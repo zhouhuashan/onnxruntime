@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package CommonIR;
 
-import "Type.proto";
+import "core/protobuf/Type.proto";
 
 message DataProto {
   // Defines a dense tensor in its serialized format.

@@ -2,9 +2,9 @@ syntax = "proto2";
 
 package CommonIR;
 
-import "Data.proto";
-import "Type.proto";
-import "TensorShape.proto";
+import "core/protobuf/Data.proto";
+import "core/protobuf/Type.proto";
+import "core/protobuf/TensorShape.proto";
 
 // Defines a computation graph.
 // `run(graph, fetches, feed_dict)` executes the subgraph of the graph
