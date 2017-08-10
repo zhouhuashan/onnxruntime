@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
+set(COMMONIR_ROOT ${PROJECT_SOURCE_DIR}/..)
 include(zlib)
 include(protobuf)
 
@@ -19,3 +20,4 @@ include_directories(
 )
 
 include(commonIR_core_protobuf.cmake)
+include(commonIR_core_graph.cmake)
