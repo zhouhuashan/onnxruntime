@@ -16,6 +16,27 @@ the Common IR will provide implementations of these on all the standard
 data types. However frameworks can chose which devices each operator
 supports.
 
+## Control Flow Operators
+
+### While
+
+`While(condition\_function, body\_function)`
+
+Arguments | Description
+--------- | -----------
+condition_function | 
+body_function | 
+
+### Cond
+
+`Cond(condition\_function, true\_function, false\_function)`
+
+Arguments | Description
+--------- | -----------
+condition_function | 
+true_function | 
+false_function | 
+
 ## Activation Operators
 
 ### Sigmoid
@@ -66,22 +87,3 @@ supports.
 ### SimpleRNN
 ### LSTM
 ### GRU
-
-## Control Flow Operators
-
-### While
-
-While(condition\_function, body\_function)
-
-Arguments 
-condition_function
-body_function
-
-### Cond
-
-Cond(condition\_function, true\_function, false\_function)
-
-Arguments 
-condition_function
-true_function
-false_function
