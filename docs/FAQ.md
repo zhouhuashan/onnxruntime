@@ -1,4 +1,6 @@
-﻿FAQ
+﻿#### Microsoft Confidential
+
+FAQ
 ===
 
 How can operator implementations from one framework be used with others since they likely depend on framework-specific memory managers, etc.?

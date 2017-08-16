@@ -1,4 +1,6 @@
-﻿Common IR
+﻿#### Microsoft Confidential
+
+Common IR
 =========
 
 The Common IR is an open specification that consists of the following

@@ -1,4 +1,6 @@
-﻿Operators
+﻿#### Microsoft Confidential
+
+Operators
 =========
 
 Operators are implemented external to the graph and registered with the
