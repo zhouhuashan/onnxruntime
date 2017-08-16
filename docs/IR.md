@@ -27,23 +27,12 @@ a custom operator.
 
 ### Operators
 
-Operators are implemented external to the graph and registered with the
-IR. Built-in operators are portable across frameworks while custom
-operators may be framework-specific. The list of built-on operators is
-provided later in this document. Operators for control flow of the graph
-are also provided.
+See [Operators.md] for details
 
-The IR provides a single registration mechanism for all operators. The
-registration process maps operators to their implementation for specific
-data types and on specific devices (CPU, GPU, FPGA, etc). This way the
-IR cleanly represents the logical operation being performed while the
-implementation is kept separate. Built-in operators are pre-registered
-by the framework and custom operators can be registered by the framework
-or by users.
+The IR also provides a method to query the set of available
+implementations for any operator.
 
-Functions
-
-### 
+### Functions
 
 Functions are subgraphs that encapsulate some functionality. They have
 one or more inputs and one or more outputs. Functions are user-defined
@@ -52,39 +41,6 @@ composition of lower level operations into higher level ones.
 
 Built-in operators and standard data types
 ------------------------------------------
-
-### Common Operators
-
-The following built-in operators are provided. Every framework adopting
-the common IR will provide implementations of these on all the standard
-data types. However frameworks can chose which devices each operator
-supports.
-
-  Activation   Math         Tensor        NN                     RNN
-  ------------ ------------ ------------- ---------------------- -----------
-  Sigmoid      Exp          Reshape       Dropout                SimpleRNN
-  Tanh         Log          Clip          Pooling                LSTM
-  ReLU         Sqrt         Maximum       Convolution            GRU
-  Softmax      Floor        Minimum       ConvolutionTranspose   
-  ELU          Abs          Concatenate   BatchNormalization     
-  LeakyRelu    Reciprocal   Slice         ROIPooling             
-  SoftPlus     Plus         Transpose     Unpooling              
-               Minus                                             
-               Time                                              
-               Div                                               
-               Dot                                               
-               Pow                                               
-
-The IR also provides a method to query the set of available
-implementations for any operator.
-
-### Control flow operators
-
-Two built-in operators are provided for control flow:
-
--   while(condition\_function, body\_function)
-
--   cond(boolean\_condition\_function, true\_function, false\_function)
 
 ### Standard data types
 
