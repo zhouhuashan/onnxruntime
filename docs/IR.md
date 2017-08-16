@@ -27,7 +27,7 @@ a custom operator.
 
 ### Operators
 
-See [Operators.md] for details
+See [Operators.md](Operators.md) for details
 
 The IR also provides a method to query the set of available
 implementations for any operator.
