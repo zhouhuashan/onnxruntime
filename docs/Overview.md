@@ -39,4 +39,4 @@ Framework authors can focus on the scenario they want to optimize rather
 than the whole stack. Hardware vendors can target the common IR rather
 than multiple, separate frameworks.
 
-![](media/stack.png){width="7.19375in" height="6.167361111111111in"}
+![stack diagram](media/stack.png)
