@@ -27,6 +27,25 @@ message GraphProto {
   // The function definitions of the graph. They can only be used
   // (i.e., called) in the graph defined by `node`.
   repeated FunctionDefProto function = 5;
+
+  // Namespace of the graph. Required.
+  // We use reverse domain names as name space indicators. For example:
+  // `com.facebook.fair` or `com.microsoft.cognitiveservices`
+  //
+  // Together with `name` and `version`, this forms the identity of the graph
+  optional string namespace = 6;
+
+  // Version of the IR this graph targets. Required.
+  optional string ir_version = 7;
+
+  // A human-readable documentation for this graph.
+  optional string documentation = 8;
+
+  // Optional, user-defined metadata
+  optional map<string,string> metadata = 9;
+
+  reserved 100 to 200; // for future required metadata
+
 };
 
 // Defines a node in a computation graph. Each graph node is either an
