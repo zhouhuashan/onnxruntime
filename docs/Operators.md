@@ -20,7 +20,7 @@ supports.
 
 ### While
 
-`While(condition\_function, body\_function)`
+`While(condition_function, body_function)`
 
 Arguments | Description
 --------- | -----------
@@ -29,7 +29,7 @@ body_function |
 
 ### Cond
 
-`Cond(condition\_function, true\_function, false\_function)`
+`Cond(condition_function, true_function, false_function)`
 
 Arguments | Description
 --------- | -----------
