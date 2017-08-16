@@ -60,6 +60,9 @@ false_function |
 ## Tensor Operators
 
 ### Reshape
+
+`Reshape(condition_function, true_function, false_function)`
+
 ### Clip
 ### Maximum
 ### Minimum
