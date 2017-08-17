@@ -26,9 +26,9 @@ The common IR specifies the portable, serialized format of the computation graph
 
 ### Graphs
 
-Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Nodes have one or more inputs and one or more outputs. Each node can be a built-in (intrinsic) operator or a custom operator.
+Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Nodes have one or more inputs and one or more outputs. Each node can be a call to a built-in (intrinsic) operator, a custom operator, or a function.
 
-A serialized grap is comprised of a set of metadata fields, a set of model parameters, a list of operator nodes, and a list of function definitions.
+A serialized graph is comprised of a set of metadata fields, a set of model parameters, a list of computation nodes, and a list of function definitions.
 
 #### Metadata
 
