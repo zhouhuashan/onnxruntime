@@ -42,7 +42,7 @@ message GraphProto {
   optional string documentation = 8;
 
   // Optional, user-defined metadata
-  optional map<string,string> metadata = 9;
+  map<string,string> metadata = 9;
 
   reserved 100 to 200; // for future required metadata
 
