@@ -18,6 +18,29 @@ the Common IR will provide implementations of these on all the standard
 data types. However frameworks can chose which devices each operator
 supports.
 
+Here the list of built-in operators that we plan to support:
+
+| Activation  | Math        | Tensor         | NN                   | RNN           |  Control   |  Logical       | Reduction       |
+|-------------|-------------|----------------|----------------------|-------------- |------------|----------------|-----------------|
+| Sigmoid     | Exp         | Reshape        | Dropout              | SimpleRNN     | While      | Greater        | ReduceMax       |
+| Tanh        | Log         | Clip           | Pooling              | LSTM          | For        | Less           | ReduceMin       |
+| ReLU        | Sqrt        | Maximum        | Convolution          | GRU           | Cond       | Equal          | ReduceMean      |
+| Softmax     | Floor       | Minimum        | ConvolutionTranspose |               |            | GreaterEqual   | ReduceSum       |
+| ELU         | Abs         | Concatenate    | BatchNormalization   |               |            | LessEqual      | ReduceLogSumExp |
+| LeakyRelu   | Reciprocal  | Slice          | ROIPooling           |               |            | And            | ReduceProd      |
+| SoftPlus    | Plus        | Transpose      | Unpooling            |               |            | Or             |                 |
+| PRelu       | Minus       | OneHot         |                      |               |            | Not            |                 |
+|             | Time        | ArgMax         |                      |               |            |                |                 |
+|             | Div         | ArgMin         |                      |               |            |                |                 |
+|             | Dot         | Gather         |                      |               |            |                |                 |
+|             | Pow         | Scatter        |                      |               |            |                |                 |
+|             | Neg         | UniformRandom  |                      |               |            |                |                 |
+|             | Sin         | NormalRandom   |                      |               |            |                |                 |
+|             | Cos         | Fill           |                      |               |            |                |                 |
+|             | Square      |                |                      |               |            |                |                 |
+|             | Sign        |                |                      |               |            |                |                 |
+|             | Ceil        |                |                      |               |            |                |                 |
+
 ## Control Flow Operators
 
 ### While
@@ -26,8 +49,8 @@ supports.
 
 Arguments | Description
 --------- | -----------
-condition_function | 
-body_function | 
+condition_function |
+body_function |
 
 ### Cond
 
@@ -35,9 +58,9 @@ body_function |
 
 Arguments | Description
 --------- | -----------
-condition_function | 
-true_function | 
-false_function | 
+condition_function |
+true_function |
+false_function |
 
 ## Activation Operators
 
@@ -48,7 +71,7 @@ false_function |
 ### ELU
 ### LeakyRelu
 ### SoftPlus
-  
+
 ## Math Operators
 
 ### Exp
