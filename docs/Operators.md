@@ -920,6 +920,8 @@ name          | Optional name.
 Compute the transpose convolution or dilated transpose convolution on the provided input tensor.
 
 ### BatchNormalization
+
+
 ### MaxROIPooling
 
 `max_roi_pooling(x, rois, output_shape, spatial_scale, name='')`
@@ -983,6 +985,6 @@ The ROI (Region of Interest) pooling operation average pools over sub-regions of
 
 ## RNN Operators
 
-### SimpleRNN
-### LSTM
-### GRU
+### RNNUnit
+### LSTMUnit
+### GRUUnit
