@@ -649,6 +649,210 @@ name          | Optional name.
 #### Description:
 Create a tensor with a specific value.
 
+## Logical Operators
+
+### Greater
+
+`greater(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `greater` comparison of two tensors. Result is 1 if left > right else 0.
+
+### Less
+
+`less(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `less` comparison of two tensors. Result is 1 if left < right else 0.
+
+### Equal
+
+`equal(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `equal` comparison of two tensors. Result is 1 if left == right else 0.
+
+### GreaterEqual
+
+`greater_equal(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `greater_equal` comparison of two tensors. Result is 1 if left >= right else 0.
+
+### LessEqual
+
+`less_equal(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `less_equal` comparison of two tensors. Result is 1 if left <= right else 0.
+
+### And
+
+`and(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `and` operator of two tensors. Result is 1 if left and right are 1 else 0.
+
+### Or
+
+`or(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `or` operator of two tensors. Result is 1 if left or right are 1 else 0.
+
+### Not
+
+`not(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `not` on the input tensor, flip 1 to 0 and vice versa.
+
+### NotEqual
+
+`not_equal(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Elementwise `not_equal` comparison of two tensors. Result is 1 if left != right else 0.
+
+## Reduction Operators
+
+### ReduceMax
+
+`reduce_max(x, axes=None, keep_dims=True, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axes          | Axes along which to compute the max.
+keep_dims     | Keep the reduced dimension.
+name          | Optional name.
+
+#### Description:
+Computes the max of the input tensor’s elements across a list of specified axes.
+
+### ReduceMin
+
+`reduce_min(x, axes=None, keep_dims=True, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axes          | Axes along which to compute the min.
+keep_dims     | Keep the reduced dimension.
+name          | Optional name.
+
+#### Description:
+Computes the min of the input tensor’s elements across a list of specified axes.
+
+### ReduceMean
+
+`reduce_mean(x, axes=None, keep_dims=True, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axes          | Axes along which to compute the mean.
+keep_dims     | Keep the reduced dimension.
+name          | Optional name.
+
+#### Description:
+Computes the mean of the input tensor’s elements across a list of specified axes.
+
+### ReduceSum
+
+`reduce_sum(x, axes=None, keep_dims=True, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axes          | Axes along which to compute the sum.
+keep_dims     | Keep the reduced dimension.
+name          | Optional name.
+
+#### Description:
+Computes the sum of the input tensor’s elements across a list of specified axes.
+
+### ReduceLogSumExp
+
+`reduce_log_sum_exp(x, axes=None, keep_dims=True, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axes          | Axes along which to compute the log of the sum of the exponentiations.
+keep_dims     | Keep the reduced dimension.
+name          | Optional name.
+
+#### Description:
+Computes the log of the sum of the exponentiations of the input tensor’s elements across a list of specified axes..
+
+### ReduceProd
+
+`reduce_prod(x, axes=None, keep_dims=True, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axes          | Axes along which to compute the product.
+keep_dims     | Keep the reduced dimension.
+name          | Optional name.
+
+#### Description:
+Computes the product of the input tensor’s elements across a list of specified axes.
+
 ## NN Operators
 
 ### Dropout
