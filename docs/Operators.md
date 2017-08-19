@@ -184,12 +184,228 @@ Computes the element-wise scaled exponential linear unit of `x`.
 ## Math Operators
 
 ### Exp
+
+`exp(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise exponential of `x`.
+
 ### Log
+
+`log(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise natural logarithm of `x`.
+
 ### Sqrt
+
+`sqrt(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise square root of `x`. Will return NaN for negative `x`.
+
 ### Floor
+
+`floor(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise floor of `x`.
+
 ### Abs
+
+`abs(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise absolute of `x`.
+
 ### Reciprocal
+
+`reciprocal(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise reciprocal of `x`.
+
 ### Plus
+
+`plus(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the sum of the `left` and `right` input tensors. It supports broadcasting.
+
+### Minus
+
+`minus(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the difference of the `left` and `right` input tensors. It supports broadcasting.
+
+### Time
+
+`time(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the product of the `left` and `right` input tensors. It supports broadcasting.
+
+### Div
+
+`div(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the division of the `left` and `right` input tensors. It supports broadcasting.
+
+### Dot
+
+`dot(left, right, reduction_rank=1, name='')`
+
+Arguments      | Description
+---------------| -----------
+left           | tensor value or the result of an expression.
+right          | tensor value or the result of an expression.
+reduction_rank | Represents the number of axes to be collapsed in order to transform the tensors into matrices, perform the operation and then reshape back.
+name           | Optional name.
+
+#### Description:
+Computes the dot product of the `left` and `right` input tensors. It supports broadcasting.
+
+### Pow
+
+`pow(x, e, name='')`
+
+Arguments | Description
+----------| -----------
+x         | base tensor.
+e         | exponent tensor.
+name      | Optional name.
+
+#### Description:
+Computes base raised to the power of exponent. It supports broadcasting. This is well defined if base is non-negative or exponent is an integer. Otherwise the result is NaN.
+
+### Neg
+
+`neg(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise negative of `x`.
+
+### Sin
+
+`sin(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise sin of `x`.
+
+### Cos
+
+`Cos(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise cos of `x`.
+
+### Square
+
+`square(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise square of `x`.
+
+### Sign
+
+`sign(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Return -1 if x < 0; 0 if x == 0 or NAN; 1 if x > 0.
+
+### Ceil
+
+`ceil(x, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise ceil of `x`.
+
 
 ## Tensor Operators
 
