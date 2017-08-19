@@ -23,14 +23,14 @@ Here the list of built-in operators that we plan to support:
 | Activation  | Math        | Tensor            | NN                   | RNN           |  Control   |  Logical       | Reduction       |
 |-------------|-------------|-------------------|----------------------|-------------- |------------|----------------|-----------------|
 | Sigmoid     | Exp         | Reshape           | Dropout              | RNNUnit       | While      | Greater        | ReduceMax       |
-| Tanh        | Log         | Clip              | Pooling              | LSTMUnit      | If         | Less           | ReduceMin       |
+| Tanh        | Log         | Clip              | AveragePooling       | LSTMUnit      | If         | Less           | ReduceMin       |
 | ReLU        | Sqrt        | Maximum           | Convolution          | GRUUnit       |            | Equal          | ReduceMean      |
 | Softmax     | Floor       | Minimum           | ConvolutionTranspose |               |            | GreaterEqual   | ReduceSum       |
 | ELU         | Abs         | Concatenate       | BatchNormalization   |               |            | LessEqual      | ReduceLogSumExp |
-| LeakyRelu   | Reciprocal  | Slice             | ROIPooling           |               |            | And            | ReduceProd      |
+| LeakyRelu   | Reciprocal  | Slice             | MaxROIPooling        |               |            | And            | ReduceProd      |
 | SoftPlus    | Plus        | Transpose         | Unpooling            |               |            | Or             |                 |
-| PRelu       | Minus       | OneHot            |                      |               |            | Not            |                 |
-| SELU        | Time        | ArgMax            |                      |               |            | NotEqual       |                 |
+| PRelu       | Minus       | OneHot            | MaxPooling           |               |            | Not            |                 |
+| SELU        | Time        | ArgMax            | AverageROIPooling    |               |            | NotEqual       |                 |
 |             | Div         | ArgMin            |                      |               |            |                |                 |
 |             | Dot         | Gather            |                      |               |            |                |                 |
 |             | Pow         | RandomUniform     |                      |               |            |                |                 |
@@ -856,12 +856,130 @@ Computes the product of the input tensor’s elements across a list of specified
 ## NN Operators
 
 ### Dropout
-### Pooling
+
+`dropout(x, dropout_rate=0.0, seed=auto, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x`.
+dropout_rate  | Between 0 and 1 inclusive, the rate of dropout.
+seed          | Seed of the pseudo random generator or auto generate.
+name          | Optional name.
+
+#### Description:
+Each element of the input is independently set to 0 with probability dropout_rate.
+
+### AveragePooling
+
+`average_pooling(x, kernel_shape, strides=(1,), padding=(False,), name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x`.
+kernel        | Tuple present the kernel shape.
+strides       | Tuple represent the strides on each dimension.
+padding       | Tuple represent the padding on each dimension.
+name          | Optional name.
+
+#### Description:
+The pooling operations compute a new tensor by selecting the average value in the pooling input.
+
 ### Convolution
+
+`convolution(x, filter, filter_shape, strides=(1,), padding=(True,), dilation=(1,), name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x` of shape [I×M1×M2×…×Mn].
+filter        | Convolution filter weights, stored as a tensor of dimensions [O×I×M1×M2×…×Mn].
+filter_shape  | Shape of the convolution kernel [M1×M2×…×Mn]
+strides       | Tuple represent the strides on each dimension.
+padding       | Tuple represent the padding on each dimension.
+dilation      | dilation across each filter axis, default no dilation.
+name          | Optional name.
+
+#### Description:
+Compute the convolution or dilated convolution on the provided input tensor.
+
 ### ConvolutionTranspose
+
+`convolution_transpose(x, filter, filter_shape, strides=(1,), padding=(True,), dilation=(1,), output_shape=None, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x` with shape [I×M1×M2×…×Mn].
+filter        | Convolution filter weights, stored as a tensor of dimensions [I×O×M1×M2×…×Mn].
+filter_shape  | Shape of the convolution kernel [M1×M2×…×Mn]
+strides       | Tuple represent the strides on each dimension.
+padding       | Tuple represent the padding on each dimension.
+dilation      | dilation across each filter axis, default no dilation.
+output_shape  | user expected output shape after convolution transpose
+name          | Optional name.
+
+#### Description:
+Compute the transpose convolution or dilated transpose convolution on the provided input tensor.
+
 ### BatchNormalization
-### ROIPooling
-### Unpooling
+### MaxROIPooling
+
+`max_roi_pooling(x, rois, output_shape, spatial_scale, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x`.
+rois          | the coordinates of the ROIs per image ([4 x roisPerImage x N]), each ROI is (x1, y1, x2, y2) absolute to original image size.
+output_shape  | Dimensions (width x height) of the ROI pooling output shape.
+spatial_scale | The scale of operand from the original image size.
+name          | Optional name.
+
+#### Description:
+The ROI (Region of Interest) pooling operation max pools over sub-regions of an input volume and produces a fixed sized output volume regardless of the ROI size.
+
+### MaxUnpooling
+
+`max_unpooling(x, pooling_input, kernel_shape, strides=(1,), padding=(False,), name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x`.
+pooling_input | Input to the corresponding pooling operation.
+kernel_shape  | Tuple present the kernel shape.
+strides       | Tuple represent the strides on each dimension.
+padding       | Tuple represent the padding on each dimension.
+name          | Optional name.
+
+#### Description:
+Unpools the `x` using information from pooling_input. Unpooling mirrors the operations performed by pooling and depends on the values provided to the corresponding pooling operation. The output should have the same shape as pooling_input.
+
+### MaxPooling
+
+`max_pooling(x, kernel_shape, strides=(1,), padding=(False,), name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x`.
+kernel_shape  | Tuple present the kernel shape.
+strides       | Tuple represent the strides on each dimension.
+padding       | Tuple represent the padding on each dimension.
+name          | Optional name.
+
+#### Description:
+The pooling operations compute a new tensor by selecting the maximum value in the pooling input.
+
+### AverageROIPooling
+
+`average_roi_pooling(x, rois, output_shape, spatial_scale, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x`.
+rois          | the coordinates of the ROIs per image ([4 x roisPerImage x N]), each ROI is (x1, y1, x2, y2) absolute to original image size.
+output_shape  | Dimensions (width x height) of the ROI pooling output shape.
+spatial_scale | The scale of operand from the original image size.
+name          | Optional name.
+
+#### Description:
+The ROI (Region of Interest) pooling operation average pools over sub-regions of an input volume and produces a fixed sized output volume regardless of the ROI size.
 
 ## RNN Operators
 
