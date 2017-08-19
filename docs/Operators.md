@@ -20,26 +20,26 @@ supports.
 
 Here the list of built-in operators that we plan to support:
 
-| Activation  | Math        | Tensor         | NN                   | RNN           |  Control   |  Logical       | Reduction       |
-|-------------|-------------|----------------|----------------------|-------------- |------------|----------------|-----------------|
-| Sigmoid     | Exp         | Reshape        | Dropout              | RNNUnit       | While      | Greater        | ReduceMax       |
-| Tanh        | Log         | Clip           | Pooling              | LSTMUnit      | If         | Less           | ReduceMin       |
-| ReLU        | Sqrt        | Maximum        | Convolution          | GRUUnit       |            | Equal          | ReduceMean      |
-| Softmax     | Floor       | Minimum        | ConvolutionTranspose |               |            | GreaterEqual   | ReduceSum       |
-| ELU         | Abs         | Concatenate    | BatchNormalization   |               |            | LessEqual      | ReduceLogSumExp |
-| LeakyRelu   | Reciprocal  | Slice          | ROIPooling           |               |            | And            | ReduceProd      |
-| SoftPlus    | Plus        | Transpose      | Unpooling            |               |            | Or             |                 |
-| PRelu       | Minus       | OneHot         |                      |               |            | Not            |                 |
-| SELU        | Time        | ArgMax         |                      |               |            | NotEqual       |                 |
-|             | Div         | ArgMin         |                      |               |            |                |                 |
-|             | Dot         | Gather         |                      |               |            |                |                 |
-|             | Pow         | Scatter        |                      |               |            |                |                 |
-|             | Neg         | UniformRandom  |                      |               |            |                |                 |
-|             | Sin         | NormalRandom   |                      |               |            |                |                 |
-|             | Cos         | Fill           |                      |               |            |                |                 |
-|             | Square      |                |                      |               |            |                |                 |
-|             | Sign        |                |                      |               |            |                |                 |
-|             | Ceil        |                |                      |               |            |                |                 |
+| Activation  | Math        | Tensor            | NN                   | RNN           |  Control   |  Logical       | Reduction       |
+|-------------|-------------|-------------------|----------------------|-------------- |------------|----------------|-----------------|
+| Sigmoid     | Exp         | Reshape           | Dropout              | RNNUnit       | While      | Greater        | ReduceMax       |
+| Tanh        | Log         | Clip              | Pooling              | LSTMUnit      | If         | Less           | ReduceMin       |
+| ReLU        | Sqrt        | Maximum           | Convolution          | GRUUnit       |            | Equal          | ReduceMean      |
+| Softmax     | Floor       | Minimum           | ConvolutionTranspose |               |            | GreaterEqual   | ReduceSum       |
+| ELU         | Abs         | Concatenate       | BatchNormalization   |               |            | LessEqual      | ReduceLogSumExp |
+| LeakyRelu   | Reciprocal  | Slice             | ROIPooling           |               |            | And            | ReduceProd      |
+| SoftPlus    | Plus        | Transpose         | Unpooling            |               |            | Or             |                 |
+| PRelu       | Minus       | OneHot            |                      |               |            | Not            |                 |
+| SELU        | Time        | ArgMax            |                      |               |            | NotEqual       |                 |
+|             | Div         | ArgMin            |                      |               |            |                |                 |
+|             | Dot         | Gather            |                      |               |            |                |                 |
+|             | Pow         | RandomUniform     |                      |               |            |                |                 |
+|             | Neg         | RandomNormal      |                      |               |            |                |                 |
+|             | Sin         | Fill              |                      |               |            |                |                 |
+|             | Cos         | RandomUniformLike |                      |               |            |                |                 |
+|             | Square      | RandomNormalLike  |                      |               |            |                |                 |
+|             | Sign        | FillLike          |                      |               |            |                |                 |
+|             | Ceil        |                   |                      |               |            |                |                 |
 
 ## Control Flow Operators
 
@@ -360,7 +360,7 @@ Computes the element-wise sin of `x`.
 
 ### Cos
 
-`Cos(x, name='')`
+`cos(x, name='')`
 
 Arguments | Description
 ----------| -----------
@@ -411,19 +411,243 @@ Computes the element-wise ceil of `x`.
 
 ### Reshape
 
-`Reshape(condition_function, true_function, false_function)`
+`reshape(x, shape, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+shape     | tuple of the new shape.
+name      | Optional name.
+
+#### Description:
+Reshape the input tensor `x`.
 
 ### Clip
+
+`clip(x, min, max, name='')`
+
+Arguments | Description
+----------| -----------
+x         | tensor value or the result of an expression.
+min       | min value.
+max       | max value.
+name      | Optional name.
+
+#### Description:
+Clip all tensor `x` value to be between `min` and `max`.
+
 ### Maximum
+
+`maximum(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise max of the two or more input tensors. It supports broadcasting.
+
 ### Minimum
+
+`minimum(left, right, name='')`
+
+Arguments | Description
+----------| -----------
+left      | tensor value or the result of an expression.
+right     | tensor value or the result of an expression.
+name      | Optional name.
+
+#### Description:
+Computes the element-wise min of the two or more input tensors. It supports broadcasting.
+
 ### Concatenate
+
+`concatenate(inputs, axis, name='')`
+
+Arguments | Description
+----------| -----------
+inputs    | One or more tensors.
+axis      | The axis along which the concatenation occur.
+name      | Optional name.
+
+#### Description:
+Concatenate the input tensors along an axis.
+
 ### Slice
+
+`slice(x, begin, end, stride, name='')`
+
+Arguments | Description
+----------| -----------
+x         | Tensor.
+begin     | Shape tuple the start of slicing long each axis.
+end       | Shape tuple the end of slicing long each axis.
+stride    | Shape tuple the stride of slicing long each axis.
+name      | Optional name.
+
+#### Description:
+Slice the input along one or multiple axes.
+
 ### Transpose
-### Minus
-### Time
-### Div
-### Dot
-### Pow
+
+`transpose(x, perm, name='')`
+
+Arguments | Description
+----------| -----------
+x         | Input tensor.
+perm      | Tuple contain permutation applied to the axes.
+name      | Optional name.
+
+#### Description:
+Permutes the axes of the tensor. The output has the same data but the axes are permuted according to `perm`.
+
+### OneHot
+
+`one_hot(x, num_classes, axis=-1, sparse_output=False, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+num_classes   | Number of the classes to generate the one hot presentation.
+axis          | Axis along which to compute the one hot presentation.
+sparse_output | If True, that the result will be stored in SparseTensor.
+name          | Optional name.
+
+#### Description:
+Create one hot tensor based on the input tensor.
+
+### ArgMax
+
+`argmax(x, axis=None, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axis          | Axis along which to compute the argmax.
+name          | Optional name.
+
+#### Description:
+Computes the argmax of the input tensor’s elements across the specified axis. If no axis is specified, it will return the flatten index of the largest element in tensor x.
+
+### ArgMin
+
+`argmin(x, axis=None, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+axis          | Axis along which to compute the argmin.
+name          | Optional name.
+
+#### Description:
+Computes the argmin of the input tensor’s elements across the specified axis. If no axis is specified, it will return the flatten index of the largest element in tensor x.
+
+### Gather
+
+`gather(x, indices, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor.
+indices       | Indices of the element to return.
+name          | Optional name.
+
+#### Description:
+Retrieves the elements of indices in the input tensor `x`.
+
+### RandomUniform
+
+`random_uniform(shape, low=0.0, high=1.0, seed=auto, dtype=float32, name='')`
+
+Arguments     | Description
+--------------| -----------
+shape         | A tuple represent the shape of the return tensor.
+low           | Lower end of the range of the random numbers.
+high          | Upper end of the range of the random numbers.
+seed          | Seed of the pseudo random generator or auto generate.
+dtype         | The type of the returned tensor, default float32.
+name          | Optional name.
+
+#### Description:
+Generates samples from the uniform distribution in the interval.
+
+### RandomNormal
+
+`random_normal(shape, mean=0.0, scale=1.0, seed=auto, dtype=float32, name='')`
+
+Arguments     | Description
+--------------| -----------
+shape         | A tuple represent the shape of the return tensor.
+mean          | Mean of the Gaussian distribution.
+scale         | Standard deviation of the Gaussian distribution.
+seed          | Seed of the pseudo random generator or auto generate.
+dtype         | The type of the returned tensor, default float32.
+name          | Optional name.
+
+#### Description:
+Generates samples from the normal distribution with mean and standard deviation scale.
+
+### Fill
+
+`fill(shape, value, dtype=float32, name='')`
+
+Arguments     | Description
+--------------| -----------
+shape         | A tuple represent the shape of the return tensor.
+value         | The value of the new tensor.
+dtype         | The type of the returned tensor, default float32.
+name          | Optional name.
+
+#### Description:
+Create a tensor with a specific value.
+
+### RandomUniformLike
+
+`random_uniform_like(x, low=0.0, high=1.0, seed=auto, dtype=float32, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Generate a random tensor with the same shape a `x`.
+low           | Lower end of the range of the random numbers.
+high          | Upper end of the range of the random numbers.
+seed          | Seed of the pseudo random generator or auto generate.
+dtype         | The type of the returned tensor, default float32.
+name          | Optional name.
+
+#### Description:
+Generates samples from the uniform distribution in the interval.
+
+### RandomNormalLike
+
+`random_normal_like(x, mean=0.0, scale=1.0, seed=auto, dtype=float32, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Generate a random tensor with the same shape a `x`.
+mean          | Mean of the Gaussian distribution.
+scale         | Standard deviation of the Gaussian distribution.
+seed          | Seed of the pseudo random generator or auto generate.
+dtype         | The type of the returned tensor, default float32.
+name          | Optional name.
+
+#### Description:
+Generates samples from the normal distribution with mean and standard deviation scale.
+
+### FillLike
+
+`fill_like(x, value, dtype=float32, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Generate a tensor with the same shape a `x`.
+value         | The value of the new tensor.
+dtype         | The type of the returned tensor, default float32.
+name          | Optional name.
+
+#### Description:
+Create a tensor with a specific value.
 
 ## NN Operators
 
