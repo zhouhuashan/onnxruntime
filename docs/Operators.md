@@ -22,10 +22,10 @@ Here the list of built-in operators that we plan to support:
 
 | Activation  | Math        | Tensor            | NN                   | RNN           |  Control   |  Logical       | Reduction       |
 |-------------|-------------|-------------------|----------------------|-------------- |------------|----------------|-----------------|
-| Sigmoid     | Exp         | Reshape           | Dropout              | RNNUnit       | While      | Greater        | ReduceMax       |
-| Tanh        | Log         | Clip              | AveragePooling       | LSTMUnit      | If         | Less           | ReduceMin       |
-| ReLU        | Sqrt        | Maximum           | Convolution          | GRUUnit       |            | Equal          | ReduceMean      |
-| Softmax     | Floor       | Minimum           | ConvolutionTranspose |               |            | GreaterEqual   | ReduceSum       |
+| Sigmoid     | Exp         | Reshape           | Dropout              | Recurrence    | While      | Greater        | ReduceMax       |
+| Tanh        | Log         | Clip              | AveragePooling       | RNNStep       | If         | Less           | ReduceMin       |
+| ReLU        | Sqrt        | Maximum           | Convolution          | LSTMStep      |            | Equal          | ReduceMean      |
+| Softmax     | Floor       | Minimum           | ConvolutionTranspose | GRUStep       |            | GreaterEqual   | ReduceSum       |
 | ELU         | Abs         | Concatenate       | BatchNormalization   |               |            | LessEqual      | ReduceLogSumExp |
 | LeakyRelu   | Reciprocal  | Slice             | MaxROIPooling        |               |            | And            | ReduceProd      |
 | SoftPlus    | Plus        | Transpose         | Unpooling            |               |            | Or             |                 |
@@ -921,6 +921,21 @@ Compute the transpose convolution or dilated transpose convolution on the provid
 
 ### BatchNormalization
 
+`batch_normalization(x, mean, variance, scale, bias, spatial, eps=0.0001, name='')`
+
+Arguments     | Description
+--------------| -----------
+x             | Input tensor `x`.
+mean          | Running mean during the training and the final mean value in evaluation.
+variance      | Running variance during the training and the final variance value in evaluation.
+scale         | Learnable scale that scale the centered input `scale*(x-mean)`.
+bias          | Learnable bias that add offset to the final result of the BN.
+spatial       | Compute the mean and variance across all spatial elements or per feature.
+eps           | To avoid divide by zero during computing the variance.
+name          | Optional name.
+
+#### Description:
+During training normalize the input using minibatch statistics while keep track of global statistics. Use the global statistics during evaluation.
 
 ### MaxROIPooling
 
@@ -985,6 +1000,79 @@ The ROI (Region of Interest) pooling operation average pools over sub-regions of
 
 ## RNN Operators
 
-### RNNUnit
-### LSTMUnit
-### GRUUnit
+### Recurrence
+
+`recurrence(x, step_function, initial_state=state_zero, return_full_states=False, go_backward=False, name='')`
+
+Arguments          | Description
+-------------------| -----------
+x                  | Input sequence, a tuple of tensors -- in order to support variable length sequence.
+step_function      | A function that take previous state and new input, and output new state and output.
+initial_state      | First state to input to the step function, usually zero except in encoder decoder model.
+return_full_states | Return all the states or only last one.
+go_backward        | If true, then run the recurrence reverse.
+name               | Optional name.
+
+#### Description:
+The above will represent the execution engine of RNN, it take a step function and iterate on it along the length of the input sequence. The return of recurrence is all outputs and state or all states depend on the `return_full_states` flag.
+
+### RNNStep
+
+`rnn_step(x, state, name='')`
+
+Arguments          | Description
+-------------------| -----------
+x                  | New input.
+state              | Previous state.
+name               | Optional name.
+
+Attributes         | Description
+-------------------| -----------
+num_units          | Number of neuron per unit.
+weights            | Tensor to store the weights.
+activation         | Activation function to use.
+name               | Optional name.
+
+#### Description:
+`rnn_step` is a basic RNN cell, it has some attributes that get initialized during creation.
+
+### LSTMStep
+
+`lstm_step(x, state, name='')`
+
+Arguments          | Description
+-------------------| -----------
+x                  | New input.
+state              | Previous state.
+name               | Optional name.
+
+Attributes         | Description
+-------------------| -----------
+num_units          | Number of neuron per unit.
+weights            | Tensor to store the weights.
+activation         | Activation function to use.
+use_peepholes      | Use peephole default to False.
+name               | Optional name.
+
+#### Description:
+`lstm_step` implement LSTM recurrent network with its gates.
+
+### GRUStep
+
+`gru_step(x, state, name='')`
+
+Arguments          | Description
+-------------------| -----------
+x                  | New input.
+state              | Previous state.
+name               | Optional name.
+
+Attributes         | Description
+-------------------| -----------
+num_units          | Number of neuron per unit.
+weights            | Tensor to store the weights.
+activation         | Activation function to use.
+name               | Optional name.
+
+#### Description:
+`gru_step` implement gated recurrent unit network..
