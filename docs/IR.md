@@ -6,12 +6,11 @@ Common IR
 The Common IR is an open specification that consists of the following
 components:
 
-1)  Definition of extensible computation graph model including methods
-    for registering operators and manipulating the graph
+1)  Definition of anextensible computation graph model.
 
-2)  Built-in operators and standard data types
+2)  Built-in operators and standard data types.
 
-3)  Reference implementation of the built-in of operators
+3)  Reference implementation of the built-in of operators.
 
 __Some notes on language in this and all related documents__:
 
@@ -125,7 +124,8 @@ types can be supported by frameworks.
 
 -   bool
 
--   Tensor
+-   Sparse and dense tensors
+
 
 Reference implementation
 ------------------------
