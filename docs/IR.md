@@ -6,7 +6,7 @@ Common IR
 The Common IR is an open specification that consists of the following
 components:
 
-1)  Definition of anextensible computation graph model.
+1)  Definition of an extensible computation graph model.
 
 2)  Built-in operators and standard data types.
 
