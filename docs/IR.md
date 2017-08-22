@@ -41,7 +41,7 @@ The following are the required metadata properties of a model graph:
 |ir_version|string||The version of the IR format specification|
 |documentation|string|Free form|A human-readable documentation string intended to summarize the purpose of the model.|
 
-All optional metadata is organized in a <string,string> map. There set of optional metadata elements is extensible without revising the specification, but tools and runtime implementations are expected to understand the following optional metadata elements:
+All optional metadata are organized in a <string,string> map. The set of optional metadata elements is extensible without revising the specification, but tools and runtime implementations are expected to understand the following optional metadata elements:
 
 |Name|Description|
 |----|----|
@@ -90,46 +90,31 @@ __TODO: Describe how model parameters are referenced in nodes.__
 
 See [Operators.md](Operators.md) for details
 
-The IR also provides a method to query the set of available
-implementations for any operator.
-
-### Functions
-
 
 Built-in operators and standard data types
 ------------------------------------------
 
 ### Standard data types
 
-The following data types are supported by the Common IR. Additional data
-types can be supported by frameworks.
+The following data types are supported by the Common IR. Additional data types can be supported by frameworks.
 
--   float32
+|Group|Name|Description|
+|-----|----|-----------|
+|Floating Point Types|__float16, float32, float64__|Values adhering to the IEEE 754-2008 standard representation of floating-point data.|
+|Signed Integer Types|__int8, int16,int32,int64__|Signed integers are supported for 8-64 bit widths.|
+|Unsigned Integer Types|__uint8,uint16__| Unsigned integers of 8 or 16 bits are supported.|
+|Complex Types|__complex64,complex128__|A complex number with either 32- or 64-bit real and imaginary parts.|
+|Other|__string__|Strings represent textual data. All strings are encoded using UTF-8.|
+|Ohter|__bool__|Boolean value represent data with only two values, typically _true_ and _false_.|
+|Other|__handle__|Handles are opaque types holding a 64-bit integer.|
+|Collections|__sparse and dense tensor__|Tensors are a generalization of vectors and matrices; whereas vectors have one dimension, and matrices two, tensors can have any number of dimenstions, including zero. A zero-dimensional tensor is equivalent to a scalar.|
+|Collections|__list__|Lists represent dense, ordered, collections of elements that are of homogeneous types. List elements can be added to the tail, removed from the head, and accessed by integer index.|
+|Collections|__tuple__|Tuples represent dense, ordered, collections of elements of heterogeneous types. Tuple elements are accessed by integer index.|
 
--   float64
-
--   uint8
-
--   int8
-
--   uint16
-
--   int16
-
--   int32
-
--   int64
-
--   string
-
--   bool
-
--   Sparse and dense tensors
+__TODO: Add maps when they are added to the .proto file.__
 
 
 Reference implementation
 ------------------------
 
-An open source reference implementation of the built-in operators will
-be provided. This can be used for testing custom implementations for
-correctness.
+An open source reference implementation of the built-in operators will be provided. This can be used for validating the correctness of custom implementations.
