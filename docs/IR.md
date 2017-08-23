@@ -8,9 +8,9 @@ components:
 
 1)  Definition of an extensible computation graph model.
 
-2)  Built-in operators and standard data types.
+2)  Definition of built-in operators and standard data types.
 
-3)  Reference implementation of the built-in of operators.
+3)  Reference implementations of graph management and operators.
 
 __Some notes on language in this and all related documents__:
 
