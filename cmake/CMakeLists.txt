@@ -12,6 +12,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 set(COMMONIR_ROOT ${PROJECT_SOURCE_DIR}/..)
 include(zlib)
 include(protobuf)
+include(googletest)
 
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -21,3 +22,4 @@ include_directories(
 
 include(commonIR_core_protobuf.cmake)
 include(commonIR_core_graph.cmake)
+include(commonIR_unittest.cmake)
