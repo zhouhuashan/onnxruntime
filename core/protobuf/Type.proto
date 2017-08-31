@@ -48,23 +48,20 @@ message TypeProto {
   };
 
   oneof value {
-    // A type parameter.
-    string type_param = 1;
-
     // The type of a tensor.
-    TensorTypeProto tensor_type = 2;
+    TensorTypeProto tensor_type = 1;
 
     // The type of a sparse tensor.
-    SparseTensorTypeProto sparse_tensor_type = 3;
+    SparseTensorTypeProto sparse_tensor_type = 2;
 
     // The type of a completely opaque handle. A handle typically represents
     // a reference to a resource managed by the framework runtime.
-    HandleTypeProto handle_type = 4;
+    HandleTypeProto handle_type = 3;
 
     // The type of a tuple.
-    TupleTypeProto tuple_type = 5;
+    TupleTypeProto tuple_type = 4;
 
     // The type of a sequence.
-    SeqTypeProto seq_type = 6;
+    SeqTypeProto seq_type = 5;
   }
 };
