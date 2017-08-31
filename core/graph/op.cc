@@ -95,16 +95,10 @@ namespace CommonIR
         return m_name;
     }
 
-    size_t OperatorRegistry::FormalParameter::GetTypes(
-        const TypeProto** p_parameterTypes) const
+    const DataTypeSet&
+        OperatorRegistry::FormalParameter::GetTypes() const
     {
-        if (nullptr == p_parameterTypes)
-        {
-            return 0;
-        }
-
-        *p_parameterTypes = m_types.data();
-        return m_types.size();
+        return m_types;
     }
 
     const std::string& OperatorRegistry::FormalParameter::GetTypeStr() const
@@ -149,6 +143,11 @@ namespace CommonIR
 
         *p_values = m_allowedValues.data();
         return m_allowedValues.size();
+    }
+
+    bool OperatorRegistry::Attribute::IsMandatory() const
+    {
+        return m_isMandatory;
     }
 
     OperatorRegistry::OperatorRegistry(const OperatorRegistrySetter& p_setter)
@@ -234,17 +233,21 @@ namespace CommonIR
         return true;
     }
 
-    void OperatorRegistryFactory::Register(
+    Status OperatorRegistryFactory::Register(
         const OperatorRegistry& p_opRegistry)
     {
         auto iter = m_operatorRegistryMap.find(p_opRegistry.GetName());
         if (m_operatorRegistryMap.end() != iter)
         {
-            // TODO: add "Status" class to return bad status in this case.
+            Status status(false,
+                "Error: operator registry with same name ("
+                + p_opRegistry.GetName() + ") exists.");
+            return status;
         }
         else
         {
             m_operatorRegistryMap[p_opRegistry.GetName()] = p_opRegistry;
+            return Status::OK();
         }
     }
 
