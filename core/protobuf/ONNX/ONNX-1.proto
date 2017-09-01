@@ -1,12 +1,12 @@
 syntax = "proto2";
 
-package toffee;
+package onnx;
 
 // Note [Release]
-// We are still in the very early stage of defining ToffeeIR. The current
-// version of ToffeeIR is a starting point. While we are actively working
+// We are still in the very early stage of defining ONNX. The current
+// version of ONNX is a starting point. While we are actively working
 // towards a complete spec, we would like to get the community involved
-// by sharing our working version of ToffeeIR.
+// by sharing our working version of ONNX.
 
 // Note [Protobuf compatibility]
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,7 +23,7 @@ package toffee;
 
 // Note [Namespaces]
 // ~~~~~~~~~~~~~~~~~
-// Toffee IR gives explicit names to graphs, intermediate values and
+// ONNX gives explicit names to graphs, intermediate values and
 // serialized tensors.  To make it easier to generate names, we organize
 // these into separate namespaces (so, e.g., a graph can have the same
 // name as a serialized tensor.)  The namespaces are as follows:
@@ -37,7 +37,7 @@ package toffee;
 // - Tensor: These names identify intermediate tensor values flowing through
 //   the computation of a graph.
 //
-// We specify the namespace of a name in ToffeeIR as comments in the form
+// We specify the namespace of a name in ONNX as comments in the form
 // of "namespace {Node,Graph,Attribute,Tensor}". Framework is responsible
 // for supporting the namespaces.
 
