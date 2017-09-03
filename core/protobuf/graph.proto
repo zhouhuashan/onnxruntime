@@ -14,27 +14,29 @@ import "core/protobuf/TensorShape.proto";
 
 // Note [Namespaces]
 // ~~~~~~~~~~~~~~~~~
-// ONNX gives explicit names to graphs, intermediate values and
+// LotusIR gives explicit names to graphs, intermediate values and
 // serialized tensors.  To make it easier to generate names, we organize
 // these into separate namespaces (so, e.g., a graph can have the same
 // name as a serialized tensor.)  The namespaces are as follows:
 //
-// - Node: These names identify specific nodes in the graph (but not, necessarily
-//   any particular input or output of the node.
+// - Node: These names identify specific nodes in the graph (but not,
+//   necessarily any particular input or output of the node.
 // - Graph: These names identify graphs in the protobuf.
-// - Attribute: These names identify attribute names for extra attributes that
-//   are passed to operators.
-// - Operator: These names identify particular operators.
+// - Attribute: These names identify attribute names for extra attributes
+//   that are passed to operators.
+// - Operator and functions: These names identify particular operators and
+//   functions.
 // - Tensor: These names identify intermediate tensor values flowing through
 //   the computation of a graph.
+// - Shape: These names represent parameters for unknown shape dimensions.
 //
-// We specify the namespace of a name in ONNX as comments in the form
-// of "namespace {Node,Graph,Attribute,Tensor}". Framework is responsible
-// for supporting the namespaces.
+// We specify the namespace of a name in LotusIR as comments in the form
+// of "namespace {Node,Graph,Attribute,Tensor,Shape}". Framework is
+// responsible for supporting the namespaces.
 
 // Defines a directed acyclic computation graph.
 // All the input/output tensors are explicitly named so a framework can
-// execute any subgraph of the graph by feeding and fetching the named tensors.
+// run any subgraph of the graph by feeding and fetching the named tensors.
 message GraphProto {
   // The nodes in the graph.
   repeated NodeProto node = 1;

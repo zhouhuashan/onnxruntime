@@ -8,7 +8,6 @@
 
 namespace CommonIR
 {
-    typedef DataProto_DenseTensorProto DenseTensorProto;
     typedef uint32_t NODEINDEX;
     typedef int64_t GRAPH_VERSION;
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
@@ -224,9 +223,9 @@ namespace CommonIR
 
         void Init(const NodeProto& p_nodeProto);
         void Init(const std::string& p_name,
-            const std::string& p_opType,
-            const std::vector<std::vector<NodeArg>>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs);
+		  const std::string& p_opType,
+		  const std::vector<NodeArg>& p_inputArgs,
+		  const std::vector<NodeArg>& p_outputArgs);
 
         // Node index.
         NODEINDEX m_index;
@@ -238,7 +237,7 @@ namespace CommonIR
         std::string m_opType;
 
         // Node inputs' definition.
-        std::vector<std::vector<NodeArg>> m_inputDefs;
+        std::vector<NodeArg> m_inputDefs;
 
         // Node outputs' definition.
         std::vector<NodeArg> m_outputDefs;
@@ -337,9 +336,9 @@ namespace CommonIR
 
         // Getter and Setter for graph parameters.
         bool GetParamter(const std::string& p_paramName,
-            DenseTensorProto& p_value) const;
+			 TensorProto& p_value) const;
         void SetParameter(const std::string& p_paramName,
-            const DenseTensorProto& p_value);
+			  const TensorProto& p_value);
 
         // Add or Remove a function definition.
         bool AddFunctionDef(const FunctionDefProto& p_function);
@@ -362,9 +361,9 @@ namespace CommonIR
 
         // Add, remove node from <*this> graph.
         Node* AddNode(const std::string& p_name,
-            const std::string& p_opType,
-            const std::vector<std::vector<NodeArg>>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs);
+		      const std::string& p_opType,
+		      const std::vector<NodeArg>& p_inputArgs,
+		      const std::vector<NodeArg>& p_outputArgs);
         Node* AddNode(const Node& p_other);
         bool RemoveNode(NODEINDEX p_nodeIndex);
 

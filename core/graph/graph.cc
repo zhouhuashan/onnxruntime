@@ -310,7 +310,7 @@ namespace CommonIR
 
     void Node::Init(const std::string& p_name,
         const std::string& p_opType,
-        const std::vector<std::vector<NodeArg>>& p_inputArgs,
+        const std::vector<NodeArg>& p_inputArgs,
         const std::vector<NodeArg>& p_outputArgs)
     {
         m_name = p_name;
@@ -768,7 +768,7 @@ namespace CommonIR
     }
 
     bool Graph::GetParamter(const std::string& p_paramName,
-        DenseTensorProto& p_value) const
+			    TensorProto& p_value) const
     {
         auto params = m_graphProto.params();
 
@@ -782,7 +782,7 @@ namespace CommonIR
     }
 
     void Graph::SetParameter(const std::string& p_paramName,
-        const DenseTensorProto& p_value)
+			     const TensorProto& p_value)
     {
         (*(m_graphProto.mutable_params()))[p_paramName] = p_value;
     }
@@ -849,7 +849,7 @@ namespace CommonIR
 
     Node* Graph::AddNode(const std::string& p_name,
         const std::string& p_opType,
-        const std::vector<std::vector<NodeArg>>& p_inputArgs,
+        const std::vector<NodeArg>& p_inputArgs,
         const std::vector<NodeArg>& p_outputArgs)
     {
         auto node = AllocateNode();
@@ -870,8 +870,7 @@ namespace CommonIR
 
     bool Graph::RemoveNode(NODEINDEX p_index)
     {
-        if (MaxNodeIndex() <= p_index
-            || nullptr == m_nodes[p_index])
+        if (MaxNodeIndex() <= p_index || nullptr == m_nodes[p_index])
         {
             return false;
         }
@@ -903,8 +902,7 @@ namespace CommonIR
 
     bool Graph::TryGetFunction(NODEINDEX p_index, /*out*/Function** p_function)
     {
-        if (MaxNodeIndex() <= p_index
-            || nullptr == p_function)
+        if (MaxNodeIndex() <= p_index || nullptr == p_function)
         {
             return false;
         }
