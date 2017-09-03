@@ -1,5 +1,5 @@
-#ifndef COMMONIR_OP_H
-#define COMMONIR_OP_H
+#ifndef CORE_GRAPH_OP_H
+#define CORE_GRAPH_OP_H
 
 #include <functional>
 #include <unordered_map>
@@ -45,7 +45,7 @@ namespace CommonIR
 
 
     // Shape inference function define.
-    typedef std::function<bool(InferenceContext&)> ShapeInferenceFunc;
+    typedef std::function<Status(InferenceContext&)> ShapeInferenceFunc;
 
     // An attribute parser - it's specified when registering an operator.
     // The parser is designed and used in two ways.
@@ -55,7 +55,7 @@ namespace CommonIR
     //    which makes it be easier to access node attributes.
     // TODO: to implement the 2nd point above, NodeAttributes should be changed
     // to contain a <T> field, which is structured attributes.
-    typedef std::function<bool(NodeAttributes&)> AttributeParser;
+    typedef std::function<Status(const NodeAttributes&)> AttributeParser;
 
     // Operator registry setter helper.
     // This is used in "REGISTER_OP" macro, to separate setters from getters
@@ -113,6 +113,8 @@ namespace CommonIR
         AttributeParser m_parser;
     };
 
+    typedef std::unordered_set<std::string> DataTypeSet;
+
     // Operator registry specification.
     // It defines input formal parameter, output formal parameters and
     // attributes.
@@ -137,9 +139,8 @@ namespace CommonIR
             // Get formal parameter name.
             const std::string& GetName() const;
 
-            // Get formal parameter types.
-            // Return number of parameter types supported for this parameter.
-            size_t GetTypes(const TypeProto** p_parameterTypes) const;
+            // Get supportted data types.
+            const DataTypeSet& GetTypes() const;
 
             // Get formal parameter type string.
             const std::string& GetTypeStr() const;
@@ -154,7 +155,7 @@ namespace CommonIR
             // A set of data types supported for <*this> formal parameter.
             // It should contain at least one element if this formal parameter
             // is good.
-            std::vector<TypeProto> m_types;
+            DataTypeSet m_types;
 
             // The <parameter type> string specified when registring an op.
             // It could be a supported data type or an attribute key, which
@@ -199,6 +200,9 @@ namespace CommonIR
             // Return number of allowed values specifed.
             size_t GetAllowedValues(const AttributeProto** p_values) const;
 
+            // Get to know whether this attribute is mandatory.
+            bool IsMandatory() const;
+
         private:
 
             Attribute() {}
@@ -213,6 +217,11 @@ namespace CommonIR
             // It it's true, the first element of <m_allowedValues> is the
             // default value.
             bool m_hasDefaultValue;
+
+            // Flag indicates whether <*this> attribute is mandatory.
+            // If it's true, then Node that refers to operator with <*this>
+            // attribute has to specify value for <*this> attribute.
+            bool m_isMandatory;
 
             // Allowed attribute values.
             std::vector<AttributeProto> m_allowedValues;
@@ -290,7 +299,7 @@ namespace CommonIR
             const OperatorRegistry** p_opRegistry) const;
 
         // Register an operator.
-        void Register(const OperatorRegistry& p_opRegistry);
+        Status Register(const OperatorRegistry& p_opRegistry);
 
         // Get the global operator registry factory instance.
         static OperatorRegistryFactory* Get();
@@ -314,6 +323,8 @@ namespace CommonIR
     //    .Input("input_2:T")
     //    .Output("output_1:T")
     //    .Attr("*T:List<TypeProto>={int, float, double}");
+
+
 }
 
 #endif

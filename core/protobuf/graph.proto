@@ -146,4 +146,8 @@ message AttributeProto {
   optional GraphProto graphs = 8;
   optional DataProto d = 9;
   repeated DataProto ds = 10;
+  optional TypeProto type = 11;
+  repeated TypeProto types = 12;
+  optional TensorShapeProto shape = 13;
+  repeated TensorShapeProto shapes = 14;
 };
