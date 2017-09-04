@@ -275,8 +275,8 @@ namespace CommonIR
 
             // Constructor.
             NodeIterator(NODEINDEX p_currentNodeIndex, Graph* p_graph)
-                : m_graph(p_graph),
-                m_currentNodeIndex(p_currentNodeIndex)
+	      : m_graph(p_graph),
+		m_currentNodeIndex(p_currentNodeIndex)
             {
             }
 
@@ -310,9 +310,9 @@ namespace CommonIR
         // Question: will a node defined in a function refers another function
         // please? I (Ke) am assuming we don't allow such case here for now.
         Graph(Node* p_node,
-            const FunctionDefProto& p_functionProto,
-            const std::string& p_name,
-            GRAPH_VERSION p_version);
+	      const FunctionDefProto& p_functionProto,
+	      const std::string& p_name,
+	      GRAPH_VERSION p_version);
 
         // Resolve <*this> graph to ensure it's in a good shape with full
         // functionality.

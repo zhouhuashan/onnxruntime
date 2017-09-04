@@ -309,9 +309,9 @@ namespace CommonIR
     }
 
     void Node::Init(const std::string& p_name,
-        const std::string& p_opType,
-        const std::vector<NodeArg>& p_inputArgs,
-        const std::vector<NodeArg>& p_outputArgs)
+		    const std::string& p_opType,
+		    const std::vector<NodeArg>& p_inputArgs,
+		    const std::vector<NodeArg>& p_outputArgs)
     {
         m_name = p_name;
         m_opType = p_opType;

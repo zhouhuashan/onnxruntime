@@ -2,8 +2,6 @@ syntax = "proto2";
 
 package CommonIR;
 
-import "core/protobuf/Type.proto";
-
 // A message defined to store a dense tensor in its serialized format.
 message TensorProto {
   // The primitive data type.
@@ -75,6 +73,8 @@ message TensorProto {
 
   // For double
   repeated double double_data = 10 [packed = true];
+
+  // Future extensions go here.
 }
 
 // Defines a sparse tensor in its serialized format.
@@ -94,7 +94,8 @@ message DataProto {
   message HandleProto {
     optional int64 uid = 1;
 
-    // TBD: More information to be added.
+    // More information to be added. We need to specify the device
+    // that the resource managed by the handle is on.
   }
 
   // Defines a tuple in its serialized format.
