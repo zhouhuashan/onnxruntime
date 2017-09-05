@@ -33,7 +33,8 @@ message TensorProto {
 
   // For very large tensors, we may want to store them in chunks, in which
   // case the following fields will specify the segment that is stored in
-  // the current TensorProto.
+  // the current TensorProto. Begin and end specify a chunk in terms of byte
+  // offsets (inclusive) into the complete tensor. 
   message Segment {
     optional int64 begin = 1;
     optional int64 end = 2;
