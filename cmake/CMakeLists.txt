@@ -21,5 +21,6 @@ include_directories(
 )
 
 include(commonIR_core_protobuf.cmake)
+include(onnx_core_protobuf.cmake)
 include(commonIR_core_graph.cmake)
 include(commonIR_unittest.cmake)
