@@ -2,7 +2,7 @@
 #include "op.h"
 #include "utils.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     NodeArg::NodeArg(const NodeProto_InputOutputProto& p_nodeProtoInputOutput)
         : m_nodeArgData(p_nodeProtoInputOutput)
@@ -455,8 +455,8 @@ namespace CommonIR
 
             std::string nodeName = (*nodeIter)->Name();
             std::string op_type = (*nodeIter)->OpType();
-            const OperatorRegistry* op = nullptr;
-            bool success = OperatorRegistryFactory::Get()->TryGetOp(op_type, &op);
+            const OperatorSchema* op = nullptr;
+            bool success = OperatorSchemaRegistry::Get()->TryGetOp(op_type, &op);
             if (success)
             {
                 // The node refers to a primitive operator.

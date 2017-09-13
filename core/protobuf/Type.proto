@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package CommonIR;
+package LotusIR;
 
 
 // Defines the type system.

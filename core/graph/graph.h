@@ -6,7 +6,7 @@
 #include "core/protobuf/graph.pb.h"
 #include "Status.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     typedef DataProto_DenseTensorProto DenseTensorProto;
     typedef uint32_t NODEINDEX;
@@ -468,4 +468,4 @@ namespace CommonIR
     };
 }
 
-#endif  // COMMONIR_GRAPH_H
+#endif  // CORE_GRAPH_GRAPH_H

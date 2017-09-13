@@ -1,6 +1,6 @@
 #include "utils.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     namespace Utils
     {
