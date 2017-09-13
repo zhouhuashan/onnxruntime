@@ -24,6 +24,8 @@ message TypeProto {
 
     // Advanced types
     FLOAT16 = 11;
+    COMPLEX64 = 12;  // single precision complex, 32-bit real and imaginary components
+    COMPLEX128 = 13;  // double precision complex, 64-bit real and imaginary components
 
     // TBD: More types to be added.
   };
