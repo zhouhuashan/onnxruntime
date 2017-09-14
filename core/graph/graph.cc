@@ -4,43 +4,47 @@
 
 namespace LotusIR
 {
-    NodeArg::NodeArg(const NodeProto_InputOutputProto& p_nodeProtoInputOutput)
-        : m_nodeArgData(p_nodeProtoInputOutput)
+    NodeArg::NodeArg(const std::string& p_name,
+        const NodeArgInfo& p_nodeProtoInputOutput)
+        : m_name(p_name),
+        m_nodeArgTypeAndShape(p_nodeProtoInputOutput)
     {
     }
 
     NodeArg::NodeArg(const std::string& p_name,
-		     const TypeProto& p_type,
-		     const TensorShapeProto& p_shape)
+        const TypeProto& p_type,
+        const TensorShapeProto& p_shape)
+        : m_name(p_name)
     {
-        m_nodeArgData.set_name(p_name);
-        *(m_nodeArgData.mutable_type()) = p_type;
-        *(m_nodeArgData.mutable_shape()) = p_shape;
+        *(m_nodeArgTypeAndShape.mutable_type()) = p_type;
+        *(m_nodeArgTypeAndShape.mutable_shape()) = p_shape;
     }
 
     const std::string& NodeArg::Name() const
     {
-        return m_nodeArgData.name();
+        return m_name;
     }
 
     const TypeProto& NodeArg::Type() const
     {
-        return m_nodeArgData.type();
+        return m_nodeArgTypeAndShape.type();
     }
 
     const TensorShapeProto& NodeArg::Shape() const
     {
-        return m_nodeArgData.shape();
+        return m_nodeArgTypeAndShape.shape();
     }
 
-    const NodeProto_InputOutputProto& NodeArg::ToProto() const
+    const NodeArgInfo& NodeArg::ToProto() const
     {
-        return m_nodeArgData;
+        return m_nodeArgTypeAndShape;
     }
 
     Function::Function(Node* p_node,
-		       const FunctionDefProto& p_funcProto,
-		       GRAPH_VERSION p_version)
+        const FunctionDefProto& p_funcProto,
+        GRAPH_VERSION p_irVersion,
+        GRAPH_VERSION p_producerVersion,
+        const std::string& p_producerTag)
     {
         m_node = p_node;
         m_functionDefProto = p_funcProto;
@@ -48,7 +52,7 @@ namespace LotusIR
 
         if (p_node != nullptr)
         {
-            auto inputDefsList = m_node->InputDefs();
+            auto inputDefs = m_node->InputDefs();
             int i = 0;
             for (auto& inputArg : p_funcProto.input_arg())
             {
@@ -57,13 +61,18 @@ namespace LotusIR
                     continue;
                 }
                 m_name.append("_")
-		    .append(Utils::OpUtils::ToString(inputDefsList[i][0].Type()))
-		    .append(std::to_string(i));
+                    .append(Utils::OpUtils::ToString(inputDefs[i].Type()))
+                    .append(std::to_string(i));
                 ++i;
             }
         }
 
-        m_body.reset(new Graph(m_node, p_funcProto, m_name, p_version));
+        m_body.reset(new Graph(m_node,
+            p_funcProto,
+            m_name,
+            p_irVersion,
+            p_producerVersion,
+            p_producerTag));
     }
 
     Graph* Function::Body()
@@ -158,12 +167,12 @@ namespace LotusIR
         return m_opType;
     }
 
-    const std::vector<std::vector<NodeArg>>& Node::InputDefs() const
+    const std::vector<NodeArg>& Node::InputDefs() const
     {
         return m_inputDefs;
     }
 
-    std::vector<std::vector<NodeArg>>& Node::Mutable_InputDefs()
+    std::vector<NodeArg>& Node::Mutable_InputDefs()
     {
         m_graph->m_isGraphValid = false;
         return m_inputDefs;
@@ -245,23 +254,22 @@ namespace LotusIR
         }
 
         // Set attributes.
-        p_proto.clear_attr();
+        p_proto.clear_attribute();
         for (auto attribute : m_attributes)
         {
-            auto attr = p_proto.add_attr();
+            auto attr = p_proto.add_attribute();
             *attr = attribute.second;
         }
 
         // Set inputs' defitions.
         p_proto.clear_input();
-        for (auto& inputDefs : m_inputDefs)
+        for (auto& inputDef : m_inputDefs)
         {
-            NodeProto_InputListProto* inputList = p_proto.add_input();
-            auto input = inputList->add_input();
-            for (auto& inputDef : inputDefs)
-            {
-                *input = inputDef.ToProto();
-            }
+            auto input = p_proto.add_input();
+            *input = inputDef.Name();
+            auto inputInfo = p_proto.add_input_arg_info();
+            *inputInfo = inputDef.ToProto();
+            // TODO: add_input_arg_count information. 
         }
 
         // Set outputs' definition.
@@ -269,7 +277,9 @@ namespace LotusIR
         for (auto& outputDef : m_outputDefs)
         {
             auto output = p_proto.add_output();
-            *output = outputDef.ToProto();
+            *output = outputDef.Name();
+            auto outputInfo = p_proto.add_output_arg_info();
+            *outputInfo = outputDef.ToProto();
         }
     }
 
@@ -278,19 +288,14 @@ namespace LotusIR
         m_name = p_nodeProto.name();
         m_opType = p_nodeProto.op_type();
 
-        for (NodeProto_InputListProto inputList : p_nodeProto.input())
+        for (size_t i = 0; i < p_nodeProto.input().size(); ++i)
         {
-            std::vector<NodeArg> tempInputs;
-            for (NodeProto_InputOutputProto input : inputList.input())
-            {
-                tempInputs.push_back(NodeArg(input));
-            }
-            m_inputDefs.push_back(tempInputs);
+            m_inputDefs.push_back(NodeArg(p_nodeProto.input(i), p_nodeProto.input_arg_info(i)));
         }
 
-        for (NodeProto_InputOutputProto output : p_nodeProto.output())
+        for (size_t i = 0; i < p_nodeProto.output().size(); ++i)
         {
-            m_outputDefs.push_back(NodeArg(output));
+            m_inputDefs.push_back(NodeArg(p_nodeProto.output(i), p_nodeProto.output_arg_info(i)));
         }
 
         for (auto control_input : p_nodeProto.control_input())
@@ -298,17 +303,17 @@ namespace LotusIR
             m_controlInputs.insert(control_input);
         }
 
-        for (int i = 0; i < p_nodeProto.attr_size(); ++i)
+        for (int i = 0; i < p_nodeProto.attribute_size(); ++i)
         {
-            auto& attr = p_nodeProto.attr(i);
+            auto& attr = p_nodeProto.attribute(i);
             m_attributes[attr.name()] = attr;
         }
     }
 
     void Node::Init(const std::string& p_name,
-		    const std::string& p_opType,
-		    const std::vector<NodeArg>& p_inputArgs,
-		    const std::vector<NodeArg>& p_outputArgs)
+        const std::string& p_opType,
+        const std::vector<NodeArg>& p_inputArgs,
+        const std::vector<NodeArg>& p_outputArgs)
     {
         m_name = p_name;
         m_opType = p_opType;
@@ -330,7 +335,7 @@ namespace LotusIR
         const Graph::NodeIterator& p_other) const
     {
         return (m_graph == p_other.m_graph &&
-		m_currentNodeIndex == p_other.m_currentNodeIndex);
+            m_currentNodeIndex == p_other.m_currentNodeIndex);
     }
 
     bool Graph::NodeIterator::operator!=(
@@ -365,6 +370,11 @@ namespace LotusIR
             m_funcDefMap[funcDef.name()] = funcDef;
         }
 
+        for (auto tensor : p_graphProto.initializer())
+        {
+            m_nameToInitialTensor[tensor.name()] = tensor;
+        }
+
         AddSourceSinkNodes();
         for (auto nodeProto : p_graphProto.node())
         {
@@ -375,11 +385,15 @@ namespace LotusIR
     Graph::Graph(Node* p_node,
         const FunctionDefProto& p_functionProto,
         const std::string& p_name,
-        GRAPH_VERSION p_version)
+        GRAPH_VERSION p_irVersion,
+        GRAPH_VERSION p_producerVersion,
+        const std::string& p_producerTag)
     {
         m_node = p_node;
         m_graphProto.set_name(p_name);
-        m_graphProto.set_version(p_version);
+        m_graphProto.set_ir_version(p_irVersion);
+        m_graphProto.set_producer_version(p_producerVersion);
+        m_graphProto.set_producer_tag(p_producerTag);
 
         AddSourceSinkNodes();
         for (auto& nodeProto : p_functionProto.node())
@@ -388,10 +402,15 @@ namespace LotusIR
         }
     }
 
-    Graph::Graph(const std::string& p_name, GRAPH_VERSION p_version)
+    Graph::Graph(const std::string& p_name,
+        GRAPH_VERSION p_irVersion,
+        GRAPH_VERSION p_producerVersion,
+        const std::string& p_producerTag)
     {
         m_graphProto.set_name(p_name);
-        m_graphProto.set_version(p_version);
+        m_graphProto.set_ir_version(p_irVersion);
+        m_graphProto.set_producer_version(p_producerVersion);
+        m_graphProto.set_producer_tag(p_producerTag);
         AddSourceSinkNodes();
     }
 
@@ -607,38 +626,35 @@ namespace LotusIR
                 continue;
             }
 
-            auto& inputArgsList = (*nodeIter)->InputDefs();
-            if (inputArgsList.size() > 0)
+            auto& inputArgs = (*nodeIter)->InputDefs();
+            if (inputArgs.size() > 0)
             {
                 // This node needs inputs.
 
-                for (auto& inputArgs : inputArgsList)
+                for (auto& inputArg : inputArgs)
                 {
-                    for (auto& inputArg : inputArgs)
+                    auto outputArgIter = p_outputArgs.find(inputArg.Name());
+                    if (p_outputArgs.end()
+                        == outputArgIter)
                     {
-                        auto outputArgIter = p_outputArgs.find(inputArg.Name());
-                        if (p_outputArgs.end()
-                            == outputArgIter)
-                        {
-                            // No such outputArg matching this inputArg.
-                            Status status(false, "The node input argument ("
-                                + inputArg.Name()
-                                + "} does not match any output argument of other nodes.");
-                            return status;
-                        }
-
-                        // Setup input/output relationship between <*nodeIter>
-                        // and <outputArgIter>.
-                        (*nodeIter)->m_inputNodes.insert(
-                            outputArgIter->second.GetNode());
-                        (*nodeIter)->m_inputs.insert({ &inputArg , outputArgIter->second });
-
-                        NODEINDEX outputNodeIndex =
-                            outputArgIter->second.GetNode()->Index();
-                        m_nodes[outputNodeIndex]->m_outputNodes.insert((*nodeIter));
-
-                        innerNodes.insert(m_nodes[outputNodeIndex].get());
+                        // No such outputArg matching this inputArg.
+                        Status status(false, "The node input argument ("
+                            + inputArg.Name()
+                            + "} does not match any output argument of other nodes.");
+                        return status;
                     }
+
+                    // Setup input/output relationship between <*nodeIter>
+                    // and <outputArgIter>.
+                    (*nodeIter)->m_inputNodes.insert(
+                        outputArgIter->second.GetNode());
+                    (*nodeIter)->m_inputs.insert({ &inputArg , outputArgIter->second });
+
+                    NODEINDEX outputNodeIndex =
+                        outputArgIter->second.GetNode()->Index();
+                    m_nodes[outputNodeIndex]->m_outputNodes.insert((*nodeIter));
+
+                    innerNodes.insert(m_nodes[outputNodeIndex].get());
                 }
             }
             else
@@ -738,20 +754,39 @@ namespace LotusIR
 
     void Graph::AddSourceSinkNodes()
     {
-        std::vector<std::vector<NodeArg>> emptyInputArgs;
-        std::vector<NodeArg> emptyOutputArgs;
-        m_sourceNodeIndex = AddNode("_Graph_Source", "NoOp", emptyInputArgs, emptyOutputArgs)->Index();
-        m_sinkNodeIndex = AddNode("_Graph_Sink", "NoOp", emptyInputArgs, emptyOutputArgs)->Index();
+        std::vector<NodeArg> emptyArgs;
+        m_sourceNodeIndex = AddNode("_Graph_Source", "NoOp", emptyArgs, emptyArgs)->Index();
+        m_sinkNodeIndex = AddNode("_Graph_Sink", "NoOp", emptyArgs, emptyArgs)->Index();
     }
 
-    GRAPH_VERSION Graph::Version() const
+    GRAPH_VERSION Graph::IrVersion() const
     {
-        return m_graphProto.version();
+        return m_graphProto.ir_version();
     }
 
-    void Graph::SetVersion(GRAPH_VERSION p_version)
+    void Graph::SetIrVersion(GRAPH_VERSION p_irVersion)
     {
-        m_graphProto.set_version(p_version);
+        m_graphProto.set_ir_version(p_irVersion);
+    }
+
+    GRAPH_VERSION Graph::ProducerVersion() const
+    {
+        return m_graphProto.producer_version();
+    }
+
+    void Graph::SetProducerVersion(GRAPH_VERSION p_producerVersion)
+    {
+        m_graphProto.set_producer_version(p_producerVersion);
+    }
+
+    const std::string& Graph::ProducerTag() const
+    {
+        return m_graphProto.producer_tag();
+    }
+
+    void Graph::SetProducerTag(const std::string& p_producerTag)
+    {
+        m_graphProto.set_producer_tag(p_producerTag);
     }
 
     const std::string& Graph::Name() const
@@ -764,24 +799,26 @@ namespace LotusIR
         m_graphProto.set_name(p_name);
     }
 
-    bool Graph::GetParamter(const std::string& p_paramName,
-			    TensorProto& p_value) const
+    void Graph::AddInitialTensor(const TensorProto& p_tensor)
     {
-        auto params = m_graphProto.params();
+        m_nameToInitialTensor[p_tensor.name()] = p_tensor;
+    }
 
-        auto iter = params.find(p_paramName);
-        if (params.end() == iter)
+    void Graph::RemoveInitialTensor(const std::string& p_tensorName)
+    {
+        m_nameToInitialTensor.erase(p_tensorName);
+    }
+
+    bool Graph::GetInitialTensor(const std::string& p_tensorName,
+        TensorProto& p_value) const
+    {
+        auto iter = m_nameToInitialTensor.find(p_tensorName);
+        if (m_nameToInitialTensor.end() == iter)
         {
             return false;
         }
         p_value = iter->second;
         return true;
-    }
-
-    void Graph::SetParameter(const std::string& p_paramName,
-			     const TensorProto& p_value)
-    {
-        (*(m_graphProto.mutable_params()))[p_paramName] = p_value;
     }
 
     bool Graph::AddFunctionDef(const FunctionDefProto& p_funcDef)
@@ -894,7 +931,7 @@ namespace LotusIR
             m_inputNodes.insert(m_nodes[p_srcNodeIndex].get());
         m_nodes[p_dstNodeIndex]->
             m_controlInputs.insert(m_nodes[p_srcNodeIndex]->Name());
-        
+
         return true;
     }
 
@@ -925,7 +962,9 @@ namespace LotusIR
             std::unique_ptr<Function>(
                 new Function(m_nodes[p_index].get(),
                     funcDefIter->second,
-                    Version()));
+                    IrVersion(),
+                    ProducerVersion(),
+                    ProducerTag()));
 
         *p_function = m_functionMap[funcDefName].get();
         return true;
@@ -951,6 +990,14 @@ namespace LotusIR
         {
             auto funcDef = m_graphProto.add_function();
             (*funcDef) = func.second;
+        }
+
+        // Initial tensors;
+        m_graphProto.clear_initializer();
+        for (auto item : m_nameToInitialTensor)
+        {
+            auto tensor = m_graphProto.add_initializer();
+            *tensor = item.second;
         }
 
         return m_graphProto;

@@ -8,16 +8,16 @@ namespace LotusIR
     {
         TEST(GraphConstruction_VerifyNoDuplicateName, ResolvingGraphTest)
         {
-            Graph graph("graph_1", 1);
+            Graph graph("graph_1", 1, 1, "tag_1");
 
-            EXPECT_EQ(1, graph.Version());
+            EXPECT_EQ(1, graph.IrVersion());
             EXPECT_EQ("graph_1", graph.Name());
 
-            std::vector<std::vector<NodeArg>> inputs;
+            std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
 
             TypeProto outputType;
-            outputType.mutable_tensor_type()->set_elem_type(TypeProto_DataType_INT32);
+            outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             TensorShapeProto outputShape;
             outputShape.add_dim()->set_dim_value(1);
 
@@ -41,13 +41,13 @@ namespace LotusIR
 
         TEST(GraphConstruction_VerifyNodeAndOpMatch, ResolvingGraphTest)
         {
-            Graph graph("graph_1", 1);
+            Graph graph("graph_1", 1, 1, "tag_1");
 
-            std::vector<std::vector<NodeArg>> inputs;
+            std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
 
             TypeProto outputType;
-            outputType.mutable_tensor_type()->set_elem_type(TypeProto_DataType_INT32);
+            outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             TensorShapeProto outputShape;
             outputShape.add_dim()->set_dim_value(1);
 
@@ -64,7 +64,7 @@ namespace LotusIR
 
         TEST(GraphConstruction_CheckIsAcyclic, ResolvingGraphTest)
         {
-            Graph graph("graph_1", 1);
+            Graph graph("graph_1", 1, 1, "tag_1");
 
             // Case 1: A normal graph.
             //                 SouceNode
@@ -76,11 +76,11 @@ namespace LotusIR
             //                 node_4 (NoOp)
             //                     |
             //                  SinkNode
-            std::vector<std::vector<NodeArg>> inputs;
+            std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
 
             TypeProto outputType;
-            outputType.mutable_tensor_type()->set_elem_type(TypeProto_DataType_INT32);
+            outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             TensorShapeProto outputShape;
             outputShape.add_dim()->set_dim_value(1);
 
@@ -93,15 +93,15 @@ namespace LotusIR
             outputs.push_back(outputArg2);
             auto node_2 = graph.AddNode("node_2", "Variable", inputs, outputs);
 
-            inputs.push_back(std::vector<NodeArg>({ outputArg }));
-            inputs.push_back(std::vector<NodeArg>({ outputArg2 }));
+            inputs.push_back(outputArg);
+            inputs.push_back(outputArg2);
             NodeArg outputArg3("node_3_out_1", outputType, outputShape);
             outputs.clear();
             outputs.push_back(outputArg3);
             auto node_3 = graph.AddNode("node_3", "Add", inputs, outputs);
 
             inputs.clear();
-            inputs.push_back(std::vector<NodeArg>({ outputArg3 }));
+            inputs.push_back(outputArg3);
             NodeArg outputArg4("node_4_out_1", outputType, outputShape);
             outputs.clear();
             outputs.push_back(outputArg4);
@@ -112,7 +112,7 @@ namespace LotusIR
             // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
             // TODO: "Variable", "Add", "NoOp" operators should be registered, otherwise,
             // error of referring non-existing op will be returned firstly.
-            node_1->Mutable_InputDefs().push_back(std::vector<NodeArg>({ outputArg4 }));
+            node_1->Mutable_InputDefs().push_back(outputArg4);
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMsg());
