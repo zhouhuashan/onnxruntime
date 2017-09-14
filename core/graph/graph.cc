@@ -10,8 +10,8 @@ namespace LotusIR
     }
 
     NodeArg::NodeArg(const std::string& p_name,
-        const TypeProto& p_type,
-        const TensorShapeProto& p_shape)
+		     const TypeProto& p_type,
+		     const TensorShapeProto& p_shape)
     {
         m_nodeArgData.set_name(p_name);
         *(m_nodeArgData.mutable_type()) = p_type;
@@ -39,14 +39,14 @@ namespace LotusIR
     }
 
     Function::Function(Node* p_node,
-        const FunctionDefProto& p_funcProto,
-        GRAPH_VERSION p_version)
+		       const FunctionDefProto& p_funcProto,
+		       GRAPH_VERSION p_version)
     {
         m_node = p_node;
         m_functionDefProto = p_funcProto;
         m_name = p_funcProto.name();
 
-        if (nullptr != p_node)
+        if (p_node != nullptr)
         {
             auto inputDefsList = m_node->InputDefs();
             int i = 0;
@@ -57,16 +57,13 @@ namespace LotusIR
                     continue;
                 }
                 m_name.append("_")
-                    .append(Utils::OpUtils::ToString(inputDefsList[i][0].Type()))
-                    .append(std::to_string(i));
+		    .append(Utils::OpUtils::ToString(inputDefsList[i][0].Type()))
+		    .append(std::to_string(i));
                 ++i;
             }
         }
 
-        m_body.reset(new Graph(m_node,
-            p_funcProto,
-            m_name,
-            p_version));
+        m_body.reset(new Graph(m_node, p_funcProto, m_name, p_version));
     }
 
     Graph* Function::Body()
@@ -309,9 +306,9 @@ namespace LotusIR
     }
 
     void Node::Init(const std::string& p_name,
-        const std::string& p_opType,
-        const std::vector<std::vector<NodeArg>>& p_inputArgs,
-        const std::vector<NodeArg>& p_outputArgs)
+		    const std::string& p_opType,
+		    const std::vector<NodeArg>& p_inputArgs,
+		    const std::vector<NodeArg>& p_outputArgs)
     {
         m_name = p_name;
         m_opType = p_opType;
@@ -332,8 +329,8 @@ namespace LotusIR
     bool Graph::NodeIterator::operator==(
         const Graph::NodeIterator& p_other) const
     {
-        return (m_graph == p_other.m_graph
-            && m_currentNodeIndex == p_other.m_currentNodeIndex);
+        return (m_graph == p_other.m_graph &&
+		m_currentNodeIndex == p_other.m_currentNodeIndex);
     }
 
     bool Graph::NodeIterator::operator!=(
@@ -768,7 +765,7 @@ namespace LotusIR
     }
 
     bool Graph::GetParamter(const std::string& p_paramName,
-        DenseTensorProto& p_value) const
+			    TensorProto& p_value) const
     {
         auto params = m_graphProto.params();
 
@@ -782,7 +779,7 @@ namespace LotusIR
     }
 
     void Graph::SetParameter(const std::string& p_paramName,
-        const DenseTensorProto& p_value)
+			     const TensorProto& p_value)
     {
         (*(m_graphProto.mutable_params()))[p_paramName] = p_value;
     }
@@ -848,7 +845,7 @@ namespace LotusIR
 
     Node* Graph::AddNode(const std::string& p_name,
         const std::string& p_opType,
-        const std::vector<std::vector<NodeArg>>& p_inputArgs,
+        const std::vector<NodeArg>& p_inputArgs,
         const std::vector<NodeArg>& p_outputArgs)
     {
         auto node = AllocateNode();
@@ -869,8 +866,7 @@ namespace LotusIR
 
     bool Graph::RemoveNode(NODEINDEX p_index)
     {
-        if (MaxNodeIndex() <= p_index
-            || nullptr == m_nodes[p_index])
+        if (MaxNodeIndex() <= p_index || nullptr == m_nodes[p_index])
         {
             return false;
         }
@@ -904,8 +900,7 @@ namespace LotusIR
 
     bool Graph::TryGetFunction(NODEINDEX p_index, /*out*/Function** p_function)
     {
-        if (MaxNodeIndex() <= p_index
-            || nullptr == p_function)
+        if (MaxNodeIndex() <= p_index || nullptr == p_function)
         {
             return false;
         }

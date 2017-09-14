@@ -8,7 +8,6 @@
 
 namespace LotusIR
 {
-    typedef DataProto_DenseTensorProto DenseTensorProto;
     typedef uint32_t NODEINDEX;
     typedef int64_t GRAPH_VERSION;
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
@@ -23,7 +22,7 @@ namespace LotusIR
 
         // Constructor by specifying a name, type and shape.
         NodeArg(const std::string& p_name, const TypeProto& p_type,
-            const TensorShapeProto& p_shape);
+		const TensorShapeProto& p_shape);
 
         // Get node arg name.
         const std::string& Name() const;
@@ -224,9 +223,9 @@ namespace LotusIR
 
         void Init(const NodeProto& p_nodeProto);
         void Init(const std::string& p_name,
-            const std::string& p_opType,
-            const std::vector<std::vector<NodeArg>>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs);
+		  const std::string& p_opType,
+		  const std::vector<NodeArg>& p_inputArgs,
+		  const std::vector<NodeArg>& p_outputArgs);
 
         // Node index.
         NODEINDEX m_index;
@@ -238,7 +237,7 @@ namespace LotusIR
         std::string m_opType;
 
         // Node inputs' definition.
-        std::vector<std::vector<NodeArg>> m_inputDefs;
+        std::vector<NodeArg> m_inputDefs;
 
         // Node outputs' definition.
         std::vector<NodeArg> m_outputDefs;
@@ -276,8 +275,8 @@ namespace LotusIR
 
             // Constructor.
             NodeIterator(NODEINDEX p_currentNodeIndex, Graph* p_graph)
-                : m_graph(p_graph),
-                m_currentNodeIndex(p_currentNodeIndex)
+	      : m_graph(p_graph),
+		m_currentNodeIndex(p_currentNodeIndex)
             {
             }
 
@@ -311,9 +310,9 @@ namespace LotusIR
         // Question: will a node defined in a function refers another function
         // please? I (Ke) am assuming we don't allow such case here for now.
         Graph(Node* p_node,
-            const FunctionDefProto& p_functionProto,
-            const std::string& p_name,
-            GRAPH_VERSION p_version);
+	      const FunctionDefProto& p_functionProto,
+	      const std::string& p_name,
+	      GRAPH_VERSION p_version);
 
         // Resolve <*this> graph to ensure it's in a good shape with full
         // functionality.
@@ -337,9 +336,9 @@ namespace LotusIR
 
         // Getter and Setter for graph parameters.
         bool GetParamter(const std::string& p_paramName,
-            DenseTensorProto& p_value) const;
+			 TensorProto& p_value) const;
         void SetParameter(const std::string& p_paramName,
-            const DenseTensorProto& p_value);
+			  const TensorProto& p_value);
 
         // Add or Remove a function definition.
         bool AddFunctionDef(const FunctionDefProto& p_function);
@@ -362,9 +361,9 @@ namespace LotusIR
 
         // Add, remove node from <*this> graph.
         Node* AddNode(const std::string& p_name,
-            const std::string& p_opType,
-            const std::vector<std::vector<NodeArg>>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs);
+		      const std::string& p_opType,
+		      const std::vector<NodeArg>& p_inputArgs,
+		      const std::vector<NodeArg>& p_outputArgs);
         Node* AddNode(const Node& p_other);
         bool RemoveNode(NODEINDEX p_nodeIndex);
 
@@ -458,7 +457,7 @@ namespace LotusIR
 
         // Graph function instantiations.
         std::unordered_map<std::string,
-            std::unique_ptr<Function>> m_functionMap;
+			   std::unique_ptr<Function>> m_functionMap;
 
         // Graph function definitions.
         std::unordered_map<std::string, FunctionDefProto> m_funcDefMap;
