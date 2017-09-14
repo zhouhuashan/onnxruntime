@@ -31,12 +31,12 @@ function(RELATIVE_PROTOBUF_GENERATE_CPP SRCS HDRS ROOT_DIR)
   set(${HDRS} ${${HDRS}} PARENT_SCOPE)
 endfunction()
 
-file(GLOB_RECURSE commonIR_protos_src RELATIVE ${CMAKE_CURRENT_BINARY_DIR}/../..
+file(GLOB_RECURSE lotusIR_protos_src RELATIVE ${CMAKE_CURRENT_BINARY_DIR}/../..
     "${CMAKE_CURRENT_BINARY_DIR}/../../core/protobuf/*.proto"
 )
 
 RELATIVE_PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
-     ${CMAKE_CURRENT_BINARY_DIR}/../.. ${commonIR_protos_src}
+     ${CMAKE_CURRENT_BINARY_DIR}/../.. ${lotusIR_protos_src}
 )
 
-add_library(commonIR_protos ${PROTO_SRCS} ${PROTO_HDRS})
+add_library(lotusIR_protos ${PROTO_SRCS} ${PROTO_HDRS})

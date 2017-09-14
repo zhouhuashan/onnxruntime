@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package CommonIR;
+package LotusIR;
 
 // A message defined to store a dense tensor in its serialized format.
 message TensorProto {

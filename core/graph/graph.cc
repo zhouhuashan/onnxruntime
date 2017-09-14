@@ -2,7 +2,7 @@
 #include "op.h"
 #include "utils.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     NodeArg::NodeArg(const NodeProto_InputOutputProto& p_nodeProtoInputOutput)
         : m_nodeArgData(p_nodeProtoInputOutput)
@@ -452,8 +452,8 @@ namespace CommonIR
 
             std::string nodeName = (*nodeIter)->Name();
             std::string op_type = (*nodeIter)->OpType();
-            const OperatorRegistry* op = nullptr;
-            bool success = OperatorRegistryFactory::Get()->TryGetOp(op_type, &op);
+            const OperatorSchema* op = nullptr;
+            bool success = OperatorSchemaRegistry::Get()->TryGetOp(op_type, &op);
             if (success)
             {
                 // The node refers to a primitive operator.
@@ -811,7 +811,6 @@ namespace CommonIR
         }
 
         return m_nodes[p_nodeIndex].get();
-        return nullptr;
     }
 
     Graph::NodeIterator Graph::Nodes_begin()
@@ -895,6 +894,8 @@ namespace CommonIR
             m_inputNodes.insert(m_nodes[p_srcNodeIndex].get());
         m_nodes[p_dstNodeIndex]->
             m_controlInputs.insert(m_nodes[p_srcNodeIndex]->Name());
+        
+        return true;
     }
 
     bool Graph::TryGetFunction(NODEINDEX p_index, /*out*/Function** p_function)

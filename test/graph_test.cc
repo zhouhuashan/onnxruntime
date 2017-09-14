@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "graph.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     namespace Test
     {

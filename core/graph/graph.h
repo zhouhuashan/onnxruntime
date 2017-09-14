@@ -6,7 +6,7 @@
 #include "core/protobuf/graph.pb.h"
 #include "Status.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     typedef uint32_t NODEINDEX;
     typedef int64_t GRAPH_VERSION;
@@ -467,4 +467,4 @@ namespace CommonIR
     };
 }
 
-#endif  // COMMONIR_GRAPH_H
+#endif  // CORE_GRAPH_GRAPH_H

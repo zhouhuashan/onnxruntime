@@ -5,7 +5,7 @@
 
 #include "core/protobuf/Type.pb.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     namespace Utils
     {
@@ -19,4 +19,4 @@ namespace CommonIR
     }
 }
 
-#endif // ! COMMONIR_UTILS_H
+#endif // ! CORE_GRAPH_UTILS_H
