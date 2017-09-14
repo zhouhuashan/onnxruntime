@@ -10,8 +10,8 @@ namespace CommonIR
     }
 
     NodeArg::NodeArg(const std::string& p_name,
-        const TypeProto& p_type,
-        const TensorShapeProto& p_shape)
+		     const TypeProto& p_type,
+		     const TensorShapeProto& p_shape)
     {
         m_nodeArgData.set_name(p_name);
         *(m_nodeArgData.mutable_type()) = p_type;
@@ -39,14 +39,14 @@ namespace CommonIR
     }
 
     Function::Function(Node* p_node,
-        const FunctionDefProto& p_funcProto,
-        GRAPH_VERSION p_version)
+		       const FunctionDefProto& p_funcProto,
+		       GRAPH_VERSION p_version)
     {
         m_node = p_node;
         m_functionDefProto = p_funcProto;
         m_name = p_funcProto.name();
 
-        if (nullptr != p_node)
+        if (p_node != nullptr)
         {
             auto inputDefsList = m_node->InputDefs();
             int i = 0;
@@ -57,16 +57,13 @@ namespace CommonIR
                     continue;
                 }
                 m_name.append("_")
-                    .append(Utils::OpUtils::ToString(inputDefsList[i][0].Type()))
-                    .append(std::to_string(i));
+		    .append(Utils::OpUtils::ToString(inputDefsList[i][0].Type()))
+		    .append(std::to_string(i));
                 ++i;
             }
         }
 
-        m_body.reset(new Graph(m_node,
-            p_funcProto,
-            m_name,
-            p_version));
+        m_body.reset(new Graph(m_node, p_funcProto, m_name, p_version));
     }
 
     Graph* Function::Body()
@@ -332,8 +329,8 @@ namespace CommonIR
     bool Graph::NodeIterator::operator==(
         const Graph::NodeIterator& p_other) const
     {
-        return (m_graph == p_other.m_graph
-            && m_currentNodeIndex == p_other.m_currentNodeIndex);
+        return (m_graph == p_other.m_graph &&
+		m_currentNodeIndex == p_other.m_currentNodeIndex);
     }
 
     bool Graph::NodeIterator::operator!=(

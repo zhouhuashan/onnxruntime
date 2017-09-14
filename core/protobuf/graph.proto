@@ -44,15 +44,18 @@ message GraphProto {
   // The name of the graph.
   optional string name = 2;   // namespace Graph
 
-  // The inputs and outputs of the graph.
+  // The inputs and outputs of the graph. The list input must be input names
+  // of some nodes in the graph. The list output must be output names of some
+  // nodes in the graph. For names in input that are not in initializer, their
+  // types and shapes are required.
   repeated string input = 3;  // namespace Tensor
   repeated string output = 4; // namespace Tensor
 
   // An optional list of initial values for tensors in the list of input above.
   // Used to pass serialized parameters for networks.
   // Each entry specifies a value for the input whose TensorProto.name matches
-  // a name in the input. This list is not required to be the same length of as
-  // input since many tensors might not have initial values.
+  // a name in the input. This list is a subset of input since many tensors
+  // might not have initial values.
   repeated TensorProto initializer = 5;
 
   // The version of the IR this graph targets. See Version enum below.
@@ -159,8 +162,6 @@ message NodeProto {
 }
 
 // Defines a function.
-// InParam and OutParam are two built-in operators for function input
-// and output parameters respectively. 
 // A function is well-formed if
 //   - input_arg.name is the name of an InParam node in `node`.
 //   - output_arg.name is the name of an OutParam node in `node`.

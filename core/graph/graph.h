@@ -22,7 +22,7 @@ namespace CommonIR
 
         // Constructor by specifying a name, type and shape.
         NodeArg(const std::string& p_name, const TypeProto& p_type,
-            const TensorShapeProto& p_shape);
+		const TensorShapeProto& p_shape);
 
         // Get node arg name.
         const std::string& Name() const;
@@ -457,7 +457,7 @@ namespace CommonIR
 
         // Graph function instantiations.
         std::unordered_map<std::string,
-            std::unique_ptr<Function>> m_functionMap;
+			   std::unique_ptr<Function>> m_functionMap;
 
         // Graph function definitions.
         std::unordered_map<std::string, FunctionDefProto> m_funcDefMap;
