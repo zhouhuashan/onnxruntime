@@ -206,8 +206,8 @@ message AttributeProto {
   repeated TensorProto tensors = 10;  // list of tensors
   repeated GraphProto graphs = 11;    // list of graph
 
-  optional TypeProto type = 11;
-  repeated TypeProto types = 12;
-  optional TensorShapeProto shape = 13;
-  repeated TensorShapeProto shapes = 14;
+  optional TypeProto type = 12;
+  repeated TypeProto types = 13;
+  optional TensorShapeProto shape = 14;
+  repeated TensorShapeProto shapes = 15;
 }

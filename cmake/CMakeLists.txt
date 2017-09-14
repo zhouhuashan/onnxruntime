@@ -21,6 +21,6 @@ include_directories(
 )
 
 include(lotusIR_core_protobuf.cmake)
-include(onnx_core_protobuf.cmake)
+#include(onnx_core_protobuf.cmake)
 include(lotusIR_core_graph.cmake)
 include(lotusIR_unittest.cmake)
