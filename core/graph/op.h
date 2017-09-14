@@ -312,8 +312,9 @@ namespace LotusIR
         std::unordered_map<std::string, OperatorSchema> m_operatorRegistryMap;
     };
 
-#define REGISTER_OP(OpName) REGISTER_OP_UNIQ(__COUNTER__, OpName)
-#define REGISTER_OP_UNIQ(Counter, OpName)                      \
+#define REGISTER_OP(OpName) REGISTER_OP_UNIQ_HELPER(__COUNTER__, OpName)
+#define REGISTER_OP_UNIQ_HELPER(Counter, OpName) REGISTER_OP_UNIQ(Counter, OpName)
+#define REGISTER_OP_UNIQ(Counter, OpName)                     \
     static OperatorSchemaRegistry::RegisterOnce op_##Counter  \
     = OperatorSchemaSetter().Name(#OpName)
 
