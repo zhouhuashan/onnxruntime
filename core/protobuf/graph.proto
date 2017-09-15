@@ -34,6 +34,13 @@ import "core/protobuf/TensorShape.proto";
 // of "namespace {Node,Graph,Attribute,Tensor,Shape}". Framework is
 // responsible for supporting the namespaces.
 
+// Defines argument information set, except argument name.
+// The argument could be an input or an output of a graph, node or function.
+message ArgInfoProto {
+    optional TypeProto type = 1;
+    optional TensorShapeProto shape = 2;
+}
+
 // Defines a directed acyclic computation graph.
 // All the input/output tensors are explicitly named so a framework can
 // run any subgraph of the graph by feeding and fetching the named tensors.
@@ -85,6 +92,10 @@ message GraphProto {
   // (i.e., called) in this graph.
   repeated FunctionDefProto function = 11;
 
+  // Argument information for input/output of this graph.
+  repeated ArgInfoProto input_arg_info = 12;
+  repeated ArgInfoProto output_arg_info = 13;
+  
   reserved 100 to 200; // for future extensions.
 }
 
@@ -122,10 +133,6 @@ enum Version {
 // where new_vars are the new values of the loop variables after one
 // iteration so must match vars in terms of types and shapes.
 message NodeProto {
-  message InputOutputProto {
-    optional TypeProto type = 1;
-    optional TensorShapeProto shape = 2;
-  }
 
   // The named inputs of the node.
   repeated string input = 1;   // namespace Tensor
@@ -147,8 +154,8 @@ message NodeProto {
 
   // Information including type and shape for each input and output
   // argument of the operator/function called by the node.
-  repeated InputOutputProto input_arg_info = 7;
-  repeated InputOutputProto output_arg_info = 8;
+  repeated ArgInfoProto input_arg_info = 7;
+  repeated ArgInfoProto output_arg_info = 8;
 
   // The number of inputs for each argument of the operator/function.
   // A formal parameter of the op may take a variable number of inputs

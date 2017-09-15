@@ -13,7 +13,7 @@ namespace LotusIR
     typedef uint32_t NODEINDEX;
     typedef int64_t GRAPH_VERSION;
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
-    typedef NodeProto_InputOutputProto NodeArgInfo;
+    typedef ArgInfoProto NodeArgInfo;
     class Graph;
 
     // Node argument definition, for both input and output,
