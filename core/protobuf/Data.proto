@@ -14,7 +14,7 @@ message TensorProto {
 //          optional.
     UNDEFINED = 0;  // UNDEFINED 
     // Basic types.
-    FLOAT = 1;      // float
+    FLOAT = 1;      // float    
     UINT8 = 2;      // uint8_t
     INT8 = 3;       // int8_t
     UINT16 = 4;     // uint16_t
@@ -44,6 +44,12 @@ message TensorProto {
   // and MUST correspond to one of the allowed values for that field.
   // When absent, this data type of the tensor elements is the 
   // default data type for the xxx_data field that is present.
+  // When the raw_data field is used to store tensor elements, this field
+  // MUST be present. 
+  //ISSUE,dbox: The spec would be so much simpler if we just made this
+  //            field required. The logic for infering the value based 
+  //            on which field is present isn't horrible, but given the way
+  //            we are overloading the int32_data/raw_data fields, I think
   optional DataType data_type = 2;
 
   // For very large tensors, we may want to store them in chunks, in which
@@ -71,7 +77,9 @@ message TensorProto {
 
   // For strings.
   // Supported DataType values: STRING (default)
-  // TODO, dbox: This field is way under-defined. See email thread offline.
+  // Each element of string_data is a UTF-8 encoded Unicode
+  // string. No trailing null, no leading BOM. The protobuf "string"
+  // scalar type is not used to match ML community conventions.
   repeated bytes string_data = 6;
 
   // For int64.
@@ -86,7 +94,7 @@ message TensorProto {
   //
   // When this raw_data field is used to store tensor value, elements MUST 
   // be stored in as fixed-width, little-endian order. 
-  // Floating-point data types MUST be stored of the IEEE 754 format. 
+  // Floating-point data types MUST be stored in IEEE 754 format. 
   // Boolean type is stored as bytes.
   //
   //BUG,dbox: For booleans, are we storing a bit-per-element or a byte-per-element?
@@ -95,7 +103,8 @@ message TensorProto {
   // that in some cases (e.g. int data), protobuf does a better packing via
   // variable length storage, and may lead to smaller binary footprint.
   // When this field is used, the data_type field MUST be specified, and it
-  // MUST NOT be STRING. String data m
+  // MUST NOT be STRING. String data must always be encoded in the string_data 
+  // field.
   optional bytes raw_data = 9;
 
   // For double

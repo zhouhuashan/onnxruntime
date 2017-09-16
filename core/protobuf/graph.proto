@@ -36,6 +36,11 @@ import "core/protobuf/TensorShape.proto";
 
 // Defines argument information set, except argument name.
 // The argument could be an input or an output of a graph, node or function.
+//ISSUE,dbox: I've sees no scenarios where TensorTypeProto makes sense without
+//           a shape definition. Absent a compelling counter example,
+//           we should just put the dimension into TensorTypeProto
+//           and eliminate all of this extra abstraction and parsing/validation
+//           complexity. 
 message ArgInfoProto {
     optional TypeProto type = 1;
     optional TensorShapeProto shape = 2;
@@ -45,6 +50,25 @@ message ArgInfoProto {
 // All the input/output tensors are explicitly named so a framework can
 // run any subgraph of the graph by feeding and fetching the named tensors.
 message GraphProto {
+//BUG,onnx: Format/protocol design 101. We need to put the version info
+//          at the front of the format.  In the current layout, one has to 
+//          parse past the entire graph + all initial tensor values prior
+//          to knowing (a) if the IR_VERSION is supported and (b) whether
+//          to quirk based on the producer_version/producer_tag.
+//          The best layout would be:
+//
+//      ir_version
+//      producer_version      
+//      producer_tag
+//      name
+//      namespace
+//      doc_string (can go anywhere before node and initializer)
+//      input
+//      output
+//      node
+//      initializer
+//
+
   // The nodes in the graph.
   repeated NodeProto node = 1;
 
@@ -58,18 +82,12 @@ message GraphProto {
   repeated string input = 3;  // namespace Tensor
   repeated string output = 4; // namespace Tensor
 
-  // An optional list of initial values for tensors in the list of input above.
+  // An optional list of named initial values for tensors in the list of input above.
   // Used to pass serialized parameters for networks.
   // Each entry specifies a value for the input whose TensorProto.name matches
   // a name in the input. This list is a subset of input since many tensors
-  // might not have initial values.
+  // might not have initial values. 
   repeated TensorProto initializer = 5;
-
-  //BUG,dbox: We really really really should consider moving
-  // fields 6-10 to the front of the buffer NOW in ONNX and here. The format as
-  // it stands requires us to parse the lion's share of data prior to knowing
-  // what format we are parsing.  This is a bug, especially for implementations
-  // that will stream the protobuf format rather than do a bulk parse.
 
   // The version of the IR this graph targets. See Version enum below.
   optional int64 ir_version = 6;
@@ -83,6 +101,8 @@ message GraphProto {
   // information such as `alpha` or `beta` or `rc3`.
   optional string producer_tag = 8;
 
+//BUG,onnx: There is no `version` field.  Either fix the comment
+//          or add a version field.  THis needs to get pushed back to ONNX
   // Domain of the graph.
   // We use reverse domain names as name space indicators. For example:
   // `com.facebook.fair` or `com.microsoft.cognitiveservices`
@@ -91,14 +111,22 @@ message GraphProto {
   // the graph.
   optional string domain = 9;
 
+  //BUG,dbox: Do we allow markdown or HTML and if so, how do we discriminate?
+  //          I'd like to avoid the mess we had with RSS
   // A human-readable documentation for this graph.
   optional string doc_string = 10;
 
   // The function definitions of the graph. They can only only be used
   // (i.e., called) in this graph.
+  //BUG,dbox: Can there be only one function def per name, or are we supporting
+  //          overloads?  We need to be explicit.
   repeated FunctionDefProto function = 11;
 
   // Argument information for input/output of this graph.
+  // Each ArgInfoProto corresponds one-to-one by position with the 
+  // input or output tensor of the graph.
+  //ISSUE,dbox: Do we make this required for Lotus?  MRuiz should weigh in
+  //            on tooling impact.
   repeated ArgInfoProto input_arg_info = 12;
   repeated ArgInfoProto output_arg_info = 13;
   
@@ -150,6 +178,7 @@ message NodeProto {
   optional string name = 3;    // namespace Node
 
   // The name of the operator/function called by the node.
+  //BUG,onnx: How can this be optional?
   optional string op_type = 4; // namespace Operator
 
   // Additional named attributes.
@@ -160,6 +189,11 @@ message NodeProto {
 
   // Information including type and shape for each input and output
   // argument of the operator/function called by the node.
+  //ISSUE,dbox: How are we using these? I understand why we want them on
+  //            function and graph parameter declarations, as well as on
+  //            the external declaration of operators (a la the defs schema stuff)
+  //            Completely unclear why these are here unless it is to index
+  //            into an overload table for a given operator/function. 
   repeated ArgInfoProto input_arg_info = 7;
   repeated ArgInfoProto output_arg_info = 8;
 
@@ -183,6 +217,8 @@ message FunctionDefProto {
     optional string name = 1;
     optional TypeProto type = 2;
     optional TensorShapeProto shape = 3;
+  //ISSUE,dbox: we should add the attributes field here as well.
+  //            We need it on any *named* declaration or definition.
   };
 
   // The name of the function.
@@ -206,6 +242,7 @@ message FunctionDefProto {
 // An AttributeProto should contain the name field, and *only one* of the
 // following content fields, effectively enforcing a C/C++ union equivalent.
 message AttributeProto {
+//ISSUE,onnx: Why is name optional?
   optional string name = 1;           // namespace Attribute
   optional float f = 2;               // float
   optional int64 i = 3;               // int

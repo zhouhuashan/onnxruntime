@@ -7,10 +7,13 @@ import "core/protobuf/Data.proto";
 // Defines the type system.
 message TypeProto {
   message TensorTypeProto {
+  //BUG,dbox: What does it mean to have no data type specified?
+  //BUG,dbox: What does it mean to have data_type UNDEFINED specified?
     optional TensorProto.DataType elem_type = 1;
   }
 
   message SparseTensorTypeProto {
+  //BUG,dbox: See comment on TensorTypeProto.elem_type
     optional TensorProto.DataType elem_type = 1;
   }
 
@@ -22,8 +25,15 @@ message TypeProto {
   };
 
   message SeqTypeProto {
+  //BUG,dbox: See comment on TensorTypeProto.elem_type
     optional TypeProto elem_type = 1;
   };
+
+  //BUG,dbox: We need to add map, which should look like this:
+  // message MapTypeProto {
+  //   TypeProto key_type = 1;
+  //   TypeProto value_type = 2;
+  // }
 
   oneof value {
     // The type of a tensor.
