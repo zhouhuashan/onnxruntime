@@ -2,33 +2,48 @@ syntax = "proto2";
 
 package LotusIR;
 
-// A message defined to store a dense tensor in its serialized format.
+// A message defined to store a dense tensor value in its serialized format.
 message TensorProto {
-  // The primitive data type.
+  // The primitive data type of a tensor element.
   enum DataType {
-    UNDEFINED = 0;
+//BUG,dbox: What does UNDEFINED mean?
+//          Is it different than having the data_type field absent?  I don't think so.
+//          What do we do if we find a TensorProto that has this value set?
+//          Are any of the xxx_fields valid? If so, how should they be interpreted?
+//          I seriously think this needs to go away.  We don't need this + having data_type
+//          optional.
+    UNDEFINED = 0;  // UNDEFINED 
     // Basic types.
-    FLOAT = 1;   // float
-    UINT8 = 2;   // uint8_t
-    INT8 = 3;    // int8_t
-    UINT16 = 4;  // uint16_t
-    INT16 = 5;   // int16_t
-    INT32 = 6;   // int32_t
-    INT64 = 7;   // int64_t
-    STRING = 8;  // string
-    BOOL = 9;    // bool
+    FLOAT = 1;      // float
+    UINT8 = 2;      // uint8_t
+    INT8 = 3;       // int8_t
+    UINT16 = 4;     // uint16_t
+    INT16 = 5;      // int16_t
+    INT32 = 6;      // int32_t
+    INT64 = 7;      // int64_t
+    STRING = 8;     // string
+    BOOL = 9;       // bool
 
     // Advanced types
-    FLOAT16 = 10; // float_16
-    DOUBLE = 11;  // double
+    FLOAT16 = 10;   // float_16
+    DOUBLE = 11;    // double
+    UINT32 = 12;    // uint32_t
+    UINT64 - 13;    // uint64_t;
+
+    //BUG,dbox: What happened to complex?  Did we lose it in a merge?
 
     // Future extensions go here.
   }
 
-  // The shape of the tensor.
+  // The shape of the tensor. Scalars are represented as a zero-dimensional tensor.
   repeated int64 dims = 1;
 
-  // The data type of the tensor.
+  // The data type of the tensor's elements.
+  // When present, this field specifies the actual type of 
+  // of the tensor elements contained in the xxx_data field
+  // and MUST correspond to one of the allowed values for that field.
+  // When absent, this data type of the tensor elements is the 
+  // default data type for the xxx_data field that is present.
   optional DataType data_type = 2;
 
   // For very large tensors, we may want to store them in chunks, in which
@@ -42,15 +57,21 @@ message TensorProto {
   optional Segment segment = 3;
 
   // Tensor content must be in the row major order.
-  // For float
+  // There MUST be exactly one xxx_data field present in a TensorProto value.
+
+  // For float values
+  // Supported DataType values: FLOAT (default)
   repeated float float_data = 4 [packed = true];
 
-  // For int32, uint8, int8, uint16, int16, bool, and float16
-  // Note about float16: in storage we will basically convert float16 byte-wise
-  // to unsigned short and then store them in the int32_data field.
+  // For int32, uint8, int8, uint16, int16, bool, and float16 values
+  // Supported DataType values: INT32 (default), INT16, INT8, UINT32, UINT16, UINT8, FLOAT16
+  // FLOAT16 values must be bit-wise converted to an uint16_t prior 
+  // to writing to the protobuf.
   repeated int32 int32_data = 5 [packed = true];
 
   // For strings.
+  // Supported DataType values: STRING (default)
+  // TODO, dbox: This field is way under-defined. See email thread offline.
   repeated bytes string_data = 6;
 
   // For int64.
@@ -63,13 +84,18 @@ message TensorProto {
   // raw bytes field. The only exception is the string case, where one is
   // required to store the content in the repeated bytes string_data field.
   //
-  // When this raw_data field is used to store tensor value, it is expected
-  // to use the little-endian order. For floating data types, they should
-  // be of the IEEE 754 format. Boolean type is stored as bytes.
+  // When this raw_data field is used to store tensor value, elements MUST 
+  // be stored in as fixed-width, little-endian order. 
+  // Floating-point data types MUST be stored of the IEEE 754 format. 
+  // Boolean type is stored as bytes.
+  //
+  //BUG,dbox: For booleans, are we storing a bit-per-element or a byte-per-element?
   //
   // Note: the advantage of specific field rather than the raw_data field is
   // that in some cases (e.g. int data), protobuf does a better packing via
   // variable length storage, and may lead to smaller binary footprint.
+  // When this field is used, the data_type field MUST be specified, and it
+  // MUST NOT be STRING. String data m
   optional bytes raw_data = 9;
 
   // For double

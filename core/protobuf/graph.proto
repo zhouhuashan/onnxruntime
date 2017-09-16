@@ -65,6 +65,12 @@ message GraphProto {
   // might not have initial values.
   repeated TensorProto initializer = 5;
 
+  //BUG,dbox: We really really really should consider moving
+  // fields 6-10 to the front of the buffer NOW in ONNX and here. The format as
+  // it stands requires us to parse the lion's share of data prior to knowing
+  // what format we are parsing.  This is a bug, especially for implementations
+  // that will stream the protobuf format rather than do a bulk parse.
+
   // The version of the IR this graph targets. See Version enum below.
   optional int64 ir_version = 6;
 
