@@ -22,7 +22,7 @@ message TensorProto {
     FLOAT16 = 10;       // float_16
     DOUBLE = 11;        // double
     UINT32 = 12;        // uint32_t
-    UINT64 - 13;        // uint64_t;
+    UINT64 = 13;        // uint64_t;
     COMPLEX64 = 14;     // complex with float32 real and imaginary components
     COMPLEX128 = 15;    // complex with float64 real and imaginary components
 
