@@ -6,50 +6,36 @@ package LotusIR;
 message TensorProto {
   // The primitive data type of a tensor element.
   enum DataType {
-//BUG,dbox: What does UNDEFINED mean?
-//          Is it different than having the data_type field absent?  I don't think so.
-//          What do we do if we find a TensorProto that has this value set?
-//          Are any of the xxx_fields valid? If so, how should they be interpreted?
-//          I seriously think this needs to go away.  We don't need this + having data_type
-//          optional.
-    UNDEFINED = 0;  // UNDEFINED 
+    UNDEFINED = 0;      // UNDEFINED 
     // Basic types.
-    FLOAT = 1;      // float    
-    UINT8 = 2;      // uint8_t
-    INT8 = 3;       // int8_t
-    UINT16 = 4;     // uint16_t
-    INT16 = 5;      // int16_t
-    INT32 = 6;      // int32_t
-    INT64 = 7;      // int64_t
-    STRING = 8;     // string
-    BOOL = 9;       // bool
+    FLOAT = 1;          // float    
+    UINT8 = 2;          // uint8_t
+    INT8 = 3;           // int8_t
+    UINT16 = 4;         // uint16_t
+    INT16 = 5;          // int16_t
+    INT32 = 6;          // int32_t
+    INT64 = 7;          // int64_t
+    STRING = 8;         // string
+    BOOL = 9;           // bool
 
     // Advanced types
-    FLOAT16 = 10;   // float_16
-    DOUBLE = 11;    // double
-    UINT32 = 12;    // uint32_t
-    UINT64 - 13;    // uint64_t;
-
-    //BUG,dbox: What happened to complex?  Did we lose it in a merge?
+    FLOAT16 = 10;       // float_16
+    DOUBLE = 11;        // double
+    UINT32 = 12;        // uint32_t
+    UINT64 - 13;        // uint64_t;
+    COMPLEX64 = 14;     // complex with float32 real and imaginary components
+    COMPLEX128 = 15;    // complex with float64 real and imaginary components
 
     // Future extensions go here.
   }
 
   // The shape of the tensor. Scalars are represented as a zero-dimensional tensor.
+  // This field MUST be present this version of the IR.  
   repeated int64 dims = 1;
 
   // The data type of the tensor's elements.
-  // When present, this field specifies the actual type of 
-  // of the tensor elements contained in the xxx_data field
-  // and MUST correspond to one of the allowed values for that field.
-  // When absent, this data type of the tensor elements is the 
-  // default data type for the xxx_data field that is present.
-  // When the raw_data field is used to store tensor elements, this field
-  // MUST be present. 
-  //ISSUE,dbox: The spec would be so much simpler if we just made this
-  //            field required. The logic for infering the value based 
-  //            on which field is present isn't horrible, but given the way
-  //            we are overloading the int32_data/raw_data fields, I think
+  // This field MUST NOT have the value of UNDEFINED
+  // This field MUST be present for this version of the IR.
   optional DataType data_type = 2;
 
   // For very large tensors, we may want to store them in chunks, in which
@@ -60,29 +46,33 @@ message TensorProto {
     optional int64 begin = 1;
     optional int64 end = 2;
   }
+  // When this field is present, tensor data MUST be stored in the raw_bytes field.
+  // This field MAY be absent in which case all bytes of the tensor are present.
   optional Segment segment = 3;
 
   // Tensor content must be in the row major order.
   // There MUST be exactly one xxx_data field present in a TensorProto value.
 
   // For float values
-  // Supported DataType values: FLOAT (default)
+  // When this field is present, the data_type field MUST be FLOAT
   repeated float float_data = 4 [packed = true];
 
   // For int32, uint8, int8, uint16, int16, bool, and float16 values
-  // Supported DataType values: INT32 (default), INT16, INT8, UINT32, UINT16, UINT8, FLOAT16
-  // FLOAT16 values must be bit-wise converted to an uint16_t prior 
-  // to writing to the protobuf.
+  // float16 values must be bit-wise converted to an uint16_t prior 
+  // to writing to the buffer.
+  // When this field is present, the data_type field MUST be 
+  // INT32, INT16, INT8, UINT16, INT8, BOOL, or FLOAT32
   repeated int32 int32_data = 5 [packed = true];
 
   // For strings.
-  // Supported DataType values: STRING (default)
   // Each element of string_data is a UTF-8 encoded Unicode
   // string. No trailing null, no leading BOM. The protobuf "string"
   // scalar type is not used to match ML community conventions.
+  // When this field is present, the data_type field MUST be STRING
   repeated bytes string_data = 6;
 
   // For int64.
+  // When this field is present, the data_type field MUST be INT64 or UINT32
   repeated int64 int64_data = 7 [packed = true];
 
   // Optionally, a name for the tensor.
@@ -95,19 +85,18 @@ message TensorProto {
   // When this raw_data field is used to store tensor value, elements MUST 
   // be stored in as fixed-width, little-endian order. 
   // Floating-point data types MUST be stored in IEEE 754 format. 
-  // Boolean type is stored as bytes.
-  //
-  //BUG,dbox: For booleans, are we storing a bit-per-element or a byte-per-element?
+  // Complex64 elements must be written as two consecutive FLOAT values, real component first.
+  // Complex128 elements must be written as two consecutive DOUBLE values, real component first.
+  // Boolean type MUST be written one byte per tensor element (00000001 for true, 00000000 for false).
   //
   // Note: the advantage of specific field rather than the raw_data field is
   // that in some cases (e.g. int data), protobuf does a better packing via
   // variable length storage, and may lead to smaller binary footprint.
-  // When this field is used, the data_type field MUST be specified, and it
-  // MUST NOT be STRING. String data must always be encoded in the string_data 
-  // field.
+  // When this field is present, the data_type field MUST NOT be STRING or UNDEFINED
   optional bytes raw_data = 9;
 
   // For double
+  // When this field is present, the data_type field MUST be DOUBLE
   repeated double double_data = 10 [packed = true];
 
   // Future extensions go here.
