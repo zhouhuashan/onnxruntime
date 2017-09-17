@@ -110,13 +110,16 @@ message TensorProto {
 message SparseTensorProto {
   // The dimensions in the tensor.
   repeated int64 dims = 1;
+  // This field MUST be present this version of the IR.  
   optional TensorProto indices = 2;
+  // This field MUST be present this version of the IR.  
   optional TensorProto values = 3;
 }
 
 message DataProto {
   // Defines a handle in its serialized format.
   message HandleProto {
+  // This field MUST be present this version of the IR.  
     optional int64 uid = 1;
 
     // More information to be added. We need to specify the device

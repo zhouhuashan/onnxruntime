@@ -37,7 +37,9 @@ import "core/protobuf/TensorShape.proto";
 // Defines argument information set, except argument name.
 // The argument could be an input or an output of a graph, node or function.
 message ArgInfoProto {
+  // This field MUST be present this version of the IR.  
     optional TypeProto type = 1;
+  // This field MUST only be present if the type field is not a TensorTypeProto
     optional TensorShapeProto shape = 2;
 }
 
@@ -74,6 +76,8 @@ message GraphProto {
   // of some nodes in the graph. The list output must be output names of some
   // nodes in the graph. For names in input that are not in initializer, their
   // types and shapes are required.
+  //ISSUE,dbox: For input tensors that also appear in the initializer field,
+  //            do we also expose those parameters as inputs to eval?
   repeated string input = 3;  // namespace Tensor
   repeated string output = 4; // namespace Tensor
 
@@ -82,16 +86,22 @@ message GraphProto {
   // Each entry specifies a value for the input whose TensorProto.name matches
   // a name in the input. This list is a subset of input since many tensors
   // might not have initial values. 
+  //ISSUE,onnx: Do we require at most one Tensor per input name? Given that
+  //            our evaluation model allows multiple tensors to be fed into a 
+  //            given node, I'm guessing we allow two or more tensors per
+  //            input (and also allow users to provide it). I'll tighten up
+  //            the text once we resolve. As written, it's ambiguous in ONNX.
   repeated TensorProto initializer = 5;
 
   // The version of the IR this graph targets. See Version enum below.
+  // This field MUST be present this version of the IR.  
   optional int64 ir_version = 6;
 
-  // The version of the framework runtime that generates this graph.
+  // The optional version of the framework runtime that generates this graph.
   // This producer_version has the same format as ir_version. 
   optional int64 producer_version = 7;
 
-  // The name of the framework used to generate this graph in the form
+  // The optional name of the framework used to generate this graph in the form
   // "framework_name[-tag]". Tag is optional and provides additional
   // information such as `alpha` or `beta` or `rc3`.
   optional string producer_tag = 8;
@@ -106,7 +116,7 @@ message GraphProto {
   // the graph.
   optional string domain = 9;
 
-  // A human-readable documentation for this graph.
+  // An optional human-readable documentation for this graph.
 //ISSUE,onnx: In looking at FB's opschema stuff, they are definitely
 //            using markdown syntax in their doc strings in that space.
 //            Let's decide how we want to manage this.
@@ -260,6 +270,8 @@ message AttributeProto {
 
   optional TypeProto type = 12;
   repeated TypeProto types = 13;
+  //ISSUE,dbox: Do we ever see shape showing up as an attribute value?
+  //            If so, won't it always be accompanied by a TypeProto?
   optional TensorShapeProto shape = 14;
   repeated TensorShapeProto shapes = 15;
 }
