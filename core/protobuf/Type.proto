@@ -7,10 +7,14 @@ import "core/protobuf/Data.proto";
 // Defines the type system.
 message TypeProto {
   message TensorTypeProto {
+  // This field MUST NOT have the value of UNDEFINED
+  // This field MUST be present for this version of the IR.
     optional TensorProto.DataType elem_type = 1;
   }
 
   message SparseTensorTypeProto {
+  // This field MUST NOT have the value of UNDEFINED
+  // This field MUST be present for this version of the IR.
     optional TensorProto.DataType elem_type = 1;
   }
 
@@ -22,8 +26,11 @@ message TypeProto {
   };
 
   message SeqTypeProto {
+  // This field MUST be present for this version of the IR.
     optional TypeProto elem_type = 1;
   };
+
+  //BUG,dbox: We need to add map. When the design thread terminates, we will put it here.
 
   oneof value {
     // The type of a tensor.
