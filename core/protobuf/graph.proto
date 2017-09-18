@@ -56,8 +56,12 @@ message GraphProto {
 //          The best layout would be:
 //
 //      ir_version
-//      producer_version      
+//      producer_version
 //      producer_tag
+//      model_version
+//      model_author
+//      model_license
+//      model_information
 //      name
 //      attributes
 //      namespace
@@ -108,14 +112,11 @@ message GraphProto {
   // information such as `alpha` or `beta` or `rc3`.
   optional string producer_tag = 8;
 
-//BUG:13806904,onnx: 
-//          There is no `version` field.  Either fix the comment
-//          or add a version field.  THis needs to get pushed back to ONNX
   // Domain of the graph.
   // We use reverse domain names as name space indicators. For example:
   // `com.facebook.fair` or `com.microsoft.cognitiveservices`
   //
-  // Together with `name` and `version`, this forms the unique identity of
+  // Together with `name` and `model_version`, this forms the unique identity of
   // the graph.
   optional string domain = 9;
 
@@ -141,7 +142,22 @@ message GraphProto {
   // of elements in the output field.
   repeated ArgInfoProto input_arg_info = 12;
   repeated ArgInfoProto output_arg_info = 13;
-  
+
+  // An optional version identifier used to track evolution of this graph.
+  // This model_version has the same format as ir_version. 
+  optional int64 model_version = 14;
+
+  // The optional name of the author who created the graph.
+  optional string model_author = 15;
+
+  // Optional licensing information concerning use or origination of the graph.
+  optional string model_license = 16;
+
+  // TODO: When the map type is added, provide for the "model_information"
+  // field which holds name/value pairs of strings with additional devops
+  // metadata, such as an identifier for which training set this instance
+  // of a graph was trained with.
+
   reserved 100 to 200; // for future extensions.
 }
 
