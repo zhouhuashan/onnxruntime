@@ -517,14 +517,6 @@ namespace LotusIR
                         auto nodeAttrIter = nodeAttributes.find(attr.GetName());
                         if (nodeAttributes.end() == nodeAttrIter)
                         {
-                            if (attr.IsMandatory())
-                            {
-                                Status status(false,
-                                    "Error: the mandatory attribute ("
-                                    + attr.GetName() + ") is not specified in Node ("
-                                    + nodeName + ").");
-                                return status;
-                            }
                             return Status::OK();
                         }
                         else
