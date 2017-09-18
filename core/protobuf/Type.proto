@@ -9,6 +9,7 @@ message TypeProto {
   message TensorTypeProto {
   // This field MUST NOT have the value of UNDEFINED
   // This field MUST be present for this version of the IR.
+  //ISSUE:13807134,dbox: When we resolve whether to move TensorShapeProto here or not, this will go away
     optional TensorProto.DataType elem_type = 1;
   }
 
@@ -30,7 +31,7 @@ message TypeProto {
     optional TypeProto elem_type = 1;
   };
 
-  //BUG,dbox: We need to add map. When the design thread terminates, we will put it here.
+  //BUG:13806996,dbox: We need to add map. When the design thread terminates, we will put it here.
 
   oneof value {
     // The type of a tensor.

@@ -47,7 +47,8 @@ message ArgInfoProto {
 // All the input/output tensors are explicitly named so a framework can
 // run any subgraph of the graph by feeding and fetching the named tensors.
 message GraphProto {
-//BUG,onnx: Format/protocol design 101. We need to put the version info
+//BUG:13806896,onnx: 
+//          Format/protocol design 101. We need to put the version info
 //          at the front of the format.  In the current layout, one has to 
 //          parse past the entire graph + all initial tensor values prior
 //          to knowing (a) if the IR_VERSION is supported and (b) whether
@@ -58,6 +59,7 @@ message GraphProto {
 //      producer_version      
 //      producer_tag
 //      name
+//      attributes
 //      namespace
 //      doc_string (can go anywhere before node and initializer)
 //      input
@@ -76,7 +78,7 @@ message GraphProto {
   // of some nodes in the graph. The list output must be output names of some
   // nodes in the graph. For names in input that are not in initializer, their
   // types and shapes are required.
-  //ISSUE,dbox: For input tensors that also appear in the initializer field,
+  //ISSUE:13807021,dbox: For input tensors that also appear in the initializer field,
   //            do we also expose those parameters as inputs to eval?
   repeated string input = 3;  // namespace Tensor
   repeated string output = 4; // namespace Tensor
@@ -86,7 +88,7 @@ message GraphProto {
   // Each entry specifies a value for the input whose TensorProto.name matches
   // a name in the input. This list is a subset of input since many tensors
   // might not have initial values. 
-  //ISSUE,onnx: Do we require at most one Tensor per input name? Given that
+  //ISSUE:13807021,onnx: Do we require at most one Tensor per input name? Given that
   //            our evaluation model allows multiple tensors to be fed into a 
   //            given node, I'm guessing we allow two or more tensors per
   //            input (and also allow users to provide it). I'll tighten up
@@ -106,7 +108,8 @@ message GraphProto {
   // information such as `alpha` or `beta` or `rc3`.
   optional string producer_tag = 8;
 
-//BUG,onnx: There is no `version` field.  Either fix the comment
+//BUG:13806904,onnx: 
+//          There is no `version` field.  Either fix the comment
 //          or add a version field.  THis needs to get pushed back to ONNX
   // Domain of the graph.
   // We use reverse domain names as name space indicators. For example:
@@ -117,7 +120,7 @@ message GraphProto {
   optional string domain = 9;
 
   // An optional human-readable documentation for this graph.
-//ISSUE,onnx: In looking at FB's opschema stuff, they are definitely
+//ISSUE:13807035,onnx: In looking at FB's opschema stuff, they are definitely
 //            using markdown syntax in their doc strings in that space.
 //            Let's decide how we want to manage this.
   optional string doc_string = 10;
@@ -125,8 +128,8 @@ message GraphProto {
   // The function definitions of the graph. They can only only be used
   // (i.e., called) in this graph.
   // Each FunctionDefProto in function MUST have a unique name. 
-  //ISSUE,dbox: Is the namespace of a function distinct from its peers and the graph?
-  //ISSUE,dbox: Related - can a function body refer to GraphProto.initializer?
+  //ISSUE:13807045,dbox: Is the namespace of a function distinct from its peers and the graph?
+  //ISSUE:13807045,dbox: Related - can a function body refer to GraphProto.initializer?
   repeated FunctionDefProto function = 11;
 
   // Argument information for input/output of this graph.
@@ -199,14 +202,14 @@ message NodeProto {
 
   // Information including type and shape for each input and output
   // argument of the operator/function called by the node.
-  //ISSUE,dbox: Mail thread pending on type inferencing model. 
+  //ISSUE:13806939,dbox: Mail thread pending on type inferencing model. 
   repeated ArgInfoProto input_arg_info = 7;
   repeated ArgInfoProto output_arg_info = 8;
 
   // The number of inputs for each argument of the operator/function.
   // A formal parameter of the op may take a variable number of inputs
   // that is only known when this node is constructed.
-  //BUG,dbox: I'm assuming that this field is like input_arg_info in that
+  //BUG:13806939,dbox: I'm assuming that this field is like input_arg_info in that
   //          a zero element/missing array implies that one needs to crawl
   //          the graph to figure out the input counts, yes? COnfirm and I'll
   //          make clear.  Otherwise, we need to require it to be present
@@ -228,7 +231,7 @@ message FunctionDefProto {
     optional string name = 1;
     optional TypeProto type = 2;
     optional TensorShapeProto shape = 3;
-  //ISSUE,dbox: Resolving attribute locations offline.
+  //ISSUE:13807069,dbox: Resolving attribute locations offline.
   };
 
   // The name of the function.
@@ -248,7 +251,7 @@ message FunctionDefProto {
   repeated AttributeProto attr = 5;
 }
 
-//BUG,onnx: Make clear that name is required. The ONNX spec uses "should"
+//BUG:13806952,onnx: Make clear that name is required. The ONNX spec uses "should"
 // A named attribute containing either singular float, integer, string
 // and tensor values, or repeated float, integer, string and tensor values.
 // An AttributeProto MUST contain the name field, and *only one* of the
@@ -270,7 +273,7 @@ message AttributeProto {
 
   optional TypeProto type = 12;
   repeated TypeProto types = 13;
-  //ISSUE,dbox: Do we ever see shape showing up as an attribute value?
+  //ISSUE:13807134,dbox: Do we ever see shape showing up as an attribute value?
   //            If so, won't it always be accompanied by a TypeProto?
   optional TensorShapeProto shape = 14;
   repeated TensorShapeProto shapes = 15;
