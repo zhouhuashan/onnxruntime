@@ -18,6 +18,7 @@ namespace LotusIR
         public:
             static PTYPE ToType(const TypeProto& p_type);
             static PTYPE ToType(const std::string& p_type);
+            static PTYPE GetType(const AttributeProto& p_attr);
             static const TypeProto& ToTypeProto(const PTYPE& p_type);
             static std::string ToString(const TypeProto& p_type);
             static std::string ToString(const TensorProto::DataType& p_type);
@@ -56,7 +57,6 @@ namespace LotusIR
             const char* m_data;
             size_t m_size;
         };
-
     }
 }
 

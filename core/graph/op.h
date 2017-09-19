@@ -28,6 +28,16 @@ namespace LotusIR
         SHAPES
     };
 
+    class TypeUtils
+    {
+    public:
+
+        // static helper function to judge whether a PTYPE of a node attribute
+        // is the same as the AttrType defined in operator definition.
+        static bool IsEqual(PTYPE p_nodeAttrType,
+            LotusIR::AttrType p_opDefAttrType);
+    };
+
     // A context to contain information for shape inference function.
     // It includes the operator registry, input arguments definition,
     // and mutable output arguments, whose shapes needs to be filled.
@@ -102,16 +112,16 @@ namespace LotusIR
         OperatorSchemaSetter& Description(const std::string& p_description);
 
         OperatorSchemaSetter& Input(const std::string& p_inputName,
-                                    const std::string& p_type,
-                                    const std::string& p_description);
+            const std::string& p_type,
+            const std::string& p_description);
 
         OperatorSchemaSetter& Output(const std::string& p_outputName,
-                                     const std::string& p_type,
-                                     const std::string& p_description);
+            const std::string& p_type,
+            const std::string& p_description);
 
         OperatorSchemaSetter& Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description);
+            AttrType p_attrType,
+            const std::string& p_description);
 
         ATTR_SETTER_INTERFACE(int64_t);
         ATTR_SETTER_INTERFACE(float);
@@ -122,8 +132,8 @@ namespace LotusIR
         ATTR_SETTER_INTERFACE(TensorShapeProto);
 
         OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
-                                             const std::vector<std::string>& p_constraints,
-                                             const std::string& p_description);
+            const std::vector<std::string>& p_constraints,
+            const std::string& p_description);
 
         // Shape inference function will be used to infer outputs' shape with
         // inputs' shape.
@@ -183,9 +193,9 @@ namespace LotusIR
 
             // Constructor.
             explicit FormalParameter(const std::string& p_name,
-                                     const std::string& p_type,
-                                     const std::string& p_description,
-                                     const TypeConstraintMap& p_constraintMap = TypeConstraintMap());
+                const std::string& p_type,
+                const std::string& p_description,
+                const TypeConstraintMap& p_constraintMap = TypeConstraintMap());
 
             // Get formal parameter name.
             const std::string& GetName() const;
@@ -229,14 +239,14 @@ namespace LotusIR
 
             // Constructor.
             explicit Attribute(const std::string& p_attrName,
-                               AttrType p_type,
-                               const std::string& p_description);
+                AttrType p_type,
+                const std::string& p_description);
 
             // Constructor with default value.
             explicit Attribute(const std::string& p_attrName,
-                               AttrType p_type,
-                               const std::string& p_description,
-                               const AttributeProto& p_defaultVal);
+                AttrType p_type,
+                const std::string& p_description,
+                const AttributeProto& p_defaultVal);
 
             // Get attribute name.
             const std::string& GetName() const;

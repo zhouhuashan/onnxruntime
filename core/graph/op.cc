@@ -48,19 +48,19 @@ namespace LotusIR
         return *this;
     }
 
-    OperatorSchemaSetter& 
+    OperatorSchemaSetter&
         OperatorSchemaSetter::Input(const std::string& p_inputName,
-                                    const std::string& p_type,
-                                    const std::string& p_description)
+            const std::string& p_type,
+            const std::string& p_description)
     {
         m_inputs.push_back(std::make_tuple(p_inputName, p_type, p_description));
         return *this;
     }
 
-    OperatorSchemaSetter& 
+    OperatorSchemaSetter&
         OperatorSchemaSetter::Output(const std::string& p_outputName,
-                                     const std::string& p_type,
-                                     const std::string& p_description)
+            const std::string& p_type,
+            const std::string& p_description)
     {
         m_outputs.push_back(std::make_tuple(p_outputName, p_type, p_description));
         return *this;
@@ -68,8 +68,8 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description)
+            AttrType p_attrType,
+            const std::string& p_description)
     {
         m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, AttributeProto()));
         return *this;
@@ -77,9 +77,9 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description,
-                                   const int64_t& p_defaultValue)
+            AttrType p_attrType,
+            const std::string& p_description,
+            const int64_t& p_defaultValue)
     {
         AttributeProto a;
         a.set_name(p_attrName);
@@ -90,9 +90,9 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description,
-                                   const std::vector<int64_t>& p_defaultValue)
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::vector<int64_t>& p_defaultValue)
     {
         AttributeProto a;
         a.set_name(p_attrName);
@@ -106,9 +106,9 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description,
-                                   const float& p_defaultValue)
+            AttrType p_attrType,
+            const std::string& p_description,
+            const float& p_defaultValue)
     {
         AttributeProto a;
         a.set_name(p_attrName);
@@ -119,9 +119,9 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description,
-                                   const std::vector<float>& p_defaultValue)
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::vector<float>& p_defaultValue)
     {
         AttributeProto a;
         a.set_name(p_attrName);
@@ -135,9 +135,9 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description,
-                                   const std::string& p_defaultValue)
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::string& p_defaultValue)
     {
         AttributeProto a;
         a.set_name(p_attrName);
@@ -148,9 +148,9 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
-                                   AttrType p_attrType,
-                                   const std::string& p_description,
-                                   const std::vector<std::string>& p_defaultValue)
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::vector<std::string>& p_defaultValue)
     {
         AttributeProto a;
         a.set_name(p_attrName);
@@ -164,8 +164,8 @@ namespace LotusIR
 
     OperatorSchemaSetter&
         OperatorSchemaSetter::TypeConstraint(const std::string& p_typeName,
-                                             const std::vector<std::string>& p_constraints,
-                                             const std::string& p_description)
+            const std::vector<std::string>& p_constraints,
+            const std::string& p_description)
     {
         m_constraints.push_back(std::make_tuple(p_typeName, p_constraints, p_description));
         return *this;
@@ -230,7 +230,7 @@ namespace LotusIR
         const std::string& p_description,
         const AttributeProto& p_defaultVal)
         : m_name(p_attrName), m_type(p_type), m_description(p_description),
-          m_hasDefaultValue(true)
+        m_hasDefaultValue(true)
     {
         m_allowedValues.push_back(p_defaultVal);
     }
@@ -424,5 +424,12 @@ namespace LotusIR
         static OperatorSchemaRegistry* s_registry
             = new OperatorSchemaRegistry();
         return s_registry;
+    }
+
+    bool TypeUtils::IsEqual(PTYPE p_nodeAttrType,
+        LotusIR::AttrType p_opDefAttrType)
+    {
+        // TODO: add implementation.
+        return true;
     }
 }

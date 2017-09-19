@@ -1,7 +1,9 @@
 #include <cctype>
-#include <iostream>
 #include <iterator>
+#include <iostream>
 #include <sstream>
+
+#include "core\protobuf\graph.pb.h"
 #include "utils.h"
 
 namespace LotusIR
@@ -9,6 +11,7 @@ namespace LotusIR
     namespace Utils
     {
         std::unordered_map<std::string, TypeProto> OpUtils::s_typeStrToProtoMap;
+
         PTYPE OpUtils::ToType(const TypeProto& p_type)
         {
             auto typeStr = ToString(p_type);
@@ -24,6 +27,12 @@ namespace LotusIR
             TypeProto type;
             FromString(p_type, type);
             return ToType(type);
+        }
+
+        PTYPE OpUtils::GetType(const AttributeProto& p_attr)
+        {
+            // TODO: add implementation.
+            return nullptr;
         }
 
         const TypeProto& OpUtils::ToTypeProto(const PTYPE& p_type)
@@ -71,26 +80,26 @@ namespace LotusIR
         {
             switch (p_type)
             {
-                case TensorProto::DataType::TensorProto_DataType_BOOL:
-                    return "bool";
-                case TensorProto::DataType::TensorProto_DataType_FLOAT:
-                    return "float32";
-                case TensorProto::DataType::TensorProto_DataType_FLOAT16:
-                    return "float16";
-                case TensorProto::DataType::TensorProto_DataType_DOUBLE:
-                    return "float64";
-                case TensorProto::DataType::TensorProto_DataType_INT16:
-                    return "int16";
-                case TensorProto::DataType::TensorProto_DataType_INT32:
-                    return "int32";
-                case TensorProto::DataType::TensorProto_DataType_INT64:
-                    return "int64";
-                case TensorProto::DataType::TensorProto_DataType_INT8:
-                    return "int8";
-                case TensorProto::DataType::TensorProto_DataType_STRING:
-                    return "string";
-                case TensorProto::DataType::TensorProto_DataType_UINT16:
-                    return "uint16";
+            case TensorProto::DataType::TensorProto_DataType_BOOL:
+                return "bool";
+            case TensorProto::DataType::TensorProto_DataType_FLOAT:
+                return "float32";
+            case TensorProto::DataType::TensorProto_DataType_FLOAT16:
+                return "float16";
+            case TensorProto::DataType::TensorProto_DataType_DOUBLE:
+                return "float64";
+            case TensorProto::DataType::TensorProto_DataType_INT16:
+                return "int16";
+            case TensorProto::DataType::TensorProto_DataType_INT32:
+                return "int32";
+            case TensorProto::DataType::TensorProto_DataType_INT64:
+                return "int64";
+            case TensorProto::DataType::TensorProto_DataType_INT8:
+                return "int8";
+            case TensorProto::DataType::TensorProto_DataType_STRING:
+                return "string";
+            case TensorProto::DataType::TensorProto_DataType_UINT16:
+                return "uint16";
             }
             return "";
         }

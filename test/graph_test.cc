@@ -23,17 +23,17 @@ namespace LotusIR
 
             NodeArg outputArg("node_1_out_1", outputType, outputShape);
             outputs.push_back(outputArg);
-            auto node_1 = graph.AddNode("node_1", "Variable", inputs, outputs);
+            auto node_1 = graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
             // Case 1: Adding two nodes with same node name should fail.
-            auto nodeWithDupName = graph.AddNode("node_1", "Variable", inputs, outputs);
+            auto nodeWithDupName = graph.AddNode("node_1", "Variable", "node 1", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMsg());
             graph.RemoveNode(nodeWithDupName->Index());
 
             // Case 2: Adding two nodes with same output arg name should fail.
-            auto nodeWithDupOutputArgName = graph.AddNode("node_2", "Variable", inputs, outputs);
+            auto nodeWithDupOutputArgName = graph.AddNode("node_2", "Variable", "node 2", inputs, outputs);
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMsg());
@@ -54,7 +54,7 @@ namespace LotusIR
             NodeArg outputArg("node_1_out_1", outputType, outputShape);
             outputs.push_back(outputArg);
             // Case: Adding node refering to non-existing operator should fail.
-            auto nodeWithOpNotExist = graph.AddNode("node_1", "OpNotExist", inputs, outputs);
+            auto nodeWithOpNotExist = graph.AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ(
@@ -86,26 +86,26 @@ namespace LotusIR
 
             NodeArg outputArg("node_1_out_1", outputType, outputShape);
             outputs.push_back(outputArg);
-            auto node_1 = graph.AddNode("node_1", "Variable", inputs, outputs);
+            auto node_1 = graph.AddNode("node_1", "Variable", "node 1", inputs, outputs);
 
             NodeArg outputArg2("node_2_out_1", outputType, outputShape);
             outputs.clear();
             outputs.push_back(outputArg2);
-            auto node_2 = graph.AddNode("node_2", "Variable", inputs, outputs);
+            auto node_2 = graph.AddNode("node_2", "Variable", "node 2", inputs, outputs);
 
             inputs.push_back(outputArg);
             inputs.push_back(outputArg2);
             NodeArg outputArg3("node_3_out_1", outputType, outputShape);
             outputs.clear();
             outputs.push_back(outputArg3);
-            auto node_3 = graph.AddNode("node_3", "Add", inputs, outputs);
+            auto node_3 = graph.AddNode("node_3", "Add", "node 3", inputs, outputs);
 
             inputs.clear();
             inputs.push_back(outputArg3);
             NodeArg outputArg4("node_4_out_1", outputType, outputShape);
             outputs.clear();
             outputs.push_back(outputArg4);
-            auto node_4 = graph.AddNode("node_4", "NoOp", inputs, outputs);
+            auto node_4 = graph.AddNode("node_4", "NoOp", "node 4", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 
