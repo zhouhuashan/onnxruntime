@@ -712,7 +712,23 @@ namespace LotusIR
                             return status;
                         }
 
-                        outputDef.SetType(OpUtils::GetType(nodeAttributesIter->second));
+                        AttrType attrType = TypeUtils::GetType(nodeAttributesIter->second);
+                        if (AttrType::TENSOR == attrType)
+                        {
+                            auto& tensor = nodeAttributesIter->second.t();
+                            TypeProto typeProto;
+                            typeProto.mutable_tensor_type()->set_elem_type(tensor.data_type());
+                            outputDef.SetType(OpUtils::ToType(typeProto));
+                        }
+                        else
+                        {
+                            Status status(false,
+                                "For attribute CONSTANT_VALUE, only Tensor type \
+                                is allowed. The attribute type in this model is "
+                                + LotusIR::c_attrTypeStr[(int)attrType] + ".");
+                            return status;
+                        }
+
                         continue;
                     }
 
@@ -787,8 +803,8 @@ namespace LotusIR
                         {
                             // Verify node attribute type matching type of
                             // attribute defined in operator definition.
-                            auto nodeAttrType = OpUtils::GetType(nodeAttrIter->second);
-                            if (!TypeUtils::IsEqual(nodeAttrType, attrDef.GetType()))
+                            auto nodeAttrType = TypeUtils::GetType(nodeAttrIter->second);
+                            if (nodeAttrType != attrDef.GetType())
                             {
                                 Status status(false,
                                     "Node (" + nodeName + ") attribute ("

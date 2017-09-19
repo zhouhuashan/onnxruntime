@@ -426,10 +426,9 @@ namespace LotusIR
         return s_registry;
     }
 
-    bool TypeUtils::IsEqual(PTYPE p_nodeAttrType,
-        LotusIR::AttrType p_opDefAttrType)
+    AttrType TypeUtils::GetType(const AttributeProto& p_attr)
     {
         // TODO: add implementation.
-        return true;
+        return AttrType::FLOAT;
     }
 }

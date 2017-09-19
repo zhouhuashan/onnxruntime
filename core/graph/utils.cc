@@ -6,6 +6,7 @@
 #include "core\protobuf\graph.pb.h"
 #include "utils.h"
 
+
 namespace LotusIR
 {
     namespace Utils
@@ -27,12 +28,6 @@ namespace LotusIR
             TypeProto type;
             FromString(p_type, type);
             return ToType(type);
-        }
-
-        PTYPE OpUtils::GetType(const AttributeProto& p_attr)
-        {
-            // TODO: add implementation.
-            return nullptr;
         }
 
         const TypeProto& OpUtils::ToTypeProto(const PTYPE& p_type)

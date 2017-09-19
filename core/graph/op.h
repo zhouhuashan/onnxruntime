@@ -28,14 +28,32 @@ namespace LotusIR
         SHAPES
     };
 
+    // This string array should exactly match the AttrType defined above.
+    static const std::string c_attrTypeStr[14] =
+    {
+        "FLOAT",
+        "INT",
+        "STRING",
+        "GRAPH",
+        "TENSOR",
+        "TYPE",
+        "SHAPE",
+        "FLOATS",
+        "INTS",
+        "STRINGS",
+        "GRAPHS",
+        "TENSORS",
+        "TYPES",
+        "SHAPES"
+    };
+
     class TypeUtils
     {
     public:
 
-        // static helper function to judge whether a PTYPE of a node attribute
-        // is the same as the AttrType defined in operator definition.
-        static bool IsEqual(PTYPE p_nodeAttrType,
-            LotusIR::AttrType p_opDefAttrType);
+        // Get attribute type given attribute proto data.
+        static AttrType GetType(const AttributeProto& p_attr);
+
     };
 
     // A context to contain information for shape inference function.
