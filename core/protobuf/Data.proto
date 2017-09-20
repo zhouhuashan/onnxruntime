@@ -76,7 +76,7 @@ message TensorProto {
   repeated int64 int64_data = 7 [packed = true];
 
   // Optionally, a name for the tensor.
-  optional string name = 8; // namespace Tensor
+  optional string name = 8; // namespace Value
 
   // Serializations can either use one of the fields above, or use this
   // raw bytes field. The only exception is the string case, where one is
