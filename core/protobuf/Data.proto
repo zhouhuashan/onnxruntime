@@ -149,7 +149,7 @@ message DataProto {
     optional TensorProto keys = 1;
 
   // This field MUST be present for this version of the IR.
-  optional TensorProto values = 2;
+    optional TensorProto values = 2;
   }
 
   oneof value {
