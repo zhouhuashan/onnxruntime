@@ -24,14 +24,14 @@ import "core/protobuf/TensorShape.proto";
 // - Graph: These names identify graphs in the protobuf.
 // - Attribute: These names identify attribute names for extra attributes
 //   that are passed to operators.
-// - Operator and functions: These names identify particular operators and
+// - OperatorOrFunction: These names identify particular operators and
 //   functions.
-// - Tensor: These names identify intermediate tensor values flowing through
+// - Value: These names identify intermediate values (typically tensors) flowing through
 //   the computation of a graph.
 // - Shape: These names represent parameters for unknown shape dimensions.
 //
 // We specify the namespace of a name in LotusIR as comments in the form
-// of "namespace {Node,Graph,Attribute,Tensor,Shape}". Framework is
+// of "namespace {Node,Graph,OperatorOrFunction,Attribute,Value,Shape}". Framework is
 // responsible for supporting the namespaces.
 
 // Defines argument information set, except argument name.
@@ -84,8 +84,8 @@ message GraphProto {
   // types and shapes are required.
   //ISSUE:13807021,dbox: For input tensors that also appear in the initializer field,
   //            do we also expose those parameters as inputs to eval?
-  repeated string input = 3;  // namespace Tensor
-  repeated string output = 4; // namespace Tensor
+  repeated string input = 3;  // namespace Value
+  repeated string output = 4; // namespace Value
 
   // An optional list of named initial values for tensors in the list of input above.
   // Used to pass serialized parameters for networks.
@@ -121,16 +121,12 @@ message GraphProto {
   optional string domain = 9;
 
   // An optional human-readable documentation for this graph.
-//ISSUE:13807035,onnx: In looking at FB's opschema stuff, they are definitely
-//            using markdown syntax in their doc strings in that space.
-//            Let's decide how we want to manage this.
+  // This text MAY contain Markdown markup that conforms to http://commonmark.org/. 
   optional string doc_string = 10;
 
   // The function definitions of the graph. They can only only be used
   // (i.e., called) in this graph.
   // Each FunctionDefProto in function MUST have a unique name. 
-  //ISSUE:13807045,dbox: Is the namespace of a function distinct from its peers and the graph?
-  //ISSUE:13807045,dbox: Related - can a function body refer to GraphProto.initializer?
   repeated FunctionDefProto function = 11;
 
   // Argument information for input/output of this graph.
@@ -151,6 +147,7 @@ message GraphProto {
   optional string model_author = 15;
 
   // Optional licensing information concerning use or origination of the graph.
+  // This text MAY contain Markdown markup that conforms to http://commonmark.org/. 
   optional string model_license = 16;
 
   // TODO: When the map type is added, provide for the "model_information"
@@ -197,10 +194,10 @@ enum Version {
 message NodeProto {
 
   // The named inputs of the node.
-  repeated string input = 1;   // namespace Tensor
+  repeated string input = 1;   // namespace Value
 
   // The named outputs of the node.
-  repeated string output = 2;  // namespace Tensor
+  repeated string output = 2;  // namespace Value
 
   // The name of this node.
   // This field is optional and used to uniquely identify nodes in the graph.
@@ -208,12 +205,13 @@ message NodeProto {
 
   // The name of the operator/function called by the node.
   // This field MUST be present for this version of the IR.
-  optional string op_type = 4; // namespace Operator
+  optional string op_type = 4; // namespace OperatorOrFunction
 
   // Additional named attributes.
   repeated AttributeProto attribute = 5;
 
   // An optional human-readable documentation for this node in the graph.
+  // This text MAY contain Markdown markup that conforms to http://commonmark.org/. 
   optional string doc_string = 6;
 
   // Information including type and shape for each input and output
