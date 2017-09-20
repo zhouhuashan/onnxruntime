@@ -7,7 +7,7 @@ namespace LotusIR
 {
     namespace Test
     {
-        TEST(GraphConstruction_VerifyNoDuplicateName, ResolvingGraphTest)
+        TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName)
         {
             Graph graph("graph_1", 1, 1, "tag_1");
 
@@ -40,7 +40,7 @@ namespace LotusIR
             EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMsg());
         }
 
-        TEST(GraphConstruction_VerifyNodeAndOpMatch, ResolvingGraphTest)
+        TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch)
         {
             Graph graph("graph_1", 1, 1, "tag_1");
 
@@ -63,7 +63,7 @@ namespace LotusIR
                 status.ErrorMsg());
         }
 
-        TEST(GraphConstruction_CheckIsAcyclic, ResolvingGraphTest)
+        TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic)
         {
             Graph graph("graph_1", 1, 1, "tag_1");
 
