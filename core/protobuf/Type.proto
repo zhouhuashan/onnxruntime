@@ -38,7 +38,7 @@ message TypeProto {
     optional TensorProto.DataType key_type = 1;
   // This field MUST be present for this version of the IR.
   // This field MUST NOT refer to UNDEFINED
-  optional TensorProto.DataType value_type = 2;
+    optional TensorProto.DataType value_type = 2;
   };
   
   oneof value {
