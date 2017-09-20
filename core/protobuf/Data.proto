@@ -136,6 +136,22 @@ message DataProto {
     repeated DataProto elems = 1;
   }
 
+  // Defines a map in its serialized format.
+  // Maps are serialized as two single-dimensional tensors 
+  // for storage efficiency. The dimensions of each tensor MUST be identical
+  // and the key at position N corresponds to the value at position N.
+  // Keys SHOULD be unique. When a given key appears multiple times,
+  // the value that corresponds last occurance of the key is the value.
+  // This is consistent with protobuf3 encoding rules for map.
+  message MapProto {
+  // This field MUST be present for this version of the IR.
+  // The data type of the tensor MUST refer to an integral type ([U]INT{8|16|32|64}) or STRING
+    optional TensorProto keys = 1;
+
+  // This field MUST be present for this version of the IR.
+    optional TensorProto values = 2;
+  }
+
   oneof value {
     // A dense tensor.
     TensorProto dense_tensor = 1;
@@ -151,5 +167,8 @@ message DataProto {
 
     // A sequence.
     SequenceProto seq = 5;
+
+    // A map.
+    MapProto map = 6;
   }
 }
