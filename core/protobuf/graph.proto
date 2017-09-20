@@ -238,6 +238,34 @@ message NodeProto {
   repeated string control_input = 10;
 }
 
+// Defines a function.
+// A function is well-formed if
+//   - input_arg.name is the name of an InParam node in `node`.
+//   - output_arg.name is the name of an OutParam node in `node`.
+message FunctionDefProto {
+  message FunctionParam {
+    optional string name = 1;
+    optional TypeProto type = 2;
+    optional TensorShapeProto shape = 3;
+  //ISSUE:13807069,dbox: Resolving attribute locations offline.
+  };
+
+  // The name of the function.
+  // This field MUST be present for this version of the IR.
+  optional string name = 1;
+
+  // The input parameters of the function.
+  repeated FunctionParam input_arg = 2;
+
+  // The output parameters of the function.
+  repeated FunctionParam output_arg = 3;
+
+  // The body of the function.
+  repeated NodeProto node = 4;
+
+  // The named attributes of the function.
+  repeated AttributeProto attr = 5;
+}
 
 //BUG:13806952,onnx: Make clear that name is required. The ONNX spec uses "should"
 // A named attribute containing either singular float, integer, string
@@ -266,120 +294,3 @@ message AttributeProto {
   optional TensorShapeProto shape = 14;
   repeated TensorShapeProto shapes = 15;
 }
-
-
-message ParameterDeclProto {
-  optional string name = 1;
-  optional TypeProto type = 2;
-  optional TensorShapeProto shape = 3;
-// An optional human-readable documentation for this parameter.
-  optional string doc_string = 4;
-};
-
-message SignatureDeclProto {
-// The formal input parameters to the operation or function 
-  repeated ParameterDeclProto input_params = 1;
-// The formal output parameters to the operation or function 
-  repeated ParameterDeclProto output_params = 2;
-// The declaration of expected attributes to the operation or function 
-  repeated ParameterDeclProto input_attributes = 3; 
-// An optional human-readable documentation for this signature.
-  optional string doc_string = 4;
-};
-
-message OperatorDeclProto {
-// This field MUST be present for this version of the IR.
-  optional string name = 1;
-
-// This field MUST contain at least one SignatureDeclProto.
-// This field MAY contain multiple SignatureDeclProtos, one 
-// per type signature supported by this operator.
-  repeated SignatureDeclProto signature = 2;
-
-// An optional human-readable documentation for this operator.
-  optional string doc_string = 3;
-};
-
-// Defines a function.
-// A function is well-formed if
-//   - input_arg.name is the name of an InParam node in `node`.
-//   - output_arg.name is the name of an OutParam node in `node`.
-message FunctionDefProto {
-  // The name of the function.
-  // This field MUST be present for this version of the IR.
-  optional string name = 1;
-
-  // The input parameters of the function.
-  repeated ParameterDeclProto input_params = 2;
-
-  // The output parameters of the function.
-  repeated ParameterDeclProto output_params = 3;
-
-  // The body of the function.
-  repeated NodeProto node = 4;
-
-  // The named attributes of the function.
-  repeated AttributeProto attr = 5;
-}
-
-
-
-// A library is a top-level format that contains the declaration
-// of operators and the definition of functions. 
-message LibraryProto {
-  // The version of the IR this graph targets. See Version enum below.
-  // This field MUST be present this version of the IR.  
-  optional int64 ir_version = 1;
-
-  // The optional version of the framework runtime that generates this graph.
-  // This producer_version has the same format as ir_version. 
-  optional int64 producer_version = 2;
-
-  // The optional name of the framework used to generate this graph in the form
-  // "framework_name[-tag]". Tag is optional and provides additional
-  // information such as `alpha` or `beta` or `rc3`.
-  optional string producer_tag = 3;
-
-  // An optional version identifier used to track evolution of this library.
-  // This model_version has the same format as ir_version. 
-  optional int64 model_version = 4;
-
-  // The optional name of the author who created the library.
-  optional string model_author = 5;
-
-  // Optional licensing information concerning use or origination of the library.
-  optional string model_license = 6;
-
-  // The name of the library.
-  optional string name = 7;   // namespace Library
-
-
-  // Domain of the graph.
-  // We use reverse domain names as name space indicators. For example:
-  // `com.facebook.fair` or `com.microsoft.cognitiveservices`
-  //
-  // Together with `name` and `model_version`, this forms the unique identity of
-  // the library.
-  optional string domain = 8;
-
-  // An optional human-readable documentation for this graph.
-  optional string doc_string = 9;
-
-//TODO: Define import/referencing mechanism to refer to a 
-//      Library from either a graph or another library
-
-
-  // The operators declared by this library. 
-  repeated OperatorDeclProto operator = 10;
-
-  // The function definitions of the library. 
-  repeated FunctionDefProto function = 11;
-
-  // A given name may appear at most once in either operator or function (but not both).
-  // When refering to an operator or function from outside of this library, the op_type
-  // field must equal:
-  //      LibraryProto.domain + "." + LibraryProto.name + "." OperatorDeclProto.name  
-  // or
-  //      LibraryProto.domain + "." + LibraryProto.name + "." FunctionDefProto.name  
-};
-
