@@ -3,6 +3,7 @@ syntax = "proto2";
 package LotusIR;
 
 import "core/protobuf/Data.proto";
+import "core/protobuf/TensorShape.proto";
 
 // Defines the type system.
 message TypeProto {
@@ -39,7 +40,7 @@ message TypeProto {
   // This field MUST NOT refer to UNDEFINED
     optional TensorProto.DataType value_type = 2;
   };
-      
+  
   oneof value {
     // The type of a tensor.
     TensorTypeProto tensor_type = 1;
@@ -61,3 +62,4 @@ message TypeProto {
     MapTypeProto map_type = 6;
   }
 }
+

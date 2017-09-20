@@ -832,7 +832,7 @@ namespace LotusIR
                 p_funcDefNames.insert(op_type);
 
                 // Verify node inputs have same size with function definition.
-                if (funcIter->second.input_arg_size()
+                if (funcIter->second.input_params_size()
                     != node->InputDefs().size())
                 {
                     // Number of inputs do not match.
@@ -843,7 +843,7 @@ namespace LotusIR
                 }
 
                 // Verify node outputs have same size with function definition.
-                if (funcIter->second.output_arg_size()
+                if (funcIter->second.output_params_size()
                     != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
