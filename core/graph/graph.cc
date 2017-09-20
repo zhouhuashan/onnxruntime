@@ -707,8 +707,8 @@ namespace LotusIR
                         if (node->GetAttributes().end() == nodeAttributesIter)
                         {
                             Status status(false,
-                                "Node (" + nodeName + ") output arg value should \
-                                be specified via node attribute 'CONSTANT_VALUE'.");
+                                "Node (" + nodeName + ") output arg value should"
+                                "be specified via node attribute 'CONSTANT_VALUE'.");
                             return status;
                         }
 
@@ -723,8 +723,8 @@ namespace LotusIR
                         else
                         {
                             Status status(false,
-                                "For attribute CONSTANT_VALUE, only Tensor type \
-                                is allowed. The attribute type in this model is "
+                                "For attribute CONSTANT_VALUE, only Tensor type"
+                                "is allowed. The attribute type in this model is "
                                 + LotusIR::c_attrTypeStr[(int)attrType] + ".");
                             return status;
                         }
@@ -808,8 +808,7 @@ namespace LotusIR
                             {
                                 Status status(false,
                                     "Node (" + nodeName + ") attribute ("
-                                    + nodeAttrIter->first + ") type does not \
-                                    match operator definition.");
+                                    + nodeAttrIter->first + ") type does not match operator definition.");
                                 return status;
                             }
                         }
