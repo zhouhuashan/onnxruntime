@@ -12,6 +12,7 @@ namespace LotusIR
     class OperatorSchema;
 
     enum class AttrType {
+        NONE,
         FLOAT,
         INT,
         STRING,
@@ -52,7 +53,7 @@ namespace LotusIR
     public:
 
         // Get attribute type given attribute proto data.
-        static AttrType GetType(const AttributeProto& p_attr);
+        static Status GetType(const AttributeProto& p_attr, AttrType& p_type);
 
     };
 
@@ -141,13 +142,13 @@ namespace LotusIR
             AttrType p_attrType,
             const std::string& p_description);
 
-        ATTR_SETTER_INTERFACE(int64_t);
-        ATTR_SETTER_INTERFACE(float);
-        ATTR_SETTER_INTERFACE(std::string);
-        ATTR_SETTER_INTERFACE(TensorProto);
-        ATTR_SETTER_INTERFACE(GraphProto);
-        ATTR_SETTER_INTERFACE(TypeProto);
-        ATTR_SETTER_INTERFACE(TensorShapeProto);
+        ATTR_SETTER_INTERFACE(int64_t)
+        ATTR_SETTER_INTERFACE(float)
+        ATTR_SETTER_INTERFACE(std::string)
+        ATTR_SETTER_INTERFACE(TensorProto)
+        ATTR_SETTER_INTERFACE(GraphProto)
+        ATTR_SETTER_INTERFACE(TypeProto)
+        ATTR_SETTER_INTERFACE(TensorShapeProto)
 
         OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
             const std::vector<std::string>& p_constraints,
@@ -297,6 +298,8 @@ namespace LotusIR
             // Allowed attribute values.
             std::vector<AttributeProto> m_allowedValues;
         };
+
+        static bool IsValidAttribute(const AttributeProto& p_attribute);
 
         // Constructor.
         OperatorSchema() = default;

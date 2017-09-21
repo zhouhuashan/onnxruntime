@@ -214,5 +214,32 @@ namespace LotusIR
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Node (node_4) has different input types (int32,float32) matching to same type string (T).", status.ErrorMsg());
         }
+
+        TEST(TestAddAttribute, AddTensorAttribute)
+        {
+            REGISTER_OP("__Constant").Description("Constant Op.")
+                .Output("output_1", "int64", "docstr for output_1.");
+            std::vector<NodeArg> inputs;
+            std::vector<NodeArg> outputs;
+            Graph graph("graph_1", 1, 1, "tag_1");
+            TypeProto outputType;
+            outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
+            TensorShapeProto outputShape;
+            outputShape.mutable_dim()->Add()->set_dim_value(1);
+            outputShape.mutable_dim()->Add()->set_dim_value(3);
+            NodeArg outputArg("node_1_out_1", outputType, outputShape);
+            outputs.push_back(outputArg);
+            auto node_1 = graph.AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
+            TensorProto t;
+            t.set_data_type(TensorProto_DataType_INT64);
+            *(t.mutable_int64_data()->Add()) = 1;
+            *(t.mutable_int64_data()->Add()) = 2;
+            *(t.mutable_int64_data()->Add()) = 3;
+            *(t.mutable_dims()->Add()) = 1;
+            *(t.mutable_dims()->Add()) = 3;
+            EXPECT_TRUE(node_1->AddAttribute(c_constantValue, t));
+            auto status = graph.Resolve();
+            EXPECT_TRUE(status.Ok());
+        }
     }
 }

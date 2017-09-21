@@ -378,6 +378,36 @@ namespace LotusIR
         return m_typeConstraintMap;
     }
 
+    bool OperatorSchema::IsValidAttribute(const AttributeProto& p_attr)
+    {
+        if (p_attr.name().empty())
+        {
+            return false;
+        }
+
+        int num_fields =
+            p_attr.has_f() +
+            p_attr.has_i() +
+            p_attr.has_s() +
+            p_attr.has_t() +
+            p_attr.has_g() +
+            (p_attr.floats_size() > 0) +
+            (p_attr.ints_size() > 0) +
+            (p_attr.strings_size() > 0) +
+            (p_attr.tensors_size() > 0) +
+            (p_attr.graphs_size() > 0) +
+            p_attr.has_type() +
+            (p_attr.types_size() > 0) +
+            p_attr.has_shape() +
+            (p_attr.shapes_size() > 0);
+
+        if (num_fields == 1)
+        {
+            return true;
+        }
+        return false;
+    }
+
     OperatorSchemaRegistry::RegisterOnce::RegisterOnce(
         const OperatorSchemaSetter& p_opSchema)
     {
@@ -426,9 +456,75 @@ namespace LotusIR
         return s_registry;
     }
 
-    AttrType TypeUtils::GetType(const AttributeProto& p_attr)
+    Status TypeUtils::GetType(const AttributeProto& p_attr, AttrType& p_type)
     {
-        // TODO: add implementation.
-        return AttrType::FLOAT;
+        if (!OperatorSchema::IsValidAttribute(p_attr))
+        {
+            return Status(false, "Invalid AttributeProto.");
+        }
+
+        if (p_attr.has_f())
+        {
+            p_type = AttrType::FLOAT;
+        }
+        else if (p_attr.has_i())
+        {
+            p_type = AttrType::INT;
+        }
+        else if (p_attr.has_s())
+        {
+            p_type = AttrType::STRING;
+        }
+        else if (p_attr.has_t())
+        {
+            p_type = AttrType::TENSOR;
+        }
+        else if (p_attr.has_g())
+        {
+            p_type = AttrType::GRAPH;
+        }
+        else if (p_attr.floats_size())
+        {
+            p_type = AttrType::FLOATS;
+        }
+        else if (p_attr.ints_size())
+        {
+            p_type = AttrType::INTS;
+        }
+        else if (p_attr.strings_size())
+        {
+            p_type = AttrType::STRINGS;
+        }
+        else if (p_attr.tensors_size())
+        {
+            p_type = AttrType::TENSORS;
+        }
+        else if (p_attr.graphs_size())
+        {
+            p_type = AttrType::GRAPHS;
+        }
+        else if (p_attr.has_type())
+        {
+            p_type = AttrType::TYPE;
+        }
+        else if (p_attr.types_size())
+        {
+            p_type = AttrType::TYPES;
+        }
+        else if (p_attr.has_shape())
+        {
+            p_type = AttrType::SHAPE;
+        }
+        else if (p_attr.has_shape())
+        {
+            p_type = AttrType::SHAPES;
+        }
+        else
+        {
+            p_type = AttrType::NONE;
+            return Status(false, "Invalid AttributeProto.");
+        }
+
+        return Status::OK();
     }
 }

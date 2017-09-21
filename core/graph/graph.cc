@@ -355,6 +355,104 @@ namespace LotusIR
         m_outputDefs = p_outputArgs;
     }
 
+    void Node::Init(const std::string& p_name,
+        const std::string& p_opType,
+        const std::string& p_description,
+        const std::vector<NodeArg>& p_outputArgs)
+    {
+        m_name = p_name;
+        m_opType = p_opType;
+        m_description = p_description;
+        m_outputDefs = p_outputArgs;
+    }
+
+    bool Node::AddAttribute(const std::string& p_attrName, const AttributeProto& p_value)
+    {
+        auto it = m_attributes.find(p_attrName);
+        if (it == m_attributes.end())
+        {
+            m_attributes.emplace(p_attrName, p_value);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+#define ADD_BASIC_ATTR_IMPL(type, field)                                         \
+    bool Node::AddAttribute(const std::string& p_attrName, const type& p_value)  \
+    {                                                                            \
+        auto it = m_attributes.find(p_attrName);                                 \
+        if (it == m_attributes.end())                                            \
+        {                                                                        \
+            AttributeProto a;                                                    \
+            a.set_name(p_attrName);                                              \
+            a.set_##field(p_value);                                              \
+            m_attributes.emplace(p_attrName, a);                                 \
+            return true;                                                         \
+        }                                                                        \
+        else                                                                     \
+        {                                                                        \
+            return false;                                                        \
+        }                                                                        \
+    };                                                                           \
+
+#define ADD_ATTR_IMPL(type, field)                                               \
+    bool Node::AddAttribute(const std::string& p_attrName, const type& p_value)  \
+    {                                                                            \
+        auto it = m_attributes.find(p_attrName);                                 \
+        if (it == m_attributes.end())                                            \
+        {                                                                        \
+            AttributeProto a;                                                    \
+            a.set_name(p_attrName);                                              \
+            *(a.mutable_##field()) = p_value;                                    \
+            m_attributes.emplace(p_attrName, a);                                 \
+            return true;                                                         \
+        }                                                                        \
+        else                                                                     \
+        {                                                                        \
+            return false;                                                        \
+        }                                                                        \
+    };                                                                           \
+
+#define ADD_LIST_ATTR_IMPL(type, field)                                          \
+    bool Node::AddAttribute(const std::string& p_attrName,                       \
+                            const std::vector<type>& p_values)                   \
+    {                                                                            \
+        auto it = m_attributes.find(p_attrName);                                 \
+        if (it == m_attributes.end())                                            \
+        {                                                                        \
+            AttributeProto a;                                                    \
+            a.set_name(p_attrName);                                              \
+            for (const auto& val : p_values)                                     \
+            {                                                                    \
+                *(a.mutable_##field()->Add()) = val;                             \
+            }                                                                    \
+            m_attributes.emplace(p_attrName, a);                                 \
+            return true;                                                         \
+        }                                                                        \
+        else                                                                     \
+        {                                                                        \
+            return false;                                                        \
+        }                                                                        \
+    };                                                                           \
+
+    ADD_BASIC_ATTR_IMPL(float, f)
+    ADD_BASIC_ATTR_IMPL(int64_t, i)
+    ADD_BASIC_ATTR_IMPL(std::string, s)
+    ADD_ATTR_IMPL(TensorProto, t)
+    ADD_ATTR_IMPL(TensorShapeProto, shape)
+    ADD_ATTR_IMPL(GraphProto, g)
+    ADD_ATTR_IMPL(TypeProto, type)
+    ADD_LIST_ATTR_IMPL(float, floats)
+    ADD_LIST_ATTR_IMPL(int64_t, ints)
+    ADD_LIST_ATTR_IMPL(std::string, strings)
+    ADD_LIST_ATTR_IMPL(TensorProto, tensors)
+    ADD_LIST_ATTR_IMPL(TensorShapeProto, shapes)
+    ADD_LIST_ATTR_IMPL(GraphProto, graphs)
+    ADD_LIST_ATTR_IMPL(TypeProto, types)
+
     bool Node::ClearAttribute(const std::string& p_attrName)
     {
         return m_attributes.erase(p_attrName) > 0;
@@ -785,18 +883,19 @@ namespace LotusIR
                     if (typeParameterToTypeMap.empty())
                     {
                         // There's no input arg.
-                        // The output should be read from an attribute - "CONSTANT_VALUE".
+                        // The output should be read from an attribute named c_constantValue.
                         auto nodeAttributesIter
-                            = node->GetAttributes().find("CONSTANT_VALUE");
+                            = node->GetAttributes().find(c_constantValue);
                         if (node->GetAttributes().end() == nodeAttributesIter)
                         {
                             Status status(false,
                                 "Node (" + nodeName + ") output arg value should"
-                                "be specified via node attribute 'CONSTANT_VALUE'.");
+                                "be specified via node attribute '"+ c_constantValue + "'.");
                             return status;
                         }
 
-                        AttrType attrType = TypeUtils::GetType(nodeAttributesIter->second);
+                        AttrType attrType;
+                        RETURN_IF_ERROR(TypeUtils::GetType(nodeAttributesIter->second, attrType));
                         if (AttrType::TENSOR == attrType)
                         {
                             auto& tensor = nodeAttributesIter->second.t();
@@ -807,7 +906,7 @@ namespace LotusIR
                         else
                         {
                             Status status(false,
-                                "For attribute CONSTANT_VALUE, only Tensor type"
+                                "For attribute " + c_constantValue + " , only Tensor type"
                                 "is allowed. The attribute type in this model is "
                                 + LotusIR::c_attrTypeStr[(int)attrType] + ".");
                             return status;
@@ -887,7 +986,8 @@ namespace LotusIR
                         {
                             // Verify node attribute type matching type of
                             // attribute defined in operator definition.
-                            auto nodeAttrType = TypeUtils::GetType(nodeAttrIter->second);
+                            AttrType nodeAttrType;
+                            RETURN_IF_ERROR(TypeUtils::GetType(nodeAttrIter->second, nodeAttrType));
                             if (nodeAttrType != attrDef.GetType())
                             {
                                 Status status(false,
@@ -1134,6 +1234,21 @@ namespace LotusIR
         return node;
     }
 
+    Node* Graph::AddNode(const std::string& p_name,
+        const std::string& p_opType,
+        const std::string& p_description,
+        const std::vector<NodeArg>& p_outputArgs)
+    {
+        auto node = AllocateNode();
+        node->Init(p_name,
+            p_opType,
+            p_description,
+            p_outputArgs);
+        // Set flag to indicates that the graph needs to be resolved.
+        m_isGraphValid = false;
+        return node;
+    }
+
     Node* Graph::AddNode(const Node& p_other)
     {
         auto node = AllocateNode();
@@ -1154,6 +1269,16 @@ namespace LotusIR
         // Set flag to indicates that the graph needs to be resolved.
         m_isGraphValid = false;
         return true;
+    }
+
+    Node* Graph::AddConstantNode(const std::string& p_name,
+        const std::string& p_description,
+        const std::vector<NodeArg>& p_outputArgs,
+        const TensorProto& p_tensor)
+    {
+        Node* node = AddNode(p_name, c_constantOp, p_description, p_outputArgs);
+        node->AddAttribute(c_constantValue, p_tensor);
+        return node;
     }
 
     bool Graph::AddControlEdge(NODEINDEX p_srcNodeIndex,

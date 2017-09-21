@@ -11,7 +11,9 @@
 
 namespace LotusIR
 {
-    typedef uint32_t NODEINDEX;
+    static const std::string c_constantOp = "Constant";
+    static const std::string c_constantValue = "CONSTANT_VALUE";
+    typedef size_t NODEINDEX;
     typedef int64_t GRAPH_VERSION;
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
     typedef ArgInfoProto NodeArgInfo;
@@ -201,12 +203,21 @@ namespace LotusIR
             /*out*/const EdgeEnd** p_inputEdgeSrcEnd);
 
         // Add a node attribute with specified attribute name and value.
-        template <typename T>
-        bool AddAttribute(const std::string& p_attrName, const T& p_value)
-        {
-            // TODO: add implementation.
-            return true;
-        }
+        bool AddAttribute(const std::string& p_attrName, const AttributeProto& p_value);
+
+#define ADD_ATTR_INTERFACES(TypeName)                             \
+        bool AddAttribute(const std::string& p_attrName,          \
+                          const TypeName& p_value);               \
+        bool AddAttribute(const std::string& p_attrName,          \
+                          const std::vector<TypeName>& p_values); \
+
+        ADD_ATTR_INTERFACES(int64_t)
+        ADD_ATTR_INTERFACES(float)
+        ADD_ATTR_INTERFACES(std::string)
+        ADD_ATTR_INTERFACES(TensorProto)
+        ADD_ATTR_INTERFACES(GraphProto)
+        ADD_ATTR_INTERFACES(TypeProto)
+        ADD_ATTR_INTERFACES(TensorShapeProto)
 
         // Clear specified node attribute.
         bool ClearAttribute(const std::string& p_attrName);
@@ -246,6 +257,10 @@ namespace LotusIR
             const std::string& p_description,
             const std::vector<NodeArg>& p_inputArgs,
             const std::vector<int>& p_inputArgCount,
+            const std::vector<NodeArg>& p_outputArgs);
+        void Init(const std::string& p_name,
+            const std::string& p_opType,
+            const std::string& p_description,
             const std::vector<NodeArg>& p_outputArgs);
 
         // Node index.
@@ -411,8 +426,18 @@ namespace LotusIR
             const std::vector<NodeArg>& p_inputArgs,
             const std::vector<int>& p_inputArgCount,
             const std::vector<NodeArg>& p_outputArgs);
+        Node* AddNode(const std::string& p_name,
+            const std::string& p_opType,
+            const std::string& p_description,
+            const std::vector<NodeArg>& p_outputArgs);
         Node* AddNode(const Node& p_other);
         bool RemoveNode(NODEINDEX p_nodeIndex);
+
+        // Convenience method for adding a constant op
+        Node* AddConstantNode(const std::string& p_name,
+            const std::string& p_description,
+            const std::vector<NodeArg>& p_outputArgs,
+            const TensorProto& p_tensor);
 
         // Add control edge into <*this> graph.
         // The <p_dstNodeIndex> node does not consume any data output by
