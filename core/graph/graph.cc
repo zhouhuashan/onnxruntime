@@ -1,3 +1,5 @@
+#include <fstream>
+#include <iostream>
 #include <numeric>
 
 #include "graph.h"
@@ -270,7 +272,6 @@ namespace LotusIR
 			*input = inputDef.Name();
 			auto inputInfo = p_proto.add_input_arg_info();
 			*inputInfo = inputDef.ToProto();
-			// TODO: add_input_arg_count information. 
 		}
 
 		// Set input arg count.
@@ -278,7 +279,7 @@ namespace LotusIR
 		int i = 0;
 		for (auto argCount : m_inputArgCount)
 		{
-			p_proto.set_input_arg_count(i++, argCount);
+			*(p_proto.mutable_input_arg_count()->Add()) = argCount;
 		}
 
 		// Set outputs' definitions.
@@ -1288,5 +1289,32 @@ namespace LotusIR
 	{
 		m_nodes[p_nodeIndex] = nullptr;
 		m_numOfNodes--;
+	}
+
+	bool Graph::Save(const GraphProto& p_graphProto, const std::string& p_filePath)
+	{
+		std::fstream outputFileStream(p_filePath, std::ios::out | std::ios::binary);
+		bool result = p_graphProto.SerializeToOstream(&outputFileStream);
+		outputFileStream.close();
+		return result;
+	}
+
+	bool Graph::Load(const std::string& p_filePath, /*out*/ GraphProto* p_graphProto)
+	{
+		if (nullptr == p_graphProto)
+		{
+			return false;
+		}
+
+		std::fstream inputFileStream(p_filePath, std::ios::in | std::ios::binary);
+		if (!inputFileStream)
+		{
+			return false;
+		}
+
+		bool result = p_graphProto->ParsePartialFromIstream(&inputFileStream);
+		inputFileStream.close();
+
+		return result;
 	}
 }

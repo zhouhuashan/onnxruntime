@@ -442,6 +442,12 @@ namespace LotusIR
 		const Node* SourceNode() const;
 		const Node* SinkNode() const;
 
+		// Save a GraphProto to a file.
+		static bool Save(const GraphProto& p_graphProto, const std::string& p_filePath);
+
+		// Load a GraphProto from a file.
+		static bool Load(const std::string& p_filePath, /*out*/ GraphProto* p_graphProto);
+
 	private:
 
 		enum Type

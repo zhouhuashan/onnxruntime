@@ -1,4 +1,6 @@
 #include <iostream>
+
+#include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
 #include "graph.h"
 #include "op.h"
@@ -7,6 +9,8 @@ namespace LotusIR
 {
 	namespace Test
 	{
+		using google::protobuf::util::MessageDifferencer;
+
 		TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName)
 		{
 			Graph graph("graph_1", 1, 1, "tag_1");
@@ -125,9 +129,13 @@ namespace LotusIR
 			auto status = graph.Resolve();
 			EXPECT_TRUE(status.Ok());
 
+			auto& graphProto = graph.ToGraphProto();
+			Graph::Save(graphProto, "graph_1.pb");
+			GraphProto graphProto2;
+			Graph::Load("graph_1.pb", &graphProto2);
+			EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(graphProto, graphProto2));
+
 			// Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
-			// TODO: "Variable", "Add", "NoOp" operators should be registered, otherwise,
-			// error of referring non-existing op will be returned firstly.
 			node_1->Mutable_InputDefs()[0] = outputArg4;
 			status = graph.Resolve();
 			EXPECT_FALSE(status.Ok());
