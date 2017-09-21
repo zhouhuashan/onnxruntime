@@ -3,7 +3,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "core\protobuf\graph.pb.h"
+#include "core/protobuf/Data.pb.h"
+#include "core/protobuf/graph.pb.h"
+#include "core/protobuf/Type.pb.h"
 #include "utils.h"
 
 
@@ -39,7 +41,7 @@ namespace LotusIR
             }
             else
             {
-                // throw exception
+                throw std::invalid_argument("PTYPE not found: " + *p_type);
             }
         }
 
@@ -64,6 +66,13 @@ namespace LotusIR
                 tuple_str += ToString(p_type.tuple_type().elem_type(size - 1));
                 tuple_str += ")";
                 return tuple_str;
+            }
+            case TypeProto::ValueCase::kMapType:
+            {
+                std::string map_str("map(");
+                map_str = map_str + ToString(p_type.map_type().key_type()) + ","
+                    + ToString(p_type.map_type().value_type()) + ")";
+                return map_str;
             }
             case TypeProto::ValueCase::kHandleType:
                 return "handle";
@@ -114,28 +123,28 @@ namespace LotusIR
             {
                 // TODO
             }
+            else if (s.LStrip("map("))
+            {
+                // TODO
+            }
             else if (s.LStrip("handle"))
             {
-                TypeProto_HandleTypeProto* t = new TypeProto_HandleTypeProto();
-                p_type.set_allocated_handle_type(t);
+                p_type.mutable_handle_type();
             }
             else if (s.LStrip("sparse("))
             {
                 // sparse tensor
-                TypeProto_SparseTensorTypeProto* t = new TypeProto_SparseTensorTypeProto();
+                s.RStrip(")");
                 TensorProto::DataType e;
                 FromString(std::string(s.Data(), s.Size()), e);
-                t->set_elem_type(e);
-                p_type.set_allocated_sparse_tensor_type(t);
+                p_type.mutable_sparse_tensor_type()->set_elem_type(e);
             }
             else
             {
                 // dense tensor
-                TypeProto_TensorTypeProto* t = new TypeProto_TensorTypeProto();
                 TensorProto::DataType e;
                 FromString(std::string(s.Data(), s.Size()), e);
-                t->set_elem_type(e);
-                p_type.set_allocated_tensor_type(t);
+                p_type.mutable_tensor_type()->set_elem_type(e);
             }
         }
 

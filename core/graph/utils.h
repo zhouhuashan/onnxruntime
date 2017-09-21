@@ -4,8 +4,8 @@
 #include <unordered_map>
 #include <xstring>
 
-#include "core/protobuf/Data.pb.h"
-#include "core/protobuf/Type.pb.h"
+class TensorProto;
+class TypeProto;
 
 namespace LotusIR
 {

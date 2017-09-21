@@ -185,57 +185,5 @@ namespace LotusIR
                 EXPECT_EQ(a3->strings(i), expected_strings[i]);
             }
         }
-
-
-        // TODO: move to separate test file
-        TEST(UtilTest, TestPTYPE)
-        {
-            PTYPE p1 = Utils::OpUtils::ToType("int32");
-            PTYPE p2 = Utils::OpUtils::ToType("int32");
-            PTYPE p3 = Utils::OpUtils::ToType("int32");
-            EXPECT_EQ(p1, p2);
-            EXPECT_EQ(p2, p3);
-            EXPECT_EQ(p1, p3);
-            PTYPE p4 = Utils::OpUtils::ToType("list(int32)");
-            PTYPE p5 = Utils::OpUtils::ToType("list(int32)");
-            PTYPE p6 = Utils::OpUtils::ToType("list(int32)");
-            EXPECT_EQ(p4, p5);
-            EXPECT_EQ(p5, p6);
-            EXPECT_EQ(p4, p6);
-
-            TypeProto t1 = Utils::OpUtils::ToTypeProto(p1);
-            EXPECT_TRUE(t1.has_tensor_type());
-            EXPECT_TRUE(t1.tensor_type().has_elem_type());
-            EXPECT_EQ(t1.tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-            TypeProto t2 = Utils::OpUtils::ToTypeProto(p2);
-            EXPECT_TRUE(t2.has_tensor_type());
-            EXPECT_TRUE(t2.tensor_type().has_elem_type());
-            EXPECT_EQ(t2.tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-            TypeProto t3 = Utils::OpUtils::ToTypeProto(p3);
-            EXPECT_TRUE(t3.has_tensor_type());
-            EXPECT_TRUE(t3.tensor_type().has_elem_type());
-            EXPECT_EQ(t3.tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-
-            /* TODO
-            TypeProto t4 = Utils::OpUtils::ToTypeProto(p4);
-            EXPECT_TRUE(t4.has_seq_type());
-            EXPECT_TRUE(t4.seq_type().has_elem_type());
-            EXPECT_TRUE(t4.seq_type().elem_type().has_tensor_type());
-            EXPECT_TRUE(t4.seq_type().elem_type().tensor_type().has_elem_type());
-            EXPECT_EQ(t4.seq_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-            TypeProto t5 = Utils::OpUtils::ToTypeProto(p5);
-            EXPECT_TRUE(t5.has_seq_type());
-            EXPECT_TRUE(t5.seq_type().has_elem_type());
-            EXPECT_TRUE(t5.seq_type().elem_type().has_tensor_type());
-            EXPECT_TRUE(t5.seq_type().elem_type().tensor_type().has_elem_type());
-            EXPECT_EQ(t5.seq_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-            TypeProto t6 = Utils::OpUtils::ToTypeProto(p6);
-            EXPECT_TRUE(t6.has_seq_type());
-            EXPECT_TRUE(t6.seq_type().has_elem_type());
-            EXPECT_TRUE(t6.seq_type().elem_type().has_tensor_type());
-            EXPECT_TRUE(t6.seq_type().elem_type().tensor_type().has_elem_type());
-            EXPECT_EQ(t6.seq_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-            */
-        }
     }
 }
