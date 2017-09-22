@@ -23,40 +23,45 @@ Extensible computation graph model
 
 The common IR specifies the portable, serialized format of the computation graph. It may not be the form a framework chooses to use and manipulate internally. For example, a framework may keep the graph in memory in another format that it finds more efficient to manipulate for optimization passes.
 
-### Graphs
+### Graphs and Libraries
 
 Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Nodes have one or more inputs and one or more outputs. Each node can be a call to a built-in (intrinsic) operator, a custom operator, or a function.
 
-A serialized graph is comprised of a set of metadata fields, a set of model parameters, a list of computation nodes, and a list of function definitions.
+A serialized graph is comprised of a set of metadata fields, a set of model parameters, a list of computation nodes, a list of function definitions, and a list of operator declarations. Libraries are  comprised of metadata fields, a list of function definitions, and a list of operator declarations. A library does __not__ contain graphs outside of its function definitions.
+
+Each graph and library MUST specify a name and a domain. Domains shall be specified using reverse domain names as organization identifiers, the same convention that is used for naming Java packages.
+
+Each graphs MUST define the names and types of its inputs.
+
+Graphs and libraries SHOULD be populated with documentation strings, which MUST be plain text but MAY be interpreted using markdown syntax.
+
+__TODO: Define which markdown syntax to support.__
 
 #### Metadata
 
-The following are the required metadata properties of a model graph:
+The following are the required metadata properties of a model graph or library:
 
 |Name|Type|Format|Description|
 |----|----|------|-----------|
 |name|string|Valid C identifier|A name for the model.|
-|namespace|string|Valid DNS name|A namespace for the model, following the style of Java package names, that is, reverse DNS domain name.|
-|version|int64||A version number of the model|
-|ir_version|string||The version of the IR format specification|
-|documentation|string|Free form|A human-readable documentation string intended to summarize the purpose of the model.|
+|domain|string|Valid DNS name|A domain for the model, following the style of Java package names, that is, reverse domain name.|
+|ir_version|int64||The version of the LotusIR specification.|
+|model_version|int64||A version number of the model.|
 
-All optional metadata are organized in a <string,string> map. The set of optional metadata elements is extensible without revising the specification, but tools and runtime implementations are expected to understand the following optional metadata elements:
+The following are optional metadata properties of a model graph or library:
 
-|Name|Description|
-|----|----|
-|author|The name of the individual or individuals that developed the model.|
-|license|The name or URL defining the license under which the model is made available.|
-|training_parameters|Parameters used when training this model in a framework-specific form.|
-|training_dataset|Identifier of the dataset(s) used to train this model.|
+|Name|Type|Format|Description|
+|----|----|------|-----------|
+|model_author|string||The name of the author(s) of the model.|
+|model_license|string||The name or URL defining the license under which the model is made available.|
+|producer_tag|string||The name of the framework that produced the model.|
+|producer_version|int64||The version of the framework that produced the model.|
+|doc_string|string|Free form, markdown.|A human-readable documentation string intended to summarize the purpose and use of the model.|
 
-#### Model Parameters
-
-__TODO: Address the syntax and semantics for how model parameters are defined.__
 
 #### Names Within a Graph
 
-Names of nodes, inputs, outputs, and (in the case of graphs that are found within function definitions) parameters MUST be unique within that graph. Names of functions may overlap with other names, but a function MUST NOT have a name that can also be the name of an operator. 
+Names of nodes, inputs, outputs, initializers, attributes, and (in the case of graphs that are found within function definitions) parameters MUST be unique within that graph. Names of functions may overlap with other names, but a function MUST NOT have a name that can also be the name of an operator. 
 
 All names MUST adhere to C identifier syntax rules.
 
@@ -68,25 +73,33 @@ Function definitions are comprised of a name, a list of named input arguments, a
 
 The inputs and outputs of a function are defined as lists of named, typed, formal parameters. The parameter names must be unique among the names within the function.
 
+__OPEN QUESTION: What are function attributes used for? Do they allow passing values to functions? If so, how are they referenced within the function body?__
+
 #### Nodes
 
-Computation nodes are comprised of a name, a list of named inputs, a list of named outputs, a list of attributes, a list of control inputs, and a list of attributes.
+Computation nodes are comprised of a name, a list of named inputs, a list of named outputs, a list of attributes, and a list of control inputs.
 
-Edges in the computation graph are established by outputs of one node being referenced by name in the inputs of a subsequent node. Node, input, and output names must be unique within the graph. For a function definition, the names must be unique within the function definition's graph.
+Edges in the computation graph are established by outputs of one node being referenced by name in the inputs of a subsequent node. Node, input, and output names MUST be unique within the graph. For a function definition, the names MUST be unique within the function definition's graph. Input nodes may also refer to declared graph inputs and graph initializers. Graph outputs refer to a subset of node outputs.
 
-The control inputs are used to establish edges in the computation graph that are based on other concerns than data dependencies. 
+The list of input names may be longer than the list of parameters accepted by an operator that accepts more than one input value for a given parameter. To associate the input list with operator parameters, a separate list is used to define how many inputs are to be associated with each parameter. The inputs are matched with parameters left-to-right.
+
+For example, an operator taking two arguments may be passed five values. In this example, an arg_count list '[2,3]' would mean that the first two inputs are associated with the first operator parameter, and the last three inputs with the second parameter.
+
+Control inputs are used to establish edges in the computation graph that are based on other concerns than data dependencies. Inference runtime implementations MAY choose to ignore control edges when scheduling computations.
 
 The list of nodes defining the top-level computation graph MUST be ordered topologically; that is, if node K follows node N in the graph, none of the data inputs of N may refer to outputs of K; further, no control input of N may refer to K.
 
+Node attributes are used to pass literal (static) values, such as biases and other constants, to operators and functions.
 
-__TODO: Address how the overall input/output signature of the graph is established. Function definitions have input/output formal argument definitions, but
-that is not so for graphs. Is it from the first and last nodes in the graph? If so, does that mean that one node (the first) will dominate all others in the graph, and that one node (the last) will post-dominate all other nodes?__
+#### Importing Libraries
 
-__TODO: Describe how model parameters are referenced in nodes.__
+Both graphs and libraries contain a list of imported libraries, which is the main mechanism for composing computation models out of more than one file. Libraries support sharing of common function definitions, as well as defining specific sets of operators that are supported by a runtime target. The root document loaded to perform a computation is always a graph, never a library.
 
-
+Each library reference is in the form of a URI or relative path that represents the location of a document containing a serialized representation of the library. Tools MUST fetch all referenced documents, but MAY apply standard HTTP caching rules to avoid unnecessary fetches. Tools MAY bundle such library documents together with the root document (a graph), either by merging the library contents into the root document, or bundling them together through other mechanisms, thus freeing a runtime implementation from fetching library documents while loading a model for inference or training.
 
 ### Operators
+
+Operators are explcitly declared within graphs and libraries with full type information on all operands -- arguments and attributes alike. 
 
 See [Operators.md](Operators.md) for details
 
@@ -110,6 +123,7 @@ The following data types are supported by the Common IR. Additional data types c
 |Collections|__sparse and dense tensor__|Tensors are a generalization of vectors and matrices; whereas vectors have one dimension, and matrices two, tensors can have any number of dimenstions, including zero. A zero-dimensional tensor is equivalent to a scalar.|
 |Collections|__list__|Lists represent dense, ordered, collections of elements that are of homogeneous types. List elements can be added to the tail, removed from the head, and accessed by integer index.|
 |Collections|__tuple__|Tuples represent dense, ordered, collections of elements of heterogeneous types. Tuple elements are accessed by integer index.|
+|Collections|__map__|Maps represent associative tables, defined by a key type and a value type, both of which MUST NOT be a collection type.|
 
 __TODO: Add maps when they are added to the .proto file.__
 
