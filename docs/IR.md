@@ -13,7 +13,7 @@ The Common IR is an open specification that consists of the following components
 
 __Some notes on language in this and all related documents__:
 
-1. The use of SHOULD, MUST, MAY and so on in this document is consistent with [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
+1. The use of SHOULD, MUST, MAY and so on in this document for normative purposes, which is indicated by upper-case lettering, is consistent with [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
 
 2. The use of 'list' shall denote an ordered collection of items, 'set' shall denote an unordered collection of unique elements, and 'bag' an unordered colletion of possibly non-unique elements.
 
@@ -24,17 +24,17 @@ The common IR specifies the portable, serialized format of the computation graph
 
 ### Graphs and Libraries
 
-Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Nodes have one or more inputs and one or more outputs. Each node can be a call to an operator or a function.
+Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Each node represents a call to an operator or a function. Each node SHOULD have one or more inputs and one or more outputs. 
 
 A serialized graph is comprised of a set of metadata fields, a set of model parameters, a list of computation nodes, a list of function definitions, and a list of operator declarations. Libraries are  comprised of metadata fields, a list of function definitions, and a list of operator declarations. A library does __not__ contain graphs outside of its function definitions.
 
-Each graph and library MUST specify a name and a domain. Domains shall be specified using reverse domain names as organization identifiers, the same convention that is used for naming Java packages.
+Each graph and library MUST specify a name and a domain. Domains SHOULD be specified using reverse domain names as organization identifiers, the same convention that is used for naming Java packages.
 
-Each graphs MUST define the names and types of its inputs.
+Each graph MUST define the names and types of its inputs.
 
-Graphs and libraries SHOULD be populated with documentation strings, which MUST be plain text but MAY be interpreted using markdown syntax.
+Graphs and libraries SHOULD be populated with documentation strings, which MAY be interpreted using markdown syntax. HTML and other text-markup languages MUST NOT be used in documentation strings.
 
-__TODO: Define which markdown syntax to support.__
+__TODO: Define which specific markdown syntax to support.__
 
 #### Metadata
 
@@ -60,7 +60,7 @@ The following are optional metadata properties of a model graph or library:
 
 #### Names Within a Graph
 
-Names of nodes, inputs, outputs, initializers, attributes, and (in the case of graphs that are found within function definitions) parameters MUST be unique within that graph. Names of functions may overlap with other names, but a function MUST NOT have a name that can also be the name of an operator. 
+Names of nodes, inputs, outputs, initializers, attributes, and (in the case of graphs that are found within function definitions) parameters MUST be unique within that graph. Names of graph and library functions and operators share a namespace and MUST therefore be unique.  
 
 All names MUST adhere to C identifier syntax rules.
 
@@ -80,9 +80,9 @@ Computation nodes are comprised of a name, a list of named inputs, a list of nam
 
 Edges in the computation graph are established by outputs of one node being referenced by name in the inputs of a subsequent node. Node, input, and output names MUST be unique within the graph. For a function definition, the names MUST be unique within the function definition's graph. Input nodes may also refer to declared graph inputs and graph initializers. Graph outputs refer to a subset of node outputs.
 
-The list of input names may be longer than the list of parameters accepted by an operator that accepts more than one input value for a given parameter. To associate the input list with operator parameters, a separate list is used to define how many inputs are to be associated with each parameter. The inputs are matched with parameters left-to-right.
+The list of input names may sometimes be longer than the list of parameters accepted by an operator that accepts more than one input value for a given parameter. To associate the input list with operator parameters, a separate list is used to define how many inputs are to be associated with each parameter. The inputs are matched with parameters left-to-right.
 
-For example, an operator taking two arguments may be passed five values. In this example, an arg_count list '[2,3]' would mean that the first two inputs are associated with the first operator parameter, and the last three inputs with the second parameter.
+For example, an operator taking two arguments may be passed five values. In this example, an arg_count list '[2,3]' would mean that the first two inputs are associated with the first operator parameter, and the last three inputs with the second parameter. The input argument count list MUST be populated and its length MUST match the number of formal parameters of the operator.
 
 Control inputs are used to establish edges in the computation graph that are based on other concerns than data dependencies. Inference runtime implementations MAY choose to ignore control edges when scheduling computations.
 
