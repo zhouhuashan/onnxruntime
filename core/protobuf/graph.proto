@@ -129,6 +129,10 @@ message GraphProto {
   // Each FunctionDefProto in function MUST have a unique name. 
   repeated FunctionDefProto function = 11;
 
+  // The externally defined operators declared by this graph. 
+  repeated OperatorDeclProto operator = 17;
+    
+    
   // Argument information for input/output of this graph.
   // Each ArgInfoProto corresponds one-to-one by position with the 
   // input or output tensor of the graph.
