@@ -10,7 +10,7 @@ function(RELATIVE_PROTOBUF_GENERATE_CPP SRCS HDRS ROOT_DIR)
     message(${FIL})
     set(ABS_FIL ${ROOT_DIR}/${FIL})
     get_filename_component(FIL_WE ${FIL} NAME_WE)
-    get_filename_component(FIL_DIR ${ABS_FIL} PATH)
+    get_filename_component(FIL_DIR ${ABS_FIL} DIRECTORY)
     file(RELATIVE_PATH REL_DIR ${ROOT_DIR} ${FIL_DIR})
 
     list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${REL_DIR}/${FIL_WE}.pb.cc")
@@ -31,12 +31,12 @@ function(RELATIVE_PROTOBUF_GENERATE_CPP SRCS HDRS ROOT_DIR)
   set(${HDRS} ${${HDRS}} PARENT_SCOPE)
 endfunction()
 
-file(GLOB_RECURSE commonIR_protos_src RELATIVE ${CMAKE_CURRENT_BINARY_DIR}/../..
-    "${CMAKE_CURRENT_BINARY_DIR}/../../core/protobuf/*.proto"
+file(GLOB_RECURSE lotusIR_protos_src RELATIVE ${LOTUSIR_ROOT}
+    "${LOTUSIR_ROOT}/core/protobuf/*.proto"
 )
 
 RELATIVE_PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
-     ${CMAKE_CURRENT_BINARY_DIR}/../.. ${commonIR_protos_src}
+    ${LOTUSIR_ROOT} ${lotusIR_protos_src}
 )
 
-add_library(commonIR_protos ${PROTO_SRCS} ${PROTO_HDRS})
+add_library(lotusIR_protos ${PROTO_SRCS} ${PROTO_HDRS})

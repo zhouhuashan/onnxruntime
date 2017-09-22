@@ -1,13 +1,14 @@
 #include "op.h"
+#include "utils.h"
 
-namespace CommonIR
+namespace LotusIR
 {
     InferenceContext::InferenceContext(const Node* p_node,
-        const OperatorRegistry* p_opRegistry,
+        const OperatorSchema* p_opSchema,
         const std::vector<NodeArg>* p_inputs,
         std::vector<NodeArg>* p_outputs)
         : m_node(p_node),
-        m_opRegistry(p_opRegistry),
+        m_opSchema(p_opSchema),
         m_inputs(p_inputs),
         m_outputs(p_outputs)
     {
@@ -18,9 +19,9 @@ namespace CommonIR
         return m_node;
     }
 
-    const OperatorRegistry* InferenceContext::GetOp() const
+    const OperatorSchema* InferenceContext::GetOp() const
     {
-        return m_opRegistry;
+        return m_opSchema;
     }
 
     const std::vector<NodeArg>* InferenceContext::GetInputs() const
@@ -33,101 +34,227 @@ namespace CommonIR
         return m_outputs;
     }
 
-    OperatorRegistrySetter&
-        OperatorRegistrySetter::Name(const std::string& p_opName)
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Name(const std::string& p_opName)
     {
         m_name = p_opName;
         return *this;
     }
 
-    OperatorRegistrySetter&
-        OperatorRegistrySetter::Description(const std::string& p_description)
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Description(const std::string& p_description)
     {
         m_description = p_description;
         return *this;
     }
 
-    OperatorRegistrySetter&
-        OperatorRegistrySetter::Input(const std::string& p_input)
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Input(const std::string& p_inputName,
+            const std::string& p_type,
+            const std::string& p_description)
     {
-        m_inputs.push_back(p_input);
+        m_inputs.push_back(std::make_tuple(p_inputName, p_type, p_description));
         return *this;
     }
 
-    OperatorRegistrySetter&
-        OperatorRegistrySetter::Output(const std::string& p_output)
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Output(const std::string& p_outputName,
+            const std::string& p_type,
+            const std::string& p_description)
     {
-        m_outputs.push_back(p_output);
+        m_outputs.push_back(std::make_tuple(p_outputName, p_type, p_description));
         return *this;
     }
 
-    OperatorRegistrySetter&
-        OperatorRegistrySetter::Attr(const std::string& p_attr)
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description)
     {
-        m_attributes.push_back(p_attr);
+        m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, AttributeProto()));
         return *this;
     }
 
-    OperatorRegistrySetter&
-        OperatorRegistrySetter::SetShapeInferenceFunc(
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description,
+            const int64_t& p_defaultValue)
+    {
+        AttributeProto a;
+        a.set_name(p_attrName);
+        a.set_i(p_defaultValue);
+        m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, a));
+        return *this;
+    }
+
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::vector<int64_t>& p_defaultValue)
+    {
+        AttributeProto a;
+        a.set_name(p_attrName);
+        for (const auto& v : p_defaultValue)
+        {
+            a.add_ints(v);
+        }
+        m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, a));
+        return *this;
+    }
+
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description,
+            const float& p_defaultValue)
+    {
+        AttributeProto a;
+        a.set_name(p_attrName);
+        a.set_f(p_defaultValue);
+        m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, a));
+        return *this;
+    }
+
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::vector<float>& p_defaultValue)
+    {
+        AttributeProto a;
+        a.set_name(p_attrName);
+        for (const auto& v : p_defaultValue)
+        {
+            a.add_floats(v);
+        }
+        m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, a));
+        return *this;
+    }
+
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::string& p_defaultValue)
+    {
+        AttributeProto a;
+        a.set_name(p_attrName);
+        a.set_s(p_defaultValue);
+        m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, a));
+        return *this;
+    }
+
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description,
+            const std::vector<std::string>& p_defaultValue)
+    {
+        AttributeProto a;
+        a.set_name(p_attrName);
+        for (const auto& v : p_defaultValue)
+        {
+            a.add_strings(v);
+        }
+        m_attributes.push_back(make_tuple(p_attrName, p_attrType, p_description, a));
+        return *this;
+    }
+
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::TypeConstraint(const std::string& p_typeName,
+            const std::vector<std::string>& p_constraints,
+            const std::string& p_description)
+    {
+        m_constraints.push_back(std::make_tuple(p_typeName, p_constraints, p_description));
+        return *this;
+    }
+
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::SetShapeInferenceFunc(
             ShapeInferenceFunc p_shapeInferFunc)
     {
         m_shapeInferFunc = p_shapeInferFunc;
         return *this;
     }
 
-    OperatorRegistrySetter&
-        OperatorRegistrySetter::SetAttributeParser(
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::SetAttributeParser(
             AttributeParser p_attrParser)
     {
         m_parser = p_attrParser;
         return *this;
     }
 
-    OperatorRegistry::FormalParameter::FormalParameter(
-        const std::string& p_paramStr)
+    OperatorSchema::FormalParameter::FormalParameter(
+        const std::string& p_name, const std::string& p_type,
+        const std::string& p_description,
+        const TypeConstraintMap& p_constraintMap)
+        : m_name(p_name), m_typeStr(p_type), m_description(p_description)
     {
-        // TODO: add implementation.
+        auto it = p_constraintMap.find(p_type);
+        if (it != p_constraintMap.end())
+        {
+            m_types = it->second.first;
+        }
+        else
+        {
+            m_types.emplace(Utils::OpUtils::ToType(m_typeStr));
+        }
     }
 
-    const std::string& OperatorRegistry::FormalParameter::GetName() const
+    const std::string& OperatorSchema::FormalParameter::GetName() const
     {
         return m_name;
     }
 
-    size_t OperatorRegistry::FormalParameter::GetTypes(
-        const TypeProto** p_parameterTypes) const
+    const DataTypeSet& OperatorSchema::FormalParameter::GetTypes() const
     {
-        if (nullptr == p_parameterTypes)
-        {
-            return 0;
-        }
-
-        *p_parameterTypes = m_types.data();
-        return m_types.size();
+        return m_types;
     }
 
-    const std::string& OperatorRegistry::FormalParameter::GetTypeStr() const
+    const std::string& OperatorSchema::FormalParameter::GetTypeStr() const
     {
         return m_typeStr;
     }
 
-    OperatorRegistry::Attribute::Attribute(const std::string& p_attributeStr)
+    const std::string& OperatorSchema::FormalParameter::GetDescription() const
     {
-        // TODO: add implementation.
+        return m_description;
     }
 
-    const std::string& OperatorRegistry::Attribute::GetName() const
+    OperatorSchema::Attribute::Attribute(
+        const std::string& p_attrName,
+        AttrType p_type,
+        const std::string& p_description,
+        const AttributeProto& p_defaultVal)
+        : m_name(p_attrName), m_type(p_type), m_description(p_description),
+        m_hasDefaultValue(true)
+    {
+        m_allowedValues.push_back(p_defaultVal);
+    }
+
+    OperatorSchema::Attribute::Attribute(
+        const std::string& p_attrName,
+        AttrType p_type,
+        const std::string& p_description)
+        : m_name(p_attrName), m_type(p_type), m_description(p_description),
+        m_hasDefaultValue(false)
+    {
+    }
+
+    const std::string& OperatorSchema::Attribute::GetName() const
     {
         return m_name;
     }
 
-    const TypeProto& OperatorRegistry::Attribute::GetType() const
+    AttrType OperatorSchema::Attribute::GetType() const
     {
         return m_type;
     }
 
-    bool OperatorRegistry::Attribute::HasDefaultValue(
+    bool OperatorSchema::Attribute::HasDefaultValue(
         const AttributeProto** p_value) const
     {
         if (m_hasDefaultValue
@@ -139,86 +266,156 @@ namespace CommonIR
         return m_hasDefaultValue;
     }
 
-    size_t OperatorRegistry::Attribute::GetAllowedValues(
-        const AttributeProto** p_values) const
-    {
-        if (nullptr == p_values)
-        {
-            return 0;
-        }
-
-        *p_values = m_allowedValues.data();
-        return m_allowedValues.size();
-    }
-
-    OperatorRegistry::OperatorRegistry(const OperatorRegistrySetter& p_setter)
+    OperatorSchema::OperatorSchema(const OperatorSchemaSetter& p_setter)
         : m_name(p_setter.m_name),
         m_description(p_setter.m_description),
         m_shapeInferFunc(p_setter.m_shapeInferFunc),
         m_parser(p_setter.m_parser)
     {
-        for (auto input : p_setter.m_inputs)
+        // Process type constraints.
+        for (const auto& constraint : p_setter.m_constraints)
         {
-            m_inputs.push_back(FormalParameter(input));
+            std::string name;
+            std::vector<std::string> types;
+            std::string desc;
+            std::tie(name, types, desc) = constraint;
+
+            auto it = m_typeConstraintMap.find(name);
+            if (it == m_typeConstraintMap.end())
+            {
+                DataTypeSet d;
+                for (const auto& t : types)
+                {
+                    d.insert(Utils::OpUtils::ToType(t));
+                }
+                m_typeConstraintMap.insert(std::make_pair(name, std::make_pair(d, desc)));
+            }
+            else
+            {
+                // already a constraint with the same name. error.
+            }
         }
 
-        for (auto output : p_setter.m_outputs)
+        m_inputs.reserve(p_setter.m_inputs.size());
+        for (const auto& input : p_setter.m_inputs)
         {
-            m_outputs.push_back(FormalParameter(output));
+            std::string name;
+            std::string type;
+            std::string desc;
+            std::tie(name, type, desc) = input;
+            m_inputs.push_back(FormalParameter(name, type, desc, m_typeConstraintMap));
         }
 
-        for (auto attr : p_setter.m_attributes)
+        m_outputs.reserve(p_setter.m_outputs.size());
+        for (const auto& output : p_setter.m_outputs)
         {
-            m_attributes.push_back(Attribute(attr));
+            std::string name;
+            std::string type;
+            std::string desc;
+            std::tie(name, type, desc) = output;
+            m_outputs.push_back(FormalParameter(name, type, desc, m_typeConstraintMap));
+        }
+
+        m_attributes.reserve(p_setter.m_attributes.size());
+        for (const auto& attr : p_setter.m_attributes)
+        {
+            std::string name;
+            AttrType type;
+            std::string desc;
+            AttributeProto a;
+            std::tie(name, type, desc, a) = attr;
+            if (a.name() == name)
+            {
+                m_attributes.push_back(Attribute(name, type, desc, a));
+            }
+            else
+            {
+                m_attributes.push_back(Attribute(name, type, desc));
+            }
         }
     }
 
-    const std::string& OperatorRegistry::GetName() const
+    const std::string& OperatorSchema::GetName() const
     {
         return m_name;
     }
 
-    const std::string& OperatorRegistry::GetDescription() const
+    const std::string& OperatorSchema::GetDescription() const
     {
         return m_description;
     }
 
-    const std::vector<OperatorRegistry::FormalParameter>&
-        OperatorRegistry::GetInputs() const
+    const std::vector<OperatorSchema::FormalParameter>&
+        OperatorSchema::GetInputs() const
     {
         return m_inputs;
     }
 
-    const std::vector<OperatorRegistry::FormalParameter>&
-        OperatorRegistry::GetOutputs() const
+    const std::vector<OperatorSchema::FormalParameter>&
+        OperatorSchema::GetOutputs() const
     {
         return m_outputs;
     }
 
-    const std::vector<OperatorRegistry::Attribute>&
-        OperatorRegistry::GetAttributes() const
+    const std::vector<OperatorSchema::Attribute>&
+        OperatorSchema::GetAttributes() const
     {
         return m_attributes;
     }
 
-    ShapeInferenceFunc OperatorRegistry::GetShapeInferenceFunc() const
+    ShapeInferenceFunc OperatorSchema::GetShapeInferenceFunc() const
     {
         return m_shapeInferFunc;
     }
 
-    AttributeParser OperatorRegistry::GetAttributeParser() const
+    AttributeParser OperatorSchema::GetAttributeParser() const
     {
         return m_parser;
     }
 
-    OperatorRegistryFactory::RegisterOnce::RegisterOnce(
-        const OperatorRegistrySetter& p_opRegistry)
+    const TypeConstraintMap& OperatorSchema::GetTypeConstraintMap() const
     {
-        OperatorRegistryFactory::Get()->Register(p_opRegistry);
+        return m_typeConstraintMap;
     }
 
-    bool OperatorRegistryFactory::TryGetOp(const std::string& p_name,
-        const OperatorRegistry** p_opRegistry) const
+    bool OperatorSchema::IsValidAttribute(const AttributeProto& p_attr)
+    {
+        if (p_attr.name().empty())
+        {
+            return false;
+        }
+
+        int num_fields =
+            p_attr.has_f() +
+            p_attr.has_i() +
+            p_attr.has_s() +
+            p_attr.has_t() +
+            p_attr.has_g() +
+            (p_attr.floats_size() > 0) +
+            (p_attr.ints_size() > 0) +
+            (p_attr.strings_size() > 0) +
+            (p_attr.tensors_size() > 0) +
+            (p_attr.graphs_size() > 0) +
+            p_attr.has_type() +
+            (p_attr.types_size() > 0) +
+            p_attr.has_shape() +
+            (p_attr.shapes_size() > 0);
+
+        if (num_fields == 1)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    OperatorSchemaRegistry::RegisterOnce::RegisterOnce(
+        const OperatorSchemaSetter& p_opSchema)
+    {
+        OperatorSchemaRegistry::Get()->Register(p_opSchema);
+    }
+
+    bool OperatorSchemaRegistry::TryGetOp(const std::string& p_name,
+        const OperatorSchema** p_opRegistry) const
     {
         if (nullptr == p_opRegistry)
         {
@@ -234,24 +431,100 @@ namespace CommonIR
         return true;
     }
 
-    void OperatorRegistryFactory::Register(
-        const OperatorRegistry& p_opRegistry)
+    Status OperatorSchemaRegistry::Register(
+        const OperatorSchema& p_opSchema)
     {
-        auto iter = m_operatorRegistryMap.find(p_opRegistry.GetName());
+        auto iter = m_operatorRegistryMap.find(p_opSchema.GetName());
         if (m_operatorRegistryMap.end() != iter)
         {
-            // TODO: add "Status" class to return bad status in this case.
+            Status status(false,
+                "Error: operator schema with same name ("
+                + p_opSchema.GetName() + ") exists.");
+            return status;
         }
         else
         {
-            m_operatorRegistryMap[p_opRegistry.GetName()] = p_opRegistry;
+            m_operatorRegistryMap[p_opSchema.GetName()] = p_opSchema;
+            return Status::OK();
         }
     }
 
-    OperatorRegistryFactory* OperatorRegistryFactory::Get()
+    OperatorSchemaRegistry* OperatorSchemaRegistry::Get()
     {
-        static OperatorRegistryFactory* s_factory
-            = new OperatorRegistryFactory();
-        return s_factory;
+        static OperatorSchemaRegistry* s_registry
+            = new OperatorSchemaRegistry();
+        return s_registry;
+    }
+
+    Status TypeUtils::GetType(const AttributeProto& p_attr, AttrType& p_type)
+    {
+        if (!OperatorSchema::IsValidAttribute(p_attr))
+        {
+            return Status(false, "Invalid AttributeProto.");
+        }
+
+        if (p_attr.has_f())
+        {
+            p_type = AttrType::FLOAT;
+        }
+        else if (p_attr.has_i())
+        {
+            p_type = AttrType::INT;
+        }
+        else if (p_attr.has_s())
+        {
+            p_type = AttrType::STRING;
+        }
+        else if (p_attr.has_t())
+        {
+            p_type = AttrType::TENSOR;
+        }
+        else if (p_attr.has_g())
+        {
+            p_type = AttrType::GRAPH;
+        }
+        else if (p_attr.floats_size())
+        {
+            p_type = AttrType::FLOATS;
+        }
+        else if (p_attr.ints_size())
+        {
+            p_type = AttrType::INTS;
+        }
+        else if (p_attr.strings_size())
+        {
+            p_type = AttrType::STRINGS;
+        }
+        else if (p_attr.tensors_size())
+        {
+            p_type = AttrType::TENSORS;
+        }
+        else if (p_attr.graphs_size())
+        {
+            p_type = AttrType::GRAPHS;
+        }
+        else if (p_attr.has_type())
+        {
+            p_type = AttrType::TYPE;
+        }
+        else if (p_attr.types_size())
+        {
+            p_type = AttrType::TYPES;
+        }
+        else if (p_attr.has_shape())
+        {
+            p_type = AttrType::SHAPE;
+        }
+        else if (p_attr.has_shape())
+        {
+            p_type = AttrType::SHAPES;
+        }
+        else
+        {
+            p_type = AttrType::NONE;
+            return Status(false, "Invalid AttributeProto.");
+        }
+
+        return Status::OK();
     }
 }

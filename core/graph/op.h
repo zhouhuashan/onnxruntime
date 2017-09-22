@@ -1,14 +1,61 @@
-#ifndef COMMONIR_OP_H
-#define COMMONIR_OP_H
+#ifndef CORE_GRAPH_OP_H
+#define CORE_GRAPH_OP_H
 
 #include <functional>
 #include <unordered_map>
 
 #include "graph.h"
+#include "utils.h"
 
-namespace CommonIR
+namespace LotusIR
 {
-    class OperatorRegistry;
+    class OperatorSchema;
+
+    enum class AttrType {
+        NONE,
+        FLOAT,
+        INT,
+        STRING,
+        GRAPH,
+        TENSOR,
+        TYPE,
+        SHAPE,
+        FLOATS,
+        INTS,
+        STRINGS,
+        GRAPHS,
+        TENSORS,
+        TYPES,
+        SHAPES
+    };
+
+    // This string array should exactly match the AttrType defined above.
+    static const std::string c_attrTypeStr[14] =
+    {
+        "FLOAT",
+        "INT",
+        "STRING",
+        "GRAPH",
+        "TENSOR",
+        "TYPE",
+        "SHAPE",
+        "FLOATS",
+        "INTS",
+        "STRINGS",
+        "GRAPHS",
+        "TENSORS",
+        "TYPES",
+        "SHAPES"
+    };
+
+    class TypeUtils
+    {
+    public:
+
+        // Get attribute type given attribute proto data.
+        static Status GetType(const AttributeProto& p_attr, AttrType& p_type);
+
+    };
 
     // A context to contain information for shape inference function.
     // It includes the operator registry, input arguments definition,
@@ -20,13 +67,13 @@ namespace CommonIR
         // TODO: Add input tensors into constructor.
         // In some cases, node evaluation will be needed to get output shapes.
         InferenceContext(const Node* p_node,
-            const OperatorRegistry* p_opRegistry,
+            const OperatorSchema* p_opSchema,
             const std::vector<NodeArg>* p_inputs,
             std::vector<NodeArg>* p_outputs);
 
         const Node* GetNode() const;
 
-        const OperatorRegistry* GetOp() const;
+        const OperatorSchema* GetOp() const;
 
         const std::vector<NodeArg>* GetInputs() const;
 
@@ -36,7 +83,7 @@ namespace CommonIR
 
         const Node* m_node;
 
-        const OperatorRegistry* m_opRegistry;
+        const OperatorSchema* m_opSchema;
 
         const std::vector<NodeArg>* m_inputs;
 
@@ -45,7 +92,7 @@ namespace CommonIR
 
 
     // Shape inference function define.
-    typedef std::function<bool(InferenceContext&)> ShapeInferenceFunc;
+    typedef std::function<Status(InferenceContext&)> ShapeInferenceFunc;
 
     // An attribute parser - it's specified when registering an operator.
     // The parser is designed and used in two ways.
@@ -55,40 +102,71 @@ namespace CommonIR
     //    which makes it be easier to access node attributes.
     // TODO: to implement the 2nd point above, NodeAttributes should be changed
     // to contain a <T> field, which is structured attributes.
-    typedef std::function<bool(NodeAttributes&)> AttributeParser;
+    typedef std::function<Status(const NodeAttributes&)> AttributeParser;
 
+    typedef std::tuple<std::string, std::string, std::string> InputOutputParam;
+    typedef std::tuple<std::string, AttrType, std::string, AttributeProto> AttrParam;
+    typedef std::tuple<std::string, std::vector<std::string>, std::string> TypeConstraintParam;
+
+#define ATTR_SETTER_INTERFACE(TypeName) \
+    OperatorSchemaSetter& Attr(const std::string& p_attrName, \
+                               AttrType p_attrType, \
+                               const std::string& p_description, \
+                               const TypeName& p_defaultValue); \
+    OperatorSchemaSetter& Attr(const std::string& p_attrName, \
+                               AttrType p_attrType, \
+                               const std::string& p_description, \
+                               const std::vector<TypeName>& p_defaultValues); \
     // Operator registry setter helper.
     // This is used in "REGISTER_OP" macro, to separate setters from getters
-    // in OperatorRegistry.
-    class OperatorRegistrySetter
+    // in OperatorSchema.
+    class OperatorSchemaSetter
     {
     public:
 
-        OperatorRegistrySetter() = default;
+        OperatorSchemaSetter() = default;
 
-        OperatorRegistrySetter& Name(const std::string& p_opName);
+        OperatorSchemaSetter& Name(const std::string& p_opName);
 
-        OperatorRegistrySetter& Description(const std::string& p_description);
+        OperatorSchemaSetter& Description(const std::string& p_description);
 
-        OperatorRegistrySetter& Input(const std::string& p_input);
+        OperatorSchemaSetter& Input(const std::string& p_inputName,
+            const std::string& p_type,
+            const std::string& p_description);
 
-        OperatorRegistrySetter& Output(const std::string& p_output);
+        OperatorSchemaSetter& Output(const std::string& p_outputName,
+            const std::string& p_type,
+            const std::string& p_description);
 
-        OperatorRegistrySetter& Attr(const std::string& p_attr);
+        OperatorSchemaSetter& Attr(const std::string& p_attrName,
+            AttrType p_attrType,
+            const std::string& p_description);
+
+        ATTR_SETTER_INTERFACE(int64_t)
+        ATTR_SETTER_INTERFACE(float)
+        ATTR_SETTER_INTERFACE(std::string)
+        ATTR_SETTER_INTERFACE(TensorProto)
+        ATTR_SETTER_INTERFACE(GraphProto)
+        ATTR_SETTER_INTERFACE(TypeProto)
+        ATTR_SETTER_INTERFACE(TensorShapeProto)
+
+        OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
+            const std::vector<std::string>& p_constraints,
+            const std::string& p_description);
 
         // Shape inference function will be used to infer outputs' shape with
         // inputs' shape.
-        OperatorRegistrySetter& SetShapeInferenceFunc(
+        OperatorSchemaSetter& SetShapeInferenceFunc(
             ShapeInferenceFunc p_shapeInferFunc);
 
         // Attribute parser will be used to parse Node's attributes to see
         // whether Node attributes are matching operator attributes definition.
-        OperatorRegistrySetter& SetAttributeParser(
+        OperatorSchemaSetter& SetAttributeParser(
             AttributeParser p_attrParser);
 
     private:
 
-        friend class OperatorRegistry;
+        friend class OperatorSchema;
 
         // Operator name.
         std::string m_name;
@@ -97,13 +175,16 @@ namespace CommonIR
         std::string m_description;
 
         // Operator input formal parameters.
-        std::vector<std::string> m_inputs;
+        std::vector<InputOutputParam> m_inputs;
 
         // Operator output formal parameters.
-        std::vector<std::string> m_outputs;
+        std::vector<InputOutputParam> m_outputs;
 
-        // Operator attributes' definitions.
-        std::vector<std::string> m_attributes;
+        // Operator attribute definitions.
+        std::vector<AttrParam> m_attributes;
+
+        // Operator type constraints.
+        std::vector<TypeConstraintParam> m_constraints;
 
         // Shape inference function.
         // Its functionality is inferring outputs' shape given inputs' shape.
@@ -113,11 +194,14 @@ namespace CommonIR
         AttributeParser m_parser;
     };
 
+    typedef std::unordered_set<PTYPE> DataTypeSet;
+    typedef std::unordered_map<std::string, std::pair<DataTypeSet, std::string>> TypeConstraintMap;
+
     // Operator registry specification.
     // It defines input formal parameter, output formal parameters and
     // attributes.
     // Once an operator registry created, it's "Read-Only".
-    class OperatorRegistry
+    class OperatorSchema
     {
     public:
 
@@ -127,22 +211,22 @@ namespace CommonIR
         public:
 
             // Constructor.
-            // The syntax used to specify a formal parameter in one string
-            // is: <parameter name> : <parameter type>.
-            // <parameter type> could be a supported data type or an attribute
-            // key, which maps to a set of supported data types. Examples:
-            // "p_oneNumber:int", "p_oneNumber:T".
-            explicit FormalParameter(const std::string& p_paramStr);
+            explicit FormalParameter(const std::string& p_name,
+                const std::string& p_type,
+                const std::string& p_description,
+                const TypeConstraintMap& p_constraintMap = TypeConstraintMap());
 
             // Get formal parameter name.
             const std::string& GetName() const;
 
-            // Get formal parameter types.
-            // Return number of parameter types supported for this parameter.
-            size_t GetTypes(const TypeProto** p_parameterTypes) const;
+            // Get supported data types.
+            const DataTypeSet& GetTypes() const;
 
             // Get formal parameter type string.
             const std::string& GetTypeStr() const;
+
+            // Get formal parameter description.
+            const std::string& GetDescription() const;
 
         private:
 
@@ -154,12 +238,15 @@ namespace CommonIR
             // A set of data types supported for <*this> formal parameter.
             // It should contain at least one element if this formal parameter
             // is good.
-            std::vector<TypeProto> m_types;
+            DataTypeSet m_types;
 
             // The <parameter type> string specified when registring an op.
-            // It could be a supported data type or an attribute key, which
+            // It could be a supported data type or a type constraint key, which
             // maps to a set of supported data types.
             std::string m_typeStr;
+
+            // Formal parameter description
+            std::string m_description;
         };
 
         // Attribute representation, including name, type, and allowed values.
@@ -170,34 +257,25 @@ namespace CommonIR
         public:
 
             // Constructor.
-            // The syntax used to specify an attribute in one string is:
-            // [*]<attribute name> : <attribute type> [= {<attribute value>[, <attribute value>]}]
-            // a. [*] means the attribute has to be specified in node
-            //    attributes. No default value provided in this case. The value
-            //    set (if specified) here are allowed values.
-            // b. If no attribute value specified ([*] should be added in this
-            //    case), it means the attribute value should be fetched from
-            //    node attributes.
-            // c. If a set of attribute values (allowed values) are specified,
-            //    it means the attribute value specified in node attributes
-            //    should be one of this set, or the attribute value is NOT
-            //    specified in node attributes and the first (default) value in
-            //    this set will be used (no [*] specified in this case).
-            explicit Attribute(const std::string& p_attributeStr);
+            explicit Attribute(const std::string& p_attrName,
+                AttrType p_type,
+                const std::string& p_description);
+
+            // Constructor with default value.
+            explicit Attribute(const std::string& p_attrName,
+                AttrType p_type,
+                const std::string& p_description,
+                const AttributeProto& p_defaultVal);
 
             // Get attribute name.
             const std::string& GetName() const;
 
             // Get attribute type.
-            const TypeProto& GetType() const;
+            AttrType GetType() const;
 
             // Get to know whether this attribute has default value,
             // if yes, <p_value> will be assigned to be the default value.
             bool HasDefaultValue(const AttributeProto** p_value) const;
-
-            // Get attribute values.
-            // Return number of allowed values specifed.
-            size_t GetAllowedValues(const AttributeProto** p_values) const;
 
         private:
 
@@ -207,7 +285,10 @@ namespace CommonIR
             std::string m_name;
 
             // Attribute type.
-            TypeProto m_type;
+            AttrType m_type;
+
+            // Attribute description.
+            std::string m_description;
 
             // Flag indicates whether a default value specified.
             // It it's true, the first element of <m_allowedValues> is the
@@ -218,11 +299,13 @@ namespace CommonIR
             std::vector<AttributeProto> m_allowedValues;
         };
 
+        static bool IsValidAttribute(const AttributeProto& p_attribute);
+
         // Constructor.
-        OperatorRegistry() = default;
+        OperatorSchema() = default;
 
         // Conversion constructor.
-        OperatorRegistry(const OperatorRegistrySetter& p_setter);
+        OperatorSchema(const OperatorSchemaSetter& p_setter);
 
         // Get operator name.
         const std::string& GetName() const;
@@ -245,6 +328,9 @@ namespace CommonIR
         // Get attribute parser.
         AttributeParser GetAttributeParser() const;
 
+        // Get type constraint map.
+        const TypeConstraintMap& GetTypeConstraintMap() const;
+
     private:
 
         // Operator name.
@@ -262,6 +348,9 @@ namespace CommonIR
         // Operator attributes' definitions.
         std::vector<Attribute> m_attributes;
 
+        // Map from constraint name to DataTypeSet
+        TypeConstraintMap m_typeConstraintMap;
+
         // Shape inference function.
         // Its functionality is inferring outputs' shape given inputs' shape.
         ShapeInferenceFunc m_shapeInferFunc;
@@ -270,50 +359,53 @@ namespace CommonIR
         AttributeParser m_parser;
     };
 
-    // Operator registry factory. A singleton factory to manage all operator
-    // registries.
-    class OperatorRegistryFactory
+    // Operator schema registry. A singleton registry to manage all operator
+    // schemas.
+    class OperatorSchemaRegistry
     {
     public:
 
         // Helper function providing a way to call
-        // OperatorRegistryFactory::Register().
+        // OperatorSchemaFactory::Register().
         class RegisterOnce
         {
         public:
 
-            RegisterOnce(const OperatorRegistrySetter& p_opRegistry);
+            RegisterOnce(const OperatorSchemaSetter& p_opRegistry);
         };
 
         // Try to get operator with specified operator name.
         bool TryGetOp(const std::string& p_name,
-            const OperatorRegistry** p_opRegistry) const;
+            const OperatorSchema** p_opRegistry) const;
 
         // Register an operator.
-        void Register(const OperatorRegistry& p_opRegistry);
+        Status Register(const OperatorSchema& p_opRegistry);
 
         // Get the global operator registry factory instance.
-        static OperatorRegistryFactory* Get();
+        static OperatorSchemaRegistry* Get();
 
     private:
 
-        OperatorRegistryFactory() = default;
+        OperatorSchemaRegistry() = default;
 
-        // An operator name to operator registry map.
-        std::unordered_map<std::string, OperatorRegistry> m_operatorRegistryMap;
+        // An operator name to operator schema map.
+        std::unordered_map<std::string, OperatorSchema> m_operatorRegistryMap;
     };
 
-#define REGISTER_OP(OpName) REGISTER_OP_UNIQ(__COUNTER__, OpName)
-#define REGISTER_OP_UNIQ(Counter, OpName)                      \
-    static OperatorRegistryFactory::RegisterOnce op_##Counter  \
-    = OperatorRegistrySetter().Name(#OpName)
+#define REGISTER_OP(OpName) REGISTER_OP_UNIQ_HELPER(__COUNTER__, OpName)
+#define REGISTER_OP_UNIQ_HELPER(Counter, OpName) REGISTER_OP_UNIQ(Counter, OpName)
+#define REGISTER_OP_UNIQ(Counter, OpName)                     \
+    static OperatorSchemaRegistry::RegisterOnce op_##Counter  \
+    = OperatorSchemaSetter().Name(OpName)
 
-    // Operator registering example.
-    // REGISTER_OP("Add").Description("An operator to sum two numbers");
-    //    .Input("input_1:T")
-    //    .Input("input_2:T")
-    //    .Output("output_1:T")
-    //    .Attr("*T:List<TypeProto>={int, float, double}");
+    // Operator registration example.
+    // REGISTER_OP("Add").Description("An operator to sum two float numbers.")
+    //   .Input("input_1", "T", "docstr for input_1.")
+    //   .Input("input_2", "T", "docstr for input_2.")
+    //   .Output("output_1", "T", "docstr for output_1.")
+    //   .TypeConstraint("T", { "float16", "float32", "float64" }, "Constrain input and output types to floats.");
+
+
 }
 
 #endif

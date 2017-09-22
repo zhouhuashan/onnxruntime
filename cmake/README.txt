@@ -4,7 +4,7 @@ Generating the Build System
 
 Prerequisites:
 - Tools
-  - CMake
+  - CMake: https://cmake.org/download/
   - Git
 
 mkdir build
