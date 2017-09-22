@@ -735,6 +735,14 @@ namespace LotusIR
         std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
         /*out*/ std::set<std::string>& p_funcDefNames)
     {
+        m_graphProto.clear_input();
+        m_graphProto.clear_input_arg_info();
+        m_graphProto.clear_output();
+        m_graphProto.clear_output_arg_info();
+
+        // Init graph output args with all node output args.
+        auto graphOutputArgs = p_outputArgs;
+
         for (auto nodeIndex : p_nodesInToplogicalOrder)
         {
             if (IsSourceNode(nodeIndex)
@@ -795,15 +803,35 @@ namespace LotusIR
                         auto outputArgsIter = p_outputArgs.find(inputDef.Name());
                         if (p_outputArgs.end() == outputArgsIter)
                         {
-                            // This input arg should be fed by callers.
-                            // This input arg should have type information.
-                            if (!inputDef.m_nodeArgTypeAndShape.has_type())
+                            // This input arg should either be fed by callers,
+                            // or be in initializers.
+                            // If it's fed by callers, it's needed to have type
+                            // information defined well.
+                            auto initialTensorIter
+                                = m_nameToInitialTensor.find(inputDef.Name());
+                            if (m_nameToInitialTensor.end()
+                                == initialTensorIter)
                             {
-                                Status status(false,
-                                    "Node (" + nodeName + ") input arg ("
-                                    + inputDef.Name()
-                                    + ") does not have type information.");
-                                return status;
+                                // This input is fed by callers.
+                                if (!inputDef.m_nodeArgTypeAndShape.has_type())
+                                {
+                                    Status status(false,
+                                        "Node (" + nodeName + ") input arg ("
+                                        + inputDef.Name()
+                                        + ") does not have type information.");
+                                    return status;
+                                }
+                                *(m_graphProto.mutable_input()->Add()) = inputDef.Name();
+                                *(m_graphProto.mutable_input_arg_info()->Add()) = inputDef.ToProto();
+                            }
+                            else
+                            {
+                                // This input is fed by initializer.
+                                TypeProto initialTensorType;
+                                initialTensorType.mutable_tensor_type()->set_elem_type(
+                                    initialTensorIter->second.data_type());
+
+                                inputDef.SetType(OpUtils::ToType(initialTensorType));
                             }
                         }
                         else
@@ -814,6 +842,7 @@ namespace LotusIR
                                 = outputArgsIter->second.GetNodeArg();
 
                             inputDef.SetType(outputArgOfInputNode->Type());
+                            graphOutputArgs.erase(inputDef.Name());
                         }
 
                         // Verify the input arg type complying with operator
@@ -883,6 +912,7 @@ namespace LotusIR
                     if (typeParameterToTypeMap.empty())
                     {
                         // There's no input arg.
+
                         // The output should be read from an attribute named c_constantValue.
                         auto nodeAttributesIter
                             = node->GetAttributes().find(c_constantValue);
@@ -890,7 +920,7 @@ namespace LotusIR
                         {
                             Status status(false,
                                 "Node (" + nodeName + ") output arg value should"
-                                "be specified via node attribute '"+ c_constantValue + "'.");
+                                "be specified via node attribute '" + c_constantValue + "'.");
                             return status;
                         }
 
@@ -1037,6 +1067,14 @@ namespace LotusIR
                     return status;
                 }
             }
+        }
+
+        // Set graph outputs.
+        for (auto& outputArg : graphOutputArgs)
+        {
+            *(m_graphProto.mutable_output()->Add()) = outputArg.first;
+            *(m_graphProto.mutable_output_arg_info()->Add())
+                = outputArg.second.GetNodeArg()->ToProto();
         }
 
         return Status::OK();

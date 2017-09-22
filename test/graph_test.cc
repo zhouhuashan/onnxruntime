@@ -202,9 +202,17 @@ namespace LotusIR
             outputs.clear();
             outputs.push_back(outputArg4);
             auto node_4 = graph.AddNode("node_4", "Max_Fake", "node 4", inputs, { 3 }, outputs);
-
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
+
+            auto& graphProto = graph.ToGraphProto();
+            EXPECT_EQ(3, graphProto.input_size());
+            std::string expectedGraphInputs = " node_1_in_1, node_2_in_1, node_3_in_1";
+            EXPECT_GT(expectedGraphInputs.find(graphProto.input(0)), 0);
+            EXPECT_GT(expectedGraphInputs.find(graphProto.input(1)), 0);
+            EXPECT_GT(expectedGraphInputs.find(graphProto.input(2)), 0);
+            EXPECT_EQ("node_4_out_1", graphProto.output(0));
+            EXPECT_EQ(1, graphProto.output_size());
 
             TypeProto tensor_float;
             tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
