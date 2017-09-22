@@ -3,8 +3,7 @@
 Common IR
 =========
 
-The Common IR is an open specification that consists of the following
-components:
+The Common IR is an open specification that consists of the following components:
 
 1)  Definition of an extensible computation graph model.
 
@@ -25,7 +24,7 @@ The common IR specifies the portable, serialized format of the computation graph
 
 ### Graphs and Libraries
 
-Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Nodes have one or more inputs and one or more outputs. Each node can be a call to a built-in (intrinsic) operator, a custom operator, or a function.
+Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Nodes have one or more inputs and one or more outputs. Each node can be a call to an operator or a function.
 
 A serialized graph is comprised of a set of metadata fields, a set of model parameters, a list of computation nodes, a list of function definitions, and a list of operator declarations. Libraries are  comprised of metadata fields, a list of function definitions, and a list of operator declarations. A library does __not__ contain graphs outside of its function definitions.
 
@@ -99,9 +98,9 @@ Each library reference is in the form of a URI or relative path that represents 
 
 ### Operators
 
-Operators are explcitly declared within graphs and libraries with full type information on all operands -- arguments and attributes alike. 
+All operators named within graph and library nodes MUST be explicitly declared within the graph or the transitive closure of its imported libraries. Such declerations MUST have full type information on all operands and SHOULD have shape information when applicable and possible. All operator attributes MOST also be typed. 
 
-See [Operators.md](Operators.md) for details
+See [Operators.md](Operators.md) for details on the standard set of available operators.
 
 
 Built-in operators and standard data types
@@ -124,11 +123,3 @@ The following data types are supported by the Common IR. Additional data types c
 |Collections|__list__|Lists represent dense, ordered, collections of elements that are of homogeneous types. List elements can be added to the tail, removed from the head, and accessed by integer index.|
 |Collections|__tuple__|Tuples represent dense, ordered, collections of elements of heterogeneous types. Tuple elements are accessed by integer index.|
 |Collections|__map__|Maps represent associative tables, defined by a key type and a value type, both of which MUST NOT be a collection type.|
-
-__TODO: Add maps when they are added to the .proto file.__
-
-
-Reference implementation
-------------------------
-
-An open source reference implementation of the built-in operators will be provided. This can be used for validating the correctness of custom implementations.
