@@ -159,6 +159,11 @@ message GraphProto {
   // metadata, such as an identifier for which training set this instance
   // of a graph was trained with.
 
+  // Imported libraries are referenced as a collection of strings in the form of absolute
+  // URIs or relative paths. Where such relative paths are rooted is defined by tools and
+  // runtime implementations.
+  repeated string imported_libraries = 18;  
+  
   reserved 100 to 200; // for future extensions.
 }
 
@@ -364,10 +369,6 @@ message LibraryProto {
   // An optional human-readable documentation for this graph.
   optional string doc_string = 9;
 
-//TODO: Define import/referencing mechanism to refer to a 
-//      Library from either a graph or another library
-
-
   // The operators declared by this library. 
   repeated OperatorDeclProto operator = 10;
 
@@ -380,5 +381,10 @@ message LibraryProto {
   //      LibraryProto.domain + "." + LibraryProto.name + "." OperatorDeclProto.name  
   // or
   //      LibraryProto.domain + "." + LibraryProto.name + "." FunctionDefProto.name  
+
+  // Imported libraries are referenced as a collection of strings in the form of absolute
+  // URIs or relative paths. Where such relative paths are rooted is defined by tools and
+  // runtime implementations.
+  repeated string imported_libraries = 12;  
 };
 
