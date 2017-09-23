@@ -80,23 +80,14 @@ message GraphProto {
 
   // The inputs and outputs of the graph. The list input must be input names
   // of some nodes in the graph. The list output must be output names of some
-  // nodes in the graph. For names in input that are not in initializer, their
-  // types and shapes are required.
-  //ISSUE:13807021,dbox: For input tensors that also appear in the initializer field,
-  //            do we also expose those parameters as inputs to eval?
+  // nodes in the graph. For names in input, their types and shapes are required.
   repeated string input = 3;  // namespace Value
   repeated string output = 4; // namespace Value
 
-  // An optional list of named initial values for tensors in the list of input above.
+  // An optional list of named tensor values (constants).
   // Used to pass serialized parameters for networks.
-  // Each entry specifies a value for the input whose TensorProto.name matches
-  // a name in the input. This list is a subset of input since many tensors
-  // might not have initial values. 
-  //ISSUE:13807021,onnx: Do we require at most one Tensor per input name? Given that
-  //            our evaluation model allows multiple tensors to be fed into a 
-  //            given node, I'm guessing we allow two or more tensors per
-  //            input (and also allow users to provide it). I'll tighten up
-  //            the text once we resolve. As written, it's ambiguous in ONNX.
+  // Each TensorProto entry must have a name (unique in the value name space).
+  // NOTE: These are treated as being distinct from inputs, unlike the earlier design.
   repeated TensorProto initializer = 5;
 
   // The version of the IR this graph targets. See Version enum below.
