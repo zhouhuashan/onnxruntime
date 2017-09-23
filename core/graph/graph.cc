@@ -276,7 +276,6 @@ namespace LotusIR
 
         // Set input arg count.
         p_proto.clear_input_arg_count();
-        int i = 0;
         for (auto argCount : m_inputArgCount)
         {
             *(p_proto.mutable_input_arg_count()->Add()) = argCount;
@@ -298,7 +297,7 @@ namespace LotusIR
         m_name = p_nodeProto.name();
         m_opType = p_nodeProto.op_type();
 
-        for (size_t i = 0; i < p_nodeProto.input().size(); ++i)
+        for (int i = 0; i < p_nodeProto.input().size(); ++i)
         {
             m_inputDefs.push_back(NodeArg(p_nodeProto.input(i), p_nodeProto.input_arg_info(i)));
         }
@@ -308,7 +307,7 @@ namespace LotusIR
             m_inputArgCount.push_back(argCount);
         }
 
-        for (size_t i = 0; i < p_nodeProto.output().size(); ++i)
+        for (int i = 0; i < p_nodeProto.output().size(); ++i)
         {
             m_inputDefs.push_back(NodeArg(p_nodeProto.output(i), p_nodeProto.output_arg_info(i)));
         }
@@ -773,7 +772,7 @@ namespace LotusIR
                 }
 
                 // Infer and verify node input arg type information.
-                int totalArgCount = std::accumulate(node->InputArgCount().begin(),
+                size_t totalArgCount = std::accumulate(node->InputArgCount().begin(),
                     node->InputArgCount().end(), 0);
                 if (totalArgCount != node->InputDefs().size())
                 {
@@ -1046,7 +1045,7 @@ namespace LotusIR
                 p_funcDefNames.insert(op_type);
 
                 // Verify node inputs have same size with function definition.
-                if (funcIter->second.input_params_size()
+                if ((size_t)funcIter->second.input_params_size()
                     != node->InputDefs().size())
                 {
                     // Number of inputs do not match.
@@ -1057,7 +1056,7 @@ namespace LotusIR
                 }
 
                 // Verify node outputs have same size with function definition.
-                if (funcIter->second.output_params_size()
+                if ((size_t)funcIter->second.output_params_size()
                     != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
