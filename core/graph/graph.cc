@@ -1453,7 +1453,7 @@ namespace LotusIR
         m_numOfNodes--;
     }
 
-    bool Graph::Save(const GraphProto& p_graphProto, const std::string& p_filePath)
+    bool Graph::Save(const GraphProto& p_graphProto, const std::wstring& p_filePath)
     {
         std::fstream outputFileStream(p_filePath, std::ios::out | std::ios::binary);
         bool result = p_graphProto.SerializeToOstream(&outputFileStream);
@@ -1461,7 +1461,13 @@ namespace LotusIR
         return result;
     }
 
-    bool Graph::Load(const std::string& p_filePath, /*out*/ GraphProto* p_graphProto)
+    bool Graph::Save(Graph& p_graph, const std::wstring& p_filePath)
+    {
+        GraphProto graphProto = p_graph.ToGraphProto();
+        return Save(graphProto, p_filePath);
+    }
+
+    bool Graph::Load(const std::wstring& p_filePath, /*out*/ GraphProto* p_graphProto)
     {
         if (nullptr == p_graphProto)
         {

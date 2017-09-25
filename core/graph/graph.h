@@ -211,15 +211,15 @@ namespace LotusIR
                           const std::vector<TypeName>& p_values); \
 
         ADD_ATTR_INTERFACES(int64_t)
-            ADD_ATTR_INTERFACES(float)
-            ADD_ATTR_INTERFACES(std::string)
-            ADD_ATTR_INTERFACES(TensorProto)
-            ADD_ATTR_INTERFACES(GraphProto)
-            ADD_ATTR_INTERFACES(TypeProto)
-            ADD_ATTR_INTERFACES(TensorShapeProto)
+        ADD_ATTR_INTERFACES(float)
+        ADD_ATTR_INTERFACES(std::string)
+        ADD_ATTR_INTERFACES(TensorProto)
+        ADD_ATTR_INTERFACES(GraphProto)
+        ADD_ATTR_INTERFACES(TypeProto)
+        ADD_ATTR_INTERFACES(TensorShapeProto)
 
-            // Clear specified node attribute.
-            bool ClearAttribute(const std::string& p_attrName);
+        // Clear specified node attribute.
+        bool ClearAttribute(const std::string& p_attrName);
 
         // Get node attributes.
         const NodeAttributes& GetAttributes() const;
@@ -467,10 +467,12 @@ namespace LotusIR
         const Node* SinkNode() const;
 
         // Save a GraphProto to a file.
-        static bool Save(const GraphProto& p_graphProto, const std::string& p_filePath);
+        static bool Save(const GraphProto& p_graphProto, const std::wstring& p_filePath);
+
+        static bool Save(Graph& p_graph, const std::wstring& p_filePath);
 
         // Load a GraphProto from a file.
-        static bool Load(const std::string& p_filePath, /*out*/ GraphProto* p_graphProto);
+        static bool Load(const std::wstring& p_filePath, /*out*/ GraphProto* p_graphProto);
 
     private:
 

@@ -129,11 +129,15 @@ namespace LotusIR
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 
+            Graph::Save(graph, L"graph_1_copy.pb");
             auto& graphProto = graph.ToGraphProto();
-            Graph::Save(graphProto, "graph_1.pb");
+            Graph::Save(graphProto, L"graph_1.pb");
             GraphProto graphProto2;
-            Graph::Load("graph_1.pb", &graphProto2);
+            Graph::Load(L"graph_1.pb", &graphProto2);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(graphProto, graphProto2));
+            GraphProto graphProto3;
+            Graph::Load(L"graph_1_copy.pb", &graphProto3);
+            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(graphProto, graphProto3));
 
             // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
             node_1->Mutable_InputDefs()[0] = outputArg4;
