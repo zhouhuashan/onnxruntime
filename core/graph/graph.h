@@ -6,13 +6,12 @@
 #include <unordered_set>
 
 #include "core/protobuf/graph.pb.h"
+#include "constants.h"
 #include "status.h"
 #include "utils.h"
 
 namespace LotusIR
 {
-    static const std::string c_constantOp = "Constant";
-    static const std::string c_constantValue = "CONSTANT_VALUE";
     typedef size_t NODEINDEX;
     typedef int64_t GRAPH_VERSION;
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;

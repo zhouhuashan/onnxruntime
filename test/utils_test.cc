@@ -18,9 +18,9 @@ namespace LotusIR
             EXPECT_EQ(p1, p2);
             EXPECT_EQ(p2, p3);
             EXPECT_EQ(p1, p3);
-            PTYPE p4 = OpUtils::ToType("list(int32)");
-            PTYPE p5 = OpUtils::ToType("list(int32)");
-            PTYPE p6 = OpUtils::ToType("list(int32)");
+            PTYPE p4 = OpUtils::ToType("seq(int32)");
+            PTYPE p5 = OpUtils::ToType("seq(int32)");
+            PTYPE p6 = OpUtils::ToType("seq(int32)");
             EXPECT_EQ(p4, p5);
             EXPECT_EQ(p5, p6);
             EXPECT_EQ(p4, p6);
@@ -37,8 +37,6 @@ namespace LotusIR
             EXPECT_TRUE(t3.has_tensor_type());
             EXPECT_TRUE(t3.tensor_type().has_elem_type());
             EXPECT_EQ(t3.tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-
-            /* TODO
             TypeProto t4 = Utils::OpUtils::ToTypeProto(p4);
             EXPECT_TRUE(t4.has_seq_type());
             EXPECT_TRUE(t4.seq_type().has_elem_type());
@@ -57,7 +55,6 @@ namespace LotusIR
             EXPECT_TRUE(t6.seq_type().elem_type().has_tensor_type());
             EXPECT_TRUE(t6.seq_type().elem_type().tensor_type().has_elem_type());
             EXPECT_EQ(t6.seq_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
-            */
         }
 
         TEST(OpUtilsTest, ToStringTest)
@@ -68,16 +65,16 @@ namespace LotusIR
 
             TypeProto s;
             s.mutable_sparse_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
-            EXPECT_EQ(OpUtils::ToString(s), "sparse(float32)");
+            EXPECT_EQ(OpUtils::ToString(s), "sparse(float)");
 
             TypeProto t;
             t.mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
-            EXPECT_EQ(OpUtils::ToString(t), "float32");
+            EXPECT_EQ(OpUtils::ToString(t), "float");
 
             TypeProto seq;
             seq.mutable_seq_type()->mutable_elem_type()->mutable_seq_type()->mutable_elem_type()->
                 mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
-            EXPECT_EQ(OpUtils::ToString(seq), "list(list(float32))");
+            EXPECT_EQ(OpUtils::ToString(seq), "seq(seq(float))");
 
             TypeProto tuple;
             tuple.mutable_tuple_type()->mutable_elem_type()->Add()->mutable_handle_type();
@@ -106,10 +103,38 @@ namespace LotusIR
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(s1, s2));
 
             TypeProto t1;
-            OpUtils::FromString("float32", t1);
+            OpUtils::FromString("float", t1);
             TypeProto t2;
             t2.mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(t1, t2));
+
+            TypeProto seq1;
+            OpUtils::FromString("seq(float)", seq1);
+            TypeProto seq2;
+            seq2.mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
+            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(seq1, seq2));
+
+            TypeProto tuple1;
+            OpUtils::FromString("tuple(int32,sparse(int32),handle)", tuple1);
+            TypeProto tuple2;
+            tuple2.mutable_tuple_type()->mutable_elem_type()->Add()->mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_INT32);
+            tuple2.mutable_tuple_type()->mutable_elem_type()->Add()->mutable_sparse_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+            tuple2.mutable_tuple_type()->mutable_elem_type()->Add()->mutable_handle_type();
+            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(tuple1, tuple2));
+
+            TypeProto tuple3;
+            OpUtils::FromString("tuple(seq(int32))", tuple3);
+            TypeProto tuple4;
+            tuple4.mutable_tuple_type()->mutable_elem_type()->Add()->mutable_seq_type()->
+                mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_INT32);
+            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(tuple3, tuple4));
+
+            TypeProto map1;
+            OpUtils::FromString("map(string,int32)", map1);
+            TypeProto map2;
+            map2.mutable_map_type()->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
+            map2.mutable_map_type()->set_value_type(TensorProto_DataType::TensorProto_DataType_INT32);
+            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(map1, map2));
         }
     }
 }

@@ -147,12 +147,12 @@ namespace LotusIR
             REGISTER_OP("Variable2_Fake").Description("Input variable.")
                 .Input("input_1", "T", "docstr for input_1.")
                 .Output("output_1", "T", "docstr for output_1.")
-                .TypeConstraint("T", { "int32","float32" }, "input/output types");
+                .TypeConstraint("T", { "int32","float" }, "input/output types");
 
             REGISTER_OP("Max_Fake").Description("Add two integers.")
                 .Input("input_1", "T", "docstr for input_1.")
                 .Output("output_1", "T", "docstr for output_1.")
-                .TypeConstraint("T", { "int32","float32" }, "input/output types");
+                .TypeConstraint("T", { "int32","float" }, "input/output types");
 
 
             Graph graph("graph_1", 1, 1, "tag_1");
@@ -220,7 +220,7 @@ namespace LotusIR
             node_2->Mutable_OutputDefs()[0] = NodeArg("node_2_out_1", tensor_float, scalarShape);
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
-            EXPECT_EQ("Node (node_4) has different input types (int32,float32) matching to same type string (T).", status.ErrorMsg());
+            EXPECT_EQ("Node (node_4) has different input types (int32,float) matching to same type string (T).", status.ErrorMsg());
         }
 
         TEST(TestAddAttribute, AddTensorAttribute)

@@ -46,7 +46,7 @@ namespace LotusIR
                 .Input("input_1", "T", "docstr for input_1.")
                 .Input("input_2", "T", "docstr for input_2.")
                 .Output("output_1", "T", "docstr for output_1.")
-                .TypeConstraint("T", { "float16", "float32", "float64" }, "Constrain input and output types to floats.");
+                .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.");
             const OperatorSchema* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestTypeConstraint", &op);
             EXPECT_TRUE(success);
@@ -55,21 +55,21 @@ namespace LotusIR
             EXPECT_EQ(op->GetInputs()[0].GetName(), "input_1");
             EXPECT_EQ(op->GetInputs()[0].GetTypes().size(), 3);
             EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("float16")), "float16");
-            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("float32")), "float32");
-            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("float64")), "float64");
+            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("float")), "float");
+            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("double")), "double");
 
             EXPECT_EQ(op->GetInputs()[1].GetName(), "input_2");
             EXPECT_EQ(op->GetInputs()[1].GetTypes().size(), 3);
             EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("float16")), "float16");
-            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("float32")), "float32");
-            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("float64")), "float64");
+            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("float")), "float");
+            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("double")), "double");
 
             EXPECT_EQ(op->GetOutputs().size(), 1);
             EXPECT_EQ(op->GetOutputs()[0].GetName(), "output_1");
             EXPECT_EQ(op->GetOutputs()[0].GetTypes().size(), 3);
             EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("float16")), "float16");
-            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("float32")), "float32");
-            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("float64")), "float64");
+            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("float")), "float");
+            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("double")), "double");
         }
 
         TEST(OpRegistrationTest, AttributeTest)
