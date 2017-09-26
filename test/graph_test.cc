@@ -87,9 +87,9 @@ namespace LotusIR
             TypeProto tensor_int32;
             tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             TensorShapeProto scalarShape;
-            REGISTER_OP("Variable_Fake").Description("Input variable.")
-                .Input("input_1", "int32", "docstr for input_1.")
-                .Output("output_1", "int32", "docstr for output_1.");
+            REGISTER_OP(Variable_Fake).Description("Input variable.")
+                .Input("input_1", "docstr for input_1.", "int32")
+                .Output("output_1", "docstr for output_1.", "int32");
 
             NodeArg inputArg("node_1_in_1", tensor_int32, scalarShape);
             inputs.push_back(inputArg);
@@ -105,10 +105,10 @@ namespace LotusIR
             outputs.push_back(outputArg2);
             auto node_2 = graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
 
-            REGISTER_OP("Add_Fake").Description("Add two integers.")
-                .Input("input_1", "int32", "docstr for input_1.")
-                .Input("input_2", "int32", "docstr for input_2.")
-                .Output("output_1", "int32", "docstr for output_1.");
+            REGISTER_OP(Add_Fake).Description("Add two integers.")
+                .Input("input_1", "docstr for input_1.", "int32")
+                .Input("input_2", "docstr for input_2.", "int32")
+                .Output("output_1", "docstr for output_1.", "int32");
             inputs.clear();
             inputs.push_back(outputArg);
             inputs.push_back(outputArg2);
@@ -117,9 +117,9 @@ namespace LotusIR
             outputs.push_back(outputArg3);
             auto node_3 = graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
 
-            REGISTER_OP("NoOp_Fake").Description("Operator doing nothing.")
-                .Input("input_1", "int32", "docstr for input_1.")
-                .Output("output_1", "int32", "docstr for output_1.");
+            REGISTER_OP(NoOp_Fake).Description("Operator doing nothing.")
+                .Input("input_1", "docstr for input_1.", "int32")
+                .Output("output_1", "docstr for output_1.", "int32");
             inputs.clear();
             inputs.push_back(outputArg3);
             NodeArg outputArg4("node_4_out_1", tensor_int32, scalarShape);
@@ -148,14 +148,14 @@ namespace LotusIR
 
         TEST(ResolvingGraphTest, GraphConstruction_TypeInference)
         {
-            REGISTER_OP("Variable2_Fake").Description("Input variable.")
-                .Input("input_1", "T", "docstr for input_1.")
-                .Output("output_1", "T", "docstr for output_1.")
+            REGISTER_OP(Variable2_Fake).Description("Input variable.")
+                .Input("input_1", "docstr for input_1.", "T")
+                .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "int32","float" }, "input/output types");
 
-            REGISTER_OP("Max_Fake").Description("Add two integers.")
-                .Input("input_1", "T", "docstr for input_1.")
-                .Output("output_1", "T", "docstr for output_1.")
+            REGISTER_OP(Max_Fake).Description("Add two integers.")
+                .Input("input_1", "docstr for input_1.", "T")
+                .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "int32","float" }, "input/output types");
 
 
@@ -229,8 +229,8 @@ namespace LotusIR
 
         TEST(TestAddAttribute, AddTensorAttribute)
         {
-            REGISTER_OP("__Constant").Description("Constant Op.")
-                .Output("output_1", "int64", "docstr for output_1.");
+            REGISTER_OP(__Constant).Description("Constant Op.")
+                .Output("output_1", "docstr for output_1.", "int64");
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
             Graph graph("graph_1", 1, 1, "tag_1");

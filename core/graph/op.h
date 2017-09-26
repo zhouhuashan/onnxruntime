@@ -105,17 +105,17 @@ namespace LotusIR
     typedef std::function<Status(const NodeAttributes&)> AttributeParser;
 
     typedef std::tuple<std::string, std::string, std::string> InputOutputParam;
-    typedef std::tuple<std::string, AttrType, std::string, AttributeProto> AttrParam;
+    typedef std::tuple<std::string, std::string, AttrType, AttributeProto> AttrParam;
     typedef std::tuple<std::string, std::vector<std::string>, std::string> TypeConstraintParam;
 
 #define ATTR_SETTER_INTERFACE(TypeName) \
     OperatorSchemaSetter& Attr(const std::string& p_attrName, \
-                               AttrType p_attrType, \
                                const std::string& p_description, \
+                               AttrType p_attrType, \
                                const TypeName& p_defaultValue); \
     OperatorSchemaSetter& Attr(const std::string& p_attrName, \
-                               AttrType p_attrType, \
                                const std::string& p_description, \
+                               AttrType p_attrType, \
                                const std::vector<TypeName>& p_defaultValues); \
     // Operator registry setter helper.
     // This is used in "REGISTER_OP" macro, to separate setters from getters
@@ -131,16 +131,16 @@ namespace LotusIR
         OperatorSchemaSetter& Description(const std::string& p_description);
 
         OperatorSchemaSetter& Input(const std::string& p_inputName,
-            const std::string& p_type,
-            const std::string& p_description);
+            const std::string& p_description,
+            const std::string& p_type = "");
 
         OperatorSchemaSetter& Output(const std::string& p_outputName,
-            const std::string& p_type,
-            const std::string& p_description);
+            const std::string& p_description,
+            const std::string& p_type = "");
 
         OperatorSchemaSetter& Attr(const std::string& p_attrName,
-            AttrType p_attrType,
-            const std::string& p_description);
+            const std::string& p_description,
+            AttrType p_attrType);
 
         ATTR_SETTER_INTERFACE(int64_t)
         ATTR_SETTER_INTERFACE(float)
@@ -396,13 +396,13 @@ namespace LotusIR
 #define REGISTER_OP_UNIQ_HELPER(Counter, OpName) REGISTER_OP_UNIQ(Counter, OpName)
 #define REGISTER_OP_UNIQ(Counter, OpName)                     \
     static OperatorSchemaRegistry::RegisterOnce op_##Counter  \
-    = OperatorSchemaSetter().Name(OpName)
+    = OperatorSchemaSetter().Name(#OpName)
 
     // Operator registration example.
-    // REGISTER_OP("Add").Description("An operator to sum two float numbers.")
-    //   .Input("input_1", "T", "docstr for input_1.")
-    //   .Input("input_2", "T", "docstr for input_2.")
-    //   .Output("output_1", "T", "docstr for output_1.")
+    // REGISTER_OP(Add).Description("An operator to sum two float numbers.")
+    //   .Input("input_1", "docstr for input_1.", "T")
+    //   .Input("input_2", "docstr for input_2.", "T")
+    //   .Output("output_1", "docstr for output_1.", "T")
     //   .TypeConstraint("T", { "float16", "float32", "float64" }, "Constrain input and output types to floats.");
 
 

@@ -17,12 +17,31 @@ namespace LotusIR
             EXPECT_EQ(Utils::OpUtils::ToType("int32"), *p.GetTypes().begin());
         }
 
-        TEST(OpRegistrationTest, BasicOpRegTest)
+        TEST(OpRegistrationTest, OpRegTestNoTypes)
         {
-            REGISTER_OP("__TestOpReg").Description("Op Registration Basic Test.")
-                .Input("input_1", "int32", "docstr for input_1.")
-                .Input("input_2", "int32", "docstr for input_2.")
-                .Output("output_1", "int32", "docstr for output_1.");
+            REGISTER_OP(__TestOpRegNoTypes).Description("Op Registration Without Types.")
+                .Input("input_1", "docstr for input_1.")
+                .Input("input_2", "docstr for input_2.")
+                .Output("output_1", "docstr for output_1.");
+            const OperatorSchema* op;
+            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestOpRegNoTypes", &op);
+            EXPECT_TRUE(success);
+            EXPECT_EQ(op->GetInputs().size(), 2);
+            EXPECT_EQ(op->GetInputs()[0].GetName(), "input_1");
+            EXPECT_EQ(op->GetInputs()[0].GetTypes().size(), 0);
+            EXPECT_EQ(op->GetInputs()[1].GetName(), "input_2");
+            EXPECT_EQ(op->GetInputs()[1].GetTypes().size(), 0);
+            EXPECT_EQ(op->GetOutputs().size(), 1);
+            EXPECT_EQ(op->GetOutputs()[0].GetName(), "output_1");
+            EXPECT_EQ(op->GetOutputs()[0].GetTypes().size(), 0);
+        }
+
+        TEST(OpRegistrationTest, OpRegTest)
+        {
+            REGISTER_OP(__TestOpReg).Description("Op Registration Basic Test.")
+                .Input("input_1", "docstr for input_1.", "int32")
+                .Input("input_2", "docstr for input_2.", "int32")
+                .Output("output_1", "docstr for output_1.", "int32");
             const OperatorSchema* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestOpReg", &op);
             EXPECT_TRUE(success);
@@ -42,10 +61,10 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, TypeConstraintTest)
         {
-            REGISTER_OP("__TestTypeConstraint").Description("Op with Type Constraint.")
-                .Input("input_1", "T", "docstr for input_1.")
-                .Input("input_2", "T", "docstr for input_2.")
-                .Output("output_1", "T", "docstr for output_1.")
+            REGISTER_OP(__TestTypeConstraint).Description("Op with Type Constraint.")
+                .Input("input_1", "docstr for input_1.", "T")
+                .Input("input_2", "docstr for input_2.", "T")
+                .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.");
             const OperatorSchema* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestTypeConstraint", &op);
@@ -74,10 +93,10 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, AttributeTest)
         {
-            REGISTER_OP("__TestAttr").Description("Op with attributes.")
-                .Attr("my_attr_int", AttrType::INT, "attr with INT type")
-                .Attr("my_attr_float", AttrType::FLOAT, "attr with FLOAT type")
-                .Attr("my_attr_string", AttrType::STRING, "attr with STRING type");
+            REGISTER_OP(__TestAttr).Description("Op with attributes.")
+                .Attr("my_attr_int", "attr with INT type", AttrType::INT)
+                .Attr("my_attr_float", "attr with FLOAT type", AttrType::FLOAT)
+                .Attr("my_attr_string", "attr with STRING type", AttrType::STRING);
             const OperatorSchema* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttr", &op);
             EXPECT_TRUE(success);
@@ -97,10 +116,10 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, AttributeDefaultValueTest)
         {
-            REGISTER_OP("__TestAttrDefaultValue").Description("Op with attributes that have default values")
-                .Attr("my_attr_int", AttrType::INT, "attr with default value of 99.", 99LL)
-                .Attr("my_attr_float", AttrType::FLOAT, "attr with default value of 0.99.", 0.99f)
-                .Attr("my_attr_string", AttrType::STRING, "attr with default value of \"99\".", "99");
+            REGISTER_OP(__TestAttrDefaultValue).Description("Op with attributes that have default values")
+                .Attr("my_attr_int", "attr with default value of 99.", AttrType::INT, 99LL)
+                .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::FLOAT, 0.99f)
+                .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::STRING, "99");
 
             const OperatorSchema* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrDefaultValue", &op);
@@ -135,10 +154,10 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, AttributeDefaultValueListTest)
         {
-            REGISTER_OP("__TestAttrDefaultValueList").Description("Op with attributes that have default list of values.")
-                .Attr("my_attr_ints", AttrType::INTS, "attr with default value of [98, 99, 100].", std::vector<int64_t> {98LL, 99LL, 100LL})
-                .Attr("my_attr_floats", AttrType::FLOATS, "attr with default value of [0.98, 0.99, 1.00].", std::vector<float> {0.98f, 0.99f, 1.00f})
-                .Attr("my_attr_strings", AttrType::STRINGS, "attr with default value of [\"98\", \"99\", \"100\"].", std::vector<std::string> {"98", "99", "100"});
+            REGISTER_OP(__TestAttrDefaultValueList).Description("Op with attributes that have default list of values.")
+                .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::INTS, std::vector<int64_t> {98LL, 99LL, 100LL})
+                .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::FLOATS, std::vector<float> {0.98f, 0.99f, 1.00f})
+                .Attr("my_attr_strings", "attr with default value of [\"98\", \"99\", \"100\"].", AttrType::STRINGS, std::vector<std::string> {"98", "99", "100"});
 
             const OperatorSchema* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrDefaultValueList", &op);
