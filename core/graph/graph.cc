@@ -309,7 +309,7 @@ namespace LotusIR
 
         for (int i = 0; i < p_nodeProto.output().size(); ++i)
         {
-            m_inputDefs.push_back(NodeArg(p_nodeProto.output(i), p_nodeProto.output_arg_info(i)));
+            m_outputDefs.push_back(NodeArg(p_nodeProto.output(i), p_nodeProto.output_arg_info(i)));
         }
 
         for (auto control_input : p_nodeProto.control_input())
