@@ -24,13 +24,13 @@ The common IR specifies the portable, serialized format of the computation graph
 
 ### Graphs and Libraries
 
-Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Each node represents a call to an operator or a function. Each node SHOULD have one or more inputs and one or more outputs. 
+Each computation dataflow graph is structured as a list of nodes that form a graph, which MUST be free of cycles. Each node represents a call to an operator or a function. Each node SHOULD have zero or more inputs and one or more outputs. 
 
 A serialized graph is comprised of a set of metadata fields, a set of model parameters, a list of computation nodes, a list of function definitions, and a list of operator declarations. Libraries are  comprised of metadata fields, a list of function definitions, and a list of operator declarations. A library does __not__ contain graphs outside of its function definitions.
 
 Each graph and library MUST specify a name and a domain. Domains SHOULD be specified using reverse domain names as organization identifiers, the same convention that is used for naming Java packages.
 
-Each graph MUST define the names and types of its inputs.
+Each graph MUST define the names and types of its inputs and outputs.
 
 Graphs and libraries SHOULD be populated with documentation strings, which MAY be interpreted using markdown syntax. HTML and other text-markup languages MUST NOT be used in documentation strings.
 
@@ -84,6 +84,8 @@ The list of input names may sometimes be longer than the list of parameters acce
 
 For example, an operator taking two arguments may be passed five values. In this example, an arg_count list '[2,3]' would mean that the first two inputs are associated with the first operator parameter, and the last three inputs with the second parameter. The input argument count list MUST be populated and its length MUST match the number of formal parameters of the operator.
 
+__OPEN QUESTION: Are such arguments identified as sequences in operator declarations?__
+
 Control inputs are used to establish edges in the computation graph that are based on other concerns than data dependencies. Inference runtime implementations MAY choose to ignore control edges when scheduling computations.
 
 The list of nodes defining the top-level computation graph MUST be ordered topologically; that is, if node K follows node N in the graph, none of the data inputs of N may refer to outputs of K; further, no control input of N may refer to K.
@@ -98,7 +100,7 @@ Each library reference is in the form of a URI or relative path that represents 
 
 ### Operators
 
-All operators named within graph and library nodes MUST be explicitly declared within the graph or the transitive closure of its imported libraries. Such declerations MUST have full type information on all operands and SHOULD have shape information when applicable and possible. All operator attributes MOST also be typed. 
+All operators named within graph and library nodes MUST be explicitly declared within the graph or the transitive closure of its imported libraries. Such declarations MUST have full type information on all operands and SHOULD have shape information when applicable and possible. All operator attributes MUST also be typed. 
 
 See [Operators.md](Operators.md) for details on the standard set of available operators.
 
