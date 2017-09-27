@@ -125,3 +125,46 @@ The following data types are supported by the Common IR. Additional data types c
 |Collections|__list__|Lists represent dense, ordered, collections of elements that are of homogeneous types. List elements can be added to the tail, removed from the head, and accessed by integer index.|
 |Collections|__tuple__|Tuples represent dense, ordered, collections of elements of heterogeneous types. Tuple elements are accessed by integer index.|
 |Collections|__map__|Maps represent associative tables, defined by a key type and a value type, both of which MUST NOT be a collection type.|
+
+#### Tensor shapes
+
+In addition to element type and dense/sparse properties, tensors have shape. A shape is a list of sizes that define whether the tensor is a vector, a matrix, or a higher-dimensioned structure. For example, a 100x100 matrix would have the shape [100,100].
+
+The empty list of sizes, [], is a valid tensor shape. It's denotes a scalar value.
+
+Each size in the list may be expressed as an integral value, or as a "dimension variable," a string denoting that the actual size of the dimension is not statically constrainted to a particular number, which is useful for declaring interfaces that care about the number of dimensions, but not the exact size of each dimension. For example, a NxM matrix would have the shape list [N,M].
+
+Dimension variables are scoped to the declaration (graph signature, node signature, single operator declaration, or function definition signature) that they appear in. Thus, any given name denotes the same size within a declaration, allowing a declaration to describe how the shapes of inputs and outputs are related. For example, a function that performs matrix cross-product may be defined as taking two inputs of shape [K,M] and [M,N], and produce an output of shape [K,N].
+
+Shapes MAY be defined using a combination of integers and variables.
+
+__Wildcards__
+
+Dimension variables MAY also include wildcards. A wildcard is used to denote a collection of sizes, or explicitly declare that no correlation is needed.
+
+For example, the simple wildcard [\*\] denotes a tensor of any number of dimensions; using it on more than one declaration does not correlate sizes. Thus, decorating two inputs/outputs with [\*\] says nothing about how their respective shapes are related.
+
+A wildcard may be _named_, which allows for correlation of shapes with wildcards.
+
+Some wildcard examples:
+
+```
+[*]       
+zero or more dimensions
+
+[n,*]     
+one or more dimensions
+```
+
+Correlating two shapes:
+
+```
+[m*],[m*]
+The shape must be the same between both operands, but we don’t care exactly what it is.
+
+[n,m*], [m*]
+The second operand has one fewer dimensions, the left-most. The remaining dimensions are all the same as in the first operand.
+
+[*,n], [n,*]   
+We don’t care how many dimensions each operand has (other than “more than zero”), but the last of the left operand, and the first of the right operand, must have the same size. 
+```
