@@ -29,3 +29,13 @@ AddTest(
     SOURCES ${${UT_NAME}_src}
     LIBS ${${UT_NAME}_libs}
 )
+
+set(TEST_DATA_SRC ${LOTUSIR_ROOT}/test/testdata)
+set(TEST_DATA_DES ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration)/testdata)
+
+#Copy test data from source to destination.
+add_custom_command(
+    TARGET ${UT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${TEST_DATA_SRC}
+            ${TEST_DATA_DES})

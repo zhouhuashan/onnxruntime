@@ -253,5 +253,20 @@ namespace LotusIR
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
         }
+
+        TEST(TestLoadGraph, LoadGraph)
+        {
+            std::wstring onnxmodel[10] = { L"super_resolution.pb" };
+
+            GraphProto graphProto;
+            for (auto fileName : onnxmodel)
+            {
+                std::wstring filePath = L".\\testdata\\" + fileName;
+                Graph::Load(filePath, &graphProto);
+                Graph graph(graphProto);
+                auto status = graph.Resolve();
+                EXPECT_TRUE(status.Ok());
+            }
+        }
     }
 }
