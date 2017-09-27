@@ -20,6 +20,7 @@ include_directories(
     ${PROTOBUF_INCLUDE_DIRS}
 )
 
+add_definitions(-DONNX_V1_OPSCHEMA_COMPAT)
 include(lotusIR_core_protobuf.cmake)
 #include(onnx_core_protobuf.cmake)
 include(lotusIR_core_graph.cmake)

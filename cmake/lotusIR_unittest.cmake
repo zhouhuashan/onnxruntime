@@ -1,8 +1,8 @@
 set(UT_NAME ${PROJECT_NAME}_UT)
 
 set(${UT_NAME}_libs
+    -WHOLEARCHIVE:$<TARGET_FILE:lotusIR_graph>
     lotusIR_protos
-    lotusIR_graph
     ${googletest_STATIC_LIBRARIES}
     ${protobuf_STATIC_LIBRARIES}
 )
@@ -18,7 +18,7 @@ function(AddTest)
   list(REMOVE_DUPLICATES _UT_SOURCES)
   
   add_executable(${_UT_TARGET} ${_UT_SOURCES})
-  add_dependencies(${_UT_TARGET} googletest)
+  add_dependencies(${_UT_TARGET} googletest lotusIR_graph)
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS})
   

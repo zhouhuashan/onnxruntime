@@ -3,7 +3,11 @@ file(GLOB_RECURSE lotusIR_graph_src
     "${LOTUSIR_ROOT}/core/graph//*.cc"
 )
 
-set(lotusIR_graph_header ${LOTUSIR_ROOT}/core/graph)
+file(GLOB_RECURSE lotusIR_defs_src
+    "${LOTUSIR_ROOT}/core/defs//*.cc"
+)
 
-add_library(lotusIR_graph ${lotusIR_graph_src})
+include_directories(${LOTUSIR_ROOT}/core/graph)
+
+add_library(lotusIR_graph ${lotusIR_graph_src} ${lotusIR_defs_src})
 add_dependencies(lotusIR_graph lotusIR_protos)

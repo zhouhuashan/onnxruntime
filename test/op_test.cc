@@ -104,10 +104,10 @@ namespace LotusIR
 
             std::vector<std::string> expected_strings = { "my_attr_int", "my_attr_float", "my_attr_string" };
             std::vector<AttrType> expected_types = { AttrType::INT, AttrType::FLOAT, AttrType::STRING };
-            
-            int size = op->GetAttributes().size();
+
+            size_t size = op->GetAttributes().size();
             EXPECT_EQ(size, 3);
-            for (int i = 0; i < size; i++)
+            for (size_t i = 0; i < size; i++)
             {
                 EXPECT_EQ(op->GetAttributes()[i].GetName(), expected_strings[i]);
                 EXPECT_EQ(op->GetAttributes()[i].GetType(), expected_types[i]);
@@ -119,7 +119,7 @@ namespace LotusIR
             REGISTER_OP(__TestAttrDefaultValue).Description("Op with attributes that have default values")
                 .Attr("my_attr_int", "attr with default value of 99.", AttrType::INT, 99LL)
                 .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::FLOAT, 0.99f)
-                .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::STRING, "99");
+                .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::STRING, std::string("99"));
 
             const OperatorSchema* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrDefaultValue", &op);
@@ -203,6 +203,15 @@ namespace LotusIR
             {
                 EXPECT_EQ(a3->strings(i), expected_strings[i]);
             }
+        }
+
+        TEST(TestONNXReg, VerifyRegistration)
+        {
+            const OperatorSchema* op;
+            bool success = OperatorSchemaRegistry::Get()->TryGetOp("Add", &op);
+            EXPECT_TRUE(success);
+            success = OperatorSchemaRegistry::Get()->TryGetOp("Conv", &op);
+            EXPECT_TRUE(success);
         }
     }
 }

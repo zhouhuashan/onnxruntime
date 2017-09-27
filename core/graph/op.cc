@@ -69,7 +69,7 @@ namespace LotusIR
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
             const std::string& p_description,
-            AttrType p_attrType)
+            AttrType p_attrType, bool required)
     {
         m_attributes.push_back(make_tuple(p_attrName, p_description, p_attrType, AttributeProto()));
         return *this;
@@ -481,4 +481,19 @@ namespace LotusIR
 
         return Status::OK();
     }
+
+#ifdef ONNX_V1_OPSCHEMA_COMPAT
+    size_t ReplaceAll(std::string& s, const char* from, const char* to)
+    {
+        size_t numReplaced = 0;
+        std::string::size_type lenFrom = std::strlen(from);
+        std::string::size_type lenTo = std::strlen(to);
+        for (std::string::size_type pos = s.find(from); pos != std::string::npos;
+            pos = s.find(from, pos + lenTo)) {
+            s.replace(pos, lenFrom, to);
+            numReplaced++;
+        }
+        return numReplaced;
+    }
+#endif
 }
