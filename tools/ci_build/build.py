@@ -12,6 +12,9 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="LotusIR CI build driver.")
     parser.add_argument("--build_dir", required=True, help="Path to the build directory.")
     parser.add_argument("--output_dir", required=True, help="Path to the output directory.")
+    parser.add_argument("--config", nargs="+", default=["Debug"],
+                        choices=["Debug", "MinSizeRel", "Release", "RelWithDebInfo"],
+                        help="Configuration(s) to build.")
     parser.add_argument("--cmake_path", default="cmake", help="Path to the CMake program.")
 
     return parser.parse_args()
@@ -28,7 +31,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir):
 
 def build_targets(cmake_path, build_dir, configs):
     targets = [
-        "LotusIR_UT",
+        "ALL_BUILD",
     ]
 
     for config in configs:
@@ -46,7 +49,8 @@ def run_unit_tests(build_dir, output_dir, configs):
         ut_file = os.path.join(build_dir, config, ut_basename)
         log.info("Running unit test program: %s", ut_file)
         output_file = os.path.join(output_dir, "test", "{}.{}.results.xml".format(ut_basename, config))
-        run_subprocess([ut_file, "--gtest_output=xml:%s" % output_file])
+        run_subprocess([ut_file, "--gtest_output=xml:%s" % output_file],
+                       cwd=os.path.join(build_dir, config))
 
 def main():
     args = parse_arguments()
@@ -60,7 +64,7 @@ def main():
     os.makedirs(build_dir, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
 
-    configs = ["Debug", "RelWithDebInfo"]
+    configs = set(args.config)
 
     log.info("Build started")
 
