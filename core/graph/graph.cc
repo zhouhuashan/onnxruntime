@@ -1034,27 +1034,6 @@ namespace LotusIR
             if (success)
             {
                 // The node refers to a primitive operator.
-
-                // Verify size of node arg count is same as input number in
-                // operator definition.
-                if (op->GetInputs().size() != node->InputArgCount().size())
-                {
-                    // TODO: need to handle onnx case.
-                    // the operator's input size is smaller than the input
-                    // arg count size. In this case, the last input arg count
-                    // should be adjusted to accept multiple inputs (it's set
-                    // as 1 by default.
-                    // After last arg count adjusted, checking whether the last
-                    // arg count matches the rule of <min, max> set in the
-                    // operator schema.
-
-                    // Number of inputs do not match.
-                    Status status(false, "Error: node (" + nodeName
-                        + ")'s number of inputs do not match its operator ("
-                        + op_type + ") specification.");
-                    return status;
-                }
-
                 // Infer and verify node input arg type information.
                 size_t totalArgCount = std::accumulate(node->InputArgCount().begin(),
                     node->InputArgCount().end(), 0);
@@ -1066,14 +1045,96 @@ namespace LotusIR
                     return status;
                 }
 
+                if (totalArgCount > op->GetOnnxMaxInput() ||
+                    totalArgCount < op->GetOnnxMinInput() ||
+                    !op->GetOnnxNumInputsAllowedFunc()(totalArgCount))
+                {
+                    // Number of inputs do not match.
+                    Status status(false, "Error: node (" + nodeName
+                        + ")'s number of inputs do not match its operator ("
+                        + op_type + ") specification.");
+                    return status;
+                }
+
+                // Verify size of node arg count is same as input number in
+                // operator definition.
+                if (op->GetInputs().size() != node->InputArgCount().size())
+                {
+                    if (0 == (m_graphType & Type::Strict))
+                    {
+                        // It's ONNX case.
+                        // Adjust input arg count array with op definition
+                        // The adjustment will work as below,
+                        // In total, there're <totalArgCount> inputs, which
+                        // will be split as <1, 1, 1, 1, ... 1, x> or
+                        // <1, 1, 1, 1, ...1, 0, 0, ...0>. The final input 
+                        // arg count array's element number will be the same
+                        // as op definition, and the sum of all elements will
+                        // be equal to <totalArgCount>.
+                        auto& inputArgCount = node->Mutable_InputArgCount();
+                        inputArgCount.clear();
+                        size_t m = 0;
+                        auto argCountLeft = totalArgCount;
+                        if (0 < op->GetInputs().size())
+                        {
+                            for (; m < op->GetInputs().size() - 1;++m)
+                            {
+                                if (argCountLeft > 0)
+                                {
+                                    inputArgCount.push_back(1);
+                                    argCountLeft--;
+                                }
+                                else
+                                {
+                                    inputArgCount.push_back(0);
+                                }
+                            }
+                        }
+
+                        // Set the arg count for the last input formal parameter.
+                        // NOTE: in the case that there's no .input(...) defined
+                        // in op schema, all input args will be fed as one input
+                        // of the operator.
+                        inputArgCount.push_back(argCountLeft);
+                    }
+                    else
+                    {
+                        // Number of inputs do not match.
+                        Status status(false, "Error: node (" + nodeName
+                            + ")'s number of inputs do not match its operator ("
+                            + op_type + ") specification.");
+                        return status;
+                    }
+                }
+
                 // Verify node outputs have same size with operator definition.
+                size_t outputCount = node->OutputDefs().size();
+
+
                 if (op->GetOutputs().size() != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
                     Status status(false, "Error: node (" + nodeName
                         + ")'s number of outputs do not match its operator ("
                         + op_type + ") specification.");
-                    return status;
+
+                    if (0 == (m_graphType & Type::Strict))
+                    {
+                        // It's ONNX case.
+                        // TODO: more understanding is still needed about ONNX
+                        // on how to distributing the output args to output formal
+                        // parameter (same as input?)
+                        if (outputCount > op->GetOnnxMaxOutput() ||
+                            outputCount < op->GetOnnxMinOutput() ||
+                            !op->GetOnnxNumOutputsAllowedFunc()(outputCount))
+                        {
+                            return status;
+                        }
+                    }
+                    else
+                    {
+                        return status;
+                    }
                 }
 
                 if (0 != (m_graphType & Type::Strict))
@@ -1106,6 +1167,12 @@ namespace LotusIR
                                 = attrDef.HasDefaultValue(&defaultValue);
                             if (!hasDefaultValue)
                             {
+                                if (0 == (m_graphType & Type::Strict))
+                                {
+                                    // It's ONNX, which does not have default value.
+                                    continue;
+                                }
+
                                 Status status(false,
                                     "Error: the mandatory attribute ("
                                     + attrDef.GetName() + ") is not specified in Node ("
@@ -1204,12 +1271,12 @@ namespace LotusIR
     {
         std::vector<NodeArg> emptyArgs;
         m_sourceNodeIndex = AddNode("_Graph_Source",
-            "NoOp",
+            c_noOp,
             "Source node internally in a graph.",
             emptyArgs,
             emptyArgs)->Index();
         m_sinkNodeIndex = AddNode("_Graph_Sink",
-            "NoOp",
+            c_noOp,
             "Sink node internally in a graph.",
             emptyArgs,
             emptyArgs)->Index();

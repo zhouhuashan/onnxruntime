@@ -230,6 +230,7 @@ namespace LotusIR
         TEST(TestAddAttribute, AddTensorAttribute)
         {
             REGISTER_OP(__Constant).Description("Constant Op.")
+                .Attr(c_constantValue, "constant value", AttrType::TENSOR)
                 .Output("output_1", "docstr for output_1.", "int64");
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
@@ -252,21 +253,6 @@ namespace LotusIR
             EXPECT_TRUE(node_1->AddAttribute(c_constantValue, t));
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
-        }
-
-        TEST(TestLoadGraph, LoadGraph)
-        {
-            std::wstring onnxmodel[10] = { L"super_resolution.pb" };
-
-            GraphProto graphProto;
-            for (auto fileName : onnxmodel)
-            {
-                std::wstring filePath = L".\\testdata\\" + fileName;
-                Graph::Load(filePath, &graphProto);
-                Graph graph(graphProto);
-                auto status = graph.Resolve();
-                EXPECT_TRUE(status.Ok());
-            }
         }
     }
 }
