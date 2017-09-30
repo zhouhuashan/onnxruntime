@@ -87,7 +87,7 @@ namespace LotusIR
             TypeProto tensor_int32;
             tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             TensorShapeProto scalarShape;
-            REGISTER_OP(Variable_Fake).Description("Input variable.")
+            OPERATOR_DEFINITION(Variable_Fake).Description("Input variable.")
                 .Input("input_1", "docstr for input_1.", "int32")
                 .Output("output_1", "docstr for output_1.", "int32");
 
@@ -105,7 +105,7 @@ namespace LotusIR
             outputs.push_back(outputArg2);
             auto node_2 = graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
 
-            REGISTER_OP(Add_Fake).Description("Add two integers.")
+            OPERATOR_DEFINITION(Add_Fake).Description("Add two integers.")
                 .Input("input_1", "docstr for input_1.", "int32")
                 .Input("input_2", "docstr for input_2.", "int32")
                 .Output("output_1", "docstr for output_1.", "int32");
@@ -117,7 +117,7 @@ namespace LotusIR
             outputs.push_back(outputArg3);
             auto node_3 = graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
 
-            REGISTER_OP(NoOp_Fake).Description("Operator doing nothing.")
+            OPERATOR_DEFINITION(NoOp_Fake).Description("Operator doing nothing.")
                 .Input("input_1", "docstr for input_1.", "int32")
                 .Output("output_1", "docstr for output_1.", "int32");
             inputs.clear();
@@ -148,15 +148,16 @@ namespace LotusIR
 
         TEST(ResolvingGraphTest, GraphConstruction_TypeInference)
         {
-            REGISTER_OP(Variable2_Fake).Description("Input variable.")
+            OPERATOR_DEFINITION(Variable2_Fake).Description("Input variable.")
                 .Input("input_1", "docstr for input_1.", "T")
                 .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "int32","float" }, "input/output types");
 
-            REGISTER_OP(Max_Fake).Description("Add two integers.")
+            OPERATOR_DEFINITION(Max_Fake).Description("Add two integers.")
                 .Input("input_1", "docstr for input_1.", "T")
                 .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "int32","float" }, "input/output types");
+
 
 
             Graph graph("graph_1", 1, 1, "tag_1");
@@ -229,7 +230,7 @@ namespace LotusIR
 
         TEST(TestAddAttribute, AddTensorAttribute)
         {
-            REGISTER_OP(__Constant).Description("Constant Op.")
+            OPERATOR_DEFINITION(__Constant).Description("Constant Op.")
                 .Attr(c_constantValue, "constant value", AttrType::TENSOR)
                 .Output("output_1", "docstr for output_1.", "int64");
             std::vector<NodeArg> inputs;

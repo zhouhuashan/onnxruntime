@@ -37,8 +37,9 @@ namespace LotusIR
         // Get node arg type.
         const PTYPE& Type() const;
 
-        // Get node arg shape.
+        // Get/set node arg shape.
         const TensorShapeProto& Shape() const;
+        void SetShape(const TensorShapeProto& p_shape);
 
         // Get node arg information except name.
         const NodeArgInfo& ToProto() const;

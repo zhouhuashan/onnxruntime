@@ -50,6 +50,11 @@ namespace LotusIR
         return m_nodeArgTypeAndShape.shape();
     }
 
+    void NodeArg::SetShape(const TensorShapeProto& p_shape)
+    {
+        (*m_nodeArgTypeAndShape.mutable_shape()) = p_shape;
+    }
+
     const NodeArgInfo& NodeArg::ToProto() const
     {
         return m_nodeArgTypeAndShape;
@@ -1028,11 +1033,13 @@ namespace LotusIR
             auto node = GetNode(nodeIndex);
             std::string nodeName = node->Name();
             std::string op_type = node->OpType();
-            const OperatorSchema* op = nullptr;
+            const OperatorDefinition* opDefData = nullptr;
             bool success
-                = OperatorSchemaRegistry::Get()->TryGetOp(op_type, &op);
+                = OperatorDefinitionRegistry::Get()->TryGetOp(op_type, &opDefData);
             if (success)
             {
+                auto& op = opDefData->GetOpSchema();
+
                 // The node refers to a primitive operator.
                 // Infer and verify node input arg type information.
                 size_t totalArgCount = std::accumulate(node->InputArgCount().begin(),
@@ -1045,9 +1052,9 @@ namespace LotusIR
                     return status;
                 }
 
-                if (totalArgCount > op->GetOnnxMaxInput() ||
-                    totalArgCount < op->GetOnnxMinInput() ||
-                    !op->GetOnnxNumInputsAllowedFunc()(totalArgCount))
+                if (totalArgCount > op.GetOnnxMaxInput() ||
+                    totalArgCount < op.GetOnnxMinInput() ||
+                    !op.GetOnnxNumInputsAllowedFunc()(totalArgCount))
                 {
                     // Number of inputs do not match.
                     Status status(false, "Error: node (" + nodeName
@@ -1058,7 +1065,7 @@ namespace LotusIR
 
                 // Verify size of node arg count is same as input number in
                 // operator definition.
-                if (op->GetInputs().size() != node->InputArgCount().size())
+                if (op.GetInputs().size() != node->InputArgCount().size())
                 {
                     if (0 == (m_graphType & Type::Strict))
                     {
@@ -1075,9 +1082,9 @@ namespace LotusIR
                         inputArgCount.clear();
                         size_t m = 0;
                         auto argCountLeft = totalArgCount;
-                        if (0 < op->GetInputs().size())
+                        if (0 < op.GetInputs().size())
                         {
-                            for (; m < op->GetInputs().size() - 1;++m)
+                            for (; m < op.GetInputs().size() - 1;++m)
                             {
                                 if (argCountLeft > 0)
                                 {
@@ -1111,7 +1118,7 @@ namespace LotusIR
                 size_t outputCount = node->OutputDefs().size();
 
 
-                if (op->GetOutputs().size() != node->OutputDefs().size())
+                if (op.GetOutputs().size() != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
                     Status status(false, "Error: node (" + nodeName
@@ -1124,9 +1131,9 @@ namespace LotusIR
                         // TODO: more understanding is still needed about ONNX
                         // on how to distributing the output args to output formal
                         // parameter (same as input?)
-                        if (outputCount > op->GetOnnxMaxOutput() ||
-                            outputCount < op->GetOnnxMinOutput() ||
-                            !op->GetOnnxNumOutputsAllowedFunc()(outputCount))
+                        if (outputCount > op.GetOnnxMaxOutput() ||
+                            outputCount < op.GetOnnxMinOutput() ||
+                            !op.GetOnnxNumOutputsAllowedFunc()(outputCount))
                         {
                             return status;
                         }
@@ -1141,12 +1148,12 @@ namespace LotusIR
                 {
                     // Strict type checking needed.
 
-                    RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, op, p_outputArgs));
+                    RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs));
                 }
 
                 // Attribute verification and fill node attribute with
                 // default value defined in operator definition if needed.
-                auto attrParser = op->GetAttributeParser();
+                auto attrParser = opDefData->GetAttributeParser();
                 if (nullptr != attrParser)
                 {
                     // Attribute parser registered.
@@ -1157,7 +1164,7 @@ namespace LotusIR
                 {
                     // No attribute parser registered.
                     auto nodeAttributes = node->GetAttributes();
-                    for (auto attrDef : op->GetAttributes())
+                    for (auto attrDef : op.GetAttributes())
                     {
                         auto nodeAttrIter = nodeAttributes.find(attrDef.GetName());
                         if (nodeAttributes.end() == nodeAttrIter)
