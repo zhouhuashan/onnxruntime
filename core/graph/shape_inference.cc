@@ -3,9 +3,9 @@
 namespace LotusIR
 {
     InferenceContext::InferenceContext(Node* p_node,
-        const OperatorSchema* p_opSchema)
+        const OpSignature* p_opSchema)
         : m_node(p_node),
-        m_opSchema(p_opSchema)
+        m_opSignature(p_opSchema)
     {
     }
 
@@ -14,9 +14,9 @@ namespace LotusIR
         return m_node;
     }
 
-    const OperatorSchema* InferenceContext::GetOp() const
+    const OpSignature* InferenceContext::GetOp() const
     {
-        return m_opSchema;
+        return m_opSignature;
     }
 
     const std::vector<NodeArg>* InferenceContext::GetInputs() const

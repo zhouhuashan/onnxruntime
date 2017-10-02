@@ -1,47 +1,47 @@
 #include "op.h"
-#include "opschema.h"
+#include "opsignature.h"
 #include "utils.h"
 
 namespace LotusIR
 {
-    const std::string& OperatorDefinition::GetName() const
+    const std::string& OperatorSchema::GetName() const
     {
-        return m_opSchema.GetName();
+        return m_opSignature.GetName();
     }
 
-    const OperatorSchema& OperatorDefinition::GetOpSchema() const
+    const OpSignature& OperatorSchema::GetOpSignature() const
     {
-        return m_opSchema;
+        return m_opSignature;
     }
 
-    ShapeInferenceFunc OperatorDefinition::GetShapeInferenceFn() const
+    ShapeInferenceFunc OperatorSchema::GetShapeInferenceFn() const
     {
         return m_shapeInferenceFunc;
     }
 
-    AttributeParser OperatorDefinition::GetAttributeParser() const
+    AttributeParser OperatorSchema::GetAttributeParser() const
     {
         return m_attrParser;
     }
 
-    OperatorDefinitionSetter&
-        OperatorDefinitionSetter::Name(const std::string& p_opName)
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Name(const std::string& p_opName)
     {
-        m_opDefData.m_opSchema.m_name = p_opName;
+        m_opSchema.m_opSignature.m_name = p_opName;
         return *this;
     }
 
 
 
-    OperatorDefinitionSetter&
-        OperatorDefinitionSetter::Description(const std::string& p_description)
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Description(const std::string& p_description)
     {
-        m_opDefData.m_opSchema.m_description = p_description;
+        m_opSchema.m_opSignature.m_description = p_description;
         return *this;
     }
 
-    OperatorDefinitionSetter&
-        OperatorDefinitionSetter::Input(const std::string& p_inputName,
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Input(const std::string& p_inputName,
             const std::string& p_description,
             const std::string& p_type)
     {
@@ -49,8 +49,8 @@ namespace LotusIR
         return *this;
     }
 
-    OperatorDefinitionSetter&
-        OperatorDefinitionSetter::Output(const std::string& p_outputName,
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Output(const std::string& p_outputName,
             const std::string& p_description,
             const std::string& p_type)
     {
@@ -58,20 +58,20 @@ namespace LotusIR
         return *this;
     }
 
-    OperatorDefinitionSetter&
-        OperatorDefinitionSetter::Attr(const std::string& p_attrName,
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,
             const std::string& p_description,
             AttrType p_attrType, bool required)
     {
-        m_opDefData.m_opSchema.m_attributes.push_back(
-            OperatorSchema::Attribute(p_attrName, p_attrType, p_description));
+        m_opSchema.m_opSignature.m_attributes.push_back(
+            OpSignature::Attribute(p_attrName, p_attrType, p_description));
 
         return *this;
     }
 
 #define ATTR_SETTER_BASIC_IMPL(type, field)                                               \
-    OperatorDefinitionSetter&                                                         \
-        OperatorDefinitionSetter::Attr(const std::string& p_attrName,                 \
+    OperatorSchemaSetter&                                                         \
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,                 \
             const std::string& p_description,                                             \
             AttrType p_attrType,                                                          \
             const type& p_defaultValue)                                                   \
@@ -80,8 +80,8 @@ namespace LotusIR
         a.set_name(p_attrName);                                                           \
         a.set_##field(p_defaultValue);                                                    \
                                                                                           \
-        m_opDefData.m_opSchema.m_attributes.push_back(                                    \
-            OperatorSchema::Attribute(p_attrName,                                         \
+        m_opSchema.m_opSignature.m_attributes.push_back(                                    \
+            OpSignature::Attribute(p_attrName,                                         \
                                         p_attrType,                                       \
                                         p_description,                                    \
                                         a));                                              \
@@ -90,8 +90,8 @@ namespace LotusIR
     }                                                                                     \
 
 #define ATTR_SETTER_LIST_IMPL(type, field)                                                \
-    OperatorDefinitionSetter&                                                         \
-        OperatorDefinitionSetter::Attr(const std::string& p_attrName,                 \
+    OperatorSchemaSetter&                                                         \
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,                 \
             const std::string& p_description,                                             \
             AttrType p_attrType,                                                          \
             const std::vector<type>& p_defaultValue)                                      \
@@ -103,8 +103,8 @@ namespace LotusIR
             a.add_##field(v);                                                             \
         }                                                                                 \
                                                                                           \
-        m_opDefData.m_opSchema.m_attributes.push_back(                                    \
-        OperatorSchema::Attribute(p_attrName,                                             \
+        m_opSchema.m_opSignature.m_attributes.push_back(                                    \
+        OpSignature::Attribute(p_attrName,                                             \
             p_attrType,                                                                   \
             p_description,                                                                \
             a));                                                                          \
@@ -118,8 +118,8 @@ namespace LotusIR
     ATTR_SETTER_LIST_IMPL(float, floats)
     ATTR_SETTER_LIST_IMPL(std::string, strings)
 
-    OperatorDefinitionSetter&
-    OperatorDefinitionSetter::TypeConstraint(const std::string& p_typeName,
+    OperatorSchemaSetter&
+    OperatorSchemaSetter::TypeConstraint(const std::string& p_typeName,
         const std::vector<std::string>& p_constraints,
         const std::string& p_description)
     {
@@ -127,43 +127,43 @@ namespace LotusIR
         return *this;
     }
 
-    OperatorDefinitionSetter&
-        OperatorDefinitionSetter::SetShapeInferenceFunc(
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::SetShapeInferenceFunc(
             ShapeInferenceFunc p_shapeInferFunc)
     {
-        m_opDefData.m_shapeInferenceFunc = p_shapeInferFunc;
+        m_opSchema.m_shapeInferenceFunc = p_shapeInferFunc;
         return *this;
     }
 
-    OperatorDefinitionSetter&
-        OperatorDefinitionSetter::SetAttributeParser(
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::SetAttributeParser(
             AttributeParser p_attrParser)
     {
-        m_opDefData.m_attrParser = p_attrParser;
+        m_opSchema.m_attrParser = p_attrParser;
         return *this;
     }
 
-    OperatorDefinitionRegistry::RegisterOnce::RegisterOnce(
-        OperatorDefinitionSetter& p_opDefDataSetter)
+    OperatorSchemaRegistry::RegisterOnce::RegisterOnce(
+        OperatorSchemaSetter& p_opSchemaSetter)
     {
-        auto& opDefData = p_opDefDataSetter.m_opDefData;
+        auto& opSchema = p_opSchemaSetter.m_opSchema;
         // Process type constraints.
-        for (const auto& constraint : p_opDefDataSetter.m_constraints)
+        for (const auto& constraint : p_opSchemaSetter.m_constraints)
         {
             std::string name;
             std::vector<std::string> types;
             std::string desc;
             std::tie(name, types, desc) = constraint;
 
-            auto it = opDefData.m_opSchema.m_typeConstraintMap.find(name);
-            if (it == opDefData.m_opSchema.m_typeConstraintMap.end())
+            auto it = opSchema.m_opSignature.m_typeConstraintMap.find(name);
+            if (it == opSchema.m_opSignature.m_typeConstraintMap.end())
             {
                 DataTypeSet d;
                 for (const auto& t : types)
                 {
                     d.insert(Utils::OpUtils::ToType(t));
                 }
-                opDefData.m_opSchema.m_typeConstraintMap.insert(std::make_pair(name, std::make_pair(d, desc)));
+                opSchema.m_opSignature.m_typeConstraintMap.insert(std::make_pair(name, std::make_pair(d, desc)));
             }
             else
             {
@@ -171,101 +171,101 @@ namespace LotusIR
             }
         }
 
-        opDefData.m_opSchema.m_inputs.reserve(p_opDefDataSetter.m_inputs.size());
-        for (const auto& input : p_opDefDataSetter.m_inputs)
+        opSchema.m_opSignature.m_inputs.reserve(p_opSchemaSetter.m_inputs.size());
+        for (const auto& input : p_opSchemaSetter.m_inputs)
         {
             std::string name;
             std::string type;
             std::string desc;
             std::tie(name, desc, type) = input;
-            opDefData.m_opSchema.m_inputs.push_back(
-                OperatorSchema::FormalParameter(name, type, desc, opDefData.m_opSchema.m_typeConstraintMap));
+            opSchema.m_opSignature.m_inputs.push_back(
+                OpSignature::FormalParameter(name, type, desc, opSchema.m_opSignature.m_typeConstraintMap));
         }
 
-        opDefData.m_opSchema.m_outputs.reserve(p_opDefDataSetter.m_outputs.size());
-        for (const auto& output : p_opDefDataSetter.m_outputs)
+        opSchema.m_opSignature.m_outputs.reserve(p_opSchemaSetter.m_outputs.size());
+        for (const auto& output : p_opSchemaSetter.m_outputs)
         {
             std::string name;
             std::string type;
             std::string desc;
             std::tie(name, desc, type) = output;
-            opDefData.m_opSchema.m_outputs.push_back(
-                OperatorSchema::FormalParameter(name, type, desc,
-                    opDefData.m_opSchema.m_typeConstraintMap));
+            opSchema.m_opSignature.m_outputs.push_back(
+                OpSignature::FormalParameter(name, type, desc,
+                    opSchema.m_opSignature.m_typeConstraintMap));
         }
 
 #ifdef ONNX_V1_OPSCHEMA_COMPAT
-        auto& opSchema = p_opDefDataSetter.m_opDefData.m_opSchema;
-        if (0 == opSchema.m_inputs.size())
+        auto& opSignature = p_opSchemaSetter.m_opSchema.m_opSignature;
+        if (0 == opSignature.m_inputs.size())
         {
-            for (int i = 0; i < opSchema.m_onnxMinInput; ++i)
+            for (int i = 0; i < opSignature.m_onnxMinInput; ++i)
             {
                 std::string name = "p" + std::to_string(i);
                 std::string desc = "Input Parameter " + std::to_string(i);
-                opSchema.m_inputs.push_back(
-                    OperatorSchema::FormalParameter(name, "", desc, opSchema.m_typeConstraintMap));
+                opSignature.m_inputs.push_back(
+                    OpSignature::FormalParameter(name, "", desc, opSignature.m_typeConstraintMap));
             }
         }
 
-        if (0 == opSchema.m_outputs.size())
+        if (0 == opSignature.m_outputs.size())
         {
-            for (int i = 0; i < opSchema.m_onnxMinOutput; ++i)
+            for (int i = 0; i < opSignature.m_onnxMinOutput; ++i)
             {
                 std::string name = "p" + std::to_string(i);
                 std::string desc = "Output Result " + std::to_string(i);
-                opSchema.m_outputs.push_back(
-                    OperatorSchema::FormalParameter(name, "", desc, opSchema.m_typeConstraintMap));
+                opSignature.m_outputs.push_back(
+                    OpSignature::FormalParameter(name, "", desc, opSignature.m_typeConstraintMap));
             }
         }
 #endif
-        OperatorDefinitionRegistry::Get()->Register(p_opDefDataSetter.m_opDefData);
+        OperatorSchemaRegistry::Get()->Register(p_opSchemaSetter.m_opSchema);
     }
 
-    bool OperatorDefinitionRegistry::TryGetOp(const std::string& p_name,
-        const OperatorDefinition** p_opDefData) const
+    bool OperatorSchemaRegistry::TryGetOp(const std::string& p_name,
+        const OperatorSchema** p_opSchema) const
     {
-        if (nullptr == p_opDefData)
+        if (nullptr == p_opSchema)
         {
             return false;
         }
 
-        auto iter = m_opNameToOpDefDataMap.find(p_name);
-        if (m_opNameToOpDefDataMap.end() == iter)
+        auto iter = m_opNameToOpSchemaMap.find(p_name);
+        if (m_opNameToOpSchemaMap.end() == iter)
         {
             return false;
         }
-        *p_opDefData = &(iter->second);
+        *p_opSchema = &(iter->second);
         return true;
     }
 
-    Status OperatorDefinitionRegistry::Register(
-        const OperatorDefinition& p_opDefData)
+    Status OperatorSchemaRegistry::Register(
+        const OperatorSchema& p_opSchema)
     {
-        auto iter = m_opNameToOpDefDataMap.find(p_opDefData.GetName());
-        if (m_opNameToOpDefDataMap.end() != iter)
+        auto iter = m_opNameToOpSchemaMap.find(p_opSchema.GetName());
+        if (m_opNameToOpSchemaMap.end() != iter)
         {
             Status status(false,
                 "Error: operator schema with same name ("
-                + p_opDefData.GetName() + ") exists.");
+                + p_opSchema.GetName() + ") exists.");
             return status;
         }
         else
         {
-            m_opNameToOpDefDataMap[p_opDefData.GetName()] = p_opDefData;
+            m_opNameToOpSchemaMap[p_opSchema.GetName()] = p_opSchema;
             return Status::OK();
         }
     }
 
-    OperatorDefinitionRegistry* OperatorDefinitionRegistry::Get()
+    OperatorSchemaRegistry* OperatorSchemaRegistry::Get()
     {
-        static OperatorDefinitionRegistry* s_registry
-            = new OperatorDefinitionRegistry();
+        static OperatorSchemaRegistry* s_registry
+            = new OperatorSchemaRegistry();
         return s_registry;
     }
 
     Status TypeUtils::GetType(const AttributeProto& p_attr, AttrType& p_type)
     {
-        if (!OperatorSchema::IsValidAttribute(p_attr))
+        if (!OpSignature::IsValidAttribute(p_attr))
         {
             return Status(false, "Invalid AttributeProto.");
         }

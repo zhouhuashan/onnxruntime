@@ -49,11 +49,11 @@ namespace LotusIR
     typedef std::unordered_set<PTYPE> DataTypeSet;
     typedef std::unordered_map<std::string, std::pair<DataTypeSet, std::string>> TypeConstraintMap;
 
-    // Operator registry specification.
+    // Operator signature declaration.
     // It defines input formal parameter, output formal parameters and
     // attributes.
-    // Once an operator registry created, it's "Read-Only".
-    class OperatorSchema
+    // Once an operator signature created, it's "Read-Only".
+    class OpSignature
     {
     public:
 
@@ -155,7 +155,7 @@ namespace LotusIR
         static bool IsValidAttribute(const AttributeProto& p_attribute);
 
         // Constructor.
-        OperatorSchema() = default;
+        OpSignature() = default;
 
         // Get operator name.
         const std::string& GetName() const;
@@ -198,8 +198,8 @@ namespace LotusIR
 
     private:
 
-        friend class OperatorDefinitionSetter;
-        friend class OperatorDefinitionRegistry;
+        friend class OperatorSchemaSetter;
+        friend class OperatorSchemaRegistry;
 
         // Operator name.
         std::string m_name;

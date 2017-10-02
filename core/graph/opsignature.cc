@@ -1,8 +1,8 @@
-#include "opschema.h"
+#include "opsignature.h"
 
 namespace LotusIR
 {
-    OperatorSchema::FormalParameter::FormalParameter(
+    OpSignature::FormalParameter::FormalParameter(
         const std::string& p_name, const std::string& p_type,
         const std::string& p_description,
         const TypeConstraintMap& p_constraintMap)
@@ -22,27 +22,27 @@ namespace LotusIR
         }
     }
 
-    const std::string& OperatorSchema::FormalParameter::GetName() const
+    const std::string& OpSignature::FormalParameter::GetName() const
     {
         return m_name;
     }
 
-    const DataTypeSet& OperatorSchema::FormalParameter::GetTypes() const
+    const DataTypeSet& OpSignature::FormalParameter::GetTypes() const
     {
         return m_types;
     }
 
-    const std::string& OperatorSchema::FormalParameter::GetTypeStr() const
+    const std::string& OpSignature::FormalParameter::GetTypeStr() const
     {
         return m_typeStr;
     }
 
-    const std::string& OperatorSchema::FormalParameter::GetDescription() const
+    const std::string& OpSignature::FormalParameter::GetDescription() const
     {
         return m_description;
     }
 
-    OperatorSchema::Attribute::Attribute(
+    OpSignature::Attribute::Attribute(
         const std::string& p_attrName,
         AttrType p_type,
         const std::string& p_description,
@@ -53,7 +53,7 @@ namespace LotusIR
         m_allowedValues.push_back(p_defaultVal);
     }
 
-    OperatorSchema::Attribute::Attribute(
+    OpSignature::Attribute::Attribute(
         const std::string& p_attrName,
         AttrType p_type,
         const std::string& p_description)
@@ -62,17 +62,17 @@ namespace LotusIR
     {
     }
 
-    const std::string& OperatorSchema::Attribute::GetName() const
+    const std::string& OpSignature::Attribute::GetName() const
     {
         return m_name;
     }
 
-    AttrType OperatorSchema::Attribute::GetType() const
+    AttrType OpSignature::Attribute::GetType() const
     {
         return m_type;
     }
 
-    bool OperatorSchema::Attribute::HasDefaultValue(
+    bool OpSignature::Attribute::HasDefaultValue(
         const AttributeProto** p_value) const
     {
         if (m_hasDefaultValue
@@ -86,40 +86,40 @@ namespace LotusIR
 
 
 
-    const std::string& OperatorSchema::GetName() const
+    const std::string& OpSignature::GetName() const
     {
         return m_name;
     }
 
-    const std::string& OperatorSchema::GetDescription() const
+    const std::string& OpSignature::GetDescription() const
     {
         return m_description;
     }
 
-    const std::vector<OperatorSchema::FormalParameter>&
-        OperatorSchema::GetInputs() const
+    const std::vector<OpSignature::FormalParameter>&
+        OpSignature::GetInputs() const
     {
         return m_inputs;
     }
 
-    const std::vector<OperatorSchema::FormalParameter>&
-        OperatorSchema::GetOutputs() const
+    const std::vector<OpSignature::FormalParameter>&
+        OpSignature::GetOutputs() const
     {
         return m_outputs;
     }
 
-    const std::vector<OperatorSchema::Attribute>&
-        OperatorSchema::GetAttributes() const
+    const std::vector<OpSignature::Attribute>&
+        OpSignature::GetAttributes() const
     {
         return m_attributes;
     }
 
-    const TypeConstraintMap& OperatorSchema::GetTypeConstraintMap() const
+    const TypeConstraintMap& OpSignature::GetTypeConstraintMap() const
     {
         return m_typeConstraintMap;
     }
 
-    bool OperatorSchema::IsValidAttribute(const AttributeProto& p_attr)
+    bool OpSignature::IsValidAttribute(const AttributeProto& p_attr)
     {
         if (p_attr.name().empty())
         {

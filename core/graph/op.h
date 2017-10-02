@@ -4,15 +4,15 @@
 #include <functional>
 #include <unordered_map>
 
-#include "opschema.h"
+#include "opsignature.h"
 #include "shape_inference.h"
 
 namespace LotusIR
 {
-    class OperatorSchema;
+    class OpSignature;
 #ifdef ONNX_V1_OPSCHEMA_COMPAT
-    class OperatorDefinitionSetter;
-    typedef OperatorDefinitionSetter OpSchema;
+    class OperatorSchemaSetter;
+    typedef OperatorSchemaSetter OpSchema;
 #endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
 
     class TypeUtils
@@ -34,21 +34,21 @@ namespace LotusIR
     // to contain a <T> field, which is structured attributes.
     typedef std::function<Status(const NodeAttributes&)> AttributeParser;
 
-    class OperatorDefinition
+    class OperatorSchema
     {
     public:
 
         const std::string& GetName() const;
-        const OperatorSchema& GetOpSchema() const;
+        const OpSignature& GetOpSignature() const;
         ShapeInferenceFunc GetShapeInferenceFn() const;
         AttributeParser GetAttributeParser() const;
 
     private:
 
-        friend class OperatorDefinitionSetter;
-        friend class OperatorDefinitionRegistry;
+        friend class OperatorSchemaSetter;
+        friend class OperatorSchemaRegistry;
 
-        OperatorSchema m_opSchema;
+        OpSignature m_opSignature;
         ShapeInferenceFunc m_shapeInferenceFunc;
         AttributeParser m_attrParser;
     };
@@ -58,37 +58,37 @@ namespace LotusIR
     typedef std::tuple<std::string, std::vector<std::string>, std::string> TypeConstraintParam;
 
 #define ATTR_SETTER_INTERFACE(TypeName) \
-    OperatorDefinitionSetter& Attr(const std::string& p_attrName, \
+    OperatorSchemaSetter& Attr(const std::string& p_attrName, \
                                const std::string& p_description, \
                                AttrType p_attrType, \
                                const TypeName& p_defaultValue); \
-    OperatorDefinitionSetter& Attr(const std::string& p_attrName, \
+    OperatorSchemaSetter& Attr(const std::string& p_attrName, \
                                const std::string& p_description, \
                                AttrType p_attrType, \
                                const std::vector<TypeName>& p_defaultValues); \
 
     // Operator registry setter helper.
     // This is used in "OPERATOR_DEFINITION" macro, to separate setters from getters
-    // in OperatorSchema.
-    class OperatorDefinitionSetter
+    // in OpSignature.
+    class OperatorSchemaSetter
     {
     public:
 
-        OperatorDefinitionSetter() = default;
+        OperatorSchemaSetter() = default;
 
-        OperatorDefinitionSetter& Name(const std::string& p_opName);
+        OperatorSchemaSetter& Name(const std::string& p_opName);
 
-        OperatorDefinitionSetter& Description(const std::string& p_description);
+        OperatorSchemaSetter& Description(const std::string& p_description);
 
-        OperatorDefinitionSetter& Input(const std::string& p_inputName,
+        OperatorSchemaSetter& Input(const std::string& p_inputName,
             const std::string& p_description,
             const std::string& p_type = "");
 
-        OperatorDefinitionSetter& Output(const std::string& p_outputName,
+        OperatorSchemaSetter& Output(const std::string& p_outputName,
             const std::string& p_description,
             const std::string& p_type = "");
 
-        OperatorDefinitionSetter& Attr(const std::string& p_attrName,
+        OperatorSchemaSetter& Attr(const std::string& p_attrName,
             const std::string& p_description,
             AttrType p_attrType, bool required = false);
 
@@ -100,18 +100,18 @@ namespace LotusIR
         ATTR_SETTER_INTERFACE(TypeProto)
         ATTR_SETTER_INTERFACE(TensorShapeProto)
 
-        OperatorDefinitionSetter& TypeConstraint(const std::string& p_typeName,
+        OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
             const std::vector<std::string>& p_constraints,
             const std::string& p_description);
 
         // Shape inference function will be used to infer outputs' shape with
         // inputs' shape.
-        OperatorDefinitionSetter& SetShapeInferenceFunc(
+        OperatorSchemaSetter& SetShapeInferenceFunc(
             ShapeInferenceFunc p_shapeInferFunc);
 
         // Attribute parser will be used to parse Node's attributes to see
         // whether Node attributes are matching operator attributes definition.
-        OperatorDefinitionSetter& SetAttributeParser(
+        OperatorSchemaSetter& SetAttributeParser(
             AttributeParser p_attrParser);
 
 #ifdef ONNX_V1_OPSCHEMA_COMPAT
@@ -126,8 +126,8 @@ namespace LotusIR
         }
         OpSchema& NumInputs(int min, int max)
         {
-            m_opDefData.m_opSchema.m_onnxMinInput = min;
-            m_opDefData.m_opSchema.m_onnxMaxInput = max;
+            m_opSchema.m_opSignature.m_onnxMinInput = min;
+            m_opSchema.m_opSignature.m_onnxMaxInput = max;
             return *this;
         }
         OpSchema& NumInputs(std::set<int> allowed_input_nums)
@@ -138,7 +138,7 @@ namespace LotusIR
         }
         OpSchema& NumInputs(std::function<bool(int)> func)
         {
-            m_opDefData.m_opSchema.m_onnxNumInputsAllowed = func;
+            m_opSchema.m_opSignature.m_onnxNumInputsAllowed = func;
             return *this;
         }
         OpSchema& NumOutputs(int n) {
@@ -146,8 +146,8 @@ namespace LotusIR
         }
         OpSchema& NumOutputs(int min, int max)
         {
-            m_opDefData.m_opSchema.m_onnxMinOutput = min;
-            m_opDefData.m_opSchema.m_onnxMaxOutput = max;
+            m_opSchema.m_opSignature.m_onnxMinOutput = min;
+            m_opSchema.m_opSignature.m_onnxMaxOutput = max;
             return *this;
         }
         OpSchema& NumOutputs(std::set<int> allowed_output_nums)
@@ -158,12 +158,12 @@ namespace LotusIR
         }
         OpSchema& NumOutputs(std::function<bool(int)> func)
         {
-            m_opDefData.m_opSchema.m_onnxNumOutputsAllowed = func;
+            m_opSchema.m_opSignature.m_onnxNumOutputsAllowed = func;
             return *this;
         }
         OpSchema& NumInputsOutputs(std::function<bool(int, int)> func)
         {
-            m_opDefData.m_opSchema.m_onnxNumInputsOutputsAllowed = func;
+            m_opSchema.m_opSignature.m_onnxNumInputsOutputsAllowed = func;
             return *this;
         }
         OpSchema& OutputCalculator(std::function<int(int)> calc) { return *this; }
@@ -200,10 +200,10 @@ namespace LotusIR
 
     private:
 
-        //friend class OperatorSchema;
-        friend class OperatorDefinitionRegistry;
+        //friend class OpSignature;
+        friend class OperatorSchemaRegistry;
 
-        OperatorDefinition m_opDefData;
+        OperatorSchema m_opSchema;
 
         // Operator input formal parameters.
         std::vector<InputOutputParam> m_inputs;
@@ -217,48 +217,47 @@ namespace LotusIR
 
     // Operator schema registry. A singleton registry to manage all operator
     // schemas.
-    class OperatorDefinitionRegistry
+    class OperatorSchemaRegistry
     {
     public:
 
         // Helper function providing a way to call
-        // OperatorSchemaFactory::Register().
+        // OpSignatureFactory::Register().
         class RegisterOnce
         {
         public:
 
-            RegisterOnce(OperatorDefinitionSetter& p_opRegistry);
+            RegisterOnce(OperatorSchemaSetter& p_opRegistry);
         };
 
         // Try to get operator with specified operator name.
         bool TryGetOp(const std::string& p_name,
-            const OperatorDefinition** p_opRegistry) const;
+            const OperatorSchema** p_opRegistry) const;
 
         // Register an operator.
-        Status Register(const OperatorDefinition& p_opDefData);
+        Status Register(const OperatorSchema& p_opSchema);
 
         // Get the global operator registry factory instance.
-        static OperatorDefinitionRegistry* Get();
+        static OperatorSchemaRegistry* Get();
 
     private:
 
-        OperatorDefinitionRegistry() = default;
+        OperatorSchemaRegistry() = default;
 
         // An operator name to operator definition data map.
-        std::unordered_map<std::string, OperatorDefinition> m_opNameToOpDefDataMap;
+        std::unordered_map<std::string, OperatorSchema> m_opNameToOpSchemaMap;
     };
 
 #ifdef ONNX_V1_OPSCHEMA_COMPAT
     // utility function used by ONNX v1 op registration defs.
     size_t ReplaceAll(std::string& s, const char* from, const char* to);
-#define OPERATOR_SCHEMA(OpName) OPERATOR_DEFINITION(OpName)
 #endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
 
-#define OPERATOR_DEFINITION(OpName) OPERATOR_DEFINITION_UNIQ_HELPER(__COUNTER__, OpName)
-#define OPERATOR_DEFINITION_UNIQ_HELPER(Counter, OpName) OPERATOR_DEFINITION_UNIQ(Counter, OpName)
-#define OPERATOR_DEFINITION_UNIQ(Counter, OpName)                     \
-    static OperatorDefinitionRegistry::RegisterOnce op_##Counter  \
-    = OperatorDefinitionSetter().Name(#OpName)
+#define OPERATOR_SCHEMA(OpName) OPERATOR_SCHEMA_UNIQ_HELPER(__COUNTER__, OpName)
+#define OPERATOR_SCHEMA_UNIQ_HELPER(Counter, OpName) OPERATOR_SCHEMA_UNIQ(Counter, OpName)
+#define OPERATOR_SCHEMA_UNIQ(Counter, OpName)                     \
+    static OperatorSchemaRegistry::RegisterOnce op_##Counter  \
+    = OperatorSchemaSetter().Name(#OpName)
 
     // Operator registration example.
     // OPERATOR_DEFINITION(Add).Description("An operator to sum two float numbers.")

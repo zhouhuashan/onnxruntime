@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "core/protobuf/graph.pb.h"
 #include "constants.h"
+#include "core/protobuf/graph.pb.h"
 #include "status.h"
 #include "utils.h"
 
@@ -18,7 +18,7 @@ namespace LotusIR
     typedef ArgInfoProto NodeArgInfo;
 
     class Graph;
-    class OperatorSchema;
+    class OpSignature;
 
     // Node argument definition, for both input and output,
     // including arg name, arg type and arg shape.
@@ -537,7 +537,7 @@ namespace LotusIR
             /*out*/ std::set<std::string>& p_funcDefNames);
 
         Status InferAndVerifyTypeMatch(Node* p_node,
-            const OperatorSchema* p_op,
+            const OpSignature* p_op,
             const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs);
 
         // Clean function definition map.

@@ -823,7 +823,7 @@ namespace LotusIR
     }
 
     Status Graph::InferAndVerifyTypeMatch(Node* p_node,
-        const OperatorSchema* p_op,
+        const OpSignature* p_op,
         const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs)
     {
         auto& nodeName = p_node->Name();
@@ -1033,12 +1033,12 @@ namespace LotusIR
             auto node = GetNode(nodeIndex);
             std::string nodeName = node->Name();
             std::string op_type = node->OpType();
-            const OperatorDefinition* opDefData = nullptr;
+            const OperatorSchema* opSchema = nullptr;
             bool success
-                = OperatorDefinitionRegistry::Get()->TryGetOp(op_type, &opDefData);
+                = OperatorSchemaRegistry::Get()->TryGetOp(op_type, &opSchema);
             if (success)
             {
-                auto& op = opDefData->GetOpSchema();
+                auto& op = opSchema->GetOpSignature();
 
                 // The node refers to a primitive operator.
                 // Infer and verify node input arg type information.
@@ -1153,7 +1153,7 @@ namespace LotusIR
 
                 // Attribute verification and fill node attribute with
                 // default value defined in operator definition if needed.
-                auto attrParser = opDefData->GetAttributeParser();
+                auto attrParser = opSchema->GetAttributeParser();
                 if (nullptr != attrParser)
                 {
                     // Attribute parser registered.

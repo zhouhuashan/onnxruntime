@@ -1,8 +1,8 @@
 #ifndef CORE_GRAPH_SHAPEINFERENCE_H
 #define CORE_GRAPH_SHAPEINFERENCE_H
 
-#include "opschema.h"
 #include "graph.h"
+#include "opsignature.h"
 
 namespace LotusIR
 {
@@ -18,11 +18,11 @@ namespace LotusIR
         // TODO: An abstract tensor interface will be needed.
         // In some cases, node evaluation will be needed to get output shapes.
         InferenceContext(Node* p_node,
-            const OperatorSchema* p_opSchema);
+            const OpSignature* p_opSchema);
 
         const Node* GetNode() const;
 
-        const OperatorSchema* GetOp() const;
+        const OpSignature* GetOp() const;
 
         const std::vector<NodeArg>* GetInputs() const;
 
@@ -32,7 +32,7 @@ namespace LotusIR
 
         Node* m_node;
 
-        const OperatorSchema* m_opSchema;
+        const OpSignature* m_opSignature;
     };
 
     // Shape inference function define.

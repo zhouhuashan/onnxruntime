@@ -3,12 +3,11 @@
 #include <iostream>
 #include <sstream>
 
+#include "constants.h"
 #include "core/protobuf/Data.pb.h"
 #include "core/protobuf/graph.pb.h"
 #include "core/protobuf/Type.pb.h"
-#include "constants.h"
 #include "utils.h"
-
 
 namespace LotusIR
 {
