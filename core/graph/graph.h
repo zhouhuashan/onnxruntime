@@ -16,6 +16,7 @@ namespace LotusIR
     typedef int64_t GRAPH_VERSION;
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
     typedef ArgInfoProto NodeArgInfo;
+    typedef std::unordered_map<std::string, TensorProto> InitialTensorSet;
 
     class Graph;
     class OpSignature;
@@ -396,6 +397,7 @@ namespace LotusIR
         void RemoveInitialTensor(const std::string& p_tensorName);
         bool GetInitialTensor(const std::string& p_tensorName,
             TensorProto& p_value) const;
+        const InitialTensorSet& GetAllInitialTensors() const;
 
         // Add or Remove a function definition.
         bool AddFunctionDef(const FunctionDefProto& p_function);
@@ -580,8 +582,7 @@ namespace LotusIR
         // Graph function definitions.
         std::unordered_map<std::string, FunctionDefProto> m_funcDefMap;
 
-        std::unordered_map<std::string,
-            TensorProto> m_nameToInitialTensor;
+        InitialTensorSet m_nameToInitialTensor;
 
         // A flag indicates whether <*this> graph needs to be resolved.
         bool m_graphResolveNeeded;

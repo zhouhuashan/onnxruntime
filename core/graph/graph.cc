@@ -1355,6 +1355,11 @@ namespace LotusIR
         return true;
     }
 
+    const InitialTensorSet& Graph::GetAllInitialTensors() const
+    {
+        return m_nameToInitialTensor;
+    }
+
     bool Graph::AddFunctionDef(const FunctionDefProto& p_funcDef)
     {
         auto funcDefName = p_funcDef.name();
