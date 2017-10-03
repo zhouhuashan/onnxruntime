@@ -26,7 +26,9 @@ def run_subprocess(args, cwd=None):
 def generate_build_tree(cmake_path, source_dir, build_dir):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
-    run_subprocess([cmake_path, cmake_dir, "-G", "Visual Studio 14 Win64"],
+    run_subprocess([cmake_path, cmake_dir,
+                   "-G", "Visual Studio 14 Win64",
+                   "-DlotusIR_RUN_ONNX_TESTS=ON"],
                    cwd=build_dir)
 
 def build_targets(cmake_path, build_dir, configs):
