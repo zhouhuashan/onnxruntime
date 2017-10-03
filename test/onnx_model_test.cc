@@ -16,21 +16,21 @@ namespace LotusIR
             EXPECT_TRUE(status.Ok());
         }
 
-#ifdef false
+#ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
         TEST(ONNXModelsTest, bvlc_alexnet)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\bvlc_alexnet.pb";
+            std::wstring filePath = L".\\models\\bvlc_alexnet\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
-        TEST(ONNXModelsTest, densenet121)
+        TEST(DISABLED_ONNXModelsTest, densenet121)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\densenet121.pb";
+            std::wstring filePath = L".\\models\\densenet121\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
@@ -40,7 +40,7 @@ namespace LotusIR
         TEST(ONNXModelsTest, inception_v1)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\inception_v1.pb";
+            std::wstring filePath = L".\\models\\inception_v1\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
@@ -50,7 +50,7 @@ namespace LotusIR
         TEST(ONNXModelsTest, inception_v2)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\inception_v2.pb";
+            std::wstring filePath = L".\\models\\inception_v2\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
@@ -60,7 +60,7 @@ namespace LotusIR
         TEST(ONNXModelsTest, resnet50)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\resnet50.pb";
+            std::wstring filePath = L".\\models\\resnet50\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
@@ -70,7 +70,7 @@ namespace LotusIR
         TEST(ONNXModelsTest, shufflenet)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\shufflenet.pb";
+            std::wstring filePath = L".\\models\\shufflenet\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
@@ -80,7 +80,7 @@ namespace LotusIR
         TEST(ONNXModelsTest, squeezenet)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\squeezenet.pb";
+            std::wstring filePath = L".\\models\\squeezenet\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
@@ -90,7 +90,7 @@ namespace LotusIR
         TEST(ONNXModelsTest, vgg16)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\vgg16.pb";
+            std::wstring filePath = L".\\models\\vgg16\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();
@@ -100,7 +100,7 @@ namespace LotusIR
         TEST(ONNXModelsTest, vgg19)
         {
             GraphProto graphProto;
-            std::wstring filePath = L".\\testdata\\vgg19.pb";
+            std::wstring filePath = L".\\models\\vgg19\\graph.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));
             Graph graph(graphProto);
             auto status = graph.Resolve();

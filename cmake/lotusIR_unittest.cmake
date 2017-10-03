@@ -18,7 +18,11 @@ function(AddTest)
   list(REMOVE_DUPLICATES _UT_SOURCES)
   
   add_executable(${_UT_TARGET} ${_UT_SOURCES})
-  add_dependencies(${_UT_TARGET} googletest lotusIR_graph)
+  if (lotusIR_RUN_ONNX_TESTS)
+    add_dependencies(${_UT_TARGET} googletest lotusIR_graph models)
+  else()
+    add_dependencies(${_UT_TARGET} googletest lotusIR_graph)
+  endif()
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS})
   
@@ -39,3 +43,13 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${TEST_DATA_SRC}
             ${TEST_DATA_DES})
+
+#Copy large onnx models to test dir
+if (lotusIR_RUN_ONNX_TESTS)
+  add_custom_command(
+      TARGET ${UT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+              ${CMAKE_CURRENT_BINARY_DIR}/models/models/onnx
+              $<TARGET_FILE_DIR:${UT_NAME}>/models
+      DEPENDS ${UT_NAME})
+endif()
