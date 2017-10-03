@@ -8,6 +8,7 @@ namespace LotusIR
     {
         TEST(ONNXModelsTest, super_resolution)
         {
+            // NOTE: this requires the current directory to be where LotusIR_UT.exe is located
             GraphProto graphProto;
             std::wstring filePath = L".\\testdata\\super_resolution.pb";
             EXPECT_TRUE(Graph::Load(filePath, &graphProto));

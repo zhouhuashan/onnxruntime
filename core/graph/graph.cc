@@ -1,4 +1,6 @@
+#include <fcntl.h>
 #include <fstream>
+#include <io.h>
 #include <iostream>
 #include <numeric>
 
@@ -1716,9 +1718,17 @@ namespace LotusIR
 
     bool Graph::Save(const GraphProto& p_graphProto, const std::wstring& p_filePath)
     {
+#if SUPPORTS_IOSTREAMS
         std::fstream outputFileStream(p_filePath, std::ios::out | std::ios::binary);
         bool result = p_graphProto.SerializeToOstream(&outputFileStream);
         outputFileStream.close();
+#else
+        int fd;
+        errno_t err = _wsopen_s(&fd, p_filePath.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+        if (err) return false;
+        bool result = p_graphProto.SerializeToFileDescriptor(fd);
+        _close(fd);
+#endif
         return result;
     }
 
@@ -1735,6 +1745,7 @@ namespace LotusIR
             return false;
         }
 
+#if SUPPORTS_IOSTREAMS
         std::fstream inputFileStream(p_filePath, std::ios::in | std::ios::binary);
         if (!inputFileStream)
         {
@@ -1743,6 +1754,13 @@ namespace LotusIR
 
         bool result = p_graphProto->ParsePartialFromIstream(&inputFileStream);
         inputFileStream.close();
+#else
+        int fd;
+        errno_t err = _wsopen_s(&fd, p_filePath.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+        if (err) return false;
+        bool result = p_graphProto->ParsePartialFromFileDescriptor(fd);
+        _close(fd);
+#endif
 
         return result;
     }
