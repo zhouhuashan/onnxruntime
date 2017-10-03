@@ -471,6 +471,8 @@ namespace LotusIR
         const Node* SourceNode() const;
         const Node* SinkNode() const;
 
+        Status GetNodesInToplogicalOrder(std::vector<NODEINDEX>& nodes);
+
         // Save a GraphProto to a file.
         static bool Save(const GraphProto& p_graphProto, const std::wstring& p_filePath);
 

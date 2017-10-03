@@ -1276,6 +1276,11 @@ namespace LotusIR
         return Status::OK();
     }
 
+    Status Graph::GetNodesInToplogicalOrder(std::vector<NODEINDEX>& nodes)
+    {
+        return CheckIsAcyclic(nodes);
+    }
+
     void Graph::AddSourceSinkNodes()
     {
         std::vector<NodeArg> emptyArgs;
