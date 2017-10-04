@@ -1174,22 +1174,11 @@ namespace LotusIR
                             const AttributeProto* defaultValue = nullptr;
                             bool hasDefaultValue
                                 = attrDef.HasDefaultValue(&defaultValue);
-                            if (!hasDefaultValue)
+                            if (hasDefaultValue)
                             {
-                                if (0 == (m_graphType & Type::Strict))
-                                {
-                                    // It's ONNX, which does not have default value.
-                                    continue;
-                                }
-
-                                Status status(false,
-                                    "Error: the mandatory attribute ("
-                                    + attrDef.GetName() + ") is not specified in Node ("
-                                    + nodeName + ").");
-                                return status;
-                            }
-
-                            node->AddAttribute(attrDef.GetName(), *defaultValue);
+                                // Set default value to the node attributes.
+                                node->AddAttribute(attrDef.GetName(), *defaultValue);
+                            }                            
                         }
                         else
                         {
