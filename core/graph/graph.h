@@ -19,6 +19,7 @@ namespace LotusIR
     typedef std::unordered_map<std::string, TensorProto> InitialTensorSet;
 
     class Graph;
+    class Node;
     class OpSignature;
 
     // Node argument definition, for both input and output,
@@ -518,7 +519,7 @@ namespace LotusIR
         // edge.
         // <p_nodesInToplogicalOrder> returns nodes' indexes in toplogical
         // order if <Status> returned is "OK", otherwise it's undefined.
-        Status Graph::CheckIsAcyclic(
+        Status CheckIsAcyclic(
             /*out*/std::vector<NODEINDEX>& p_nodesInToplogicalOrder);
 
         // Depth-first graph access.
@@ -552,7 +553,7 @@ namespace LotusIR
         void AddSourceSinkNodes();
 
         // Set graph inputs/outputs when serializing to proto.
-        void Graph::SetGraphInputsOutputs();
+        void SetGraphInputsOutputs();
 
         // Graph nodes.
         // Element in <m_nodes> may be nullptr due to graph optimization.

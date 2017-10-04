@@ -253,7 +253,7 @@ namespace LotusIR
     size_t ReplaceAll(std::string& s, const char* from, const char* to);
 #endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
 
-#define OPERATOR_SCHEMA(OpName) OPERATOR_SCHEMA_UNIQ_HELPER(__COUNTER__, OpName)
+#define REGISTER_OPERATOR_SCHEMA(OpName) OPERATOR_SCHEMA_UNIQ_HELPER(__COUNTER__, OpName)
 #define OPERATOR_SCHEMA_UNIQ_HELPER(Counter, OpName) OPERATOR_SCHEMA_UNIQ(Counter, OpName)
 #define OPERATOR_SCHEMA_UNIQ(Counter, OpName)                     \
     static OperatorSchemaRegistry::RegisterOnce op_##Counter  \

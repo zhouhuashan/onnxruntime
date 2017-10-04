@@ -6,7 +6,7 @@
 
 namespace LotusIR
 {
-    OPERATOR_SCHEMA(RandomUniform)
+    REGISTER_OPERATOR_SCHEMA(RandomUniform)
         .NumInputs(0)
         .NumOutputs(1)
         .SetDoc(R"DOC(
@@ -42,7 +42,7 @@ TensorProto message.
             "output",
             "Output tensor of random values drawn from uniform distribution");
 
-    OPERATOR_SCHEMA(RandomNormal)
+    REGISTER_OPERATOR_SCHEMA(RandomNormal)
         .NumInputs(0)
         .NumOutputs(1)
         .SetDoc(R"DOC(
@@ -79,7 +79,7 @@ TensorProto message.
             "output",
             "Output tensor of random values drawn from normal distribution");
 
-    OPERATOR_SCHEMA(RandomUniformLike)
+    REGISTER_OPERATOR_SCHEMA(RandomUniformLike)
         .NumInputs(1)
         .NumOutputs(1)
         .SetDoc(R"DOC(
@@ -116,7 +116,7 @@ TensorProto message.
             "output",
             "Output tensor of random values drawn from uniform distribution");
 
-    OPERATOR_SCHEMA(RandomNormalLike)
+    REGISTER_OPERATOR_SCHEMA(RandomNormalLike)
         .NumInputs(1)
         .NumOutputs(1)
         .SetDoc(R"DOC(

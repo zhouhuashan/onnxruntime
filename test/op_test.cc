@@ -19,7 +19,7 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, OpRegTestNoTypes)
         {
-            OPERATOR_SCHEMA(__TestOpRegNoTypes).Description("Op Registration Without Types.")
+            REGISTER_OPERATOR_SCHEMA(__TestOpRegNoTypes).Description("Op Registration Without Types.")
                 .Input("input_1", "docstr for input_1.")
                 .Input("input_2", "docstr for input_2.")
                 .Output("output_1", "docstr for output_1.");
@@ -40,7 +40,7 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, OpRegTest)
         {
-            OPERATOR_SCHEMA(__TestOpReg).Description("Op Registration Basic Test.")
+            REGISTER_OPERATOR_SCHEMA(__TestOpReg).Description("Op Registration Basic Test.")
                 .Input("input_1", "docstr for input_1.", "int32")
                 .Input("input_2", "docstr for input_2.", "int32")
                 .Output("output_1", "docstr for output_1.", "int32");
@@ -64,7 +64,7 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, TypeConstraintTest)
         {
-            OPERATOR_SCHEMA(__TestTypeConstraint).Description("Op with Type Constraint.")
+            REGISTER_OPERATOR_SCHEMA(__TestTypeConstraint).Description("Op with Type Constraint.")
                 .Input("input_1", "docstr for input_1.", "T")
                 .Input("input_2", "docstr for input_2.", "T")
                 .Output("output_1", "docstr for output_1.", "T")
@@ -97,7 +97,7 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, AttributeTest)
         {
-            OPERATOR_SCHEMA(__TestAttr).Description("Op with attributes.")
+            REGISTER_OPERATOR_SCHEMA(__TestAttr).Description("Op with attributes.")
                 .Attr("my_attr_int", "attr with INT type", AttrType::INT)
                 .Attr("my_attr_float", "attr with FLOAT type", AttrType::FLOAT)
                 .Attr("my_attr_string", "attr with STRING type", AttrType::STRING);
@@ -121,7 +121,7 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, AttributeDefaultValueTest)
         {
-            OPERATOR_SCHEMA(__TestAttrDefaultValue).Description("Op with attributes that have default values")
+            REGISTER_OPERATOR_SCHEMA(__TestAttrDefaultValue).Description("Op with attributes that have default values")
                 .Attr("my_attr_int", "attr with default value of 99.", AttrType::INT, 99LL)
                 .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::FLOAT, 0.99f)
                 .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::STRING, std::string("99"));
@@ -159,7 +159,7 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, AttributeDefaultValueListTest)
         {
-            OPERATOR_SCHEMA(__TestAttrDefaultValueList).Description("Op with attributes that have default list of values.")
+            REGISTER_OPERATOR_SCHEMA(__TestAttrDefaultValueList).Description("Op with attributes that have default list of values.")
                 .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::INTS, std::vector<int64_t> {98LL, 99LL, 100LL})
                 .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::FLOATS, std::vector<float> {0.98f, 0.99f, 1.00f})
                 .Attr("my_attr_strings", "attr with default value of [\"98\", \"99\", \"100\"].", AttrType::STRINGS, std::vector<std::string> {"98", "99", "100"});
