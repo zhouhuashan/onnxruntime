@@ -780,20 +780,20 @@ namespace LotusIR
     }
 
     Status Graph::CheckIsAcyclic(
-        std::vector<NODEINDEX>& p_nodesInToplogicalOrder)
+        std::vector<NODEINDEX>& p_nodesInTopologicalOrder)
     {
         std::unordered_set<NODEINDEX> visitedNodes;
         std::unordered_set<NODEINDEX> ancestorNodes;
         return DepthFirstAccess(ancestorNodes,
             m_sinkNodeIndex,
             visitedNodes,
-            p_nodesInToplogicalOrder);
+            p_nodesInTopologicalOrder);
     }
 
     Status Graph::DepthFirstAccess(std::unordered_set<NODEINDEX> p_ancestors,
         NODEINDEX p_current,
         std::unordered_set<NODEINDEX>& p_visitedNodes,
-        std::vector<NODEINDEX>& p_nodesInToplogicalOrder)
+        std::vector<NODEINDEX>& p_nodesInTopologicalOrder)
     {
         if (p_visitedNodes.end() != p_visitedNodes.find(p_current))
         {
@@ -816,10 +816,10 @@ namespace LotusIR
             RETURN_IF_ERROR(DepthFirstAccess(p_ancestors,
                 (*iter)->Index(),
                 p_visitedNodes,
-                p_nodesInToplogicalOrder));
+                p_nodesInTopologicalOrder));
         }
         p_visitedNodes.insert(p_current);
-        p_nodesInToplogicalOrder.push_back(p_current);
+        p_nodesInTopologicalOrder.push_back(p_current);
 
         return Status::OK();
     }
@@ -1020,11 +1020,11 @@ namespace LotusIR
     }
 
     Status Graph::VerifyNodeAndOpMatch(
-        const std::vector<NODEINDEX>& p_nodesInToplogicalOrder,
+        const std::vector<NODEINDEX>& p_nodesInTopologicalOrder,
         std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
         /*out*/ std::set<std::string>& p_funcDefNames)
     {
-        for (auto nodeIndex : p_nodesInToplogicalOrder)
+        for (auto nodeIndex : p_nodesInTopologicalOrder)
         {
             if (IsSourceNode(nodeIndex)
                 || IsSinkNode(nodeIndex))
@@ -1252,16 +1252,23 @@ namespace LotusIR
         RETURN_IF_ERROR(VerifyNoDuplicateName(outputArgs, nodeNameToIndex));
         RETURN_IF_ERROR(BuildConnections(outputArgs, nodeNameToIndex));
 
-        std::vector<NODEINDEX> nodesInToplogicalOrder;
-        RETURN_IF_ERROR(CheckIsAcyclic(nodesInToplogicalOrder));
+        RETURN_IF_ERROR(CheckIsAcyclic(m_nodesInTopologicalOrder));
 
         std::set<std::string> funcDefNames;
-        RETURN_IF_ERROR(VerifyNodeAndOpMatch(nodesInToplogicalOrder,
+        RETURN_IF_ERROR(VerifyNodeAndOpMatch(m_nodesInTopologicalOrder,
             outputArgs,
             funcDefNames));
         CleanFunctionDefMap(funcDefNames);
 
         m_graphResolveNeeded = false;
+        return Status::OK();
+    }
+
+    Status Graph::GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes)
+    {
+        RETURN_IF_ERROR(Resolve());
+
+        *nodes = &m_nodesInTopologicalOrder;
         return Status::OK();
     }
 
