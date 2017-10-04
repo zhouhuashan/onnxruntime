@@ -1275,14 +1275,11 @@ namespace LotusIR
         return Status::OK();
     }
 
-    Status Graph::GetNodesInTopologicalOrder(std::vector<NODEINDEX>& nodes)
+    Status Graph::GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes)
     {
-        if (m_graphResolveNeeded)
-        {
-            RETURN_IF_ERROR(Resolve());
-        }
+        RETURN_IF_ERROR(Resolve());
 
-        nodes = m_nodesInTopologicalOrder;
+        *nodes = &m_nodesInTopologicalOrder;
         return Status::OK();
     }
 
