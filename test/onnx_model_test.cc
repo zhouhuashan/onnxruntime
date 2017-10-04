@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "graph.h"
+#include "model.h"
 #include "op.h"
 
 namespace LotusIR
@@ -9,102 +10,102 @@ namespace LotusIR
         TEST(ONNXModelsTest, super_resolution)
         {
             // NOTE: this requires the current directory to be where LotusIR_UT.exe is located
-            GraphProto graphProto;
+            ModelProto modelProto;
             std::wstring filePath = L".\\testdata\\super_resolution.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
 #ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
         TEST(ONNXModelsTest, bvlc_alexnet)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\bvlc_alexnet\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\bvlc_alexnet\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(DISABLED_ONNXModelsTest, densenet121)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\densenet121\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\densenet121\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(ONNXModelsTest, inception_v1)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\inception_v1\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\inception_v1\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(ONNXModelsTest, inception_v2)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\inception_v2\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\inception_v2\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(ONNXModelsTest, resnet50)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\resnet50\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\resnet50\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(ONNXModelsTest, shufflenet)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\shufflenet\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\shufflenet\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(ONNXModelsTest, squeezenet)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\squeezenet\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\squeezenet\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(ONNXModelsTest, vgg16)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\vgg16\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\vgg16\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
         TEST(ONNXModelsTest, vgg19)
         {
-            GraphProto graphProto;
-            std::wstring filePath = L".\\models\\vgg19\\graph.pb";
-            EXPECT_TRUE(Graph::Load(filePath, &graphProto));
-            Graph graph(graphProto);
-            auto status = graph.Resolve();
+            ModelProto modelProto;
+            std::wstring filePath = L".\\models\\vgg19\\model.pb";
+            EXPECT_TRUE(Model::Load(filePath, &modelProto));
+            Model model(modelProto);
+            auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 #endif

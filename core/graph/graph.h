@@ -13,9 +13,9 @@
 namespace LotusIR
 {
     typedef size_t NODEINDEX;
-    typedef int64_t GRAPH_VERSION;
+    typedef int64_t VERSION;
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
-    typedef ArgInfoProto NodeArgInfo;
+    typedef ValueInfoProto NodeArgInfo;
     typedef std::unordered_map<std::string, TensorProto> InitialTensorSet;
 
     class Graph;
@@ -23,15 +23,30 @@ namespace LotusIR
     class OpSignature;
 
     // Node argument definition, for both input and output,
-    // including arg name, arg type and arg shape.
+    // including arg name, arg type (contains both type and shape).
+    //
+    // Design Question: in my (Ke's) opinion, shape should not be part of type.
+    // We may align the protobuf design with our operator registry interface,
+    // which has type specified for each operator, but no shape. Well, shape
+    // should be inferred with a separate shape inference function given
+    // input shapes, or input tensor data sometimes.
+    // With shape as part of type (current protobuf design), 
+    // 1) we'll have to split the "TypeProto" into type and shape in this internal
+    // representation interface so that it could be easily used when doing type
+    // inference and matching with operator registry.
+    // 2) SetType should be always called before SetShape, otherwise, SetShape()
+    // will fail. Because shape is located in a TypeProto.
+    // Thoughts?
+    //
     class NodeArg
     {
     public:
 
-        // Constructor by specifying a name, type and shape.
+        // Constructor by specifying node arg name and type&shape which is
+        // optional. This is called when loading a <Graph> from <GraphProto>
+        // normally.
         NodeArg(const std::string& p_name,
-            const TypeProto& p_type,
-            const TensorShapeProto& p_shape);
+            const TypeProto* p_argType);
 
         // Get node arg name.
         const std::string& Name() const;
@@ -39,11 +54,16 @@ namespace LotusIR
         // Get node arg type.
         const PTYPE& Type() const;
 
-        // Get/set node arg shape.
-        const TensorShapeProto& Shape() const;
-        void SetShape(const TensorShapeProto& p_shape);
+        // Get node arg shape.
+        // Return null pointer if there's no shape specified.
+        const TypeProto::TensorShapeProto* Shape() const;
 
-        // Get node arg information except name.
+        // Set node arg shape.
+        // Shape could only be set after setting type since shape information
+        // now is part of TypeProto.
+        void SetShape(const TypeProto::TensorShapeProto& p_shape);
+
+        // Get node arg info proto.
         const NodeArgInfo& ToProto() const;
 
     private:
@@ -51,22 +71,14 @@ namespace LotusIR
         friend class Node;
         friend class Graph;
 
-        // Constructor by specifying node arg name and <NodeArgInfo> which is
-        // optional. This is called when loading a <Graph> from <GraphProto>
-        // normally.
-        NodeArg(const std::string& p_name,
-            const NodeArgInfo* p_nodeProtoInputOutput);
-
         void SetType(PTYPE p_type);
+        void SetType(const TypeProto& p_typeProto);
 
-        // Node arg name.
-        std::string m_name;
-
-        // Node arg DType.
+        // Node arg PType.
         PTYPE m_type;
 
-        // Node arg type and shape.
-        NodeArgInfo m_nodeArgTypeAndShape;
+        // Node arg name, type and shape.
+        NodeArgInfo m_nodeArgInfo;
     };
 
     // Function representation.
@@ -221,7 +233,7 @@ namespace LotusIR
         ADD_ATTR_INTERFACES(TensorProto)
         ADD_ATTR_INTERFACES(GraphProto)
         ADD_ATTR_INTERFACES(TypeProto)
-        ADD_ATTR_INTERFACES(TensorShapeProto)
+        ADD_ATTR_INTERFACES(TypeProto::TensorShapeProto)
 
         // Clear specified node attribute.
         bool ClearAttribute(const std::string& p_attrName);
@@ -250,6 +262,9 @@ namespace LotusIR
             m_graph(p_graph) {}
         Node(const Node& p_other);
 
+        // Init node per <NodeProto>.
+        // <p_nameToValueInfoMap> specifies the node's inputs'/outputs' value information,
+        // including name, type and shape.
         void Init(const NodeProto& p_nodeProto);
         void Init(const std::string& p_name,
             const std::string& p_opType,
@@ -347,10 +362,8 @@ namespace LotusIR
         };
 
         // Constructor from scratch.
-        Graph(const std::string& p_name,
-            GRAPH_VERSION p_irVersion,
-            GRAPH_VERSION p_producerVersion,
-            const std::string& p_producerTag);
+        Graph(const std::string& p_name);
+        Graph(const std::string& p_name, const std::string& p_docString);
 
         // Constructor: Given a <GraphProto> loaded from model file, construct
         // a <Graph> object.
@@ -376,18 +389,6 @@ namespace LotusIR
         // 3. Cleanup function definition lists.
         // Returns resolving status.
         Status Resolve();
-
-        // Getter and Setter for producer version.
-        GRAPH_VERSION ProducerVersion() const;
-        void SetProducerVersion(GRAPH_VERSION p_producerVersion);
-
-        // Getter and Setter for IR version.
-        GRAPH_VERSION IrVersion() const;
-        void SetIrVersion(GRAPH_VERSION p_irVersion);
-
-        // Getter and Setter for producer tag.
-        const std::string& ProducerTag() const;
-        void SetProducerTag(const std::string& p_producerTag);
 
         // Getter and Setter for graph name.
         const std::string& Name() const;
@@ -473,16 +474,6 @@ namespace LotusIR
         const Node* SinkNode() const;
 
         Status GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes);
-
-        // Save a GraphProto to a file.
-        static bool Save(const GraphProto& p_graphProto, const std::wstring& p_filePath);
-
-        static bool Save(Graph& p_graph, const std::wstring& p_filePath);
-
-        // Load a GraphProto from a file.
-        static bool Load(const std::wstring& p_filePath, /*out*/ GraphProto* p_graphProto);
-
-        static std::shared_ptr<Graph> Load(const std::wstring& p_filePath);
 
     private:
 

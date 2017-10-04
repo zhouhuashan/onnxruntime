@@ -3,6 +3,7 @@
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
 #include "graph.h"
+#include "model.h"
 #include "op.h"
 
 namespace LotusIR
@@ -13,25 +14,24 @@ namespace LotusIR
 
         TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName)
         {
-            Graph graph("graph_1", 1, 1, "tag_1");
+            Graph graph("graph_1");
 
-            EXPECT_EQ(1, graph.IrVersion());
             EXPECT_EQ("graph_1", graph.Name());
 
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
 
+            // INT32 vector.
             TypeProto outputType;
             outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-            TensorShapeProto outputShape;
-            outputShape.add_dim()->set_dim_value(1);
+            outputType.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            NodeArg outputArg("node_1_out_1", outputType, outputShape);
+            NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             auto node_1 = graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
             // Case 1: Adding two nodes with same node name should fail.
-            auto nodeWithDupName = graph.AddNode("node_1", "Variable", "node 1", inputs, outputs);
+            auto nodeWithDupName = graph.AddNode("node_1", "Variable", "node 2", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMsg());
@@ -46,17 +46,17 @@ namespace LotusIR
 
         TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch)
         {
-            Graph graph("graph_1", 1, 1, "tag_1");
+            Graph graph("graph_1");
 
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
 
+            // INT32 vector.
             TypeProto outputType;
             outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-            TensorShapeProto outputShape;
-            outputShape.add_dim()->set_dim_value(1);
+            outputType.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            NodeArg outputArg("node_1_out_1", outputType, outputShape);
+            NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             // Case: Adding node refering to non-existing operator should fail.
             auto nodeWithOpNotExist = graph.AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
@@ -69,7 +69,8 @@ namespace LotusIR
 
         TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic)
         {
-            Graph graph("graph_1", 1, 1, "tag_1");
+            Model model("graph_1");
+            auto& graph = *(model.MainGraph());
 
             // Case 1: A normal graph.
             //                 SouceNode
@@ -86,21 +87,21 @@ namespace LotusIR
 
             TypeProto tensor_int32;
             tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-            TensorShapeProto scalarShape;
+            tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             REGISTER_OPERATOR_SCHEMA(Variable_Fake).Description("Input variable.")
                 .Input("input_1", "docstr for input_1.", "int32")
                 .Output("output_1", "docstr for output_1.", "int32");
 
-            NodeArg inputArg("node_1_in_1", tensor_int32, scalarShape);
+            NodeArg inputArg("node_1_in_1", &tensor_int32);
             inputs.push_back(inputArg);
-            NodeArg outputArg("node_1_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg("node_1_out_1", &tensor_int32);
             outputs.push_back(outputArg);
             auto node_1 = graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
-            NodeArg inputArg2("node_2_in_1", tensor_int32, scalarShape);
+            NodeArg inputArg2("node_2_in_1", &tensor_int32);
             inputs.clear();
             inputs.push_back(inputArg2);
-            NodeArg outputArg2("node_2_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg2("node_2_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg2);
             auto node_2 = graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
@@ -112,7 +113,7 @@ namespace LotusIR
             inputs.clear();
             inputs.push_back(outputArg);
             inputs.push_back(outputArg2);
-            NodeArg outputArg3("node_3_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg3("node_3_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg3);
             auto node_3 = graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
@@ -122,34 +123,34 @@ namespace LotusIR
                 .Output("output_1", "docstr for output_1.", "int32");
             inputs.clear();
             inputs.push_back(outputArg3);
-            NodeArg outputArg4("node_4_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg4("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
             auto node_4 = graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 
-            EXPECT_TRUE(Graph::Save(graph, L"graph_1_copy.pb"));
-            auto& graphProto = graph.ToGraphProto();
-            EXPECT_TRUE(Graph::Save(graphProto, L"graph_1.pb"));
-            GraphProto graphProto2;
-            EXPECT_TRUE(Graph::Load(L"graph_1.pb", &graphProto2));
-            bool equalProto1And2 = MessageDifferencer::MessageDifferencer::Equals(graphProto, graphProto2);
+            EXPECT_TRUE(Model::Save(model, L"graph_1_copy.pb"));
+            auto& modelProto = model.ToProto();
+            EXPECT_TRUE(Model::Save(modelProto, L"graph_1.pb"));
+            ModelProto modelProto2;
+            EXPECT_TRUE(Model::Load(L"graph_1.pb", &modelProto2));
+            bool equalProto1And2 = MessageDifferencer::MessageDifferencer::Equals(modelProto, modelProto2);
             std::string diff;
             if (!equalProto1And2)
             {
                 MessageDifferencer d;
                 d.ReportDifferencesToString(&diff);
-                d.Compare(graphProto, graphProto2);
+                d.Compare(modelProto, modelProto2);
             }
             else
             {
-              diff = "it's fine";
+                diff = "it's fine";
             }
             EXPECT_TRUE(equalProto1And2) << diff;
-            GraphProto graphProto3;
-            EXPECT_TRUE(Graph::Load(L"graph_1_copy.pb", &graphProto3));
-            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(graphProto, graphProto3));
+            ModelProto modelProto3;
+            EXPECT_TRUE(Model::Load(L"graph_1_copy.pb", &modelProto3));
+            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(modelProto, modelProto3));
 
             // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
             node_1->Mutable_InputDefs()[0] = outputArg4;
@@ -170,9 +171,7 @@ namespace LotusIR
                 .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "int32","float" }, "input/output types");
 
-
-
-            Graph graph("graph_1", 1, 1, "tag_1");
+            Graph graph("graph_1");
 
             // Case 1: A normal graph.
             //                         SouceNode
@@ -187,26 +186,26 @@ namespace LotusIR
 
             TypeProto tensor_int32;
             tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-            TensorShapeProto scalarShape;
+            tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            NodeArg inputArg("node_1_in_1", tensor_int32, scalarShape);
+            NodeArg inputArg("node_1_in_1", &tensor_int32);
             inputs.push_back(inputArg);
-            NodeArg outputArg("node_1_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg("node_1_out_1", &tensor_int32);
             outputs.push_back(outputArg);
             auto node_1 = graph.AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
-            NodeArg inputArg2("node_2_in_1", tensor_int32, scalarShape);
+            NodeArg inputArg2("node_2_in_1", &tensor_int32);
             inputs.clear();
             inputs.push_back(inputArg2);
-            NodeArg outputArg2("node_2_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg2("node_2_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg2);
             auto node_2 = graph.AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
-            NodeArg inputArg3("node_3_in_1", tensor_int32, scalarShape);
+            NodeArg inputArg3("node_3_in_1", &tensor_int32);
             inputs.clear();
             inputs.push_back(inputArg3);
-            NodeArg outputArg3("node_3_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg3("node_3_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg3);
             auto node_3 = graph.AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
@@ -215,7 +214,7 @@ namespace LotusIR
             inputs.push_back(outputArg);
             inputs.push_back(outputArg2);
             inputs.push_back(outputArg3);
-            NodeArg outputArg4("node_4_out_1", tensor_int32, scalarShape);
+            NodeArg outputArg4("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
             auto node_4 = graph.AddNode("node_4", "Max_Fake", "node 4", inputs, { 3 }, outputs);
@@ -225,16 +224,16 @@ namespace LotusIR
             auto& graphProto = graph.ToGraphProto();
             EXPECT_EQ(3, graphProto.input_size());
             std::string expectedGraphInputs = " node_1_in_1, node_2_in_1, node_3_in_1";
-            EXPECT_GT(expectedGraphInputs.find(graphProto.input(0)), 0);
-            EXPECT_GT(expectedGraphInputs.find(graphProto.input(1)), 0);
-            EXPECT_GT(expectedGraphInputs.find(graphProto.input(2)), 0);
-            EXPECT_EQ("node_4_out_1", graphProto.output(0));
+            EXPECT_GT(expectedGraphInputs.find(graphProto.input(0).name()), 0);
+            EXPECT_GT(expectedGraphInputs.find(graphProto.input(1).name()), 0);
+            EXPECT_GT(expectedGraphInputs.find(graphProto.input(2).name()), 0);
+            EXPECT_EQ("node_4_out_1", graphProto.output(0).name());
             EXPECT_EQ(1, graphProto.output_size());
 
             TypeProto tensor_float;
             tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-            node_2->Mutable_InputDefs()[0] = NodeArg("node_2_in_1", tensor_float, scalarShape);
-            node_2->Mutable_OutputDefs()[0] = NodeArg("node_2_out_1", tensor_float, scalarShape);
+            node_2->Mutable_InputDefs()[0] = NodeArg("node_2_in_1", &tensor_float);
+            node_2->Mutable_OutputDefs()[0] = NodeArg("node_2_out_1", &tensor_float);
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Node (node_4) has different input types (int32,float) matching to same type string (T).", status.ErrorMsg());
@@ -247,13 +246,14 @@ namespace LotusIR
                 .Output("output_1", "docstr for output_1.", "int64");
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
-            Graph graph("graph_1", 1, 1, "tag_1");
+            Graph graph("graph_1");
             TypeProto outputType;
             outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
-            TensorShapeProto outputShape;
+            TypeProto::TensorShapeProto outputShape;
             outputShape.mutable_dim()->Add()->set_dim_value(1);
             outputShape.mutable_dim()->Add()->set_dim_value(3);
-            NodeArg outputArg("node_1_out_1", outputType, outputShape);
+            *(outputType.mutable_tensor_type()->mutable_shape()) = outputShape;
+            NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             auto node_1 = graph.AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
             TensorProto t;

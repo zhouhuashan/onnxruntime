@@ -98,7 +98,7 @@ namespace LotusIR
         ATTR_SETTER_INTERFACE(TensorProto)
         ATTR_SETTER_INTERFACE(GraphProto)
         ATTR_SETTER_INTERFACE(TypeProto)
-        ATTR_SETTER_INTERFACE(TensorShapeProto)
+        ATTR_SETTER_INTERFACE(TypeProto::TensorShapeProto)
 
         OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
             const std::vector<std::string>& p_constraints,
