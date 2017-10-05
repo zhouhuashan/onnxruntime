@@ -302,5 +302,45 @@ namespace LotusIR
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
         }
+
+        TEST(CreateOnnxModelFromScratch, GraphConstruction_SkipTypeCheckingForOnnx)
+        {
+            Model model("graph_1");
+            Model model_onnx("graph_1_onnx", true);
+            Graph* graph = model.MainGraph();
+            Graph* graphOnnx = model_onnx.MainGraph();
+
+            EXPECT_EQ("graph_1", graph->Name());
+
+            std::vector<NodeArg> inputs;
+            std::vector<NodeArg> outputs;
+
+            TypeProto floatTensor; // NCHW
+            floatTensor.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+
+            inputs.push_back(NodeArg("node_1_in_1", &floatTensor));
+            outputs.push_back(NodeArg("node_1_out_1", &floatTensor));
+
+            floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            inputs.push_back(NodeArg("node_1_in_2", &floatTensor));
+            inputs.push_back(NodeArg("node_1_in_3", &floatTensor));
+            inputs.push_back(NodeArg("node_1_in_4", &floatTensor));
+            inputs.push_back(NodeArg("node_1_in_5", &floatTensor));
+
+            auto node_1 = graph->AddNode("node_1", "BatchNormalization", "node 1.", inputs, outputs);
+            EXPECT_TRUE(nullptr != node_1);
+            auto node_onnx = graphOnnx->AddNode("node_1", "BatchNormalization", "node 1.", inputs, outputs);
+            EXPECT_TRUE(nullptr != node_onnx);
+            auto status = graph->Resolve();
+            EXPECT_FALSE(status.Ok());
+            EXPECT_EQ("Error: node (node_1)'s number of outputs does not match its operator (BatchNormalization) specification.", status.ErrorMsg());
+            status = graphOnnx->Resolve();
+            EXPECT_TRUE(status.Ok());
+        }
     }
 }
