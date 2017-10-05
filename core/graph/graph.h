@@ -17,6 +17,7 @@ namespace LotusIR
     typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
     typedef ValueInfoProto NodeArgInfo;
     typedef std::unordered_map<std::string, TensorProto> InitialTensorSet;
+    typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
 
     class Graph;
     class Node;
@@ -265,7 +266,8 @@ namespace LotusIR
         // Init node per <NodeProto>.
         // <p_nameToValueInfoMap> specifies the node's inputs'/outputs' value information,
         // including name, type and shape.
-        void Init(const NodeProto& p_nodeProto);
+        void Init(const NodeProto& p_nodeProto,
+            const ArgNameToTypeMap& p_nameToType);
         void Init(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
@@ -493,7 +495,8 @@ namespace LotusIR
         void ReleaseNode(NODEINDEX p_nodeIndex);
 
         // Add node with specified <p_nodeProto>.
-        Node* AddNode(const NodeProto& p_nodeProto);
+        Node* AddNode(const NodeProto& p_nodeProto,
+            const ArgNameToTypeMap& p_nameToType);
 
         Status VerifyNoDuplicateName(
             /*out*/ std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,

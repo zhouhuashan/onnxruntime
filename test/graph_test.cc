@@ -69,6 +69,17 @@ namespace LotusIR
 
         TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic)
         {
+            REGISTER_OPERATOR_SCHEMA(Variable_Fake).Description("Input variable.")
+                .Input("input_1", "docstr for input_1.", "int32")
+                .Output("output_1", "docstr for output_1.", "int32");
+            REGISTER_OPERATOR_SCHEMA(Add_Fake).Description("Add two integers.")
+                .Input("input_1", "docstr for input_1.", "int32")
+                .Input("input_2", "docstr for input_2.", "int32")
+                .Output("output_1", "docstr for output_1.", "int32");
+            REGISTER_OPERATOR_SCHEMA(NoOp_Fake).Description("Operator doing nothing.")
+                .Input("input_1", "docstr for input_1.", "int32")
+                .Output("output_1", "docstr for output_1.", "int32");
+
             Model model("graph_1");
             auto& graph = *(model.MainGraph());
 
@@ -85,17 +96,17 @@ namespace LotusIR
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
 
+            std::unordered_map<std::string, std::pair<std::vector<NodeArg>, std::vector<NodeArg>>> expectedNodeNameToInputOutputArgs;
+
             TypeProto tensor_int32;
             tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
-            REGISTER_OPERATOR_SCHEMA(Variable_Fake).Description("Input variable.")
-                .Input("input_1", "docstr for input_1.", "int32")
-                .Output("output_1", "docstr for output_1.", "int32");
 
             NodeArg inputArg("node_1_in_1", &tensor_int32);
             inputs.push_back(inputArg);
             NodeArg outputArg("node_1_out_1", &tensor_int32);
             outputs.push_back(outputArg);
+            expectedNodeNameToInputOutputArgs["node_1"] = { inputs, outputs };
             auto node_1 = graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
             NodeArg inputArg2("node_2_in_1", &tensor_int32);
@@ -104,28 +115,24 @@ namespace LotusIR
             NodeArg outputArg2("node_2_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg2);
+            expectedNodeNameToInputOutputArgs["node_2"] = { inputs, outputs };
             auto node_2 = graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
 
-            REGISTER_OPERATOR_SCHEMA(Add_Fake).Description("Add two integers.")
-                .Input("input_1", "docstr for input_1.", "int32")
-                .Input("input_2", "docstr for input_2.", "int32")
-                .Output("output_1", "docstr for output_1.", "int32");
             inputs.clear();
             inputs.push_back(outputArg);
             inputs.push_back(outputArg2);
             NodeArg outputArg3("node_3_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg3);
+            expectedNodeNameToInputOutputArgs["node_3"] = { inputs, outputs };
             auto node_3 = graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
 
-            REGISTER_OPERATOR_SCHEMA(NoOp_Fake).Description("Operator doing nothing.")
-                .Input("input_1", "docstr for input_1.", "int32")
-                .Output("output_1", "docstr for output_1.", "int32");
             inputs.clear();
             inputs.push_back(outputArg3);
             NodeArg outputArg4("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
+            expectedNodeNameToInputOutputArgs["node_4"] = { inputs, outputs };
             auto node_4 = graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
@@ -151,6 +158,34 @@ namespace LotusIR
             ModelProto modelProto3;
             EXPECT_TRUE(Model::Load(L"graph_1_copy.pb", &modelProto3));
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(modelProto, modelProto3));
+
+            // Load the model again to ensure that it's still the right thing.
+            Model model2(modelProto3);
+            Graph* graph2 = model2.MainGraph();
+            for (auto nodeIter = graph2->Nodes_begin(); nodeIter != graph2->Nodes_end(); ++nodeIter)
+            {
+                if (graph2->IsSourceNode((*nodeIter)->Index())
+                    || graph2->IsSinkNode((*nodeIter)->Index()))
+                {
+                    continue;
+                }
+                auto nodeNameToInputOutputIter = expectedNodeNameToInputOutputArgs.find((*nodeIter)->Name());
+                EXPECT_FALSE(nodeNameToInputOutputIter == expectedNodeNameToInputOutputArgs.end());
+
+                EXPECT_EQ(nodeNameToInputOutputIter->second.first.size(), (*nodeIter)->InputDefs().size());
+                for (size_t i = 0; i < nodeNameToInputOutputIter->second.first.size();++i)
+                {
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.first[i].Name(), (*nodeIter)->InputDefs()[i].Name());
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.first[i].Type(), (*nodeIter)->InputDefs()[i].Type());
+                }
+
+                EXPECT_EQ(nodeNameToInputOutputIter->second.second.size(), (*nodeIter)->OutputDefs().size());
+                for (size_t i = 0; i < nodeNameToInputOutputIter->second.second.size();++i)
+                {
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.second[i].Name(), (*nodeIter)->OutputDefs()[i].Name());
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.second[i].Type(), (*nodeIter)->OutputDefs()[i].Type());
+                }
+            }
 
             // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
             node_1->Mutable_InputDefs()[0] = outputArg4;
