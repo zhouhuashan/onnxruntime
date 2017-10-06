@@ -122,8 +122,8 @@ namespace LotusIR
         TEST(OpRegistrationTest, AttributeDefaultValueTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestAttrDefaultValue).Description("Op with attributes that have default values")
-                .Attr("my_attr_int", "attr with default value of 99.", AttrType::INT, 99LL)
-                .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::FLOAT, 0.99f)
+                .Attr("my_attr_int", "attr with default value of 99.", AttrType::INT, int64_t(99))
+                .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::FLOAT, float(0.99))
                 .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::STRING, std::string("99"));
             const OperatorSchema* opSchema;
             const OpSignature* op;
@@ -160,8 +160,8 @@ namespace LotusIR
         TEST(OpRegistrationTest, AttributeDefaultValueListTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestAttrDefaultValueList).Description("Op with attributes that have default list of values.")
-                .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::INTS, std::vector<int64_t> {98LL, 99LL, 100LL})
-                .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::FLOATS, std::vector<float> {0.98f, 0.99f, 1.00f})
+                .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::INTS, std::vector<int64_t> {int64_t(98), int64_t(99), int64_t(100)})
+                .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::FLOATS, std::vector<float> {float(0.98), float(0.99), float(1.00)})
                 .Attr("my_attr_strings", "attr with default value of [\"98\", \"99\", \"100\"].", AttrType::STRINGS, std::vector<std::string> {"98", "99", "100"});
             const OperatorSchema* opSchema;
             const OpSignature* op;

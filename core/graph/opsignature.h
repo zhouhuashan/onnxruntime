@@ -4,7 +4,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include "core\protobuf\graph.pb.h"
+#include "core/protobuf/graph.pb.h"
 #include "utils.h"
 
 namespace LotusIR

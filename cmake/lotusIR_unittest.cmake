@@ -1,11 +1,27 @@
 set(UT_NAME ${PROJECT_NAME}_UT)
 
+find_package(Threads)
+
+function(add_whole_archive_flag lib output_var)
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    set(${output_var} -Wl,-force_load,$<TARGET_FILE:${lib}> PARENT_SCOPE)
+  elseif(MSVC)
+    # In MSVC, we will add whole archive in default.
+    set(${output_var} -WHOLEARCHIVE:$<TARGET_FILE:${lib}> PARENT_SCOPE)
+  else()
+    # Assume everything else is like gcc
+    set(${output_var} -Wl,--whole-archive ${lib} -Wl,--no-whole-archive PARENT_SCOPE)
+  endif()
+endfunction()
+
 set(${UT_NAME}_libs
-    -WHOLEARCHIVE:$<TARGET_FILE:lotusIR_graph>
     lotusIR_protos
     ${googletest_STATIC_LIBRARIES}
     ${protobuf_STATIC_LIBRARIES}
 )
+
+add_whole_archive_flag(lotusIR_graph tmp)
+list(APPEND ${UT_NAME}_libs ${tmp})
 
 file(GLOB_RECURSE ${UT_NAME}_src
     "${LOTUSIR_ROOT}/test/*.cc"
@@ -24,9 +40,11 @@ function(AddTest)
     add_dependencies(${_UT_TARGET} googletest lotusIR_graph)
   endif()
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
-  target_link_libraries(${_UT_TARGET} ${_UT_LIBS})
+  target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
   
 endfunction(AddTest)
+
+
 
 AddTest(
     TARGET ${UT_NAME}
