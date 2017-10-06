@@ -8,8 +8,7 @@ namespace LotusIR {
         .Input("X", "input tensor", "T")
         .Output("C", "Result, has same shape and type as X", "T")
         .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
-        .Attr("scale", "the scale to apply, default 1.0", AttrType::FLOAT, float(1.0))
-        .Attr("bias", "the scale to apply, default 1.0", AttrType::FLOAT, float(1.0));
+        .Attr("scale", "the scale to apply, default 1.0", AttrType::FLOAT, float(1.0));
 
     REGISTER_OPERATOR_SCHEMA(BatchToSpace)
         .Description("BatchToSpace for 4-D tensors of type T. "

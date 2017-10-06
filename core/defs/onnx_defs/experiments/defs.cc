@@ -259,19 +259,6 @@ will throw errors.
 Given a matrix, apply L2-normalization along the last dimension.
 )DOC");
 
-    REGISTER_OPERATOR_SCHEMA(Scale)
-        .SetSupportLevel(SupportType::EXPERIMENTAL)
-        .NumInputs(1)
-        .NumOutputs(1)
-        .AllowConsumed({ {0, 0} })
-        .SetDoc(R"DOC(
-Scale takes one input data (Tensor<float>) and produces one output data
-(Tensor<float>) whose value is the input data tensor scaled element-wise.
-)DOC")
-.Attr("scale",
-    "(float, default 1.0) the scale to apply.",
-    AttrType::FLOAT);
-
     REGISTER_OPERATOR_SCHEMA(ChannelShuffle)
         .SetSupportLevel(SupportType::EXPERIMENTAL)
         .NumInputs(1)

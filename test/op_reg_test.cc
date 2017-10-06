@@ -24,7 +24,6 @@ namespace LotusIR
             EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::FLOAT);
         }
 
-
         TEST(OpRegistrationTest, EmbeddingOp)
         {
             const OperatorSchema* opSchema;
