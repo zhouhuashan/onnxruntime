@@ -65,7 +65,7 @@ def build_targets(cmake_path, build_dir, configs):
 def run_tests(ctest_path, build_dir, configs):
     for config in configs:
         log.info("Running tests for %s configuration", config)
-        run_subprocess([ctest_path, "--build-config", config],
+        run_subprocess([ctest_path, "--build-config", config, "--verbose"],
                        cwd=get_config_build_dir(build_dir, config))
 
 def main():
