@@ -19,6 +19,7 @@ namespace
         bool err = _wsopen_s(&fd, p_path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
         return fd;
     }
+
     inline int FileOpenWr(const std::wstring& p_path)
     {
         int fd = -1;
@@ -26,6 +27,7 @@ namespace
         return fd;
     }
 #endif
+
     inline int FileOpenRd(const std::string& p_path)
     {
 #ifdef _WIN32
@@ -36,6 +38,7 @@ namespace
         return open(p_path.c_str(), O_RDONLY);
 #endif
     }
+
     inline int FileOpenWr(const std::string& p_path)
     {
 #ifdef _WIN32

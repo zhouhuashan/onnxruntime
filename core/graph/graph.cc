@@ -528,21 +528,21 @@ namespace LotusIR
     };                                                                           \
 
     ADD_BASIC_ATTR_IMPL(float, f)
-        ADD_BASIC_ATTR_IMPL(int64_t, i)
-        ADD_BASIC_ATTR_IMPL(std::string, s)
-        ADD_ATTR_IMPL(TensorProto, t)
-        ADD_ATTR_IMPL(TypeProto::TensorShapeProto, shape)
-        ADD_ATTR_IMPL(GraphProto, g)
-        ADD_ATTR_IMPL(TypeProto, type)
-        ADD_LIST_ATTR_IMPL(float, floats)
-        ADD_LIST_ATTR_IMPL(int64_t, ints)
-        ADD_LIST_ATTR_IMPL(std::string, strings)
-        ADD_LIST_ATTR_IMPL(TensorProto, tensors)
-        ADD_LIST_ATTR_IMPL(TypeProto::TensorShapeProto, shapes)
-        ADD_LIST_ATTR_IMPL(GraphProto, graphs)
-        ADD_LIST_ATTR_IMPL(TypeProto, types)
+    ADD_BASIC_ATTR_IMPL(int64_t, i)
+    ADD_BASIC_ATTR_IMPL(std::string, s)
+    ADD_ATTR_IMPL(TensorProto, t)
+    ADD_ATTR_IMPL(TypeProto::TensorShapeProto, shape)
+    ADD_ATTR_IMPL(GraphProto, g)
+    ADD_ATTR_IMPL(TypeProto, type)
+    ADD_LIST_ATTR_IMPL(float, floats)
+    ADD_LIST_ATTR_IMPL(int64_t, ints)
+    ADD_LIST_ATTR_IMPL(std::string, strings)
+    ADD_LIST_ATTR_IMPL(TensorProto, tensors)
+    ADD_LIST_ATTR_IMPL(TypeProto::TensorShapeProto, shapes)
+    ADD_LIST_ATTR_IMPL(GraphProto, graphs)
+    ADD_LIST_ATTR_IMPL(TypeProto, types)
 
-        bool Node::ClearAttribute(const std::string& p_attrName)
+    bool Node::ClearAttribute(const std::string& p_attrName)
     {
         m_graph->m_graphResolveNeeded = true;
         m_graph->m_graphProtoSyncNeeded = true;

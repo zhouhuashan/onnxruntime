@@ -15,6 +15,14 @@ namespace LotusIR
             Model model(modelProto);
             auto status = model.MainGraph()->Resolve();
             EXPECT_TRUE(status.Ok());
+#ifdef _WIN32
+            // wstring version
+            ModelProto modelProto2;
+            EXPECT_TRUE(Model::Load(L"./testdata/super_resolution.pb", &modelProto2));
+            Model model2(modelProto2);
+            status = model2.MainGraph()->Resolve();
+            EXPECT_TRUE(status.Ok());
+#endif
         }
 
 #ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
