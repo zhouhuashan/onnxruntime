@@ -7,8 +7,12 @@ project(LotusIR C CXX)
 # Set C++14 as standard for the whole project
 set(CMAKE_CXX_STANDARD 14)
 
+# Enable CTest
+enable_testing()
+
 # Options
 option(lotusIR_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
+option(lotusIR_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
 
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)

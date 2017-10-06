@@ -41,7 +41,18 @@ function(AddTest)
   endif()
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-  
+
+  set(TEST_ARGS)
+  if (lotusIR_GENERATE_TEST_REPORTS)
+    # generate a report file next to the test program
+    list(APPEND TEST_ARGS
+      "--gtest_output=xml:$<SHELL_PATH:$<TARGET_FILE:${_UT_TARGET}>.$<CONFIG>.results.xml>")
+  endif(lotusIR_GENERATE_TEST_REPORTS)
+
+  add_test(NAME ${_UT_TARGET}
+    COMMAND ${_UT_TARGET} ${TEST_ARGS}
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:${_UT_TARGET}>
+  )
 endfunction(AddTest)
 
 
@@ -53,16 +64,16 @@ AddTest(
 )
 
 set(TEST_DATA_SRC ${LOTUSIR_ROOT}/test/testdata)
-set(TEST_DATA_DES ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration)/testdata)
+set(TEST_DATA_DES $<TARGET_FILE_DIR:${UT_NAME}>/testdata)
 
-#Copy test data from source to destination.
+# Copy test data from source to destination.
 add_custom_command(
     TARGET ${UT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${TEST_DATA_SRC}
             ${TEST_DATA_DES})
 
-#Copy large onnx models to test dir
+# Copy large onnx models to test dir
 if (lotusIR_RUN_ONNX_TESTS)
   add_custom_command(
       TARGET ${UT_NAME} POST_BUILD
