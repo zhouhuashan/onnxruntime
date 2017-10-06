@@ -1,5 +1,5 @@
 #include <iostream>
-#include "core/protobuf/Type.pb.h"
+#include "core/protobuf/graph.pb.h"
 #include "gtest/gtest.h"
 #include "op.h"
 #include "utils.h"

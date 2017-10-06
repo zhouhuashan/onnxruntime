@@ -1,6 +1,6 @@
 #include "google/protobuf/util/message_differencer.h"
+#include "core/protobuf/graph.pb.h"
 #include "gtest/gtest.h"
-#include "core/protobuf/Type.pb.h"
 #include "utils.h"
 
 using google::protobuf::util::MessageDifferencer;
