@@ -44,7 +44,7 @@ namespace LotusIR
             EXPECT_TRUE(status.Ok());
         }
 
-        TEST(DISABLED_ONNXModelsTest, inception_v1)
+        TEST(ONNXModelsTest, inception_v1)
         {
             ModelProto modelProto;
             EXPECT_TRUE(Model::Load("./models/inception_v1/model.pb", &modelProto));
@@ -53,7 +53,7 @@ namespace LotusIR
             EXPECT_TRUE(status.Ok());
         }
 
-        TEST(DISABLED_ONNXModelsTest, inception_v2)
+        TEST(ONNXModelsTest, inception_v2)
         {
             ModelProto modelProto;
             EXPECT_TRUE(Model::Load("./models/inception_v2/model.pb", &modelProto));
@@ -71,7 +71,7 @@ namespace LotusIR
             EXPECT_TRUE(status.Ok());
         }
 
-        TEST(DISABLED_ONNXModelsTest, shufflenet)
+        TEST(ONNXModelsTest, shufflenet)
         {
             ModelProto modelProto;
             EXPECT_TRUE(Model::Load("./models/shufflenet/model.pb", &modelProto));
@@ -80,7 +80,7 @@ namespace LotusIR
             EXPECT_TRUE(status.Ok());
         }
 
-        TEST(DISABLED_ONNXModelsTest, squeezenet)
+        TEST(ONNXModelsTest, squeezenet)
         {
             ModelProto modelProto;
             EXPECT_TRUE(Model::Load("./models/squeezenet/model.pb", &modelProto));
