@@ -31,7 +31,7 @@ namespace LotusIR {
                          "Input data tensor from the previous operator; dimensions for image case "
                          "are (N x C x H x W), where N is the batch size, C is the number of channels, "
                          "and H and W are the height and the width of the data. For non image case, the "
-                         "dimension are in the form of (N x D1 x D2 ... Dn), where N is the batch size.");
+                         "dimension are in the form of (N x C x D1 x D2 ... Dn), where N is the batch size.");
             schema.Output(0,
                           "Y",
                           "Output data tensor from average pooling across the input "
@@ -72,7 +72,7 @@ namespace LotusIR {
                          "Input data tensor from the previous operator; dimensions for image case "
                          "are (N x C x H x W), where N is the batch size, C is the number of channels, "
                          "and H and W are the height and the width of the data. For non image case, the "
-                         "dimension are in the form of (N x D1 x D2 ... Dn), where N is the batch size.");
+                         "dimension are in the form of (N x C x D1 x D2 ... Dn), where N is the batch size.");
             schema.Output(0,
                           "Y",
                           "Output data tensor from max pooling across the input "
@@ -100,10 +100,12 @@ computes the output.)DOC";
                          " H and W are the height and width. Note that this is for the 2D image."
                          "Otherwise the size is (N x D1 x D2 ... x Dn)");
             schema.Input(1,
-                         "filter",
-                         "The filter blob that will be used in the convolutions; "
+                         "weights",
+                         "The weight tensor that will be used in the convolutions; "
                          "has size (M x C x kH x kW), where C is the number of channels, "
-                         "and kH and kW are the height and width of the kernel.");
+                         "and kH and kW are the height and width of the kernel, and M is the number "
+                         "of feature maps. For more than 2 dimensions, the kernel shape will be "
+                         "(M x C x k1 x k2 x ... x kn), where is the dimension of the kernel");
             schema.Output(0,
                           "Y",
                           "Output data tensor that contains the result of the convolution. The "
@@ -147,10 +149,12 @@ and computes the output.)DOC";
                          " H and W are the height and width. Note that this is for the 2D image."
                          "Otherwise the size is (N x D1 x D2 ... x Dn)");
             schema.Input(1,
-                         "filter",
-                         "The filter blob that will be used in the convolutions; "
-                         "has size (M x C x kH x kW), where C is the number of channels, "
-                         "and kH and kW are the height and width of the kernel.");
+                         "weights",
+                         "The weight tensor that will be used in the convolutions; "
+                         "has size (C x M x kH x kW), where C is the number of channels, "
+                         "and kH and kW are the height and width of the kernel, and M is the number "
+                         "of feature maps. For more than 2 dimensions, the kernel shape will be "
+                         "(C x M x k1 x k2 x ... x kn), where is the dimension of the kernel");
             schema.Output(0,
                           "Y",
                           "Output data tensor that contains the result of the convolution. The "
@@ -194,7 +198,7 @@ and computes the output.)DOC";
                 "Input data tensor from the previous operator; dimensions for image case "
                 "are (N x C x H x W), where N is the batch size, C is the number of channels, "
                 "and H and W are the height and the width of the data. For non image case, the "
-                "dimension are in the form of (N x D1 x D2 ... Dn), where N is the batch size.");
+                "dimension are in the form of (N x C x D1 x D2 ... Dn), where N is the batch size.");
             schema.Output(0,
                 "Y",
                 "Output data tensor from pooling across the input "
@@ -306,6 +310,6 @@ unchanged.
     "output",
     "A tensor of rank 2 with the contents of the input tensor, "
     "with first dimension equal first dimension of input, and remaining "
-    "input dimensions flatenned into the inner dimension of the output.");
+    "input dimensions flattened into the inner dimension of the output.");
 }
 #endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT

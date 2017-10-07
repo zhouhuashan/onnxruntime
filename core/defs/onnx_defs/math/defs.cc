@@ -201,8 +201,10 @@ is applied to the tensor elementwise.
         .NumInputs(1)
         .NumOutputs(1)
         .AllowConsumed({ {0, 0} })
+	    .Attr("alpha",
+	          "Coefficient of ELU default to 1.0.",
+	          AttrType::FLOAT)
         .SetDoc(R"DOC(
-
 Elu takes one input data (Tensor<T>) and produces one output data
 (Tensor<T>) where the function `f(x) = alpha * (exp(x) - 1.) for x <
 0`, `f(x) = x for x >= 0`., is applied to the tensor elementwise.
@@ -383,5 +385,31 @@ will throw errors.
         .Output(0, "output", "The softmax normalized output values with the same "
             "shape as input tensor.");
 
+	REGISTER_OPERATOR_SCHEMA(Gemm)
+	    .NumInputs(3)
+	    .NumOutputs(1)
+	    .SetDoc(R"DOC(General Matrix multiplication: https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms#Level_3
+	Compute Y = alpha * A * B + beta * C, where input tensor A has dimension (M X K), input tensor B has dimension (K X N), input tensor C and output tensor Y have dimension (M X N). Input tensor C can be used inplace as the output tensor Y. If attribute broadcast is non-zero, input tensor C will be broadcasted to match the dimension requirement. If A can be transposed before doing the computation if attribute transA is non-zero, same for B and transB.
+	)DOC")
+	    .Input(0, "A", "Input tensor A")
+	    .Input(1, "B", "Input tensor B")
+	    .Input(2, "C", "Input tensor C, can be inplace.")
+	    .AllowConsumed({{2, 0}})
+	    .Output(0, "Y", "Output tensor.")
+	    .Attr("transA",
+	          "Whether A should be transposed",
+	          AttrType::INT)
+	    .Attr("transB",
+	          "Whether B should be transposed",
+	          AttrType::INT)
+	    .Attr("broadcast",
+	          "Whether C should be broadcasted",
+	          AttrType::INT)
+	    .Attr("alpha",
+	          "Scalar multiplier for the product of input tensors A * B",
+	          AttrType::FLOAT)
+	    .Attr("beta",
+	          "Scalar multiplier for input tensor C",
+	          AttrType::FLOAT);
 }
 #endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
