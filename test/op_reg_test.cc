@@ -4,7 +4,7 @@
 #include "op.h"
 #include "utils.h"
 
-namespace LotusIR 
+namespace LotusIR
 {
     namespace Test
     {
@@ -33,7 +33,7 @@ namespace LotusIR
             op = &(opSchema->GetOpSignature());
             size_t input_size = op->GetInputs().size();
             EXPECT_EQ(input_size, 1);
-            DataTypeSet input_types, output_types; 
+            DataTypeSet input_types, output_types;
             input_types.emplace(Utils::OpUtils::ToType( "uint64" ));
             output_types.emplace(Utils::OpUtils::ToType("float16"));
             output_types.emplace(Utils::OpUtils::ToType("float"));
@@ -47,7 +47,7 @@ namespace LotusIR
             EXPECT_EQ(op->GetAttributes()[1].GetName(), "output_dim");
             EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::INT);
             EXPECT_EQ(op->GetAttributes()[2].GetName(), "weights");
-            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::FLOAT);
+            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::FLOATS);
         }
     }
 

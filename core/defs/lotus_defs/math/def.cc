@@ -2,123 +2,145 @@
 
 namespace LotusIR {
 
-    REGISTER_OPERATOR_SCHEMA(Linear)
-        .Description("Linear takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the linear function, f(x)= alpha * x + beta is "
-            "applied to the tensor elementwise.")
-        .Input("input", "Input tensor of any shape", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("alpha", "Scalar multiplication factor", AttrType::FLOAT)
-        .Attr("beta", "Scalar offset", AttrType::FLOAT);
+    #define REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(OpName)                                                    \
+    REGISTER_OPERATOR_SCHEMA(OpName)                                                                        \
+        .Description("Elementwise "#OpName" takes one or more input data (Tensor<T>) and produces one "     \
+            "output data (Tensor<T>) where the declared function is applied to the input "                  \
+            "tensors elementwise.")                                                                         \
+        .Input("data_0", "First of the input tensors. Can be inplace.", "T")                                \
+        .Output("output", "Output tensor. Same dimension as inputs.", "T")                                  \
+        .TypeConstraint("T", { "float16", "float", "double" },                                              \
+            "Constrain input and output types to floats.");
 
-    REGISTER_OPERATOR_SCHEMA(HardSigmoid)
-        .Description("HardSigmoid takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the hard sigmoid function, f(x) = max⁡(0,min⁡(alpha*x+beta,1)), "
-            "is applied to the  tensor elementwise.")
-        .Input("input", "Input tensor of any shape", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("alpha", "Scaling value", AttrType::FLOAT)
-        .Attr("beta", "Scalar offset", AttrType::FLOAT);
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Plus)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Minus)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Multiply)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Max)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Min)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Mean)
 
-    REGISTER_OPERATOR_SCHEMA(ScaledTanh)
-        .Description("ScaledTanh takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the scaled hyperbolic tangent function, "
-            "f(x) = alpha*tanh⁡(beta*x), is applied to the  tensor elementwise.")
-        .Input("input", "Input tensor, typically 1-D.", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("alpha", "Scaling value", AttrType::FLOAT)
-        .Attr("beta", "Scaling value", AttrType::FLOAT);
-
-    REGISTER_OPERATOR_SCHEMA(ThresholdedReLU)
-        .Description("Thresholded Relu takes input data (Tensor<T>) and threshold as input, and "
-            "produces one output data (Tensor<T>) where the function `f(x) = 0 for x < alpha, "
-            "x for x >= alpha`, is applied to the data tensor elementwise.")
-        .Input("input", "Input tensor, typically 1-D.", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("alpha", "Scalar threshold value", AttrType::FLOAT);
-
-    REGISTER_OPERATOR_SCHEMA(LogSoftmax)
-        .Description("Log Softmax takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the function, y = log(1 / sum(exp(X)) * exp(x)), is applied "
-            "to the tensor elementwise.")
-        .Input("input", "Input tensor of shape [N, F].", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.");
-
-    REGISTER_OPERATOR_SCHEMA(Hardmax)
-        .Description("Compute the hardmax normalized values for each layer in the batch "
-            "of the given input. The input is a 2-D tensor (Tensor<float>) of size "
-            "(batch_size x input_feature_dimensions). The output tensor has the same shape "
-            "and contains the softmax normalized values of the corresponding input. "
-            "\n"                                                                                                                  
-            "X does not need to explicitly be a 2D vector; rather, it will be coerced into "
-            "one. For an arbitrary n-dimensional tensor X in [a_0, a_1, ..., a_{k-1}, "
-            "a_k, ..., a_{n-1}] and k is the axis provided, then X will be coerced into a "
-            "2-dimensional tensor with dimensions [a_0 * ... * a_{k-1}, a_k * ... * a_{n-1}]. "
-            "For the default case where axis=1, this means the X tensor will be coerced into "
-            "a 2D tensor of dimensions [a_0, a_1 * ... * a_{n-1}], where a_0 is often the "
-            "batch size.  In this situation, we must have a_0 = N and a_1 * ... * a_{n-1} = D. "
-            "Each of these dimensions must be matched correctly, or else the operator will "
-            "throw errors.")
-        .Input("input", "Input tensor of shape [N, F].", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("axis", "Default to 1; describes the axis of the inputs when coerced to 2D; "
-            "defaults to one because the 0th axis most likely describes the batch size.",
-            AttrType::INT, int64_t(1));
-
-    REGISTER_OPERATOR_SCHEMA(Softsign)
-        .Description("Softsign takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the function, y = x / (1 + abs(x)), is applied to the "
-            "tensor elementwise.")
-        .Input("input", "Input tensor, typically 1-D.", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::FLOAT, float(1.6732));
-
-    REGISTER_OPERATOR_SCHEMA(Softplus)
-        .Description("Softplus takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the function, y = log(1 + exp(beta * x)) / beta, is "
-            "applied to the tensor elementwise.  When steepness is greater than 1, the "
-            "function is y = log(1 + exp(beta * steepness * x)) / steepness.")
-        .Input("input", "Input tensor, typically 1-D.", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("beta", "Scaling value, default to 1.0.", AttrType::FLOAT, float(1.0))
-        .Attr("steepness", "Steepness factor, default is 1.0", AttrType::FLOAT, float(1.0));
-
-    REGISTER_OPERATOR_SCHEMA(ParametericSoftplus)
-        .Description("Softplus takes input data (Tensor<T>) and parametric tensors, "
-            "producing one output data (Tensor<T>) where the function, "
-            "y = alpha * log(1 + exp(beta * x), is applied to the tensor elementwise.")
-        .Input("input", "Input tensor, typically 1-D.", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
-        .Attr("alpha", "Alpha tensor. If `alpha` is of size 1, "
-            "the value is shared across different channels.", AttrType::FLOAT, float(1.0))
-        .Attr("beta", "Beta tensor. If `beta` is of size 1, "
-            "the value is shared across different channels.", AttrType::FLOAT, float(1.0));
-
-    REGISTER_OPERATOR_SCHEMA(Identity)
-        .Description("Identity takes one input data (Tensor<T>) and produces one "
-            "output data (Tensor<T>) where the function, y = x, is applied to the "
-            "tensor elementwise.")
+    // Taken from Caffe2
+    REGISTER_OPERATOR_SCHEMA(Scale)
+        .Description("Scale takes one input data (Tensor<T>) and produces one output data"
+            "(Tensor<T>) whose value is the input data tensor scaled element-wise.")
         .Input("input", "input tensor", "T")
-        .Output("output", "output tensor", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.");
+        .Output("output", "Result, has same shape and type as input", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("scale", "the scale to apply, default 1.0", AttrType::FLOAT, float(1.0));
 
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Neg)
+        .Description("Neg takes one input data (Tensor<T>) and produces one output data \
+            (Tensor<T>) where each element flipped sign, y = -x, is applied to \
+            the tensor elementwise.")
+        .Input("input", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Abs)
+        .Description("Absolute takes one input data (Tensor<T>) and produces one output data "
+            "(Tensor<T>) where the absolute is, y = abs(x), is applied to "
+            "the tensor elementwise.")
+        .Input("input", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+             "Constrain input and output types to floats.");
+
+    // Take from ONNX
+    REGISTER_OPERATOR_SCHEMA(Reciprocal)
+        .Description("Reciprocal takes one input data (Tensor<T>) and produces one output data "
+            "(Tensor<T>) where the reciprocal is, y = 1/x, is applied to "
+            "the tensor elementwise.")
+        .Input("input", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Floor)
+        .SetDoc("Floor takes one input data (Tensor<T>) and produces one output data "
+            "(Tensor<T>) where the floor is, y = floor(x), is applied to "
+            "the tensor elementwise.")
+        .Input("input", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Ceil)
+        .Description("Ceil takes one input data (Tensor<T>) and produces one output data"
+            "(Tensor<T>) where the ceil is, y = ceil(x), is applied to"
+            "the tensor elementwise.")
+        .Input("input", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from Caffe2
+    REGISTER_OPERATOR_SCHEMA(Clip)
+        .Description("Clip operator limits the given input within an interval. "
+            "The interval is specified with arguments 'min' and 'max'. They default to "
+            "numeric_limits::lowest() and numeric_limits::max() respectively. The clipping "
+            "operation can be done in in-place fashion too, where the input and output blobs "
+            "are the same.")
+        .Input("input", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("min", "Minimum value, under which element is replaced by min", AttrType::FLOAT)
+        .Attr("max", "Maximum value, under which element is replaced by max", AttrType::FLOAT);
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Sqrt)
+        .Description("Square root takes one input data (Tensor<T>) and produces one output "
+            "data Tensor<T>) where the square root is, y = x^0.5, is applied to "
+            "the tensor elementwise. If x is negative, then it will return NaN.")
+        .Input("input", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Exp)
+        .Description("Calculates the exponential of the given input tensor, element-wise. "
+            "This operation can be done in an in-place fashion too, by providing the same "
+            "input and output blobs.")
+        .Input("input", "input tensor", "T")
+        .Output("output", "The exponential of the input tensor computed element-wise", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Log)
+        .Description("Calculates the natural log of the given input tensor, element-wise. "
+            "This operation can be done in an in-place fashion too, by providing the same "
+            "input and output blobs.")
+        .Input("input", "input tensor", "T")
+        .Output("output", "The natural  log of the input tensor computed element-wise", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Pow)
+        .Description("Pow takes input data (Tensor<T>) and an argument exponent, and "
+            "produces one output data (Tensor<T>) where the function `f(x) = x^exponent`, "
+            "is applied to the data tensor elementwise.")
+        .Input("input", "input tensor", "T")
+        .Output("output", "The x^exponent value of the input tensor computed element-wise", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("exponent", "The exponent of the power function.", AttrType::FLOAT);
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Dot)
+        .Description("Apply dot product between 2 tensors. Similar to numpy implementation: "
+            "https://docs.scipy.org/doc/numpy/reference/generated/numpy.dot.html")
+        .Input("X", "Input tensor of any shape", "T")
+        .Input("Y", "Input tensor of any shape", "T")
+        .Output("output", "Output tensor the dot product between X and Y.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
 }
