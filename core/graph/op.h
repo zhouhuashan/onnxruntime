@@ -174,7 +174,7 @@ namespace LotusIR
         OpSchema& EnforceConsumed(std::function<std::pair<bool, int>(int)> inplace) { return *this; }
         OpSchema& EnforceConsumed(std::unordered_map<int, int> inplace) { return *this; }
         OpSchema& EnforceOneToOneConsumed() { return *this; }
-        OpSchema& SetSupportLevel(SupportType supportType) { return *this; }
+        OpSchema& SetSupportLevel(SupportType /*supportType*/) { return *this; }
         OpSchema& AllowUncheckedAttributes() { return *this; }
         OpSchema& FillUsing(std::function<void(OpSchema&)> populator)
         {
@@ -184,11 +184,11 @@ namespace LotusIR
             }
             return *this;
         }
-        OpSchema& Input(const int n, const char* name, const char* description)
+        OpSchema& Input(const int /*n*/, const char* name, const char* description)
         {
             return Input(name, description);
         }
-        OpSchema& Output(const int n, const char* name, const char* description)
+        OpSchema& Output(const int /*n*/, const char* name, const char* description)
         {
             return Output(name, description);
         }

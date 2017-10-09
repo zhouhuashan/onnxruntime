@@ -1,4 +1,14 @@
+#ifdef _MSC_VER
+#pragma warning(push)
+// 'identifier' : unreferenced formal parameter
+#pragma warning(disable: 4100)
+// 'type' : forcing value to bool 'true' or 'false' (performance warning)
+#pragma warning(disable: 4800)
+#endif
 #include "google/protobuf/util/message_differencer.h"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "core/protobuf/graph.pb.h"
 #include "gtest/gtest.h"
 #include "utils.h"

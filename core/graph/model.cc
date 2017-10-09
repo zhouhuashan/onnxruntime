@@ -1,6 +1,14 @@
 #include <fcntl.h>
 #include <fstream>
+#ifdef _MSC_VER
+#pragma warning(push)
+// 'type' : forcing value to bool 'true' or 'false' (performance warning)
+#pragma warning(disable: 4800)
+#endif
 #include <google/protobuf/io/coded_stream.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #ifdef _WIN32
 #include <io.h>
@@ -47,6 +55,15 @@ namespace
         return fd;
 #else
         return open(p_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+#endif
+    }
+
+    inline int FileClose(int fd)
+    {
+#ifdef _WIN32
+        return _close(fd);
+#else
+        return close(fd);
 #endif
     }
 }
@@ -247,7 +264,7 @@ namespace LotusIR
         bool result = p_modelProto->ParseFromCodedStream(coded_input.get());
         coded_input.reset();
         raw_input.reset();
-        close(p_fd);
+        FileClose(p_fd);
         return result;
     }
 
@@ -262,7 +279,7 @@ namespace LotusIR
         auto model = std::shared_ptr<Model>(new Model(modelProto));
         auto status = model->MainGraph()->Resolve();
 
-        close(p_fd);
+        FileClose(p_fd);
         if (status.Ok())
         {
             return model;
@@ -277,7 +294,7 @@ namespace LotusIR
             return false;
         }
         bool result = p_modelProto.SerializeToFileDescriptor(p_fd);
-        close(p_fd);
+        FileClose(p_fd);
         return result;
     }
 }

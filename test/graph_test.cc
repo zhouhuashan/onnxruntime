@@ -1,6 +1,16 @@
 #include <iostream>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+// 'identifier' : unreferenced formal parameter
+#pragma warning(disable: 4100)
+// 'type' : forcing value to bool 'true' or 'false' (performance warning)
+#pragma warning(disable: 4800)
+#endif
 #include "google/protobuf/util/message_differencer.h"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "gtest/gtest.h"
 #include "graph.h"
 #include "model.h"
@@ -28,7 +38,7 @@ namespace LotusIR
 
             NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
-            auto node_1 = graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
+            graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
             // Case 1: Adding two nodes with same node name should fail.
             auto nodeWithDupName = graph.AddNode("node_1", "Variable", "node 2", inputs, outputs);
@@ -38,7 +48,7 @@ namespace LotusIR
             graph.RemoveNode(nodeWithDupName->Index());
 
             // Case 2: Adding two nodes with same output arg name should fail.
-            auto nodeWithDupOutputArgName = graph.AddNode("node_2", "Variable", "node 2", inputs, outputs);
+            graph.AddNode("node_2", "Variable", "node 2", inputs, outputs);
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMsg());
@@ -59,7 +69,7 @@ namespace LotusIR
             NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             // Case: Adding node refering to non-existing operator should fail.
-            auto nodeWithOpNotExist = graph.AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
+            graph.AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ(
@@ -116,7 +126,7 @@ namespace LotusIR
             outputs.clear();
             outputs.push_back(outputArg2);
             expectedNodeNameToInputOutputArgs["node_2"] = { inputs, outputs };
-            auto node_2 = graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
+            graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
 
             inputs.clear();
             inputs.push_back(outputArg);
@@ -125,7 +135,7 @@ namespace LotusIR
             outputs.clear();
             outputs.push_back(outputArg3);
             expectedNodeNameToInputOutputArgs["node_3"] = { inputs, outputs };
-            auto node_3 = graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
+            graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
 
             inputs.clear();
             inputs.push_back(outputArg3);
@@ -133,7 +143,7 @@ namespace LotusIR
             outputs.clear();
             outputs.push_back(outputArg4);
             expectedNodeNameToInputOutputArgs["node_4"] = { inputs, outputs };
-            auto node_4 = graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
+            graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 
@@ -227,7 +237,7 @@ namespace LotusIR
             inputs.push_back(inputArg);
             NodeArg outputArg("node_1_out_1", &tensor_int32);
             outputs.push_back(outputArg);
-            auto node_1 = graph.AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
+            graph.AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
             NodeArg inputArg2("node_2_in_1", &tensor_int32);
             inputs.clear();
@@ -243,7 +253,7 @@ namespace LotusIR
             NodeArg outputArg3("node_3_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg3);
-            auto node_3 = graph.AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
+            graph.AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
 
             inputs.clear();
             inputs.push_back(outputArg);
@@ -252,7 +262,7 @@ namespace LotusIR
             NodeArg outputArg4("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
-            auto node_4 = graph.AddNode("node_4", "Max_Fake", "node 4", inputs, { 3 }, outputs);
+            graph.AddNode("node_4", "Max_Fake", "node 4", inputs, { 3 }, outputs);
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 

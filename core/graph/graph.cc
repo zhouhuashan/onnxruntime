@@ -1134,7 +1134,7 @@ namespace LotusIR
 
                 // The node refers to a primitive operator.
                 // Infer and verify node input arg type information.
-                size_t totalArgCount = std::accumulate(node->InputArgCount().begin(),
+                auto totalArgCount = std::accumulate(node->InputArgCount().begin(),
                     node->InputArgCount().end(), 0);
                 if (totalArgCount != node->InputDefs().size())
                 {
@@ -1207,7 +1207,7 @@ namespace LotusIR
                 }
 
                 // Verify node outputs have same size with operator definition.
-                size_t outputCount = node->OutputDefs().size();
+                int outputCount = static_cast<int>(node->OutputDefs().size());
                 if (op.GetOutputs().size() != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.

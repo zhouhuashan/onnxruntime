@@ -43,6 +43,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, configs):
     cmake_args = [cmake_path, cmake_dir,
                  "-DlotusIR_RUN_ONNX_TESTS=ON",
                  "-DlotusIR_GENERATE_TEST_REPORTS=ON",
+                 "-DPYTHON3_EXECUTABLE={}".format(sys.executable),
                  ]
 
     if is_windows():

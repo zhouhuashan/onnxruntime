@@ -62,7 +62,7 @@ namespace LotusIR
     OperatorSchemaSetter&
         OperatorSchemaSetter::Attr(const std::string& p_attrName,
             const std::string& p_description,
-            AttrType p_attrType, bool required)
+            AttrType p_attrType, bool /*required*/)
     {
         m_opSchema.m_opSignature.m_attributes.push_back(
             OpSignature::Attribute(p_attrName, p_attrType, p_description));
