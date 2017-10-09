@@ -10,6 +10,8 @@
 #include "status.h"
 #include "utils.h"
 
+using namespace Lotus::Common;
+
 namespace LotusIR
 {
     typedef size_t NODEINDEX;

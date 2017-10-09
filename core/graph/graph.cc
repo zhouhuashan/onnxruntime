@@ -729,7 +729,7 @@ namespace LotusIR
                 && p_nodeNameToIndex.end() != p_nodeNameToIndex.find(nodeName))
             {
                 // The node has name and its name was used by another node.
-                Status status(false,
+                Status status(FAIL,
                     "Error: two nodes with same node name (" + nodeName + ").");
                 return status;
             }
@@ -742,7 +742,7 @@ namespace LotusIR
                 if (p_outputArgs.end() != p_outputArgs.find(outputArgname))
                 {
                     // Two outputs with same name.
-                    Status status(false,
+                    Status status(FAIL,
                         "Error: two output args with same name ("
                         + outputArgname + ").");
                     return status;
@@ -787,7 +787,7 @@ namespace LotusIR
                 auto nameToIndexIter = p_nodeNameToIndex.find(controlInput);
                 if (p_nodeNameToIndex.end() == nameToIndexIter)
                 {
-                    Status status(false,
+                    Status status(FAIL,
                         "The control input (" + controlInput + ") of Node ("
                         + (*nodeIter)->Name() + ") does not exist in the graph.");
                     return status;
@@ -899,7 +899,7 @@ namespace LotusIR
         {
             if (p_ancestors.end() != p_ancestors.find((*iter)->Index()))
             {
-                Status status(false,
+                Status status(FAIL,
                     "Error: the graph is not acyclic.");
                 return status;
             }
@@ -962,7 +962,7 @@ namespace LotusIR
                     {
                         // This input is fed by callers and its type has to be specified.
 
-                        Status status(false,
+                        Status status(FAIL,
                             "Node (" + nodeName + ") input arg ("
                             + inputDef.Name()
                             + ") does not have type information.");
@@ -986,7 +986,7 @@ namespace LotusIR
                 auto iter = opFormalParameter.GetTypes().find(inputDef.Type());
                 if (opFormalParameter.GetTypes().end() == iter)
                 {
-                    Status status(false,
+                    Status status(FAIL,
                         "Node (" + nodeName + ") input arg ("
                         + inputDef.Name() + ") type does not match operator ("
                         + p_op->GetName() + ") definition.");
@@ -1005,7 +1005,7 @@ namespace LotusIR
                     // This is the case.
                     // An operator's inputs' type is "T", and T"s allowed value set is "float, int32".
                     // However, one input is specified as "float", and another one is specified as "int".
-                    Status status(false,
+                    Status status(FAIL,
                         "Node (" + nodeName + ") has different input"
                         " types (" + *(paramToTypeIter->second) + ","
                         + *(inputDef.Type()) + ") matching to same "
@@ -1044,7 +1044,7 @@ namespace LotusIR
                     = p_node->GetAttributes().find(c_constantValue);
                 if (p_node->GetAttributes().end() == nodeAttributesIter)
                 {
-                    Status status(false,
+                    Status status(FAIL,
                         "Node (" + nodeName + ") output arg value should"
                         "be specified via node attribute '" + c_constantValue + "'.");
                     return status;
@@ -1061,7 +1061,7 @@ namespace LotusIR
                 }
                 else
                 {
-                    Status status(false,
+                    Status status(FAIL,
                         "For attribute " + c_constantValue + " , only Tensor type"
                         "is allowed. The attribute type in this model is "
                         + LotusIR::c_attrTypeStr[(int)attrType] + ".");
@@ -1079,7 +1079,7 @@ namespace LotusIR
                 auto iter = opFormalParameter.GetTypes().find(outputDef.Type());
                 if (opFormalParameter.GetTypes().end() == iter)
                 {
-                    Status status(false,
+                    Status status(FAIL,
                         "Node (" + nodeName + ") output arg ("
                         + outputDef.Name() + ") type does not match operator ("
                         + p_op->GetName() + ") definition.");
@@ -1100,7 +1100,7 @@ namespace LotusIR
             // Output arg has no type information, and there're
             // multiple allowed types defined in operator definition.
             // Type inference fails in this case.
-            Status status(false,
+            Status status(FAIL,
                 "Node (" + nodeName + ") output arg ("
                 + outputDef.Name() + ") type inference failed");
             return status;
@@ -1138,7 +1138,7 @@ namespace LotusIR
                     node->InputArgCount().end(), 0);
                 if (totalArgCount != node->InputDefs().size())
                 {
-                    Status status(false,
+                    Status status(FAIL,
                         "The sum of input arg count is not equal to size of"
                         "input defs in node (" + nodeName + ").");
                     return status;
@@ -1149,7 +1149,7 @@ namespace LotusIR
                     !op.GetOnnxNumInputsAllowedFunc()(totalArgCount))
                 {
                     // Number of inputs do not match.
-                    Status status(false, "Error: node (" + nodeName
+                    Status status(FAIL, "Error: node (" + nodeName
                         + ")'s number of inputs do not match its operator ("
                         + op_type + ") specification.");
                     return status;
@@ -1199,7 +1199,7 @@ namespace LotusIR
                     else
                     {
                         // Number of inputs do not match.
-                        Status status(false, "Error: node (" + nodeName
+                        Status status(FAIL, "Error: node (" + nodeName
                             + ")'s number of inputs do not match its operator ("
                             + op_type + ") specification.");
                         return status;
@@ -1211,7 +1211,7 @@ namespace LotusIR
                 if (op.GetOutputs().size() != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
-                    Status status(false, "Error: node (" + nodeName
+                    Status status(FAIL, "Error: node (" + nodeName
                         + ")'s number of outputs does not match its operator ("
                         + op_type + ") specification.");
 
@@ -1276,7 +1276,7 @@ namespace LotusIR
                             RETURN_IF_ERROR(TypeUtils::GetType(nodeAttrIter->second, nodeAttrType));
                             if (nodeAttrType != attrDef.GetType())
                             {
-                                Status status(false,
+                                Status status(FAIL,
                                     "Node (" + nodeName + ") attribute ("
                                     + nodeAttrIter->first + ") type does not match operator definition.");
                                 return status;
@@ -1291,7 +1291,7 @@ namespace LotusIR
                 if (m_funcDefMap.end() == funcIter)
                 {
                     // A op_type refers to nothing.
-                    Status status(false,
+                    Status status(FAIL,
                         "Error: the operator or function (" + op_type
                         + ") refered by node (" + nodeName
                         + ") does not exist.");
@@ -1306,7 +1306,7 @@ namespace LotusIR
                     != node->InputDefs().size())
                 {
                     // Number of inputs do not match.
-                    Status status(false, "Error: node (" + nodeName
+                    Status status(FAIL, "Error: node (" + nodeName
                         + ")'s number of inputs do not match its function ("
                         + op_type + ") specification.");
                     return status;
@@ -1317,7 +1317,7 @@ namespace LotusIR
                     != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
-                    Status status(false, "Error: node (" + nodeName
+                    Status status(FAIL, "Error: node (" + nodeName
                         + ")'s number of outputs do not match its function ("
                         + op_type + ") specification.");
                     return status;

@@ -44,14 +44,14 @@ namespace LotusIR
             auto nodeWithDupName = graph.AddNode("node_1", "Variable", "node 2", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
-            EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMsg());
+            EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMessage());
             graph.RemoveNode(nodeWithDupName->Index());
 
             // Case 2: Adding two nodes with same output arg name should fail.
             graph.AddNode("node_2", "Variable", "node 2", inputs, outputs);
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
-            EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMsg());
+            EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMessage());
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch)
@@ -74,7 +74,7 @@ namespace LotusIR
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ(
                 "Error: the operator or function (OpNotExist) refered by node (node_1) does not exist.",
-                status.ErrorMsg());
+                status.ErrorMessage());
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic)
@@ -201,7 +201,7 @@ namespace LotusIR
             node_1->Mutable_InputDefs()[0] = outputArg4;
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
-            EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMsg());
+            EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_TypeInference)
@@ -281,7 +281,7 @@ namespace LotusIR
             node_2->Mutable_OutputDefs()[0] = NodeArg("node_2_out_1", &tensor_float);
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
-            EXPECT_EQ("Node (node_4) has different input types (int32,float) matching to same type string (T).", status.ErrorMsg());
+            EXPECT_EQ("Node (node_4) has different input types (int32,float) matching to same type string (T).", status.ErrorMessage());
         }
 
         TEST(TestAddAttribute, AddTensorAttribute)
@@ -348,7 +348,7 @@ namespace LotusIR
             EXPECT_TRUE(nullptr != node_onnx);
             auto status = graph->Resolve();
             EXPECT_FALSE(status.Ok());
-            EXPECT_EQ("Error: node (node_1)'s number of outputs does not match its operator (BatchNormalization) specification.", status.ErrorMsg());
+            EXPECT_EQ("Error: node (node_1)'s number of outputs does not match its operator (BatchNormalization) specification.", status.ErrorMessage());
             status = graphOnnx->Resolve();
             EXPECT_TRUE(status.Ok());
         }
