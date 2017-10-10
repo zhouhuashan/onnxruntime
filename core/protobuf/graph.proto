@@ -82,6 +82,9 @@ message ValueInfoProto {
   optional string name = 1;     // namespace Value
   // This field MUST be present in this version of the IR.
   optional TypeProto type = 2;
+  // An optional human-readable documentation for this node in the graph.
+  // This text MAY contain Markdown markup that conforms to http://commonmark.org/. 
+  optional string doc_string = 3;
 }
 
 // Defines a node in a computation graph. Each graph node is either an
@@ -145,6 +148,8 @@ message NodeProto {
   // Framework may use this to give users the ability to impose additional
   // execution orders for the operations.
   repeated string control_input = 51;
+
+  reserved 100 to 200; // for future extensions.
 }
 
 // ModelProto is a top-level file/container format for bundling a ML model.
@@ -184,13 +189,16 @@ message ModelProto {
   optional GraphProto graph = 7;
 
   // NOTE: ids between 8 and 49 are reserved for more ONNX fields.
-  
+  reserved 8 to 49;
+
   // The optional name of the author who created the graph.
   optional string model_author = 50;
 
   // Optional licensing information concerning use or origination of the graph.
   // This text MAY contain Markdown markup that conforms to http://commonmark.org/. 
   optional string model_license = 51;
+
+  reserved 100 to 200; // for future extensions.
 };
 
 // GraphProto defines a parameterized series of nodes to form a directed acyclic graph.
@@ -444,6 +452,8 @@ message TypeProto {
     // The type of a map.
     MapTypeProto map_type = 6;
   }
+
+  reserved 100 to 200; // for future extensions.
 }
 
 message ValueProto {
@@ -501,6 +511,8 @@ message ValueProto {
     // A map.
     MapProto map = 6;
   }
+
+  reserved 100 to 200; // for future extensions.
 }
 
 message ParameterDeclProto {
@@ -527,6 +539,12 @@ message FunctionDefProto {
 
   // The named attributes of the function.
   repeated AttributeProto attr = 5;
+
+  // An optional human-readable documentation for this node in the graph.
+  // This text MAY contain Markdown markup that conforms to http://commonmark.org/. 
+  optional string doc_string = 6;
+  
+  reserved 100 to 200; // for future extensions.
 }
 
 message SignatureDeclProto {
@@ -551,6 +569,8 @@ message OperatorDeclProto {
 
   // An optional human-readable documentation for this operator.
   optional string doc_string = 3;
+  
+  reserved 100 to 200; // for future extensions.
 }
 
 // A library is a top-level format that contains the declaration
@@ -610,4 +630,6 @@ message LibraryProto {
   // URIs or relative paths. Where such relative paths are rooted is defined by tools and
   // runtime implementations.
   repeated string imported_libraries = 12;  
+
+  reserved 100 to 200; // for future extensions.
 }
