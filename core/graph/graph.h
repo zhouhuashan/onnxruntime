@@ -5,10 +5,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "constants.h"
+#include "core/graph/constants.h"
+#include "core/graph/status.h"
+#include "core/graph/utils.h"
 #include "core/protobuf/graph.pb.h"
-#include "status.h"
-#include "utils.h"
 
 using namespace Lotus::Common;
 

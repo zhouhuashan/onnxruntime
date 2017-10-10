@@ -9,9 +9,9 @@
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+#include "core/graph/utils.h"
 #include "core/protobuf/graph.pb.h"
 #include "gtest/gtest.h"
-#include "utils.h"
 
 using google::protobuf::util::MessageDifferencer;
 using LotusIR::Utils::OpUtils;

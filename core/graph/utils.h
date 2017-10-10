@@ -4,9 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
-
-class TensorProto;
-class TypeProto;
+#include "core/protobuf/graph.pb.h"
 
 namespace LotusIR
 {

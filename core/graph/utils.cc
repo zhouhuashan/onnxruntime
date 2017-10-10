@@ -3,9 +3,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "constants.h"
+#include "core/graph/constants.h"
+#include "core/graph/utils.h"
 #include "core/protobuf/graph.pb.h"
-#include "utils.h"
 
 namespace LotusIR
 {

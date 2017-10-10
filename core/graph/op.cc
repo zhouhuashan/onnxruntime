@@ -1,6 +1,6 @@
-#include "op.h"
-#include "opsignature.h"
-#include "utils.h"
+#include "core/graph/op.h"
+#include "core/graph/opsignature.h"
+#include "core/graph/utils.h"
 #include <cstring>
 
 namespace LotusIR

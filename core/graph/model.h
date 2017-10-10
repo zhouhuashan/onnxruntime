@@ -1,7 +1,7 @@
 #ifndef CORE_GRAPH_MODEL_H
 #define CORE_GRAPH_MODEL_H
 
-#include "graph.h"
+#include "core/graph/graph.h"
 
 namespace LotusIR
 {

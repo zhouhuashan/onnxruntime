@@ -4,8 +4,8 @@
 #include <functional>
 #include <unordered_map>
 
-#include "opsignature.h"
-#include "shape_inference.h"
+#include "core/graph/opsignature.h"
+#include "core/graph/shape_inference.h"
 
 namespace LotusIR
 {

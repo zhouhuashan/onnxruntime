@@ -1,8 +1,8 @@
 #ifndef CORE_GRAPH_SHAPEINFERENCE_H
 #define CORE_GRAPH_SHAPEINFERENCE_H
 
-#include "graph.h"
-#include "opsignature.h"
+#include "core/graph/graph.h"
+#include "core/graph/opsignature.h"
 
 namespace LotusIR
 {

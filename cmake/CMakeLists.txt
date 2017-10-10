@@ -42,6 +42,7 @@ if (WIN32)
 endif()
 
 include_directories(
+    ${LOTUSIR_ROOT}
     ${CMAKE_CURRENT_BINARY_DIR}
     # External dependencies.
     ${PROTOBUF_INCLUDE_DIRS}

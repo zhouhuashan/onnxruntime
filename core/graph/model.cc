@@ -16,7 +16,7 @@
 #include <sys/io.h>
 #include <unistd.h>
 #endif
-#include "model.h"
+#include "core/graph/model.h"
 
 namespace
 {

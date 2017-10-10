@@ -1,8 +1,8 @@
 #include <iostream>
-#include "core/protobuf/graph.pb.h"
 #include "gtest/gtest.h"
-#include "op.h"
-#include "utils.h"
+#include "core/graph/op.h"
+#include "core/graph/utils.h"
+#include "core/protobuf/graph.pb.h"
 
 namespace LotusIR
 {

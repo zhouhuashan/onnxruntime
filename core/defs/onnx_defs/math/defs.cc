@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #ifdef ONNX_V1_OPSCHEMA_COMPAT
-#include "op.h"
+#include "core/graph/op.h"
 #include <functional>
 
 using AttrType = LotusIR::AttrType;

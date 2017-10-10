@@ -10,10 +10,10 @@ namespace Lotus
     namespace Common
     {
 
-#define RETURN_IF_ERROR(expr)           \
-  do {                                  \
-    auto status = (expr);               \
-    if ((!status.Ok())) return status;  \
+#define RETURN_IF_ERROR(expr)             \
+  do {                                    \
+    auto _status = (expr);                \
+    if ((!_status.Ok())) return _status;  \
   } while (0)
 
         enum StatusCategory

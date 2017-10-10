@@ -1,4 +1,4 @@
-#include "shape_inference.h"
+#include "core/graph/shape_inference.h"
 
 namespace LotusIR
 {

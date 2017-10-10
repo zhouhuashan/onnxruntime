@@ -12,9 +12,9 @@
 #pragma warning(pop)
 #endif
 #include "gtest/gtest.h"
-#include "graph.h"
-#include "model.h"
-#include "op.h"
+#include "core/graph/graph.h"
+#include "core/graph/model.h"
+#include "core/graph/op.h"
 
 namespace LotusIR
 {

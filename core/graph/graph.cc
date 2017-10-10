@@ -2,9 +2,9 @@
 #include <iostream>
 #include <numeric>
 
-#include "graph.h"
-#include "op.h"
-#include "utils.h"
+#include "core/graph/graph.h"
+#include "core/graph/op.h"
+#include "core/graph/utils.h"
 
 using namespace LotusIR::Utils;
 
