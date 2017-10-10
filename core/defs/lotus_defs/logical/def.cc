@@ -33,4 +33,10 @@ namespace LotusIR {
     REGISTER_BINARY_LOGIC_OPERATOR_SCHEMA(Or)
     REGISTER_BINARY_LOGIC_OPERATOR_SCHEMA(Xor)
 
+    REGISTER_OPERATOR_SCHEMA(Not)
+        .Description("Performs element-wise negation.")
+        .Input("X", "Input tensor of type bool.", "T")
+        .Output("Y", "  Output tensor of type bool.", "T")
+        .TypeConstraint("T", { "int32" }, "Constrain input and output types to int.");
+
 }

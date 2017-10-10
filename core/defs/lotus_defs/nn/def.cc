@@ -13,8 +13,14 @@ namespace LotusIR {
         .Input("b", "1D blob containing bias vector", "T")
         .Output("Y", "output tensor", "T")
         .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
-        .Attr("map_rank", "Optional, number of leading dimensions that are not transformed by the operator", AttrType::INT, false)
-        .Attr("activation", "Activation function to be computed with operator. ", AttrType::FLOAT);
+        .Attr("axis",
+            "(int32_t) default to 1; describes the axis of the inputs; "
+            "defaults to one because the 0th axis most likely describes the batch_size",
+            AttrType::INT, int64_t(1))
+        .Attr("axis_w",
+            "(int32_t) default to 1; describes the axis of the weight matrix W; "
+            "defaults to one because the 0th axis most likely describes the batch_size",
+            AttrType::INT, int64_t(1));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Conv)
@@ -123,6 +129,23 @@ namespace LotusIR {
             AttrType::INTS);
 
     // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(GlobalAveragePool)
+        .Description("GlobalAveragePool consumes an input tensor X and applies average "
+            "pooling across the values in the same channel. This is equivalent to "
+            "AveragePool with kernel size equal to the spatial dimension of input tensor.")
+        .Input("X",
+            "Input data tensor from the previous operator; dimensions for image case "
+            "are (N x C x H x W), where N is the batch size, C is the number of channels, "
+            "and H and W are the height and the width of the data. For non image case, the "
+            "dimension are in the form of (N x D1 x D2 ... Dn), where N is the batch size.",
+            "T")
+        .Output("Y",
+            "Output data tensor from pooling across the input tensor. Dimensions will "
+            "be N x C x 1 x 1")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(MaxPool)
         .Description("MaxPool consumes an input tensor X and applies max pooling across the"
             "the tensor according to kernel sizes, stride sizes, and pad lengths."
@@ -153,6 +176,23 @@ namespace LotusIR {
         .Attr("dilations",
             "Dilaton along each axis, 1 mean no dilation.",
             AttrType::INTS);
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(GlobalMaxPool)
+        .Description("GlobalMaxPool consumes an input tensor X and applies max pooling "
+            "across the values in the same channel. This is equivalent to MaxPool "
+            "with kernel size equal to the spatial dimension of input tensor.")
+        .Input("X",
+            "Input data tensor from the previous operator; dimensions for image case "
+            "are (N x C x H x W), where N is the batch size, C is the number of channels, "
+            "and H and W are the height and the width of the data. For non image case, the "
+            "dimension are in the form of (N x D1 x D2 ... Dn), where N is the batch size.",
+            "T")
+        .Output("Y",
+            "Output data tensor from pooling across the input tensor. Dimensions will "
+            "be N x C x 1 x 1")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(BatchNormalization)
@@ -216,46 +256,83 @@ namespace LotusIR {
             "Compute the mean and variance across all spatial elements or per feature.",
             AttrType::INT);
 
-    REGISTER_OPERATOR_SCHEMA(ROIPooling)
-        .Description("Carries out ROI Pooling for Faster-RCNN.")
+    // Taken from Caffe2
+    REGISTER_OPERATOR_SCHEMA(RoIPool)
+        .Description("Carries out ROI Pooling for Faster-RCNN. Depending on the mode, "
+            "there are multiple output cases: "
+            "Output case #1: Y, argmaxes (train mode)"
+            "Output case #2: Y           (test mode)")
         .Input("X", "The input 4-D tensor of data. Only NCHW order is currently supported.", "T")
         .Input("rois", "RoIs (Regions of Interest) to pool over. Should be a 2-D tensor of "
             "shape (num_rois, 5) given as [[batch_id, x1, y1, x2, y2], ...].", "T")
-        .Output("Y", "RoI pooled output 4-D tensor of shape (num_rois, channels, pooled_h, pooled_w).", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
-        .Attr("spatial_scale", "Multiplicative spatial scale factor to translate ROI coordinates from their "
-            "input scale to the scale used when pooling (Default: 1.0).", AttrType::FLOAT, float(1.0))
-        .Attr("roi_output_shape", "Dimensions (width x height) of the ROI pooling output shape.", AttrType::INTS );
+        .Output("Y", "RoI pooled output 4-D tensor of shape "
+            "(num_rois, channels, pooled_h, pooled_w).", "T")
+        .Output("argmaxes", "Argmaxes corresponding to indices in X used for gradient "
+            "computation. Only output if arg “is_test” is false.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("is_test", "If set, run in test mode and skip computation of argmaxes (used "
+            "for gradient computation). Only one output tensor is produced. (Default: false).",
+            AttrType::INT, int64_t(0))
+        .Attr("spatial_scale", "Multiplicative spatial scale factor to translate ROI "
+            "coordinates from their input scale to the scale used when pooling (Default: 1.0).",
+            AttrType::FLOAT, float(1.0))
+        .Attr("pooled_h", "The pooled output height (Default: 1).",
+            AttrType::FLOAT, float(1.0))
+        .Attr("pooled_w", "The pooled output width (Default: 1).",
+            AttrType::FLOAT, float(1.0));
 
-    REGISTER_OPERATOR_SCHEMA(L2Pooling)
-        .Description("Carries out L2 Pooling.")
-        .Input("X", "Input tensor of any shape", "T")
-        .Output("Y", "Output tensor of same shape and type as input X", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
-        .Attr("kernel_size", "receptive field (window) to pool over, e.g. (2,2) (not including the input feature-map dept) ", AttrType::INTS)
-        .Attr("strides", "increment when sliding the pool over the input. E.g. (2,2) to reduce the dimensions by 2", AttrType::INTS)
-        .Attr("pad", "if False (default), then the pool will be shifted over the “valid” area of input, that is,"
-            "no value outside the area is used. If pad is True on the other hand, the pool will be applied to all input positions, "
-            "and values outside the valid region will be considered zero. For average pooling,"
-            "count for average does not include padded values.", AttrType::INT, int64_t(0))
-        .Attr("global", "If true, use global pooling.", AttrType::INT );
+    REGISTER_OPERATOR_SCHEMA(LpPool)
+        .Description("LpPool consumes an input blob X and applies L-p pooling across the "
+            "blob according to kernel sizes, stride sizes, and pad lengths defined by the "
+            "ConvPoolOpBase operator. L-p pooling consisting of taking the L-p norm of a "
+            "subset of the input tensor according to the kernel size and downsampling the "
+            "data into the output blob Y for further processing.")
+        .Input("X", "X Input data tensor from the previous operator; dimensions depend on "
+            "whether the NCHW or NHWC operators are being used. For example, in the former, "
+            "the input has size (N x C x H x W), where N is the batch size, C is the number "
+            "of channels, and H and W are the height and the width of the data. The "
+            "corresponding permutation of dimensions is used in the latter case.", "T")
+        .Output("Y", "Y Output data tensor from L-p pooling across the input tensor. "
+            "Dimensions will vary based on various kernel, stride, and pad sizes.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("kernel_shape", "The size of the kernel along each axis.", AttrType::INTS)
+        .Attr("strides", "Stride along each axis.", AttrType::INTS)
+        .Attr("pads", "Padding along each axis, can take the value 0 (False) or non 0 (True)",
+            AttrType::INTS)
+        .Attr("p", "Value of p, default 2.0.", AttrType::FLOAT, float(2.0));
 
-    REGISTER_OPERATOR_SCHEMA(LocalResponseNormalization)
+    REGISTER_OPERATOR_SCHEMA(GlobalLpPool)
+        .Description("GlobalLpPool consumes an input tensor X and applies lp-pool across the "
+            "values in the same channel. This is equivalent to LpPool with kernel size equal "
+            "to the spatial dimension of input tensor.")
+        .Input("X", "X Input data tensor from the previous operator; dimensions depend on "
+            "whether the NCHW or NHWC operators are being used. For example, in the former, "
+            "the input has size (N x C x H x W), where N is the batch size, C is the number "
+            "of channels, and H and W are the height and the width of the data. The "
+            "corresponding permutation of dimensions is used in the latter case.", "T")
+        .Output("Y", "Y Output data tensor from L-p pooling across the input tensor. Dimensions will "
+            "vary based on various kernel, stride, and pad sizes.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
+        .Attr("p", "Value of p, default 2.0.", AttrType::FLOAT, float(2.0));
+
+    REGISTER_OPERATOR_SCHEMA(LRN)
         .Description("Perform local response normalization. "
             "NOTE: Only supports Caffe across channel mode. ")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
              " types to floats.")
-        .Attr("local_radius", "[default 5]: the number of channels to sum over (for cross "
+        .Attr("size", "[default 5]: the number of channels to sum over (for cross "
               "channel LRN) or the side length of the square region to sum over (for within "
               "channel LRN)", AttrType::INT, int64_t(5))
         .Attr("alpha", "Scalar scaling factor. Default is 0.0001", AttrType::FLOAT, float(0.0001))
         .Attr("beta", "Scalar exponent in the LRN.  Default is 0.5.", AttrType::FLOAT, float(0.5))
-        .Attr("beta", "An offset (must be positive to avoid dividing by 0). Defaults to 1.0.",
+        .Attr("bias", "An offset (must be positive to avoid dividing by 0). Defaults to 1.0.",
             AttrType::FLOAT, float(1.0));
 
-    REGISTER_OPERATOR_SCHEMA(MeanVarianceNormalization)
+    REGISTER_OPERATOR_SCHEMA(MVN)
         .Description("Perform mean variance normalization.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
@@ -299,16 +376,18 @@ namespace LotusIR {
             "output types to floats.")
         .Attr("mode", "enum {'NN', 'BILINEAR' }, Nearest neighbor or bilinear upsampling.",
             AttrType::STRING)
-        .Attr("sacle", "1-D scale factor tensor with values for (H,W)", AttrType::INT);
+        .Attr("width_scale", "Scale along width dimension", AttrType::INT)
+        .Attr("height_scale", "Scale along height dimension", AttrType::INT);
 
-    REGISTER_OPERATOR_SCHEMA(RepeatElements)
+    // Taken from Caffe2
+    REGISTER_OPERATOR_SCHEMA(Tile)
         .Description("Scale up spatial dimensions.  Use interpolation to fill in values")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Result, has same shape and type as X", "T")
         .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and "
             "output types to floats.")
         .Attr("axis", "Axis along which to repeat. Default is 0.", AttrType::INT, int64_t(0))
-        .Attr("repetitions", "Number of repeated copies to make of the input tensor.",
+        .Attr("tiles", "Number of repeated copies to make of the input tensor.",
             AttrType::INT);
 
     REGISTER_OPERATOR_SCHEMA(Crop)
@@ -324,7 +403,7 @@ namespace LotusIR {
         .Attr("scale", "A 1-D tensor of values (height, width)", AttrType::INT);
 
     // Taken from Caffe2
-    REGISTER_OPERATOR_SCHEMA(Padding)
+    REGISTER_OPERATOR_SCHEMA(PadImage)
         .Description("Perform padding along spatial dimensions of an image.")
         .Input("input", "Input tensor of shape [N,C,H,W]", "T")
         .Output("output", "Result, has same type as X, with H and W extended by the  \

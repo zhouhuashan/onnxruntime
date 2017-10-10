@@ -12,22 +12,14 @@ namespace LotusIR {
         .TypeConstraint("T", { "float16", "float", "double" },                                              \
             "Constrain input and output types to floats.");
 
-    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Plus)
-    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Minus)
-    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Multiply)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Add)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Sub)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Mul)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Div)
     REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Max)
     REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Min)
+    REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Sum)
     REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Mean)
-
-    // Taken from Caffe2
-    REGISTER_OPERATOR_SCHEMA(Scale)
-        .Description("Scale takes one input data (Tensor<T>) and produces one output data"
-            "(Tensor<T>) whose value is the input data tensor scaled element-wise.")
-        .Input("input", "input tensor", "T")
-        .Output("output", "Result, has same shape and type as input", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
-        .Attr("scale", "the scale to apply, default 1.0", AttrType::FLOAT, float(1.0));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Neg)

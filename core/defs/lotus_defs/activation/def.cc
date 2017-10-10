@@ -199,18 +199,15 @@ namespace LotusIR {
             "Constrain input and output types to floats.")
         .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::FLOAT, float(1.6732));
 
-    // Taken from RS4
+    // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(Softplus)
         .Description("Softplus takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the function, y = log(1 + exp(beta * x)) / beta, is "
-            "applied to the tensor elementwise.  When steepness is greater than 1, the "
-            "function is y = log(1 + exp(beta * steepness * x)) / steepness.")
+            "data (Tensor<T>) where the function, y = log(1 + exp(x)), is "
+            "applied to the tensor elementwise.")
         .Input("input", "Input tensor, typically 1-D.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
-        .Attr("beta", "Scaling value, default to 1.0.", AttrType::FLOAT, float(1.0))
-        .Attr("steepness", "Steepness factor, default is 1.0", AttrType::FLOAT, float(1.0));
+            "Constrain input and output types to floats.");
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(ParametericSoftplus)

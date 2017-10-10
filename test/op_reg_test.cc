@@ -8,20 +8,22 @@ namespace LotusIR
 {
     namespace Test
     {
-        TEST(OpRegistrationTest, ScaleOp)
+        TEST(OpRegistrationTest, LinearOp)
         {
             const OperatorSchema* opSchema;
             const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("Scale", &opSchema);
+            bool success = OperatorSchemaRegistry::Get()->TryGetOp("Linear", &opSchema);
             EXPECT_TRUE(success);
             op = &(opSchema->GetOpSignature());
             size_t input_size = op->GetInputs().size();
             EXPECT_EQ(input_size, 1);
             EXPECT_EQ(op->GetInputs()[0].GetTypes(), op->GetOutputs()[0].GetTypes());
             size_t attr_size = op->GetAttributes().size();
-            EXPECT_EQ(attr_size, 1);
-            EXPECT_EQ(op->GetAttributes()[0].GetName(), "scale");
+            EXPECT_EQ(attr_size, 2);
+            EXPECT_EQ(op->GetAttributes()[0].GetName(), "alpha");
             EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::FLOAT);
+            EXPECT_EQ(op->GetAttributes()[1].GetName(), "beta");
+            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::FLOAT);
         }
 
         TEST(OpRegistrationTest, EmbeddingOp)
