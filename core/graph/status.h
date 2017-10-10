@@ -16,7 +16,16 @@ namespace Lotus
     if ((!status.Ok())) return status;  \
   } while (0)
 
-        typedef enum {
+        enum StatusCategory
+        {
+            NONE = 0,
+            SYSTEM = 1,
+            LOTUS = 2,
+        };
+
+        // Error code for lotus.
+        enum StatusCode
+        {
             OK = 0,
             FAIL = 1,
             INVALID_ARGUMENT = 2,
@@ -27,8 +36,7 @@ namespace Lotus
             INVALID_PROTOBUF = 7,
             MODEL_LOADED = 8,
             NOT_IMPLEMENTED = 9,
-        } StatusCode;
-
+        };
 
         class Status
         {
@@ -36,44 +44,46 @@ namespace Lotus
 
             Status() {}
 
-            Status(StatusCode code, const std::string& msg);
+            Status(StatusCategory p_category, int p_code, const std::string& p_msg);
 
-            explicit Status(StatusCode code);
+            Status(StatusCategory p_category, int p_code);
 
-            inline Status(const Status& s)
-                : m_state((s.m_state == NULL) ? NULL : new State(*s.m_state)) {}
+            inline Status(const Status& p_other)
+                : m_state((p_other.m_state == NULL) ? NULL : new State(*p_other.m_state)) {}
 
             bool Ok() const;
 
-            StatusCode Code() const;
+            int Code() const;
+
+            StatusCategory Category() const;
 
             const std::string& ErrorMessage() const;
 
             std::string ToString() const;
 
-            inline void operator=(const Status& s)
+            inline void operator=(const Status& p_other)
             {
-                if (nullptr == s.m_state)
+                if (nullptr == p_other.m_state)
                 {
                     m_state.reset();
                 }
-                else if (m_state != s.m_state)
+                else if (m_state != p_other.m_state)
                 {
-                    m_state.reset(new State(*s.m_state));
+                    m_state.reset(new State(*p_other.m_state));
                 }
             }
 
-            inline bool operator==(const Status& x) const
+            inline bool operator==(const Status& p_other) const
             {
-                return (this->m_state == x.m_state) || (ToString() == x.ToString());
+                return (this->m_state == p_other.m_state) || (ToString() == p_other.ToString());
             }
 
-            inline bool operator!=(const Status& x) const
+            inline bool operator!=(const Status& p_other) const
             {
-                return !(*this == x);
+                return !(*this == p_other);
             }
 
-            static Status OK();
+            static const Status& OK();
 
         private:
 
@@ -81,7 +91,8 @@ namespace Lotus
 
             struct State
             {
-                StatusCode m_code;
+                StatusCategory m_category;
+                int m_code;
                 std::string m_msg;
             };
 

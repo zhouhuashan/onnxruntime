@@ -147,11 +147,12 @@ namespace LotusIR
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 
-            EXPECT_TRUE(Model::Save(model, "graph_1_copy.pb"));
+            EXPECT_TRUE(Model::Save(model, "graph_1.pb").Ok());
+            std::shared_ptr<Model> model2;
+            EXPECT_TRUE(Model::Load("graph_1.pb", &model2).Ok());
+
             auto& modelProto = model.ToProto();
-            EXPECT_TRUE(Model::Save(modelProto, "graph_1.pb"));
-            ModelProto modelProto2;
-            EXPECT_TRUE(Model::Load("graph_1.pb", &modelProto2));
+            auto& modelProto2 = model2->ToProto();
             bool equalProto1And2 = MessageDifferencer::MessageDifferencer::Equals(modelProto, modelProto2);
             std::string diff;
             if (!equalProto1And2)
@@ -165,13 +166,10 @@ namespace LotusIR
                 diff = "it's fine";
             }
             EXPECT_TRUE(equalProto1And2) << diff;
-            ModelProto modelProto3;
-            EXPECT_TRUE(Model::Load("graph_1_copy.pb", &modelProto3));
-            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(modelProto, modelProto3));
 
+            model2.reset(new Model(modelProto2));
             // Load the model again to ensure that it's still the right thing.
-            Model model2(modelProto3);
-            Graph* graph2 = model2.MainGraph();
+            Graph* graph2 = model2->MainGraph();
             for (auto nodeIter = graph2->Nodes_begin(); nodeIter != graph2->Nodes_end(); ++nodeIter)
             {
                 if (graph2->IsSourceNode((*nodeIter)->Index())

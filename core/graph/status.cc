@@ -4,15 +4,16 @@ namespace Lotus
 {
     namespace Common
     {
-        Status::Status(StatusCode p_code, const std::string& p_msg)
+        Status::Status(StatusCategory p_category, int p_code, const std::string& p_msg)
         {
             m_state.reset(new State());
+            m_state->m_category = p_category;
             m_state->m_code = p_code;
             m_state->m_msg = p_msg;
         }
 
-        Status::Status(StatusCode p_code)
-            : Status(p_code, EmptyString())
+        Status::Status(StatusCategory p_category, int p_code)
+            : Status(p_category, p_code, EmptyString())
         {
         }
 
@@ -21,9 +22,14 @@ namespace Lotus
             return (m_state == NULL);
         }
 
-        StatusCode Status::Code() const
+        StatusCategory Status::Category() const
         {
-            return Ok() ? StatusCode::OK : m_state->m_code;
+            return Ok() ? StatusCategory::NONE : m_state->m_category;
+        }
+
+        int Status::Code() const
+        {
+            return Ok() ? static_cast<int>(StatusCode::OK) : m_state->m_code;
         }
 
         const std::string& Status::ErrorMessage() const
@@ -38,46 +44,60 @@ namespace Lotus
                 return std::string("OK");
             }
 
-            char *msg = NULL;
-            switch (Code())
+            std::string result;
+
+            if (StatusCategory::SYSTEM == m_state->m_category)
             {
-            case INVALID_ARGUMENT:
-                msg = "INVALID_ARGUMENT";
-                break;
-            case NO_SUCHFILE:
-                msg = "NO_SUCHFILE";
-                break;
-            case NO_MODEL:
-                msg = "NO_MODEL";
-                break;
-            case ENGINE_ERROR:
-                msg = "ENGINE_ERROR";
-                break;
-            case RUNTIME_EXCEPTION:
-                msg = "RUNTIME_EXCEPTION";
-                break;
-            case INVALID_PROTOBUF:
-                msg = "INVALID_PROTOBUF";
-                break;
-            case MODEL_LOADED:
-                msg = "MODEL_LOADED";
-                break;
-            case NOT_IMPLEMENTED:
-                msg = "NOT_IMPLEMENTED";
-                break;
-            default:
-                msg = "GENERAL ERROR";
-                break;
+                result += "SystemError";
+                result += " : ";
+                result += std::to_string(errno);
             }
-            std::string result(std::to_string(static_cast<int>(Code())));
-            result += " : ";
-            result += std::string(msg);
-            result += " : ";
-            result += m_state->m_msg;
+            else if (StatusCategory::LOTUS == m_state->m_category)
+            {
+                result += "[LotusError]";
+                result += " : ";
+                result += std::to_string(static_cast<int>(Code()));
+                char *msg = NULL;
+                switch (static_cast<StatusCode>(Code()))
+                {
+                case INVALID_ARGUMENT:
+                    msg = "INVALID_ARGUMENT";
+                    break;
+                case NO_SUCHFILE:
+                    msg = "NO_SUCHFILE";
+                    break;
+                case NO_MODEL:
+                    msg = "NO_MODEL";
+                    break;
+                case ENGINE_ERROR:
+                    msg = "ENGINE_ERROR";
+                    break;
+                case RUNTIME_EXCEPTION:
+                    msg = "RUNTIME_EXCEPTION";
+                    break;
+                case INVALID_PROTOBUF:
+                    msg = "INVALID_PROTOBUF";
+                    break;
+                case MODEL_LOADED:
+                    msg = "MODEL_LOADED";
+                    break;
+                case NOT_IMPLEMENTED:
+                    msg = "NOT_IMPLEMENTED";
+                    break;
+                default:
+                    msg = "GENERAL ERROR";
+                    break;
+                }
+                result += " : ";
+                result += std::string(msg);
+                result += " : ";
+                result += m_state->m_msg;
+            }
+
             return result;
         }
 
-        Status Status::OK()
+        const Status& Status::OK()
         {
             static Status s_ok;
             return s_ok;

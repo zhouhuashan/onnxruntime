@@ -245,7 +245,7 @@ namespace LotusIR
         auto iter = m_opNameToOpSchemaMap.find(p_opSchema.GetName());
         if (m_opNameToOpSchemaMap.end() != iter)
         {
-            Status status(FAIL,
+            Status status(LOTUS, FAIL,
                 "Error: operator schema with same name ("
                 + p_opSchema.GetName() + ") exists.");
             return status;
@@ -268,7 +268,7 @@ namespace LotusIR
     {
         if (!OpSignature::IsValidAttribute(p_attr))
         {
-            return Status(FAIL, "Invalid AttributeProto.");
+            return Status(LOTUS, FAIL, "Invalid AttributeProto.");
         }
 
         if (p_attr.has_f())
@@ -330,7 +330,7 @@ namespace LotusIR
         else
         {
             p_type = AttrType::NONE;
-            return Status(FAIL, "Invalid AttributeProto.");
+            return Status(LOTUS, FAIL, "Invalid AttributeProto.");
         }
 
         return Status::OK();

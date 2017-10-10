@@ -21,50 +21,68 @@
 namespace
 {
 #ifdef _WIN32
-    inline int FileOpenRd(const std::wstring& p_path)
+    inline Status FileOpenRd(const std::wstring& p_path, /*out*/ int* p_fd)
     {
-        int fd = -1;
-        _wsopen_s(&fd, p_path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-        return fd;
+        _wsopen_s(p_fd, p_path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+        if (0 > *p_fd)
+        {
+            return Status(SYSTEM, errno);
+        }
+        return Status::OK();
     }
 
-    inline int FileOpenWr(const std::wstring& p_path)
+    inline Status FileOpenWr(const std::wstring& p_path, /*out*/ int* p_fd)
     {
-        int fd = -1;
-        _wsopen_s(&fd, p_path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-        return fd;
+        _wsopen_s(p_fd, p_path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+        if (0 > *p_fd)
+        {
+            return Status(SYSTEM, errno);
+        }
+        return Status::OK();
     }
 #endif
 
-    inline int FileOpenRd(const std::string& p_path)
+    inline Status FileOpenRd(const std::string& p_path, /*out*/ int* p_fd)
     {
 #ifdef _WIN32
-        int fd = -1;
-        _sopen_s(&fd, p_path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-        return fd;
+        _sopen_s(p_fd, p_path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
 #else
-        return open(p_path.c_str(), O_RDONLY);
+        *p_fd = open(p_path.c_str(), O_RDONLY);
 #endif
+        if (0 > *p_fd)
+        {
+            return Status(SYSTEM, errno);
+        }
+        return Status::OK();
     }
 
-    inline int FileOpenWr(const std::string& p_path)
+    inline Status FileOpenWr(const std::string& p_path, /*out*/ int* p_fd)
     {
 #ifdef _WIN32
-        int fd = -1;
-        _sopen_s(&fd, p_path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
-        return fd;
+        _sopen_s(p_fd, p_path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
 #else
-        return open(p_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        *p_fd = open(p_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
 #endif
+        if (0 > *p_fd)
+        {
+            return Status(SYSTEM, errno);
+        }
+        return Status::OK();
     }
 
-    inline int FileClose(int fd)
+    inline Status FileClose(int fd)
     {
+        int ret = 0;
 #ifdef _WIN32
-        return _close(fd);
+        ret = _close(fd);
 #else
-        return close(fd);
+        ret = close(fd);
 #endif
+        if (0 != ret)
+        {
+            return Status(SYSTEM, errno);
+        }
+        return Status::OK();
     }
 }
 
@@ -212,89 +230,92 @@ namespace LotusIR
     }
 
 #ifdef _WIN32
-    bool Model::Load(const std::wstring& p_filePath, /*out*/ ModelProto* p_modelProto)
+    Status Model::Load(const std::wstring& p_filePath, std::shared_ptr<Model>* p_model)
     {
-        return Load(FileOpenRd(p_filePath), p_modelProto);
+        int fd;
+        RETURN_IF_ERROR(FileOpenRd(p_filePath, &fd));
+        auto status = Load(fd, p_model);
+        RETURN_IF_ERROR(FileClose(fd));
+        return status;
     }
-    std::shared_ptr<Model> Model::Load(const std::wstring& p_filePath)
+
+    Status Model::Save(Model& p_model, const std::wstring& p_filePath)
     {
-        return Load(FileOpenRd(p_filePath));
+        int fd;
+        RETURN_IF_ERROR(FileOpenWr(p_filePath, &fd));
+        auto status = Save(p_model, fd);
+        RETURN_IF_ERROR(FileClose(fd));
+        return status;
     }
-    bool Model::Save(Model& p_model, const std::wstring& p_filePath)
-    {
-        return Save(p_model.ToProto(), FileOpenWr(p_filePath));
-    }
-    bool Model::Save(const ModelProto& p_modelProto, const std::wstring& p_filePath)
-    {
-        return Save(p_modelProto, FileOpenWr(p_filePath));
-    }
+
 #endif
 
-    bool Model::Load(const std::string& p_filePath, /*out*/ ModelProto* p_modelProto)
+    Status Model::Load(const std::string& p_filePath, std::shared_ptr<Model>* p_model)
     {
-        return Load(FileOpenRd(p_filePath), p_modelProto);
+        int fd;
+        RETURN_IF_ERROR(FileOpenRd(p_filePath, &fd));
+        auto status = Load(fd, p_model);
+        RETURN_IF_ERROR(FileClose(fd));
+        return status;
     }
-    std::shared_ptr<Model> Model::Load(const std::string& p_filePath)
+
+    Status Model::Save(Model& p_model, const std::string& p_filePath)
     {
-        return Load(FileOpenRd(p_filePath));
-    }
-    bool Model::Save(Model& p_model, const std::string& p_filePath)
-    {
-        return Save(p_model.ToProto(), FileOpenWr(p_filePath));
-    }
-    bool Model::Save(const ModelProto& p_modelProto, const std::string& p_filePath)
-    {
-        return Save(p_modelProto, FileOpenWr(p_filePath));
+        int fd;
+        RETURN_IF_ERROR(FileOpenWr(p_filePath, &fd));
+        auto status = Save(p_model, fd);
+        RETURN_IF_ERROR(FileClose(fd));
+        return status;
     }
 
     using ::google::protobuf::io::ZeroCopyInputStream;
     using ::google::protobuf::io::FileInputStream;
     using ::google::protobuf::io::CodedInputStream;
-    bool Model::Load(int p_fd, /*out*/ ModelProto* p_modelProto)
+
+    Status Model::Load(int p_fd, std::shared_ptr<Model>* p_model)
     {
-        if (nullptr == p_modelProto || p_fd < 0)
+        if (p_fd < 0 || nullptr == p_model)
         {
-            return false;
+            return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> less than 0 or <p_model> is nullptr.");
         }
+
         std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(p_fd));
         std::unique_ptr<CodedInputStream> coded_input(
             new CodedInputStream(raw_input.get()));
         // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
         coded_input->SetTotalBytesLimit(INT_MAX, INT_MAX);
-        bool result = p_modelProto->ParseFromCodedStream(coded_input.get());
+        ModelProto modelProto;
+        bool result = modelProto.ParseFromCodedStream(coded_input.get());
         coded_input.reset();
         raw_input.reset();
-        FileClose(p_fd);
-        return result;
+        if (!result)
+        {
+            return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
+        }
+
+        (*p_model).reset(new Model(modelProto));
+        RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve());
+
+        return Status::OK();
     }
 
-    std::shared_ptr<Model> Model::Load(int p_fd)
-    {
-        ModelProto modelProto;
-        bool result = Load(p_fd, &modelProto);
-        if (!result || p_fd < 0)
-        {
-            return nullptr;
-        }
-        auto model = std::shared_ptr<Model>(new Model(modelProto));
-        auto status = model->MainGraph()->Resolve();
-
-        FileClose(p_fd);
-        if (status.Ok())
-        {
-            return model;
-        }
-        return nullptr;
-    }
-
-    bool Model::Save(const ModelProto& p_modelProto, int p_fd)
+    Status Model::Save(Model& p_model, int p_fd)
     {
         if (p_fd < 0)
         {
-            return false;
+            return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> is less than 0.");
         }
-        bool result = p_modelProto.SerializeToFileDescriptor(p_fd);
-        FileClose(p_fd);
-        return result;
+
+        RETURN_IF_ERROR(p_model.MainGraph()->Resolve());
+        auto& modelProto = p_model.ToProto();
+        bool result = modelProto.SerializeToFileDescriptor(p_fd);
+        if (result)
+        {
+            return Status::OK();
+        }
+        else
+        {
+            return Status(LOTUS, INVALID_PROTOBUF, "Protobuf serialization failed.");
+        }
     }
 }

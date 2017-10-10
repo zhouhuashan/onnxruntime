@@ -10,6 +10,14 @@ using namespace LotusIR::Utils;
 
 namespace LotusIR
 {
+
+#define NO_CHANGE_ON_SYNC_FLAG(...)                 \
+    do {                                            \
+        bool syncNeeded = m_graphProtoSyncNeeded;   \
+        {__VA_ARGS__;}                               \
+        m_graphProtoSyncNeeded = syncNeeded;        \
+    } while (0)                                     \
+
     NodeArg::NodeArg(const std::string& p_name,
         const TypeProto* p_nodeArgType)
     {
@@ -729,20 +737,22 @@ namespace LotusIR
                 && p_nodeNameToIndex.end() != p_nodeNameToIndex.find(nodeName))
             {
                 // The node has name and its name was used by another node.
-                Status status(FAIL,
+                Status status(LOTUS,
+                    FAIL,
                     "Error: two nodes with same node name (" + nodeName + ").");
                 return status;
             }
             p_nodeNameToIndex[nodeName] = (*nodeIter)->Index();
 
             // Verify node outputs' name should be unique.
-            for (auto& outputDef : (*nodeIter)->Mutable_OutputDefs())
+            for (auto& outputDef : (*nodeIter)->OutputDefs())
             {
                 std::string outputArgname = outputDef.Name();
                 if (p_outputArgs.end() != p_outputArgs.find(outputArgname))
                 {
                     // Two outputs with same name.
-                    Status status(FAIL,
+                    Status status(LOTUS,
+                        FAIL,
                         "Error: two output args with same name ("
                         + outputArgname + ").");
                     return status;
@@ -787,7 +797,7 @@ namespace LotusIR
                 auto nameToIndexIter = p_nodeNameToIndex.find(controlInput);
                 if (p_nodeNameToIndex.end() == nameToIndexIter)
                 {
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "The control input (" + controlInput + ") of Node ("
                         + (*nodeIter)->Name() + ") does not exist in the graph.");
                     return status;
@@ -899,7 +909,7 @@ namespace LotusIR
         {
             if (p_ancestors.end() != p_ancestors.find((*iter)->Index()))
             {
-                Status status(FAIL,
+                Status status(LOTUS, FAIL,
                     "Error: the graph is not acyclic.");
                 return status;
             }
@@ -962,7 +972,7 @@ namespace LotusIR
                     {
                         // This input is fed by callers and its type has to be specified.
 
-                        Status status(FAIL,
+                        Status status(LOTUS, FAIL,
                             "Node (" + nodeName + ") input arg ("
                             + inputDef.Name()
                             + ") does not have type information.");
@@ -986,7 +996,7 @@ namespace LotusIR
                 auto iter = opFormalParameter.GetTypes().find(inputDef.Type());
                 if (opFormalParameter.GetTypes().end() == iter)
                 {
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") input arg ("
                         + inputDef.Name() + ") type does not match operator ("
                         + p_op->GetName() + ") definition.");
@@ -1005,7 +1015,7 @@ namespace LotusIR
                     // This is the case.
                     // An operator's inputs' type is "T", and T"s allowed value set is "float, int32".
                     // However, one input is specified as "float", and another one is specified as "int".
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") has different input"
                         " types (" + *(paramToTypeIter->second) + ","
                         + *(inputDef.Type()) + ") matching to same "
@@ -1044,7 +1054,7 @@ namespace LotusIR
                     = p_node->GetAttributes().find(c_constantValue);
                 if (p_node->GetAttributes().end() == nodeAttributesIter)
                 {
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") output arg value should"
                         "be specified via node attribute '" + c_constantValue + "'.");
                     return status;
@@ -1061,7 +1071,7 @@ namespace LotusIR
                 }
                 else
                 {
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "For attribute " + c_constantValue + " , only Tensor type"
                         "is allowed. The attribute type in this model is "
                         + LotusIR::c_attrTypeStr[(int)attrType] + ".");
@@ -1079,7 +1089,7 @@ namespace LotusIR
                 auto iter = opFormalParameter.GetTypes().find(outputDef.Type());
                 if (opFormalParameter.GetTypes().end() == iter)
                 {
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") output arg ("
                         + outputDef.Name() + ") type does not match operator ("
                         + p_op->GetName() + ") definition.");
@@ -1100,7 +1110,7 @@ namespace LotusIR
             // Output arg has no type information, and there're
             // multiple allowed types defined in operator definition.
             // Type inference fails in this case.
-            Status status(FAIL,
+            Status status(LOTUS, FAIL,
                 "Node (" + nodeName + ") output arg ("
                 + outputDef.Name() + ") type inference failed");
             return status;
@@ -1138,7 +1148,7 @@ namespace LotusIR
                     node->InputArgCount().end(), 0);
                 if (totalArgCount != node->InputDefs().size())
                 {
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "The sum of input arg count is not equal to size of"
                         "input defs in node (" + nodeName + ").");
                     return status;
@@ -1149,7 +1159,7 @@ namespace LotusIR
                     !op.GetOnnxNumInputsAllowedFunc()(totalArgCount))
                 {
                     // Number of inputs do not match.
-                    Status status(FAIL, "Error: node (" + nodeName
+                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
                         + ")'s number of inputs do not match its operator ("
                         + op_type + ") specification.");
                     return status;
@@ -1199,7 +1209,7 @@ namespace LotusIR
                     else
                     {
                         // Number of inputs do not match.
-                        Status status(FAIL, "Error: node (" + nodeName
+                        Status status(LOTUS, FAIL, "Error: node (" + nodeName
                             + ")'s number of inputs do not match its operator ("
                             + op_type + ") specification.");
                         return status;
@@ -1211,7 +1221,7 @@ namespace LotusIR
                 if (op.GetOutputs().size() != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
-                    Status status(FAIL, "Error: node (" + nodeName
+                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
                         + ")'s number of outputs does not match its operator ("
                         + op_type + ") specification.");
 
@@ -1237,8 +1247,7 @@ namespace LotusIR
                 if (0 != (m_graphType & Type::Strict))
                 {
                     // Strict type checking needed.
-
-                    RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs));
+                    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs)));
                 }
 
                 // Attribute verification and fill node attribute with
@@ -1276,7 +1285,7 @@ namespace LotusIR
                             RETURN_IF_ERROR(TypeUtils::GetType(nodeAttrIter->second, nodeAttrType));
                             if (nodeAttrType != attrDef.GetType())
                             {
-                                Status status(FAIL,
+                                Status status(LOTUS, FAIL,
                                     "Node (" + nodeName + ") attribute ("
                                     + nodeAttrIter->first + ") type does not match operator definition.");
                                 return status;
@@ -1291,7 +1300,7 @@ namespace LotusIR
                 if (m_funcDefMap.end() == funcIter)
                 {
                     // A op_type refers to nothing.
-                    Status status(FAIL,
+                    Status status(LOTUS, FAIL,
                         "Error: the operator or function (" + op_type
                         + ") refered by node (" + nodeName
                         + ") does not exist.");
@@ -1306,7 +1315,7 @@ namespace LotusIR
                     != node->InputDefs().size())
                 {
                     // Number of inputs do not match.
-                    Status status(FAIL, "Error: node (" + nodeName
+                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
                         + ")'s number of inputs do not match its function ("
                         + op_type + ") specification.");
                     return status;
@@ -1317,7 +1326,7 @@ namespace LotusIR
                     != node->OutputDefs().size())
                 {
                     // Number of outputs do not match.
-                    Status status(FAIL, "Error: node (" + nodeName
+                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
                         + ")'s number of outputs do not match its function ("
                         + op_type + ") specification.");
                     return status;
@@ -1484,6 +1493,10 @@ namespace LotusIR
     {
         auto node = AllocateNode();
         node->Init(p_name, p_opType, p_description, p_inputArgs, p_outputArgs);
+        if (0 != p_opType.compare(c_noOp))
+        {
+            m_graphProtoSyncNeeded = true;
+        }
         return node;
     }
 
@@ -1501,6 +1514,7 @@ namespace LotusIR
             p_inputArgs,
             p_inputArgCount,
             p_outputArgs);
+        m_graphProtoSyncNeeded = true;
         return node;
     }
 
@@ -1514,6 +1528,7 @@ namespace LotusIR
             p_opType,
             p_description,
             p_outputArgs);
+        m_graphProtoSyncNeeded = true;
         return node;
     }
 
@@ -1521,6 +1536,7 @@ namespace LotusIR
     {
         auto node = AllocateNode();
         *node = p_other;
+        m_graphProtoSyncNeeded = true;
         return node;
     }
 
@@ -1563,8 +1579,12 @@ namespace LotusIR
         m_nodes[p_dstNodeIndex]->
             m_controlInputs.insert(m_nodes[p_srcNodeIndex]->Name());
 
-        m_graphProtoSyncNeeded = true;
-        m_graphResolveNeeded = true;
+        if (!IsSourceNode(p_srcNodeIndex)
+            && !IsSinkNode(p_dstNodeIndex))
+        {
+            m_graphProtoSyncNeeded = true;
+            m_graphResolveNeeded = true;
+        }
 
         return true;
     }
@@ -1751,7 +1771,6 @@ namespace LotusIR
         std::unique_ptr<Node> node(new Node(MaxNodeIndex(), this));
         m_nodes.push_back(std::move(node));
         m_numOfNodes++;
-        m_graphProtoSyncNeeded = true;
         m_graphResolveNeeded = true;
         return m_nodes.back().get();
     }
