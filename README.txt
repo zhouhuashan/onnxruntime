@@ -2,6 +2,7 @@ This is used to clarify some engineering related topics.
 
 1. Coding guideline
 We're following Bing c++ coding guideline as https://www.bingwiki.com/Coding_Guidelines.
+NOTE: Please disregard sections about exception handling. Exceptions should NOT be thrown intentionally。
 
 2. Engineering process
 2.1 Coding
