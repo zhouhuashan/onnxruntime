@@ -14,15 +14,6 @@ enable_testing()
 option(lotusIR_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
 option(lotusIR_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
 
-# Python3
-if (NOT DEFINED PYTHON3_EXECUTABLE)
-    find_package(PythonInterp 3)
-    if (NOT PYTHONINTERP_FOUND)
-        message(FATAL_ERROR "Failed to find Python3!")
-    endif()
-    set(PYTHON3_EXECUTABLE ${PYTHON_EXECUTABLE})
-endif()
-
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 set(LOTUSIR_ROOT ${PROJECT_SOURCE_DIR}/..)
