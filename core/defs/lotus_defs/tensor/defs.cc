@@ -1,6 +1,29 @@
 #include "core/graph/op.h"
 
 namespace LotusIR {
+    // Taken fron ONNX
+    REGISTER_OPERATOR_SCHEMA(Cast)
+        .Description("The operator casts the elements of a given input tensor to a data type "
+            "specified by the 'to' argument and returns an output tensor of the same size in "
+            "the converted type. The 'to' argument must be one of the data types specified "
+            "in the 'DataType' enum field in the TensorProto message. If the 'to' argument "
+            "is not provided or is not one of the enumerated types in DataType, Caffe2 "
+            "throws an Enforce error. "
+            "NOTE: Casting to and from strings is not supported yet.")
+        .Input("input", "Input tensor to be cast.", "T")
+        .Output(
+            "output",
+            "Output tensor with the same shape as input with type "
+            "specified by the 'to' argument",
+            "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr(
+            "to",
+            "The data type to which the elements of the input tensor are cast."
+            "Strictly must be one of the types from DataType enum in TensorProto",
+            AttrType::STRING);
+
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Flatten)
         .Description("Flattens the input tensor into a 2D matrix, "
@@ -58,7 +81,8 @@ namespace LotusIR {
         .Attr("perm", "A list of integers. By default, reverse the dimensions, "
             "otherwise permute the axes according to the values given.", AttrType::INTS);
 
-    REGISTER_OPERATOR_SCHEMA(RepeatElements)
+    // Taken from Caffe2
+    REGISTER_OPERATOR_SCHEMA(Tile)
         .Description("Repeat the elements of a tensor along an axis.")
         .Input("input", "An input tensor.", "T")
         .Output("output", "Repeated output.", "T")
@@ -96,6 +120,55 @@ namespace LotusIR {
             "Constrain input and output types to floats.")
         .Attr("starts", "List of starting indices", AttrType::INTS)
         .Attr("ends", "List of ending indices", AttrType::INTS);
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Gather)
+        .Description("Given data tensor of rank r >= 1, and indices tensor of rank q, gather "
+            "entries of the outer-most dimension of data indexed by indices, and concatenate "
+            "them in an output tensor of rank q + (r - 1). "
+            "Example: data = [ [1.0, 1.2], [2.3, 3.4], [4.5, 5.7] ] "
+            "indices = [ [0, 1], [1, 2] ] "
+            "ouput = [ [ [1.0, 1.2], [2.3, 3.4], ], [ [2.3, 3.4], [4.5, 5.7] ] ] ")
+        .Input("data", "Tensor of rank r >= 1.", "T")
+        .Input("indices", "Tensor of int32/int64 indices, of any rank q.", "T")
+        .Output("ouput", "Tensor of rank q + (r - 1).", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Squeeze)
+        .Description("Remove single-dimensional entries from the shape of a tensor. "
+            "Takes a  parameter `axes` with a list of axes to squeeze.")
+        .Input("data", "Tensors with at least max(dims) dimensions.", "T")
+        .Output("squeezed", "Reshaped tensor with same data as input.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("axes",
+            "List of positive integers, indicate the dimensions to squeeze.",
+            AttrType::INTS, int64_t(1));
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Pad)
+        .Description("Given data tensor, paddings, mode, and value. "
+            "Example: Insert 0 paddings to the beginning of the second dimension. "
+            "data = [ [1.0, 1.2], [2.3, 3.4], [4.5, 5.7], ] paddings = [0, 0, 2, 0] "
+            "output = [ [ [0.0, 0.0, 1.0, 1.2], [0.0, 0.0, 2.3, 3.4], [0.0, 0.0, 4.5, 5.7] ] ]")
+        .Input("data", "Input tensor.", "T")
+        .Output("output", "Tensor after padding.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("paddings",
+              "List of integers indicate the padding sizes, paddings's length "
+              "should be the double of input's dimension. "
+              "The order should be axis_0_begin, axis_0_end, axis_1_begin, ..., "
+              "axis_n_begin, axis_n_end, n is input's dimension.",
+              AttrType::INTS, int64_t(1))
+        .Attr("mode",
+              "Three modes: constant(default), reflect, edge",
+              AttrType::STRING, std::string("constant"))
+        .Attr("value",
+              "One float, indicates the value to be filled, default is 0",
+              AttrType::FLOAT, float(0));
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(BatchToSpace)

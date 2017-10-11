@@ -100,6 +100,26 @@ namespace LotusIR {
             "Padding along each axis, can take the value 0 (False) or non 0 (True)",
             AttrType::INTS);
 
+    REGISTER_OPERATOR_SCHEMA(Dropout)
+        .Description("Dropout takes one input data (Tensor<float>) and produces two Tensor outputs, "
+            "output (Tensor<float>) and mask (Tensor<bool>). Depending on whether it is in "
+            "test mode or not, the output Y will either be a random dropout, or a simple "
+            "copy of the input. Note that our implementation of Dropout does scaling in "
+            "the training phase, so during testing nothing needs to be done.")
+        .Input("data", "The input data as Tensor.", "T")
+        .Output("output", "The output.", "T")
+        .Output("mask",
+            "The output mask. If is_test is nonzero, this output is not filled.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("ratio",
+            "(float, default 0.5) the ratio of random dropout",
+            AttrType::FLOAT, float(0.5))
+        .Attr("is_test",
+            "(int, default 0) if nonzero, run dropout in test mode where "
+            "the output is simply Y = X.",
+            AttrType::INT, int64_t(0));
+
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(AveragePool)
         .Description("AveragePool consumes an input tensor X and applies average pooling across the"

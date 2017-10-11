@@ -135,4 +135,36 @@ namespace LotusIR {
         .Output("output", "Output tensor the dot product between X and Y.", "T")
         .TypeConstraint("T", { "float16", "float", "double" },
             "Constrain input and output types to floats.");
+
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Gemm)
+        .Description("(General Matrix multiplication: "
+            "https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms#Level_3 "
+            "Compute Y = alpha * A * B + beta * C, where input tensor A has dimension (M X K), "
+            "input tensor B has dimension (K X N), input tensor C and output tensor Y have "
+            "dimension (M X N). Input tensor C can be used inplace as the output tensor Y. "
+            "If attribute broadcast is non-zero, input tensor C will be broadcasted to match the "
+            "dimension requirement. If A can be transposed before doing the computation if "
+            "attribute transA is non-zero, same for B and transB. ")
+        .Input("A", "Input tensor A", "T")
+        .Input("B", "Input tensor B", "T")
+        .Input("C", "Input tensor C, can be inplace.", "T")
+        .Output("Y", "Output tensor.", "T")
+        .TypeConstraint("T", { "float16", "float", "double" },
+            "Constrain input and output types to floats.")
+        .Attr("transA",
+              "Whether A should be transposed",
+              AttrType::INT)
+        .Attr("transB",
+              "Whether B should be transposed",
+              AttrType::INT)
+        .Attr("broadcast",
+              "Whether C should be broadcasted",
+              AttrType::INT)
+        .Attr("alpha",
+              "Scalar multiplier for the product of input tensors A * B",
+              AttrType::FLOAT)
+        .Attr("beta",
+              "Scalar multiplier for input tensor C",
+              AttrType::FLOAT);
 }
