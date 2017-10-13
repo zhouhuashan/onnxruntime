@@ -15,6 +15,11 @@ else()
   set(PROTOBUF_PROTOC_EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf/protoc)
 endif()
 
+find_package(Git)
+if(NOT GIT_FOUND)
+    message(FATAL_ERROR "Failed to find Git!")
+endif()
+
 ExternalProject_Add(protobuf
     PREFIX protobuf
     DEPENDS zlib
@@ -24,8 +29,7 @@ ExternalProject_Add(protobuf
     BUILD_IN_SOURCE 1
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf
     PATCH_COMMAND
-        ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/patches/protobuf
-                                           ${CMAKE_CURRENT_BINARY_DIR}/protobuf/src/protobuf
+        ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_SOURCE_DIR}/patches/protobuf.patch
     CONFIGURE_COMMAND ${CMAKE_COMMAND} cmake/
         -Dprotobuf_BUILD_TESTS=OFF
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
