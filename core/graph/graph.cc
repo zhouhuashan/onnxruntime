@@ -1352,6 +1352,7 @@ namespace LotusIR
             outputArgs,
             funcDefNames));
         CleanFunctionDefMap(funcDefNames);
+        SetGraphInputsOutputs();
 
         m_graphResolveNeeded = false;
         return Status::OK();
@@ -1419,6 +1420,16 @@ namespace LotusIR
     const InitialTensorSet& Graph::GetAllInitialTensors() const
     {
         return m_nameToInitialTensor;
+    }
+
+    const std::vector<const NodeArg*>& Graph::GetInputs() const
+    {
+        return m_graphInputs;
+    }
+
+    const std::vector<const NodeArg*>& Graph::GetOutputs() const
+    {
+        return m_graphInputs;
     }
 
     bool Graph::AddFunctionDef(const FunctionDefProto& p_funcDef)
@@ -1653,37 +1664,51 @@ namespace LotusIR
             *tensor = item.second;
         }
 
-        // Set graph inputs/outputs.
-        // Set graph value_info.
-        SetGraphInputsOutputs();
+        // Sync graph inputs/outputs/valueInfo.
+        SyncGraphInputsOutputs();
 
         m_graphProtoSyncNeeded = false;
 
         return m_graphProto;
     }
 
-    void Graph::SetGraphInputsOutputs()
+    void Graph::SyncGraphInputsOutputs()
     {
         m_graphProto.clear_input();
         m_graphProto.clear_output();
         m_graphProto.clear_value_info();
 
-        std::unordered_map<std::string, Node::EdgeEnd> allOutputArgs;
+        for (auto inputArg : m_graphInputs)
+        {
+            *(m_graphProto.mutable_input()->Add()) = inputArg->ToProto();
+        }
+
+        for (auto outputArg : m_graphOutputs)
+        {
+            *(m_graphProto.mutable_output()->Add()) = outputArg->ToProto();
+        }
+
+        for (auto valueInfo : m_valueInfo)
+        {
+            *(m_graphProto.mutable_value_info()->Add()) = valueInfo->ToProto();
+        }
+    }
+
+    void Graph::SetGraphInputsOutputs()
+    {
+        std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
         for (auto nodeIter = Nodes_begin();
             nodeIter != Nodes_end();
             ++nodeIter)
         {
             for (auto& outputDef : (*nodeIter)->OutputDefs())
             {
-                auto& outputArgname = outputDef.Name();
-
-                allOutputArgs.insert(
-                { outputArgname, Node::EdgeEnd(*(*nodeIter), outputDef) });
+                outputNameToNodeArg.insert({ outputDef.Name(), &outputDef });
             }
         }
 
         // Init graph output args with all node output args.
-        auto graphOutputArgs = allOutputArgs;
+        auto graphOutputArgs = outputNameToNodeArg;
 
         std::unordered_set<Node*> innerNodes;
         for (auto nodeIter = Nodes_begin();
@@ -1699,14 +1724,14 @@ namespace LotusIR
             // Go thru all node's inputs.
             for (auto& inputArg : (*nodeIter)->InputDefs())
             {
-                auto outputArgIter = allOutputArgs.find(inputArg.Name());
-                if (allOutputArgs.end()
+                auto outputArgIter = outputNameToNodeArg.find(inputArg.Name());
+                if (outputNameToNodeArg.end()
                     == outputArgIter)
                 {
                     // No such outputArg matching this inputArg.
                     // This input arg should be fed when running evaluation.
                     // it should be a graph input or initializer (say, weight).
-                    *(m_graphProto.mutable_input()->Add()) = inputArg.ToProto();
+                    m_graphInputs.push_back(&inputArg);
                     continue;
                 }
 
@@ -1714,7 +1739,7 @@ namespace LotusIR
                 // feeding another node as the node's input.
                 if (graphOutputArgs.erase(outputArgIter->first) >= 1)
                 {
-                    *(m_graphProto.mutable_value_info()->Add()) = inputArg.ToProto();
+                    m_valueInfo.push_back(&inputArg);
                 }
             }
         }
@@ -1722,7 +1747,7 @@ namespace LotusIR
         // Set graph outputs.
         for (auto& outputArg : graphOutputArgs)
         {
-            *(m_graphProto.mutable_output()->Add()) = outputArg.second.GetNodeArg()->ToProto();
+            m_graphOutputs.push_back(outputArg.second);
         }
     }
 

@@ -408,6 +408,10 @@ namespace LotusIR
             TensorProto& p_value) const;
         const InitialTensorSet& GetAllInitialTensors() const;
 
+        // Get graph inputs/outputs.
+        const std::vector<const NodeArg*>& GetInputs() const;
+        const std::vector<const NodeArg*>& GetOutputs() const;
+
         // Add or Remove a function definition.
         bool AddFunctionDef(const FunctionDefProto& p_function);
         void RemoveFunctionDef(const std::string& p_functionName);
@@ -551,8 +555,11 @@ namespace LotusIR
         // Add source/sink nodes to <*this> graph.
         void AddSourceSinkNodes();
 
-        // Set graph inputs/outputs when serializing to proto.
+        // Set graph inputs/outputs when resolving a graph..
         void SetGraphInputsOutputs();
+
+        // Sync graph inputs/outputs when serializing to proto.
+        void SyncGraphInputsOutputs();
 
         // Graph nodes.
         // Element in <m_nodes> may be nullptr due to graph optimization.
@@ -593,8 +600,17 @@ namespace LotusIR
 
         int m_graphType = 0;
 
-        // the topologic order of node index
+        // The topologic order of node index.
         std::vector<NODEINDEX> m_nodesInTopologicalOrder;
+
+        // Graph inputs.
+        std::vector<const NodeArg*> m_graphInputs;
+
+        // Graph outputs.
+        std::vector<const NodeArg*> m_graphOutputs;
+
+        // Graph value_info.
+        std::vector<const NodeArg*> m_valueInfo;
     };
 }
 
