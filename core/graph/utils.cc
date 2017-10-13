@@ -58,18 +58,6 @@ namespace LotusIR
                 return "sparse(" + ToString(p_type.sparse_tensor_type().elem_type()) + ")";
             case TypeProto::ValueCase::kSeqType:
                 return "seq(" + ToString(p_type.seq_type().elem_type()) + ")";
-            case TypeProto::ValueCase::kTupleType:
-            {
-                int size = p_type.tuple_type().elem_type_size();
-                std::string tuple_str("tuple(");
-                for (int i = 0; i < size - 1; i++)
-                {
-                    tuple_str = tuple_str + ToString(p_type.tuple_type().elem_type(i)) + ",";
-                }
-                tuple_str += ToString(p_type.tuple_type().elem_type(size - 1));
-                tuple_str += ")";
-                return tuple_str;
-            }
             case TypeProto::ValueCase::kMapType:
             {
                 std::string map_str("map(");
@@ -77,8 +65,36 @@ namespace LotusIR
                     + ToString(p_type.map_type().value_type()) + ")";
                 return map_str;
             }
-            case TypeProto::ValueCase::kHandleType:
-                return "handle";
+            case TypeProto::ValueCase::kRecordType:
+            {
+                std::string record_str("record(");
+                int size = p_type.record_type().field_size();
+                for (int i = 0; i < size - 1; i++)
+                {
+                    record_str = record_str +
+                        p_type.record_type().field(i).name() + ":" +
+                        ToString(p_type.record_type().field(i).type()) + "|";
+                }
+                record_str = record_str +
+                    p_type.record_type().field(size-1).name() + ":" +
+                    ToString(p_type.record_type().field(size-1).type()) + ")";
+                return record_str;
+            }
+            case TypeProto::ValueCase::kUnionType:
+            {
+                std::string union_str("union(");
+                int size = p_type.union_type().choice_size();
+                for (int i = 0; i < size - 1; i++)
+                {
+                    union_str = union_str +
+                        p_type.union_type().choice(i).name() + ":" +
+                        ToString(p_type.union_type().choice(i).type()) + "|";
+                }
+                union_str = union_str +
+                    p_type.union_type().choice(size-1).name() + ":" +
+                    ToString(p_type.union_type().choice(size-1).type()) + ")";
+                return union_str;
+            }
             default:
                 throw std::invalid_argument("Unknown TypeProto");
             }
@@ -136,37 +152,58 @@ namespace LotusIR
                 s.RStrip(")");
                 FromString(std::string(s.Data(), s.Size()), *p_type.mutable_seq_type()->mutable_elem_type());
             }
-            else if (s.LStrip("tuple("))
-            {
-                s.RStrip(")");
-                std::istringstream types(std::string(s.Data(), s.Size()));
-                std::string type;
-                while (std::getline(types, type, ','))
-                {
-                    FromString(type, *p_type.mutable_tuple_type()->mutable_elem_type()->Add());
-                }
-            }
             else if (s.LStrip("map("))
             {
                 size_t key_size = s.Find(',');
                 StringRange k(s.Data(), key_size);
+                k.LAndRStrip();
                 std::string key = std::string(k.Data(), k.Size());
                 s.LStrip(key_size);
                 s.LStrip(",");
                 size_t val_size = s.Find(')');
                 StringRange v(s.Data(), val_size);
-                std::string val = std::string(v.Data(), v.Size());
-
+                v.LAndRStrip();
                 TensorProto::DataType key_type;
                 FromString(key, key_type);
-                TensorProto::DataType val_type;
-                FromString(val, val_type);
                 p_type.mutable_map_type()->set_key_type(key_type);
-                p_type.mutable_map_type()->set_value_type(val_type);
+                FromString(std::string(v.Data(), v.Size()), *p_type.mutable_map_type()->mutable_value_type());
             }
-            else if (s.LStrip("handle"))
+            else if (s.LStrip("record("))
             {
-                p_type.mutable_handle_type();
+                s.RStrip(")");
+                std::istringstream fields(std::string(s.Data(), s.Size()));
+                std::string field;
+                while (std::getline(fields, field, '|'))
+                {
+                    StringRange f(field);
+                    f.LAndRStrip();
+                    ValueInfoProto* valueinfo = p_type.mutable_record_type()->mutable_field()->Add();
+                    size_t name_size = f.Find(':');
+                    StringRange n(f.Data(), name_size);
+                    std::string name = std::string(n.Data(), n.Size());
+                    valueinfo->set_name(name);
+                    f.LStrip(name_size);
+                    f.LStrip(":");
+                    FromString(std::string(f.Data(), f.Size()), *valueinfo->mutable_type());
+                }
+            }
+            else if (s.LStrip("union("))
+            {
+                std::istringstream choices(std::string(s.Data(), s.Size()));
+                std::string choice;
+                while (std::getline(choices, choice, '|'))
+                {
+                    StringRange c(choice);
+                    c.LAndRStrip();
+                    ValueInfoProto* valueinfo = p_type.mutable_union_type()->mutable_choice()->Add();
+                    size_t name_size = c.Find(':');
+                    StringRange n(c.Data(), name_size);
+                    std::string name = std::string(n.Data(), n.Size());
+                    valueinfo->set_name(name);
+                    c.LStrip(name_size);
+                    c.LStrip(":");
+                    FromString(std::string(c.Data(), c.Size()), *valueinfo->mutable_type());
+                }
             }
             else if (s.LStrip("sparse("))
             {
@@ -397,7 +434,9 @@ namespace LotusIR
 
         bool StringRange::LAndRStrip()
         {
-            return LStrip() || RStrip();
+            bool l = LStrip();
+            bool r = RStrip();
+            return l || r;
         }
 
         size_t StringRange::Find(const char p_ch) const

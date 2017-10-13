@@ -53,8 +53,6 @@ namespace LotusIR
             return &(m_nodeArgInfo.type().tensor_type().shape());
         case LotusIR::TypeProto::kSparseTensorType:
             return &(m_nodeArgInfo.type().sparse_tensor_type().shape());
-        case LotusIR::TypeProto::kHandleType:
-        case LotusIR::TypeProto::kTupleType:
         case LotusIR::TypeProto::kSeqType:
         case LotusIR::TypeProto::kMapType:
         case LotusIR::TypeProto::VALUE_NOT_SET:
@@ -79,8 +77,6 @@ namespace LotusIR
         case LotusIR::TypeProto::kSparseTensorType:
             *(m_nodeArgInfo.mutable_type()->mutable_sparse_tensor_type()->mutable_shape()) = p_shape;
             break;
-        case LotusIR::TypeProto::kHandleType:
-        case LotusIR::TypeProto::kTupleType:
         case LotusIR::TypeProto::kSeqType:
         case LotusIR::TypeProto::kMapType:
         case LotusIR::TypeProto::VALUE_NOT_SET:
