@@ -38,14 +38,8 @@ namespace LotusIR
         const TypeProto& OpUtils::ToTypeProto(const PTYPE& p_type)
         {
             auto it = GetTypeStrToProtoMap().find(*p_type);
-            if (it != GetTypeStrToProtoMap().end())
-            {
-                return it->second;
-            }
-            else
-            {
-                throw std::invalid_argument("PTYPE not found: " + *p_type);
-            }
+            assert(it != GetTypeStrToProtoMap().end());
+            return it->second;
         }
 
         std::string OpUtils::ToString(const TypeProto& p_type)
@@ -73,7 +67,7 @@ namespace LotusIR
                 {
                     record_str = record_str +
                         p_type.record_type().field(i).name() + ":" +
-                        ToString(p_type.record_type().field(i).type()) + "|";
+                        ToString(p_type.record_type().field(i).type()) + ",";
                 }
                 record_str = record_str +
                     p_type.record_type().field(size-1).name() + ":" +
@@ -88,7 +82,7 @@ namespace LotusIR
                 {
                     union_str = union_str +
                         p_type.union_type().choice(i).name() + ":" +
-                        ToString(p_type.union_type().choice(i).type()) + "|";
+                        ToString(p_type.union_type().choice(i).type()) + ",";
                 }
                 union_str = union_str +
                     p_type.union_type().choice(size-1).name() + ":" +
@@ -144,39 +138,34 @@ namespace LotusIR
         void OpUtils::FromString(const std::string& p_src, TypeProto& p_type)
         {
             StringRange s(p_src);
-            s.LAndRStrip();
             p_type.Clear();
 
-            if (s.LStrip("seq("))
+            if (s.LStrip("seq"))
             {
-                s.RStrip(")");
+                s.ParensWhitespaceStrip();
                 FromString(std::string(s.Data(), s.Size()), *p_type.mutable_seq_type()->mutable_elem_type());
             }
-            else if (s.LStrip("map("))
+            else if (s.LStrip("map"))
             {
+                s.ParensWhitespaceStrip();
                 size_t key_size = s.Find(',');
                 StringRange k(s.Data(), key_size);
-                k.LAndRStrip();
                 std::string key = std::string(k.Data(), k.Size());
                 s.LStrip(key_size);
                 s.LStrip(",");
-                size_t val_size = s.Find(')');
-                StringRange v(s.Data(), val_size);
-                v.LAndRStrip();
+                StringRange v(s.Data(), s.Size());
                 TensorProto::DataType key_type;
                 FromString(key, key_type);
                 p_type.mutable_map_type()->set_key_type(key_type);
                 FromString(std::string(v.Data(), v.Size()), *p_type.mutable_map_type()->mutable_value_type());
             }
-            else if (s.LStrip("record("))
+            else if (s.LStrip("record"))
             {
-                s.RStrip(")");
-                std::istringstream fields(std::string(s.Data(), s.Size()));
-                std::string field;
-                while (std::getline(fields, field, '|'))
+                s.ParensWhitespaceStrip();
+                std::vector<StringRange> fields;
+                SplitRecords(s, fields);
+                for (auto& f : fields)
                 {
-                    StringRange f(field);
-                    f.LAndRStrip();
                     ValueInfoProto* valueinfo = p_type.mutable_record_type()->mutable_field()->Add();
                     size_t name_size = f.Find(':');
                     StringRange n(f.Data(), name_size);
@@ -187,14 +176,13 @@ namespace LotusIR
                     FromString(std::string(f.Data(), f.Size()), *valueinfo->mutable_type());
                 }
             }
-            else if (s.LStrip("union("))
+            else if (s.LStrip("union"))
             {
-                std::istringstream choices(std::string(s.Data(), s.Size()));
-                std::string choice;
-                while (std::getline(choices, choice, '|'))
+                s.ParensWhitespaceStrip();
+                std::vector<StringRange> choices;
+                SplitRecords(s, choices);
+                for (auto& c : choices)
                 {
-                    StringRange c(choice);
-                    c.LAndRStrip();
                     ValueInfoProto* valueinfo = p_type.mutable_union_type()->mutable_choice()->Add();
                     size_t name_size = c.Find(':');
                     StringRange n(c.Data(), name_size);
@@ -205,9 +193,9 @@ namespace LotusIR
                     FromString(std::string(c.Data(), c.Size()), *valueinfo->mutable_type());
                 }
             }
-            else if (s.LStrip("sparse("))
+            else if (s.LStrip("sparse"))
             {
-                s.RStrip(")");
+                s.ParensWhitespaceStrip();
                 TensorProto::DataType e;
                 FromString(std::string(s.Data(), s.Size()), e);
                 p_type.mutable_sparse_tensor_type()->set_elem_type(e);
@@ -225,6 +213,41 @@ namespace LotusIR
         {
             TypesWrapper& t = TypesWrapper::GetTypesWrapper();
             return (t.GetAllowedDataTypes().find(p_dataType) != t.GetAllowedDataTypes().end());
+        }
+
+        void OpUtils::SplitRecords(StringRange& p_src, std::vector<StringRange>& p_records)
+        {
+            int parens = 0;
+            p_src.RestartCapture();
+            while (p_src.Size() > 0)
+            {
+                if (p_src.StartsWith(","))
+                {
+                    if (parens == 0)
+                    {
+                        p_records.push_back(p_src.GetCaptured());
+                        p_src.LStrip(",");
+                        p_src.RestartCapture();
+                    }
+                    else
+                    {
+                        p_src.LStrip(",");
+                    }
+                }
+                else if (p_src.LStrip("("))
+                {
+                    parens++;
+                }
+                else if (p_src.LStrip(")"))
+                {
+                    parens--;
+                }
+                else
+                {
+                    p_src.LStrip(1);
+                }
+            }
+            p_records.push_back(p_src.GetCaptured());
         }
 
         void OpUtils::FromString(const std::string& p_typeStr, TensorProto::DataType& p_type)
@@ -302,20 +325,27 @@ namespace LotusIR
         }
 
         StringRange::StringRange()
-            : m_data(""), m_size(0)
+            : m_data(""), m_size(0), m_start(m_data), m_end(m_data)
         {}
 
         StringRange::StringRange(const char* p_data, size_t p_size)
-            : m_data(p_data), m_size(p_size)
-        {}
+            : m_data(p_data), m_size(p_size), m_start(m_data), m_end(m_data)
+        {
+            assert(p_data != nullptr);
+            LAndRStrip();
+        }
 
         StringRange::StringRange(const std::string& p_str)
-            : m_data(p_str.data()), m_size(p_str.size())
-        {}
+            : m_data(p_str.data()), m_size(p_str.size()), m_start(m_data), m_end(m_data)
+        {
+            LAndRStrip();
+        }
 
         StringRange::StringRange(const char* p_data)
-            : m_data(p_data), m_size(strlen(p_data))
-        {}
+            : m_data(p_data), m_size(strlen(p_data)), m_start(m_data), m_end(m_data)
+        {
+            LAndRStrip();
+        }
 
         const char* StringRange::Data() const
         {
@@ -341,18 +371,21 @@ namespace LotusIR
         {
             m_data = "";
             m_size = 0;
+            m_start = m_end = m_data;
         }
 
         void StringRange::Reset(const char* p_data, size_t p_size)
         {
             m_data = p_data;
             m_size = p_size;
+            m_start = m_end = m_data;
         }
 
         void StringRange::Reset(const std::string& p_str)
         {
             m_data = p_str.data();
             m_size = p_str.size();
+            m_start = m_end = m_data;
         }
 
         bool StringRange::StartsWith(const StringRange& p_str) const
@@ -380,12 +413,14 @@ namespace LotusIR
             }
             return false;
         }
+
         bool StringRange::LStrip(size_t p_size)
         {
             if (p_size <= m_size)
             {
                 m_data += p_size;
                 m_size -= p_size;
+                m_end += p_size;
                 return true;
             }
             return false;
@@ -439,6 +474,15 @@ namespace LotusIR
             return l || r;
         }
 
+        void StringRange::ParensWhitespaceStrip()
+        {
+            LStrip();
+            LStrip("(");
+            LAndRStrip();
+            RStrip(")");
+            RStrip();
+        }
+
         size_t StringRange::Find(const char p_ch) const
         {
             size_t idx = 0;
@@ -451,6 +495,17 @@ namespace LotusIR
                 idx++;
             }
             return std::string::npos;
+        }
+
+        void StringRange::RestartCapture()
+        {
+            m_start = m_data;
+            m_end = m_data;
+        }
+
+        StringRange StringRange::GetCaptured()
+        {
+            return StringRange(m_start, m_end - m_start);
         }
     }
 }

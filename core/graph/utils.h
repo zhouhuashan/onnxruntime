@@ -9,6 +9,10 @@
 namespace LotusIR
 {
     typedef const std::string* PTYPE;
+    namespace Utils
+    {
+        class StringRange;
+    }
 
     namespace Utils
     {
@@ -23,10 +27,15 @@ namespace LotusIR
             static void FromString(const std::string& p_src, TypeProto& p_type);
             static void FromString(const std::string& p_src, TensorProto::DataType& p_type);
             static bool IsValidDataTypeString(const std::string &p_dataType);
+            static void SplitRecords(StringRange& p_src, std::vector<StringRange>& p_records);
         private:
             static std::unordered_map<std::string, TypeProto>& GetTypeStrToProtoMap();
         };
 
+        // Simple class which contains pointers to external string buffer and a size.
+        // This can be used to track a "valid" range/slice of the string.
+        // Caller should ensure StringRange is not used after external storage has
+        // been freed.
         class StringRange
         {
         public:
@@ -50,11 +59,24 @@ namespace LotusIR
             bool RStrip(size_t p_size);
             bool RStrip(StringRange p_str);
             bool LAndRStrip();
+            void ParensWhitespaceStrip();
             size_t Find(const char p_ch) const;
 
+            // These methods provide a way to return the range of the string
+            // which was discarded by LStrip(). i.e. We capture the string
+            // range which was discarded.
+            StringRange GetCaptured();
+            void RestartCapture();
+
         private:
+            // m_data + size tracks the "valid" range of the external string buffer.
             const char* m_data;
             size_t m_size;
+
+            // m_start and m_end track the captured range.
+            // m_end advances when LStrip() is called.
+            const char* m_start;
+            const char* m_end;
         };
     }
 }
