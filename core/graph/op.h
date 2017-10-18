@@ -80,13 +80,27 @@ namespace LotusIR
 
         OperatorSchemaSetter& Description(const std::string& p_description);
 
+        // Grammar for type strings used in Input(), Output(), and AttrWithRichType() api's
+        // <type> ::= <data_type> |
+        //            tensor(<data_type>) |
+        //            sparse(<data_type>) |
+        //            seq(<type>) |
+        //            map(<data_type>, <type>) |
+        //            record(<name_type_list>) |
+        //            union(<name_type_list>)
+        // <name_type_list> :: = <name>:<type>{ ,<name_type_list> }
+        // <data_type> :: = float | uint8 | ...   (see data_type strings defined in constants.h)
         OperatorSchemaSetter& Input(const std::string& p_inputName,
             const std::string& p_description,
             const std::string& p_type = "");
 
         OperatorSchemaSetter& Output(const std::string& p_outputName,
             const std::string& p_description,
-            const std::string& p_type = "");
+            const std::string& p_type = ""); // see grammar above.
+
+        OperatorSchemaSetter& AttrWithRichType(const std::string& p_attrName,
+            const std::string& p_description,
+            const std::string& p_richType); // see grammar above.
 
         OperatorSchemaSetter& Attr(const std::string& p_attrName,
             const std::string& p_description,

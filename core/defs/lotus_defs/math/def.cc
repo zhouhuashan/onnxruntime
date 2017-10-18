@@ -9,8 +9,8 @@ namespace LotusIR {
             "tensors elementwise.")                                                                         \
         .Input("data_0", "First of the input tensors. Can be inplace.", "T")                                \
         .Output("output", "Output tensor. Same dimension as inputs.", "T")                                  \
-        .TypeConstraint("T", { "float16", "float", "double" },                                              \
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },                                              \
+            "Constrain input and output types to float tensors.");
 
     REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Add)
     REGISTER_ELEMENTWISE_OPERATOR_SCHEMA(Sub)
@@ -28,8 +28,8 @@ namespace LotusIR {
             the tensor elementwise.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Abs)
@@ -38,8 +38,8 @@ namespace LotusIR {
             "the tensor elementwise.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-             "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+             "Constrain input and output types to float tensors.");
 
     // Take from ONNX
     REGISTER_OPERATOR_SCHEMA(Reciprocal)
@@ -48,8 +48,8 @@ namespace LotusIR {
             "the tensor elementwise.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Floor)
@@ -58,8 +58,8 @@ namespace LotusIR {
             "the tensor elementwise.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Ceil)
@@ -68,8 +68,8 @@ namespace LotusIR {
             "the tensor elementwise.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(Clip)
@@ -80,8 +80,8 @@ namespace LotusIR {
             "are the same.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("min", "Minimum value, under which element is replaced by min", AttrType::FLOAT)
         .Attr("max", "Maximum value, under which element is replaced by max", AttrType::FLOAT);
 
@@ -92,8 +92,8 @@ namespace LotusIR {
             "the tensor elementwise. If x is negative, then it will return NaN.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Exp)
@@ -102,8 +102,8 @@ namespace LotusIR {
             "input and output blobs.")
         .Input("input", "input tensor", "T")
         .Output("output", "The exponential of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Log)
@@ -112,8 +112,8 @@ namespace LotusIR {
             "input and output blobs.")
         .Input("input", "input tensor", "T")
         .Output("output", "The natural  log of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Pow)
@@ -122,8 +122,8 @@ namespace LotusIR {
             "is applied to the data tensor elementwise.")
         .Input("input", "input tensor", "T")
         .Output("output", "The x^exponent value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("exponent", "The exponent of the power function.", AttrType::FLOAT);
 
     // Taken from ONNX
@@ -133,8 +133,8 @@ namespace LotusIR {
         .Input("X", "Input tensor of any shape", "T")
         .Input("Y", "Input tensor of any shape", "T")
         .Output("output", "Output tensor the dot product between X and Y.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Gemm)
@@ -150,8 +150,8 @@ namespace LotusIR {
         .Input("B", "Input tensor B", "T")
         .Input("C", "Input tensor C, can be inplace.", "T")
         .Output("Y", "Output tensor.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("transA",
               "Whether A should be transposed",
               AttrType::INT)

@@ -66,13 +66,22 @@ namespace LotusIR
     {
         m_opSchema.m_opSignature.m_attributes.push_back(
             OpSignature::Attribute(p_attrName, p_attrType, p_description));
+        return *this;
+    }
 
+    OperatorSchemaSetter&
+        OperatorSchemaSetter::AttrWithRichType(const std::string& p_attrName,
+            const std::string& p_description,
+            const std::string& p_richType)
+    {
+        m_opSchema.m_opSignature.m_attributes.push_back(
+            OpSignature::Attribute(p_attrName, p_description, p_richType));
         return *this;
     }
 
 #define ATTR_SETTER_BASIC_IMPL(type, field)                                               \
-    OperatorSchemaSetter&                                                         \
-        OperatorSchemaSetter::Attr(const std::string& p_attrName,                 \
+    OperatorSchemaSetter&                                                                 \
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,                         \
             const std::string& p_description,                                             \
             AttrType p_attrType,                                                          \
             const type& p_defaultValue)                                                   \
@@ -81,8 +90,8 @@ namespace LotusIR
         a.set_name(p_attrName);                                                           \
         a.set_##field(p_defaultValue);                                                    \
                                                                                           \
-        m_opSchema.m_opSignature.m_attributes.push_back(                                    \
-            OpSignature::Attribute(p_attrName,                                         \
+        m_opSchema.m_opSignature.m_attributes.push_back(                                  \
+            OpSignature::Attribute(p_attrName,                                            \
                                         p_attrType,                                       \
                                         p_description,                                    \
                                         a));                                              \
@@ -91,8 +100,8 @@ namespace LotusIR
     }                                                                                     \
 
 #define ATTR_SETTER_LIST_IMPL(type, field)                                                \
-    OperatorSchemaSetter&                                                         \
-        OperatorSchemaSetter::Attr(const std::string& p_attrName,                 \
+    OperatorSchemaSetter&                                                                 \
+        OperatorSchemaSetter::Attr(const std::string& p_attrName,                         \
             const std::string& p_description,                                             \
             AttrType p_attrType,                                                          \
             const std::vector<type>& p_defaultValue)                                      \
@@ -104,8 +113,8 @@ namespace LotusIR
             a.add_##field(v);                                                             \
         }                                                                                 \
                                                                                           \
-        m_opSchema.m_opSignature.m_attributes.push_back(                                    \
-        OpSignature::Attribute(p_attrName,                                             \
+        m_opSchema.m_opSignature.m_attributes.push_back(                                  \
+        OpSignature::Attribute(p_attrName,                                                \
             p_attrType,                                                                   \
             p_description,                                                                \
             a));                                                                          \
@@ -290,6 +299,10 @@ namespace LotusIR
         else if (p_attr.has_g())
         {
             p_type = AttrType::GRAPH;
+        }
+        else if (p_attr.has_v())
+        {
+            p_type = AttrType::VALUE;
         }
         else if (p_attr.floats_size())
         {

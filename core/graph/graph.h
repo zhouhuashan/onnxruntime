@@ -238,6 +238,9 @@ namespace LotusIR
         ADD_ATTR_INTERFACES(TypeProto)
         ADD_ATTR_INTERFACES(TypeProto::TensorShapeProto)
 
+        // ValueProto doesn't have a vector interface
+        bool AddAttribute(const std::string& p_attrName, const ValueProto& p_value);
+
         // Clear specified node attribute.
         bool ClearAttribute(const std::string& p_attrName);
 

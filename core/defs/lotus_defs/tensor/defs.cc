@@ -16,8 +16,8 @@ namespace LotusIR {
             "Output tensor with the same shape as input with type "
             "specified by the 'to' argument",
             "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr(
             "to",
             "The data type to which the elements of the input tensor are cast."
@@ -32,8 +32,8 @@ namespace LotusIR {
         .Output("output", "A tensor of rank 2 with the contents of the input tensor, "
             "with first dimension equal first dimension of input, and remaining "
             "input dimensions flatenned into the inner dimension of the output.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Reshape)
@@ -47,8 +47,8 @@ namespace LotusIR {
             "from the shape argument.")
         .Input("data", "An input tensor.", "T")
         .Output("reshaped", "Reshaped data.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("shape", "Tensor of shape declarations for the output. Must be compatible with "
             "the input. At most one dimension of the new shape can be -1. In this case, the "
             "value is inferred from the size of the tensor and the remaining dimensions. A "
@@ -64,8 +64,8 @@ namespace LotusIR {
         .Input("input", "The tensor to split", "T")
         .Input("split", "Optional list of output lengths (see also arg 'split')", "T")
         .Output("output", "A list of output tensors", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("axis", "Which axis to split on", AttrType::INT)
         .Attr("split", "Number of tensors to output.", AttrType::INT);
 
@@ -76,8 +76,8 @@ namespace LotusIR {
             "will be (2, 1, 3).")
         .Input("data", "An input tensor.", "T")
         .Output("transposed", "Transposed output.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("perm", "A list of integers. By default, reverse the dimensions, "
             "otherwise permute the axes according to the values given.", AttrType::INTS);
 
@@ -86,8 +86,8 @@ namespace LotusIR {
         .Description("Repeat the elements of a tensor along an axis.")
         .Input("input", "An input tensor.", "T")
         .Output("output", "Repeated output.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("perm", "A list of integers. By default, reverse the dimensions, "
             "otherwise permute the axes according to the values given.", AttrType::INTS);
 
@@ -98,8 +98,8 @@ namespace LotusIR {
             "of all inputs.")
         .Input("input", "A list of input tensors.", "T")
         .Output("output", "Concatenated tensor", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("axis", "Axis along which to concatenate", AttrType::INT);
 
     // Taken from ONNX
@@ -116,8 +116,8 @@ namespace LotusIR {
             "reverse order.")
         .Input("input", "Tensor of data to extract slices from.", "T")
         .Output("output", "Sliced data tensor.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("starts", "List of starting indices", AttrType::INTS)
         .Attr("ends", "List of ending indices", AttrType::INTS);
 
@@ -132,8 +132,8 @@ namespace LotusIR {
         .Input("data", "Tensor of rank r >= 1.", "T")
         .Input("indices", "Tensor of int32/int64 indices, of any rank q.", "T")
         .Output("ouput", "Tensor of rank q + (r - 1).", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Squeeze)
@@ -141,8 +141,8 @@ namespace LotusIR {
             "Takes a  parameter `axes` with a list of axes to squeeze.")
         .Input("data", "Tensors with at least max(dims) dimensions.", "T")
         .Output("squeezed", "Reshaped tensor with same data as input.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("axes",
             "List of positive integers, indicate the dimensions to squeeze.",
             AttrType::INTS, int64_t(1));
@@ -155,8 +155,8 @@ namespace LotusIR {
             "output = [ [ [0.0, 0.0, 1.0, 1.2], [0.0, 0.0, 2.3, 3.4], [0.0, 0.0, 4.5, 5.7] ] ]")
         .Input("data", "Input tensor.", "T")
         .Output("output", "Tensor after padding.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("paddings",
               "List of integers indicate the padding sizes, paddings's length "
               "should be the double of input's dimension. "
@@ -182,8 +182,8 @@ namespace LotusIR {
         .Input("input", "Input tensor of [N,C,H,W]", "T")
         .Output("output", "Output tensor of [N, C/(blocksize * blocksize), H * blocksize, "
             "W * blocksize]", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("blocksize", "Blocks of [blocksize,blocksize] are moved.", AttrType::INT);
 
     // Taken from Caffe2
@@ -197,8 +197,8 @@ namespace LotusIR {
         .Input("input", "Input tensor of [N,C,H,W]", "T")
         .Output("output", "Output tensor of [N, C * blocksize * blocksize, H/blocksize, "
             "W/blocksize]", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("blocksize", "Blocks of [blocksize,blocksize] are moved.", AttrType::INT);
 
 }

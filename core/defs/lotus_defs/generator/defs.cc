@@ -11,8 +11,8 @@ namespace LotusIR
         .Output("output",
                 "Output tensor containing the same value of the provided tensor.",
                 "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     REGISTER_OPERATOR_SCHEMA(RandomUniform)
         .Description("Generate a tensor with random values drawn from a uniform distribution. "
@@ -44,8 +44,8 @@ namespace LotusIR
         .Output("output",
             "Output tensor of random values drawn from uniform distribution",
             "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     REGISTER_OPERATOR_SCHEMA(RandomNormal)
         .Description("Generate a tensor with random values drawn from a normal distribution. "
@@ -78,8 +78,8 @@ namespace LotusIR
             "output",
             "Output tensor of random values drawn from normal distribution",
             "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     REGISTER_OPERATOR_SCHEMA(RandomUniformLike)
          .Description("Generate a tensor with random values drawn from a uniform distribution. "
@@ -112,8 +112,8 @@ namespace LotusIR
             "output",
             "Output tensor of random values drawn from uniform distribution",
             "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     REGISTER_OPERATOR_SCHEMA(RandomNormalLike)
         .Description("Generate a tensor with random values drawn from a normal distribution. "
@@ -147,7 +147,7 @@ namespace LotusIR
             "output",
             "Output tensor of random values drawn from normal distribution",
             "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
 }

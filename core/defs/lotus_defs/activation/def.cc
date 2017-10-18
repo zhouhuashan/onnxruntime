@@ -8,8 +8,8 @@ namespace LotusIR {
             "tensor elementwise.")
         .Input("input", "input tensor", "T")
         .Output("output", "The sigmoid value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Tanh)
@@ -18,8 +18,8 @@ namespace LotusIR {
             "and output blobs.")
         .Input("input", "input tensor", "T")
         .Output("output", "The hyperbolic tangent value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Relu)
@@ -28,8 +28,8 @@ namespace LotusIR {
             "applied to the tensor elementwise.")
         .Input("input", "input tensor", "T")
         .Output("output", "The Relu value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(LeakyRelu)
@@ -39,8 +39,8 @@ namespace LotusIR {
             "tensor elementwise.")
         .Input("input", "input tensor", "T")
         .Output("output", "The LeakyRelu value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha","Coefficient of leakage", AttrType::FLOAT);
 
     // Taken from ONNX
@@ -53,8 +53,8 @@ namespace LotusIR {
         .Input("Slope", "Slope tensor. If `Slope` is of size 1, the value is shared"
             "across different channels", "T")
         .Output("Y", "The PRelu value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Elu)
@@ -63,8 +63,8 @@ namespace LotusIR {
             "`f(x) = x for x >= 0`., is applied to the tensor elementwise.")
         .Input("input", "input tensor", "T")
         .Output("output", "The elu value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Coefficient of ELU default to 1", AttrType::FLOAT, float(1.0));
 
     // Taken from ONNX
@@ -75,8 +75,8 @@ namespace LotusIR {
             "is applied to the tensor elementwise.")
         .Input("input", "input tensor", "T")
         .Output("output", "The selu value of the input tensor computed element-wise", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::FLOAT, float(1.6732))
         .Attr("gamma", "Coefficient of SELU default to 1.0507.", AttrType::FLOAT, float(1.0507));
 
@@ -101,8 +101,8 @@ namespace LotusIR {
             "as described above.", "T")
         .Output("output", "The softmax normalized output values with the same "
             "shape as input tensor.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("axis", "(int) default to 1; describes the axis of the inputs when coerced "
             "to 2D; defaults to one because the 0th axis most likely describes "
             "the batch_size", AttrType::INT);
@@ -114,8 +114,8 @@ namespace LotusIR {
             "applied to the tensor elementwise.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Scalar multiplication factor", AttrType::FLOAT)
         .Attr("beta", "Scalar offset", AttrType::FLOAT);
 
@@ -126,8 +126,8 @@ namespace LotusIR {
             "is applied to the  tensor elementwise.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Scaling value", AttrType::FLOAT)
         .Attr("beta", "Scalar offset", AttrType::FLOAT);
 
@@ -138,8 +138,8 @@ namespace LotusIR {
             "f(x) = alpha*tanh⁡(beta*x), is applied to the  tensor elementwise.")
         .Input("input", "Input tensor, typically 1-D.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Scaling value", AttrType::FLOAT)
         .Attr("beta", "Scaling value", AttrType::FLOAT);
 
@@ -150,8 +150,8 @@ namespace LotusIR {
             "x for x >= alpha`, is applied to the data tensor elementwise.")
         .Input("input", "Input tensor, typically 1-D.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Scalar threshold value", AttrType::FLOAT);
 
     // Taken from RS4
@@ -161,8 +161,8 @@ namespace LotusIR {
             "to the tensor elementwise.")
         .Input("input", "Input tensor of shape [N, F].", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(Hardmax)
@@ -182,8 +182,8 @@ namespace LotusIR {
             "throw errors.")
         .Input("input", "Input tensor of shape [N, F].", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("axis", "Default to 1; describes the axis of the inputs when coerced to 2D; "
             "defaults to one because the 0th axis most likely describes the batch size.",
             AttrType::INT, int64_t(1));
@@ -195,8 +195,8 @@ namespace LotusIR {
             "tensor elementwise.")
         .Input("input", "Input tensor, typically 1-D.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::FLOAT, float(1.6732));
 
     // Taken from Caffe2
@@ -206,8 +206,8 @@ namespace LotusIR {
             "applied to the tensor elementwise.")
         .Input("input", "Input tensor, typically 1-D.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(ParametericSoftplus)
@@ -216,8 +216,8 @@ namespace LotusIR {
             "y = alpha * log(1 + exp(beta * x), is applied to the tensor elementwise.")
         .Input("input", "Input tensor, typically 1-D.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("alpha", "Alpha tensor. If `alpha` is of size 1, "
             "the value is shared across different channels.", AttrType::FLOAT, float(1.0))
         .Attr("beta", "Beta tensor. If `beta` is of size 1, "
@@ -230,7 +230,7 @@ namespace LotusIR {
             "tensor elementwise.")
         .Input("input", "input tensor", "T")
         .Output("output", "output tensor", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
 }

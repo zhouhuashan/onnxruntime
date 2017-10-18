@@ -538,6 +538,7 @@ namespace LotusIR
     ADD_ATTR_IMPL(TypeProto::TensorShapeProto, shape)
     ADD_ATTR_IMPL(GraphProto, g)
     ADD_ATTR_IMPL(TypeProto, type)
+    ADD_ATTR_IMPL(ValueProto, v)
     ADD_LIST_ATTR_IMPL(float, floats)
     ADD_LIST_ATTR_IMPL(int64_t, ints)
     ADD_LIST_ATTR_IMPL(std::string, strings)
@@ -1285,6 +1286,25 @@ namespace LotusIR
                                     "Node (" + nodeName + ") attribute ("
                                     + nodeAttrIter->first + ") type does not match operator definition.");
                                 return status;
+                            }
+
+                            // This is an Attribute containing a Rich Type Value. Do further validation.
+                            if (attrDef.GetType() == AttrType::VALUE)
+                            {
+                                std::string richType = OpUtils::ToAttrTypeString(nodeAttrIter->second.v());
+                                if (richType != *attrDef.GetRichType())
+                                {
+                                    // TODO: validation via string comparison doesn't work for types containing union.
+                                    // maybe we can use this as a shallow validation. We can potentially implement deep
+                                    // validation which goes through the entire ValueProto and checks all fields.
+                                    if (richType.find("union") != std::string::npos)
+                                    {
+                                        Status status(LOTUS, FAIL,
+                                            "Node (" + nodeName + ") attribute ("
+                                            + nodeAttrIter->first + ") type does not match operator definition.");
+                                        return status;
+                                    }
+                                }
                             }
                         }
                     }

@@ -10,11 +10,11 @@ namespace LotusIR
     {
         TEST(FormalParamTest, Success)
         {
-            OpSignature::FormalParameter p("input", "int32", "desc: integer input");
+            OpSignature::FormalParameter p("input", "tensor(int32)", "desc: integer input");
             EXPECT_EQ("input", p.GetName());
-            EXPECT_EQ("int32", p.GetTypeStr());
+            EXPECT_EQ("tensor(int32)", p.GetTypeStr());
             EXPECT_EQ("desc: integer input", p.GetDescription());
-            EXPECT_EQ(Utils::OpUtils::ToType("int32"), *p.GetTypes().begin());
+            EXPECT_EQ(Utils::OpUtils::ToType("tensor(int32)"), *p.GetTypes().begin());
         }
 
         TEST(OpRegistrationTest, OpRegTestNoTypes)
@@ -41,9 +41,9 @@ namespace LotusIR
         TEST(OpRegistrationTest, OpRegTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestOpReg).Description("Op Registration Basic Test.")
-                .Input("input_1", "docstr for input_1.", "int32")
-                .Input("input_2", "docstr for input_2.", "int32")
-                .Output("output_1", "docstr for output_1.", "int32");
+                .Input("input_1", "docstr for input_1.", "tensor(int32)")
+                .Input("input_2", "docstr for input_2.", "tensor(int32)")
+                .Output("output_1", "docstr for output_1.", "tensor(int32)");
             const OperatorSchema* opSchema;
             const OpSignature* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestOpReg", &opSchema);
@@ -52,14 +52,14 @@ namespace LotusIR
             EXPECT_EQ(op->GetInputs().size(), 2);
             EXPECT_EQ(op->GetInputs()[0].GetName(), "input_1");
             EXPECT_EQ(op->GetInputs()[0].GetTypes().size(), 1);
-            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("int32")), "int32");
+            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(int32)")), "tensor(int32)");
             EXPECT_EQ(op->GetInputs()[1].GetName(), "input_2");
             EXPECT_EQ(op->GetInputs()[1].GetTypes().size(), 1);
-            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("int32")), "int32");
+            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("tensor(int32)")), "tensor(int32)");
             EXPECT_EQ(op->GetOutputs().size(), 1);
             EXPECT_EQ(op->GetOutputs()[0].GetName(), "output_1");
             EXPECT_EQ(op->GetOutputs()[0].GetTypes().size(), 1);
-            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("int32")), "int32");
+            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(int32)")), "tensor(int32)");
         }
 
         TEST(OpRegistrationTest, TypeConstraintTest)
@@ -68,7 +68,8 @@ namespace LotusIR
                 .Input("input_1", "docstr for input_1.", "T")
                 .Input("input_2", "docstr for input_2.", "T")
                 .Output("output_1", "docstr for output_1.", "T")
-                .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.");
+                .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+                    "Constrain input and output types to floats.");
             const OperatorSchema* opSchema;
             const OpSignature* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestTypeConstraint", &opSchema);
@@ -77,22 +78,22 @@ namespace LotusIR
             EXPECT_EQ(op->GetInputs().size(), 2);
             EXPECT_EQ(op->GetInputs()[0].GetName(), "input_1");
             EXPECT_EQ(op->GetInputs()[0].GetTypes().size(), 3);
-            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("float16")), "float16");
-            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("float")), "float");
-            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("double")), "double");
+            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(float16)")), "tensor(float16)");
+            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(float)")), "tensor(float)");
+            EXPECT_EQ(**op->GetInputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(double)")), "tensor(double)");
 
             EXPECT_EQ(op->GetInputs()[1].GetName(), "input_2");
             EXPECT_EQ(op->GetInputs()[1].GetTypes().size(), 3);
-            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("float16")), "float16");
-            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("float")), "float");
-            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("double")), "double");
+            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("tensor(float16)")), "tensor(float16)");
+            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("tensor(float)")), "tensor(float)");
+            EXPECT_EQ(**op->GetInputs()[1].GetTypes().find(Utils::OpUtils::ToType("tensor(double)")), "tensor(double)");
 
             EXPECT_EQ(op->GetOutputs().size(), 1);
             EXPECT_EQ(op->GetOutputs()[0].GetName(), "output_1");
             EXPECT_EQ(op->GetOutputs()[0].GetTypes().size(), 3);
-            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("float16")), "float16");
-            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("float")), "float");
-            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("double")), "double");
+            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(float16)")), "tensor(float16)");
+            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(float)")), "tensor(float)");
+            EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(double)")), "tensor(double)");
         }
 
         TEST(OpRegistrationTest, AttributeTest)
@@ -208,6 +209,38 @@ namespace LotusIR
             {
                 EXPECT_EQ(a3->strings(i), expected_strings[i]);
             }
+        }
+
+
+        TEST(OpRegistrationTest, AttributeRichTypes)
+        {
+            REGISTER_OPERATOR_SCHEMA(__TestAttrRichTypes).Description("Op with rich type attributes.")
+                .AttrWithRichType("my_attr_seq", "seq type.", "seq( tensor( int32 ))")
+                .AttrWithRichType("my_attr_scalar_map", "scalar map type.", "map(string , tensor(int32))")
+                .AttrWithRichType("my_attr_map", "map type.", "map (string, seq(tensor(int32)))")
+                .AttrWithRichType("my_attr_record", "record type.", "record(r1:int32, r2:tensor(int32))")
+                .AttrWithRichType("my_attr_union", "union type.", "union ( c1:tensor(int32), c2: tensor(float))");
+            const OperatorSchema* opSchema;
+            const OpSignature* op;
+            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrRichTypes", &opSchema);
+            EXPECT_TRUE(success);
+            op = &(opSchema->GetOpSignature());
+            EXPECT_EQ(op->GetAttributes().size(), 5);
+            EXPECT_EQ(op->GetAttributes()[0].GetName(), "my_attr_seq");
+            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::VALUE);
+            EXPECT_EQ(*op->GetAttributes()[0].GetRichType(), "seq(tensor(int32))");
+            EXPECT_EQ(op->GetAttributes()[1].GetName(), "my_attr_scalar_map");
+            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::VALUE);
+            EXPECT_EQ(*op->GetAttributes()[1].GetRichType(), "map(string,tensor(int32))");
+            EXPECT_EQ(op->GetAttributes()[2].GetName(), "my_attr_map");
+            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::VALUE);
+            EXPECT_EQ(*op->GetAttributes()[2].GetRichType(), "map(string,seq(tensor(int32)))");
+            EXPECT_EQ(op->GetAttributes()[3].GetName(), "my_attr_record");
+            EXPECT_EQ(op->GetAttributes()[3].GetType(), AttrType::VALUE);
+            EXPECT_EQ(*op->GetAttributes()[3].GetRichType(), "record(r1:int32,r2:tensor(int32))");
+            EXPECT_EQ(op->GetAttributes()[4].GetName(), "my_attr_union");
+            EXPECT_EQ(op->GetAttributes()[4].GetType(), AttrType::VALUE);
+            EXPECT_EQ(*op->GetAttributes()[4].GetRichType(), "union(c1:tensor(int32),c2:tensor(float))");
         }
 
         TEST(TestONNXReg, VerifyRegistration)

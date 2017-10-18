@@ -23,29 +23,29 @@ namespace LotusIR
         TEST(OpUtilsTest, SplitRecords)
         {
             std::vector<Utils::StringRange> tokens;
-            Utils::StringRange s("r1:int32,r2:seq(double),r3:record(a1:string,a2:int32),r4:sparse(int32)");
+            Utils::StringRange s("r1:tensor(int32),r2:seq(tensor(double)),r3:record(a1:tensor(string),a2:tensor(int32)),r4:sparse(int32)");
             OpUtils::SplitRecords(s, tokens);
             std::string s1 = std::string(tokens[0].Data(), tokens[0].Size());
-            EXPECT_EQ(s1, "r1:int32");
+            EXPECT_EQ(s1, "r1:tensor(int32)");
             std::string s2 = std::string(tokens[1].Data(), tokens[1].Size());
-            EXPECT_EQ(s2, "r2:seq(double)");
+            EXPECT_EQ(s2, "r2:seq(tensor(double))");
             std::string s3 = std::string(tokens[2].Data(), tokens[2].Size());
-            EXPECT_EQ(s3, "r3:record(a1:string,a2:int32)");
+            EXPECT_EQ(s3, "r3:record(a1:tensor(string),a2:tensor(int32))");
             std::string s4 = std::string(tokens[3].Data(), tokens[3].Size());
             EXPECT_EQ(s4, "r4:sparse(int32)");
         }
 
         TEST(OpUtilsTest, TestPTYPE)
         {
-            PTYPE p1 = OpUtils::ToType("int32");
-            PTYPE p2 = OpUtils::ToType("int32");
-            PTYPE p3 = OpUtils::ToType("int32");
+            PTYPE p1 = OpUtils::ToType("tensor(int32)");
+            PTYPE p2 = OpUtils::ToType("tensor(int32)");
+            PTYPE p3 = OpUtils::ToType("tensor(int32)");
             EXPECT_EQ(p1, p2);
             EXPECT_EQ(p2, p3);
             EXPECT_EQ(p1, p3);
-            PTYPE p4 = OpUtils::ToType("seq(int32)");
-            PTYPE p5 = OpUtils::ToType("seq(int32)");
-            PTYPE p6 = OpUtils::ToType("seq(int32)");
+            PTYPE p4 = OpUtils::ToType("seq(tensor(int32))");
+            PTYPE p5 = OpUtils::ToType("seq(tensor(int32))");
+            PTYPE p6 = OpUtils::ToType("seq(tensor(int32))");
             EXPECT_EQ(p4, p5);
             EXPECT_EQ(p5, p6);
             EXPECT_EQ(p4, p6);
@@ -84,28 +84,34 @@ namespace LotusIR
 
         TEST(OpUtilsTest, ToStringTest)
         {
+            TypeProto scalar;
+            TypeProto_TensorTypeProto* tensor = scalar.mutable_tensor_type();
+            tensor->set_elem_type(TensorProto_DataType_INT32);
+            tensor->mutable_shape()->mutable_dim()->Add()->set_dim_value(0);
+            EXPECT_EQ(OpUtils::ToString(scalar), "int32");
+
             TypeProto s;
             s.mutable_sparse_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
             EXPECT_EQ(OpUtils::ToString(s), "sparse(float)");
 
             TypeProto t;
             t.mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
-            EXPECT_EQ(OpUtils::ToString(t), "float");
+            EXPECT_EQ(OpUtils::ToString(t), "tensor(float)");
 
             TypeProto seq;
             seq.mutable_seq_type()->mutable_elem_type()->mutable_seq_type()->mutable_elem_type()->
                 mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
-            EXPECT_EQ(OpUtils::ToString(seq), "seq(seq(float))");
+            EXPECT_EQ(OpUtils::ToString(seq), "seq(seq(tensor(float)))");
 
             TypeProto map1;
             map1.mutable_map_type()->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
             map1.mutable_map_type()->mutable_value_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
-            EXPECT_EQ(OpUtils::ToString(map1), "map(string,string)");
+            EXPECT_EQ(OpUtils::ToString(map1), "map(string,tensor(string))");
 
             TypeProto map2;
             map2.mutable_map_type()->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
             map2.mutable_map_type()->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
-            EXPECT_EQ(OpUtils::ToString(map2), "map(string,seq(string))");
+            EXPECT_EQ(OpUtils::ToString(map2), "map(string,seq(tensor(string)))");
 
             TypeProto record1;
             ValueInfoProto* v1 = record1.mutable_record_type()->mutable_field()->Add();
@@ -119,7 +125,7 @@ namespace LotusIR
             TypeProto_MapTypeProto* m = v3->mutable_type()->mutable_map_type();
             m->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
             m->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
-            EXPECT_EQ(OpUtils::ToString(record1), "record(r1:int32,r2:seq(double),r3:map(string,seq(string)))");
+            EXPECT_EQ(OpUtils::ToString(record1), "record(r1:tensor(int32),r2:seq(tensor(double)),r3:map(string,seq(tensor(string))))");
 
             TypeProto union1;
             ValueInfoProto* uv1 = union1.mutable_union_type()->mutable_choice()->Add();
@@ -133,11 +139,58 @@ namespace LotusIR
             TypeProto_MapTypeProto* m1 = uv3->mutable_type()->mutable_map_type();
             m1->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
             m1->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
-            EXPECT_EQ(OpUtils::ToString(union1), "union(c1:seq(string),c2:sparse(double),c3:map(string,seq(string)))");
+            EXPECT_EQ(OpUtils::ToString(union1), "union(c1:seq(tensor(string)),c2:sparse(double),c3:map(string,seq(tensor(string))))");
+        }
+
+        TEST(OpUtilsTest, ToAttrTypeStringTest)
+        {
+            ValueProto scalar;
+            TensorProto* t1 = scalar.mutable_dense_tensor();
+            t1->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
+            t1->add_int32_data(100);
+            t1->add_dims(0);
+            EXPECT_EQ(OpUtils::ToAttrTypeString(scalar), "int32");
+
+            ValueProto seq;
+            ValueProto* v1 = seq.mutable_seq()->mutable_elems()->Add();
+            TensorProto* t2 = v1->mutable_dense_tensor();
+            t2->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
+            t2->add_int32_data(100);
+            EXPECT_EQ(OpUtils::ToAttrTypeString(seq), "seq(tensor(int32))");
+
+            ValueProto map;
+            ValueProto_KeyValuePairProto* kv = map.mutable_map()->add_key_value_pairs();
+            kv->set_s("key");
+            ValueProto* v2 = kv->mutable_value()->mutable_seq()->mutable_elems()->Add();
+            TensorProto* t3 = v2->mutable_dense_tensor();
+            t3->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
+            t3->add_int32_data(100);
+            EXPECT_EQ(OpUtils::ToAttrTypeString(map), "map(string,seq(tensor(int32)))");
+
+            ValueProto record;
+            ValueProto_NameValuePairProto* nv1 = record.mutable_record()->add_fields();
+            nv1->set_key("r1");
+            TensorProto* t4 = nv1->mutable_value()->mutable_dense_tensor();
+            t4->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
+            t4->add_int32_data(100);
+            ValueProto_NameValuePairProto* nv2 = record.mutable_record()->add_fields();
+            nv2->set_key("r2");
+            TensorProto* t5 = nv2->mutable_value()->mutable_dense_tensor();
+            t5->set_data_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
+            t5->add_float_data(100.0f);
+            EXPECT_EQ(OpUtils::ToAttrTypeString(record), "record(r1:tensor(int32),r2:tensor(float))");
         }
 
         TEST(OpUtilsTest, FromStringTest)
         {
+            TypeProto scalar1;
+            OpUtils::FromString("int32", scalar1);
+            TypeProto scalar2;
+            TypeProto_TensorTypeProto* tensor = scalar2.mutable_tensor_type();
+            tensor->set_elem_type(TensorProto_DataType_INT32);
+            tensor->mutable_shape()->mutable_dim()->Add()->set_dim_value(0);
+            EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(scalar1, scalar2));
+
             TypeProto s1;
             OpUtils::FromString("sparse(int32)", s1);
             TypeProto s2;
@@ -145,26 +198,26 @@ namespace LotusIR
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(s1, s2));
 
             TypeProto t1;
-            OpUtils::FromString("float", t1);
+            OpUtils::FromString("tensor(float)", t1);
             TypeProto t2;
             t2.mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(t1, t2));
 
             TypeProto seq1;
-            OpUtils::FromString("seq(float)", seq1);
+            OpUtils::FromString("seq(tensor(float))", seq1);
             TypeProto seq2;
             seq2.mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(seq1, seq2));
 
             TypeProto map1;
-            OpUtils::FromString("map(string,int32)", map1);
+            OpUtils::FromString("map(string,tensor(int32))", map1);
             TypeProto map2;
             map2.mutable_map_type()->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
             map2.mutable_map_type()->mutable_value_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(map1, map2));
 
             TypeProto map3;
-            OpUtils::FromString("map(string,seq(int32))", map3);
+            OpUtils::FromString("map(string,seq(tensor(int32)))", map3);
             TypeProto map4;
             map4.mutable_map_type()->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
             map4.mutable_map_type()->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
@@ -172,7 +225,7 @@ namespace LotusIR
 
             TypeProto record1;
             // Test parsing random whitespaces in between.
-            OpUtils::FromString("record (r1: int32,r2:seq( double), r3:map(string , record(a1:string,a2: int32) ), r4:record(x1:int32))", record1);
+            OpUtils::FromString("record (r1: tensor(int32),r2:seq( tensor(double)), r3:map(string , record(a1:tensor(string),a2: tensor(int32)) ), r4:record(x1:tensor(int32)))", record1);
             TypeProto record2;
             ValueInfoProto* v1 = record2.mutable_record_type()->mutable_field()->Add();
             v1->set_name("r1");
@@ -199,7 +252,7 @@ namespace LotusIR
 
             TypeProto union1;
             // Test parsing random whitespaces in between.
-            OpUtils::FromString("union (c1 : seq ( string ), c2: sparse( double ),c3 : map ( string ,seq( string) ))", union1);
+            OpUtils::FromString("union (c1 : seq ( tensor(string) ), c2: sparse( double ),c3 : map ( string ,seq( tensor(string )) ))", union1);
             TypeProto union2;
             ValueInfoProto* uv1 = union2.mutable_union_type()->mutable_choice()->Add();
             uv1->set_name("c1");

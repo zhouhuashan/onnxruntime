@@ -12,8 +12,8 @@ namespace LotusIR {
             "to False instead of True.")                                                                    \
         .Input("input", "Input tensor to be reduced.", "T")                                                 \
         .Output("output", "Output tensor.", "T")                                                            \
-        .TypeConstraint("T", { "float16", "float", "double" },                                              \
-            "Constrain input and output types to floats.")                                                  \
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },                                              \
+            "Constrain input and output types to float tensors.")                                                  \
         .Attr("axis", "A list of axes to reduce into.", AttrType::INTS)                                     \
         .Attr("keepdims", "Keep the reduced dimension or not, default 1 mean keep reduced dimension.",      \
             AttrType::INT, int64_t(1));
@@ -41,7 +41,7 @@ namespace LotusIR {
             "dimension pruned. The type of the output tensor is integer.")
         .Input("input", "Input tensor.", "T")
         .Output("output", "Output tensor.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
         .Attr("axis", "A list of integers, along which to reduce max.", AttrType::INT);
 
     // Taken from ONNX
@@ -52,7 +52,7 @@ namespace LotusIR {
             "dimension pruned. The type of the output tensor is integer.")
         .Input("input", "Input tensor.", "T")
         .Output("output", "Output tensor.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
         .Attr("axis", "A list of integers, along which to reduce min.", AttrType::INT);
 
 }

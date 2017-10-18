@@ -24,11 +24,12 @@ namespace LotusIR
         GRAPHS,
         TENSORS,
         TYPES,
-        SHAPES
+        SHAPES,
+        VALUE
     };
 
     // This string array should exactly match the AttrType defined above.
-    static const std::string c_attrTypeStr[14] =
+    static const std::string c_attrTypeStr[15] =
     {
         "FLOAT",
         "INT",
@@ -43,7 +44,8 @@ namespace LotusIR
         "GRAPHS",
         "TENSORS",
         "TYPES",
-        "SHAPES"
+        "SHAPES",
+        "VALUE"
     };
 
     typedef std::unordered_set<PTYPE> DataTypeSet;
@@ -120,11 +122,28 @@ namespace LotusIR
                 const std::string& p_description,
                 const AttributeProto& p_defaultVal);
 
+            // Constructor for rich types. (i.e. AttrType::Value)
+            explicit Attribute(const std::string& p_attrName,
+                const std::string& p_description,
+                const std::string& p_richType);
+
             // Get attribute name.
             const std::string& GetName() const;
 
             // Get attribute type.
             AttrType GetType() const;
+
+            // Grammar for type string returned by GetRichType()
+            // <type> ::= <data_type> |
+            //            tensor(<data_type>) |
+            //            sparse(<data_type>) |
+            //            seq(<type>) |
+            //            map(<data_type>, <type>) |
+            //            record(<name_type_list>) |
+            //            union(<name_type_list>)
+            // <name_type_list> :: = <name>:<type>{ ,<name_type_list> }
+            // <data_type> :: = float | uint8 | ...   (see data_type strings defined in constants.h)
+            PTYPE GetRichType() const;
 
             // Get to know whether this attribute has default value,
             // if yes, <p_value> will be assigned to be the default value.
@@ -139,6 +158,9 @@ namespace LotusIR
 
             // Attribute type.
             AttrType m_type;
+
+            // Attribute PTYPE, when m_type == AttrType::VALUE
+            PTYPE m_richType;
 
             // Attribute description.
             std::string m_description;

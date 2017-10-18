@@ -24,6 +24,7 @@ namespace LotusIR
             static const TypeProto& ToTypeProto(const PTYPE& p_type);
             static std::string ToString(const TypeProto& p_type);
             static std::string ToString(const TensorProto::DataType& p_type);
+            static std::string ToAttrTypeString(const ValueProto& p_value);
             static void FromString(const std::string& p_src, TypeProto& p_type);
             static void FromString(const std::string& p_src, TensorProto::DataType& p_type);
             static bool IsValidDataTypeString(const std::string &p_dataType);

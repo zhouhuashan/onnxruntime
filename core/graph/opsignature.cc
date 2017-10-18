@@ -62,6 +62,15 @@ namespace LotusIR
     {
     }
 
+    OpSignature::Attribute::Attribute(
+        const std::string& p_attrName,
+        const std::string& p_description,
+        const std::string& p_richType)
+        : m_name(p_attrName), m_type(AttrType::VALUE), m_description(p_description),
+        m_hasDefaultValue(false), m_richType(Utils::OpUtils::ToType(p_richType))
+    {
+    }
+
     const std::string& OpSignature::Attribute::GetName() const
     {
         return m_name;
@@ -70,6 +79,11 @@ namespace LotusIR
     AttrType OpSignature::Attribute::GetType() const
     {
         return m_type;
+    }
+
+    PTYPE OpSignature::Attribute::GetRichType() const
+    {
+        return m_richType;
     }
 
     bool OpSignature::Attribute::HasDefaultValue(
@@ -132,6 +146,7 @@ namespace LotusIR
             p_attr.has_s() +
             p_attr.has_t() +
             p_attr.has_g() +
+            p_attr.has_v() +
             (p_attr.floats_size() > 0) +
             (p_attr.ints_size() > 0) +
             (p_attr.strings_size() > 0) +

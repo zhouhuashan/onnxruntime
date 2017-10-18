@@ -12,7 +12,7 @@ namespace LotusIR {
         .Input("W", "A tensor that is coerced into a 2D blob of size (KxN) containing fully connected weight matrix", "T")
         .Input("b", "1D blob containing bias vector", "T")
         .Output("Y", "output tensor", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
         .Attr("axis",
             "(int32_t) default to 1; describes the axis of the inputs; "
             "defaults to one because the 0th axis most likely describes the batch_size",
@@ -43,8 +43,8 @@ namespace LotusIR {
               "output dimensions are functions of the kernel size, stride size, "
               "and pad lengths.",
               "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The shape of the convolution kernel.",
              AttrType::INTS)
@@ -82,8 +82,8 @@ namespace LotusIR {
               "output dimensions are functions of the kernel size, stride size, "
               "and pad lengths.",
               "T")
-		.TypeConstraint("T", { "float16", "float", "double" },
-			"Constrain input and output types to floats.")
+		.TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+			"Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The shape of the convolution kernel.",
              AttrType::INTS)
@@ -110,8 +110,8 @@ namespace LotusIR {
         .Output("output", "The output.", "T")
         .Output("mask",
             "The output mask. If is_test is nonzero, this output is not filled.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("ratio",
             "(float, default 0.5) the ratio of random dropout",
             AttrType::FLOAT, float(0.5))
@@ -136,8 +136,8 @@ namespace LotusIR {
         .Output("Y",
             "Output data tensor from average pooling across the input tensor. "
             "Dimensions will vary based on various kernel, stride, and pad sizes.")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The size of the kernel along each axis.",
             AttrType::INTS)
@@ -162,8 +162,8 @@ namespace LotusIR {
         .Output("Y",
             "Output data tensor from pooling across the input tensor. Dimensions will "
             "be N x C x 1 x 1")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(MaxPool)
@@ -182,8 +182,8 @@ namespace LotusIR {
             "Output data tensor from max pooling across the input tensor. "
             "Dimensions will vary based on various kernel, stride, and pad sizes.",
             "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The size of the kernel along each axis.",
             AttrType::INTS)
@@ -211,8 +211,8 @@ namespace LotusIR {
         .Output("Y",
             "Output data tensor from pooling across the input tensor. Dimensions will "
             "be N x C x 1 x 1")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.");
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(BatchNormalization)
@@ -260,8 +260,8 @@ namespace LotusIR {
             "Saved variance used during training to speed up "
             "gradient computation. Should not be used for testing.",
             "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("epsilon",
             "The epsilon value to use to avoid division by zero.",
             AttrType::FLOAT)
@@ -289,8 +289,8 @@ namespace LotusIR {
             "(num_rois, channels, pooled_h, pooled_w).", "T")
         .Output("argmaxes", "Argmaxes corresponding to indices in X used for gradient "
             "computation. Only output if arg “is_test” is false.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("is_test", "If set, run in test mode and skip computation of argmaxes (used "
             "for gradient computation). Only one output tensor is produced. (Default: false).",
             AttrType::INT, int64_t(0))
@@ -315,8 +315,8 @@ namespace LotusIR {
             "corresponding permutation of dimensions is used in the latter case.", "T")
         .Output("Y", "Y Output data tensor from L-p pooling across the input tensor. "
             "Dimensions will vary based on various kernel, stride, and pad sizes.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("kernel_shape", "The size of the kernel along each axis.", AttrType::INTS)
         .Attr("strides", "Stride along each axis.", AttrType::INTS)
         .Attr("pads", "Padding along each axis, can take the value 0 (False) or non 0 (True)",
@@ -334,7 +334,7 @@ namespace LotusIR {
             "corresponding permutation of dimensions is used in the latter case.", "T")
         .Output("Y", "Y Output data tensor from L-p pooling across the input tensor. Dimensions will "
             "vary based on various kernel, stride, and pad sizes.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
         .Attr("p", "Value of p, default 2.0.", AttrType::FLOAT, float(2.0));
 
     REGISTER_OPERATOR_SCHEMA(LRN)
@@ -342,8 +342,8 @@ namespace LotusIR {
             "NOTE: Only supports Caffe across channel mode. ")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-             " types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output "
+             " types to float tensors.")
         .Attr("size", "[default 5]: the number of channels to sum over (for cross "
               "channel LRN) or the side length of the square region to sum over (for within "
               "channel LRN)", AttrType::INT, int64_t(5))
@@ -356,8 +356,8 @@ namespace LotusIR {
         .Description("Perform mean variance normalization.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output "
-            "types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output "
+            "types to float tensors.")
         .Attr("across_channels", "If true, mean and variance are computed across channels. "
             "Default is false.", AttrType::INT, int64_t(0))
         .Attr("normalize_variance", "If false, normalize the mean only. Default is true.",
@@ -368,8 +368,8 @@ namespace LotusIR {
             "sum of squares of all elements in the input tensor.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "float16", "float", "float" }, "Constrain input and output "
-            "types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(float)" }, "Constrain input and output "
+            "types to float tensors.")
         .Attr("Axis", "Axis along which to perform normalization.", AttrType::INT);
 
     // Take from RS4
@@ -380,9 +380,9 @@ namespace LotusIR {
         .Input("input", "1-D tensor of integers representing indices in the embedding "
             "dictionary with length [N] and values [0, input_dim -1]", "T1")
         .Output("output", "Output tensor of computed features [N, O].", "T2")
-        .TypeConstraint("T1", { "uint64" }, "Constrain input types to ints.")
-        .TypeConstraint("T2", { "float16", "float", "double" },
-                "Constrain output types to floats.")
+        .TypeConstraint("T1", { "tensor(uint64)" }, "Constrain input types to ints.")
+        .TypeConstraint("T2", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+                "Constrain output types to float tensors.")
         .Attr("input_dim", "Size of the input vocabulary.", AttrType::INT)
         .Attr("output_dim", "Dimension of the embedding output vectors.", AttrType::INT)
         .Attr("weights", "2-D tensor of weights [O,I]", AttrType::FLOATS);
@@ -392,8 +392,8 @@ namespace LotusIR {
         .Description("Scale up spatial dimensions.  Use interpolation to fill in values")
         .Input("input", "Input tensor of shape [N,C,H,W]", "T")
         .Output("output", "Result, has same shape and type as X", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and "
-            "output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
+            "output types to float tensors.")
         .Attr("mode", "enum {'NN', 'BILINEAR' }, Nearest neighbor or bilinear upsampling.",
             AttrType::STRING)
         .Attr("width_scale", "Scale along width dimension", AttrType::INT)
@@ -404,8 +404,8 @@ namespace LotusIR {
         .Description("Scale up spatial dimensions.  Use interpolation to fill in values")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Result, has same shape and type as X", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and "
-            "output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
+            "output types to float tensors.")
         .Attr("axis", "Axis along which to repeat. Default is 0.", AttrType::INT, int64_t(0))
         .Attr("tiles", "Number of repeated copies to make of the input tensor.",
             AttrType::INT);
@@ -416,8 +416,8 @@ namespace LotusIR {
             "If scale is not provided, crop the borders as provided.")
         .Input("input", "Input tensor of shape [N,C,H,W]", "T")
         .Output("output", "Result, has same type as X, with H and W dimensions reduced.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and "
-            "output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
+            "output types to float tensors.")
         .Attr("border", "A 1-D tensor of values (leftBorder, topBorder, rightBorder, bottomBorder)",
             AttrType::INT)
         .Attr("scale", "A 1-D tensor of values (height, width)", AttrType::INT);
@@ -428,8 +428,8 @@ namespace LotusIR {
         .Input("input", "Input tensor of shape [N,C,H,W]", "T")
         .Output("output", "Result, has same type as X, with H and W extended by the  \
             padding amounts.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("border", "A 1-D tensor of values (leftBorder, topBorder, rightBorder, bottomBorder)",
             AttrType::INT)
         .Attr("constant", "Constant padding value.", AttrType::FLOAT)
@@ -444,15 +444,15 @@ namespace LotusIR {
         .Description("Subtracts the provided mean image from the input image.")
         .Input("input", "Input tensor of shape [N,C,H,W]", "T")
         .Output("output", "Result, has same shape and type as X", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("image", "Image tensor stored as a sequence of floats [C,H,W].", AttrType::TENSOR);
 
     REGISTER_OPERATOR_SCHEMA(Constant)
         .Description("A constant tensor.")
         .Output("output", "Output tensor containing the same value of the provided tensor.", "T")
-        .TypeConstraint("T", { "float16", "float", "double" },
-            "Constrain input and output types to floats.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
         .Attr("value", "The value for the elements of the output tensor.", AttrType::TENSOR);
 }
 

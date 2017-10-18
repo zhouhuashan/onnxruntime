@@ -36,10 +36,10 @@ namespace LotusIR
             size_t input_size = op->GetInputs().size();
             EXPECT_EQ(input_size, 1);
             DataTypeSet input_types, output_types;
-            input_types.emplace(Utils::OpUtils::ToType( "uint64" ));
-            output_types.emplace(Utils::OpUtils::ToType("float16"));
-            output_types.emplace(Utils::OpUtils::ToType("float"));
-            output_types.emplace(Utils::OpUtils::ToType("double"));
+            input_types.emplace(Utils::OpUtils::ToType("tensor(uint64)"));
+            output_types.emplace(Utils::OpUtils::ToType("tensor(float16)"));
+            output_types.emplace(Utils::OpUtils::ToType("tensor(float)"));
+            output_types.emplace(Utils::OpUtils::ToType("tensor(double)"));
             EXPECT_EQ(op->GetInputs()[0].GetTypes(), input_types);
             EXPECT_EQ(op->GetOutputs()[0].GetTypes(), output_types);
             size_t attr_size = op->GetAttributes().size();

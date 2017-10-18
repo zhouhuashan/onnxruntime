@@ -47,7 +47,18 @@ namespace LotusIR
             switch (p_type.value_case())
             {
             case TypeProto::ValueCase::kTensorType:
-                return ToString(p_type.tensor_type().elem_type());
+            {
+                if (p_type.tensor_type().shape().dim_size() == 1 &&
+                    p_type.tensor_type().shape().dim(0).dim_value() == 0)
+                {
+                    // Scalar case.
+                    return ToString(p_type.tensor_type().elem_type());
+                }
+                else
+                {
+                    return "tensor(" + ToString(p_type.tensor_type().elem_type()) + ")";
+                }
+            }
             case TypeProto::ValueCase::kSparseTensorType:
                 return "sparse(" + ToString(p_type.sparse_tensor_type().elem_type()) + ")";
             case TypeProto::ValueCase::kSeqType:
@@ -90,7 +101,8 @@ namespace LotusIR
                 return union_str;
             }
             default:
-                throw std::invalid_argument("Unknown TypeProto");
+                assert(false);
+                return "";
             }
         }
 
@@ -131,9 +143,104 @@ namespace LotusIR
                 return t.c_complex128;
             }
 
-            throw std::invalid_argument("Unknown DataType");
+            assert(false);
+            return "";
         }
 
+        std::string OpUtils::ToAttrTypeString(const ValueProto& p_value)
+        {
+            switch (p_value.value_case())
+            {
+            case ValueProto::ValueCase::kDenseTensor:
+            {
+                if (p_value.dense_tensor().dims_size() == 1 &&
+                    p_value.dense_tensor().dims(0) == 0)
+                {
+                    // Scalar case.
+                    return ToString(p_value.dense_tensor().data_type());
+                }
+                else
+                {
+                    return "tensor(" + ToString(p_value.dense_tensor().data_type()) + ")";
+                }
+            }
+            case ValueProto::ValueCase::kSparseTensor:
+                return "sparse(" + ToString(p_value.sparse_tensor().values().data_type()) + ")";
+            case ValueProto::ValueCase::kSeq:
+            {
+                assert(p_value.seq().elems_size() > 0);
+                return "seq(" + ToAttrTypeString(p_value.seq().elems(0)) + ")";
+            }
+            case ValueProto::ValueCase::kScalarMap:
+            {
+                int keys_size = p_value.scalar_map().keys_size();
+                int values_size = p_value.scalar_map().values_size();
+                assert(keys_size > 0);
+                assert(values_size > 0);
+                assert(keys_size == values_size);
+                std::string map_str("map(");
+                map_str = map_str + ToString(p_value.scalar_map().keys(0).data_type()) + ","
+                    + "tensor(" + ToString(p_value.scalar_map().values(0).data_type()) + "))";
+                return map_str;
+            }
+            case ValueProto::ValueCase::kMap:
+            {
+                assert(p_value.map().key_value_pairs_size() > 0);
+                std::string map_str("map(");
+                std::string key_str;
+
+                TypesWrapper& t = TypesWrapper::GetTypesWrapper();
+                switch (p_value.map().key_value_pairs(0).key_case())
+                {
+                case ValueProto_KeyValuePairProto::KeyCase::kS:
+                    key_str = t.c_string;
+                    break;
+                case ValueProto_KeyValuePairProto::KeyCase::kI32:
+                    key_str = t.c_int32;
+                    break;
+                case ValueProto_KeyValuePairProto::KeyCase::kI64:
+                    key_str = t.c_int64;
+                    break;
+                case ValueProto_KeyValuePairProto::KeyCase::kUi64:
+                    key_str = t.c_uint64;
+                    break;
+                default:
+                    assert(false);
+                }
+                map_str = map_str + key_str + ","
+                    + ToAttrTypeString(p_value.map().key_value_pairs(0).value()) + ")";
+                return map_str;
+            }
+            case ValueProto::ValueCase::kRecord:
+            {
+                int fields_size = p_value.record().fields_size();
+                assert(fields_size > 0);
+                std::string record_str("record(");
+                for (int i = 0; i < fields_size - 1; i++)
+                {
+                    record_str = record_str +
+                        p_value.record().fields(i).key() + ":" +
+                        ToAttrTypeString(p_value.record().fields(i).value()) + ",";
+                }
+                record_str = record_str +
+                    p_value.record().fields(fields_size-1).key() + ":" +
+                    ToAttrTypeString(p_value.record().fields(fields_size-1).value()) + ")";
+                return record_str;
+            }
+            case ValueProto::ValueCase::kUnion:
+            {
+                assert(p_value.union_().has_choice());
+                std::string union_str("union(");
+                union_str = union_str +
+                    p_value.union_().choice().key() + ":" +
+                    ToAttrTypeString(p_value.union_().choice().value()) + ")";
+                return union_str;
+            }
+            default:
+                assert(false);
+                return "";
+            }
+        }
 
         void OpUtils::FromString(const std::string& p_src, TypeProto& p_type)
         {
@@ -200,12 +307,21 @@ namespace LotusIR
                 FromString(std::string(s.Data(), s.Size()), e);
                 p_type.mutable_sparse_tensor_type()->set_elem_type(e);
             }
-            else
+            else if (s.LStrip("tensor"))
             {
-                // dense tensor
+                s.ParensWhitespaceStrip();
                 TensorProto::DataType e;
                 FromString(std::string(s.Data(), s.Size()), e);
                 p_type.mutable_tensor_type()->set_elem_type(e);
+            }
+            else
+            {
+                // Scalar
+                TensorProto::DataType e;
+                FromString(std::string(s.Data(), s.Size()), e);
+                TypeProto::TensorTypeProto* t = p_type.mutable_tensor_type();
+                t->set_elem_type(e);
+                t->mutable_shape()->add_dim()->set_dim_value(0);
             }
         }
 
@@ -252,10 +368,7 @@ namespace LotusIR
 
         void OpUtils::FromString(const std::string& p_typeStr, TensorProto::DataType& p_type)
         {
-            if (!IsValidDataTypeString(p_typeStr))
-            {
-                throw std::invalid_argument("Unknown DataType: " + p_typeStr);
-            }
+            assert(IsValidDataTypeString(p_typeStr));
 
             TypesWrapper& t = TypesWrapper::GetTypesWrapper();
             if (p_typeStr == t.c_bool)
@@ -320,7 +433,7 @@ namespace LotusIR
             }
             else
             {
-                p_type = TensorProto::DataType::TensorProto_DataType_UNDEFINED;
+                assert(false);
             }
         }
 
