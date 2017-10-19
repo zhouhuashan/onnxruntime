@@ -173,8 +173,9 @@ namespace LotusIR
             }
             case ValueProto::ValueCase::kScalarMap:
             {
-                int keys_size = p_value.scalar_map().keys_size();
-                int values_size = p_value.scalar_map().values_size();
+                const int keys_size = p_value.scalar_map().keys_size();
+                const int values_size = p_value.scalar_map().values_size();
+                Ignore(keys_size, values_size);
                 assert(keys_size > 0);
                 assert(values_size > 0);
                 assert(keys_size == values_size);

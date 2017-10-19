@@ -12,10 +12,7 @@ namespace LotusIR
     namespace Utils
     {
         class StringRange;
-    }
 
-    namespace Utils
-    {
         class OpUtils
         {
         public:
@@ -79,6 +76,12 @@ namespace LotusIR
             const char* m_start;
             const char* m_end;
         };
+
+        // Use this to avoid compiler warnings about unused variables. E.g., if
+        // a variable is only used in an assert when compiling in Release mode.
+        // Adapted from https://stackoverflow.com/questions/15763937/unused-parameter-in-c11
+        template<typename... Args>
+        void Ignore(Args&&...) {}
     }
 }
 

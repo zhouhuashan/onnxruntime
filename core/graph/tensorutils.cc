@@ -76,7 +76,7 @@ namespace Lotus
 
             for (auto elem : p_tensor.int32_data())
             {
-                p_data->push_back(static_cast<bool>(elem));
+                p_data->push_back(elem != 0);
             }
         }
     }

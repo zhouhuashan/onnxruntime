@@ -26,8 +26,16 @@ if (lotusIR_RUN_ONNX_TESTS)
 endif()
 
 if (WIN32)
-    # warning level 4
+    # parallel build
+    add_compile_options(/MP)
+
+    # compile warning level 4
     add_compile_options(/W4)
+
+    # treat warnings as errors
+    add_compile_options(/WX)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /WX")
+    set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /WX")
 endif()
 
 include_directories(
