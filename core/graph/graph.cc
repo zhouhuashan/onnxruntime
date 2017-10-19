@@ -593,7 +593,8 @@ namespace LotusIR
     Graph::Graph(const GraphProto& p_graphProto)
         : m_graphProto(p_graphProto),
         m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true)
+        m_graphResolveNeeded(true),
+        m_numOfNodes(0)
     {
         // This is a main graph, and strict type checking needed..
         m_graphType |= Type::Main;
@@ -657,7 +658,8 @@ namespace LotusIR
     Graph::Graph(Node* p_node,
         const FunctionDefProto& p_functionProto)
         : m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true)
+        m_graphResolveNeeded(true),
+        m_numOfNodes(0)
     {
         // This is a function (subgraph).
         m_graphType |= (Type::Main | Type::Strict);
@@ -692,7 +694,8 @@ namespace LotusIR
 
     Graph::Graph(const std::string& p_name, bool p_isONNX)
         : m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true)
+        m_graphResolveNeeded(true),
+        m_numOfNodes(0)
     {
         m_graphProto.set_name(p_name);
         m_graphType |= Type::Main;
@@ -707,7 +710,8 @@ namespace LotusIR
     Graph::Graph(const std::string& p_name,
         const std::string& p_docString)
         : m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true)
+        m_graphResolveNeeded(true),
+        m_numOfNodes(0)
     {
         m_graphProto.set_name(p_name);
         m_graphProto.set_doc_string(p_docString);
@@ -1449,7 +1453,7 @@ namespace LotusIR
 
     const std::vector<const NodeArg*>& Graph::GetOutputs() const
     {
-        return m_graphInputs;
+        return m_graphOutputs;
     }
 
     bool Graph::AddFunctionDef(const FunctionDefProto& p_funcDef)

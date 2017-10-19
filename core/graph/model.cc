@@ -223,6 +223,11 @@ namespace LotusIR
         return m_graph.get();
     }
 
+    const Graph* Model::MainGraph() const
+    {
+        return m_graph.get();
+    }
+
     const ModelProto& Model::ToProto()
     {
         *(m_modelProto.mutable_graph()) = m_graph->ToGraphProto();

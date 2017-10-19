@@ -264,14 +264,24 @@ namespace LotusIR
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 
+            std::unordered_set<std::string> expectedGraphInputs = { "node_1_in_1", "node_2_in_1", "node_3_in_1" };
+            EXPECT_EQ(3, graph.GetInputs().size());
+            for (auto& graphInput : graph.GetInputs())
+            {
+                EXPECT_TRUE(expectedGraphInputs.find(graphInput->Name()) != expectedGraphInputs.end());
+            }
+            EXPECT_EQ(1, graph.GetOutputs().size());
+            EXPECT_EQ("node_4_out_1", graph.GetOutputs()[0]->Name());
+
             auto& graphProto = graph.ToGraphProto();
             EXPECT_EQ(3, graphProto.input_size());
-            std::string expectedGraphInputs = " node_1_in_1, node_2_in_1, node_3_in_1";
-            EXPECT_GT(expectedGraphInputs.find(graphProto.input(0).name()), 0);
-            EXPECT_GT(expectedGraphInputs.find(graphProto.input(1).name()), 0);
-            EXPECT_GT(expectedGraphInputs.find(graphProto.input(2).name()), 0);
-            EXPECT_EQ("node_4_out_1", graphProto.output(0).name());
+            //std::string expectedGraphInputs = " node_1_in_1, node_2_in_1, node_3_in_1";
+            for (auto& graphProtoInput : graphProto.input())
+            {
+                EXPECT_TRUE(expectedGraphInputs.find(graphProtoInput.name()) != expectedGraphInputs.end());
+            }
             EXPECT_EQ(1, graphProto.output_size());
+            EXPECT_EQ("node_4_out_1", graphProto.output(0).name());
 
             TypeProto tensor_float;
             tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);

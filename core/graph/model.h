@@ -86,6 +86,8 @@ namespace LotusIR
         // Get model's main graph.
         // The return pointer is owned by <*this> model.
         Graph* MainGraph();
+        const Graph* MainGraph() const;
+
 
         // Get model's serlization proto data.
         const ModelProto& ToProto();
