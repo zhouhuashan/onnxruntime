@@ -33,7 +33,7 @@ namespace LotusIR
             EXPECT_TRUE(status.Ok());
         }
 
-        TEST(DISABLED_ONNXModelsTest, densenet121)
+        TEST(ONNXModelsTest, densenet121)
         {
             std::shared_ptr<Model> model;
             EXPECT_TRUE(Model::Load("./models/densenet121/model.pb", &model).Ok());
