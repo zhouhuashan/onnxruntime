@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "core/protobuf/graph.pb.h"
+#include "status.h"
 
 namespace Lotus
 {
@@ -13,14 +14,15 @@ namespace Lotus
         {
         public:
 
-            static void UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<std::string>* p_data);
+            static Common::Status UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<std::string>* p_data);
 
-            static void UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<float>* p_data);
+            static Common::Status UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<float>* p_data);
 
-            static void UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<int32_t>* p_data);
+            static Common::Status UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<int32_t>* p_data);
 
-            static void UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<bool>* p_data);
+            static Common::Status UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<bool>* p_data);
 
+            static Common::Status UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<int64_t>* p_data);
 
         private:
 
