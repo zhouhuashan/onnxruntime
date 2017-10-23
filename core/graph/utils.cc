@@ -13,14 +13,20 @@ namespace LotusIR
     {
         std::unordered_map<std::string, TypeProto>& OpUtils::GetTypeStrToProtoMap()
         {
-            static std::unordered_map<std::string, TypeProto>* typeStrToProtoMap =
-                new std::unordered_map<std::string, TypeProto>();
-            return *typeStrToProtoMap;
+            static std::unordered_map<std::string, TypeProto> map;
+            return map;
+        }
+
+        std::mutex& OpUtils::GetTypeStrLock()
+        {
+            static std::mutex lock;
+            return lock;
         }
 
         PTYPE OpUtils::ToType(const TypeProto& p_type)
         {
             auto typeStr = ToString(p_type);
+            std::lock_guard<std::mutex> lock(GetTypeStrLock());
             if (GetTypeStrToProtoMap().find(typeStr) == GetTypeStrToProtoMap().end())
             {
                 GetTypeStrToProtoMap()[typeStr] = p_type;
@@ -37,6 +43,7 @@ namespace LotusIR
 
         const TypeProto& OpUtils::ToTypeProto(const PTYPE& p_type)
         {
+            std::lock_guard<std::mutex> lock(GetTypeStrLock());
             auto it = GetTypeStrToProtoMap().find(*p_type);
             assert(it != GetTypeStrToProtoMap().end());
             return it->second;
@@ -329,7 +336,8 @@ namespace LotusIR
         bool OpUtils::IsValidDataTypeString(const std::string& p_dataType)
         {
             TypesWrapper& t = TypesWrapper::GetTypesWrapper();
-            return (t.GetAllowedDataTypes().find(p_dataType) != t.GetAllowedDataTypes().end());
+            const auto& allowedSet = t.GetAllowedDataTypes();
+            return (allowedSet.find(p_dataType) != allowedSet.end());
         }
 
         void OpUtils::SplitRecords(StringRange& p_src, std::vector<StringRange>& p_records)

@@ -1,9 +1,9 @@
 #ifndef LOTUSIR_UTILS_H
 #define LOTUSIR_UTILS_H
 
-#include <unordered_map>
-#include <unordered_set>
+#include <mutex>
 #include <string>
+#include <unordered_map>
 #include "core/protobuf/graph.pb.h"
 
 namespace LotusIR
@@ -28,6 +28,8 @@ namespace LotusIR
             static void SplitRecords(StringRange& p_src, std::vector<StringRange>& p_records);
         private:
             static std::unordered_map<std::string, TypeProto>& GetTypeStrToProtoMap();
+            // Returns lock used for concurrent updates to TypeStrToProtoMap.
+            static std::mutex& GetTypeStrLock();
         };
 
         // Simple class which contains pointers to external string buffer and a size.

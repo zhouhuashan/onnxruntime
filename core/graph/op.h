@@ -80,7 +80,7 @@ namespace LotusIR
 
         OperatorSchemaSetter& Description(const std::string& p_description);
 
-        // Grammar for type strings used in Input(), Output(), and AttrWithRichType() api's
+        // Grammar for type strings used in Input(), Output(), AttrWithRichType(), and TypeConstraint() api's
         // <type> ::= <data_type> |
         //            tensor(<data_type>) |
         //            sparse(<data_type>) |
@@ -102,6 +102,10 @@ namespace LotusIR
             const std::string& p_description,
             const std::string& p_richType); // see grammar above.
 
+        OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
+            const std::vector<std::string>& p_constraints, // see grammar above.
+            const std::string& p_description);
+
         OperatorSchemaSetter& Attr(const std::string& p_attrName,
             const std::string& p_description,
             AttrType p_attrType, bool required = false);
@@ -113,10 +117,6 @@ namespace LotusIR
         ATTR_SETTER_INTERFACE(GraphProto)
         ATTR_SETTER_INTERFACE(TypeProto)
         ATTR_SETTER_INTERFACE(TypeProto::TensorShapeProto)
-
-        OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
-            const std::vector<std::string>& p_constraints,
-            const std::string& p_description);
 
         // Shape inference function will be used to infer outputs' shape with
         // inputs' shape.
