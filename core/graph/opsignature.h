@@ -197,27 +197,6 @@ namespace LotusIR
         // Get type constraint map.
         const TypeConstraintMap& GetTypeConstraintMap() const;
 
-#ifdef ONNX_V1_OPSCHEMA_COMPAT
-        // To support ONNX variable input/output compatibility.
-        // Min and Max num arguments of last input/output.
-        int GetOnnxMinInput() const { return m_onnxMinInput; }
-        int GetOnnxMaxInput() const { return m_onnxMaxInput; }
-        int GetOnnxMinOutput() const { return m_onnxMinOutput; }
-        int GetOnnxMaxOutput() const { return m_onnxMaxOutput; }
-        std::function<bool(int)> GetOnnxNumInputsAllowedFunc() const
-        {
-            return m_onnxNumInputsAllowed;
-        }
-        std::function<bool(int)> GetOnnxNumOutputsAllowedFunc() const
-        {
-            return m_onnxNumOutputsAllowed;
-        }
-        std::function<bool(int, int)> GetOnnxNumInputsOutputsAllowedFunc() const
-        {
-            return m_onnxNumInputsOutputsAllowed;
-        }
-#endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
-
     private:
 
         friend class OperatorSchemaSetter;
@@ -240,21 +219,6 @@ namespace LotusIR
 
         // Map from constraint name to DataTypeSet
         TypeConstraintMap m_typeConstraintMap;
-
-#ifdef ONNX_V1_OPSCHEMA_COMPAT
-        // To support ONNX variable input/output compatibility.
-        // Min and Max num arguments of last input/output.
-        int m_onnxMinInput = 0;
-        int m_onnxMaxInput = std::numeric_limits<int>::max();
-        int m_onnxMinOutput = 0;
-        int m_onnxMaxOutput = std::numeric_limits<int>::max();
-        std::function<bool(int)> m_onnxNumInputsAllowed =
-            [](int) { return true; };
-        std::function<bool(int)> m_onnxNumOutputsAllowed =
-            [](int) { return true; };
-        std::function<bool(int, int)> m_onnxNumInputsOutputsAllowed =
-            [](int, int) { return true; };
-#endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
     };
 }
 #endif

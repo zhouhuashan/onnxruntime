@@ -204,30 +204,6 @@ namespace LotusIR
                     opSchema.m_opSignature.m_typeConstraintMap));
         }
 
-#ifdef ONNX_V1_OPSCHEMA_COMPAT
-        auto& opSignature = p_opSchemaSetter.m_opSchema.m_opSignature;
-        if (0 == opSignature.m_inputs.size())
-        {
-            for (int i = 0; i < opSignature.m_onnxMinInput; ++i)
-            {
-                std::string name = "p" + std::to_string(i);
-                std::string desc = "Input Parameter " + std::to_string(i);
-                opSignature.m_inputs.push_back(
-                    OpSignature::FormalParameter(name, "", desc, opSignature.m_typeConstraintMap));
-            }
-        }
-
-        if (0 == opSignature.m_outputs.size())
-        {
-            for (int i = 0; i < opSignature.m_onnxMinOutput; ++i)
-            {
-                std::string name = "p" + std::to_string(i);
-                std::string desc = "Output Result " + std::to_string(i);
-                opSignature.m_outputs.push_back(
-                    OpSignature::FormalParameter(name, "", desc, opSignature.m_typeConstraintMap));
-            }
-        }
-#endif
         OperatorSchemaRegistry::Get()->Register(p_opSchemaSetter.m_opSchema);
     }
 
@@ -348,19 +324,4 @@ namespace LotusIR
 
         return Status::OK();
     }
-
-#ifdef ONNX_V1_OPSCHEMA_COMPAT
-    size_t ReplaceAll(std::string& s, const char* from, const char* to)
-    {
-        size_t numReplaced = 0;
-        std::string::size_type lenFrom = std::strlen(from);
-        std::string::size_type lenTo = std::strlen(to);
-        for (std::string::size_type pos = s.find(from); pos != std::string::npos;
-            pos = s.find(from, pos + lenTo)) {
-            s.replace(pos, lenFrom, to);
-            numReplaced++;
-        }
-        return numReplaced;
-    }
-#endif
 }

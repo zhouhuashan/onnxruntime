@@ -10,10 +10,6 @@
 namespace LotusIR
 {
     class OpSignature;
-#ifdef ONNX_V1_OPSCHEMA_COMPAT
-    class OperatorSchemaSetter;
-    typedef OperatorSchemaSetter OpSchema;
-#endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
 
     class TypeUtils
     {
@@ -128,90 +124,6 @@ namespace LotusIR
         OperatorSchemaSetter& SetAttributeParser(
             AttributeParser p_attrParser);
 
-#ifdef ONNX_V1_OPSCHEMA_COMPAT
-        enum class SupportType {
-            COMMON,
-            EXPERIMENTAL,
-        };
-        // Methods added for compatibility with ONNX OpSchema registration API
-        OpSchema& NumInputs(int n)
-        {
-            return NumInputs(n, n);
-        }
-        OpSchema& NumInputs(int min, int max)
-        {
-            m_opSchema.m_opSignature.m_onnxMinInput = min;
-            m_opSchema.m_opSignature.m_onnxMaxInput = max;
-            return *this;
-        }
-        OpSchema& NumInputs(std::set<int> allowed_input_nums)
-        {
-            return NumInputs([allowed_input_nums](int n)-> bool {
-                return allowed_input_nums.count(n) > 0;
-            });
-        }
-        OpSchema& NumInputs(std::function<bool(int)> func)
-        {
-            m_opSchema.m_opSignature.m_onnxNumInputsAllowed = func;
-            return *this;
-        }
-        OpSchema& NumOutputs(int n) {
-            return NumOutputs(n, n);
-        }
-        OpSchema& NumOutputs(int min, int max)
-        {
-            m_opSchema.m_opSignature.m_onnxMinOutput = min;
-            m_opSchema.m_opSignature.m_onnxMaxOutput = max;
-            return *this;
-        }
-        OpSchema& NumOutputs(std::set<int> allowed_output_nums)
-        {
-            return NumOutputs([allowed_output_nums](int n)-> bool {
-                return allowed_output_nums.count(n) > 0;
-            });
-        }
-        OpSchema& NumOutputs(std::function<bool(int)> func)
-        {
-            m_opSchema.m_opSignature.m_onnxNumOutputsAllowed = func;
-            return *this;
-        }
-        OpSchema& NumInputsOutputs(std::function<bool(int, int)> func)
-        {
-            m_opSchema.m_opSignature.m_onnxNumInputsOutputsAllowed = func;
-            return *this;
-        }
-        OpSchema& OutputCalculator(std::function<int(int)> calc) { return *this; }
-        OpSchema& SameNumberOfOutput() { return *this; }
-        OpSchema& AllowConsumed(std::function<std::pair<bool, int>(int)> inplace) { return *this; }
-        OpSchema& AllowConsumed(std::unordered_map<int, int> inplace) { return *this; }
-        OpSchema& AllowOneToOneConsumed() { return *this; }
-        OpSchema& EnforceConsumed(std::function<std::pair<bool, int>(int)> inplace) { return *this; }
-        OpSchema& EnforceConsumed(std::unordered_map<int, int> inplace) { return *this; }
-        OpSchema& EnforceOneToOneConsumed() { return *this; }
-        OpSchema& SetSupportLevel(SupportType /*supportType*/) { return *this; }
-        OpSchema& AllowUncheckedAttributes() { return *this; }
-        OpSchema& FillUsing(std::function<void(OpSchema&)> populator)
-        {
-            if (populator)
-            {
-                populator(*this);
-            }
-            return *this;
-        }
-        OpSchema& Input(const int /*n*/, const char* name, const char* description)
-        {
-            return Input(name, description);
-        }
-        OpSchema& Output(const int /*n*/, const char* name, const char* description)
-        {
-            return Output(name, description);
-        }
-        OpSchema& SetDoc(const std::string& doc)
-        {
-            return Description(doc);
-        }
-#endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
-
     private:
 
         //friend class OpSignature;
@@ -262,11 +174,6 @@ namespace LotusIR
         std::unordered_map<std::string, OperatorSchema> m_opNameToOpSchemaMap;
     };
 
-#ifdef ONNX_V1_OPSCHEMA_COMPAT
-    // utility function used by ONNX v1 op registration defs.
-    size_t ReplaceAll(std::string& s, const char* from, const char* to);
-#endif // #ifdef ONNX_V1_OPSCHEMA_COMPAT
-
 #define REGISTER_OPERATOR_SCHEMA(OpName) OPERATOR_SCHEMA_UNIQ_HELPER(__COUNTER__, OpName)
 #define OPERATOR_SCHEMA_UNIQ_HELPER(Counter, OpName) OPERATOR_SCHEMA_UNIQ(Counter, OpName)
 #define OPERATOR_SCHEMA_UNIQ(Counter, OpName)                     \
@@ -274,11 +181,11 @@ namespace LotusIR
     = OperatorSchemaSetter().Name(#OpName)
 
     // Operator registration example.
-    // OPERATOR_DEFINITION(Add).Description("An operator to sum two float numbers.")
+    // REGISTER_OPERATOR_SCHEMA(Add).Description("An operator to sum two float numbers.")
     //   .Input("input_1", "docstr for input_1.", "T")
     //   .Input("input_2", "docstr for input_2.", "T")
     //   .Output("output_1", "docstr for output_1.", "T")
-    //   .TypeConstraint("T", { "float16", "float32", "float64" }, "Constrain input and output types to floats.");
+    //   .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.");
 }
 
 #endif

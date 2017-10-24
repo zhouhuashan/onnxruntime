@@ -85,12 +85,12 @@ namespace LotusIR
             featureName->set_name("name");
             auto scalarTensor = featureName->mutable_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_STRING);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
             auto featureValue = record_float.mutable_record_type()->add_field();
             featureValue->set_name("value");
             scalarTensor = featureValue->mutable_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_FLOAT);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
 
             NodeArg inputArg("node_1_in_1", &record_float);
             inputs.push_back(inputArg);
@@ -104,12 +104,12 @@ namespace LotusIR
             featureName->set_name("name");
             scalarTensor = featureName->mutable_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_STRING);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
             featureValue = record_seq_float.mutable_record_type()->add_field();
             featureValue->set_name("value");
             scalarTensor = featureValue->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_FLOAT);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
 
             NodeArg inputArg2("node_2_in_1", &record_seq_float);
             inputs.clear();
@@ -125,14 +125,14 @@ namespace LotusIR
             featureName->set_name("name");
             scalarTensor = featureName->mutable_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_STRING);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
             featureValue = record_map_int64_float.mutable_record_type()->add_field();
             featureValue->set_name("value");
             auto mapType = featureValue->mutable_type()->mutable_map_type();
             mapType->set_key_type(TensorProto_DataType_INT64);
             scalarTensor = mapType->mutable_value_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_FLOAT);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
 
             NodeArg inputArg3("node_3_in_1", &record_map_int64_float);
             inputs.clear();
@@ -148,12 +148,12 @@ namespace LotusIR
             featureName->set_name("name");
             scalarTensor = featureName->mutable_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_STRING);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
             featureValue = record_tensor_float.mutable_record_type()->add_field();
             featureValue->set_name("value");
             scalarTensor = featureValue->mutable_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_FLOAT);
-            (*scalarTensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            scalarTensor->mutable_shape();
 
             NodeArg inputArg4("node_4_in_1", &record_tensor_float);
             inputs.clear();

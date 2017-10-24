@@ -1158,17 +1158,6 @@ namespace LotusIR
                     return status;
                 }
 
-                if (totalArgCount > op.GetOnnxMaxInput() ||
-                    totalArgCount < op.GetOnnxMinInput() ||
-                    !op.GetOnnxNumInputsAllowedFunc()(totalArgCount))
-                {
-                    // Number of inputs do not match.
-                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
-                        + ")'s number of inputs do not match its operator ("
-                        + op_type + ") specification.");
-                    return status;
-                }
-
                 // Verify size of node arg count is same as input number in
                 // operator definition.
                 if (op.GetInputs().size() != node->InputArgCount().size())
@@ -1221,29 +1210,14 @@ namespace LotusIR
                 }
 
                 // Verify node outputs have same size with operator definition.
-                int outputCount = static_cast<int>(node->OutputDefs().size());
                 if (op.GetOutputs().size() != node->OutputDefs().size())
                 {
-                    // Number of outputs do not match.
-                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
-                        + ")'s number of outputs does not match its operator ("
-                        + op_type + ") specification.");
-
-                    if (0 == (m_graphType & Type::Strict))
+                    if (0 != (m_graphType & Type::Strict))
                     {
-                        // It's ONNX case.
-                        // TODO: more understanding is still needed about ONNX
-                        // on how to distributing the output args to output formal
-                        // parameter (same as input?)
-                        if (outputCount > op.GetOnnxMaxOutput() ||
-                            outputCount < op.GetOnnxMinOutput() ||
-                            !op.GetOnnxNumOutputsAllowedFunc()(outputCount))
-                        {
-                            return status;
-                        }
-                    }
-                    else
-                    {
+                        // Number of outputs do not match.
+                        Status status(LOTUS, FAIL, "Error: node (" + nodeName
+                            + ")'s number of outputs does not match its operator ("
+                            + op_type + ") specification.");
                         return status;
                     }
                 }

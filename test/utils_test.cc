@@ -87,7 +87,7 @@ namespace LotusIR
             TypeProto scalar;
             TypeProto_TensorTypeProto* tensor = scalar.mutable_tensor_type();
             tensor->set_elem_type(TensorProto_DataType_INT32);
-            *(tensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            tensor->mutable_shape();
             EXPECT_EQ(OpUtils::ToString(scalar), "int32");
 
             TypeProto s;
@@ -191,7 +191,7 @@ namespace LotusIR
             TypeProto scalar2;
             TypeProto_TensorTypeProto* tensor = scalar2.mutable_tensor_type();
             tensor->set_elem_type(TensorProto_DataType_INT32);
-            *(tensor->mutable_shape()) = TypeProto_TensorShapeProto();
+            tensor->mutable_shape();
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(scalar1, scalar2));
 
             TypeProto s1;
