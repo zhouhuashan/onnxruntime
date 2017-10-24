@@ -9,6 +9,10 @@ namespace Lotus
     {
         TEST(RecordTest, CommonDataStructureTest)
         {
+            Record<std::string> stringRecord;
+            const std::string* n2;
+            EXPECT_FALSE(stringRecord.GetName(0, &n2).Ok());
+
             // One way to store feature vector using Record.
             std::vector<std::string> names = { "featureName", "featureValue" };
             std::tuple<std::string, float> values("streamLength", 2.0f);

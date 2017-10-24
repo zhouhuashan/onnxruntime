@@ -19,6 +19,8 @@ namespace Lotus
 
             typedef std::tuple<Types...> VALUES;
 
+            Record() = default;
+
             Record(const std::vector<std::string>& p_names,
                 const VALUES& p_values)
             {
