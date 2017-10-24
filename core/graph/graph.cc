@@ -945,7 +945,7 @@ namespace LotusIR
 
             // Infer and verify all <arguCount> inputs (k-th input)
             // matching operator definition (i-th argument).
-            for (int j = 0;j < argCount;++j, ++k)
+            for (int j = 0; j < argCount; ++j, ++k)
             {
                 auto& inputDef = p_node->Mutable_InputDefs()[k];
 
@@ -1011,11 +1011,14 @@ namespace LotusIR
                         = inputDef.Type();
 
                 }
-                else if (paramToTypeIter->second != inputDef.Type())
+                else if (paramToTypeIter->second != inputDef.Type() && argCount == 1)
                 {
                     // This is the case.
                     // An operator's inputs' type is "T", and T"s allowed value set is "float, int32".
                     // However, one input is specified as "float", and another one is specified as "int".
+                    // NOTE: for variadic arguments (argCount > 1), this verification rule is not applicable.
+                    // Different types are allowed for variadic arguments although there's only one type "T"
+                    // specified in op definition.
                     Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") has different input"
                         " types (" + *(paramToTypeIter->second) + ","
@@ -1187,7 +1190,7 @@ namespace LotusIR
                         auto argCountLeft = totalArgCount;
                         if (0 < op.GetInputs().size())
                         {
-                            for (; m < op.GetInputs().size() - 1;++m)
+                            for (; m < op.GetInputs().size() - 1; ++m)
                             {
                                 if (argCountLeft > 0)
                                 {

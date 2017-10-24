@@ -181,14 +181,14 @@ namespace LotusIR
                 EXPECT_FALSE(nodeNameToInputOutputIter == expectedNodeNameToInputOutputArgs.end());
 
                 EXPECT_EQ(nodeNameToInputOutputIter->second.first.size(), (*nodeIter)->InputDefs().size());
-                for (size_t i = 0; i < nodeNameToInputOutputIter->second.first.size();++i)
+                for (size_t i = 0; i < nodeNameToInputOutputIter->second.first.size(); ++i)
                 {
                     EXPECT_EQ(nodeNameToInputOutputIter->second.first[i].Name(), (*nodeIter)->InputDefs()[i].Name());
                     EXPECT_EQ(nodeNameToInputOutputIter->second.first[i].Type(), (*nodeIter)->InputDefs()[i].Type());
                 }
 
                 EXPECT_EQ(nodeNameToInputOutputIter->second.second.size(), (*nodeIter)->OutputDefs().size());
-                for (size_t i = 0; i < nodeNameToInputOutputIter->second.second.size();++i)
+                for (size_t i = 0; i < nodeNameToInputOutputIter->second.second.size(); ++i)
                 {
                     EXPECT_EQ(nodeNameToInputOutputIter->second.second[i].Name(), (*nodeIter)->OutputDefs()[i].Name());
                     EXPECT_EQ(nodeNameToInputOutputIter->second.second[i].Type(), (*nodeIter)->OutputDefs()[i].Type());
@@ -211,6 +211,8 @@ namespace LotusIR
 
             REGISTER_OPERATOR_SCHEMA(Max_Fake).Description("Add two integers.")
                 .Input("input_1", "docstr for input_1.", "T")
+                .Input("input_2", "docstr for input_2.", "T")
+                .Input("input_3", "docstr for input_3.", "T")
                 .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "tensor(int32)","tensor(float)" }, "input/output types");
 
@@ -260,7 +262,7 @@ namespace LotusIR
             NodeArg outputArg4("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
-            graph.AddNode("node_4", "Max_Fake", "node 4", inputs, { 3 }, outputs);
+            graph.AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 

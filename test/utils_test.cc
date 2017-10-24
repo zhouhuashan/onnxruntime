@@ -87,7 +87,7 @@ namespace LotusIR
             TypeProto scalar;
             TypeProto_TensorTypeProto* tensor = scalar.mutable_tensor_type();
             tensor->set_elem_type(TensorProto_DataType_INT32);
-            tensor->mutable_shape()->mutable_dim()->Add()->set_dim_value(0);
+            *(tensor->mutable_shape()) = TypeProto_TensorShapeProto();
             EXPECT_EQ(OpUtils::ToString(scalar), "int32");
 
             TypeProto s;
@@ -148,7 +148,6 @@ namespace LotusIR
             TensorProto* t1 = scalar.mutable_dense_tensor();
             t1->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
             t1->add_int32_data(100);
-            t1->add_dims(0);
             EXPECT_EQ(OpUtils::ToAttrTypeString(scalar), "int32");
 
             ValueProto seq;
@@ -156,6 +155,7 @@ namespace LotusIR
             TensorProto* t2 = v1->mutable_dense_tensor();
             t2->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
             t2->add_int32_data(100);
+            t2->add_dims(1);
             EXPECT_EQ(OpUtils::ToAttrTypeString(seq), "seq(tensor(int32))");
 
             ValueProto map;
@@ -165,6 +165,7 @@ namespace LotusIR
             TensorProto* t3 = v2->mutable_dense_tensor();
             t3->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
             t3->add_int32_data(100);
+            t3->add_dims(1);
             EXPECT_EQ(OpUtils::ToAttrTypeString(map), "map(string,seq(tensor(int32)))");
 
             ValueProto record;
@@ -173,11 +174,13 @@ namespace LotusIR
             TensorProto* t4 = nv1->mutable_value()->mutable_dense_tensor();
             t4->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
             t4->add_int32_data(100);
+            t4->add_dims(1);
             ValueProto_NameValuePairProto* nv2 = record.mutable_record()->add_fields();
             nv2->set_key("r2");
             TensorProto* t5 = nv2->mutable_value()->mutable_dense_tensor();
             t5->set_data_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
             t5->add_float_data(100.0f);
+            t5->add_dims(1);
             EXPECT_EQ(OpUtils::ToAttrTypeString(record), "record(r1:tensor(int32),r2:tensor(float))");
         }
 
@@ -188,7 +191,7 @@ namespace LotusIR
             TypeProto scalar2;
             TypeProto_TensorTypeProto* tensor = scalar2.mutable_tensor_type();
             tensor->set_elem_type(TensorProto_DataType_INT32);
-            tensor->mutable_shape()->mutable_dim()->Add()->set_dim_value(0);
+            *(tensor->mutable_shape()) = TypeProto_TensorShapeProto();
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(scalar1, scalar2));
 
             TypeProto s1;

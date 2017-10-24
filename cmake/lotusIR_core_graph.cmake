@@ -1,10 +1,10 @@
 file(GLOB_RECURSE lotusIR_graph_src
-    "${LOTUSIR_ROOT}/core/graph//*.h"
-    "${LOTUSIR_ROOT}/core/graph//*.cc"
+    "${LOTUSIR_ROOT}/core/graph/*.h"
+    "${LOTUSIR_ROOT}/core/graph/*.cc"
 )
 
 file(GLOB_RECURSE lotusIR_defs_src
-    "${LOTUSIR_ROOT}/core/defs//*.cc"
+    "${LOTUSIR_ROOT}/core/defs/*.cc"
 )
 
 add_library(lotusIR_graph ${lotusIR_graph_src} ${lotusIR_defs_src})

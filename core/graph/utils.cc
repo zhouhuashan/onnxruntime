@@ -55,8 +55,8 @@ namespace LotusIR
             {
             case TypeProto::ValueCase::kTensorType:
             {
-                if (p_type.tensor_type().shape().dim_size() == 1 &&
-                    p_type.tensor_type().shape().dim(0).dim_value() == 0)
+                if (p_type.tensor_type().has_shape()
+                    && p_type.tensor_type().shape().dim_size() == 0)
                 {
                     // Scalar case.
                     return ToString(p_type.tensor_type().elem_type());
@@ -88,8 +88,8 @@ namespace LotusIR
                         ToString(p_type.record_type().field(i).type()) + ",";
                 }
                 record_str = record_str +
-                    p_type.record_type().field(size-1).name() + ":" +
-                    ToString(p_type.record_type().field(size-1).type()) + ")";
+                    p_type.record_type().field(size - 1).name() + ":" +
+                    ToString(p_type.record_type().field(size - 1).type()) + ")";
                 return record_str;
             }
             case TypeProto::ValueCase::kUnionType:
@@ -103,8 +103,8 @@ namespace LotusIR
                         ToString(p_type.union_type().choice(i).type()) + ",";
                 }
                 union_str = union_str +
-                    p_type.union_type().choice(size-1).name() + ":" +
-                    ToString(p_type.union_type().choice(size-1).type()) + ")";
+                    p_type.union_type().choice(size - 1).name() + ":" +
+                    ToString(p_type.union_type().choice(size - 1).type()) + ")";
                 return union_str;
             }
             default:
@@ -160,8 +160,7 @@ namespace LotusIR
             {
             case ValueProto::ValueCase::kDenseTensor:
             {
-                if (p_value.dense_tensor().dims_size() == 1 &&
-                    p_value.dense_tensor().dims(0) == 0)
+                if (p_value.dense_tensor().dims_size() == 0)
                 {
                     // Scalar case.
                     return ToString(p_value.dense_tensor().data_type());
@@ -231,8 +230,8 @@ namespace LotusIR
                         ToAttrTypeString(p_value.record().fields(i).value()) + ",";
                 }
                 record_str = record_str +
-                    p_value.record().fields(fields_size-1).key() + ":" +
-                    ToAttrTypeString(p_value.record().fields(fields_size-1).value()) + ")";
+                    p_value.record().fields(fields_size - 1).key() + ":" +
+                    ToAttrTypeString(p_value.record().fields(fields_size - 1).value()) + ")";
                 return record_str;
             }
             case ValueProto::ValueCase::kUnion:
@@ -329,7 +328,8 @@ namespace LotusIR
                 FromString(std::string(s.Data(), s.Size()), e);
                 TypeProto::TensorTypeProto* t = p_type.mutable_tensor_type();
                 t->set_elem_type(e);
-                t->mutable_shape()->add_dim()->set_dim_value(0);
+                // Call mutable_shape() to initialize a shape with no dimension.
+                t->mutable_shape();
             }
         }
 
