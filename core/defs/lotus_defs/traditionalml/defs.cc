@@ -57,7 +57,7 @@ namespace LotusIR {
             For example: if the ``string_vocabulary`` parameter is set to ``["a", "c", "b", "z"]``,
             then an input of ``{"a": 4, "c": 8}`` will produce an output of ``[4, 8, 0, 0]``.
             )DOC")
-        .TypeConstraint("T", { "map(string, int64)", "map(int64, string)"}, " allowed types.")
+        .TypeConstraint("T", { "map(string, int64)", "map(int64, string)" }, " allowed types.")
         .Attr("string_vocabulary", "The vocabulary vector of strings", AttrType::STRINGS)
         .Attr("int64_vocabulary", "The vocabulary vector of int64s", AttrType::INTS);
 
@@ -99,7 +99,7 @@ namespace LotusIR {
             "record(name:string, value:tensor(float))", "record(name:string, value:tensor(int64))", "record(name:string, value:tensor(double))", "record(name:string, value:tensor(int32))"
         },
             "allowed feature value types.");
-    
+
 
     REGISTER_OPERATOR_SCHEMA(LabelEncoder)
         .Input("X", "Data to be encoded", "T1")
@@ -152,7 +152,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(Normalizer)
-        .Input("X", "Data to be encoded","T")
+        .Input("X", "Data to be encoded", "T")
         .Output("Y", "encoded output data", "tensor(float)")
         .Description(R"DOC(
             Normalize the input.  There are three normalization modes,
@@ -203,7 +203,7 @@ namespace LotusIR {
             )DOC")
         .TypeConstraint("T1", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .TypeConstraint("T2", { "tensor(string)", "tensor(int64)" }, " allowed types.")
-        .Attr("kernel_type", "enum LINEAR, POLY, RBF, SIGMOID, defaults to linear",AttrType::INT)
+        .Attr("kernel_type", "enum LINEAR, POLY, RBF, SIGMOID, defaults to linear", AttrType::INT)
         .Attr("kernel_params", "Tensor of 3 elements containing gamma, coef0, degree in that order.  Zero if unused for the kernel.", AttrType::FLOATS)
         .Attr("prob_A", "", AttrType::FLOATS)
         .Attr("prob_B", "", AttrType::FLOATS)
@@ -262,13 +262,15 @@ namespace LotusIR {
         .Attr("nodes_truenodeids", "child node if expression is true", AttrType::INTS)
         .Attr("nodes_falsenodeids", "child node if expression is false", AttrType::INTS)
         .Attr("nodes_missing_value_tracks_true", "for each node, decide if the value is missing (nan) then use true branch, this field can be left unset and will assume false for all nodes", AttrType::INTS)
+        .Attr("base_values", "starting values for each class, can be omitted and will be assumed as 0", AttrType::FLOATS)
         .Attr("class_treeids", "tree that this node is in", AttrType::INTS)
         .Attr("class_nodeids", "node id that this weight is for", AttrType::INTS)
         .Attr("class_ids", "index of the class list that this weight is for", AttrType::INTS)
         .Attr("class_weights", "the weight for the class in class_id", AttrType::FLOATS)
+        .Attr("aggregate_function", "how to aggregate data for each regression target from leaf nodes", AttrType::INT)
         .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::INT)
         .Attr("classlabels_strings", "class labels if using string labels, size E", AttrType::STRINGS)
-        .Attr("classlabels_int64s", "class labels if using int labels, size E", AttrType::INTS);
+        .Attr("classlabels_int64s", "class labels if using int labels, size E, one of the two class label fields must be used", AttrType::INTS);
 
 
     REGISTER_OPERATOR_SCHEMA(TreeRegressor)
