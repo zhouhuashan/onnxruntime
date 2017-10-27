@@ -27,14 +27,21 @@ namespace Lotus
 
             TensorProto floatTensorProto;
             floatTensorProto.set_data_type(TensorProto_DataType_FLOAT);
-            char rawdata[sizeof(float)+1];
-            float f = 1.1f;
-            memcpy(rawdata, &f, sizeof f);
-            rawdata[sizeof(float)] = '\0';
+            float f[4] = { 1.1f, 2.2f, 3.3f, 4.4f };
+            char rawdata[sizeof(float) * 4 + 1];
+            for (int i = 0; i < 4; ++i)
+            {
+                memcpy(rawdata + i * sizeof(float), &(f[i]), sizeof(float));
+            }
+
+            rawdata[sizeof(float) * 4] = '\0';
             floatTensorProto.set_raw_data(rawdata);
             TensorUtils::UnpackTensor(floatTensorProto, &floatData);
-            EXPECT_EQ(1, floatData.size());
+            EXPECT_EQ(4, floatData.size());
             EXPECT_EQ(1.1f, floatData[0]);
+            EXPECT_EQ(2.2f, floatData[1]);
+            EXPECT_EQ(3.3f, floatData[2]);
+            EXPECT_EQ(4.4f, floatData[3]);
 
             TensorProto stringTensorProto;
             stringTensorProto.set_data_type(TensorProto_DataType_STRING);

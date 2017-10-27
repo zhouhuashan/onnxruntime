@@ -35,10 +35,8 @@ namespace Lotus
                 auto buff = raw_data.c_str();
                 size_t typeSize = sizeof(T);
 
-                for (size_t i = 0; i < raw_data.size(); i += typeSize)
+                for (size_t i = 0; i < raw_data.size(); i += typeSize, buff += typeSize)
                 {
-                    buff += i;
-
                     T result;
                     if (IsLittleEndianOrder())
                     {
