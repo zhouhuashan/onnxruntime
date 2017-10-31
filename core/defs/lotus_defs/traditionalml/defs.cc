@@ -191,13 +191,13 @@ namespace LotusIR {
             Rescale input data, for example to standardize features by removing the mean and scaling to unit variance.
             )DOC")
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
-        .Attr("scale", "second, multiply by this", AttrType::AttributeProto_AttributeType_FLOAT)
-        .Attr("offset", "first, offset by this", AttrType::AttributeProto_AttributeType_FLOAT);
+        .Attr("scale", "second, multiply by this", AttrType::AttributeProto_AttributeType_FLOATS)
+        .Attr("offset", "first, offset by thisfirst, offset by this, can be one value or a separate value for each feature", AttrType::AttributeProto_AttributeType_FLOATS);
 
     REGISTER_OPERATOR_SCHEMA(SVMClassifier)
         .Input("X", "Data to be classified", "T1")
-        .Output("Y", "Classification outputs (one class per example", "T2")
-        .Output("Z", "Classification outputs (All classes scores per example,N,E", "tensor(float)")
+        .Output("Y", "Classification outputs, one class per example", "T2")
+        .Output("Z", "Classification outputs, All classes scores per example,N,E*(E-1)/2", "tensor(float)")
         .Description(R"DOC(
             SVM classifier prediction 
             )DOC")
@@ -228,11 +228,9 @@ namespace LotusIR {
         .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::AttributeProto_AttributeType_INT)
         .Attr("vectors_per_class", "", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("support_vectors", "", AttrType::AttributeProto_AttributeType_FLOATS)
+        .Attr("n_supports", "number of support vectors", AttrType::AttributeProto_AttributeType_INT)
         .Attr("coefficients", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("prob_a", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("prob_b", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("rho", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("n_targets", "number of targets for regressions", AttrType::AttributeProto_AttributeType_INT);
+        .Attr("rho", "", AttrType::AttributeProto_AttributeType_FLOATS);
 
     REGISTER_OPERATOR_SCHEMA(TreeClassifier)
         .Input("X", "Data to be classified", "T1")
