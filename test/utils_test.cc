@@ -24,7 +24,7 @@ namespace LotusIR
         {
             std::vector<Utils::StringRange> tokens;
             Utils::StringRange s("r1:tensor(int32),r2:seq(tensor(double)),r3:record(a1:tensor(string),a2:tensor(int32)),r4:sparse(int32)");
-            OpUtils::SplitRecords(s, tokens);
+            OpUtils::SplitStringTokens(s, tokens);
             std::string s1 = std::string(tokens[0].Data(), tokens[0].Size());
             EXPECT_EQ(s1, "r1:tensor(int32)");
             std::string s2 = std::string(tokens[1].Data(), tokens[1].Size());
@@ -126,6 +126,33 @@ namespace LotusIR
             m->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
             m->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
             EXPECT_EQ(OpUtils::ToString(record1), "record(r1:tensor(int32),r2:seq(tensor(double)),r3:map(string,seq(tensor(string))))");
+
+            TypeProto record2;
+            v1 = record2.mutable_record_type()->mutable_field()->Add();
+            v1->set_name("r1");
+            v1->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+            v2 = record2.mutable_record_type()->mutable_field()->Add();
+            v2->set_name("r2");
+            v2->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
+            v3 = record2.mutable_record_type()->mutable_field()->Add();
+            v3->set_name("r3");
+            m = v3->mutable_type()->mutable_map_type();
+            m->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
+            ValueInfoProto* a1 = m->mutable_value_type()->mutable_record_type()->mutable_field()->Add();
+            a1->set_name("a1");
+            a1->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
+            ValueInfoProto* a2 = m->mutable_value_type()->mutable_record_type()->mutable_field()->Add();
+            a2->set_name("a2");
+            a2->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+            ValueInfoProto* v4 = record2.mutable_record_type()->mutable_field()->Add();
+            v4->set_name("r4");
+            ValueInfoProto* x1 = v4->mutable_type()->mutable_record_type()->mutable_field()->Add();
+            x1->set_name("x1");
+            x1->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+            ValueInfoProto* v5 = record2.mutable_record_type()->mutable_field()->Add();
+            v5->set_name("r5");
+            v5->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+            EXPECT_EQ(OpUtils::ToString(record2), "record(r1:tensor(int32),r2:seq(tensor(double)),r3:map(string,record(a1:tensor(string),a2:tensor(int32))),r4:record(x1:tensor(int32)),r5:tensor(int32))");
 
             TypeProto union1;
             ValueInfoProto* uv1 = union1.mutable_union_type()->mutable_choice()->Add();

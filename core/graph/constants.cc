@@ -31,9 +31,7 @@ namespace LotusIR
         // Initialize TypeStrToProtoMap using common type strings.
         for (const auto& t : m_commonTypeStrings)
         {
-            TypeProto type;
-            Utils::OpUtils::FromString(t, type);
-            Utils::OpUtils::ToType(type);
+            Utils::OpUtils::ToType(t);
         }
     }
 

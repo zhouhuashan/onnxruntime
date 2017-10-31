@@ -49,7 +49,7 @@ namespace LotusIR
             return it->second;
         }
 
-        std::string OpUtils::ToString(const TypeProto& p_type)
+        std::string OpUtils::ToString(const TypeProto& p_type, const std::string& left, const std::string& right)
         {
             switch (p_type.value_case())
             {
@@ -59,23 +59,21 @@ namespace LotusIR
                     && p_type.tensor_type().shape().dim_size() == 0)
                 {
                     // Scalar case.
-                    return ToString(p_type.tensor_type().elem_type());
+                    return left + ToDataTypeString(p_type.tensor_type().elem_type()) + right;
                 }
                 else
                 {
-                    return "tensor(" + ToString(p_type.tensor_type().elem_type()) + ")";
+                    return left + "tensor(" + ToDataTypeString(p_type.tensor_type().elem_type()) + ")" + right;
                 }
             }
             case TypeProto::ValueCase::kSparseTensorType:
-                return "sparse(" + ToString(p_type.sparse_tensor_type().elem_type()) + ")";
+                return left + "sparse(" + ToDataTypeString(p_type.sparse_tensor_type().elem_type()) + ")" + right;
             case TypeProto::ValueCase::kSeqType:
-                return "seq(" + ToString(p_type.seq_type().elem_type()) + ")";
+                return ToString(p_type.seq_type().elem_type(), left + "seq(", ")" + right);
             case TypeProto::ValueCase::kMapType:
             {
-                std::string map_str("map(");
-                map_str = map_str + ToString(p_type.map_type().key_type()) + ","
-                    + ToString(p_type.map_type().value_type()) + ")";
-                return map_str;
+                std::string map_str = "map(" + ToDataTypeString(p_type.map_type().key_type()) + ",";
+                return ToString(p_type.map_type().value_type(), left + map_str, ")" + right);
             }
             case TypeProto::ValueCase::kRecordType:
             {
@@ -83,14 +81,11 @@ namespace LotusIR
                 int size = p_type.record_type().field_size();
                 for (int i = 0; i < size - 1; i++)
                 {
-                    record_str = record_str +
-                        p_type.record_type().field(i).name() + ":" +
-                        ToString(p_type.record_type().field(i).type()) + ",";
+                    record_str = ToString(p_type.record_type().field(i).type(),
+                        record_str + p_type.record_type().field(i).name() + ":" , ",");
                 }
-                record_str = record_str +
-                    p_type.record_type().field(size - 1).name() + ":" +
-                    ToString(p_type.record_type().field(size - 1).type()) + ")";
-                return record_str;
+                record_str += p_type.record_type().field(size - 1).name() + ":";
+                return ToString(p_type.record_type().field(size - 1).type(), left + record_str, ")" + right);
             }
             case TypeProto::ValueCase::kUnionType:
             {
@@ -98,14 +93,11 @@ namespace LotusIR
                 int size = p_type.union_type().choice_size();
                 for (int i = 0; i < size - 1; i++)
                 {
-                    union_str = union_str +
-                        p_type.union_type().choice(i).name() + ":" +
-                        ToString(p_type.union_type().choice(i).type()) + ",";
+                    union_str = ToString(p_type.union_type().choice(i).type(),
+                        union_str + p_type.union_type().choice(i).name() + ":", ",");
                 }
-                union_str = union_str +
-                    p_type.union_type().choice(size - 1).name() + ":" +
-                    ToString(p_type.union_type().choice(size - 1).type()) + ")";
-                return union_str;
+                union_str += p_type.union_type().choice(size - 1).name() + ":";
+                return ToString(p_type.union_type().choice(size - 1).type(), left + union_str, ")" + right);
             }
             default:
                 assert(false);
@@ -113,7 +105,7 @@ namespace LotusIR
             }
         }
 
-        std::string OpUtils::ToString(const TensorProto::DataType& p_type)
+        std::string OpUtils::ToDataTypeString(const TensorProto::DataType& p_type)
         {
             TypesWrapper& t = TypesWrapper::GetTypesWrapper();
             switch (p_type)
@@ -154,7 +146,7 @@ namespace LotusIR
             return "";
         }
 
-        std::string OpUtils::ToAttrTypeString(const ValueProto& p_value)
+        std::string OpUtils::ToAttrTypeString(const ValueProto& p_value, const std::string& left, const std::string& right)
         {
             switch (p_value.value_case())
             {
@@ -163,19 +155,19 @@ namespace LotusIR
                 if (p_value.dense_tensor().dims_size() == 0)
                 {
                     // Scalar case.
-                    return ToString(p_value.dense_tensor().data_type());
+                    return left + ToDataTypeString(p_value.dense_tensor().data_type()) + right;
                 }
                 else
                 {
-                    return "tensor(" + ToString(p_value.dense_tensor().data_type()) + ")";
+                    return left + "tensor(" + ToDataTypeString(p_value.dense_tensor().data_type()) + ")" + right;
                 }
             }
             case ValueProto::ValueCase::kSparseTensor:
-                return "sparse(" + ToString(p_value.sparse_tensor().values().data_type()) + ")";
+                return left + "sparse(" + ToDataTypeString(p_value.sparse_tensor().values().data_type()) + ")" + right;
             case ValueProto::ValueCase::kSeq:
             {
                 assert(p_value.seq().elems_size() > 0);
-                return "seq(" + ToAttrTypeString(p_value.seq().elems(0)) + ")";
+                return ToAttrTypeString(p_value.seq().elems(0), left + "seq(", ")" + right);
             }
             case ValueProto::ValueCase::kScalarMap:
             {
@@ -185,9 +177,8 @@ namespace LotusIR
                 assert(keys_size > 0);
                 assert(values_size > 0);
                 assert(keys_size == values_size);
-                std::string map_str("map(");
-                map_str = map_str + ToString(p_value.scalar_map().keys(0).data_type()) + ","
-                    + "tensor(" + ToString(p_value.scalar_map().values(0).data_type()) + "))";
+                std::string map_str = "map(" + ToDataTypeString(p_value.scalar_map().keys(0).data_type()) + ","
+                    + "tensor(" + ToDataTypeString(p_value.scalar_map().values(0).data_type()) + "))";
                 return map_str;
             }
             case ValueProto::ValueCase::kMap:
@@ -214,9 +205,8 @@ namespace LotusIR
                 default:
                     assert(false);
                 }
-                map_str = map_str + key_str + ","
-                    + ToAttrTypeString(p_value.map().key_value_pairs(0).value()) + ")";
-                return map_str;
+                map_str += key_str + ",";
+                return ToAttrTypeString(p_value.map().key_value_pairs(0).value(), left + map_str, ")" + right);
             }
             case ValueProto::ValueCase::kRecord:
             {
@@ -225,23 +215,17 @@ namespace LotusIR
                 std::string record_str("record(");
                 for (int i = 0; i < fields_size - 1; i++)
                 {
-                    record_str = record_str +
-                        p_value.record().fields(i).key() + ":" +
-                        ToAttrTypeString(p_value.record().fields(i).value()) + ",";
+                    record_str = ToAttrTypeString(p_value.record().fields(i).value(),
+                        record_str + p_value.record().fields(i).key() + ":", ",");
                 }
-                record_str = record_str +
-                    p_value.record().fields(fields_size - 1).key() + ":" +
-                    ToAttrTypeString(p_value.record().fields(fields_size - 1).value()) + ")";
-                return record_str;
+                record_str += p_value.record().fields(fields_size - 1).key() + ":";
+                return ToAttrTypeString(p_value.record().fields(fields_size - 1).value(), left + record_str, ")" + right);
             }
             case ValueProto::ValueCase::kUnion:
             {
                 assert(p_value.union_().has_choice());
-                std::string union_str("union(");
-                union_str = union_str +
-                    p_value.union_().choice().key() + ":" +
-                    ToAttrTypeString(p_value.union_().choice().value()) + ")";
-                return union_str;
+                std::string union_str = "union(" + p_value.union_().choice().key() + ":";
+                return ToAttrTypeString(p_value.union_().choice().value(), left + union_str, ")" + right);
             }
             default:
                 assert(false);
@@ -257,7 +241,7 @@ namespace LotusIR
             if (s.LStrip("seq"))
             {
                 s.ParensWhitespaceStrip();
-                FromString(std::string(s.Data(), s.Size()), *p_type.mutable_seq_type()->mutable_elem_type());
+                return FromString(std::string(s.Data(), s.Size()), *p_type.mutable_seq_type()->mutable_elem_type());
             }
             else if (s.LStrip("map"))
             {
@@ -269,15 +253,15 @@ namespace LotusIR
                 s.LStrip(",");
                 StringRange v(s.Data(), s.Size());
                 TensorProto::DataType key_type;
-                FromString(key, key_type);
+                FromDataTypeString(key, key_type);
                 p_type.mutable_map_type()->set_key_type(key_type);
-                FromString(std::string(v.Data(), v.Size()), *p_type.mutable_map_type()->mutable_value_type());
+                return FromString(std::string(v.Data(), v.Size()), *p_type.mutable_map_type()->mutable_value_type());
             }
             else if (s.LStrip("record"))
             {
                 s.ParensWhitespaceStrip();
                 std::vector<StringRange> fields;
-                SplitRecords(s, fields);
+                SplitStringTokens(s, fields);
                 for (auto& f : fields)
                 {
                     ValueInfoProto* valueinfo = p_type.mutable_record_type()->mutable_field()->Add();
@@ -294,7 +278,7 @@ namespace LotusIR
             {
                 s.ParensWhitespaceStrip();
                 std::vector<StringRange> choices;
-                SplitRecords(s, choices);
+                SplitStringTokens(s, choices);
                 for (auto& c : choices)
                 {
                     ValueInfoProto* valueinfo = p_type.mutable_union_type()->mutable_choice()->Add();
@@ -311,21 +295,21 @@ namespace LotusIR
             {
                 s.ParensWhitespaceStrip();
                 TensorProto::DataType e;
-                FromString(std::string(s.Data(), s.Size()), e);
+                FromDataTypeString(std::string(s.Data(), s.Size()), e);
                 p_type.mutable_sparse_tensor_type()->set_elem_type(e);
             }
             else if (s.LStrip("tensor"))
             {
                 s.ParensWhitespaceStrip();
                 TensorProto::DataType e;
-                FromString(std::string(s.Data(), s.Size()), e);
+                FromDataTypeString(std::string(s.Data(), s.Size()), e);
                 p_type.mutable_tensor_type()->set_elem_type(e);
             }
             else
             {
                 // Scalar
                 TensorProto::DataType e;
-                FromString(std::string(s.Data(), s.Size()), e);
+                FromDataTypeString(std::string(s.Data(), s.Size()), e);
                 TypeProto::TensorTypeProto* t = p_type.mutable_tensor_type();
                 t->set_elem_type(e);
                 // Call mutable_shape() to initialize a shape with no dimension.
@@ -340,7 +324,7 @@ namespace LotusIR
             return (allowedSet.find(p_dataType) != allowedSet.end());
         }
 
-        void OpUtils::SplitRecords(StringRange& p_src, std::vector<StringRange>& p_records)
+        void OpUtils::SplitStringTokens(StringRange& p_src, std::vector<StringRange>& p_tokens)
         {
             int parens = 0;
             p_src.RestartCapture();
@@ -350,7 +334,7 @@ namespace LotusIR
                 {
                     if (parens == 0)
                     {
-                        p_records.push_back(p_src.GetCaptured());
+                        p_tokens.push_back(p_src.GetCaptured());
                         p_src.LStrip(",");
                         p_src.RestartCapture();
                     }
@@ -372,10 +356,10 @@ namespace LotusIR
                     p_src.LStrip(1);
                 }
             }
-            p_records.push_back(p_src.GetCaptured());
+            p_tokens.push_back(p_src.GetCaptured());
         }
 
-        void OpUtils::FromString(const std::string& p_typeStr, TensorProto::DataType& p_type)
+        void OpUtils::FromDataTypeString(const std::string& p_typeStr, TensorProto::DataType& p_type)
         {
             assert(IsValidDataTypeString(p_typeStr));
 

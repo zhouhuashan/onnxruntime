@@ -19,13 +19,13 @@ namespace LotusIR
             static PTYPE ToType(const TypeProto& p_type);
             static PTYPE ToType(const std::string& p_type);
             static const TypeProto& ToTypeProto(const PTYPE& p_type);
-            static std::string ToString(const TypeProto& p_type);
-            static std::string ToString(const TensorProto::DataType& p_type);
-            static std::string ToAttrTypeString(const ValueProto& p_value);
+            static std::string ToString(const TypeProto& p_type, const std::string& left = "", const std::string& right = "");
+            static std::string ToDataTypeString(const TensorProto::DataType& p_type);
+            static std::string ToAttrTypeString(const ValueProto& p_value, const std::string& left = "", const std::string& right = "");
             static void FromString(const std::string& p_src, TypeProto& p_type);
-            static void FromString(const std::string& p_src, TensorProto::DataType& p_type);
+            static void FromDataTypeString(const std::string& p_src, TensorProto::DataType& p_type);
             static bool IsValidDataTypeString(const std::string &p_dataType);
-            static void SplitRecords(StringRange& p_src, std::vector<StringRange>& p_records);
+            static void SplitStringTokens(StringRange& p_src, std::vector<StringRange>& p_tokens);
         private:
             static std::unordered_map<std::string, TypeProto>& GetTypeStrToProtoMap();
             // Returns lock used for concurrent updates to TypeStrToProtoMap.
