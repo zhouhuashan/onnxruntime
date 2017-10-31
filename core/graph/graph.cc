@@ -535,17 +535,12 @@ namespace LotusIR
     ADD_BASIC_ATTR_IMPL(int64_t, i)
     ADD_BASIC_ATTR_IMPL(std::string, s)
     ADD_ATTR_IMPL(TensorProto, t)
-    ADD_ATTR_IMPL(TypeProto::TensorShapeProto, shape)
     ADD_ATTR_IMPL(GraphProto, g)
-    ADD_ATTR_IMPL(TypeProto, type)
-    ADD_ATTR_IMPL(ValueProto, v)
     ADD_LIST_ATTR_IMPL(float, floats)
     ADD_LIST_ATTR_IMPL(int64_t, ints)
     ADD_LIST_ATTR_IMPL(std::string, strings)
     ADD_LIST_ATTR_IMPL(TensorProto, tensors)
-    ADD_LIST_ATTR_IMPL(TypeProto::TensorShapeProto, shapes)
     ADD_LIST_ATTR_IMPL(GraphProto, graphs)
-    ADD_LIST_ATTR_IMPL(TypeProto, types)
 
     bool Node::ClearAttribute(const std::string& p_attrName)
     {
@@ -1066,7 +1061,7 @@ namespace LotusIR
 
                 AttrType attrType;
                 RETURN_IF_ERROR(TypeUtils::GetType(nodeAttributesIter->second, attrType));
-                if (AttrType::TENSOR == attrType)
+                if (AttrType::AttributeProto_AttributeType_TENSOR == attrType)
                 {
                     auto& tensor = nodeAttributesIter->second.t();
                     TypeProto typeProto;
@@ -1267,25 +1262,6 @@ namespace LotusIR
                                     "Node (" + nodeName + ") attribute ("
                                     + nodeAttrIter->first + ") type does not match operator definition.");
                                 return status;
-                            }
-
-                            // This is an Attribute containing a Rich Type Value. Do further validation.
-                            if (attrDef.GetType() == AttrType::VALUE)
-                            {
-                                std::string richType = OpUtils::ToAttrTypeString(nodeAttrIter->second.v());
-                                if (richType != *attrDef.GetRichType())
-                                {
-                                    // TODO: validation via string comparison doesn't work for types containing union.
-                                    // maybe we can use this as a shallow validation. We can potentially implement deep
-                                    // validation which goes through the entire ValueProto and checks all fields.
-                                    if (richType.find("union") != std::string::npos)
-                                    {
-                                        Status status(LOTUS, FAIL,
-                                            "Node (" + nodeName + ") attribute ("
-                                            + nodeAttrIter->first + ") type does not match operator definition.");
-                                        return status;
-                                    }
-                                }
                             }
                         }
                     }

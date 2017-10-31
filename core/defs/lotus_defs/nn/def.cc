@@ -16,11 +16,11 @@ namespace LotusIR {
         .Attr("axis",
             "(int32_t) default to 1; describes the axis of the inputs; "
             "defaults to one because the 0th axis most likely describes the batch_size",
-            AttrType::INT, int64_t(1))
+            AttrType::AttributeProto_AttributeType_INT, int64_t(1))
         .Attr("axis_w",
             "(int32_t) default to 1; describes the axis of the weight matrix W; "
             "defaults to one because the 0th axis most likely describes the batch_size",
-            AttrType::INT, int64_t(1));
+            AttrType::AttributeProto_AttributeType_INT, int64_t(1));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Conv)
@@ -47,19 +47,19 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The shape of the convolution kernel.",
-             AttrType::INTS)
+             AttrType::AttributeProto_AttributeType_INTS)
         .Attr("dilations",
             "dilation value along each axis of the filter.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("strides",
             "stride along each axis.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads",
             "Padding along each axis, can take the value 0 (False) or non 0 (True)",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("group",
             "number of groups input channels and output channels are divided into",
-            AttrType::INT);
+            AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(ConvTranspose)
@@ -86,19 +86,19 @@ namespace LotusIR {
 			"Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The shape of the convolution kernel.",
-             AttrType::INTS)
+             AttrType::AttributeProto_AttributeType_INTS)
         .Attr("output_shape",
             "The shape of the output.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("dilations",
             "dilation value along each axis of the filter.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("strides",
             "stride along each axis.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads",
             "Padding along each axis, can take the value 0 (False) or non 0 (True)",
-            AttrType::INTS);
+            AttrType::AttributeProto_AttributeType_INTS);
 
     REGISTER_OPERATOR_SCHEMA(Dropout)
         .Description("Dropout takes one input data (Tensor<float>) and produces two Tensor outputs, "
@@ -114,11 +114,11 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("ratio",
             "(float, default 0.5) the ratio of random dropout",
-            AttrType::FLOAT, float(0.5))
+            AttrType::AttributeProto_AttributeType_FLOAT, float(0.5))
         .Attr("is_test",
             "(int, default 0) if nonzero, run dropout in test mode where "
             "the output is simply Y = X.",
-            AttrType::INT, int64_t(0));
+            AttrType::AttributeProto_AttributeType_INT, int64_t(0));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(AveragePool)
@@ -140,13 +140,13 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The size of the kernel along each axis.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads",
             "Padding along each axis, can take the value 0 (False) or non 0 (True)",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("strides",
             "Stride along each axis.",
-            AttrType::INTS);
+            AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(GlobalAveragePool)
@@ -186,16 +186,16 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("kernel_shape",
             "The size of the kernel along each axis.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("strides",
             "Stride along each axis.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads",
             "Padding along each axis, can take the value 0 (False) or non 0 (True)",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Attr("dilations",
             "Dilaton along each axis, 1 mean no dilation.",
-            AttrType::INTS);
+            AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(GlobalMaxPool)
@@ -264,17 +264,17 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("epsilon",
             "The epsilon value to use to avoid division by zero.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr("is_test",
             "If set to nonzero, run spatial batch normalization in test mode.",
-            AttrType::INT)
+            AttrType::AttributeProto_AttributeType_INT)
         .Attr("momentum",
             "Factor used in computing the running mean and variance."
             "e.g., running_mean = running_mean * momentum + mean * (1 - momentum)",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr("spatial",
             "Compute the mean and variance across all spatial elements or per feature.",
-            AttrType::INT);
+            AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(RoIPool)
@@ -293,14 +293,14 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("is_test", "If set, run in test mode and skip computation of argmaxes (used "
             "for gradient computation). Only one output tensor is produced. (Default: false).",
-            AttrType::INT, int64_t(0))
+            AttrType::AttributeProto_AttributeType_INT, int64_t(0))
         .Attr("spatial_scale", "Multiplicative spatial scale factor to translate ROI "
             "coordinates from their input scale to the scale used when pooling (Default: 1.0).",
-            AttrType::FLOAT, float(1.0))
+            AttrType::AttributeProto_AttributeType_FLOAT, float(1.0))
         .Attr("pooled_h", "The pooled output height (Default: 1).",
-            AttrType::FLOAT, float(1.0))
+            AttrType::AttributeProto_AttributeType_FLOAT, float(1.0))
         .Attr("pooled_w", "The pooled output width (Default: 1).",
-            AttrType::FLOAT, float(1.0));
+            AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
 
     REGISTER_OPERATOR_SCHEMA(LpPool)
         .Description("LpPool consumes an input blob X and applies L-p pooling across the "
@@ -317,11 +317,11 @@ namespace LotusIR {
             "Dimensions will vary based on various kernel, stride, and pad sizes.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("kernel_shape", "The size of the kernel along each axis.", AttrType::INTS)
-        .Attr("strides", "Stride along each axis.", AttrType::INTS)
+        .Attr("kernel_shape", "The size of the kernel along each axis.", AttrType::AttributeProto_AttributeType_INTS)
+        .Attr("strides", "Stride along each axis.", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads", "Padding along each axis, can take the value 0 (False) or non 0 (True)",
-            AttrType::INTS)
-        .Attr("p", "Value of p, default 2.0.", AttrType::FLOAT, float(2.0));
+            AttrType::AttributeProto_AttributeType_INTS)
+        .Attr("p", "Value of p, default 2.0.", AttrType::AttributeProto_AttributeType_FLOAT, float(2.0));
 
     REGISTER_OPERATOR_SCHEMA(GlobalLpPool)
         .Description("GlobalLpPool consumes an input tensor X and applies lp-pool across the "
@@ -335,7 +335,7 @@ namespace LotusIR {
         .Output("Y", "Y Output data tensor from L-p pooling across the input tensor. Dimensions will "
             "vary based on various kernel, stride, and pad sizes.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
-        .Attr("p", "Value of p, default 2.0.", AttrType::FLOAT, float(2.0));
+        .Attr("p", "Value of p, default 2.0.", AttrType::AttributeProto_AttributeType_FLOAT, float(2.0));
 
     REGISTER_OPERATOR_SCHEMA(LRN)
         .Description("Perform local response normalization. "
@@ -346,11 +346,11 @@ namespace LotusIR {
              " types to float tensors.")
         .Attr("size", "[default 5]: the number of channels to sum over (for cross "
               "channel LRN) or the side length of the square region to sum over (for within "
-              "channel LRN)", AttrType::INT, int64_t(5))
-        .Attr("alpha", "Scalar scaling factor. Default is 0.0001", AttrType::FLOAT, float(0.0001))
-        .Attr("beta", "Scalar exponent in the LRN.  Default is 0.5.", AttrType::FLOAT, float(0.5))
+              "channel LRN)", AttrType::AttributeProto_AttributeType_INT, int64_t(5))
+        .Attr("alpha", "Scalar scaling factor. Default is 0.0001", AttrType::AttributeProto_AttributeType_FLOAT, float(0.0001))
+        .Attr("beta", "Scalar exponent in the LRN.  Default is 0.5.", AttrType::AttributeProto_AttributeType_FLOAT, float(0.5))
         .Attr("bias", "An offset (must be positive to avoid dividing by 0). Defaults to 1.0.",
-            AttrType::FLOAT, float(1.0));
+            AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
 
     REGISTER_OPERATOR_SCHEMA(MVN)
         .Description("Perform mean variance normalization.")
@@ -359,9 +359,9 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output "
             "types to float tensors.")
         .Attr("across_channels", "If true, mean and variance are computed across channels. "
-            "Default is false.", AttrType::INT, int64_t(0))
+            "Default is false.", AttrType::AttributeProto_AttributeType_INT, int64_t(0))
         .Attr("normalize_variance", "If false, normalize the mean only. Default is true.",
-            AttrType::INT, int64_t(1));
+            AttrType::AttributeProto_AttributeType_INT, int64_t(1));
 
     REGISTER_OPERATOR_SCHEMA(L2Normalization)
         .Description("Perform L2 normalization  Divide each element by the square root of the "
@@ -370,7 +370,7 @@ namespace LotusIR {
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(float)" }, "Constrain input and output "
             "types to float tensors.")
-        .Attr("Axis", "Axis along which to perform normalization.", AttrType::INT);
+        .Attr("Axis", "Axis along which to perform normalization.", AttrType::AttributeProto_AttributeType_INT);
 
     // Take from RS4
     REGISTER_OPERATOR_SCHEMA(Embedding)
@@ -383,9 +383,9 @@ namespace LotusIR {
         .TypeConstraint("T1", { "tensor(uint64)" }, "Constrain input types to ints.")
         .TypeConstraint("T2", { "tensor(float16)", "tensor(float)", "tensor(double)" },
                 "Constrain output types to float tensors.")
-        .Attr("input_dim", "Size of the input vocabulary.", AttrType::INT)
-        .Attr("output_dim", "Dimension of the embedding output vectors.", AttrType::INT)
-        .Attr("weights", "2-D tensor of weights [O,I]", AttrType::FLOATS);
+        .Attr("input_dim", "Size of the input vocabulary.", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("output_dim", "Dimension of the embedding output vectors.", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("weights", "2-D tensor of weights [O,I]", AttrType::AttributeProto_AttributeType_FLOATS);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(Upsample)
@@ -395,9 +395,9 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
             "output types to float tensors.")
         .Attr("mode", "enum {'NN', 'BILINEAR' }, Nearest neighbor or bilinear upsampling.",
-            AttrType::STRING)
-        .Attr("width_scale", "Scale along width dimension", AttrType::INT)
-        .Attr("height_scale", "Scale along height dimension", AttrType::INT);
+            AttrType::AttributeProto_AttributeType_STRING)
+        .Attr("width_scale", "Scale along width dimension", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("height_scale", "Scale along height dimension", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(Tile)
@@ -406,9 +406,9 @@ namespace LotusIR {
         .Output("output", "Result, has same shape and type as X", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
             "output types to float tensors.")
-        .Attr("axis", "Axis along which to repeat. Default is 0.", AttrType::INT, int64_t(0))
+        .Attr("axis", "Axis along which to repeat. Default is 0.", AttrType::AttributeProto_AttributeType_INT, int64_t(0))
         .Attr("tiles", "Number of repeated copies to make of the input tensor.",
-            AttrType::INT);
+            AttrType::AttributeProto_AttributeType_INT);
 
     REGISTER_OPERATOR_SCHEMA(Crop)
         .Description("Crop and image to the specified spatial dimensions.  If scale is given,"
@@ -419,8 +419,8 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
             "output types to float tensors.")
         .Attr("border", "A 1-D tensor of values (leftBorder, topBorder, rightBorder, bottomBorder)",
-            AttrType::INT)
-        .Attr("scale", "A 1-D tensor of values (height, width)", AttrType::INT);
+            AttrType::AttributeProto_AttributeType_INT)
+        .Attr("scale", "A 1-D tensor of values (height, width)", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(PadImage)
@@ -431,13 +431,13 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
         .Attr("border", "A 1-D tensor of values (leftBorder, topBorder, rightBorder, bottomBorder)",
-            AttrType::INT)
-        .Attr("constant", "Constant padding value.", AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_INT)
+        .Attr("constant", "Constant padding value.", AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr("mode", "Method to use when padding: ‘CONSTANT’, ‘REFLECT’, ‘REPLICATE’;"
             "Constant padding simply fills in the values created by the border. "
             "Reflect takes a reflection of the values at the border into the padding space."
             "Replicate copies the border, projecting into the padding space.",
-            AttrType::STRING);
+            AttrType::AttributeProto_AttributeType_STRING);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(MeanSubtraction)
@@ -446,13 +446,13 @@ namespace LotusIR {
         .Output("output", "Result, has same shape and type as X", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("image", "Image tensor stored as a sequence of floats [C,H,W].", AttrType::TENSOR);
+        .Attr("image", "Image tensor stored as a sequence of floats [C,H,W].", AttrType::AttributeProto_AttributeType_TENSOR);
 
     REGISTER_OPERATOR_SCHEMA(Constant)
         .Description("A constant tensor.")
         .Output("output", "Output tensor containing the same value of the provided tensor.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("value", "The value for the elements of the output tensor.", AttrType::TENSOR);
+        .Attr("value", "The value for the elements of the output tensor.", AttrType::AttributeProto_AttributeType_TENSOR);
 }
 

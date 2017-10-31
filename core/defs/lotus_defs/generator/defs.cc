@@ -7,7 +7,7 @@ namespace LotusIR
         .Attr(
             "value",
             "The value for the elements of the output tensor.",
-            AttrType::TENSOR)
+            AttrType::AttributeProto_AttributeType_TENSOR)
         .Output("output",
                 "Output tensor containing the same value of the provided tensor.",
                 "T")
@@ -24,23 +24,23 @@ namespace LotusIR
         .Attr(
             "low",
             "Lower boundary of the output values.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "high",
             "Upper boundary of the output values.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "seed",
             "(Optional) Seed to the random generator, if not specified we will auto generate one.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "dtype",
             "The data type for the elements of the output tensor.",
-            AttrType::INT)
+            AttrType::AttributeProto_AttributeType_INT)
         .Attr(
             "shape",
             "The shape of the output tensor.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Output("output",
             "Output tensor of random values drawn from uniform distribution",
             "T")
@@ -57,23 +57,23 @@ namespace LotusIR
         .Attr(
             "mean",
             "The mean of the normal distribution.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "scale",
             "The standard deviation of the normal distribution.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "seed",
             "(Optional) Seed to the random generator, if not specified we will auto generate one.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "dtype",
             "The data type for the elements of the output tensor.",
-            AttrType::INT)
+            AttrType::AttributeProto_AttributeType_INT)
         .Attr(
             "shape",
             "The shape of the output tensor.",
-            AttrType::INTS)
+            AttrType::AttributeProto_AttributeType_INTS)
         .Output(
             "output",
             "Output tensor of random values drawn from normal distribution",
@@ -90,20 +90,20 @@ namespace LotusIR
         .Attr(
             "low",
             "Lower boundary of the output values.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "high",
             "Upper boundary of the output values.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "seed",
             "(Optional) Seed to the random generator, if not specified we will auto generate one.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "dtype",
             "(Optional) The data type for the elements of the output tensor, if not specified, "
             "we will use the data type of the input tensor.",
-            AttrType::INT)
+            AttrType::AttributeProto_AttributeType_INT)
         .Input(
             "input",
             "Input tensor to provide shape information.",
@@ -125,20 +125,20 @@ namespace LotusIR
         .Attr(
             "mean",
             "The mean of the normal distribution.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "scale",
             "The standard deviation of the normal distribution.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "seed",
             "(Optional) Seed to the random generator, if not specified we will auto generate one.",
-            AttrType::FLOAT)
+            AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr(
             "dtype",
             "(Optional) The data type for the elements of the output tensor, if not specified, "
             "we will use the data type of the input tensor.",
-            AttrType::INT)
+            AttrType::AttributeProto_AttributeType_INT)
         .Input(
             "input",
             "Input tensor to provide shape information.",

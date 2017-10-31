@@ -22,9 +22,9 @@ namespace LotusIR
             size_t attr_size = op->GetAttributes().size();
             EXPECT_EQ(attr_size, 2);
             EXPECT_EQ(op->GetAttributes()[0].GetName(), "alpha");
-            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::FLOAT);
+            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::AttributeProto_AttributeType_FLOAT);
             EXPECT_EQ(op->GetAttributes()[1].GetName(), "beta");
-            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::FLOAT);
+            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_FLOAT);
         }
 
         TEST(OpRegistrationTest, EmbeddingOp)
@@ -46,11 +46,11 @@ namespace LotusIR
             size_t attr_size = op->GetAttributes().size();
             EXPECT_EQ(attr_size, 3);
             EXPECT_EQ(op->GetAttributes()[0].GetName(), "input_dim");
-            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::INT);
+            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::AttributeProto_AttributeType_INT);
             EXPECT_EQ(op->GetAttributes()[1].GetName(), "output_dim");
-            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::INT);
+            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_INT);
             EXPECT_EQ(op->GetAttributes()[2].GetName(), "weights");
-            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::FLOATS);
+            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::AttributeProto_AttributeType_FLOATS);
         }
 
         TEST(FeatureVectorizerTest, TraditionalMlOpTest)

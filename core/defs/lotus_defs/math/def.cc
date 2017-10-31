@@ -82,8 +82,8 @@ namespace LotusIR {
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("min", "Minimum value, under which element is replaced by min", AttrType::FLOAT)
-        .Attr("max", "Maximum value, under which element is replaced by max", AttrType::FLOAT);
+        .Attr("min", "Minimum value, under which element is replaced by min", AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("max", "Maximum value, under which element is replaced by max", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Sqrt)
@@ -124,7 +124,7 @@ namespace LotusIR {
         .Output("output", "The x^exponent value of the input tensor computed element-wise", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("exponent", "The exponent of the power function.", AttrType::FLOAT);
+        .Attr("exponent", "The exponent of the power function.", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Dot)
@@ -154,17 +154,17 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("transA",
               "Whether A should be transposed",
-              AttrType::INT)
+              AttrType::AttributeProto_AttributeType_INT)
         .Attr("transB",
               "Whether B should be transposed",
-              AttrType::INT)
+              AttrType::AttributeProto_AttributeType_INT)
         .Attr("broadcast",
               "Whether C should be broadcasted",
-              AttrType::INT)
+              AttrType::AttributeProto_AttributeType_INT)
         .Attr("alpha",
               "Scalar multiplier for the product of input tensors A * B",
-              AttrType::FLOAT)
+              AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr("beta",
               "Scalar multiplier for input tensor C",
-              AttrType::FLOAT);
+              AttrType::AttributeProto_AttributeType_FLOAT);
 }

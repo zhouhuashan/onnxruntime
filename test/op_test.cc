@@ -99,9 +99,9 @@ namespace LotusIR
         TEST(OpRegistrationTest, AttributeTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestAttr).Description("Op with attributes.")
-                .Attr("my_attr_int", "attr with INT type", AttrType::INT)
-                .Attr("my_attr_float", "attr with FLOAT type", AttrType::FLOAT)
-                .Attr("my_attr_string", "attr with STRING type", AttrType::STRING);
+                .Attr("my_attr_int", "attr with INT type", AttrType::AttributeProto_AttributeType_INT)
+                .Attr("my_attr_float", "attr with FLOAT type", AttrType::AttributeProto_AttributeType_FLOAT)
+                .Attr("my_attr_string", "attr with STRING type", AttrType::AttributeProto_AttributeType_STRING);
             const OperatorSchema* opSchema;
             const OpSignature* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttr", &opSchema);
@@ -109,7 +109,7 @@ namespace LotusIR
             op = &(opSchema->GetOpSignature());
 
             std::vector<std::string> expected_strings = { "my_attr_int", "my_attr_float", "my_attr_string" };
-            std::vector<AttrType> expected_types = { AttrType::INT, AttrType::FLOAT, AttrType::STRING };
+            std::vector<AttrType> expected_types = { AttrType::AttributeProto_AttributeType_INT, AttrType::AttributeProto_AttributeType_FLOAT, AttrType::AttributeProto_AttributeType_STRING };
 
             size_t size = op->GetAttributes().size();
             EXPECT_EQ(size, 3);
@@ -123,9 +123,9 @@ namespace LotusIR
         TEST(OpRegistrationTest, AttributeDefaultValueTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestAttrDefaultValue).Description("Op with attributes that have default values")
-                .Attr("my_attr_int", "attr with default value of 99.", AttrType::INT, int64_t(99))
-                .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::FLOAT, float(0.99))
-                .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::STRING, std::string("99"));
+                .Attr("my_attr_int", "attr with default value of 99.", AttrType::AttributeProto_AttributeType_INT, int64_t(99))
+                .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::AttributeProto_AttributeType_FLOAT, float(0.99))
+                .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::AttributeProto_AttributeType_STRING, std::string("99"));
             const OperatorSchema* opSchema;
             const OpSignature* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrDefaultValue", &opSchema);
@@ -134,7 +134,7 @@ namespace LotusIR
             EXPECT_EQ(op->GetAttributes().size(), 3);
 
             EXPECT_EQ(op->GetAttributes()[0].GetName(), "my_attr_int");
-            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::INT);
+            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::AttributeProto_AttributeType_INT);
             const AttributeProto* a1;
             EXPECT_TRUE(op->GetAttributes()[0].HasDefaultValue(&a1));
             EXPECT_EQ(a1->name(), "my_attr_int");
@@ -142,7 +142,7 @@ namespace LotusIR
             EXPECT_EQ(a1->i(), 99LL);
 
             EXPECT_EQ(op->GetAttributes()[1].GetName(), "my_attr_float");
-            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::FLOAT);
+            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_FLOAT);
             const AttributeProto* a2;
             EXPECT_TRUE(op->GetAttributes()[1].HasDefaultValue(&a2));
             EXPECT_EQ(a2->name(), "my_attr_float");
@@ -150,7 +150,7 @@ namespace LotusIR
             EXPECT_EQ(a2->f(), 0.99f);
 
             EXPECT_EQ(op->GetAttributes()[2].GetName(), "my_attr_string");
-            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::STRING);
+            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::AttributeProto_AttributeType_STRING);
             const AttributeProto* a3;
             EXPECT_TRUE(op->GetAttributes()[2].HasDefaultValue(&a3));
             EXPECT_EQ(a3->name(), "my_attr_string");
@@ -161,9 +161,9 @@ namespace LotusIR
         TEST(OpRegistrationTest, AttributeDefaultValueListTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestAttrDefaultValueList).Description("Op with attributes that have default list of values.")
-                .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::INTS, std::vector<int64_t> {int64_t(98), int64_t(99), int64_t(100)})
-                .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::FLOATS, std::vector<float> {float(0.98), float(0.99), float(1.00)})
-                .Attr("my_attr_strings", "attr with default value of [\"98\", \"99\", \"100\"].", AttrType::STRINGS, std::vector<std::string> {"98", "99", "100"});
+                .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::AttributeProto_AttributeType_INTS, std::vector<int64_t> {int64_t(98), int64_t(99), int64_t(100)})
+                .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::AttributeProto_AttributeType_FLOATS, std::vector<float> {float(0.98), float(0.99), float(1.00)})
+                .Attr("my_attr_strings", "attr with default value of [\"98\", \"99\", \"100\"].", AttrType::AttributeProto_AttributeType_STRINGS, std::vector<std::string> {"98", "99", "100"});
             const OperatorSchema* opSchema;
             const OpSignature* op;
             bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrDefaultValueList", &opSchema);
@@ -172,7 +172,7 @@ namespace LotusIR
             EXPECT_EQ(op->GetAttributes().size(), 3);
 
             EXPECT_EQ(op->GetAttributes()[0].GetName(), "my_attr_ints");
-            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::INTS);
+            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::AttributeProto_AttributeType_INTS);
             const AttributeProto* a1;
             EXPECT_TRUE(op->GetAttributes()[0].HasDefaultValue(&a1));
             EXPECT_EQ(a1->name(), "my_attr_ints");
@@ -185,7 +185,7 @@ namespace LotusIR
             }
 
             EXPECT_EQ(op->GetAttributes()[1].GetName(), "my_attr_floats");
-            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::FLOATS);
+            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_FLOATS);
             const AttributeProto* a2;
             EXPECT_TRUE(op->GetAttributes()[1].HasDefaultValue(&a2));
             EXPECT_EQ(a2->name(), "my_attr_floats");
@@ -198,7 +198,7 @@ namespace LotusIR
             }
 
             EXPECT_EQ(op->GetAttributes()[2].GetName(), "my_attr_strings");
-            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::STRINGS);
+            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::AttributeProto_AttributeType_STRINGS);
             const AttributeProto* a3;
             EXPECT_TRUE(op->GetAttributes()[2].HasDefaultValue(&a3));
             EXPECT_EQ(a3->name(), "my_attr_strings");
@@ -209,38 +209,6 @@ namespace LotusIR
             {
                 EXPECT_EQ(a3->strings(i), expected_strings[i]);
             }
-        }
-
-
-        TEST(OpRegistrationTest, AttributeRichTypes)
-        {
-            REGISTER_OPERATOR_SCHEMA(__TestAttrRichTypes).Description("Op with rich type attributes.")
-                .AttrWithRichType("my_attr_seq", "seq type.", "seq( tensor( int32 ))")
-                .AttrWithRichType("my_attr_scalar_map", "scalar map type.", "map(string , tensor(int32))")
-                .AttrWithRichType("my_attr_map", "map type.", "map (string, seq(tensor(int32)))")
-                .AttrWithRichType("my_attr_record", "record type.", "record(r1:int32, r2:tensor(int32))")
-                .AttrWithRichType("my_attr_union", "union type.", "union ( c1:tensor(int32), c2: tensor(float))");
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrRichTypes", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
-            EXPECT_EQ(op->GetAttributes().size(), 5);
-            EXPECT_EQ(op->GetAttributes()[0].GetName(), "my_attr_seq");
-            EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::VALUE);
-            EXPECT_EQ(*op->GetAttributes()[0].GetRichType(), "seq(tensor(int32))");
-            EXPECT_EQ(op->GetAttributes()[1].GetName(), "my_attr_scalar_map");
-            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::VALUE);
-            EXPECT_EQ(*op->GetAttributes()[1].GetRichType(), "map(string,tensor(int32))");
-            EXPECT_EQ(op->GetAttributes()[2].GetName(), "my_attr_map");
-            EXPECT_EQ(op->GetAttributes()[2].GetType(), AttrType::VALUE);
-            EXPECT_EQ(*op->GetAttributes()[2].GetRichType(), "map(string,seq(tensor(int32)))");
-            EXPECT_EQ(op->GetAttributes()[3].GetName(), "my_attr_record");
-            EXPECT_EQ(op->GetAttributes()[3].GetType(), AttrType::VALUE);
-            EXPECT_EQ(*op->GetAttributes()[3].GetRichType(), "record(r1:int32,r2:tensor(int32))");
-            EXPECT_EQ(op->GetAttributes()[4].GetName(), "my_attr_union");
-            EXPECT_EQ(op->GetAttributes()[4].GetType(), AttrType::VALUE);
-            EXPECT_EQ(*op->GetAttributes()[4].GetRichType(), "union(c1:tensor(int32),c2:tensor(float))");
         }
 
         TEST(TestONNXReg, VerifyRegistration)

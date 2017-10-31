@@ -297,7 +297,7 @@ namespace LotusIR
         TEST(TestAddAttribute, AddTensorAttribute)
         {
             REGISTER_OPERATOR_SCHEMA(__Constant).Description("Constant Op.")
-                .Attr(c_constantValue, "constant value", AttrType::TENSOR)
+                .Attr(c_constantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR)
                 .Output("output_1", "docstr for output_1.", "tensor(int64)");
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
@@ -319,34 +319,6 @@ namespace LotusIR
             *(t.mutable_dims()->Add()) = 1;
             *(t.mutable_dims()->Add()) = 3;
             EXPECT_TRUE(node_1->AddAttribute(c_constantValue, t));
-            auto status = graph.Resolve();
-            EXPECT_TRUE(status.Ok());
-        }
-
-        TEST(TestAddAttribute, AddRichTypeAttribute)
-        {
-            REGISTER_OPERATOR_SCHEMA(__RichAttrTypeOp).Description("Op with Rich Type Attr.")
-                .Input("input_1", "docstr for input_1.", "tensor(int32)")
-                .Output("output_1", "docstr for output_1.", "tensor(int32)")
-                .AttrWithRichType("seq", "rich type attr example", "seq(tensor(int32))");
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
-            TypeProto tensor_int32;
-            tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-            tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
-            Graph graph("graph_1");
-            NodeArg inputArg("node_1_in_1", &tensor_int32);
-            inputs.push_back(inputArg);
-            NodeArg outputArg("node_1_out_1", &tensor_int32);
-            outputs.push_back(outputArg);
-            auto node_1 = graph.AddNode("node_1", "__RichAttrTypeOp", "node 1.", inputs, outputs);
-
-            ValueProto seq;
-            ValueProto* v1 = seq.mutable_seq()->mutable_elems()->Add();
-            TensorProto* t2 = v1->mutable_dense_tensor();
-            t2->set_data_type(TensorProto_DataType::TensorProto_DataType_INT32);
-            t2->add_int32_data(100);
-            EXPECT_TRUE(node_1->AddAttribute("seq", seq));
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
         }

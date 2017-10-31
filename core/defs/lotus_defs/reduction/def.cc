@@ -14,9 +14,9 @@ namespace LotusIR {
         .Output("output", "Output tensor.", "T")                                                            \
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },                                              \
             "Constrain input and output types to float tensors.")                                                  \
-        .Attr("axis", "A list of axes to reduce into.", AttrType::INTS)                                     \
+        .Attr("axis", "A list of axes to reduce into.", AttrType::AttributeProto_AttributeType_INTS)                                     \
         .Attr("keepdims", "Keep the reduced dimension or not, default 1 mean keep reduced dimension.",      \
-            AttrType::INT, int64_t(1));
+            AttrType::AttributeProto_AttributeType_INT, int64_t(1));
 
     // Taken from ONNX
     REGISTER_REDUCE_OPERATOR_SCHEMA(ReduceSum)
@@ -42,7 +42,7 @@ namespace LotusIR {
         .Input("input", "Input tensor.", "T")
         .Output("output", "Output tensor.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
-        .Attr("axis", "A list of integers, along which to reduce max.", AttrType::INT);
+        .Attr("axis", "A list of integers, along which to reduce max.", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Argmin)
@@ -53,6 +53,6 @@ namespace LotusIR {
         .Input("input", "Input tensor.", "T")
         .Output("output", "Output tensor.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
-        .Attr("axis", "A list of integers, along which to reduce min.", AttrType::INT);
+        .Attr("axis", "A list of integers, along which to reduce min.", AttrType::AttributeProto_AttributeType_INT);
 
 }

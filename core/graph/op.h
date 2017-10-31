@@ -94,10 +94,6 @@ namespace LotusIR
             const std::string& p_description,
             const std::string& p_type = ""); // see grammar above.
 
-        OperatorSchemaSetter& AttrWithRichType(const std::string& p_attrName,
-            const std::string& p_description,
-            const std::string& p_richType); // see grammar above.
-
         OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
             const std::vector<std::string>& p_constraints, // see grammar above.
             const std::string& p_description);

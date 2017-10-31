@@ -41,7 +41,7 @@ namespace LotusIR {
         .Output("output", "The LeakyRelu value of the input tensor computed element-wise", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha","Coefficient of leakage", AttrType::FLOAT);
+        .Attr("alpha","Coefficient of leakage", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(PRelu)
@@ -65,7 +65,7 @@ namespace LotusIR {
         .Output("output", "The elu value of the input tensor computed element-wise", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha", "Coefficient of ELU default to 1", AttrType::FLOAT, float(1.0));
+        .Attr("alpha", "Coefficient of ELU default to 1", AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Selu)
@@ -77,8 +77,8 @@ namespace LotusIR {
         .Output("output", "The selu value of the input tensor computed element-wise", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::FLOAT, float(1.6732))
-        .Attr("gamma", "Coefficient of SELU default to 1.0507.", AttrType::FLOAT, float(1.0507));
+        .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::AttributeProto_AttributeType_FLOAT, float(1.6732))
+        .Attr("gamma", "Coefficient of SELU default to 1.0507.", AttrType::AttributeProto_AttributeType_FLOAT, float(1.0507));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Softmax)
@@ -105,7 +105,7 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("axis", "(int) default to 1; describes the axis of the inputs when coerced "
             "to 2D; defaults to one because the 0th axis most likely describes "
-            "the batch_size", AttrType::INT);
+            "the batch_size", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(Linear)
@@ -116,8 +116,8 @@ namespace LotusIR {
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha", "Scalar multiplication factor", AttrType::FLOAT)
-        .Attr("beta", "Scalar offset", AttrType::FLOAT);
+        .Attr("alpha", "Scalar multiplication factor", AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("beta", "Scalar offset", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(HardSigmoid)
@@ -128,8 +128,8 @@ namespace LotusIR {
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha", "Scaling value", AttrType::FLOAT)
-        .Attr("beta", "Scalar offset", AttrType::FLOAT);
+        .Attr("alpha", "Scaling value", AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("beta", "Scalar offset", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(ScaledTanh)
@@ -140,8 +140,8 @@ namespace LotusIR {
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha", "Scaling value", AttrType::FLOAT)
-        .Attr("beta", "Scaling value", AttrType::FLOAT);
+        .Attr("alpha", "Scaling value", AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("beta", "Scaling value", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(ThresholdedReLU)
@@ -152,7 +152,7 @@ namespace LotusIR {
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha", "Scalar threshold value", AttrType::FLOAT);
+        .Attr("alpha", "Scalar threshold value", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(LogSoftmax)
@@ -186,7 +186,7 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("axis", "Default to 1; describes the axis of the inputs when coerced to 2D; "
             "defaults to one because the 0th axis most likely describes the batch size.",
-            AttrType::INT, int64_t(1));
+            AttrType::AttributeProto_AttributeType_INT, int64_t(1));
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(Softsign)
@@ -197,7 +197,7 @@ namespace LotusIR {
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::FLOAT, float(1.6732));
+        .Attr("alpha", "Coefficient of SELU default to 1.6732.", AttrType::AttributeProto_AttributeType_FLOAT, float(1.6732));
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(Softplus)
@@ -219,9 +219,9 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
         .Attr("alpha", "Alpha tensor. If `alpha` is of size 1, "
-            "the value is shared across different channels.", AttrType::FLOAT, float(1.0))
+            "the value is shared across different channels.", AttrType::AttributeProto_AttributeType_FLOAT, float(1.0))
         .Attr("beta", "Beta tensor. If `beta` is of size 1, "
-            "the value is shared across different channels.", AttrType::FLOAT, float(1.0));
+            "the value is shared across different channels.", AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(Identity)

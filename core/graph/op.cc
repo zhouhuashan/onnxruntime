@@ -69,16 +69,6 @@ namespace LotusIR
         return *this;
     }
 
-    OperatorSchemaSetter&
-        OperatorSchemaSetter::AttrWithRichType(const std::string& p_attrName,
-            const std::string& p_description,
-            const std::string& p_richType)
-    {
-        m_opSchema.m_opSignature.m_attributes.push_back(
-            OpSignature::Attribute(p_attrName, p_description, p_richType));
-        return *this;
-    }
-
 #define ATTR_SETTER_BASIC_IMPL(type, field)                                               \
     OperatorSchemaSetter&                                                                 \
         OperatorSchemaSetter::Attr(const std::string& p_attrName,                         \
@@ -122,16 +112,16 @@ namespace LotusIR
     }                                                                                     \
 
     ATTR_SETTER_BASIC_IMPL(int64_t, i)
-    ATTR_SETTER_BASIC_IMPL(float, f)
-    ATTR_SETTER_BASIC_IMPL(std::string, s)
-    ATTR_SETTER_LIST_IMPL(int64_t, ints)
-    ATTR_SETTER_LIST_IMPL(float, floats)
-    ATTR_SETTER_LIST_IMPL(std::string, strings)
+        ATTR_SETTER_BASIC_IMPL(float, f)
+        ATTR_SETTER_BASIC_IMPL(std::string, s)
+        ATTR_SETTER_LIST_IMPL(int64_t, ints)
+        ATTR_SETTER_LIST_IMPL(float, floats)
+        ATTR_SETTER_LIST_IMPL(std::string, strings)
 
-    OperatorSchemaSetter&
-    OperatorSchemaSetter::TypeConstraint(const std::string& p_typeName,
-        const std::vector<std::string>& p_constraints,
-        const std::string& p_description)
+        OperatorSchemaSetter&
+        OperatorSchemaSetter::TypeConstraint(const std::string& p_typeName,
+            const std::vector<std::string>& p_constraints,
+            const std::string& p_description)
     {
         m_constraints.push_back(std::make_tuple(p_typeName, p_constraints, p_description));
         return *this;
@@ -256,72 +246,67 @@ namespace LotusIR
             return Status(LOTUS, FAIL, "Invalid AttributeProto.");
         }
 
-        if (p_attr.has_f())
+        p_type = p_attr.type();
+        if (AttrType::AttributeProto_AttributeType_UNDEFINED == p_type)
         {
-            p_type = AttrType::FLOAT;
-        }
-        else if (p_attr.has_i())
-        {
-            p_type = AttrType::INT;
-        }
-        else if (p_attr.has_s())
-        {
-            p_type = AttrType::STRING;
-        }
-        else if (p_attr.has_t())
-        {
-            p_type = AttrType::TENSOR;
-        }
-        else if (p_attr.has_g())
-        {
-            p_type = AttrType::GRAPH;
-        }
-        else if (p_attr.has_v())
-        {
-            p_type = AttrType::VALUE;
-        }
-        else if (p_attr.floats_size())
-        {
-            p_type = AttrType::FLOATS;
-        }
-        else if (p_attr.ints_size())
-        {
-            p_type = AttrType::INTS;
-        }
-        else if (p_attr.strings_size())
-        {
-            p_type = AttrType::STRINGS;
-        }
-        else if (p_attr.tensors_size())
-        {
-            p_type = AttrType::TENSORS;
-        }
-        else if (p_attr.graphs_size())
-        {
-            p_type = AttrType::GRAPHS;
-        }
-        else if (p_attr.has_type())
-        {
-            p_type = AttrType::TYPE;
-        }
-        else if (p_attr.types_size())
-        {
-            p_type = AttrType::TYPES;
-        }
-        else if (p_attr.has_shape())
-        {
-            p_type = AttrType::SHAPE;
-        }
-        else if (p_attr.has_shape())
-        {
-            p_type = AttrType::SHAPES;
+            if (p_attr.has_f())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_FLOAT;
+            }
+            else if (p_attr.has_i())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_INT;
+            }
+            else if (p_attr.has_s())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_STRING;
+            }
+            else if (p_attr.has_t())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_TENSOR;
+            }
+            else if (p_attr.has_g())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_GRAPH;
+            }
+            else if (p_attr.floats_size())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_FLOATS;
+            }
+            else if (p_attr.ints_size())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_INTS;
+            }
+            else if (p_attr.strings_size())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_STRINGS;
+            }
+            else if (p_attr.tensors_size())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_TENSORS;
+            }
+            else if (p_attr.graphs_size())
+            {
+                p_type = AttrType::AttributeProto_AttributeType_GRAPHS;
+            }
+            else
+            {
+                return Status(LOTUS, FAIL, "Invalid AttributeProto.");
+            }
         }
         else
         {
-            p_type = AttrType::NONE;
-            return Status(LOTUS, FAIL, "Invalid AttributeProto.");
+            assert((p_attr.has_f() && AttrType::AttributeProto_AttributeType_FLOAT == p_type)
+                || (p_attr.has_i() && AttrType::AttributeProto_AttributeType_INT == p_type)
+                || (p_attr.has_s() && AttrType::AttributeProto_AttributeType_STRING == p_type)
+                || (p_attr.has_t() && AttrType::AttributeProto_AttributeType_TENSOR == p_type)
+                || (p_attr.has_g() && AttrType::AttributeProto_AttributeType_GRAPH == p_type)
+                || (p_attr.floats_size() && AttrType::AttributeProto_AttributeType_FLOATS == p_type)
+                || (p_attr.ints_size() && AttrType::AttributeProto_AttributeType_INTS == p_type)
+                || (p_attr.strings_size() && AttrType::AttributeProto_AttributeType_STRINGS == p_type)
+                || (p_attr.tensors_size() && AttrType::AttributeProto_AttributeType_TENSORS == p_type)
+                || (p_attr.graphs_size() && AttrType::AttributeProto_AttributeType_GRAPHS == p_type));
         }
-
         return Status::OK();
     }
 }

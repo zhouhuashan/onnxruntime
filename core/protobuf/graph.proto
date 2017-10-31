@@ -53,8 +53,36 @@ enum Version {
 // An AttributeProto MUST contain the name field, and *only one* of the
 // following content fields, effectively enforcing a C/C++ union equivalent.
 message AttributeProto {
+
+  // Note: this enum is structurally identical to the OpSchema::AttrType
+  // enum defined in schema.h.  If you rev one, you likely need to rev the other.
+  enum AttributeType {
+    UNDEFINED = 0;
+    FLOAT = 1;
+    INT = 2;
+    STRING = 3;
+    TENSOR = 4;
+    GRAPH = 5;
+
+    FLOATS = 6;
+    INTS = 7;
+    STRINGS = 8;
+    TENSORS = 9;
+    GRAPHS = 10;
+  }
+
   // The name field MUST be present for this version of the IR.
   optional string name = 1;           // namespace Attribute
+
+  // The type field MUST be present for this version of the IR.
+  // For 0.0.1 versions of the IR, this field was not defined, and
+  // implementations needed to use has_field hueristics to determine
+  // which value field was in use.  For IR_VERSION 0.0.2 or later, this
+  // field MUST be set and match the f|i|s|t|... field in use.  This
+  // change was made to accomodate proto3 implementations.
+  optional AttributeType type = 20;   // discriminator that indicates which field below is in use
+
+  // Exactly ONE of the following fields must be present for this version of the IR
   optional float f = 2;               // float
   optional int64 i = 3;               // int
   optional bytes s = 4;               // UTF-8 string
@@ -66,14 +94,6 @@ message AttributeProto {
   repeated bytes strings = 9;         // list of UTF-8 strings
   repeated TensorProto tensors = 10;  // list of tensors
   repeated GraphProto graphs = 11;    // list of graph
-
-  optional TypeProto type = 51;
-  repeated TypeProto types = 52;
-  //ISSUE:13807134,dbox: Do we ever see shape showing up as an attribute value?
-  //            If so, won't it always be accompanied by a TypeProto?
-  optional TypeProto.TensorShapeProto shape = 53;
-  repeated TypeProto.TensorShapeProto shapes = 54;
-  optional ValueProto v = 55;         // value - subsumes everything but graph
 }
 
 // Defines information on value, including the name, the type, and

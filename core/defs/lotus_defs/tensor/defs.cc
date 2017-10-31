@@ -22,7 +22,7 @@ namespace LotusIR {
             "to",
             "The data type to which the elements of the input tensor are cast."
             "Strictly must be one of the types from DataType enum in TensorProto",
-            AttrType::STRING);
+            AttrType::AttributeProto_AttributeType_STRING);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Flatten)
@@ -53,7 +53,7 @@ namespace LotusIR {
             "the input. At most one dimension of the new shape can be -1. In this case, the "
             "value is inferred from the size of the tensor and the remaining dimensions. A "
             "dimension could also be 0, in which case the actual dimension value is going to "
-            "be copied from the input tensor.", AttrType::INTS);
+            "be copied from the input tensor.", AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Split)
@@ -66,8 +66,8 @@ namespace LotusIR {
         .Output("output", "A list of output tensors", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("axis", "Which axis to split on", AttrType::INT)
-        .Attr("split", "Number of tensors to output.", AttrType::INT);
+        .Attr("axis", "Which axis to split on", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("split", "Number of tensors to output.", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Transpose)
@@ -79,7 +79,7 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
         .Attr("perm", "A list of integers. By default, reverse the dimensions, "
-            "otherwise permute the axes according to the values given.", AttrType::INTS);
+            "otherwise permute the axes according to the values given.", AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(Tile)
@@ -89,7 +89,7 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
         .Attr("perm", "A list of integers. By default, reverse the dimensions, "
-            "otherwise permute the axes according to the values given.", AttrType::INTS);
+            "otherwise permute the axes according to the values given.", AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Concat)
@@ -100,7 +100,7 @@ namespace LotusIR {
         .Output("output", "Concatenated tensor", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("axis", "Axis along which to concatenate", AttrType::INT);
+        .Attr("axis", "Axis along which to concatenate", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Slice)
@@ -118,8 +118,8 @@ namespace LotusIR {
         .Output("output", "Sliced data tensor.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("starts", "List of starting indices", AttrType::INTS)
-        .Attr("ends", "List of ending indices", AttrType::INTS);
+        .Attr("starts", "List of starting indices", AttrType::AttributeProto_AttributeType_INTS)
+        .Attr("ends", "List of ending indices", AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Gather)
@@ -145,7 +145,7 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("axes",
             "List of positive integers, indicate the dimensions to squeeze.",
-            AttrType::INTS, int64_t(1));
+            AttrType::AttributeProto_AttributeType_INTS, int64_t(1));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Pad)
@@ -162,13 +162,13 @@ namespace LotusIR {
               "should be the double of input's dimension. "
               "The order should be axis_0_begin, axis_0_end, axis_1_begin, ..., "
               "axis_n_begin, axis_n_end, n is input's dimension.",
-              AttrType::INTS, int64_t(1))
+              AttrType::AttributeProto_AttributeType_INTS, int64_t(1))
         .Attr("mode",
               "Three modes: constant(default), reflect, edge",
-              AttrType::STRING, std::string("constant"))
+              AttrType::AttributeProto_AttributeType_STRING, std::string("constant"))
         .Attr("value",
               "One float, indicates the value to be filled, default is 0",
-              AttrType::FLOAT, float(0));
+              AttrType::AttributeProto_AttributeType_FLOAT, float(0));
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(BatchToSpace)
@@ -184,7 +184,7 @@ namespace LotusIR {
             "W * blocksize]", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("blocksize", "Blocks of [blocksize,blocksize] are moved.", AttrType::INT);
+        .Attr("blocksize", "Blocks of [blocksize,blocksize] are moved.", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(SpaceToBatch)
@@ -199,6 +199,6 @@ namespace LotusIR {
             "W/blocksize]", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("blocksize", "Blocks of [blocksize,blocksize] are moved.", AttrType::INT);
+        .Attr("blocksize", "Blocks of [blocksize,blocksize] are moved.", AttrType::AttributeProto_AttributeType_INT);
 
 }
