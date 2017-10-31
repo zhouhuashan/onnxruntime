@@ -963,6 +963,14 @@ namespace LotusIR
                         initialTensorType.mutable_tensor_type()->set_elem_type(
                             initialTensorIter->second.data_type());
                         inputDef.SetType(OpUtils::ToType(initialTensorType));
+
+                        // Set shape accordingly.
+                        TypeProto_TensorShapeProto shape;
+                        for (auto dim : initialTensorIter->second.dims())
+                        {
+                            shape.add_dim()->set_dim_value(dim);
+                        }
+                        inputDef.SetShape(shape);
                     }
                     else if (!inputDef.m_nodeArgInfo.has_type())
                     {
