@@ -29,9 +29,7 @@ namespace LotusIR
             const std::string& p_producerVersion,
             const std::string& p_domain,
             VERSION p_modelVersion,
-            const std::string& p_modelDocString,
-            const std::string& p_modelAuthor,
-            const std::string& p_modelLicense);
+            const std::string& p_modelDocString);
 
         Model(const ModelProto& p_modelProto);
 
@@ -70,18 +68,6 @@ namespace LotusIR
         const std::string& DocString() const;
         // Set models' doc string.
         void SetDocString(const std::string& p_docString);
-
-        // Get model's author.
-        // Return null pointer if not specified.
-        const std::string& ModelAuthor() const;
-        // Set models' author.
-        void SetModelAuthor(const std::string& p_modelAuthor);
-
-        // Get model's license.
-        // Return null pointer if not specified.
-        const std::string& ModelLicense() const;
-        // Set models' license.
-        void SetModelLicense(const std::string& p_modelLicense);
 
         // Get model's main graph.
         // The return pointer is owned by <*this> model.

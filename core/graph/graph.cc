@@ -53,7 +53,7 @@ namespace LotusIR
             return &(m_nodeArgInfo.type().tensor_type().shape());
         case LotusIR::TypeProto::kSparseTensorType:
             return &(m_nodeArgInfo.type().sparse_tensor_type().shape());
-        case LotusIR::TypeProto::kSeqType:
+        case LotusIR::TypeProto::kSequenceType:
         case LotusIR::TypeProto::kMapType:
         case LotusIR::TypeProto::VALUE_NOT_SET:
         default:
@@ -77,7 +77,7 @@ namespace LotusIR
         case LotusIR::TypeProto::kSparseTensorType:
             *(m_nodeArgInfo.mutable_type()->mutable_sparse_tensor_type()->mutable_shape()) = p_shape;
             break;
-        case LotusIR::TypeProto::kSeqType:
+        case LotusIR::TypeProto::kSequenceType:
         case LotusIR::TypeProto::kMapType:
         case LotusIR::TypeProto::VALUE_NOT_SET:
         default:
@@ -302,19 +302,6 @@ namespace LotusIR
         // Set doc string.
         p_proto.set_doc_string(m_description);
 
-        // Set control inputs.
-        p_proto.clear_control_input();
-        for (auto& control_input : m_controlInputs)
-        {
-            if (0 == m_graph->SourceNode()->Name().compare(control_input))
-            {
-                // Source node will be removed during serialization.
-                continue;
-            }
-
-            *p_proto.add_control_input() = control_input;
-        }
-
         // Set attributes.
         p_proto.clear_attribute();
         for (auto attribute : m_attributes)
@@ -329,13 +316,6 @@ namespace LotusIR
         {
             auto input = p_proto.add_input();
             *input = inputDef.Name();
-        }
-
-        // Set input arg count.
-        p_proto.clear_input_arg_count();
-        for (auto argCount : m_inputArgCount)
-        {
-            *(p_proto.mutable_input_arg_count()->Add()) = argCount;
         }
 
         // Set outputs' definitions.
@@ -368,18 +348,11 @@ namespace LotusIR
             m_inputDefs.push_back(NodeArg(p_nodeProto.input(i), type));
         }
 
-        for (auto argCount : p_nodeProto.input_arg_count())
-        {
-            m_inputArgCount.push_back(argCount);
-        }
-        if (0 == m_inputArgCount.size())
-        {
-            // Input arg count information is not provided in proto file.
-            // Set each arg count as 1 by default.
-            // It could be adjusted when resolving the node with its operator
-            // information.
-            m_inputArgCount.assign(m_inputDefs.size(), 1);
-        }
+        // Set input arg count as 1:1 maping with input defs.
+        // NOTE: it may be refined per operator definition.
+        // There will be cases having arg count as, 1, 1, ..., 1, N.
+        // It means that the last operator input is variadic.
+        m_inputArgCount.assign(m_inputDefs.size(), 1);
 
         for (int i = 0; i < p_nodeProto.output().size(); ++i)
         {
@@ -394,11 +367,6 @@ namespace LotusIR
             }
 
             m_outputDefs.push_back(NodeArg(p_nodeProto.output(i), type));
-        }
-
-        for (auto control_input : p_nodeProto.control_input())
-        {
-            m_controlInputs.insert(control_input);
         }
 
         for (int i = 0; i < p_nodeProto.attribute_size(); ++i)
@@ -594,20 +562,7 @@ namespace LotusIR
         // This is a main graph, and strict type checking needed..
         m_graphType |= Type::Main;
 
-        if (m_graphProto.node_size() > 0
-            && m_graphProto.node(0).input_arg_count_size() > 0)
-        {
-            // The condition above now is used to judge
-            // whether 1) node input arg count is specified or not,
-            // to determin whether strict type checking needed or not.
-            m_graphType |= Type::Strict;
-        }
-
-        // Copy function definitions to a map.
-        for (auto funcDef : p_graphProto.function())
-        {
-            m_funcDefMap[funcDef.name()] = funcDef;
-        }
+        // TODO: add Type::Strict back.
 
         // Copy initial tensors to a map.
         for (auto tensor : p_graphProto.initializer())
@@ -1631,14 +1586,6 @@ namespace LotusIR
             }
             auto nodeProto = m_graphProto.add_node();
             node->ToProto(*nodeProto);
-        }
-
-        // Functions.
-        m_graphProto.clear_function();
-        for (auto& func : m_funcDefMap)
-        {
-            auto funcDef = m_graphProto.add_function();
-            (*funcDef) = func.second;
         }
 
         // Initial tensors;

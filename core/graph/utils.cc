@@ -68,8 +68,8 @@ namespace LotusIR
             }
             case TypeProto::ValueCase::kSparseTensorType:
                 return left + "sparse(" + ToDataTypeString(p_type.sparse_tensor_type().elem_type()) + ")" + right;
-            case TypeProto::ValueCase::kSeqType:
-                return ToString(p_type.seq_type().elem_type(), left + "seq(", ")" + right);
+            case TypeProto::ValueCase::kSequenceType:
+                return ToString(p_type.sequence_type().elem_type(), left + "seq(", ")" + right);
             case TypeProto::ValueCase::kMapType:
             {
                 std::string map_str = "map(" + ToDataTypeString(p_type.map_type().key_type()) + ",";
@@ -241,7 +241,7 @@ namespace LotusIR
             if (s.LStrip("seq"))
             {
                 s.ParensWhitespaceStrip();
-                return FromString(std::string(s.Data(), s.Size()), *p_type.mutable_seq_type()->mutable_elem_type());
+                return FromString(std::string(s.Data(), s.Size()), *p_type.mutable_sequence_type()->mutable_elem_type());
             }
             else if (s.LStrip("map"))
             {

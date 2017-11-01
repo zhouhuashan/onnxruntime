@@ -40,6 +40,10 @@ package LotusIR;
 // To be compatible with both proto2 and proto3, we will use a version number
 // that is not defined by the default value but an explicit enum number.
 enum Version {
+  // proto3 requires the first enum value to be zero.
+  // We add this just to appease the compiler.
+  _START_VERSION = 0;
+
   // The version field is always serialized and we will use it to store the
   // version that the  graph is generated from. This helps us set up version
   // control. We should use version as
@@ -103,9 +107,6 @@ message ValueInfoProto {
   optional string name = 1;     // namespace Value
   // This field MUST be present in this version of the IR.
   optional TypeProto type = 2;
-  // An optional human-readable documentation for this node in the graph.
-  // This text MAY contain Markdown markup that conforms to http://commonmark.org/.
-  optional string doc_string = 3;
 }
 
 // Defines a node in a computation graph. Each graph node is either an
@@ -155,21 +156,6 @@ message NodeProto {
   // This text MAY contain Markdown markup that conforms to http://commonmark.org/.
   optional string doc_string = 6;
 
-  // The number of inputs for each argument of the operator/function.
-  // A formal parameter of the op may take a variable number of inputs
-  // that is only known when this node is constructed.
-  //BUG:13806939,dbox: I'm assuming that this field is like input_arg_info in that
-  //          a zero element/missing array implies that one needs to crawl
-  //          the graph to figure out the input counts, yes? Confirm and I'll
-  //          make clear.  Otherwise, we need to require it to be present
-  //          and accurate.
-  repeated int32 input_arg_count = 50;
-
-  // Specify a list of named nodes that must be executed before this node.
-  // Framework may use this to give users the ability to impose additional
-  // execution orders for the operations.
-  repeated string control_input = 51;
-
   reserved 100 to 200; // for future extensions.
 }
 
@@ -208,18 +194,6 @@ message ModelProto {
 
   // The parameterized graph that is evaluated to execute the model.
   optional GraphProto graph = 7;
-
-  // NOTE: ids between 8 and 49 are reserved for more ONNX fields.
-  reserved 8 to 49;
-
-  // The optional name of the author who created the graph.
-  optional string model_author = 50;
-
-  // Optional licensing information concerning use or origination of the graph.
-  // This text MAY contain Markdown markup that conforms to http://commonmark.org/.
-  optional string model_license = 51;
-
-  reserved 100 to 200; // for future extensions.
 };
 
 // GraphProto defines a parameterized series of nodes to form a directed acyclic graph.
@@ -261,24 +235,6 @@ message GraphProto {
   // optional int64 producer_version = 7;
   // optional string producer_tag = 8;
   // optional string domain = 9;
-
-  // The function definitions of the graph. They can only only be used
-  // (i.e., called) in this graph.
-  // Each FunctionDefProto in function MUST have a unique name.
-  repeated FunctionDefProto function = 50;
-
-  // The externally defined operators declared by this graph.
-  repeated OperatorDeclProto operator = 51;
-
-  // TODO: When the map type is added, provide for the "model_information"
-  // field which holds name/value pairs of strings with additional devops
-  // metadata, such as an identifier for which training set this instance
-  // of a graph was trained with.
-
-  // Imported libraries are referenced as a collection of strings in the form of absolute
-  // URIs or relative paths. Where such relative paths are rooted is defined by tools and
-  // runtime implementations.
-  repeated string imported_libraries = 52;
 
   reserved 100 to 200; // for future extensions.
 }
@@ -460,26 +416,26 @@ message ValueProto {
   }
 
   oneof value {
-    // A dense tensor.
+    // A dense tensor (or scalar).
     TensorProto dense_tensor = 1;
 
     // A sparse tensor.
     SparseTensorProto sparse_tensor = 2;
 
     // A tuple.
-    RecordProto record = 50;
+    RecordProto record = 3;
 
     // A sequence.
-    SequenceProto seq = 51;
+    SequenceProto seq = 4;
 
     // A union.
-    UnionProto union = 52;
+    UnionProto union = 5;
 
     // A map.
-    MapProto map = 53;
+    MapProto map = 6;
 
     // A map.
-    ScalarMapProto scalar_map = 54;
+    ScalarMapProto scalar_map = 7;
   }
 
   reserved 100 to 200; // for future extensions.
@@ -494,8 +450,8 @@ message TypeProto {
       oneof value {
         int64 dim_value = 1;
         string dim_param = 2;   // namespace Shape
-      }
-    }
+      };
+    };
     repeated Dimension dim = 1;
   }
 
@@ -523,7 +479,7 @@ message TypeProto {
   };
 
   // repeated T
-  message SeqTypeProto {
+  message SequenceTypeProto {
     // The type and optional shape of each element of the sequence.
     // This field MUST be present for this version of the IR.
     optional TypeProto elem_type = 1;
@@ -560,19 +516,17 @@ message TypeProto {
     //        and output types to tensors.
 
     // The type of a record.
-    RecordTypeProto record_type = 50;
+    RecordTypeProto record_type = 3;
 
     // The type of a sequence.
-    SeqTypeProto seq_type = 51;
+    SequenceTypeProto sequence_type = 4;
 
     // The type of a map.
-    MapTypeProto map_type = 52;
+    MapTypeProto map_type = 5;
 
     // The type of a union.
-    UnionTypeProto union_type = 53;
+    UnionTypeProto union_type = 6;
   }
-
-  reserved 100 to 200; // for future extensions.
 }
 
 message ParameterDeclProto {

@@ -107,7 +107,7 @@ namespace LotusIR
             scalarTensor->mutable_shape();
             featureValue = record_seq_float.mutable_record_type()->add_field();
             featureValue->set_name("value");
-            scalarTensor = featureValue->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type();
+            scalarTensor = featureValue->mutable_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type();
             scalarTensor->set_elem_type(TensorProto_DataType_FLOAT);
             scalarTensor->mutable_shape();
 

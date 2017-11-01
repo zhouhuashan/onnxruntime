@@ -63,23 +63,23 @@ namespace LotusIR
             EXPECT_TRUE(t3.tensor_type().has_elem_type());
             EXPECT_EQ(t3.tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
             TypeProto t4 = Utils::OpUtils::ToTypeProto(p4);
-            EXPECT_TRUE(t4.has_seq_type());
-            EXPECT_TRUE(t4.seq_type().has_elem_type());
-            EXPECT_TRUE(t4.seq_type().elem_type().has_tensor_type());
-            EXPECT_TRUE(t4.seq_type().elem_type().tensor_type().has_elem_type());
-            EXPECT_EQ(t4.seq_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
+            EXPECT_TRUE(t4.has_sequence_type());
+            EXPECT_TRUE(t4.sequence_type().has_elem_type());
+            EXPECT_TRUE(t4.sequence_type().elem_type().has_tensor_type());
+            EXPECT_TRUE(t4.sequence_type().elem_type().tensor_type().has_elem_type());
+            EXPECT_EQ(t4.sequence_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
             TypeProto t5 = Utils::OpUtils::ToTypeProto(p5);
-            EXPECT_TRUE(t5.has_seq_type());
-            EXPECT_TRUE(t5.seq_type().has_elem_type());
-            EXPECT_TRUE(t5.seq_type().elem_type().has_tensor_type());
-            EXPECT_TRUE(t5.seq_type().elem_type().tensor_type().has_elem_type());
-            EXPECT_EQ(t5.seq_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
+            EXPECT_TRUE(t5.has_sequence_type());
+            EXPECT_TRUE(t5.sequence_type().has_elem_type());
+            EXPECT_TRUE(t5.sequence_type().elem_type().has_tensor_type());
+            EXPECT_TRUE(t5.sequence_type().elem_type().tensor_type().has_elem_type());
+            EXPECT_EQ(t5.sequence_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
             TypeProto t6 = Utils::OpUtils::ToTypeProto(p6);
-            EXPECT_TRUE(t6.has_seq_type());
-            EXPECT_TRUE(t6.seq_type().has_elem_type());
-            EXPECT_TRUE(t6.seq_type().elem_type().has_tensor_type());
-            EXPECT_TRUE(t6.seq_type().elem_type().tensor_type().has_elem_type());
-            EXPECT_EQ(t6.seq_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
+            EXPECT_TRUE(t6.has_sequence_type());
+            EXPECT_TRUE(t6.sequence_type().has_elem_type());
+            EXPECT_TRUE(t6.sequence_type().elem_type().has_tensor_type());
+            EXPECT_TRUE(t6.sequence_type().elem_type().tensor_type().has_elem_type());
+            EXPECT_EQ(t6.sequence_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
         }
 
         TEST(OpUtilsTest, ToStringTest)
@@ -99,7 +99,7 @@ namespace LotusIR
             EXPECT_EQ(OpUtils::ToString(t), "tensor(float)");
 
             TypeProto seq;
-            seq.mutable_seq_type()->mutable_elem_type()->mutable_seq_type()->mutable_elem_type()->
+            seq.mutable_sequence_type()->mutable_elem_type()->mutable_sequence_type()->mutable_elem_type()->
                 mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
             EXPECT_EQ(OpUtils::ToString(seq), "seq(seq(tensor(float)))");
 
@@ -110,7 +110,7 @@ namespace LotusIR
 
             TypeProto map2;
             map2.mutable_map_type()->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
-            map2.mutable_map_type()->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
+            map2.mutable_map_type()->mutable_value_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
             EXPECT_EQ(OpUtils::ToString(map2), "map(string,seq(tensor(string)))");
 
             TypeProto record1;
@@ -119,12 +119,12 @@ namespace LotusIR
             v1->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             ValueInfoProto* v2 = record1.mutable_record_type()->mutable_field()->Add();
             v2->set_name("r2");
-            v2->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
+            v2->mutable_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
             ValueInfoProto* v3 = record1.mutable_record_type()->mutable_field()->Add();
             v3->set_name("r3");
             TypeProto_MapTypeProto* m = v3->mutable_type()->mutable_map_type();
             m->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
-            m->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
+            m->mutable_value_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
             EXPECT_EQ(OpUtils::ToString(record1), "record(r1:tensor(int32),r2:seq(tensor(double)),r3:map(string,seq(tensor(string))))");
 
             TypeProto record2;
@@ -133,7 +133,7 @@ namespace LotusIR
             v1->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             v2 = record2.mutable_record_type()->mutable_field()->Add();
             v2->set_name("r2");
-            v2->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
+            v2->mutable_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
             v3 = record2.mutable_record_type()->mutable_field()->Add();
             v3->set_name("r3");
             m = v3->mutable_type()->mutable_map_type();
@@ -157,7 +157,7 @@ namespace LotusIR
             TypeProto union1;
             ValueInfoProto* uv1 = union1.mutable_union_type()->mutable_choice()->Add();
             uv1->set_name("c1");
-            uv1->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
+            uv1->mutable_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
             ValueInfoProto* uv2 = union1.mutable_union_type()->mutable_choice()->Add();
             uv2->set_name("c2");
             uv2->mutable_type()->mutable_sparse_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
@@ -165,7 +165,7 @@ namespace LotusIR
             uv3->set_name("c3");
             TypeProto_MapTypeProto* m1 = uv3->mutable_type()->mutable_map_type();
             m1->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
-            m1->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
+            m1->mutable_value_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
             EXPECT_EQ(OpUtils::ToString(union1), "union(c1:seq(tensor(string)),c2:sparse(double),c3:map(string,seq(tensor(string))))");
         }
 
@@ -236,7 +236,7 @@ namespace LotusIR
             TypeProto seq1;
             OpUtils::FromString("seq(tensor(float))", seq1);
             TypeProto seq2;
-            seq2.mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
+            seq2.mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType::TensorProto_DataType_FLOAT);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(seq1, seq2));
 
             TypeProto map1;
@@ -250,7 +250,7 @@ namespace LotusIR
             OpUtils::FromString("map(string,seq(tensor(int32)))", map3);
             TypeProto map4;
             map4.mutable_map_type()->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
-            map4.mutable_map_type()->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+            map4.mutable_map_type()->mutable_value_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(map3, map4));
 
             TypeProto record1;
@@ -262,7 +262,7 @@ namespace LotusIR
             v1->mutable_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             ValueInfoProto* v2 = record2.mutable_record_type()->mutable_field()->Add();
             v2->set_name("r2");
-            v2->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
+            v2->mutable_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
             ValueInfoProto* v3 = record2.mutable_record_type()->mutable_field()->Add();
             v3->set_name("r3");
             TypeProto_MapTypeProto* m = v3->mutable_type()->mutable_map_type();
@@ -286,7 +286,7 @@ namespace LotusIR
             TypeProto union2;
             ValueInfoProto* uv1 = union2.mutable_union_type()->mutable_choice()->Add();
             uv1->set_name("c1");
-            uv1->mutable_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
+            uv1->mutable_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
             ValueInfoProto* uv2 = union2.mutable_union_type()->mutable_choice()->Add();
             uv2->set_name("c2");
             uv2->mutable_type()->mutable_sparse_tensor_type()->set_elem_type(TensorProto_DataType_DOUBLE);
@@ -294,7 +294,7 @@ namespace LotusIR
             uv3->set_name("c3");
             TypeProto_MapTypeProto* m1 = uv3->mutable_type()->mutable_map_type();
             m1->set_key_type(TensorProto_DataType::TensorProto_DataType_STRING);
-            m1->mutable_value_type()->mutable_seq_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
+            m1->mutable_value_type()->mutable_sequence_type()->mutable_elem_type()->mutable_tensor_type()->set_elem_type(TensorProto_DataType_STRING);
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(union1, union2));
         }
     }

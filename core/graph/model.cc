@@ -106,9 +106,7 @@ namespace LotusIR
         const std::string& p_producerVersion,
         const std::string& p_domain,
         VERSION p_modelVersion,
-        const std::string& p_docString,
-        const std::string& p_modelAuthor,
-        const std::string& p_modelLicense)
+        const std::string& p_docString)
     {
         m_graph.reset(new Graph(p_graphName, p_graphDocString));
         m_modelProto.set_ir_version(p_irVersion);
@@ -117,8 +115,6 @@ namespace LotusIR
         m_modelProto.set_domain(p_domain);
         m_modelProto.set_model_version(p_modelVersion);
         m_modelProto.set_doc_string(p_docString);
-        m_modelProto.set_model_author(p_modelAuthor);
-        m_modelProto.set_model_license(p_modelLicense);
     }
 
     Model::Model(const ModelProto& p_modelProto)
@@ -196,26 +192,6 @@ namespace LotusIR
     void Model::SetDocString(const std::string& p_docString)
     {
         m_modelProto.set_doc_string(p_docString);
-    }
-
-    const std::string& Model::ModelAuthor() const
-    {
-        return m_modelProto.model_author();
-    }
-
-    void Model::SetModelAuthor(const std::string& p_modelAuthor)
-    {
-        m_modelProto.set_model_author(p_modelAuthor);
-    }
-
-    const std::string& Model::ModelLicense() const
-    {
-        return m_modelProto.model_license();
-    }
-
-    void Model::SetModelLicense(const std::string& p_modelLicense)
-    {
-        m_modelProto.set_model_license(p_modelLicense);
     }
 
     Graph* Model::MainGraph()
