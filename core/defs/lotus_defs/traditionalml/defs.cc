@@ -197,16 +197,17 @@ namespace LotusIR {
     REGISTER_OPERATOR_SCHEMA(SVMClassifier)
         .Input("X", "Data to be classified", "T1")
         .Output("Y", "Classification outputs, one class per example", "T2")
-        .Output("Z", "Classification outputs, All classes scores per example,N,E*(E-1)/2", "tensor(float)")
+        .Output("Z", "Classification outputs, All classes scores per example,N,E*(E-1)/2 if dual scores, or E if probabilities are used.", "tensor(float)")
         .Description(R"DOC(
-            SVM classifier prediction 
+            SVM classifier prediction (two class or multiclass).
+            Will output probabilities in Z if prob_A and prob_B are filled in.
             )DOC")
         .TypeConstraint("T1", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .TypeConstraint("T2", { "tensor(string)", "tensor(int64)" }, " allowed types.")
         .Attr("kernel_type", "enum LINEAR, POLY, RBF, SIGMOID, defaults to linear", AttrType::AttributeProto_AttributeType_INT)
         .Attr("kernel_params", "Tensor of 3 elements containing gamma, coef0, degree in that order.  Zero if unused for the kernel.", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("prob_A", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("prob_B", "", AttrType::AttributeProto_AttributeType_FLOATS)
+        .Attr("prob_a", "probability vector a, must be either 0 length or E*(E-1)/2 length", AttrType::AttributeProto_AttributeType_FLOATS)
+        .Attr("prob_b", "probability vector b, must be same length as prob_a", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("vectors_per_class", "", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("support_vectors", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("coefficients", "", AttrType::AttributeProto_AttributeType_FLOATS)
@@ -220,7 +221,7 @@ namespace LotusIR {
         .Input("X", "Input N,F", "T")
         .Output("Y", "All target scores, N,E", "tensor(float)")
         .Description(R"DOC(
-            SVM classifier prediction 
+            SVM regressor. Also supports oneclass svm. 
             )DOC")
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .Attr("kernel_type", "enum LINEAR, POLY, RBF, SIGMOID, defaults to linear", AttrType::AttributeProto_AttributeType_INT)
@@ -230,7 +231,8 @@ namespace LotusIR {
         .Attr("support_vectors", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("n_supports", "number of support vectors", AttrType::AttributeProto_AttributeType_INT)
         .Attr("coefficients", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("rho", "", AttrType::AttributeProto_AttributeType_FLOATS);
+        .Attr("rho", "", AttrType::AttributeProto_AttributeType_FLOATS)
+        .Attr("one_class", "If this regressor is a oneclass svm set this param to 1, otherwise use 0 (default is zero)", AttrType::AttributeProto_AttributeType_INT);
 
     REGISTER_OPERATOR_SCHEMA(TreeClassifier)
         .Input("X", "Data to be classified", "T1")
