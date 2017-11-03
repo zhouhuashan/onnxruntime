@@ -144,7 +144,7 @@ namespace LotusIR {
         .Attr("beta", "Scaling value", AttrType::AttributeProto_AttributeType_FLOAT);
 
     // Taken from RS4
-    REGISTER_OPERATOR_SCHEMA(ThresholdedReLU)
+    REGISTER_OPERATOR_SCHEMA(ThresholdedRelu)
         .Description("Thresholded Relu takes input data (Tensor<T>) and threshold as input, and "
             "produces one output data (Tensor<T>) where the function `f(x) = 0 for x < alpha, "
             "x for x >= alpha`, is applied to the data tensor elementwise.")
@@ -159,10 +159,14 @@ namespace LotusIR {
         .Description("Log Softmax takes one input data (Tensor<T>) and produces one output "
             "data (Tensor<T>) where the function, y = log(1 / sum(exp(X)) * exp(x)), is applied "
             "to the tensor elementwise.")
-        .Input("input", "Input tensor of shape [N, F].", "T")
+        .Input("input", "The input tensor that's coerced into a 2D matrix of size (NxD) as "
+            "described above.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-            "Constrain input and output types to float tensors.");
+            "Constrain input and output types to float tensors.")
+        .Attr("axis", "(int) default to 1; describes the axis of the inputs when coerced "
+            "to 2D; defaults to one because the 0th axis most likely describes "
+            "the batch_size", AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(Hardmax)
@@ -180,7 +184,8 @@ namespace LotusIR {
             "batch size.  In this situation, we must have a_0 = N and a_1 * ... * a_{n-1} = D. "
             "Each of these dimensions must be matched correctly, or else the operator will "
             "throw errors.")
-        .Input("input", "Input tensor of shape [N, F].", "T")
+        .Input("input", "The input tensor that's coerced into a 2D matrix of size (NxD) as "
+            "described above.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
@@ -202,12 +207,13 @@ namespace LotusIR {
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(Softplus)
         .Description("Softplus takes one input data (Tensor<T>) and produces one output "
-            "data (Tensor<T>) where the function, y = log(1 + exp(x)), is "
+            "data (Tensor<T>) where the function, y = ln(1 + exp(steepness * x)), is "
             "applied to the tensor elementwise.")
         .Input("input", "Input tensor, typically 1-D.", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-            "Constrain input and output types to float tensors.");
+            "Constrain input and output types to float tensors.")
+        .Attr("steepness", "Steepness (default to 1, must be > 1)", AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(ParametericSoftplus)

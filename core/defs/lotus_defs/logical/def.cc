@@ -14,9 +14,9 @@ namespace LotusIR {
         .TypeConstraint("T2", { "tensor(int32)" }, "Constrain output types to int tensor.");
 
     //‘GREATER’, ‘LESS’, ‘EQUALS,
-    REGISTER_BINARY_COMPARISON_OPERATOR_SCHEMA(Greater)
-    REGISTER_BINARY_COMPARISON_OPERATOR_SCHEMA(Less)
-    REGISTER_BINARY_COMPARISON_OPERATOR_SCHEMA(Equals)
+    REGISTER_BINARY_COMPARISON_OPERATOR_SCHEMA(GT)
+    REGISTER_BINARY_COMPARISON_OPERATOR_SCHEMA(LE)
+    REGISTER_BINARY_COMPARISON_OPERATOR_SCHEMA(EQ)
 
     #define REGISTER_BINARY_LOGIC_OPERATOR_SCHEMA(OpName)                                                       \
     REGISTER_OPERATOR_SCHEMA(OpName)                                                                            \

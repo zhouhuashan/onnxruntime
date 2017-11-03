@@ -39,10 +39,14 @@ namespace LotusIR {
             "along the provided axes. The resulted tensor has the same shape as the input if "
             "keepdims equal 1. If keepdims equal 0, then the resulted tensor have the reduced "
             "dimension pruned. The type of the output tensor is integer.")
-        .Input("input", "Input tensor.", "T")
-        .Output("output", "Output tensor.", "T")
-        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
-        .Attr("axis", "A list of integers, along which to reduce max.", AttrType::AttributeProto_AttributeType_INT);
+        .Input("input", "Input tensor.", "T1")
+        .Output("output", "Output tensor.", "T2")
+        .TypeConstraint("T1", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
+        .TypeConstraint("T2", { "tensor(int64)" }, "Constrain output types to int64 tensors.")
+        .Attr("axis", "The axis in which to compute the arg indices.", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("keepdims", "Keep the reduced dimension or not, default 1 mean keep reduced dimension.",
+            AttrType::AttributeProto_AttributeType_INT, int64_t(1));
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Argmin)
@@ -50,9 +54,13 @@ namespace LotusIR {
             "along the provided axes. The resulted tensor has the same shape as the input if "
             "keepdims equal 1. If keepdims equal 0, then the resulted tensor have the reduced "
             "dimension pruned. The type of the output tensor is integer.")
-        .Input("input", "Input tensor.", "T")
-        .Output("output", "Output tensor.", "T")
-        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
-        .Attr("axis", "A list of integers, along which to reduce min.", AttrType::AttributeProto_AttributeType_INT);
+        .Input("input", "Input tensor.", "T1")
+        .Output("output", "Output tensor.", "T2")
+        .TypeConstraint("T1", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input types to float tensors.")
+        .TypeConstraint("T2", { "tensor(int64)" }, "Constrain output types to int64 tensors.")
+        .Attr("axis", "The axis in which to compute the arg indices.", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("keepdims", "Keep the reduced dimension or not, default 1 mean keep reduced dimension.",
+            AttrType::AttributeProto_AttributeType_INT, int64_t(1));
 
 }

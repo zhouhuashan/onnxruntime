@@ -1,6 +1,37 @@
 #include "core/graph/op.h"
 
 namespace LotusIR {
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Gemm)
+        .Description("General Matrix Multiplication: "
+            "https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms#Level_3 "
+            "Compute Y = alpha * A * B + beta * C, where input tensor A has dimension (M X K), "
+            "input tensor B has dimension (K X N), input tensor C and output tensor Y have "
+            "dimension (M X N). Input tensor C can be used inplace as the output tensor Y. "
+            "If attribute broadcast is non-zero, input tensor C will be broadcasted to match "
+            "the dimension requirement. If A can be transposed before doing the computation "
+            "if attribute transA is non-zero, same for B and transB.")
+        .Input("A", "Input tensor A", "T")
+        .Input("B", "Input tensor B", "T")
+        .Input("C", "Input tensor C, can be inplace.", "T")
+        .Output("Y", "Output tensor.", "T")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
+        .Attr("alpha",
+            "Scalar multiplier for the product of input tensors A * B",
+            AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("beta",
+            "Scalar multiplier for input tensor C",
+            AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("broadcast",
+            "Whether C should be broadcasted",
+            AttrType::AttributeProto_AttributeType_INT)
+        .Attr("transA",
+            "Whether A should be transposed",
+            AttrType::AttributeProto_AttributeType_INT)
+        .Attr("transB",
+            "Whether B should be transposed",
+            AttrType::AttributeProto_AttributeType_INT);
 
     REGISTER_OPERATOR_SCHEMA(FC)
         .Description("Computes the result of passing an input vector X into a fully"
@@ -38,6 +69,9 @@ namespace LotusIR {
              "and M is the number of feature maps. For more than 2 dimensions, the kernel shape will be "
              "(M x C x k1 x k2 x ... x kn), where is the dimension of the kernel",
              "T")
+        .Input("bias",
+            "Optional 1D bias to be added to the convolution, has size of M.",
+            "T")
         .Output("Y",
               "Output data tensor that contains the result of the convolution. The "
               "output dimensions are functions of the kernel size, stride size, "
@@ -45,6 +79,13 @@ namespace LotusIR {
               "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
+        .Attr("auto_pad",
+            "auto_pad must be either SAME_UPPER, SAME_LOWER or VALID. Where SAME_UPPER "
+            "or SAME_LOWER mean pad the input so that the ouput size match the input. "
+            "In case of odd number add the extra padding at the end for SAME_UPPER and "
+            "at the begining for SAME_LOWER. VALID mean no padding, therefore, read the "
+            "pixel values from the pads attribute.",
+            AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_shape",
             "The shape of the convolution kernel.",
              AttrType::AttributeProto_AttributeType_INTS)
@@ -55,7 +96,12 @@ namespace LotusIR {
             "stride along each axis.",
             AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads",
-            "Padding along each axis, can take the value 0 (False) or non 0 (True)",
+            "Padding for lower and upper side along each axis, it can take any value greater "
+            "than or equal to 0. The value represent the number of pixels added to the lower "
+            "and upper part of the corresponding axis. So `pads` will have two values per axis, "
+            "first value corresponding to the number of pixels added to the begining of the "
+            "axis and the second value corresponding to the number of pixels add at the end "
+            "of the axis.",
             AttrType::AttributeProto_AttributeType_INTS)
         .Attr("group",
             "number of groups input channels and output channels are divided into",
@@ -72,18 +118,28 @@ namespace LotusIR {
              "Otherwise the size is (N x D1 x D2 ... x Dn)",
              "T")
         .Input("weights",
-             "The weight tensor that will be used in the convolutions; has size (M x C x kH x kW), "
+             "The weight tensor that will be used in the convolutions; has size (C x M x kH x kW), "
              "where C is the number of channels, and kH and kW are the height and width of the kernel, "
              "and M is the number of feature maps. For more than 2 dimensions, the kernel shape will be "
              "(M x C x k1 x k2 x ... x kn), where is the dimension of the kernel",
              "T")
+        .Input("bias",
+            "Optional 1D bias to be added to the convolution, has size of C.",
+            "T")
         .Output("Y",
               "Output data tensor that contains the result of the convolution. The "
               "output dimensions are functions of the kernel size, stride size, "
               "and pad lengths.",
               "T")
-		.TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-			"Constrain input and output types to float tensors.")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+            "Constrain input and output types to float tensors.")
+        .Attr("auto_pad",
+            "auto_pad must be either SAME_UPPER, SAME_LOWER or VALID. Where SAME_UPPER "
+            "or SAME_LOWER mean pad the input so that the ouput size match the input. "
+            "In case of odd number add the extra padding at the end for SAME_UPPER and "
+            "at the begining for SAME_LOWER. VALID mean no padding, therefore, read the "
+            "pixel values from the pads attribute.",
+            AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_shape",
             "The shape of the convolution kernel.",
              AttrType::AttributeProto_AttributeType_INTS)
@@ -97,8 +153,16 @@ namespace LotusIR {
             "stride along each axis.",
             AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads",
-            "Padding along each axis, can take the value 0 (False) or non 0 (True)",
-            AttrType::AttributeProto_AttributeType_INTS);
+            "Padding for lower and upper side along each axis, it can take any value greater "
+            "than or equal to 0. The value represent the number of pixels added to the lower "
+            "and upper part of the corresponding axis. So `pads` will have two values per axis, "
+            "first value corresponding to the number of pixels added to the begining of the "
+            "axis and the second value corresponding to the number of pixels add at the end "
+            "of the axis.",
+            AttrType::AttributeProto_AttributeType_INTS)
+        .Attr("group",
+            "number of groups input channels and output channels are divided into",
+            AttrType::AttributeProto_AttributeType_INT);
 
     REGISTER_OPERATOR_SCHEMA(Dropout)
         .Description("Dropout takes one input data (Tensor<float>) and produces two Tensor outputs, "
@@ -138,6 +202,13 @@ namespace LotusIR {
             "Dimensions will vary based on various kernel, stride, and pad sizes.")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
+        .Attr("auto_pad",
+            "auto_pad must be either SAME_UPPER, SAME_LOWER or VALID. Where SAME_UPPER "
+            "or SAME_LOWER mean pad the input so that the ouput size match the input. "
+            "In case of odd number add the extra padding at the end for SAME_UPPER and "
+            "at the begining for SAME_LOWER. VALID mean no padding, therefore, read the "
+            "pixel values from the pads attribute.",
+            AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_shape",
             "The size of the kernel along each axis.",
             AttrType::AttributeProto_AttributeType_INTS)
@@ -184,6 +255,13 @@ namespace LotusIR {
             "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
+        .Attr("auto_pad",
+            "auto_pad must be either SAME_UPPER, SAME_LOWER or VALID. Where SAME_UPPER "
+            "or SAME_LOWER mean pad the input so that the ouput size match the input. "
+            "In case of odd number add the extra padding at the end for SAME_UPPER and "
+            "at the begining for SAME_LOWER. VALID mean no padding, therefore, read the "
+            "pixel values from the pads attribute.",
+            AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_shape",
             "The size of the kernel along each axis.",
             AttrType::AttributeProto_AttributeType_INTS)
@@ -317,6 +395,13 @@ namespace LotusIR {
             "Dimensions will vary based on various kernel, stride, and pad sizes.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
+        .Attr("auto_pad",
+            "auto_pad must be either SAME_UPPER, SAME_LOWER or VALID. Where SAME_UPPER "
+            "or SAME_LOWER mean pad the input so that the ouput size match the input. "
+            "In case of odd number add the extra padding at the end for SAME_UPPER and "
+            "at the begining for SAME_LOWER. VALID mean no padding, therefore, read the "
+            "pixel values from the pads attribute.",
+            AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_shape", "The size of the kernel along each axis.", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("strides", "Stride along each axis.", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("pads", "Padding along each axis, can take the value 0 (False) or non 0 (True)",
@@ -388,6 +473,19 @@ namespace LotusIR {
         .Attr("weights", "2-D tensor of weights [O,I]", AttrType::AttributeProto_AttributeType_FLOATS);
 
     // Taken from RS4
+    REGISTER_OPERATOR_SCHEMA(ImageScaler)
+        .Description("Alteration of image by scaling its individual values. "
+            "NOTE: The current definition assumes that the bias values are stored in the "
+            "same ordering as the image pixel format.")
+        .Input("input", "Input tensor of shape [N,C,H,W]", "T")
+        .Output("output", "Result, has same shape and type as X", "T")
+        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
+            "output types to float tensors.")
+        .Attr("bias", "Bias values for each channel, of shape [C]", AttrType::AttributeProto_AttributeType_FLOATS)
+        .Attr("scale", "Scalar channel factor, elementwise mutliplied into every value in [C,H,W]",
+            AttrType::AttributeProto_AttributeType_FLOAT);
+
+    // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(Upsample)
         .Description("Scale up spatial dimensions.  Use interpolation to fill in values")
         .Input("input", "Input tensor of shape [N,C,H,W]", "T")
@@ -422,17 +520,20 @@ namespace LotusIR {
             AttrType::AttributeProto_AttributeType_INT)
         .Attr("scale", "A 1-D tensor of values (height, width)", AttrType::AttributeProto_AttributeType_INT);
 
-    // Taken from Caffe2
-    REGISTER_OPERATOR_SCHEMA(PadImage)
+    // Taken from ONNX
+    REGISTER_OPERATOR_SCHEMA(Pad)
         .Description("Perform padding along spatial dimensions of an image.")
         .Input("input", "Input tensor of shape [N,C,H,W]", "T")
         .Output("output", "Result, has same type as X, with H and W extended by the  \
             padding amounts.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("border", "A 1-D tensor of values (leftBorder, topBorder, rightBorder, bottomBorder)",
+        .Attr("paddings", "List of integers indicate the padding sizes, paddings's "
+            "length should be the double of input's dimension. The order should be "
+            "axis_0_begin, axis_0_end, axis_1_begin, ..., axis_n_begin, axis_n_end, "
+            "n is input's dimension.",
             AttrType::AttributeProto_AttributeType_INT)
-        .Attr("constant", "Constant padding value.", AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("value", "Constant padding value.", AttrType::AttributeProto_AttributeType_FLOAT)
         .Attr("mode", "Method to use when padding: ‘CONSTANT’, ‘REFLECT’, ‘REPLICATE’;"
             "Constant padding simply fills in the values created by the border. "
             "Reflect takes a reflection of the values at the border into the padding space."
