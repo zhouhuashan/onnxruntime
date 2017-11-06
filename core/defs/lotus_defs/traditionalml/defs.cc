@@ -133,7 +133,7 @@ namespace LotusIR {
         .Attr("classlabels_int64s", "class labels if using int labels, size E", AttrType::AttributeProto_AttributeType_INTS);
 
 
-    REGISTER_OPERATOR_SCHEMA(LinearRegression)
+    REGISTER_OPERATOR_SCHEMA(LinearRegressor)
         .Input("X", "Data to be regressed", "T")
         .Output("Y", "Regression outputs (one per target, per example", "tensor(float)")
         .Description(R"DOC(
@@ -234,7 +234,7 @@ namespace LotusIR {
         .Attr("rho", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("one_class", "If this regressor is a oneclass svm set this param to 1, otherwise use 0 (default is zero)", AttrType::AttributeProto_AttributeType_INT);
 
-    REGISTER_OPERATOR_SCHEMA(TreeClassifier)
+    REGISTER_OPERATOR_SCHEMA(TreeEnsembleClassifier)
         .Input("X", "Data to be classified", "T1")
         .Output("Y", "Classification outputs (one class per example", "T2")
         .Output("Z", "Classification outputs (All classes scores per example,N,E", "tensor(float)")
@@ -273,7 +273,7 @@ namespace LotusIR {
         .Attr("classlabels_int64s", "class labels if using int labels, size E, one of the two class label fields must be used", AttrType::AttributeProto_AttributeType_INTS);
 
 
-    REGISTER_OPERATOR_SCHEMA(TreeRegressor)
+    REGISTER_OPERATOR_SCHEMA(TreeEnsembleRegressor)
         .Input("X", "Input N,F", "T")
         .Output("Y", "NxE floats", "tensor(float)")
         .Description(R"DOC(
