@@ -394,7 +394,7 @@ namespace LotusIR
         //    a. Node name and node output's names should be unique.
         //    b. Attribute match between node and op definition.
         //    c. Input/Output match between node and op definition.
-        //    d. Graph is acyclic.
+        //    d. Graph is acyclic and sort nodes in topological order.
         // 2. Check & Setup inner nodes' dependency.
         // 3. Cleanup function definition lists.
         // Returns resolving status.
@@ -414,6 +414,7 @@ namespace LotusIR
         // Get graph inputs/outputs.
         const std::vector<const NodeArg*>& GetInputs() const;
         const std::vector<const NodeArg*>& GetOutputs() const;
+        const std::vector<const NodeArg*>& GetValueInfo() const;
 
         // Add or Remove a function definition.
         bool AddFunctionDef(const FunctionDefProto& p_function);
@@ -526,17 +527,6 @@ namespace LotusIR
         // <p_nodesInToplogicalOrder> returns nodes' indexes in toplogical
         // order if <Status> returned is "OK", otherwise it's undefined.
         Status CheckIsAcyclic(
-            /*out*/std::vector<NODEINDEX>& p_nodesInToplogicalOrder);
-
-        // Depth-first graph access.
-        // <p_ancestors> specifies all ancestor nodes of <p_current> node.
-        // <p_current> specifies current node being accessed.
-        // <p_visitedNodes> specifies nodes already visited.
-        // <p_nodesInToplogicalOrder> returns nodes' indexes in toplogical
-        // order if the graph is acyclic.
-        Status DepthFirstAccess(std::unordered_set<NODEINDEX> p_ancestors,
-            NODEINDEX p_current,
-            /*in | out*/std::unordered_set<NODEINDEX>& p_visitedNodes,
             /*out*/std::vector<NODEINDEX>& p_nodesInToplogicalOrder);
 
         // Given nodes in toplogical order, infer and set type information

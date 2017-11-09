@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <stack>
 
 #include "core/graph/graph.h"
 #include "core/graph/op.h"
@@ -602,7 +603,6 @@ namespace LotusIR
         {
             AddNode(nodeProto, nameToTypeMap);
         }
-
     }
 
     Graph::Graph(Node* p_node,
@@ -834,45 +834,74 @@ namespace LotusIR
     Status Graph::CheckIsAcyclic(
         std::vector<NODEINDEX>& p_nodesInTopologicalOrder)
     {
+        p_nodesInTopologicalOrder.clear();
+        // nodes that have been processed and added to p_nodesInTopologicalOrder.
         std::unordered_set<NODEINDEX> visitedNodes;
         std::unordered_set<NODEINDEX> ancestorNodes;
-        return DepthFirstAccess(ancestorNodes,
-            m_sinkNodeIndex,
-            visitedNodes,
-            p_nodesInTopologicalOrder);
-    }
+        // tracks nodes whose child nodes have been processed.
+        std::unordered_set<NODEINDEX> childrenVisitedNodes;
+        std::stack<NODEINDEX> stack;
+        stack.push(m_sinkNodeIndex);
 
-    Status Graph::DepthFirstAccess(std::unordered_set<NODEINDEX> p_ancestors,
-        NODEINDEX p_current,
-        std::unordered_set<NODEINDEX>& p_visitedNodes,
-        std::vector<NODEINDEX>& p_nodesInTopologicalOrder)
-    {
-        if (p_visitedNodes.end() != p_visitedNodes.find(p_current))
+        while (!stack.empty())
         {
-            // The node has been visited before.
-            return Status::OK();
-        }
+            NODEINDEX current = stack.top();
+            stack.pop();
 
-        p_ancestors.insert(p_current);
-        for (auto iter = m_nodes[p_current]->InputNodes_begin();
-            iter != m_nodes[p_current]->InputNodes_end();
-            ++iter)
-        {
-            if (p_ancestors.end() != p_ancestors.find((*iter)->Index()))
+            if (visitedNodes.end() != visitedNodes.find(current))
             {
-                Status status(LOTUS, FAIL,
-                    "Error: the graph is not acyclic.");
-                return status;
+                // The node has been visited before
+                continue;
             }
 
-            RETURN_IF_ERROR(DepthFirstAccess(p_ancestors,
-                (*iter)->Index(),
-                p_visitedNodes,
-                p_nodesInTopologicalOrder));
-        }
-        p_visitedNodes.insert(p_current);
-        p_nodesInTopologicalOrder.push_back(p_current);
+            if (childrenVisitedNodes.end() != childrenVisitedNodes.find(current))
+            {
+                // children are done so we mark this one complete.
+                visitedNodes.insert(current);
+                p_nodesInTopologicalOrder.push_back(current);
+                ancestorNodes.erase(current);
+                continue;
+            }
 
+            if (m_nodes[current]->InputNodes_begin() ==
+                m_nodes[current]->InputNodes_end())
+            {
+                // no children
+                childrenVisitedNodes.insert(current);
+                visitedNodes.insert(current);
+                p_nodesInTopologicalOrder.push_back(current);
+                ancestorNodes.erase(current);
+                continue;
+            }
+
+            stack.push(current);
+
+            // mark as children done. by the time the node is popped off the stack again,
+            // its children will have been processed
+            childrenVisitedNodes.insert(current);
+
+            ancestorNodes.insert(current);
+
+            // check children
+            for (auto iter = m_nodes[current]->InputNodes_begin();
+                iter != m_nodes[current]->InputNodes_end();
+                ++iter)
+            {
+                NODEINDEX idx = (*iter)->Index();
+                if (ancestorNodes.end() != ancestorNodes.find(idx))
+                {
+                    Status status(LOTUS, FAIL,
+                        "Error: the graph is not acyclic.");
+                    return status;
+                }
+
+                // avoid re-processing nodes
+                if (childrenVisitedNodes.end() == childrenVisitedNodes.find(idx))
+                {
+                    stack.push(idx);
+                }
+            }
+        }
         return Status::OK();
     }
 
@@ -1284,7 +1313,6 @@ namespace LotusIR
         std::unordered_map<std::string, NODEINDEX> nodeNameToIndex;
         RETURN_IF_ERROR(VerifyNoDuplicateName(outputArgs, nodeNameToIndex));
         RETURN_IF_ERROR(BuildConnections(outputArgs, nodeNameToIndex));
-
         RETURN_IF_ERROR(CheckIsAcyclic(m_nodesInTopologicalOrder));
 
         std::set<std::string> funcDefNames;
@@ -1370,6 +1398,11 @@ namespace LotusIR
     const std::vector<const NodeArg*>& Graph::GetOutputs() const
     {
         return m_graphOutputs;
+    }
+
+    const std::vector<const NodeArg*>& Graph::GetValueInfo() const
+    {
+        return m_valueInfo;
     }
 
     bool Graph::AddFunctionDef(const FunctionDefProto& p_funcDef)
@@ -1576,16 +1609,17 @@ namespace LotusIR
 
         // Nodes.
         m_graphProto.clear_node();
-        for (auto& node : m_nodes)
+
+        // Nodes must be sorted in Topological Order in the GraphProto per ONNX spec.
+        for (auto& nodeIdx : m_nodesInTopologicalOrder)
         {
-            if (nullptr == node
-                || IsSourceNode(node->Index())
-                || IsSinkNode(node->Index()))
+            if ( IsSourceNode(nodeIdx)
+                || IsSinkNode(nodeIdx))
             {
                 continue;
             }
             auto nodeProto = m_graphProto.add_node();
-            node->ToProto(*nodeProto);
+            m_nodes[nodeIdx]->ToProto(*nodeProto);
         }
 
         // Initial tensors;
@@ -1628,6 +1662,11 @@ namespace LotusIR
 
     void Graph::SetGraphInputsOutputs()
     {
+        // Reset graphInputs/graphOutputs/valueInfo state.
+        m_graphInputs.clear();
+        m_graphOutputs.clear();
+        m_valueInfo.clear();
+
         std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
         for (auto nodeIter = Nodes_begin();
             nodeIter != Nodes_end();
