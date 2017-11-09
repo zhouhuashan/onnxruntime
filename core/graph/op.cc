@@ -41,10 +41,12 @@ namespace LotusIR
         return *this;
     }
 
+    #pragma warning(disable : 4100) // unused p_optional
     OperatorSchemaSetter&
         OperatorSchemaSetter::Input(const std::string& p_inputName,
             const std::string& p_description,
-            const std::string& p_type)
+            const std::string& p_type,
+            bool p_optional) /* TODO: add logic for this */
     {
         m_inputs.push_back(std::make_tuple(p_inputName, p_description, p_type));
         return *this;
@@ -140,6 +142,14 @@ namespace LotusIR
             AttributeParser p_attrParser)
     {
         m_opSchema.m_attrParser = p_attrParser;
+        return *this;
+    }
+
+    OperatorSchemaSetter& OperatorSchemaSetter::FillUsing(std::function<void(OperatorSchemaSetter&)> populator)
+    {
+        if (populator) {
+            populator(*this);
+        }
         return *this;
     }
 

@@ -88,7 +88,8 @@ namespace LotusIR
         // <data_type> :: = float | uint8 | ...   (see data_type strings defined in constants.h)
         OperatorSchemaSetter& Input(const std::string& p_inputName,
             const std::string& p_description,
-            const std::string& p_type = "");
+            const std::string& p_type = "",
+            bool p_optional = false);
 
         OperatorSchemaSetter& Output(const std::string& p_outputName,
             const std::string& p_description,
@@ -119,6 +120,9 @@ namespace LotusIR
         // whether Node attributes are matching operator attributes definition.
         OperatorSchemaSetter& SetAttributeParser(
             AttributeParser p_attrParser);
+
+        // adding docs for temlated/macro ops.
+        OperatorSchemaSetter& FillUsing(std::function<void(OperatorSchemaSetter&)> populator);
 
     private:
 
