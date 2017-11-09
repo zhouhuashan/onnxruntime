@@ -21,7 +21,7 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .Attr("threshold", "Values greater than this are set to 1, else set to 0", AttrType::AttributeProto_AttributeType_FLOAT);
 
-    REGISTER_OPERATOR_SCHEMA(Cast)
+    REGISTER_OPERATOR_SCHEMA(MLFlatten)
         .Input("X", "The input values", "T1")
         .Output("Y", "The output values", "T2")
         .Description(R"DOC(
