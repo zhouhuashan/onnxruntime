@@ -21,6 +21,17 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .Attr("threshold", "Values greater than this are set to 1, else set to 0", AttrType::AttributeProto_AttributeType_FLOAT);
 
+    REGISTER_OPERATOR_SCHEMA(Cast)
+        .Input("X", "The input values", "T1")
+        .Output("Y", "The output values", "T2")
+        .Description(R"DOC(
+            Casts the input into an output tensor.
+            )DOC")
+        .TypeConstraint("T1", { "map(string, float)", "map(int64, float)", "tensor(string)","tensor(double)","tensor(float)","tensor(int64)" }, " allowed input types.")
+        .TypeConstraint("T2", { "tensor(string)","tensor(double)","tensor(float)","tensor(int64)" }, " allowed output types.")
+        .Attr("cast_to", "what type of tensor to cast the input to, enum 'TO_FLOAT','TO_STRING','TO_INT64'", AttrType::AttributeProto_AttributeType_STRING)
+        .Attr("map_form", "if casting from a map with int64 keys, should we pad spaces between the keys or pack them, enum 'PACK, 'SPARSE'", AttrType::AttributeProto_AttributeType_STRING)
+        .Attr("max_map", "if casting from a sparse map, what is the max key in the map", AttrType::AttributeProto_AttributeType_INT);
 
     REGISTER_OPERATOR_SCHEMA(CategoryMapper)
         .Input("X", "Input data", "T1")
@@ -78,27 +89,15 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(FeatureVectorizer)
+        .Input("featureArgs", "ordered input tensors", "T")
+        .Output("featurevector", "flattened feature vectors.", "T")
         .Description(R"DOC(
-            Concatenates input features into one continuous output.  
-            Inputlist is a list of input feature names, inputdimensions is the size of each input feature.
-            Only supports a single batch at this time.
-            Inputs can be in any order, but will be written to the output in the order of inputlist.
-            Any missing input is set to zero in the output array.
-            Allowable inputs are scalers, sequences, tensors, and maps, where the map key is an int64.
-            For maps they will be written to the output in ascending key order.
+            Concatenates a list of input tensors of floats into one tensor.
+            Input order in inputs must match inputlist and inputdimensions order.
             )DOC")
+        .TypeConstraint("T", {"tensor(float)"}, " allowed types.")
         .Attr("inputlist", "list of string names of the input features, output features will appear in this order", AttrType::AttributeProto_AttributeType_STRINGS)
-        .Attr("inputdimensions", "the size of the inputs in the input list (useful for passing sparse dicts at runtime", AttrType::AttributeProto_AttributeType_INTS)
-        .Input("featureArgs", "feature name to value args, which are variadic arguments.", "T")
-        .Output("featurevector", "flattened feature vectors.", "tensor(double)")
-        .TypeConstraint("T",
-        {
-            "record(name:string, value:float)", "record(name:string, value:int64)", "record(name:string, value:int32)", "record(name:string, value:double)",
-            "record(name:string, value:seq(float))", "record(name:string, value:seq(int64))", "record(name:string, value:seq(double))",
-            "record(name:string, value:map(int64, float))", "record(name:string, value:map(int64, int64))",
-            "record(name:string, value:tensor(float))", "record(name:string, value:tensor(int64))", "record(name:string, value:tensor(double))", "record(name:string, value:tensor(int32))"
-        },
-            "allowed feature value types.");
+        .Attr("inputdimensions", "the size of the inputs in the input list", AttrType::AttributeProto_AttributeType_INTS);
 
 
     REGISTER_OPERATOR_SCHEMA(LabelEncoder)
@@ -127,7 +126,7 @@ namespace LotusIR {
         .TypeConstraint("T2", { "tensor(string)", "tensor(int64)" }, " allowed types.")
         .Attr("coefficients", "weights of the model(s)", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("intercepts", "weights of the intercepts (if used)", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("multi_class", "whether to do OvR or multinomial (0=OvR and is default)", AttrType::AttributeProto_AttributeType_INT)
         .Attr("classlabels_strings", "class labels if using string labels, size E", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("classlabels_int64s", "class labels if using int labels, size E", AttrType::AttributeProto_AttributeType_INTS);
@@ -148,7 +147,7 @@ namespace LotusIR {
         .Attr("coefficients", "weights of the model(s)", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("intercepts", "weights of the intercepts (if used)", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("targets", "total number of regression targets (default is 1)", AttrType::AttributeProto_AttributeType_INT)
-        .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::AttributeProto_AttributeType_INT);
+        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING);
 
 
     REGISTER_OPERATOR_SCHEMA(Normalizer)
@@ -162,7 +161,7 @@ namespace LotusIR {
             L2  .. math::  z = ||x||_2 = \sqrt{\sum_{i=1}^{n} x_i^2}
             )DOC")
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
-        .Attr("norm", "0=Lmax, 1=L1, 2=L2", AttrType::AttributeProto_AttributeType_INT);
+        .Attr("norm", "enum 'MAX', 'L1', 'L2'", AttrType::AttributeProto_AttributeType_STRING);
 
 
     REGISTER_OPERATOR_SCHEMA(OneHotEncoder)
@@ -204,7 +203,7 @@ namespace LotusIR {
             )DOC")
         .TypeConstraint("T1", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .TypeConstraint("T2", { "tensor(string)", "tensor(int64)" }, " allowed types.")
-        .Attr("kernel_type", "enum LINEAR, POLY, RBF, SIGMOID, defaults to linear", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("kernel_type", "enum 'LINEAR', 'POLY', 'RBF', 'SIGMOID', defaults to linear", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_params", "Tensor of 3 elements containing gamma, coef0, degree in that order.  Zero if unused for the kernel.", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("prob_a", "probability vector a, must be either 0 length or E*(E-1)/2 length", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("prob_b", "probability vector b, must be same length as prob_a", AttrType::AttributeProto_AttributeType_FLOATS)
@@ -212,7 +211,7 @@ namespace LotusIR {
         .Attr("support_vectors", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("coefficients", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("rho", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("classlabels_strings", "class labels if using string labels", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("classlabels_int64s", "class labels if using int labels", AttrType::AttributeProto_AttributeType_INTS);
 
@@ -224,9 +223,9 @@ namespace LotusIR {
             SVM regressor. Also supports oneclass svm. 
             )DOC")
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
-        .Attr("kernel_type", "enum LINEAR, POLY, RBF, SIGMOID, defaults to linear", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("kernel_type", "enum 'LINEAR', 'POLY', 'RBF', 'SIGMOID', defaults to linear", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_params", "Tensor of 3 elements containing gamma, coef0, degree in that order.  Zero if unused for the kernel.", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_INT)
         .Attr("vectors_per_class", "", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("support_vectors", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("n_supports", "number of support vectors", AttrType::AttributeProto_AttributeType_INT)
@@ -258,7 +257,7 @@ namespace LotusIR {
         .Attr("nodes_featureids", "feature id for this node", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_values", "thresholds to do the splitting on for this node.", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("nodes_hitrates", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("nodes_modes", "enum of behavior for this node", AttrType::AttributeProto_AttributeType_INTS)
+        .Attr("nodes_modes", "enum of behavior for this node 'BRANCH_LEQ', 'BRANCH_LT', 'BRANCH_GTE', 'BRANCH_GT', 'BRANCH_EQ', 'BRANCH_NEQ', 'LEAF'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("nodes_truenodeids", "child node if expression is true", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_falsenodeids", "child node if expression is false", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_missing_value_tracks_true", "for each node, decide if the value is missing (nan) then use true branch, this field can be left unset and will assume false for all nodes", AttrType::AttributeProto_AttributeType_INTS)
@@ -267,8 +266,7 @@ namespace LotusIR {
         .Attr("class_nodeids", "node id that this weight is for", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("class_ids", "index of the class list that this weight is for", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("class_weights", "the weight for the class in class_id", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("aggregate_function", "how to aggregate data for each regression target from leaf nodes", AttrType::AttributeProto_AttributeType_INT)
-        .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("classlabels_strings", "class labels if using string labels, size E", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("classlabels_int64s", "class labels if using int labels, size E, one of the two class label fields must be used", AttrType::AttributeProto_AttributeType_INTS);
 
@@ -294,7 +292,7 @@ namespace LotusIR {
         .Attr("nodes_featureids", "feature id for this node", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_values", "thresholds to do the splitting on for this node.", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("nodes_hitrates", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("nodes_modes", "enum of behavior for this node", AttrType::AttributeProto_AttributeType_INTS)
+        .Attr("nodes_modes", "enum of behavior for this node.  enum 'BRANCH_LEQ', 'BRANCH_LT', 'BRANCH_GTE', 'BRANCH_GT', 'BRANCH_EQ', 'BRANCH_NEQ', 'LEAF'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("nodes_truenodeids", "child node if expression is true", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_falsenodeids", "child node if expression is false", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_missing_value_tracks_true", "for each node, decide if the value is missing (nan) then use true branch, this field can be left unset and will assume false for all nodes", AttrType::AttributeProto_AttributeType_INTS)
@@ -303,10 +301,23 @@ namespace LotusIR {
         .Attr("target_ids", "index of the class list that this weight is for", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("target_weights", "the weight for the class in target_id", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("n_targets", "number of regression targets", AttrType::AttributeProto_AttributeType_INT)
-        .Attr("post_transform", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZERO, PROBIT", AttrType::AttributeProto_AttributeType_INT)
-        .Attr("aggregate_function", "post eval transform for score, enum NONE, SOFTMAX, LOGISTIC, SOFTMAX_ZER", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING)
+        .Attr("aggregate_function", "post eval transform for score,  enum 'AVERAGE', 'SUM', 'MIN', 'MAX'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("base_values", "base values for regression, added to final score, size must be the same as n_outputs or can be left unassigned (assumed 0)", AttrType::AttributeProto_AttributeType_FLOATS);
 
-
+    REGISTER_OPERATOR_SCHEMA(VecDictionizer)
+        .Input("X", "The input values", "tensor(float)")
+        .Output("Y", "The output map", "T")
+        .Description(R"DOC(
+            Makes a map from the input and the attributes.  
+            Assumes input 0 are the values, and the keys are specified by the attributes.
+            Must provide keys in either classlabels_strings or classlabels_int64s (but not both).
+            Input 0 may have a batch size larger than 1, 
+            but each input in the batch must be the size of the keys specified by the attributes.
+            The order of the input and attributes determines the key-value mapping.
+            )DOC")
+        .TypeConstraint("T", { "map(string, float)", "map(int64, float)" }, " allowed types.")
+        .Attr("classlabels_strings", "keys if using string keys", AttrType::AttributeProto_AttributeType_STRINGS)
+        .Attr("classlabels_int64s", "keys if using int keys", AttrType::AttributeProto_AttributeType_INTS);
 
 }
