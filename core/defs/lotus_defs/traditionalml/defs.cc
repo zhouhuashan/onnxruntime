@@ -21,14 +21,14 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .Attr("threshold", "Values greater than this are set to 1, else set to 0", AttrType::AttributeProto_AttributeType_FLOAT);
 
-    REGISTER_OPERATOR_SCHEMA(MLFlatten)
+    REGISTER_OPERATOR_SCHEMA(CastMap)
         .Input("X", "The input values", "T1")
         .Output("Y", "The output values", "T2")
         .Description(R"DOC(
             Casts the input into an output tensor.
             )DOC")
-        .TypeConstraint("T1", { "map(string, float)", "map(int64, float)", "tensor(string)","tensor(double)","tensor(float)","tensor(int64)" }, " allowed input types.")
-        .TypeConstraint("T2", { "tensor(string)","tensor(double)","tensor(float)","tensor(int64)" }, " allowed output types.")
+        .TypeConstraint("T1", { "map(int64, string)", "map(int64, float)" }, " allowed input types.")
+        .TypeConstraint("T2", { "tensor(string)","tensor(float)","tensor(int64)" }, " allowed output types.")
         .Attr("cast_to", "what type of tensor to cast the input to, enum 'TO_FLOAT','TO_STRING','TO_INT64'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("map_form", "if casting from a map with int64 keys, should we pad spaces between the keys or pack them, enum 'PACK, 'SPARSE'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("max_map", "if casting from a sparse map, what is the max key in the map", AttrType::AttributeProto_AttributeType_INT);
@@ -89,13 +89,13 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(FeatureVectorizer)
-        .Input("featureArgs", "ordered input tensors", "T")
-        .Output("featurevector", "flattened feature vectors.", "T")
+        .Input("X", "ordered input tensors", "T")
+        .Output("Y", "flattened feature vectors.", "T")
         .Description(R"DOC(
             Concatenates a list of input tensors of floats into one tensor.
             Input order in inputs must match inputlist and inputdimensions order.
             )DOC")
-        .TypeConstraint("T", {"tensor(float)"}, " allowed types.")
+        .TypeConstraint("T", { "tensor(float)" }, " allowed types.")
         .Attr("inputlist", "list of string names of the input features, output features will appear in this order", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("inputdimensions", "the size of the inputs in the input list", AttrType::AttributeProto_AttributeType_INTS);
 
@@ -225,7 +225,7 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .Attr("kernel_type", "enum 'LINEAR', 'POLY', 'RBF', 'SIGMOID', defaults to linear", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("kernel_params", "Tensor of 3 elements containing gamma, coef0, degree in that order.  Zero if unused for the kernel.", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_INT)
+        .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("vectors_per_class", "", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("support_vectors", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("n_supports", "number of support vectors", AttrType::AttributeProto_AttributeType_INT)
@@ -257,7 +257,7 @@ namespace LotusIR {
         .Attr("nodes_featureids", "feature id for this node", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_values", "thresholds to do the splitting on for this node.", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("nodes_hitrates", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("nodes_modes", "enum of behavior for this node 'BRANCH_LEQ', 'BRANCH_LT', 'BRANCH_GTE', 'BRANCH_GT', 'BRANCH_EQ', 'BRANCH_NEQ', 'LEAF'", AttrType::AttributeProto_AttributeType_STRING)
+        .Attr("nodes_modes", "enum of behavior for this node 'BRANCH_LEQ', 'BRANCH_LT', 'BRANCH_GTE', 'BRANCH_GT', 'BRANCH_EQ', 'BRANCH_NEQ', 'LEAF'", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("nodes_truenodeids", "child node if expression is true", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_falsenodeids", "child node if expression is false", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_missing_value_tracks_true", "for each node, decide if the value is missing (nan) then use true branch, this field can be left unset and will assume false for all nodes", AttrType::AttributeProto_AttributeType_INTS)
@@ -292,7 +292,7 @@ namespace LotusIR {
         .Attr("nodes_featureids", "feature id for this node", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_values", "thresholds to do the splitting on for this node.", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("nodes_hitrates", "", AttrType::AttributeProto_AttributeType_FLOATS)
-        .Attr("nodes_modes", "enum of behavior for this node.  enum 'BRANCH_LEQ', 'BRANCH_LT', 'BRANCH_GTE', 'BRANCH_GT', 'BRANCH_EQ', 'BRANCH_NEQ', 'LEAF'", AttrType::AttributeProto_AttributeType_STRING)
+        .Attr("nodes_modes", "enum of behavior for this node.  enum 'BRANCH_LEQ', 'BRANCH_LT', 'BRANCH_GTE', 'BRANCH_GT', 'BRANCH_EQ', 'BRANCH_NEQ', 'LEAF'", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("nodes_truenodeids", "child node if expression is true", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_falsenodeids", "child node if expression is false", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("nodes_missing_value_tracks_true", "for each node, decide if the value is missing (nan) then use true branch, this field can be left unset and will assume false for all nodes", AttrType::AttributeProto_AttributeType_INTS)

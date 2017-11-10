@@ -60,11 +60,11 @@ namespace LotusIR
 
             // Case: A traditional ml graph.
             //                           SouceNode
-            //                  /           |               \
-            //        node_1(MLFlatten) node_2(MLFlatten)   node_3(MLFlatten)
-            //          (tensor(float))   (tensor(float))   (tensor(float))
-            //                  \           |               /
-            //                            node_5 (FeatureVectorizer)
+            //                              |                
+            //                       node_1(CastMap)               
+            //                      (tensor(float))                 
+            //                             |               
+            //                    node_5 (FeatureVectorizer)
             //                              |
             //                           SinkNode
 
@@ -89,44 +89,15 @@ namespace LotusIR
             NodeArg outputArg1("node_1_out_1", &tensor_float);
             outputs.clear();
             outputs.push_back(outputArg1);
-            graph->AddNode("node_1", "MLFlatten", "node 1", inputs, outputs);
-
-            // Type: map(string,float);
-            TypeProto map_string_float;
-            mapType = map_string_float.mutable_map_type();
-            mapType->set_key_type(TensorProto::STRING);
-            mapValueType = mapType->mutable_value_type()->mutable_tensor_type();
-            mapValueType->set_elem_type(TensorProto::FLOAT);
-            mapValueType->mutable_shape();
-
-            NodeArg inputArg2("node_2_in_1", &map_string_float);
-            inputs.clear();
-            inputs.push_back(inputArg2);
-            NodeArg outputArg2("node_2_out_1", &tensor_float);
-            outputs.clear();
-            outputs.push_back(outputArg2);
-            graph->AddNode("node_2", "MLFlatten", "node 2", inputs, outputs);
-
-            // Type: tensor(double)
-            TypeProto tensor_double;
-            tensor_double.mutable_tensor_type()->set_elem_type(TensorProto::DOUBLE);
-
-            NodeArg inputArg3("node_3_in_1", &tensor_double);
-            inputs.clear();
-            inputs.push_back(inputArg3);
-            NodeArg outputArg3("node_3_out_1", &tensor_float);
-            outputs.clear();
-            outputs.push_back(outputArg3);
-            graph->AddNode("node_3", "MLFlatten", "node 3", inputs, outputs);
+            graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs);
 
             inputs.clear();
             inputs.push_back(outputArg1);
-            inputs.push_back(outputArg2);
-            inputs.push_back(outputArg3);
+
             NodeArg outputArg4("node_4_out_1", &tensor_float);
             outputs.clear();
             outputs.push_back(outputArg4);
-            graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, { 3 }, outputs);
+            graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, { 1 }, outputs);
             auto status = graph->Resolve();
             EXPECT_TRUE(status.Ok());
         }
