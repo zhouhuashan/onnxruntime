@@ -1,38 +1,6 @@
 #include "core/graph/op.h"
 
 namespace LotusIR {
-    // Taken from ONNX
-    REGISTER_OPERATOR_SCHEMA(Gemm)
-        .Description("General Matrix Multiplication: "
-            "https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms#Level_3 "
-            "Compute Y = alpha * A * B + beta * C, where input tensor A has dimension (M X K), "
-            "input tensor B has dimension (K X N), input tensor C and output tensor Y have "
-            "dimension (M X N). Input tensor C can be used inplace as the output tensor Y. "
-            "If attribute broadcast is non-zero, input tensor C will be broadcasted to match "
-            "the dimension requirement. If A can be transposed before doing the computation "
-            "if attribute transA is non-zero, same for B and transB.")
-        .Input("A", "Input tensor A", "T")
-        .Input("B", "Input tensor B", "T")
-        .Input("C", "Input tensor C, can be inplace.", "T")
-        .Output("Y", "Output tensor.", "T")
-        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-            "Constrain input and output types to float tensors.")
-        .Attr("alpha",
-            "Scalar multiplier for the product of input tensors A * B",
-            AttrType::AttributeProto_AttributeType_FLOAT)
-        .Attr("beta",
-            "Scalar multiplier for input tensor C",
-            AttrType::AttributeProto_AttributeType_FLOAT)
-        .Attr("broadcast",
-            "Whether C should be broadcasted",
-            AttrType::AttributeProto_AttributeType_INT)
-        .Attr("transA",
-            "Whether A should be transposed",
-            AttrType::AttributeProto_AttributeType_INT)
-        .Attr("transB",
-            "Whether B should be transposed",
-            AttrType::AttributeProto_AttributeType_INT);
-
     REGISTER_OPERATOR_SCHEMA(FC)
         .Description("Computes the result of passing an input vector X into a fully"
             "connected layer with 2D weight matrix W and 1D bias vector b.That is, "
@@ -497,17 +465,6 @@ namespace LotusIR {
         .Attr("width_scale", "Scale along width dimension", AttrType::AttributeProto_AttributeType_INT)
         .Attr("height_scale", "Scale along height dimension", AttrType::AttributeProto_AttributeType_INT);
 
-    // Taken from Caffe2
-    REGISTER_OPERATOR_SCHEMA(Tile)
-        .Description("Scale up spatial dimensions.  Use interpolation to fill in values")
-        .Input("input", "Input tensor of any shape", "T")
-        .Output("output", "Result, has same shape and type as X", "T")
-        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
-            "output types to float tensors.")
-        .Attr("axis", "Axis along which to repeat. Default is 0.", AttrType::AttributeProto_AttributeType_INT, int64_t(0))
-        .Attr("tiles", "Number of repeated copies to make of the input tensor.",
-            AttrType::AttributeProto_AttributeType_INT);
-
     REGISTER_OPERATOR_SCHEMA(Crop)
         .Description("Crop and image to the specified spatial dimensions.  If scale is given,"
             "then optionally start the crop offset by the left/top border amounts.  "
@@ -522,23 +479,26 @@ namespace LotusIR {
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Pad)
-        .Description("Perform padding along spatial dimensions of an image.")
-        .Input("input", "Input tensor of shape [N,C,H,W]", "T")
-        .Output("output", "Result, has same type as X, with H and W extended by the  \
-            padding amounts.", "T")
+        .Description("Given data tensor, paddings, mode, and value. "
+            "Example: Insert 0 paddings to the beginning of the second dimension. "
+            "data = [ [1.0, 1.2], [2.3, 3.4], [4.5, 5.7], ] paddings = [0, 0, 2, 0] "
+            "output = [ [ [0.0, 0.0, 1.0, 1.2], [0.0, 0.0, 2.3, 3.4], [0.0, 0.0, 4.5, 5.7] ] ]")
+        .Input("data", "Input tensor.", "T")
+        .Output("output", "Tensor after padding.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("paddings", "List of integers indicate the padding sizes, paddings's "
-            "length should be the double of input's dimension. The order should be "
-            "axis_0_begin, axis_0_end, axis_1_begin, ..., axis_n_begin, axis_n_end, "
-            "n is input's dimension.",
-            AttrType::AttributeProto_AttributeType_INT)
-        .Attr("value", "Constant padding value.", AttrType::AttributeProto_AttributeType_FLOAT)
-        .Attr("mode", "Method to use when padding: ‘CONSTANT’, ‘REFLECT’, ‘REPLICATE’;"
-            "Constant padding simply fills in the values created by the border. "
-            "Reflect takes a reflection of the values at the border into the padding space."
-            "Replicate copies the border, projecting into the padding space.",
-            AttrType::AttributeProto_AttributeType_STRING);
+        .Attr("paddings",
+              "List of integers indicate the padding sizes, paddings's length "
+              "should be the double of input's dimension. "
+              "The order should be axis_0_begin, axis_0_end, axis_1_begin, ..., "
+              "axis_n_begin, axis_n_end, n is input's dimension.",
+              AttrType::AttributeProto_AttributeType_INTS, int64_t(1))
+        .Attr("mode",
+              "Three modes: constant(default), reflect, edge",
+              AttrType::AttributeProto_AttributeType_STRING, std::string("constant"))
+        .Attr("value",
+              "One float, indicates the value to be filled, default is 0",
+              AttrType::AttributeProto_AttributeType_FLOAT, float(0));
 
     // Taken from RS4
     REGISTER_OPERATOR_SCHEMA(MeanSubtraction)
@@ -549,11 +509,5 @@ namespace LotusIR {
             "Constrain input and output types to float tensors.")
         .Attr("image", "Image tensor stored as a sequence of floats [C,H,W].", AttrType::AttributeProto_AttributeType_TENSOR);
 
-    REGISTER_OPERATOR_SCHEMA(Constant)
-        .Description("A constant tensor.")
-        .Output("output", "Output tensor containing the same value of the provided tensor.", "T")
-        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-            "Constrain input and output types to float tensors.")
-        .Attr("value", "The value for the elements of the output tensor.", AttrType::AttributeProto_AttributeType_TENSOR);
 }
 

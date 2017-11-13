@@ -233,6 +233,7 @@ namespace LotusIR
             Status status(LOTUS, FAIL,
                 "Error: operator schema with same name ("
                 + p_opSchema.GetName() + ") exists.");
+            assert(false);
             return status;
         }
         else

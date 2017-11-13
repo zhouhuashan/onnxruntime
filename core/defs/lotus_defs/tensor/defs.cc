@@ -88,8 +88,10 @@ namespace LotusIR {
         .Output("output", "Repeated output.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
-        .Attr("perm", "A list of integers. By default, reverse the dimensions, "
-            "otherwise permute the axes according to the values given.", AttrType::AttributeProto_AttributeType_INTS);
+        .Attr("axis", "Axis along which to repeat. Default is 0.",
+            AttrType::AttributeProto_AttributeType_INT, int64_t(0))
+        .Attr("tiles", "Number of repeated copies to make of the input tensor.",
+            AttrType::AttributeProto_AttributeType_INT);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Concat)
@@ -146,29 +148,6 @@ namespace LotusIR {
         .Attr("axes",
             "List of positive integers, indicate the dimensions to squeeze.",
             AttrType::AttributeProto_AttributeType_INTS, int64_t(1));
-
-    // Taken from ONNX
-    REGISTER_OPERATOR_SCHEMA(Pad)
-        .Description("Given data tensor, paddings, mode, and value. "
-            "Example: Insert 0 paddings to the beginning of the second dimension. "
-            "data = [ [1.0, 1.2], [2.3, 3.4], [4.5, 5.7], ] paddings = [0, 0, 2, 0] "
-            "output = [ [ [0.0, 0.0, 1.0, 1.2], [0.0, 0.0, 2.3, 3.4], [0.0, 0.0, 4.5, 5.7] ] ]")
-        .Input("data", "Input tensor.", "T")
-        .Output("output", "Tensor after padding.", "T")
-        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-            "Constrain input and output types to float tensors.")
-        .Attr("paddings",
-              "List of integers indicate the padding sizes, paddings's length "
-              "should be the double of input's dimension. "
-              "The order should be axis_0_begin, axis_0_end, axis_1_begin, ..., "
-              "axis_n_begin, axis_n_end, n is input's dimension.",
-              AttrType::AttributeProto_AttributeType_INTS, int64_t(1))
-        .Attr("mode",
-              "Three modes: constant(default), reflect, edge",
-              AttrType::AttributeProto_AttributeType_STRING, std::string("constant"))
-        .Attr("value",
-              "One float, indicates the value to be filled, default is 0",
-              AttrType::AttributeProto_AttributeType_FLOAT, float(0));
 
     // Taken from Caffe2
     REGISTER_OPERATOR_SCHEMA(BatchToSpace)
