@@ -304,19 +304,6 @@ namespace LotusIR
                 return Status(LOTUS, FAIL, "Invalid AttributeProto.");
             }
         }
-        else
-        {
-            assert((p_attr.has_f() && AttrType::AttributeProto_AttributeType_FLOAT == p_type)
-                || (p_attr.has_i() && AttrType::AttributeProto_AttributeType_INT == p_type)
-                || (p_attr.has_s() && AttrType::AttributeProto_AttributeType_STRING == p_type)
-                || (p_attr.has_t() && AttrType::AttributeProto_AttributeType_TENSOR == p_type)
-                || (p_attr.has_g() && AttrType::AttributeProto_AttributeType_GRAPH == p_type)
-                || (p_attr.floats_size() && AttrType::AttributeProto_AttributeType_FLOATS == p_type)
-                || (p_attr.ints_size() && AttrType::AttributeProto_AttributeType_INTS == p_type)
-                || (p_attr.strings_size() && AttrType::AttributeProto_AttributeType_STRINGS == p_type)
-                || (p_attr.tensors_size() && AttrType::AttributeProto_AttributeType_TENSORS == p_type)
-                || (p_attr.graphs_size() && AttrType::AttributeProto_AttributeType_GRAPHS == p_type));
-        }
         return Status::OK();
     }
 }

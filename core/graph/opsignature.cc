@@ -126,22 +126,25 @@ namespace LotusIR
             return false;
         }
 
-        int num_fields =
-            p_attr.has_f() +
-            p_attr.has_i() +
-            p_attr.has_s() +
-            p_attr.has_t() +
-            p_attr.has_g() +
-            (p_attr.floats_size() > 0) +
-            (p_attr.ints_size() > 0) +
-            (p_attr.strings_size() > 0) +
-            (p_attr.tensors_size() > 0) +
-            (p_attr.graphs_size() > 0);
-
-        if (num_fields == 1)
+        if (p_attr.type() == AttributeProto_AttributeType_UNDEFINED)
         {
-            return true;
+            int num_fields =
+                p_attr.has_f() +
+                p_attr.has_i() +
+                p_attr.has_s() +
+                p_attr.has_t() +
+                p_attr.has_g() +
+                (p_attr.floats_size() > 0) +
+                (p_attr.ints_size() > 0) +
+                (p_attr.strings_size() > 0) +
+                (p_attr.tensors_size() > 0) +
+                (p_attr.graphs_size() > 0);
+
+            if (num_fields != 1)
+            {
+                return false;
+            }
         }
-        return false;
+        return true;
     }
 }
