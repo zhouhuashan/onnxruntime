@@ -69,6 +69,11 @@ namespace LotusIR
         // Get node arg info proto.
         const NodeArgInfo& ToProto() const;
 
+        // Indicates whether <*this> node arg exists or not.
+        // Optional inputs are allowed in ONNX. Empty arg name represents 
+        // a non-existing input argument.
+        bool Exist() const;
+
     private:
 
         friend class Node;
@@ -82,6 +87,9 @@ namespace LotusIR
 
         // Node arg name, type and shape.
         NodeArgInfo m_nodeArgInfo;
+
+        // Flag indicates whether <*this> node arg exists or not.
+        bool m_exist;
     };
 
     // Function representation.

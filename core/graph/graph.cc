@@ -23,6 +23,8 @@ namespace LotusIR
         const TypeProto* p_nodeArgType)
     {
         m_nodeArgInfo.set_name(p_name);
+        // If the name is empty, it means the arg does not exist.
+        m_exist = !(p_name.empty());
         if (nullptr != p_nodeArgType)
         {
             (*m_nodeArgInfo.mutable_type()) = *p_nodeArgType;
@@ -107,6 +109,11 @@ namespace LotusIR
     {
         m_type = OpUtils::ToType(p_typeProto);
         *(m_nodeArgInfo.mutable_type()) = p_typeProto;
+    }
+
+    bool NodeArg::Exist() const
+    {
+        return m_exist;
     }
 
     Function::Function(Node* p_node,
@@ -769,6 +776,12 @@ namespace LotusIR
 
                 for (auto& inputArg : inputArgs)
                 {
+                    if (!inputArg.Exist())
+                    {
+                        // This input could be optional and it does not exist in this case.
+                        continue;
+                    }
+
                     auto outputArgIter = p_outputArgs.find(inputArg.Name());
                     if (p_outputArgs.end()
                         == outputArgIter)
@@ -1613,7 +1626,7 @@ namespace LotusIR
         // Nodes must be sorted in Topological Order in the GraphProto per ONNX spec.
         for (auto& nodeIdx : m_nodesInTopologicalOrder)
         {
-            if ( IsSourceNode(nodeIdx)
+            if (IsSourceNode(nodeIdx)
                 || IsSinkNode(nodeIdx))
             {
                 continue;
