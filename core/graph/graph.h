@@ -380,12 +380,16 @@ namespace LotusIR
         // <p_isONNX> is a special flag to indicate whether it's
         // going to construct a ONNX graph. With ONNX graph, strict
         // type checking will be skiped.
+        // TODO: the flag <p_isONNX> should be removed once we reuse the op
+        // registration API in ONNX.
         Graph(const std::string& p_name, bool p_isONNX = false);
         Graph(const std::string& p_name, const std::string& p_docString);
 
         // Constructor: Given a <GraphProto> loaded from model file, construct
         // a <Graph> object.
-        Graph(const GraphProto& p_graphProto);
+        // TODO: the flag <p_isONNX> should be removed once we reuse the op
+        // registration API in ONNX.
+        Graph(const GraphProto& p_graphProto, bool p_isONNX = false);
 
         // Constructor: Given a function definition and a node which refers to
         // the function, construct a <Graph> object.

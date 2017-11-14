@@ -42,12 +42,12 @@ namespace LotusIR
         {
             // NOTE: this requires the current directory to be where LotusIR_UT.exe is located
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./testdata/super_resolution.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./testdata/super_resolution.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
 #ifdef _WIN32
             // wstring version
             std::shared_ptr<Model> model2;
-            EXPECT_TRUE(Model::Load(L"./testdata/super_resolution.pb", &model2).Ok());
+            EXPECT_TRUE(Model::Load(L"./testdata/super_resolution.pb", &model2, true).Ok());
             TestResolve(model2->MainGraph());
 #endif
         }
@@ -56,63 +56,63 @@ namespace LotusIR
         TEST(ONNXModelsTest, bvlc_alexnet)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/bvlc_alexnet/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/bvlc_alexnet/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, densenet121)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/densenet121/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/densenet121/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, inception_v1)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/inception_v1/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/inception_v1/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, inception_v2)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/inception_v2/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/inception_v2/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, resnet50)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/resnet50/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/resnet50/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, shufflenet)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/shufflenet/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/shufflenet/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, squeezenet)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/squeezenet/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/squeezenet/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, vgg16)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/vgg16/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/vgg16/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 
         TEST(ONNXModelsTest, vgg19)
         {
             std::shared_ptr<Model> model;
-            EXPECT_TRUE(Model::Load("./models/vgg19/model.pb", &model).Ok());
+            EXPECT_TRUE(Model::Load("./models/vgg19/model.pb", &model, true).Ok());
             TestResolve(model->MainGraph());
         }
 #endif

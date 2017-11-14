@@ -117,12 +117,12 @@ namespace LotusIR
         m_modelProto.set_doc_string(p_docString);
     }
 
-    Model::Model(const ModelProto& p_modelProto)
+    Model::Model(const ModelProto& p_modelProto, bool p_isONNX)
     {
         m_modelProto = p_modelProto;
         if (m_modelProto.has_graph())
         {
-            m_graph.reset(new Graph(m_modelProto.graph()));
+            m_graph.reset(new Graph(m_modelProto.graph(), p_isONNX));
         }
     }
 
@@ -211,11 +211,11 @@ namespace LotusIR
     }
 
 #ifdef _WIN32
-    Status Model::Load(const std::wstring& p_filePath, std::shared_ptr<Model>* p_model)
+    Status Model::Load(const std::wstring& p_filePath, std::shared_ptr<Model>* p_model, bool p_isONNX)
     {
         int fd;
         RETURN_IF_ERROR(FileOpenRd(p_filePath, &fd));
-        auto status = Load(fd, p_model);
+        auto status = Load(fd, p_model, p_isONNX);
         RETURN_IF_ERROR(FileClose(fd));
         return status;
     }
@@ -231,11 +231,11 @@ namespace LotusIR
 
 #endif
 
-    Status Model::Load(const std::string& p_filePath, std::shared_ptr<Model>* p_model)
+    Status Model::Load(const std::string& p_filePath, std::shared_ptr<Model>* p_model, bool p_isONNX)
     {
         int fd;
         RETURN_IF_ERROR(FileOpenRd(p_filePath, &fd));
-        auto status = Load(fd, p_model);
+        auto status = Load(fd, p_model, p_isONNX);
         RETURN_IF_ERROR(FileClose(fd));
         return status;
     }
@@ -253,7 +253,7 @@ namespace LotusIR
     using ::google::protobuf::io::FileInputStream;
     using ::google::protobuf::io::CodedInputStream;
 
-    Status Model::Load(int p_fd, std::shared_ptr<Model>* p_model)
+    Status Model::Load(int p_fd, std::shared_ptr<Model>* p_model, bool p_isONNX)
     {
         if (p_fd < 0 || nullptr == p_model)
         {
@@ -274,7 +274,7 @@ namespace LotusIR
             return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
         }
 
-        (*p_model).reset(new Model(modelProto));
+        (*p_model).reset(new Model(modelProto, p_isONNX));
         RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve());
 
         return Status::OK();
