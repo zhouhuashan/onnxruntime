@@ -3,13 +3,14 @@
 namespace LotusIR {
 
     REGISTER_OPERATOR_SCHEMA(ArrayFeatureExtractor)
-        .Input("X", "Data to be selected from", "T")
-        .Output("Y", "Selected data as an array", "T")
+        .Input("X", "Data to be selected from", "T1")
+        .Input("Y", "Data to be selected from", "T2")
+        .Output("Z", "Selected data as an array", "T1")
         .Description(R"DOC(
-            Select a subset of the data based on the indices chosen.
+            Select a subset of the data from input1 based on the indices provided in input2.
             )DOC")
-        .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)", "tensor(string)" }, " allowed types.")
-        .Attr("indices", "Index positions to extract the data from in the input X", AttrType::AttributeProto_AttributeType_INTS);
+        .TypeConstraint("T1", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)", "tensor(string)" }, " allowed types.")
+        .TypeConstraint("T2", { "tensor(int64)" }, " Index value types .");
 
 
     REGISTER_OPERATOR_SCHEMA(Binarizer)
