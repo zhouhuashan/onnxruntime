@@ -15,7 +15,7 @@ function(add_whole_archive_flag lib output_var)
 endfunction()
 
 set(${UT_NAME}_libs
-    lotusIR_protos
+    onnx_protos
     ${googletest_STATIC_LIBRARIES}
     ${protobuf_STATIC_LIBRARIES}
 )

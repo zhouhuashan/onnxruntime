@@ -12,9 +12,9 @@ namespace Lotus
             return (*(char*)&n == 1);
         }
 
-        Status TensorUtils::UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<std::string>* p_data)
+        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<std::string>* p_data)
         {
-            if (LotusIR::TensorProto_DataType_STRING != p_tensor.data_type()
+            if (onnx::TensorProto_DataType_STRING != p_tensor.data_type()
                 || nullptr == p_data)
             {
                 return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
@@ -28,9 +28,9 @@ namespace Lotus
             return Status::OK();
         }
 
-        Status TensorUtils::UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<float>* p_data)
+        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<float>* p_data)
         {
-            if (LotusIR::TensorProto_DataType_FLOAT != p_tensor.data_type()
+            if (onnx::TensorProto_DataType_FLOAT != p_tensor.data_type()
                 || nullptr == p_data)
             {
                 return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
@@ -50,9 +50,9 @@ namespace Lotus
             return Status::OK();
         }
 
-        Status TensorUtils::UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<int32_t>* p_data)
+        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<int32_t>* p_data)
         {
-            if (LotusIR::TensorProto_DataType_INT32 != p_tensor.data_type()
+            if (onnx::TensorProto_DataType_INT32 != p_tensor.data_type()
                 || nullptr == p_data)
             {
                 return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
@@ -72,9 +72,9 @@ namespace Lotus
             return Status::OK();
         }
 
-        Status TensorUtils::UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<bool>* p_data)
+        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<bool>* p_data)
         {
-            if (LotusIR::TensorProto_DataType_BOOL != p_tensor.data_type()
+            if (onnx::TensorProto_DataType_BOOL != p_tensor.data_type()
                 || nullptr == p_data)
             {
                 return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
@@ -94,9 +94,9 @@ namespace Lotus
             return Status::OK();
         }
 
-        Status TensorUtils::UnpackTensor(const LotusIR::TensorProto& p_tensor, /*out*/ std::vector<int64_t>* p_data)
+        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<int64_t>* p_data)
         {
-            if (LotusIR::TensorProto_DataType_INT64 != p_tensor.data_type()
+            if (onnx::TensorProto_DataType_INT64 != p_tensor.data_type()
                 || nullptr == p_data)
             {
                 return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);

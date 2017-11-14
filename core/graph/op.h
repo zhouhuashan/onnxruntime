@@ -79,11 +79,8 @@ namespace LotusIR
         // Grammar for type strings used in Input(), Output(), AttrWithRichType(), and TypeConstraint() api's
         // <type> ::= <data_type> |
         //            tensor(<data_type>) |
-        //            sparse(<data_type>) |
         //            seq(<type>) |
-        //            map(<data_type>, <type>) |
-        //            record(<name_type_list>) |
-        //            union(<name_type_list>)
+        //            map(<data_type>, <type>)
         // <name_type_list> :: = <name>:<type>{ ,<name_type_list> }
         // <data_type> :: = float | uint8 | ...   (see data_type strings defined in constants.h)
         OperatorSchemaSetter& Input(const std::string& p_inputName,

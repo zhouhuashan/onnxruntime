@@ -5,7 +5,9 @@
 #include <unordered_map>
 
 #include "core/graph/utils.h"
-#include "core/protobuf/graph.pb.h"
+#include "external/onnx/onnx/onnx-ml.pb.h"
+
+using namespace onnx;
 
 namespace LotusIR
 {

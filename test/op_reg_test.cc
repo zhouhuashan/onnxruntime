@@ -3,7 +3,9 @@
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
-#include "core/protobuf/graph.pb.h"
+#include "external/onnx/onnx/onnx-ml.pb.h"
+
+using namespace onnx;
 
 namespace LotusIR
 {

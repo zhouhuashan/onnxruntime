@@ -4,7 +4,9 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include "core/protobuf/graph.pb.h"
+#include "external/onnx/onnx/onnx-ml.pb.h"
+
+using namespace onnx;
 
 namespace LotusIR
 {
@@ -21,7 +23,6 @@ namespace LotusIR
             static const TypeProto& ToTypeProto(const PTYPE& p_type);
             static std::string ToString(const TypeProto& p_type, const std::string& left = "", const std::string& right = "");
             static std::string ToDataTypeString(const TensorProto::DataType& p_type);
-            static std::string ToAttrTypeString(const ValueProto& p_value, const std::string& left = "", const std::string& right = "");
             static void FromString(const std::string& p_src, TypeProto& p_type);
             static void FromDataTypeString(const std::string& p_src, TensorProto::DataType& p_type);
             static bool IsValidDataTypeString(const std::string &p_dataType);

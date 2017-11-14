@@ -8,9 +8,10 @@
 #include "core/graph/constants.h"
 #include "core/graph/status.h"
 #include "core/graph/utils.h"
-#include "core/protobuf/graph.pb.h"
+#include "external/onnx/onnx/onnx-ml.pb.h"
 
 using namespace Lotus::Common;
+using namespace onnx;
 
 namespace LotusIR
 {
@@ -90,55 +91,6 @@ namespace LotusIR
 
         // Flag indicates whether <*this> node arg exists or not.
         bool m_exist;
-    };
-
-    // Function representation.
-    // It could present two cases of functions.
-    // 1. Function without instantiation (No Node* sent to constructor). This
-    //    may be used in pure function optimization.
-    //    Function body (subgraph) should not be able to executed since no real
-    //    tensor binded with inputs/outputs of the function.
-    // 2. Function with instantiation (A non-empty Node* sent to constructor).
-    //    Function body (subgraph) should be able to be executed since all 
-    //    input/output names among nodes inside are refering real tensor names.
-    //    2_a. Function with template type parameter.
-    //    2_b. Function without template type parameter.
-    // Function definition (FunctionDefProto) will be synced only when its body
-    // is changed. Meanwhile, in 2_a case above, the function definition name
-    // will be appended with real type string.
-    class Function
-    {
-    public:
-
-        // Get function body - a subgraph.
-        // Returned pointer owned by <*this> Function.
-        Graph* Body();
-
-        // Get function name.
-        // A function's name could be either its function definition name
-        // m_functionDefProto.name(), or m_functionDefProto.name() + template
-        // argument value.
-        const std::string& Name();
-
-        // Get the protobuf representation of <*this> function.
-        const FunctionDefProto& ToProto();
-
-    private:
-
-        friend class Graph;
-
-        Function() = delete;
-
-        // Constructor.
-        // <p_node> specifies the node that refers to <*this> function. It's
-        // used to instantiate <p_funcProto> if <p_funcProto> is a function
-        // template.
-        // <p_funcProto> specifies a function definition that a node refers to.
-        Function(Node* p_node,
-            const FunctionDefProto& p_funcProto);
-
-        // Function body which is a SubGraph.
-        std::unique_ptr<Graph> m_body;
     };
 
     // A node representation class.
@@ -245,9 +197,6 @@ namespace LotusIR
         ADD_ATTR_INTERFACES(GraphProto)
         ADD_ATTR_INTERFACES(TypeProto)
         ADD_ATTR_INTERFACES(TypeProto::TensorShapeProto)
-
-        // ValueProto doesn't have a vector interface
-        bool AddAttribute(const std::string& p_attrName, const ValueProto& p_value);
 
         // Clear specified node attribute.
         bool ClearAttribute(const std::string& p_attrName);
@@ -387,15 +336,6 @@ namespace LotusIR
         // a <Graph> object.
         Graph(const GraphProto& p_graphProto);
 
-        // Constructor: Given a function definition and a node which refers to
-        // the function, construct a <Graph> object.
-        // Normally the <p_name> could be the parent node name and the
-        // <p_version> could be the parent graph's version.
-        // Question: will a node defined in a function refers another function
-        // please? I (Ke) am assuming we don't allow such case here for now.
-        Graph(Node* p_node,
-            const FunctionDefProto& p_functionProto);
-
         // Resolve <*this> graph to ensure it's in a good shape with full
         // functionality.
         // 1. Run through all validation rules.
@@ -423,10 +363,6 @@ namespace LotusIR
         const std::vector<const NodeArg*>& GetInputs() const;
         const std::vector<const NodeArg*>& GetOutputs() const;
         const std::vector<const NodeArg*>& GetValueInfo() const;
-
-        // Add or Remove a function definition.
-        bool AddFunctionDef(const FunctionDefProto& p_function);
-        void RemoveFunctionDef(const std::string& p_functionName);
 
         // Get node given specific node index.
         Node* GetNode(NODEINDEX p_nodeIndex);
@@ -473,22 +409,8 @@ namespace LotusIR
         // <p_srcNodeIndex>, but it's designed to be executed behind.
         bool AddControlEdge(NODEINDEX p_srcNodeIndex, NODEINDEX p_dstNodeIndex);
 
-        // Try to get function with specified <p_nodeIndex>. Return true if the
-        // specified node refers to a function, and <p_function> will be the 
-        // function; false otherwise, and <p_function> will be unchanged.
-        bool TryGetFunction(NODEINDEX p_nodeIndex,
-            /*out*/ Function** p_function);
-
         // Serialize the <Graph> into <GraphProto>.
         const GraphProto& ToGraphProto();
-
-        // Serialize the <Graph> into <FunctionDefProto>.
-        // This is used when the graph is a subgraph of a main graph.
-        const FunctionDefProto& ToFuncProto();
-
-        // Inline all function in <*this> and construct <p_graph>
-        // without any functions. <p_graph> owned by caller.
-        bool InlineAllFunctions(/*out*/Graph* p_graph) const;
 
         bool IsSourceNode(NODEINDEX p_index) const;
         bool IsSinkNode(NODEINDEX p_index) const;
@@ -537,13 +459,12 @@ namespace LotusIR
         Status CheckIsAcyclic(
             /*out*/std::vector<NODEINDEX>& p_nodesInToplogicalOrder);
 
-        // Given nodes in toplogical order, infer and set type information
+        // Given nodes in topological order, infer and set type information
         // across <*this> graph if needed, and verify type/attribute
         // information match between node and op.
         Status VerifyNodeAndOpMatch(
             const std::vector<NODEINDEX>& p_nodesInToplogicalOrder,
-            std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
-            /*out*/ std::set<std::string>& p_funcDefNames);
+            std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs);
 
         Status InferAndVerifyTypeMatch(Node* p_node,
             const OpSignature* p_op,
@@ -580,17 +501,9 @@ namespace LotusIR
         // functions in <Graph> will also be fed into <m_graphProto> so that
         // it's consistent with <*this> graph.
         GraphProto m_graphProto;
-        FunctionDefProto m_funcDefProto;
 
         // The node which refers to <*this> graph (Function).
         Node* m_node;
-
-        // Graph function instantiations.
-        std::unordered_map<std::string,
-            std::unique_ptr<Function>> m_functionMap;
-
-        // Graph function definitions.
-        std::unordered_map<std::string, FunctionDefProto> m_funcDefMap;
 
         InitialTensorSet m_nameToInitialTensor;
 

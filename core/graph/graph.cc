@@ -52,13 +52,11 @@ namespace LotusIR
         auto typeCase = m_nodeArgInfo.type().value_case();
         switch (typeCase)
         {
-        case LotusIR::TypeProto::kTensorType:
+        case TypeProto::kTensorType:
             return &(m_nodeArgInfo.type().tensor_type().shape());
-        case LotusIR::TypeProto::kSparseTensorType:
-            return &(m_nodeArgInfo.type().sparse_tensor_type().shape());
-        case LotusIR::TypeProto::kSequenceType:
-        case LotusIR::TypeProto::kMapType:
-        case LotusIR::TypeProto::VALUE_NOT_SET:
+        case TypeProto::kSequenceType:
+        case TypeProto::kMapType:
+        case TypeProto::VALUE_NOT_SET:
         default:
             return nullptr;
         }
@@ -74,15 +72,12 @@ namespace LotusIR
         auto typeCase = m_nodeArgInfo.type().value_case();
         switch (typeCase)
         {
-        case LotusIR::TypeProto::kTensorType:
+        case TypeProto::kTensorType:
             *(m_nodeArgInfo.mutable_type()->mutable_tensor_type()->mutable_shape()) = p_shape;
             break;
-        case LotusIR::TypeProto::kSparseTensorType:
-            *(m_nodeArgInfo.mutable_type()->mutable_sparse_tensor_type()->mutable_shape()) = p_shape;
-            break;
-        case LotusIR::TypeProto::kSequenceType:
-        case LotusIR::TypeProto::kMapType:
-        case LotusIR::TypeProto::VALUE_NOT_SET:
+        case TypeProto::kSequenceType:
+        case TypeProto::kMapType:
+        case TypeProto::VALUE_NOT_SET:
         default:
             return;
         }
@@ -114,27 +109,6 @@ namespace LotusIR
     bool NodeArg::Exist() const
     {
         return m_exist;
-    }
-
-    Function::Function(Node* p_node,
-        const FunctionDefProto& p_funcProto)
-    {
-        m_body.reset(new Graph(p_node, p_funcProto));
-    }
-
-    Graph* Function::Body()
-    {
-        return m_body.get();
-    }
-
-    const std::string& Function::Name()
-    {
-        return m_body->Name();
-    }
-
-    const FunctionDefProto& Function::ToProto()
-    {
-        return m_body->ToFuncProto();
     }
 
     Node::EdgeEnd::EdgeEnd(const Node& p_node, const NodeArg& p_nodeArg)
@@ -612,43 +586,6 @@ namespace LotusIR
         }
     }
 
-    Graph::Graph(Node* p_node,
-        const FunctionDefProto& p_functionProto)
-        : m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true),
-        m_numOfNodes(0)
-    {
-        // This is a function (subgraph).
-        m_graphType |= (Type::Main | Type::Strict);
-
-        m_node = p_node;
-        m_funcDefProto = p_functionProto;
-
-        AddSourceSinkNodes();
-
-        ArgNameToTypeMap nameToType;
-        if (nullptr != p_node)
-        {
-            // <p_node> is the one which refers to the function <p_functionProto>.
-            // The inputs/outputs of <p_node> should also be matched with function
-            // inputs/outputs in order.
-            int i = 0;
-            for (auto inputDef : p_node->InputDefs())
-            {
-                if (nullptr != inputDef.Type())
-                {
-                    nameToType[p_functionProto.input_params(i).name()] = OpUtils::ToTypeProto(inputDef.Type());
-                }
-                ++i;
-            }
-        }
-
-        for (auto& nodeProto : p_functionProto.node())
-        {
-            AddNode(nodeProto, nameToType);
-        }
-    }
-
     Graph::Graph(const std::string& p_name, bool p_isONNX)
         : m_graphProtoSyncNeeded(false),
         m_graphResolveNeeded(true),
@@ -720,19 +657,6 @@ namespace LotusIR
             }
         }
         return Status::OK();
-    }
-
-    void Graph::CleanFunctionDefMap(
-        const std::set<std::string>& p_funcDefNames)
-    {
-        for (auto funcDef : m_funcDefMap)
-        {
-            if (p_funcDefNames.end() == p_funcDefNames.find(funcDef.first))
-            {
-                // The <funcDef> is NOT used any more, remove it.
-                m_funcDefMap.erase(funcDef.first);
-            }
-        }
     }
 
     Status Graph::BuildConnections(
@@ -1125,8 +1049,7 @@ namespace LotusIR
 
     Status Graph::VerifyNodeAndOpMatch(
         const std::vector<NODEINDEX>& p_nodesInTopologicalOrder,
-        std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
-        /*out*/ std::set<std::string>& p_funcDefNames)
+        std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs)
     {
         for (auto nodeIndex : p_nodesInTopologicalOrder)
         {
@@ -1274,41 +1197,12 @@ namespace LotusIR
             }
             else
             {
-                auto funcIter = m_funcDefMap.find(op_type);
-                if (m_funcDefMap.end() == funcIter)
-                {
-                    // A op_type refers to nothing.
-                    Status status(LOTUS, FAIL,
-                        "Error: the operator or function (" + op_type
-                        + ") refered by node (" + nodeName
-                        + ") does not exist.");
-                    return status;
-                }
-
-                // The node refers to a function.
-                p_funcDefNames.insert(op_type);
-
-                // Verify node inputs have same size with function definition.
-                if ((size_t)funcIter->second.input_params_size()
-                    != node->InputDefs().size())
-                {
-                    // Number of inputs do not match.
-                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
-                        + ")'s number of inputs do not match its function ("
-                        + op_type + ") specification.");
-                    return status;
-                }
-
-                // Verify node outputs have same size with function definition.
-                if ((size_t)funcIter->second.output_params_size()
-                    != node->OutputDefs().size())
-                {
-                    // Number of outputs do not match.
-                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
-                        + ")'s number of outputs do not match its function ("
-                        + op_type + ") specification.");
-                    return status;
-                }
+                // A op_type refers to nothing.
+                Status status(LOTUS, FAIL,
+                    "Error: the operator or function (" + op_type
+                    + ") refered by node (" + nodeName
+                    + ") does not exist.");
+                return status;
             }
         }
 
@@ -1327,12 +1221,7 @@ namespace LotusIR
         RETURN_IF_ERROR(VerifyNoDuplicateName(outputArgs, nodeNameToIndex));
         RETURN_IF_ERROR(BuildConnections(outputArgs, nodeNameToIndex));
         RETURN_IF_ERROR(CheckIsAcyclic(m_nodesInTopologicalOrder));
-
-        std::set<std::string> funcDefNames;
-        RETURN_IF_ERROR(VerifyNodeAndOpMatch(m_nodesInTopologicalOrder,
-            outputArgs,
-            funcDefNames));
-        CleanFunctionDefMap(funcDefNames);
+        RETURN_IF_ERROR(VerifyNodeAndOpMatch(m_nodesInTopologicalOrder, outputArgs));
         SetGraphInputsOutputs();
 
         m_graphResolveNeeded = false;
@@ -1416,28 +1305,6 @@ namespace LotusIR
     const std::vector<const NodeArg*>& Graph::GetValueInfo() const
     {
         return m_valueInfo;
-    }
-
-    bool Graph::AddFunctionDef(const FunctionDefProto& p_funcDef)
-    {
-        auto funcDefName = p_funcDef.name();
-        if (m_funcDefMap.end() != m_funcDefMap.find(funcDefName))
-        {
-            // Same function definition exists.
-            return false;
-        }
-        m_funcDefMap[funcDefName] = p_funcDef;
-        m_graphProtoSyncNeeded = true;
-        m_graphResolveNeeded = true;
-        return true;
-    }
-
-    void Graph::RemoveFunctionDef(const std::string& p_funcDefName)
-    {
-        m_funcDefMap.erase(p_funcDefName);
-        // Set flag to indicates that the graph needs to be resolved.
-        m_graphProtoSyncNeeded = true;
-        m_graphResolveNeeded = true;
     }
 
     Node* Graph::GetNode(NODEINDEX p_nodeIndex)
@@ -1582,37 +1449,6 @@ namespace LotusIR
         return true;
     }
 
-    bool Graph::TryGetFunction(NODEINDEX p_index, /*out*/Function** p_function)
-    {
-        if (MaxNodeIndex() <= p_index || nullptr == p_function)
-        {
-            return false;
-        }
-
-        auto& funcDefName = m_nodes[p_index]->OpType();
-        auto funcDefIter = m_funcDefMap.find(funcDefName);
-        if (m_funcDefMap.end() == funcDefIter)
-        {
-            // There's no such function definition.
-            return false;
-        }
-
-        auto funcIter = m_functionMap.find(funcDefName);
-        if (m_functionMap.end() != funcIter)
-        {
-            // A function instantiation exists.
-            *p_function = funcIter->second.get();
-            return true;
-        }
-
-        m_functionMap[funcDefName] =
-            std::unique_ptr<Function>(
-                new Function(m_nodes[p_index].get(), funcDefIter->second));
-
-        *p_function = m_functionMap[funcDefName].get();
-        return true;
-    }
-
     const GraphProto& Graph::ToGraphProto()
     {
         if (!m_graphProtoSyncNeeded)
@@ -1733,22 +1569,6 @@ namespace LotusIR
         {
             m_graphOutputs.push_back(outputArg.second);
         }
-    }
-
-    const FunctionDefProto& Graph::ToFuncProto()
-    {
-        return m_funcDefProto;
-    }
-
-    bool Graph::InlineAllFunctions(/*out*/Graph* p_graph) const
-    {
-        if (nullptr == p_graph)
-        {
-            return false;
-        }
-
-        // TODO: add implementation.
-        return true;
     }
 
     bool Graph::IsSourceNode(NODEINDEX p_index) const

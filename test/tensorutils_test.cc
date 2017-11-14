@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "core/graph/tensorutils.h"
-#include "core/protobuf/graph.pb.h"
+#include "external/onnx/onnx/onnx-ml.pb.h"
 
-using namespace LotusIR;
 using namespace Lotus::Utils;
+using namespace onnx;
 
 namespace Lotus
 {
