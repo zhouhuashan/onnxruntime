@@ -31,7 +31,7 @@ namespace LotusIR
             VERSION p_modelVersion,
             const std::string& p_modelDocString);
 
-        Model(const ModelProto& p_modelProto, bool p_isONNX = false);
+        Model(const ModelProto& p_modelProto);
 
         // Get model's IR version.
         // Return <c_noVersion> if not specified.
@@ -81,15 +81,15 @@ namespace LotusIR
 #ifdef _WIN32
         static Status Save(Model& p_model, const std::wstring& p_filePath);
 
-        static Status Load(const std::wstring& p_filePath, /*out*/ std::shared_ptr<Model>* p_model, bool p_isONNX = false);
+        static Status Load(const std::wstring& p_filePath, /*out*/ std::shared_ptr<Model>* p_model);
 #endif
         static Status Save(Model& p_model, const std::string& p_filePath);
 
         static Status Save(Model& p_model, int p_fd);
 
-        static Status Load(const std::string& p_filePath, /*out*/ std::shared_ptr<Model>* p_model, bool p_isONNX = false);
+        static Status Load(const std::string& p_filePath, /*out*/ std::shared_ptr<Model>* p_model);
 
-        static Status Load(int p_fd, /*out*/ std::shared_ptr<Model>* p_model, bool p_isONNX = false);
+        static Status Load(int p_fd, /*out*/ std::shared_ptr<Model>* p_model);
 
     private:
 

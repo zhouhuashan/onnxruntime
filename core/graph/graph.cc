@@ -561,19 +561,16 @@ namespace LotusIR
         return m_graph->GetNode(m_currentNodeIndex);
     }
 
-    Graph::Graph(const GraphProto& p_graphProto, bool p_isONNX)
+    Graph::Graph(const GraphProto& p_graphProto)
         : m_graphProto(p_graphProto),
         m_graphProtoSyncNeeded(false),
         m_graphResolveNeeded(true),
         m_numOfNodes(0)
     {
-        // This is a main graph.
+        // This is a main graph, and strict type checking needed..
         m_graphType |= Type::Main;
 
-        if (!p_isONNX)
-        {
-            m_graphType |= Type::Strict;
-        }
+        // TODO: add Type::Strict back.
 
         // Copy initial tensors to a map.
         for (auto tensor : p_graphProto.initializer())
