@@ -6,13 +6,13 @@ namespace Lotus
 
     namespace Utils
     {
-        bool TensorUtils::IsLittleEndianOrder()
+        inline bool TensorUtils::IsLittleEndianOrder()
         {
-            int n = 1;
+            static int n = 1;
             return (*(char*)&n == 1);
         }
 
-        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<std::string>* p_data)
+        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/std::string* p_data, int64_t p_expected_size)
         {
             if (onnx::TensorProto_DataType_STRING != p_tensor.data_type()
                 || nullptr == p_data)
@@ -20,59 +20,18 @@ namespace Lotus
                 return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
             }
 
-            p_data->clear();
+            if (p_tensor.string_data_size() != p_expected_size)
+                return Status(StatusCategory::LOTUS, StatusCode::FAIL, \
+                    "UnpackTensor: the pre-allocate size does not match the size in proto");
+
             for (auto& elem : p_tensor.string_data())
             {
-                p_data->push_back(elem);
+                *p_data++ = elem;
             }
             return Status::OK();
         }
 
-        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<float>* p_data)
-        {
-            if (onnx::TensorProto_DataType_FLOAT != p_tensor.data_type()
-                || nullptr == p_data)
-            {
-                return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
-            }
-
-            p_data->clear();
-            if (p_tensor.has_raw_data())
-            {
-                UnpackTensorWithRawData(p_tensor, p_data);
-                return Status::OK();
-            }
-
-            for (auto elem : p_tensor.float_data())
-            {
-                p_data->push_back(elem);
-            }
-            return Status::OK();
-        }
-
-        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<int32_t>* p_data)
-        {
-            if (onnx::TensorProto_DataType_INT32 != p_tensor.data_type()
-                || nullptr == p_data)
-            {
-                return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
-            }
-
-            p_data->clear();
-            if (p_tensor.has_raw_data())
-            {
-                UnpackTensorWithRawData(p_tensor, p_data);
-                return Status::OK();
-            }
-
-            for (auto elem : p_tensor.int32_data())
-            {
-                p_data->push_back(elem);
-            }
-            return Status::OK();
-        }
-
-        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<bool>* p_data)
+        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/bool* p_data, int64_t p_expected_size)
         {
             if (onnx::TensorProto_DataType_BOOL != p_tensor.data_type()
                 || nullptr == p_data)
@@ -80,38 +39,22 @@ namespace Lotus
                 return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
             }
 
-            p_data->clear();
             if (p_tensor.has_raw_data())
             {
+                if (p_tensor.raw_data().size() != (p_expected_size) * sizeof(bool))
+                    return Common::Status(Common::StatusCategory::LOTUS, Common::StatusCode::FAIL,
+                        "UnpackTensor: the pre-allocate size does not match the raw data size");
                 UnpackTensorWithRawData(p_tensor, p_data);
-                return Status::OK();
+                return Common::Status::OK();
             }
 
-            for (auto elem : p_tensor.int32_data())
-            {
-                p_data->push_back(elem != 0);
-            }
-            return Status::OK();
-        }
+            if (p_tensor.int32_data_size() != p_expected_size)
+                return Status(StatusCategory::LOTUS, StatusCode::FAIL, \
+                    "UnpackTensor: the pre-allocate size does not match the size in proto");
 
-        Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<int64_t>* p_data)
-        {
-            if (onnx::TensorProto_DataType_INT64 != p_tensor.data_type()
-                || nullptr == p_data)
+            for (auto& elem : p_tensor.int32_data())
             {
-                return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
-            }
-
-            p_data->clear();
-            if (p_tensor.has_raw_data())
-            {
-                UnpackTensorWithRawData(p_tensor, p_data);
-                return Status::OK();
-            }
-
-            for (auto elem : p_tensor.int64_data())
-            {
-                p_data->push_back(elem);
+                *p_data++ = elem != 0;
             }
             return Status::OK();
         }

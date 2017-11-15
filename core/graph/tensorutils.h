@@ -13,45 +13,68 @@ namespace Lotus
         class TensorUtils
         {
         public:
+#define DEFINE_UNPACK_TENSOR(T, Type, fieldName, fieldSize)                                                                    \
+    static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/T* p_data, int64_t p_expected_size)           \
+    {                                                                                                                          \
+        if (Type != p_tensor.data_type()                                                                                       \
+            || nullptr == p_data)                                                                                              \
+        {                                                                                                                      \
+            return Common::Status(Common::StatusCategory::LOTUS, Common::StatusCode::INVALID_ARGUMENT);                        \
+        }                                                                                                                      \
+        if (p_tensor.has_raw_data())                                                                                           \
+        {                                                                                                                      \
+            if (p_tensor.raw_data().size() != (p_expected_size) * sizeof(T))                                                   \
+                return Common::Status(Common::StatusCategory::LOTUS, Common::StatusCode::FAIL,                                 \
+                                               "UnpackTensor: the pre-allocate size does not match the raw data size");        \
+            UnpackTensorWithRawData(p_tensor, p_data);                                                                         \
+            return Common::Status::OK();                                                                                       \
+        }                                                                                                                      \
+        if (p_tensor.fieldSize() != p_expected_size)                                                                           \
+            return Common::Status(Common::StatusCategory::LOTUS, Common::StatusCode::FAIL,                                     \
+                                            "UnpackTensor: the pre-allocate size does not match the size in proto");           \
+        for (auto elem : p_tensor.fieldName())                                                                                 \
+        {                                                                                                                      \
+            *p_data++ = static_cast<T>(elem);                                                                                  \
+        }                                                                                                                      \
+        return Common::Status::OK();                                                                                           \
+    }
 
-            static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<std::string>* p_data);
+            DEFINE_UNPACK_TENSOR(float, onnx::TensorProto_DataType_FLOAT, float_data, float_data_size);
+            DEFINE_UNPACK_TENSOR(int32_t, onnx::TensorProto_DataType_INT32, int32_data, int32_data_size);
+            DEFINE_UNPACK_TENSOR(int64_t, onnx::TensorProto_DataType_INT64, int64_data, int64_data_size);
 
-            static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<float>* p_data);
-
-            static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<int32_t>* p_data);
-
-            static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<bool>* p_data);
-
-            static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/ std::vector<int64_t>* p_data);
+            static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/std::string* p_data, int64_t p_expected_size);
+            static Common::Status UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/bool* p_data, int64_t p_expected_size);
 
         private:
 
             static bool IsLittleEndianOrder();
 
             template <typename T>
-            static void UnpackTensorWithRawData(const onnx::TensorProto& p_tensor, /*out*/ std::vector<T>* p_data)
+            static void UnpackTensorWithRawData(const onnx::TensorProto& p_tensor, /*out*/T* p_data)
             {
                 auto& raw_data = p_tensor.raw_data();
                 auto buff = raw_data.c_str();
                 size_t typeSize = sizeof(T);
 
-                for (size_t i = 0; i < raw_data.size(); i += typeSize, buff += typeSize)
+                if (IsLittleEndianOrder())
                 {
-                    T result;
-                    if (IsLittleEndianOrder())
+                    memcpy((void*)p_data, (void*)buff, raw_data.size() * sizeof(char));
+                }
+                else
+                {
+                    for (size_t i = 0; i < raw_data.size(); i += typeSize, buff += typeSize)
                     {
-                        memcpy((void*)&result, (void*)buff, typeSize);
-                    }
-                    else
-                    {
+                        T result;
                         const char* tempBytes = reinterpret_cast<char*>(&result);
                         for (size_t j = 0; j < typeSize; ++j)
                         {
                             memcpy((void*)&tempBytes[j], (void*)&buff[typeSize - 1 - i], sizeof(char));
                         }
+                        p_data[i] = result;
                     }
-                    p_data->push_back(result);
                 }
+
             }
         };
     }
