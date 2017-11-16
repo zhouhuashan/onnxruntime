@@ -13,6 +13,7 @@ enable_testing()
 # Options
 option(lotusIR_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
 option(lotusIR_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
+option(lotusIR_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
 
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
@@ -28,6 +29,14 @@ endif()
 if (WIN32)
     # parallel build
     add_compile_options(/MP)
+
+    if (lotusIR_ENABLE_STATIC_ANALYSIS)
+        add_compile_options(
+            /analyze:WX-
+            # disable warning because there are many occurrences from test macros
+            /wd6326 # potential comparison of a constant with another constant
+        )
+    endif()
 
     # compile warning level 4
     add_compile_options(/W4)

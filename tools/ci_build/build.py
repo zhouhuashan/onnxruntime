@@ -16,11 +16,13 @@ def parse_arguments():
     parser.add_argument("--config", nargs="+", default=["Debug"],
                         choices=["Debug", "MinSizeRel", "Release", "RelWithDebInfo"],
                         help="Configuration(s) to build.")
+    parser.add_argument("--cmake_extra_defines", nargs="+",
+                        help="Extra definitions to pass to CMake during build system generation. " +
+                             "These are just CMake -D options without the leading -D.")
     parser.add_argument("--cmake_path", default="cmake", help="Path to the CMake program.")
     parser.add_argument("--ctest_path", default="ctest", help="Path to the CTest program.")
 
-    #return parser.parse_args()
-    return parser.parse_known_args()[0] # TODO removed output_dir opt, change back to parse_args() when VSTS builds are updated
+    return parser.parse_args()
 
 def is_windows():
     return sys.platform.startswith("win")
@@ -37,13 +39,15 @@ def run_subprocess(args, cwd=None):
     log.debug("Running subprocess: \n%s", args)
     subprocess.run(args, cwd=cwd, check=True)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, configs):
+def generate_build_tree(cmake_path, source_dir, build_dir, configs,
+                        cmake_extra_defines):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
                  "-DlotusIR_RUN_ONNX_TESTS=ON",
                  "-DlotusIR_GENERATE_TEST_REPORTS=ON",
                  ]
+    cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 
     if is_windows():
         run_subprocess(cmake_args + ["-A", "x64"], cwd=build_dir)
@@ -72,6 +76,8 @@ def main():
     args = parse_arguments()
 
     cmake_path = args.cmake_path
+    cmake_extra_defines = \
+        args.cmake_extra_defines if args.cmake_extra_defines else []
     ctest_path = args.ctest_path
     build_dir = args.build_dir
     script_dir = os.path.realpath(os.path.dirname(__file__))
@@ -83,7 +89,8 @@ def main():
 
     log.info("Build started")
 
-    generate_build_tree(cmake_path, source_dir, build_dir, configs)
+    generate_build_tree(cmake_path, source_dir, build_dir, configs,
+                        cmake_extra_defines)
     build_targets(cmake_path, build_dir, configs)
     run_tests(ctest_path, build_dir, configs)
 
