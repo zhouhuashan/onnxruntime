@@ -48,7 +48,11 @@ namespace Lotus
 
         private:
 
-            static bool IsLittleEndianOrder();
+            static inline bool IsLittleEndianOrder()
+            {
+                static int n = 1;
+                return (*(char*)&n == 1);
+            }
 
             template <typename T>
             static void UnpackTensorWithRawData(const onnx::TensorProto& p_tensor, /*out*/T* p_data)

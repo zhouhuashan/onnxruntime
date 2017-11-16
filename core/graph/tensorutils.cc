@@ -6,12 +6,6 @@ namespace Lotus
 
     namespace Utils
     {
-        inline bool TensorUtils::IsLittleEndianOrder()
-        {
-            static int n = 1;
-            return (*(char*)&n == 1);
-        }
-
         Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/std::string* p_data, int64_t p_expected_size)
         {
             if (onnx::TensorProto_DataType_STRING != p_tensor.data_type()
