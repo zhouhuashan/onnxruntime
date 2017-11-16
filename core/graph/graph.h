@@ -154,6 +154,9 @@ namespace LotusIR
         // Get node operator type.
         const std::string& OpType() const;
 
+        // Get the domain of the OperatorSet that specifies the operator named by <m_opType>.
+        const std::string& Domain() const;
+
         // Get node description.
         const std::string& Description() const;
 
@@ -195,8 +198,6 @@ namespace LotusIR
         ADD_ATTR_INTERFACES(std::string)
         ADD_ATTR_INTERFACES(TensorProto)
         ADD_ATTR_INTERFACES(GraphProto)
-        ADD_ATTR_INTERFACES(TypeProto)
-        ADD_ATTR_INTERFACES(TypeProto::TensorShapeProto)
 
         // Clear specified node attribute.
         bool ClearAttribute(const std::string& p_attrName);
@@ -234,17 +235,20 @@ namespace LotusIR
             const std::string& p_opType,
             const std::string& p_description,
             const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs);
+            const std::vector<NodeArg>& p_outputArgs,
+            const std::string& p_domain);
         void Init(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
             const std::vector<NodeArg>& p_inputArgs,
             const std::vector<int>& p_inputArgCount,
-            const std::vector<NodeArg>& p_outputArgs);
+            const std::vector<NodeArg>& p_outputArgs,
+            const std::string& p_domain);
         void Init(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
-            const std::vector<NodeArg>& p_outputArgs);
+            const std::vector<NodeArg>& p_outputArgs,
+            const std::string& p_domain);
 
         // Node index.
         NODEINDEX m_index;
@@ -254,6 +258,9 @@ namespace LotusIR
 
         // Node operator type.
         std::string m_opType;
+
+        // OperatorSet domain of <m_opType).
+        std::string m_domain;
 
         // Node doc string.
         std::string m_description;
@@ -384,17 +391,20 @@ namespace LotusIR
             const std::string& p_opType,
             const std::string& p_description,
             const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs);
+            const std::vector<NodeArg>& p_outputArgs,
+            const std::string& p_domain = "");
         Node* AddNode(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
             const std::vector<NodeArg>& p_inputArgs,
             const std::vector<int>& p_inputArgCount,
-            const std::vector<NodeArg>& p_outputArgs);
+            const std::vector<NodeArg>& p_outputArgs,
+            const std::string& p_domain = "");
         Node* AddNode(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
-            const std::vector<NodeArg>& p_outputArgs);
+            const std::vector<NodeArg>& p_outputArgs,
+            const std::string& p_domain = "");
         Node* AddNode(const Node& p_other);
         bool RemoveNode(NODEINDEX p_nodeIndex);
 

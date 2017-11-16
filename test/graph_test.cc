@@ -1,5 +1,4 @@
 #include <iostream>
-
 #ifdef _MSC_VER
 #pragma warning(push)
 // 'identifier' : unreferenced formal parameter

@@ -159,6 +159,7 @@ namespace LotusIR
     {
         m_name = p_other.m_name;
         m_opType = p_other.m_opType;
+        m_domain = p_other.m_domain;
         m_inputDefs = p_other.m_inputDefs;
         m_inputs = p_other.m_inputs;
         m_inputNodes = p_other.m_inputNodes;
@@ -187,6 +188,11 @@ namespace LotusIR
     const std::string& Node::Description() const
     {
         return m_description;
+    }
+
+    const std::string& Node::Domain() const
+    {
+        return m_domain;
     }
 
     const std::vector<NodeArg>& Node::InputDefs() const
@@ -281,6 +287,8 @@ namespace LotusIR
         p_proto.set_name(m_name);
         // Set op type.
         p_proto.set_op_type(m_opType);
+        // Set op domain;
+        p_proto.set_domain(m_domain);
         // Set doc string.
         p_proto.set_doc_string(m_description);
 
@@ -314,6 +322,7 @@ namespace LotusIR
     {
         m_name = p_nodeProto.name();
         m_opType = p_nodeProto.op_type();
+        m_domain = p_nodeProto.domain();
 
         for (int i = 0; i < p_nodeProto.input().size(); ++i)
         {
@@ -362,17 +371,15 @@ namespace LotusIR
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
-        const std::vector<NodeArg>& p_outputArgs)
+        const std::vector<NodeArg>& p_outputArgs,
+        const std::string& p_domain)
     {
-        m_name = p_name;
-        m_opType = p_opType;
-        m_description = p_description;
+        Init(p_name, p_opType, p_description, p_outputArgs, p_domain);
         m_inputDefs = p_inputArgs;
         // Set each arg count as 1 by default.
         // It could be adjusted when resolving the node with its operator
         // information.
         m_inputArgCount.assign(m_inputDefs.size(), 1);
-        m_outputDefs = p_outputArgs;
     }
 
     void Node::Init(const std::string& p_name,
@@ -380,25 +387,25 @@ namespace LotusIR
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
         const std::vector<int>& p_inputArgCount,
-        const std::vector<NodeArg>& p_outputArgs)
+        const std::vector<NodeArg>& p_outputArgs,
+        const std::string& p_domain)
     {
-        m_name = p_name;
-        m_opType = p_opType;
-        m_description = p_description;
+        Init(p_name, p_opType, p_description, p_outputArgs, p_domain);
         m_inputDefs = p_inputArgs;
         m_inputArgCount = p_inputArgCount;
-        m_outputDefs = p_outputArgs;
     }
 
     void Node::Init(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
-        const std::vector<NodeArg>& p_outputArgs)
+        const std::vector<NodeArg>& p_outputArgs,
+        const std::string& p_domain)
     {
         m_name = p_name;
         m_opType = p_opType;
         m_description = p_description;
         m_outputDefs = p_outputArgs;
+        m_domain = p_domain;
     }
 
     bool Node::AddAttribute(const std::string& p_attrName, const AttributeProto& p_value)
@@ -1349,10 +1356,11 @@ namespace LotusIR
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
-        const std::vector<NodeArg>& p_outputArgs)
+        const std::vector<NodeArg>& p_outputArgs,
+        const std::string& p_domain)
     {
         auto node = AllocateNode();
-        node->Init(p_name, p_opType, p_description, p_inputArgs, p_outputArgs);
+        node->Init(p_name, p_opType, p_description, p_inputArgs, p_outputArgs, p_domain);
         if (0 != p_opType.compare(c_noOp))
         {
             m_graphProtoSyncNeeded = true;
@@ -1365,7 +1373,8 @@ namespace LotusIR
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
         const std::vector<int>& p_inputArgCount,
-        const std::vector<NodeArg>& p_outputArgs)
+        const std::vector<NodeArg>& p_outputArgs,
+        const std::string& p_domain)
     {
         auto node = AllocateNode();
         node->Init(p_name,
@@ -1373,7 +1382,8 @@ namespace LotusIR
             p_description,
             p_inputArgs,
             p_inputArgCount,
-            p_outputArgs);
+            p_outputArgs,
+            p_domain);
         m_graphProtoSyncNeeded = true;
         return node;
     }
@@ -1381,13 +1391,15 @@ namespace LotusIR
     Node* Graph::AddNode(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
-        const std::vector<NodeArg>& p_outputArgs)
+        const std::vector<NodeArg>& p_outputArgs,
+        const std::string& p_domain)
     {
         auto node = AllocateNode();
         node->Init(p_name,
             p_opType,
             p_description,
-            p_outputArgs);
+            p_outputArgs,
+            p_domain);
         m_graphProtoSyncNeeded = true;
         return node;
     }

@@ -5,6 +5,8 @@
 
 namespace LotusIR
 {
+    typedef std::unordered_map<std::string, std::string> ModelMetaData;
+
     // A machine learning model representation class.
     // Besides a main <Graph>, it also holds basic information, say,
     // version, domain, model author, license etc.
@@ -14,30 +16,24 @@ namespace LotusIR
 
         const VERSION c_noVersion = INT64_MAX;
 
-        // <p_isONNX> is a special flag to indicate whether it's
-        // going to construct a ONNX graph. With ONNX graph, strict
-        // type checking will be skiped.
-        Model(const std::string& p_graphName, bool p_isONNX = false);
-
         Model(const std::string& p_graphName,
-            const std::string& p_graphDocString);
+            bool p_isONNX = false,
+            const ModelMetaData& p_modelMetaData = ModelMetaData());
 
         Model(const std::string& p_graphName,
             const std::string& p_graphDocString,
-            VERSION p_irVersion,
             const std::string& p_producerName,
             const std::string& p_producerVersion,
             const std::string& p_domain,
             VERSION p_modelVersion,
-            const std::string& p_modelDocString);
+            const std::string& p_modelDocString,
+            const ModelMetaData& p_modelMetaData = ModelMetaData());
 
         Model(const ModelProto& p_modelProto);
 
         // Get model's IR version.
         // Return <c_noVersion> if not specified.
         VERSION IrVersion() const;
-        // Set model's IR version.
-        void SetIrVersion(VERSION p_irVersion);
 
         // Get model's producer name.
         // Return null pointer if not specified.
@@ -69,11 +65,12 @@ namespace LotusIR
         // Set models' doc string.
         void SetDocString(const std::string& p_docString);
 
+        const ModelMetaData& MetaData() const;
+
         // Get model's main graph.
         // The return pointer is owned by <*this> model.
         Graph* MainGraph();
         const Graph* MainGraph() const;
-
 
         // Get model's serlization proto data.
         const ModelProto& ToProto();
@@ -95,6 +92,9 @@ namespace LotusIR
 
         // Model data.
         ModelProto m_modelProto;
+        // This is a duplication of <m_modelProto.metadata_props()>.
+        // It gives better accessibility.
+        ModelMetaData m_modelMetaData;
 
         // Main graph of the model.
         std::unique_ptr<Graph> m_graph;
