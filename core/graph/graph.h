@@ -60,12 +60,12 @@ namespace LotusIR
 
         // Get node arg shape.
         // Return null pointer if there's no shape specified.
-        const TypeProto::TensorShapeProto* Shape() const;
+        const TensorShapeProto* Shape() const;
 
         // Set node arg shape.
         // Shape could only be set after setting type since shape information
         // now is part of TypeProto.
-        void SetShape(const TypeProto::TensorShapeProto& p_shape);
+        void SetShape(const TensorShapeProto& p_shape);
 
         // Get node arg info proto.
         const NodeArgInfo& ToProto() const;

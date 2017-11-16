@@ -106,7 +106,7 @@ namespace LotusIR
         ATTR_SETTER_INTERFACE(TensorProto)
         ATTR_SETTER_INTERFACE(GraphProto)
         ATTR_SETTER_INTERFACE(TypeProto)
-        ATTR_SETTER_INTERFACE(TypeProto::TensorShapeProto)
+        ATTR_SETTER_INTERFACE(TensorShapeProto)
 
         // Shape inference function will be used to infer outputs' shape with
         // inputs' shape.

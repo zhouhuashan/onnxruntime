@@ -303,7 +303,7 @@ namespace LotusIR
             Graph graph("graph_1");
             TypeProto outputType;
             outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
-            TypeProto::TensorShapeProto outputShape;
+            TensorShapeProto outputShape;
             outputShape.mutable_dim()->Add()->set_dim_value(1);
             outputShape.mutable_dim()->Add()->set_dim_value(3);
             *(outputType.mutable_tensor_type()->mutable_shape()) = outputShape;

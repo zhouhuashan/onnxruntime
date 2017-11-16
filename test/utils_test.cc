@@ -86,7 +86,7 @@ namespace LotusIR
         TEST(OpUtilsTest, ToStringTest)
         {
             TypeProto scalar;
-            TypeProto_TensorTypeProto* tensor = scalar.mutable_tensor_type();
+            TypeProto_Tensor* tensor = scalar.mutable_tensor_type();
             tensor->set_elem_type(TensorProto_DataType_INT32);
             tensor->mutable_shape();
             EXPECT_EQ(OpUtils::ToString(scalar), "int32");
@@ -116,7 +116,7 @@ namespace LotusIR
             TypeProto scalar1;
             OpUtils::FromString("int32", scalar1);
             TypeProto scalar2;
-            TypeProto_TensorTypeProto* tensor = scalar2.mutable_tensor_type();
+            TypeProto_Tensor* tensor = scalar2.mutable_tensor_type();
             tensor->set_elem_type(TensorProto_DataType_INT32);
             tensor->mutable_shape();
             EXPECT_TRUE(MessageDifferencer::MessageDifferencer::Equals(scalar1, scalar2));

@@ -42,7 +42,7 @@ namespace LotusIR
         return m_type;
     }
 
-    const TypeProto::TensorShapeProto* NodeArg::Shape() const
+    const TensorShapeProto* NodeArg::Shape() const
     {
         if (!m_nodeArgInfo.has_type())
         {
@@ -62,7 +62,7 @@ namespace LotusIR
         }
     }
 
-    void NodeArg::SetShape(const TypeProto::TensorShapeProto& p_shape)
+    void NodeArg::SetShape(const TensorShapeProto& p_shape)
     {
         if (!m_nodeArgInfo.has_type())
         {
@@ -893,7 +893,7 @@ namespace LotusIR
                         inputDef.SetType(OpUtils::ToType(initialTensorType));
 
                         // Set shape accordingly.
-                        TypeProto_TensorShapeProto shape;
+                        TensorShapeProto shape;
                         for (auto dim : initialTensorIter->second.dims())
                         {
                             shape.add_dim()->set_dim_value(dim);
