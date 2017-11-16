@@ -15,6 +15,7 @@ option(lotusIR_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
 option(lotusIR_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
 option(lotusIR_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
 
+include(lotusIR_util.cmake)
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 set(LOTUSIR_ROOT ${PROJECT_SOURCE_DIR}/..)
@@ -25,6 +26,8 @@ if (lotusIR_RUN_ONNX_TESTS)
   include(models)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()
+include(onnx.cmake)
+add_definitions(-DONNX_ML)
 
 if (WIN32)
     # parallel build
@@ -49,12 +52,12 @@ endif()
 
 include_directories(
     ${LOTUSIR_ROOT}
+    ${LOTUSIR_ROOT}/external/onnx
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/external/onnx
     # External dependencies.
     ${PROTOBUF_INCLUDE_DIRS}
 )
 
-include(lotusIR_util.cmake)
-include(onnx_core_protobuf.cmake)
 include(lotusIR_core_graph.cmake)
 include(lotusIR_unittest.cmake)

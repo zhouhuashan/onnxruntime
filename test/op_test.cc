@@ -3,6 +3,8 @@
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
 #include "external/onnx/onnx/onnx-ml.pb.h"
+#include "external/onnx/onnx/defs/schema.h"
+#include "external/onnx/onnx/defs/data_type_utils.h"
 
 using namespace onnx;
 
@@ -64,6 +66,28 @@ namespace LotusIR
             EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(int32)")), "tensor(int32)");
         }
 
+        TEST(OpRegistrationTest, OnnxOpRegTest)
+        {
+            OPERATOR_SCHEMA(__TestOpReg).SetDoc("Op Registration Basic Test.")
+                .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+                .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
+                .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+
+            const onnx::OpSchema* opSchema = onnx::OpSchemaRegistry::Schema("__TestOpReg");
+            EXPECT_TRUE(opSchema != nullptr);
+            EXPECT_EQ(opSchema->inputs().size(), 2);
+            EXPECT_EQ(opSchema->inputs()[0].GetName(), "input_1");
+            EXPECT_EQ(opSchema->inputs()[0].GetTypes().size(), 1);
+            EXPECT_EQ(**opSchema->inputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(int32)")), "tensor(int32)");
+            EXPECT_EQ(opSchema->inputs()[1].GetName(), "input_2");
+            EXPECT_EQ(opSchema->inputs()[1].GetTypes().size(), 1);
+            EXPECT_EQ(**opSchema->inputs()[1].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(int32)")), "tensor(int32)");
+            EXPECT_EQ(opSchema->outputs().size(), 1);
+            EXPECT_EQ(opSchema->outputs()[0].GetName(), "output_1");
+            EXPECT_EQ(opSchema->outputs()[0].GetTypes().size(), 1);
+            EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(int32)")), "tensor(int32)");
+        }
+
         TEST(OpRegistrationTest, TypeConstraintTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestTypeConstraint).Description("Op with Type Constraint.")
@@ -98,6 +122,37 @@ namespace LotusIR
             EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(double)")), "tensor(double)");
         }
 
+        TEST(OpRegistrationTest, OnnxTypeConstraintTest)
+        {
+            OPERATOR_SCHEMA(__TestTypeConstraint).SetDoc("Op with Type Constraint.")
+                .Input(0, "input_1", "docstr for input_1.", "T")
+                .Input(1, "input_2", "docstr for input_2.", "T")
+                .Output(0, "output_1", "docstr for output_1.", "T")
+                .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+                    "Constrain input and output types to floats.");
+            const onnx::OpSchema* opSchema = onnx::OpSchemaRegistry::Schema("__TestTypeConstraint");
+            EXPECT_TRUE(opSchema != nullptr);
+            EXPECT_EQ(opSchema->inputs().size(), 2);
+            EXPECT_EQ(opSchema->inputs()[0].GetName(), "input_1");
+            EXPECT_EQ(opSchema->inputs()[0].GetTypes().size(), 3);
+            EXPECT_EQ(**opSchema->inputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float16)")), "tensor(float16)");
+            EXPECT_EQ(**opSchema->inputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float)")), "tensor(float)");
+            EXPECT_EQ(**opSchema->inputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(double)")), "tensor(double)");
+
+            EXPECT_EQ(opSchema->inputs()[1].GetName(), "input_2");
+            EXPECT_EQ(opSchema->inputs()[1].GetTypes().size(), 3);
+            EXPECT_EQ(**opSchema->inputs()[1].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float16)")), "tensor(float16)");
+            EXPECT_EQ(**opSchema->inputs()[1].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float)")), "tensor(float)");
+            EXPECT_EQ(**opSchema->inputs()[1].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(double)")), "tensor(double)");
+
+            EXPECT_EQ(opSchema->outputs().size(), 1);
+            EXPECT_EQ(opSchema->outputs()[0].GetName(), "output_1");
+            EXPECT_EQ(opSchema->outputs()[0].GetTypes().size(), 3);
+            EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float16)")), "tensor(float16)");
+            EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float)")), "tensor(float)");
+            EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(double)")), "tensor(double)");
+        }
+
         TEST(OpRegistrationTest, AttributeTest)
         {
             REGISTER_OPERATOR_SCHEMA(__TestAttr).Description("Op with attributes.")
@@ -119,6 +174,26 @@ namespace LotusIR
             {
                 EXPECT_EQ(op->GetAttributes()[i].GetName(), expected_strings[i]);
                 EXPECT_EQ(op->GetAttributes()[i].GetType(), expected_types[i]);
+            }
+        }
+
+        TEST(OpRegistrationTest, OnnxAttributeTest)
+        {
+            OPERATOR_SCHEMA(__TestAttr).SetDoc("Op with attributes.")
+                .Attr("my_attr_int", "attr with INT type", onnx::OpSchema::AttrType::INT)
+                .Attr("my_attr_float", "attr with FLOAT type", onnx::OpSchema::AttrType::FLOAT)
+                .Attr("my_attr_string", "attr with STRING type", onnx::OpSchema::AttrType::STRING);
+            const onnx::OpSchema* opSchema = onnx::OpSchemaRegistry::Schema("__TestAttr");
+            EXPECT_TRUE(opSchema != nullptr);
+
+            std::vector<std::string> expected_strings = { "my_attr_int", "my_attr_float", "my_attr_string" };
+            std::vector<onnx::OpSchema::AttrType> expected_types = { onnx::OpSchema::AttrType::INT, onnx::OpSchema::AttrType::FLOAT, onnx::OpSchema::AttrType::STRING };
+
+            size_t size = opSchema->attributes().size();
+            EXPECT_EQ(size, 3);
+            for (size_t i = 0; i < size; i++)
+            {
+                EXPECT_EQ(opSchema->attributes().find(expected_strings[i])->second.type, expected_types[i]);
             }
         }
 
@@ -220,6 +295,11 @@ namespace LotusIR
             EXPECT_TRUE(success);
             success = OperatorSchemaRegistry::Get()->TryGetOp("Conv", &opSchema);
             EXPECT_TRUE(success);
+
+            const onnx::OpSchema* opSchemaOnnx = onnx::OpSchemaRegistry::Schema("Add");
+            EXPECT_TRUE(opSchema != nullptr);
+            opSchemaOnnx = onnx::OpSchemaRegistry::Schema("Conv");
+            EXPECT_TRUE(opSchema != nullptr);
         }
     }
 }

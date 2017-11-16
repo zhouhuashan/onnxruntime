@@ -15,12 +15,13 @@ function(add_whole_archive_flag lib output_var)
 endfunction()
 
 set(${UT_NAME}_libs
-    onnx_protos
     ${googletest_STATIC_LIBRARIES}
     ${protobuf_STATIC_LIBRARIES}
 )
 
 add_whole_archive_flag(lotusIR_graph tmp)
+list(APPEND ${UT_NAME}_libs ${tmp})
+add_whole_archive_flag(onnx tmp)
 list(APPEND ${UT_NAME}_libs ${tmp})
 
 file(GLOB_RECURSE ${UT_NAME}_src
