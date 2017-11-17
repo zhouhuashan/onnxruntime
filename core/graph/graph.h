@@ -14,6 +14,11 @@
 using namespace Lotus::Common;
 using namespace onnx;
 
+namespace lotusrt
+{
+    class LotusRT;
+};
+
 namespace LotusIR
 {
     typedef size_t NODEINDEX;
@@ -25,11 +30,6 @@ namespace LotusIR
     class Graph;
     class Node;
     class OpSignature;
-
-    namespace lotusrt
-    {
-        class LotusRT;
-    };
 
     // Node argument definition, for both input and output,
     // including arg name, arg type (contains both type and shape).
