@@ -195,6 +195,11 @@ namespace LotusIR
         return m_domain;
     }
 
+    const OperatorSchema* Node::Op() const
+    {
+        return m_op;
+    }
+
     const std::vector<NodeArg>& Node::InputDefs() const
     {
         return m_inputDefs;
@@ -1069,140 +1074,13 @@ namespace LotusIR
             auto node = GetNode(nodeIndex);
             std::string nodeName = node->Name();
             std::string op_type = node->OpType();
-            const OperatorSchema* opSchema = nullptr;
+            // TODO: after using ONNX op registry API, logic will be changed
+            // here to find OperatorSchema that a node refers to with op_type,
+            // domain and version.
+
             bool success
-                = OperatorSchemaRegistry::Get()->TryGetOp(op_type, &opSchema);
-            if (success)
-            {
-                auto& op = opSchema->GetOpSignature();
-
-                // The node refers to a primitive operator.
-                // Infer and verify node input arg type information.
-                auto totalArgCount = std::accumulate(node->InputArgCount().begin(),
-                    node->InputArgCount().end(), 0);
-                if (totalArgCount != node->InputDefs().size())
-                {
-                    Status status(LOTUS, FAIL,
-                        "The sum of input arg count is not equal to size of"
-                        "input defs in node (" + nodeName + ").");
-                    return status;
-                }
-
-                // Verify size of node arg count is same as input number in
-                // operator definition.
-                if (op.GetInputs().size() != node->InputArgCount().size())
-                {
-                    if (0 == (m_graphType & Type::Strict))
-                    {
-                        // It's ONNX case.
-                        // Adjust input arg count array with op definition
-                        // The adjustment will work as below,
-                        // In total, there're <totalArgCount> inputs, which
-                        // will be split as <1, 1, 1, 1, ... 1, x> or
-                        // <1, 1, 1, 1, ...1, 0, 0, ...0>. The final input 
-                        // arg count array's element number will be the same
-                        // as op definition, and the sum of all elements will
-                        // be equal to <totalArgCount>.
-                        auto& inputArgCount = node->Mutable_InputArgCount();
-                        inputArgCount.clear();
-                        size_t m = 0;
-                        auto argCountLeft = totalArgCount;
-                        if (0 < op.GetInputs().size())
-                        {
-                            for (; m < op.GetInputs().size() - 1; ++m)
-                            {
-                                if (argCountLeft > 0)
-                                {
-                                    inputArgCount.push_back(1);
-                                    argCountLeft--;
-                                }
-                                else
-                                {
-                                    inputArgCount.push_back(0);
-                                }
-                            }
-                        }
-
-                        // Set the arg count for the last input formal parameter.
-                        // NOTE: in the case that there's no .input(...) defined
-                        // in op schema, all input args will be fed as one input
-                        // of the operator.
-                        inputArgCount.push_back(argCountLeft);
-                    }
-                    else
-                    {
-                        // Number of inputs do not match.
-                        Status status(LOTUS, FAIL, "Error: node (" + nodeName
-                            + ")'s number of inputs do not match its operator ("
-                            + op_type + ") specification.");
-                        return status;
-                    }
-                }
-
-                // Verify node outputs have same size with operator definition.
-                if (op.GetOutputs().size() != node->OutputDefs().size())
-                {
-                    if (0 != (m_graphType & Type::Strict))
-                    {
-                        // Number of outputs do not match.
-                        Status status(LOTUS, FAIL, "Error: node (" + nodeName
-                            + ")'s number of outputs does not match its operator ("
-                            + op_type + ") specification.");
-                        return status;
-                    }
-                }
-
-                if (0 != (m_graphType & Type::Strict))
-                {
-                    // Strict type checking needed.
-                    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs)));
-                }
-
-                // Attribute verification and fill node attribute with
-                // default value defined in operator definition if needed.
-                auto attrParser = opSchema->GetAttributeParser();
-                if (nullptr != attrParser)
-                {
-                    // Attribute parser registered.
-                    // Verifying attribute match by running attribute parser.
-                    RETURN_IF_ERROR(attrParser(node->GetAttributes()));
-                }
-                else
-                {
-                    // No attribute parser registered.
-                    auto nodeAttributes = node->GetAttributes();
-                    for (auto attrDef : op.GetAttributes())
-                    {
-                        auto nodeAttrIter = nodeAttributes.find(attrDef.GetName());
-                        if (nodeAttributes.end() == nodeAttrIter)
-                        {
-                            const AttributeProto* defaultValue = nullptr;
-                            bool hasDefaultValue
-                                = attrDef.HasDefaultValue(&defaultValue);
-                            if (hasDefaultValue)
-                            {
-                                // Set default value to the node attributes.
-                                node->AddAttribute(attrDef.GetName(), *defaultValue);
-                            }
-                        }
-                        else
-                        {
-                            // Verify node attribute type matching type of
-                            // attribute defined in operator definition.
-                            AttrType nodeAttrType;
-                            RETURN_IF_ERROR(TypeUtils::GetType(nodeAttrIter->second, nodeAttrType));
-                            if (nodeAttrType != attrDef.GetType())
-                            {
-                                Status status(LOTUS, FAIL,
-                                    "Node (" + nodeName + ") attribute ("
-                                    + nodeAttrIter->first + ") type does not match operator definition.");
-                                return status;
-                            }
-                        }
-                    }
-                }
-            }
-            else
+                = OperatorSchemaRegistry::Get()->TryGetOp(op_type, &(node->m_op));
+            if (!success)
             {
                 // A op_type refers to nothing.
                 Status status(LOTUS, FAIL,
@@ -1210,6 +1088,134 @@ namespace LotusIR
                     + ") refered by node (" + nodeName
                     + ") does not exist.");
                 return status;
+            }
+
+            auto& op = node->Op()->GetOpSignature();
+
+            // The node refers to a primitive operator.
+            // Infer and verify node input arg type information.
+            auto totalArgCount = std::accumulate(node->InputArgCount().begin(),
+                node->InputArgCount().end(), 0);
+            if (totalArgCount != node->InputDefs().size())
+            {
+                Status status(LOTUS, FAIL,
+                    "The sum of input arg count is not equal to size of"
+                    "input defs in node (" + nodeName + ").");
+                return status;
+            }
+
+            // Verify size of node arg count is same as input number in
+            // operator definition.
+            if (op.GetInputs().size() != node->InputArgCount().size())
+            {
+                if (0 == (m_graphType & Type::Strict))
+                {
+                    // It's ONNX case.
+                    // Adjust input arg count array with op definition
+                    // The adjustment will work as below,
+                    // In total, there're <totalArgCount> inputs, which
+                    // will be split as <1, 1, 1, 1, ... 1, x> or
+                    // <1, 1, 1, 1, ...1, 0, 0, ...0>. The final input 
+                    // arg count array's element number will be the same
+                    // as op definition, and the sum of all elements will
+                    // be equal to <totalArgCount>.
+                    auto& inputArgCount = node->Mutable_InputArgCount();
+                    inputArgCount.clear();
+                    size_t m = 0;
+                    auto argCountLeft = totalArgCount;
+                    if (0 < op.GetInputs().size())
+                    {
+                        for (; m < op.GetInputs().size() - 1; ++m)
+                        {
+                            if (argCountLeft > 0)
+                            {
+                                inputArgCount.push_back(1);
+                                argCountLeft--;
+                            }
+                            else
+                            {
+                                inputArgCount.push_back(0);
+                            }
+                        }
+                    }
+
+                    // Set the arg count for the last input formal parameter.
+                    // NOTE: in the case that there's no .input(...) defined
+                    // in op schema, all input args will be fed as one input
+                    // of the operator.
+                    inputArgCount.push_back(argCountLeft);
+                }
+                else
+                {
+                    // Number of inputs do not match.
+                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
+                        + ")'s number of inputs do not match its operator ("
+                        + op_type + ") specification.");
+                    return status;
+                }
+            }
+
+            // Verify node outputs have same size with operator definition.
+            if (op.GetOutputs().size() != node->OutputDefs().size())
+            {
+                if (0 != (m_graphType & Type::Strict))
+                {
+                    // Number of outputs do not match.
+                    Status status(LOTUS, FAIL, "Error: node (" + nodeName
+                        + ")'s number of outputs does not match its operator ("
+                        + op_type + ") specification.");
+                    return status;
+                }
+            }
+
+            if (0 != (m_graphType & Type::Strict))
+            {
+                // Strict type checking needed.
+                NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs)));
+            }
+
+            // Attribute verification and fill node attribute with
+            // default value defined in operator definition if needed.
+            auto attrParser = node->Op()->GetAttributeParser();
+            if (nullptr != attrParser)
+            {
+                // Attribute parser registered.
+                // Verifying attribute match by running attribute parser.
+                RETURN_IF_ERROR(attrParser(node->GetAttributes()));
+            }
+            else
+            {
+                // No attribute parser registered.
+                auto nodeAttributes = node->GetAttributes();
+                for (auto attrDef : op.GetAttributes())
+                {
+                    auto nodeAttrIter = nodeAttributes.find(attrDef.GetName());
+                    if (nodeAttributes.end() == nodeAttrIter)
+                    {
+                        const AttributeProto* defaultValue = nullptr;
+                        bool hasDefaultValue
+                            = attrDef.HasDefaultValue(&defaultValue);
+                        if (hasDefaultValue)
+                        {
+                            // Set default value to the node attributes.
+                            node->AddAttribute(attrDef.GetName(), *defaultValue);
+                        }
+                    }
+                    else
+                    {
+                        // Verify node attribute type matching type of
+                        // attribute defined in operator definition.
+                        AttrType nodeAttrType;
+                        RETURN_IF_ERROR(TypeUtils::GetType(nodeAttrIter->second, nodeAttrType));
+                        if (nodeAttrType != attrDef.GetType())
+                        {
+                            Status status(LOTUS, FAIL,
+                                "Node (" + nodeName + ") attribute ("
+                                + nodeAttrIter->first + ") type does not match operator definition.");
+                            return status;
+                        }
+                    }
+                }
             }
         }
 

@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include "core/graph/constants.h"
+#include "core/graph/op.h"
 #include "core/graph/status.h"
 #include "core/graph/utils.h"
 #include "external/onnx/onnx/onnx-ml.pb.h"
@@ -17,7 +18,6 @@ namespace LotusIR
 {
     typedef size_t NODEINDEX;
     typedef int64_t VERSION;
-    typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
     typedef ValueInfoProto NodeArgInfo;
     typedef std::unordered_map<std::string, TensorProto> InitialTensorSet;
     typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
@@ -25,6 +25,11 @@ namespace LotusIR
     class Graph;
     class Node;
     class OpSignature;
+
+    namespace lotusrt
+    {
+        class LotusRT;
+    };
 
     // Node argument definition, for both input and output,
     // including arg name, arg type (contains both type and shape).
@@ -79,6 +84,7 @@ namespace LotusIR
 
         friend class Node;
         friend class Graph;
+        friend class lotusrt::LotusRT;
 
         void SetType(PTYPE p_type);
         void SetType(const TypeProto& p_typeProto);
@@ -156,6 +162,9 @@ namespace LotusIR
 
         // Get the domain of the OperatorSet that specifies the operator named by <m_opType>.
         const std::string& Domain() const;
+
+        // Get the OperatorSchema this node refers to.
+        const OperatorSchema* Op() const;
 
         // Get node description.
         const std::string& Description() const;
@@ -261,6 +270,9 @@ namespace LotusIR
 
         // OperatorSet domain of <m_opType).
         std::string m_domain;
+
+        // OperatorSchema that <*this> node refers to.
+        const OperatorSchema* m_op;
 
         // Node doc string.
         std::string m_description;

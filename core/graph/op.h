@@ -10,6 +10,7 @@
 namespace LotusIR
 {
     class OpSignature;
+    typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
 
     class TypeUtils
     {

@@ -1,11 +1,17 @@
 #ifndef CORE_GRAPH_SHAPEINFERENCE_H
 #define CORE_GRAPH_SHAPEINFERENCE_H
 
-#include "core/graph/graph.h"
+#include <functional>
+
 #include "core/graph/opsignature.h"
+#include "core/graph/status.h"
+
+using namespace Lotus::Common;
 
 namespace LotusIR
 {
+    class Node;
+    class NodeArg;
 
     // A context to contain information for shape inference function.
     // It includes the operator registry, input arguments definition,
