@@ -257,6 +257,21 @@ namespace LotusIR
         return status;
     }
 
+    Status Model::LoadFromBytes(int count, void *pBytes, /*out*/ std::shared_ptr<Model>* p_model)
+    {
+        ModelProto modelProto;
+        bool result = modelProto.ParseFromArray(pBytes, count);
+        if (!result)
+        {
+            return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
+        }
+
+        (*p_model).reset(new Model(modelProto));
+        RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve());
+
+        return Status::OK();
+    }
+
     Status Model::Save(Model& p_model, const std::string& p_filePath)
     {
         int fd;

@@ -42,6 +42,11 @@ function(AddTest)
   endif()
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+  if (WIN32)
+    target_compile_options(${_UT_TARGET} PRIVATE
+        /EHsc   # exception handling - C++ may throw, extern "C" will not
+    )
+  endif()
 
   set(TEST_ARGS)
   if (lotusIR_GENERATE_TEST_REPORTS)

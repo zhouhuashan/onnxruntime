@@ -88,6 +88,9 @@ namespace LotusIR
 
         static Status Load(int p_fd, /*out*/ std::shared_ptr<Model>* p_model);
 
+        // 'int' rather than 'size_t' because of a protobuf design choice; let callers handle type checks
+        static Status LoadFromBytes(int count, void *pBytes, /*out*/ std::shared_ptr<Model>* p_model);
+
     private:
 
         // Model data.

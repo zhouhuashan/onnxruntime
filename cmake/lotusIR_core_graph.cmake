@@ -15,4 +15,7 @@ if (WIN32)
     )
     set_target_properties(lotusIR_graph PROPERTIES
         STATIC_LIBRARY_FLAGS "${lotusIR_graph_static_library_flags}")
+    target_compile_options(lotusIR_graph PRIVATE
+        /EHsc   # exception handling - C++ may throw, extern "C" will not
+    )
 endif()
