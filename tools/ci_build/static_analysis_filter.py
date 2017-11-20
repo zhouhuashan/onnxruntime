@@ -23,7 +23,7 @@ def make_warning_info(location, code_str, description, project):
     return WarningInfo._make([
         normalized_location, code, description, project])
 
-path_pattern = r"[A-Za-z0-9_ :./\\]+"
+path_pattern = r"[A-Za-z0-9_\- :./\\]+"
 warning_line_pattern = r"^(" + path_pattern + r"\(\d+\)):" + \
                        r"\s+warning C(\d+):" + \
                        r"\s+(.*)" + \
