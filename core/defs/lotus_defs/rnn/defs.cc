@@ -105,7 +105,7 @@ namespace LotusIR {
         .FillUsing(RNNDocGeneratorInputInitialH())
         .Attr("activations", "One (or two if bidirectional) activation function for "
             "input gate. It must be one of tanh and ReLU. Default `tanh`.",
-            AttrType::AttributeProto_AttributeType_STRING)
+            AttrType::AttributeProto_AttributeType_STRINGS)
         .FillUsing(RNNDocGeneratorActivationArgs())
         .FillUsing(RNNDocGeneratorAttrOutput());
 
