@@ -141,6 +141,8 @@ namespace LotusIR
 
         // Get operator name.
         const std::string& GetName() const;
+        int SinceVersion() const;
+        const std::string& Domain() const;
 
         // Get operator description.
         const std::string& GetDescription() const;
@@ -160,10 +162,12 @@ namespace LotusIR
     private:
 
         friend class OperatorSchemaSetter;
-        friend class OperatorSchemaRegistry;
+        friend class OpSchemaRegistry;
 
         // Operator name.
         std::string m_name;
+        int m_sinceVersion = 1;
+        std::string m_domain = "";
 
         // Operator description.
         std::string m_description;

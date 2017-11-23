@@ -27,11 +27,9 @@ namespace LotusIR
                 .Input("input_1", "docstr for input_1.")
                 .Input("input_2", "docstr for input_2.")
                 .Output("output_1", "docstr for output_1.");
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestOpRegNoTypes", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            auto opSchema = OpSchemaRegistry::Schema("__TestOpRegNoTypes");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
             EXPECT_EQ(op->GetInputs().size(), 2);
             EXPECT_EQ(op->GetInputs()[0].GetName(), "input_1");
             EXPECT_EQ(op->GetInputs()[0].GetTypes().size(), 0);
@@ -48,11 +46,9 @@ namespace LotusIR
                 .Input("input_1", "docstr for input_1.", "tensor(int32)")
                 .Input("input_2", "docstr for input_2.", "tensor(int32)")
                 .Output("output_1", "docstr for output_1.", "tensor(int32)");
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestOpReg", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            const OperatorSchema* opSchema = OpSchemaRegistry::Schema("__TestOpReg");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
             EXPECT_EQ(op->GetInputs().size(), 2);
             EXPECT_EQ(op->GetInputs()[0].GetName(), "input_1");
             EXPECT_EQ(op->GetInputs()[0].GetTypes().size(), 1);
@@ -74,7 +70,7 @@ namespace LotusIR
                 .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
             const onnx::OpSchema* opSchema = onnx::OpSchemaRegistry::Schema("__TestOpReg");
-            EXPECT_TRUE(opSchema != nullptr);
+            EXPECT_TRUE(nullptr != opSchema);
             EXPECT_EQ(opSchema->inputs().size(), 2);
             EXPECT_EQ(opSchema->inputs()[0].GetName(), "input_1");
             EXPECT_EQ(opSchema->inputs()[0].GetTypes().size(), 1);
@@ -96,11 +92,9 @@ namespace LotusIR
                 .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
                     "Constrain input and output types to floats.");
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestTypeConstraint", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            const OperatorSchema* opSchema = OpSchemaRegistry::Schema("__TestTypeConstraint");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
             EXPECT_EQ(op->GetInputs().size(), 2);
             EXPECT_EQ(op->GetInputs()[0].GetName(), "input_1");
             EXPECT_EQ(op->GetInputs()[0].GetTypes().size(), 3);
@@ -131,7 +125,7 @@ namespace LotusIR
                 .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
                     "Constrain input and output types to floats.");
             const onnx::OpSchema* opSchema = onnx::OpSchemaRegistry::Schema("__TestTypeConstraint");
-            EXPECT_TRUE(opSchema != nullptr);
+            EXPECT_TRUE(nullptr != opSchema);
             EXPECT_EQ(opSchema->inputs().size(), 2);
             EXPECT_EQ(opSchema->inputs()[0].GetName(), "input_1");
             EXPECT_EQ(opSchema->inputs()[0].GetTypes().size(), 3);
@@ -159,11 +153,9 @@ namespace LotusIR
                 .Attr("my_attr_int", "attr with INT type", AttrType::AttributeProto_AttributeType_INT)
                 .Attr("my_attr_float", "attr with FLOAT type", AttrType::AttributeProto_AttributeType_FLOAT)
                 .Attr("my_attr_string", "attr with STRING type", AttrType::AttributeProto_AttributeType_STRING);
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttr", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            const OperatorSchema* opSchema = OpSchemaRegistry::Schema("__TestAttr");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
 
             std::vector<std::string> expected_strings = { "my_attr_int", "my_attr_float", "my_attr_string" };
             std::vector<AttrType> expected_types = { AttrType::AttributeProto_AttributeType_INT, AttrType::AttributeProto_AttributeType_FLOAT, AttrType::AttributeProto_AttributeType_STRING };
@@ -184,8 +176,7 @@ namespace LotusIR
                 .Attr("my_attr_float", "attr with FLOAT type", onnx::OpSchema::AttrType::FLOAT)
                 .Attr("my_attr_string", "attr with STRING type", onnx::OpSchema::AttrType::STRING);
             const onnx::OpSchema* opSchema = onnx::OpSchemaRegistry::Schema("__TestAttr");
-            EXPECT_TRUE(opSchema != nullptr);
-
+            EXPECT_TRUE(nullptr != opSchema);
             std::vector<std::string> expected_strings = { "my_attr_int", "my_attr_float", "my_attr_string" };
             std::vector<onnx::OpSchema::AttrType> expected_types = { onnx::OpSchema::AttrType::INT, onnx::OpSchema::AttrType::FLOAT, onnx::OpSchema::AttrType::STRING };
 
@@ -203,11 +194,9 @@ namespace LotusIR
                 .Attr("my_attr_int", "attr with default value of 99.", AttrType::AttributeProto_AttributeType_INT, int64_t(99))
                 .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::AttributeProto_AttributeType_FLOAT, float(0.99))
                 .Attr("my_attr_string", "attr with default value of \"99\".", AttrType::AttributeProto_AttributeType_STRING, std::string("99"));
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrDefaultValue", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            const OperatorSchema* opSchema = OpSchemaRegistry::Schema("__TestAttrDefaultValue");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
             EXPECT_EQ(op->GetAttributes().size(), 3);
 
             EXPECT_EQ(op->GetAttributes()[0].GetName(), "my_attr_int");
@@ -241,11 +230,9 @@ namespace LotusIR
                 .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::AttributeProto_AttributeType_INTS, std::vector<int64_t> {int64_t(98), int64_t(99), int64_t(100)})
                 .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::AttributeProto_AttributeType_FLOATS, std::vector<float> {float(0.98), float(0.99), float(1.00)})
                 .Attr("my_attr_strings", "attr with default value of [\"98\", \"99\", \"100\"].", AttrType::AttributeProto_AttributeType_STRINGS, std::vector<std::string> {"98", "99", "100"});
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("__TestAttrDefaultValueList", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            const OperatorSchema* opSchema = OpSchemaRegistry::Schema("__TestAttrDefaultValueList");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
             EXPECT_EQ(op->GetAttributes().size(), 3);
 
             EXPECT_EQ(op->GetAttributes()[0].GetName(), "my_attr_ints");
@@ -290,11 +277,10 @@ namespace LotusIR
 
         TEST(TestONNXReg, VerifyRegistration)
         {
-            const OperatorSchema* opSchema;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("Add", &opSchema);
-            EXPECT_TRUE(success);
-            success = OperatorSchemaRegistry::Get()->TryGetOp("Conv", &opSchema);
-            EXPECT_TRUE(success);
+            const OperatorSchema* opSchema = OpSchemaRegistry::Schema("Add");
+            EXPECT_TRUE(nullptr != opSchema);
+            opSchema = OpSchemaRegistry::Schema("Conv");
+            EXPECT_TRUE(nullptr != opSchema);
 
             const onnx::OpSchema* opSchemaOnnx = onnx::OpSchemaRegistry::Schema("Add");
             EXPECT_TRUE(opSchema != nullptr);

@@ -1072,15 +1072,14 @@ namespace LotusIR
             }
 
             auto node = GetNode(nodeIndex);
-            std::string nodeName = node->Name();
-            std::string op_type = node->OpType();
-            // TODO: after using ONNX op registry API, logic will be changed
-            // here to find OperatorSchema that a node refers to with op_type,
-            // domain and version.
+            auto& nodeName = node->Name();
+            auto& op_type = node->OpType();
+            auto& domain = node->Domain();
 
-            bool success
-                = OperatorSchemaRegistry::Get()->TryGetOp(op_type, &(node->m_op));
-            if (!success)
+            // Get op schema with latest version given op name and domain.
+            // TODO: version may be used when we want to support versioning in run time.
+            node->m_op = OpSchemaRegistry::Schema(op_type, domain);
+            if (nullptr == node->m_op)
             {
                 // A op_type refers to nothing.
                 Status status(LOTUS, FAIL,

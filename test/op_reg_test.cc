@@ -13,11 +13,9 @@ namespace LotusIR
     {
         TEST(OpRegistrationTest, LinearOp)
         {
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("Linear", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            auto opSchema = OpSchemaRegistry::Schema("Linear");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
             size_t input_size = op->GetInputs().size();
             EXPECT_EQ(input_size, 1);
             EXPECT_EQ(op->GetInputs()[0].GetTypes(), op->GetOutputs()[0].GetTypes());
@@ -31,11 +29,9 @@ namespace LotusIR
 
         TEST(OpRegistrationTest, EmbeddingOp)
         {
-            const OperatorSchema* opSchema;
-            const OpSignature* op;
-            bool success = OperatorSchemaRegistry::Get()->TryGetOp("Embedding", &opSchema);
-            EXPECT_TRUE(success);
-            op = &(opSchema->GetOpSignature());
+            auto opSchema = OpSchemaRegistry::Schema("Embedding");
+            EXPECT_TRUE(nullptr != opSchema);
+            const OpSignature* op = &(opSchema->GetOpSignature());
             size_t input_size = op->GetInputs().size();
             EXPECT_EQ(input_size, 2);
             DataTypeSet input_types, output_types;
@@ -50,7 +46,8 @@ namespace LotusIR
             EXPECT_EQ(op->GetAttributes()[0].GetName(), "input_dim");
             EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::AttributeProto_AttributeType_INT);
             EXPECT_EQ(op->GetAttributes()[1].GetName(), "output_dim");
-            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_INT);        }
+            EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_INT);
+        }
 
         TEST(FeatureVectorizerTest, TraditionalMlOpTest)
         {
