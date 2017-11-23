@@ -32,6 +32,7 @@ add_definitions(-DONNX_ML)
 if (WIN32)
     # parallel build
     add_compile_options(/MP)
+    add_compile_options(/wd4503) # Decorated name length exceeded.
 
     if (lotusIR_ENABLE_STATIC_ANALYSIS)
         add_compile_options(
