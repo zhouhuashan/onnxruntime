@@ -238,7 +238,7 @@ namespace LotusIR
             outputs.push_back(outputArg);
             graph.AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
-            NodeArg inputArg2("node_2_in_1", &tensor_int32);
+            NodeArg inputArg2("node_1_in_1", &tensor_int32); // This refers to the same input as the node_1.
             inputs.clear();
             inputs.push_back(inputArg2);
             NodeArg outputArg2("node_2_out_1", &tensor_int32);
@@ -265,8 +265,8 @@ namespace LotusIR
             auto status = graph.Resolve();
             EXPECT_TRUE(status.Ok());
 
-            std::unordered_set<std::string> expectedGraphInputs = { "node_1_in_1", "node_2_in_1", "node_3_in_1" };
-            EXPECT_EQ(3, graph.GetInputs().size());
+            std::unordered_set<std::string> expectedGraphInputs = { "node_1_in_1", "node_3_in_1" };
+            EXPECT_EQ(2, graph.GetInputs().size());
             for (auto& graphInput : graph.GetInputs())
             {
                 EXPECT_TRUE(expectedGraphInputs.find(graphInput->Name()) != expectedGraphInputs.end());
@@ -275,8 +275,7 @@ namespace LotusIR
             EXPECT_EQ("node_4_out_1", graph.GetOutputs()[0]->Name());
 
             auto& graphProto = graph.ToGraphProto();
-            EXPECT_EQ(3, graphProto.input_size());
-            //std::string expectedGraphInputs = " node_1_in_1, node_2_in_1, node_3_in_1";
+            EXPECT_EQ(2, graphProto.input_size());
             for (auto& graphProtoInput : graphProto.input())
             {
                 EXPECT_TRUE(expectedGraphInputs.find(graphProtoInput.name()) != expectedGraphInputs.end());

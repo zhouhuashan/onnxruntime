@@ -30,6 +30,10 @@ namespace LotusIR
             (*m_nodeArgInfo.mutable_type()) = *p_nodeArgType;
             m_type = OpUtils::ToType(m_nodeArgInfo.type());
         }
+        else
+        {
+            m_type = nullptr;
+        }
     }
 
     const std::string& NodeArg::Name() const
@@ -1534,6 +1538,7 @@ namespace LotusIR
         m_valueInfo.clear();
 
         std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
+        std::unordered_map<std::string, const NodeArg*> inputNameToNodeArg;
         for (auto nodeIter = Nodes_begin();
             nodeIter != Nodes_end();
             ++nodeIter)
@@ -1562,13 +1567,19 @@ namespace LotusIR
             for (auto& inputArg : (*nodeIter)->InputDefs())
             {
                 auto outputArgIter = outputNameToNodeArg.find(inputArg.Name());
-                if (outputNameToNodeArg.end()
-                    == outputArgIter)
+                if (outputNameToNodeArg.end() == outputArgIter)
                 {
                     // No such outputArg matching this inputArg.
                     // This input arg should be fed when running evaluation.
                     // it should be a graph input or initializer (say, weight).
-                    m_graphInputs.push_back(&inputArg);
+                    if (inputNameToNodeArg.end() == inputNameToNodeArg.find(inputArg.Name()))
+                    {
+                        // This graph input has not been added into <m_graphInputs>.
+                        m_graphInputs.push_back(&inputArg);
+                        inputNameToNodeArg[inputArg.Name()] = &inputArg;
+                    }
+                    // TODO: more verfication may be needed to check whether two graph inputs
+                    // with same name are having exact same information (NodeArg), including type,shape.
                     continue;
                 }
 
