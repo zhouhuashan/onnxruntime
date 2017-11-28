@@ -401,11 +401,11 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
         .Attr("p", "Value of p, default 2.", AttrType::AttributeProto_AttributeType_INT, int64_t(2));
 
-    REGISTER_OPERATOR_SCHEMA(LRN)
+    REGISTER_OPERATOR_SCHEMA(LocalResponseNormalization)
         .Description("Perform local response normalization. "
             "NOTE: Only supports Caffe across channel mode. ")
-        .Input("input", "Input tensor of any shape", "T")
-        .Output("output", "Output tensor of same shape and type as input X.", "T")
+        .Input("X", "Input tensor of any shape", "T")
+        .Output("Y", "Output tensor of same shape and type as input X.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output "
              " types to float tensors.")
         .Attr("size", "[default 5]: the number of channels to sum over (for cross "
@@ -416,7 +416,7 @@ namespace LotusIR {
         .Attr("bias", "An offset (must be positive to avoid dividing by 0). Defaults to 1.0.",
             AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
 
-    REGISTER_OPERATOR_SCHEMA(MVN)
+    REGISTER_OPERATOR_SCHEMA(MeanVarianceNormalization)
         .Description("Perform mean variance normalization.")
         .Input("input", "Input tensor of any shape", "T")
         .Output("output", "Output tensor of same shape and type as input X.", "T")
@@ -477,8 +477,8 @@ namespace LotusIR {
             "output types to float tensors.")
         .Attr("mode", "enum {'NN', 'BILINEAR' }, Nearest neighbor or bilinear upsampling.",
             AttrType::AttributeProto_AttributeType_STRING)
-        .Attr("width_scale", "Scale along width dimension", AttrType::AttributeProto_AttributeType_INT)
-        .Attr("height_scale", "Scale along height dimension", AttrType::AttributeProto_AttributeType_INT);
+        .Attr("width_scale", "Scale along width dimension", AttrType::AttributeProto_AttributeType_FLOAT)
+        .Attr("height_scale", "Scale along height dimension", AttrType::AttributeProto_AttributeType_FLOAT);
 
     REGISTER_OPERATOR_SCHEMA(Crop)
         .Description("Crop and image to the specified spatial dimensions.  If scale is given,"
