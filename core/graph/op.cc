@@ -1,3 +1,4 @@
+#include "core/graph/constants.h"
 #include "core/graph/op.h"
 #include "core/graph/opsignature.h"
 #include "core/graph/utils.h"
@@ -238,8 +239,8 @@ namespace LotusIR
         // Increase the highest version when you make BC-breaking changes to the
         // operator schema on specific domain. Update the lowest version when it's
         // determined to remove too old version history.
-        m_map[""] = std::make_pair(1, 2);
-        m_map["ai.onnx.ml"] = std::make_pair(1, 1);
+        m_map[c_onnxDomain] = std::make_pair(1, 2);
+        m_map[c_mlDomain] = std::make_pair(1, 1);
     }
 
     const std::unordered_map<std::string, std::pair<int, int>>&

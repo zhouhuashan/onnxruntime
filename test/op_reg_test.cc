@@ -85,7 +85,7 @@ namespace LotusIR
             NodeArg outputArg1("node_1_out_1", &tensor_float);
             outputs.clear();
             outputs.push_back(outputArg1);
-            graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs);
+            graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs, c_mlDomain);
 
             inputs.clear();
             inputs.push_back(outputArg1);
@@ -93,7 +93,7 @@ namespace LotusIR
             NodeArg outputArg4("node_4_out_1", &tensor_float);
             outputs.clear();
             outputs.push_back(outputArg4);
-            graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, { 1 }, outputs);
+            graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, c_mlDomain);
             auto status = graph->Resolve();
             EXPECT_TRUE(status.Ok());
         }

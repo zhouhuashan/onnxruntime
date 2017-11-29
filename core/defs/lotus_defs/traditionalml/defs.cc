@@ -1,8 +1,10 @@
+#include "core/graph/constants.h"
 #include "core/graph/op.h"
 
 namespace LotusIR {
 
     REGISTER_OPERATOR_SCHEMA(ArrayFeatureExtractor)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be selected from", "T1")
         .Input("Y", "Data to be selected from", "T2")
         .Output("Z", "Selected data as an array", "T1")
@@ -14,6 +16,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(Binarizer)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be binarized", "T")
         .Output("Y", "Binarized output data", "T")
         .Description(R"DOC(
@@ -23,6 +26,7 @@ namespace LotusIR {
         .Attr("threshold", "Values greater than this are set to 1, else set to 0", AttrType::AttributeProto_AttributeType_FLOAT);
 
     REGISTER_OPERATOR_SCHEMA(CastMap)
+        .SetDomain(c_mlDomain)
         .Input("X", "The input values", "T1")
         .Output("Y", "The output values", "T2")
         .Description(R"DOC(
@@ -35,6 +39,7 @@ namespace LotusIR {
         .Attr("max_map", "if casting from a sparse map, what is the max key in the map", AttrType::AttributeProto_AttributeType_INT);
 
     REGISTER_OPERATOR_SCHEMA(CategoryMapper)
+        .SetDomain(c_mlDomain)
         .Input("X", "Input data", "T1")
         .Output("Y", "Output data, if strings are input, then output is INTS, and vice versa.", "T2")
         .Description(R"DOC(
@@ -56,6 +61,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(DictVectorizer)
+        .SetDomain(c_mlDomain)
         .Input("X", "The input dictionary", "T")
         .Output("Y", "The tensor", "tensor(int64)")
         .Description(R"DOC(
@@ -75,6 +81,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(Imputer)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be imputed", "T")
         .Output("Y", "Imputed output data", "T")
         .Description(R"DOC(
@@ -90,6 +97,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(FeatureVectorizer)
+        .SetDomain(c_mlDomain)
         .Input("X", "ordered input tensors", "T")
         .Output("Y", "flattened feature vectors.", "T")
         .Description(R"DOC(
@@ -102,6 +110,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(LabelEncoder)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be encoded", "T1")
         .Output("Y", "Encoded output data", "T2")
         .Description(R"DOC(
@@ -117,6 +126,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(LinearClassifier)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be classified", "T1")
         .Output("Y", "Classification outputs (one class per example", "T2")
         .Output("Z", "Classification outputs (All classes scores per example,N,E", "tensor(float)")
@@ -134,6 +144,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(LinearRegressor)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be regressed", "T")
         .Output("Y", "Regression outputs (one per target, per example", "tensor(float)")
         .Description(R"DOC(
@@ -152,6 +163,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(Normalizer)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be encoded", "T")
         .Output("Y", "encoded output data", "tensor(float)")
         .Description(R"DOC(
@@ -166,6 +178,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(OneHotEncoder)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be encoded", "T")
         .Output("Y", "encoded output data", "tensor(float)")
         .Description(R"DOC(
@@ -185,6 +198,7 @@ namespace LotusIR {
 
     // Input: X, output: Y
     REGISTER_OPERATOR_SCHEMA(Scaler)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be scaled", "T")
         .Output("Y", "Scaled output data", "tensor(float)")
         .Description(R"DOC(
@@ -195,6 +209,7 @@ namespace LotusIR {
         .Attr("offset", "first, offset by thisfirst, offset by this, can be one value or a separate value for each feature", AttrType::AttributeProto_AttributeType_FLOATS);
 
     REGISTER_OPERATOR_SCHEMA(SVMClassifier)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be classified", "T1")
         .Output("Y", "Classification outputs, one class per example", "T2")
         .Output("Z", "Classification outputs, All classes scores per example,N,E*(E-1)/2 if dual scores, or E if probabilities are used.", "tensor(float)")
@@ -218,6 +233,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(SVMRegressor)
+        .SetDomain(c_mlDomain)
         .Input("X", "Input N,F", "T")
         .Output("Y", "All target scores, N,E", "tensor(float)")
         .Description(R"DOC(
@@ -235,6 +251,7 @@ namespace LotusIR {
         .Attr("one_class", "If this regressor is a oneclass svm set this param to 1, otherwise use 0 (default is zero)", AttrType::AttributeProto_AttributeType_INT);
 
     REGISTER_OPERATOR_SCHEMA(TreeEnsembleClassifier)
+        .SetDomain(c_mlDomain)
         .Input("X", "Data to be classified", "T1")
         .Output("Y", "Classification outputs (one class per example", "T2")
         .Output("Z", "Classification outputs (All classes scores per example,N,E", "tensor(float)")
@@ -273,6 +290,7 @@ namespace LotusIR {
 
 
     REGISTER_OPERATOR_SCHEMA(TreeEnsembleRegressor)
+        .SetDomain(c_mlDomain)
         .Input("X", "Input N,F", "T")
         .Output("Y", "NxE floats", "tensor(float)")
         .Description(R"DOC(
@@ -307,6 +325,7 @@ namespace LotusIR {
         .Attr("base_values", "base values for regression, added to final score, size must be the same as n_outputs or can be left unassigned (assumed 0)", AttrType::AttributeProto_AttributeType_FLOATS);
 
     REGISTER_OPERATOR_SCHEMA(VecDictionizer)
+        .SetDomain(c_mlDomain)
         .Input("X", "The input values", "tensor(float)")
         .Output("Y", "The output map", "T")
         .Description(R"DOC(
