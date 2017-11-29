@@ -7,6 +7,8 @@ namespace LotusIR
     static const std::string c_noOp = "NoOp";
     static const std::string c_constantOp = "Constant";
     static const std::string c_constantValue = "value";
+    static const std::string c_onnxDomain = "";
+    static const std::string c_mlDomain = "ai.onnx.ml";
 
     // Singleton wrapper around allowed data types.
     // This implements construct on first use which is needed to ensure

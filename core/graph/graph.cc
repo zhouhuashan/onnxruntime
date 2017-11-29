@@ -551,12 +551,14 @@ namespace LotusIR
         return m_graph->GetNode(m_currentNodeIndex);
     }
 
-    Graph::Graph(const GraphProto& p_graphProto)
+    Graph::Graph(const GraphProto& p_graphProto,
+        const std::unordered_map<std::string, int>& p_domainToVersion)
         : m_graphProto(p_graphProto),
         m_graphProtoSyncNeeded(false),
         m_graphResolveNeeded(true),
         m_numOfNodes(0)
     {
+        m_domainToVersion = &p_domainToVersion;
         // This is a main graph, and strict type checking needed..
         m_graphType |= Type::Main;
 
@@ -602,30 +604,20 @@ namespace LotusIR
         }
     }
 
-    Graph::Graph(const std::string& p_name, bool p_isONNX)
+    Graph::Graph(const std::string& p_name,
+        const std::unordered_map<std::string, int>& p_domainToVersion,
+        bool p_isONNX)
         : m_graphProtoSyncNeeded(false),
         m_graphResolveNeeded(true),
         m_numOfNodes(0)
     {
+        m_domainToVersion = &p_domainToVersion;
         m_graphProto.set_name(p_name);
         m_graphType |= Type::Main;
         if (!p_isONNX)
         {
             m_graphType |= Type::Strict;
         }
-
-        AddSourceSinkNodes();
-    }
-
-    Graph::Graph(const std::string& p_name,
-        const std::string& p_docString)
-        : m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true),
-        m_numOfNodes(0)
-    {
-        m_graphProto.set_name(p_name);
-        m_graphProto.set_doc_string(p_docString);
-        m_graphType |= (Type::Main | Type::Strict);
 
         AddSourceSinkNodes();
     }
@@ -1079,10 +1071,18 @@ namespace LotusIR
             auto& nodeName = node->Name();
             auto& op_type = node->OpType();
             auto& domain = node->Domain();
+            auto versionIter = m_domainToVersion->find(domain);
+            if (m_domainToVersion->end() == versionIter)
+            {
+                // The domain referred by this node does not exist either
+                // in <OpSetIdProto> in the <ModelProto> loaded (in the case of model loaded from file) or
+                // in global DomainToVersionRange map (in the case of model constructed from scratch).
+                return Status(LOTUS, FAIL, "The op domain (" + domain + ") used by node ("
+                    + nodeName + ") is not supported for this model.");
+            }
 
-            // Get op schema with latest version given op name and domain.
-            // TODO: version may be used when we want to support versioning in run time.
-            node->m_op = OpSchemaRegistry::Schema(op_type, domain);
+            // Get op schema given op name, max inclusive version and domain.
+            node->m_op = OpSchemaRegistry::Schema(op_type, versionIter->second, domain);
             if (nullptr == node->m_op)
             {
                 // A op_type refers to nothing.
@@ -1275,6 +1275,16 @@ namespace LotusIR
     void Graph::SetName(const std::string& p_name)
     {
         m_graphProto.set_name(p_name);
+    }
+
+    const std::string& Graph::Description() const
+    {
+        return m_graphProto.doc_string();
+    }
+
+    void Graph::SetDescription(const std::string& p_desription)
+    {
+        m_graphProto.set_doc_string(p_desription);
     }
 
     void Graph::AddInitialTensor(const TensorProto& p_tensor)

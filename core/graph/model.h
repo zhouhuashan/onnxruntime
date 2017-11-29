@@ -20,15 +20,6 @@ namespace LotusIR
             bool p_isONNX = false,
             const ModelMetaData& p_modelMetaData = ModelMetaData());
 
-        Model(const std::string& p_graphName,
-            const std::string& p_graphDocString,
-            const std::string& p_producerName,
-            const std::string& p_producerVersion,
-            const std::string& p_domain,
-            VERSION p_modelVersion,
-            const std::string& p_modelDocString,
-            const ModelMetaData& p_modelMetaData = ModelMetaData());
-
         Model(const ModelProto& p_modelProto);
 
         // Get model's IR version.
@@ -92,12 +83,21 @@ namespace LotusIR
         static Status LoadFromBytes(int count, void *pBytes, /*out*/ std::shared_ptr<Model>* p_model);
 
     private:
+        // Set <m_domainToVersion> and <m_modelProto> to contain related domains
+        // with latest version in OpSchemaRegistry.
+        // if <p_isONNX> is true, then only onnx domain will be contained.
+        // otherwise, ml domain will also be contained.
+        void AddImportOpSets(bool p_isONNX);
 
         // Model data.
         ModelProto m_modelProto;
         // This is a duplication of <m_modelProto.metadata_props()>.
         // It gives better accessibility.
         ModelMetaData m_modelMetaData;
+
+        // Operator set used by this model.
+        // It contains <domain, version> pairs.
+        std::unordered_map<std::string, int> m_domainToVersion;
 
         // Main graph of the model.
         std::unique_ptr<Graph> m_graph;

@@ -92,7 +92,6 @@ namespace LotusIR
         bool p_isONNX,
         const ModelMetaData& p_modelMetaData)
     {
-        m_graph.reset(new Graph(p_graphName, p_isONNX));
         m_modelProto.set_ir_version(Version::IR_VERSION);
         m_modelMetaData = p_modelMetaData;
         for (auto& metaData : m_modelMetaData)
@@ -101,45 +100,36 @@ namespace LotusIR
             prop->set_key(metaData.first);
             prop->set_value(metaData.second);
         }
-    }
-
-    Model::Model(const std::string& p_graphName,
-        const std::string& p_graphDocString,
-        const std::string& p_producerName,
-        const std::string& p_producerVersion,
-        const std::string& p_domain,
-        VERSION p_modelVersion,
-        const std::string& p_docString,
-        const ModelMetaData& p_modelMetaData)
-    {
-        m_graph.reset(new Graph(p_graphName, p_graphDocString));
-        m_modelProto.set_ir_version(Version::IR_VERSION);
-        m_modelMetaData = p_modelMetaData;
-        for (auto& metaData : m_modelMetaData)
-        {
-            auto prop = m_modelProto.add_metadata_props();
-            prop->set_key(metaData.first);
-            prop->set_value(metaData.second);
-        }
-
-        m_modelProto.set_producer_name(p_producerName);
-        m_modelProto.set_producer_version(p_producerVersion);
-        m_modelProto.set_domain(p_domain);
-        m_modelProto.set_model_version(p_modelVersion);
-        m_modelProto.set_doc_string(p_docString);
+        // Set m_domainToVersion to contain related domains with latest version.
+        AddImportOpSets(p_isONNX);
+        m_graph.reset(new Graph(p_graphName, m_domainToVersion, p_isONNX));
     }
 
     Model::Model(const ModelProto& p_modelProto)
     {
         m_modelProto = p_modelProto;
-        if (m_modelProto.has_graph())
-        {
-            m_graph.reset(new Graph(m_modelProto.graph()));
-        }
-
         for (auto& prop : m_modelProto.metadata_props())
         {
             m_modelMetaData[prop.key()] = prop.value();
+        }
+
+        if (0 == m_modelProto.opset_import_size())
+        {
+            // Operator sets are not specified in this model.
+            // Will use global operator store instead.
+            AddImportOpSets(false);
+        }
+        else
+        {
+            for (auto& opSet : m_modelProto.opset_import())
+            {
+                m_domainToVersion[opSet.domain()] = static_cast<int>(opSet.version());
+            }
+        }
+
+        if (m_modelProto.has_graph())
+        {
+            m_graph.reset(new Graph(m_modelProto.graph(), m_domainToVersion));
         }
     }
 
@@ -225,6 +215,25 @@ namespace LotusIR
     {
         *(m_modelProto.mutable_graph()) = m_graph->ToGraphProto();
         return m_modelProto;
+    }
+
+    void Model::AddImportOpSets(bool p_isONNX)
+    {
+        auto& domainToVersionRangeMap = OpSchemaRegistry::DomainToVersionRange::Instance().Map();
+        for (auto& domainToVersionRange : domainToVersionRangeMap)
+        {
+            if (p_isONNX && domainToVersionRange.first.compare(c_onnxDomain) != 0)
+            {
+                // Constructing a pure ONNX model.
+                // Only ops in ONNX domain should be used.
+                continue;
+            }
+
+            m_domainToVersion[domainToVersionRange.first] = domainToVersionRange.second.second;
+            auto opSetIdProto = m_modelProto.add_opset_import();
+            opSetIdProto->set_domain(domainToVersionRange.first);
+            opSetIdProto->set_version(domainToVersionRange.second.second);
+        }
     }
 
 #ifdef _WIN32

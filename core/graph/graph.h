@@ -344,17 +344,6 @@ namespace LotusIR
             NODEINDEX m_currentNodeIndex;
         };
 
-        // Constructor from scratch.
-        // <p_isONNX> is a special flag to indicate whether it's
-        // going to construct a ONNX graph. With ONNX graph, strict
-        // type checking will be skiped.
-        Graph(const std::string& p_name, bool p_isONNX = false);
-        Graph(const std::string& p_name, const std::string& p_docString);
-
-        // Constructor: Given a <GraphProto> loaded from model file, construct
-        // a <Graph> object.
-        Graph(const GraphProto& p_graphProto);
-
         // Resolve <*this> graph to ensure it's in a good shape with full
         // functionality.
         // 1. Run through all validation rules.
@@ -370,6 +359,9 @@ namespace LotusIR
         // Getter and Setter for graph name.
         const std::string& Name() const;
         void SetName(const std::string& p_name);
+
+        const std::string& Description() const;
+        void SetDescription(const std::string& p_desription);
 
         // Add/Remove/Get initial tensors for some graph inputs.
         void AddInitialTensor(const TensorProto& p_tensor);
@@ -444,6 +436,23 @@ namespace LotusIR
 
     private:
 
+        friend class Model;
+
+        Graph() = delete;
+
+        // Constructor from scratch.
+        // <p_isONNX> is a special flag to indicate whether it's
+        // going to construct a ONNX graph. With ONNX graph, strict
+        // type checking will be skiped.
+        Graph(const std::string& p_name,
+            const std::unordered_map<std::string, int>& p_domainToVersion,
+            bool p_isONNX = false);
+
+        // Constructor: Given a <GraphProto> loaded from model file, construct
+        // a <Graph> object.
+        Graph(const GraphProto& p_graphProto,
+            const std::unordered_map<std::string, int>& p_domainToVersion);
+
         enum Type
         {
             // A main graph.
@@ -491,10 +500,6 @@ namespace LotusIR
         Status InferAndVerifyTypeMatch(Node* p_node,
             const OpSignature* p_op,
             const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs);
-
-        // Clean function definition map.
-        // Remove function definitions not refered by any node.
-        void CleanFunctionDefMap(const std::set<std::string>& p_funcDefNames);
 
         // Add source/sink nodes to <*this> graph.
         void AddSourceSinkNodes();
@@ -547,6 +552,8 @@ namespace LotusIR
 
         // Graph value_info.
         std::vector<const NodeArg*> m_valueInfo;
+
+        const std::unordered_map<std::string, int>* m_domainToVersion;
     };
 }
 

@@ -23,9 +23,10 @@ namespace LotusIR
 
         TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName)
         {
-            Graph graph("graph_1");
+            Model model("graph_1");
+            auto graph = model.MainGraph();
 
-            EXPECT_EQ("graph_1", graph.Name());
+            EXPECT_EQ("graph_1", graph->Name());
 
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
@@ -37,25 +38,26 @@ namespace LotusIR
 
             NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
-            graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
+            graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
             // Case 1: Adding two nodes with same node name should fail.
-            auto nodeWithDupName = graph.AddNode("node_1", "Variable", "node 2", inputs, outputs);
-            auto status = graph.Resolve();
+            auto nodeWithDupName = graph->AddNode("node_1", "Variable", "node 2", inputs, outputs);
+            auto status = graph->Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMessage());
-            graph.RemoveNode(nodeWithDupName->Index());
+            graph->RemoveNode(nodeWithDupName->Index());
 
             // Case 2: Adding two nodes with same output arg name should fail.
-            graph.AddNode("node_2", "Variable", "node 2", inputs, outputs);
-            status = graph.Resolve();
+            graph->AddNode("node_2", "Variable", "node 2", inputs, outputs);
+            status = graph->Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMessage());
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch)
         {
-            Graph graph("graph_1");
+            Model model("graph_1");
+            auto graph = model.MainGraph();
 
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
@@ -68,8 +70,8 @@ namespace LotusIR
             NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             // Case: Adding node refering to non-existing operator should fail.
-            graph.AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
-            auto status = graph.Resolve();
+            graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
+            auto status = graph->Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ(
                 "Error: the operator or function (OpNotExist) refered by node (node_1) does not exist.",
@@ -215,7 +217,8 @@ namespace LotusIR
                 .Output("output_1", "docstr for output_1.", "T")
                 .TypeConstraint("T", { "tensor(int32)","tensor(float)" }, "input/output types");
 
-            Graph graph("graph_1");
+            Model model("graph_1");
+            auto graph = model.MainGraph();
 
             // Case 1: A normal graph.
             //                         SouceNode
@@ -236,7 +239,7 @@ namespace LotusIR
             inputs.push_back(inputArg);
             NodeArg outputArg("node_1_out_1", &tensor_int32);
             outputs.push_back(outputArg);
-            graph.AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
+            graph->AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
             NodeArg inputArg2("node_1_in_1", &tensor_int32); // This refers to the same input as the node_1.
             inputs.clear();
@@ -244,7 +247,7 @@ namespace LotusIR
             NodeArg outputArg2("node_2_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg2);
-            auto node_2 = graph.AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
+            auto node_2 = graph->AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
             NodeArg inputArg3("node_3_in_1", &tensor_int32);
             inputs.clear();
@@ -252,7 +255,7 @@ namespace LotusIR
             NodeArg outputArg3("node_3_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg3);
-            graph.AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
+            graph->AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
 
             inputs.clear();
             inputs.push_back(outputArg);
@@ -261,20 +264,20 @@ namespace LotusIR
             NodeArg outputArg4("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
-            graph.AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
-            auto status = graph.Resolve();
+            graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
+            auto status = graph->Resolve();
             EXPECT_TRUE(status.Ok());
 
             std::unordered_set<std::string> expectedGraphInputs = { "node_1_in_1", "node_3_in_1" };
-            EXPECT_EQ(2, graph.GetInputs().size());
-            for (auto& graphInput : graph.GetInputs())
+            EXPECT_EQ(2, graph->GetInputs().size());
+            for (auto& graphInput : graph->GetInputs())
             {
                 EXPECT_TRUE(expectedGraphInputs.find(graphInput->Name()) != expectedGraphInputs.end());
             }
-            EXPECT_EQ(1, graph.GetOutputs().size());
-            EXPECT_EQ("node_4_out_1", graph.GetOutputs()[0]->Name());
+            EXPECT_EQ(1, graph->GetOutputs().size());
+            EXPECT_EQ("node_4_out_1", graph->GetOutputs()[0]->Name());
 
-            auto& graphProto = graph.ToGraphProto();
+            auto& graphProto = graph->ToGraphProto();
             EXPECT_EQ(2, graphProto.input_size());
             for (auto& graphProtoInput : graphProto.input())
             {
@@ -287,7 +290,7 @@ namespace LotusIR
             tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
             node_2->Mutable_InputDefs()[0] = NodeArg("node_2_in_1", &tensor_float);
             node_2->Mutable_OutputDefs()[0] = NodeArg("node_2_out_1", &tensor_float);
-            status = graph.Resolve();
+            status = graph->Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Node (node_4) has different input types (tensor(int32),tensor(float)) matching to same type string (T).", status.ErrorMessage());
         }
@@ -299,7 +302,8 @@ namespace LotusIR
                 .Output("output_1", "docstr for output_1.", "tensor(int64)");
             std::vector<NodeArg> inputs;
             std::vector<NodeArg> outputs;
-            Graph graph("graph_1");
+            Model model("graph_1");
+            auto graph = model.MainGraph();
             TypeProto outputType;
             outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
             TensorShapeProto outputShape;
@@ -308,7 +312,7 @@ namespace LotusIR
             *(outputType.mutable_tensor_type()->mutable_shape()) = outputShape;
             NodeArg outputArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
-            auto node_1 = graph.AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
+            auto node_1 = graph->AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
             TensorProto t;
             t.set_data_type(TensorProto_DataType_INT64);
             *(t.mutable_int64_data()->Add()) = 1;
@@ -317,7 +321,7 @@ namespace LotusIR
             *(t.mutable_dims()->Add()) = 1;
             *(t.mutable_dims()->Add()) = 3;
             EXPECT_TRUE(node_1->AddAttribute(c_constantValue, t));
-            auto status = graph.Resolve();
+            auto status = graph->Resolve();
             EXPECT_TRUE(status.Ok());
         }
 
