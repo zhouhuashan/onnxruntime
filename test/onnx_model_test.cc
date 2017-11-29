@@ -54,7 +54,7 @@ namespace LotusIR
 
 #ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
         // TODO: Test failing due to LRN renamed to LocalResponseNormalization. Enable this when model is updated.
-        TEST(ONNXModelsTest, DISABLED_bvlc_alexnet)
+        TEST(ONNXModelsTest, bvlc_alexnet)
         {
             std::shared_ptr<Model> model;
             EXPECT_TRUE(Model::Load("./models/bvlc_alexnet/model.pb", &model).Ok());
@@ -69,7 +69,7 @@ namespace LotusIR
         }
 
         // TODO: Test failing due to LRN renamed to LocalResponseNormalization. Enable this when model is updated.
-        TEST(ONNXModelsTest, DISABLED_inception_v1)
+        TEST(ONNXModelsTest, inception_v1)
         {
             std::shared_ptr<Model> model;
             EXPECT_TRUE(Model::Load("./models/inception_v1/model.pb", &model).Ok());
@@ -105,7 +105,7 @@ namespace LotusIR
         }
 
         // TODO: Test failing due to LRN renamed to LocalResponseNormalization. Enable this when model is updated.
-        TEST(ONNXModelsTest, DISABLED_vgg16)
+        TEST(ONNXModelsTest, vgg16)
         {
             std::shared_ptr<Model> model;
             EXPECT_TRUE(Model::Load("./models/vgg16/model.pb", &model).Ok());

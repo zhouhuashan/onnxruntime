@@ -401,20 +401,33 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output types to float tensors.")
         .Attr("p", "Value of p, default 2.", AttrType::AttributeProto_AttributeType_INT, int64_t(2));
 
+
+    std::function<void(OperatorSchemaSetter&)> LRNDocGenerator() {
+        return [=](OperatorSchemaSetter& schema) {
+            schema.Description("Perform local response normalization. "
+                "NOTE: Only supports Caffe across channel mode. ");
+            schema.Input("X", "Input tensor of any shape", "T");
+            schema.Output("Y", "Output tensor of same shape and type as input X.", "T");
+            schema.TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
+                "Constrain input and output types to float tensors.");
+            schema.Attr("size", "[default 5]: the number of channels to sum over (for cross "
+                  "channel LRN) or the side length of the square region to sum over (for within "
+                  "channel LRN)", AttrType::AttributeProto_AttributeType_INT, int64_t(5));
+            schema.Attr("alpha", "Scalar scaling factor. Default is 0.0001",
+                AttrType::AttributeProto_AttributeType_FLOAT, float(0.0001));
+            schema.Attr("beta", "Scalar exponent in the LRN.  Default is 0.5.",
+                AttrType::AttributeProto_AttributeType_FLOAT, float(0.5));
+            schema.Attr("bias", "An offset (must be positive to avoid dividing by 0). Defaults to 1.0.",
+                AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
+        };
+    }
+
     REGISTER_OPERATOR_SCHEMA(LocalResponseNormalization)
-        .Description("Perform local response normalization. "
-            "NOTE: Only supports Caffe across channel mode. ")
-        .Input("X", "Input tensor of any shape", "T")
-        .Output("Y", "Output tensor of same shape and type as input X.", "T")
-        .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and output "
-             " types to float tensors.")
-        .Attr("size", "[default 5]: the number of channels to sum over (for cross "
-              "channel LRN) or the side length of the square region to sum over (for within "
-              "channel LRN)", AttrType::AttributeProto_AttributeType_INT, int64_t(5))
-        .Attr("alpha", "Scalar scaling factor. Default is 0.0001", AttrType::AttributeProto_AttributeType_FLOAT, float(0.0001))
-        .Attr("beta", "Scalar exponent in the LRN.  Default is 0.5.", AttrType::AttributeProto_AttributeType_FLOAT, float(0.5))
-        .Attr("bias", "An offset (must be positive to avoid dividing by 0). Defaults to 1.0.",
-            AttrType::AttributeProto_AttributeType_FLOAT, float(1.0));
+        .FillUsing(LRNDocGenerator());
+
+    // TODO: to be duplicated.
+    REGISTER_OPERATOR_SCHEMA(LRN)
+        .FillUsing(LRNDocGenerator());
 
     REGISTER_OPERATOR_SCHEMA(MeanVarianceNormalization)
         .Description("Perform mean variance normalization.")
