@@ -502,8 +502,8 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" }, "Constrain input and "
             "output types to float tensors.")
         .Attr("border", "A 1-D tensor of values (leftBorder, topBorder, rightBorder, bottomBorder)",
-            AttrType::AttributeProto_AttributeType_INT)
-        .Attr("scale", "A 1-D tensor of values (height, width)", AttrType::AttributeProto_AttributeType_INT);
+            AttrType::AttributeProto_AttributeType_INTS)
+        .Attr("scale", "A 1-D tensor of values (height, width)", AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Pad)
