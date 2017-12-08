@@ -370,7 +370,7 @@ namespace LotusIR
             TensorProto& p_value) const;
         const InitialTensorSet& GetAllInitialTensors() const;
 
-        // Get graph inputs/outputs.
+        // Get graph inputs/outputs/valueinfos.
         const std::vector<const NodeArg*>& GetInputs() const;
         const std::vector<const NodeArg*>& GetOutputs() const;
         const std::vector<const NodeArg*>& GetValueInfo() const;

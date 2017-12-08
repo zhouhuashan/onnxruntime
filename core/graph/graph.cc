@@ -1547,18 +1547,36 @@ namespace LotusIR
         m_graphOutputs.clear();
         m_valueInfo.clear();
 
+        // Collect all graph inputs/outputs specified in original graph proto
+        std::unordered_set<std::string> specifiedGraphInputs;
+        std::unordered_set<std::string> specifiedGraphOutputs;
+        for (auto& graphInput : m_graphProto.input())
+        {
+            specifiedGraphInputs.insert(graphInput.name());
+        }
+
+        for (auto& graphOutput : m_graphProto.output())
+        {
+            specifiedGraphOutputs.insert(graphOutput.name());
+        }
+
+        std::unordered_set<std::string> addedInputNames;
         std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
-        std::unordered_map<std::string, const NodeArg*> inputNameToNodeArg;
         for (auto nodeIter = Nodes_begin();
             nodeIter != Nodes_end();
             ++nodeIter)
         {
+            if (IsSourceNode((*nodeIter)->Index())
+                || IsSinkNode((*nodeIter)->Index()))
+            {
+                continue;
+            }
+
             for (auto& outputDef : (*nodeIter)->OutputDefs())
             {
                 outputNameToNodeArg.insert({ outputDef.Name(), &outputDef });
             }
         }
-
         // Init graph output args with all node output args.
         auto graphOutputArgs = outputNameToNodeArg;
 
@@ -1577,25 +1595,27 @@ namespace LotusIR
             for (auto& inputArg : (*nodeIter)->InputDefs())
             {
                 auto outputArgIter = outputNameToNodeArg.find(inputArg.Name());
-                if (outputNameToNodeArg.end() == outputArgIter)
+                if (specifiedGraphInputs.end() != specifiedGraphInputs.find(inputArg.Name())
+                    || outputNameToNodeArg.end() == outputArgIter)
                 {
-                    // No such outputArg matching this inputArg.
+                    // The input was specified as graph input in model file,
+                    // or no such outputArg matching this inputArg.
                     // This input arg should be fed when running evaluation.
                     // it should be a graph input or initializer (say, weight).
-                    if (inputNameToNodeArg.end() == inputNameToNodeArg.find(inputArg.Name()))
+                    if (addedInputNames.end() == addedInputNames.find(inputArg.Name()))
                     {
                         // This graph input has not been added into <m_graphInputs>.
                         m_graphInputs.push_back(&inputArg);
-                        inputNameToNodeArg[inputArg.Name()] = &inputArg;
+                        addedInputNames.insert(inputArg.Name());
                     }
-                    // TODO: more verfication may be needed to check whether two graph inputs
-                    // with same name are having exact same information (NodeArg), including type,shape.
-                    continue;
                 }
 
                 // Remove the output arg name from graph outputs since it's
-                // feeding another node as the node's input.
-                if (graphOutputArgs.erase(outputArgIter->first) >= 1)
+                // feeding another node as the node's input and not specified as graph output
+                // in the model.
+                if (outputNameToNodeArg.end() != outputArgIter
+                    && specifiedGraphOutputs.end() == specifiedGraphOutputs.find(outputArgIter->first)
+                    && graphOutputArgs.erase(outputArgIter->first) >= 1)
                 {
                     m_valueInfo.push_back(&inputArg);
                 }
