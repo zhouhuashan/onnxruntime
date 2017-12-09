@@ -847,7 +847,15 @@ namespace LotusIR
                 }
             }
         }
-        return Status::OK();
+
+        if (this->NumberOfNodes() == p_nodesInTopologicalOrder.size())
+        {
+            return Status::OK();
+        }
+        else
+        {
+            return Status(LOTUS, FAIL, "Error: the graph is not acyclic.");
+        }
     }
 
     Status Graph::InferAndVerifyTypeMatch(Node* p_node,
