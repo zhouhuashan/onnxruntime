@@ -99,13 +99,12 @@ namespace LotusIR {
     REGISTER_OPERATOR_SCHEMA(FeatureVectorizer)
         .SetDomain(c_mlDomain)
         .Input("X", "ordered input tensors", "T")
-        .Output("Y", "flattened feature vectors.", "T")
+        .Output("Y", "flattened output vector.", "T")
         .Description(R"DOC(
             Concatenates a list of input tensors of floats into one tensor.
-            Input order in inputs must match inputlist and inputdimensions order.
+            The size of each input in the input list is expressed in inputdimensions.
             )DOC")
         .TypeConstraint("T", { "tensor(float)" }, " allowed types.")
-        .Attr("inputlist", "list of string names of the input features, output features will appear in this order", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("inputdimensions", "the size of the inputs in the input list", AttrType::AttributeProto_AttributeType_INTS);
 
 
@@ -324,7 +323,7 @@ namespace LotusIR {
         .Attr("aggregate_function", "post eval transform for score,  enum 'AVERAGE', 'SUM', 'MIN', 'MAX'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("base_values", "base values for regression, added to final score, size must be the same as n_outputs or can be left unassigned (assumed 0)", AttrType::AttributeProto_AttributeType_FLOATS);
 
-    REGISTER_OPERATOR_SCHEMA(VecDictionizer)
+    REGISTER_OPERATOR_SCHEMA(ZipMap)
         .SetDomain(c_mlDomain)
         .Input("X", "The input values", "tensor(float)")
         .Output("Y", "The output map", "T")
