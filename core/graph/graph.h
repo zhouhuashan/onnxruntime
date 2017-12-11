@@ -83,6 +83,7 @@ namespace LotusIR
     private:
 
         friend class Node;
+        friend class GraphBase;
         friend class Graph;
         friend class lotusrt::LotusRT;
 
@@ -203,13 +204,13 @@ namespace LotusIR
                           const std::vector<TypeName>& p_values); \
 
         ADD_ATTR_INTERFACES(int64_t)
-        ADD_ATTR_INTERFACES(float)
-        ADD_ATTR_INTERFACES(std::string)
-        ADD_ATTR_INTERFACES(TensorProto)
-        ADD_ATTR_INTERFACES(GraphProto)
+            ADD_ATTR_INTERFACES(float)
+            ADD_ATTR_INTERFACES(std::string)
+            ADD_ATTR_INTERFACES(TensorProto)
+            ADD_ATTR_INTERFACES(GraphProto)
 
-        // Clear specified node attribute.
-        bool ClearAttribute(const std::string& p_attrName);
+            // Clear specified node attribute.
+            bool ClearAttribute(const std::string& p_attrName);
 
         // Get node attributes.
         const NodeAttributes& GetAttributes() const;
@@ -226,11 +227,12 @@ namespace LotusIR
 
     private:
 
+        friend class GraphBase;
         friend class Graph;
 
         // Node could ONLY be constructed and owned by a <Graph>.
         Node() {}
-        Node(NODEINDEX p_index, Graph* p_graph)
+        Node(NODEINDEX p_index, GraphBase* p_graph)
             : m_index(p_index),
             m_graph(p_graph) {}
         Node(const Node& p_other);
@@ -307,14 +309,18 @@ namespace LotusIR
         // This allows attribute adding and removing.
         NodeAttributes m_attributes;
 
-        Graph* m_graph;
+        GraphBase* m_graph;
     };
 
-    // A graph representation class.
-    class Graph
+    // TODO: Graph base class.
+    // It should cover the common things between function and graph.
+    // Move these common things from Graph to GraphBase.
+    // 1. Graph does not have attributes, while function has.
+    // 2. Graph does have initializers, while function does not.
+    // 3. Graph does have value_info, while function does not.
+    class GraphBase
     {
     public:
-
         // An iterator helper to access graph nodes without copy.
         // The iterator itself does not own any data.
         class NodeIterator
@@ -322,7 +328,7 @@ namespace LotusIR
         public:
 
             // Constructor.
-            NodeIterator(NODEINDEX p_currentNodeIndex, Graph* p_graph)
+            NodeIterator(NODEINDEX p_currentNodeIndex, GraphBase* p_graph)
                 : m_graph(p_graph),
                 m_currentNodeIndex(p_currentNodeIndex)
             {
@@ -338,7 +344,7 @@ namespace LotusIR
 
         private:
 
-            Graph* m_graph;
+            GraphBase* m_graph;
 
             // it's the Node Index in <m_nodes> of the <m_graph>.
             NODEINDEX m_currentNodeIndex;
@@ -354,33 +360,25 @@ namespace LotusIR
         // 2. Check & Setup inner nodes' dependency.
         // 3. Cleanup function definition lists.
         // Returns resolving status.
-        Status Resolve();
+        virtual Status Resolve() = 0;
 
         // Getter and Setter for graph name.
-        const std::string& Name() const;
-        void SetName(const std::string& p_name);
+        virtual const std::string& Name() const = 0;
+        virtual void SetName(const std::string& p_name) = 0;
 
-        const std::string& Description() const;
-        void SetDescription(const std::string& p_desription);
+        virtual const std::string& Description() const = 0;
+        virtual void SetDescription(const std::string& p_desription) = 0;
 
-        // Add/Remove/Get initial tensors for some graph inputs.
-        void AddInitialTensor(const TensorProto& p_tensor);
-        void RemoveInitialTensor(const std::string& p_tensorName);
-        bool GetInitialTensor(const std::string& p_tensorName,
-            TensorProto& p_value) const;
-        const InitialTensorSet& GetAllInitialTensors() const;
-
-        // Get graph inputs/outputs/valueinfos.
-        const std::vector<const NodeArg*>& GetInputs() const;
-        const std::vector<const NodeArg*>& GetOutputs() const;
-        const std::vector<const NodeArg*>& GetValueInfo() const;
+        // Get graph inputs/outputs.
+        virtual const std::vector<const NodeArg*>& GetInputs() const = 0;
+        virtual const std::vector<const NodeArg*>& GetOutputs() const = 0;
 
         // Get node given specific node index.
         Node* GetNode(NODEINDEX p_nodeIndex);
 
         // Get node iterator to access all effective nodes in the graph.
-        Graph::NodeIterator Nodes_begin();
-        Graph::NodeIterator Nodes_end();
+        GraphBase::NodeIterator Nodes_begin();
+        GraphBase::NodeIterator Nodes_end();
 
         // Max Node Index.
         NODEINDEX MaxNodeIndex() const;
@@ -423,16 +421,186 @@ namespace LotusIR
         // <p_srcNodeIndex>, but it's designed to be executed behind.
         bool AddControlEdge(NODEINDEX p_srcNodeIndex, NODEINDEX p_dstNodeIndex);
 
-        // Serialize the <Graph> into <GraphProto>.
-        const GraphProto& ToGraphProto();
-
         bool IsSourceNode(NODEINDEX p_index) const;
         bool IsSinkNode(NODEINDEX p_index) const;
 
         const Node* SourceNode() const;
         const Node* SinkNode() const;
 
-        Status GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes);
+        Status GetNodesInTopologicalOrder(/*out*/ std::vector<NODEINDEX>** nodes);
+
+    protected:
+
+        friend class Node;
+
+        // Add source/sink nodes to <*this> graph.
+        void AddSourceSinkNodes();
+
+        // Add node with specified <p_nodeProto>.
+        Node* AddNode(const NodeProto& p_nodeProto,
+            const ArgNameToTypeMap& p_nameToType);
+
+        // Graph nodes.
+        // Element in <m_nodes> may be nullptr due to graph optimization.
+        std::vector<std::unique_ptr<Node>> m_nodes;
+
+        // Number of nodes.
+        // Normally this is smaller than the size of <m_nodes>, as some
+        // elements in <m_nodes> may be removed when doing graph optimization,
+        // or some elements may be merged, etc.
+        int m_numOfNodes;
+
+        NODEINDEX m_sourceNodeIndex;
+        NODEINDEX m_sinkNodeIndex;
+
+        // A flag indicates whether <*this> graph needs to be resolved.
+        bool m_graphResolveNeeded;
+
+        bool m_graphProtoSyncNeeded;
+
+        int m_graphType = 0;
+
+        // The topologic order of node index.
+        std::vector<NODEINDEX> m_nodesInTopologicalOrder;
+
+        // Graph inputs.
+        std::vector<const NodeArg*> m_graphInputs;
+
+        // Graph outputs.
+        std::vector<const NodeArg*> m_graphOutputs;
+
+        const std::unordered_map<std::string, int>* m_domainToVersion;
+
+    private:
+
+        Node* AllocateNode();
+
+        void ReleaseNode(NODEINDEX p_nodeIndex);
+    };
+
+    // A graph representation class.
+    class Graph : public GraphBase
+    {
+    public:
+
+        // An iterator helper to access graph nodes without copy.
+        // The iterator itself does not own any data.
+        //class NodeIterator
+        //{
+        //public:
+
+        //    // Constructor.
+        //    NodeIterator(NODEINDEX p_currentNodeIndex, Graph* p_graph)
+        //        : m_graph(p_graph),
+        //        m_currentNodeIndex(p_currentNodeIndex)
+        //    {
+        //    }
+
+        //    bool operator==(const NodeIterator& p_other) const;
+
+        //    bool operator!=(const NodeIterator& p_other) const;
+
+        //    void operator++();
+
+        //    Node* operator*();
+
+        //private:
+
+        //    Graph* m_graph;
+
+        //    // it's the Node Index in <m_nodes> of the <m_graph>.
+        //    NODEINDEX m_currentNodeIndex;
+        //};
+
+        // Resolve <*this> graph to ensure it's in a good shape with full
+        // functionality.
+        // 1. Run through all validation rules.
+        //    a. Node name and node output's names should be unique.
+        //    b. Attribute match between node and op definition.
+        //    c. Input/Output match between node and op definition.
+        //    d. Graph is acyclic and sort nodes in topological order.
+        // 2. Check & Setup inner nodes' dependency.
+        // 3. Cleanup function definition lists.
+        // Returns resolving status.
+        virtual Status Resolve() override;
+
+        // Getter and Setter for graph name.
+        virtual const std::string& Name() const override;
+        virtual void SetName(const std::string& p_name) override;
+
+        virtual const std::string& Description() const override;
+        virtual void SetDescription(const std::string& p_desription) override;
+
+        // Add/Remove/Get initial tensors for some graph inputs.
+        void AddInitialTensor(const TensorProto& p_tensor);
+        void RemoveInitialTensor(const std::string& p_tensorName);
+        bool GetInitialTensor(const std::string& p_tensorName,
+            TensorProto& p_value) const;
+        const InitialTensorSet& GetAllInitialTensors() const;
+
+        // Get graph inputs/outputs/valueinfos.
+        virtual const std::vector<const NodeArg*>& GetInputs() const override;
+        virtual const std::vector<const NodeArg*>& GetOutputs() const override;
+        const std::vector<const NodeArg*>& GetValueInfo() const;
+
+        // Get node given specific node index.
+        //Node* GetNode(NODEINDEX p_nodeIndex);
+
+        // Get node iterator to access all effective nodes in the graph.
+        //Graph::NodeIterator Nodes_begin();
+        //Graph::NodeIterator Nodes_end();
+
+        // Max Node Index.
+        //NODEINDEX MaxNodeIndex() const;
+
+        // Number of nodes in the <Graph>.
+        // This is smaller than MaxNodeIndex(), since there may be nodes
+        // removed during optimization.
+        // int NumberOfNodes() const;
+
+        // Add, remove node from <*this> graph.
+        //Node* AddNode(const std::string& p_name,
+        //    const std::string& p_opType,
+        //    const std::string& p_description,
+        //    const std::vector<NodeArg>& p_inputArgs,
+        //    const std::vector<NodeArg>& p_outputArgs,
+        //    const std::string& p_domain = "");
+        //Node* AddNode(const std::string& p_name,
+        //    const std::string& p_opType,
+        //    const std::string& p_description,
+        //    const std::vector<NodeArg>& p_inputArgs,
+        //    const std::vector<int>& p_inputArgCount,
+        //    const std::vector<NodeArg>& p_outputArgs,
+        //    const std::string& p_domain = "");
+        //Node* AddNode(const std::string& p_name,
+        //    const std::string& p_opType,
+        //    const std::string& p_description,
+        //    const std::vector<NodeArg>& p_outputArgs,
+        //    const std::string& p_domain = "");
+        //Node* AddNode(const Node& p_other);
+        //bool RemoveNode(NODEINDEX p_nodeIndex);
+
+        //// Convenience method for adding a constant op
+        //Node* AddConstantNode(const std::string& p_name,
+        //    const std::string& p_description,
+        //    const std::vector<NodeArg>& p_outputArgs,
+        //    const TensorProto& p_tensor);
+
+        // Add control edge into <*this> graph.
+        // The <p_dstNodeIndex> node does not consume any data output by
+        // <p_srcNodeIndex>, but it's designed to be executed behind.
+        //bool AddControlEdge(NODEINDEX p_srcNodeIndex, NODEINDEX p_dstNodeIndex);
+
+        // Serialize the <Graph> into <GraphProto>.
+        const GraphProto& ToGraphProto();
+
+        //bool IsSourceNode(NODEINDEX p_index) const;
+        //bool IsSinkNode(NODEINDEX p_index) const;
+
+        //const Node* SourceNode() const;
+        //const Node* SinkNode() const;
+
+        //Status GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes);
 
     private:
 
@@ -465,12 +633,7 @@ namespace LotusIR
 
         friend class Node;
 
-        Node* AllocateNode();
-        void ReleaseNode(NODEINDEX p_nodeIndex);
 
-        // Add node with specified <p_nodeProto>.
-        Node* AddNode(const NodeProto& p_nodeProto,
-            const ArgNameToTypeMap& p_nameToType);
 
         Status VerifyNoDuplicateName(
             /*out*/ std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
@@ -501,8 +664,7 @@ namespace LotusIR
             const OpSignature* p_op,
             const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs);
 
-        // Add source/sink nodes to <*this> graph.
-        void AddSourceSinkNodes();
+
 
         // Set graph inputs/outputs when resolving a graph..
         void SetGraphInputsOutputs();
@@ -512,16 +674,16 @@ namespace LotusIR
 
         // Graph nodes.
         // Element in <m_nodes> may be nullptr due to graph optimization.
-        std::vector<std::unique_ptr<Node>> m_nodes;
+        //std::vector<std::unique_ptr<Node>> m_nodes;
 
         // Number of nodes.
         // Normally this is smaller than the size of <m_nodes>, as some
         // elements in <m_nodes> may be removed when doing graph optimization,
         // or some elements may be merged, etc.
-        int m_numOfNodes;
+        //int m_numOfNodes;
 
-        NODEINDEX m_sourceNodeIndex;
-        NODEINDEX m_sinkNodeIndex;
+        //NODEINDEX m_sourceNodeIndex;
+        //NODEINDEX m_sinkNodeIndex;
 
         // GraphProto to store name, version, initializer.
         // When serilizing <*this> Graph to a GraphProto, the nodes and
@@ -530,30 +692,30 @@ namespace LotusIR
         GraphProto m_graphProto;
 
         // The node which refers to <*this> graph (Function).
-        Node* m_node;
+        //Node* m_node;
 
         InitialTensorSet m_nameToInitialTensor;
 
         // A flag indicates whether <*this> graph needs to be resolved.
-        bool m_graphResolveNeeded;
+        //bool m_graphResolveNeeded;
 
-        bool m_graphProtoSyncNeeded;
+        //bool m_graphProtoSyncNeeded;
 
-        int m_graphType = 0;
+        //int m_graphType = 0;
 
         // The topologic order of node index.
-        std::vector<NODEINDEX> m_nodesInTopologicalOrder;
+        //std::vector<NODEINDEX> m_nodesInTopologicalOrder;
 
         // Graph inputs.
-        std::vector<const NodeArg*> m_graphInputs;
+        //std::vector<const NodeArg*> m_graphInputs;
 
         // Graph outputs.
-        std::vector<const NodeArg*> m_graphOutputs;
+        //std::vector<const NodeArg*> m_graphOutputs;
 
         // Graph value_info.
         std::vector<const NodeArg*> m_valueInfo;
 
-        const std::unordered_map<std::string, int>* m_domainToVersion;
+        //const std::unordered_map<std::string, int>* m_domainToVersion;
     };
 }
 

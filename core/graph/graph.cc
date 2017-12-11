@@ -498,17 +498,17 @@ namespace LotusIR
     };                                                                           \
 
     ADD_BASIC_ATTR_IMPL(float, f)
-    ADD_BASIC_ATTR_IMPL(int64_t, i)
-    ADD_BASIC_ATTR_IMPL(std::string, s)
-    ADD_ATTR_IMPL(TensorProto, t)
-    ADD_ATTR_IMPL(GraphProto, g)
-    ADD_LIST_ATTR_IMPL(float, floats)
-    ADD_LIST_ATTR_IMPL(int64_t, ints)
-    ADD_LIST_ATTR_IMPL(std::string, strings)
-    ADD_LIST_ATTR_IMPL(TensorProto, tensors)
-    ADD_LIST_ATTR_IMPL(GraphProto, graphs)
+        ADD_BASIC_ATTR_IMPL(int64_t, i)
+        ADD_BASIC_ATTR_IMPL(std::string, s)
+        ADD_ATTR_IMPL(TensorProto, t)
+        ADD_ATTR_IMPL(GraphProto, g)
+        ADD_LIST_ATTR_IMPL(float, floats)
+        ADD_LIST_ATTR_IMPL(int64_t, ints)
+        ADD_LIST_ATTR_IMPL(std::string, strings)
+        ADD_LIST_ATTR_IMPL(TensorProto, tensors)
+        ADD_LIST_ATTR_IMPL(GraphProto, graphs)
 
-    bool Node::ClearAttribute(const std::string& p_attrName)
+        bool Node::ClearAttribute(const std::string& p_attrName)
     {
         m_graph->m_graphResolveNeeded = true;
         m_graph->m_graphProtoSyncNeeded = true;
@@ -520,20 +520,20 @@ namespace LotusIR
         return m_attributes;
     }
 
-    bool Graph::NodeIterator::operator==(
-        const Graph::NodeIterator& p_other) const
+    bool GraphBase::NodeIterator::operator==(
+        const GraphBase::NodeIterator& p_other) const
     {
         return (m_graph == p_other.m_graph &&
             m_currentNodeIndex == p_other.m_currentNodeIndex);
     }
 
-    bool Graph::NodeIterator::operator!=(
-        const Graph::NodeIterator& p_other) const
+    bool GraphBase::NodeIterator::operator!=(
+        const GraphBase::NodeIterator& p_other) const
     {
         return !(*this == p_other);
     }
 
-    void Graph::NodeIterator::operator++()
+    void GraphBase::NodeIterator::operator++()
     {
         while (true)
         {
@@ -546,18 +546,19 @@ namespace LotusIR
         }
     }
 
-    Node* Graph::NodeIterator::operator*()
+    Node* GraphBase::NodeIterator::operator*()
     {
         return m_graph->GetNode(m_currentNodeIndex);
     }
 
     Graph::Graph(const GraphProto& p_graphProto,
         const std::unordered_map<std::string, int>& p_domainToVersion)
-        : m_graphProto(p_graphProto),
-        m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true),
-        m_numOfNodes(0)
+        : m_graphProto(p_graphProto)
     {
+        m_graphProtoSyncNeeded = false;
+        m_graphResolveNeeded = true;
+        m_numOfNodes = 0;
+
         m_domainToVersion = &p_domainToVersion;
         // This is a main graph, and strict type checking needed..
         m_graphType |= Type::Main;
@@ -1252,7 +1253,7 @@ namespace LotusIR
         return Status::OK();
     }
 
-    Status Graph::GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes)
+    Status GraphBase::GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes)
     {
         RETURN_IF_ERROR(Resolve());
 
@@ -1260,7 +1261,7 @@ namespace LotusIR
         return Status::OK();
     }
 
-    void Graph::AddSourceSinkNodes()
+    void GraphBase::AddSourceSinkNodes()
     {
         std::vector<NodeArg> emptyArgs;
         m_sourceNodeIndex = AddNode("_Graph_Source",
@@ -1341,7 +1342,7 @@ namespace LotusIR
         return m_valueInfo;
     }
 
-    Node* Graph::GetNode(NODEINDEX p_nodeIndex)
+    Node* GraphBase::GetNode(NODEINDEX p_nodeIndex)
     {
         if (MaxNodeIndex() <= p_nodeIndex)
         {
@@ -1351,27 +1352,27 @@ namespace LotusIR
         return m_nodes[p_nodeIndex].get();
     }
 
-    Graph::NodeIterator Graph::Nodes_begin()
+    GraphBase::NodeIterator GraphBase::Nodes_begin()
     {
-        return Graph::NodeIterator(0, this);
+        return GraphBase::NodeIterator(0, this);
     }
 
-    Graph::NodeIterator Graph::Nodes_end()
+    GraphBase::NodeIterator GraphBase::Nodes_end()
     {
-        return Graph::NodeIterator(MaxNodeIndex(), this);
+        return GraphBase::NodeIterator(MaxNodeIndex(), this);
     }
 
-    NODEINDEX Graph::MaxNodeIndex() const
+    NODEINDEX GraphBase::MaxNodeIndex() const
     {
         return m_nodes.size();
     }
 
-    int Graph::NumberOfNodes() const
+    int GraphBase::NumberOfNodes() const
     {
         return m_numOfNodes;
     }
 
-    Node* Graph::AddNode(const NodeProto& p_nodeProto,
+    Node* GraphBase::AddNode(const NodeProto& p_nodeProto,
         const ArgNameToTypeMap& p_nameToType)
     {
         auto node = AllocateNode();
@@ -1379,7 +1380,7 @@ namespace LotusIR
         return node;
     }
 
-    Node* Graph::AddNode(const std::string& p_name,
+    Node* GraphBase::AddNode(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
@@ -1395,7 +1396,7 @@ namespace LotusIR
         return node;
     }
 
-    Node* Graph::AddNode(const std::string& p_name,
+    Node* GraphBase::AddNode(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
@@ -1415,7 +1416,7 @@ namespace LotusIR
         return node;
     }
 
-    Node* Graph::AddNode(const std::string& p_name,
+    Node* GraphBase::AddNode(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_outputArgs,
@@ -1431,7 +1432,7 @@ namespace LotusIR
         return node;
     }
 
-    Node* Graph::AddNode(const Node& p_other)
+    Node* GraphBase::AddNode(const Node& p_other)
     {
         auto node = AllocateNode();
         *node = p_other;
@@ -1439,7 +1440,7 @@ namespace LotusIR
         return node;
     }
 
-    bool Graph::RemoveNode(NODEINDEX p_index)
+    bool GraphBase::RemoveNode(NODEINDEX p_index)
     {
         if (MaxNodeIndex() <= p_index || nullptr == m_nodes[p_index])
         {
@@ -1450,7 +1451,7 @@ namespace LotusIR
         return true;
     }
 
-    Node* Graph::AddConstantNode(const std::string& p_name,
+    Node* GraphBase::AddConstantNode(const std::string& p_name,
         const std::string& p_description,
         const std::vector<NodeArg>& p_outputArgs,
         const TensorProto& p_tensor)
@@ -1460,7 +1461,7 @@ namespace LotusIR
         return node;
     }
 
-    bool Graph::AddControlEdge(NODEINDEX p_srcNodeIndex,
+    bool GraphBase::AddControlEdge(NODEINDEX p_srcNodeIndex,
         NODEINDEX p_dstNodeIndex)
     {
         if (MaxNodeIndex() <= p_srcNodeIndex
@@ -1637,27 +1638,27 @@ namespace LotusIR
         }
     }
 
-    bool Graph::IsSourceNode(NODEINDEX p_index) const
+    bool GraphBase::IsSourceNode(NODEINDEX p_index) const
     {
         return m_sourceNodeIndex == p_index;
     }
 
-    bool Graph::IsSinkNode(NODEINDEX p_index) const
+    bool GraphBase::IsSinkNode(NODEINDEX p_index) const
     {
         return m_sinkNodeIndex == p_index;
     }
 
-    const Node* Graph::SourceNode() const
+    const Node* GraphBase::SourceNode() const
     {
         return m_nodes[m_sourceNodeIndex].get();
     }
 
-    const Node* Graph::SinkNode() const
+    const Node* GraphBase::SinkNode() const
     {
         return m_nodes[m_sinkNodeIndex].get();
     }
 
-    Node* Graph::AllocateNode()
+    Node* GraphBase::AllocateNode()
     {
         std::unique_ptr<Node> node(new Node(MaxNodeIndex(), this));
         m_nodes.push_back(std::move(node));
@@ -1666,7 +1667,7 @@ namespace LotusIR
         return m_nodes.back().get();
     }
 
-    void Graph::ReleaseNode(NODEINDEX p_nodeIndex)
+    void GraphBase::ReleaseNode(NODEINDEX p_nodeIndex)
     {
         m_nodes[p_nodeIndex] = nullptr;
         m_numOfNodes--;
