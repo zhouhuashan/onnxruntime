@@ -67,7 +67,7 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
         .Attr("axis", "Which axis to split on", AttrType::AttributeProto_AttributeType_INT)
-        .Attr("split", "Number of tensors to output.", AttrType::AttributeProto_AttributeType_INT);
+        .Attr("split", "Number of tensors to output.", AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Transpose)
