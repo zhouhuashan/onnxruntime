@@ -608,10 +608,11 @@ namespace LotusIR
     Graph::Graph(const std::string& p_name,
         const std::unordered_map<std::string, int>& p_domainToVersion,
         bool p_isONNX)
-        : m_graphProtoSyncNeeded(false),
-        m_graphResolveNeeded(true),
-        m_numOfNodes(0)
     {
+        m_graphProtoSyncNeeded = false;
+        m_graphResolveNeeded = true;
+        m_numOfNodes = 0;
+
         m_domainToVersion = &p_domainToVersion;
         m_graphProto.set_name(p_name);
         m_graphType |= Type::Main;
