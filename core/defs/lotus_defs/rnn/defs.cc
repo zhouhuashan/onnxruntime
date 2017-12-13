@@ -48,10 +48,10 @@ namespace LotusIR {
 
     std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorActivationArgs() {
         return [=](OperatorSchemaSetter& schema) {
-            schema.Attr("alpha",
+            schema.Attr("activation_alpha",
                 "Optional scaling values used by some activation functions.",
                 AttrType::AttributeProto_AttributeType_FLOATS);
-            schema.Attr("beta",
+            schema.Attr("activation_beta",
                 "Optional scaling values used by some activation functions.",
                 AttrType::AttributeProto_AttributeType_FLOATS);
         };

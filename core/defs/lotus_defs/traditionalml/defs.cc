@@ -140,7 +140,7 @@ namespace LotusIR {
         .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("multi_class", "whether to do OvR or multinomial (0=OvR and is default)", AttrType::AttributeProto_AttributeType_INT)
         .Attr("classlabels_strings", "class labels if using string labels, size E", AttrType::AttributeProto_AttributeType_STRINGS)
-        .Attr("classlabels_int64s", "class labels if using int labels, size E", AttrType::AttributeProto_AttributeType_INTS);
+        .Attr("classlabels_ints", "class labels if using int labels, size E", AttrType::AttributeProto_AttributeType_INTS);
 
 
     REGISTER_OPERATOR_SCHEMA(LinearRegressor)
@@ -183,11 +183,11 @@ namespace LotusIR {
         .Output("Y", "encoded output data", "tensor(float)")
         .Description(R"DOC(
             Replace the inputs with an array of ones and zeros, where the only
-            one is the zero-based category that was passed in.  The total category count 
-            will determine the length of the vector. For example if we pass a 
-            tensor with a single value of 4, and a category count of 8, the 
+            one is the zero-based category that was passed in.  The total category count
+            will determine the length of the vector. For example if we pass a
+            tensor with a single value of 4, and a category count of 8, the
             output will be a tensor with 0,0,0,0,1,0,0,0 .
-            This operator assumes every input in X is of the same category set 
+            This operator assumes every input in X is of the same category set
             (meaning there is only one category count).
             )DOC")
         .TypeConstraint("T", { "tensor(string)", "tensor(int64)" }, " allowed types.")
@@ -229,7 +229,7 @@ namespace LotusIR {
         .Attr("rho", "", AttrType::AttributeProto_AttributeType_FLOATS)
         .Attr("post_transform", "post eval transform for score, enum 'NONE', 'SOFTMAX', 'LOGISTIC', 'SOFTMAX_ZERO', 'PROBIT'", AttrType::AttributeProto_AttributeType_STRING)
         .Attr("classlabels_strings", "class labels if using string labels", AttrType::AttributeProto_AttributeType_STRINGS)
-        .Attr("classlabels_int64s", "class labels if using int labels", AttrType::AttributeProto_AttributeType_INTS);
+        .Attr("classlabels_ints", "class labels if using int labels", AttrType::AttributeProto_AttributeType_INTS);
 
 
     REGISTER_OPERATOR_SCHEMA(SVMRegressor)
@@ -237,7 +237,7 @@ namespace LotusIR {
         .Input("X", "Input N,F", "T")
         .Output("Y", "All target scores, N,E", "tensor(float)")
         .Description(R"DOC(
-            SVM regressor. Also supports oneclass svm. 
+            SVM regressor. Also supports oneclass svm.
             )DOC")
         .TypeConstraint("T", { "tensor(float)", "tensor(double)", "tensor(int64)", "tensor(int32)" }, " allowed types.")
         .Attr("kernel_type", "enum 'LINEAR', 'POLY', 'RBF', 'SIGMOID', defaults to linear", AttrType::AttributeProto_AttributeType_STRING)
@@ -257,13 +257,13 @@ namespace LotusIR {
         .Output("Z", "Classification outputs (All classes scores per example,N,E", "tensor(float)")
         .Description(R"DOC(
             Tree Ensemble classifier.  Returns the top class for each input in N.
-            All args with nodes_ are fields of a tuple of tree nodes, and 
+            All args with nodes_ are fields of a tuple of tree nodes, and
             it is assumed they are the same length, and an index i will decode the
-            tuple across these inputs.  Each node id can appear only once 
+            tuple across these inputs.  Each node id can appear only once
             for each tree id."
             All fields prefixed with class_ are tuples of votes at the leaves.
             A leaf may have multiple votes, where each vote is weighted by
-            the associated class_weights index.  
+            the associated class_weights index.
             It is expected that either classlabels_strings or classlabels_INTS
             will be passed and the class_ids are an index into this list.
             Mode enum is BRANCH_LEQ, BRANCH_LT, BRANCH_GTE, BRANCH_GT, BRANCH_EQ, BRANCH_NEQ, LEAF.
@@ -295,13 +295,13 @@ namespace LotusIR {
         .Output("Y", "NxE floats", "tensor(float)")
         .Description(R"DOC(
             Tree Ensemble regressor.  Returns the regressed values for each input in N.
-            All args with nodes_ are fields of a tuple of tree nodes, and 
+            All args with nodes_ are fields of a tuple of tree nodes, and
             it is assumed they are the same length, and an index i will decode the
-            tuple across these inputs.  Each node id can appear only once 
+            tuple across these inputs.  Each node id can appear only once
             for each tree id.
             All fields prefixed with target_ are tuples of votes at the leaves.
             A leaf may have multiple votes, where each vote is weighted by
-            the associated target_weights index.  
+            the associated target_weights index.
             All trees must have their node ids start at 0 and increment by 1.
             Mode enum is BRANCH_LEQ, BRANCH_LT, BRANCH_GTE, BRANCH_GT, BRANCH_EQ, BRANCH_NEQ, LEAF
             )DOC")
@@ -329,10 +329,10 @@ namespace LotusIR {
         .Input("X", "The input values", "tensor(float)")
         .Output("Y", "The output map", "T")
         .Description(R"DOC(
-            Makes a map from the input and the attributes.  
+            Makes a map from the input and the attributes.
             Assumes input 0 are the values, and the keys are specified by the attributes.
             Must provide keys in either classlabels_strings or classlabels_int64s (but not both).
-            Input 0 may have a batch size larger than 1, 
+            Input 0 may have a batch size larger than 1,
             but each input in the batch must be the size of the keys specified by the attributes.
             The order of the input and attributes determines the key-value mapping.
             )DOC")
