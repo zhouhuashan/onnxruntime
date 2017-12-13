@@ -7,11 +7,11 @@ namespace LotusIR
 {
     // A graph transformer interface. A graph transformer could be
     // going thru a graph to do some optimization, for example, op fusion.
-    class IGraphTransoformer
+    class IGraphTransformer
     {
     public:
 
-        virtual ~IGraphTransoformer() {}
+        virtual ~IGraphTransformer() {}
 
         // Transformer name.
         virtual const std::string& Name() const = 0;
@@ -23,7 +23,8 @@ namespace LotusIR
 
         // Apply <*this> transformation to a specific graph.
         // Transformation happens in place.
-        virtual Status Apply(/*IN/OUT*/ Graph& p_graph) = 0;
+		// The return value of "modified" indicates if the graph was modified or not.
+        virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) = 0;
     };
 
     class GraphTransformerManager
@@ -31,7 +32,7 @@ namespace LotusIR
     public:
 
         // Register a graph transformer.
-        Status Register(const IGraphTransoformer& p_graphTransformer);
+        Status Register(const IGraphTransformer& p_graphTransformer);
 
         // Going thru all transformers registered in <*this> manager on specified graph.
         Status ApplyAll(/*IN/OUT*/ Graph& p_graph);
@@ -46,7 +47,7 @@ namespace LotusIR
 
         GraphTransformerManager() = default;
 
-        std::vector<IGraphTransoformer> m_transformers;
+        std::vector<IGraphTransformer> m_transformers;
     };
 
 #define REGISTER_GRAPH_PROCESSOR(ProcessorClassName) REGISTER_GRAPH_PROCESSOR_UNIQ_HELPER(__COUNTER__, ProcessorClassName)
@@ -56,7 +57,7 @@ namespace LotusIR
     = GraphTransformerManager::Instance().Register(ProcessorClassName());
 
     // Example
-    class A : public IGraphTransoformer {
+    class A : public IGraphTransformer {
     public:
 
         virtual const std::string& Name() const override
@@ -64,8 +65,9 @@ namespace LotusIR
             return "A";
         }
 
-        virtual Status Apply(/*IN/OUT*/ Graph& p_graph) override
+        virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) override
         {
+			modified = false;
             return Status::OK();
         }
     };
