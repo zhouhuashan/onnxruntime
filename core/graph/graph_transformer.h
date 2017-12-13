@@ -96,9 +96,17 @@ namespace LotusIR
 
         virtual const std::string& ID() const = 0;
 
+		// There is a tradeoff between the following two API methods for declaring an execution-provider's capabilities.
+		// The first is more general (e.g., if an execution-provider supports an operation with specific attribute-values).
+		// The second could be a more efficient approximation that is useful in some contexts: for example, for a
+		// graph-transformer that recognizes all occurrences of sub-graphs that can be replaced by a function call.
 
+		// Indicates whether the execution provider can realize/execute a given node.
+		// This may depend on the operator/function invoked by the node as well as its attributes.
+		virtual bool Supports(const Node& node) const = 0;
 
-
+		// Indicates whether the execution provider can realize/execute a given function.
+		virtual bool Supports(const Function& function) const = 0;
     };
 }
 #endif  // CORE_GRAPH_GRAPH_TRANSFORMER_H
