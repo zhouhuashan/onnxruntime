@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "core/graph/tensorutils.h"
-#include "external/onnx/onnx/onnx-ml.pb.h"
+#include "core/protobuf/onnx-ml.pb.h"
 
 using namespace Lotus::Utils;
 using namespace onnx;

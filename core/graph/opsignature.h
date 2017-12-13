@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "core/graph/utils.h"
-#include "external/onnx/onnx/onnx-ml.pb.h"
+#include "core/protobuf/onnx-ml.pb.h"
 
 using namespace onnx;
 

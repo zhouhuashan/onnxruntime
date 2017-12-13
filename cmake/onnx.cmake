@@ -1,24 +1,9 @@
 RELATIVE_PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
-    ${LOTUSIR_ROOT} external/onnx/onnx/onnx-ml.proto
+    ${LOTUSIR_ROOT} core/protobuf/onnx-ml.proto
 )
 
-file(GLOB_RECURSE onnx_src
-    "${LOTUSIR_ROOT}/external/onnx/onnx/*.h"
-    "${LOTUSIR_ROOT}/external/onnx/onnx/*.cc"
-)
-file(GLOB_RECURSE onnx_exclude_src
-    "${LOTUSIR_ROOT}/external/onnx/onnx/py_utils.h"
-    "${LOTUSIR_ROOT}/external/onnx/onnx/proto_utils.h"
-    "${LOTUSIR_ROOT}/external/onnx/onnx/cpp2py_export.cc"
-)
-list(REMOVE_ITEM onnx_src ${onnx_exclude_src})
 
-file(GLOB_RECURSE onnx_defs_src
-    "${LOTUSIR_ROOT}/external/onnx/onnx/defs/*.h"
-    "${LOTUSIR_ROOT}/external/onnx/onnx/defs/*.cc"
-)
-
-add_library(onnx ${PROTO_SRCS} ${PROTO_HDRS} ${onnx_src} ${onnx_defs_src})
+add_library(onnx ${PROTO_SRCS} ${PROTO_HDRS})
 if (WIN32)
     target_compile_options(onnx PRIVATE
         /wd4800 # 'type' : forcing value to bool 'true' or 'false' (performance warning)

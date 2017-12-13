@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "external/onnx/onnx/onnx-ml.pb.h"
+#include "core/protobuf/onnx-ml.pb.h"
 #include "status.h"
 
 namespace Lotus
