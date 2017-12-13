@@ -34,6 +34,7 @@ namespace LotusIR
         const std::string c_complex128 = "complex128";
         const std::string c_string = "string";
         const std::string c_bool = "bool";
+        const std::string c_undefined = "undefined";
 
         std::unordered_set<std::string>& GetAllowedDataTypes();
         ~TypesWrapper() = default;

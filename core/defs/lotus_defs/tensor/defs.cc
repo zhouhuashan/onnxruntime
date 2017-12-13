@@ -67,7 +67,7 @@ namespace LotusIR {
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
             "Constrain input and output types to float tensors.")
         .Attr("axis", "Which axis to split on", AttrType::AttributeProto_AttributeType_INT)
-        .Attr("split", "Number of tensors to output.", AttrType::AttributeProto_AttributeType_INT);
+        .Attr("split", "Number of tensors to output.", AttrType::AttributeProto_AttributeType_INTS);
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Transpose)
@@ -89,11 +89,7 @@ namespace LotusIR {
         .Input("axis", "Axis along which to repeat.", "T")
         .Output("output", "Repeated output.", "T")
         .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-            "Constrain input and output types to float tensors.")
-        .Attr("axis", "Axis along which to repeat. Default is 0.",
-            AttrType::AttributeProto_AttributeType_INT, int64_t(0))
-        .Attr("tiles", "Number of repeated copies to make of the input tensor.",
-            AttrType::AttributeProto_AttributeType_INT);
+            "Constrain input and output types to float tensors.");
 
     // Taken from ONNX
     REGISTER_OPERATOR_SCHEMA(Concat)

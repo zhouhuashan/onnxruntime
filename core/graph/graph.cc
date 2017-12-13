@@ -1275,6 +1275,7 @@ namespace LotusIR
             "Sink node internally in a graph.",
             emptyArgs,
             emptyArgs)->Index();
+        AddControlEdge(m_sourceNodeIndex, m_sinkNodeIndex);
     }
 
     const std::string& Graph::Name() const
