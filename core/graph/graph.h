@@ -9,7 +9,7 @@
 #include "core/graph/op.h"
 #include "core/graph/status.h"
 #include "core/graph/utils.h"
-#include "external/onnx/onnx/onnx-ml.pb.h"
+#include "core/protobuf/onnx-ml.pb.h"
 
 using namespace Lotus::Common;
 using namespace onnx;

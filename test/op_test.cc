@@ -2,9 +2,9 @@
 #include "gtest/gtest.h"
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
-#include "external/onnx/onnx/onnx-ml.pb.h"
-#include "external/onnx/onnx/defs/schema.h"
-#include "external/onnx/onnx/defs/data_type_utils.h"
+#include "core/protobuf/onnx-ml.pb.h"
+//#include "external/onnx/onnx/defs/schema.h"
+//#include "external/onnx/onnx/defs/data_type_utils.h"
 
 using namespace onnx;
 
@@ -62,7 +62,7 @@ namespace LotusIR
             EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(int32)")), "tensor(int32)");
         }
 
-        TEST(OpRegistrationTest, OnnxOpRegTest)
+        /*TEST(OpRegistrationTest, OnnxOpRegTest)
         {
             OPERATOR_SCHEMA(__TestOpReg).SetDoc("Op Registration Basic Test.")
                 .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
@@ -82,7 +82,7 @@ namespace LotusIR
             EXPECT_EQ(opSchema->outputs()[0].GetName(), "output_1");
             EXPECT_EQ(opSchema->outputs()[0].GetTypes().size(), 1);
             EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(int32)")), "tensor(int32)");
-        }
+        }*/
 
         TEST(OpRegistrationTest, TypeConstraintTest)
         {
@@ -116,7 +116,7 @@ namespace LotusIR
             EXPECT_EQ(**op->GetOutputs()[0].GetTypes().find(Utils::OpUtils::ToType("tensor(double)")), "tensor(double)");
         }
 
-        TEST(OpRegistrationTest, OnnxTypeConstraintTest)
+        /*TEST(OpRegistrationTest, OnnxTypeConstraintTest)
         {
             OPERATOR_SCHEMA(__TestTypeConstraint).SetDoc("Op with Type Constraint.")
                 .Input(0, "input_1", "docstr for input_1.", "T")
@@ -145,7 +145,7 @@ namespace LotusIR
             EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float16)")), "tensor(float16)");
             EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(float)")), "tensor(float)");
             EXPECT_EQ(**opSchema->outputs()[0].GetTypes().find(onnx::Utils::DataTypeUtils::ToType("tensor(double)")), "tensor(double)");
-        }
+        }*/
 
         TEST(OpRegistrationTest, AttributeTest)
         {
@@ -169,7 +169,7 @@ namespace LotusIR
             }
         }
 
-        TEST(OpRegistrationTest, OnnxAttributeTest)
+        /*TEST(OpRegistrationTest, OnnxAttributeTest)
         {
             OPERATOR_SCHEMA(__TestAttr).SetDoc("Op with attributes.")
                 .Attr("my_attr_int", "attr with INT type", onnx::OpSchema::AttrType::INT)
@@ -186,7 +186,7 @@ namespace LotusIR
             {
                 EXPECT_EQ(opSchema->attributes().find(expected_strings[i])->second.type, expected_types[i]);
             }
-        }
+        }*/
 
         TEST(OpRegistrationTest, AttributeDefaultValueTest)
         {
@@ -275,7 +275,7 @@ namespace LotusIR
             }
         }
 
-        TEST(TestONNXReg, VerifyRegistration)
+        /*TEST(TestONNXReg, VerifyRegistration)
         {
             const OperatorSchema* opSchema = OpSchemaRegistry::Schema("Add");
             EXPECT_TRUE(nullptr != opSchema);
@@ -286,6 +286,6 @@ namespace LotusIR
             EXPECT_TRUE(opSchema != nullptr);
             opSchemaOnnx = onnx::OpSchemaRegistry::Schema("Conv");
             EXPECT_TRUE(opSchema != nullptr);
-        }
+        }*/
     }
 }

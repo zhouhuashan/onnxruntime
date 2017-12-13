@@ -4,7 +4,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include "external/onnx/onnx/onnx-ml.pb.h"
+#include "core/protobuf/onnx-ml.pb.h"
 
 using namespace onnx;
 
