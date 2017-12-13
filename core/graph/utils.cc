@@ -116,6 +116,8 @@ namespace LotusIR
                 return t.c_complex64;
             case TensorProto::DataType::TensorProto_DataType_COMPLEX128:
                 return t.c_complex128;
+             case TensorProto::DataType::TensorProto_DataType_UNDEFINED:
+                return t.c_undefined;
             }
 
             assert(false);

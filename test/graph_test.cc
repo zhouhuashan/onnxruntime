@@ -201,6 +201,19 @@ namespace LotusIR
             status = graph.Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
+
+            LotusIR::Model model_2("graph_1");
+            auto& graph_2 = *(model_2.MainGraph());
+
+            onnx::TensorProto weight;
+            weight.add_dims(1);
+            weight.set_data_type(TensorProto_DataType_STRING);
+            weight.add_string_data("test");
+            weight.set_name("node_1_in_2");
+            graph_2.AddInitialTensor(weight);
+
+            auto status_2 = graph_2.Resolve();
+            EXPECT_TRUE(status_2.Ok());
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_TypeInference)
