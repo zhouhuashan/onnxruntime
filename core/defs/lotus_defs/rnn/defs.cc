@@ -233,5 +233,8 @@ namespace LotusIR {
             "`[num_directions, 3*hidde_size]`. Optional: If not specified - "
             "assumed to be 0.", "T",
             true /*optional*/)
-        .FillUsing(RNNDocGeneratorAttrOutput());
+        .FillUsing(RNNDocGeneratorAttrOutput())
+        .Output("Y_c",
+                "The last output value of the cell. It has shape "
+                "`[num_directions, batch_size, hidden_size]`.", "T");
 }
