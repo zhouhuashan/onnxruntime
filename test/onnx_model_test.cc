@@ -1,7 +1,9 @@
-#include "gtest/gtest.h"
+#include <memory>
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
 #include "core/graph/op.h"
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include "gtest/gtest.h"
 
 namespace LotusIR
 {
@@ -53,11 +55,32 @@ namespace LotusIR
         }
 
 #ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
-        // TODO: Test failing due to LRN renamed to LocalResponseNormalization. Enable this when model is updated.
         TEST(ONNXModelsTest, bvlc_alexnet)
         {
+            using ::google::protobuf::io::ZeroCopyInputStream;
+            using ::google::protobuf::io::FileInputStream;
+            using ::google::protobuf::io::CodedInputStream;
+
+            int fd;
+            FileOpenRd("./models/bvlc_alexnet/model.pb", &fd);
+            std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
+            std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
+            // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
+            coded_input->SetTotalBytesLimit(INT_MAX, INT_MAX);
+            ModelProto modelProto;
+            bool result = modelProto.ParseFromCodedStream(coded_input.get());
+            coded_input.reset();
+            raw_input.reset();
+            EXPECT_TRUE(result);
+            FileClose(fd);
+
             std::shared_ptr<Model> model;
             EXPECT_TRUE(Model::Load("./models/bvlc_alexnet/model.pb", &model).Ok());
+
+            // Check the graph input/output/value_info should have the same size as specified in the model file.
+            EXPECT_EQ(modelProto.graph().value_info_size(), model->MainGraph()->GetValueInfo().size());
+            EXPECT_EQ(modelProto.graph().input_size(), model->MainGraph()->GetInputs().size());
+            EXPECT_EQ(modelProto.graph().output_size(), model->MainGraph()->GetOutputs().size());
             TestResolve(model->MainGraph());
         }
 
@@ -68,7 +91,6 @@ namespace LotusIR
             TestResolve(model->MainGraph());
         }
 
-        // TODO: Test failing due to LRN renamed to LocalResponseNormalization. Enable this when model is updated.
         TEST(ONNXModelsTest, inception_v1)
         {
             std::shared_ptr<Model> model;
@@ -104,7 +126,6 @@ namespace LotusIR
             TestResolve(model->MainGraph());
         }
 
-        // TODO: Test failing due to LRN renamed to LocalResponseNormalization. Enable this when model is updated.
         TEST(ONNXModelsTest, vgg16)
         {
             std::shared_ptr<Model> model;

@@ -505,7 +505,7 @@ namespace LotusIR
         void AddSourceSinkNodes();
 
         // Set graph inputs/outputs when resolving a graph..
-        void SetGraphInputsOutputs();
+        Status SetGraphInputsOutputs();
 
         // Sync graph inputs/outputs when serializing to proto.
         void SyncGraphInputsOutputs();
