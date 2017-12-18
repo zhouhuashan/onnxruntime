@@ -1570,6 +1570,7 @@ namespace LotusIR
             std::unordered_set<std::string> specifiedGraphInputs;
             std::unordered_set<std::string> specifiedGraphOutputs;
             std::unordered_set<std::string> specifiedGraphValueInfo;
+            std::unordered_set<std::string> specifiedInitializers;
             for (auto& graphInput : m_graphProto.input())
             {
                 specifiedGraphInputs.insert(graphInput.name());
@@ -1581,6 +1582,10 @@ namespace LotusIR
             for (auto& graphValueInfo : m_graphProto.value_info())
             {
                 specifiedGraphValueInfo.insert(graphValueInfo.name());
+            }
+            for (auto& initializer : m_graphProto.initializer())
+            {
+                specifiedInitializers.insert(initializer.name());
             }
 
             std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
@@ -1617,7 +1622,8 @@ namespace LotusIR
                     }
 
                     auto outputArgIter = outputNameToNodeArg.find(inputArg.Name());
-                    if (outputNameToNodeArg.end() == outputArgIter)
+                    if (outputNameToNodeArg.end() == outputArgIter
+                        && specifiedInitializers.end() == specifiedInitializers.find(inputArg.Name()))
                     {
                         // The node input is not specified as graph input,
                         // and it's not fed by another node neither.
