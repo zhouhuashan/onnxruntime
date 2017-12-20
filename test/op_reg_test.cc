@@ -11,9 +11,9 @@ namespace LotusIR
 {
     namespace Test
     {
-        TEST(OpRegistrationTest, LinearOp)
+        TEST(OpRegistrationTest, AffineOp)
         {
-            auto opSchema = OpSchemaRegistry::Schema("Linear");
+            auto opSchema = OpSchemaRegistry::Schema("Affine");
             EXPECT_TRUE(nullptr != opSchema);
             const OpSignature* op = &(opSchema->GetOpSignature());
             size_t input_size = op->GetInputs().size();
