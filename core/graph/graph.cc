@@ -1564,6 +1564,7 @@ namespace LotusIR
             || m_graphProto.output_size() != 0
             || m_graphProto.value_info_size() != 0;
 
+        std::unordered_set<std::string> addedInputNames{};
         if (loadedFromModelFile)
         {
             // Collect all graph inputs/outputs specified in original graph proto
@@ -1622,8 +1623,12 @@ namespace LotusIR
 
                     if (specifiedGraphInputs.end() != specifiedGraphInputs.find(inputArg.Name()))
                     {
-                        // The node input is specified as graph input.
-                        m_graphInputs.push_back(&inputArg);
+                        if (addedInputNames.end() == addedInputNames.find(inputArg.Name()))
+                        {
+                            // The node input is specified as graph input.
+                            m_graphInputs.push_back(&inputArg);
+                            addedInputNames.insert(inputArg.Name());
+                        }
                         continue;
                     }
 
@@ -1645,7 +1650,6 @@ namespace LotusIR
         }
         else
         {
-            std::unordered_set<std::string> addedInputNames;
             std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
             for (auto nodeIter = Nodes_begin();
                 nodeIter != Nodes_end();

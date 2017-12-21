@@ -289,6 +289,12 @@ namespace LotusIR
             }
             EXPECT_EQ(1, graph->GetOutputs().size());
             EXPECT_EQ("node_4_out_1", graph->GetOutputs()[0]->Name());
+            EXPECT_EQ(2, graph->GetInputs().size());
+
+            EXPECT_TRUE(Model::Save(model, "model_x.pb").Ok());
+            std::shared_ptr<Model> loaded_model;
+            EXPECT_TRUE(Model::Load("model_x.pb", &loaded_model).Ok());
+            EXPECT_EQ(2, loaded_model->MainGraph()->GetInputs().size());
 
             auto& graphProto = graph->ToGraphProto();
             EXPECT_EQ(2, graphProto.input_size());
