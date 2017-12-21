@@ -377,5 +377,76 @@ namespace LotusIR
             status = graphOnnx->Resolve();
             EXPECT_TRUE(status.Ok());
         }
+
+        TEST(SetGraphInputOutputTest, GraphConstruction_WithOptionalInputs)
+        {
+            Model model("graph_1", true);
+            Graph* graph = model.MainGraph();
+
+            // RNN Operator.
+            // Inputs: "X", "W", "R", "B" (optional), "sequence_lens" (optional), "initial_h" (optional).
+            std::vector<NodeArg> inputs;
+            std::vector<NodeArg> outputs;
+
+            TypeProto floatTensor;
+            // X: [seq_length, batch_size, input_size].
+            floatTensor.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(10);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(100);
+            inputs.push_back(NodeArg("X", &floatTensor));
+
+            floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
+            // W: [num_directions, hidden_size, input_size]
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(100);
+            inputs.push_back(NodeArg("W", &floatTensor));
+            
+            floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
+            // R: [num_directions, hidden_size, hidden_size]
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
+            inputs.push_back(NodeArg("R", &floatTensor));
+
+            floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
+            // B: [num_directions, 2*hidden_size]
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(4);
+            inputs.push_back(NodeArg("B", &floatTensor));
+
+            // Optional: sequence_lens, initial_h.
+            inputs.push_back(NodeArg("", nullptr));
+            inputs.push_back(NodeArg("", nullptr));
+
+            floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
+            // Y: [seq_length, num_directions, batch_size, hidden_size].
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(10);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
+            outputs.push_back(NodeArg("Y", &floatTensor));
+
+            floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
+            // Y_h: [num_directions, batch_size, hidden_size].
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+            floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
+            outputs.push_back(NodeArg("Y_h", &floatTensor));
+
+            auto node_1 = graph->AddNode("node_1", "RNN", "node 1.", inputs, outputs);
+            EXPECT_TRUE(nullptr != node_1);
+            auto status = graph->Resolve();
+            EXPECT_TRUE(status.Ok());
+            EXPECT_EQ(4, model.MainGraph()->GetInputs().size());
+
+            // Test case: load a model from file, and the model has optional inputs.
+            std::shared_ptr<Model> loaded_model;
+            status = Model::Load("./testdata/model_optional_inputs.pb", &loaded_model);
+            EXPECT_TRUE(status.Ok());
+            auto graphInputs = loaded_model->MainGraph()->GetInputs();
+            EXPECT_EQ(4, graphInputs.size());
+        }
     }
 }

@@ -1614,6 +1614,12 @@ namespace LotusIR
                 // Go thru all node's inputs.
                 for (auto& inputArg : (*nodeIter)->InputDefs())
                 {
+                    if (!inputArg.Exist())
+                    {
+                        // It's an optional input and does not exist in this case.
+                        continue;
+                    }
+
                     if (specifiedGraphInputs.end() != specifiedGraphInputs.find(inputArg.Name()))
                     {
                         // The node input is specified as graph input.
@@ -1661,6 +1667,12 @@ namespace LotusIR
                 // Go thru all node's inputs.
                 for (auto& inputArg : (*nodeIter)->InputDefs())
                 {
+                    if (!inputArg.Exist())
+                    {
+                        // It's an optional input and does not exist in this case.
+                        continue;
+                    }
+
                     auto outputArgIter = outputNameToNodeArg.find(inputArg.Name());
                     if (outputNameToNodeArg.end() == outputArgIter)
                     {
