@@ -517,7 +517,7 @@ message FunctionDefProto {
 
   // The attribute map from the attributes of the function to the attributes
   // of the nodes in the function.
-  repeated FunctionAttrMapProto attr = 8;
+  repeated FunctionAttrMapProto attr_map = 8;
 
   // An optional human-readable documentation for this function in the graph. 
   // MAY contain Markdown markup that conforms to http://commonmark.org/. 
