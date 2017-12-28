@@ -475,11 +475,11 @@ message FunctionAttrProto {
 
 // Defines a custom implementation of a function. 
 message FunctionImplProto { 
-  // The domain of this implementation.
-  optional string execution_provider_domain = 1; 
+  // The domain of this function implementation.
+  optional string function_domain = 1; 
 
   // The version of this implemenation.
-  optional int64 execution_provider_version = 2; 
+  optional int64 function_version = 2; 
 
   // The URI of the executable. A runtime uses <domain> and <version> to determine
   // whether Compilation data itself saved in a separate file. 
