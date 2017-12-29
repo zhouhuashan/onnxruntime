@@ -449,7 +449,7 @@ message OperatorSetIdProto {
 
 // Defines a function parameter.
 message ParameterDeclProto {
-  // The name of this parameter.
+  // The name of this parameter. Must be present.
   optional string name = 1;
 
   // The type/shape of this parameter.
@@ -461,16 +461,19 @@ message ParameterDeclProto {
 
 // Defines a function attribute.
 message FunctionAttrProto {
-  // The named attribute of the function. 
-  optional AttributeProto attr = 1;
+  // The attribute name of the function. Must be present.
+  optional string attr_name = 1;
 
-  // An attribute may map to multiple attributes
-  // of the nodes in a function.
+  // The type of this attribute.
+  optional AttributeProto.AttributeType type = 2; 
+
+  // An attribute may map to multiple attributes of the
+  // nodes in a function.
   // The node names in the function body.
-  repeated string node_name = 2; 
+  repeated string node_name = 3; 
 
   // The node attribute names of the nodes `node_name` above.
-  repeated string node_attr_name = 3;
+  repeated string node_attr_name = 4;
 } 
 
 // Defines a custom implementation of a function. 
@@ -481,8 +484,8 @@ message FunctionImplProto {
   // The version of this implementation.
   optional int64 function_impl_version = 2; 
 
-  // The URI of the executable. A runtime uses <domain> and <version> to determine
-  // whether Compilation data itself saved in a separate file. 
+  // The URI of the executable. A runtime uses <domain> and <version> to
+  // determine whether Compilation data itself saved in a separate file. 
   optional string executable_uri = 3;
 
   // The actual executable for this function implementation.
