@@ -73,6 +73,53 @@ namespace LotusIR
     };
     REGISTER_GRAPH_PROCESSOR(A);
 
+	// A rewrite-rule interface. A rewrite-rule represents a semantics-preserving transformation of a
+	// computation-graph. It can be used to represent, for example, the elimination of operators that
+	// serve as no-ops (for example, dropout during inference), as well as inlining of "function"
+	// definitions or the dual (replacing a complex expression by an equivalent function-call).
+	// Unlike the more general IGraphTransformer, a rewrite-rule is applied at a single node,
+	// representing the root of an expression that is rewritten.
+	class IRewriteRule {
+	public:
+
+		// Apply the rewrite rule to a specific node.
+		// The transformation happens in-place. The return-value of node may be different
+		// from the input-value due to rewriting.
+		// The return value of "modified" indicates if the graph was modified or not.
+		virtual Status Apply(/*IN/OUT*/ Node& p_node, /*OUT*/ bool& modified) = 0;
+
+		// Indicates whether this rewrite-rule may be applicable to a particular op-signature.
+		// A return-value of false implies that the rule will definitely not be applicable
+		// to a node with that signature. This is intended to be used to avoid applying
+		// irrelevant rewrite-rules to a given node, based on its op signature.
+		// TODO: determine the right parameters to use. Note that the idea is to group
+		// rewrite-rules statically based on the operator they apply to.
+		virtual bool MayModify(const OpSignature& p_op) = 0;
+	};
+
+	// Represents a IGraphTransformer determined by a set of rewrite-rules.
+	// The transformer will apply all the rewrite-rules iteratively as determined by
+	// the underlying rewriting-strategy.
+	// TODO: Several rewriting-strategies are possible, with different tradeoffs.
+	// To begin with, we may use a simple, bottom-up, rewriting strategy.
+	class RewriteRuleSetTransformer : public IGraphTransformer {
+	public:
+		RewriteRuleSetTransformer(std::vector<const IRewriteRule*>& rewriteRuleSet) {
+			// TODO
+		}
+
+		virtual const std::string& Name() const override
+		{
+			return "RewritingRuleSet"; // TODO: use name for ruleset?
+		}
+
+		virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) override
+		{
+			modified = false;
+			// TODO
+			return Status::OK();
+		}
+	};
 
     // Function representation class.
     class Function : public GraphBase
@@ -86,6 +133,40 @@ namespace LotusIR
 
         OperatorSchema m_schema;
     };
+
+	// A function-inlining rewrite-rule. The plan with ONNX is to capture most optimizations
+	// as function-inlining or function-extraction.
+	class FunctionInliner : public IRewriteRule {
+	public:
+		FunctionInliner(const Function& function) {
+			// TODO
+		}
+
+		virtual Status Apply(/*IN/OUT*/ Node& p_node, /*OUT*/ bool& modified) override {
+			// TODO
+		}
+
+		virtual bool MayModify(const OpSignature& p_op) override {
+			// TODO
+		}
+	};
+
+	// A function-extraction rewrite-rule is the dual of function-inlining. It identifies
+	// occurrences of the body of a function-definition and replaces it by a call to the function.
+	class FunctionExtraction : public IRewriteRule {
+	public:
+		FunctionExtraction(const Function& function) {
+			// TODO
+		}
+
+		virtual Status Apply(/*IN/OUT*/ Node& p_node, /*OUT*/ bool& modified) override {
+			// TODO
+		}
+
+		virtual bool MayModify(const OpSignature& p_op) override {
+			// TODO
+		}
+	};
 
     // TODO: Tensor class design.
     class Tensor;
