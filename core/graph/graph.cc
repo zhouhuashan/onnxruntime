@@ -383,7 +383,12 @@ namespace LotusIR
         const std::vector<NodeArg>& p_outputArgs,
         const std::string& p_domain)
     {
-        Init(p_name, p_opType, p_description, p_outputArgs, p_domain);
+        m_name = p_name;
+        m_opType = p_opType;
+        m_description = p_description;
+        m_outputDefs = p_outputArgs;
+        m_domain = p_domain;
+        //Init(p_name, p_opType, p_description, p_outputArgs, p_domain);
         m_inputDefs = p_inputArgs;
         // Set each arg count as 1 by default.
         // It could be adjusted when resolving the node with its operator
@@ -391,7 +396,7 @@ namespace LotusIR
         m_inputArgCount.assign(m_inputDefs.size(), 1);
     }
 
-    void Node::Init(const std::string& p_name,
+    /*void Node::Init(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
@@ -415,7 +420,7 @@ namespace LotusIR
         m_description = p_description;
         m_outputDefs = p_outputArgs;
         m_domain = p_domain;
-    }
+    }*/
 
     bool Node::AddAttribute(const std::string& p_attrName, const AttributeProto& p_value)
     {
@@ -1398,7 +1403,7 @@ namespace LotusIR
         return node;
     }
 
-    Node* GraphBase::AddNode(const std::string& p_name,
+    /*Node* GraphBase::AddNode(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_inputArgs,
@@ -1416,9 +1421,9 @@ namespace LotusIR
             p_domain);
         m_graphProtoSyncNeeded = true;
         return node;
-    }
+    }*/
 
-    Node* GraphBase::AddNode(const std::string& p_name,
+    /*Node* GraphBase::AddNode(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
         const std::vector<NodeArg>& p_outputArgs,
@@ -1432,7 +1437,7 @@ namespace LotusIR
             p_domain);
         m_graphProtoSyncNeeded = true;
         return node;
-    }
+    }*/
 
     Node* GraphBase::AddNode(const Node& p_other)
     {
@@ -1458,7 +1463,7 @@ namespace LotusIR
         const std::vector<NodeArg>& p_outputArgs,
         const TensorProto& p_tensor)
     {
-        Node* node = AddNode(p_name, c_constantOp, p_description, p_outputArgs);
+        Node* node = AddNode(p_name, c_constantOp, p_description, std::vector<NodeArg>{}, p_outputArgs);
         node->AddAttribute(c_constantValue, p_tensor);
         return node;
     }

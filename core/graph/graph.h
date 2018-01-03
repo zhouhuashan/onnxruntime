@@ -248,18 +248,6 @@ namespace LotusIR
             const std::vector<NodeArg>& p_inputArgs,
             const std::vector<NodeArg>& p_outputArgs,
             const std::string& p_domain);
-        void Init(const std::string& p_name,
-            const std::string& p_opType,
-            const std::string& p_description,
-            const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<int>& p_inputArgCount,
-            const std::vector<NodeArg>& p_outputArgs,
-            const std::string& p_domain);
-        void Init(const std::string& p_name,
-            const std::string& p_opType,
-            const std::string& p_description,
-            const std::vector<NodeArg>& p_outputArgs,
-            const std::string& p_domain);
 
         // Node index.
         NODEINDEX m_index;
@@ -393,18 +381,6 @@ namespace LotusIR
             const std::string& p_opType,
             const std::string& p_description,
             const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs,
-            const std::string& p_domain = "");
-        Node* AddNode(const std::string& p_name,
-            const std::string& p_opType,
-            const std::string& p_description,
-            const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<int>& p_inputArgCount,
-            const std::vector<NodeArg>& p_outputArgs,
-            const std::string& p_domain = "");
-        Node* AddNode(const std::string& p_name,
-            const std::string& p_opType,
-            const std::string& p_description,
             const std::vector<NodeArg>& p_outputArgs,
             const std::string& p_domain = "");
         Node* AddNode(const Node& p_other);
