@@ -189,8 +189,11 @@ namespace LotusIR {
             output will be a tensor with 0,0,0,0,1,0,0,0 .
             This operator assumes every input in X is of the same category set
             (meaning there is only one category count).
+
+            If the input is a tensor of float, int32, or double, the data will be cast
+            to int64s and the cats_int64s category list will be used for the lookups.
             )DOC")
-        .TypeConstraint("T", { "tensor(string)", "tensor(int64)" }, " allowed types.")
+        .TypeConstraint("T", { "tensor(string)", "tensor(int64)","tensor(int32)", "tensor(float)","tensor(double)" }, "allowed types.")
         .Attr("cats_int64s", "list of cateogries, ints", AttrType::AttributeProto_AttributeType_INTS)
         .Attr("cats_strings", "list of cateogries, strings", AttrType::AttributeProto_AttributeType_STRINGS)
         .Attr("zeros", "if true and category is not present, will return all zeros, if false and missing category, operator will return false", AttrType::AttributeProto_AttributeType_INT);
