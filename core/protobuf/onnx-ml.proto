@@ -104,6 +104,8 @@ message AttributeProto {
 
   // The name field MUST be present for this version of the IR.
   optional string name = 1;           // namespace Attribute
+  optional bool is_ref = 21;          // if it's true, it means it's referring parent node's (referring to a function) attribute value.
+  optional string ref_attr_name = 22; // if is_ref is true, ref_attr_name is the attribute name in parent function.
 
   // A human-readable documentation for this attribute. Markdown is allowed.
   optional string doc_string = 13;
@@ -459,21 +461,13 @@ message ParameterDeclProto {
   optional string doc_string = 3; 
 } 
 
-// Defines a function attribute.
+// Defines a function attribute declaration.
 message FunctionAttrProto {
   // The attribute name of the function. Must be present.
-  optional string attr_name = 1;
+  optional string name = 1;
 
   // The type of this attribute.
-  optional AttributeProto.AttributeType type = 2; 
-
-  // An attribute may map to multiple attributes of the
-  // nodes in a function.
-  // The node names in the function body.
-  repeated string node_name = 3; 
-
-  // The node attribute names of the nodes `node_name` above.
-  repeated string node_attr_name = 4;
+  optional AttributeProto.AttributeType type = 2;
 } 
 
 // Defines a custom implementation of a function. 
