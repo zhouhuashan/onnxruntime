@@ -61,4 +61,5 @@ include_directories(
 )
 
 include(lotusIR_core_graph.cmake)
+include(lotus_core_framework.cmake)
 include(lotusIR_unittest.cmake)
