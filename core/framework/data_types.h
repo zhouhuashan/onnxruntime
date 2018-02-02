@@ -39,6 +39,8 @@ namespace Lotus
         DataTypeImpl() {}
 
         TypeProto m_type_proto;
+
+        std::string m_typeid;
     };
 
 
@@ -50,6 +52,7 @@ namespace Lotus
         TensorType() {
             m_type_proto.mutable_tensor_type()->set_elem_type(
                 (TensorProto_DataType)elemT);
+            m_typeid = typeid(Tensor).name();
         }
     };
 
@@ -67,6 +70,7 @@ namespace Lotus
     //        const std::string& domain_ = ONNX_DOMAIN) {
     //        type_proto.mutable_abs_type()->set_domain(domain);
     //        type_proto.mutable_abs_type()->set_identifier(identifier);
+    //        m_typeid = typeid(T).name();
     //    }
     //};
 }
