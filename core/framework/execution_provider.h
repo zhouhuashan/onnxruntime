@@ -47,9 +47,26 @@ namespace Lotus
         virtual Status CopyTensorToCPU(const Tensor* p_srcTensor,
             Tensor* p_dstTensor) = 0;
 
+        // Get the Arena that is based on current device's resource allocator
+        // Here we provide the default implementation. Not sure do we want customized implementation in execution provider.
+        Lotus::IArenaAllocator* GetArenaAllocator() {
+            if (!m_allocator) {
+                m_allocator = new Lotus::ArenaBase(GetResourceAllocator());
+            }
+            return m_allocator;
+        }
+
     private:
 
+        // Return the resouce allocator on current device.
+        // Usually we don't want runtime invoke resource allocator directly.
+        // Allocation should go with Arena, so make it private.
+        // The execution provider implementation could chose to reuse an existing ResourceAllocator.
+        virtual Lotus::IResourceAllocator GetResourceAllocator() const = 0;
+
         std::string m_id;
+
+        IArenaAllocator* m_allocator;
     };
 
     typedef std::function<std::vector<IExecutionProvider>()> ExecutionProviderFinder;
