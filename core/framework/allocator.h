@@ -47,5 +47,26 @@ namespace Lotus
     private:
         IResourceAllocator m_allocator;
     };
+
+    typedef std::function<bool(Tensor& src, Tensor& dist)> TensorCopier;
+
+    class AllocatorContext
+    {
+    public:
+
+        static AllocatorContext Instance()
+        {
+            static AllocatorContext context;
+            return context;
+        }
+
+        // TODO: registration for customized copy method.
+
+    private:
+
+        AllocatorContext() {}
+
+        std::unordered_map<std::pair<std::string, std::string>, TensorCopier> m_copy_methods;
+    };
 }
 #endif  // CORE_FRAMEWORK_ALLOCATOR_H
