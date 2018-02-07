@@ -25,7 +25,7 @@ add_whole_archive_flag(onnx tmp)
 list(APPEND ${UT_NAME}_libs ${tmp})
 
 file(GLOB_RECURSE ${UT_NAME}_src
-    "${LOTUSIR_ROOT}/test/*.cc"
+    "${LOTUSIR_ROOT}/test/ir/*.cc"
 )
   
 function(AddTest)
@@ -67,6 +67,28 @@ AddTest(
     TARGET ${UT_NAME}
     SOURCES ${${UT_NAME}_src}
     LIBS ${${UT_NAME}_libs}
+)
+
+set(lotus_test_framework_libs
+    ${googletest_STATIC_LIBRARIES}
+    ${protobuf_STATIC_LIBRARIES}
+)
+
+add_whole_archive_flag(lotus_framework tmp)
+list(APPEND lotus_test_framework_libs ${tmp})
+add_whole_archive_flag(lotusIR_graph tmp)
+list(APPEND lotus_test_framework_libs ${tmp})
+add_whole_archive_flag(onnx tmp)
+list(APPEND lotus_test_framework_libs ${tmp})
+
+file(GLOB_RECURSE lotus_test_framework_src
+    "${LOTUSIR_ROOT}/test/framework/*.cc"
+)
+
+AddTest(
+    TARGET lotus_test_framework
+    SOURCES ${lotus_test_framework_src}
+    LIBS ${lotus_test_framework_libs}
 )
 
 set(TEST_DATA_SRC ${LOTUSIR_ROOT}/test/testdata)
