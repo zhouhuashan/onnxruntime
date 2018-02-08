@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "core\protobuf\onnx-ml.pb.h"
+#include "core/protobuf/onnx-ml.pb.h"
 
 using namespace onnx;
 
@@ -45,9 +45,9 @@ namespace Lotus
 
     class Tensor {
     public:
-        Tensor::Tensor();
-        Tensor::Tensor(TensorProto_DataType p_type);
-        Tensor::Tensor(TensorProto_DataType p_type, const TensorShape& p_shape, void* p_pData);
+        Tensor();
+        Tensor(TensorProto_DataType p_type);
+        Tensor(TensorProto_DataType p_type, const TensorShape& p_shape, void* p_pData);
 
         // Returns the data type.
         TensorProto_DataType dtype() const { return m_dtype; }

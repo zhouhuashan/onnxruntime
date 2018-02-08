@@ -2,8 +2,8 @@
 #define CORE_FRAMEWORK_ALLOCATOR_H
 
 #include <string>
-#include "core\framework\tensor.h"
-#include "core\graph\status.h"
+#include "core/framework/tensor.h"
+#include "core/graph/status.h"
 
 using namespace Lotus::Common;
 

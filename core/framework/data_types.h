@@ -2,8 +2,8 @@
 #define CORE_FRAMEWORK_DATA_TYPES_H
 
 #include <string>
-#include "core\framework\tensor.h"
-#include "core\protobuf\onnx-ml.pb.h"
+#include "core/framework/tensor.h"
+#include "core/protobuf/onnx-ml.pb.h"
 
 using namespace onnx;
 

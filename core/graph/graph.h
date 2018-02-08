@@ -28,6 +28,7 @@ namespace LotusIR
     typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
 
     class Graph;
+    class GraphBase;
     class Node;
     class OpSignature;
 

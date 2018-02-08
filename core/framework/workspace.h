@@ -2,7 +2,7 @@
 #define CORE_FRAMEWORK_WORKSPACE_H
 
 #include <string>
-#include "core\framework\tensor.h"
+#include "core/framework/tensor.h"
 
 namespace Lotus
 {

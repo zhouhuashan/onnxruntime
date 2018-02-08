@@ -2,9 +2,9 @@
 #define CORE_FRAMEWORK_INFERENCE_ENGINE_H
 
 #include <vector>
-#include "core\framework\execution_provider.h"
-#include "core\framework\ml_value.h"
-#include "core\graph\status.h"
+#include "core/framework/execution_provider.h"
+#include "core/framework/ml_value.h"
+#include "core/graph/status.h"
 
 
 using namespace Lotus::Common;

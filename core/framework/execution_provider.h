@@ -1,10 +1,10 @@
 #ifndef CORE_FRAMEWORK_EXECUTION_PROVIDER_H
 #define CORE_FRAMEWORK_EXECUTION_PROVIDER_H
 
-#include "core\framework\allocator.h"
-#include "core\framework\workspace.h"
-#include "core\graph\graph.h"
-#include "core\graph\graph_transformer.h"
+#include "core/framework/allocator.h"
+#include "core/framework/workspace.h"
+#include "core/graph/graph.h"
+#include "core/graph/graph_transformer.h"
 
 using namespace LotusIR;
 
