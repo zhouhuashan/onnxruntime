@@ -36,6 +36,10 @@ namespace Lotus {
             if (!allocator_manager)
                 return Common::Status(Common::LOTUS, Common::StatusCode::FAIL, "Init allocator manager failed");
 
+            status = allocator_manager->InitializeAllocators();
+            if (status.Ok())
+                return status;
+
             return Common::Status::OK();
         }
         catch (std::exception& ex)

@@ -6,19 +6,14 @@
 namespace Lotus {
     class AllocatorManager
     {
+        friend class Initializer;
     public:
+        // the allocator manager is a global object for entire process.
+        // all the inference engine in the same process will use the same allocator manager.
         static AllocatorManager* Instance()
         {
-            static AllocatorManager* manager;
-            if (!manager)
-            {
-                auto ptr = new AllocatorManager();
-                if (!ptr->InitializeAllocators().Ok())
-                    return nullptr;
-                manager = ptr;
-            }
-
-            return manager;
+            static AllocatorManager manager;
+            return &manager;
         }
 
         IArenaAllocator& GetArena(const std::string& name, const int id = 0);

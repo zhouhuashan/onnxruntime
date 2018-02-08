@@ -1,6 +1,6 @@
 #ifndef CORE_FRAMEWORK_INIT_H
 #define CORE_FRAMEWORK_INIT_H
-#include "core\graph\status.h"
+#include "core/graph/status.h"
 
 namespace Lotus {
     /**

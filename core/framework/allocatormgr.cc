@@ -61,6 +61,8 @@ namespace Lotus {
     {
         auto& arena_map = _getArenaAllocatorMap();
         auto arena_id = GetAllocatorId(name, id, true);
+
+        std::lock_guard<std::mutex> lock(_getLocalMutex());
         if (arena_map.find(arena_id) == arena_map.end())
             throw std::logic_error("Arena not found.");
         return *(arena_map[arena_id]);
