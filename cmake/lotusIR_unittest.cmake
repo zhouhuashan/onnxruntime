@@ -13,20 +13,6 @@ function(add_whole_archive_flag lib output_var)
     set(${output_var} "-Wl,--whole-archive $<TARGET_FILE:${lib}> -Wl,--no-whole-archive" PARENT_SCOPE)
   endif()
 endfunction()
-
-set(${UT_NAME}_libs
-    ${googletest_STATIC_LIBRARIES}
-    ${protobuf_STATIC_LIBRARIES}
-)
-
-add_whole_archive_flag(lotusIR_graph tmp)
-list(APPEND ${UT_NAME}_libs ${tmp})
-add_whole_archive_flag(onnx tmp)
-list(APPEND ${UT_NAME}_libs ${tmp})
-
-file(GLOB_RECURSE ${UT_NAME}_src
-    "${LOTUSIR_ROOT}/test/ir/*.cc"
-)
   
 function(AddTest)
   cmake_parse_arguments(_UT "" "TARGET" "LIBS;SOURCES" ${ARGN})
@@ -61,7 +47,20 @@ function(AddTest)
   )
 endfunction(AddTest)
 
+add_whole_archive_flag(lotusIR_graph lotusIR_graph_whole_archived)
+add_whole_archive_flag(onnx onnx_whole_archived)
+add_whole_archive_flag(lotus_framework  lotus_framework_whole_archived)
 
+set(${UT_NAME}_libs
+    ${googletest_STATIC_LIBRARIES}
+    ${protobuf_STATIC_LIBRARIES}
+	${lotusIR_graph_whole_archived}
+	${onnx_whole_archived}
+)
+
+file(GLOB_RECURSE ${UT_NAME}_src
+    "${LOTUSIR_ROOT}/test/ir/*.cc"
+)
 
 AddTest(
     TARGET ${UT_NAME}
@@ -72,14 +71,10 @@ AddTest(
 set(lotus_test_framework_libs
     ${googletest_STATIC_LIBRARIES}
     ${protobuf_STATIC_LIBRARIES}
+	${lotusIR_graph_whole_archived}
+	${onnx_whole_archived}
+	${lotus_framework_whole_archived}
 )
-
-add_whole_archive_flag(lotus_framework tmp)
-list(APPEND lotus_test_framework_libs ${tmp})
-add_whole_archive_flag(lotusIR_graph tmp)
-list(APPEND lotus_test_framework_libs ${tmp})
-add_whole_archive_flag(onnx tmp)
-list(APPEND lotus_test_framework_libs ${tmp})
 
 file(GLOB_RECURSE lotus_test_framework_src
     "${LOTUSIR_ROOT}/test/framework/*.cc"
