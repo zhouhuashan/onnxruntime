@@ -4,7 +4,7 @@ file(GLOB_RECURSE lotus_framework_src
 )
 
 add_library(lotus_framework ${lotus_framework_src})
-target_link_libraries(lotus_framework PUBLIC onnx lotusIR_graph)
+target_link_libraries(lotus_framework PUBLIC onnx lotusIR_graph PRIVATE ${protobuf_STATIC_LIBRARIES})
 if (WIN32)
     set(lotus_framework_static_library_flags
         -IGNORE:4221 # LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library

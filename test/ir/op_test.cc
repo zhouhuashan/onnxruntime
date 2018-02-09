@@ -3,8 +3,6 @@
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
 #include "core/protobuf/onnx-ml.pb.h"
-//#include "external/onnx/onnx/defs/schema.h"
-//#include "external/onnx/onnx/defs/data_type_utils.h"
 
 using namespace onnx;
 

@@ -46,9 +46,8 @@ namespace Lotus
 
         virtual Status CopyTensorToCPU(const Tensor* p_srcTensor,
             Tensor* p_dstTensor) = 0;
-
+        
     private:
-
         std::string m_id;
     };
 

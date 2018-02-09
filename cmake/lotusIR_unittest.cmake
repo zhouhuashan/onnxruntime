@@ -13,33 +13,23 @@ function(add_whole_archive_flag lib output_var)
     set(${output_var} "-Wl,--whole-archive $<TARGET_FILE:${lib}> -Wl,--no-whole-archive" PARENT_SCOPE)
   endif()
 endfunction()
-
-set(${UT_NAME}_libs
-    ${googletest_STATIC_LIBRARIES}
-    ${protobuf_STATIC_LIBRARIES}
-)
-
-add_whole_archive_flag(lotusIR_graph tmp)
-list(APPEND ${UT_NAME}_libs ${tmp})
-add_whole_archive_flag(onnx tmp)
-list(APPEND ${UT_NAME}_libs ${tmp})
-
-file(GLOB_RECURSE ${UT_NAME}_src
-    "${LOTUSIR_ROOT}/test/*.cc"
-)
   
 function(AddTest)
-  cmake_parse_arguments(_UT "" "TARGET" "LIBS;SOURCES" ${ARGN})
+  cmake_parse_arguments(_UT "" "TARGET" "LIBS;SOURCES;DEPENDS" ${ARGN})
 
   list(REMOVE_DUPLICATES _UT_LIBS)
   list(REMOVE_DUPLICATES _UT_SOURCES)
   
-  add_executable(${_UT_TARGET} ${_UT_SOURCES})
   if (lotusIR_RUN_ONNX_TESTS)
-    add_dependencies(${_UT_TARGET} googletest lotusIR_graph models)
-  else()
-    add_dependencies(${_UT_TARGET} googletest lotusIR_graph)
+    list(APPEND _UT_DEPENDS models)
   endif()
+  
+  if (_UT_DEPENDS)
+    list(REMOVE_DUPLICATES _UT_DEPENDS)
+  endif(_UT_DEPENDS)
+    
+  add_executable(${_UT_TARGET} ${_UT_SOURCES})
+  add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
   if (WIN32)
@@ -61,12 +51,44 @@ function(AddTest)
   )
 endfunction(AddTest)
 
+add_whole_archive_flag(lotusIR_graph lotusIR_graph_whole_archived)
+add_whole_archive_flag(onnx onnx_whole_archived)
 
+set(${UT_NAME}_libs
+    ${googletest_STATIC_LIBRARIES}
+    ${protobuf_STATIC_LIBRARIES}
+	${lotusIR_graph_whole_archived}
+	${onnx_whole_archived}
+)
+
+file(GLOB_RECURSE ${UT_NAME}_src
+    "${LOTUSIR_ROOT}/test/ir/*.cc"
+)
 
 AddTest(
     TARGET ${UT_NAME}
     SOURCES ${${UT_NAME}_src}
     LIBS ${${UT_NAME}_libs}
+	DEPENDS googletest lotusIR_graph
+)
+
+set(lotus_test_framework_libs
+    ${googletest_STATIC_LIBRARIES}
+    ${protobuf_STATIC_LIBRARIES}
+	${lotusIR_graph_whole_archived}
+	${onnx_whole_archived}
+	lotus_framework
+)
+
+file(GLOB_RECURSE lotus_test_framework_src
+    "${LOTUSIR_ROOT}/test/framework/*.cc"
+)
+
+AddTest(
+    TARGET lotus_test_framework
+    SOURCES ${lotus_test_framework_src}
+    LIBS ${lotus_test_framework_libs}
+	DEPENDS lotus_framework googletest lotusIR_graph
 )
 
 set(TEST_DATA_SRC ${LOTUSIR_ROOT}/test/testdata)
