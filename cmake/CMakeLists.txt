@@ -18,7 +18,7 @@ option(lotusIR_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
 include(lotusIR_util.cmake)
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
-set(LOTUSIR_ROOT ${PROJECT_SOURCE_DIR}/..)
+set(LOTUSIR_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
 include(zlib)
 include(protobuf)
 include(googletest)
