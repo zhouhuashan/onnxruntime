@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "core/protobuf/onnx-ml.pb.h"
+#include "core/framework/data_types.h"
+#include "core/framework/allocator.h"
 
 using namespace onnx;
 
@@ -15,6 +17,8 @@ namespace Lotus
     public:
         TensorShape();
 
+        TensorShape(const std::vector<int64_t>& dims);
+
         TensorShape(const TensorShape& p_other);
 
         // Return the dimension specified by <p_idx>.
@@ -23,7 +27,9 @@ namespace Lotus
         // Return the dimension specified by <p_idx>.
         const int64_t& operator[](int p_idx) const;
 
-        bool operator==(const TensorShape& p_other) const;
+        bool operator==(const TensorShape& p_other) const {
+            return m_dims == p_other.m_dims;
+        }
 
         bool operator!=(const TensorShape& p_other) const {
             return !(*this == p_other);
@@ -42,25 +48,65 @@ namespace Lotus
         std::vector<int64_t> m_dims;
     };
 
-
+    /*
+    We want to keep tensor as simple as possible, it is just a placeholder for a piece of memory, with additional shape information.
+    Memory is managered by Executor / Workspace, so Tensor just use it, won't do any allocation / release 
+    */
     class Tensor {
     public:
+        // Create an empty tensor with float type.
+        // empty tensor is a tensor with 1-d shape (0,), and 0 elements.
         Tensor();
-        Tensor(TensorProto_DataType p_type);
-        Tensor(TensorProto_DataType p_type, const TensorShape& p_shape, void* p_pData);
+        // Create a empty tensor with given type
+        Tensor(MlDataType p_type);
+        // Create tensor with given type, shape, pre-allocate memory and allocator info. 
+        Tensor(MlDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t offset = 0);
+        
+        //Copy constructure and assign op will just pass the shape and memory reference to another tensor.
+        //No deep clone / copy happened.
+        Tensor(const Tensor& src);
+        Tensor& operator=(const Tensor& other) = default;
 
         // Returns the data type.
-        TensorProto_DataType dtype() const { return m_dtype; }
+        MlDataType dtype() const { return m_dtype; }
 
         // Returns the shape of the tensor.
         const TensorShape& shape() const { return m_shape; }
 
+        // Returns the location of the tensor's memory
+        const AllocatorInfo& location() const { return m_alloc_info; }
+
+        template<typename T>
+        T* mutable_data() 
+        {
+            //Type check
+            if (DataTypeImpl::GetType<T>() != m_dtype)
+                //todo: we should update this when we have a entire design for exception with better debug string.
+                throw TypeMismatchException();
+
+            return reinterpret_cast<T*>(static_cast<char*>(m_pData) + m_byte_offset);
+        }
+
+        template<typename T>
+        const T* data() const
+        {
+            //Type check
+            if (DataTypeImpl::GetType<T>() != m_dtype)
+                //todo: we should update this when we have a entire design for exception with better debug string.
+                throw TypeMismatchException();
+
+            return reinterpret_cast<const T*>(static_cast<char*>(m_pData) + m_byte_offset);
+        }
+
         // More API methods.
     private:
+
+        void init(MlDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t bytes_offset);
+
         void* m_pData;         // Make it shared_ptr<void>?
         TensorShape m_shape;
-        TensorProto_DataType m_dtype;
-        std::string m_providerid;
+        MlDataType m_dtype;
+        AllocatorInfo& m_alloc_info;
         int64_t m_byte_offset;
     };
 
