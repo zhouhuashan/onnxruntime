@@ -1,5 +1,4 @@
-#include "core/framework/data_types.h"
-
+#include "core/framework/data_types_impl.h"
 
 namespace Lotus
 {
@@ -46,4 +45,16 @@ namespace Lotus
         TensorType<TensorProto_DataType_COMPLEX64>::Type();
     MlDataType DataTypeImpl::Tensor_COMPLEX128 =
         TensorType<TensorProto_DataType_COMPLEX128>::Type();
+
+    LOTUS_REGISTRY_TYPE(int);
+    LOTUS_REGISTRY_TYPE(float);
+    LOTUS_REGISTRY_TYPE(bool);
+    LOTUS_REGISTRY_TYPE(std::string);
+    LOTUS_REGISTRY_TYPE(uint8_t);
+    LOTUS_REGISTRY_TYPE(uint16_t);
+    LOTUS_REGISTRY_TYPE(int16_t);
+    LOTUS_REGISTRY_TYPE(int64_t);
+    LOTUS_REGISTRY_TYPE(double);
+    LOTUS_REGISTRY_TYPE(uint32_t);
+    LOTUS_REGISTRY_TYPE(uint64_t);
 }

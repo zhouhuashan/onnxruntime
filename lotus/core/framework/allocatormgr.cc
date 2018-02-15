@@ -1,5 +1,5 @@
 #include "core/framework/allocatormgr.h"
-#include <map>
+#include <unordered_map>
 #include <mutex>
 #include <sstream>
 

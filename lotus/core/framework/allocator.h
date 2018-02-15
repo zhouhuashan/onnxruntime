@@ -2,7 +2,6 @@
 #define CORE_FRAMEWORK_ALLOCATOR_H
 
 #include <string>
-#include "core/framework/tensor.h"
 #include "core/graph/status.h"
 #include <map>
 #include "core/framework/exceptions.h"
@@ -87,6 +86,8 @@ namespace Lotus
 
         virtual void* Alloc(size_t size) override
         {
+            if (size == 0)
+                return nullptr;
             return m_allocator->Alloc(size);
         }
 
