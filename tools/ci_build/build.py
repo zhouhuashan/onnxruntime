@@ -11,7 +11,7 @@ logging.basicConfig(format="%(asctime)s %(name)s [%(levelname)s] - %(message)s",
 log = logging.getLogger("Build")
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="LotusIR CI build driver.")
+    parser = argparse.ArgumentParser(description="Lotus CI build driver.")
     parser.add_argument("--build_dir", required=True, help="Path to the build directory.")
     parser.add_argument("--config", nargs="+", default=["Debug"],
                         choices=["Debug", "MinSizeRel", "Release", "RelWithDebInfo"],
@@ -44,8 +44,8 @@ def generate_build_tree(cmake_path, source_dir, build_dir, configs,
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
-                 "-DlotusIR_RUN_ONNX_TESTS=ON",
-                 "-DlotusIR_GENERATE_TEST_REPORTS=ON",
+                 "-Dlotus_RUN_ONNX_TESTS=ON",
+                 "-Dlotus_GENERATE_TEST_REPORTS=ON",
                  ]
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 

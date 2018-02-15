@@ -22,6 +22,8 @@ namespace Lotus {
     {
     }
 
+    bool InitLogSink(int* /*pargc*/, char*** /*pargv*/);
+
     Common::Status Initializer::Initialize(int* pargc, char*** pargv)
     {
         try
@@ -30,6 +32,8 @@ namespace Lotus {
 
             if (!pargc || !pargv) status = Common::Status(Common::LOTUS, Common::StatusCode::INVALID_ARGUMENT);
             if (!status.Ok()) return status;
+
+            Lotus::InitLogSink(pargc, pargv);
 
             // LotusDeviceManager
             auto allocator_manager = AllocatorManager::Instance();
