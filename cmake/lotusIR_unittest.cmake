@@ -20,7 +20,7 @@ function(AddTest)
   list(REMOVE_DUPLICATES _UT_LIBS)
   list(REMOVE_DUPLICATES _UT_SOURCES)
   
-  if (lotusIR_RUN_ONNX_TESTS)
+  if (lotus_RUN_ONNX_TESTS)
     list(APPEND _UT_DEPENDS models)
   endif()
   
@@ -39,11 +39,11 @@ function(AddTest)
   endif()
 
   set(TEST_ARGS)
-  if (lotusIR_GENERATE_TEST_REPORTS)
+  if (lotus_GENERATE_TEST_REPORTS)
     # generate a report file next to the test program
     list(APPEND TEST_ARGS
       "--gtest_output=xml:$<SHELL_PATH:$<TARGET_FILE:${_UT_TARGET}>.$<CONFIG>.results.xml>")
-  endif(lotusIR_GENERATE_TEST_REPORTS)
+  endif(lotus_GENERATE_TEST_REPORTS)
 
   add_test(NAME ${_UT_TARGET}
     COMMAND ${_UT_TARGET} ${TEST_ARGS}
@@ -62,7 +62,7 @@ set(${UT_NAME}_libs
 )
 
 file(GLOB_RECURSE ${UT_NAME}_src
-    "${LOTUSIR_ROOT}/test/ir/*.cc"
+    "${LOTUS_ROOT}/test/ir/*.cc"
 )
 
 AddTest(
@@ -81,7 +81,8 @@ set(lotus_test_framework_libs
 )
 
 file(GLOB_RECURSE lotus_test_framework_src
-    "${LOTUSIR_ROOT}/test/framework/*.cc"
+    "${LOTUS_ROOT}/test/framework/*.cc"
+    "${LOTUS_ROOT}/test/platform/*.cc"
 )
 
 AddTest(
@@ -91,7 +92,7 @@ AddTest(
 	DEPENDS lotus_framework googletest lotusIR_graph
 )
 
-set(TEST_DATA_SRC ${LOTUSIR_ROOT}/test/testdata)
+set(TEST_DATA_SRC ${LOTUS_ROOT}/test/testdata)
 set(TEST_DATA_DES $<TARGET_FILE_DIR:${UT_NAME}>/testdata)
 
 # Copy test data from source to destination.
@@ -102,7 +103,7 @@ add_custom_command(
             ${TEST_DATA_DES})
 
 # Copy large onnx models to test dir
-if (lotusIR_RUN_ONNX_TESTS)
+if (lotus_RUN_ONNX_TESTS)
   add_custom_command(
       TARGET ${UT_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory

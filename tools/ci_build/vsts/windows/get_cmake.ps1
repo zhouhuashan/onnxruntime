@@ -16,7 +16,7 @@ try
 {
     # download CMake
     Write-Host "Downloading CMake..."
-    $cmakeUrl = "https://cmake.org/files/v3.9/cmake-3.9.4-win64-x64.zip"
+    $cmakeUrl = "https://cmake.org/files/v3.10/cmake-3.10.0-win64-x64.zip"
     Invoke-WebRequest -Uri $cmakeUrl -OutFile $(Join-Path $tempDir "cmake.zip")
 
     # extract cmake.zip

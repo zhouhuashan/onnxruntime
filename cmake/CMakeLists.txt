@@ -1,5 +1,5 @@
 # Minimum CMake required
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 # Project
 project(Lotus C CXX)
@@ -10,31 +10,54 @@ set(CMAKE_CXX_STANDARD 14)
 # Enable CTest
 enable_testing()
 
+if(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "Build type not set - using RelWithDebInfo")
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose build type: Debug Release RelWithDebInfo." FORCE)
+endif()
+
 # Options
-option(lotusIR_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
-option(lotusIR_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
-option(lotusIR_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
+option(lotus_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
+option(lotus_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
+option(lotus_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
+option(lotus_ENABLE_STDERR_LOGGING "Enable logging to stderr" ON)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+option(lotus_ENABLE_DEBUG_LOGGING "Enable debug logging (e.g., enable VLOG)" ON)
+else()
+option(lotus_ENABLE_DEBUG_LOGGING "Enable debug logging (e.g., enable VLOG)" OFF)
+endif()
 
 include(lotusIR_util.cmake)
 # External dependencies
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
-set(LOTUSIR_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
+set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
 include(zlib)
 include(protobuf)
 include(googletest)
-if (lotusIR_RUN_ONNX_TESTS)
+if (lotus_RUN_ONNX_TESTS)
   include(models)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()
 include(onnx.cmake)
 add_definitions(-DONNX_ML)
 
+if (lotus_ENABLE_DEBUG_LOGGING)
+  add_definitions(-DLOTUS_ENABLE_DEBUG_LOGGING)
+else()
+  add_definitions(-DLOTUS_LOG_THRESHOLD=2)
+endif()
+
+if (lotus_ENABLE_STDERR_LOGGING)
+  add_definitions(-DLOTUS_ENABLE_STDERR_LOGGING)
+endif()
+
 if (WIN32)
     # parallel build
     add_compile_options(/MP)
-    add_compile_options(/wd4503) # Decorated name length exceeded.
-
-    if (lotusIR_ENABLE_STATIC_ANALYSIS)
+    add_compile_options(
+      /wd4503 # Decorated name length exceeded.
+      /wd4127 # conditional expression is constant
+    )
+    if (lotus_ENABLE_STATIC_ANALYSIS)
         add_compile_options(
             /analyze:WX-
             # disable warning because there are many occurrences from test macros
@@ -52,8 +75,8 @@ if (WIN32)
 endif()
 
 include_directories(
-    ${LOTUSIR_ROOT}
-    ${LOTUSIR_ROOT}/external/onnx
+    ${LOTUS_ROOT}
+    ${LOTUS_ROOT}/external/onnx
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/external/onnx
     # External dependencies.

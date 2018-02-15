@@ -1,5 +1,5 @@
 RELATIVE_PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
-    ${LOTUSIR_ROOT} core/protobuf/onnx-ml.proto
+    ${LOTUS_ROOT} core/protobuf/onnx-ml.proto
 )
 
 
