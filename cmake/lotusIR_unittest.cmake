@@ -83,6 +83,7 @@ set(lotus_test_framework_libs
 file(GLOB_RECURSE lotus_test_framework_src
     "${LOTUS_ROOT}/test/framework/*.cc"
     "${LOTUS_ROOT}/test/platform/*.cc"
+    "${LOTUS_ROOT}/test/lib/*.cc"    
 )
 
 AddTest(
