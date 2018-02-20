@@ -2,7 +2,6 @@
 #define CORE_FRAMEWORK_EXECUTOR_H
 
 #include <vector>
-#include "core/framework/execution_provider.h"
 #include "core/framework/ml_value.h"
 #include "core/graph/status.h"
 

@@ -175,13 +175,16 @@ namespace LotusIR
     class FunctionInliner : public IRewriteRule {
     public:
         FunctionInliner(const Function& function) {
-            // TODO
+          (function);
         }
 
         virtual Status Apply(/*IN/OUT*/ Node& p_node,
             GraphEditor p_graphEditor,
             /*OUT*/ bool& modified) override {
-            // TODO
+          (p_node);
+          (p_graphEditor);
+          (modified);
+          return Status::OK();
         }
     };
 
@@ -190,13 +193,16 @@ namespace LotusIR
     class FunctionExtraction : public IRewriteRule {
     public:
         FunctionExtraction(const Function& function) {
-            // TODO
+          (function);
         }
 
         virtual Status Apply(/*IN/OUT*/ Node& p_node,
             GraphEditor p_graphEditor,
             /*OUT*/ bool& modified) override {
-            // TODO
+          (p_node);
+          (p_graphEditor);
+          (modified);
+          return Status::OK();
         }
     };
 }
