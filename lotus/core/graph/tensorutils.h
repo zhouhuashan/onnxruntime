@@ -84,6 +84,4 @@ namespace Lotus
     }
 }
 
-
-
 #endif

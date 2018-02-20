@@ -1,8 +1,9 @@
 #ifndef CORE_FRAMEWORK_EXECUTION_PROVIDER_H
 #define CORE_FRAMEWORK_EXECUTION_PROVIDER_H
 
+#include <unordered_map>
 #include "core/framework/allocator.h"
-#include "core/framework/workspace.h"
+#include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
 #include "core/graph/graph_transformer.h"
 
@@ -10,68 +11,80 @@ using namespace LotusIR;
 
 namespace Lotus
 {
+  // Map from operator name to kernels. 
+  typedef OpKernel* (*KernelCreateFn)(OpKernelInfo*);
+  typedef std::unordered_multimap<std::string, KernelCreateFn> KernelRegistry;
+  
+  // Logical device represenatation.
+  class IExecutionProvider
+  {
+  public:
+    IExecutionProvider()
+    {
+      m_id = Name() + "." + Version();
+    }
+
+    virtual ~IExecutionProvider() {}
+
+    virtual const std::string& Name() const = 0;
     
+    virtual const std::string& Version() const = 0;
 
-    // Logical device represenatation.
-    // 
-    class IExecutionProvider
+    virtual const std::string& ID() const
     {
-    public:
+      return m_id;
+    }
 
-        IExecutionProvider()
-        {
-            m_id = Name() + "." + Version();
-        }
+    // Graph to graph transformation. The resulting graph may contain custom 
+    // operators introduced by this execution provider. Newly formed custom
+    // functions must be registered in kernelRegistry_. 
+    virtual IGraphTransformer& GetTransformer() const = 0;
 
-        virtual ~IExecutionProvider() {}
+    // Get IAllocator for <*this> execution provider.
+    // It will be used for allocating tensors (inputs/outputs) or copying tensors
+    // (IN/OUT) for this execution provider.
+    virtual IAllocator& GetAllocator() const = 0;
 
-        virtual const std::string& Name() const = 0;
+    // Run the computation of a given node.
+    virtual void Compute(Node* node, OpKernelContext* context) = 0;
 
-        virtual const std::string& Version() const = 0;
+    // TODO: Do we still need these copy methods?
+    virtual Status CopyCPUTensorTo(const Tensor& srcTensor,
+                                   Tensor* p_dstTensor) = 0;
 
-        virtual const std::string& ID() const
-        {
-            return m_id;
-        }
+    virtual Status CopyTensorToCPU(const Tensor& srcTensor,
+                                   Tensor* p_dstTensor) = 0;
 
-        // Get graph transformer related to thsi execution provider so that it will do in-place graph
-        // modeification (fusion etc) to identify which nodes will be run against <*this> execution provider.
-        virtual IGraphTransformer& GetTransformer() const = 0;
+    // Find or create the kernel ofor this execution provider.
+    Status FindOrCreateKernel(const Node& node, OpKernel** kernel);
 
-        // Execute the <p_node> given <p_workSpace> which contains inputs/outputs for <*this> execution provider.
-        virtual Status Execute(const Node& p_node, WorkSpace& p_workSpace) = 0;
+  private:
+    std::string m_id;
+  };
 
-        virtual Status CopyCPUTensorTo(const Tensor* p_srcTensor,
-            Tensor* p_dstTensor) = 0;
+  class ExecutionProviderInfo {
+  };
+  
+  typedef ExecutionProvider* (*ProviderCreateFn)(ExecutionProviderInfo*);
 
-        virtual Status CopyTensorToCPU(const Tensor* p_srcTensor,
-            Tensor* p_dstTensor) = 0;
-        
-    private:
-        std::string m_id;
-    };
-
-    typedef std::function<std::vector<IExecutionProvider>()> ExecutionProviderFinder;
-    // Singleton execution provider manager.
-    // It holds a global provider type to provider finder map, and will find/create
-    // execution provider instances for inference engine.
-    class ExecutionProviderMgr
+  // Singleton execution provider manager.
+  // It holds a global provider type to provider finder map, and will find/create
+  // execution provider instances for inference engine.
+  class ExecutionProviderMgr
+  {
+  public:
+    static ExecutionProviderMgr Instance()
     {
-    public:
+      static ExecutionProviderMgr s_providerMgr;
+      return s_providerMgr;
+    }
 
-        static ExecutionProviderMgr Instance()
-        {
-            static ExecutionProviderMgr s_providerMgr;
-            return s_providerMgr;
-        }
+    // TODO: registration for provider type to provider finder.
 
-        // TODO: registration for provider type to provider finder.
+  private:
+    ExecutionProviderMgr() {}
 
-    private:
-
-        ExecutionProviderMgr() {}
-
-        std::unordered_map<std::string, ExecutionProviderFinder> m_executionProviderTypeToFinder;
-    };
+    std::unordered_map<std::string, ProviderCreateFn> provider_map_;
+  };
 }
 #endif  // CORE_FRAMEWORK_EXECUTION_PROVIDER_H
