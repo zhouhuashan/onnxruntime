@@ -80,20 +80,21 @@ namespace Lotus {
     int num_outputs() const { return 1; }
     
     // starting index in input_values
-    size_t Input_Index(int arg_index) const
+    int Input_Index(int arg_index) const
     {
-      return 0;
+      return arg_index;
     }
 
     // starting index in output_values
-    size_t Output_Index(int arg_index) const
+    int Output_Index(int arg_index) const
     {
-      return 1;
+      return arg_index;
     }
 
     // The number of inputs for the i-th input argument.
     int input_size(int arg_index) const
     {
+      (arg_index);
       return 1;
     }
     
