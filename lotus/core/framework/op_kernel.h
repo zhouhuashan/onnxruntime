@@ -76,7 +76,7 @@ namespace Lotus {
       : m_node(info->OpDef()),
         m_alloc(info->GetAllocatorInfo()) {
       m_input_start_index.resize(m_node.InputArgCount().size());
-      int index = 0;
+      size_t index = 0;
       for (size_t i = 0; i < m_input_start_index.size(); i++) {
         m_input_start_index[i] = index;
         index += m_node.InputArgCount()[i];
@@ -84,25 +84,25 @@ namespace Lotus {
     }
 
     // The total number of inputs.
-    int num_inputs() const
+    size_t num_inputs() const
     {
       return m_node.InputDefs().size();
     }
 
     // The total number of outputs.    
-    int num_outputs() const
+    size_t num_outputs() const
     {
       return m_node.OutputDefs().size();
     }
     
     // Starting index for the i-th input argument.
-    int input_start_index(int arg_index) const
+    size_t input_start_index(int arg_index) const
     {
       return m_input_start_index[arg_index];
     }
 
     // The number of inputs for the i-th input argument.
-    int input_size(int arg_index) const
+    size_t input_size(int arg_index) const
     {
       return m_node.InputArgCount()[arg_index];
     }
@@ -115,7 +115,7 @@ namespace Lotus {
   private:
     AllocatorInfo* m_alloc;
     const LotusIR::Node& m_node;
-    std::vector<int> m_input_start_index;
+    std::vector<size_t> m_input_start_index;
   };
 }
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H
