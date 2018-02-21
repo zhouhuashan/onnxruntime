@@ -17,7 +17,7 @@ namespace Lotus {
   class OpKernelInfo
   {
   public:
-    explicit OpKernelInfo(const LotusIR::Node& node) : m_opdef(node) {}
+    explicit OpKernelInfo(const LotusIR::Node& node) : m_node(node) {}
 
     ~OpKernelInfo();
 
@@ -32,7 +32,7 @@ namespace Lotus {
     AllocatorInfo* GetAllocatorInfo();
 
   private:
-    const LotusIR::Node& m_opdef;
+    const LotusIR::Node& m_node;
   };
 
   class OpKernelContext {
@@ -73,29 +73,38 @@ namespace Lotus {
     typedef std::function<void()> DoneCallback;
 
     explicit OpKernel(OpKernelInfo* info)
-      : m_alloc(info->GetAllocatorInfo()) {}
-
-    // The total number of inputs and outputs.
-    int num_inputs() const { return 1; }
-    int num_outputs() const { return 1; }
-    
-    // starting index in input_values
-    int Input_Index(int arg_index) const
-    {
-      return arg_index;
+      : m_node(info->node),
+        m_alloc(info->GetAllocatorInfo()) {
+      m_input_start_index.resize(m_node.InputArgCount().size());
+      int index = 0;
+      for (size_t i = 0; i < m_input_start_index.size(); i++) {
+        m_input_start_index[i] = index;
+        index += m_node.InputArgCount()[i];
+      }
     }
 
-    // starting index in output_values
-    int Output_Index(int arg_index) const
+    // The total number of inputs.
+    int num_inputs() const
     {
-      return arg_index;
+      return m_node.InputDefs().size();
+    }
+
+    // The total number of outputs.    
+    int num_outputs() const
+    {
+      return m_node.OutputDefs().size();
+    }
+    
+    // Starting index for the i-th input argument.
+    int input_start_index(int arg_index) const
+    {
+      return m_input_start_index[arg_index];
     }
 
     // The number of inputs for the i-th input argument.
     int input_size(int arg_index) const
     {
-      (arg_index);
-      return 1;
+      return m_node.InputArgCount()[arg_index];
     }
     
     virtual void Compute(OpKernelContext* context) = 0;
@@ -105,6 +114,8 @@ namespace Lotus {
 
   private:
     AllocatorInfo* m_alloc;
+    const LotusIR::Node& m_node;
+    std::vector<int> m_input_start_index;
   };
 }
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H
