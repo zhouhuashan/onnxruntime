@@ -3,7 +3,6 @@
 
 #include <mutex>
 #include <vector>
-#include "core/framework/execution_provider.h"
 #include "core/framework/ml_value.h"
 #include "core/graph/graph.h"
 #include "core/graph/status.h"

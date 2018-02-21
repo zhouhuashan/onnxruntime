@@ -3,6 +3,8 @@
 
 #include <vector>
 #include "core/framework/ml_value.h"
+#include "core/framework/execution_frame.h"
+#include "core/graph/graph.h"
 #include "core/graph/status.h"
 
 namespace Lotus
@@ -15,9 +17,9 @@ namespace Lotus
 
     
   private:
-    const Graph* graph_;    
-    ExecutionFrame* root_frame;
-  }
+    const LotusIR::Graph* m_graph;
+    ExecutionFrame* m_root_frame;
+  };
 }
 
 #endif  // CORE_FRAMEWORK_EXECUTOR_H
