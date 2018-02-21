@@ -76,8 +76,8 @@ namespace Lotus {
       : m_alloc(info->GetAllocatorInfo()) {}
 
     // The total number of inputs and outputs.
-    int num_inputs() const;
-    int num_outputs() const;
+    int num_inputs() const { return 1; }
+    int num_outputs() const { return 1; }
     
     // starting index in input_values
     size_t Input_Index(int arg_index) const;
