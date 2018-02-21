@@ -27,7 +27,7 @@ namespace Lotus {
     template<typename T>
     Status GetAttr(const std::string& name, std::vector<T>& values) const;
             
-    const LotusIR::Node& OpDef() const { return m_opdef; }
+    const LotusIR::Node& OpDef() const { return m_node; }
 
     AllocatorInfo* GetAllocatorInfo();
 
@@ -73,7 +73,7 @@ namespace Lotus {
     typedef std::function<void()> DoneCallback;
 
     explicit OpKernel(OpKernelInfo* info)
-      : m_node(info->node),
+      : m_node(info->OpDef()),
         m_alloc(info->GetAllocatorInfo()) {
       m_input_start_index.resize(m_node.InputArgCount().size());
       int index = 0;
