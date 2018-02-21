@@ -80,13 +80,22 @@ namespace Lotus {
     int num_outputs() const { return 1; }
     
     // starting index in input_values
-    size_t Input_Index(int arg_index) const;
+    size_t Input_Index(int arg_index) const
+    {
+      return 0;
+    }
 
     // starting index in output_values
-    size_t Output_Index(int arg_index) const;
+    size_t Output_Index(int arg_index) const
+    {
+      return 1;
+    }
 
     // The number of inputs for the i-th input argument.
-    int input_size(int arg_index) const;
+    int input_size(int arg_index) const
+    {
+      return 1;
+    }
     
     virtual void Compute(OpKernelContext* context) = 0;
     virtual void ComputeAsync(OpKernelContext* context, DoneCallback done) = 0;
