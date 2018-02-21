@@ -57,8 +57,8 @@ namespace Lotus {
 
     template<typename T>
     T* Output(int index) const {
-      int num_inputs = kernel->num_inputs();
-      ExecutionFrame::NodeArgValue value = m_arg_start[input_size + index];
+      int num_inputs = m_kernel->num_inputs();
+      ExecutionFrame::NodeArgValue value = m_arg_start[num_inputs + index];
       return reinterpret_cast<T*>(value->pData);
     }
       

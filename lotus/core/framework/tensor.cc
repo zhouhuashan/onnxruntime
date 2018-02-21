@@ -47,11 +47,11 @@ namespace Lotus
     {
     }
 
-    Tensor::Tensor(MlDataType p_type) : Tensor(p_type, TensorShape(std::vector<int64_t>(1, 0)), nullptr, AllocatorManager::Instance()->GetArena(CPU).Info())
+    Tensor::Tensor(MLDataType p_type) : Tensor(p_type, TensorShape(std::vector<int64_t>(1, 0)), nullptr, AllocatorManager::Instance()->GetArena(CPU).Info())
     {
     }
     
-    Tensor::Tensor(MlDataType p_type,
+    Tensor::Tensor(MLDataType p_type,
         const TensorShape& p_shape, 
         void* p_data, 
         AllocatorInfo& alloc, 
@@ -61,7 +61,7 @@ namespace Lotus
         init(p_type, p_shape, p_data, alloc, offset);
     }
 
-    void Tensor::init(MlDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t bytes_offset)
+    void Tensor::init(MLDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t bytes_offset)
     {
         m_dtype = p_type;
         m_shape = p_shape;

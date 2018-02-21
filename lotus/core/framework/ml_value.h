@@ -9,8 +9,8 @@ namespace Lotus
 {
     struct MLValue
     {
-        void* m_pData;       // A pointer to the actual data
-        MlDataType m_type;   // A unique id for the static type of the data
+        void* pData;       // A pointer to the actual data
+        MLDataType type;   // A unique id for the static type of the data
     };
 }
 
