@@ -49,5 +49,12 @@ namespace Lotus {
   DEFINE_GET_ATTRS(std::string, strings)
   DEFINE_GET_ATTRS(TensorProto, tensors)
   DEFINE_GET_ATTRS(GraphProto, graphs)
-
+  
+  template<typename T>
+  T* OpKernelContext::Output(int index) const
+  {
+    int num_inputs = m_kernel->num_inputs();
+    ExecutionFrame::NodeArgValue value = m_arg_start[num_inputs + index];
+    return reinterpret_cast<T*>(value->pData);
+  }
 }

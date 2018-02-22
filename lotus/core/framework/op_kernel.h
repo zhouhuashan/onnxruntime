@@ -54,11 +54,7 @@ namespace Lotus {
     }
 
     template<typename T>
-    T* Output(int index) const {
-      int num_inputs = m_kernel->num_inputs();
-      ExecutionFrame::NodeArgValue value = m_arg_start[num_inputs + index];
-      return reinterpret_cast<T*>(value->pData);
-    }
+    T* Output(int index) const;
       
   private:
     ExecutionFrame* m_execution_frame = nullptr;

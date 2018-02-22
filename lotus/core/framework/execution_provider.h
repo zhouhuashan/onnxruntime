@@ -43,7 +43,7 @@ namespace Lotus
     // Get IAllocator for <*this> execution provider.
     // It will be used for allocating tensors (inputs/outputs) or copying tensors
     // (IN/OUT) for this execution provider.
-    virtual IAllocator& GetAllocator() const = 0;
+    virtual IArenaAllocator& GetAllocator() const = 0;
 
     // Run the computation of a given node.
     virtual void Compute(Node* node, OpKernelContext* context) = 0;
@@ -55,9 +55,6 @@ namespace Lotus
     virtual Status CopyTensorToCPU(const Tensor& srcTensor,
                                    Tensor* p_dstTensor) = 0;
 
-    // Find or create the kernel ofor this execution provider.
-    Status FindOrCreateKernel(const Node& node, OpKernel** kernel);
-
   private:
     std::string m_id;
   };
@@ -65,7 +62,7 @@ namespace Lotus
   class ExecutionProviderInfo {
   };
   
-  typedef ExecutionProvider* (*ProviderCreateFn)(ExecutionProviderInfo*);
+  typedef IExecutionProvider* (*ProviderCreateFn)(ExecutionProviderInfo*);
 
   // Singleton execution provider manager.
   // It holds a global provider type to provider finder map, and will find/create
