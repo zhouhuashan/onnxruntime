@@ -4,7 +4,6 @@ file(GLOB_RECURSE lotus_core_framework_srcs
 )
 
 add_library(lotus_framework ${lotus_core_framework_srcs})
-
 target_link_libraries(lotus_framework PUBLIC onnx lotusIR_graph PRIVATE ${protobuf_STATIC_LIBRARIES})
 if (WIN32)
     set(lotus_framework_static_library_flags

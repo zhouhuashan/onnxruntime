@@ -10,31 +10,31 @@ namespace Lotus
 {
     struct DataTypeImpl;
     // DataTypeImpl pointer as unique DataTypeImpl identifier.
-    typedef const DataTypeImpl* MlDataType;
+    typedef const DataTypeImpl* MLDataType;
 
     struct DataTypeImpl {
         virtual ~DataTypeImpl();
 
         const TypeProto& ToProto() const;
         
-        static MlDataType Tensor_FLOAT;
-        static MlDataType Tensor_UINT8;
-        static MlDataType Tensor_INT8;
-        static MlDataType Tensor_UINT16;
-        static MlDataType Tensor_INT16;
-        static MlDataType Tensor_INT32;
-        static MlDataType Tensor_INT64;
-        static MlDataType Tensor_STRING;
-        static MlDataType Tensor_BOOL;
-        static MlDataType Tensor_FLOAT16;
-        static MlDataType Tensor_DOUBLE;
-        static MlDataType Tensor_UINT32;
-        static MlDataType Tensor_UINT64;
-        static MlDataType Tensor_COMPLEX64;
-        static MlDataType Tensor_COMPLEX128;
+        static MLDataType Tensor_FLOAT;
+        static MLDataType Tensor_UINT8;
+        static MLDataType Tensor_INT8;
+        static MLDataType Tensor_UINT16;
+        static MLDataType Tensor_INT16;
+        static MLDataType Tensor_INT32;
+        static MLDataType Tensor_INT64;
+        static MLDataType Tensor_STRING;
+        static MLDataType Tensor_BOOL;
+        static MLDataType Tensor_FLOAT16;
+        static MLDataType Tensor_DOUBLE;
+        static MLDataType Tensor_UINT32;
+        static MLDataType Tensor_UINT64;
+        static MLDataType Tensor_COMPLEX64;
+        static MLDataType Tensor_COMPLEX128;
 
         template<typename T>
-        static MlDataType GetType();
+        static MLDataType GetType();
 
     protected:
 
