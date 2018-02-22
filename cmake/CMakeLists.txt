@@ -33,12 +33,17 @@ set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
 include(zlib)
 include(protobuf)
 include(googletest)
+include(eigen)
 if (lotus_RUN_ONNX_TESTS)
   include(models)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()
 include(onnx.cmake)
 add_definitions(-DONNX_ML)
+
+set(lotus_EXTERNAL_DEPENDENCIES
+    eigen
+)
 
 if (lotus_ENABLE_DEBUG_LOGGING)
   add_definitions(-DLOTUS_ENABLE_DEBUG_LOGGING)
@@ -51,6 +56,7 @@ if (lotus_ENABLE_STDERR_LOGGING)
 endif()
 
 if (WIN32)
+    add_definitions(-DPLATFORM_WINDOWS)
     # parallel build
     add_compile_options(/MP)
     add_compile_options(
@@ -72,15 +78,18 @@ if (WIN32)
     add_compile_options(/WX)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /WX")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /WX")
+else()
+    add_definitions(-DPLATFORM_POSIX)    
 endif()
 
 include_directories(
     ${LOTUS_ROOT}
-    ${LOTUS_ROOT}/external/onnx
+    ${PROJECT_SOURCE_DIR}/../external/onnx
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/external/onnx
     # External dependencies.
     ${PROTOBUF_INCLUDE_DIRS}
+    ${eigen_INCLUDE_DIRS}
 )
 include(lotus_common.cmake)
 include(lotusIR_core_graph.cmake)
