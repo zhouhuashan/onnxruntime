@@ -7,7 +7,7 @@
 namespace Lotus {
     template <int elemT>
     struct TensorType : public DataTypeImpl {
-        static MlDataType Type();
+        static MLDataType Type();
 
     private:
         TensorType() {
@@ -20,7 +20,7 @@ namespace Lotus {
     template<typename T>
     class RegistreredType : public DataTypeImpl {
     public:
-        static MlDataType Type() {
+        static MLDataType Type() {
             static RegistreredType<T> s;
             return &s;
         }
@@ -36,7 +36,7 @@ namespace Lotus {
     //// TODO: enable it after introduced abstract type in proto.
     //template <typename T>
     //struct Abstract : public DataType {
-    //    static MlDataType Type(
+    //    static MLDataType Type(
     //        const std::string& identifier,
     //        const std::string& domain = ONNX_DOMAIN);
 
@@ -52,7 +52,7 @@ namespace Lotus {
 
 #define LOTUS_REGISTRY_TYPE(T)                  \
     template<>                                  \
-    MlDataType DataTypeImpl::GetType<T>()       \
+    MLDataType DataTypeImpl::GetType<T>()       \
     {                                           \
         return RegistreredType<T>::Type();       \
     }

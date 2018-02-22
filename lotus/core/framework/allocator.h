@@ -116,7 +116,6 @@ namespace Lotus
         IDeviceAllocator* m_allocator;
         AllocatorInfo m_info;
     };
-
-    
 }
+
 #endif  // CORE_FRAMEWORK_ALLOCATOR_H

@@ -23,8 +23,10 @@ namespace LotusIR
             const std::vector<NodeArg>& p_outputArgs,
             const std::string& p_domain = "")
         {
-            return m_graph->AddNode(p_name, p_opType, p_description, p_inputArgs, p_outputArgs, p_domain);
+            return m_graph->AddNode(p_name, p_opType, p_description,
+                                    p_inputArgs, p_outputArgs, p_domain);
         }
+        
         Node* AddNode(const Node& p_other)
         {
             return m_graph->AddNode(p_other);
@@ -154,8 +156,7 @@ namespace LotusIR
         std::unordered_map<OpSignature*, std::vector<IRewriteRule>> m_opToRules;
     };
 
-    //TODO: Design a loose way to register rewrite rules into RuleBasedGraphTransformer.
-
+    // TODO: Design a loose way to register rewrite rules into RuleBasedGraphTransformer.
     // Function representation class.
     class Function : public GraphBase
     {
@@ -174,13 +175,16 @@ namespace LotusIR
     class FunctionInliner : public IRewriteRule {
     public:
         FunctionInliner(const Function& function) {
-            // TODO
+          (function);
         }
 
         virtual Status Apply(/*IN/OUT*/ Node& p_node,
             GraphEditor p_graphEditor,
             /*OUT*/ bool& modified) override {
-            // TODO
+          (p_node);
+          (p_graphEditor);
+          (modified);
+          return Status::OK();
         }
     };
 
@@ -189,13 +193,16 @@ namespace LotusIR
     class FunctionExtraction : public IRewriteRule {
     public:
         FunctionExtraction(const Function& function) {
-            // TODO
+          (function);
         }
 
         virtual Status Apply(/*IN/OUT*/ Node& p_node,
             GraphEditor p_graphEditor,
             /*OUT*/ bool& modified) override {
-            // TODO
+          (p_node);
+          (p_graphEditor);
+          (modified);
+          return Status::OK();
         }
     };
 }

@@ -58,9 +58,9 @@ namespace Lotus
         // empty tensor is a tensor with 1-d shape (0,), and 0 elements.
         Tensor();
         // Create a empty tensor with given type
-        Tensor(MlDataType p_type);
+        Tensor(MLDataType p_type);
         // Create tensor with given type, shape, pre-allocate memory and allocator info. 
-        Tensor(MlDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t offset = 0);
+        Tensor(MLDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t offset = 0);
         
         //Copy constructure and assign op will just pass the shape and memory reference to another tensor.
         //No deep clone / copy happened.
@@ -68,7 +68,7 @@ namespace Lotus
         Tensor& operator=(const Tensor& other) = default;
 
         // Returns the data type.
-        MlDataType dtype() const { return m_dtype; }
+        MLDataType dtype() const { return m_dtype; }
 
         // Returns the shape of the tensor.
         const TensorShape& shape() const { return m_shape; }
@@ -95,11 +95,11 @@ namespace Lotus
         // More API methods.
     private:
 
-        void init(MlDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t bytes_offset);
+        void init(MLDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t bytes_offset);
 
         void* m_pData;         // Make it shared_ptr<void>?
         TensorShape m_shape;
-        MlDataType m_dtype;
+        MLDataType m_dtype;
         AllocatorInfo& m_alloc_info;
         int64_t m_byte_offset;
     };
