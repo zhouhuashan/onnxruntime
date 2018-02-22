@@ -1,4 +1,7 @@
-// @@COPYRIGHT@@
+/**
+* Derived from caffe2, need copy right annoucement here.
+*/
+
 #ifndef LOTUS_CORE_PLATFORM_LOGGING_H_
 #define LOTUS_CORE_PLATFORM_LOGGING_H_
 
@@ -8,12 +11,7 @@
 #include <functional>
 #include <iomanip>
 #include <limits>
-#include <map>
-#include <memory>
-#include <set>
-#include <sstream>
-#include <string>
-#include <vector>
+#include "core/common/common.h"
 
 // Log severity level constants.
 constexpr int LOTUS_LOG_SEVERITY_FATAL = 3;

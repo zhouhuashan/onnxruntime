@@ -3,12 +3,10 @@
 
 #include "core/framework/execution_frame.h"
 #include "core/framework/ml_value.h"
+#include "core/common/status.h"
 #include "core/framework/tensor.h"
-#include "core/framework/exceptions.h"
+#include "core/common/exceptions.h"
 #include "core/graph/graph.h"
-#include "core/graph/status.h"
-
-using namespace Lotus::Common;
 
 namespace Lotus {
 

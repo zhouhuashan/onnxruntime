@@ -14,13 +14,14 @@
 #include <string>
 #include <unordered_map>
 #include "core/protobuf/onnx-ml.pb.h"
-#include "core/graph/status.h"
+#include "core/common/status.h"
+#include "core/common/common.h"
 
 using namespace onnx;
-using namespace Lotus::Common;
 
 namespace
 {
+    using namespace ::Lotus::Common;
 #ifdef _WIN32
     inline Status FileOpenRd(const std::wstring& p_path, /*out*/ int* p_fd)
     {

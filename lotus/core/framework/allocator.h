@@ -2,9 +2,10 @@
 #define CORE_FRAMEWORK_ALLOCATOR_H
 
 #include <string>
-#include "core/graph/status.h"
+#include "core/common/status.h"
 #include <map>
-#include "core/framework/exceptions.h"
+#include "core/common/common.h"
+#include "core/common/exceptions.h"
 
 using namespace Lotus::Common;
 
@@ -98,12 +99,12 @@ namespace Lotus
 
         virtual size_t Used() override
         {
-            throw NotImplementedException();
+            LOTUS_NOT_IMPLEMENTED;
         }
 
         virtual size_t Max() override
         {
-            throw NotImplementedException();
+            LOTUS_NOT_IMPLEMENTED;
         }
 
         virtual AllocatorInfo& Info() override

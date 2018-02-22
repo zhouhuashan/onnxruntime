@@ -1,20 +1,13 @@
-// @@COPYRIGHT@@
-#include "core/platform/logging.h"
+/**
+* Derived from caffe2, need copy right annoucement here.
+*/
+#include "core/common/logging.h"
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <numeric>
 
 namespace Lotus {
-std::string StripBasename(const std::string &full_path) {
-  const char kSeparator = '/';
-  size_t pos = full_path.rfind(kSeparator);
-  if (pos != std::string::npos) {
-    return full_path.substr(pos + 1, std::string::npos);
-  } else {
-    return full_path;
-  }
-}
 
 size_t ReplaceAll(std::string& s, const char* from, const char* to) {
   size_t numReplaced = 0;

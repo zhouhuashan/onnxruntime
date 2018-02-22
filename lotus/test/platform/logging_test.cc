@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <gtest/gtest.h>
-#include "core/platform/logging.h"
+#include "core/common/logging.h"
 
 namespace Lotus {
 
