@@ -1,7 +1,7 @@
 #include <string>
 #include <vector>
 #include "gtest/gtest.h"
-#include "core/platform/log_sink.h"
+#include "core/common/log_sink.h"
 
 namespace Lotus {
 namespace test {

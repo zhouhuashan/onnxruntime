@@ -23,12 +23,12 @@ namespace Lotus {
 
     size_t CPUAllocator::MinChunkSize()
     {
-        throw NotImplementedException();
+        LOTUS_NOT_IMPLEMENTED;
     }
 
     size_t CPUAllocator::MaxChunkSize()
     {
-        throw NotImplementedException();
+        LOTUS_NOT_IMPLEMENTED;
     }
 
     AllocatorInfo& CPUAllocator::Info()

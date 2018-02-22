@@ -17,7 +17,7 @@ limitations under the License.
 #include <Windows.h>
 
 #include "core/platform/env.h"
-#include "core/platform/logging.h"
+#include "core/common/logging.h"
 #include "core/platform/types.h"
 
 #include <thread>

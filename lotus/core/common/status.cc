@@ -1,4 +1,4 @@
-#include "core/graph/status.h"
+#include "core/common/status.h"
 
 namespace Lotus
 {

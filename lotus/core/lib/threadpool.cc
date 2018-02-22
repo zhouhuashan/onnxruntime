@@ -20,7 +20,7 @@ limitations under the License.
 #pragma warning(disable: 4389 4267)
 #include "unsupported/Eigen/CXX11/ThreadPool"
 #include "core/platform/context.h"
-#include "core/platform/logging.h"
+#include "core/common/logging.h"
 
 namespace Lotus {
 namespace thread {

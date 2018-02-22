@@ -80,10 +80,7 @@ namespace Lotus
         T* mutable_data() 
         {
             //Type check
-            if (DataTypeImpl::GetType<T>() != m_dtype)
-                //todo: we should update this when we have a entire design for exception with better debug string.
-                throw TypeMismatchException();
-
+            LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == m_dtype, "Tensor type mismatch.");
             return reinterpret_cast<T*>(static_cast<char*>(m_pData) + m_byte_offset);
         }
 
@@ -91,10 +88,7 @@ namespace Lotus
         const T* data() const
         {
             //Type check
-            if (DataTypeImpl::GetType<T>() != m_dtype)
-                //todo: we should update this when we have a entire design for exception with better debug string.
-                throw TypeMismatchException();
-
+            LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == m_dtype, "Tensor type mismatch.");
             return reinterpret_cast<const T*>(static_cast<char*>(m_pData) + m_byte_offset);
         }
 

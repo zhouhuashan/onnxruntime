@@ -2,8 +2,6 @@
 
 namespace Lotus
 {
-    using namespace Common;
-
     namespace Utils
     {
         Status TensorUtils::UnpackTensor(const onnx::TensorProto& p_tensor, /*out*/std::string* p_data, int64_t p_expected_size)
@@ -36,10 +34,10 @@ namespace Lotus
             if (p_tensor.has_raw_data())
             {
                 if (p_tensor.raw_data().size() != (p_expected_size) * sizeof(bool))
-                    return Common::Status(Common::StatusCategory::LOTUS, Common::StatusCode::FAIL,
+                    return Status(StatusCategory::LOTUS, StatusCode::FAIL,
                         "UnpackTensor: the pre-allocate size does not match the raw data size");
                 UnpackTensorWithRawData(p_tensor, p_data);
-                return Common::Status::OK();
+                return Status::OK();
             }
 
             if (p_tensor.int32_data_size() != p_expected_size)

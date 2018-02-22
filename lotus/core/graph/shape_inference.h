@@ -4,9 +4,7 @@
 #include <functional>
 
 #include "core/graph/opsignature.h"
-#include "core/graph/status.h"
-
-using namespace Lotus::Common;
+#include "core/common/status.h"
 
 namespace LotusIR
 {

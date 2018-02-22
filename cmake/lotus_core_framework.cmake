@@ -3,45 +3,7 @@ file(GLOB_RECURSE lotus_core_framework_srcs
     "${LOTUS_ROOT}/core/framework/*.cc"
 )
 
-file(GLOB_RECURSE lotus_core_lib_srcs
-    "${LOTUS_ROOT}/core/lib/*.h"
-    "${LOTUS_ROOT}/core/lib/*.cc"
-)
-
-set(lotus_core_platform_src_patterns
-    "${LOTUS_ROOT}/core/platform/logging.h"
-    "${LOTUS_ROOT}/core/platform/log_sink.h"
-    "${LOTUS_ROOT}/core/platform/log_sink_common.cc"
-    "${LOTUS_ROOT}/core/platform/logging.cc"
-    "${LOTUS_ROOT}/core/platform/env.h"
-    "${LOTUS_ROOT}/core/platform/env.cc"
-    "${LOTUS_ROOT}/core/platform/env_time.h"
-    "${LOTUS_ROOT}/core/platform/env_time.cc"
-)
-if(WIN32)
-    list(APPEND lotus_core_platform_src_patterns
-         "${LOTUS_ROOT}/core/platform/windows/*.h"
-         "${LOTUS_ROOT}/core/platform/windows/*.cc"
-    )
-else()
-    list(APPEND lotus_core_platform_src_patterns
-         "${LOTUS_ROOT}/core/platform/posix/*.h"
-         "${LOTUS_ROOT}/core/platform/posix/*.cc"
-    )
-endif()
-
-file(GLOB lotus_core_platform_srcs ${lotus_core_platform_src_patterns})
-
-list(APPEND lotus_core_srcs
-     ${lotus_core_framework_srcs}
-     ${lotus_core_platform_srcs}
-     ${lotus_core_lib_srcs}     
-)
-
-add_library(lotus_framework ${lotus_core_srcs})
-
-# artificial hack to build dependencies before runtime if we hit the ALL target
-add_dependencies(lotus_framework ${lotus_EXTERNAL_DEPENDENCIES})
+add_library(lotus_framework ${lotus_core_framework_srcs})
 
 target_link_libraries(lotus_framework PUBLIC onnx lotusIR_graph PRIVATE ${protobuf_STATIC_LIBRARIES})
 if (WIN32)

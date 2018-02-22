@@ -20,12 +20,12 @@ namespace Lotus {
 
     private:
         // after add allocator, allocator manager will take the ownership.
-        Common::Status AddDeviceAllocator(IDeviceAllocator* allocator, const bool create_arena = true);
-        Common::Status AddArenaAllocator(IArenaAllocator* allocator);
+        Status AddDeviceAllocator(IDeviceAllocator* allocator, const bool create_arena = true);
+        Status AddArenaAllocator(IArenaAllocator* allocator);
 
         static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena);
 
-        Common::Status InitializeAllocators();
+        Status InitializeAllocators();
     };
 }
 
