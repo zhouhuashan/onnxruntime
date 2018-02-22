@@ -27,8 +27,7 @@ namespace Lotus
         int64_t size = 1;
         for (int i = 0; i < m_dims.size(); i++)
         {
-            if (m_dims[i] < 0)
-                throw std::logic_error("Can't calculate size for a un-resolved tensor shape");
+            LOTUS_ENFORCE(m_dims[i] >= 0, "Can't calculate size for a un-resolved tensor shape");
             size *= m_dims[i];
         }
         //should we cache the size? as multiple operation may be expensive.
@@ -37,9 +36,7 @@ namespace Lotus
 
     TensorShape TensorShape::Slice(int p_dimstart, int p_dimend) const
     {
-        if (p_dimstart < 0 || p_dimstart > p_dimend || p_dimend > m_dims.size())
-            throw std::logic_error("Invliad tensor shape slice argument.");
-
+        LOTUS_ENFORCE(p_dimstart >= 0 && p_dimstart <= p_dimend && p_dimend <= m_dims.size(), "Invliad tensor shape slice argument.");
         return TensorShape(std::vector<int64_t>(m_dims.begin() + p_dimstart, m_dims.begin() + p_dimend));
     }
 

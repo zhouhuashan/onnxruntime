@@ -1,6 +1,6 @@
 // @@COPYRIGHT@@
 
-#include "core/platform/log_sink.h"
+#include "core/common/log_sink.h"
 
 namespace Lotus {
     LogSinkPtr GetDefaultLogSink()

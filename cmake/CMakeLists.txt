@@ -82,7 +82,7 @@ include_directories(
     # External dependencies.
     ${PROTOBUF_INCLUDE_DIRS}
 )
-
+include(lotus_common.cmake)
 include(lotusIR_core_graph.cmake)
 include(lotus_core_framework.cmake)
 include(lotusIR_unittest.cmake)

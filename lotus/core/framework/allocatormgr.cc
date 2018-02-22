@@ -20,7 +20,7 @@ namespace Lotus {
         return gMtx;
     }
 
-    Common::Status AllocatorManager::AddDeviceAllocator(IDeviceAllocator* allocator, const bool create_arena)
+    Status AllocatorManager::AddDeviceAllocator(IDeviceAllocator* allocator, const bool create_arena)
     {
         std::lock_guard<std::mutex> lock(_getLocalMutex());
         auto& device_map = _getDeviceAllocatorMap();
@@ -28,30 +28,30 @@ namespace Lotus {
         auto& info = allocator->Info();
         auto allocator_id = GetAllocatorId(info.m_name, info.m_allocator_id, false);
         if (device_map.find(allocator_id) != device_map.end())
-            return Common::Status(Common::LOTUS, Common::FAIL, "device allocator already exist");
+            return Status(LOTUS, FAIL, "device allocator already exist");
 
         auto arena_id = GetAllocatorId(info.m_name, info.m_allocator_id, true);
         if (create_arena && arena_map.find(arena_id) != arena_map.end())
-            return Common::Status(Common::LOTUS, Common::FAIL, "arena already exist");
+            return Status(LOTUS, FAIL, "arena already exist");
 
         device_map[allocator_id] = std::move(std::unique_ptr<IDeviceAllocator>(allocator));
         arena_map[arena_id] = std::move(std::unique_ptr<IArenaAllocator>(new DummyArena(allocator)));
-        return Common::Status::OK();
+        return Status::OK();
     }
 
-    Common::Status AllocatorManager::AddArenaAllocator(IArenaAllocator* allocator)
+    Status AllocatorManager::AddArenaAllocator(IArenaAllocator* allocator)
     {
         std::lock_guard<std::mutex> lock(_getLocalMutex());
         auto& arena_map = _getArenaAllocatorMap();
         auto& info = allocator->Info();
         auto arena_id = GetAllocatorId(info.m_name, info.m_allocator_id, true);
         if (arena_map.find(arena_id) != arena_map.end())
-            return Common::Status(Common::LOTUS, Common::FAIL, "arena already exist");
+            return Status(LOTUS, FAIL, "arena already exist");
         arena_map[arena_id] = std::move(std::unique_ptr<IArenaAllocator>(allocator));
-        return Common::Status::OK();
+        return Status::OK();
     }
 
-    Common::Status AllocatorManager::InitializeAllocators()
+    Status AllocatorManager::InitializeAllocators()
     {
         //right now we only have cpu allocator;
         return AddDeviceAllocator(new CPUAllocator());

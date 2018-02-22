@@ -2,11 +2,9 @@
 #ifndef _LOTUS_CORE_PLATFORM_LOG_SINK_H_
 #define _LOTUS_CORE_PLATFORM_LOG_SINK_H_
 
-#include <memory>
 #include <mutex>
-#include <vector>
 
-#include "core/platform/logging.h"
+#include "core/common/logging.h"
 
 namespace Lotus {
     using LogSinkPtr = std::unique_ptr<LogSinkInterface>;

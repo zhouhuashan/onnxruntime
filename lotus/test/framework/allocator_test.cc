@@ -1,8 +1,6 @@
 #include "gtest/gtest.h"
 #include "core/framework/allocatormgr.h"
 
-using namespace Lotus::Common;
-
 namespace Lotus
 {
     namespace Test

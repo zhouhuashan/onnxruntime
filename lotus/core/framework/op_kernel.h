@@ -1,9 +1,9 @@
 #ifndef CORE_FRAMEWORK_OP_KERNEL_H
 #define CORE_FRAMEWORK_OP_KERNEL_H
 
-#include "core/graph/status.h"
+#include "core/common/status.h"
 #include "core/framework/tensor.h"
-#include "core/framework/exceptions.h"
+#include "core/common/exceptions.h"
 #include "core/graph/graph.h"
 #include "core/framework/ml_value.h"
 

@@ -1,6 +1,7 @@
 #ifndef CORE_FRAMEWORK_INIT_H
 #define CORE_FRAMEWORK_INIT_H
-#include "core/graph/status.h"
+#include "core/common/common.h"
+#include "core/common/status.h"
 
 namespace Lotus {
     /**
@@ -15,14 +16,14 @@ namespace Lotus {
         /**
         * Runs the initialization logic if it hasn't been run yet.
         */
-        static Common::Status EnsureInitialized(int* pargc, char*** pargv);
-        static Common::Status EnsureInitialized();
+        static Status EnsureInitialized(int* pargc, char*** pargv);
+        static Status EnsureInitialized();
 
     private:
         Initializer(int* pargc, char*** pargv);
-        Common::Status Initialize(int* pargc, char*** pargv);
+        Status Initialize(int* pargc, char*** pargv);
 
-        Common::Status initialization_status_;
+        Status initialization_status_;
     };
 }
 

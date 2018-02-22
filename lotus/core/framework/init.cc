@@ -3,13 +3,13 @@
 
 namespace Lotus {
 
-    Common::Status Initializer::EnsureInitialized(int* pargc, char*** pargv)
+    Status Initializer::EnsureInitialized(int* pargc, char*** pargv)
     {
         static Initializer initializer{ pargc, pargv };
         return initializer.initialization_status_;
     }
 
-    Common::Status Initializer::EnsureInitialized()
+    Status Initializer::EnsureInitialized()
     {
         int argc = 0;
         char* argv_buf[] = { nullptr };
@@ -24,13 +24,13 @@ namespace Lotus {
 
     bool InitLogSink(int* /*pargc*/, char*** /*pargv*/);
 
-    Common::Status Initializer::Initialize(int* pargc, char*** pargv)
+    Status Initializer::Initialize(int* pargc, char*** pargv)
     {
         try
         {
-            Common::Status status{};
+            Status status{};
 
-            if (!pargc || !pargv) status = Common::Status(Common::LOTUS, Common::StatusCode::INVALID_ARGUMENT);
+            if (!pargc || !pargv) status = Status(LOTUS, StatusCode::INVALID_ARGUMENT);
             if (!status.Ok()) return status;
 
             Lotus::InitLogSink(pargc, pargv);
@@ -38,22 +38,22 @@ namespace Lotus {
             // LotusDeviceManager
             auto allocator_manager = AllocatorManager::Instance();
             if (!allocator_manager)
-                return Common::Status(Common::LOTUS, Common::StatusCode::FAIL, "Init allocator manager failed");
+                return Status(LOTUS, StatusCode::FAIL, "Init allocator manager failed");
 
             status = allocator_manager->InitializeAllocators();
             if (status.Ok())
                 return status;
 
-            return Common::Status::OK();
+            return Status::OK();
         }
         catch (std::exception& ex)
         {
-            return Status{ Common::LOTUS, Common::StatusCode::RUNTIME_EXCEPTION,
+            return Status{ LOTUS, StatusCode::RUNTIME_EXCEPTION,
                 std::string{ "Exception caught: " } +ex.what() };
         }
         catch (...)
         {
-            return Status{ Common::LOTUS, Common::StatusCode::RUNTIME_EXCEPTION };
+            return Status{ LOTUS, StatusCode::RUNTIME_EXCEPTION };
         }
     }
 }

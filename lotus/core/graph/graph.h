@@ -7,11 +7,10 @@
 
 #include "core/graph/constants.h"
 #include "core/graph/op.h"
-#include "core/graph/status.h"
+#include "core/common/status.h"
 #include "core/graph/utils.h"
 #include "core/protobuf/onnx-ml.pb.h"
 
-using namespace Lotus::Common;
 using namespace onnx;
 
 namespace lotusrt
