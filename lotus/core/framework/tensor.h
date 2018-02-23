@@ -53,6 +53,7 @@ namespace Lotus
     Memory is managered by Executor / Workspace, so Tensor just use it, won't do any allocation / release 
     */
     class Tensor {
+        friend class TensorUtil;
     public:
         // Create an empty tensor with float type.
         // empty tensor is a tensor with 1-d shape (0,), and 0 elements.
@@ -91,7 +92,6 @@ namespace Lotus
             LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == m_dtype, "Tensor type mismatch.");
             return reinterpret_cast<const T*>(static_cast<char*>(m_pData) + m_byte_offset);
         }
-
         // More API methods.
     private:
 

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
+#include "core/framework/tensor_util.h"
 
 
 namespace Lotus
@@ -150,6 +151,24 @@ namespace Lotus
             EXPECT_EQ(location.m_allocator_id, 0);
             EXPECT_EQ(location.m_type, AllocatorType::ArenaAllocator);
             auto t_data = t2.data<int>();
+            EXPECT_EQ((void*)t_data, data);
+            alloc.Free(data, sizeof(int) * shape.Size());
+        }
+
+        TEST(TensorTest, TensorReshapeTest)
+        {
+            TensorShape shape({ 1, 2, 3 });
+            auto& alloc = AllocatorManager::Instance()->GetArena(CPU);
+            auto data = alloc.Alloc(sizeof(int) * shape.Size());
+            EXPECT_TRUE(data);
+            Tensor t1(DataTypeImpl::GetType<int>(), shape, data, alloc.Info());
+            EXPECT_EQ(t1.dtype(), DataTypeImpl::GetType<int>());
+            EXPECT_EQ(t1.shape(), shape);
+            TensorShape new_shape({6,1});
+            auto t2 = TensorUtil::ReshapeTensor(t1, new_shape);
+            EXPECT_TRUE(t2 != nullptr);
+            EXPECT_EQ(t2->shape(), new_shape);
+            auto t_data = t2->data<int>();
             EXPECT_EQ((void*)t_data, data);
             alloc.Free(data, sizeof(int) * shape.Size());
         }
