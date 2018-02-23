@@ -63,6 +63,9 @@ namespace LotusIR
         // Get node arg type.
         const PTYPE& Type() const;
 
+        void SetType(PTYPE p_type);
+        void SetType(const TypeProto& p_typeProto);
+
         // Get node arg shape.
         // Return null pointer if there's no shape specified.
         const TensorShapeProto* Shape() const;
@@ -85,10 +88,7 @@ namespace LotusIR
         friend class Node;
         friend class GraphBase;
         friend class Graph;
-        friend class lotusrt::LotusRT;
-
-        void SetType(PTYPE p_type);
-        void SetType(const TypeProto& p_typeProto);
+        friend class lotusrt::LotusRT;        
 
         // Node arg PType.
         PTYPE m_type;
@@ -117,7 +117,7 @@ namespace LotusIR
             // Constructor.
             // An EdgeEnd contains a Node pointer, a NodeArg pointer.
             // NOTE: it does not own the Node pointer and NodeArg pointer.
-            EdgeEnd(const Node& p_node, const NodeArg& p_nodeArg);
+            EdgeEnd(const Node* p_node, const NodeArg* p_nodeArg);
 
             // Get the <Node*> that this edge end refers to. 
             const Node* GetNode() const;
@@ -172,16 +172,16 @@ namespace LotusIR
 
         // Read/Write <*this> node's input args' definition, including name,
         // type and shape.
-        const std::vector<NodeArg>& InputDefs() const;
-        std::vector<NodeArg>& Mutable_InputDefs();
+        const std::vector<NodeArg*>& InputDefs() const;
+        std::vector<NodeArg*>& Mutable_InputDefs();
 
         const std::vector<int>& InputArgCount() const;
         std::vector<int>& Mutable_InputArgCount();
 
         // Read/Write <*this> node's output args' definition, including name,
         // type and shape.
-        const std::vector<NodeArg>& OutputDefs() const;
-        std::vector<NodeArg>& Mutable_OutputDefs();
+        const std::vector<NodeArg*>& OutputDefs() const;
+        std::vector<NodeArg*>& Mutable_OutputDefs();
 
         // Functions defined to traverse a Graph as below.
         // Read all input nodes of <*this>.
@@ -190,6 +190,11 @@ namespace LotusIR
         // Read all output nodes of <*this>.
         Node::NodeConstIterator OutputNodes_begin() const;
         Node::NodeConstIterator OutputNodes_end() const;
+
+        // Get input/output edges.
+        const std::set<EdgeEnd*>& InputEdges() const;
+        const std::set<EdgeEnd*>& OutputEdges() const;
+
         // Given input arg, get the source end of an input edge.
         bool InputEdgeSrcEnd(NodeArg* p_inputArg,
             /*out*/const EdgeEnd** p_inputEdgeSrcEnd) const;
@@ -245,8 +250,8 @@ namespace LotusIR
         void Init(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
-            const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs,
+            const std::vector<NodeArg*>& p_inputArgs,
+            const std::vector<NodeArg*>& p_outputArgs,
             const std::string& p_domain);
 
         // Node index.
@@ -268,7 +273,7 @@ namespace LotusIR
         std::string m_description;
 
         // Node inputs' definition.
-        std::vector<NodeArg> m_inputDefs;
+        std::vector<NodeArg*> m_inputDefs;
         // The number of inputs for each argument of the operator or function which
         // this node refers.
         // For example, <m_inputDefs> has 10 elements (inputs), and <m_inputArgCount>
@@ -278,10 +283,12 @@ namespace LotusIR
         std::vector<int> m_inputArgCount;
 
         // Node outputs' definition.
-        std::vector<NodeArg> m_outputDefs;
+        std::vector<NodeArg*> m_outputDefs;
 
-        // Node inputs' instantiation.
-        std::unordered_map<const NodeArg*, EdgeEnd> m_inputs;
+        // Node inputs edges.
+        std::set<EdgeEnd*> m_input_edges;
+        // Node output edges.
+        std::set<EdgeEnd*> m_output_edges;
         // Node input nodes, besides input nodes mentioned in <m_inputs> above,
         // it also contains all control input nodes;
         std::set<const Node*> m_inputNodes;
@@ -361,6 +368,8 @@ namespace LotusIR
         virtual const std::vector<const NodeArg*>& GetInputs() const = 0;
         virtual const std::vector<const NodeArg*>& GetOutputs() const = 0;
 
+        virtual std::unordered_map<std::string, NodeArg*>* GetNodeArgMap() = 0;
+
         // Get node given specific node index.
         Node* GetNode(NODEINDEX p_nodeIndex);
 
@@ -380,8 +389,8 @@ namespace LotusIR
         Node* AddNode(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
-            const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs,
+            const std::vector<NodeArg*>& p_inputArgs,
+            const std::vector<NodeArg*>& p_outputArgs,
             const std::string& p_domain = "");
         Node* AddNode(const Node& p_other);
         bool RemoveNode(NODEINDEX p_nodeIndex);
@@ -389,7 +398,7 @@ namespace LotusIR
         // Convenience method for adding a constant op
         Node* AddConstantNode(const std::string& p_name,
             const std::string& p_description,
-            const std::vector<NodeArg>& p_outputArgs,
+            const std::vector<NodeArg*>& p_outputArgs,
             const TensorProto& p_tensor);
 
         // Add control edge into <*this> graph.
@@ -507,6 +516,8 @@ namespace LotusIR
         virtual const std::string& Description() const override;
         virtual void SetDescription(const std::string& p_desription) override;
 
+        virtual std::unordered_map<std::string, NodeArg*>* GetNodeArgMap() override;
+
         // Add/Remove/Get initial tensors for some graph inputs.
         void AddInitialTensor(const TensorProto& p_tensor);
         void RemoveInitialTensor(const std::string& p_tensorName);
@@ -612,13 +623,13 @@ namespace LotusIR
 
 
         Status VerifyNoDuplicateName(
-            /*out*/ std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
+            /*out*/ std::unordered_map<std::string, Node*>& p_outputArgs,
             /*out*/ std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex);
 
         // Build and verify node connection (edges).
         // Verify NodeArg name/type/shape matching correctly.
         Status BuildConnections(
-            const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
+            const std::unordered_map<std::string, Node*>& p_outputArgs,
             const std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex);
 
         // Check whether <*this> graph is acyclic.
@@ -634,11 +645,11 @@ namespace LotusIR
         // information match between node and op.
         Status VerifyNodeAndOpMatch(
             const std::vector<NODEINDEX>& p_nodesInToplogicalOrder,
-            std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs);
+            std::unordered_map<std::string, Node*>& p_outputArgs);
 
         Status InferAndVerifyTypeMatch(Node* p_node,
             const OpSignature* p_op,
-            const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs);
+            const std::unordered_map<std::string, Node*>& p_outputArgs);
 
 
 
@@ -690,6 +701,9 @@ namespace LotusIR
 
         // Graph value_info.
         std::vector<const NodeArg*> m_valueInfo;
+
+        // Store NodeArg in this graph
+        std::unordered_map<std::string, NodeArg*> m_nodeArgs;
 
         //const std::unordered_map<std::string, int>* m_domainToVersion;
     };

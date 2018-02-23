@@ -115,9 +115,8 @@ namespace LotusIR
         return m_exist;
     }
 
-    Node::EdgeEnd::EdgeEnd(const Node& p_node, const NodeArg& p_nodeArg)
-        : m_node(&p_node),
-        m_nodeArg(&p_nodeArg)
+    Node::EdgeEnd::EdgeEnd(const Node* p_node, const NodeArg* p_nodeArg)
+        : m_node(p_node), m_nodeArg(p_nodeArg)
     {
     }
 
@@ -165,7 +164,8 @@ namespace LotusIR
         m_opType = p_other.m_opType;
         m_domain = p_other.m_domain;
         m_inputDefs = p_other.m_inputDefs;
-        m_inputs = p_other.m_inputs;
+        m_input_edges = p_other.m_input_edges;
+        m_output_edges = p_other.m_output_edges;
         m_inputNodes = p_other.m_inputNodes;
         m_controlInputs = p_other.m_controlInputs;
         m_outputDefs = p_other.m_outputDefs;
@@ -204,12 +204,12 @@ namespace LotusIR
         return m_op;
     }
 
-    const std::vector<NodeArg>& Node::InputDefs() const
+    const std::vector<NodeArg*>& Node::InputDefs() const
     {
         return m_inputDefs;
     }
 
-    std::vector<NodeArg>& Node::Mutable_InputDefs()
+    std::vector<NodeArg*>& Node::Mutable_InputDefs()
     {
         m_graph->m_graphResolveNeeded = true;
         m_graph->m_graphProtoSyncNeeded = true;
@@ -248,6 +248,16 @@ namespace LotusIR
         return NodeConstIterator(m_outputNodes.end());
     }
 
+    const std::set<Node::EdgeEnd*>& Node::InputEdges() const
+    {
+        return m_input_edges;
+    }
+
+    const std::set<Node::EdgeEnd*>& Node::OutputEdges() const
+    {
+        return m_output_edges;
+    }
+
     bool Node::InputEdgeSrcEnd(NodeArg* p_inputArg,
         /*out*/const EdgeEnd** p_inputEdgeSrcEnd) const
     {
@@ -257,23 +267,24 @@ namespace LotusIR
             return false;
         }
 
-        auto edgeEndIter = m_inputs.find(p_inputArg);
-        if (m_inputs.end() == edgeEndIter)
+        for (const EdgeEnd *edge : m_input_edges)
         {
-            // There's no input edge for the specified input argument.
-            return false;
+            if (edge->GetNodeArg() == p_inputArg)
+            {
+                *p_inputEdgeSrcEnd = edge;
+                return true;
+            }
         }
 
-        *p_inputEdgeSrcEnd = &(edgeEndIter->second);
-        return true;
+        return false;
     }
 
-    const std::vector<NodeArg>& Node::OutputDefs() const
+    const std::vector<NodeArg*>& Node::OutputDefs() const
     {
         return m_outputDefs;
     }
 
-    std::vector<NodeArg>& Node::Mutable_OutputDefs()
+    std::vector<NodeArg*>& Node::Mutable_OutputDefs()
     {
         m_graph->m_graphResolveNeeded = true;
         m_graph->m_graphProtoSyncNeeded = true;
@@ -314,7 +325,7 @@ namespace LotusIR
         for (auto& inputDef : m_inputDefs)
         {
             auto input = p_proto.add_input();
-            *input = inputDef.Name();
+            *input = inputDef->Name();
         }
 
         // Set outputs' definitions.
@@ -322,7 +333,7 @@ namespace LotusIR
         for (auto& outputDef : m_outputDefs)
         {
             auto output = p_proto.add_output();
-            *output = outputDef.Name();
+            *output = outputDef->Name();
         }
     }
 
@@ -345,7 +356,20 @@ namespace LotusIR
                 type = &(nameToTypeIter->second);
             }
 
-            m_inputDefs.push_back(NodeArg(p_nodeProto.input(i), type));
+            NodeArg *nodeArg = nullptr;
+            auto nodeArgMap = m_graph->GetNodeArgMap();
+            auto nameToNodeArgIter = nodeArgMap->find(p_nodeProto.input(i));
+            if (nameToNodeArgIter == nodeArgMap->end())
+            {
+                nodeArg = new NodeArg(p_nodeProto.input(i), type);
+                (*nodeArgMap)[p_nodeProto.input(i)] = nodeArg;
+            }
+            else
+            {
+                nodeArg = nameToNodeArgIter->second;
+            }
+
+            m_inputDefs.push_back(nodeArg);
         }
 
         // Set input arg count as 1:1 maping with input defs.
@@ -366,7 +390,20 @@ namespace LotusIR
                 type = &(nameToTypeIter->second);
             }
 
-            m_outputDefs.push_back(NodeArg(p_nodeProto.output(i), type));
+            NodeArg *nodeArg = nullptr;
+            auto nodeArgMap = m_graph->GetNodeArgMap();
+            auto nameToNodeArgIter = nodeArgMap->find(p_nodeProto.output(i));
+            if (nameToNodeArgIter == nodeArgMap->end())
+            {
+                nodeArg = new NodeArg(p_nodeProto.output(i), type);
+                (*nodeArgMap)[p_nodeProto.output(i)] = nodeArg;
+            }
+            else
+            {
+                nodeArg = nameToNodeArgIter->second;
+            }
+
+            m_outputDefs.push_back(nodeArg);
         }
 
         for (int i = 0; i < p_nodeProto.attribute_size(); ++i)
@@ -379,8 +416,8 @@ namespace LotusIR
     void Node::Init(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
-        const std::vector<NodeArg>& p_inputArgs,
-        const std::vector<NodeArg>& p_outputArgs,
+        const std::vector<NodeArg*>& p_inputArgs,
+        const std::vector<NodeArg*>& p_outputArgs,
         const std::string& p_domain)
     {
         m_name = p_name;
@@ -394,6 +431,41 @@ namespace LotusIR
         // It could be adjusted when resolving the node with its operator
         // information.
         m_inputArgCount.assign(m_inputDefs.size(), 1);
+
+        auto nodeArgMap = m_graph->GetNodeArgMap();
+        for (NodeArg *inputDef : p_inputArgs)
+        {
+            auto nameToNodeArgIter = nodeArgMap->find(inputDef->Name());
+            if (nameToNodeArgIter == nodeArgMap->end())
+            {
+                (*nodeArgMap)[inputDef->Name()] = inputDef;
+            }
+            else
+            {
+                if (nameToNodeArgIter->second != inputDef)
+                {
+                    // TODO: What LOG and ASSERT utility to use?
+                    exit(1);
+                }
+            }
+        }
+
+        for (NodeArg *outputDef : p_outputArgs)
+        {
+            auto nameToNodeArgIter = nodeArgMap->find(outputDef->Name());
+            if (nameToNodeArgIter == nodeArgMap->end())
+            {
+                (*nodeArgMap)[outputDef->Name()] = outputDef;
+            }
+            else
+            {
+                if (nameToNodeArgIter->second != outputDef)
+                {
+                    // TODO: What LOG and ASSERT utility to use?
+                    exit(1);
+                }
+            }
+        }
     }
 
     /*void Node::Init(const std::string& p_name,
@@ -630,7 +702,7 @@ namespace LotusIR
     }
 
     Status Graph::VerifyNoDuplicateName(
-        /*out*/ std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
+        /*out*/ std::unordered_map<std::string, Node*>& p_outputArgs,
         /*out*/ std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex)
     {
         p_outputArgs.clear();
@@ -657,7 +729,7 @@ namespace LotusIR
             // Verify node outputs' name should be unique.
             for (auto& outputDef : (*nodeIter)->OutputDefs())
             {
-                std::string outputArgname = outputDef.Name();
+                std::string outputArgname = outputDef->Name();
                 if (p_outputArgs.end() != p_outputArgs.find(outputArgname))
                 {
                     // Two outputs with same name.
@@ -668,14 +740,14 @@ namespace LotusIR
                     return status;
                 }
                 p_outputArgs.insert(
-                { outputArgname, Node::EdgeEnd(*(*nodeIter), outputDef) });
+                { outputArgname, *nodeIter});
             }
         }
         return Status::OK();
     }
 
     Status Graph::BuildConnections(
-        const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs,
+        const std::unordered_map<std::string, Node*>& p_outputArgs,
         const std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex)
     {
         std::unordered_set<Node*> innerNodes;
@@ -715,15 +787,14 @@ namespace LotusIR
 
                 for (auto& inputArg : inputArgs)
                 {
-                    if (!inputArg.Exist())
+                    if (!inputArg->Exist())
                     {
                         // This input could be optional and it does not exist in this case.
                         continue;
                     }
 
-                    auto outputArgIter = p_outputArgs.find(inputArg.Name());
-                    if (p_outputArgs.end()
-                        == outputArgIter)
+                    auto outputArgIter = p_outputArgs.find(inputArg->Name());
+                    if (p_outputArgs.end() == outputArgIter)
                     {
                         // No such outputArg matching this inputArg.
                         // This input arg should be fed when running evaluation.
@@ -735,15 +806,17 @@ namespace LotusIR
 
                     // Setup input/output relationship between <*nodeIter>
                     // and <outputArgIter>.
-                    (*nodeIter)->m_inputNodes.insert(
-                        outputArgIter->second.GetNode());
-                    (*nodeIter)->m_inputs.insert({ &inputArg , outputArgIter->second });
+                    Node *output_node = outputArgIter->second;
+                    
+                    (*nodeIter)->m_inputNodes.insert(output_node);
+                    Node::EdgeEnd *in_edge = new Node::EdgeEnd(output_node, inputArg);
+                    (*nodeIter)->m_input_edges.insert(in_edge);
 
-                    NODEINDEX outputNodeIndex =
-                        outputArgIter->second.GetNode()->Index();
-                    m_nodes[outputNodeIndex]->m_outputNodes.insert((*nodeIter));
+                    output_node->m_outputNodes.insert((*nodeIter));
+                    Node::EdgeEnd *out_edge = new Node::EdgeEnd(*nodeIter, inputArg);
+                    output_node->m_output_edges.insert(out_edge);
 
-                    innerNodes.insert(m_nodes[outputNodeIndex].get());
+                    innerNodes.insert(output_node);
                 }
             }
             else
@@ -867,7 +940,7 @@ namespace LotusIR
 
     Status Graph::InferAndVerifyTypeMatch(Node* p_node,
         const OpSignature* p_op,
-        const std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs)
+        const std::unordered_map<std::string, Node*>& p_outputArgs)
     {
         auto& nodeName = p_node->Name();
 
@@ -889,7 +962,7 @@ namespace LotusIR
                 auto& inputDef = p_node->Mutable_InputDefs()[k];
 
                 // For each input arg.
-                auto outputArgsIter = p_outputArgs.find(inputDef.Name());
+                auto outputArgsIter = p_outputArgs.find(inputDef->Name());
                 if (p_outputArgs.end() == outputArgsIter)
                 {
                     // This input arg should either be fed by callers,
@@ -897,7 +970,7 @@ namespace LotusIR
                     // If it's fed by callers, it's needed to have type
                     // information defined well.
                     auto initialTensorIter
-                        = m_nameToInitialTensor.find(inputDef.Name());
+                        = m_nameToInitialTensor.find(inputDef->Name());
                     if (m_nameToInitialTensor.end()
                         != initialTensorIter)
                     {
@@ -906,7 +979,7 @@ namespace LotusIR
                         TypeProto initialTensorType;
                         initialTensorType.mutable_tensor_type()->set_elem_type(
                             initialTensorIter->second.data_type());
-                        inputDef.SetType(OpUtils::ToType(initialTensorType));
+                        inputDef->SetType(OpUtils::ToType(initialTensorType));
 
                         // Set shape accordingly.
                         TensorShapeProto shape;
@@ -914,15 +987,15 @@ namespace LotusIR
                         {
                             shape.add_dim()->set_dim_value(dim);
                         }
-                        inputDef.SetShape(shape);
+                        inputDef->SetShape(shape);
                     }
-                    else if (!inputDef.m_nodeArgInfo.has_type())
+                    else if (!inputDef->m_nodeArgInfo.has_type())
                     {
                         // This input is fed by callers and its type has to be specified.
 
                         Status status(LOTUS, FAIL,
                             "Node (" + nodeName + ") input arg ("
-                            + inputDef.Name()
+                            + inputDef->Name()
                             + ") does not have type information.");
                         return status;
 
@@ -930,23 +1003,27 @@ namespace LotusIR
                 }
                 else
                 {
-                    // Infer its type by copying from its corresponding
-                    // input node's output arg.
-                    auto outputArgOfInputNode
-                        = outputArgsIter->second.GetNodeArg();
-
-                    inputDef.SetType(outputArgOfInputNode->Type());
+                    // The type of this input should have been set by 
+                    // its parent who ouputs the NodeArg
+                    if (inputDef->Type() == nullptr)
+                    {
+                        Status status(LOTUS, FAIL,
+                            "Node (" + nodeName + ") input arg ("
+                            + inputDef->Name()
+                            + ") does not have type information set by parent node.");
+                        return status;
+                    }
                 }
 
                 // Verify the input arg type complying with operator
                 // definition.
 
-                auto iter = opFormalParameter.GetTypes().find(inputDef.Type());
+                auto iter = opFormalParameter.GetTypes().find(inputDef->Type());
                 if (opFormalParameter.GetTypes().end() == iter)
                 {
                     Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") input arg ("
-                        + inputDef.Name() + ") type does not match operator ("
+                        + inputDef->Name() + ") type does not match operator ("
                         + p_op->GetName() + ") definition.");
                     return status;
                 }
@@ -955,10 +1032,10 @@ namespace LotusIR
                 if (typeParameterToTypeMap.end() == paramToTypeIter)
                 {
                     typeParameterToTypeMap[opFormalParameter.GetTypeStr()]
-                        = inputDef.Type();
+                        = inputDef->Type();
 
                 }
-                else if (paramToTypeIter->second != inputDef.Type() && argCount == 1)
+                else if (paramToTypeIter->second != inputDef->Type() && argCount == 1)
                 {
                     // This is the case.
                     // An operator's inputs' type is "T", and T"s allowed value set is "float, int32".
@@ -969,7 +1046,7 @@ namespace LotusIR
                     Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") has different input"
                         " types (" + *(paramToTypeIter->second) + ","
-                        + *(inputDef.Type()) + ") matching to same "
+                        + *(inputDef->Type()) + ") matching to same "
                         "type string (" + opFormalParameter.GetTypeStr()
                         + ").");
                     return status;
@@ -992,7 +1069,7 @@ namespace LotusIR
                 = typeParameterToTypeMap.find(opFormalParameter.GetTypeStr());
             if (typeParameterToTypeMap.end() != inputTypesIter)
             {
-                outputDef.SetType(inputTypesIter->second);
+                outputDef->SetType(inputTypesIter->second);
                 continue;
             }
 
@@ -1018,7 +1095,7 @@ namespace LotusIR
                     auto& tensor = nodeAttributesIter->second.t();
                     TypeProto typeProto;
                     typeProto.mutable_tensor_type()->set_elem_type(tensor.data_type());
-                    outputDef.SetType(OpUtils::ToType(typeProto));
+                    outputDef->SetType(OpUtils::ToType(typeProto));
                 }
                 else
                 {
@@ -1033,16 +1110,16 @@ namespace LotusIR
             }
 
             // For case that input arg and output arg have different types.
-            if (outputDef.m_nodeArgInfo.has_type())
+            if (outputDef->m_nodeArgInfo.has_type())
             {
                 // The output arg has already had type information.
                 // Check whether it matches operator definition.
-                auto iter = opFormalParameter.GetTypes().find(outputDef.Type());
+                auto iter = opFormalParameter.GetTypes().find(outputDef->Type());
                 if (opFormalParameter.GetTypes().end() == iter)
                 {
                     Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") output arg ("
-                        + outputDef.Name() + ") type does not match operator ("
+                        + outputDef->Name() + ") type does not match operator ("
                         + p_op->GetName() + ") definition.");
                     return status;
                 }
@@ -1054,7 +1131,7 @@ namespace LotusIR
             {
                 // Infer output arg type as the only one type defined
                 // in operator definition.
-                outputDef.SetType(*(opFormalParameter.GetTypes().begin()));
+                outputDef->SetType(*(opFormalParameter.GetTypes().begin()));
                 continue;
             }
 
@@ -1063,7 +1140,7 @@ namespace LotusIR
             // Type inference fails in this case.
             Status status(LOTUS, FAIL,
                 "Node (" + nodeName + ") output arg ("
-                + outputDef.Name() + ") type inference failed");
+                + outputDef->Name() + ") type inference failed");
             return status;
         }
 
@@ -1072,7 +1149,7 @@ namespace LotusIR
 
     Status Graph::VerifyNodeAndOpMatch(
         const std::vector<NODEINDEX>& p_nodesInTopologicalOrder,
-        std::unordered_map<std::string, Node::EdgeEnd>& p_outputArgs)
+        std::unordered_map<std::string, Node*>& p_outputArgs)
     {
         for (auto nodeIndex : p_nodesInTopologicalOrder)
         {
@@ -1247,7 +1324,7 @@ namespace LotusIR
             return Status::OK();
         }
 
-        std::unordered_map<std::string, Node::EdgeEnd> outputArgs;
+        std::unordered_map<std::string, Node*> outputArgs;
         std::unordered_map<std::string, NODEINDEX> nodeNameToIndex;
         RETURN_IF_ERROR(VerifyNoDuplicateName(outputArgs, nodeNameToIndex));
         RETURN_IF_ERROR(BuildConnections(outputArgs, nodeNameToIndex));
@@ -1269,7 +1346,7 @@ namespace LotusIR
 
     void GraphBase::AddSourceSinkNodes()
     {
-        std::vector<NodeArg> emptyArgs;
+        std::vector<NodeArg*> emptyArgs;
         m_sourceNodeIndex = AddNode("_Graph_Source",
             c_noOp,
             "Source node internally in a graph.",
@@ -1301,6 +1378,11 @@ namespace LotusIR
     void Graph::SetDescription(const std::string& p_desription)
     {
         m_graphProto.set_doc_string(p_desription);
+    }
+
+    std::unordered_map<std::string, NodeArg*>* Graph::GetNodeArgMap()
+    {
+        return &m_nodeArgs;
     }
 
     void Graph::AddInitialTensor(const TensorProto& p_tensor)
@@ -1390,8 +1472,8 @@ namespace LotusIR
     Node* GraphBase::AddNode(const std::string& p_name,
         const std::string& p_opType,
         const std::string& p_description,
-        const std::vector<NodeArg>& p_inputArgs,
-        const std::vector<NodeArg>& p_outputArgs,
+        const std::vector<NodeArg*>& p_inputArgs,
+        const std::vector<NodeArg*>& p_outputArgs,
         const std::string& p_domain)
     {
         auto node = AllocateNode();
@@ -1460,10 +1542,10 @@ namespace LotusIR
 
     Node* GraphBase::AddConstantNode(const std::string& p_name,
         const std::string& p_description,
-        const std::vector<NodeArg>& p_outputArgs,
+        const std::vector<NodeArg*>& p_outputArgs,
         const TensorProto& p_tensor)
     {
-        Node* node = AddNode(p_name, c_constantOp, p_description, std::vector<NodeArg>{}, p_outputArgs);
+        Node* node = AddNode(p_name, c_constantOp, p_description, std::vector<NodeArg*>{}, p_outputArgs);
         node->AddAttribute(c_constantValue, p_tensor);
         return node;
     }
@@ -1603,11 +1685,11 @@ namespace LotusIR
             {
                 for (auto& outputDef : (*nodeIter)->OutputDefs())
                 {
-                    if (specifiedGraphOutputs.erase(outputDef.Name()) >= 1)
+                    if (specifiedGraphOutputs.erase(outputDef->Name()) >= 1)
                     {
-                        m_graphOutputs.push_back(&outputDef);
+                        m_graphOutputs.push_back(outputDef);
                     }
-                    outputNameToNodeArg.insert({ outputDef.Name(), &outputDef });
+                    outputNameToNodeArg.insert({ outputDef->Name(), outputDef });
                 }
             }
             if (specifiedGraphOutputs.size() != 0)
@@ -1622,35 +1704,35 @@ namespace LotusIR
                 // Go thru all node's inputs.
                 for (auto& inputArg : (*nodeIter)->InputDefs())
                 {
-                    if (!inputArg.Exist())
+                    if (!inputArg->Exist())
                     {
                         // It's an optional input and does not exist in this case.
                         continue;
                     }
 
-                    if (specifiedGraphInputs.end() != specifiedGraphInputs.find(inputArg.Name()))
+                    if (specifiedGraphInputs.end() != specifiedGraphInputs.find(inputArg->Name()))
                     {
-                        if (addedInputNames.end() == addedInputNames.find(inputArg.Name()))
+                        if (addedInputNames.end() == addedInputNames.find(inputArg->Name()))
                         {
                             // The node input is specified as graph input.
-                            m_graphInputs.push_back(&inputArg);
-                            addedInputNames.insert(inputArg.Name());
+                            m_graphInputs.push_back(inputArg);
+                            addedInputNames.insert(inputArg->Name());
                         }
                         continue;
                     }
 
-                    auto outputArgIter = outputNameToNodeArg.find(inputArg.Name());
+                    auto outputArgIter = outputNameToNodeArg.find(inputArg->Name());
                     if (outputNameToNodeArg.end() == outputArgIter
-                        && specifiedInitializers.end() == specifiedInitializers.find(inputArg.Name()))
+                        && specifiedInitializers.end() == specifiedInitializers.find(inputArg->Name()))
                     {
                         // The node input is not specified as graph input,
                         // and it's not fed by another node neither.
-                        return Status(LOTUS, FAIL, "Node input (" + inputArg.Name() + ") should be a graph input.");
+                        return Status(LOTUS, FAIL, "Node input (" + inputArg->Name() + ") should be a graph input.");
                     }
 
-                    if (specifiedGraphValueInfo.erase(inputArg.Name()) >= 1)
+                    if (specifiedGraphValueInfo.erase(inputArg->Name()) >= 1)
                     {
-                        m_valueInfo.push_back(&inputArg);
+                        m_valueInfo.push_back(inputArg);
                     }
                 }
             }
@@ -1664,7 +1746,7 @@ namespace LotusIR
             {
                 for (auto& outputDef : (*nodeIter)->OutputDefs())
                 {
-                    outputNameToNodeArg.insert({ outputDef.Name(), &outputDef });
+                    outputNameToNodeArg.insert({ outputDef->Name(), outputDef });
                 }
             }
             // Init graph output args with all node output args.
@@ -1678,22 +1760,22 @@ namespace LotusIR
                 // Go thru all node's inputs.
                 for (auto& inputArg : (*nodeIter)->InputDefs())
                 {
-                    if (!inputArg.Exist())
+                    if (!inputArg->Exist())
                     {
                         // It's an optional input and does not exist in this case.
                         continue;
                     }
 
-                    auto outputArgIter = outputNameToNodeArg.find(inputArg.Name());
+                    auto outputArgIter = outputNameToNodeArg.find(inputArg->Name());
                     if (outputNameToNodeArg.end() == outputArgIter)
                     {
                         // This input arg should be fed when running evaluation.
                         // it should be a graph input.
-                        if (addedInputNames.end() == addedInputNames.find(inputArg.Name()))
+                        if (addedInputNames.end() == addedInputNames.find(inputArg->Name()))
                         {
                             // This graph input has not been added into <m_graphInputs>.
-                            m_graphInputs.push_back(&inputArg);
-                            addedInputNames.insert(inputArg.Name());
+                            m_graphInputs.push_back(inputArg);
+                            addedInputNames.insert(inputArg->Name());
                         }
                     }
                     else if (graphOutputArgs.erase(outputArgIter->first) >= 1)
@@ -1701,7 +1783,7 @@ namespace LotusIR
                         // Remove the output arg name from graph outputs since it's
                         // the input of another node, which we call it intermediate result
                         // and store it in <m_valueinfo>.
-                        m_valueInfo.push_back(&inputArg);
+                        m_valueInfo.push_back(inputArg);
                     }
                 }
             }

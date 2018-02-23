@@ -64,8 +64,8 @@ namespace LotusIR
             //                              |
             //                           SinkNode
 
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
 
             // Type: tensor(float)
             TypeProto tensor_float;
@@ -78,11 +78,11 @@ namespace LotusIR
             auto mapValueType = mapType->mutable_value_type()->mutable_tensor_type();
             mapValueType->set_elem_type(TensorProto::FLOAT);
             mapValueType->mutable_shape();
-
-            NodeArg inputArg1("node_1_in_1", &map_int64_float);
+            
+            NodeArg *inputArg1 = new NodeArg("node_1_in_1", &map_int64_float);
             inputs.clear();
             inputs.push_back(inputArg1);
-            NodeArg outputArg1("node_1_out_1", &tensor_float);
+            NodeArg *outputArg1 = new NodeArg("node_1_out_1", &tensor_float);
             outputs.clear();
             outputs.push_back(outputArg1);
             graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs, c_mlDomain);
@@ -90,12 +90,16 @@ namespace LotusIR
             inputs.clear();
             inputs.push_back(outputArg1);
 
-            NodeArg outputArg4("node_4_out_1", &tensor_float);
+            NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_float);
             outputs.clear();
             outputs.push_back(outputArg4);
             graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, c_mlDomain);
             auto status = graph->Resolve();
             EXPECT_TRUE(status.Ok());
+
+            delete inputArg1;
+            delete outputArg1;
+            delete outputArg4;
         }
     }
 }

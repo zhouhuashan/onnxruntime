@@ -20,7 +20,7 @@ namespace LotusIR
         return m_opSignature;
     }
 
-    const std::vector<NodeArg>* InferenceContext::GetInputs() const
+    const std::vector<NodeArg*>* InferenceContext::GetInputs() const
     {
         if (nullptr == m_node)
         {
@@ -29,7 +29,7 @@ namespace LotusIR
         return &(m_node->InputDefs());
     }
 
-    std::vector<NodeArg>* InferenceContext::Mutable_Outputs()
+    std::vector<NodeArg*>* InferenceContext::Mutable_Outputs()
     {
         if (nullptr == m_node)
         {

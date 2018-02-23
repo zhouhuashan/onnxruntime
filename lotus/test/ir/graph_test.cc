@@ -28,15 +28,15 @@ namespace LotusIR
 
             EXPECT_EQ("graph_1", graph->Name());
 
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
 
             // INT32 vector.
             TypeProto outputType;
             outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             outputType.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            NodeArg outputArg("node_1_out_1", &outputType);
+            NodeArg *outputArg = new NodeArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
@@ -52,6 +52,7 @@ namespace LotusIR
             status = graph->Resolve();
             EXPECT_FALSE(status.Ok());
             EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMessage());
+            //delete outputArg;
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch)
@@ -59,15 +60,15 @@ namespace LotusIR
             Model model("graph_1");
             auto graph = model.MainGraph();
 
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
 
             // INT32 vector.
             TypeProto outputType;
             outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             outputType.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            NodeArg outputArg("node_1_out_1", &outputType);
+            NodeArg *outputArg = new NodeArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             // Case: Adding node refering to non-existing operator should fail.
             graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
@@ -76,6 +77,8 @@ namespace LotusIR
             EXPECT_EQ(
                 "Error: the operator or function (OpNotExist) refered by node (node_1) does not exist.",
                 status.ErrorMessage());
+
+            //delete outputArg;
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic)
@@ -104,26 +107,26 @@ namespace LotusIR
             //                 node_4 (NoOp)
             //                     |
             //                  SinkNode
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
 
-            std::unordered_map<std::string, std::pair<std::vector<NodeArg>, std::vector<NodeArg>>> expectedNodeNameToInputOutputArgs;
+            std::unordered_map<std::string, std::pair<std::vector<NodeArg*>, std::vector<NodeArg*>>> expectedNodeNameToInputOutputArgs;
 
             TypeProto tensor_int32;
             tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            NodeArg inputArg("node_1_in_1", &tensor_int32);
+            NodeArg *inputArg = new NodeArg("node_1_in_1", &tensor_int32);
             inputs.push_back(inputArg);
-            NodeArg outputArg("node_1_out_1", &tensor_int32);
+            NodeArg *outputArg = new NodeArg("node_1_out_1", &tensor_int32);
             outputs.push_back(outputArg);
             expectedNodeNameToInputOutputArgs["node_1"] = { inputs, outputs };
             auto node_1 = graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
-            NodeArg inputArg2("node_2_in_1", &tensor_int32);
+            NodeArg *inputArg2 = new NodeArg("node_2_in_1", &tensor_int32);
             inputs.clear();
             inputs.push_back(inputArg2);
-            NodeArg outputArg2("node_2_out_1", &tensor_int32);
+            NodeArg *outputArg2 = new NodeArg("node_2_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg2);
             expectedNodeNameToInputOutputArgs["node_2"] = { inputs, outputs };
@@ -132,7 +135,7 @@ namespace LotusIR
             inputs.clear();
             inputs.push_back(outputArg);
             inputs.push_back(outputArg2);
-            NodeArg outputArg3("node_3_out_1", &tensor_int32);
+            NodeArg *outputArg3 = new NodeArg("node_3_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg3);
             expectedNodeNameToInputOutputArgs["node_3"] = { inputs, outputs };
@@ -140,7 +143,7 @@ namespace LotusIR
 
             inputs.clear();
             inputs.push_back(outputArg3);
-            NodeArg outputArg4("node_4_out_1", &tensor_int32);
+            NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
             expectedNodeNameToInputOutputArgs["node_4"] = { inputs, outputs };
@@ -184,15 +187,15 @@ namespace LotusIR
                 EXPECT_EQ(nodeNameToInputOutputIter->second.first.size(), (*nodeIter)->InputDefs().size());
                 for (size_t i = 0; i < nodeNameToInputOutputIter->second.first.size(); ++i)
                 {
-                    EXPECT_EQ(nodeNameToInputOutputIter->second.first[i].Name(), (*nodeIter)->InputDefs()[i].Name());
-                    EXPECT_EQ(nodeNameToInputOutputIter->second.first[i].Type(), (*nodeIter)->InputDefs()[i].Type());
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.first[i]->Name(), (*nodeIter)->InputDefs()[i]->Name());
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.first[i]->Type(), (*nodeIter)->InputDefs()[i]->Type());
                 }
 
                 EXPECT_EQ(nodeNameToInputOutputIter->second.second.size(), (*nodeIter)->OutputDefs().size());
                 for (size_t i = 0; i < nodeNameToInputOutputIter->second.second.size(); ++i)
                 {
-                    EXPECT_EQ(nodeNameToInputOutputIter->second.second[i].Name(), (*nodeIter)->OutputDefs()[i].Name());
-                    EXPECT_EQ(nodeNameToInputOutputIter->second.second[i].Type(), (*nodeIter)->OutputDefs()[i].Type());
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.second[i]->Name(), (*nodeIter)->OutputDefs()[i]->Name());
+                    EXPECT_EQ(nodeNameToInputOutputIter->second.second[i]->Type(), (*nodeIter)->OutputDefs()[i]->Type());
                 }
             }
 
@@ -214,6 +217,13 @@ namespace LotusIR
 
             auto status_2 = graph_2.Resolve();
             EXPECT_TRUE(status_2.Ok());
+
+            //delete inputArg;
+            //delete outputArg;
+            //delete inputArg2;
+            //delete outputArg2;
+            //delete outputArg3;
+            //delete outputArg4;
         }
 
         TEST(ResolvingGraphTest, GraphConstruction_TypeInference)
@@ -241,31 +251,30 @@ namespace LotusIR
             //                        node_4 (Max)
             //                             |
             //                          SinkNode
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
 
             TypeProto tensor_int32;
             tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
             tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            NodeArg inputArg("node_1_in_1", &tensor_int32);
+            NodeArg *inputArg = new NodeArg("node_1_in_1", &tensor_int32);
             inputs.push_back(inputArg);
-            NodeArg outputArg("node_1_out_1", &tensor_int32);
+            NodeArg *outputArg = new NodeArg("node_1_out_1", &tensor_int32);
             outputs.push_back(outputArg);
             graph->AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
-
-            NodeArg inputArg2("node_1_in_1", &tensor_int32); // This refers to the same input as the node_1.
+                        
             inputs.clear();
-            inputs.push_back(inputArg2);
-            NodeArg outputArg2("node_2_out_1", &tensor_int32);
+            inputs.push_back(inputArg);
+            NodeArg *outputArg2 = new NodeArg("node_2_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg2);
             auto node_2 = graph->AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
-            NodeArg inputArg3("node_3_in_1", &tensor_int32);
+            NodeArg *inputArg3 = new NodeArg("node_3_in_1", &tensor_int32);
             inputs.clear();
             inputs.push_back(inputArg3);
-            NodeArg outputArg3("node_3_out_1", &tensor_int32);
+            NodeArg *outputArg3 = new NodeArg("node_3_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg3);
             graph->AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
@@ -274,10 +283,11 @@ namespace LotusIR
             inputs.push_back(outputArg);
             inputs.push_back(outputArg2);
             inputs.push_back(outputArg3);
-            NodeArg outputArg4("node_4_out_1", &tensor_int32);
+            NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_int32);
             outputs.clear();
             outputs.push_back(outputArg4);
-            graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
+            auto node_4 = graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
+            EXPECT_NE(node_4, nullptr);
             auto status = graph->Resolve();
             EXPECT_TRUE(status.Ok());
 
@@ -306,12 +316,19 @@ namespace LotusIR
             EXPECT_EQ("node_4_out_1", graphProto.output(0).name());
 
             TypeProto tensor_float;
-            tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-            node_2->Mutable_InputDefs()[0] = NodeArg("node_2_in_1", &tensor_float);
-            node_2->Mutable_OutputDefs()[0] = NodeArg("node_2_out_1", &tensor_float);
+            tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);            
+            node_2->Mutable_InputDefs()[0]->SetType(tensor_float);
+            node_2->Mutable_OutputDefs()[0]->SetType(tensor_float);
             status = graph->Resolve();
             EXPECT_FALSE(status.Ok());
-            EXPECT_EQ("Node (node_4) has different input types (tensor(int32),tensor(float)) matching to same type string (T).", status.ErrorMessage());
+            EXPECT_EQ("Node (node_4) has different input types (tensor(float),tensor(int32)) matching to same type string (T).", status.ErrorMessage());
+
+            //delete inputArg;
+            //delete outputArg;
+            //delete outputArg2;
+            //delete inputArg3;
+            //delete outputArg3;
+            //delete outputArg4;
         }
 
         TEST(TestAddAttribute, AddTensorAttribute)
@@ -319,8 +336,8 @@ namespace LotusIR
             REGISTER_OPERATOR_SCHEMA(__Constant).Description("Constant Op.")
                 .Attr(c_constantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR)
                 .Output("output_1", "docstr for output_1.", "tensor(int64)");
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
             Model model("graph_1");
             auto graph = model.MainGraph();
             TypeProto outputType;
@@ -329,7 +346,7 @@ namespace LotusIR
             outputShape.mutable_dim()->Add()->set_dim_value(1);
             outputShape.mutable_dim()->Add()->set_dim_value(3);
             *(outputType.mutable_tensor_type()->mutable_shape()) = outputShape;
-            NodeArg outputArg("node_1_out_1", &outputType);
+            NodeArg *outputArg = new NodeArg("node_1_out_1", &outputType);
             outputs.push_back(outputArg);
             auto node_1 = graph->AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
             TensorProto t;
@@ -342,6 +359,7 @@ namespace LotusIR
             EXPECT_TRUE(node_1->AddAttribute(c_constantValue, t));
             auto status = graph->Resolve();
             EXPECT_TRUE(status.Ok());
+            //delete outputArg;
         }
 
         TEST(CreateOnnxModelFromScratch, GraphConstruction_SkipTypeCheckingForOnnx)
@@ -353,8 +371,8 @@ namespace LotusIR
 
             EXPECT_EQ("graph_1", graph->Name());
 
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
 
             TypeProto floatTensor; // NCHW
             floatTensor.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
@@ -363,15 +381,24 @@ namespace LotusIR
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-            inputs.push_back(NodeArg("node_1_in_1", &floatTensor));
-            outputs.push_back(NodeArg("node_1_out_1", &floatTensor));
+            NodeArg *inputArg1 = new NodeArg("node_1_in_1", &floatTensor);
+            NodeArg *outputArg1 = new NodeArg("node_1_out_1", &floatTensor);
+
+            inputs.push_back(inputArg1);
+            outputs.push_back(outputArg1);
 
             floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
-            inputs.push_back(NodeArg("node_1_in_2", &floatTensor));
-            inputs.push_back(NodeArg("node_1_in_3", &floatTensor));
-            inputs.push_back(NodeArg("node_1_in_4", &floatTensor));
-            inputs.push_back(NodeArg("node_1_in_5", &floatTensor));
+
+            NodeArg *inputArg2 = new NodeArg("node_1_in_2", &floatTensor);
+            NodeArg *inputArg3 = new NodeArg("node_1_in_3", &floatTensor);
+            NodeArg *inputArg4 = new NodeArg("node_1_in_4", &floatTensor);
+            NodeArg *inputArg5 = new NodeArg("node_1_in_5", &floatTensor);
+
+            inputs.push_back(inputArg2);
+            inputs.push_back(inputArg3);
+            inputs.push_back(inputArg4);
+            inputs.push_back(inputArg5);
 
             auto node_1 = graph->AddNode("node_1", "BatchNormalization", "node 1.", inputs, outputs);
             EXPECT_TRUE(nullptr != node_1);
@@ -382,6 +409,13 @@ namespace LotusIR
             EXPECT_EQ("Error: node (node_1)'s number of outputs does not match its operator (BatchNormalization) specification.", status.ErrorMessage());
             status = graphOnnx->Resolve();
             EXPECT_TRUE(status.Ok());
+
+            //delete inputArg1;
+            //delete outputArg1;
+            //delete inputArg2;
+            //delete inputArg3;
+            //delete inputArg4;
+            //delete inputArg5;
         }
 
         TEST(SetGraphInputOutputTest, GraphConstruction_WithOptionalInputs)
@@ -391,8 +425,8 @@ namespace LotusIR
 
             // RNN Operator.
             // Inputs: "X", "W", "R", "B" (optional), "sequence_lens" (optional), "initial_h" (optional).
-            std::vector<NodeArg> inputs;
-            std::vector<NodeArg> outputs;
+            std::vector<NodeArg*> inputs;
+            std::vector<NodeArg*> outputs;
 
             TypeProto floatTensor;
             // X: [seq_length, batch_size, input_size].
@@ -400,31 +434,40 @@ namespace LotusIR
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(10);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(100);
-            inputs.push_back(NodeArg("X", &floatTensor));
+
+            NodeArg *nodeArgX = new NodeArg("X", &floatTensor);
+            inputs.push_back(nodeArgX);
 
             floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
             // W: [num_directions, hidden_size, input_size]
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(100);
-            inputs.push_back(NodeArg("W", &floatTensor));
+
+            NodeArg *nodeArgW = new NodeArg("W", &floatTensor);
+            inputs.push_back(nodeArgW);
             
             floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
             // R: [num_directions, hidden_size, hidden_size]
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
-            inputs.push_back(NodeArg("R", &floatTensor));
+
+            NodeArg *nodeArgR = new NodeArg("R", &floatTensor);
+            inputs.push_back(nodeArgR);
 
             floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
             // B: [num_directions, 2*hidden_size]
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(4);
-            inputs.push_back(NodeArg("B", &floatTensor));
+
+            NodeArg *nodeArgB = new NodeArg("B", &floatTensor);
+            inputs.push_back(nodeArgB);
 
             // Optional: sequence_lens, initial_h.
-            inputs.push_back(NodeArg("", nullptr));
-            inputs.push_back(NodeArg("", nullptr));
+            NodeArg *nonExistArg = new NodeArg("", nullptr);
+            inputs.push_back(nonExistArg);
+            inputs.push_back(nonExistArg);
 
             floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
             // Y: [seq_length, num_directions, batch_size, hidden_size].
@@ -432,14 +475,18 @@ namespace LotusIR
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
-            outputs.push_back(NodeArg("Y", &floatTensor));
+
+            NodeArg *nodeArgY = new NodeArg("Y", &floatTensor);
+            outputs.push_back(nodeArgY);
 
             floatTensor.mutable_tensor_type()->mutable_shape()->clear_dim();
             // Y_h: [num_directions, batch_size, hidden_size].
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
             floatTensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
-            outputs.push_back(NodeArg("Y_h", &floatTensor));
+
+            NodeArg *nodeArgY_h = new NodeArg("Y_h", &floatTensor);
+            outputs.push_back(nodeArgY_h);
 
             auto node_1 = graph->AddNode("node_1", "RNN", "node 1.", inputs, outputs);
             EXPECT_TRUE(nullptr != node_1);
@@ -453,6 +500,14 @@ namespace LotusIR
             EXPECT_TRUE(status.Ok());
             auto graphInputs = loaded_model->MainGraph()->GetInputs();
             EXPECT_EQ(4, graphInputs.size());
+
+            //delete nodeArgX;
+            //delete nodeArgW;
+            //delete nodeArgR;
+            //delete nodeArgB;
+            //delete nonExistArg;
+            //delete nodeArgY;
+            //delete nodeArgY_h;
         }
     }
 }

@@ -28,9 +28,9 @@ namespace LotusIR
 
         const OpSignature* GetOp() const;
 
-        const std::vector<NodeArg>* GetInputs() const;
+        const std::vector<NodeArg*>* GetInputs() const;
 
-        std::vector<NodeArg>* Mutable_Outputs();
+        std::vector<NodeArg*>* Mutable_Outputs();
 
     private:
 
