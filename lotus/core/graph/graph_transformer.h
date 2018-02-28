@@ -19,8 +19,8 @@ namespace LotusIR
         Node* AddNode(const std::string& p_name,
             const std::string& p_opType,
             const std::string& p_description,
-            const std::vector<NodeArg>& p_inputArgs,
-            const std::vector<NodeArg>& p_outputArgs,
+            const std::vector<NodeArg*>& p_inputArgs,
+            const std::vector<NodeArg*>& p_outputArgs,
             const std::string& p_domain = "")
         {
             return m_graph->AddNode(p_name, p_opType, p_description,
@@ -117,7 +117,7 @@ namespace LotusIR
 
     private:
         GraphTransformerManager() = default;
-        std::vector<IGraphTransformer> m_transformers;
+        std::vector<IGraphTransformer*> m_transformers;
     };
 
 
@@ -153,7 +153,7 @@ namespace LotusIR
 
         RuleBasedGraphTransformer() = default;
 
-        std::unordered_map<OpSignature*, std::vector<IRewriteRule>> m_opToRules;
+        std::unordered_map<OpSignature*, std::vector<IRewriteRule*>> m_opToRules;
     };
 
     // TODO: Design a loose way to register rewrite rules into RuleBasedGraphTransformer.

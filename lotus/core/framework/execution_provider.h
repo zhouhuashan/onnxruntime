@@ -21,7 +21,6 @@ namespace Lotus
   public:
     IExecutionProvider()
     {
-      m_id = Name() + "." + Version();
     }
 
     virtual ~IExecutionProvider() {}
@@ -54,8 +53,13 @@ namespace Lotus
 
     virtual Status CopyTensorToCPU(const Tensor& srcTensor,
                                    Tensor* p_dstTensor) = 0;
+    
+  protected:
+    void SetId()
+    {
+        m_id = Name() + "." + Version();
+    }
 
-  private:
     std::string m_id;
   };
 
