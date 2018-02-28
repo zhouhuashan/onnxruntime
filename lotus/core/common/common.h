@@ -147,5 +147,9 @@ inline string MakeString(const char* c_str) {
     return string(c_str);
 }
 
+// Suppresses 'unused variable' warnings.
+template<typename T> void ignore_unused_variable(const T&) {}
+#define LOTUS_UNUSED_VARIABLE(var) Lotus::ignore_unused_variable(var);
+
 }  // namespace Lotus
 #endif
