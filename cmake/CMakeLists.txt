@@ -21,6 +21,7 @@ option(lotus_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
 option(lotus_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
 option(lotus_ENABLE_STDERR_LOGGING "Enable logging to stderr" ON)
 option(lotus_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
+option(lotus_USE_OPENBLAS "Use openblas" OFF)
 if(CMAKE_BUILD_TYPE MATCHES Debug)
 option(lotus_ENABLE_DEBUG_LOGGING "Enable debug logging (e.g., enable VLOG)" ON)
 else()
@@ -29,6 +30,14 @@ endif()
 
 if (lotus_USE_EIGEN_FOR_BLAS)
 add_definitions(-DLOTUS_USE_EIGEN_FOR_BLAS)
+endif()
+
+if (lotus_USE_OPENBLAS AND "${lotus_OPENBLAS_HOME}" STREQUAL "")
+  message(FATAL_ERROR "lotus_OPENBLAS_HOME required for lotus_USE_OPENBLAS")
+endif()
+
+if (lotus_USE_OPENBLAS AND lotus_USE_EIGEN_FOR_BLAS)
+  message(FATAL_ERROR "use one of lotus_USE_OPENBLAS, lotus_USE_EIGEN_FOR_BLAS")
 endif()
 
 include(lotusIR_util.cmake)
@@ -96,6 +105,23 @@ include_directories(
     ${PROTOBUF_INCLUDE_DIRS}
     ${eigen_INCLUDE_DIRS}
 )
+
+set(lotus_EXTERNAL_LIBRARIES
+    ${zlib_STATIC_LIBRARIES}
+    ${protobuf_STATIC_LIBRARIES}
+)
+
+if (lotus_USE_OPENBLAS)
+  add_definitions(-DUSE_OPENBLAS=1)
+  if (WIN32)
+    include_directories(${lotus_OPENBLAS_HOME})
+    list(APPEND lotus_EXTERNAL_LIBRARIES ${lotus_OPENBLAS_HOME}/lib/libopenblas.lib)
+  else()
+    # on linux we assume blas is installed via 'apt install libopenblas-dev'
+    list(APPEND lotus_EXTERNAL_LIBRARIES openblas)
+  endif()
+endif()
+
 include(lotus_common.cmake)
 include(lotusIR_core_graph.cmake)
 include(lotus_core_framework.cmake)

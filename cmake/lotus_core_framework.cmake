@@ -44,7 +44,7 @@ add_library(lotus_framework
             $<TARGET_OBJECTS:lotus_core_framework_obj>
 			$<TARGET_OBJECTS:lotus_provider_obj>
 			$<TARGET_OBJECTS:lotus_util_obj>)
-target_link_libraries(lotus_framework PUBLIC onnx lotusIR_graph PRIVATE ${protobuf_STATIC_LIBRARIES})
+target_link_libraries(lotus_framework PUBLIC onnx lotusIR_graph PRIVATE ${lotus_EXTERNAL_LIBRARIES})
 if (WIN32)
     target_compile_definitions(lotus_framework PRIVATE
         _SCL_SECURE_NO_WARNINGS
