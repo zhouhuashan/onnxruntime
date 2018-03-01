@@ -50,19 +50,19 @@ InferenceSession::InferenceSession(const SessionOptions& session_options):
 
 Common::Status InferenceSession::Load(const std::string& model_uri) {
   // TODO
-  LOTUS_UNUSED_VARIABLE(model_uri);
+  UNUSED_PARAMETER(model_uri);
   return Common::Status::OK();
 }
 
 Common::Status InferenceSession::Run(const std::vector<MLValue>& feeds, std::vector<MLValue>* p_fetches) {
   // TODO
-  LOTUS_UNUSED_VARIABLE(feeds);
-  LOTUS_UNUSED_VARIABLE(p_fetches);
+  UNUSED_PARAMETER(feeds);
+  UNUSED_PARAMETER(p_fetches);
   return Common::Status::OK();
 }
 
 Common::Status InferenceSession::SetProviderPreference(const std::vector<IExecutionProvider>& providers) {
-  LOTUS_UNUSED_VARIABLE(providers);
+  UNUSED_PARAMETER(providers);
   // TODO
   return Common::Status::OK();
 }

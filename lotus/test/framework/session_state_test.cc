@@ -25,10 +25,10 @@ class TestOpKernel: public OpKernel {
  public:
   TestOpKernel(OpKernelInfo* p): OpKernel(p) {}
   void Compute(OpKernelContext* context) {
-    LOTUS_UNUSED_VARIABLE(context);
+    UNUSED_PARAMETER(context);
   }
   void ComputeAsync(OpKernelContext* context, DoneCallback done) {
-    LOTUS_UNUSED_VARIABLE(context);
+    UNUSED_PARAMETER(context);
   }
 };
   
