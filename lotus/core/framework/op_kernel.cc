@@ -2,6 +2,11 @@
 
 namespace Lotus {
 
+// TODO dummy implementation to facilitate testing
+AllocatorInfo* OpKernelInfo::GetAllocatorInfo() {
+  return nullptr;
+}
+
 #define DEFINE_GET_ATTR(T, type)                                                  \
   template <>                                                                     \
   Status OpKernelInfo::GetAttr<T>(                                                \
