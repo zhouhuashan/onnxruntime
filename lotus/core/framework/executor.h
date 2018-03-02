@@ -12,13 +12,13 @@ namespace Lotus
   class Executor
   {
   public:
-    Executor();
-    ~Executor();
+    Executor() {}
+    ~Executor() {}
 
     
   private:
-    const LotusIR::Graph* m_graph;
-    ExecutionFrame* m_root_frame;
+    const LotusIR::Graph* graph_;
+    ExecutionFrame* root_frame_;
   };
 }
 
