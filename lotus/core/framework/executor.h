@@ -12,13 +12,17 @@ namespace Lotus
   class Executor
   {
   public:
-    Executor();
-    ~Executor();
+    Executor() {}
+    ~Executor() {}
 
     
   private:
-    const LotusIR::Graph* m_graph;
-    ExecutionFrame* m_root_frame;
+    // TODO: Should we use naked pointer here?
+    // If yes, explain the ownership and lifetime
+    const LotusIR::Graph* graph_;
+    // TODO: Should we use naked pointer here?
+    // If yes, explain the ownership and lifetime
+    ExecutionFrame* root_frame_;
   };
 }
 

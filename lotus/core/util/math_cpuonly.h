@@ -49,6 +49,12 @@ namespace Lotus {
     template <typename T>
     using ConstEigenVectorArrayMap =
         Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1> >;
+
+    class CPUMathUtil
+    {
+    public:
+        //todo: the random generate interface.
+    };
 }
 
 #endif
