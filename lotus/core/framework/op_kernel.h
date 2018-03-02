@@ -1,12 +1,11 @@
 #ifndef CORE_FRAMEWORK_OP_KERNEL_H
 #define CORE_FRAMEWORK_OP_KERNEL_H
 
-
+#include "core/common/exceptions.h"
+#include "core/common/status.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/ml_value.h"
-#include "core/common/status.h"
 #include "core/framework/tensor.h"
-#include "core/common/exceptions.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
@@ -16,7 +15,8 @@ namespace Lotus {
   class OpKernelInfo
   {
   public:
-    explicit OpKernelInfo(const LotusIR::Node& node) : m_node(node) {}
+    explicit OpKernelInfo(const LotusIR::Node& node)
+      : m_node(node) {}
 
     ~OpKernelInfo();
 
