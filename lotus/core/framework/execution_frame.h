@@ -10,19 +10,25 @@
 
 namespace Lotus
 {
-    class OpKernel;
+  namespace Test
+  {
+      class TestUtils;
+  }
 
-    class ExecutionFrame {
-    public:
-        typedef MLValue* NodeArgValue;
+  class OpKernel;
+  
+  class ExecutionFrame {
+  public:
+      typedef MLValue* NodeArgValue;
+      typedef std::vector<NodeArgValue> ArgTable;
+    
+      ExecutionFrame() {
 
-        ExecutionFrame() {
+      }
 
-        }
+      ~ExecutionFrame() {
 
-        ~ExecutionFrame() {
-
-        }
+      }
 
         // Index to the first argument of the given node.
         int get_first_arg(const LotusIR::Node& node) {
@@ -43,6 +49,10 @@ namespace Lotus
 
     private:
         friend class OpKernelContext;
+
+        //The TestUtils need hack this class to provide input/output 
+        // tensors since the class is not fully implemented yet.
+        friend class Lotus::Test::TestUtils;
 
         struct NodeInfo {
             // The kernel for this node.
@@ -67,7 +77,7 @@ namespace Lotus
         Status m_status;
 
         // The values for the inputs and outputs of the nodes.
-        std::vector<NodeArgValue> m_node_values;
+        ArgTable m_node_values;
 
         // All the values for the entire graph.
         std::vector<MLValue> m_all_values;

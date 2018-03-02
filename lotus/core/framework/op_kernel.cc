@@ -29,7 +29,7 @@ namespace Lotus {
 
 #define DEFINE_GET_ATTRS(T, list)                                                 \
   template <>                                                                     \
-  Status OpKernelInfo::GetAttr<T>(                                                \
+  Status OpKernelInfo::GetAttrs<T>(                                               \
       const std::string& name, std::vector<T>& values) const {                    \
     const LotusIR::Node& op_def = OpDef();                                        \
     const LotusIR::NodeAttributes attributes = op_def.GetAttributes();            \
@@ -43,6 +43,7 @@ namespace Lotus {
     }                                                                             \
     return Status(LOTUS, FAIL, "No attribute with this name is defined.");        \
   }
+
 
     DEFINE_GET_ATTR(float, f)
     DEFINE_GET_ATTR(int, i)

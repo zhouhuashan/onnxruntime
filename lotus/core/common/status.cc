@@ -17,24 +17,24 @@ namespace Lotus
         {
         }
 
-        bool Status::Ok() const
+        bool Status::IsOK() const
         {
             return (m_state == NULL);
         }
 
         StatusCategory Status::Category() const
         {
-            return Ok() ? StatusCategory::NONE : m_state->m_category;
+            return IsOK() ? StatusCategory::NONE : m_state->m_category;
         }
 
         int Status::Code() const
         {
-            return Ok() ? static_cast<int>(StatusCode::OK) : m_state->m_code;
+            return IsOK() ? static_cast<int>(StatusCode::OK) : m_state->m_code;
         }
 
         const std::string& Status::ErrorMessage() const
         {
-            return Ok() ? EmptyString() : m_state->m_msg;
+            return IsOK() ? EmptyString() : m_state->m_msg;
         }
 
         std::string Status::ToString() const
