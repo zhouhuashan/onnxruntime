@@ -10,11 +10,10 @@ namespace Lotus
     class CPUExecutionProvider : public IExecutionProvider
     {
     public:
-        CPUExecutionProvider(const ExecutionProviderInfo* info)
+        CPUExecutionProvider(const ExecutionProviderInfo& info)
         {
-            LOTUS_ENFORCE(info != NULL);
-            name_ = info->Name();
-            version_ = info->Version();
+            name_ = info.Name();
+            version_ = info.Version();
             SetId();
         }
 
@@ -40,7 +39,7 @@ namespace Lotus
             return alloc_mgr->GetArena(CPU);
         }
 
-        virtual void Compute(Node* node, OpKernelContext* context) override
+        virtual void Compute(const Node& node, OpKernelContext* context) override
         {
             UNUSED_PARAMETER(node);
             UNUSED_PARAMETER(context);
@@ -51,7 +50,8 @@ namespace Lotus
             Tensor* p_dstTensor) override
         {
             //no really copy needed.
-            *p_dstTensor = srcTensor;
+            LOTUS_ENFORCE(p_dstTensor);
+            p_dstTensor->ShallowCopy(srcTensor);
             return Status::OK();
         }
 
@@ -59,7 +59,8 @@ namespace Lotus
             Tensor* p_dstTensor) override
         {
             //no really copy needed.
-            *p_dstTensor = srcTensor;
+            LOTUS_ENFORCE(p_dstTensor);
+            p_dstTensor->ShallowCopy(srcTensor);
             return Status::OK();
         }
 

@@ -15,7 +15,7 @@ namespace Lotus
   typedef OpKernel* (*KernelCreateFn)(OpKernelInfo*);
   typedef std::unordered_multimap<std::string, KernelCreateFn> KernelRegistry;
 
-  typedef void* EPAdditionalInfo;
+  typedef std::shared_ptr<void> EPAdditionalInfo;
 
   class ExecutionProviderInfo 
   {
@@ -66,7 +66,7 @@ namespace Lotus
     virtual IArenaAllocator& GetAllocator() const = 0;
 
     // Run the computation of a given node.
-    virtual void Compute(Node* node, OpKernelContext* context) = 0;
+    virtual void Compute(const Node& node, OpKernelContext* context) = 0;
 
     // TODO: Do we still need these copy methods?
     virtual Status CopyCPUTensorTo(const Tensor& srcTensor,
@@ -83,8 +83,9 @@ namespace Lotus
 
     std::string id_;
   };
-    
-  typedef std::function<unique_ptr<IExecutionProvider>(const ExecutionProviderInfo*)> ProviderCreateFn;
+
+  typedef std::function<unique_ptr<IExecutionProvider>(const ExecutionProviderInfo&)> ProviderCreateFn;
+  typedef std::unique_ptr<IExecutionProvider> ExecutionProviderPtr;
 
   // Singleton execution provider manager.
   // It holds a global provider type to provider finder map, and will find/create
@@ -112,7 +113,7 @@ namespace Lotus
         }
     }
 
-    ProviderCreateFn GetProvider(const string& key)
+    ExecutionProviderPtr GetProvider(const string& key, const ExecutionProviderInfo& info)
     {
         if (provider_map_.find(key) == provider_map_.end())
         {
@@ -120,7 +121,7 @@ namespace Lotus
         }
         else
         {
-            return provider_map_[key];
+            return ExecutionProviderPtr(provider_map_[key](info));
         }
     }
 

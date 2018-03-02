@@ -76,7 +76,7 @@ namespace Lotus
     {
     }
 
-    Tensor& Tensor::operator=(const Tensor& other)
+    Tensor& Tensor::ShallowCopy(const Tensor& other)
     {
         if (this != &other)
         {

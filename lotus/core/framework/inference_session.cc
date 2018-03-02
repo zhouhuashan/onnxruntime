@@ -19,14 +19,14 @@ class InferenceSession::Impl {
     auto& provider_mgr = ExecutionProviderMgr::Instance();
     for (auto& info : session_options.ep_infors)
     {
-        auto creater = provider_mgr.GetProvider(info.Name());
-        if (creater == nullptr)
+        auto provider = provider_mgr.GetProvider(info.Name(), info);
+        if (provider == nullptr)
         {
             LOG(WARNING) << "Execution Provider with name: "
                 << info.Name() << "Not found.";
             continue;
         }
-        execution_providers_.push_back(creater(&info));
+        execution_providers_.push_back(std::move(provider));
     }
   }
 
@@ -46,6 +46,8 @@ class InferenceSession::Impl {
   SessionState session_state_;
 
   // Environment for this session
+  // TODO: Should we use naked pointer here?
+  // If yes, explain the ownership and lifetime
   Env* env_;
 
   // Threadpool for this session

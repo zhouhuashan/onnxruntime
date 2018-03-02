@@ -92,7 +92,28 @@ AddTest(
     TARGET lotus_test_framework
     SOURCES ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
-	DEPENDS lotus_framework googletest lotusIR_graph lotus_provider
+    DEPENDS lotus_framework googletest lotusIR_graph lotus_provider
+)
+
+set(lotus_test_kernels_libs
+    ${googletest_STATIC_LIBRARIES}
+    ${protobuf_STATIC_LIBRARIES}
+    ${lotusIR_graph_whole_archived}
+    ${onnx_whole_archived}
+    lotus_operator_kernels
+)
+
+file(GLOB_RECURSE lotus_test_kernels_src
+    "${LOTUS_ROOT}/test/framework/framework_test_main.cc"
+    "${LOTUS_ROOT}/test/kernels/*.cc"
+    "${LOTUS_ROOT}/test/*.h"
+)
+
+AddTest(
+    TARGET lotus_test_kernels
+    SOURCES ${lotus_test_kernels_src}
+    LIBS ${lotus_test_kernels_libs}
+  DEPENDS lotus_operator_kernels lotus_framework googletest lotusIR_graph
 )
 
 set(TEST_DATA_SRC ${LOTUS_ROOT}/test/testdata)

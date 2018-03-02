@@ -2,6 +2,7 @@
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/tensor_util.h"
+#include "gtest/gtest.h"
 
 
 namespace Lotus

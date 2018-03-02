@@ -8,8 +8,8 @@ namespace Lotus
         TEST(CPUExecutionProviderTest, MetadataTest)
         {
             ExecutionProviderInfo info("CPUExecutionProvider", "0.1", NULL);
-            auto creater = ExecutionProviderMgr::Instance().GetProvider(info.Name());
-            std::shared_ptr<IExecutionProvider> provider(creater(&info));
+            auto provider = ExecutionProviderMgr::Instance().GetProvider(info.Name(), info);
+            EXPECT_TRUE(provider != nullptr);
             EXPECT_EQ(provider->Name(), info.Name());
             EXPECT_EQ(provider->Version(), info.Version());
             EXPECT_EQ(provider->ID(), "CPUExecutionProvider.0.1");
