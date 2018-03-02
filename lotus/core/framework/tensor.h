@@ -66,7 +66,7 @@ namespace Lotus
         //Copy constructure and assign op will just pass the shape and memory reference to another tensor.
         //No deep clone / copy happened.
         Tensor(const Tensor& src);
-        Tensor& operator=(const Tensor& other);
+        Tensor& operator=(const Tensor& other) = default;
 
         // Returns the data type.
         MLDataType dtype() const { return m_dtype; }

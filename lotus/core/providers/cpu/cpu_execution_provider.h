@@ -10,22 +10,20 @@ namespace Lotus
     class CPUExecutionProvider : public IExecutionProvider
     {
     public:
-        CPUExecutionProvider(const ExecutionProviderInfo* info)
+        CPUExecutionProvider()
         {
-            LOTUS_ENFORCE(info != NULL);
-            name_ = info->Name();
-            version_ = info->Version();
-            SetId();
+            //Todo: implement name and version
+            //SetId();
         }
 
         virtual const std::string& Name() const override
         {
-            return name_;
+            LOTUS_NOT_IMPLEMENTED;
         }
 
         virtual const std::string& Version() const override
         {
-            return version_;
+            LOTUS_NOT_IMPLEMENTED;
         }
 
         virtual IGraphTransformer& GetTransformer() const override
@@ -50,22 +48,20 @@ namespace Lotus
         virtual Status CopyCPUTensorTo(const Tensor& srcTensor,
             Tensor* p_dstTensor) override
         {
-            //no really copy needed.
-            *p_dstTensor = srcTensor;
-            return Status::OK();
+            UNUSED_PARAMETER(srcTensor);
+            UNUSED_PARAMETER(p_dstTensor);
+            LOTUS_NOT_IMPLEMENTED;
         }
 
         virtual Status CopyTensorToCPU(const Tensor& srcTensor,
             Tensor* p_dstTensor) override
         {
-            //no really copy needed.
-            *p_dstTensor = srcTensor;
-            return Status::OK();
+            UNUSED_PARAMETER(srcTensor);
+            UNUSED_PARAMETER(p_dstTensor);
+            LOTUS_NOT_IMPLEMENTED;
         }
 
     private:
-        string name_;
-        string version_;
     };
 }
 

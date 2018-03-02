@@ -82,7 +82,7 @@ namespace Lotus {
         // (transpose) if the argument TransA or TransB is set to CblasNoTrans or
         // CblasTrans, respectively, for each of A and B.
         template <>
-        void Gemm<float, CPUMathUtil>(
+        void Gemm<float, CPUExecutionProvider>(
             const CBLAS_TRANSPOSE TransA,
             const CBLAS_TRANSPOSE TransB,
             const int M,
@@ -93,7 +93,7 @@ namespace Lotus {
             const float* B,
             const float beta,
             float* C,
-            CPUMathUtil* /*provider*/,
+            CPUExecutionProvider* /*provider*/,
             MLDataType /*math_type*/) {
             auto C_mat = EigenMatrixMap<float>(C, N, M);
             if (beta == 0) {
@@ -141,7 +141,7 @@ namespace Lotus {
         }
 
         template <>
-        void GemmEx<float, CPUMathUtil>(
+        void GemmEx<float, CPUExecutionProvider>(
             const CBLAS_TRANSPOSE TransA,
             const CBLAS_TRANSPOSE TransB,
             const int M,
@@ -155,7 +155,7 @@ namespace Lotus {
             const float beta,
             float* C,
             const int ldc,
-            CPUMathUtil*) {
+            CPUExecutionProvider*) {
             using OuterStride = Eigen::OuterStride<Eigen::Dynamic>;
             using StridedMap = Eigen::Map<Eigen::MatrixXf, 0, OuterStride>;
             using ConstStridedMap = Eigen::Map<const Eigen::MatrixXf, 0, OuterStride>;
@@ -205,7 +205,7 @@ namespace Lotus {
         }
 
         template <>
-        void Gemv<float, CPUMathUtil>(
+        void Gemv<float, CPUExecutionProvider>(
             const CBLAS_TRANSPOSE TransA,
             const int M,
             const int N,
@@ -214,7 +214,7 @@ namespace Lotus {
             const float* x,
             const float beta,
             float* y,
-            CPUMathUtil* /*provider*/,
+            CPUExecutionProvider* /*provider*/,
             MLDataType /*math_type*/) {
             EigenVectorMap<float> y_vec(y, TransA == CblasNoTrans ? M : N);
             if (beta == 0) {
@@ -245,17 +245,17 @@ namespace Lotus {
 
 #define LOTUS_SPECIALIZED_SCALE(T)                                            \
   template <>                                                                  \
-  void Scale<T, CPUMathUtil>(                                                   \
-      const int n, const float alpha, const T* x, T* y, CPUMathUtil* /*provider*/) { \
+  void Scale<T, CPUExecutionProvider>(                                                   \
+      const int n, const float alpha, const T* x, T* y, CPUExecutionProvider* /*provider*/) { \
     EigenVectorMap<T>(y, n) = ConstEigenVectorMap<T>(x, n) * alpha;            \
   }                                                                            \
   template <>                                                                  \
-  void Scale<T, CPUMathUtil>(                                                   \
+  void Scale<T, CPUExecutionProvider>(                                                   \
       const int n,                                                             \
       const float* alpha,                                                      \
       const T* x,                                                              \
       T* y,                                                                    \
-      CPUMathUtil* /*provider*/) {                                                   \
+      CPUExecutionProvider* /*provider*/) {                                                   \
     EigenVectorMap<T>(y, n) = ConstEigenVectorMap<T>(x, n) * (*alpha);         \
   }
         LOTUS_SPECIALIZED_SCALE(float)
@@ -263,9 +263,9 @@ namespace Lotus {
 
 #define LOTUS_SPECIALIZED_DOT(T)                                              \
 template<>                                                                     \
-void Dot<T, CPUMathUtil>(                                                       \
+void Dot<T, CPUExecutionProvider>(                                                       \
     const int N, const T* a, const T* b, T* y,                                 \
-    CPUMathUtil* /*provider*/) {                                                     \
+    CPUExecutionProvider* /*provider*/) {                                                     \
   *y = ConstEigenVectorMap<T>(a, N).dot(ConstEigenVectorMap<T>(b, N));         \
 }
             LOTUS_SPECIALIZED_DOT(float)
@@ -273,13 +273,13 @@ void Dot<T, CPUMathUtil>(                                                       
 
 #define LOTUS_SPECIALIZED_AXPY(T)                                          \
   template <>                                                               \
-  void Axpy<T, CPUMathUtil>(                                                 \
-      const int N, const T alpha, const T* x, T* Y, CPUMathUtil* /*provider*/) {  \
+  void Axpy<T, CPUExecutionProvider>(                                                 \
+      const int N, const T alpha, const T* x, T* Y, CPUExecutionProvider* /*provider*/) {  \
     EigenVectorMap<T>(Y, N) += ConstEigenVectorMap<T>(x, N) * alpha;        \
   }                                                                         \
   template <>                                                               \
-  void Axpy<T, CPUMathUtil>(                                                 \
-      const int N, const T* alpha, const T* x, T* Y, CPUMathUtil* /*provider*/) { \
+  void Axpy<T, CPUExecutionProvider>(                                                 \
+      const int N, const T* alpha, const T* x, T* Y, CPUExecutionProvider* /*provider*/) { \
     EigenVectorMap<T>(Y, N) += ConstEigenVectorMap<T>(x, N) * (*alpha);     \
   }
             LOTUS_SPECIALIZED_AXPY(float)
@@ -287,8 +287,8 @@ void Dot<T, CPUMathUtil>(                                                       
 
 #define LOTUS_SPECIALIZED_AXPBY(T)                                            \
 template <>                                                                    \
-void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              \
-                          const T beta, T* y, CPUMathUtil* /*context*/) {           \
+void Axpby<T, CPUExecutionProvider>(const int N, const T alpha, const T* x,              \
+                          const T beta, T* y, CPUExecutionProvider* /*context*/) {           \
   EigenVectorMap<T> y_vec(y, N);                                               \
   y_vec = y_vec * beta + ConstEigenVectorMap<T>(x, N) * alpha;                 \
 }
@@ -298,7 +298,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 #else  // CAFFE2_USE_EIGEN_FOR_BLAS
 
         template <>
-        void Gemm<float, CPUMathUtil>(
+        void Gemm<float, CPUExecutionProvider>(
             const CBLAS_TRANSPOSE TransA,
             const CBLAS_TRANSPOSE TransB,
             const int M,
@@ -309,7 +309,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
             const float* B,
             const float beta,
             float* C,
-            CPUMathUtil* /*context*/,
+            CPUExecutionProvider* /*context*/,
             MLDataType /*math_type*/) {
             int lda = (TransA == CblasNoTrans) ? K : M;
             int ldb = (TransB == CblasNoTrans) ? N : K;
@@ -318,7 +318,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
         }
 
         template <>
-        void GemmEx<float, CPUMathUtil>(
+        void GemmEx<float, CPUExecutionProvider>(
             const CBLAS_TRANSPOSE TransA,
             const CBLAS_TRANSPOSE TransB,
             const int M,
@@ -332,13 +332,13 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
             const float beta,
             float* C,
             const int ldc,
-            CPUMathUtil* /*context*/) {
+            CPUExecutionProvider* /*context*/) {
             cblas_sgemm(CblasRowMajor, TransA, TransB, M, N, K, alpha, A, lda, B, ldb,
                 beta, C, ldc);
         }
 
         template <>
-        void Gemv<float, CPUMathUtil>(
+        void Gemv<float, CPUExecutionProvider>(
             const CBLAS_TRANSPOSE TransA,
             const int M,
             const int N,
@@ -347,22 +347,22 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
             const float* x,
             const float beta,
             float* y,
-            CPUMathUtil* /*context*/,
+            CPUExecutionProvider* /*context*/,
             MLDataType /*math_type*/) {
             cblas_sgemv(CblasRowMajor, TransA, M, N, alpha, A, N, x, 1, beta, y, 1);
         }
 
 #define CAFFE2_SPECIALIZED_SCALE(T, prefix)                             \
   template <>                                                           \
-  void Scale<T, CPUMathUtil>(                                            \
-      const int n, const float alpha, const T* x, T* y, CPUMathUtil*) {  \
+  void Scale<T, CPUExecutionProvider>(                                            \
+      const int n, const float alpha, const T* x, T* y, CPUExecutionProvider*) {  \
     if (y != x)                                                         \
       cblas_##prefix##copy(n, x, 1, y, 1);                              \
     cblas_##prefix##scal(n, static_cast<float>(alpha), y, 1);           \
   }                                                                     \
   template <>                                                           \
-  void Scale<T, CPUMathUtil>(                                            \
-      const int n, const float* alpha, const T* x, T* y, CPUMathUtil*) { \
+  void Scale<T, CPUExecutionProvider>(                                            \
+      const int n, const float* alpha, const T* x, T* y, CPUExecutionProvider*) { \
     if (y != x)                                                         \
       cblas_##prefix##copy(n, x, 1, y, 1);                              \
     cblas_##prefix##scal(n, static_cast<float>(*alpha), y, 1);          \
@@ -372,8 +372,8 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 
 #define CAFFE2_SPECIALIZED_DOT(T, prefix)                       \
   template <>                                                   \
-  void Dot<T, CPUMathUtil>(                                      \
-      const int N, const T* a, const T* b, T* y, CPUMathUtil*) { \
+  void Dot<T, CPUExecutionProvider>(                                      \
+      const int N, const T* a, const T* b, T* y, CPUExecutionProvider*) { \
     *y = cblas_##prefix##dot(N, a, 1, b, 1);                    \
   }
             CAFFE2_SPECIALIZED_DOT(float, s)
@@ -381,13 +381,13 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 
 #define CAFFE2_SPECIALIZED_AXPY(T, prefix)                          \
   template <>                                                       \
-  void Axpy<T, CPUMathUtil>(                                         \
-      const int N, const T alpha, const T* x, T* y, CPUMathUtil*) {  \
+  void Axpy<T, CPUExecutionProvider>(                                         \
+      const int N, const T alpha, const T* x, T* y, CPUExecutionProvider*) {  \
     cblas_##prefix##axpy(N, alpha, x, 1, y, 1);                     \
   }                                                                 \
   template <>                                                       \
-  void Axpy<T, CPUMathUtil>(                                         \
-      const int N, const T* alpha, const T* x, T* y, CPUMathUtil*) { \
+  void Axpy<T, CPUExecutionProvider>(                                         \
+      const int N, const T* alpha, const T* x, T* y, CPUExecutionProvider*) { \
     cblas_##prefix##axpy(N, *alpha, x, 1, y, 1);                    \
   }
             CAFFE2_SPECIALIZED_AXPY(float, s)
@@ -395,13 +395,13 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 
 #define CAFFE2_SPECIALIZED_AXPBY(T, prefix)     \
   template <>                                   \
-  void Axpby<T, CPUMathUtil>(                    \
+  void Axpby<T, CPUExecutionProvider>(                    \
       const int N,                              \
       const T alpha,                            \
       const T* x,                               \
       const T beta,                             \
       T* y,                                     \
-      CPUMathUtil*) {                            \
+      CPUExecutionProvider*) {                            \
     cblas_##prefix##scal(N, beta, y, 1);        \
     cblas_##prefix##axpy(N, alpha, x, 1, y, 1); \
   }
@@ -411,7 +411,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 #endif  // CAFFE2_USE_EIGEN_FOR_BLAS
 
             template <>
-        void GemmBatched<float, CPUMathUtil>(
+        void GemmBatched<float, CPUExecutionProvider>(
             const CBLAS_TRANSPOSE TransA,
             const CBLAS_TRANSPOSE TransB,
             const int A_size,
@@ -426,7 +426,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
             const float* B,
             const float /*beta*/,
             float* C,
-            CPUMathUtil* provider,
+            CPUExecutionProvider* provider,
             Tensor*, /* scratch */
             MLDataType /* math_type */) {
 
@@ -435,7 +435,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
             auto y_offset = M * N;
             // loop over matrices in the batch
             for (int i = 0; i < A_batches; ++i) {
-                math::Gemm<float, CPUMathUtil>(
+                math::Gemm<float, CPUExecutionProvider>(
                     TransA,
                     TransB,
                     M,
@@ -462,7 +462,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 
 #define DELEGATE_SIMPLE_UNARY_FUNCTION(T, Funcname, expr)                    \
   template <>                                                                \
-  void Funcname<T, CPUMathUtil>(const int N, const T* x, T* y, CPUMathUtil*) { \
+  void Funcname<T, CPUExecutionProvider>(const int N, const T* x, T* y, CPUExecutionProvider*) { \
     EigenVectorMap<T>(y, N) = ConstEigenVectorMap<T>(x, N).array().expr();   \
   }
         DELEGATE_SIMPLE_UNARY_FUNCTION(float, Exp, exp)
@@ -477,8 +477,8 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 
 #define DELEGATE_SINCOS_FUNCTION(T)                                        \
   template <>                                                              \
-  void SinCos<T, CPUMathUtil>(                                              \
-      const int N, const T* x, T* ys, T* yc, CPUMathUtil*) {                \
+  void SinCos<T, CPUExecutionProvider>(                                              \
+      const int N, const T* x, T* ys, T* yc, CPUExecutionProvider*) {                \
     EigenVectorMap<T>(ys, N) = ConstEigenVectorMap<T>(x, N).array().sin(); \
     EigenVectorMap<T>(yc, N) = ConstEigenVectorMap<T>(x, N).array().cos(); \
   }
@@ -488,7 +488,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 
 #define DELEGATE_POWX_FUNCTION(T)                                             \
   template <>                                                                 \
-  void Powx<T, CPUMathUtil>(const int N, const T* a, T b, T* y, CPUMathUtil*) { \
+  void Powx<T, CPUExecutionProvider>(const int N, const T* a, T b, T* y, CPUExecutionProvider*) { \
     EigenVectorMap<T>(y, N) = ConstEigenVectorMap<T>(a, N).array().pow(b);    \
   }
             DELEGATE_POWX_FUNCTION(float)
@@ -497,9 +497,9 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
 
 #define EIGEN_SIMPLE_BINARY_FUNCTION(T, Funcname, expr)                        \
 template <>                                                                    \
-void Funcname<T, CPUMathUtil>(                                                  \
+void Funcname<T, CPUExecutionProvider>(                                                  \
     const int N, const T* a, const T* b, T* y,                                 \
-    CPUMathUtil*) {                                                             \
+    CPUExecutionProvider*) {                                                             \
   EigenVectorMap<T>(y, N) =                                                    \
       ConstEigenVectorMap<T>(a, N).array() expr                                \
       ConstEigenVectorMap<T>(b, N).array();                                    \
@@ -529,12 +529,12 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_REDUCEMIN(T)    \
   template <>                              \
-  void ReduceMin<T, CPUMathUtil>(           \
+  void ReduceMin<T, CPUExecutionProvider>(           \
       const int N,                         \
       const T* x,                          \
       T* y,                                \
       Tensor* /*scratch_ptr*/, \
-      CPUMathUtil* /*context*/) {           \
+      CPUExecutionProvider* /*context*/) {           \
     *y = *std::min_element(x, x + N);      \
   }
             LOTUS_SPECIALIZED_REDUCEMIN(float)
@@ -542,12 +542,12 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_REDUCEMAX(T)    \
   template <>                              \
-  void ReduceMax<T, CPUMathUtil>(           \
+  void ReduceMax<T, CPUExecutionProvider>(           \
       const int N,                         \
       const T* x,                          \
       T* y,                                \
       Tensor* /*scratch_ptr*/, \
-      CPUMathUtil* /*context*/) {           \
+      CPUExecutionProvider* /*context*/) {           \
     *y = *std::max_element(x, x + N);      \
   }
             LOTUS_SPECIALIZED_REDUCEMAX(float)
@@ -558,8 +558,8 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_ROWWISEMAX(T)                         \
   template <>                                                    \
-  void RowwiseMax<T, CPUMathUtil>(                                \
-      const int N, const int D, const T* x, T* y, CPUMathUtil*) { \
+  void RowwiseMax<T, CPUExecutionProvider>(                                \
+      const int N, const int D, const T* x, T* y, CPUExecutionProvider*) { \
     EigenVectorMap<T>(y, N) =                                    \
         ConstEigenMatrixMap<T>(x, D, N).colwise().maxCoeff();    \
   }
@@ -568,8 +568,8 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_COLWISEMAX(T)                         \
   template <>                                                    \
-  void ColwiseMax<T, CPUMathUtil>(                                \
-      const int N, const int D, const T* x, T* y, CPUMathUtil*) { \
+  void ColwiseMax<T, CPUExecutionProvider>(                                \
+      const int N, const int D, const T* x, T* y, CPUExecutionProvider*) { \
     EigenVectorMap<T>(y, D) =                                    \
         ConstEigenMatrixMap<T>(x, D, N).rowwise().maxCoeff();    \
   }
@@ -578,8 +578,8 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_ELEMWISEMAX(T)                                   \
   template <>                                                               \
-  void ElemwiseMax<T, CPUMathUtil>(                                          \
-      const int N, const T* x, const T* y, T* z, CPUMathUtil* /*context*/) { \
+  void ElemwiseMax<T, CPUExecutionProvider>(                                          \
+      const int N, const T* x, const T* y, T* z, CPUExecutionProvider* /*context*/) { \
     std::transform(x, x + N, y, z, [](const T& x_i, const T& y_i) {         \
       return std::max(x_i, y_i);                                            \
     });                                                                     \
@@ -589,8 +589,8 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_MAXIMUM(T)                                          \
   template <>                                                                  \
-  void Maximum<T, CPUMathUtil>(                                                 \
-      const int N, const float alpha, const T* x, T* y, CPUMathUtil* /*provider*/) { \
+  void Maximum<T, CPUExecutionProvider>(                                                 \
+      const int N, const float alpha, const T* x, T* y, CPUExecutionProvider* /*provider*/) { \
     std::transform(                                                            \
         x, x + N, y, [&alpha](const T& x_i) { return std::max(x_i, alpha); }); \
   }
@@ -602,21 +602,21 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             // so notice the row/column swap in the actual implementation.
 #define DELEGATE_BROADCAST_BINARY_FUNCTION(T, Funcname, expr)                \
   template <>                                                                \
-  void Funcname##ToRow<T, CPUMathUtil>(                                       \
-      const int M, const int N, const T* a, const T* b, T* y, CPUMathUtil*) { \
+  void Funcname##ToRow<T, CPUExecutionProvider>(                                       \
+      const int M, const int N, const T* a, const T* b, T* y, CPUExecutionProvider*) { \
     EigenArrayMap<T>(y, N, M) = ConstEigenArrayMap<T>(a, N, M).colwise()     \
                                     expr ConstEigenVectorArrayMap<T>(b, N);  \
   }                                                                          \
   /* inplace versions */                                                     \
   template <>                                                                \
-  void Funcname##ToRow<T, CPUMathUtil>(                                       \
-      const int M, const int N, const T* x, T* y, CPUMathUtil*) {             \
+  void Funcname##ToRow<T, CPUExecutionProvider>(                                       \
+      const int M, const int N, const T* x, T* y, CPUExecutionProvider*) {             \
     EigenArrayMap<T>(y, N, M).colwise() expr## =                             \
         ConstEigenVectorArrayMap<T>(x, N);                                   \
   }                                                                          \
   template <>                                                                \
-  void Funcname##ToCol<T, CPUMathUtil>(                                       \
-      const int M, const int N, const T* x, T* y, CPUMathUtil*) {             \
+  void Funcname##ToCol<T, CPUExecutionProvider>(                                       \
+      const int M, const int N, const T* x, T* y, CPUExecutionProvider*) {             \
     EigenArrayMap<T>(y, N, M).rowwise() expr## =                             \
         ConstEigenVectorArrayMap<T>(x, M).transpose();                       \
   }
@@ -636,7 +636,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_SET(T)                                             \
   template <>                                                                 \
-  void Set<T, CPUMathUtil>(const int64_t N, const T alpha, T* Y, CPUMathUtil*) { \
+  void Set<T, CPUExecutionProvider>(const int64_t N, const T alpha, T* Y, CPUExecutionProvider*) { \
     if (alpha == (T)0) {                                                      \
       memset(Y, 0, N * sizeof(T));                                            \
     } else {                                                                  \
@@ -658,20 +658,20 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_INSTANTIATE_BINARY_OP(name, op, T)                  \
   template <>                                                      \
-  void name<T, CPUMathUtil>(                                        \
-      const int n, const T* a, const T* b, bool* y, CPUMathUtil*) { \
+  void name<T, CPUExecutionProvider>(                                        \
+      const int n, const T* a, const T* b, bool* y, CPUExecutionProvider*) { \
     for (int i = 0; i < n; ++i) {                                  \
       y[i] = a[i] op b[i];                                         \
     }                                                              \
   }                                                                \
   template <>                                                      \
-  void name##ToRow<T, CPUMathUtil>(                                 \
+  void name##ToRow<T, CPUExecutionProvider>(                                 \
       const int m,                                                 \
       const int n,                                                 \
       const T* a,                                                  \
       const T* b,                                                  \
       bool* y,                                                     \
-      CPUMathUtil*) {                                               \
+      CPUExecutionProvider*) {                                               \
     for (int i = 0; i < n * m; ++i) {                              \
       y[i] = a[i] op b[i % n];                                     \
     }                                                              \
@@ -692,11 +692,11 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
     LOTUS_INSTANTIATE_BINARY_OP(Xor, ^, bool);
 
         template <>
-        void Not<bool, CPUMathUtil>(
+        void Not<bool, CPUExecutionProvider>(
             const int n,
             const bool* x,
             bool* y,
-            CPUMathUtil* /*context*/) {
+            CPUExecutionProvider* /*context*/) {
             for (int i = 0; i < n; ++i) {
                 y[i] = !x[i];
             }
@@ -713,9 +713,9 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
       T* y,                                                     \
       const int stripe,                                         \
       const int batch,                                          \
-      CPUMathUtil* provider) {                                    \
+      CPUExecutionProvider* provider) {                                    \
     for (int j = 0; j < batch; j++) {                           \
-      Add<T, CPUMathUtil>(N, first + j * stripe, y, y, provider); \
+      Add<T, CPUExecutionProvider>(N, first + j * stripe, y, y, provider); \
     }                                                           \
   }
 
@@ -723,9 +723,9 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 #undef LOTUS_SPECIALIZED_CPU_ADD_STRIPED_BATCH
 
         template <>
-        void RandUniform<float, CPUMathUtil>(
+        void RandUniform<float, CPUExecutionProvider>(
             const int n, const float a, const float b, float* r,
-            CPUMathUtil* /*provider*/) {
+            CPUExecutionProvider* /*provider*/) {
             std::uniform_real_distribution<float> distribution(a, b);
             //todo: need implmenet "RandGenerator()" in execution provider
             UNUSED_PARAMETER(n);
@@ -737,9 +737,9 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void RandUniform<int, CPUMathUtil>(
+        void RandUniform<int, CPUExecutionProvider>(
             const int n, const int a, const int b, int* r,
-            CPUMathUtil* /*provider*/) {
+            CPUExecutionProvider* /*provider*/) {
             std::uniform_int_distribution<int> distribution(a, b);
             //todo: need implmenet "RandGenerator()" in execution provider
             UNUSED_PARAMETER(n);
@@ -785,9 +785,9 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 //#undef CAFFE2_SPECIALIZED_RAND_UNIFORM_UNIQUE
 
         template <>
-        void RandGaussian<float, CPUMathUtil>(
+        void RandGaussian<float, CPUExecutionProvider>(
             const int n, const float mean, const float std, float* r,
-            CPUMathUtil* /*provider*/) {
+            CPUExecutionProvider* /*provider*/) {
             std::normal_distribution<float> distribution(mean, std);
             UNUSED_PARAMETER(n);
             UNUSED_PARAMETER(r);
@@ -799,11 +799,11 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_SUM(T)            \
   template <>                                \
-  void Sum<T, CPUMathUtil>(                   \
+  void Sum<T, CPUExecutionProvider>(                   \
       const int N,                           \
       const T* x,                            \
       T* y,                                  \
-      CPUMathUtil* /* unused */,              \
+      CPUExecutionProvider* /* unused */,              \
       Tensor* /* unused */) {    \
     *y = ConstEigenVectorMap<T>(x, N).sum(); \
   }
@@ -815,23 +815,23 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 #undef LOTUS_SPECIALIZED_SUM
 
         template <>
-        void SumSqr<float, CPUMathUtil>(
+        void SumSqr<float, CPUExecutionProvider>(
             const int N,
             const float* x,
             float* y,
-            CPUMathUtil* /*context*/ /* unused */,
+            CPUExecutionProvider* /*context*/ /* unused */,
             Tensor* /*scratch_ptr*/ /* unused */) {
             *y = ConstEigenVectorMap<float>(x, N).squaredNorm();
         }
 
         template <>
-        void Select<float, CPUMathUtil>(
+        void Select<float, CPUExecutionProvider>(
             const int N,
             const int D,
             const float* x,
             const int* idx,
             float* y,
-            CPUMathUtil* /*context*/) {
+            CPUExecutionProvider* /*context*/) {
             for (int i = 0; i < N; ++i) {
                 DCHECK_LT(idx[i], D);
                 y[i] = x[i * D + idx[i]];
@@ -839,7 +839,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
         // Ported from caffe 1.
         template <>
-        void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
+        void Im2colNd<float, CPUExecutionProvider, StorageOrder::NCHW>(
             const float* data_img,
             const int* im_shape,
             const int* col_shape,
@@ -851,7 +851,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             const int* pad,
             const int N,
             float* data_col,
-            CPUMathUtil* /* context */,
+            CPUExecutionProvider* /* context */,
             bool accumulate_output) {
             int kernel_size = 1;
             for (int i = 0; i < N; ++i) {
@@ -916,7 +916,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void Col2imNd<float, CPUMathUtil, StorageOrder::NCHW>(
+        void Col2imNd<float, CPUExecutionProvider, StorageOrder::NCHW>(
             const float* data_col,
             const int* img_shape,
             const int* col_shape,
@@ -928,9 +928,9 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             const int* pad,
             const int N,
             float* data_img,
-            CPUMathUtil* context) {
-            Set<float, CPUMathUtil>(img_size, 0, data_img, context);
-            Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
+            CPUExecutionProvider* context) {
+            Set<float, CPUExecutionProvider>(img_size, 0, data_img, context);
+            Im2colNd<float, CPUExecutionProvider, StorageOrder::NCHW>(
                 data_col,
                 img_shape,
                 col_shape,
@@ -947,7 +947,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void Im2col<float, CPUMathUtil, StorageOrder::NCHW>(
+        void Im2col<float, CPUExecutionProvider, StorageOrder::NCHW>(
             const float* data_im,
             const int channels,
             const int height,
@@ -963,7 +963,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             const int stride_h,
             const int stride_w,
             float* data_col,
-            CPUMathUtil* /*context*/) {
+            CPUExecutionProvider* /*context*/) {
             const int output_h =
                 (height + pad_b + pad_t - (dilation_h * (kernel_h - 1) + 1)) / stride_h +
                 1;
@@ -1068,7 +1068,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void Im2col<float, CPUMathUtil, StorageOrder::NHWC>(
+        void Im2col<float, CPUExecutionProvider, StorageOrder::NHWC>(
             const float* data_im,
             const int channels,
             const int height,
@@ -1084,7 +1084,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             const int stride_h,
             const int stride_w,
             float* data_col,
-            CPUMathUtil* /*context*/) {
+            CPUExecutionProvider* /*context*/) {
             const int dkernel_h = dilation_h * (kernel_h - 1) + 1;
             const int dkernel_w = dilation_w * (kernel_w - 1) + 1;
 
@@ -1115,7 +1115,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void Col2im<float, CPUMathUtil, StorageOrder::NCHW>(
+        void Col2im<float, CPUExecutionProvider, StorageOrder::NCHW>(
             const float* data_col,
             const int channels,
             const int height,
@@ -1131,7 +1131,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             const int stride_h,
             const int stride_w,
             float* data_im,
-            CPUMathUtil* context) {
+            CPUExecutionProvider* context) {
             const int output_h =
                 (height + pad_b + pad_t - (dilation_h * (kernel_h - 1) + 1)) / stride_h +
                 1;
@@ -1139,7 +1139,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
                 (width + pad_l + pad_r - (dilation_w * (kernel_w - 1) + 1)) / stride_w +
                 1;
 
-            Set<float, CPUMathUtil>(height * width * channels, 0, data_im, context);
+            Set<float, CPUExecutionProvider>(height * width * channels, 0, data_im, context);
 
             // Fast path for zero padding and no dilation
             // From Torch, modified THNN_(unfolded_acc)
@@ -1233,7 +1233,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void Col2im<float, CPUMathUtil, StorageOrder::NHWC>(
+        void Col2im<float, CPUExecutionProvider, StorageOrder::NHWC>(
             const float* data_col,
             const int channels,
             const int height,
@@ -1249,11 +1249,11 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             const int stride_h,
             const int stride_w,
             float* data_im,
-            CPUMathUtil* context) {
+            CPUExecutionProvider* context) {
             const int dkernel_h = dilation_h * (kernel_h - 1) + 1;
             const int dkernel_w = dilation_w * (kernel_w - 1) + 1;
 
-            Set<float, CPUMathUtil>(height * width * channels, 0, data_im, context);
+            Set<float, CPUExecutionProvider>(height * width * channels, 0, data_im, context);
             int height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
             int width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
             int h_pad = -pad_t;
@@ -1264,7 +1264,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
                         for (int iw = w_pad; iw < w_pad + dkernel_w; iw += dilation_w) {
                             if (ih >= 0 && ih < height && iw >= 0 && iw < width) {
                                 auto* data_im_patch = data_im + (ih * width + iw) * channels;
-                                Add<float, CPUMathUtil>(
+                                Add<float, CPUExecutionProvider>(
                                     channels, data_im_patch, data_col, data_im_patch, context);
                             }
                             data_col += channels;
@@ -1277,12 +1277,12 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void BiasCHW<float, CPUMathUtil>(
+        void BiasCHW<float, CPUExecutionProvider>(
             const float* bias,
             const int bias_channels,
             const int image_size,
             float* image,
-            CPUMathUtil* /*context*/) {
+            CPUExecutionProvider* /*context*/) {
             // Sum the per-channel bias into every image plane
             for (int c = 0; c < bias_channels; ++c) {
                 float b = bias[c];
@@ -1361,7 +1361,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
         }
 
         template <>
-        void CopyMatrix<CPUMathUtil>(
+        void CopyMatrix<CPUExecutionProvider>(
             const size_t itemsize,
             const int M,
             const int N,
@@ -1369,7 +1369,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
             const int lda,
             void* B,
             const int ldb,
-            CPUMathUtil*,
+            CPUExecutionProvider*,
             TypedCopy copy) {
             if (lda == N && ldb == N) {
                 // can coalese to a single memcpy of size M * N
@@ -1401,8 +1401,8 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 
 #define LOTUS_SPECIALIZED_COPYVECTOR(T)                            \
   template <>                                                       \
-  void CopyVector<T, CPUMathUtil>(                                   \
-      const int N, const T* src, T* dst, CPUMathUtil* /*context*/) { \
+  void CopyVector<T, CPUExecutionProvider>(                                   \
+      const int N, const T* src, T* dst, CPUExecutionProvider* /*context*/) { \
     if (src != dst && N > 0) {                                      \
       memcpy(dst, src, sizeof(T) * N);                              \
     }                                                               \

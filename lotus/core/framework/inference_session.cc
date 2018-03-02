@@ -1,6 +1,9 @@
 #include "core/framework/inference_session.h"
-#include "core/common/logging.h"
+
+#include <string>
+#include <memory>
 #include <mutex>
+
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
@@ -16,18 +19,6 @@ class InferenceSession::Impl {
     const int num_threads = session_options.num_threads;
     // per session threadpool; we can also use the global threadpool instead if required
     thread_pool_.reset(new thread::ThreadPool(env_, "Compute", num_threads));
-    auto& provider_mgr = ExecutionProviderMgr::Instance();
-    for (auto& info : session_options.ep_infors)
-    {
-        auto creater = provider_mgr.GetProvider(info.Name());
-        if (creater == nullptr)
-        {
-            LOG(WARNING) << "Execution Provider with name: "
-                << info.Name() << "Not found.";
-            continue;
-        }
-        execution_providers_.push_back(creater(&info));
-    }
   }
 
   // TODO add the methods of the parent class
@@ -37,7 +28,7 @@ class InferenceSession::Impl {
   std::shared_ptr<Model> model_;
   
   // The list of execution providers in preference order.
-  std::vector<unique_ptr<IExecutionProvider> > execution_providers_;
+  std::vector<IExecutionProvider> execution_providers_;
 
   // A set of executors that can run in parallel.
   std::vector<Executor> executors_;
@@ -57,17 +48,24 @@ InferenceSession::InferenceSession(const SessionOptions& session_options):
   
 }
 
-Status InferenceSession::Load(const std::string& model_uri) {
+Common::Status InferenceSession::Load(const std::string& model_uri) {
   // TODO
   UNUSED_PARAMETER(model_uri);
-  return Status::OK();
+  return Common::Status::OK();
 }
 
-Status InferenceSession::Run(const std::vector<MLValue>& feeds, std::vector<MLValue>* p_fetches) {
+Common::Status InferenceSession::Run(const std::vector<MLValue>& feeds, std::vector<MLValue>* p_fetches) {
   // TODO
   UNUSED_PARAMETER(feeds);
   UNUSED_PARAMETER(p_fetches);
-  return Status::OK();
+  return Common::Status::OK();
 }
+
+Common::Status InferenceSession::SetProviderPreference(const std::vector<IExecutionProvider>& providers) {
+  UNUSED_PARAMETER(providers);
+  // TODO
+  return Common::Status::OK();
+}
+
 
 }

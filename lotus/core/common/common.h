@@ -33,7 +33,6 @@
 #include <type_traits>
 #include <vector>
 #include "core/common/status.h"
-#include <functional> 
 
 namespace Lotus {
 
