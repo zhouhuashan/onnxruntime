@@ -76,5 +76,18 @@ namespace Lotus
     {
     }
 
+    Tensor& Tensor::ShallowCopy(const Tensor& other)
+    {
+        if (this != &other)
+        {
+            m_dtype = other.m_dtype;
+            m_alloc_info = other.m_alloc_info;
+            m_shape = other.m_shape;
+            m_pData = other.m_pData;
+            m_byte_offset = other.m_byte_offset;
+        }
+        return *this;
+    }
+
 
 }

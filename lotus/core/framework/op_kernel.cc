@@ -2,16 +2,11 @@
 
 namespace Lotus {
 
-// TODO dummy implementation to facilitate testing
-AllocatorInfo* OpKernelInfo::GetAllocatorInfo() {
-  return nullptr;
-}
-
 #define DEFINE_GET_ATTR(T, type)                                                  \
   template <>                                                                     \
   Status OpKernelInfo::GetAttr<T>(                                                \
       const std::string& name, T* value) const {                                  \
-    const LotusIR::Node& op_def = OpDef();                                        \
+    const LotusIR::Node& op_def = node();                                         \
     const LotusIR::NodeAttributes attributes = op_def.GetAttributes();            \
     auto it = attributes.find(name);                                              \
     if (it != attributes.end()) {                                                 \
@@ -29,9 +24,9 @@ AllocatorInfo* OpKernelInfo::GetAllocatorInfo() {
 
 #define DEFINE_GET_ATTRS(T, list)                                                 \
   template <>                                                                     \
-  Status OpKernelInfo::GetAttr<T>(                                                \
+  Status OpKernelInfo::GetAttrs<T>(                                               \
       const std::string& name, std::vector<T>& values) const {                    \
-    const LotusIR::Node& op_def = OpDef();                                        \
+    const LotusIR::Node& op_def = node();                                         \
     const LotusIR::NodeAttributes attributes = op_def.GetAttributes();            \
     auto it = attributes.find(name);                                              \
     if (it != attributes.end()) {                                                 \
@@ -44,22 +39,23 @@ AllocatorInfo* OpKernelInfo::GetAllocatorInfo() {
     return Status(LOTUS, FAIL, "No attribute with this name is defined.");        \
   }
 
-  DEFINE_GET_ATTR(float, f)
-  DEFINE_GET_ATTR(int, i)
-  DEFINE_GET_ATTR(std::string, s)
-  DEFINE_GET_ATTR(TensorProto, t)
-  DEFINE_GET_ATTR(GraphProto, g)
-  DEFINE_GET_ATTRS(float, floats)
-  DEFINE_GET_ATTRS(int, ints)
-  DEFINE_GET_ATTRS(std::string, strings)
-  DEFINE_GET_ATTRS(TensorProto, tensors)
-  DEFINE_GET_ATTRS(GraphProto, graphs)
-  
-  template<typename T>
-  T* OpKernelContext::Output(int index) const
-  {
-    int num_inputs = m_kernel->num_inputs();
-    ExecutionFrame::NodeArgValue value = m_arg_start[num_inputs + index];
-    return reinterpret_cast<T*>(value->pData);
-  }
+
+    DEFINE_GET_ATTR(float, f)
+    DEFINE_GET_ATTR(int, i)
+    DEFINE_GET_ATTR(std::string, s)
+    DEFINE_GET_ATTR(TensorProto, t)
+    DEFINE_GET_ATTR(GraphProto, g)
+    DEFINE_GET_ATTRS(float, floats)
+    DEFINE_GET_ATTRS(int, ints)
+    DEFINE_GET_ATTRS(std::string, strings)
+    DEFINE_GET_ATTRS(TensorProto, tensors)
+    DEFINE_GET_ATTRS(GraphProto, graphs)
+
+    Tensor* OpKernelContext::output(int index, const TensorShape& shape)
+    {
+        // In this case, it's assumed that the tensor hasn't been allocated yet,
+        // so that it's calling ExecutionFrame to create a tensor in the given position with given shape.
+        auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->node().InputDefs().size()) + index;
+        return execution_frame_->get_or_create_tensor(output_arg_index, shape);
+    }
 }

@@ -11,7 +11,7 @@ namespace Lotus
         {
             Record<std::string> stringRecord;
             const std::string* n2;
-            EXPECT_FALSE(stringRecord.GetName(0, &n2).Ok());
+            EXPECT_FALSE(stringRecord.GetName(0, &n2).IsOK());
 
             // One way to store feature vector using Record.
             std::vector<std::string> names = { "featureName", "featureValue" };
@@ -20,7 +20,7 @@ namespace Lotus
 
             const std::string* name;
             auto status = record.GetName(2, &name);
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
 
             record.GetName(0, &name);
             auto& value = std::get<0>(record.GetValues());

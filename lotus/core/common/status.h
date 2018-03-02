@@ -13,7 +13,7 @@ namespace Lotus
 #define RETURN_IF_ERROR(expr)             \
   do {                                    \
     auto _status = (expr);                \
-    if ((!_status.Ok())) return _status;  \
+    if ((!_status.IsOK())) return _status;  \
   } while (0)
 
         enum StatusCategory
@@ -51,7 +51,7 @@ namespace Lotus
             inline Status(const Status& p_other)
                 : m_state((p_other.m_state == NULL) ? NULL : new State(*p_other.m_state)) {}
 
-            bool Ok() const;
+            bool IsOK() const;
 
             int Code() const;
 

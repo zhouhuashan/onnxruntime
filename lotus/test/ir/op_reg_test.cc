@@ -95,7 +95,7 @@ namespace LotusIR
             outputs.push_back(outputArg4);
             graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, c_mlDomain);
             auto status = graph->Resolve();
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
 
             delete inputArg1;
             delete outputArg1;

@@ -1,116 +1,112 @@
 #ifndef CORE_FRAMEWORK_OP_KERNEL_H
 #define CORE_FRAMEWORK_OP_KERNEL_H
 
-
+#include "core/common/exceptions.h"
+#include "core/common/status.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/ml_value.h"
-#include "core/common/status.h"
 #include "core/framework/tensor.h"
-#include "core/common/exceptions.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
+    class OpKernelContext;
 
-  class OpKernel;
-  
-  class OpKernelInfo
-  {
-  public:
-    explicit OpKernelInfo(const LotusIR::Node& node) : m_node(node) {}
-
-    ~OpKernelInfo();
-
-    template<typename T>
-    Status GetAttr(const std::string& name, T* value) const;
-
-    template<typename T>
-    Status GetAttr(const std::string& name, std::vector<T>& values) const;
-            
-    const LotusIR::Node& OpDef() const { return m_node; }
-
-    AllocatorInfo* GetAllocatorInfo();
-
-  private:
-    const LotusIR::Node& m_node;
-  };
-
-  class OpKernelContext {
-  public:
-    typedef std::unordered_map<std::string, size_t> ArgMap;
-    
-    explicit OpKernelContext(const LotusIR::Node& node, OpKernel* kernel,
-                             ExecutionFrame* frame)
-      : m_kernel(kernel),
-        m_execution_frame(frame)
+    class OpKernelInfo
     {
-      m_arg_start = frame->get_first_arg(node);
-    }
-    
-    ~OpKernelContext() {};
+    public:
+        explicit OpKernelInfo(const LotusIR::Node& node,
+            const AllocatorInfo& allocator_info)
+            : node_(node),
+            allocator_info_(allocator_info) {}
 
-    template<typename T>
-    const T* Input(int index) const {
-      ExecutionFrame::NodeArgValue value = m_arg_start[index];
-      return reinterpret_cast<T*>(value->pData);
-    }
+        //Get a single attribute
+        template<typename T>
+        Status GetAttr(const std::string& name, T* value) const;
 
-    template<typename T>
-    T* Output(int index) const;
-      
-  private:
-    ExecutionFrame* m_execution_frame = nullptr;
-    OpKernel* m_kernel = nullptr;
-    ExecutionFrame::NodeArgValue* m_arg_start = nullptr;
-  };
+        //Get repeated attributes
+        template<typename T>
+        Status GetAttrs(const std::string& name, std::vector<T>& values) const;
 
-  class OpKernel {
-  public:
-    typedef std::function<void()> DoneCallback;
+        const LotusIR::Node& node() const {
+            return node_;
+        }
 
-    explicit OpKernel(OpKernelInfo* info)
-      : m_node(info->OpDef()),
-        m_alloc(info->GetAllocatorInfo()) {
-      m_input_start_index.resize(m_node.InputArgCount().size());
-      size_t index = 0;
-      for (size_t i = 0; i < m_input_start_index.size(); i++) {
-        m_input_start_index[i] = index;
-        index += m_node.InputArgCount()[i];
-      }
-    }
+        const AllocatorInfo& get_allocator_info() const {
+            return allocator_info_;
+        }
 
-    // The total number of inputs.
-    size_t num_inputs() const
-    {
-      return m_node.InputDefs().size();
-    }
+    private:
 
-    // The total number of outputs.    
-    size_t num_outputs() const
-    {
-      return m_node.OutputDefs().size();
-    }
-    
-    // Starting index for the i-th input argument.
-    size_t input_start_index(int arg_index) const
-    {
-      return m_input_start_index[arg_index];
-    }
+        const LotusIR::Node& node_;
+        const AllocatorInfo& allocator_info_;
+    };
 
-    // The number of inputs for the i-th input argument.
-    size_t input_size(int arg_index) const
-    {
-      return m_node.InputArgCount()[arg_index];
-    }
-    
-    virtual void Compute(OpKernelContext* context) = 0;
-    virtual void ComputeAsync(OpKernelContext* context, DoneCallback done) = 0;
+    class OpKernel {
+    public:
+        typedef std::function<void()> DoneCallback;
 
-    const AllocatorInfo& allocator() { return *m_alloc; }
+        explicit OpKernel(OpKernelInfo* info)
+            : op_kernel_info_(info),
+            allocator_info_(info->get_allocator_info()) {
+            LOTUS_ENFORCE(nullptr != info);
+        }
 
-  private:
-    AllocatorInfo* m_alloc;
-    const LotusIR::Node& m_node;
-    std::vector<size_t> m_input_start_index;
-  };
+        const LotusIR::Node& node() const {
+            return op_kernel_info_->node();
+        }
+
+        virtual void compute(OpKernelContext* context) = 0;
+        virtual void compute_async(OpKernelContext* context, DoneCallback done) {
+            UNUSED_PARAMETER(context);
+            UNUSED_PARAMETER(done);
+            LOTUS_NOT_IMPLEMENTED;
+        }
+
+        const AllocatorInfo& allocator() { return allocator_info_; }
+
+    private:
+
+        const AllocatorInfo& allocator_info_;
+
+        OpKernelInfo* op_kernel_info_;
+    };
+
+    class OpKernelContext {
+    public:
+        typedef std::unordered_map<std::string, size_t> ArgMap;
+
+        explicit OpKernelContext(ExecutionFrame* frame, OpKernel* kernel)
+            : execution_frame_(frame),
+            kernel_(kernel)
+        {
+            LOTUS_ENFORCE(nullptr != frame && kernel != nullptr);
+            arg_start_index_ = frame->get_first_arg_index(kernel->node().Index());
+        }
+
+        ~OpKernelContext() {};
+
+        template<typename T>
+        const T* input(int index) const {
+            return execution_frame_->get_input<T>(arg_start_index_ + index);
+        }
+
+        template<typename T>
+        T* output(int index) {
+            auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->node().InputDefs().size()) + index;
+            return execution_frame_->get_output<T>(output_arg_index);
+        }
+
+        // In the case that memory allocation has not been done for an output tensor,
+        // The memory allocation will be done on-the-fly with given tensor shape.
+        Tensor* output(int index, const TensorShape& shape);
+
+    private:
+        ExecutionFrame* execution_frame_ = nullptr;
+
+        OpKernel* kernel_ = nullptr;
+
+        // The argument starting index in ExecutionFrame.
+        int arg_start_index_ = -1;
+    };
 }
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H

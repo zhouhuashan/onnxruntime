@@ -8,6 +8,6 @@ mkdir %BLD_DIR%
 cd %BLD_DIR%
 
 cmake ..\..\..\cmake  -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE%
-MSBuild /p:Configuration=%CMAKE_BUILD_TYPE% ALL_BUILD.vcxproj
+MSBuild /p:Configuration=%CMAKE_BUILD_TYPE% ALL_BUILD.vcxproj && ctest.exe --build-config Debug --verbose
 
 cd ..\..\..

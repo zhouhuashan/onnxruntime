@@ -17,12 +17,12 @@ namespace Lotus
 
             bool boolData[1];
             auto status = TensorUtils::UnpackTensor(boolTensorProto, boolData, 1);
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
             EXPECT_TRUE(boolData[0]);
 
             float floatData[1];
             status = TensorUtils::UnpackTensor(boolTensorProto, floatData, 1);
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
 
             TensorProto floatTensorProto;
             floatTensorProto.set_data_type(TensorProto_DataType_FLOAT);
@@ -37,7 +37,7 @@ namespace Lotus
             floatTensorProto.set_raw_data(rawdata);
             float floatData2[4];
             status = TensorUtils::UnpackTensor(floatTensorProto, floatData2, 4);
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
             EXPECT_EQ(1.1f, floatData2[0]);
             EXPECT_EQ(2.2f, floatData2[1]);
             EXPECT_EQ(3.3f, floatData2[2]);
@@ -50,12 +50,12 @@ namespace Lotus
 
             std::string stringData[2];
             status = TensorUtils::UnpackTensor(stringTensorProto, stringData, 2);
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
             EXPECT_EQ("a", stringData[0]);
             EXPECT_EQ("b", stringData[1]);
 
             status = TensorUtils::UnpackTensor(boolTensorProto, stringData, 2);
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
         }
     }
 }

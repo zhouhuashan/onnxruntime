@@ -10,20 +10,21 @@ namespace Lotus
     class CPUExecutionProvider : public IExecutionProvider
     {
     public:
-        CPUExecutionProvider()
+        CPUExecutionProvider(const ExecutionProviderInfo& info)
         {
-            //Todo: implement name and version
-            //SetId();
+            name_ = info.Name();
+            version_ = info.Version();
+            SetId();
         }
 
         virtual const std::string& Name() const override
         {
-            LOTUS_NOT_IMPLEMENTED;
+            return name_;
         }
 
         virtual const std::string& Version() const override
         {
-            LOTUS_NOT_IMPLEMENTED;
+            return version_;
         }
 
         virtual IGraphTransformer& GetTransformer() const override
@@ -38,7 +39,7 @@ namespace Lotus
             return alloc_mgr->GetArena(CPU);
         }
 
-        virtual void Compute(Node* node, OpKernelContext* context) override
+        virtual void Compute(const Node& node, OpKernelContext* context) override
         {
             UNUSED_PARAMETER(node);
             UNUSED_PARAMETER(context);
@@ -48,20 +49,24 @@ namespace Lotus
         virtual Status CopyCPUTensorTo(const Tensor& srcTensor,
             Tensor* p_dstTensor) override
         {
-            UNUSED_PARAMETER(srcTensor);
-            UNUSED_PARAMETER(p_dstTensor);
-            LOTUS_NOT_IMPLEMENTED;
+            //no really copy needed.
+            LOTUS_ENFORCE(p_dstTensor);
+            p_dstTensor->ShallowCopy(srcTensor);
+            return Status::OK();
         }
 
         virtual Status CopyTensorToCPU(const Tensor& srcTensor,
             Tensor* p_dstTensor) override
         {
-            UNUSED_PARAMETER(srcTensor);
-            UNUSED_PARAMETER(p_dstTensor);
-            LOTUS_NOT_IMPLEMENTED;
+            //no really copy needed.
+            LOTUS_ENFORCE(p_dstTensor);
+            p_dstTensor->ShallowCopy(srcTensor);
+            return Status::OK();
         }
 
     private:
+        string name_;
+        string version_;
     };
 }
 
