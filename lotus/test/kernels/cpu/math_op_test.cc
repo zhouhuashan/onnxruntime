@@ -18,7 +18,8 @@ namespace Lotus {
             EXPECT_TRUE(node->AddAttribute("min", -10.0f));
             EXPECT_TRUE(node->AddAttribute("max", 10.0f));
 
-            OpKernelInfo info(*node);
+            AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+            OpKernelInfo info(*node, allocator_info);
             Clip<float> kernel(&info);
             ExecutionFrame frame;
             
@@ -27,8 +28,8 @@ namespace Lotus {
             std::vector<float> expected_vals = { 10.0f, 4.4f, 10.0f, -1.3f, 3.5f, 10.0f, -5.4f, 9.3f, 10.0f };
             auto input = TestUtils::CreateTensor<float>(dims, input_vals);
             auto output = TestUtils::CreateTensor<float>(dims, std::vector<float>(3*3));
-            auto ctx = TestUtils::CreateKernelContext(*node, &kernel, frame, input.get(), output.get());
-            kernel.Compute(ctx.get());
+            auto ctx = TestUtils::CreateKernelContext(&kernel, frame, input.get(), output.get());
+            kernel.compute(ctx.get());
             const float* res = output->data<float>();
             
             for (int i = 0; i < expected_vals.size(); ++i) {

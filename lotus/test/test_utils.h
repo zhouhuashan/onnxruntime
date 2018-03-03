@@ -16,7 +16,7 @@
 namespace Lotus {
     namespace  Test {
 
-        class TestUtils{
+        class TestUtils {
             typedef std::shared_ptr<LotusIR::Node> NodePtr;
             typedef std::shared_ptr<Tensor> TensorPtr;
             typedef std::shared_ptr<OpKernelContext> KernelContextPtr;
@@ -24,14 +24,14 @@ namespace Lotus {
 
         public:
 
-            static KernelContextPtr CreateKernelContext(const LotusIR::Node& node, OpKernel* kernel, ExecutionFrame& frame,
+            static KernelContextPtr CreateKernelContext(OpKernel* kernel, ExecutionFrame& frame,
                 Tensor* input, Tensor* output) {
-                std::vector<Tensor*> inputs={ input };
-                std::vector<Tensor*> outputs={ output };
-                return CreateKernelContext(node, kernel, frame, inputs, outputs);
+                std::vector<Tensor*> inputs = { input };
+                std::vector<Tensor*> outputs = { output };
+                return CreateKernelContext(kernel, frame, inputs, outputs);
             }
-            
-            static KernelContextPtr CreateKernelContext(const LotusIR::Node& node, OpKernel* kernel, 
+
+            static KernelContextPtr CreateKernelContext(OpKernel* kernel,
                 ExecutionFrame& frame, std::vector<Tensor*> inputs, std::vector<Tensor*> outputs) {
                 //This a hack to facilitate the test due to our execution_frame is not 
                 //fully implementated. Once the implementation is in place, we will replace 
@@ -41,24 +41,24 @@ namespace Lotus {
                     MLValue ml_input;
                     ml_input.pData = input;
                     ml_input.type = input->dtype();
-                    frame.m_all_values.push_back(ml_input);
+                    frame.all_values_.push_back(ml_input);
                 }
                 for (Tensor* output : outputs) {
                     MLValue ml_output;
                     ml_output.pData = output;
                     ml_output.type = output->dtype();
-                    frame.m_all_values.push_back(ml_output);
+                    frame.all_values_.push_back(ml_output);
                 }
-                for (int i = 0; i < frame.m_all_values.size(); ++i) {
-                    frame.m_node_values.push_back(&frame.m_all_values[i]);
+                for (int i = 0; i < frame.all_values_.size(); ++i) {
+                    frame.node_values_.push_back(&frame.all_values_[i]);
                 }
-                
+
                 ExecutionFrame::NodeInfo src_node, sink_node, test_node;
                 test_node.kernel = kernel;
-                frame.m_node_infos.push_back(src_node);
-                frame.m_node_infos.push_back(sink_node);
-                frame.m_node_infos.push_back(test_node);
-                OpKernelContext* ctx = new OpKernelContext(node, kernel, &frame);
+                frame.node_infos_.push_back(src_node);
+                frame.node_infos_.push_back(sink_node);
+                frame.node_infos_.push_back(test_node);
+                OpKernelContext* ctx = new OpKernelContext(&frame, kernel);
                 return std::shared_ptr<OpKernelContext>(ctx);
             }
 

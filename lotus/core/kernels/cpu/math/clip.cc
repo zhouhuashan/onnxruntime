@@ -3,9 +3,9 @@
 namespace Lotus{
 
 template<>
-void Clip<float>::Compute(OpKernelContext* ctx) {
-    const Tensor* X = ctx-> template Input<Tensor>(0);
-    Tensor* Y = ctx->template Output<Tensor>(0);
+void Clip<float>::compute(OpKernelContext* ctx) {
+    const Tensor* X = ctx-> template input<Tensor>(0);
+    Tensor* Y = ctx->template output<Tensor>(0);
     auto Y_ptr = TensorUtil::ReshapeTensor(*Y, X->shape());
     Y = Y_ptr.get();
     EigenVectorMap<float>(Y_ptr->mutable_data<float>(), Y_ptr->shape().Size()) =
