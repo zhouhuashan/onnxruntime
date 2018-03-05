@@ -15,10 +15,9 @@ namespace Lotus {
 
 class InferenceSession::Impl {
  public:
-  Impl(const SessionOptions& session_options): env_(Env::Default()) {
-    const int num_threads = session_options.num_threads;
-    // per session threadpool; we can also use the global threadpool instead if required
-    thread_pool_.reset(new thread::ThreadPool(env_, "Compute", num_threads));
+  Impl(const SessionOptions& session_options)
+      : env_(Env::Default()),
+        thread_pool_(env_, "Compute", session_options.num_threads) {
     auto& provider_mgr = ExecutionProviderMgr::Instance();
     for (auto& info : session_options.ep_infors)
     {
@@ -52,23 +51,22 @@ class InferenceSession::Impl {
     LOG(INFO) << "Running with tag: " << run_options.run_tag << std::endl;
     ++current_num_runs_;
     
-    std::unique_ptr<Executor> exec;
-    if (run_options.enable_sequential_execution) {
-      exec = std::move(Executor::NewSequentialExecutor(session_state_));
-    } else {
-      exec = std::move(Executor::NewParallelExecutor(session_state_));
-    }
-
     // TODO should we add this exec to the list of executors? i guess its not needed now?
+
     struct RunStatus {
       std::unique_ptr<Executor> p_exec;
-      Common::Status status;
+      Common::Status status; // used to collect the status from the executor
       Notification executor_done;
     };
     
     RunStatus run_status;
-    run_status.p_exec = std::move(exec);
-    thread_pool_->Schedule([&run_options, &feeds, p_fetches, &run_status]() {
+    if (run_options.enable_sequential_execution) {
+      run_status.p_exec = std::move(Executor::NewSequentialExecutor(session_state_));
+    } else {
+      run_status.p_exec = std::move(Executor::NewParallelExecutor(session_state_));
+    }
+    
+    thread_pool_.Schedule([&run_options, &feeds, p_fetches, &run_status]() {
         Common::Status local_status = run_status.p_exec->Execute(run_options, feeds, p_fetches);        
 	run_status.status = local_status;
         run_status.executor_done.Notify();
@@ -115,7 +113,7 @@ class InferenceSession::Impl {
   Env* env_; // statically allocated pointer, no need to manage its lifetime.
 
   // Threadpool for this session
-  std::unique_ptr<thread::ThreadPool> thread_pool_;
+  thread::ThreadPool thread_pool_;
 
   // Number of concurrently running executors
   std::atomic<int> current_num_runs_;

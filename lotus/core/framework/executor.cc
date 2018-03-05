@@ -60,14 +60,10 @@ class ParallelExecutor: public Executor {
 };
 
 std::unique_ptr<Executor> Executor::NewSequentialExecutor(const SessionState& session_state) {
-  std::unique_ptr<Executor> retval;
-  retval.reset(new SequentialExecutor(session_state));
-  return retval;
+  return std::unique_ptr<Executor>(new SequentialExecutor(session_state));
 }
 
 std::unique_ptr<Executor> Executor::NewParallelExecutor(const SessionState& session_state) {
-  std::unique_ptr<Executor> retval;
-  retval.reset(new ParallelExecutor(session_state));
-  return retval;
+  return std::unique_ptr<Executor>(new ParallelExecutor(session_state));  
 }
 }

@@ -14,7 +14,6 @@ namespace Lotus
   class Executor
   {
   public:
-    Executor() {}
     virtual ~Executor() {}
 
     static std::unique_ptr<Executor> NewSequentialExecutor(const SessionState& session_state);
@@ -24,7 +23,9 @@ namespace Lotus
                                    const std::vector<MLValue>& feeds,
                                    std::vector<MLValue>* p_fetches);
     
-  private:
+ protected:
+    Executor() {}
+    
     // TODO: Should we use naked pointer here?
     // If yes, explain the ownership and lifetime
     const LotusIR::Graph* graph_;
