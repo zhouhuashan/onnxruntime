@@ -1,6 +1,6 @@
 # Lotus
 
-Lotus is the runtime for LotusIR.
+Lotus is the runtime for ONNX.
 
 # Build
 Install cmake-3.10 or better from https://cmake.org/download/.

@@ -1,12 +1,11 @@
 #ifndef CORE_FRAMEWORK_OP_KERNEL_H
 #define CORE_FRAMEWORK_OP_KERNEL_H
 
-
+#include "core/common/exceptions.h"
+#include "core/common/status.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/ml_value.h"
-#include "core/common/status.h"
 #include "core/framework/tensor.h"
-#include "core/common/exceptions.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
@@ -109,6 +108,5 @@ namespace Lotus {
         // The argument starting index in ExecutionFrame.
         int arg_start_index_ = -1;
     };
-
 }
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H

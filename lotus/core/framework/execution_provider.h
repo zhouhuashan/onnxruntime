@@ -11,10 +11,6 @@ using namespace LotusIR;
 
 namespace Lotus
 {
-  // Map from operator name to kernels. 
-  typedef OpKernel* (*KernelCreateFn)(OpKernelInfo*);
-  typedef std::unordered_multimap<std::string, KernelCreateFn> KernelRegistry;
-
   typedef std::shared_ptr<void> EPAdditionalInfo;
 
   class ExecutionProviderInfo 
