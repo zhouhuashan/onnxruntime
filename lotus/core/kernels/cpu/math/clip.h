@@ -22,7 +22,7 @@ public:
         }
     }
 
-    void Compute(OpKernelContext* context) override;
+    void compute(OpKernelContext* context) override;
 
 private:
     T max_, min_;
