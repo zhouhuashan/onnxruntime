@@ -1,0 +1,15 @@
+---
+Language:        Cpp
+BasedOnStyle:  Google
+ColumnLimit:     120
+
+# if you want to customize when working locally see https://clang.llvm.org/docs/ClangFormatStyleOptions.html for options.
+# disable customizations and run clang-format (probably easier from command line) to re-format
+# AccessModifierOffset: -2
+# BreakBeforeBraces: Allman
+# CompactNamespaces: false
+# IndentCaseLabels: true
+# IndentWidth:     4
+# NamespaceIndentation: All
+...
+
