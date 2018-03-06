@@ -20,8 +20,8 @@ limitations under the License.
 #include <memory>
 #include <string>
 
+#include "core/common/common.h"
 #include "core/platform/env.h"
-#include "core/platform/macros.h"
 
 namespace Lotus {
 namespace thread {
@@ -73,7 +73,7 @@ class ThreadPool {
 
  private:
   std::unique_ptr<Impl> impl_;
-  LOTUS_DISALLOW_COPY_AND_ASSIGN(ThreadPool);
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ThreadPool);
 };
 
 }  // namespace thread

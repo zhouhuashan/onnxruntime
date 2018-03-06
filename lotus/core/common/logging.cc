@@ -47,15 +47,13 @@ std::shared_ptr<LogSinkInterface> MessageLogger::sink_{};
 
 static const char* const kDefaultLogCategory = "Lotus";
 
-MessageLogger::MessageLogger(const char *file, int line, int severity)
-  : MessageLogger{ file, line, severity, kDefaultLogCategory }
-{
+MessageLogger::MessageLogger(const char* file, int line, int severity)
+    : MessageLogger{file, line, severity, kDefaultLogCategory} {
 }
 
-MessageLogger::MessageLogger(const char *file, int line, int severity,
-                             const char *category)
-  : severity_{ severity }, file_{ file }, line_{ line },
-    category_{ category ? category : "" } {
+MessageLogger::MessageLogger(const char* file, int line, int severity,
+                             const char* category)
+    : severity_{severity}, file_{file}, line_{line}, category_{category ? category : ""} {
   tag_ = "";
   time_ = Clock::now();
 }
@@ -66,18 +64,20 @@ MessageLogger::~MessageLogger() {
   // log to sink
   auto sink = std::atomic_load(&sink_);
   if (sink) {
-      tm t{};
-      const time_t tt = Clock::to_time_t(time_);
-      const auto microseconds = static_cast<int32_t>(
-          std::chrono::duration_cast<std::chrono::microseconds>(
-              time_.time_since_epoch()).count() % 1000000);
+    tm t{};
+    const time_t tt = Clock::to_time_t(time_);
+    const auto microseconds = static_cast<int32_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            time_.time_since_epoch())
+            .count() %
+        1000000);
 #ifdef WIN32
-      localtime_s(&t, &tt);
+    localtime_s(&t, &tt);
 #else
-      localtime_r(&tt, &t);
+    localtime_r(&tt, &t);
 #endif
-      sink->send(severity_, file_, StripBasename(file_).c_str(), line_,
-          &t, microseconds, category_, message.c_str(), message.size());
+    sink->send(severity_, file_, StripBasename(file_).c_str(), line_,
+               &t, microseconds, category_, message.c_str(), message.size());
   }
   if (severity_ == LOTUS_LOG_SEVERITY_FATAL) {
     DealWithFatal();

@@ -4,7 +4,10 @@ file(GLOB_RECURSE lotus_core_framework_srcs
 )
 
 add_library(lotus_core_framework_obj OBJECT ${lotus_core_framework_srcs})
+source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_core_framework_srcs})
+
 add_dependencies(lotus_core_framework_obj lotusIR_graph)
+
 if (WIN32)
 	set(lotus_framework_static_library_flags
         -IGNORE:4221 # LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
@@ -14,7 +17,8 @@ if (WIN32)
     target_compile_options(lotus_core_framework_obj PRIVATE
         /EHsc   # exception handling - C++ may throw, extern "C" will not
     )
-	
+    # Add Code Analysis properties to enable C++ Core checks. Have to do it via a props file include. 
+    SET_TARGET_PROPERTIES(lotus_core_framework_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/ConfigureVisualStudioCodeAnalysis.props)
 endif()
 
 file(GLOB_RECURSE lotus_util_srcs
@@ -23,8 +27,12 @@ file(GLOB_RECURSE lotus_util_srcs
 )
 
 add_library(lotus_util_obj OBJECT ${lotus_util_srcs})
+source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_util_srcs})
+
 add_dependencies(lotus_util_obj lotus_core_framework_obj)
+
 SET_TARGET_PROPERTIES(lotus_util_obj PROPERTIES LINKER_LANGUAGE CXX)
+
 if (WIN32)
     target_compile_definitions(lotus_util_obj PRIVATE
         _SCL_SECURE_NO_WARNINGS
