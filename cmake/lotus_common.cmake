@@ -25,6 +25,8 @@ file(GLOB lotus_core_common_src ${lotus_core_common_src_patterns})
 
 add_library(lotus_core_common OBJECT ${lotus_core_common_src})
 
+source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_core_common_src})
+
 # artificial hack to build dependencies before runtime if we hit the ALL target
 add_dependencies(lotus_core_common ${lotus_EXTERNAL_DEPENDENCIES})
 

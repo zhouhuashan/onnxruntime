@@ -5,6 +5,8 @@ file(GLOB_RECURSE lotus_provider_srcs
 )
 
 add_library(lotus_provider_obj OBJECT ${lotus_provider_srcs})
+source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_provider_srcs})
+
 add_dependencies(lotus_provider_obj lotus_core_framework_obj)
 SET_TARGET_PROPERTIES(lotus_provider_obj PROPERTIES LINKER_LANGUAGE CXX)
 

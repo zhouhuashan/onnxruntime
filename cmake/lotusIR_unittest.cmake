@@ -29,6 +29,8 @@ function(AddTest)
   endif(_UT_DEPENDS)
     
   add_executable(${_UT_TARGET} ${_UT_SOURCES})
+  source_group(TREE ${LOTUS_ROOT}/test FILES ${_UT_SOURCES})
+  
   add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
@@ -115,6 +117,7 @@ AddTest(
     LIBS ${lotus_test_kernels_libs}
   DEPENDS lotus_operator_kernels lotus_framework googletest lotusIR_graph
 )
+
 
 set(TEST_DATA_SRC ${LOTUS_ROOT}/test/testdata)
 set(TEST_DATA_DES $<TARGET_FILE_DIR:${UT_NAME}>/testdata)
