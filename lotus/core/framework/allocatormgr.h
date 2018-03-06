@@ -1,7 +1,7 @@
 #ifndef CORE_FRAMEWORK_ALLOCATORMGR_H
 #define CORE_FRAMEWORK_ALLOCATORMGR_H
 
-#include "core/framework/allocator.h"
+#include "core/framework/arena.h"
 
 namespace Lotus {
     class AllocatorManager

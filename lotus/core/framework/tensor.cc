@@ -51,14 +51,14 @@ namespace Lotus
     Tensor::Tensor(MLDataType p_type,
         const TensorShape& p_shape, 
         void* p_data, 
-        AllocatorInfo& alloc, 
+        const AllocatorInfo& alloc, 
         const int64_t offset)
         : m_alloc_info(alloc)
     {
         init(p_type, p_shape, p_data, alloc, offset);
     }
 
-    void Tensor::init(MLDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t bytes_offset)
+    void Tensor::init(MLDataType p_type, const TensorShape& p_shape, void* p_data, const AllocatorInfo& alloc, const int64_t bytes_offset)
     {
         m_dtype = p_type;
         m_shape = p_shape;

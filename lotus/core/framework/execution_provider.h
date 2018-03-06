@@ -59,16 +59,16 @@ namespace Lotus
     // Get IAllocator for <*this> execution provider.
     // It will be used for allocating tensors (inputs/outputs) or copying tensors
     // (IN/OUT) for this execution provider.
-    virtual IArenaAllocator& GetAllocator() const = 0;
+    virtual IArenaAllocator& GetTempSpaceAllocator() const = 0;
 
     // Run the computation of a given node.
     virtual void Compute(const Node& node, OpKernelContext* context) = 0;
 
     // TODO: Do we still need these copy methods?
-    virtual Status CopyCPUTensorTo(const Tensor& srcTensor,
+    virtual Status CopyTensorTo(const Tensor& srcTensor,
                                    Tensor* p_dstTensor) = 0;
 
-    virtual Status CopyTensorToCPU(const Tensor& srcTensor,
+    virtual Status CopyTensorFrom(const Tensor& srcTensor,
                                    Tensor* p_dstTensor) = 0;
     
   protected:

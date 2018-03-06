@@ -58,6 +58,7 @@ namespace Lotus {
                 frame.node_infos_.push_back(src_node);
                 frame.node_infos_.push_back(sink_node);
                 frame.node_infos_.push_back(test_node);
+                
                 OpKernelContext* ctx = new OpKernelContext(&frame, kernel);
                 return std::shared_ptr<OpKernelContext>(ctx);
             }

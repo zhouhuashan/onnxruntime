@@ -13,7 +13,7 @@ namespace Lotus
             EXPECT_EQ(provider->Name(), info.Name());
             EXPECT_EQ(provider->Version(), info.Version());
             EXPECT_EQ(provider->ID(), "CPUExecutionProvider.0.1");
-            EXPECT_EQ(provider->GetAllocator().Info().m_name, CPU);
+            EXPECT_EQ(provider->GetTempSpaceAllocator().Info().name_, CPU);
         }
     }
 }

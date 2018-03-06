@@ -26,11 +26,11 @@ namespace Lotus {
         auto& device_map = _getDeviceAllocatorMap();
         auto& arena_map = _getArenaAllocatorMap();
         auto& info = allocator->Info();
-        auto allocator_id = GetAllocatorId(info.m_name, info.m_allocator_id, false);
+        auto allocator_id = GetAllocatorId(info.name_, info.id_, false);
         if (device_map.find(allocator_id) != device_map.end())
             return Status(LOTUS, FAIL, "device allocator already exist");
 
-        auto arena_id = GetAllocatorId(info.m_name, info.m_allocator_id, true);
+        auto arena_id = GetAllocatorId(info.name_, info.id_, true);
         if (create_arena && arena_map.find(arena_id) != arena_map.end())
             return Status(LOTUS, FAIL, "arena already exist");
 
@@ -44,7 +44,7 @@ namespace Lotus {
         std::lock_guard<std::mutex> lock(_getLocalMutex());
         auto& arena_map = _getArenaAllocatorMap();
         auto& info = allocator->Info();
-        auto arena_id = GetAllocatorId(info.m_name, info.m_allocator_id, true);
+        auto arena_id = GetAllocatorId(info.name_, info.id_, true);
         if (arena_map.find(arena_id) != arena_map.end())
             return Status(LOTUS, FAIL, "arena already exist");
         arena_map[arena_id] = std::move(std::unique_ptr<IArenaAllocator>(allocator));
