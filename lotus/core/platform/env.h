@@ -16,14 +16,14 @@ limitations under the License.
 #ifndef LOTUS_CORE_PLATFORM_ENV_H_
 #define LOTUS_CORE_PLATFORM_ENV_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <functional>
 
+#include "core/common/common.h"
 #include "core/platform/env_time.h"
-#include "core/platform/macros.h"
 #include "core/platform/types.h"
 
 namespace Lotus {
@@ -61,7 +61,7 @@ class Env {
 
   /// Sleeps/delays the thread for the prescribed number of micro-seconds.
   virtual void SleepForMicroseconds(int64 micros) = 0;
-  
+
   /// \brief Returns a new thread that is running fn() and is identified
   /// (for debugging/performance-analysis) by "name".
   ///
@@ -71,11 +71,10 @@ class Env {
                               const std::string& name,
                               std::function<void()> fn) = 0;
 
-
   // TODO add filesystem related functions
-  
+
  private:
-  LOTUS_DISALLOW_COPY_AND_ASSIGN(Env);
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Env);
   EnvTime* envTime = EnvTime::Default();
 };
 
@@ -88,7 +87,7 @@ class Thread {
   virtual ~Thread();
 
  private:
-  LOTUS_DISALLOW_COPY_AND_ASSIGN(Thread);
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Thread);
 };
 
 /// \brief Options to configure a Thread.

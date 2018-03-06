@@ -21,17 +21,6 @@ if (WIN32)
     SET_TARGET_PROPERTIES(lotus_core_framework_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/ConfigureVisualStudioCodeAnalysis.props)
 endif()
 
-file(GLOB_RECURSE lotus_provider_srcs
-	"${LOTUS_ROOT}/core/providers/cpu/*.h"
-    "${LOTUS_ROOT}/core/providers/cpu/*.cc"
-)
-
-add_library(lotus_provider_obj OBJECT ${lotus_provider_srcs})
-source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_provider_srcs})
-
-add_dependencies(lotus_provider_obj lotus_core_framework_obj)
-SET_TARGET_PROPERTIES(lotus_provider_obj PROPERTIES LINKER_LANGUAGE CXX)
-
 file(GLOB_RECURSE lotus_util_srcs
 	"${LOTUS_ROOT}/core/util/*.h"
     "${LOTUS_ROOT}/core/util/*.cc"
@@ -40,8 +29,10 @@ file(GLOB_RECURSE lotus_util_srcs
 add_library(lotus_util_obj OBJECT ${lotus_util_srcs})
 source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_util_srcs})
 
-add_dependencies(lotus_util_obj lotus_provider_obj)
+add_dependencies(lotus_util_obj lotus_core_framework_obj)
+
 SET_TARGET_PROPERTIES(lotus_util_obj PROPERTIES LINKER_LANGUAGE CXX)
+
 if (WIN32)
     target_compile_definitions(lotus_util_obj PRIVATE
         _SCL_SECURE_NO_WARNINGS
@@ -50,11 +41,8 @@ endif()
 
 add_library(lotus_framework 
             $<TARGET_OBJECTS:lotus_core_framework_obj>
-			$<TARGET_OBJECTS:lotus_provider_obj>
 			$<TARGET_OBJECTS:lotus_util_obj>)
-            
 target_link_libraries(lotus_framework PUBLIC onnx lotusIR_graph PRIVATE ${lotus_EXTERNAL_LIBRARIES})
-
 if (WIN32)
     target_compile_definitions(lotus_framework PRIVATE
         _SCL_SECURE_NO_WARNINGS

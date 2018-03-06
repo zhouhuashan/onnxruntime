@@ -66,23 +66,20 @@ using Common::StatusCode;
     }                                                                        \
   } while (false)
 
-#define CAFFE_ENFORCE_WITH_CALLER(condition, ...)                                  \
-  do {                                                                             \
-    if (!(condition)) {                                                            \
-      throw ::Lotus::EnforceNotMet(                                                \
-          __FILE__, __LINE__, #condition, ::Lotus::MakeString(__VA_ARGS__), this); \
-    }                                                                              \
-  } while (false)
+// Macros to disable the copy and/or move ctor and assignment methods
+// These are usually placed in the private: declarations for a class.
 
-// Disable the copy and assignment operator for a class. Note that this will
-// disable the usage of the class in std containers.
-#ifndef DISABLE_COPY_AND_ASSIGN
-#define DISABLE_COPY_AND_ASSIGN(classname) \
-  \
-private:                                   \
-  classname(const classname&) = delete;    \
-  classname& operator=(const classname&) = delete
-#endif
+#define LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(const TypeName &) = delete;           \
+  TypeName &operator=(const TypeName &) = delete
+
+#define LOTUS_DISALLOW_MOVE(TypeName)   \
+  TypeName(const TypeName &&) = delete; \
+  TypeName &operator=(const TypeName &&) = delete
+
+#define LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName) \
+  LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName);           \
+  LOTUS_DISALLOW_MOVE(TypeName)
 
 #if defined(__GNUC__)
 #if __GNUC_PREREQ(4, 9)
