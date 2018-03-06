@@ -37,8 +37,8 @@ You can build with:
 ```
 set CMAKE_BUILD_TYPE=RelWithDebInfo
 mkdir cmake_build_gpu
-cd cmake_build_gpu
-cmake ../cmake -A x64 -G "Visual Studio 14 2015" -T host=x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -Dlotus_USE_CUDA=1 -Dlotus_CUDNN_HOME=where_you_installed_cudnn
+
+cmake ../cmake -A x64 -G "Visual Studio 14 2015" -T host=x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -Dlotus_USE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=where_you_installed_cuda -Dlotus_CUDNN_HOME=where_you_installed_cudnn
 ```
 
 # Source tree structure
@@ -97,8 +97,12 @@ To pass in additional compiler flags, for example to build with SIMD instruction
 cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
 ```
 ## CUDA
-To build Lotus with CUDA support, download CUDA8 and CUDNN from NVidia. Once installed you can call cmake for Lotus as follows:
+To build Lotus with CUDA support, download CUDA8 and CUDNN6 from NVidia. Once installed you can call cmake for Lotus as follows:
 ```
-cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -Dlotus_USE_CUDA=1 -Dlotus_CUDNN_HOME=%CUDNN_HOME%
+cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=%CUDNN_HOME%
+
+you may have to specify your root CUDA installation directory via -DCUDA_TOOLKIT_ROOT_DIR
 ```
 where CUDNN_HOME may look something like `d:\local\cudnn-8.0-windows10-x64-v6.0\cuda`
+and
+CUDA_TOOLKIT_ROOT_DIR is something like `c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0`
