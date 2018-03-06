@@ -1,10 +1,13 @@
 ---
 Language:        Cpp
 BasedOnStyle:  Google
-ColumnLimit:     120
+# Setting ColumnLimit to 0 so developer choices about where to break lines are maintained.
+# Developers are responsible for adhering to the 120 character maximum.
+ColumnLimit:     0
 
 # if you want to customize when working locally see https://clang.llvm.org/docs/ClangFormatStyleOptions.html for options.
-# disable customizations and run clang-format (probably easier from command line) to re-format
+# See ReformatSource.ps1 for a script to update all source according to the current options in this file.
+# e.g. customizations to use Allman bracing and more indenting.
 # AccessModifierOffset: -2
 # BreakBeforeBraces: Allman
 # CompactNamespaces: false

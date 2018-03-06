@@ -30,3 +30,7 @@ add_dependencies(lotus_core_common ${lotus_EXTERNAL_DEPENDENCIES})
 
 SET_TARGET_PROPERTIES(lotus_core_common PROPERTIES LINKER_LANGUAGE CXX)
 
+if(WIN32)
+    # Add Code Analysis properties to enable C++ Core checks. Have to do it via a props file include. 
+    SET_TARGET_PROPERTIES(lotus_core_common PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/ConfigureVisualStudioCodeAnalysis.props)
+endif()

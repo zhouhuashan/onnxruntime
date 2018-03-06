@@ -15,6 +15,8 @@ if (WIN32)
         /EHsc   # exception handling - C++ may throw, extern "C" will not
     )
 	
+    # Add Code Analysis properties to enable C++ Core checks. Have to do it via a props file include. 
+    SET_TARGET_PROPERTIES(lotus_core_framework_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/ConfigureVisualStudioCodeAnalysis.props)
 endif()
 
 file(GLOB_RECURSE lotus_provider_srcs
