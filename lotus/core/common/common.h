@@ -22,6 +22,7 @@
 #define LOTUS_CORE_COMMON_H_
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -32,7 +33,6 @@
 #include <unordered_map>
 #include <vector>
 #include "core/common/status.h"
-#include <functional> 
 
 namespace Lotus {
 
