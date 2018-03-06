@@ -31,7 +31,7 @@ namespace Lotus {
             Status status{};
 
             if (!pargc || !pargv) status = Status(LOTUS, StatusCode::INVALID_ARGUMENT);
-            if (!status.Ok()) return status;
+            if (!status.IsOK()) return status;
 
             Lotus::InitLogSink(pargc, pargv);
 
@@ -41,7 +41,7 @@ namespace Lotus {
                 return Status(LOTUS, StatusCode::FAIL, "Init allocator manager failed");
 
             status = allocator_manager->InitializeAllocators();
-            if (status.Ok())
+            if (status.IsOK())
                 return status;
 
             return Status::OK();

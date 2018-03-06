@@ -18,6 +18,14 @@ namespace lotusrt
     class LotusRT;
 };
 
+namespace Lotus
+{
+    namespace Test
+    {
+        class TestUtils;
+    }
+}
+
 namespace LotusIR
 {
     typedef size_t NODEINDEX;

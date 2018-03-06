@@ -21,16 +21,22 @@ namespace Lotus
     struct AllocatorInfo
     {
         // use string for name, so we could have customzied allocator in execution provider.
-        std::string m_name;
-        int m_allocator_id;
-        AllocatorType m_type;
+        std::string name_;
+        int id_;
+        AllocatorType type_;
 
     public:
         AllocatorInfo(const std::string& name, AllocatorType type, const int id = 0)
-            : m_name(name),
-            m_allocator_id(id),
-            m_type(type)
+            : name_(name),
+            id_(id),
+            type_(type)
         {}
+
+        bool operator==(const AllocatorInfo& p_other) const {
+            return name_ == p_other.name_
+                && id_ == p_other.id_
+                && type_ == p_other.type_;
+        }
     };
 
     // The resource allocator on a physcial device.
@@ -54,67 +60,6 @@ namespace Lotus
         virtual size_t MinChunkSize() override;
         virtual size_t MaxChunkSize() override;
         virtual AllocatorInfo& Info() override;
-    };
-
-    // The interface for arena which manage memory allocations
-    // Arena will hold a pool of pre-allocate memories and manage their lifecycle.
-    // Need an underline IResourceAllocator to allocate memories.
-    // The setting like max_chunk_size is init by IDeviceDescriptor from resource allocator
-    class IArenaAllocator
-    {
-    public:
-        virtual ~IArenaAllocator() {}
-        // Alloc call need to be thread safe.
-        virtual void* Alloc(size_t size) = 0;
-        // Free call need to be thread safe.
-        virtual void Free(void* p, size_t size) = 0;
-        virtual size_t Used() = 0;
-        virtual size_t Max() = 0;
-        virtual AllocatorInfo& Info() = 0;
-    };
-
-    // Dummy Arena which just call underline device allocator directly.
-    class DummyArena : public IArenaAllocator
-    {
-    public:
-        DummyArena(IDeviceAllocator* resource_allocator) 
-            : m_allocator(resource_allocator), 
-            m_info(resource_allocator->Info().m_name, AllocatorType::ArenaAllocator, resource_allocator->Info().m_allocator_id)
-        {
-        }
-
-        virtual ~DummyArena() {}
-
-        virtual void* Alloc(size_t size) override
-        {
-            if (size == 0)
-                return nullptr;
-            return m_allocator->Alloc(size);
-        }
-
-        virtual void Free(void* p, size_t size) override
-        {
-            m_allocator->Free(p, size);
-        }
-
-        virtual size_t Used() override
-        {
-            LOTUS_NOT_IMPLEMENTED;
-        }
-
-        virtual size_t Max() override
-        {
-            LOTUS_NOT_IMPLEMENTED;
-        }
-
-        virtual AllocatorInfo& Info() override
-        {
-            return m_info;
-        }
-
-    private:
-        IDeviceAllocator* m_allocator;
-        AllocatorInfo m_info;
     };
 }
 

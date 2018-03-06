@@ -10,20 +10,21 @@ namespace Lotus
     class CPUExecutionProvider : public IExecutionProvider
     {
     public:
-        CPUExecutionProvider()
+        CPUExecutionProvider(const ExecutionProviderInfo& info)
         {
-            //Todo: implement name and version
-            //SetId();
+            name_ = info.Name();
+            version_ = info.Version();
+            SetId();
         }
 
         virtual const std::string& Name() const override
         {
-            LOTUS_NOT_IMPLEMENTED;
+            return name_;
         }
 
         virtual const std::string& Version() const override
         {
-            LOTUS_NOT_IMPLEMENTED;
+            return version_;
         }
 
         virtual IGraphTransformer& GetTransformer() const override
@@ -31,37 +32,47 @@ namespace Lotus
             LOTUS_NOT_IMPLEMENTED;
         }
 
-        virtual IArenaAllocator& GetAllocator() const override
+        virtual IArenaAllocator& GetTempSpaceAllocator() const override
         {
             auto alloc_mgr = AllocatorManager::Instance();
             LOTUS_ENFORCE(alloc_mgr);
             return alloc_mgr->GetArena(CPU);
         }
 
-        virtual void Compute(Node* node, OpKernelContext* context) override
+        virtual void Compute(const Node& node, OpKernelContext* context) override
         {
             UNUSED_PARAMETER(node);
             UNUSED_PARAMETER(context);
             LOTUS_NOT_IMPLEMENTED;
         }
 
-        virtual Status CopyCPUTensorTo(const Tensor& srcTensor,
+        virtual Status CopyTensorTo(const Tensor& srcTensor,
             Tensor* p_dstTensor) override
         {
-            UNUSED_PARAMETER(srcTensor);
-            UNUSED_PARAMETER(p_dstTensor);
-            LOTUS_NOT_IMPLEMENTED;
+            LOTUS_ENFORCE(p_dstTensor && p_dstTensor->location().name_ == CPU);
+            // Todo: support copy with different devices.
+            if (srcTensor.location().name_ != CPU)
+                LOTUS_NOT_IMPLEMENTED;
+            //no really copy needed if is copy to cpu.
+            p_dstTensor->ShallowCopy(srcTensor);
+            return Status::OK();
         }
 
-        virtual Status CopyTensorToCPU(const Tensor& srcTensor,
+        virtual Status CopyTensorFrom(const Tensor& srcTensor,
             Tensor* p_dstTensor) override
         {
-            UNUSED_PARAMETER(srcTensor);
-            UNUSED_PARAMETER(p_dstTensor);
-            LOTUS_NOT_IMPLEMENTED;
+            LOTUS_ENFORCE(p_dstTensor && srcTensor.location().name_ == CPU);
+            // Todo: support copy with different devices.
+            if (p_dstTensor->location().name_ != CPU)
+                LOTUS_NOT_IMPLEMENTED;
+            //no really copy needed.
+            p_dstTensor->ShallowCopy(srcTensor);
+            return Status::OK();
         }
 
     private:
+        string name_;
+        string version_;
     };
 }
 

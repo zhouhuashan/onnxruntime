@@ -43,14 +43,14 @@ namespace LotusIR
             // Case 1: Adding two nodes with same node name should fail.
             auto nodeWithDupName = graph->AddNode("node_1", "Variable", "node 2", inputs, outputs);
             auto status = graph->Resolve();
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
             EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMessage());
             graph->RemoveNode(nodeWithDupName->Index());
 
             // Case 2: Adding two nodes with same output arg name should fail.
             graph->AddNode("node_2", "Variable", "node 2", inputs, outputs);
             status = graph->Resolve();
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
             EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMessage());
             //delete outputArg;
         }
@@ -73,7 +73,7 @@ namespace LotusIR
             // Case: Adding node refering to non-existing operator should fail.
             graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
             auto status = graph->Resolve();
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
             EXPECT_EQ(
                 "Error: the operator or function (OpNotExist) refered by node (node_1) does not exist.",
                 status.ErrorMessage());
@@ -149,11 +149,11 @@ namespace LotusIR
             expectedNodeNameToInputOutputArgs["node_4"] = { inputs, outputs };
             graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
             auto status = graph.Resolve();
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
 
-            EXPECT_TRUE(Model::Save(model, "graph_1.pb").Ok());
+            EXPECT_TRUE(Model::Save(model, "graph_1.pb").IsOK());
             std::shared_ptr<Model> model2;
-            EXPECT_TRUE(Model::Load("graph_1.pb", &model2).Ok());
+            EXPECT_TRUE(Model::Load("graph_1.pb", &model2).IsOK());
 
             auto& modelProto = model.ToProto();
             auto& modelProto2 = model2->ToProto();
@@ -202,7 +202,7 @@ namespace LotusIR
             // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
             node_1->Mutable_InputDefs()[0] = outputArg4;
             status = graph.Resolve();
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
             EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
 
             LotusIR::Model model_2("graph_1");
@@ -216,7 +216,7 @@ namespace LotusIR
             graph_2.AddInitialTensor(weight);
 
             auto status_2 = graph_2.Resolve();
-            EXPECT_TRUE(status_2.Ok());
+            EXPECT_TRUE(status_2.IsOK());
 
             //delete inputArg;
             //delete outputArg;
@@ -289,7 +289,7 @@ namespace LotusIR
             auto node_4 = graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
             EXPECT_NE(node_4, nullptr);
             auto status = graph->Resolve();
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
 
             std::unordered_set<std::string> expectedGraphInputs = { "node_1_in_1", "node_3_in_1" };
             EXPECT_EQ(2, graph->GetInputs().size());
@@ -301,9 +301,9 @@ namespace LotusIR
             EXPECT_EQ("node_4_out_1", graph->GetOutputs()[0]->Name());
             EXPECT_EQ(2, graph->GetInputs().size());
 
-            EXPECT_TRUE(Model::Save(model, "model_x.pb").Ok());
+            EXPECT_TRUE(Model::Save(model, "model_x.pb").IsOK());
             std::shared_ptr<Model> loaded_model;
-            EXPECT_TRUE(Model::Load("model_x.pb", &loaded_model).Ok());
+            EXPECT_TRUE(Model::Load("model_x.pb", &loaded_model).IsOK());
             EXPECT_EQ(2, loaded_model->MainGraph()->GetInputs().size());
 
             auto& graphProto = graph->ToGraphProto();
@@ -320,7 +320,7 @@ namespace LotusIR
             node_2->Mutable_InputDefs()[0]->SetType(tensor_float);
             node_2->Mutable_OutputDefs()[0]->SetType(tensor_float);
             status = graph->Resolve();
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
             EXPECT_EQ("Node (node_4) has different input types (tensor(float),tensor(int32)) matching to same type string (T).", status.ErrorMessage());
 
             //delete inputArg;
@@ -358,7 +358,7 @@ namespace LotusIR
             *(t.mutable_dims()->Add()) = 3;
             EXPECT_TRUE(node_1->AddAttribute(c_constantValue, t));
             auto status = graph->Resolve();
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
             //delete outputArg;
         }
 
@@ -405,10 +405,10 @@ namespace LotusIR
             auto node_onnx = graphOnnx->AddNode("node_1", "BatchNormalization", "node 1.", inputs, outputs);
             EXPECT_TRUE(nullptr != node_onnx);
             auto status = graph->Resolve();
-            EXPECT_FALSE(status.Ok());
+            EXPECT_FALSE(status.IsOK());
             EXPECT_EQ("Error: node (node_1)'s number of outputs does not match its operator (BatchNormalization) specification.", status.ErrorMessage());
             status = graphOnnx->Resolve();
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
 
             //delete inputArg1;
             //delete outputArg1;
@@ -491,13 +491,13 @@ namespace LotusIR
             auto node_1 = graph->AddNode("node_1", "RNN", "node 1.", inputs, outputs);
             EXPECT_TRUE(nullptr != node_1);
             auto status = graph->Resolve();
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
             EXPECT_EQ(4, model.MainGraph()->GetInputs().size());
 
             // Test case: load a model from file, and the model has optional inputs.
             std::shared_ptr<Model> loaded_model;
             status = Model::Load("./testdata/model_optional_inputs.pb", &loaded_model);
-            EXPECT_TRUE(status.Ok());
+            EXPECT_TRUE(status.IsOK());
             auto graphInputs = loaded_model->MainGraph()->GetInputs();
             EXPECT_EQ(4, graphInputs.size());
 

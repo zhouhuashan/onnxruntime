@@ -51,14 +51,14 @@ namespace Lotus
     Tensor::Tensor(MLDataType p_type,
         const TensorShape& p_shape, 
         void* p_data, 
-        AllocatorInfo& alloc, 
+        const AllocatorInfo& alloc, 
         const int64_t offset)
         : m_alloc_info(alloc)
     {
         init(p_type, p_shape, p_data, alloc, offset);
     }
 
-    void Tensor::init(MLDataType p_type, const TensorShape& p_shape, void* p_data, AllocatorInfo& alloc, const int64_t bytes_offset)
+    void Tensor::init(MLDataType p_type, const TensorShape& p_shape, void* p_data, const AllocatorInfo& alloc, const int64_t bytes_offset)
     {
         m_dtype = p_type;
         m_shape = p_shape;
@@ -74,6 +74,19 @@ namespace Lotus
         , m_pData(src.m_pData)
         , m_byte_offset(src.m_byte_offset)
     {
+    }
+
+    Tensor& Tensor::ShallowCopy(const Tensor& other)
+    {
+        if (this != &other)
+        {
+            m_dtype = other.m_dtype;
+            m_alloc_info = other.m_alloc_info;
+            m_shape = other.m_shape;
+            m_pData = other.m_pData;
+            m_byte_offset = other.m_byte_offset;
+        }
+        return *this;
     }
 
 

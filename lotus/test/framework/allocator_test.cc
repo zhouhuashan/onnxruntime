@@ -11,9 +11,9 @@ namespace Lotus
             EXPECT_TRUE(allocator_manager);
 
             auto& cpu_arena = allocator_manager->GetArena(CPU);
-            EXPECT_EQ(cpu_arena.Info().m_name, CPU);
-            EXPECT_EQ(cpu_arena.Info().m_allocator_id, 0);
-            EXPECT_EQ(cpu_arena.Info().m_type, AllocatorType::ArenaAllocator);
+            EXPECT_EQ(cpu_arena.Info().name_, CPU);
+            EXPECT_EQ(cpu_arena.Info().id_, 0);
+            EXPECT_EQ(cpu_arena.Info().type_, AllocatorType::ArenaAllocator);
 
             size_t size = 1024;
             auto bytes = cpu_arena.Alloc(size);

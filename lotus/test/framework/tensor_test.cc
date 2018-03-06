@@ -2,6 +2,7 @@
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/tensor_util.h"
+#include "gtest/gtest.h"
 
 
 namespace Lotus
@@ -20,8 +21,8 @@ namespace Lotus
             EXPECT_EQ(shape, tensor_shape);
             EXPECT_EQ(t.dtype(), DataTypeImpl::GetType<T>());
             auto& location = t.location();
-            EXPECT_EQ(location.m_name, CPU);
-            EXPECT_EQ(location.m_allocator_id, 0);
+            EXPECT_EQ(location.name_, CPU);
+            EXPECT_EQ(location.id_, 0);
 
             auto t_data = t.mutable_data<T>();
             EXPECT_TRUE(t_data);
@@ -131,9 +132,9 @@ namespace Lotus
             EXPECT_TRUE(!data);
 
             auto& location = t.location();
-            EXPECT_EQ(location.m_name, CPU);
-            EXPECT_EQ(location.m_allocator_id, 0);
-            EXPECT_EQ(location.m_type, ArenaAllocator);
+            EXPECT_EQ(location.name_, CPU);
+            EXPECT_EQ(location.id_, 0);
+            EXPECT_EQ(location.type_, ArenaAllocator);
         }
 
         TEST(TensorTest, TensorCopyAssignOpTest)
@@ -147,9 +148,9 @@ namespace Lotus
             EXPECT_EQ(t2.dtype(), DataTypeImpl::GetType<int>());
             EXPECT_EQ(t2.shape(), shape);
             auto location = t2.location();
-            EXPECT_EQ(location.m_name, CPU);
-            EXPECT_EQ(location.m_allocator_id, 0);
-            EXPECT_EQ(location.m_type, AllocatorType::ArenaAllocator);
+            EXPECT_EQ(location.name_, CPU);
+            EXPECT_EQ(location.id_, 0);
+            EXPECT_EQ(location.type_, AllocatorType::ArenaAllocator);
             auto t_data = t2.data<int>();
             EXPECT_EQ((void*)t_data, data);
             alloc.Free(data, sizeof(int) * shape.Size());
