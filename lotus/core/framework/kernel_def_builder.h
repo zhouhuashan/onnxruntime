@@ -2,7 +2,11 @@
 #define CORE_FRAMEWORK_KERNEL_DEF_BUILDER_H
 
 #include <string>
+#include <memory>
+
 #include "core/framework/data_types.h"
+#include "core/framework/op_kernel.h"
+#include "core/common/common.h"
 
 namespace Lotus
 {
@@ -11,26 +15,16 @@ namespace Lotus
     kCPU = 1,
     kDirectML = 2,
     kCUDA = 3,
-    kMKL = 4;
-    kFPGA = 5;
-    kGraphCore = 6;
-    kNNAPI = 7;
-    kCoreML = 8;
+    kMKL = 4,
+    kFPGA = 5,
+    kGraphCore = 6,
+    kNNAPI = 7,
+    kCoreML = 8
   };
-
-  struct KernelCreateInfo {
-    KernelDef* kernel_def;
-    KernelCreateFn kernel_create_fn;
-
-    ~KernelCreateInfo() {
-      delete kernel_def;
-    }
-  }
-    
+  
   // Map from operator name to kernels.
   typedef OpKernel* (*KernelCreateFn)(OpKernelInfo*);
-  typedef std::unordered_multimap<std::string, KernelCreateInfo> KernelRegistry;
-
+  
   struct KernelDef {
     // The operator name.
     std::string op_name;
@@ -51,6 +45,31 @@ namespace Lotus
     std::vector<std::pair<int, bool>> host_memory_args;
   };
 
+  struct KernelCreateInfo {
+    std::unique_ptr<KernelDef> kernel_def;
+    KernelCreateFn kernel_create_fn;
+  };
+    
+  typedef std::unordered_multimap<std::string, KernelCreateInfo> KernelRegistry;
+
+  KernelRegistry& GlobalKernelRegistry() {
+    static KernelRegistry kernel_registry;
+    return kernel_registry;
+  }
+
+  // TODO KernelRegistry is a multimap and hence to find the right match we need
+  // more than just the operator name.
+  const KernelCreateInfo* GetOpKernelCreateInfoFromRegistry(const std::string& opId) {
+    KernelRegistry& kr = GlobalKernelRegistry();
+    auto it = kr.find(opId);
+    if (it == kr.end()) {
+      return nullptr;
+    }
+
+    const KernelCreateInfo& kernel_create_info = it->second;
+    return &kernel_create_info;
+  }
+
   class KernelDefBuilder {
   public:
     // Starts with just the name field set.
@@ -69,8 +88,8 @@ namespace Lotus
     // of the set of types specified in the op schema.
     KernelDefBuilder& TypeConstraint(const std::string& attr_name,
                                      std::vector<MLDataType> dtypes) {
-      auto& dtypes = kernel_def_->type_constraints[attr_name];
-      for (MLDataType dtype : dtypes) {
+      auto& dtypesx = kernel_def_->type_constraints[attr_name];
+      for (MLDataType dtype : dtypesx) {
         dtypes.push_back(dtype);
       }
       return *this;
@@ -126,13 +145,13 @@ namespace Lotus
     }
 
     // Return the kernel definition.
-    const KernelDef* Build() {
-      KernelDef* def = kernel_def_.release();
-      return def;
+    std::unique_ptr<KernelDef> Build() {
+      return std::move(kernel_def_);
     }
   
   private:
-    std::unique_ptr<KernelDef> kernelDef_;   // not owned.
+    std::unique_ptr<KernelDef> kernel_def_; // owned only until Build() is invoked.
+    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(KernelDefBuilder);    
   };
 }
 

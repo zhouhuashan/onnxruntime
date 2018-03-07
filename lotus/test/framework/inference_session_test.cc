@@ -14,13 +14,15 @@ namespace Test {
 TEST(InferenceSessionTestNoTimeout, RunTest) {
   SessionOptions so;
   so.num_threads = 1;
-  InferenceSession is {so};
+  InferenceSession session_object {so};
+  session_object.Load("./testdata/super_resolution.pb");
+  session_object.Initialize();
   std::vector<MLValue> feeds;
   std::vector<MLValue> fetches;
   RunOptions run_options;
   run_options.timeout_in_ms = 0;
   run_options.run_tag = "one session/one thread";
-  Common::Status st = is.Run(run_options, feeds, &fetches);
+  Common::Status st = session_object.Run(run_options, feeds, &fetches);
   std::cout << "without timeout run status: " << st.ToString() << std::endl;
   EXPECT_TRUE(st.IsOK());
 }
@@ -29,6 +31,8 @@ TEST(MultipleInferenceSessionTestNoTimeout, RunTest) {
   SessionOptions session_options;
   session_options.num_threads = 5;
   InferenceSession session_object {session_options};
+  session_object.Load("./testdata/super_resolution.pb");
+  session_object.Initialize();
   Common::Status st1;
   Common::Status st2;
   

@@ -1,6 +1,6 @@
 # Lotus
 
-Lotus is the runtime for ONNX.
+Lotus is the runtime for ONNX. Here is the [design document](https://microsoft.sharepoint.com/:w:/t/ONNX2/EdT4SATkbt1Nv4un1JoBHrYBH65Yt3EKFGHCuo2NTAv4Fg).
 
 # Build
 Install cmake-3.10 or better from https://cmake.org/download/.

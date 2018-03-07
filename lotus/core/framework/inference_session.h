@@ -31,6 +31,8 @@ namespace Lotus
     // Load an ONNX model and initialize.
     Common::Status Load(const std::string& model_uri);
 
+    Common::Status Initialize();
+
     // Both feeds and fetches are owned by client code, and can't be changed
     // by client code during Run().
     Common::Status Run(const std::vector<MLValue>& feeds, std::vector<MLValue>* p_fetches);
@@ -48,6 +50,8 @@ namespace Lotus
  private:
     class Impl;
     std::unique_ptr<Impl> impl_;
+
+    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
   };
 }
 

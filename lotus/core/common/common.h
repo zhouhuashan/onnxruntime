@@ -81,6 +81,12 @@ using Common::StatusCode;
   LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName);           \
   LOTUS_DISALLOW_MOVE(TypeName)
 
+#define LOTUS_RETURN_IF_ERROR(expr)       \
+  do {                                    \
+    auto _status = (expr);                \
+    if ((!_status.IsOK())) return _status;  \
+  } while (0)
+
 #if defined(__GNUC__)
 #if __GNUC_PREREQ(4, 9)
 #define LOTUS_EXPORT [[gnu::visibility("default")]]
