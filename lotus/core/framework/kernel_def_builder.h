@@ -57,6 +57,8 @@ namespace Lotus
     return kernel_registry;
   }
 
+  // TODO KernelRegistry is a multimap and hence to find the right match we need
+  // more than just the operator name.
   const KernelCreateInfo* GetOpKernelCreateInfoFromRegistry(const std::string& opId) {
     KernelRegistry& kr = GlobalKernelRegistry();
     auto it = kr.find(opId);

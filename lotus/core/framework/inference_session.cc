@@ -164,6 +164,8 @@ class InferenceSession::Impl {
   }
 
   std::unique_ptr<OpKernel> CreateOpKernel(const std::string& opId, const Node* node) {
+    // TODO KernelRegistry is a multimap and hence to find the right match we need
+    // more than just the operator name.
     const KernelCreateInfo* p_kernel_create_info = GetOpKernelCreateInfoFromRegistry(opId);
     if (!p_kernel_create_info) {
       LOG(ERROR) << "Could not create kernel for op: " << opId;
