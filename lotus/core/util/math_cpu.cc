@@ -295,7 +295,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
             LOTUS_SPECIALIZED_AXPBY(float)
 #undef LOTUS_SPECIALIZED_AXPBY
 
-#else  // CAFFE2_USE_EIGEN_FOR_BLAS
+#else  // LOTUS_USE_EIGEN_FOR_BLAS
 
         template <>
         void Gemm<float, CPUMathUtil>(
@@ -408,7 +408,7 @@ void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,              
             CAFFE2_SPECIALIZED_AXPBY(float, s)
 #undef CAFFE2_SPECIALIZED_AXPBY
 
-#endif  // CAFFE2_USE_EIGEN_FOR_BLAS
+#endif  // LOTUS_USE_EIGEN_FOR_BLAS
 
             template <>
         void GemmBatched<float, CPUMathUtil>(
