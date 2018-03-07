@@ -6,6 +6,7 @@
 
 #include "core/framework/data_types.h"
 #include "core/framework/op_kernel.h"
+#include "core/common/common.h"
 
 namespace Lotus
 {
@@ -45,12 +46,8 @@ namespace Lotus
   };
 
   struct KernelCreateInfo {
-    KernelDef* kernel_def;
+    std::unique_ptr<KernelDef> kernel_def;
     KernelCreateFn kernel_create_fn;
-    
-    ~KernelCreateInfo() {
-      delete kernel_def;
-    }
   };
     
   typedef std::unordered_multimap<std::string, KernelCreateInfo> KernelRegistry;
@@ -60,15 +57,15 @@ namespace Lotus
     return kernel_registry;
   }
 
-  std::unique_ptr<OpKernel> CreateOpKernel(const std::string& opId, OpKernelInfo* op_kernel_info) {
+  const KernelCreateInfo* GetOpKernelCreateInfoFromRegistry(const std::string& opId) {
     KernelRegistry& kr = GlobalKernelRegistry();
     auto it = kr.find(opId);
     if (it == kr.end()) {
       return nullptr;
     }
 
-    KernelCreateInfo& kernel_create_info = it->second;
-    return std::unique_ptr<OpKernel>(kernel_create_info.kernel_create_fn(op_kernel_info));
+    const KernelCreateInfo& kernel_create_info = it->second;
+    return &kernel_create_info;
   }
 
   class KernelDefBuilder {
@@ -146,13 +143,13 @@ namespace Lotus
     }
 
     // Return the kernel definition.
-    const KernelDef* Build() {
-      KernelDef* def = kernel_def_.release();
-      return def;
+    std::unique_ptr<KernelDef> Build() {
+      return std::move(kernel_def_);
     }
   
   private:
-    std::unique_ptr<KernelDef> kernel_def_;   // not owned.
+    std::unique_ptr<KernelDef> kernel_def_; // owned only until Build() is invoked.
+    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(KernelDefBuilder);    
   };
 }
 

@@ -50,6 +50,8 @@ namespace Lotus
  private:
     class Impl;
     std::unique_ptr<Impl> impl_;
+
+    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
   };
 }
 
