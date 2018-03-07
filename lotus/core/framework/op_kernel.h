@@ -48,7 +48,7 @@ namespace Lotus {
         explicit OpKernel(OpKernelInfo* info)
             : op_kernel_info_(info),
             allocator_info_(info->get_allocator_info()) {
-            LOTUS_ENFORCE(nullptr != info);
+          LOTUS_ENFORCE(nullptr != info);
         }
 
         const LotusIR::Node& node() const {
@@ -68,7 +68,7 @@ namespace Lotus {
 
         const AllocatorInfo& allocator_info_;
 
-        OpKernelInfo* op_kernel_info_;
+        OpKernelInfo* op_kernel_info_; // TODO why is this a naked pointer? why not const ref ?
     };
 
     class OpKernelContext {

@@ -17,7 +17,7 @@ public:
         if (!info->GetAttr<T>("max", &max_).IsOK()) {
              max_ = std::numeric_limits<T>::max();
         }
-        if(!info->GetAttr<T>("min", &min_).IsOK()){
+        if (!info->GetAttr<T>("min", &min_).IsOK()){
             min_ = std::numeric_limits<T>::min();
         }
     }
