@@ -66,16 +66,9 @@ class InferenceSession::Impl {
       return Common::Status::OK();
     }
 
-    Common::Status st = TransformGraph();
-    if (!st.IsOK()) {
-      return st;
-    }
-
-    st = ConstructKernels();
-    if (!st.IsOK()) {
-      return st;
-    }
-
+    LOTUS_RETURN_IF_ERROR(TransformGraph());
+    LOTUS_RETURN_IF_ERROR(ConstructKernels());
+    
     // TODO add other per session initialization stuff here
 
     is_inited_ = true;
