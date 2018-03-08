@@ -102,6 +102,7 @@ set(lotus_test_providers_libs
     ${protobuf_STATIC_LIBRARIES}
     ${lotusIR_graph_whole_archived}
     ${onnx_whole_archived}
+    lotus_framework
     lotus_providers
 )
 
