@@ -5,10 +5,8 @@ namespace Lotus{
 template<>
 void Clip<float>::compute(OpKernelContext* ctx) {
     const Tensor* X = ctx-> template input<Tensor>(0);
-    Tensor* Y = ctx->template output<Tensor>(0);
-    auto Y_ptr = TensorUtil::ReshapeTensor(*Y, X->shape());
-    Y = Y_ptr.get();
-    EigenVectorMap<float>(Y_ptr->mutable_data<float>(), Y_ptr->shape().Size()) =
+    Tensor* Y = ctx->output(0, X->shape());
+    EigenVectorMap<float>(Y->mutable_data<float>(), Y->shape().Size()) =
         ConstEigenVectorMap<float>(X->data<float>(), X->shape().Size())
         .cwiseMax(min_)
         .cwiseMin(max_);

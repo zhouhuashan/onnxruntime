@@ -3,12 +3,12 @@
 #include <mutex>
 
 #include "core/common/logging.h"
+#include "core/framework/executor.h"
 #include "core/framework/op_kernel.h"
+#include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
 #include "core/lib/threadpool.h"
-#include "core/framework/executor.h"
-#include "core/framework/session_state.h"
 #include "core/platform/notification.h"
 #include "core/framework/kernel_def_builder.h"
 
@@ -22,16 +22,14 @@ class InferenceSession::Impl {
     // QUESTION: what if the user doesn't provide his preferred list of execution
     // providers? Should we have our own default?
     auto& provider_mgr = ExecutionProviderMgr::Instance();
-    for (auto& info : session_options.ep_infors)
-    {
-        auto provider = provider_mgr.GetProvider(info.Name(), info);
-        if (provider == nullptr)
-        {
-            LOG(WARNING) << "Execution Provider with name: "
-                << info.Name() << "Not found.";
-            continue;
-        }
-        execution_providers_.insert(std::make_pair(info.Name(), std::move(provider)));
+    for (auto& info : session_options.ep_options) {
+      auto provider = provider_mgr.GetProvider(info.provider_type, info.provider_info);
+      if (provider == nullptr) {
+        LOG(WARNING) << "Execution Provider with name: "
+                     << info.provider_type << "Not found.";
+        continue;
+      }
+      execution_providers_.insert(std::make_pair(info.provider_type, std::move(provider)));
     }
   }
 
@@ -96,37 +94,36 @@ class InferenceSession::Impl {
     }
 
     // TODO add instrumentation to measure the time taken for this Run
-    
-    LOG(INFO) << "Running with tag: " << run_options.run_tag;
+    LOG(INFO) << "Running with tag: " << run_options.run_tag << std::endl;
     ++current_num_runs_;
-    
+
     // TODO should we add this exec to the list of executors? i guess its not needed now?
 
     struct RunStatus {
       std::unique_ptr<Executor> p_exec;
-      Common::Status status; // used to collect the status from the executor
+      Common::Status status;  // used to collect the status from the executor
       Notification executor_done;
     };
-    
+
     RunStatus run_status;
     if (run_options.enable_sequential_execution) {
       run_status.p_exec = std::move(Executor::NewSequentialExecutor(session_state_));
     } else {
       run_status.p_exec = std::move(Executor::NewParallelExecutor(session_state_));
     }
-    
+
     thread_pool_.Schedule([&run_options, &feeds, p_fetches, &run_status]() {
-        Common::Status local_status = run_status.p_exec->Execute(run_options, feeds, p_fetches);        
-	run_status.status = local_status;
-        run_status.executor_done.Notify();
-      });
+      Common::Status local_status = run_status.p_exec->Execute(run_options, feeds, p_fetches);
+      run_status.status = local_status;
+      run_status.executor_done.Notify();
+    });
 
     // this is a blocking Run, hence wait to be notified by the above closure when the executor is done
     Common::Status waitStatus = WaitForNotification(&run_status.executor_done, run_options.timeout_in_ms);
     Common::Status retval;
 
     if (!waitStatus.IsOK()) {
-      // TODO should we cancel the thread in the pool that corresponds to this executor?      
+      // TODO should we cancel the thread in the pool that corresponds to this executor?
       retval = waitStatus;
     } else {
       retval = run_status.status;
@@ -135,7 +132,7 @@ class InferenceSession::Impl {
     --current_num_runs_;
     return retval;
   }
-  
+
  private:
   Common::Status TransformGraph() {
     for (auto& ep: execution_providers_) {
@@ -179,27 +176,27 @@ class InferenceSession::Impl {
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {
     if (timeout_in_ms > 0) {
-      LOTUS_NOT_IMPLEMENTED; // TODO
+      LOTUS_NOT_IMPLEMENTED;  // TODO
     } else {
       p_executor_done->WaitForNotification();
     }
-    return Status::OK();    
+    return Status::OK();
   }
-  
+
   // The model served by this inference session instance.
   std::shared_ptr<Model> model_;
-  
+
   // The list of execution providers in preference order.
   std::map<std::string, ExecutionProviderPtr> execution_providers_;
 
   // A set of executors that can run in parallel.
-  std::vector<std::unique_ptr<Executor>> executors_; // TODO do we need this vector?
+  std::vector<std::unique_ptr<Executor>> executors_;  // TODO do we need this vector?
 
   // State for each op in the model. Shared by all executors.
   SessionState session_state_;
 
   // Environment for this session
-  Env* env_; // statically allocated pointer, no need to manage its lifetime.
+  Env* env_;  // statically allocated pointer, no need to manage its lifetime.
 
   // Threadpool for this session
   thread::ThreadPool thread_pool_;
@@ -239,14 +236,8 @@ Common::Status InferenceSession::Run(const RunOptions& run_options,
   return impl_->Run(run_options, feeds, p_fetches);
 }
 
-Common::Status InferenceSession::SetProviderPreference(const std::vector<IExecutionProvider>& providers) {
-  UNUSED_PARAMETER(providers);
-  // TODO
-  return Common::Status::OK();
-}
-
 int InferenceSession::GetCurrentNumRuns() {
   return impl_->GetCurrentNumRuns();
 }
 
-}
+}  // namespace Lotus

@@ -2,7 +2,6 @@
 #define CORE_KERNELS_CPU_MATH_CLIP_H
 
 #include "core/framework/op_kernel.h"
-#include "core/framework/tensor_util.h"
 #include "core/common/common.h"
 #include "core/util/math_cpuonly.h"
 

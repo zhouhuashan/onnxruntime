@@ -79,7 +79,7 @@ namespace Lotus {
             : execution_frame_(frame),
             kernel_(kernel)
         {
-            LOTUS_ENFORCE(nullptr != frame && kernel != nullptr);
+            LOTUS_ENFORCE(nullptr != frame && nullptr != kernel);
             arg_start_index_ = frame->get_first_arg_index(kernel->node().Index());
         }
 
@@ -90,6 +90,7 @@ namespace Lotus {
             return execution_frame_->get_input<T>(arg_start_index_ + index);
         }
 
+        // Fetch output (non-tensor) with specified index.
         template<typename T>
         T* output(int index) {
             auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->node().InputDefs().size()) + index;

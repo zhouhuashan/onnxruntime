@@ -5,13 +5,8 @@
 #include "core/framework/execution_frame.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/tensor.h"
-#include "core/framework/tensor_util.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
-
-
-//#include "gtest/gtest.h"
-
 
 namespace Lotus {
     namespace  Test {

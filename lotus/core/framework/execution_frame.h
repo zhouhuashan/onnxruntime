@@ -92,14 +92,19 @@ namespace Lotus
         };
 
         Tensor* get_or_create_tensor(int tensor_index, const TensorShape& shape) {
-            // TODO:
-            // Check whether the tensor has been allocated yet or not.
-            // if it's allocated, then check the size of the allocated tensor with given shape,
-            // if they match each other, then return, else throw error.
-            // if it's not allocated, then allocate it with given shape and return.
-            (tensor_index);
-            (shape);
-            return nullptr;
+            auto value = node_values_[tensor_index];
+            if (nullptr != value->pData) {
+                // The tensor has already been allocated.
+                // TODO: Check the size of the allocated tensor with given shape,
+                // if they match each other, then return, else throw error.
+                // TODO: type also needs to be checked and then use static_cast.
+                return reinterpret_cast<Tensor*>(value->pData);
+            }
+            else {
+                // It's not allocated, then allocate it with given shape and return.
+                (shape);
+                return nullptr;
+            }
         }
         
         void InitArenas()

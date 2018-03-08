@@ -7,12 +7,9 @@ namespace Lotus
     {
         TEST(CPUExecutionProviderTest, MetadataTest)
         {
-            ExecutionProviderInfo info("CPUExecutionProvider", "0.1", NULL);
-            auto provider = ExecutionProviderMgr::Instance().GetProvider(info.Name(), info);
+            ExecutionProviderInfo info;
+            auto provider = ExecutionProviderMgr::Instance().GetProvider("CPUExecutionProvider", info);
             EXPECT_TRUE(provider != nullptr);
-            EXPECT_EQ(provider->Name(), info.Name());
-            EXPECT_EQ(provider->Version(), info.Version());
-            EXPECT_EQ(provider->ID(), "CPUExecutionProvider.0.1");
             EXPECT_EQ(provider->GetTempSpaceAllocator().Info().name_, CPU);
         }
     }

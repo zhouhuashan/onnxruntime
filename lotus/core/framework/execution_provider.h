@@ -11,45 +11,14 @@ using namespace LotusIR;
 
 namespace Lotus
 {
-  typedef std::shared_ptr<void> EPAdditionalInfo;
-
-  class ExecutionProviderInfo 
-  {
-  public:
-      const string& Name() const { return name_; }
-      const string& Version() const { return version_; }
-      EPAdditionalInfo AdditionalInfo() { return info_; }
-
-      ExecutionProviderInfo(const string& name, 
-          const string& version, 
-          EPAdditionalInfo info)
-          : name_(name), version_(version), info_(info)
-      {}
-
-  private:
-      string name_;
-      string version_;
-      EPAdditionalInfo info_;
-  };
+  typedef std::shared_ptr<void> ExecutionProviderInfo;
   
   // Logical device represenatation.
   class IExecutionProvider
   {
   public:
-    IExecutionProvider()
-    {
-    }
 
     virtual ~IExecutionProvider() {}
-
-    virtual const std::string& Name() const = 0;
-    
-    virtual const std::string& Version() const = 0;
-
-    virtual const std::string& ID() const
-    {
-      return id_;
-    }
 
     // Graph to graph transformation. The resulting graph may contain custom 
     // operators introduced by this execution provider. Newly formed custom
@@ -70,14 +39,6 @@ namespace Lotus
 
     virtual Status CopyTensorFrom(const Tensor& srcTensor,
                                    Tensor* p_dstTensor) = 0;
-    
-  protected:
-    void SetId()
-    {
-        id_ = Name() + "." + Version();
-    }
-
-    std::string id_;
   };
 
   typedef std::function<unique_ptr<IExecutionProvider>(const ExecutionProviderInfo&)> ProviderCreateFn;
@@ -105,7 +66,8 @@ namespace Lotus
         }
         else
         {
-            return Status(LOTUS, INVALID_ARGUMENT, "Execution provider already registered");
+            LOTUS_ENFORCE(false, "Execution provider () " + key +  " already registered");
+            return Status(LOTUS, INVALID_ARGUMENT, "Execution provider () " + key + " already registered");
         }
     }
 
@@ -127,13 +89,19 @@ namespace Lotus
     std::unordered_map<std::string, ProviderCreateFn> provider_map_;
   };
   
-#define REGISTRY_PROVIDER_CREATOR(Key, Func) \
-  REGISTRY_PROVIDER_CREATOR_HELPER(__COUNTER__, Key, Func)
-#define REGISTRY_PROVIDER_CREATOR_HELPER(Counter, Key, Func)          \
-  namespace {                                                         \
-      static Status s_##Counter = ExecutionProviderMgr::Instance()   \
-          .AddProviderCreater(#Key, Func);                             \
-  }
-  
+
+  // Execution provider registration macro.
+  // It registers a provider with provider class name.
+#define REGISTER_PROVIDER(...)                                                      \
+  REGISTER_PROVIDER_HELPER(__COUNTER__, __VA_ARGS__)
+#define REGISTER_PROVIDER_HELPER(Counter, ...)                                      \
+  namespace {                                                                       \
+      static Status s_##Counter = ExecutionProviderMgr::Instance()                  \
+          .AddProviderCreater(#__VA_ARGS__,                                         \
+            [](const ExecutionProviderInfo& info)                                   \
+                -> unique_ptr<IExecutionProvider> {                                 \
+                return std::unique_ptr<IExecutionProvider>(new __VA_ARGS__(info));  \
+            });                                                                     \
+  }  
 }
 #endif  // CORE_FRAMEWORK_EXECUTION_PROVIDER_H

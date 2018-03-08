@@ -58,4 +58,12 @@ namespace Lotus {
         auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->node().InputDefs().size()) + index;
         return execution_frame_->get_or_create_tensor(output_arg_index, shape);
     }
+
+    // Fetching output tensor without shape is not allowed.
+    template<>
+    Tensor* OpKernelContext::output<Tensor>(int index) {
+        LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
+        (index);
+        return nullptr;
+    }
 }

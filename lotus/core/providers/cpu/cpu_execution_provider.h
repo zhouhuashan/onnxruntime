@@ -10,22 +10,7 @@ namespace Lotus
     class CPUExecutionProvider : public IExecutionProvider
     {
     public:
-        CPUExecutionProvider(const ExecutionProviderInfo& info)
-        {
-            name_ = info.Name();
-            version_ = info.Version();
-            SetId();
-        }
-
-        virtual const std::string& Name() const override
-        {
-            return name_;
-        }
-
-        virtual const std::string& Version() const override
-        {
-            return version_;
-        }
+        explicit CPUExecutionProvider(const ExecutionProviderInfo& /*info*/) {}
 
         virtual IGraphTransformer& GetTransformer() const override
         {
@@ -69,10 +54,6 @@ namespace Lotus
             p_dstTensor->ShallowCopy(srcTensor);
             return Status::OK();
         }
-
-    private:
-        string name_;
-        string version_;
     };
 }
 
