@@ -160,7 +160,6 @@ endif()
 
 include(lotus_common.cmake)
 include(lotus_core_framework.cmake)
-include(lotus_kernels.cmake)
 include(lotusIR_core_graph.cmake)
 include(lotus_providers.cmake)
 include(lotusIR_unittest.cmake)

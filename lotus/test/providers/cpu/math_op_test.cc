@@ -1,4 +1,4 @@
-#include "core/kernels/cpu/math/clip.h"
+#include "core/providers/cpu/math/clip.h"
 #include "gtest/gtest.h"
 #include "test/test_utils.h"
 
