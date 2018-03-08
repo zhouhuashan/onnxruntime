@@ -70,6 +70,11 @@ namespace Lotus {
             }
         };
 
+        #define CREATE_NODE(op_name)                                           \
+          LotusIR::Model model("test");                                                     \
+          LotusIR::Graph* graph = model.MainGraph();                                        \
+          graph->AddNode("node1", #op_name, #op_name, ArgMap{}, ArgMap{});      \
+          LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
     }
 }
 
