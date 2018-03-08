@@ -6,15 +6,12 @@ namespace Lotus {
     namespace Test {
         typedef  std::vector<LotusIR::NodeArg*> ArgMap;
         TEST(MathOpTest, Clip) {
-            LotusIR::Model model("test");
-            LotusIR::Graph* graph = model.MainGraph();
+            CREATE_NODE(clip);
             TypeProto tensor_float;
             tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
             LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
-
-            graph->AddNode("node1", "clip", "clip operator", ArgMap{&input_def}, ArgMap{&output_def});
-            LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
-
+            node->Mutable_InputDefs().push_back(&input_def);
+            node->Mutable_OutputDefs().push_back(&output_def);
             EXPECT_TRUE(node->AddAttribute("min", -10.0f));
             EXPECT_TRUE(node->AddAttribute("max", 10.0f));
 
