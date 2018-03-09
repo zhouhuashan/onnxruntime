@@ -1,5 +1,5 @@
-#ifndef CORE_KERNELS_CPU_MATH_CLIP_H
-#define CORE_KERNELS_CPU_MATH_CLIP_H
+#ifndef CORE_PROVIDERS_CPU_MATH_CLIP_H
+#define CORE_PROVIDERS_CPU_MATH_CLIP_H
 
 #include "core/framework/op_kernel.h"
 #include "core/common/common.h"
@@ -29,4 +29,4 @@ private:
 
 }
 
-#endif // !CORE_KERNELS_CPU_MATH_CLIP_H
+#endif // !CORE_PROVIDERS_CPU_MATH_CLIP_H
