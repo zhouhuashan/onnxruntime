@@ -39,27 +39,36 @@ namespace Lotus
         }
     };
 
+    class IAllocator
+    {
+    public:
+        virtual ~IAllocator() {}
+        virtual void* Alloc(size_t size) = 0;
+        virtual void Free(void* p) = 0;
+        virtual const AllocatorInfo& Info() const = 0;
+    };
+
     // The resource allocator on a physcial device.
     // This allocator will directly allocate resource from system call
-    class IDeviceAllocator
+    class IDeviceAllocator : public IAllocator
     {
     public:
         virtual ~IDeviceAllocator() {}
         virtual void* Alloc(size_t size) = 0;
-        virtual void Free(void* p, size_t size) = 0;
+        virtual void Free(void* p) = 0;
         virtual size_t MinChunkSize() = 0;
         virtual size_t MaxChunkSize() = 0;
-        virtual AllocatorInfo& Info() = 0;
+        virtual const AllocatorInfo& Info() const = 0;
     };
 
     class CPUAllocator : public IDeviceAllocator
     {
     public:
         virtual void* Alloc(size_t size) override;
-        virtual void Free(void* p, size_t size) override;
+        virtual void Free(void* p) override;
         virtual size_t MinChunkSize() override;
         virtual size_t MaxChunkSize() override;
-        virtual AllocatorInfo& Info() override;
+        virtual const AllocatorInfo& Info() const override;
     };
 }
 

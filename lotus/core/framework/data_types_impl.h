@@ -5,17 +5,11 @@
 #include "core/framework/tensor.h"
 
 namespace Lotus {
-    template <int elemT>
-    struct TensorType : public DataTypeImpl {
-        static MLDataType Type();
-
-    private:
-        TensorType() {
-            m_type_proto.mutable_tensor_type()->set_elem_type(
-                (TensorProto_DataType)elemT);
-            m_typeid = typeid(Tensor).name();
-        }
-    };
+    template<typename T>
+    static void Delete(void* p)
+    {
+        delete static_cast<T*>(p);
+    }
 
     template<typename T>
     class RegistreredType : public DataTypeImpl {
@@ -23,6 +17,14 @@ namespace Lotus {
         static MLDataType Type() {
             static RegistreredType<T> s;
             return &s;
+        }
+
+        virtual const size_t Size() const override{
+            return sizeof(T);
+        }
+
+        virtual DeleteFunc GetDeleteFunc() const override {
+            return &Delete<T>;
         }
 
     private:

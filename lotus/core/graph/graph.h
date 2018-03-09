@@ -31,7 +31,7 @@ namespace LotusIR
     typedef size_t NODEINDEX;
     typedef int64_t VERSION;
     typedef ValueInfoProto NodeArgInfo;
-    typedef std::unordered_map<std::string, TensorProto> InitialTensorSet;
+    typedef std::unordered_map<std::string, TensorProto> InitializedTensorSet;
     typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
 
     class Graph;
@@ -232,8 +232,8 @@ namespace LotusIR
         // Executor will decide which device that this node will run against
         // and set it properly.
         // TODO: may change the return value type to be an ENUM.
-        const std::string& Device() const;
-        void SetDevice(const std::string& p_device);
+        const std::string& GetExecutionProvider() const;
+        void SetExecutionProvider(const std::string& p_execution_provider);
 
         // Get the corresponding <NodeProto>.
         void ToProto(NodeProto& p_proto) const;
@@ -306,7 +306,7 @@ namespace LotusIR
         std::set<const Node*> m_outputNodes;
 
         // Device.
-        std::string m_device;
+        std::string m_execution_provider;
 
         // Map from attribute name to attribute.
         // This allows attribute adding and removing.
@@ -379,7 +379,7 @@ namespace LotusIR
         virtual std::unordered_map<std::string, NodeArg*>* GetNodeArgMap() = 0;
 
         // Get node given specific node index.
-        Node* GetNode(NODEINDEX p_nodeIndex);
+        Node* GetNode(NODEINDEX p_nodeIndex) const;
 
         // Get node iterator to access all effective nodes in the graph.
         GraphBase::NodeIterator Nodes_begin();
@@ -527,11 +527,11 @@ namespace LotusIR
         virtual std::unordered_map<std::string, NodeArg*>* GetNodeArgMap() override;
 
         // Add/Remove/Get initial tensors for some graph inputs.
-        void AddInitialTensor(const TensorProto& p_tensor);
-        void RemoveInitialTensor(const std::string& p_tensorName);
-        bool GetInitialTensor(const std::string& p_tensorName,
+        void AddInitializedTensor(const TensorProto& p_tensor);
+        void RemoveInitializedTensor(const std::string& p_tensorName);
+        bool GetInitializedTensor(const std::string& p_tensorName,
             TensorProto& p_value) const;
-        const InitialTensorSet& GetAllInitialTensors() const;
+        const InitializedTensorSet& GetAllInitializedTensors() const;
 
         // Get graph inputs/outputs/valueinfos.
         virtual const std::vector<const NodeArg*>& GetInputs() const override;
@@ -689,7 +689,7 @@ namespace LotusIR
         // The node which refers to <*this> graph (Function).
         //Node* m_node;
 
-        InitialTensorSet m_nameToInitialTensor;
+        InitializedTensorSet m_nameToInitialTensor;
 
         // A flag indicates whether <*this> graph needs to be resolved.
         //bool m_graphResolveNeeded;
@@ -711,6 +711,7 @@ namespace LotusIR
         std::vector<const NodeArg*> m_valueInfo;
 
         // Store NodeArg in this graph
+        // QUESTION: what does the key represent here?
         std::unordered_map<std::string, NodeArg*> m_nodeArgs;
 
         //const std::unordered_map<std::string, int>* m_domainToVersion;

@@ -22,7 +22,7 @@ namespace Lotus
             memset(bytes, -1, 1024);
             
             EXPECT_EQ(*((int*)bytes), -1);
-            cpu_arena.Free(bytes, size);
+            cpu_arena.Free(bytes);
             //todo: test the used / max api.
         }
     }

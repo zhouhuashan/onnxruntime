@@ -13,25 +13,22 @@ namespace Lotus
 {
   class Executor
   {
-  public:
+ public:
     virtual ~Executor() {}
 
-    static std::unique_ptr<Executor> NewSequentialExecutor(const SessionState& session_state);
-    static std::unique_ptr<Executor> NewParallelExecutor(const SessionState& session_state);    
+    static std::unique_ptr<Executor> NewSequentialExecutor(const SessionState& session_state,
+                                                           std::unique_ptr<ExecutionFrame> p_exec_frame);
 
     virtual Common::Status Execute(const RunOptions& run_options,
-                                   const std::vector<MLValue>& feeds,
+                                   const NameMLValMap& feeds,
+                                   const std::vector<std::string>& output_names,
                                    std::vector<MLValue>* p_fetches);
     
  protected:
-    Executor() {}
-    
-    // TODO: Should we use naked pointer here?
-    // If yes, explain the ownership and lifetime
-    const LotusIR::Graph* graph_;
-    // TODO: Should we use naked pointer here?
-    // If yes, explain the ownership and lifetime
-    ExecutionFrame* root_frame_;
+    Executor(std::unique_ptr<ExecutionFrame> p_exec_frame)
+        : root_frame_(std::move(p_exec_frame)) {
+    }
+    std::unique_ptr<ExecutionFrame> root_frame_;
   };
 }
 

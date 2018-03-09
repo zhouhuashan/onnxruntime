@@ -13,10 +13,8 @@ namespace Lotus {
         return p;
     }
 
-    void CPUAllocator::Free(void* p, size_t size)
+    void CPUAllocator::Free(void* p)
     {
-        //todo: should replaced with an UNUSED_PARAMETER macro;
-        (size);
         //todo: unpin the memory
         free(p);
     }
@@ -31,7 +29,7 @@ namespace Lotus {
         LOTUS_NOT_IMPLEMENTED;
     }
 
-    AllocatorInfo& CPUAllocator::Info()
+    const AllocatorInfo& CPUAllocator::Info() const
     {
         static AllocatorInfo cpuAllocatorInfo(CPU, AllocatorType::DeviceAllocator);
         return cpuAllocatorInfo;

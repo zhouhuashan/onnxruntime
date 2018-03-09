@@ -40,51 +40,169 @@ namespace Lotus
         return TensorShape(std::vector<int64_t>(m_dims.begin() + p_dimstart, m_dims.begin() + p_dimend));
     }
 
-    Tensor::Tensor() : Tensor(DataTypeImpl::GetType<float>())
+    Tensor::Tensor() : 
+        alloc_info_(AllocatorManager::Instance()->GetArena(CPU).Info()),
+        p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter()))
     {
+        Init(DataTypeImpl::GetType<float>(),
+            TensorShape(std::vector<int64_t>(1, 0)),
+            UNKNOWN,
+            nullptr,
+            AllocatorManager::Instance()->GetArena(CPU).Info(),
+            0);
     }
 
-    Tensor::Tensor(MLDataType p_type) : Tensor(p_type, TensorShape(std::vector<int64_t>(1, 0)), nullptr, AllocatorManager::Instance()->GetArena(CPU).Info())
+    Tensor::Tensor(MLDataType p_type) :
+        alloc_info_(AllocatorManager::Instance()->GetArena(CPU).Info()),
+        p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter()))
     {
+        Init(p_type,
+            TensorShape(std::vector<int64_t>(1, 0)),
+            UNKNOWN,
+            nullptr,
+            AllocatorManager::Instance()->GetArena(CPU).Info(),
+            0);
     }
     
     Tensor::Tensor(MLDataType p_type,
         const TensorShape& p_shape, 
-        void* p_data, 
+        BufferNakedPtr p_data,
         const AllocatorInfo& alloc, 
         const int64_t offset)
-        : m_alloc_info(alloc)
+        : alloc_info_(alloc),
+        p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter()))
     {
-        init(p_type, p_shape, p_data, alloc, offset);
+        Init(p_type,
+            p_shape,
+            PREALLOCATEDBUFFER,
+            p_data,
+            alloc,
+            offset);
     }
 
-    void Tensor::init(MLDataType p_type, const TensorShape& p_shape, void* p_data, const AllocatorInfo& alloc, const int64_t bytes_offset)
+    Tensor::Tensor(MLDataType p_type,
+        const TensorShape& p_shape,
+        BufferUniquePtr p_data,
+        const AllocatorInfo& alloc,
+        const int64_t offset)
+        : alloc_info_(alloc),
+        p_unique_data_(std::move(p_data))
     {
-        m_dtype = p_type;
-        m_shape = p_shape;
-        m_pData = p_data;
-        m_alloc_info = alloc;
-        m_byte_offset = bytes_offset;
+        Init(p_type,
+            p_shape,
+            OWNEDBUFFER,
+            nullptr,
+            alloc,
+            offset);
+    }
+
+    void Tensor::Init(MLDataType p_type, 
+        const TensorShape& p_shape,
+        BufferStrategy strategy,
+        BufferNakedPtr p_raw_data,
+        const AllocatorInfo& alloc,
+        const int64_t offset)
+    {
+        dtype_ = p_type;
+        shape_ = p_shape;
+        buffer_strategy_ = strategy;
+        p_naked_data_ = p_raw_data;
+        alloc_info_ = alloc;
+        byte_offset_ = offset;
+    }
+
+    Tensor::Tensor(Tensor&& other)
+        : dtype_(other.dtype_),
+        shape_(other.shape_),
+        alloc_info_(other.alloc_info_),
+        byte_offset_(other.byte_offset_),
+        buffer_strategy_(other.buffer_strategy_)
+    {
+        if (other.buffer_strategy_ == OWNEDBUFFER)
+        {
+            p_unique_data_ = std::move(other.p_unique_data_);
+            p_naked_data_ = nullptr;
+        }
+        else
+        {
+            p_naked_data_ = other.p_naked_data_;
+            p_unique_data_ = nullptr;
+        }
+
+        other.dtype_ = DataTypeImpl::GetType<float>();
+        other.shape_ = TensorShape(std::vector<int64_t>(1, 0));
+        other.buffer_strategy_ = UNKNOWN;
+        other.byte_offset_ = 0;
+        other.p_unique_data_ = nullptr;
+    }
+
+    Tensor& Tensor::operator=(Tensor&& other)
+    {
+        if (this != &other)
+        {
+            dtype_ = other.dtype_;
+            shape_ = other.shape_;
+            alloc_info_ = other.alloc_info_;
+            byte_offset_ = other.byte_offset_;
+            buffer_strategy_ = other.buffer_strategy_;
+            if (other.buffer_strategy_ == OWNEDBUFFER)
+            {
+                p_unique_data_ = std::move(other.p_unique_data_);
+                p_naked_data_ = nullptr;
+            }
+            else
+            {
+                p_naked_data_ = other.p_naked_data_;
+                p_unique_data_ = nullptr;
+            }
+
+            other.dtype_ = DataTypeImpl::GetType<float>();
+            other.shape_ = TensorShape(std::vector<int64_t>(1, 0));
+            other.buffer_strategy_ = UNKNOWN;
+            other.byte_offset_ = 0;
+            other.p_unique_data_ = nullptr;
+        }
+        return *this;
     }
 
     Tensor::Tensor(const Tensor& src)
-        : m_dtype(src.m_dtype)
-        , m_alloc_info(src.m_alloc_info)
-        , m_shape(src.m_shape)
-        , m_pData(src.m_pData)
-        , m_byte_offset(src.m_byte_offset)
+        : dtype_(src.dtype_)
+        , alloc_info_(src.alloc_info_)
+        , shape_(src.shape_)
+        , byte_offset_(src.byte_offset_)
     {
+        // it may be better to refactor it a little bit to make it a compile error
+        // but right now just keep it simple first.
+        if (src.buffer_strategy_ == OWNEDBUFFER)
+        {
+            LOTUS_THROW("Can't copy tensor with its owned buffer. Please transfer ownership by move");
+        }
+        else if (src.buffer_strategy_ == PREALLOCATEDBUFFER)
+        {
+            buffer_strategy_ = PREALLOCATEDBUFFER;
+            p_naked_data_ = src.p_naked_data_;
+        }
+        else
+        {
+            buffer_strategy_ = UNKNOWN;
+            p_naked_data_ = nullptr;
+            p_unique_data_ = nullptr;
+        }
     }
 
     Tensor& Tensor::ShallowCopy(const Tensor& other)
     {
+        // smiliar as above
+        LOTUS_ENFORCE(other.buffer_strategy_ != OWNEDBUFFER);
         if (this != &other)
         {
-            m_dtype = other.m_dtype;
-            m_alloc_info = other.m_alloc_info;
-            m_shape = other.m_shape;
-            m_pData = other.m_pData;
-            m_byte_offset = other.m_byte_offset;
+            dtype_ = other.dtype_;
+            alloc_info_ = other.alloc_info_;
+            shape_ = other.shape_;
+            byte_offset_ = other.byte_offset_;
+            buffer_strategy_ = other.buffer_strategy_;
+            p_naked_data_ = other.p_naked_data_;
+            p_naked_data_ = nullptr;
         }
         return *this;
     }

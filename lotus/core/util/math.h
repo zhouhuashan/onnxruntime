@@ -42,6 +42,8 @@ namespace Lotus {
         NCHW = 2,
     };
 
+#define FLOAT_TYPE DataTypeImpl::GetType<float>()
+
     namespace math {
 
         template <typename T, class Provider>
@@ -185,7 +187,7 @@ namespace Lotus {
             Provider* provider,
             //Caffe2 use this type to control on GPU, what presicion do we want to do the calculation
             //But not sure is this a good design for us. Keep it here for now.
-            MLDataType math_type = DataTypeImpl::Tensor_FLOAT);
+            MLDataType math_type = FLOAT_TYPE);
 
         // We also provide a gemm that has explicit lda, ldb and ldc specified.
         // In most cases you probably want to use the function above, though.
@@ -225,7 +227,7 @@ namespace Lotus {
             T* C,
             Provider* provider,
             Tensor* scratch = nullptr,
-            MLDataType math_type = DataTypeImpl::Tensor_FLOAT);
+            MLDataType math_type = DataTypeImpl::FLOAT_TYPE);
 
         // Gemv always takes in a M*N matrix A, and depending on whether we set TransA
         // to Trans, the output is:
@@ -242,8 +244,7 @@ namespace Lotus {
             const float beta,
             T* y,
             Provider* provider,
-            MLDataType math_type = DataTypeImpl::Tensor_FLOAT);
-
+            MLDataType math_type = DataTypeImpl::FLOAT_TYPE);
         template <typename T, class Provider>
         void Set(const int64_t N, const T alpha, T* X, Provider* provider);
 
