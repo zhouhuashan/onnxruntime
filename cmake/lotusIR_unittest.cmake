@@ -81,7 +81,6 @@ set(lotus_test_framework_libs
 	${lotusIR_graph_whole_archived}
 	${onnx_whole_archived}
 	lotus_framework
-	${lotus_providers_whole_archived}
 )
 
 file(GLOB_RECURSE lotus_test_framework_src
@@ -94,7 +93,7 @@ AddTest(
     TARGET lotus_test_framework
     SOURCES ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
-    DEPENDS lotus_framework googletest lotusIR_graph lotus_providers
+    DEPENDS lotus_framework googletest lotusIR_graph
 )
 
 set(lotus_test_providers_libs
@@ -103,7 +102,7 @@ set(lotus_test_providers_libs
     ${lotusIR_graph_whole_archived}
     ${onnx_whole_archived}
     lotus_framework
-    lotus_providers
+    ${lotus_providers_whole_archived}
 )
 
 file(GLOB_RECURSE lotus_test_providers_src
