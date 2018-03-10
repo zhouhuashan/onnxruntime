@@ -10,17 +10,8 @@
 
 namespace Lotus
 {
-  // The types of execution providers.
-  enum class ProviderType {
-    kCPU = 1,
-    kDirectML = 2,
-    kCUDA = 3,
-    kMKL = 4,
-    kFPGA = 5,
-    kGraphCore = 6,
-    kNNAPI = 7,
-    kCoreML = 8
-  };
+  // Execution provider class name is registered as a provider type.
+  typedef std::string ProviderType;
   
   // Map from operator name to kernels.
   typedef OpKernel* (*KernelCreateFn)(OpKernelInfo*);
@@ -106,7 +97,7 @@ namespace Lotus
     // Like TypeConstraint for type T.
     template <class T>
       KernelDefBuilder& TypeConstraint(const std::string& attr_name) {
-      return TypeConstraint(attr_name, DataTypeImpl::GetType<T>());
+      return TypeConstraint(attr_name, DataTypeImpl::GetTensorType<T>());
     }
 
     // Inplace mapping from inputs to outputs.

@@ -40,7 +40,7 @@ namespace Lotus
         return TensorShape(std::vector<int64_t>(m_dims.begin() + p_dimstart, m_dims.begin() + p_dimend));
     }
 
-    Tensor::Tensor() : Tensor(DataTypeImpl::GetType<float>())
+    Tensor::Tensor() : Tensor(DataTypeImpl::GetTensorType<float>())
     {
     }
 

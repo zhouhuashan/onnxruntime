@@ -66,10 +66,15 @@ namespace Lotus {
                 auto data = alloc.Alloc(size);
                 LOTUS_ENFORCE(data);
                 memcpy(data, vals.data(), size);
-                return std::make_shared<Tensor>(DataTypeImpl::GetType<T>(), shape, data, alloc.Info());
+                return std::make_shared<Tensor>(DataTypeImpl::GetTensorType<T>(), shape, data, alloc.Info());
             }
         };
 
+        #define CREATE_NODE(op_name)                                           \
+          LotusIR::Model model("test");                                        \
+          LotusIR::Graph* graph = model.MainGraph();                           \
+          graph->AddNode("node1", #op_name, #op_name, ArgMap{}, ArgMap{});     \
+          LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
     }
 }
 
