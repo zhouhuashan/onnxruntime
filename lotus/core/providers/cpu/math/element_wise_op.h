@@ -1,6 +1,6 @@
 #pragma once
-#ifndef CORE_PROVIDERS_CPU_MATH_BASIC_H
-#define CORE_PROVIDERS_CPU_MATH_BASIC_H
+#ifndef CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OP_H
+#define CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OP_H
 
 #include "core/framework/op_kernel.h"
 #include "core/common/common.h"
@@ -70,4 +70,4 @@ private:
 
 }
 
-#endif // !CORE_PROVIDERS_CPU_MATH_BASIC_H
+#endif // !CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OP_H
