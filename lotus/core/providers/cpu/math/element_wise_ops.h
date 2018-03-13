@@ -1,6 +1,5 @@
-#pragma once
-#ifndef CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OP_H
-#define CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OP_H
+#ifndef CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H
+#define CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H
 
 #include "core/framework/op_kernel.h"
 #include "core/common/common.h"
@@ -9,65 +8,55 @@
 namespace Lotus {
 
 template<typename T>
-struct Add final : OpKernel {
-
+class Add final : public OpKernel {
+public:
     Add(OpKernelInfo* info) : OpKernel(info)
     {
     }
 
     void compute(OpKernelContext* context) override;
-
-private:
 };
 
 template<typename T>
-struct Sub final : OpKernel {
-
+class Sub final : public OpKernel {
+public:
     Sub(OpKernelInfo* info) : OpKernel(info)
     {
     }
 
     void compute(OpKernelContext* context) override;
-
-private:
 };
 
 template<typename T>
-struct Mul final : OpKernel {
-
+class Mul final : public OpKernel {
+public:
     Mul(OpKernelInfo* info) : OpKernel(info)
     {
     }
 
     void compute(OpKernelContext* context) override;
-
-private:
 };
 
 template<typename T>
-struct Reciprocal final : OpKernel {
-
+class Reciprocal final : public OpKernel {
+public:
     Reciprocal(OpKernelInfo* info) : OpKernel(info)
     {
     }
 
     void compute(OpKernelContext* context) override;
-
-private:
 };
 
 template<typename T>
-struct Sum final : OpKernel {
-
+class Sum final : public OpKernel {
+public:
     Sum(OpKernelInfo* info) : OpKernel(info)
     {
     }
 
     void compute(OpKernelContext* context) override;
-
-private:
 };
 
 }
 
-#endif // !CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OP_H
+#endif // !CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H
