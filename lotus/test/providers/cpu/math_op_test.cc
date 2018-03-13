@@ -72,10 +72,10 @@ namespace Lotus {
             test.graph_->AddNode("node1", "add", "add operator", {&input1_def, &input2_def}, {&output_def});
 
             std::vector<int64_t> dims{ 3, 3 };
-            auto input1 = TestUtils::CreateTensor<float>(dims, {  1.0f, 2.0f,  -1.0f, 0.0f, 1.5f, -100.0f,  -5.4f,  9.3f, -10000.0f });
-            auto input2 = TestUtils::CreateTensor<float>(dims, { -1.0f, 4.4f, 432.3f, 0.0f, 3.5f,   64.0f,  -5.4f,  9.3f,  10000.0f });
+            auto input1 = TestUtils::CreateTensor<float>(dims, {  1.0f, 2.0f,  -1.0f, 0.0f, 1.5f, -100.0f,  -5.4f,  9.3f, -10'000.0f });
+            auto input2 = TestUtils::CreateTensor<float>(dims, { -1.0f, 4.4f, 432.3f, 0.0f, 3.5f,   64.0f,  -5.4f,  9.3f,  10'000.0f });
             auto output = TestUtils::CreateTensor<float>(dims, std::vector<float>(3*3));
-            float expected_vals[] =                            {  0.0f, 6.4f, 431.3f, 0.0f, 5.0f,  -36.0f, -10.8f, 18.6f,      0.0f };
+            float expected_vals[] =                            {  0.0f, 6.4f, 431.3f, 0.0f, 5.0f,  -36.0f, -10.8f, 18.6f,       0.0f };
 
             test.Run<Add<float>>({ input1.get(), input2.get() }, { output.get() });
             test.Check(*output, expected_vals);
@@ -103,10 +103,10 @@ namespace Lotus {
             test.graph_->AddNode("node1", "sub", "sub operator", {&input1_def, &input2_def}, {&output_def});
             
             std::vector<int64_t> dims{ 3, 3 };
-            auto input1 = TestUtils::CreateTensor<float>(dims, {  1.0f, 2.0f,  -1.0f, 0.0f, 1.5f, -100.0f, -5.4f,  9.3f, -10000.0f });
-            auto input2 = TestUtils::CreateTensor<float>(dims, { -1.0f, 4.4f, 432.3f, 0.0f, 3.5f,   64.0f, -5.4f,  9.3f,  10000.0f });
+            auto input1 = TestUtils::CreateTensor<float>(dims, {  1.0f, 2.0f,  -1.0f, 0.0f, 1.5f, -100.0f, -5.4f,  9.3f, -10'000.0f });
+            auto input2 = TestUtils::CreateTensor<float>(dims, { -1.0f, 4.4f, 432.3f, 0.0f, 3.5f,   64.0f, -5.4f,  9.3f,  10'000.0f });
             auto output = TestUtils::CreateTensor<float>(dims, std::vector<float>(3*3));
-            float expected_vals[] =                            {  2.0f,-2.4f,-433.3f, 0.0f,-2.0f, -164.0f,  0.0f,  0.0f, -20000.0f };
+            float expected_vals[] =                            {  2.0f,-2.4f,-433.3f, 0.0f,-2.0f, -164.0f,  0.0f,  0.0f, -20'000.0f };
 
             test.Run<Sub<float>>({ input1.get(), input2.get() }, { output.get() });
             test.Check(*output, expected_vals);
