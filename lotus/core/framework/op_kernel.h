@@ -13,6 +13,9 @@
 namespace Lotus {
 class OpKernelContext;
 
+// A very light-weight class, which works as an aggregated
+// view of all data needed for constructing a Kernel instance.
+// NOTE: it does not own/hold any objects.
 class OpKernelInfo {
  public:
   explicit OpKernelInfo(const LotusIR::Node& node,
@@ -45,15 +48,15 @@ class OpKernel {
  public:
   typedef std::function<void()> DoneCallback;
 
-  explicit OpKernel(OpKernelInfo* info, const KernelDef* kernel_def)
+  explicit OpKernel(const OpKernelInfo& info, const KernelDef* kernel_def)
       : op_kernel_info_(info),
-        kernel_def_(kernel_def),
-        allocator_info_(info->get_allocator_info()) {
-    LOTUS_ENFORCE(nullptr != info);
+        kernel_def_(kernel_def) {
+      // TODO: enable this
+      // LOTUS_ENFORCE(nullptr != kernel_def, "kernel_def should be not nullptr.")
   }
 
   const LotusIR::Node& node() const {
-    return op_kernel_info_->node();
+    return op_kernel_info_.node();
   }
 
   const KernelDef* kernel_def() const {
@@ -67,12 +70,10 @@ class OpKernel {
     LOTUS_NOT_IMPLEMENTED;
   }
 
-  const AllocatorInfo& allocator() { return allocator_info_; }
+  const AllocatorInfo& allocator() { return op_kernel_info_.get_allocator_info(); }
 
- private:
-  const AllocatorInfo& allocator_info_;
-
-  OpKernelInfo* op_kernel_info_;  // TODO why is this a naked pointer? why not const ref ?
+ protected:
+  OpKernelInfo op_kernel_info_;
 
   // KernelDef of <*this> kernel, it's owned by global KernelRegistry.
   const KernelDef* kernel_def_;
@@ -132,7 +133,7 @@ class KernelRegistry {
   /**/
   Status CreateKernel(const LotusIR::OperatorSchema& op_schema,
                       const ProviderType& provider_type,
-                      OpKernelInfo* op_kernel_info,
+                      const OpKernelInfo& op_kernel_info,
                       /*out*/ OpKernel** op_kernel) const {
     // TODO: error check for op_name/op_domain/provider/since_version.
     // TODO: find the real appropriate kernel create info for specific version.

@@ -23,7 +23,7 @@ namespace Lotus
     {
         class TestOpKernel : public OpKernel {
         public:
-            TestOpKernel(OpKernelInfo* p, const KernelDef* kernel_def) : OpKernel(p, kernel_def) {}
+            TestOpKernel(const OpKernelInfo& p, const KernelDef* kernel_def) : OpKernel(p, kernel_def) {}
             void compute(OpKernelContext* context) {
                 UNUSED_PARAMETER(context);
             }
@@ -50,7 +50,7 @@ namespace Lotus
             LotusIR::Node* p_node = graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
-            OpKernelInfo* p_info = new OpKernelInfo(*p_node, allocator_info);
+            OpKernelInfo p_info(*p_node, allocator_info);
             unique_ptr<TestOpKernel> p_kernel;
             p_kernel.reset(new TestOpKernel(p_info, nullptr));
             size_t orig_num_outputs = p_kernel->node().OutputDefs().size();

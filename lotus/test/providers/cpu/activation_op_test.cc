@@ -18,7 +18,7 @@ namespace Lotus {
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
             OpKernelInfo info(*node, allocator_info);
 			
-			Sigmoid<float> kernel(&info, nullptr);
+			Sigmoid<float> kernel(info, nullptr);
             ExecutionFrame frame;
 
             std::vector<float> input_vals = { -3.f, -2.f, -1.f, 1.f, 2.f, 3.f };
@@ -53,7 +53,7 @@ namespace Lotus {
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
             OpKernelInfo info(*node, allocator_info);
 
-            ReLU<float> kernel(&info, nullptr);
+            ReLU<float> kernel(info, nullptr);
             ExecutionFrame frame;
 
             std::vector<float> input_vals = {

@@ -145,10 +145,9 @@ class InferenceSession::Impl {
   Common::Status ConstructKernels() {
     Graph* graph = session_state_.p_graph_;
     for (auto node_it = graph->Nodes_begin(); node_it != graph->Nodes_end(); ++node_it) {
-      const std::string& opId = (*node_it)->OpType();
       std::unique_ptr<OpKernel> op_kernel_ptr = CreateOpKernel(**node_it);
       if (!op_kernel_ptr) {
-        LOG(ERROR) << "Could not create kernel for opId: " << opId;
+        LOG(ERROR) << "Could not create kernel for opId: " << (*node_it)->OpType();
         continue;  // TODO for now ignore the error and continue until the actual kernels are ready
         // return Common::Status(Common::LOTUS,
         //                       Common::FAIL,
@@ -162,16 +161,14 @@ class InferenceSession::Impl {
 
   std::unique_ptr<OpKernel> CreateOpKernel(const Node& node) {
     const std::string& exec_provider_name = node.Device();
-    if (exec_provider_name.empty()) {
-        LOG(ERROR) << "Could not create kernel for op: " << node.OpType() << " as there's no execution provider allocated.";
+    if (exec_provider_name.empty() || execution_providers_.end() == execution_providers_.find(exec_provider_name)) {
+        LOG(ERROR) << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";
         return nullptr;
     }
-    const AllocatorInfo& allocator_info = execution_providers_[exec_provider_name]->GetTempSpaceAllocator().Info();
-    // TODO: this is a bug that OpKernelInfo can't be a stack variable here. It's hold by OpKernel and should be something on heap.
-    // Will fix it later.
+    auto& allocator_info = execution_providers_[exec_provider_name]->GetTempSpaceAllocator().Info();
     OpKernelInfo op_kernel_info{node, allocator_info};
     OpKernel* result;
-    auto status = KernelRegistry::Instance()->CreateKernel(*(node.Op()), node.Device(), &op_kernel_info, &result);
+    auto status = KernelRegistry::Instance()->CreateKernel(*(node.Op()), exec_provider_name, op_kernel_info, &result);
     return std::unique_ptr<OpKernel>(result);
   }
 

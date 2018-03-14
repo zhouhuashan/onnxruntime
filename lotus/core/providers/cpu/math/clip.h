@@ -11,12 +11,12 @@ template<typename T>
 class Clip final : public OpKernel {
 
 public:
-    Clip(OpKernelInfo* info, const KernelDef* kernel_def): OpKernel(info, kernel_def)
+    Clip(const OpKernelInfo& info, const KernelDef* kernel_def): OpKernel(info, kernel_def)
     {
-        if (!info->GetAttr<T>("max", &max_).IsOK()) {
+        if (!op_kernel_info_.GetAttr<T>("max", &max_).IsOK()) {
              max_ = std::numeric_limits<T>::max();
         }
-        if (!info->GetAttr<T>("min", &min_).IsOK()){
+        if (!op_kernel_info_.GetAttr<T>("min", &min_).IsOK()){
             min_ = std::numeric_limits<T>::min();
         }
     }
