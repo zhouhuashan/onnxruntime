@@ -19,9 +19,11 @@ class OpKernelContext;
 class OpKernelInfo {
  public:
   explicit OpKernelInfo(const LotusIR::Node& node,
-                        const AllocatorInfo& allocator_info)
+                        const AllocatorInfo& allocator_info,
+                        const KernelDef& kernel_def)
       : node_(node),
-        allocator_info_(allocator_info) {}
+        allocator_info_(allocator_info),
+        kernel_def_(kernel_def){}
 
   //Get a single attribute
   template <typename T>
@@ -39,18 +41,22 @@ class OpKernelInfo {
     return allocator_info_;
   }
 
+  const KernelDef& get_kernel_def() const {
+      return kernel_def_;
+  }
+
  private:
   const LotusIR::Node& node_;
   const AllocatorInfo& allocator_info_;
+  const KernelDef& kernel_def_;
 };
 
 class OpKernel {
  public:
   typedef std::function<void()> DoneCallback;
 
-  explicit OpKernel(const OpKernelInfo& info, const KernelDef* kernel_def)
-      : op_kernel_info_(info),
-        kernel_def_(kernel_def) {
+  explicit OpKernel(const OpKernelInfo& info)
+      : op_kernel_info_(info) {
       // TODO: enable this
       // LOTUS_ENFORCE(nullptr != kernel_def, "kernel_def should be not nullptr.")
   }
@@ -59,8 +65,8 @@ class OpKernel {
     return op_kernel_info_.node();
   }
 
-  const KernelDef* kernel_def() const {
-    return kernel_def_;
+  const KernelDef& kernel_def() const {
+    return op_kernel_info_.get_kernel_def();
   }
 
   virtual void compute(OpKernelContext* context) = 0;
@@ -74,8 +80,7 @@ class OpKernel {
 
  protected:
   OpKernelInfo op_kernel_info_;
-
-  // KernelDef of <*this> kernel, it's owned by global KernelRegistry.
+  
   const KernelDef* kernel_def_;
 };
 
@@ -133,13 +138,15 @@ class KernelRegistry {
   /**/
   Status CreateKernel(const LotusIR::OperatorSchema& op_schema,
                       const ProviderType& provider_type,
-                      const OpKernelInfo& op_kernel_info,
+                      const LotusIR::Node& node,
+                      const AllocatorInfo& allocator_info,
                       /*out*/ OpKernel** op_kernel) const {
     // TODO: error check for op_name/op_domain/provider/since_version.
     // TODO: find the real appropriate kernel create info for specific version.
     UNUSED_PARAMETER(op_schema);
     UNUSED_PARAMETER(provider_type);
-    UNUSED_PARAMETER(op_kernel_info);
+    UNUSED_PARAMETER(node);
+    UNUSED_PARAMETER(allocator_info);
     UNUSED_PARAMETER(op_kernel);
     return Status::OK();
   }

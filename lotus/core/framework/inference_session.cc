@@ -166,9 +166,8 @@ class InferenceSession::Impl {
         return nullptr;
     }
     auto& allocator_info = execution_providers_[exec_provider_name]->GetTempSpaceAllocator().Info();
-    OpKernelInfo op_kernel_info{node, allocator_info};
     OpKernel* result;
-    auto status = KernelRegistry::Instance()->CreateKernel(*(node.Op()), exec_provider_name, op_kernel_info, &result);
+    auto status = KernelRegistry::Instance()->CreateKernel(*(node.Op()), exec_provider_name, node, allocator_info, &result);
     return std::unique_ptr<OpKernel>(result);
   }
 

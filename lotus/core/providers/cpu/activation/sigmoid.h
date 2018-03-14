@@ -11,7 +11,7 @@ namespace Lotus {
     class Sigmoid final : public OpKernel {
 
     public:
-        Sigmoid(const OpKernelInfo& info, const KernelDef* kernel_def) : OpKernel(info, kernel_def)
+        Sigmoid(const OpKernelInfo& info) : OpKernel(info)
         {
         }
 

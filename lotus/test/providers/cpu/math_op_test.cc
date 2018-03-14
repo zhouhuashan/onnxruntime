@@ -16,8 +16,9 @@ namespace Lotus {
             EXPECT_TRUE(node->AddAttribute("max", 10.0f));
 
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
-            OpKernelInfo info(*node, allocator_info);
-            Clip<float> kernel(info, nullptr);
+            KernelDef kernel_def;
+            OpKernelInfo info(*node, allocator_info, kernel_def);
+            Clip<float> kernel(info);
             ExecutionFrame frame;
             
             std::vector<float> input_vals = { 11.0f, 4.4f, 432.3f, -1.3f, 3.5f, 64.0f, -5.4f, 9.3f, 82.4f };

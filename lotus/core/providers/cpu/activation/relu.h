@@ -11,7 +11,7 @@ namespace Lotus {
     class ReLU final : public OpKernel {
 
     public:
-        ReLU(const OpKernelInfo& info, const KernelDef* kernel_def) : OpKernel(info, kernel_def)
+        ReLU(const OpKernelInfo& info) : OpKernel(info)
         {
         }
 
