@@ -1,4 +1,5 @@
 #include "core/framework/op_kernel.h"
+#include "core/framework/execution_frame.h"
 
 namespace Lotus {
 
@@ -65,5 +66,13 @@ namespace Lotus {
         LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
         (index);
         return nullptr;
+    }
+
+    OpKernelContext::OpKernelContext(ExecutionFrame* frame, OpKernel* kernel)
+        : execution_frame_(frame),
+        kernel_(kernel)
+    {
+        LOTUS_ENFORCE(nullptr != frame && kernel != nullptr);
+        arg_start_index_ = frame->get_first_arg_index(kernel->node().Index());
     }
 }

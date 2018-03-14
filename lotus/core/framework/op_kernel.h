@@ -88,25 +88,20 @@ class OpKernelContext {
  public:
   typedef std::unordered_map<std::string, size_t> ArgMap;
 
-  explicit OpKernelContext(ExecutionFrame* frame, OpKernel* kernel)
-      : execution_frame_(frame),
-        kernel_(kernel) {
-    LOTUS_ENFORCE(nullptr != frame && nullptr != kernel);
-    arg_start_index_ = frame->get_first_arg_index(kernel->node().Index());
-  }
+  explicit OpKernelContext(ExecutionFrame* frame, OpKernel* kernel);
 
   ~OpKernelContext(){};
 
   template <typename T>
   const T* input(int index) const {
-    return execution_frame_->get_input<T>(arg_start_index_ + index);
+    return execution_frame_->get_value<T>(arg_start_index_ + index);
   }
 
   // Fetch output (non-tensor) with specified index.
   template <typename T>
   T* output(int index) {
     auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->node().InputDefs().size()) + index;
-    return execution_frame_->get_output<T>(output_arg_index);
+    return execution_frame_->get_mutable_value<T>(output_arg_index);
   }
 
   // In the case that memory allocation has not been done for an output tensor,
