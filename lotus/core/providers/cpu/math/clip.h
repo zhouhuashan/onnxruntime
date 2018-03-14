@@ -11,7 +11,7 @@ template<typename T>
 class Clip final : public OpKernel {
 
 public:
-    Clip(OpKernelInfo* info): OpKernel(info)
+    Clip(OpKernelInfo* info, const KernelDef* kernel_def): OpKernel(info, kernel_def)
     {
         if (!info->GetAttr<T>("max", &max_).IsOK()) {
              max_ = std::numeric_limits<T>::max();

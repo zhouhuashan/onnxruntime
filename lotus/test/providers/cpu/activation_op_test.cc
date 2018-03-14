@@ -15,7 +15,7 @@ namespace Lotus {
 
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
             OpKernelInfo info(*node, allocator_info);
-            ReLU<float> kernel(&info);
+            ReLU<float> kernel(&info, nullptr);
             ExecutionFrame frame;
 
             std::vector<float> input_vals = {

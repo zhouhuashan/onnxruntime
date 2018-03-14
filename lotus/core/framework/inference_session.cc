@@ -4,13 +4,13 @@
 
 #include "core/common/logging.h"
 #include "core/framework/executor.h"
+#include "core/framework/kernel_def_builder.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
 #include "core/lib/threadpool.h"
 #include "core/platform/notification.h"
-#include "core/framework/kernel_def_builder.h"
 
 namespace Lotus {
 
@@ -37,7 +37,7 @@ class InferenceSession::Impl {
 
   Common::Status Load(const std::string& model_uri) {
     std::lock_guard<std::mutex> l(session_mutex_);
-    if (is_model_loaded_) { // already loaded
+    if (is_model_loaded_) {  // already loaded
       LOG(INFO) << "Model: " << model_uri << " has already been loaded.";
       return Common::Status::OK();
     }
@@ -59,14 +59,14 @@ class InferenceSession::Impl {
       return Common::Status(Common::LOTUS, Common::FAIL, "Model was not loaded.");
     }
 
-    if (is_inited_) { // already initialized
+    if (is_inited_) {  // already initialized
       LOG(INFO) << "Session has already been initialized.";
       return Common::Status::OK();
     }
 
     LOTUS_RETURN_IF_ERROR(TransformGraph());
     LOTUS_RETURN_IF_ERROR(ConstructKernels());
-    
+
     // TODO add other per session initialization stuff here
 
     is_inited_ = true;
@@ -135,7 +135,7 @@ class InferenceSession::Impl {
 
  private:
   Common::Status TransformGraph() {
-    for (auto& ep: execution_providers_) {
+    for (auto& ep : execution_providers_) {
       bool is_modified;
       ep.second->GetTransformer().Apply(*session_state_.p_graph_, is_modified);
     }
@@ -144,12 +144,12 @@ class InferenceSession::Impl {
 
   Common::Status ConstructKernels() {
     Graph* graph = session_state_.p_graph_;
-    for (auto node_it = graph->Nodes_begin(); node_it!=graph->Nodes_end(); ++node_it) {
+    for (auto node_it = graph->Nodes_begin(); node_it != graph->Nodes_end(); ++node_it) {
       const std::string& opId = (*node_it)->OpType();
-      std::unique_ptr<OpKernel> op_kernel_ptr = CreateOpKernel(opId, *node_it);
+      std::unique_ptr<OpKernel> op_kernel_ptr = CreateOpKernel(**node_it);
       if (!op_kernel_ptr) {
         LOG(ERROR) << "Could not create kernel for opId: " << opId;
-        continue; // TODO for now ignore the error and continue until the actual kernels are ready
+        continue;  // TODO for now ignore the error and continue until the actual kernels are ready
         // return Common::Status(Common::LOTUS,
         //                       Common::FAIL,
         //                       "Failed to initialize session because kernel creation failed");
@@ -160,18 +160,19 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  std::unique_ptr<OpKernel> CreateOpKernel(const std::string& opId, const Node* node) {
-    // TODO KernelRegistry is a multimap and hence to find the right match we need
-    // more than just the operator name.
-    const KernelCreateInfo* p_kernel_create_info = GetOpKernelCreateInfoFromRegistry(opId);
-    if (!p_kernel_create_info) {
-      LOG(ERROR) << "Could not create kernel for op: " << opId;
-      return nullptr;
+  std::unique_ptr<OpKernel> CreateOpKernel(const Node& node) {
+    const std::string& exec_provider_name = node.Device();
+    if (exec_provider_name.empty()) {
+        LOG(ERROR) << "Could not create kernel for op: " << node.OpType() << " as there's no execution provider allocated.";
+        return nullptr;
     }
-    const std::string& exec_provider_name = node->Device(); // TODO is this the right way to identify the execution provider?
     const AllocatorInfo& allocator_info = execution_providers_[exec_provider_name]->GetTempSpaceAllocator().Info();
-    OpKernelInfo op_kernel_info {*node, allocator_info};
-    return std::unique_ptr<OpKernel>(p_kernel_create_info->kernel_create_fn(&op_kernel_info));
+    // TODO: this is a bug that OpKernelInfo can't be a stack variable here. It's hold by OpKernel and should be something on heap.
+    // Will fix it later.
+    OpKernelInfo op_kernel_info{node, allocator_info};
+    OpKernel* result;
+    auto status = KernelRegistry::Instance()->CreateKernel(*(node.Op()), node.Device(), &op_kernel_info, &result);
+    return std::unique_ptr<OpKernel>(result);
   }
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {
@@ -204,16 +205,15 @@ class InferenceSession::Impl {
   // Number of concurrently running executors
   std::atomic<int> current_num_runs_;
 
-  std::mutex session_mutex_; // to ensure only one thread can invoke Load/Initialize
-  bool is_model_loaded_ = false; // GUARDED_BY(session_mutex_)
-  bool is_inited_ = false; // GUARDED_BY(session_mutex_)
+  std::mutex session_mutex_;      // to ensure only one thread can invoke Load/Initialize
+  bool is_model_loaded_ = false;  // GUARDED_BY(session_mutex_)
+  bool is_inited_ = false;        // GUARDED_BY(session_mutex_)
 };
 
 //
 // InferenceSession
 //
-InferenceSession::InferenceSession(const SessionOptions& session_options):
-    impl_(new Impl(session_options)) {  
+InferenceSession::InferenceSession(const SessionOptions& session_options) : impl_(new Impl(session_options)) {
 }
 
 InferenceSession::~InferenceSession() = default;

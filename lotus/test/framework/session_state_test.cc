@@ -23,7 +23,7 @@ namespace Lotus
     {
         class TestOpKernel : public OpKernel {
         public:
-            TestOpKernel(OpKernelInfo* p) : OpKernel(p) {}
+            TestOpKernel(OpKernelInfo* p, const KernelDef* kernel_def) : OpKernel(p, kernel_def) {}
             void compute(OpKernelContext* context) {
                 UNUSED_PARAMETER(context);
             }
@@ -52,7 +52,7 @@ namespace Lotus
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
             OpKernelInfo* p_info = new OpKernelInfo(*p_node, allocator_info);
             unique_ptr<TestOpKernel> p_kernel;
-            p_kernel.reset(new TestOpKernel(p_info));
+            p_kernel.reset(new TestOpKernel(p_info, nullptr));
             size_t orig_num_outputs = p_kernel->node().OutputDefs().size();
             //std::cout << "node_idx: " << p_node->Index() << std::endl;
             s.AddKernel(p_node->Index(), std::move(p_kernel));
