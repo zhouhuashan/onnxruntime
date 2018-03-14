@@ -10,7 +10,7 @@ namespace Lotus {
 template<typename T>
 class Add final : public OpKernel {
 public:
-    Add(OpKernelInfo* info) : OpKernel(info)
+    Add(const OpKernelInfo& info) : OpKernel(info)
     {
     }
 
@@ -20,7 +20,7 @@ public:
 template<typename T>
 class Sub final : public OpKernel {
 public:
-    Sub(OpKernelInfo* info) : OpKernel(info)
+    Sub(const OpKernelInfo& info) : OpKernel(info)
     {
     }
 
@@ -30,7 +30,7 @@ public:
 template<typename T>
 class Mul final : public OpKernel {
 public:
-    Mul(OpKernelInfo* info) : OpKernel(info)
+    Mul(const OpKernelInfo& info) : OpKernel(info)
     {
     }
 
@@ -40,7 +40,7 @@ public:
 template<typename T>
 class Reciprocal final : public OpKernel {
 public:
-    Reciprocal(OpKernelInfo* info) : OpKernel(info)
+    Reciprocal(const OpKernelInfo& info) : OpKernel(info)
     {
     }
 
@@ -50,7 +50,7 @@ public:
 template<typename T>
 class Sum final : public OpKernel {
 public:
-    Sum(OpKernelInfo* info) : OpKernel(info)
+    Sum(const OpKernelInfo& info) : OpKernel(info)
     {
     }
 

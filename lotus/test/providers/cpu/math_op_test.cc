@@ -46,8 +46,9 @@ namespace Lotus {
                 LotusIR::Node* node = graph_->GetNode(graph_->NumberOfNodes() - 1);
 
                 AllocatorInfo allocator_info{"CPUAllocator", Lotus::AllocatorType::ArenaAllocator};
-                OpKernelInfo info(*node, allocator_info);
-                Op kernel(&info);
+                KernelDef kernel_def;
+                OpKernelInfo info(*node, allocator_info, kernel_def);
+                Op kernel(info);
                 ExecutionFrame frame;
                 auto ctx = TestUtils::CreateKernelContext(&kernel, frame, std::move(inputs), std::move(outputs));
                 kernel.compute(ctx.get());
