@@ -1,5 +1,4 @@
 #include "core/providers/cpu/math/element_wise_ops.h"
-#include "core/providers/cpu/math/constant.h"
 #include "core/providers/cpu/math/clip.h"
 #include "gtest/gtest.h"
 #include "test/test_utils.h"
@@ -142,50 +141,5 @@ namespace Lotus {
             test.Check(*output, expected_vals);
         }
 
-        TEST(MathOpTest, Constant) {
-            SimpleFloatTest test;
-            LotusIR::NodeArg output_def("C", &test.tensor_float_);
-            test.graph_->AddNode("node1", "constant", "constant operator", {}, {&output_def});
-
-            std::vector<int64_t> dims{ 2, 3 };
-            float expected_vals[] = {  11.0f, 12.0f, 13.0f, 21.0f, 22.0f, 23.0f };
-
-            TensorProto tensorConstant;
-            tensorConstant.set_data_type(TensorProto_DataType_FLOAT);
-            for(auto v : expected_vals)
-                tensorConstant.add_float_data(v);
-            for(auto dim : dims)
-                tensorConstant.add_dims(dim);
-
-            LotusIR::Node* node = test.graph_->GetNode(test.graph_->NumberOfNodes() - 1);
-            EXPECT_TRUE(node->AddAttribute("value", tensorConstant ) );
-
-            auto output = TestUtils::CreateTensor<float>(dims, std::vector<float>(2*3));
-
-            test.Run<Constant<float>>({}, { output.get() });
-            test.Check(*output, expected_vals);
-        }
-
-#if 0
-        TEST(MathOpTest, Concat) {
-            SimpleFloatTest test;
-            LotusIR::NodeArg input1_def("A", &test.tensor_float_), input2_def("B", &test.tensor_float_), input3_def("A3", &test.tensor_float_), output_def("C", &test.tensor_float_);
-
-            test.graph_->AddNode("node1", "concat", "sum operator", {&input1_def, &input2_def, &input3_def}, {&output_def});
-
-            LotusIR::Node* node = test.graph_->GetNode(test.graph_->NumberOfNodes() - 1);
-            EXPECT_TRUE(node->AddAttribute("axis", 1.0f));
-
-            std::vector<int64_t> dims{ 3, 3 };
-            auto input1 = TestUtils::CreateTensor<float>(dims, {  1.0f, 0.0f, 1.0f, -1.0f, 1.1f,  -100.0f,  -5.4f,  0.01f, -10'000.0f });
-            auto input2 = TestUtils::CreateTensor<float>(dims, {  1.0f, 0.0f, 2.0f, -2.0f, 2.2f,    64.0f,  -1.0f,  0.02f,       0.1f });
-            auto input3 = TestUtils::CreateTensor<float>(dims, {  1.0f, 0.0f, 3.0f, -3.0f, 3.3f,    64.0f,   5.4f,  0.03f,  10'000.0f });
-            auto output = TestUtils::CreateTensor<float>(dims, std::vector<float>(3*3));
-            float expected_vals[] =                            {  3.0f, 0.0f, 6.0f, -6.0f, 6.6f,    28.0f,  -1.0f,  0.06f,       0.1f };
-
-            test.Run<Concat<float>>({ input1.get(), input2.get(), input3.get() }, { output.get() });
-            test.Check(*output, expected_vals);
-        }
-#endif
     }
 }
