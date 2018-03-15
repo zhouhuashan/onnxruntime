@@ -17,8 +17,7 @@ namespace Test {
 TEST(InferenceSessionTestNoTimeout, RunTest) {
   ExecutionProviderInfo epi;
   ProviderOption po {"CPUExecutionProvider", epi};
-  SessionOptions so;
-  so.ep_options.push_back(po);
+  SessionOptions so(vector<ProviderOption>{po}, true);
   InferenceSession session_object {so};
   EXPECT_TRUE(session_object.Load("testdata/super_resolution.pb").IsOK());
   EXPECT_TRUE(session_object.Initialize().IsOK());
@@ -36,7 +35,7 @@ TEST(InferenceSessionTestNoTimeout, RunTest) {
 TEST(MultipleInferenceSessionTestNoTimeout, RunTest) {
   ExecutionProviderInfo epi;
   ProviderOption po {"CPUExecutionProvider", epi};
-  SessionOptions session_options;
+  SessionOptions session_options(vector<ProviderOption>{po}, true);
   session_options.ep_options.push_back(po);  
   InferenceSession session_object {session_options};
   EXPECT_TRUE(session_object.Load("testdata/super_resolution.pb").IsOK());
