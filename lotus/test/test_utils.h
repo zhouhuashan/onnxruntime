@@ -23,7 +23,7 @@ namespace Lotus {
             {
                 LOTUS_ENFORCE(graph);
                 return std::make_shared<ExecutionFrame>(
-                    graph,
+                    //graph,
                     std::unordered_map<std::string, MLValue>{},
                     std::vector<std::string>{},
                     session_state);
@@ -75,10 +75,10 @@ namespace Lotus {
             }
         };
 
-        #define CREATE_NODE(op_name, inputs, outputs)                                           \
-          LotusIR::Model model("test");                                                     \
-          LotusIR::Graph* graph = model.MainGraph();                                        \
-          graph->AddNode("node1", #op_name, #op_name, inputs, outputs);      \
+        #define CREATE_NODE(op_name, inputs, outputs)                       \
+          LotusIR::Model model("test");                                     \
+          LotusIR::Graph* graph = model.MainGraph();                        \
+          graph->AddNode("node1", op_name, op_name, inputs, outputs);       \
           LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
     }
 }

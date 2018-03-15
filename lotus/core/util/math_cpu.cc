@@ -1427,7 +1427,7 @@ EIGEN_SIMPLE_BINARY_FUNCTION(int64_t, Funcname, expr)
 #ifdef _MSC_VER
             static const uint32_t pid{ ::GetCurrentProcessId() };
 #else // !_MSC_VER
-            static const uint32_t pid{ getpid() };
+            static const uint32_t pid{ (uint32_t)getpid() };
 #endif // _MSC_VER
             return kPrime0 * (seedInput++) + kPrime1 * pid +
                 kPrime2 * tv_sec + kPrime3 * tv_usec;

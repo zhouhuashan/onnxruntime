@@ -170,7 +170,7 @@ namespace LotusIR
         m_controlInputs = p_other.m_controlInputs;
         m_outputDefs = p_other.m_outputDefs;
         m_outputNodes = p_other.m_outputNodes;
-        m_device = p_other.m_device;
+        m_execution_provider = p_other.m_execution_provider;
         m_attributes = p_other.m_attributes;
     }
 
@@ -291,14 +291,14 @@ namespace LotusIR
         return m_outputDefs;
     }
 
-    const std::string& Node::Device() const
+    const std::string& Node::GetExecutionProvider() const
     {
-        return m_device;
+        return m_execution_provider;
     }
 
-    void Node::SetDevice(const std::string& p_device)
+    void Node::SetExecutionProvider(const std::string& p_execution_provider)
     {
-        m_device = p_device;
+        m_execution_provider = p_execution_provider;
     }
 
     void Node::ToProto(NodeProto& p_proto) const
@@ -1340,7 +1340,7 @@ namespace LotusIR
     {
         RETURN_IF_ERROR(Resolve());
 
-        *nodes = &m_nodesInTopologicalOrder;
+        *nodes = &m_nodesInTopologicalOrder; // QUESTION: returning non-const ptr to a member?
         return Status::OK();
     }
 
@@ -1385,21 +1385,21 @@ namespace LotusIR
         return &m_nodeArgs;
     }
 
-    void Graph::AddInitialTensor(const TensorProto& p_tensor)
+    void Graph::AddInitializedTensor(const TensorProto& p_tensor)
     {
         m_nameToInitialTensor[p_tensor.name()] = p_tensor;
         m_graphProtoSyncNeeded = true;
         m_graphResolveNeeded = true;
     }
 
-    void Graph::RemoveInitialTensor(const std::string& p_tensorName)
+    void Graph::RemoveInitializedTensor(const std::string& p_tensorName)
     {
         m_nameToInitialTensor.erase(p_tensorName);
         m_graphProtoSyncNeeded = true;
         m_graphResolveNeeded = true;
     }
 
-    bool Graph::GetInitialTensor(const std::string& p_tensorName,
+    bool Graph::GetInitializedTensor(const std::string& p_tensorName,
         TensorProto& p_value) const
     {
         auto iter = m_nameToInitialTensor.find(p_tensorName);
@@ -1411,7 +1411,7 @@ namespace LotusIR
         return true;
     }
 
-    const InitialTensorSet& Graph::GetAllInitialTensors() const
+    const InitializedTensorSet& Graph::GetAllInitializedTensors() const
     {
         return m_nameToInitialTensor;
     }
@@ -1431,7 +1431,7 @@ namespace LotusIR
         return m_valueInfo;
     }
 
-    Node* GraphBase::GetNode(NODEINDEX p_nodeIndex)
+    Node* GraphBase::GetNode(NODEINDEX p_nodeIndex) const
     {
         if (MaxNodeIndex() <= p_nodeIndex)
         {

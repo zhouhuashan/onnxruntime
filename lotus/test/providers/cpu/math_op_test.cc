@@ -11,7 +11,7 @@ namespace Lotus {
             LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
             std::vector<LotusIR::NodeArg*> input_defs{ &input_def };
             std::vector<LotusIR::NodeArg*> output_defs{ &output_def };
-            CREATE_NODE(Clip, input_defs, output_defs);
+            CREATE_NODE("Clip", input_defs, output_defs);
             
             EXPECT_TRUE(node->AddAttribute("min", -10.0f));
             EXPECT_TRUE(node->AddAttribute("max", 10.0f));
@@ -26,6 +26,7 @@ namespace Lotus {
             std::vector<float> expected_vals = { 10.0f, 4.4f, 10.0f, -1.3f, 3.5f, 10.0f, -5.4f, 9.3f, 10.0f };
 
             SessionState state;
+            state.Init(graph);
             auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(graph, state);
             auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, dims, &input_vals);
             EXPECT_TRUE(status.IsOK());

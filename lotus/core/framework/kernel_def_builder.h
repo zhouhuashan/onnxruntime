@@ -40,15 +40,20 @@ class KernelDef {
     return *this;
   }
 
+  // The start and end version should be set accordingly per version range for
+  // each domain registered in OpSchemaRegistry::DomainToVersionRange in
+  // \Lotus\lotus\core\graph\op.h as below.
+  // Key: domain. Value: <lowest version, highest version> pair.
+  // std::unordered_map<std::string, std::pair<int, int>> m_map;
   KernelDef& SinceVersion(int since_version_start, int since_version_end) {
     op_since_version_start_ = since_version_start;
     op_since_version_end_ = since_version_end;
     return *this;
   }
 
-  void SinceVersion(int& start, int& end) const {
-    start = op_since_version_start_;
-    end = op_since_version_end_;
+  void SinceVersion(/*out*/ int* start, /*out*/ int* end) const {
+    *start = op_since_version_start_;
+    *end = op_since_version_end_;
   }
 
   // The execution provider type of the kernel.
@@ -63,8 +68,10 @@ class KernelDef {
 
   // Specify the set of types that this kernel supports. A further restriction
   // of the set of types specified in the op schema.
+  // The arg name could be either op formal parameter name, say "X", or type argument name
+  // specified in op schema, say "T".
   KernelDef& TypeConstraint(const std::string& arg_name,
-                            std::vector<MLDataType> supported_types) {
+                            const std::vector<MLDataType>& supported_types) {
     type_constraints_[arg_name] = supported_types;
     return *this;
   }
@@ -111,11 +118,19 @@ class KernelDef {
     return *this;
   }
 
+  const std::vector<std::pair<int, int>>& Alias() const {
+    return alias_map_;
+  }
+
   // Specify that this kernel requires/provides an input/output arg
   // in host memory (instead of the default, device memory).
   KernelDef& HostMemory(int index, bool is_input) {
     host_memory_args_.push_back({index, is_input});
     return *this;
+  }
+
+  const std::vector<std::pair<int, bool>>& HostMemory() const {
+    return host_memory_args_;
   }
 
  private:
@@ -124,10 +139,10 @@ class KernelDef {
   // The operator since_version range supported by <*this> kernel.
   // A kernel could support an operator definition between <op_since_version_start>
   // and <op_since_version_end> (inclusive).
-  int op_since_version_start_;
-  int op_since_version_end_;
+  int op_since_version_start_ = 1;
+  int op_since_version_end_ = INT_MAX;
   // THe operator domain supported by <*this> kernel.
-  std::string op_domain_;
+  std::string op_domain_ = LotusIR::c_onnxDomain;
 
   // The type of the execution provider.
   ProviderType provider_type_;

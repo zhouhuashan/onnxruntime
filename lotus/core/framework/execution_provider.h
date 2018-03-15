@@ -23,7 +23,7 @@ namespace Lotus
     // Graph to graph transformation. The resulting graph may contain custom 
     // operators introduced by this execution provider. Newly formed custom
     // functions must be registered in kernelRegistry_. 
-    virtual IGraphTransformer& GetTransformer() const = 0;
+    virtual IGraphTransformer& GetTransformer() = 0;
 
     // Get IAllocator for <*this> execution provider.
     // It will be used for allocating tensors (inputs/outputs) or copying tensors
@@ -31,7 +31,7 @@ namespace Lotus
     virtual IArenaAllocator& GetTempSpaceAllocator() const = 0;
 
     // Run the computation of a given node.
-    virtual void Compute(const Node& node, OpKernelContext* context) = 0;
+    virtual Common::Status Compute(const Node& node, OpKernelContext* context) = 0;
 
     // TODO: Do we still need these copy methods?
     virtual Status CopyTensorTo(const Tensor& srcTensor,

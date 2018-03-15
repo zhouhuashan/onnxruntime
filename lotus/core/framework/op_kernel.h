@@ -7,6 +7,7 @@
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
+#include "core/graph/constants.h"
 #include "core/graph/graph.h"
 #include "core/graph/op.h"
 
@@ -23,7 +24,7 @@ class OpKernelInfo {
                         const KernelDef& kernel_def)
       : node_(node),
         allocator_info_(allocator_info),
-        kernel_def_(kernel_def){}
+        kernel_def_(kernel_def) {}
 
   //Get a single attribute
   template <typename T>
@@ -42,7 +43,7 @@ class OpKernelInfo {
   }
 
   const KernelDef& get_kernel_def() const {
-      return kernel_def_;
+    return kernel_def_;
   }
 
  private:
@@ -57,8 +58,8 @@ class OpKernel {
 
   explicit OpKernel(const OpKernelInfo& info)
       : op_kernel_info_(info) {
-      // TODO: enable this
-      // LOTUS_ENFORCE(nullptr != kernel_def, "kernel_def should be not nullptr.")
+    // TODO: enable this
+    // LOTUS_ENFORCE(nullptr != kernel_def, "kernel_def should be not nullptr.")
   }
 
   const LotusIR::Node& node() const {
@@ -80,7 +81,7 @@ class OpKernel {
 
  protected:
   OpKernelInfo op_kernel_info_;
-  
+
   const KernelDef* kernel_def_;
 };
 
@@ -117,7 +118,7 @@ class OpKernelContext {
   int arg_start_index_ = -1;
 };
 
-typedef OpKernel* (*KernelCreateFn)(OpKernelInfo*, const KernelDef*);
+typedef OpKernel* (*KernelCreateFn)(const OpKernelInfo&);
 
 class KernelRegistry {
  public:
@@ -128,14 +129,18 @@ class KernelRegistry {
     auto& provider = kernel_def.Provider();
     // TODO: check version overlap issue. For example, there're multiple kernels registered for same version.
     kernel_creator_fn_map_[op_name][op_domain][provider].push_back(KernelCreateInfo(kernel_def, kernel_creator));
+    return Status::OK();
   }
 
   /**/
+  // factory functions should always return a unique_ptr for maximum flexibility
+  // for its clients unless the factory is managing the lifecycle of the pointer
+  // itself.
   Status CreateKernel(const LotusIR::OperatorSchema& op_schema,
                       const ProviderType& provider_type,
                       const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
-                      /*out*/ OpKernel** op_kernel) const {
+                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
     // TODO: error check for op_name/op_domain/provider/since_version.
     // TODO: find the real appropriate kernel create info for specific version.
     UNUSED_PARAMETER(op_schema);
@@ -171,5 +176,12 @@ class KernelRegistry {
                                         std::unordered_map<ProviderType, std::vector<KernelCreateInfo>>>>
       kernel_creator_fn_map_;
 };
+
+#define REGISTER_KERNEL(kernel_def, ...) REGISTER_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def, __VA_ARGS__)
+#define REGISTER_KERNEL_UNIQ_HELPER(counter, kernel_def, ...) REGISTER_KERNEL_UNIQ(counter, kernel_def, __VA_ARGS__)
+#define REGISTER_KERNEL_UNIQ(counter, kernel_def, ...) \
+static Lotus::Common::Status kernel_def_##counter##_status = KernelRegistry::Instance()->Register(kernel_def, \
+[](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });
+
 }  // namespace Lotus
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H

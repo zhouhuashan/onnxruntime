@@ -103,6 +103,7 @@ if (WIN32)
     endif()
 else()
     add_definitions(-DPLATFORM_POSIX)    
+    add_compile_options(-Werror)
 endif()
 
 include_directories(
