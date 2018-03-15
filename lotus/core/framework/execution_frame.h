@@ -8,6 +8,7 @@
 #include "core/common/status.h"
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
+//#include "core/framework/session_state.h"
 
 namespace Lotus
 {

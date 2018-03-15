@@ -7,6 +7,7 @@
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
+#include "core/graph/constants.h"
 #include "core/graph/graph.h"
 #include "core/graph/op.h"
 
@@ -117,7 +118,7 @@ class OpKernelContext {
   int arg_start_index_ = -1;
 };
 
-typedef OpKernel* (*KernelCreateFn)(OpKernelInfo*, const KernelDef*);
+typedef OpKernel* (*KernelCreateFn)(const OpKernelInfo&);
 
 class KernelRegistry {
  public:
@@ -128,6 +129,7 @@ class KernelRegistry {
     auto& provider = kernel_def.Provider();
     // TODO: check version overlap issue. For example, there're multiple kernels registered for same version.
     kernel_creator_fn_map_[op_name][op_domain][provider].push_back(KernelCreateInfo(kernel_def, kernel_creator));
+    return Status::OK();
   }
 
   /**/
@@ -174,5 +176,12 @@ class KernelRegistry {
                                         std::unordered_map<ProviderType, std::vector<KernelCreateInfo>>>>
       kernel_creator_fn_map_;
 };
+
+#define REGISTER_KERNEL(kernel_def, ...) REGISTER_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def, __VA_ARGS__)
+#define REGISTER_KERNEL_UNIQ_HELPER(counter, kernel_def, ...) REGISTER_KERNEL_UNIQ(counter, kernel_def, __VA_ARGS__)
+#define REGISTER_KERNEL_UNIQ(counter, kernel_def, ...) \
+static Lotus::Common::Status kernel_def_##counter##_status = KernelRegistry::Instance()->Register(kernel_def, \
+[](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });
+
 }  // namespace Lotus
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H

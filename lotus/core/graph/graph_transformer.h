@@ -74,7 +74,8 @@ namespace LotusIR
 
         // Rewrite rule description.
         virtual const std::string& Description() const {
-            return "";
+            static const std::string description("");
+            return description;
         }
 
         // Apply the rewrite rule to a specific node.
