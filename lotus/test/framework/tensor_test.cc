@@ -15,10 +15,10 @@ namespace Lotus
             auto& alloc = AllocatorManager::Instance()->GetArena(CPU);
             auto data = alloc.Alloc(sizeof(T) * (shape.Size() + offset));
             EXPECT_TRUE(data);
-            Tensor t(DataTypeImpl::GetTensorType<T>(), shape, data, alloc.Info(), offset);
+            Tensor t(DataTypeImpl::GetType<T>(), shape, data, alloc.Info(), offset);
             auto tensor_shape = t.shape();
             EXPECT_EQ(shape, tensor_shape);
-            EXPECT_EQ(t.dtype(), DataTypeImpl::GetTensorType<T>());
+            EXPECT_EQ(t.dtype(), DataTypeImpl::GetType<T>());
             auto& location = t.location();
             EXPECT_EQ(location.name_, CPU);
             EXPECT_EQ(location.id_, 0);
@@ -27,7 +27,26 @@ namespace Lotus
             EXPECT_TRUE(t_data);
             memset(t_data, 0, sizeof(T) * shape.Size());
             EXPECT_EQ(*(T*)((char*)data + offset), (T)0);
-            alloc.Free(data, sizeof(T) * shape.Size());
+            alloc.Free(data);
+
+            // owned buffer
+            data = alloc.Alloc(sizeof(T) * (shape.Size() + offset));
+            EXPECT_TRUE(data);
+            BufferUniquePtr buffer_ptr(data, BufferDeleter(&alloc));
+            Tensor new_t(DataTypeImpl::GetType<T>(), shape, std::move(buffer_ptr), alloc.Info(), offset);
+
+            tensor_shape = new_t.shape();
+            EXPECT_EQ(shape, tensor_shape);
+            EXPECT_EQ(new_t.dtype(), DataTypeImpl::GetType<T>());
+            auto& new_location = new_t.location();
+            EXPECT_EQ(new_location.name_, CPU);
+            EXPECT_EQ(new_location.id_, 0);
+
+            auto new_data = new_t.mutable_data<T>();
+            EXPECT_TRUE(new_data);
+            memset(new_data, 0, sizeof(T) * shape.Size());
+            EXPECT_EQ(*(T*)((char*)new_data + offset), (T)0);
+            //no free op as the tensor own the buffer
         }
 
         TEST(TensorTest, CPUFloatTensorTest)
@@ -125,7 +144,7 @@ namespace Lotus
             Tensor t;
             auto& shape = t.shape();
             EXPECT_EQ(shape.Size(), 0);
-            EXPECT_EQ(t.dtype(), DataTypeImpl::GetTensorType<float>());
+            EXPECT_EQ(t.dtype(), DataTypeImpl::GetType<float>());
 
             auto data = t.mutable_data<float>();
             EXPECT_TRUE(!data);
@@ -142,9 +161,9 @@ namespace Lotus
             auto& alloc = AllocatorManager::Instance()->GetArena(CPU);
             auto data = alloc.Alloc(sizeof(int) * shape.Size());
             EXPECT_TRUE(data);
-            Tensor t1(DataTypeImpl::GetTensorType<int>(), shape, data, alloc.Info());
+            Tensor t1(DataTypeImpl::GetType<int>(), shape, data, alloc.Info());
             Tensor t2 = t1;
-            EXPECT_EQ(t2.dtype(), DataTypeImpl::GetTensorType<int>());
+            EXPECT_EQ(t2.dtype(), DataTypeImpl::GetType<int>());
             EXPECT_EQ(t2.shape(), shape);
             auto location = t2.location();
             EXPECT_EQ(location.name_, CPU);
@@ -152,7 +171,7 @@ namespace Lotus
             EXPECT_EQ(location.type_, AllocatorType::ArenaAllocator);
             auto t_data = t2.data<int>();
             EXPECT_EQ((void*)t_data, data);
-            alloc.Free(data, sizeof(int) * shape.Size());
-        }        
+            alloc.Free(data);
+        }
     }
 }

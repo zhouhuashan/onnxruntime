@@ -2,7 +2,7 @@
 #define CORE_FRAMEWORK_EXECUTION_PROVIDER_H
 
 #include <unordered_map>
-#include "core/framework/allocator.h"
+#include "core/framework/arena.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
 #include "core/graph/graph_transformer.h"

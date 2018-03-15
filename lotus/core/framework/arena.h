@@ -12,14 +12,14 @@ namespace Lotus
     // Arena will hold a pool of pre-allocate memories and manage their lifecycle.
     // Need an underline IResourceAllocator to allocate memories.
     // The setting like max_chunk_size is init by IDeviceDescriptor from resource allocator
-    class IArenaAllocator
+    class IArenaAllocator : public IAllocator
     {
     public:
         virtual ~IArenaAllocator() {}
         // Alloc call need to be thread safe.
         virtual void* Alloc(size_t size) = 0;
         // Free call need to be thread safe.
-        virtual void Free(void* p, size_t size) = 0;
+        virtual void Free(void* p) = 0;
         virtual size_t Used() const = 0;
         virtual size_t Max() const = 0;
         virtual const AllocatorInfo& Info() const = 0;
@@ -45,9 +45,9 @@ namespace Lotus
             return m_allocator->Alloc(size);
         }
 
-        virtual void Free(void* p, size_t size) override
+        virtual void Free(void* p) override
         {
-            m_allocator->Free(p, size);
+            m_allocator->Free(p);
         }
 
         virtual size_t Used() const override

@@ -8,6 +8,7 @@
 #include "core/common/status.h"
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
+//#include "core/framework/session_state.h"
 
 namespace Lotus
 {
@@ -16,7 +17,7 @@ namespace Lotus
         class TestUtils;
     }
 
-    class OpKernel;
+    struct SessionState;
 
     class ExecutionFrame {
     public:
@@ -41,32 +42,57 @@ namespace Lotus
         // better result, we can replace this part with something like unique_ptr.
         typedef IArenaAllocator* ArenaPtr;
 
-        ExecutionFrame() {
+        ExecutionFrame(LotusIR::Graph* graph, 
+            const std::unordered_map<string, MLValue>& feeds,
+            const std::vector<string>& outputs,
+            const SessionState& session_state)
+        {
+            Init(graph, feeds, outputs, session_state);
+
             InitArenas();
         }
 
         ~ExecutionFrame() {
-
         }
+
+        // Create tensor at index mlvalue, and allocate buffer for it.
+        // This tensor will own this buffer.
+        // This method is not thread safe!
+        Status AllocateTensorWithSelfOwnBuffer(const int index,
+            const MLDataType element_type,
+            const AllocatorInfo& location,
+            const TensorShape& shape);
+
+        // Create tensor at index mlvalue, with pre-allocate buffer
+        // This tensor does not own the buffer.
+        // The executor / planner need to be careful about the 
+        // lifetime of the buffer. Tensor itself won't manage it.
+        // This method is not thread safe!
+        Status AllocateTensorWithPreAllocateBuffer(const int offset,
+            void* pBuffer,
+            const MLDataType element_type,
+            const AllocatorInfo& location,
+            const TensorShape& shape);
 
         // Index to the first argument of the given node.
-        int get_first_arg_index(LotusIR::NODEINDEX node_index) {
-            return node_infos_[node_index].start_index;
+        int get_first_arg_index(LotusIR::NODEINDEX index) {
+            LOTUS_ENFORCE(index >= 0 && index < node_offsets_.size());
+            return node_offsets_[index];
         }
 
         template<typename T>
-        const T* get_input(int index) const {
-            auto value = node_values_[index];
-            return reinterpret_cast<T*>(value->pData);
+        const T* get_value(int index) const {
+            LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+            return &node_values_[index]->Get<T>();
         }
 
         template<typename T>
-        T* get_output(int index) {
-            auto value = node_values_[index];
-            return reinterpret_cast<T*>(value->pData);
+        T* get_mutable_value(int index) {
+            LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+            return node_values_[index]->GetMutable<T>();
         }
 
-        ArenaPtr GetArena(AllocatorInfo& info)
+        ArenaPtr GetArena(const AllocatorInfo& info)
         {
             for (auto arena : arenas_)
             {
@@ -82,28 +108,52 @@ namespace Lotus
         //The TestUtils need hack this class to provide input/output 
         // tensors since the class is not fully implemented yet.
         friend class Lotus::Test::TestUtils;
+        
+        // This method is not thread safe!
+        void Release(const int offset);
 
-        struct NodeInfo {
-            // The kernel for this node.
-            OpKernel* kernel = nullptr;
+        void Init(LotusIR::Graph* graph, 
+            const std::unordered_map<string, MLValue>& feeds,
+            const std::vector<string>& outputs,
+            const SessionState& session_state);
 
-            // node_values_[start_index] is the first argument of this node.
-            int start_index = 0;
-        };
-
-        Tensor* get_or_create_tensor(int tensor_index, const TensorShape& shape) {
-            auto value = node_values_[tensor_index];
-            if (nullptr != value->pData) {
+        void SetupNodeArg(LotusIR::NodeArg* arg, 
+            std::unordered_map<string, int>& value_name_to_index)
+        {
+            LOTUS_ENFORCE(arg);
+            auto& name = arg->Name();
+            auto index_it = value_name_to_index.find(name);
+            LOTUS_ENFORCE(index_it != value_name_to_index.end());
+            auto index = index_it->second;
+            node_values_.push_back(&all_values_[index]);
+        }
+        
+        // This method is not thread safe!
+        Tensor* get_or_create_tensor(int index, const TensorShape& shape) {
+            LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+            auto value = node_values_[index];
+            if (value->IsAllocated()) {
                 // The tensor has already been allocated.
                 // TODO: Check the size of the allocated tensor with given shape,
                 // if they match each other, then return, else throw error.
                 // TODO: type also needs to be checked and then use static_cast.
-                return reinterpret_cast<Tensor*>(value->pData);
+                Tensor* tensor = value->GetMutable<Tensor>();
+                LOTUS_ENFORCE(tensor->shape() == shape);
+                return tensor;
             }
             else {
                 // It's not allocated, then allocate it with given shape and return.
-                (shape);
-                return nullptr;
+                // TODO: at this point, we should already know the location and dtype
+                // for the tensor, the graph should be able to tell us. But now graph
+                // don't have it. So here hack to default as CPU and float.
+                auto location = AllocatorManager::Instance()->GetArena(CPU).Info();
+                auto dtype = DataTypeImpl::GetType<float>();
+                LOTUS_ENFORCE(AllocateTensorWithSelfOwnBuffer(
+                    index, 
+                    dtype, 
+                    location, 
+                    shape).IsOK());
+                return value->GetMutable<Tensor>();
             }
         }
         
@@ -116,18 +166,19 @@ namespace Lotus
             LOTUS_ENFORCE(alloc_mgr);
             arenas_.push_back(&alloc_mgr->GetArena(CPU));
         }
-
+        
         std::mutex mu_;
         Status status_;
 
         // The values for the inputs and outputs of the nodes.
         ArgTable node_values_;
 
-        // All the values for the entire graph.
+        // All the intermedia values for the entire graph.
+        // Input and Output values are passed in by executors
         vector<MLValue> all_values_;
 
         // The start index into node_values_ for all the nodes.
-        vector<NodeInfo> node_infos_;
+        std::vector<int> node_offsets_;
 
         // i-th kernel is still waiting for pending_counts_[i] inputs.
         vector<int> pending_counts_;
@@ -140,6 +191,8 @@ namespace Lotus
         // release them. If we switch to another approach later, we should
         // define ArenaPtr as unique_ptr here.
         vector<ArenaPtr> arenas_;
+
+        std::unordered_map<string, int> value_name_to_index_;
     };
 }
 

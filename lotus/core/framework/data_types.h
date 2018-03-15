@@ -4,7 +4,6 @@
 #include <string>
 #include "core/protobuf/onnx-ml.pb.h"
 #include "core/common/common.h"
-
 using namespace onnx;
 
 namespace Lotus
@@ -12,6 +11,13 @@ namespace Lotus
     class DataTypeImpl;
     // DataTypeImpl pointer as unique DataTypeImpl identifier.
     typedef const DataTypeImpl* MLDataType;
+    typedef std::function<void(void*)> DeleteFunc;
+
+    template<typename T>
+    static void Delete(void* p)
+    {
+        delete static_cast<T*>(p);
+    }
 
     class DataTypeImpl {
     public:
@@ -29,20 +35,40 @@ namespace Lotus
             return true;
         }
 
+        virtual const size_t Size() const = 0;
+
+        virtual DeleteFunc GetDeleteFunc() const = 0;
+
         virtual bool IsTensorType() const {
             return false;
         }
+
+        // Return the type meta that we are using in the runtime.
+        template<typename T>
+        static MLDataType GetType();
         
+        // Return the types for a concrete tensor type, like Tensor_Float
         template<typename T>
         static MLDataType GetTensorType();
     };
 
     class TensorTypeBase : public DataTypeImpl {
     public:
+        static MLDataType Type() {
+            static TensorTypeBase tensor_base;
+            return &tensor_base;
+        }
 
         virtual bool IsTensorType() const override {
             return true;
         }
+
+        virtual const size_t Size() const;
+
+        virtual DeleteFunc GetDeleteFunc() const;
+
+    protected:
+        TensorTypeBase() = default;
     };
 
     template <typename elemT>
@@ -69,11 +95,43 @@ namespace Lotus
         NonTensorType() = default;
     };
 
+    template<typename T>
+    class NonOnnxType : public DataTypeImpl {
+    public:
+        virtual bool IsCompatible(const TypeProto& type_proto) const {
+            UNUSED_PARAMETER(type_proto);
+            return false;
+        }
+
+        static MLDataType Type() {
+            static NonOnnxType non_tensor_type;
+            return &non_tensor_type;
+        }
+
+        virtual const size_t Size() const override {
+            return sizeof(T);
+        }
+
+        virtual DeleteFunc GetDeleteFunc() const override {
+            return &Delete<T>;
+        }
+
+    private:
+        NonOnnxType() = default;
+    };
+
 #define LOTUS_REGISTER_TENSOR_TYPE(ELEM_TYPE)              \
     template<>                                             \
     MLDataType DataTypeImpl::GetTensorType<ELEM_TYPE>()    \
     {                                                      \
         return TensorType<ELEM_TYPE>::Type();              \
+    }
+
+#define LOTUS_REGISTER_NON_ONNX_TYPE(TYPE)              \
+    template<>                                             \
+    MLDataType DataTypeImpl::GetType<TYPE>()    \
+    {                                                      \
+        return NonOnnxType<TYPE>::Type();              \
     }
 }
 

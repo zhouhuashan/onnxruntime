@@ -9,6 +9,7 @@
 #include "core/graph/graph.h"
 
 namespace Lotus {
+  class OpKernel;
   struct SessionState {
    public:
     SessionState() = default;
