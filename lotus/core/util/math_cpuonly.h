@@ -55,6 +55,29 @@ namespace Lotus {
     public:
         //todo: the random generate interface.
     };
-}
 
+#define EIGEN_Y EigenVectorArrayMap<T>(Y->mutable_data<T>(), Y->shape().Size())
+#define EIGEN_X ConstEigenVectorArrayMap<T>(X->data<T>(), X->shape().Size())
+#define EIGEN_X_VAR(var) ConstEigenVectorArrayMap<T> var(X->data<T>(), X->shape().Size())
+#define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->mutable_data<T>(), Y->shape().Size())
+
+#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func)    \
+    template<typename T>                                            \
+    class class_name final : public OpKernel {                      \
+    public:                                                         \
+        static const char* TypeTraits() {                           \
+            return #class_name;                                     \
+        }                                                           \
+                                                                    \
+        class_name(const OpKernelInfo& info) : OpKernel(info)       \
+        {}                                                          \
+                                                                    \
+        void compute(OpKernelContext* context) override {           \
+            const Tensor* X = context->template input<Tensor>(0);   \
+            Tensor* Y = context->output(0, X->shape());             \
+            func;                                                   \
+        }                                                           \
+    };
+
+}
 #endif
