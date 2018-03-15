@@ -1,9 +1,17 @@
 #include "core/framework/execution_frame.h"
 #include "core/framework/op_kernel.h"
+#include "core/framework/session_state.h"
 
 namespace Lotus {
 
-    Status ExecutionFrame::AllocateTensorWithSelfOwnBuffer(const int index,
+ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
+                               const std::vector<std::string>& output_names,
+                               const SessionState& session_state) {
+  Init(session_state.GetGraph(), feeds, output_names, session_state);
+  InitArenas();
+}
+
+  Status ExecutionFrame::AllocateTensorWithSelfOwnBuffer(const int index,
         const MLDataType element_type,
         const AllocatorInfo& location,
         const TensorShape& shape)
@@ -51,7 +59,7 @@ namespace Lotus {
         node_values_[offset]->Reset();
     }
 
-    void ExecutionFrame::Init(LotusIR::Graph* graph,
+    void ExecutionFrame::Init(const LotusIR::Graph* graph,
         const std::unordered_map<string, MLValue>& feeds,
         const std::vector<string>& output_names,
         const SessionState& session_state)
@@ -60,8 +68,11 @@ namespace Lotus {
         //1. construct the value name to index map
         // It seems not efficient to construct this map everytime
         // If planner could provide this, we can pass in the map.
+        // TODO: avoid const_cast here since this operation can be performed
+        // in the inference session once and avoided each time execution is
+        // called
         std::vector<LotusIR::NODEINDEX>* nodes;
-        auto status = graph->GetNodesInTopologicalOrder(&nodes);
+        auto status = const_cast<LotusIR::Graph*>(graph)->GetNodesInTopologicalOrder(&nodes);
         LOTUS_ENFORCE(status.IsOK());
         auto num_nodes = nodes->size();
         node_offsets_.resize(num_nodes);

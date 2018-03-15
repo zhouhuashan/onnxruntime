@@ -4,6 +4,7 @@
 #include <string>
 #include "core/protobuf/onnx-ml.pb.h"
 #include "core/common/common.h"
+
 using namespace onnx;
 
 namespace Lotus
@@ -129,9 +130,9 @@ namespace Lotus
 
 #define LOTUS_REGISTER_NON_ONNX_TYPE(TYPE)                 \
     template<>                                             \
-    MLDataType DataTypeImpl::GetType<TYPE>()               \
+    MLDataType DataTypeImpl::GetType<TYPE>()    \
     {                                                      \
-        return NonOnnxType<TYPE>::Type();                  \
+        return NonOnnxType<TYPE>::Type();              \
     }
 }
 

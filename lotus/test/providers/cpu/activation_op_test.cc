@@ -24,6 +24,7 @@ namespace Lotus {
 
             Op kernel(info);
             SessionState state;
+            state.Init(graph);
             auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(graph, state);
 
             std::vector<int64_t> dims = { (int64_t)input_vals.size() };

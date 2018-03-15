@@ -29,7 +29,6 @@ namespace Lotus
     LOTUS_REGISTER_TENSOR_TYPE(uint32_t);
     LOTUS_REGISTER_TENSOR_TYPE(uint64_t);
 
-
     //Below are the types the we need to execute the runtime
     //They are not compatible with TypeProto in ONNX.
     LOTUS_REGISTER_NON_ONNX_TYPE(int);

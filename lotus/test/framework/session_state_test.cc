@@ -55,10 +55,12 @@ namespace Lotus
             unique_ptr<TestOpKernel> p_kernel;
             p_kernel.reset(new TestOpKernel(p_info));
             size_t orig_num_outputs = p_kernel->node().OutputDefs().size();
-            //std::cout << "node_idx: " << p_node->Index() << std::endl;
+            std::cout << "node_idx: " << p_node->Index() << std::endl;
+
+            s.Init(graph);
             s.AddKernel(p_node->Index(), std::move(p_kernel));
             OpKernel* test_kernel = s.GetKernel(p_node->Index());
-            //std::cout << "orig: " << orig_num_outputs << " new: " << test_kernel->num_outputs() << std::endl;
+            std::cout << "orig: " << orig_num_outputs << " new: " << test_kernel->node().OutputDefs().size() << std::endl;
             EXPECT_EQ(orig_num_outputs, test_kernel->node().OutputDefs().size());
         }
     }

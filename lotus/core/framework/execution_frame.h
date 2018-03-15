@@ -17,7 +17,7 @@ namespace Lotus
         class TestUtils;
     }
 
-    struct SessionState;
+    class SessionState;
 
     class ExecutionFrame {
     public:
@@ -42,15 +42,9 @@ namespace Lotus
         // better result, we can replace this part with something like unique_ptr.
         typedef IArenaAllocator* ArenaPtr;
 
-        ExecutionFrame(LotusIR::Graph* graph, 
-            const std::unordered_map<string, MLValue>& feeds,
-            const std::vector<string>& outputs,
-            const SessionState& session_state)
-        {
-            Init(graph, feeds, outputs, session_state);
-
-            InitArenas();
-        }
+        ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
+                       const std::vector<std::string>& output_names,
+                       const SessionState& session_state);
 
         ~ExecutionFrame() {
         }
@@ -112,7 +106,7 @@ namespace Lotus
         // This method is not thread safe!
         void Release(const int offset);
 
-        void Init(LotusIR::Graph* graph, 
+        void Init(const LotusIR::Graph* graph, 
             const std::unordered_map<string, MLValue>& feeds,
             const std::vector<string>& outputs,
             const SessionState& session_state);

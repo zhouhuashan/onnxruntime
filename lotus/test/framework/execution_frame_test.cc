@@ -36,11 +36,11 @@ namespace Lotus
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
 
             SessionState state;
-            ExecutionFrame frame(graph, 
-                std::unordered_map<std::string, MLValue>{},
-                std::vector<std::string>{},
-                state);
-
+            state.Init(graph);
+            ExecutionFrame frame(std::unordered_map<std::string, MLValue>{},
+                                 std::vector<std::string>{},
+                                 state);
+            
             int start_index = frame.get_first_arg_index(node->Index());
             EXPECT_EQ(start_index, 0);
 
@@ -97,10 +97,10 @@ namespace Lotus
                 DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
             SessionState state;
-            ExecutionFrame frame(graph,
-                std::unordered_map<std::string, MLValue>{ {"X", value} },
-                std::vector<std::string>{},
-                state);
+            state.Init(graph);
+            ExecutionFrame frame(std::unordered_map<std::string, MLValue>{ {"X", value} },
+                                 std::vector<std::string>{},
+                                 state);
 
             auto tensor = frame.get_mutable_value<Tensor>(0);
             EXPECT_TRUE(tensor);

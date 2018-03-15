@@ -26,6 +26,7 @@ namespace Lotus {
             std::vector<float> expected_vals = { 10.0f, 4.4f, 10.0f, -1.3f, 3.5f, 10.0f, -5.4f, 9.3f, 10.0f };
 
             SessionState state;
+            state.Init(graph);
             auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(graph, state);
             auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, dims, &input_vals);
             EXPECT_TRUE(status.IsOK());

@@ -7,10 +7,10 @@
 
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
+#include "core/framework/execution_provider.h"
 
 namespace Lotus {
-  class OpKernel;
-  struct SessionState {
+  class SessionState {
    public:
     SessionState() = default;
     
@@ -18,21 +18,30 @@ namespace Lotus {
      // TODO Dummy constructor for now to add a basic test.
    }
     
-    void Init(LotusIR::Graph* graph) {
-      p_graph_ = graph;
-      session_kernels_.resize(p_graph_->NumberOfNodes());
-    }
+    void Init(const LotusIR::Graph* graph);
+    const LotusIR::Graph* GetGraph() const;
 
-    // QUESTION: will the indices of the nodes change after the graph is
-    // transformed?
-    OpKernel* GetKernel(LotusIR::NODEINDEX nodeId);
-    void AddKernel(LotusIR::NODEINDEX nodeId, std::unique_ptr<OpKernel> p_kernel);
-    
-    // state
+    // kernels
+    OpKernel* GetKernel(LotusIR::NODEINDEX node_id) const;
+    void AddKernel(LotusIR::NODEINDEX node_id, std::unique_ptr<OpKernel> p_kernel);
+    const std::vector<unique_ptr<OpKernel>>& GetKernelVector() const;
+
+    // exec providers
+    IExecutionProvider* GetExecutionProvider(const std::string& provider_id) const;
+    void AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> exec_provider);
+    const std::vector<std::unique_ptr<IExecutionProvider>>& GetExecutionProviders() const;
+
+   private:
     // cache of the constructed kernels to avoid spending construction
     // time per executor
     std::vector<unique_ptr<OpKernel>> session_kernels_;
-    LotusIR::Graph* p_graph_ = nullptr; // owned by the Model inside an InferenceSession
+    const LotusIR::Graph* p_graph_ = nullptr; // owned by the Model inside an InferenceSession
+
+    struct ExecutionProviderSet {
+      std::vector<std::unique_ptr<IExecutionProvider>> exec_providers;
+      std::unordered_map<std::string, size_t> provider_idx_map; // this merely exists to facilitate fast lookup
+    };
+    ExecutionProviderSet exec_provider_set_;
 
     // TODO add more
   };

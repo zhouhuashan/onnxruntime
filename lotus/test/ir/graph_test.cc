@@ -213,7 +213,7 @@ namespace LotusIR
             weight.set_data_type(TensorProto_DataType_STRING);
             weight.add_string_data("test");
             weight.set_name("node_1_in_2");
-            graph_2.AddInitialTensor(weight);
+            graph_2.AddInitializedTensor(weight);
 
             auto status_2 = graph_2.Resolve();
             EXPECT_TRUE(status_2.IsOK());

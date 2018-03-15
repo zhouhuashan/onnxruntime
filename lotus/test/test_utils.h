@@ -23,7 +23,7 @@ namespace Lotus {
             {
                 LOTUS_ENFORCE(graph);
                 return std::make_shared<ExecutionFrame>(
-                    graph,
+                    //graph,
                     std::unordered_map<std::string, MLValue>{},
                     std::vector<std::string>{},
                     session_state);

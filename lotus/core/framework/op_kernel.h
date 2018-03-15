@@ -133,11 +133,14 @@ class KernelRegistry {
   }
 
   /**/
+  // factory functions should always return a unique_ptr for maximum flexibility
+  // for its clients unless the factory is managing the lifecycle of the pointer
+  // itself.
   Status CreateKernel(const LotusIR::OperatorSchema& op_schema,
                       const ProviderType& provider_type,
                       const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
-                      /*out*/ OpKernel** op_kernel) const {
+                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
     // TODO: error check for op_name/op_domain/provider/since_version.
     // TODO: find the real appropriate kernel create info for specific version.
     UNUSED_PARAMETER(op_schema);
