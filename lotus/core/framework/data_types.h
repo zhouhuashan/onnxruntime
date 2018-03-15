@@ -127,11 +127,11 @@ namespace Lotus
         return TensorType<ELEM_TYPE>::Type();              \
     }
 
-#define LOTUS_REGISTER_NON_ONNX_TYPE(TYPE)              \
+#define LOTUS_REGISTER_NON_ONNX_TYPE(TYPE)                 \
     template<>                                             \
-    MLDataType DataTypeImpl::GetType<TYPE>()    \
+    MLDataType DataTypeImpl::GetType<TYPE>()               \
     {                                                      \
-        return NonOnnxType<TYPE>::Type();              \
+        return NonOnnxType<TYPE>::Type();                  \
     }
 }
 
