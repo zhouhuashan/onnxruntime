@@ -32,8 +32,8 @@ namespace Lotus {
             template <typename T>
             static Status PrepareTensor(const int index,
                 ExecutionFramePtr frame,
-                std::vector<int64_t>& dims,
-                std::vector<T>* value)
+                const std::vector<int64_t>& dims,
+                const std::vector<T>* value)
             {
                auto status = frame->AllocateTensorWithSelfOwnBuffer(
                    index, 
@@ -56,8 +56,8 @@ namespace Lotus {
             static Status PrepareIthInput(const LotusIR::Node& node,
                 const int i,
                 ExecutionFramePtr frame,
-                std::vector<int64_t>& dims,
-                std::vector<T>* value = nullptr)
+                const std::vector<int64_t>& dims,
+                const std::vector<T>* value = nullptr)
             {
                 LOTUS_ENFORCE(i >= 0 && i < node.InputDefs().size());
                 return PrepareTensor(i, frame, dims, value);
@@ -67,11 +67,11 @@ namespace Lotus {
             static Status PrepareIthOutput(const LotusIR::Node& node,
                 const int i,
                 ExecutionFramePtr frame,
-                std::vector<int64_t>& dims,
-                std::vector<T>* value = nullptr)
+                const std::vector<int64_t>& dims,
+                const std::vector<T>* value = nullptr)
             {
                 LOTUS_ENFORCE(i >= 0 && i < node.OutputDefs().size());
-                return PrepareTensor(i + (int)node.OutputDefs().size(), frame, dims, value);
+                return PrepareTensor(i + (int)node.InputDefs().size(), frame, dims, value);
             }
         };
 

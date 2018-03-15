@@ -2,7 +2,7 @@
 
 namespace Lotus {
 
-template<typename T> auto EigenMap( Tensor& t) { return EigenVectorMap<T>(t.mutable_data<T>(), t.shape().Size() ); }
+template<typename T> auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.mutable_data<T>(), t.shape().Size() ); }
 template<typename T> auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.data<T>(), t.shape().Size() ); }
 
 template<>
@@ -45,7 +45,7 @@ void Reciprocal<float>::compute(OpKernelContext* ctx) {
 
 template<>
 void Sum<float>::compute(OpKernelContext* ctx) {
-    auto inputCount = node().InputArgCount().size();
+    auto inputCount = node().InputArgCount().front();
     LOTUS_ENFORCE(inputCount>=1, "Must have 1 or more inputs");
     auto& data_0 = *ctx->input<Tensor>(0);
     auto& shape = data_0.shape();
