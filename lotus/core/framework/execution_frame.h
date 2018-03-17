@@ -108,19 +108,9 @@ namespace Lotus
 
         void Init(const LotusIR::Graph* graph, 
             const std::unordered_map<string, MLValue>& feeds,
-            const std::vector<string>& outputs,
-            const SessionState& session_state);
+            const std::vector<string>& outputs);
 
-        void SetupNodeArg(LotusIR::NodeArg* arg, 
-            std::unordered_map<string, int>& value_name_to_index)
-        {
-            LOTUS_ENFORCE(arg);
-            auto& name = arg->Name();
-            auto index_it = value_name_to_index.find(name);
-            LOTUS_ENFORCE(index_it != value_name_to_index.end());
-            auto index = index_it->second;
-            node_values_.push_back(&all_values_[index]);
-        }
+        void SetupNodeArg(LotusIR::NodeArg* arg);
         
         // This method is not thread safe!
         Tensor* get_or_create_tensor(int index, const TensorShape& shape) {
@@ -187,6 +177,8 @@ namespace Lotus
         vector<ArenaPtr> arenas_;
 
         std::unordered_map<string, int> value_name_to_index_;
+
+        const SessionState& session_state_;
     };
 }
 

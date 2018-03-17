@@ -24,8 +24,10 @@ namespace Lotus {
 
             Op kernel(info);
             SessionState state;
-            state.Init(graph);
-            auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(graph, state);
+            state.SetGraph(graph);
+            state.AddMLValueNameIdx("X", 0);
+            state.AddMLValueNameIdx("Y", 1);            
+            auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(graph, state, {{"X", MLValue()}}, {"Y"});
 
             std::vector<int64_t> dims = { (int64_t)input_vals.size() };
 

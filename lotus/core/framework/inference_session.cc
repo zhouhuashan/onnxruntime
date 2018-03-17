@@ -12,9 +12,9 @@
 #include "core/graph/model.h"
 //#include "core/platform/env.h"
 //#include "core/lib/threadpool.h"
-#include "core/platform/notification.h"
-#include "core/graph/tensorutils.h"
 #include "core/framework/execution_frame.h"
+#include "core/graph/tensorutils.h"
+#include "core/platform/notification.h"
 
 namespace Lotus {
 
@@ -22,7 +22,7 @@ class InferenceSession::Impl {
  public:
   Impl(const SessionOptions& session_options)
       : session_options_(session_options) {
-        //env_(Env::Default()) { 
+    //env_(Env::Default()) {
     //thread_pool_(env_, "Compute", session_options.num_threads) {
     // QUESTION: what if the user doesn't provide his preferred list of execution
     // providers? Should we have our own default?
@@ -37,7 +37,7 @@ class InferenceSession::Impl {
       session_state_.AddExecutionProvider(info.provider_type, std::move(provider));
     }
   }
-  
+
   // TODO add the methods of the parent class
 
   Common::Status Load(const std::string& model_uri) {
@@ -71,11 +71,15 @@ class InferenceSession::Impl {
     Graph* graph = model_->MainGraph();
     LOTUS_RETURN_IF_ERROR(TransformGraph(*graph));
     LOTUS_RETURN_IF_ERROR(graph->Resolve());
-    session_state_.Init(graph);
 
-    // henceforth use the graph stored in the session state
-    // as it has been transformed and resolved before
-    LOTUS_RETURN_IF_ERROR(ConstructKernels());
+    // at this point the graph should be in a frozen state
+    // hence we set it in the session for use by the executors
+    session_state_.SetGraph(graph);
+
+    // TODO This function doesn't modify the graph, but I've to still
+    // pass it by non-const ref because the graph API doesn't support any
+    // const iterator today
+    LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping(*graph));
 
     // TODO add other per session initialization stuff here
 
@@ -117,11 +121,8 @@ class InferenceSession::Impl {
 
     std::unique_ptr<Executor> p_exec;
     if (session_options_.enable_sequential_execution) {
-      std::unique_ptr<ExecutionFrame> p_exec_frame =
-          std::make_unique<ExecutionFrame>(feeds, output_names, session_state_);
-      p_exec = std::move(Executor::NewSequentialExecutor(session_state_, std::move(p_exec_frame)));
-    }
-    else {
+      p_exec = std::move(Executor::NewSequentialExecutor(session_state_, feeds, output_names));
+    } else {
       LOTUS_NOT_IMPLEMENTED;
     }
 
@@ -137,38 +138,49 @@ class InferenceSession::Impl {
 
  private:
   Common::Status TransformGraph(Graph& graph) {
-    for (auto& ep: session_state_.GetExecutionProviders()) {
+    for (auto& ep : session_state_.GetExecutionProviders()) {
       bool is_modified;
       ep->GetTransformer().Apply(graph, is_modified);
     }
     return Common::Status::OK();
   }
 
-  Common::Status ConstructKernels() {
-    const Graph* p_graph = session_state_.GetGraph();
+  // This function does the following:
+  // - constructs the kernels and saves them in the session state
+  // - builds the MLValue name->idx mapping and saves it in the session state
+  // The reason we're doing 2 operations in the same function is so that we iterate
+  // through all the nodes only once.
+  Common::Status SaveKernelsAndMLValueNameIndexMapping(Graph& graph) {
+    int curr_idx = 0;
+    for (auto node_it = graph.Nodes_begin(); node_it != graph.Nodes_end(); ++node_it) {
+      Node* p_node = *node_it;
 
-    std::vector<NODEINDEX>* p_topo_sorted_nodes = nullptr;
-    std::unique_ptr<std::vector<NODEINDEX>> scoped_ptr(p_topo_sorted_nodes); // avoid leak due to p_topo_sorted_nodes
-    LOTUS_RETURN_IF_ERROR(const_cast<Graph*>(p_graph)->GetNodesInTopologicalOrder(&p_topo_sorted_nodes));
-
-    for (const NODEINDEX& node_idx : *p_topo_sorted_nodes) {
       // ignore source and sink nodes
-      if (session_state_.GetGraph()->IsSourceNode(node_idx)
-          || session_state_.GetGraph()->IsSinkNode(node_idx)) {
+      if (graph.IsSourceNode(p_node->Index()) || graph.IsSinkNode(p_node->Index())) {
         continue;
       }
 
-      Node* p_node = p_graph->GetNode(node_idx);
+      // construct and save the kernels
       std::unique_ptr<OpKernel> p_op_kernel;
       LOTUS_RETURN_IF_ERROR(CreateOpKernel(*p_node, &p_op_kernel));
       if (!p_op_kernel) {
         LOG(ERROR) << "Could not create kernel for op_id: " << p_node->OpType();
-        continue; // TODO for now ignore the error and continue until the actual kernels are ready
+        // TODO for now ignore the error and continue until the actual kernels are ready
         // return Common::Status(Common::LOTUS,
         //                       Common::FAIL,
         //                       "Failed to initialize session because kernel creation failed");
       }
       session_state_.AddKernel(p_node->Index(), std::move(p_op_kernel));
+
+      // build the MLValue->index map
+      auto& inputs = p_node->InputDefs();
+      for (auto& def : inputs) {
+        session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
+      }
+      auto& outputs = p_node->OutputDefs();
+      for (auto def : outputs) {
+        session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);              
+      }      
     }
 
     return Status::OK();
@@ -191,15 +203,14 @@ class InferenceSession::Impl {
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {
     if (timeout_in_ms > 0) {
       LOTUS_NOT_IMPLEMENTED;  // TODO
-    }
-    else {
+    } else {
       p_executor_done->WaitForNotification();
     }
     return Status::OK();
   }
 
   const SessionOptions& session_options_;
-  
+
   // The model served by this inference session instance.
   // Currently this has to be a shared ptr because the Model::Load method
   // returns a shared_ptr only. Ideally factory functions should always return
@@ -215,7 +226,7 @@ class InferenceSession::Impl {
 
   // Environment for this session
   // not used now; we'll need it when we introduce threadpool
-  // statically allocated pointer, no need to manage its lifetime.  
+  // statically allocated pointer, no need to manage its lifetime.
   //Env* env_;
 
   // Threadpool for this session
@@ -232,8 +243,7 @@ class InferenceSession::Impl {
 //
 // InferenceSession
 //
-InferenceSession::InferenceSession(const SessionOptions& session_options):
-    impl_(std::make_unique<Impl>(session_options)) {  
+InferenceSession::InferenceSession(const SessionOptions& session_options) : impl_(std::make_unique<Impl>(session_options)) {
 }
 
 InferenceSession::~InferenceSession() = default;

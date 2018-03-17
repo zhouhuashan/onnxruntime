@@ -19,13 +19,15 @@ namespace Lotus {
 
             static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(
                 LotusIR::Graph* graph,
-                const SessionState& session_state)
+                const SessionState& session_state,
+                std::unordered_map<std::string, MLValue> feeds,
+                const std::vector<std::string> output_names)
             {
                 LOTUS_ENFORCE(graph);
                 return std::make_shared<ExecutionFrame>(
                     //graph,
-                    std::unordered_map<std::string, MLValue>{},
-                    std::vector<std::string>{},
+                    feeds,
+                    output_names,
                     session_state);
             }
 

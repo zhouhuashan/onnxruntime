@@ -57,7 +57,7 @@ namespace Lotus
             size_t orig_num_outputs = p_kernel->node().OutputDefs().size();
             std::cout << "node_idx: " << p_node->Index() << std::endl;
 
-            s.Init(graph);
+            s.SetGraph(graph);
             s.AddKernel(p_node->Index(), std::move(p_kernel));
             OpKernel* test_kernel = s.GetKernel(p_node->Index());
             std::cout << "orig: " << orig_num_outputs << " new: " << test_kernel->node().OutputDefs().size() << std::endl;
