@@ -16,31 +16,32 @@ namespace Lotus {
 typedef int MLValueIndex;
 typedef std::string MLValueName;
 
-/* The ML-Values fall into the following categories with respect to their memory management:
-   - inference inputs: owned (allocated and freed) by caller, not managed by runtime
-     - This could be generalized in the future.
-   - inference outputs: allocated by runtime, ownership transferred to caller
-     - TODO: The above is not clear from the InferenceSession API, but seems to be the intended semantics
-   - weights (constant tensors): can be allocated once (statically), and reused by all inference
-   - non-tensor ml-values: allocated and freed by runtime; but no memory reuse/sharing optimization
-   - tensor values: The lifetimes of these tensor-values are statically determined, which is
-        used for memory reuse/sharing optimizations. The runtime allocates/frees these at the
-		right time (as determined by the static allocation plan).
-		Note that this is simplified since we do not try to optimize for "slice" like ops,
-		where we may be able to conditionally reuse memory/data in some cases but not others.
-		Generalizing this is future work.
- */
+// ?? Rama: Do we need to treat non-tensor values differently??
+// The ML-Values fall into the following categories with respect to their 
+// memory management:
+//   - inference inputs: owned (allocated and freed) by caller, and is by
+//     default read-only by the runtime. 
+//   - inference outputs: allocated by runtime, ownership transferred to
+//     caller. TODO: Make sure this semantics is clear in InferenceSession API.
+//   - weights (constant tensors): can be allocated once (statically), and
+//     reused by all inference calls within an InferenceSession.
+//   - tensor values: The lifetimes of these tensor-values are statically
+//     determined, which is used for memory reuse/sharing optimizations. The
+//     runtime allocates/frees these values at the right time (as determined
+//     by the static allocation plan). Note that this is simplified since we
+//     do not try to optimize for "slice" like ops, where we may be able to
+//     conditionally reuse memory/data in some cases but not others.
+//     Generalizing this is future work.
 
 enum class AllocKind {
   kAllocate = 0,
   kReuse = 1,
   kPreExisting = 2,
   kAllocateStatically = 3,
-
 };
 
-// SequentialExecutionPlan: This is the data that is produced by a static planner for
-// a sequential execution, to be used by a SequentialExecutor.
+// SequentialExecutionPlan: This is the data that is produced by a static
+// planner for a sequential execution, to be used by a SequentialExecutor.
 struct SequentialExecutionPlan {
   // Allocation plan:
   // ExecutionFrame::get_or_create_tensor() should use the following information
@@ -73,7 +74,7 @@ struct SequentialExecutionPlan {
     int free_to_index;
   };
 
-  // execution_plan : represents the nodes in the sequential order to be executed
+  // Execution_plan: represents the nodes in the sequential order to be executed
   std::vector<NodeExecutionPlan> execution_plan;
 
   // to_be_freed: vector elements represent indices of ml-values to be freed (as described above)
@@ -82,7 +83,8 @@ struct SequentialExecutionPlan {
 
 class SequentialPlanner {
  public:
-  static std::pair<Status, std::unique_ptr<SequentialExecutionPlan>> CreatePlan(const SessionState& session_state);
+  Status CreatePlan(const SessionState& session_state,
+                    SequentialExecutionPlan* plan);
 };
 
 }  // namespace Lotus
