@@ -46,6 +46,7 @@ namespace Lotus {
 
     // ?? Cheng: What about non-tensor values??
     // ?? Cheng: There are cases we may not want to use LOTUS_ENFORCE??
+    // ?? Cheng: Graph must be immutable for GetNodesInTopologicalOrder??
     // Create tensor at index mlvalue, and allocate buffer for it.
     // This tensor will own this buffer.
     // This method is not thread safe!

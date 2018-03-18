@@ -59,7 +59,7 @@ namespace Lotus {
     // If planner could provide this, we can pass in the map.
     // TODO: avoid const_cast here since this operation can be performed
     // in the inference session once and avoided each time execution is
-    // called
+    // called.
     std::vector<LotusIR::NODEINDEX>* nodes;
     auto status = const_cast<LotusIR::Graph*>(graph)->GetNodesInTopologicalOrder(&nodes);
     LOTUS_ENFORCE(status.IsOK());
