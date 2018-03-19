@@ -22,6 +22,12 @@ namespace Lotus
         return m_dims[p_idx];
     }
 
+    const int64_t& TensorShape::operator[](int p_idx) const
+    {
+        //Since we don't have status in return value, if p_idex invalid, let stl throw exception.
+        return m_dims[p_idx];
+    }
+
     int64_t TensorShape::Size() const
     {
         int64_t size = 1;

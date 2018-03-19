@@ -35,6 +35,10 @@ namespace Lotus
             return !(*this == p_other);
         }
 
+        int64_t NumDimensions() const {
+            return m_dims.size();
+        }
+
         // Return the total number of elements.
         int64_t Size() const;
 

@@ -18,12 +18,9 @@ namespace Lotus {
         public:
 
             static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(
-                LotusIR::Graph* graph,
                 const SessionState& session_state)
             {
-                LOTUS_ENFORCE(graph);
                 return std::make_shared<ExecutionFrame>(
-                    //graph,
                     std::unordered_map<std::string, MLValue>{},
                     std::vector<std::string>{},
                     session_state);
@@ -71,7 +68,7 @@ namespace Lotus {
                 std::vector<T>* value = nullptr)
             {
                 LOTUS_ENFORCE(i >= 0 && i < node.OutputDefs().size());
-                return PrepareTensor(i + (int)node.OutputDefs().size(), frame, dims, value);
+                return PrepareTensor(i + (int)node.InputDefs().size(), frame, dims, value);
             }
         };
 
