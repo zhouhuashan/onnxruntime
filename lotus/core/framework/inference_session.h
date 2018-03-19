@@ -44,13 +44,14 @@ namespace Lotus
 
   // Per model, handling multiple requests.
   class InferenceSession {
- public:
+  public:
     explicit InferenceSession(const SessionOptions& session_options);
     ~InferenceSession();
 
     // Load an ONNX model and initialize.
     Common::Status Load(const std::string& model_uri);
 
+    // 
     Common::Status Initialize();
 
     // Both feeds and fetches are owned by client code, and can't be changed

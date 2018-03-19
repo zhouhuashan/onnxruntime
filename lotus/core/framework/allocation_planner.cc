@@ -2,10 +2,12 @@
 
 namespace Lotus {
 
-std::pair<Status, unique_ptr<SequentialExecutionPlan>> SequentialPlanner::CreatePlan(const SessionState& session_state) {
+Status SequentialPlanner::CreatePlan(const SessionState& session_state,
+                                     SequentialExecutionPlan* plan) {
   (session_state);
+  (plan);
   // TODO
-  return std::make_pair(Status(), unique_ptr<SequentialExecutionPlan>());
+  return Status::OK();
 }
 
 }  // namespace Lotus

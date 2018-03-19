@@ -23,7 +23,7 @@ class InferenceSession::Impl {
   Impl(const SessionOptions& session_options)
       : session_options_(session_options) {
         //env_(Env::Default()) { 
-    //thread_pool_(env_, "Compute", session_options.num_threads) {
+    // thread_pool_(env_, "Compute", session_options.num_threads) {
     // QUESTION: what if the user doesn't provide his preferred list of execution
     // providers? Should we have our own default?
     auto& provider_mgr = ExecutionProviderMgr::Instance();
@@ -47,13 +47,13 @@ class InferenceSession::Impl {
       return Common::Status::OK();
     }
     std::shared_ptr<Model> tmp_model_ptr;
-    Common::Status st = Model::Load(model_uri, &tmp_model_ptr);
-    if (st.IsOK()) {
+    Common::Status status = Model::Load(model_uri, &tmp_model_ptr);
+    if (status.IsOK()) {
       is_model_loaded_ = true;
       model_ = tmp_model_ptr;
     }
 
-    return st;
+    return status;
   }
 
   Common::Status Initialize() {
