@@ -71,7 +71,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
         
   all_values_.resize(session_state_.GetMaxMLValueIdx() + 1);
   
-  //3. handle feed in values
+  //2. handle feed in values
   for (auto it = feeds.begin(); it != feeds.end(); it++)
   {
     int index;
@@ -81,9 +81,9 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
     all_values_[index] = it->second;
   }
         
-  //4. Todo: handle the weights.
+  //3. Todo: handle the weights.
 
-  //5. set node args
+  //4. set node args
 
   // TODO const_cast is needed due to the lack of a const iterator in the graph
   Graph* p_graph = const_cast<Graph*>(graph);
@@ -104,7 +104,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
     }
   }
         
-  //6. for outputs, we may limit the buffer strategy, for example,
+  //5. for outputs, we may limit the buffer strategy, for example,
   // output tensor should always use its own buffer. TBD
   UNUSED_PARAMETER(output_names);
 }
