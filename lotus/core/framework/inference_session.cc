@@ -47,13 +47,13 @@ class InferenceSession::Impl {
       return Common::Status::OK();
     }
     std::shared_ptr<Model> tmp_model_ptr;
-    Common::Status st = Model::Load(model_uri, &tmp_model_ptr);
-    if (st.IsOK()) {
+    Common::Status status = Model::Load(model_uri, &tmp_model_ptr);
+    if (status.IsOK()) {
       is_model_loaded_ = true;
       model_ = tmp_model_ptr;
     }
 
-    return st;
+    return status;
   }
 
   Common::Status Initialize() {

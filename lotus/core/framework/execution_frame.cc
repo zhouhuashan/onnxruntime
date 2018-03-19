@@ -15,8 +15,7 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
 Status ExecutionFrame::AllocateTensorWithSelfOwnBuffer(const int index,
                                                        const MLDataType element_type,
                                                        const AllocatorInfo& location,
-                                                       const TensorShape& shape)
-{
+                                                       const TensorShape& shape) {
   LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
   auto value = node_values_[index];
   LOTUS_ENFORCE(!value->IsAllocated());
@@ -119,5 +118,4 @@ void ExecutionFrame::SetupNodeArg(LotusIR::NodeArg* arg)
   LOTUS_ENFORCE(status.IsOK());
   node_values_.push_back(&all_values_[index]);
 }
-
 }

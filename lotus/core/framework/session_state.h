@@ -11,7 +11,6 @@
 #include "core/graph/graph.h"
 
 namespace Lotus {
-
 // SessionState should be modified by the inference session class only.
 // It is supposed to be passed by const-ref only to all the executors.
 class SessionState {
