@@ -400,6 +400,7 @@ template <template <typename> typename Op>
 struct SimpleFloatTest {
   SimpleFloatTest(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs)
       : graph_(szName, inputDefs, outputDefs) {
+    graph_->Resolve();
     state_.SetGraph(graph_);
     SetupState(state_, inputDefs, outputDefs);
     
