@@ -26,8 +26,10 @@ namespace Lotus {
             std::vector<int64_t> expected_shape({ 1, 3, 2 });
 
             SessionState state;
-            state.Init(graph);
-            auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state);
+            state.SetGraph(graph);
+            state.AddMLValueNameIdx("X", 0);
+            state.AddMLValueNameIdx("Y", 1);            
+            auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, {{"X", MLValue()}}, {"Y"});
             auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, input_shape, &input_vals);
             EXPECT_TRUE(status.IsOK());
             status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_shape);

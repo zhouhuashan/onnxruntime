@@ -36,7 +36,9 @@ namespace Lotus
             AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
 
             SessionState state;
-            state.Init(graph);
+            state.SetGraph(graph);
+            state.AddMLValueNameIdx("X", 0);
+            state.AddMLValueNameIdx("Y", 1);
             ExecutionFrame frame(std::unordered_map<std::string, MLValue>{},
                                  std::vector<std::string>{},
                                  state);
@@ -97,7 +99,9 @@ namespace Lotus
                 DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
             SessionState state;
-            state.Init(graph);
+            state.SetGraph(graph);
+            state.AddMLValueNameIdx("X", 0);
+            state.AddMLValueNameIdx("Y", 1);            
             ExecutionFrame frame(std::unordered_map<std::string, MLValue>{ {"X", value} },
                                  std::vector<std::string>{},
                                  state);

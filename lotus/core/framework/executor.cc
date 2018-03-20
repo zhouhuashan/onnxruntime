@@ -22,8 +22,9 @@ Common::Status Executor::Execute(const RunOptions& run_options,
 class SequentialExecutor: public Executor {
  public:
   SequentialExecutor(const SessionState& session_state,
-                     std::unique_ptr<ExecutionFrame> p_exec_frame)
-      : Executor(std::move(p_exec_frame)),
+                     const NameMLValMap& feeds,
+                     const std::vector<std::string>& output_names)
+      : root_frame_(feeds, output_names, session_state),
         session_state_(session_state) {
   }
   
@@ -54,7 +55,7 @@ class SequentialExecutor: public Executor {
       IExecutionProvider* p_exec_provider = session_state_.GetExecutionProvider(exec_provider_name);
 
       // construct OpKernelContext
-      OpKernelContext op_kernel_context(root_frame_.get(), p_op_kernel.get());
+      OpKernelContext op_kernel_context(&root_frame_, p_op_kernel.get());
 
       // call Compute on the execution provider
       LOTUS_RETURN_IF_ERROR(p_exec_provider->Compute(node, &op_kernel_context));
@@ -64,11 +65,13 @@ class SequentialExecutor: public Executor {
   }
 
  private:
-  const SessionState& session_state_;
+  ExecutionFrame root_frame_;
+  const SessionState& session_state_;  
 };
 
 std::unique_ptr<Executor> Executor::NewSequentialExecutor(const SessionState& session_state,
-                                                          std::unique_ptr<ExecutionFrame> p_exec_frame) {
-  return std::unique_ptr<Executor>(new SequentialExecutor(session_state, std::move(p_exec_frame)));
+                                                          const NameMLValMap& feeds,
+                                                          const std::vector<std::string>& output_names) {
+  return std::unique_ptr<Executor>(new SequentialExecutor(session_state, feeds, output_names));
 }
 }

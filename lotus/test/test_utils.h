@@ -17,10 +17,12 @@ class TestUtils {
 
  public:
   static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(
-      const SessionState& session_state) {
+      const SessionState& session_state,
+      std::unordered_map<std::string, MLValue> feeds,
+      const std::vector<std::string> output_names) {
     return std::make_shared<ExecutionFrame>(
-        std::unordered_map<std::string, MLValue>{},
-        std::vector<std::string>{},
+        feeds,
+        output_names,
         session_state);
   }
 
