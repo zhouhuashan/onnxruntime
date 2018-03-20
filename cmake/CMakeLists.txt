@@ -7,6 +7,8 @@ project(Lotus C CXX)
 # Set C++14 as standard for the whole project
 set(CMAKE_CXX_STANDARD 14)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # Enable CTest
 enable_testing()
 
@@ -60,6 +62,7 @@ if (lotus_RUN_ONNX_TESTS)
 endif()
 include(onnx.cmake)
 add_definitions(-DONNX_ML)
+include(date)
 
 set(lotus_EXTERNAL_DEPENDENCIES
     eigen
@@ -114,6 +117,7 @@ include_directories(
     # External dependencies.
     ${PROTOBUF_INCLUDE_DIRS}
     ${eigen_INCLUDE_DIRS}
+    ${date_INCLUDE_DIR}
 )
 
 set(lotus_EXTERNAL_LIBRARIES
@@ -161,10 +165,10 @@ if (lotus_USE_CUDA)
 endif()
 
 include(lotus_common.cmake)
-include(lotus_core_framework.cmake)
-include(lotusIR_core_graph.cmake)
+include(lotusIR_graph.cmake)
+include(lotus_framework.cmake)
 include(lotus_providers.cmake)
-include(lotusIR_unittest.cmake)
+include(lotus_unittests.cmake)
 
 if (lotus_ENABLE_PYTHON)
 if(UNIX)

@@ -1,8 +1,12 @@
 #include "core/framework/session_state.h"
 
+#include <sstream>
+
+#include "core/common/logging.h"
+
 namespace Lotus {
 
-void SessionState::Init(const LotusIR::Graph* graph) {
+void SessionState::SetGraph(const LotusIR::Graph* graph) {
   p_graph_ = graph;
   session_kernels_.resize(p_graph_->NumberOfNodes());
 }
@@ -25,13 +29,13 @@ OpKernel* SessionState::GetKernel(LotusIR::NODEINDEX node_id) const {
 void SessionState::AddKernel(LotusIR::NODEINDEX nodeId, std::unique_ptr<OpKernel> p_kernel) {
   // assumes vector is already resize()'ed to the number of nodes in the graph
   // and the nodeIds space is dense
-  LOTUS_ENFORCE(session_kernels_.size() == p_graph_->NumberOfNodes());
+  LOTUS_ENFORCE(p_graph_ && (session_kernels_.size() == p_graph_->NumberOfNodes()));
   session_kernels_[nodeId] = std::move(p_kernel);
 }
 
-void SessionState::AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> exec_provider) {
-  exec_provider_set_.provider_idx_map.insert(std::make_pair(provider_id, exec_provider_set_.exec_providers.size()));        
-  exec_provider_set_.exec_providers.push_back(std::move(exec_provider));  
+void SessionState::AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
+  exec_provider_set_.provider_idx_map.insert(std::make_pair(provider_id, exec_provider_set_.exec_providers.size()));
+  exec_provider_set_.exec_providers.push_back(std::move(p_exec_provider));
 }
 
 IExecutionProvider* SessionState::GetExecutionProvider(const std::string& provider_id) const {
@@ -39,9 +43,9 @@ IExecutionProvider* SessionState::GetExecutionProvider(const std::string& provid
   if (it == exec_provider_set_.provider_idx_map.end()) {
     return nullptr;
   }
-  
+
   LOTUS_ENFORCE(it->second < exec_provider_set_.exec_providers.size());
-  return exec_provider_set_.exec_providers[it->second].get();  
+  return exec_provider_set_.exec_providers[it->second].get();
 }
 
 const std::vector<std::unique_ptr<IExecutionProvider>>& SessionState::GetExecutionProviders() const {
@@ -56,4 +60,39 @@ const SequentialExecutionPlan* SessionState::GetExecutionPlan() const {
   return p_seq_exec_plan_.get();
 }
 
+void SessionState::AddMLValueNameIdx(const std::string& name, int idx) {
+  int idx_ret;
+  Common::Status status = GetMLValueIdx(name, &idx_ret);
+  if (status.IsOK()) {
+    LOG(WARNING) << "MLValue name " << name << " already exists in the MLValueName -> idx map";
+    return;
+  }
+
+  if (idx > mlvalue_max_idx_) {
+    mlvalue_max_idx_ = idx;
+  }
+  mlvalue_name_idx_map_.insert(std::make_pair(name, idx));
 }
+
+// returns OK() if value is found
+Common::Status SessionState::GetMLValueIdx(const std::string& name, int* idx) const {
+  auto it = mlvalue_name_idx_map_.find(name);
+  if (it == mlvalue_name_idx_map_.end()) {
+    std::ostringstream ostr;
+    ostr << "Could not find MLValue with name: " << name;
+    return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+  }
+
+  *idx = it->second;
+  return Common::Status::OK();
+}
+
+size_t SessionState::GetNumMLValues() const {
+  return mlvalue_name_idx_map_.size();
+}
+
+int SessionState::GetMaxMLValueIdx() const {
+  return mlvalue_max_idx_;
+}
+
+}  // namespace Lotus

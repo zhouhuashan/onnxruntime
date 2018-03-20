@@ -14,17 +14,21 @@
 # ==============================================================================
 include (ExternalProject)
 
-set(googletest_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include)
+set(googletest_INCLUDE_DIRS 
+        ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/include 
+        ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googlemock/include)
 set(googletest_URL https://github.com/google/googletest.git)
 set(googletest_BUILD ${CMAKE_CURRENT_BINARY_DIR}/googletest/)
-set(googletest_TAG 0fe96607d85cf3a25ac40da369db62bbee2939a5)
+set(googletest_TAG 9bda90b7e5e08c4c37a832d0cea218aed6af6470)
 
 if(WIN32)
   set(googletest_STATIC_LIBRARIES
-      ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/$<CONFIG>/$<IF:$<CONFIG:Debug>,gtestd.lib,gtest.lib>)
+      ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googlemock/gtest/$<CONFIG>/$<IF:$<CONFIG:Debug>,gtestd.lib,gtest.lib>
+      ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googlemock/$<CONFIG>/$<IF:$<CONFIG:Debug>,gmockd.lib,gmock.lib>)
 else()
   set(googletest_STATIC_LIBRARIES
-      ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googletest/$<IF:$<CONFIG:Debug>,libgtestd.a,libgtest.a>)
+      ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googlemock/gtest/$<IF:$<CONFIG:Debug>,libgtestd.a,libgtest.a>
+      ${CMAKE_CURRENT_BINARY_DIR}/googletest/src/googletest/googlemock/$<IF:$<CONFIG:Debug>,libgmockd.a,libgmock.a>)
 endif()
 
 ExternalProject_Add(googletest
@@ -38,7 +42,7 @@ ExternalProject_Add(googletest
         -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
         -DCMAKE_SYSTEM_NAME:STRING=${CMAKE_SYSTEM_NAME}
         -DCMAKE_SYSTEM_VERSION:STRING=${CMAKE_SYSTEM_VERSION}
-        -DBUILD_GMOCK:BOOL=OFF
-        -DBUILD_GTEST:BOOL=ON
+        -DBUILD_GMOCK:BOOL=ON
+        -DBUILD_GTEST:BOOL=OFF   # Built indirectly by BUILD_GMOCK
         -Dgtest_force_shared_crt:BOOL=ON
 )
