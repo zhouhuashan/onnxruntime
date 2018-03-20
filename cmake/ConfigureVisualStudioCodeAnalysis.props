@@ -4,5 +4,7 @@
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <!-- External libraries are in or below the directory with the sln file. Source is under \lotus so not affected by this -->
+    <CAExcludePath>$(SolutionDir);</CAExcludePath>
   </PropertyGroup>
 </Project>

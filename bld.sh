@@ -1,5 +1,5 @@
 CMAKE_BUILD_TYPE=RelWithDebInfo
-if [ "$1" == "" ]; then
+if [ -z "$1" ]; then
   CMAKE_BUILD_TYPE=Debug
 fi
 cd cmake
