@@ -78,7 +78,20 @@ class InferenceSession::Impl {
     LOTUS_RETURN_IF_ERROR(ConstructKernels());
 
     // TODO add other per session initialization stuff here
-
+    
+    // get execution plan
+    if (session_options_.enable_sequential_execution) {
+      SequentialPlanner seq_planner;
+      // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
+      // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
+      // Passing a pointer to a private member variable doesn't seem the right thing to do.
+      std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+      LOTUS_RETURN_IF_ERROR(seq_planner.CreatePlan(session_state_, p_seq_exec_plan.get()));
+      session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
+    } else {
+      LOTUS_NOT_IMPLEMENTED;
+    }
+    
     is_inited_ = true;
     return Status::OK();
   }

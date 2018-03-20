@@ -3,7 +3,7 @@
 
 #include "core/common/status.h"
 #include "core/framework/execution_provider.h"
-#include "core/framework/session_state.h"
+//#include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
@@ -39,6 +39,8 @@ enum class AllocKind {
   kPreExisting = 2,
   kAllocateStatically = 3,
 };
+
+class SessionState;
 
 // SequentialExecutionPlan: This is the data that is produced by a static
 // planner for a sequential execution, to be used by a SequentialExecutor.

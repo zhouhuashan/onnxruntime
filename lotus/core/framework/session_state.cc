@@ -48,4 +48,12 @@ const std::vector<std::unique_ptr<IExecutionProvider>>& SessionState::GetExecuti
   return exec_provider_set_.exec_providers;
 }
 
+void SessionState::SetExecutionPlan(std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan) {
+  p_seq_exec_plan_ = std::move(p_seq_exec_plan);
+}
+
+const SequentialExecutionPlan* SessionState::GetExecutionPlan() const {
+  return p_seq_exec_plan_.get();
+}
+
 }

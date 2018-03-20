@@ -8,6 +8,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
 #include "core/framework/execution_provider.h"
+#include "core/framework/allocation_planner.h"
 
 namespace Lotus {
   class SessionState {
@@ -33,6 +34,10 @@ namespace Lotus {
                               std::unique_ptr<IExecutionProvider> exec_provider);
     const std::vector<std::unique_ptr<IExecutionProvider>>& GetExecutionProviders() const;
 
+    // execution plan
+    void SetExecutionPlan(std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan);
+    const SequentialExecutionPlan* GetExecutionPlan() const;
+
    private:
     // cache of the constructed kernels to avoid spending construction
     // time per executor
@@ -45,7 +50,8 @@ namespace Lotus {
     };
 
     ExecutionProviderSet exec_provider_set_;
-
+    std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
+    
     // TODO add more
   };
 }
