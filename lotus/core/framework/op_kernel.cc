@@ -42,13 +42,11 @@ namespace Lotus {
 
 
     DEFINE_GET_ATTR(float, f)
-    DEFINE_GET_ATTR(int, i)
     DEFINE_GET_ATTR(int64_t, i)
     DEFINE_GET_ATTR(std::string, s)
     DEFINE_GET_ATTR(TensorProto, t)
     DEFINE_GET_ATTR(GraphProto, g)
     DEFINE_GET_ATTRS(float, floats)
-    DEFINE_GET_ATTRS(int, ints)
     DEFINE_GET_ATTRS(int64_t, ints)
     DEFINE_GET_ATTRS(std::string, strings)
     DEFINE_GET_ATTRS(TensorProto, tensors)
