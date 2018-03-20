@@ -1,6 +1,6 @@
 #include "core/providers/cpu/math/clip.h"
-#include "core/providers/cpu/math/gemm.h"
 #include "core/providers/cpu/math/element_wise_ops.h"
+#include "core/providers/cpu/math/gemm.h"
 #include "gtest/gtest.h"
 #include "test/test_utils.h"
 
@@ -320,14 +320,6 @@ TEST(MathOpTest, GemmNaN) {
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
   }
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(dims));
-  const float* res = output->data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
 }
 
 struct TestGraph {
@@ -348,7 +340,7 @@ struct SimpleFloatTest {
   SimpleFloatTest(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs)
       : graph_(szName, inputDefs, outputDefs) {
     state_.Init(graph_);
-    frame_ = TestUtils::CreateSingleNodeCPUExecutionFrame(graph_, state_);
+    frame_ = TestUtils::CreateSingleNodeCPUExecutionFrame(state_);
   }
 
   template <size_t count>
