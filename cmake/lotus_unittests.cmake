@@ -1,5 +1,3 @@
-set(UT_NAME ${PROJECT_NAME}_UT)
-
 find_package(Threads)
 
 function(add_whole_archive_flag lib output_var)
@@ -30,7 +28,8 @@ function(AddTest)
     
   add_executable(${_UT_TARGET} ${_UT_SOURCES})
   source_group(TREE ${LOTUS_ROOT}/test FILES ${_UT_SOURCES})
-  
+  set_target_properties(${_UT_TARGET} PROPERTIES FOLDER "LotusTest")
+
   add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
@@ -53,77 +52,99 @@ function(AddTest)
   )
 endfunction(AddTest)
 
-add_whole_archive_flag(lotusIR_graph lotusIR_graph_whole_archived)
-add_whole_archive_flag(onnx onnx_whole_archived)
-add_whole_archive_flag(lotus_providers lotus_providers_whole_archived)
+add_whole_archive_flag(lotus_common lotus_common_whole_archive)
+add_whole_archive_flag(lotusIR_graph lotusIR_graph_whole_archive)
+add_whole_archive_flag(lotus_framework lotus_framework_whole_archive)
+add_whole_archive_flag(lotus_providers lotus_providers_whole_archive)
+add_whole_archive_flag(onnx onnx_whole_archive)
 
-set(${UT_NAME}_libs
-    ${googletest_STATIC_LIBRARIES}
+# tests from lowest level library up.
+# the order of libraries should be maintained, with higher libraries being added first in the list
+
+set(lotus_test_ir_libs
+    ${lotusIR_graph_whole_archive}
+    ${onnx_whole_archive}
+    ${lotus_common_whole_archive}
     ${protobuf_STATIC_LIBRARIES}
-	${lotusIR_graph_whole_archived}
-	${onnx_whole_archived}
+    ${googletest_STATIC_LIBRARIES}
 )
 
-file(GLOB_RECURSE ${UT_NAME}_src
+file(GLOB lotus_test_ir_src
     "${LOTUS_ROOT}/test/ir/*.cc"
 )
 
 AddTest(
-    TARGET ${UT_NAME}
-    SOURCES ${${UT_NAME}_src}
-    LIBS ${${UT_NAME}_libs}
-	DEPENDS googletest lotusIR_graph
+    TARGET lotus_test_ir
+    SOURCES ${lotus_test_ir_src}
+    LIBS ${lotus_test_ir_libs}
+    DEPENDS googletest lotusIR_graph 
 )
 
 set(lotus_test_framework_libs
-    ${googletest_STATIC_LIBRARIES}
+    ${lotus_framework_whole_archive}
+    ${lotusIR_graph_whole_archive}
+    ${onnx_whole_archive}
+    ${lotus_common_whole_archive}
     ${protobuf_STATIC_LIBRARIES}
-	${lotusIR_graph_whole_archived}
-	${onnx_whole_archived}
-	lotus_framework
+    ${googletest_STATIC_LIBRARIES}
 )
 
-file(GLOB_RECURSE lotus_test_framework_src
+set(lotus_test_framework_src_patterns
     "${LOTUS_ROOT}/test/framework/*.cc"
     "${LOTUS_ROOT}/test/platform/*.cc"
-    "${LOTUS_ROOT}/test/lib/*.cc"    
+    "${LOTUS_ROOT}/test/lib/*.cc"
 )
+
+if(WIN32)
+    list(APPEND lotus_test_framework_src_patterns
+         "${LOTUS_ROOT}/test/platform/windows/logging/*.h"
+         "${LOTUS_ROOT}/test/platform/windows/logging/*.cc" )
+endif()
+
+file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 
 AddTest(
     TARGET lotus_test_framework
     SOURCES ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
-    DEPENDS lotus_framework googletest lotusIR_graph
+    DEPENDS lotus_framework googletest
 )
 
 set(lotus_test_providers_libs
-    ${googletest_STATIC_LIBRARIES}
+    ${lotus_providers_whole_archive}
+    ${lotus_framework_whole_archive}
+    ${lotusIR_graph_whole_archive}
+    ${onnx_whole_archive}
+    ${lotus_common_whole_archive}
     ${protobuf_STATIC_LIBRARIES}
-    ${lotusIR_graph_whole_archived}
-    ${onnx_whole_archived}
-    lotus_framework
-    ${lotus_providers_whole_archived}
+    ${googletest_STATIC_LIBRARIES}
 )
 
 file(GLOB_RECURSE lotus_test_providers_src
-    "${LOTUS_ROOT}/test/framework/framework_test_main.cc"
     "${LOTUS_ROOT}/test/providers/*.cc"
+)
+
+file(GLOB lotus_test_providers_helpers_src
+    "${LOTUS_ROOT}/test/framework/framework_test_main.cc"
     "${LOTUS_ROOT}/test/*.h"
 )
 
 AddTest(
     TARGET lotus_test_providers
-    SOURCES ${lotus_test_providers_src}
+    SOURCES ${lotus_test_providers_src} ${lotus_test_providers_helpers_src}
     LIBS ${lotus_test_providers_libs}
-  DEPENDS lotus_providers lotus_framework googletest lotusIR_graph
+  DEPENDS lotus_providers googletest
 )
 
+#
+# LotusIR_graph test data
+#
 set(TEST_DATA_SRC ${LOTUS_ROOT}/test/testdata)
-set(TEST_DATA_DES $<TARGET_FILE_DIR:${UT_NAME}>/testdata)
+set(TEST_DATA_DES $<TARGET_FILE_DIR:lotus_test_ir>/testdata)
 
 # Copy test data from source to destination.
 add_custom_command(
-    TARGET ${UT_NAME} POST_BUILD
+    TARGET lotus_test_ir POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${TEST_DATA_SRC}
             ${TEST_DATA_DES})
@@ -131,9 +152,9 @@ add_custom_command(
 # Copy large onnx models to test dir
 if (lotus_RUN_ONNX_TESTS)
   add_custom_command(
-      TARGET ${UT_NAME} POST_BUILD
+      TARGET lotus_test_ir POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory
               ${CMAKE_CURRENT_BINARY_DIR}/models/models/onnx
-              $<TARGET_FILE_DIR:${UT_NAME}>/models
-      DEPENDS ${UT_NAME})
+              $<TARGET_FILE_DIR:lotus_test_ir>/models
+      DEPENDS lotus_test_ir)
 endif()
