@@ -15,16 +15,14 @@ namespace Test {
 class TestUtils {
   typedef std::shared_ptr<ExecutionFrame> ExecutionFramePtr;
 
-        public:
-
-            static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(
-                const SessionState& session_state)
-            {
-                return std::make_shared<ExecutionFrame>(
-                    std::unordered_map<std::string, MLValue>{},
-                    std::vector<std::string>{},
-                    session_state);
-            }
+ public:
+  static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(
+      const SessionState& session_state) {
+    return std::make_shared<ExecutionFrame>(
+        std::unordered_map<std::string, MLValue>{},
+        std::vector<std::string>{},
+        session_state);
+  }
 
   template <typename T>
   static Status PrepareTensor(const int index,
@@ -57,17 +55,16 @@ class TestUtils {
     return PrepareTensor(i, frame, dims, value);
   }
 
-            template <typename T>
-            static Status PrepareIthOutput(const LotusIR::Node& node,
-                const int i,
-                ExecutionFramePtr frame,
-                std::vector<int64_t>& dims,
-                std::vector<T>* value = nullptr)
-            {
-                LOTUS_ENFORCE(i >= 0 && i < node.OutputDefs().size());
-                return PrepareTensor(i + (int)node.InputDefs().size(), frame, dims, value);
-            }
-        };
+  template <typename T>
+  static Status PrepareIthOutput(const LotusIR::Node& node,
+                                 const int i,
+                                 ExecutionFramePtr frame,
+                                 const std::vector<int64_t>& dims,
+                                 const std::vector<T>* value = nullptr) {
+    LOTUS_ENFORCE(i >= 0 && i < node.OutputDefs().size());
+    return PrepareTensor(i + (int)node.InputDefs().size(), frame, dims, value);
+  }
+};
 
 #define CREATE_NODE(op_name, inputs, outputs)                 \
   LotusIR::Model model("test");                               \
