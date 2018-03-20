@@ -27,6 +27,9 @@ namespace Lotus
         // Return the dimension specified by <p_idx>.
         const int64_t& operator[](int p_idx) const;
 
+        // Return the number of dimensions
+        size_t DimensionCount() const { return m_dims.size(); }
+
         bool operator==(const TensorShape& p_other) const {
             return m_dims == p_other.m_dims;
         }
