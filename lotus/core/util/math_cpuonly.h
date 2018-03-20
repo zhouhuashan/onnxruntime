@@ -53,7 +53,15 @@ namespace Lotus {
     class CPUMathUtil
     {
     public:
+        /*CPUMathUtil contains some help method like generate a
+        random seed. We only need a single instance for it.*/
+        static CPUMathUtil& Instance() {
+            static CPUMathUtil p;
+            return p;
+        }
         //todo: the random generate interface.
+    private:
+        CPUMathUtil() {}
     };
 
 #define EIGEN_Y EigenVectorArrayMap<T>(Y->mutable_data<T>(), Y->shape().Size())

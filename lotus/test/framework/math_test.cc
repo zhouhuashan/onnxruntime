@@ -26,7 +26,7 @@ namespace Lotus {
 #define VECTOR_HEAD(x) x.size() > 0 ? &x[0] : NULL
 
     TEST(MathTest, GemmNoTransNoTrans) {
-        CPUMathUtil provider;
+        auto& provider = CPUMathUtil::Instance();
         std::vector<float> X(50); // 5 * 10
         std::vector<float> W(60); // 10 * 6
         std::vector<float> Y(30); // 5 * 6
@@ -70,7 +70,7 @@ namespace Lotus {
     }
 
     TEST(MathTest, GemmNoTransTrans) {
-        CPUMathUtil provider;
+        auto& provider = CPUMathUtil::Instance();
         std::vector<float> X(50);// 5 * 10
         std::vector<float> W(60);// 10 * 6
         std::vector<float> Y(30);// 5 * 6
@@ -112,7 +112,7 @@ namespace Lotus {
     }
 
     TEST(MathTest, GemvNoTrans) {
-        CPUMathUtil provider;
+        auto& provider = CPUMathUtil::Instance();
         std::vector<float> A(50); // 5 * 10
         std::vector<float> X(10);
         std::vector<float> Y(5); 
@@ -150,7 +150,7 @@ namespace Lotus {
     }
 
     TEST(MathTest, GemvTrans) {
-        CPUMathUtil provider;
+        auto& provider = CPUMathUtil::Instance();
         std::vector<float> A(60); // 6 * 10
         std::vector<float> X(6);
         std::vector<float> Y(10);

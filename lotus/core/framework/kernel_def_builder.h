@@ -68,8 +68,8 @@ class KernelDef {
 
   // Specify the set of types that this kernel supports. A further restriction
   // of the set of types specified in the op schema.
-  // The arg name could be either op formal parameter name, say "X", or type argument name
-  // specified in op schema, say "T".
+  // The arg name could be either op formal parameter name, say "X", or type
+  // argument name specified in op schema, say "T".
   KernelDef& TypeConstraint(const std::string& arg_name,
                             const std::vector<MLDataType>& supported_types) {
     type_constraints_[arg_name] = supported_types;
@@ -88,8 +88,8 @@ class KernelDef {
   }
 
   // Inplace mapping from inputs to outputs allowed.
-  // It means that uplayer runtime could do memory in-place optimization as it will not
-  // impact the correctness of this kernel.
+  // It means that uplayer runtime could do memory in-place optimization
+  // as it will not impact the correctness of this kernel.
   KernelDef& MayInplace(const std::vector<std::pair<int, int>>& inplaces) {
     inplace_map_ = inplaces;
     return *this;
@@ -136,12 +136,14 @@ class KernelDef {
  private:
   // The operator name supported by <*this> kernel..
   std::string op_name_;
+
   // The operator since_version range supported by <*this> kernel.
   // A kernel could support an operator definition between <op_since_version_start>
   // and <op_since_version_end> (inclusive).
   int op_since_version_start_ = 1;
   int op_since_version_end_ = INT_MAX;
-  // THe operator domain supported by <*this> kernel.
+
+// THe operator domain supported by <*this> kernel.
   std::string op_domain_ = LotusIR::c_onnxDomain;
 
   // The type of the execution provider.

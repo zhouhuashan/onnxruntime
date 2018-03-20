@@ -11,14 +11,15 @@
 
 namespace Lotus {
   class SessionState {
-   public:
+  public:
     SessionState() = default;
     
-   SessionState(int num_nodes): session_kernels_(num_nodes) {
-     // TODO Dummy constructor for now to add a basic test.
-   }
+    SessionState(int num_nodes): session_kernels_(num_nodes) {
+      // TODO Dummy constructor for now to add a basic test.
+    }
     
     void Init(const LotusIR::Graph* graph);
+
     const LotusIR::Graph* GetGraph() const;
 
     // kernels
@@ -28,7 +29,8 @@ namespace Lotus {
 
     // exec providers
     IExecutionProvider* GetExecutionProvider(const std::string& provider_id) const;
-    void AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> exec_provider);
+    void AddExecutionProvider(const std::string& provider_id,
+                              std::unique_ptr<IExecutionProvider> exec_provider);
     const std::vector<std::unique_ptr<IExecutionProvider>>& GetExecutionProviders() const;
 
    private:
@@ -39,8 +41,9 @@ namespace Lotus {
 
     struct ExecutionProviderSet {
       std::vector<std::unique_ptr<IExecutionProvider>> exec_providers;
-      std::unordered_map<std::string, size_t> provider_idx_map; // this merely exists to facilitate fast lookup
+      std::unordered_map<std::string, size_t> provider_idx_map;  // for fast lookup.
     };
+
     ExecutionProviderSet exec_provider_set_;
 
     // TODO add more
