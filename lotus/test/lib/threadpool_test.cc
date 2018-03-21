@@ -15,8 +15,8 @@ limitations under the License.
 
 #include "core/lib/threadpool.h"
 
-#include "gtest/gtest.h"
 #include "core/platform/env.h"
+#include "gtest/gtest.h"
 
 namespace Lotus {
 namespace thread {
@@ -52,7 +52,6 @@ TEST(ThreadPool, DoWork) {
     }
   }
 }
-
 
 }  // namespace thread
 }  // namespace Lotus

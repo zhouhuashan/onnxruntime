@@ -179,9 +179,9 @@ class KernelRegistry {
 
 #define REGISTER_KERNEL(kernel_def, ...) REGISTER_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def, __VA_ARGS__)
 #define REGISTER_KERNEL_UNIQ_HELPER(counter, kernel_def, ...) REGISTER_KERNEL_UNIQ(counter, kernel_def, __VA_ARGS__)
-#define REGISTER_KERNEL_UNIQ(counter, kernel_def, ...) \
-static Lotus::Common::Status kernel_def_##counter##_status = KernelRegistry::Instance()->Register(kernel_def, \
-[](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });
+#define REGISTER_KERNEL_UNIQ(counter, kernel_def, ...)                                                          \
+  static Lotus::Common::Status kernel_def_##counter##_status = KernelRegistry::Instance()->Register(kernel_def, \
+                                                                                                    [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });
 
 }  // namespace Lotus
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H

@@ -71,9 +71,9 @@ class Notification {
     return notified;
   }
 
-  std::mutex mu_;                    // protects mutations of notified_
-  std::condition_variable cv_;       // signaled when notified_ becomes non-zero
-  std::atomic<bool> notified_;       // mutations under mu_
+  std::mutex mu_;               // protects mutations of notified_
+  std::condition_variable cv_;  // signaled when notified_ becomes non-zero
+  std::atomic<bool> notified_;  // mutations under mu_
 };
 
 inline bool WaitForNotificationWithTimeout(Notification* n,

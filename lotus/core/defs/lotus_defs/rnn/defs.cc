@@ -2,63 +2,69 @@
 
 namespace LotusIR {
 
-    std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorInputX() {
-        return [=](OperatorSchemaSetter& schema) {
-            schema.Input("X",
-                "The input sequences packed (and potentially padded) into one 3-D "
-                "tensor with the shape of `[seq_length, batch_size, input_size]`.", "T");
-            schema.TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-                "Constrain input and output types to float tensors.");
-        };
-    }
+std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorInputX() {
+  return [=](OperatorSchemaSetter& schema) {
+    schema.Input("X",
+                 "The input sequences packed (and potentially padded) into one 3-D "
+                 "tensor with the shape of `[seq_length, batch_size, input_size]`.",
+                 "T");
+    schema.TypeConstraint("T", {"tensor(float16)", "tensor(float)", "tensor(double)"},
+                          "Constrain input and output types to float tensors.");
+  };
+}
 
-    std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorInputSeqLen() {
-        return [=](OperatorSchemaSetter& schema) {
-            schema.Input("sequence_lens",
-                "Optional tensor specifying lengths of the sequences in a batch. "
-                "If not specified - assumed all sequences in the batch to have "
-                "length `seq_length`. It has shape `[batch_size]`.", "T1", true /*optional*/);
-            schema.TypeConstraint("T1", { "tensor(int32)" }, "Constrain seq_lens to integer tensor.");
-        };
-    }
+std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorInputSeqLen() {
+  return [=](OperatorSchemaSetter& schema) {
+    schema.Input("sequence_lens",
+                 "Optional tensor specifying lengths of the sequences in a batch. "
+                 "If not specified - assumed all sequences in the batch to have "
+                 "length `seq_length`. It has shape `[batch_size]`.",
+                 "T1", true /*optional*/);
+    schema.TypeConstraint("T1", {"tensor(int32)"}, "Constrain seq_lens to integer tensor.");
+  };
+}
 
-    std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorInputInitialH() {
-        return [=](OperatorSchemaSetter& schema) {
-            schema.Input("initial_h",
-                "Optional initial value of the hidden. If not specified - assumed "
-                "to be 0. It has shape `[num_directions, batch_size, hidden_size]`.", "T", true /*optional*/);
-        };
-    }
+std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorInputInitialH() {
+  return [=](OperatorSchemaSetter& schema) {
+    schema.Input("initial_h",
+                 "Optional initial value of the hidden. If not specified - assumed "
+                 "to be 0. It has shape `[num_directions, batch_size, hidden_size]`.",
+                 "T", true /*optional*/);
+  };
+}
 
-    std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorAttrOutput() {
-        return [=](OperatorSchemaSetter& schema) {
-            schema.Attr("direction", "Specify if the RNN is forward, reverse, or bidirectional. "
+std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorAttrOutput() {
+  return [=](OperatorSchemaSetter& schema) {
+    schema.Attr("direction",
+                "Specify if the RNN is forward, reverse, or bidirectional. "
                 "Must be one of forward (default), reverse, or bidirectional.",
                 AttrType::AttributeProto_AttributeType_STRING);
-            schema.Attr("hidden_size", "Number of neurons in the hidden layer",
+    schema.Attr("hidden_size", "Number of neurons in the hidden layer",
                 AttrType::AttributeProto_AttributeType_INT);
-            schema.Output("Y",
-                "A tensor that concats all the intermediate output values of the hidden."
-                "It has shape `[seq_length, num_directions, batch_size, hidden_size]`.", "T");
-            schema.Output("Y_h",
-                "The last output value of the hidden. It has shape "
-                "`[num_directions, batch_size, hidden_size]`.", "T");
-        };
-    }
+    schema.Output("Y",
+                  "A tensor that concats all the intermediate output values of the hidden."
+                  "It has shape `[seq_length, num_directions, batch_size, hidden_size]`.",
+                  "T");
+    schema.Output("Y_h",
+                  "The last output value of the hidden. It has shape "
+                  "`[num_directions, batch_size, hidden_size]`.",
+                  "T");
+  };
+}
 
-    std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorActivationArgs() {
-        return [=](OperatorSchemaSetter& schema) {
-            schema.Attr("activation_alpha",
+std::function<void(OperatorSchemaSetter&)> RNNDocGeneratorActivationArgs() {
+  return [=](OperatorSchemaSetter& schema) {
+    schema.Attr("activation_alpha",
                 "Optional scaling values used by some activation functions.",
                 AttrType::AttributeProto_AttributeType_FLOATS);
-            schema.Attr("activation_beta",
+    schema.Attr("activation_beta",
                 "Optional scaling values used by some activation functions.",
                 AttrType::AttributeProto_AttributeType_FLOATS);
-        };
-    }
+  };
+}
 
-    REGISTER_OPERATOR_SCHEMA(RNN)
-        .Description(R"DOC(
+REGISTER_OPERATOR_SCHEMA(RNN)
+    .Description(R"DOC(
             Computes an one-layer simple RNN. This operator is usually supported
             via some custom implementation such as CuDNN.
 
@@ -82,31 +88,35 @@ namespace LotusIR {
             Equations:
               - Ht = Activation(Wi*Xt + Ri*Ht-1 + Wbi + Rbi)
             )DOC")
-        .FillUsing(RNNDocGeneratorInputX())
-        .Input("W",
-            "The weight tensor for input gate. Concatenation of `Wi` and `WBi` "
-            "(if bidirectional). The tensor has shape "
-            "`[num_directions, hidden_size, input_size]`.", "T")
-        .Input("R",
-            "The recurrence weight tensor. Concatenation of `Ri` and `RBi` "
-            "(if bidirectional). The tensor has shape "
-            "`[num_directions, hidden_size, hidden_size]`.", "T")
-        .Input("B",
-            "The bias tensor for input gate. Concatenation of `[Wbi, Rbi]` "
-            "and `[WBbi, RBbi]` (if bidirectional). The tensor has shape "
-            "`[num_directions, 2*hidden_size]`, Optional: If not specified - assumed "
-            "to be 0.", "T",
-            true)
-        .FillUsing(RNNDocGeneratorInputSeqLen())
-        .FillUsing(RNNDocGeneratorInputInitialH())
-        .Attr("activations", "One (or two if bidirectional) activation function for "
-            "input gate. It must be one of tanh and ReLU. Default `tanh`.",
-            AttrType::AttributeProto_AttributeType_STRINGS)
-        .FillUsing(RNNDocGeneratorActivationArgs())
-        .FillUsing(RNNDocGeneratorAttrOutput());
+    .FillUsing(RNNDocGeneratorInputX())
+    .Input("W",
+           "The weight tensor for input gate. Concatenation of `Wi` and `WBi` "
+           "(if bidirectional). The tensor has shape "
+           "`[num_directions, hidden_size, input_size]`.",
+           "T")
+    .Input("R",
+           "The recurrence weight tensor. Concatenation of `Ri` and `RBi` "
+           "(if bidirectional). The tensor has shape "
+           "`[num_directions, hidden_size, hidden_size]`.",
+           "T")
+    .Input("B",
+           "The bias tensor for input gate. Concatenation of `[Wbi, Rbi]` "
+           "and `[WBbi, RBbi]` (if bidirectional). The tensor has shape "
+           "`[num_directions, 2*hidden_size]`, Optional: If not specified - assumed "
+           "to be 0.",
+           "T",
+           true)
+    .FillUsing(RNNDocGeneratorInputSeqLen())
+    .FillUsing(RNNDocGeneratorInputInitialH())
+    .Attr("activations",
+          "One (or two if bidirectional) activation function for "
+          "input gate. It must be one of tanh and ReLU. Default `tanh`.",
+          AttrType::AttributeProto_AttributeType_STRINGS)
+    .FillUsing(RNNDocGeneratorActivationArgs())
+    .FillUsing(RNNDocGeneratorAttrOutput());
 
-    REGISTER_OPERATOR_SCHEMA(GRU)
-        .Description(R"DOC(
+REGISTER_OPERATOR_SCHEMA(GRU)
+    .Description(R"DOC(
             Computes an one-layer GRU. This operator is usually supported via some custom
             implementation such as CuDNN.
 
@@ -135,33 +145,36 @@ namespace LotusIR {
               - ht = tanh(Wh*Xt + rt*(Rh*Ht-1 + Rbh) + Wbh)
               - H = (1 - zt) (.) ht + it (.) Ht-1
             )DOC")
-        .FillUsing(RNNDocGeneratorInputX())
-        .Input("W",
-            "The weight tensor for the gates. Concatenation of `W[zrh]` and `WB[zrh]` "
-            "(if bidirectional) along dimension 0. This tensor has shape "
-            "`[num_directions, 3*hidden_size, input_size]`.", "T")
-        .Input("R",
-            "The recurrence weight tensor. Concatenation of `R[zrh]` and `RB[zrh]` "
-            "(if bidirectional) along dimension 0. This tensor has shape "
-            "`[num_directions, 3*hidden_size, hidden_size]`.", "T")
-        .Input("B",
-            "The bias tensor for the gates. Concatenation of `[Wb[zrh], Rb[zrh]]` and "
-            "`[WBb[zrh], RBb[zrh]]` (if bidirectional) along dimension 0. This tensor "
-            "has shape `[num_directions, 6*hidden_size]`. Optional: If not specified "
-            "- assumed to be 0", "T",
-            true /*optional*/)
-        .FillUsing(RNNDocGeneratorInputSeqLen())
-        .FillUsing(RNNDocGeneratorInputInitialH())
-        .Attr("activations", "A list of 3 (or 6 if bidirectional) activation functions "
-            "for update, reset, and hidden gates. The activation functions must be "
-            "one of sigmoid and tanh. See the equations for default.",
-            AttrType::AttributeProto_AttributeType_STRINGS)
-        .FillUsing(RNNDocGeneratorActivationArgs())
-        .FillUsing(RNNDocGeneratorAttrOutput());
+    .FillUsing(RNNDocGeneratorInputX())
+    .Input("W",
+           "The weight tensor for the gates. Concatenation of `W[zrh]` and `WB[zrh]` "
+           "(if bidirectional) along dimension 0. This tensor has shape "
+           "`[num_directions, 3*hidden_size, input_size]`.",
+           "T")
+    .Input("R",
+           "The recurrence weight tensor. Concatenation of `R[zrh]` and `RB[zrh]` "
+           "(if bidirectional) along dimension 0. This tensor has shape "
+           "`[num_directions, 3*hidden_size, hidden_size]`.",
+           "T")
+    .Input("B",
+           "The bias tensor for the gates. Concatenation of `[Wb[zrh], Rb[zrh]]` and "
+           "`[WBb[zrh], RBb[zrh]]` (if bidirectional) along dimension 0. This tensor "
+           "has shape `[num_directions, 6*hidden_size]`. Optional: If not specified "
+           "- assumed to be 0",
+           "T",
+           true /*optional*/)
+    .FillUsing(RNNDocGeneratorInputSeqLen())
+    .FillUsing(RNNDocGeneratorInputInitialH())
+    .Attr("activations",
+          "A list of 3 (or 6 if bidirectional) activation functions "
+          "for update, reset, and hidden gates. The activation functions must be "
+          "one of sigmoid and tanh. See the equations for default.",
+          AttrType::AttributeProto_AttributeType_STRINGS)
+    .FillUsing(RNNDocGeneratorActivationArgs())
+    .FillUsing(RNNDocGeneratorAttrOutput());
 
-
-    REGISTER_OPERATOR_SCHEMA(LSTM)
-        .Description(R"DOC(
+REGISTER_OPERATOR_SCHEMA(LSTM)
+    .Description(R"DOC(
             Computes an one-layer LSTM. This operator is usually supported via some
             custom implementation such as CuDNN.
 
@@ -195,46 +208,54 @@ namespace LotusIR {
               - ot = sigmoid(Wo*Xt + Ro*Ht-1 + Po (.) Ct + Wbo + Rbo)
               - H = ot (.) tanh(Ct)
             )DOC")
-        .FillUsing(RNNDocGeneratorInputX())
-        .Input("W",
-            "The weight tensor for the gates. Concatenation of `W[zrh]` and `WB[zrh]` "
-            "(if bidirectional) along dimension 0. This tensor has shape "
-            "`[num_directions, 3*hidden_size, input_size]`.", "T")
-        .Input("R",
-            "The recurrence weight tensor. Concatenation of `R[zrh]` and `RB[zrh]` "
-            "(if bidirectional) along dimension 0. This tensor has shape "
-            "`[num_directions, 3*hidden_size, hidden_size]`.", "T")
-        .Input("B",
-            "The bias tensor for the gates. Concatenation of `[Wb[zrh], Rb[zrh]]` and "
-            "`[WBb[zrh], RBb[zrh]]` (if bidirectional) along dimension 0. This tensor "
-            "has shape `[num_directions, 6*hidden_size]`. Optional: If not specified "
-            "- assumed to be 0", "T",
-            true /*optional*/)
-        .FillUsing(RNNDocGeneratorInputSeqLen())
-        .FillUsing(RNNDocGeneratorInputInitialH())
-        .Attr("activations", "A list of 3 (or 6 if bidirectional) activation functions "
-            "for update, reset, and hidden gates. The activation functions must be "
-            "one of sigmoid and tanh. See the equations for default.",
-            AttrType::AttributeProto_AttributeType_STRINGS)
-        .FillUsing(RNNDocGeneratorActivationArgs())
-        .Attr("clip", "Cell clip threshold. Clipping bounds the elements of a tensor "
-            "in the range of [-threshold, +threshold] and is applied to the input "
-            "of activations. No clip if not specified.",
-            AttrType::AttributeProto_AttributeType_FLOAT)
-        .Attr("input_forget", "Couple the input and forget gates if 1, default 0.",
-            AttrType::AttributeProto_AttributeType_INT)
-        .Input("initial_c",
-            "Optional initial value of the cell. If not specified - assumed "
-            "to be 0. It has shape `[num_directions, batch_size, hidden_size]`.", "T",
-            true /*optional*/)
-        .Input("P",
-            "The weight tensor for peepholes. Concatenation of `P[iof]` and "
-            "`PB[iof]` (if bidirectional) along dimension 0. It has shape "
-            "`[num_directions, 3*hidde_size]`. Optional: If not specified - "
-            "assumed to be 0.", "T",
-            true /*optional*/)
-        .FillUsing(RNNDocGeneratorAttrOutput())
-        .Output("Y_c",
-                "The last output value of the cell. It has shape "
-                "`[num_directions, batch_size, hidden_size]`.", "T");
-}
+    .FillUsing(RNNDocGeneratorInputX())
+    .Input("W",
+           "The weight tensor for the gates. Concatenation of `W[zrh]` and `WB[zrh]` "
+           "(if bidirectional) along dimension 0. This tensor has shape "
+           "`[num_directions, 3*hidden_size, input_size]`.",
+           "T")
+    .Input("R",
+           "The recurrence weight tensor. Concatenation of `R[zrh]` and `RB[zrh]` "
+           "(if bidirectional) along dimension 0. This tensor has shape "
+           "`[num_directions, 3*hidden_size, hidden_size]`.",
+           "T")
+    .Input("B",
+           "The bias tensor for the gates. Concatenation of `[Wb[zrh], Rb[zrh]]` and "
+           "`[WBb[zrh], RBb[zrh]]` (if bidirectional) along dimension 0. This tensor "
+           "has shape `[num_directions, 6*hidden_size]`. Optional: If not specified "
+           "- assumed to be 0",
+           "T",
+           true /*optional*/)
+    .FillUsing(RNNDocGeneratorInputSeqLen())
+    .FillUsing(RNNDocGeneratorInputInitialH())
+    .Attr("activations",
+          "A list of 3 (or 6 if bidirectional) activation functions "
+          "for update, reset, and hidden gates. The activation functions must be "
+          "one of sigmoid and tanh. See the equations for default.",
+          AttrType::AttributeProto_AttributeType_STRINGS)
+    .FillUsing(RNNDocGeneratorActivationArgs())
+    .Attr("clip",
+          "Cell clip threshold. Clipping bounds the elements of a tensor "
+          "in the range of [-threshold, +threshold] and is applied to the input "
+          "of activations. No clip if not specified.",
+          AttrType::AttributeProto_AttributeType_FLOAT)
+    .Attr("input_forget", "Couple the input and forget gates if 1, default 0.",
+          AttrType::AttributeProto_AttributeType_INT)
+    .Input("initial_c",
+           "Optional initial value of the cell. If not specified - assumed "
+           "to be 0. It has shape `[num_directions, batch_size, hidden_size]`.",
+           "T",
+           true /*optional*/)
+    .Input("P",
+           "The weight tensor for peepholes. Concatenation of `P[iof]` and "
+           "`PB[iof]` (if bidirectional) along dimension 0. It has shape "
+           "`[num_directions, 3*hidde_size]`. Optional: If not specified - "
+           "assumed to be 0.",
+           "T",
+           true /*optional*/)
+    .FillUsing(RNNDocGeneratorAttrOutput())
+    .Output("Y_c",
+            "The last output value of the cell. It has shape "
+            "`[num_directions, batch_size, hidden_size]`.",
+            "T");
+}  // namespace LotusIR
