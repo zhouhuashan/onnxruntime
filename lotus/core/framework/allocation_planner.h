@@ -89,6 +89,19 @@ class SequentialPlanner {
                     SequentialExecutionPlan* plan);
 };
 
+/*
+Dummy planner is used to generate a default execution plan for test.
+For allocation part, all the values will be set as kAllocate, except
+weights. Weights will be set as kAllocateStatically.
+For execution, it is just follow the topological order, and won't free
+any values in the middle of execution.
+*/
+class DummyPlanner {
+public:
+    static Status CreatePlan(const SessionState& session_state,
+        SequentialExecutionPlan* plan);
+};
+
 }  // namespace Lotus
 
 #endif  // CORE_FRAMEWORK_ALLOCATION_PLANNER_H

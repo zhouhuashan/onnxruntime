@@ -6,11 +6,22 @@
 
 namespace Lotus
 {
-  class DummyTransformer : public IGraphTransformer {
+  class DummyCPUTransformer : public IGraphTransformer {
  public:
     virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) override {
-      UNUSED_PARAMETER(p_graph);
-      UNUSED_PARAMETER(modified);
+      auto num_nodes = p_graph.NumberOfNodes();
+      for (int i = 0; i < num_nodes; i++)
+      {
+          if (p_graph.IsSourceNode(i)
+              || p_graph.IsSinkNode(i))
+              continue;
+          auto node = p_graph.GetNode(i);
+          if (node->GetExecutionProvider().empty()) 
+          {
+              node->SetExecutionProvider(LotusIR::c_cpuExecutionProvider);
+              modified = true;
+          }
+      }
       return Common::Status::OK();
     }             
   };
@@ -66,7 +77,7 @@ namespace Lotus
     }
 
  private:
-    DummyTransformer dummy_transformer_;
+     DummyCPUTransformer dummy_transformer_;
   };
 }
 
