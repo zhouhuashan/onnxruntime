@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 
+#include "core/common/logging.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/session_state.h"
 
@@ -34,14 +35,14 @@ class SequentialExecutor : public Executor {
                          std::vector<MLValue>* p_fetches) override {
     UNUSED_PARAMETER(run_options);
     UNUSED_PARAMETER(feeds);
-    UNUSED_PARAMETER(output_names);
-    UNUSED_PARAMETER(p_fetches);
 
     // TODO write test for executor when execution frame is ready
 
     const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
+    const auto& exec_plan_vec = p_seq_exec_plan->execution_plan;
 
-    for (auto& node_exec_plan : p_seq_exec_plan->execution_plan) {
+    for (int i = 0; i < exec_plan_vec.size(); ++i) {
+      const auto& node_exec_plan = exec_plan_vec[i];
       auto node_index = node_exec_plan.node_index;
       OpKernel* p_op_kernel = session_state_.GetKernel(node_index);
       if (!p_op_kernel) {
@@ -57,17 +58,28 @@ class SequentialExecutor : public Executor {
       AllocateNodeArgs(node, node.InputDefs(), p_seq_exec_plan->allocation_plan);
       AllocateNodeArgs(node, node.OutputDefs(), p_seq_exec_plan->allocation_plan);
 
-      // get execution provider for this node
-      IExecutionProvider* p_exec_provider = session_state_.GetExecutionProvider(node.GetExecutionProvider());
-
       // construct OpKernelContext
       OpKernelContext op_kernel_context(&root_frame_, p_op_kernel);
 
       // call Compute on the execution provider
-      LOTUS_RETURN_IF_ERROR(p_exec_provider->Compute(node, &op_kernel_context));
+      p_op_kernel->compute(&op_kernel_context);
 
       // free ml-values corresponding to this node
       ReleaseNodeMLValues(p_seq_exec_plan, node_exec_plan);
+    }
+
+    LOTUS_RETURN_IF_ERROR(CopyOutput(output_names, p_fetches));
+
+    return Common::Status::OK();
+  }
+
+  Common::Status CopyOutput(const std::vector<std::string>& output_names,
+                            std::vector<MLValue>* p_fetches) {
+    for (const auto& oname : output_names) {
+      int mlvalue_index;
+      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(oname, &mlvalue_index));
+      const MLValue& output_mlvalue = root_frame_.GetMLValue(mlvalue_index);
+      p_fetches->push_back(output_mlvalue);
     }
 
     return Common::Status::OK();
@@ -77,7 +89,6 @@ class SequentialExecutor : public Executor {
                            const SequentialExecutionPlan::NodeExecutionPlan& node_exec_plan) {
     for (auto i = node_exec_plan.free_from_index; i <= node_exec_plan.free_to_index; ++i) {
       auto mlvalue_idx = p_seq_exec_plan->to_be_freed[i];
-      // TODO perform delete here
       root_frame_.ReleaseMLValue(mlvalue_idx);
     }
   }
@@ -94,6 +105,16 @@ class SequentialExecutor : public Executor {
                                   const std::vector<SequentialExecutionPlan::AllocPlanPerValue>& alloc_plan) {
     for (auto& elem : node_args) {
       const std::string& name = elem->Name();
+
+      // perform allocation only if the shape is present in the node arg; skip otherwise
+      std::vector<int64_t> dims;
+      GetDimensionsFromTensorShapeProto(elem->Shape(), &dims);
+      if (dims.empty()) {
+        LOG(WARNING) << "Missing shape in the node arg with name: " << name;
+        continue;
+      }
+
+      TensorShape shape(dims);
 
       // get mlvalue index using name from the session_state
       int mlvalue_index;
@@ -113,13 +134,15 @@ class SequentialExecutor : public Executor {
 
       // use the AllocPlanPerValue to perform allocation
       AllocKind alloc_kind = per_alloc_plan.alloc_kind;
-      std::vector<int64_t> dims;
-      GetDimensionsFromTensorShapeProto(elem->Shape(), &dims);
-      TensorShape shape(dims);
-
-      MLDataType ml_data_type = DataTypeImpl::GetType<float>();  // assume float?
+      MLDataType ml_data_type = DataTypeImpl::GetType<float>();  // TODO: assume float?
 
       switch (alloc_kind) {
+        case AllocKind::kUndecided: {
+          // In this case the else clause of get_or_create_tensor will get used to create
+          // the tensor.
+          LOG(INFO) << "Got kUndecided alloc_kind from the planner for node arg with name: " << name;
+          break;
+        }
         case AllocKind::kAllocate: {
           LOTUS_RETURN_IF_ERROR(root_frame_.AllocateMLValueTensorSelfOwnBuffer(mlvalue_index,
                                                                                ml_data_type,

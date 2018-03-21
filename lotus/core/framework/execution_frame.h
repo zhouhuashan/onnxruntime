@@ -83,6 +83,11 @@ class ExecutionFrame {
                                              const AllocatorInfo& location,
                                              const TensorShape& shape);
 
+  const MLValue& GetMLValue(int mlvalue_index) const {
+    LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
+    return all_values_[mlvalue_index];
+  }
+
   // Index to the first argument of the given node.
   int get_first_arg_index(LotusIR::NODEINDEX index) {
     LOTUS_ENFORCE(index >= 0 && index < node_offsets_.size());

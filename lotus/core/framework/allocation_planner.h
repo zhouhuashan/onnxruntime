@@ -17,10 +17,10 @@ typedef int MLValueIndex;
 typedef std::string MLValueName;
 
 // ?? Rama: Do we need to treat non-tensor values differently??
-// The ML-Values fall into the following categories with respect to their 
+// The ML-Values fall into the following categories with respect to their
 // memory management:
 //   - inference inputs: owned (allocated and freed) by caller, and is by
-//     default read-only by the runtime. 
+//     default read-only by the runtime.
 //   - inference outputs: allocated by runtime, ownership transferred to
 //     caller. TODO: Make sure this semantics is clear in InferenceSession API.
 //   - weights (constant tensors): can be allocated once (statically), and
@@ -38,6 +38,7 @@ enum class AllocKind {
   kReuse = 1,
   kPreExisting = 2,
   kAllocateStatically = 3,
+  kUndecided = 4,  // this means the planner had insufficient information to decide?
 };
 
 class SessionState;
@@ -97,9 +98,9 @@ For execution, it is just follow the topological order, and won't free
 any values in the middle of execution.
 */
 class DummyPlanner {
-public:
-    static Status CreatePlan(const SessionState& session_state,
-        SequentialExecutionPlan* plan);
+ public:
+  static Status CreatePlan(const SessionState& session_state,
+                           SequentialExecutionPlan* plan);
 };
 
 }  // namespace Lotus

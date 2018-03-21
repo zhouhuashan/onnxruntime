@@ -1,4 +1,5 @@
 #include "core/framework/allocation_planner.h"
+#include "core/framework/session_state.h"
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
 
