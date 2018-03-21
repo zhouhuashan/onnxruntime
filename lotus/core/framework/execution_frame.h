@@ -45,6 +45,22 @@ class ExecutionFrame {
   ~ExecutionFrame() {
   }
 
+  Status AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
+                                            const MLDataType element_type,
+                                            const AllocatorInfo& location,
+                                            const TensorShape& shape);
+
+  Status AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
+                                            const MLDataType element_type,
+                                            const AllocatorInfo& location,
+                                            const TensorShape& shape);
+
+  Status AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
+                                                int mlvalue_index_reuse,
+                                                const MLDataType element_type,
+                                                const AllocatorInfo& location,
+                                                const TensorShape& shape);
+
   // ?? Cheng: What about non-tensor values??
   // ?? Cheng: There are cases we may not want to use LOTUS_ENFORCE??
   // ?? Cheng: Graph must be immutable for GetNodesInTopologicalOrder??
@@ -113,6 +129,12 @@ class ExecutionFrame {
             const std::vector<string>& outputs);
 
   void SetupNodeArg(LotusIR::NodeArg* arg);
+
+  Status AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlvalue,
+                                                   void* pBuffer,
+                                                   const MLDataType element_type,
+                                                   const AllocatorInfo& location,
+                                                   const TensorShape& shape);
 
   // This method is not thread safe!
   Tensor* get_or_create_tensor(int index, const TensorShape& shape) {
