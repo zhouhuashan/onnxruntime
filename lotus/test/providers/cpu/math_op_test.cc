@@ -6,8 +6,6 @@
 
 namespace Lotus {
 namespace Test {
-typedef std::vector<LotusIR::NodeArg*> ArgMap;
-
 void SetupState(SessionState& state,
                 const std::vector<LotusIR::NodeArg*>& input_defs,
                 const std::vector<LotusIR::NodeArg*>& output_defs) {
@@ -17,12 +15,12 @@ void SetupState(SessionState& state,
   }
   for (auto& elem : output_defs) {
     state.AddMLValueNameIdx(elem->Name(), idx++);
-  }  
+  }
 }
 
 void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
                              const std::vector<LotusIR::NodeArg*>& output_defs,
-                             std::unordered_map<std::string,MLValue>& feeds,
+                             std::unordered_map<std::string, MLValue>& feeds,
                              std::vector<std::string>& output_names) {
   for (auto& elem : input_defs) {
     feeds.insert(std::make_pair(elem->Name(), MLValue()));
@@ -30,7 +28,7 @@ void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
   for (auto& elem : output_defs) {
     output_names.push_back(elem->Name());
   }
-} 
+}
 
 TEST(MathOpTest, Clip) {
   TypeProto tensor_float;
@@ -56,10 +54,10 @@ TEST(MathOpTest, Clip) {
   state.SetGraph(graph);
   SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string,MLValue> feeds;
+  std::unordered_map<std::string, MLValue> feeds;
   std::vector<std::string> output_names;
   FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-  
+
   auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
   auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, dims, &input_vals);
   EXPECT_TRUE(status.IsOK());
@@ -111,10 +109,10 @@ TEST(MathOpTest, GemmNoTrans) {
   state.SetGraph(graph);
   SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string,MLValue> feeds;
+  std::unordered_map<std::string, MLValue> feeds;
   std::vector<std::string> output_names;
   FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-  
+
   auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
   auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
   EXPECT_TRUE(status.IsOK());
@@ -171,10 +169,10 @@ TEST(MathOpTest, GemmBroadcast) {
   state.SetGraph(graph);
   SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string,MLValue> feeds;
+  std::unordered_map<std::string, MLValue> feeds;
   std::vector<std::string> output_names;
   FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-  
+
   auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
   auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
   EXPECT_TRUE(status.IsOK());
@@ -231,10 +229,10 @@ TEST(MathOpTest, GemmTrans) {
   state.SetGraph(graph);
   SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string,MLValue> feeds;
+  std::unordered_map<std::string, MLValue> feeds;
   std::vector<std::string> output_names;
   FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-  
+
   auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
   auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
   EXPECT_TRUE(status.IsOK());
@@ -291,10 +289,10 @@ TEST(MathOpTest, GemmAlphaBeta) {
   state.SetGraph(graph);
   SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string,MLValue> feeds;
+  std::unordered_map<std::string, MLValue> feeds;
   std::vector<std::string> output_names;
   FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-  
+
   auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
   auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
   EXPECT_TRUE(status.IsOK());
@@ -351,10 +349,10 @@ TEST(MathOpTest, GemmNaN) {
   state.SetGraph(graph);
   SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string,MLValue> feeds;
+  std::unordered_map<std::string, MLValue> feeds;
   std::vector<std::string> output_names;
   FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-  
+
   auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
   auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
   EXPECT_TRUE(status.IsOK());

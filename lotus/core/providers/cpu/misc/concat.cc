@@ -12,7 +12,7 @@ void Concat<float>::compute(OpKernelContext* ctx) {
   for (int index = 1; index < inputCount; index++) {
     auto& data_n = *ctx->input<Tensor>(index);
     // Ensure all the other axes match
-    for (int axisIndex = 0; axisIndex < inputs_0.shape().DimensionCount(); axisIndex++) {
+    for (int axisIndex = 0; axisIndex < inputs_0.shape().NumDimensions(); axisIndex++) {
       if (axisIndex == axis_)
         continue;
       LOTUS_ENFORCE(data_n.shape()[axisIndex] == inputs_0.shape()[axisIndex], "Non concat axis dimensions must match");
@@ -22,12 +22,12 @@ void Concat<float>::compute(OpKernelContext* ctx) {
   // Calculate the size of the concatenated axis, and verify all other dimensions match
   size_t concatAxisSize = 0;
   for (int index = 0; index < inputCount; index++) {
-    concatAxisSize += ctx->input<Tensor>(index)->shape()[axis_];
+    concatAxisSize += ctx->input<Tensor>(index)->shape()[int(axis_)];
   }
 
   // Calculate the shape of the output tensor
   std::vector<int64_t> dims;
-  for (int dimensionIndex = 0; dimensionIndex < inputs_0.shape().DimensionCount(); dimensionIndex++)
+  for (int dimensionIndex = 0; dimensionIndex < inputs_0.shape().NumDimensions(); dimensionIndex++)
     dims.emplace_back(inputs_0.shape()[dimensionIndex]);
   dims[axis_] = concatAxisSize;
   TensorShape outputShape(dims);

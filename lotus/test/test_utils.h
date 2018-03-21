@@ -12,6 +12,15 @@
 namespace Lotus {
 namespace Test {
 
+void SetupState(SessionState& state,
+                const std::vector<LotusIR::NodeArg*>& input_defs,
+                const std::vector<LotusIR::NodeArg*>& output_defs);
+
+void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
+                             const std::vector<LotusIR::NodeArg*>& output_defs,
+                             std::unordered_map<std::string, MLValue>& feeds,
+                             std::vector<std::string>& output_names);
+
 class TestUtils {
   typedef std::shared_ptr<ExecutionFrame> ExecutionFramePtr;
 
@@ -80,13 +89,26 @@ extern TypeProto_Set s_typeProto_float;
 struct TestModel {
   TestModel(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs) {
     Graph()->AddNode("node1", szName, szName, inputDefs, outputDefs);
+
+    Graph()->Resolve();
+    state_.SetGraph(Graph());
+    SetupState(state_, inputDefs, outputDefs);
+
+    std::unordered_map<std::string, MLValue> feeds;
+    std::vector<std::string> output_names;
+    FillFeedsAndOutputNames(inputDefs, outputDefs, feeds, output_names);
+    frame_ = TestUtils::CreateSingleNodeCPUExecutionFrame(state_, feeds, output_names);
   }
 
   LotusIR::Graph* Graph() { return model_.MainGraph(); }
   LotusIR::Node& Node() { return *Graph()->GetNode(Graph()->NumberOfNodes() - 1); };
+  auto& State() { return state_; }
+  auto& Frame() { return frame_; }
 
  private:
   LotusIR::Model model_{"test", true};
+  SessionState state_;
+  std::shared_ptr<ExecutionFrame> frame_;
 };
 
 // To use SimpleFloatTest:
@@ -99,13 +121,11 @@ template <template <typename> typename Op>
 struct SimpleFloatTest {
   SimpleFloatTest(TestModel& model)
       : model_(model) {
-    state_.Init(model.Graph());
-    frame_ = TestUtils::CreateSingleNodeCPUExecutionFrame(state_);
   }
 
   template <size_t count>
   void Run(const std::vector<int64_t>& expectedDims, const float (&expected_vals)[count]) {
-    OpKernelContext kernel_ctx(frame_.get(), &kernel_);
+    OpKernelContext kernel_ctx(model_.Frame().get(), &kernel_);
     kernel_.compute(&kernel_ctx);
     auto& output = *kernel_ctx.output(0, TensorShape(expectedDims));
     Check(output, expected_vals);
@@ -121,12 +141,12 @@ struct SimpleFloatTest {
   }
 
   void AddInput(const std::vector<int64_t>& dims, const std::vector<float>& values) {
-    auto status = TestUtils::PrepareIthInput<float>(model_.Node(), inputCount_++, frame_, dims, &values);
+    auto status = TestUtils::PrepareIthInput<float>(model_.Node(), inputCount_++, model_.Frame(), dims, &values);
     EXPECT_TRUE(status.IsOK());
   }
 
   void AddOutput(const std::vector<int64_t>& dims) {
-    auto status = TestUtils::PrepareIthOutput<float>(model_.Node(), 0, frame_, dims, nullptr);
+    auto status = TestUtils::PrepareIthOutput<float>(model_.Node(), 0, model_.Frame(), dims, nullptr);
     EXPECT_TRUE(status.IsOK());
   }
 
@@ -135,8 +155,6 @@ struct SimpleFloatTest {
   KernelDef kernel_def_;
   OpKernelInfo info_{model_.Node(), allocator_info_, kernel_def_};
   Op<float> kernel_{info_};
-  SessionState state_;
-  std::shared_ptr<ExecutionFrame> frame_;
 
   unsigned inputCount_{};
 };

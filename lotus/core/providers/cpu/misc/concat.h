@@ -19,7 +19,7 @@ struct Concat final : OpKernel {
   void compute(OpKernelContext* context) override;
 
  private:
-  int axis_;
+  int64_t axis_;
 };
 
 }  // namespace Lotus
