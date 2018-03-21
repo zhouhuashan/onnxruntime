@@ -40,7 +40,7 @@ TEST(AllocationPlannerTest, DummyPlannerTest) {
   state.AddMLValueNameIdx("Y", 3);
 
   SequentialExecutionPlan dummy_plan;
-  auto status = DummyPlanner::CreatePlan(state, &dummy_plan);
+  auto status = SimpleAllocationPlanner::CreatePlan(state, &dummy_plan);
   EXPECT_TRUE(status.IsOK());
   EXPECT_EQ(dummy_plan.allocation_plan.size(), 4);
   EXPECT_EQ(dummy_plan.allocation_plan[0].alloc_kind, AllocKind::kAllocate);
