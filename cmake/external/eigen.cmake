@@ -20,12 +20,14 @@ set(eigen_INCLUDE_DIRS
     ${CMAKE_CURRENT_BINARY_DIR}/external/eigen3
 )
 set(eigen_URL "https://bitbucket.org/eigen/eigen/get/f3a22f35b044.tar.gz")
+set(eigen_MD5 "4645c66075982da6fa0bcf6b20f3e8f7")
 set(eigen_BUILD ${CMAKE_CURRENT_BINARY_DIR}/eigen/src/eigen)
 set(eigen_INSTALL ${CMAKE_CURRENT_BINARY_DIR}/eigen/install)
 
 ExternalProject_Add(eigen
     PREFIX eigen
     URL ${eigen_URL}
+    URL_MD5 ${eigen_MD5}
     DOWNLOAD_DIR "${DOWNLOAD_LOCATION}"
     INSTALL_DIR "${eigen_INSTALL}"
     CMAKE_CACHE_ARGS

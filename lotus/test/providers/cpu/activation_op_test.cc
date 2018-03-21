@@ -17,8 +17,10 @@ void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(
 
   Op kernel(info);
   SessionState state;
-  state.Init(graph);
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state);
+  state.SetGraph(graph);
+  state.AddMLValueNameIdx("X", 0);
+  state.AddMLValueNameIdx("Y", 1);
+  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, {{"X", MLValue()}}, {"Y"});
 
   std::vector<int64_t> dims{(int64_t)input_vals.size()};
 

@@ -15,14 +15,14 @@ template <typename T_X,
 class Gemm final : public OpKernel {
  public:
   Gemm(const OpKernelInfo& info) : OpKernel(info) {
-    int temp;
-    LOTUS_ENFORCE(info.GetAttr<int>("transA", &temp).IsOK());
+    int64_t temp;
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("transA", &temp).IsOK());
     transA_ = temp == 0 ? CblasNoTrans : CblasTrans;
 
-    LOTUS_ENFORCE(info.GetAttr<int>("transB", &temp).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("transB", &temp).IsOK());
     transB_ = temp == 0 ? CblasNoTrans : CblasTrans;
 
-    LOTUS_ENFORCE(info.GetAttr<int>("broadcast", &broadcast_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("broadcast", &broadcast_).IsOK());
     LOTUS_ENFORCE(info.GetAttr<float>("alpha", &alpha_).IsOK());
     LOTUS_ENFORCE(info.GetAttr<float>("beta", &beta_).IsOK());
   }
@@ -101,7 +101,7 @@ class Gemm final : public OpKernel {
  private:
   CBLAS_TRANSPOSE transA_;
   CBLAS_TRANSPOSE transB_;
-  int broadcast_;
+  int64_t broadcast_;
   float alpha_;
   float beta_;
 };

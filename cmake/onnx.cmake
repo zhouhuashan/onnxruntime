@@ -2,8 +2,9 @@ RELATIVE_PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
     ${LOTUS_ROOT} core/protobuf/onnx-ml.proto
 )
 
-
 add_library(onnx ${PROTO_SRCS} ${PROTO_HDRS})
+add_dependencies(onnx protobuf)
+
 if (WIN32)
     target_compile_options(onnx PRIVATE
         /wd4800 # 'type' : forcing value to bool 'true' or 'false' (performance warning)

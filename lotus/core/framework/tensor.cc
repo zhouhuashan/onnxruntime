@@ -16,15 +16,11 @@ namespace Lotus
         m_dims.assign(p_other.m_dims.begin(), p_other.m_dims.end());
     }
 
-    int64_t& TensorShape::operator[](int p_idx)
+    const int64_t TensorShape::operator[](int p_idx) const
     {
-        //Since we don't have status in return value, if p_idex invalid, let stl throw exception.
-        return m_dims[p_idx];
-    }
-
-    const int64_t& TensorShape::operator[](int p_idx) const
-    {
-        //Since we don't have status in return value, if p_idex invalid, let stl throw exception.
+        //Since we don't have status in return value,  
+        //the caller should be responsible for invalid p_idx.
+        //In that case, stl throws an exception.
         return m_dims[p_idx];
     }
 
