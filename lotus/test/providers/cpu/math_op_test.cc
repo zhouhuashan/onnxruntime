@@ -6,7 +6,6 @@
 
 namespace Lotus {
 namespace Test {
-typedef std::vector<LotusIR::NodeArg*> ArgMap;
 TEST(MathOpTest, Clip) {
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
@@ -322,75 +321,10 @@ TEST(MathOpTest, GemmNaN) {
   }
 }
 
-struct TestGraph {
-  TestGraph(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs) {
-    graph_->AddNode("node1", szName, szName, inputDefs, outputDefs);
-  }
-
-  operator LotusIR::Graph*() const { return graph_; }
-  LotusIR::Graph* operator->() const { return graph_; }
-
- private:
-  LotusIR::Model model_{"test", true};
-  LotusIR::Graph* graph_{model_.MainGraph()};
-};
-
-template <template <typename> typename Op>
-struct SimpleFloatTest {
-  SimpleFloatTest(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs)
-      : graph_(szName, inputDefs, outputDefs) {
-    state_.Init(graph_);
-    frame_ = TestUtils::CreateSingleNodeCPUExecutionFrame(state_);
-  }
-
-  template <size_t count>
-  void Run(const std::vector<int64_t>& expectedDims, const float (&expected_vals)[count]) {
-    OpKernelContext kernel_ctx(frame_.get(), &kernel_);
-    kernel_.compute(&kernel_ctx);
-    auto& output = *kernel_ctx.output(0, TensorShape(expectedDims));
-    Check(output, expected_vals);
-  }
-
-  template <size_t count>
-  static void Check(Tensor& output, const float (&expected_vals)[count]) {
-    LOTUS_ENFORCE(output.shape().Size() == count);
-    const float* res = output.data<float>();
-    for (int i = 0; i < count; ++i) {
-      EXPECT_NEAR(expected_vals[i], res[i], 0.001f);
-    }
-  }
-
-  void AddInput(const std::vector<int64_t>& dims, const std::vector<float>& values) {
-    auto status = TestUtils::PrepareIthInput<float>(node_, inputCount_++, frame_, dims, &values);
-    EXPECT_TRUE(status.IsOK());
-  }
-
-  void AddOutput(const std::vector<int64_t>& dims) {
-    auto status = TestUtils::PrepareIthOutput<float>(node_, 0, frame_, dims, nullptr);
-    EXPECT_TRUE(status.IsOK());
-  }
-
-  TestGraph graph_;
-  LotusIR::Node& node_{*graph_->GetNode(graph_->NumberOfNodes() - 1)};
-  AllocatorInfo allocator_info_{"CPUAllocator", Lotus::AllocatorType::ArenaAllocator};
-  KernelDef kernel_def_;
-  OpKernelInfo info_{node_, allocator_info_, kernel_def_};
-  Op<float> kernel_{info_};
-  SessionState state_;
-  std::shared_ptr<ExecutionFrame> frame_;
-
-  unsigned inputCount_{};
-};
-
-static struct TypeProto_Float : TypeProto {
-  TypeProto_Float() {
-    mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  }
-} s_tensor_float;
-
 TEST(MathOpTest, Add) {
-  LotusIR::NodeArg input1_def("A", &s_tensor_float), input2_def("B", &s_tensor_float), output_def("C", &s_tensor_float);
-  SimpleFloatTest<Add> test("Add", {&input1_def, &input2_def}, {&output_def});
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
+  SimpleFloatTest<Add> test(model);
 
   std::vector<int64_t> dims{3, 3};
   test.AddInput(dims, {1.0f, 2.0f, -1.0f, 0.0f, 1.5f, -100.0f, -5.4f, 9.3f, -10'000.0f});
@@ -401,8 +335,9 @@ TEST(MathOpTest, Add) {
 }
 
 TEST(MathOpTest, Sum) {
-  LotusIR::NodeArg input1_def("data_0", &s_tensor_float), input2_def("data_1", &s_tensor_float), input3_def("data_3", &s_tensor_float), output_def("sum", &s_tensor_float);
-  SimpleFloatTest<Sum> test("Sum", {&input1_def, &input2_def, &input3_def}, {&output_def});
+  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float), input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float), output_def("sum", &s_typeProto_float);
+  TestModel model("Sum", {&input1_def, &input2_def, &input3_def}, {&output_def});
+  SimpleFloatTest<Sum> test(model);
 
   std::vector<int64_t> dims{3, 3};
   test.AddInput(dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
@@ -414,8 +349,9 @@ TEST(MathOpTest, Sum) {
 }
 
 TEST(MathOpTest, Sub) {
-  LotusIR::NodeArg input1_def("A", &s_tensor_float), input2_def("B", &s_tensor_float), output_def("C", &s_tensor_float);
-  SimpleFloatTest<Sub> test("Sub", {&input1_def, &input2_def}, {&output_def});
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  TestModel model("Sub", {&input1_def, &input2_def}, {&output_def});
+  SimpleFloatTest<Sub> test(model);
 
   std::vector<int64_t> dims{3, 3};
   test.AddInput(dims, {1.0f, 2.0f, -1.0f, 0.0f, 1.5f, -100.0f, -5.4f, 9.3f, -10'000.0f});
@@ -426,8 +362,9 @@ TEST(MathOpTest, Sub) {
 }
 
 TEST(MathOpTest, Mul) {
-  LotusIR::NodeArg input1_def("A", &s_tensor_float), input2_def("B", &s_tensor_float), output_def("C", &s_tensor_float);
-  SimpleFloatTest<Mul> test("Mul", {&input1_def, &input2_def}, {&output_def});
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  TestModel model("Mul", {&input1_def, &input2_def}, {&output_def});
+  SimpleFloatTest<Mul> test(model);
 
   std::vector<int64_t> dims{3, 3};
   test.AddInput(dims, {1.0f, 2.0f, -1.0f, 0.0f, 1.5f, -100.0f, -5.4f, 9.30f, -10'000.0f});
@@ -438,8 +375,9 @@ TEST(MathOpTest, Mul) {
 }
 
 TEST(MathOpTest, Reciprocal) {
-  LotusIR::NodeArg input_def("X", &s_tensor_float), output_def("Y", &s_tensor_float);
-  SimpleFloatTest<Reciprocal> test("Reciprocal", {&input_def}, {&output_def});
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Reciprocal", {&input_def}, {&output_def});
+  SimpleFloatTest<Reciprocal> test(model);
 
   std::vector<int64_t> dims{2, 2};
   test.AddInput(dims, {1.0f, 2.0f, -1.0f, -2.0f});

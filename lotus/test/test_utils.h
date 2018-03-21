@@ -38,6 +38,7 @@ class TestUtils {
       return status;
     if (value) {
       auto tensor = frame->get_mutable_value<Tensor>(index);
+      LOTUS_ENFORCE(size_t(tensor->shape().Size()) == value->size(), "Number of input values doesn't match tensor size");
       T* buffer = tensor->mutable_data<T>();
       for (int i = 0; i < value->size(); i++)
         buffer[i] = (*value)[i];
@@ -64,6 +65,78 @@ class TestUtils {
     LOTUS_ENFORCE(i >= 0 && i < node.OutputDefs().size());
     return PrepareTensor(i + (int)node.InputDefs().size(), frame, dims, value);
   }
+};
+
+struct TypeProto_Set : TypeProto {
+  TypeProto_Set(TensorProto_DataType type) {
+    mutable_tensor_type()->set_elem_type(type);
+  }
+};
+
+extern TypeProto_Set s_typeProto_float;
+
+struct TestModel {
+  TestModel(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs) {
+    Graph()->AddNode("node1", szName, szName, inputDefs, outputDefs);
+  }
+
+  LotusIR::Graph* Graph() { return model_.MainGraph(); }
+  LotusIR::Node& Node() { return *Graph()->GetNode(Graph()->NumberOfNodes() - 1); };
+
+ private:
+  LotusIR::Model model_{"test", true};
+};
+
+// To use SimpleFloatTest:
+//  1. Create a TestModel
+//  2. Add any attributes
+//  3. Create a SimpleFloatTest
+//  4. Add any inputs/outputs
+//  5. Call SimpleFloatTest::Run with the expected output
+template <template <typename> typename Op>
+struct SimpleFloatTest {
+  SimpleFloatTest(TestModel& model)
+      : model_(model) {
+    state_.Init(model.Graph());
+    frame_ = TestUtils::CreateSingleNodeCPUExecutionFrame(state_);
+  }
+
+  template <size_t count>
+  void Run(const std::vector<int64_t>& expectedDims, const float (&expected_vals)[count]) {
+    OpKernelContext kernel_ctx(frame_.get(), &kernel_);
+    kernel_.compute(&kernel_ctx);
+    auto& output = *kernel_ctx.output(0, TensorShape(expectedDims));
+    Check(output, expected_vals);
+  }
+
+  template <size_t count>
+  static void Check(Tensor& output, const float (&expected_vals)[count]) {
+    LOTUS_ENFORCE(output.shape().Size() == count);
+    const float* res = output.data<float>();
+    for (int i = 0; i < count; ++i) {
+      EXPECT_NEAR(expected_vals[i], res[i], 0.001f);
+    }
+  }
+
+  void AddInput(const std::vector<int64_t>& dims, const std::vector<float>& values) {
+    auto status = TestUtils::PrepareIthInput<float>(model_.Node(), inputCount_++, frame_, dims, &values);
+    EXPECT_TRUE(status.IsOK());
+  }
+
+  void AddOutput(const std::vector<int64_t>& dims) {
+    auto status = TestUtils::PrepareIthOutput<float>(model_.Node(), 0, frame_, dims, nullptr);
+    EXPECT_TRUE(status.IsOK());
+  }
+
+  TestModel& model_;
+  AllocatorInfo allocator_info_{"CPUAllocator", Lotus::AllocatorType::ArenaAllocator};
+  KernelDef kernel_def_;
+  OpKernelInfo info_{model_.Node(), allocator_info_, kernel_def_};
+  Op<float> kernel_{info_};
+  SessionState state_;
+  std::shared_ptr<ExecutionFrame> frame_;
+
+  unsigned inputCount_{};
 };
 
 #define CREATE_NODE(op_name, inputs, outputs)                 \
