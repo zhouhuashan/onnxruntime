@@ -4,29 +4,28 @@
 #include "core/framework/arena.h"
 
 namespace Lotus {
-    class AllocatorManager
-    {
-        friend class Initializer;
-    public:
-        // the allocator manager is a global object for entire process.
-        // all the inference engine in the same process will use the same allocator manager.
-        static AllocatorManager* Instance()
-        {
-            static AllocatorManager manager;
-            return &manager;
-        }
+class AllocatorManager {
+  friend class Initializer;
 
-        IArenaAllocator& GetArena(const std::string& name, const int id = 0);
+ public:
+  // the allocator manager is a global object for entire process.
+  // all the inference engine in the same process will use the same allocator manager.
+  static AllocatorManager* Instance() {
+    static AllocatorManager manager;
+    return &manager;
+  }
 
-    private:
-        // after add allocator, allocator manager will take the ownership.
-        Status AddDeviceAllocator(IDeviceAllocator* allocator, const bool create_arena = true);
-        Status AddArenaAllocator(IArenaAllocator* allocator);
+  IArenaAllocator& GetArena(const std::string& name, const int id = 0);
 
-        static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena);
+ private:
+  // after add allocator, allocator manager will take the ownership.
+  Status AddDeviceAllocator(IDeviceAllocator* allocator, const bool create_arena = true);
+  Status AddArenaAllocator(IArenaAllocator* allocator);
 
-        Status InitializeAllocators();
-    };
-}
+  static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena);
+
+  Status InitializeAllocators();
+};
+}  // namespace Lotus
 
 #endif

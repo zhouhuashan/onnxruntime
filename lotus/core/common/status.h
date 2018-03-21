@@ -84,7 +84,7 @@ class Status {
   // As long as Code() is OK, m_state == NULL.
   std::unique_ptr<State> m_state;
 };
-}
+}  // namespace Common
 }  // namespace Lotus
 
 #endif  // !CORE_GRAPH_STATUS_H

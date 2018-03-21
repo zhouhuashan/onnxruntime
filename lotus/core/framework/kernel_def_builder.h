@@ -143,7 +143,7 @@ class KernelDef {
   int op_since_version_start_ = 1;
   int op_since_version_end_ = INT_MAX;
 
-// THe operator domain supported by <*this> kernel.
+  // THe operator domain supported by <*this> kernel.
   std::string op_domain_ = LotusIR::c_onnxDomain;
 
   // The type of the execution provider.

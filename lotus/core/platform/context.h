@@ -24,7 +24,7 @@ enum class ContextKind {
   // Initial state inherited from the creating or scheduling thread.
   kThread,
 };
-  
+
 // Context is a container for request-specific information that should be passed
 // to threads that perform related work. The default constructor should capture
 // all relevant context.
