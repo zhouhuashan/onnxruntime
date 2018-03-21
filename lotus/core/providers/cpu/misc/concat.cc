@@ -51,7 +51,7 @@ void Concat<float>::compute(OpKernelContext* ctx) {
     const float* input = data_n.data<float>();
     auto inputSize = data_n.shape().Size();
 
-    // Copy the data across. For every 'inputAxisPitch' bytes copied, we move over by the 'outputAxisPitch'
+    // Copy the data across. For every 'inputAxisPitch' values copied, we move over by the 'outputAxisPitch'
     float* output = outputBase;
     for (int i = 0, j = 0; i < inputSize; i++) {
       output[i] = input[i];
