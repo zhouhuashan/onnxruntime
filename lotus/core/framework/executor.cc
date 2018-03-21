@@ -1,12 +1,11 @@
 #include "core/framework/executor.h"
 
-#include <thread>
 #include <chrono>
+#include <thread>
 
 #include "core/framework/session_state.h"
 
-namespace Lotus
-{
+namespace Lotus {
 Common::Status Executor::Execute(const RunOptions& run_options,
                                  const NameMLValMap& feeds,
                                  const std::vector<std::string>& output_names,
@@ -19,7 +18,7 @@ Common::Status Executor::Execute(const RunOptions& run_options,
 }
 
 // TODO move to its own file
-class SequentialExecutor: public Executor {
+class SequentialExecutor : public Executor {
  public:
   SequentialExecutor(const SessionState& session_state,
                      const NameMLValMap& feeds,
@@ -27,7 +26,7 @@ class SequentialExecutor: public Executor {
       : root_frame_(feeds, output_names, session_state),
         session_state_(session_state) {
   }
-  
+
   Common::Status Execute(const RunOptions& run_options,
                          const NameMLValMap& feeds,
                          const std::vector<std::string>& output_names,
@@ -39,10 +38,10 @@ class SequentialExecutor: public Executor {
 
     // TODO initialize the execution frame with feeds, output_names, p_fetches and model weights
     // TODO write test for executor when execution frame is ready
-    
+
     // we added the kernels in the topological order when we initialized
     // the session
-    for (auto& p_op_kernel: session_state_.GetKernelVector()) {
+    for (auto& p_op_kernel : session_state_.GetKernelVector()) {
       if (!p_op_kernel) {
         // TODO continue for now since we don't have any kernels ready
         // when the kernels are ready, we should log and error here and
@@ -60,13 +59,13 @@ class SequentialExecutor: public Executor {
       // call Compute on the execution provider
       LOTUS_RETURN_IF_ERROR(p_exec_provider->Compute(node, &op_kernel_context));
     }
-    
+
     return Common::Status::OK();
   }
 
  private:
   ExecutionFrame root_frame_;
-  const SessionState& session_state_;  
+  const SessionState& session_state_;
 };
 
 std::unique_ptr<Executor> Executor::NewSequentialExecutor(const SessionState& session_state,
@@ -74,4 +73,4 @@ std::unique_ptr<Executor> Executor::NewSequentialExecutor(const SessionState& se
                                                           const std::vector<std::string>& output_names) {
   return std::unique_ptr<Executor>(new SequentialExecutor(session_state, feeds, output_names));
 }
-}
+}  // namespace Lotus

@@ -179,8 +179,8 @@ class InferenceSession::Impl {
       }
       auto& outputs = p_node->OutputDefs();
       for (auto def : outputs) {
-        session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);              
-      }      
+        session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
+      }
     }
 
     return Status::OK();

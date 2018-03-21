@@ -16,12 +16,12 @@ limitations under the License.
 #include <Shlwapi.h>
 #include <Windows.h>
 
-#include "core/platform/env.h"
 #include "core/common/logging.h"
+#include "core/platform/env.h"
 #include "core/platform/types.h"
 
-#include <thread>
 #include <string>
+#include <thread>
 
 #pragma comment(lib, "Shlwapi.lib")
 
@@ -69,7 +69,7 @@ class WindowsEnv : public Env {
   }
 
  private:
-  typedef VOID(WINAPI * FnGetSystemTimePreciseAsFileTime)(LPFILETIME);
+  typedef VOID(WINAPI* FnGetSystemTimePreciseAsFileTime)(LPFILETIME);
   FnGetSystemTimePreciseAsFileTime GetSystemTimePreciseAsFileTime_;
 };
 

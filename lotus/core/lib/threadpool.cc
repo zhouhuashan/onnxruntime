@@ -17,10 +17,10 @@ limitations under the License.
 
 // NonBlockingThreadPool.h(281): warning C4389: '==': signed/unsigned mismatch
 // NonBlockingThreadPool.h(252): warning C4267: '-=': conversion from 'size_t' to 'unsigned int', possible loss of data
-#pragma warning(disable: 4389 4267)
-#include "unsupported/Eigen/CXX11/ThreadPool"
-#include "core/platform/context.h"
+#pragma warning(disable : 4389 4267)
 #include "core/common/logging.h"
+#include "core/platform/context.h"
+#include "unsupported/Eigen/CXX11/ThreadPool"
 
 namespace Lotus {
 namespace thread {
@@ -66,7 +66,9 @@ struct EigenEnvironment {
     // }
     return Task{
         std::unique_ptr<TaskImpl>(new TaskImpl{
-            std::move(f), Context(ContextKind::kThread), id,
+            std::move(f),
+            Context(ContextKind::kThread),
+            id,
         }),
     };
   }

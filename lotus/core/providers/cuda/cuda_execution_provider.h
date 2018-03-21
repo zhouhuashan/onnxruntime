@@ -3,13 +3,10 @@
 
 #include "core/framework/execution_provider.h"
 
-namespace Lotus
-{
-  // Logical device represenatation.
-  class CUDAExecutionProvider : public IExecutionProvider
-  {
-
-  }
+namespace Lotus {
+// Logical device represenatation.
+class CUDAExecutionProvider : public IExecutionProvider {
 }
+}  // namespace Lotus
 
 #endif  // CORE_PROVIDER_CUDA_EXECUTION_PROVIDER_H

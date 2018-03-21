@@ -16,8 +16,8 @@ limitations under the License.
 #include <thread>
 #include <vector>
 
-#include "core/platform/env.h"
 #include "core/common/logging.h"
+#include "core/platform/env.h"
 #include "core/platform/types.h"
 
 namespace Lotus {

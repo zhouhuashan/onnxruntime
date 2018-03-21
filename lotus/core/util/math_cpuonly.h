@@ -26,66 +26,64 @@
 
 namespace Lotus {
 
-    // Common Eigen types that we will often use
-    template <typename T>
-    using EigenMatrixMap =
-        Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> >;
-    template <typename T>
-    using EigenArrayMap =
-        Eigen::Map<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic> >;
-    template <typename T>
-    using EigenVectorMap = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1> >;
-    template <typename T>
-    using EigenVectorArrayMap = Eigen::Map<Eigen::Array<T, Eigen::Dynamic, 1> >;
-    template <typename T>
-    using ConstEigenMatrixMap =
-        Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> >;
-    template <typename T>
-    using ConstEigenArrayMap =
-        Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic> >;
-    template <typename T>
-    using ConstEigenVectorMap =
-        Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1> >;
-    template <typename T>
-    using ConstEigenVectorArrayMap =
-        Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1> >;
+// Common Eigen types that we will often use
+template <typename T>
+using EigenMatrixMap =
+    Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> >;
+template <typename T>
+using EigenArrayMap =
+    Eigen::Map<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic> >;
+template <typename T>
+using EigenVectorMap = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1> >;
+template <typename T>
+using EigenVectorArrayMap = Eigen::Map<Eigen::Array<T, Eigen::Dynamic, 1> >;
+template <typename T>
+using ConstEigenMatrixMap =
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> >;
+template <typename T>
+using ConstEigenArrayMap =
+    Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic> >;
+template <typename T>
+using ConstEigenVectorMap =
+    Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1> >;
+template <typename T>
+using ConstEigenVectorArrayMap =
+    Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1> >;
 
-    class CPUMathUtil
-    {
-    public:
-        /*CPUMathUtil contains some help method like generate a
+class CPUMathUtil {
+ public:
+  /*CPUMathUtil contains some help method like generate a
         random seed. We only need a single instance for it.*/
-        static CPUMathUtil& Instance() {
-            static CPUMathUtil p;
-            return p;
-        }
-        //todo: the random generate interface.
-    private:
-        CPUMathUtil() {}
-    };
+  static CPUMathUtil& Instance() {
+    static CPUMathUtil p;
+    return p;
+  }
+  //todo: the random generate interface.
+ private:
+  CPUMathUtil() {}
+};
 
 #define EIGEN_Y EigenVectorArrayMap<T>(Y->mutable_data<T>(), Y->shape().Size())
 #define EIGEN_X ConstEigenVectorArrayMap<T>(X->data<T>(), X->shape().Size())
 #define EIGEN_X_VAR(var) ConstEigenVectorArrayMap<T> var(X->data<T>(), X->shape().Size())
 #define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->mutable_data<T>(), Y->shape().Size())
 
-#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func)    \
-    template<typename T>                                            \
-    class class_name final : public OpKernel {                      \
-    public:                                                         \
-        static const char* TypeTraits() {                           \
-            return #class_name;                                     \
-        }                                                           \
-                                                                    \
-        class_name(const OpKernelInfo& info) : OpKernel(info)       \
-        {}                                                          \
-                                                                    \
-        void compute(OpKernelContext* context) override {           \
-            const Tensor* X = context->template input<Tensor>(0);   \
-            Tensor* Y = context->output(0, X->shape());             \
-            func;                                                   \
-        }                                                           \
-    };
+#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func) \
+  template <typename T>                                          \
+  class class_name final : public OpKernel {                     \
+   public:                                                       \
+    static const char* TypeTraits() {                            \
+      return #class_name;                                        \
+    }                                                            \
+                                                                 \
+    class_name(const OpKernelInfo& info) : OpKernel(info) {}     \
+                                                                 \
+    void compute(OpKernelContext* context) override {            \
+      const Tensor* X = context->template input<Tensor>(0);      \
+      Tensor* Y = context->output(0, X->shape());                \
+      func;                                                      \
+    }                                                            \
+  };
 
-}
+}  // namespace Lotus
 #endif

@@ -7,194 +7,178 @@
 #include "core/graph/opsignature.h"
 #include "core/graph/shape_inference.h"
 
-namespace LotusIR
-{
-    class OpSignature;
-    typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
+namespace LotusIR {
+class OpSignature;
+typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
 
-    class TypeUtils
-    {
-    public:
+class TypeUtils {
+ public:
+  // Get attribute type given attribute proto data.
+  static Status GetType(const AttributeProto& p_attr, AttrType& p_type);
+};
 
-        // Get attribute type given attribute proto data.
-        static Status GetType(const AttributeProto& p_attr, AttrType& p_type);
+// An attribute parser - it's specified when registering an operator.
+// The parser is designed and used in two ways.
+// 1) It will be used to verify whether a Node's attributes match the
+//    operator's definition.
+// 2) It will be used to parse a Node's attributes into a <T> object,
+//    which makes it be easier to access node attributes.
+// TODO: to implement the 2nd point above, NodeAttributes should be changed
+// to contain a <T> field, which is structured attributes.
+typedef std::function<Status(const NodeAttributes&)> AttributeParser;
 
-    };
+class OperatorSchema {
+ public:
+  const std::string& GetName() const;
+  int SinceVersion() const;
+  const std::string& Domain() const;
 
-    // An attribute parser - it's specified when registering an operator.
-    // The parser is designed and used in two ways.
-    // 1) It will be used to verify whether a Node's attributes match the
-    //    operator's definition.
-    // 2) It will be used to parse a Node's attributes into a <T> object,
-    //    which makes it be easier to access node attributes.
-    // TODO: to implement the 2nd point above, NodeAttributes should be changed
-    // to contain a <T> field, which is structured attributes.
-    typedef std::function<Status(const NodeAttributes&)> AttributeParser;
+  const OpSignature& GetOpSignature() const;
+  ShapeInferenceFunc GetShapeInferenceFn() const;
+  AttributeParser GetAttributeParser() const;
 
-    class OperatorSchema
-    {
-    public:
+ private:
+  friend class OperatorSchemaSetter;
+  friend class OpSchemaRegistry;
 
-        const std::string& GetName() const;
-        int SinceVersion() const;
-        const std::string& Domain() const;
+  OpSignature m_opSignature;
+  ShapeInferenceFunc m_shapeInferenceFunc;
+  AttributeParser m_attrParser;
+};
 
-        const OpSignature& GetOpSignature() const;
-        ShapeInferenceFunc GetShapeInferenceFn() const;
-        AttributeParser GetAttributeParser() const;
+typedef std::tuple<std::string, std::string, std::string> InputOutputParam;
+typedef std::tuple<std::string, std::string, AttrType, AttributeProto> AttrParam;
+typedef std::tuple<std::string, std::vector<std::string>, std::string> TypeConstraintParam;
 
-    private:
+#define ATTR_SETTER_INTERFACE(TypeName)                        \
+  OperatorSchemaSetter& Attr(const std::string& p_attrName,    \
+                             const std::string& p_description, \
+                             AttrType p_attrType,              \
+                             const TypeName& p_defaultValue);  \
+  OperatorSchemaSetter& Attr(const std::string& p_attrName,    \
+                             const std::string& p_description, \
+                             AttrType p_attrType,              \
+                             const std::vector<TypeName>& p_defaultValues);
 
-        friend class OperatorSchemaSetter;
-        friend class OpSchemaRegistry;
+// Operator registry setter helper.
+// This is used in "OPERATOR_DEFINITION" macro, to separate setters from getters
+// in OpSignature.
+class OperatorSchemaSetter {
+ public:
+  OperatorSchemaSetter() = default;
 
-        OpSignature m_opSignature;
-        ShapeInferenceFunc m_shapeInferenceFunc;
-        AttributeParser m_attrParser;
-    };
+  OperatorSchemaSetter& Name(const std::string& p_opName);
 
-    typedef std::tuple<std::string, std::string, std::string> InputOutputParam;
-    typedef std::tuple<std::string, std::string, AttrType, AttributeProto> AttrParam;
-    typedef std::tuple<std::string, std::vector<std::string>, std::string> TypeConstraintParam;
+  OperatorSchemaSetter& SinceVersion(int p_opSetVersion);
 
-#define ATTR_SETTER_INTERFACE(TypeName) \
-    OperatorSchemaSetter& Attr(const std::string& p_attrName, \
-                               const std::string& p_description, \
-                               AttrType p_attrType, \
-                               const TypeName& p_defaultValue); \
-    OperatorSchemaSetter& Attr(const std::string& p_attrName, \
-                               const std::string& p_description, \
-                               AttrType p_attrType, \
-                               const std::vector<TypeName>& p_defaultValues); \
+  OperatorSchemaSetter& SetDomain(const std::string& p_domain);
 
-    // Operator registry setter helper.
-    // This is used in "OPERATOR_DEFINITION" macro, to separate setters from getters
-    // in OpSignature.
-    class OperatorSchemaSetter
-    {
-    public:
+  OperatorSchemaSetter& Description(const std::string& p_description);
 
-        OperatorSchemaSetter() = default;
+  // Grammar for type strings used in Input(), Output(), AttrWithRichType(), and TypeConstraint() api's
+  // <type> ::= <data_type> |
+  //            tensor(<data_type>) |
+  //            seq(<type>) |
+  //            map(<data_type>, <type>)
+  // <name_type_list> :: = <name>:<type>{ ,<name_type_list> }
+  // <data_type> :: = float | uint8 | ...   (see data_type strings defined in constants.h)
+  OperatorSchemaSetter& Input(const std::string& p_inputName,
+                              const std::string& p_description,
+                              const std::string& p_type = "",
+                              bool p_optional = false);
 
-        OperatorSchemaSetter& Name(const std::string& p_opName);
+  OperatorSchemaSetter& Output(const std::string& p_outputName,
+                               const std::string& p_description,
+                               const std::string& p_type = "");  // see grammar above.
 
-        OperatorSchemaSetter& SinceVersion(int p_opSetVersion);
+  OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
+                                       const std::vector<std::string>& p_constraints,  // see grammar above.
+                                       const std::string& p_description);
 
-        OperatorSchemaSetter& SetDomain(const std::string& p_domain);
+  OperatorSchemaSetter& Attr(const std::string& p_attrName,
+                             const std::string& p_description,
+                             AttrType p_attrType, bool required = false);
 
-        OperatorSchemaSetter& Description(const std::string& p_description);
+  ATTR_SETTER_INTERFACE(int64_t)
+  ATTR_SETTER_INTERFACE(float)
+  ATTR_SETTER_INTERFACE(std::string)
+  ATTR_SETTER_INTERFACE(TensorProto)
+  ATTR_SETTER_INTERFACE(GraphProto)
 
-        // Grammar for type strings used in Input(), Output(), AttrWithRichType(), and TypeConstraint() api's
-        // <type> ::= <data_type> |
-        //            tensor(<data_type>) |
-        //            seq(<type>) |
-        //            map(<data_type>, <type>)
-        // <name_type_list> :: = <name>:<type>{ ,<name_type_list> }
-        // <data_type> :: = float | uint8 | ...   (see data_type strings defined in constants.h)
-        OperatorSchemaSetter& Input(const std::string& p_inputName,
-            const std::string& p_description,
-            const std::string& p_type = "",
-            bool p_optional = false);
+  // Shape inference function will be used to infer outputs' shape with
+  // inputs' shape.
+  OperatorSchemaSetter& SetShapeInferenceFunc(
+      ShapeInferenceFunc p_shapeInferFunc);
 
-        OperatorSchemaSetter& Output(const std::string& p_outputName,
-            const std::string& p_description,
-            const std::string& p_type = ""); // see grammar above.
+  // Attribute parser will be used to parse Node's attributes to see
+  // whether Node attributes are matching operator attributes definition.
+  OperatorSchemaSetter& SetAttributeParser(
+      AttributeParser p_attrParser);
 
-        OperatorSchemaSetter& TypeConstraint(const std::string& p_typeName,
-            const std::vector<std::string>& p_constraints, // see grammar above.
-            const std::string& p_description);
+  // adding docs for temlated/macro ops.
+  OperatorSchemaSetter& FillUsing(std::function<void(OperatorSchemaSetter&)> populator);
 
-        OperatorSchemaSetter& Attr(const std::string& p_attrName,
-            const std::string& p_description,
-            AttrType p_attrType, bool required = false);
+ private:
+  //friend class OpSignature;
+  friend class OpSchemaRegistry;
 
-        ATTR_SETTER_INTERFACE(int64_t)
-        ATTR_SETTER_INTERFACE(float)
-        ATTR_SETTER_INTERFACE(std::string)
-        ATTR_SETTER_INTERFACE(TensorProto)
-        ATTR_SETTER_INTERFACE(GraphProto)
+  OperatorSchema m_opSchema;
 
-        // Shape inference function will be used to infer outputs' shape with
-        // inputs' shape.
-        OperatorSchemaSetter& SetShapeInferenceFunc(
-            ShapeInferenceFunc p_shapeInferFunc);
+  // Operator input formal parameters.
+  std::vector<InputOutputParam> m_inputs;
 
-        // Attribute parser will be used to parse Node's attributes to see
-        // whether Node attributes are matching operator attributes definition.
-        OperatorSchemaSetter& SetAttributeParser(
-            AttributeParser p_attrParser);
+  // Operator output formal parameters.
+  std::vector<InputOutputParam> m_outputs;
 
-        // adding docs for temlated/macro ops.
-        OperatorSchemaSetter& FillUsing(std::function<void(OperatorSchemaSetter&)> populator);
+  // Operator type constraints.
+  std::vector<TypeConstraintParam> m_constraints;
+};
 
-    private:
+// Map type to store operator schemas. The format is,
+// <OpName, <Domain, <OperatorSetVersion, OpSchema>>>.
+typedef std::unordered_map<
+    std::string,
+    std::unordered_map<std::string, std::map<int, OperatorSchema>>>
+    OpSchemaMap;
 
-        //friend class OpSignature;
-        friend class OpSchemaRegistry;
+class OpSchemaRegistry {
+ public:
+  class DomainToVersionRange {
+   public:
+    DomainToVersionRange();
 
-        OperatorSchema m_opSchema;
+    const std::unordered_map<std::string, std::pair<int, int>>& Map() const;
 
-        // Operator input formal parameters.
-        std::vector<InputOutputParam> m_inputs;
+    static DomainToVersionRange& Instance();
 
-        // Operator output formal parameters.
-        std::vector<InputOutputParam> m_outputs;
+   private:
+    // Key: domain. Value: <lowest version, highest version> pair.
+    std::unordered_map<std::string, std::pair<int, int>> m_map;
+  };
 
-        // Operator type constraints.
-        std::vector<TypeConstraintParam> m_constraints;
-    };
+  class OpSchemaRegisterOnce {
+   public:
+    OpSchemaRegisterOnce(OperatorSchemaSetter& p_opSchemaSetter);
+  };
 
-    // Map type to store operator schemas. The format is,
-    // <OpName, <Domain, <OperatorSetVersion, OpSchema>>>.
-    typedef std::unordered_map<
-        std::string,
-        std::unordered_map<std::string, std::map<int, OperatorSchema>>>
-        OpSchemaMap;
+  // Return the latest schema for an operator in specified domain.
+  // Domain with default value "" means ONNX.
+  static const OperatorSchema* Schema(
+      const std::string& p_key,
+      const std::string& p_domain = "");
 
-    class OpSchemaRegistry
-    {
-    public:
-        class DomainToVersionRange
-        {
-        public:
-            DomainToVersionRange();
+  // Return the schema with biggest version, which is not greater than specified
+  // <maxInclusiveVersion> in specified domain. Domain with default value "" means ONNX.
+  static const OperatorSchema* Schema(
+      const std::string& p_key,
+      const int p_maxInclusiveVersion,
+      const std::string& p_domain = "");
 
-            const std::unordered_map<std::string, std::pair<int, int>>& Map() const;
+ private:
+  // OpSchemaRegistry should not need to be instantiated.
+  OpSchemaRegistry() = delete;
 
-            static DomainToVersionRange& Instance();
-
-        private:
-
-            // Key: domain. Value: <lowest version, highest version> pair.
-            std::unordered_map<std::string, std::pair<int, int>> m_map;
-        };
-
-        class OpSchemaRegisterOnce
-        {
-        public:
-
-            OpSchemaRegisterOnce(OperatorSchemaSetter& p_opSchemaSetter);
-        };
-
-        // Return the latest schema for an operator in specified domain.
-        // Domain with default value "" means ONNX.
-        static const OperatorSchema* Schema(
-            const std::string& p_key,
-            const std::string& p_domain = "");
-
-        // Return the schema with biggest version, which is not greater than specified
-        // <maxInclusiveVersion> in specified domain. Domain with default value "" means ONNX.
-        static const OperatorSchema* Schema(
-            const std::string& p_key,
-            const int p_maxInclusiveVersion,
-            const std::string& p_domain = "");
-
-    private:
-
-        // OpSchemaRegistry should not need to be instantiated.
-        OpSchemaRegistry() = delete;
-
-        /**
+  /**
         * @brief Returns the underlying string to OpSchema map.
         *
         * You should not manually manipulate the map object returned. Instead, use
@@ -204,23 +188,19 @@ namespace LotusIR
         * We wrap it inside a function to avoid the statia initialization order
         * fiasco.
         */
-        static OpSchemaMap& map();
-    };
-
-
-
+  static OpSchemaMap& map();
+};
 
 #define REGISTER_OPERATOR_SCHEMA(OpName) OPERATOR_SCHEMA_UNIQ_HELPER(__COUNTER__, OpName)
 #define OPERATOR_SCHEMA_UNIQ_HELPER(Counter, OpName) OPERATOR_SCHEMA_UNIQ(Counter, OpName)
-#define OPERATOR_SCHEMA_UNIQ(Counter, OpName)                     \
-    static OpSchemaRegistry::OpSchemaRegisterOnce op_##Counter  \
-    = OperatorSchemaSetter().Name(#OpName)
+#define OPERATOR_SCHEMA_UNIQ(Counter, OpName) \
+  static OpSchemaRegistry::OpSchemaRegisterOnce op_##Counter = OperatorSchemaSetter().Name(#OpName)
 
-    // Operator registration example.
-    // REGISTER_OPERATOR_SCHEMA(Add).Description("An operator to sum two float numbers.")
-    //   .Input("input_1", "docstr for input_1.", "T")
-    //   .Input("input_2", "docstr for input_2.", "T")
-    //   .Output("output_1", "docstr for output_1.", "T")
-    //   .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.");
-}
+// Operator registration example.
+// REGISTER_OPERATOR_SCHEMA(Add).Description("An operator to sum two float numbers.")
+//   .Input("input_1", "docstr for input_1.", "T")
+//   .Input("input_2", "docstr for input_2.", "T")
+//   .Output("output_1", "docstr for output_1.", "T")
+//   .TypeConstraint("T", { "float16", "float", "double" }, "Constrain input and output types to floats.");
+}  // namespace LotusIR
 #endif

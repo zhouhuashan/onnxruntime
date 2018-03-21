@@ -18,7 +18,6 @@
 * limitations under the License.
 */
 
-
 #ifndef LOTUS_UTILS_MATH_H_
 #define LOTUS_UTILS_MATH_H_
 // This is a simple translation from the old Caffe math interfaces. We aim to
@@ -36,443 +35,443 @@ extern "C" {
 
 namespace Lotus {
 
-    enum StorageOrder {
-        UNKNOWN = 0,
-        NHWC = 1,
-        NCHW = 2,
-    };
+enum StorageOrder {
+  UNKNOWN = 0,
+  NHWC = 1,
+  NCHW = 2,
+};
 
 #define FLOAT_TYPE DataTypeImpl::GetType<float>()
 
-    namespace math {
+namespace math {
 
-        template <typename T, class Provider>
-        void Exp(const int N, const T* x, T* y, Provider* provider);
-        template <typename T, class Provider>
-        void Log(const int N, const T* x, T* y, Provider* provider);
-        template <typename T, class Provider>
-        void Cos(const int N, const T* x, T* y, Provider* provider);
-        template <typename T, class Provider>
-        void Sin(const int N, const T* x, T* y, Provider* provider);
-        template <typename T, class Provider>
-        void SinCos(const int N, const T* x, T* ys, T* yc, Provider* provider);
-        template <typename T, class Provider>
-        void Abs(const int N, const T* x, T* y, Provider* provider);
-        template <typename T, class Provider>
-        void Sqrt(const int N, const T* x, T* y, Provider* provider);
-        template <typename T, class Provider>
-        void InvSqrt(const int N, const T* x, T* y, Provider* provider);
-        template <typename T, class Provider>
-        void Sqr(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void Exp(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void Log(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void Cos(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void Sin(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void SinCos(const int N, const T* x, T* ys, T* yc, Provider* provider);
+template <typename T, class Provider>
+void Abs(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void Sqrt(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void InvSqrt(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void Sqr(const int N, const T* x, T* y, Provider* provider);
 
-        template <typename T, class Provider>
-        void Not(const int N, const T* x, T* y, Provider* provider);
+template <typename T, class Provider>
+void Not(const int N, const T* x, T* y, Provider* provider);
 
-        template <typename T, class Provider>
-        void Powx(const int N, const T* a, const T b, T* y, Provider* provider);
+template <typename T, class Provider>
+void Powx(const int N, const T* a, const T b, T* y, Provider* provider);
 
-#define LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(name)                         \
-  template <typename T, class Provider>                                       \
+#define LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(name)                            \
+  template <typename T, class Provider>                                        \
   void name(const int N, const T* a, const T* b, bool* y, Provider* provider); \
-  template <typename T, class Provider>                                       \
-  void name##ToRow(                                                          \
-      const int M,                                                           \
-      const int N,                                                           \
-      const T* a,                                                            \
-      const T* b,                                                            \
-      bool* y,                                                               \
+  template <typename T, class Provider>                                        \
+  void name##ToRow(                                                            \
+      const int M,                                                             \
+      const int N,                                                             \
+      const T* a,                                                              \
+      const T* b,                                                              \
+      bool* y,                                                                 \
       Provider* provider);
 
-        LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(LT);
-        LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(LE);
-        LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(GT);
-        LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(GE);
+LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(LT);
+LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(LE);
+LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(GT);
+LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(GE);
 
-        LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(And);
-        LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(Or);
-        LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(Xor);
+LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(And);
+LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(Or);
+LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(Xor);
 
 #undef LOTUS_DECLARE_BINARY_OP_BINARY_RESULT
 
-#define LOTUS_DECLARE_BINARY_OP(name)                                    \
-  template <typename T, class Provider>                                    \
+#define LOTUS_DECLARE_BINARY_OP(name)                                       \
+  template <typename T, class Provider>                                     \
   void name(const int N, const T* a, const T* b, T* y, Provider* provider); \
-  template <typename T, class Provider>                                    \
-  void name##ToRow(                                                       \
-      const int M,                                                        \
-      const int N,                                                        \
-      const T* a,                                                         \
-      const T* b,                                                         \
-      T* y,                                                               \
+  template <typename T, class Provider>                                     \
+  void name##ToRow(                                                         \
+      const int M,                                                          \
+      const int N,                                                          \
+      const T* a,                                                           \
+      const T* b,                                                           \
+      T* y,                                                                 \
       Provider* provider);                                                  \
-  template <typename T, class Provider>                                    \
-  void name##ToRow(                                                       \
+  template <typename T, class Provider>                                     \
+  void name##ToRow(                                                         \
       const int M, const int N, const T* x, T* y, Provider* provider);      \
-  template <typename T, class Provider>                                    \
-  void name##ToCol(                                                       \
+  template <typename T, class Provider>                                     \
+  void name##ToCol(                                                         \
       const int M, const int N, const T* x, T* y, Provider* provider);
 
-        LOTUS_DECLARE_BINARY_OP(Add);
-        LOTUS_DECLARE_BINARY_OP(Sub);
-        LOTUS_DECLARE_BINARY_OP(Mul);
-        LOTUS_DECLARE_BINARY_OP(Div);
+LOTUS_DECLARE_BINARY_OP(Add);
+LOTUS_DECLARE_BINARY_OP(Sub);
+LOTUS_DECLARE_BINARY_OP(Mul);
+LOTUS_DECLARE_BINARY_OP(Div);
 
 #undef LOTUS_DECLARE_BINARY_OP
 
-        template <typename T, class Provider>
-        void ReduceMin(
-            const int N,
-            const T* x,
-            T* y,
-            Tensor* scratch_ptr,
-            Provider* provider);
-        template <typename T, class Provider>
-        void ReduceMax(
-            const int N,
-            const T* x,
-            T* y,
-            Tensor* scratch_ptr,
-            Provider* provider);
+template <typename T, class Provider>
+void ReduceMin(
+    const int N,
+    const T* x,
+    T* y,
+    Tensor* scratch_ptr,
+    Provider* provider);
+template <typename T, class Provider>
+void ReduceMax(
+    const int N,
+    const T* x,
+    T* y,
+    Tensor* scratch_ptr,
+    Provider* provider);
 
-        // Adds batch sub-tensors elementwise to output. Stripe is the stripe length
-        // and N is the number of elements to add (size of Y).
-        template <typename T, class Provider>
-        void AddStripedBatch(
-            const int N,
-            const T* first,
-            T* y,
-            const int stripe,
-            const int batch,
-            Provider* provider);
+// Adds batch sub-tensors elementwise to output. Stripe is the stripe length
+// and N is the number of elements to add (size of Y).
+template <typename T, class Provider>
+void AddStripedBatch(
+    const int N,
+    const T* first,
+    T* y,
+    const int stripe,
+    const int batch,
+    Provider* provider);
 
-        // Compute the row-wise max of a N*D matrix X, and write it to a N
-        // dimensional vector y.
-        template <typename T, class Provider>
-        void RowwiseMax(const int N, const int D, const T* x, T* y,
-            Provider* provider);
+// Compute the row-wise max of a N*D matrix X, and write it to a N
+// dimensional vector y.
+template <typename T, class Provider>
+void RowwiseMax(const int N, const int D, const T* x, T* y,
+                Provider* provider);
 
-        // Compute the column-wise max of a N*D matrix X, and write it to a D
-        // dimensional vector y.
-        template <typename T, class Provider>
-        void ColwiseMax(const int N, const int D, const T* x, T* y,
-            Provider* provider);
+// Compute the column-wise max of a N*D matrix X, and write it to a D
+// dimensional vector y.
+template <typename T, class Provider>
+void ColwiseMax(const int N, const int D, const T* x, T* y,
+                Provider* provider);
 
-        // Elemwise maximum of vector x and vector y. z[i] = max(x[i], y[i])
-        template <typename T, class Provider>
-        void ElemwiseMax(const int N, const T* x, const T* y, T* z, Provider* provider);
+// Elemwise maximum of vector x and vector y. z[i] = max(x[i], y[i])
+template <typename T, class Provider>
+void ElemwiseMax(const int N, const T* x, const T* y, T* z, Provider* provider);
 
-        // Elemwise maximum of vector x and scalar alpha. y[i] = max(x[i], alpha)
-        template <typename T, class Provider>
-        void Maximum(
-            const int N,
-            const float alpha,
-            const T* x,
-            T* y,
-            Provider* provider);
+// Elemwise maximum of vector x and scalar alpha. y[i] = max(x[i], alpha)
+template <typename T, class Provider>
+void Maximum(
+    const int N,
+    const float alpha,
+    const T* x,
+    T* y,
+    Provider* provider);
 
-        // Decaf gemm provides a simpler interface to the gemm functions, with the
-        // limitation that the data has to be contiguous in memory.
-        template <typename T, class Provider>
-        void Gemm(
-            const CBLAS_TRANSPOSE TransA,
-            const CBLAS_TRANSPOSE TransB,
-            const int M,
-            const int N,
-            const int K,
-            const float alpha,
-            const T* A,
-            const T* B,
-            const float beta,
-            T* C,
-            Provider* provider,
-            //Caffe2 use this type to control on GPU, what presicion do we want to do the calculation
-            //But not sure is this a good design for us. Keep it here for now.
-            MLDataType math_type = FLOAT_TYPE);
+// Decaf gemm provides a simpler interface to the gemm functions, with the
+// limitation that the data has to be contiguous in memory.
+template <typename T, class Provider>
+void Gemm(
+    const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB,
+    const int M,
+    const int N,
+    const int K,
+    const float alpha,
+    const T* A,
+    const T* B,
+    const float beta,
+    T* C,
+    Provider* provider,
+    //Caffe2 use this type to control on GPU, what presicion do we want to do the calculation
+    //But not sure is this a good design for us. Keep it here for now.
+    MLDataType math_type = FLOAT_TYPE);
 
-        // We also provide a gemm that has explicit lda, ldb and ldc specified.
-        // In most cases you probably want to use the function above, though.
-        template <typename T, class Provider>
-        void GemmEx(
-            const CBLAS_TRANSPOSE TransA,
-            const CBLAS_TRANSPOSE TransB,
-            const int M,
-            const int N,
-            const int K,
-            const T alpha,
-            const T* A,
-            const int lda,
-            const T* B,
-            const int ldb,
-            const T beta,
-            T* C,
-            const int ldc,
-            Provider* provider);
+// We also provide a gemm that has explicit lda, ldb and ldc specified.
+// In most cases you probably want to use the function above, though.
+template <typename T, class Provider>
+void GemmEx(
+    const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB,
+    const int M,
+    const int N,
+    const int K,
+    const T alpha,
+    const T* A,
+    const int lda,
+    const T* B,
+    const int ldb,
+    const T beta,
+    T* C,
+    const int ldc,
+    Provider* provider);
 
-        // GemmBatched provides a simple abstraction into library routines
-        template <typename T, class Provider>
-        void GemmBatched(
-            const CBLAS_TRANSPOSE TransA,
-            const CBLAS_TRANSPOSE TransB,
-            const int A_size,
-            const int A_batches,
-            const int B_size,
-            const int B_batches,
-            const int M,
-            const int N,
-            const int K,
-            const float alpha,
-            const T* A,
-            const T* B,
-            const float beta,
-            T* C,
-            Provider* provider,
-            Tensor* scratch = nullptr,
-            MLDataType math_type = DataTypeImpl::FLOAT_TYPE);
+// GemmBatched provides a simple abstraction into library routines
+template <typename T, class Provider>
+void GemmBatched(
+    const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB,
+    const int A_size,
+    const int A_batches,
+    const int B_size,
+    const int B_batches,
+    const int M,
+    const int N,
+    const int K,
+    const float alpha,
+    const T* A,
+    const T* B,
+    const float beta,
+    T* C,
+    Provider* provider,
+    Tensor* scratch = nullptr,
+    MLDataType math_type = DataTypeImpl::FLOAT_TYPE);
 
-        // Gemv always takes in a M*N matrix A, and depending on whether we set TransA
-        // to Trans, the output is:
-        // CblasNoTrans: x is an N dim vector and y is an M dim vector.
-        // CblasTrans:   x is an M dim vector and y is an N dim vector.
-        template <typename T, class Provider>
-        void Gemv(
-            const CBLAS_TRANSPOSE TransA,
-            const int M,
-            const int N,
-            const float alpha,
-            const T* A,
-            const T* x,
-            const float beta,
-            T* y,
-            Provider* provider,
-            MLDataType math_type = DataTypeImpl::FLOAT_TYPE);
-        template <typename T, class Provider>
-        void Set(const int64_t N, const T alpha, T* X, Provider* provider);
+// Gemv always takes in a M*N matrix A, and depending on whether we set TransA
+// to Trans, the output is:
+// CblasNoTrans: x is an N dim vector and y is an M dim vector.
+// CblasTrans:   x is an M dim vector and y is an N dim vector.
+template <typename T, class Provider>
+void Gemv(
+    const CBLAS_TRANSPOSE TransA,
+    const int M,
+    const int N,
+    const float alpha,
+    const T* A,
+    const T* x,
+    const float beta,
+    T* y,
+    Provider* provider,
+    MLDataType math_type = DataTypeImpl::FLOAT_TYPE);
+template <typename T, class Provider>
+void Set(const int64_t N, const T alpha, T* X, Provider* provider);
 
-        template <typename T, class Provider>
-        void RandUniform(const int n, const T a, const T b, T* r,
-            Provider* provider);
+template <typename T, class Provider>
+void RandUniform(const int n, const T a, const T b, T* r,
+                 Provider* provider);
 
-        template <typename T, class Provider>
-        void RandUniformUnique(
-            const size_t n,
-            const T a,
-            const T b,
-            T* r,
-            const size_t m,
-            const T* avoid,
-            Provider* provider);
+template <typename T, class Provider>
+void RandUniformUnique(
+    const size_t n,
+    const T a,
+    const T b,
+    T* r,
+    const size_t m,
+    const T* avoid,
+    Provider* provider);
 
-        template <typename T, class Provider>
-        void RandGaussian(
-            const int n,
-            const T mean,
-            const T std,
-            T* r,
-            Provider* provider);
+template <typename T, class Provider>
+void RandGaussian(
+    const int n,
+    const T mean,
+    const T std,
+    T* r,
+    Provider* provider);
 
-        // Dot matrix of vector a and b, and writes the result to a single value y.
-        template <typename T, class Provider>
-        void Dot(const int N, const T* a, const T* b, T* y, Provider* provider);
+// Dot matrix of vector a and b, and writes the result to a single value y.
+template <typename T, class Provider>
+void Dot(const int N, const T* a, const T* b, T* y, Provider* provider);
 
-        // Sum of vector x, and writes the result to a single value y.
-        template <typename T, class Provider>
-        void Sum(const int N, const T* x, T* y, Provider* provider,
-            Tensor* scratch_ptr = nullptr);
+// Sum of vector x, and writes the result to a single value y.
+template <typename T, class Provider>
+void Sum(const int N, const T* x, T* y, Provider* provider,
+         Tensor* scratch_ptr = nullptr);
 
-        // Sum of squares of vector x, and writes the result to a single value y.
-        template <typename T, class Provider>
-        void SumSqr(
-            const int N,
-            const T* x,
-            T* y,
-            Provider* provider,
-            Tensor* scratch_ptr = nullptr);
+// Sum of squares of vector x, and writes the result to a single value y.
+template <typename T, class Provider>
+void SumSqr(
+    const int N,
+    const T* x,
+    T* y,
+    Provider* provider,
+    Tensor* scratch_ptr = nullptr);
 
-        // Select does index selection of the rows a N*D matrix x, and gives the N
-        // dimensional vector y that contains the selected data.
-        template <typename T, class Provider>
-        void Select(const int N, const int D, const T* x, const int* idx, T* y,
-            Provider* provider);
-
-        template <typename T, class Provider>
-        void Scale(const int N, const float alpha, const T* x, T* y, Provider* provider);
-
-        // Different from the Scale function above, if alpha is passed in
-        // as a pointer, we will assume that it lives on the correct execution provider,
-        // for example on GPU.
-        template <typename T, class Provider>
-        void Scale(const int N, const float* alpha, const T* x, T* y, Provider* provider);
-
-        template <typename T, class Provider>
-        void Axpy(const int N, const float alpha, const T* x, T* y, Provider* provider);
-
-        // Different from the Axpy function above, if alpha is passed in
-        // as a pointer, we will assume that it lives on the correct execution provider,
-        // for example on GPU.
-        template <typename T, class Provider>
-        void Axpy(const int N, const float* alpha, const T* x, T* y, Provider* provider);
-
-        template <typename T, class Provider>
-        void Axpby(
-            const int N,
-            const float alpha,
-            const T* x,
-            const T b,
-            T* y,
+// Select does index selection of the rows a N*D matrix x, and gives the N
+// dimensional vector y that contains the selected data.
+template <typename T, class Provider>
+void Select(const int N, const int D, const T* x, const int* idx, T* y,
             Provider* provider);
 
-        template <typename T, class Provider, int order>
-        void Im2colNd(
-            const T* data_img,
-            const int* im_shape,
-            const int* col_shape,
-            const int img_size,
-            const int col_size,
-            const int* kernel_shape,
-            const int* stride,
-            const int* dilation,
-            const int* pad,
-            const int N,
-            T* data_col,
-            Provider* provider,
-            bool accumulate_output = false);
+template <typename T, class Provider>
+void Scale(const int N, const float alpha, const T* x, T* y, Provider* provider);
 
-        template <typename T, class Provider, int order>
-        void Col2imNd(
-            const T* data_col,
-            const int* img_shape,
-            const int* col_shape,
-            const int img_size,
-            const int col_size,
-            const int* kernel_shape,
-            const int* stride,
-            const int* dilation,
-            const int* pad,
-            const int N,
-            T* data_img,
-            Provider* provider);
+// Different from the Scale function above, if alpha is passed in
+// as a pointer, we will assume that it lives on the correct execution provider,
+// for example on GPU.
+template <typename T, class Provider>
+void Scale(const int N, const float* alpha, const T* x, T* y, Provider* provider);
 
-        template <typename T, class Provider, int order>
-        void Im2col(
-            const T* data_im,
-            const int channels,
-            const int height,
-            const int width,
-            const int kernel_h,
-            const int kernel_w,
-            const int dilation_h,
-            const int dilation_w,
-            const int pad_t,
-            const int pad_l,
-            const int pad_b,
-            const int pad_r,
-            const int stride_h,
-            const int stride_w,
-            T* data_col,
-            Provider* provider);
+template <typename T, class Provider>
+void Axpy(const int N, const float alpha, const T* x, T* y, Provider* provider);
 
-        template <typename T, class Provider, int order>
-        void Col2im(
-            const T* data_col,
-            const int channels,
-            const int height,
-            const int width,
-            const int patch_h,
-            const int patch_w,
-            const int dilation_h,
-            const int dilation_w,
-            const int pad_t,
-            const int pad_l,
-            const int pad_b,
-            const int pad_r,
-            const int stride_h,
-            const int stride_w,
-            T* data_im,
-            Provider* provider);
+// Different from the Axpy function above, if alpha is passed in
+// as a pointer, we will assume that it lives on the correct execution provider,
+// for example on GPU.
+template <typename T, class Provider>
+void Axpy(const int N, const float* alpha, const T* x, T* y, Provider* provider);
 
-        // Applies a per-channel bias value to each channel of the input
-        // image. image_size is H * W
-        template <typename T, class Provider>
-        void BiasCHW(
-            const T* bias,
-            const int bias_channels,
-            const int image_size,
-            T* image,
-            Provider* provider);
+template <typename T, class Provider>
+void Axpby(
+    const int N,
+    const float alpha,
+    const T* x,
+    const T b,
+    T* y,
+    Provider* provider);
 
-        // Todo: should we provide a better copy method signature?
-        typedef void(*TypedCopy)(const void*, void*, size_t);
+template <typename T, class Provider, int order>
+void Im2colNd(
+    const T* data_img,
+    const int* im_shape,
+    const int* col_shape,
+    const int img_size,
+    const int col_size,
+    const int* kernel_shape,
+    const int* stride,
+    const int* dilation,
+    const int* pad,
+    const int N,
+    T* data_col,
+    Provider* provider,
+    bool accumulate_output = false);
 
-        template <class Provider>
-        void CopyMatrix(
-            const size_t item_size,
-            const int M,
-            const int N,
-            const void* A,
-            const int lda,
-            void* B,
-            const int ldb,
-            Provider* provider,
-            TypedCopy copy = nullptr);
+template <typename T, class Provider, int order>
+void Col2imNd(
+    const T* data_col,
+    const int* img_shape,
+    const int* col_shape,
+    const int img_size,
+    const int col_size,
+    const int* kernel_shape,
+    const int* stride,
+    const int* dilation,
+    const int* pad,
+    const int N,
+    T* data_img,
+    Provider* provider);
 
-        template <typename T, class Provider>
-        void CopyVector(const int N, const T* A, T* B, Provider* provider);
+template <typename T, class Provider, int order>
+void Im2col(
+    const T* data_im,
+    const int channels,
+    const int height,
+    const int width,
+    const int kernel_h,
+    const int kernel_w,
+    const int dilation_h,
+    const int dilation_w,
+    const int pad_t,
+    const int pad_l,
+    const int pad_b,
+    const int pad_r,
+    const int stride_h,
+    const int stride_w,
+    T* data_col,
+    Provider* provider);
 
-        uint32_t randomNumberSeed();
+template <typename T, class Provider, int order>
+void Col2im(
+    const T* data_col,
+    const int channels,
+    const int height,
+    const int width,
+    const int patch_h,
+    const int patch_w,
+    const int dilation_h,
+    const int dilation_w,
+    const int pad_t,
+    const int pad_l,
+    const int pad_b,
+    const int pad_r,
+    const int stride_h,
+    const int stride_w,
+    T* data_im,
+    Provider* provider);
 
-        // Function uses casting from int to unsigned to compare if value of
-        // parameter a is greater or equal to zero and lower than value of
-        // parameter b. The b parameter is of type signed and is always
-        // positive,
-        // therefore its value is always lower than 0x800... where casting
-        // negative value of a parameter converts it to value higher than
-        // 0x800...
-        // The casting allows to use one condition instead of two.
-        inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
-            return static_cast<unsigned>(a) < static_cast<unsigned>(b);
-        }
+// Applies a per-channel bias value to each channel of the input
+// image. image_size is H * W
+template <typename T, class Provider>
+void BiasCHW(
+    const T* bias,
+    const int bias_channels,
+    const int image_size,
+    T* image,
+    Provider* provider);
 
-        // Calculates ceil(a / b). User must be careful to ensure that there
-        // is no overflow or underflow in the calculation.
-        template <typename T>
-        constexpr T divUp(T a, T b) {
-            return (a + b - (T)1) / b;
-        }
+// Todo: should we provide a better copy method signature?
+typedef void (*TypedCopy)(const void*, void*, size_t);
 
-        // Rounds a up to the next highest multiple of b. User must be careful
-        // to ensure that there is no overflow or underflow in the calculation
-        // of divUp.
-        template <typename T>
-        constexpr T roundUp(T a, T b) {
-            return divUp<T>(a, b) * b;
-        }
+template <class Provider>
+void CopyMatrix(
+    const size_t item_size,
+    const int M,
+    const int N,
+    const void* A,
+    const int lda,
+    void* B,
+    const int ldb,
+    Provider* provider,
+    TypedCopy copy = nullptr);
 
-        // Returns true if the given integer type is a power-of-2 (positive only)
-        // Note(jiayq): windows reported an error per
-        //     https://github.com/caffe2/caffe2/issues/997
-        // and as a result will make it a macro.
+template <typename T, class Provider>
+void CopyVector(const int N, const T* A, T* B, Provider* provider);
+
+uint32_t randomNumberSeed();
+
+// Function uses casting from int to unsigned to compare if value of
+// parameter a is greater or equal to zero and lower than value of
+// parameter b. The b parameter is of type signed and is always
+// positive,
+// therefore its value is always lower than 0x800... where casting
+// negative value of a parameter converts it to value higher than
+// 0x800...
+// The casting allows to use one condition instead of two.
+inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
+  return static_cast<unsigned>(a) < static_cast<unsigned>(b);
+}
+
+// Calculates ceil(a / b). User must be careful to ensure that there
+// is no overflow or underflow in the calculation.
+template <typename T>
+constexpr T divUp(T a, T b) {
+  return (a + b - (T)1) / b;
+}
+
+// Rounds a up to the next highest multiple of b. User must be careful
+// to ensure that there is no overflow or underflow in the calculation
+// of divUp.
+template <typename T>
+constexpr T roundUp(T a, T b) {
+  return divUp<T>(a, b) * b;
+}
+
+// Returns true if the given integer type is a power-of-2 (positive only)
+// Note(jiayq): windows reported an error per
+//     https://github.com/caffe2/caffe2/issues/997
+// and as a result will make it a macro.
 #ifdef _MSC_VER
-#define integerIsPowerOf2(v) ((v) && !((v) & ((v) - 1)))
-#else // _MSC_VER
-        template <typename T>
-        constexpr bool integerIsPowerOf2(T v) {
-            return (v && !(v & (v - 1)));
-        }
-#endif // _MSC_VER
+#define integerIsPowerOf2(v) ((v) && !((v) & ((v)-1)))
+#else   // _MSC_VER
+template <typename T>
+constexpr bool integerIsPowerOf2(T v) {
+  return (v && !(v & (v - 1)));
+}
+#endif  // _MSC_VER
 
-        // Returns log2(n) for a positive integer type
-        template <typename T>
-        constexpr int integerLog2(T n, int p = 0) {
-            return (n <= 1) ? p : integerLog2(n / 2, p + 1);
-        }
+// Returns log2(n) for a positive integer type
+template <typename T>
+constexpr int integerLog2(T n, int p = 0) {
+  return (n <= 1) ? p : integerLog2(n / 2, p + 1);
+}
 
-        // Returns the next highest power-of-2 for an integer type
-        template <typename T>
-        constexpr T integerNextHighestPowerOf2(T v) {
-            return (integerIsPowerOf2(v) ? (T)2 * v : ((T)1 << (integerLog2(v) + 1)));
-        }
+// Returns the next highest power-of-2 for an integer type
+template <typename T>
+constexpr T integerNextHighestPowerOf2(T v) {
+  return (integerIsPowerOf2(v) ? (T)2 * v : ((T)1 << (integerLog2(v) + 1)));
+}
 
-    }  // namespace math
+}  // namespace math
 }  // namespace Lotus
 
 #endif  // LOTUS_UTILS_MATH_H_

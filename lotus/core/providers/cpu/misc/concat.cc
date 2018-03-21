@@ -12,7 +12,8 @@ void Concat<float>::compute(OpKernelContext* ctx) {
   for (int index = 1; index < inputCount; index++) {
     auto& data_n = *ctx->input<Tensor>(index);
     // Ensure all the other axes match
-    for (int axisIndex = 0; axisIndex < inputs_0.shape().NumDimensions(); axisIndex++) {
+    auto dimensionCount = inputs_0.shape().NumDimensions();
+    for (int axisIndex = 0; axisIndex < dimensionCount; axisIndex++) {
       if (axisIndex == axis_)
         continue;
       LOTUS_ENFORCE(data_n.shape()[axisIndex] == inputs_0.shape()[axisIndex], "Non concat axis dimensions must match");

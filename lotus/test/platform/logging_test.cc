@@ -1,6 +1,6 @@
-#include <algorithm>
-#include <gtest/gtest.h>
 #include "core/common/logging.h"
+#include <gtest/gtest.h>
+#include <algorithm>
 
 namespace Lotus {
 
@@ -12,7 +12,7 @@ struct MyLogSink : public LogSinkInterface {
                     const char*,
                     const char* message, size_t message_len) override {
     messages.emplace_back(
-        std::make_pair(severity, std::string{ message, message_len }));
+        std::make_pair(severity, std::string{message, message_len}));
   }
 
   Messages messages{};
@@ -30,8 +30,8 @@ TEST(LoggingTest, TestLogSink) {
 
   ASSERT_EQ(logSink->messages.size(), 2);
   const MyLogSink::Messages expectedMessages{
-    {LOTUS_LOG_SEVERITY_INFO, "hello!"},
-    {LOTUS_LOG_SEVERITY_WARNING, "3.14"},
+      {LOTUS_LOG_SEVERITY_INFO, "hello!"},
+      {LOTUS_LOG_SEVERITY_WARNING, "3.14"},
   };
   EXPECT_EQ(logSink->messages, expectedMessages);
 
@@ -43,4 +43,4 @@ TEST(LoggingTest, TestLogSink) {
 }
 #endif
 
-} // namespace Lotus
+}  // namespace Lotus
