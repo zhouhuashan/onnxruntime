@@ -41,6 +41,10 @@ class SessionState {
   size_t GetNumMLValues() const;
   int GetMaxMLValueIdx() const;
 
+  // initialized tensors
+  void AddInitializedTensor(int mlvalue_index, const MLValue& mlvalue);
+  const std::unordered_map<int, MLValue>& SessionState::GetInitializedTensors() const;
+
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
@@ -54,6 +58,9 @@ class SessionState {
   ExecutionProviderSet exec_provider_set_;
   std::unordered_map<std::string, int> mlvalue_name_idx_map_;
   int mlvalue_max_idx_ = 0;
+
+  // initialized tensorset
+  std::unordered_map<int, MLValue> initialized_tensors_;  // key is mlvalue_index
 
   // TODO add more
 };

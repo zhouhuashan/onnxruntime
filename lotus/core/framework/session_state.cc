@@ -87,4 +87,12 @@ int SessionState::GetMaxMLValueIdx() const {
   return mlvalue_max_idx_;
 }
 
+void SessionState::AddInitializedTensor(int mlvalue_index, const MLValue& mlvalue) {
+  initialized_tensors_.insert(std::make_pair(mlvalue_index, mlvalue));
+}
+
+const std::unordered_map<int, MLValue>& SessionState::GetInitializedTensors() const {
+  return initialized_tensors_;
+}
+
 }  // namespace Lotus
