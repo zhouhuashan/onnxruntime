@@ -1,7 +1,6 @@
 #ifndef CORE_FRAMEWORK_ML_VALUE_H
 #define CORE_FRAMEWORK_ML_VALUE_H
 
-#include <exception>
 #include <string>
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
@@ -31,11 +30,7 @@ class MLValue {
 
   template <typename T>
   const T& Get() const {
-    try {
-      LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_);
-    } catch (const std::exception& e) {
-      std::cout << e.what() << std::endl;
-    }
+    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_);
     return *static_cast<T*>(pData_.get());
   }
 

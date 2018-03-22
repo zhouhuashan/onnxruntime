@@ -128,7 +128,6 @@ class KernelRegistry {
     auto& op_name = kernel_def.OpName();
     auto& op_domain = kernel_def.Domain();
     auto& provider = kernel_def.Provider();
-    LOG(INFO) << "Registering kernel with name: " << op_name << " domain: " << op_domain << " provider: " << provider;
     // TODO: check version overlap issue. For example, there're multiple kernels registered for same version.
     kernel_creator_fn_map_[op_name][op_domain][provider].push_back(KernelCreateInfo(kernel_def, kernel_creator));
     return Status::OK();
