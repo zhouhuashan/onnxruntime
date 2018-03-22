@@ -6,16 +6,10 @@
 
 namespace Lotus {
 namespace Test {
-typedef std::vector<LotusIR::NodeArg*> ArgMap;
-
 template <class Op>
 void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(float)> expected_func, float abs_error = 0) {
-  TypeProto tensor_float;
-  tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&input_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE(Op::TypeTraits(), input_defs, output_defs);
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  CREATE_NODE(Op::TypeTraits(), {&input_def}, {&output_def});
 
   AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
   KernelDef kernel_def;
@@ -28,7 +22,7 @@ void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(
   state.AddMLValueNameIdx("Y", 1);
   auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, {{"X", MLValue()}}, {"Y"});
 
-  std::vector<int64_t> dims = {(int64_t)input_vals.size()};
+  std::vector<int64_t> dims{(int64_t)input_vals.size()};
 
   std::vector<float> expected_vals;
   for (const auto& iv : input_vals)

@@ -95,8 +95,8 @@ class Tensor {
   Tensor(MLDataType p_type, const TensorShape& p_shape, BufferNakedPtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
   Tensor(MLDataType p_type, const TensorShape& p_shape, BufferUniquePtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
 
-  //Copy constructure and assign op will just pass the shape and memory reference to another tensor.
-  //No deep clone / copy happened.
+  // Copy constructor and assign op will just pass the shape and memory reference to another tensor.
+  // No deep clone / copy happened.
   Tensor(const Tensor& src);
   Tensor& ShallowCopy(const Tensor& other);
 
