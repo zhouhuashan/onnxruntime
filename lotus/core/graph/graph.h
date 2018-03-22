@@ -578,12 +578,10 @@ class Graph : public GraphBase {
   Graph() = delete;
 
   // Constructor from scratch.
-  // <p_isONNX> is a special flag to indicate whether it's
   // going to construct a ONNX graph. With ONNX graph, strict
   // type checking will be skiped.
   Graph(const std::string& p_name,
-        const std::unordered_map<std::string, int>& p_domainToVersion,
-        bool p_isONNX = false);
+        const std::unordered_map<std::string, int>& p_domainToVersion);
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object.
@@ -595,8 +593,6 @@ class Graph : public GraphBase {
     Main = 1,
     // A sub graph (function).
     Sub = 2,
-    // A graph with strict type checking.
-    Strict = 4,
   };
 
   friend class Node;

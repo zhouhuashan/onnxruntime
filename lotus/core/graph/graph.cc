@@ -530,10 +530,7 @@ Graph::Graph(const GraphProto& p_graphProto,
   m_numOfNodes = 0;
 
   m_domainToVersion = &p_domainToVersion;
-  // This is a main graph, and strict type checking needed..
   m_graphType |= Type::Main;
-
-  // TODO: add Type::Strict back.
 
   // Copy initial tensors to a map.
   for (auto tensor : p_graphProto.initializer()) {
@@ -568,8 +565,7 @@ Graph::Graph(const GraphProto& p_graphProto,
 }
 
 Graph::Graph(const std::string& p_name,
-             const std::unordered_map<std::string, int>& p_domainToVersion,
-             bool p_isONNX) {
+             const std::unordered_map<std::string, int>& p_domainToVersion) {
   m_graphProtoSyncNeeded = false;
   m_graphResolveNeeded = true;
   m_numOfNodes = 0;
@@ -577,9 +573,6 @@ Graph::Graph(const std::string& p_name,
   m_domainToVersion = &p_domainToVersion;
   m_graphProto.set_name(p_name);
   m_graphType |= Type::Main;
-  if (!p_isONNX) {
-    m_graphType |= Type::Strict;
-  }
 
   AddSourceSinkNodes();
 }
@@ -1002,8 +995,6 @@ Status Graph::VerifyNodeAndOpMatch(
     // Verify size of node arg count is same as input number in
     // operator definition.
     if (op.GetInputs().size() != node->InputArgCount().size()) {
-      if (0 == (m_graphType & Type::Strict)) {
-        // It's ONNX case.
         // Adjust input arg count array with op definition
         // The adjustment will work as below,
         // In total, there're <totalArgCount> inputs, which
@@ -1032,27 +1023,16 @@ Status Graph::VerifyNodeAndOpMatch(
         // in op schema, all input args will be fed as one input
         // of the operator.
         inputArgCount.push_back(argCountLeft);
-      } else {
-        // Number of inputs do not match.
-        Status status(LOTUS, FAIL, "Error: node (" + nodeName + ")'s number of inputs do not match its operator (" + op_type + ") specification.");
-        return status;
-      }
     }
 
     // Verify node outputs have same size with operator definition.
     if (op.GetOutputs().size() != node->OutputDefs().size()) {
-      if (0 != (m_graphType & Type::Strict)) {
-        // Number of outputs do not match.
-        Status status(LOTUS, FAIL, "Error: node (" + nodeName + ")'s number of outputs does not match its operator (" + op_type + ") specification.");
-        return status;
-      }
+      Status status(LOTUS, FAIL, "Error: node (" + nodeName + ")'s number of outputs does not match its operator (" + op_type + ") specification.");
+      return status;
     }
 
-    if (0 != (m_graphType & Type::Strict)) {
-      // Strict type checking needed.
-      NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs)));
-    }
-
+    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs)));
+    
     // Attribute verification and fill node attribute with
     // default value defined in operator definition if needed.
     auto attrParser = node->Op()->GetAttributeParser();

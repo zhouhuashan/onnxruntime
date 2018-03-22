@@ -14,7 +14,7 @@ namespace Lotus {
 REGISTER_PROVIDER(CPUExecutionProvider);
 namespace Test {
 
-static const std::string MODEL_URI = "testdata/super_resolution.pb";
+static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx";
 
 void SetupFeedsAndOutputNames(const std::string& model_uri,
                               NameMLValMap& feeds,
