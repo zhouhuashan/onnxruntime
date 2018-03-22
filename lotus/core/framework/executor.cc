@@ -46,12 +46,6 @@ class SequentialExecutor : public Executor {
       OpKernel* p_op_kernel = session_state_.GetKernel(node_index);
       LOTUS_ENFORCE(p_op_kernel);  // if a kernel has been added in the session state, it better be NON-null.
 
-      const Node& node = p_op_kernel->node();
-
-      // allocate the inputs and outputs of this node as per the plan
-      AllocateNodeArgs(node, node.InputDefs(), p_seq_exec_plan->allocation_plan);
-      AllocateNodeArgs(node, node.OutputDefs(), p_seq_exec_plan->allocation_plan);
-
       // construct OpKernelContext
       OpKernelContext op_kernel_context(&root_frame_, p_op_kernel);
 
@@ -95,73 +89,6 @@ class SequentialExecutor : public Executor {
                                                 std::vector<int64_t>* dims) {
     for (int index = 0; index < p_tensor_shape_proto->dim_size(); index++)
       dims->push_back(p_tensor_shape_proto->dim(index).dim_value());
-  }
-
-  Common::Status AllocateNodeArgs(const Node& node,
-                                  const std::vector<NodeArg*>& node_args,
-                                  const std::vector<SequentialExecutionPlan::AllocPlanPerValue>& alloc_plan) {
-    for (auto& elem : node_args) {
-      const std::string& name = elem->Name();
-
-      // perform allocation only if the shape is present in the node arg; skip otherwise
-      std::vector<int64_t> dims;
-      GetDimensionsFromTensorShapeProto(elem->Shape(), &dims);
-      if (dims.empty()) {
-        LOG(WARNING) << "Missing shape in the node arg with name: " << name;
-        continue;
-      }
-
-      TensorShape shape(dims);
-
-      // get mlvalue index using name from the session_state
-      int mlvalue_index;
-      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
-
-      // get AllocPlanPerValue from alloc_plan using this mlvalue_index
-      if (mlvalue_index < 0 || mlvalue_index >= alloc_plan.size()) {
-        std::ostringstream ostr;
-        ostr << "Argument with name: " << name << " with mlvalue_index: " << mlvalue_index << " does not exist in the alloc_plan";
-        return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
-      }
-      const auto& per_alloc_plan = alloc_plan[mlvalue_index];
-
-      // get allocator info
-      IExecutionProvider* p_exec_provider = session_state_.GetExecutionProvider(node.GetExecutionProvider());
-      const AllocatorInfo& alloc_info = p_exec_provider->GetTempSpaceAllocator().Info();
-
-      // use the AllocPlanPerValue to perform allocation
-      AllocKind alloc_kind = per_alloc_plan.alloc_kind;
-      MLDataType ml_data_type = DataTypeImpl::GetType<float>();  // TODO: assume float?
-
-      switch (alloc_kind) {
-        case AllocKind::kUndecided: {
-          // In this case the else clause of get_or_create_tensor will get used to create
-          // the tensor.
-          LOG(INFO) << "Got kUndecided alloc_kind from the planner for node arg with name: " << name;
-          break;
-        }
-        case AllocKind::kAllocate: {
-          LOTUS_RETURN_IF_ERROR(root_frame_.AllocateMLValueTensorSelfOwnBuffer(mlvalue_index,
-                                                                               ml_data_type,
-                                                                               alloc_info,
-                                                                               shape));
-          break;
-        }
-        case AllocKind::kReuse: {
-          int reuse_mlvalue_index = per_alloc_plan.reused_buffer;
-          LOTUS_RETURN_IF_ERROR(root_frame_.AllocateMLValueTensorPreAllocateBuffer(mlvalue_index,
-                                                                                   reuse_mlvalue_index,
-                                                                                   ml_data_type,
-                                                                                   alloc_info,
-                                                                                   shape));
-          break;
-        }
-        default:
-          return Common::Status(Common::LOTUS, Common::FAIL, "Invalid allocation kind");
-      };
-    }
-
-    return Common::Status::OK();
   }
 
  private:

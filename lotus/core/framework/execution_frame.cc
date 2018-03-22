@@ -46,7 +46,7 @@ Status ExecutionFrame::AllocateTensorWithSelfOwnBuffer(const int index,
                                                        const AllocatorInfo& location,
                                                        const TensorShape& shape) {
   LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-  auto value = node_values_[index];
+  auto value = &all_values_[node_values_[index]];
   return AllocateMLValueTensorSelfOwnBuffer(value, element_type, location, shape);
 }
 
@@ -92,13 +92,78 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBuffer(const int offset,
                                                            const AllocatorInfo& location,
                                                            const TensorShape& shape) {
   LOTUS_ENFORCE(offset >= 0 && offset < node_values_.size());
-  auto value = node_values_[offset];
+  auto value = &all_values_[node_values_[offset]];
   return AllocateTensorWithPreAllocateBufferHelper(value, pBuffer, element_type, location, shape);
 }
 
 void ExecutionFrame::Release(const int offset) {
   LOTUS_ENFORCE(offset >= 0 && offset < node_offsets_.size());
-  node_values_[offset]->Reset();
+  all_values_[node_values_[offset]].Reset();
+}
+
+// This method is not thread safe!
+Tensor* ExecutionFrame::get_or_create_tensor(int index, const TensorShape& shape) {
+  LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+  auto mlvalue_index = node_values_[index];
+  LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
+  auto p_mlvalue = &all_values_[mlvalue_index];
+
+  if (p_mlvalue->IsAllocated()) {
+    // The tensor has already been allocated.
+    // TODO: Check the size of the allocated tensor with given shape,
+    // if they match each other, then return, else throw error.
+    // TODO: type also needs to be checked and then use static_cast.
+    Tensor* tensor = p_mlvalue->GetMutable<Tensor>();
+    LOTUS_ENFORCE(tensor->shape() == shape);
+    return tensor;
+  } else {
+    // It's not allocated, then allocate it with given shape and return.
+    // TODO: at this point, we should already know the location and dtype
+    // for the tensor, the graph should be able to tell us. But now graph
+    // don't have it. So here hack to default as CPU and float.
+
+    // perform allocation based on the allocation plan
+    Status s = AllocateAsPerAllocationPlan(mlvalue_index, shape);
+    LOTUS_ENFORCE(s.IsOK());
+    return p_mlvalue->GetMutable<Tensor>();
+  }
+}
+
+Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
+                                                           const TensorShape& shape) {
+  const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
+  const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
+  LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < alloc_plan.size());
+  const auto& per_alloc_plan = alloc_plan[mlvalue_index];
+
+  // TODO: both alloc_info and ml_data_type will be supplied by the allocation
+  // plan later. This is a hack for now.
+  auto alloc_info = AllocatorManager::Instance()->GetArena(CPU).Info();
+  auto ml_data_type = DataTypeImpl::GetType<float>();
+
+  AllocKind alloc_kind = per_alloc_plan.alloc_kind;
+  switch (alloc_kind) {
+    case AllocKind::kAllocate: {
+      LOTUS_RETURN_IF_ERROR(AllocateMLValueTensorSelfOwnBuffer(mlvalue_index,
+                                                               ml_data_type,
+                                                               alloc_info,
+                                                               shape));
+      break;
+    }
+    case AllocKind::kReuse: {
+      int reuse_mlvalue_index = per_alloc_plan.reused_buffer;
+      LOTUS_RETURN_IF_ERROR(AllocateMLValueTensorPreAllocateBuffer(mlvalue_index,
+                                                                   reuse_mlvalue_index,
+                                                                   ml_data_type,
+                                                                   alloc_info,
+                                                                   shape));
+      break;
+    }
+    default:
+      return Common::Status(Common::LOTUS, Common::FAIL, "Invalid allocation kind");
+  }
+
+  return Common::Status::OK();
 }
 
 void ExecutionFrame::Init(const LotusIR::Graph* graph,
@@ -153,6 +218,6 @@ void ExecutionFrame::SetupNodeArg(LotusIR::NodeArg* arg) {
   int index;
   Common::Status status = session_state_.GetMLValueIdx(name, &index);
   LOTUS_ENFORCE(status.IsOK());
-  node_values_.push_back(&all_values_[index]);
+  node_values_.push_back(index);
 }
 }  // namespace Lotus

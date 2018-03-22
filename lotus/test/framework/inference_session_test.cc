@@ -77,7 +77,7 @@ void RunModel(InferenceSession& session_object, const RunOptions& run_options) {
 TEST(InferenceSessionTestNoTimeout, RunTest) {
   ExecutionProviderInfo epi;
   ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions so(vector<ProviderOption>{po}, true);
+  SessionOptions so(vector<ProviderOption>{po});
 
   InferenceSession session_object{so};
   EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
@@ -91,7 +91,7 @@ TEST(InferenceSessionTestNoTimeout, RunTest) {
 TEST(MultipleInferenceSessionTestNoTimeout, RunTest) {
   ExecutionProviderInfo epi;
   ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions session_options(vector<ProviderOption>{po}, true);
+  SessionOptions session_options(vector<ProviderOption>{po});
   session_options.ep_options.push_back(po);
   InferenceSession session_object{session_options};
   EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());

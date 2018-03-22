@@ -17,7 +17,6 @@ class SessionState;
 class ExecutionFrame {
  public:
   typedef MLValue* NodeArgValue;
-  typedef std::vector<NodeArgValue> ArgTable;
 
   // For arena management design, we could have two options:
   // 1. For each device, arena is global in the entire process,
@@ -97,13 +96,13 @@ class ExecutionFrame {
   template <typename T>
   const T* get_value(int index) const {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-    return &node_values_[index]->Get<T>();
+    return &all_values_[node_values_[index]].Get<T>();
   }
 
   template <typename T>
   T* get_mutable_value(int index) {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-    return node_values_[index]->GetMutable<T>();
+    return all_values_[node_values_[index]].GetMutable<T>();
   }
 
   ArenaPtr GetArena(const AllocatorInfo& info) {
@@ -129,6 +128,9 @@ class ExecutionFrame {
   // This method is not thread safe!
   void Release(const int offset);
 
+  Common::Status AllocateAsPerAllocationPlan(int mlvalue_index,
+                                             const TensorShape& shape);
+
   void Init(const LotusIR::Graph* graph,
             const std::unordered_map<string, MLValue>& feeds,
             const std::vector<string>& outputs);
@@ -142,29 +144,7 @@ class ExecutionFrame {
                                                    const TensorShape& shape);
 
   // This method is not thread safe!
-  Tensor* get_or_create_tensor(int index, const TensorShape& shape) {
-    LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-    auto value = node_values_[index];
-    if (value->IsAllocated()) {
-      // The tensor has already been allocated.
-      // TODO: Check the size of the allocated tensor with given shape,
-      // if they match each other, then return, else throw error.
-      // TODO: type also needs to be checked and then use static_cast.
-      Tensor* tensor = value->GetMutable<Tensor>();
-      LOTUS_ENFORCE(tensor->shape() == shape);
-      return tensor;
-    } else {
-      // It's not allocated, then allocate it with given shape and return.
-      // TODO: at this point, we should already know the location and dtype
-      // for the tensor, the graph should be able to tell us. But now graph
-      // don't have it. So here hack to default as CPU and float.
-      auto location = AllocatorManager::Instance()->GetArena(CPU).Info();
-      auto dtype = DataTypeImpl::GetType<float>();
-      Status s = AllocateTensorWithSelfOwnBuffer(index, dtype, location, shape);
-      LOTUS_ENFORCE(s.IsOK());
-      return value->GetMutable<Tensor>();
-    }
-  }
+  Tensor* get_or_create_tensor(int index, const TensorShape& shape);
 
   void InitArenas() {
     // For milestone 1, we only have CPU arena.
@@ -179,17 +159,17 @@ class ExecutionFrame {
   Status status_;
 
   // The values for the inputs and outputs of the nodes.
-  ArgTable node_values_;
+  std::vector<int> node_values_;
 
   // All the intermedia values for the entire graph.
   // Input and Output values are passed in by executors
-  vector<MLValue> all_values_;
+  std::vector<MLValue> all_values_;
 
   // The start index into node_values_ for all the nodes.
   std::vector<int> node_offsets_;
 
   // i-th kernel is still waiting for pending_counts_[i] inputs.
-  vector<int> pending_counts_;
+  std::vector<int> pending_counts_;
 
   // The arenas used for current execution
   // Like mentioned in comments above, we could have two approach:

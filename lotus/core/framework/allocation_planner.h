@@ -38,7 +38,6 @@ enum class AllocKind {
   kReuse = 1,
   kPreExisting = 2,
   kAllocateStatically = 3,
-  kUndecided = 4,  // this means the planner had insufficient information to decide?
 };
 
 class SessionState;

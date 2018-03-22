@@ -115,30 +115,37 @@ class InferenceSession::Impl {
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches) {
-    {
-      std::lock_guard<std::mutex> l(session_mutex_);
-      if (!is_inited_) {
-        LOG(ERROR) << "Session was not initialized";
-        return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
+    Common::Status retval;
+    try {
+      {
+        std::lock_guard<std::mutex> l(session_mutex_);
+        if (!is_inited_) {
+          LOG(ERROR) << "Session was not initialized";
+          return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
+        }
       }
+
+      // TODO add instrumentation to measure the time taken for this Run
+      if (!run_options.run_tag.empty()) {
+        LOG(INFO) << "Running with tag: " << run_options.run_tag;
+      }
+
+      ++current_num_runs_;
+
+      // TODO should we add this exec to the list of executors? i guess its not needed now?
+
+      std::unique_ptr<Executor> p_exec;
+      if (session_options_.enable_sequential_execution) {
+        p_exec = std::move(Executor::NewSequentialExecutor(session_state_, feeds, output_names));
+      } else {
+        LOTUS_NOT_IMPLEMENTED;
+      }
+
+      p_exec->Execute(run_options, feeds, output_names, p_fetches);
+    } catch (const std::exception& e) {
+      retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     }
 
-    // TODO add instrumentation to measure the time taken for this Run
-    if (!run_options.run_tag.empty()) {
-      LOG(INFO) << "Running with tag: " << run_options.run_tag;
-    }
-
-    ++current_num_runs_;
-
-    // TODO should we add this exec to the list of executors? i guess its not needed now?
-
-    std::unique_ptr<Executor> p_exec;
-    if (session_options_.enable_sequential_execution) {
-      p_exec = std::move(Executor::NewSequentialExecutor(session_state_, feeds, output_names));
-    } else {
-      LOTUS_NOT_IMPLEMENTED;
-    }
-    Common::Status retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
     --current_num_runs_;
     return retval;
   }
