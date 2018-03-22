@@ -24,7 +24,7 @@ Model::Model(const std::string& p_graphName,
   }
   // Set m_domainToVersion to contain related domains with latest version.
   AddImportOpSets(p_isONNX);
-  m_graph.reset(new Graph(p_graphName, m_domainToVersion, p_isONNX));
+  m_graph.reset(new Graph(p_graphName, m_domainToVersion));
 }
 
 Model::Model(const ModelProto& p_modelProto) {
@@ -119,9 +119,9 @@ void Model::AddImportOpSets(bool p_isONNX) {
   auto& domainToVersionRangeMap = OpSchemaRegistry::DomainToVersionRange::Instance().Map();
   for (auto& domainToVersionRange : domainToVersionRangeMap) {
     if (p_isONNX && domainToVersionRange.first.compare(c_onnxDomain) != 0) {
-      // Constructing a pure ONNX model.
-      // Only ops in ONNX domain should be used.
-      continue;
+        // Constructing a pure ONNX model.
+        // Only ops in ONNX domain should be used.
+        continue;
     }
 
     m_domainToVersion[domainToVersionRange.first] = domainToVersionRange.second.second;
