@@ -82,20 +82,19 @@ class InferenceSession::Impl {
     LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping(*graph));
 
     // TODO add other per session initialization stuff here
-    
+
     // get execution plan
     if (session_options_.enable_sequential_execution) {
-      SequentialPlanner seq_planner;
       // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
       // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
       // Passing a pointer to a private member variable doesn't seem the right thing to do.
       std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
-      LOTUS_RETURN_IF_ERROR(seq_planner.CreatePlan(session_state_, p_seq_exec_plan.get()));
+      LOTUS_RETURN_IF_ERROR(DummyPlanner::CreatePlan(session_state_, p_seq_exec_plan.get()));
       session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
     } else {
       LOTUS_NOT_IMPLEMENTED;
     }
-    
+
     is_inited_ = true;
     return Status::OK();
   }
@@ -138,12 +137,6 @@ class InferenceSession::Impl {
     } else {
       LOTUS_NOT_IMPLEMENTED;
     }
-
-    // ensure output vector size == output_names size
-    if (p_fetches->size() < output_names.size()) {
-      p_fetches->resize(output_names.size());
-    }
-
     Common::Status retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
     --current_num_runs_;
     return retval;
@@ -176,13 +169,6 @@ class InferenceSession::Impl {
       // construct and save the kernels
       std::unique_ptr<OpKernel> p_op_kernel;
       LOTUS_RETURN_IF_ERROR(CreateOpKernel(*p_node, &p_op_kernel));
-      if (!p_op_kernel) {
-        LOG(ERROR) << "Could not create kernel for op_id: " << p_node->OpType();
-        // TODO for now ignore the error and continue until the actual kernels are ready
-        // return Common::Status(Common::LOTUS,
-        //                       Common::FAIL,
-        //                       "Failed to initialize session because kernel creation failed");
-      }
       session_state_.AddKernel(p_node->Index(), std::move(p_op_kernel));
 
       // build the MLValue->index map

@@ -40,17 +40,11 @@ class SequentialExecutor : public Executor {
 
     const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
     const auto& exec_plan_vec = p_seq_exec_plan->execution_plan;
-
     for (int i = 0; i < exec_plan_vec.size(); ++i) {
       const auto& node_exec_plan = exec_plan_vec[i];
       auto node_index = node_exec_plan.node_index;
       OpKernel* p_op_kernel = session_state_.GetKernel(node_index);
-      if (!p_op_kernel) {
-        // TODO continue for now since we don't have any kernels ready
-        // when the kernels are ready, we should log and error here and
-        // return with fail status.
-        continue;
-      }
+      LOTUS_ENFORCE(p_op_kernel);  // if a kernel has been added in the session state, it better be NON-null.
 
       const Node& node = p_op_kernel->node();
 
@@ -61,7 +55,10 @@ class SequentialExecutor : public Executor {
       // construct OpKernelContext
       OpKernelContext op_kernel_context(&root_frame_, p_op_kernel);
 
-      // call Compute on the execution provider
+      // call compute on the kernel
+      // TODO Today the kernels don't return any status code.
+      // They throw exceptions instead. We should change the compute
+      // method to return a status code.
       p_op_kernel->compute(&op_kernel_context);
 
       // free ml-values corresponding to this node
