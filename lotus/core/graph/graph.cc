@@ -35,7 +35,7 @@ const std::string& NodeArg::Name() const {
   return m_nodeArgInfo.name();
 }
 
-const PTYPE& NodeArg::Type() const {
+PTYPE NodeArg::Type() const {
   return m_type;
 }
 
@@ -702,6 +702,70 @@ Status Graph::BuildConnections(
   }
 
   return Status::OK();
+}
+
+void Graph::ReverseDFSFrom(
+    const std::vector<NODEINDEX> &from,
+    const std::function<void(Node *)>& enter,
+    const std::function<void(Node *)>& leave,
+    const std::function<bool(const Node*, const Node*)>& comp) {
+    std::vector<Node *> node_vec;
+    for (auto i : from) {
+        node_vec.push_back(GetNode(i));
+    }
+
+    ReverseDFSFrom(node_vec, enter, leave, comp);
+}
+
+void Graph::ReverseDFSFrom(
+    const std::vector<Node *> &from,
+    const std::function<void(Node *)>& enter,
+    const std::function<void(Node *)>& leave,
+    const std::function<bool(const Node*, const Node*)>& comp) {
+    using WorkEntry = std::pair<Node *, bool>; // bool represents leave or not
+    std::vector<WorkEntry> stack(from.size());
+    for (size_t i = 0; i < from.size(); i++) {
+        stack[i] = WorkEntry(from[i], false);
+    }
+
+    std::vector<bool> visited(m_nodes.size(), false);
+    while (!stack.empty()) {
+        WorkEntry e = stack.back();
+        stack.pop_back();
+        Node *n = e.first;
+        if (e.second) {
+            // leave node
+            leave(n);
+            continue;
+        }
+
+        if (visited[n->Index()]) continue;
+        visited[n->Index()] = true;
+        if (enter) enter(n);
+
+        if (leave) stack.push_back(WorkEntry(n, true));
+
+        if (comp) {
+            std::vector<Node *> sorted_nodes;
+            for (auto iter = n->InputNodes_begin(); iter != n->InputNodes_end(); ++iter) {
+                sorted_nodes.push_back(const_cast<Node *>(*iter));
+            }
+            std::sort(sorted_nodes.begin(), sorted_nodes.end(), comp);
+            for (auto in : sorted_nodes) {
+                NODEINDEX idx = in->Index();
+                if (!visited[idx]) {
+                    stack.push_back(WorkEntry(in, false));
+                }
+            }
+        } else {
+            for (auto iter = n->InputNodes_begin(); iter != n->InputNodes_end(); ++iter) {
+                NODEINDEX idx = (*iter)->Index();
+                if (!visited[idx]) {
+                    stack.push_back(WorkEntry(GetNode(idx), false));
+                }
+            }
+        }
+    }
 }
 
 Status Graph::CheckIsAcyclic(

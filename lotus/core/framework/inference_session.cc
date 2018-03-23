@@ -83,6 +83,19 @@ class InferenceSession::Impl {
 
     // TODO add other per session initialization stuff here
 
+    // get execution plan
+    if (session_options_.enable_sequential_execution) {
+      // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
+      // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
+      // Passing a pointer to a private member variable doesn't seem the right thing to do.
+      std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+      // TODO change SimpleAllocationPlanner to use SequentialPlanner; Simple exists for testing only.
+      LOTUS_RETURN_IF_ERROR(SimpleAllocationPlanner::CreatePlan(session_state_, p_seq_exec_plan.get()));
+      session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
+    } else {
+      LOTUS_NOT_IMPLEMENTED;
+    }
+
     is_inited_ = true;
     return Status::OK();
   }
@@ -102,36 +115,37 @@ class InferenceSession::Impl {
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches) {
-    {
-      std::lock_guard<std::mutex> l(session_mutex_);
-      if (!is_inited_) {
-        LOG(ERROR) << "Session was not initialized";
-        return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
+    Common::Status retval;
+    try {
+      {
+        std::lock_guard<std::mutex> l(session_mutex_);
+        if (!is_inited_) {
+          LOG(ERROR) << "Session was not initialized";
+          return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
+        }
       }
+
+      // TODO add instrumentation to measure the time taken for this Run
+      if (!run_options.run_tag.empty()) {
+        LOG(INFO) << "Running with tag: " << run_options.run_tag;
+      }
+
+      ++current_num_runs_;
+
+      // TODO should we add this exec to the list of executors? i guess its not needed now?
+
+      std::unique_ptr<Executor> p_exec;
+      if (session_options_.enable_sequential_execution) {
+        p_exec = std::move(Executor::NewSequentialExecutor(session_state_, feeds, output_names));
+      } else {
+        LOTUS_NOT_IMPLEMENTED;
+      }
+
+      p_exec->Execute(run_options, feeds, output_names, p_fetches);
+    } catch (const std::exception& e) {
+      retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     }
 
-    // TODO add instrumentation to measure the time taken for this Run
-    if (!run_options.run_tag.empty()) {
-      LOG(INFO) << "Running with tag: " << run_options.run_tag;
-    }
-
-    ++current_num_runs_;
-
-    // TODO should we add this exec to the list of executors? i guess its not needed now?
-
-    std::unique_ptr<Executor> p_exec;
-    if (session_options_.enable_sequential_execution) {
-      p_exec = std::move(Executor::NewSequentialExecutor(session_state_, feeds, output_names));
-    } else {
-      LOTUS_NOT_IMPLEMENTED;
-    }
-
-    // ensure output vector size == output_names size
-    if (p_fetches->size() < output_names.size()) {
-      p_fetches->resize(output_names.size());
-    }
-
-    Common::Status retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
     --current_num_runs_;
     return retval;
   }
@@ -163,13 +177,6 @@ class InferenceSession::Impl {
       // construct and save the kernels
       std::unique_ptr<OpKernel> p_op_kernel;
       LOTUS_RETURN_IF_ERROR(CreateOpKernel(*p_node, &p_op_kernel));
-      if (!p_op_kernel) {
-        LOG(ERROR) << "Could not create kernel for op_id: " << p_node->OpType();
-        // TODO for now ignore the error and continue until the actual kernels are ready
-        // return Common::Status(Common::LOTUS,
-        //                       Common::FAIL,
-        //                       "Failed to initialize session because kernel creation failed");
-      }
       session_state_.AddKernel(p_node->Index(), std::move(p_op_kernel));
 
       // build the MLValue->index map

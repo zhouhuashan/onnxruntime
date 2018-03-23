@@ -3,7 +3,6 @@
 
 #include "core/common/status.h"
 #include "core/framework/execution_provider.h"
-#include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
@@ -40,6 +39,8 @@ enum class AllocKind {
   kAllocateStatically = 3,
 };
 
+class SessionState;
+
 // SequentialExecutionPlan: This is the data that is produced by a static
 // planner for a sequential execution, to be used by a SequentialExecutor.
 struct SequentialExecutionPlan {
@@ -72,6 +73,8 @@ struct SequentialExecutionPlan {
     //    free ml-value corresponding to ml-value-index to_be_freed[i]
     int free_from_index;
     int free_to_index;
+
+    NodeExecutionPlan(LotusIR::NODEINDEX index) : node_index(index), free_from_index(1), free_to_index(0) {}
   };
 
   // Execution_plan: represents the nodes in the sequential order to be executed
@@ -83,8 +86,8 @@ struct SequentialExecutionPlan {
 
 class SequentialPlanner {
  public:
-  Status CreatePlan(const SessionState& session_state,
-                    SequentialExecutionPlan* plan);
+  static Status CreatePlan(const SessionState& session_state,
+                           SequentialExecutionPlan* plan);
 };
 
 /*

@@ -63,7 +63,7 @@ class NodeArg {
   const std::string& Name() const;
 
   // Get node arg type.
-  const PTYPE& Type() const;
+  PTYPE Type() const;
 
   void SetType(PTYPE p_type);
   void SetType(const TypeProto& p_typeProto);
@@ -512,6 +512,23 @@ class Graph : public GraphBase {
   virtual const std::vector<const NodeArg*>& GetInputs() const override;
   virtual const std::vector<const NodeArg*>& GetOutputs() const override;
   const std::vector<const NodeArg*>& GetValueInfo() const;
+
+  // Performs reverse DFS traversal from a set of nodes in 'from' up to
+  // the SOURCE node. 'enter' is a visit function that will be invoked 
+  // on a node when it is visited but its parents haven't been. 'leave'
+  // is the visit function invoked on the node after its parents have 
+  // all been visited. 'comp' is used to stable the traversal order.
+  void ReverseDFSFrom(
+      const std::vector<NODEINDEX> &from,
+      const std::function<void(Node *)>& enter,
+      const std::function<void(Node *)>& leave,
+      const std::function<bool(const Node*, const Node*)>& comp = {});
+
+  void ReverseDFSFrom(
+      const std::vector<Node *> &from,
+      const std::function<void(Node *)>& enter,
+      const std::function<void(Node *)>& leave,
+      const std::function<bool(const Node*, const Node*)>& comp = {});
 
   // Get node given specific node index.
   //Node* GetNode(NODEINDEX p_nodeIndex);

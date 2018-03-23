@@ -4,6 +4,8 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
+#include "gsl/gsl_util"
+
 namespace Lotus {
 
 template <typename T>
@@ -39,14 +41,12 @@ class Reshape final : public OpKernel {
     if (unknown_dim != -1) {
       // calculate unknown dimension
       LOTUS_ENFORCE((current_shape.Size() % size) == 0,
-                    "The input tensor cannot be"
-                    " reshape to the requested shape");
+                    "The input tensor cannot be reshaped to the requested shape");
       shape_[unknown_dim] = current_shape.Size() / size;
     } else {
       // check if the output shape is valid.
-      LOTUS_ENFORCE(current_shape.Size() == size,
-                    "The input tensor cannot be"
-                    " reshape to the requested shape");
+      LOTUS_ENFORCE(gsl::narrow_cast<int64_t>(current_shape.Size()) == size,
+                    "The input tensor cannot be reshaped to the requested shape");
     }
 
     Tensor* Y = context->output(0, TensorShape(shape_));

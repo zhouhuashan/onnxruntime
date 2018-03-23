@@ -2,36 +2,65 @@
 #include "core/framework/allocatormgr.h"
 
 namespace Lotus {
+
+namespace {
+// Calculate size between start and end.
+// Assumes start and end are between 0 and dimensions.size(), inclusive, and that
+// start < end.
+size_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end) {
+  size_t size = 1;
+  for (size_t i = start; i < end; i++) {
+    LOTUS_ENFORCE(dimensions[i] >= 0, "Can't calculate size for a un-resolved tensor shape");
+    size *= dimensions[i];
+  }
+  return size;
+}
+}  // namespace
+
 TensorShape::TensorShape() : TensorShape(std::vector<int64_t>()) {
 }
 
 TensorShape::TensorShape(const std::vector<int64_t>& dims) : m_dims(dims) {
 }
 
-TensorShape::TensorShape(const TensorShape& p_other) {
-  m_dims.assign(p_other.m_dims.begin(), p_other.m_dims.end());
+TensorShape::TensorShape(const TensorShape& other) {
+  m_dims.assign(other.m_dims.begin(), other.m_dims.end());
 }
 
-const int64_t TensorShape::operator[](int p_idx) const {
+const int64_t TensorShape::operator[](int idx) const {
   //Since we don't have status in return value,
-  //the caller should be responsible for invalid p_idx.
+  //the caller should be responsible for invalid idx.
   //In that case, stl throws an exception.
-  return m_dims[p_idx];
+  return m_dims.at(idx);
 }
 
-int64_t TensorShape::Size() const {
-  int64_t size = 1;
-  for (int i = 0; i < m_dims.size(); i++) {
-    LOTUS_ENFORCE(m_dims[i] >= 0, "Can't calculate size for a un-resolved tensor shape");
-    size *= m_dims[i];
-  }
+size_t TensorShape::Size() const {
+  size_t size = SizeHelper(m_dims, 0, m_dims.size());
   //should we cache the size? as multiple operation may be expensive.
   return size;
 }
 
-TensorShape TensorShape::Slice(int p_dimstart, int p_dimend) const {
-  LOTUS_ENFORCE(p_dimstart >= 0 && p_dimstart <= p_dimend && p_dimend <= m_dims.size(), "Invliad tensor shape slice argument.");
-  return TensorShape(std::vector<int64_t>(m_dims.begin() + p_dimstart, m_dims.begin() + p_dimend));
+size_t TensorShape::SizeToDimension(size_t dimension) const {
+  const size_t num_dims = m_dims.size();
+  LOTUS_ENFORCE(dimension <= num_dims,
+                "Invalid dimension of %d for SizeToDimension. Tensor has %d dimensions.", dimension, num_dims);
+
+  size_t size = SizeHelper(m_dims, 0, dimension);
+  return size;
+}
+
+size_t TensorShape::SizeFromDimension(size_t dimension) const {
+  const size_t num_dims = m_dims.size();
+  LOTUS_ENFORCE(dimension < num_dims,
+                "Invalid dimension of %d for SizeFromDimension. Tensor has %d dimensions.", dimension, num_dims);
+
+  size_t size = SizeHelper(m_dims, dimension, num_dims);
+  return size;
+}
+
+TensorShape TensorShape::Slice(int dimstart, int dimend) const {
+  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= m_dims.size(), "Invalid tensor shape slice argument.");
+  return TensorShape(std::vector<int64_t>(m_dims.begin() + dimstart, m_dims.begin() + dimend));
 }
 
 Tensor::Tensor() : alloc_info_(AllocatorManager::Instance()->GetArena(CPU).Info()),
@@ -55,14 +84,14 @@ Tensor::Tensor(MLDataType p_type) : alloc_info_(AllocatorManager::Instance()->Ge
 }
 
 Tensor::Tensor(MLDataType p_type,
-               const TensorShape& p_shape,
+               const TensorShape& shape,
                BufferNakedPtr p_data,
                const AllocatorInfo& alloc,
                const int64_t offset)
     : alloc_info_(alloc),
       p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter())) {
   Init(p_type,
-       p_shape,
+       shape,
        PREALLOCATEDBUFFER,
        p_data,
        alloc,
@@ -70,14 +99,14 @@ Tensor::Tensor(MLDataType p_type,
 }
 
 Tensor::Tensor(MLDataType p_type,
-               const TensorShape& p_shape,
+               const TensorShape& shape,
                BufferUniquePtr p_data,
                const AllocatorInfo& alloc,
                const int64_t offset)
     : alloc_info_(alloc),
       p_unique_data_(std::move(p_data)) {
   Init(p_type,
-       p_shape,
+       shape,
        OWNEDBUFFER,
        nullptr,
        alloc,
@@ -85,13 +114,13 @@ Tensor::Tensor(MLDataType p_type,
 }
 
 void Tensor::Init(MLDataType p_type,
-                  const TensorShape& p_shape,
+                  const TensorShape& shape,
                   BufferStrategy strategy,
                   BufferNakedPtr p_raw_data,
                   const AllocatorInfo& alloc,
                   const int64_t offset) {
   dtype_ = p_type;
-  shape_ = p_shape;
+  shape_ = shape;
   buffer_strategy_ = strategy;
   p_naked_data_ = p_raw_data;
   alloc_info_ = alloc;

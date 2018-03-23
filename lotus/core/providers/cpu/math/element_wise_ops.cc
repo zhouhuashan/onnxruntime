@@ -89,6 +89,14 @@ void Add<float>::compute(OpKernelContext* ctx) {
   }
 }
 
+REGISTER_KERNEL(KernelDef("Add")
+                    .Domain(LotusIR::c_onnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
+                    .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
+                Add<float>);
+
 template <>
 void Sub<float>::compute(OpKernelContext* ctx) {
   auto& A = *ctx->input<Tensor>(0);
@@ -103,6 +111,14 @@ void Sub<float>::compute(OpKernelContext* ctx) {
   }
 }
 
+REGISTER_KERNEL(KernelDef("Sub")
+                    .Domain(LotusIR::c_onnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
+                    .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
+                Sub<float>);
+
 template <>
 void Mul<float>::compute(OpKernelContext* ctx) {
   auto& A = *ctx->input<Tensor>(0);
@@ -116,6 +132,14 @@ void Mul<float>::compute(OpKernelContext* ctx) {
     EigenMap<float>(C) = EigenMap<float>(A).cwiseProduct(EigenMap<float>(B));
   }
 }
+
+REGISTER_KERNEL(KernelDef("Mul")
+                    .Domain(LotusIR::c_onnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
+                    .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
+                Mul<float>);
 
 template <>
 void Reciprocal<float>::compute(OpKernelContext* ctx) {

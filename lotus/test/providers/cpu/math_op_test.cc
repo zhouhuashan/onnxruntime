@@ -17,6 +17,11 @@ void SetupState(SessionState& state,
   for (auto& elem : output_defs) {
     state.AddMLValueNameIdx(elem->Name(), idx++);
   }
+
+  std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+  // TODO change SimpleAllocationPlanner to use SequentialPlanner; Simple exists for testing only.
+  SimpleAllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
+  state.SetExecutionPlan(std::move(p_seq_exec_plan));
 }
 
 void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,

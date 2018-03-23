@@ -6,7 +6,6 @@
 
 #include "core/framework/allocator.h"
 #include "core/framework/data_types.h"
-#include "core/protobuf/onnx-ml.pb.h"
 
 using namespace onnx;
 
@@ -17,28 +16,45 @@ class TensorShape {
 
   TensorShape(const std::vector<int64_t>& dims);
 
-  TensorShape(const TensorShape& p_other);
+  TensorShape(const TensorShape& other);
 
-  // Return the dimension specified by <p_idx>.
-  const int64_t operator[](int p_idx) const;
+  /**
+  Return the dimension specified by <idx>.
+  @throws Throws if idx is invalid.
+  */
+  const int64_t operator[](int idx) const;
 
-  bool operator==(const TensorShape& p_other) const {
-    return m_dims == p_other.m_dims;
+  bool operator==(const TensorShape& other) const {
+    return m_dims == other.m_dims;
   }
 
-  bool operator!=(const TensorShape& p_other) const {
-    return !(*this == p_other);
+  bool operator!=(const TensorShape& other) const {
+    return !(*this == other);
   }
 
-  const int64_t NumDimensions() const {
+  const size_t NumDimensions() const {
     return m_dims.size();
   }
 
-  // Return the total number of elements.
-  int64_t Size() const;
+  /** 
+  Return the total number of elements.
+  */
+  size_t Size() const;
+
+  /** 
+  Return the total number of elements up to the specified dimension.
+  @param dimension Return size up to this dimension. Value must be >= 0 and < this.Size().
+  */
+  size_t SizeToDimension(size_t dimension) const;
+
+  /**
+  Return the total number of elements from the specified dimension to the end of the tensor shape.
+  @param dimension Return size up to this dimension. Value must be >= 0 and < this.Size().
+  */
+  size_t SizeFromDimension(size_t dimension) const;
 
   // Return a new TensorShape of the dimensions from dimstart to dimend.
-  TensorShape Slice(int p_dimstart, int p_dimend) const;
+  TensorShape Slice(int dimstart, int dimend) const;
 
  private:
   // We use negative numbers for unknown symbolic dimension. Each negative
@@ -72,7 +88,7 @@ typedef void* BufferNakedPtr;
 
 /*
     We want to keep tensor as simple as possible, it is just a placeholder for a piece of memory, with additional shape information.
-    Memory is managered by Executor / Workspace, so Tensor just use it, won't do any allocation / release 
+    Memory is owned and managed by Executor / Workspace, so Tensor just uses it, and won't do any allocation / release.
     */
 class Tensor {
   friend class TensorUtil;
@@ -92,8 +108,8 @@ class Tensor {
   // Create a empty tensor with given type
   Tensor(MLDataType p_type);
   // Create tensor with given type, shape, pre-allocate memory and allocator info.
-  Tensor(MLDataType p_type, const TensorShape& p_shape, BufferNakedPtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
-  Tensor(MLDataType p_type, const TensorShape& p_shape, BufferUniquePtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
+  Tensor(MLDataType p_type, const TensorShape& shape, BufferNakedPtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
+  Tensor(MLDataType p_type, const TensorShape& shape, BufferUniquePtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
 
   // Copy constructor and assign op will just pass the shape and memory reference to another tensor.
   // No deep clone / copy happened.
@@ -131,7 +147,7 @@ class Tensor {
   // More API methods.
  private:
   void Init(MLDataType p_type,
-            const TensorShape& p_shape,
+            const TensorShape& shape,
             BufferStrategy strategy,
             BufferNakedPtr p_raw_data,
             const AllocatorInfo& alloc,
