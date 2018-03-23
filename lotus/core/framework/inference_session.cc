@@ -174,8 +174,7 @@ class InferenceSession::Impl {
   // TODO consider making this function static and outside this class
   // if it has nothing to do with the class members
   Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, Tensor** p_tensor) {
-    vector<int64_t> tensor_shape_vec;
-    GetTensorShapeFromTensorProto(tensor_proto, &tensor_shape_vec);
+    vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
     if (tensor_shape_vec.empty()) {
       std::ostringstream ostr;
       ostr << "Shape is empty for tensor_proto name: " << tensor_proto.name();
@@ -229,12 +228,13 @@ class InferenceSession::Impl {
 
   // TODO consider making this function static and outside this class
   // if it has nothing to do with the class members
-  void GetTensorShapeFromTensorProto(const TensorProto& tensor_proto, std::vector<int64_t>* p_tensor_shape_vec) {
-    std::vector<int64_t>& tensor_shape_vec = *p_tensor_shape_vec;
+  std::vector<int64_t> GetTensorShapeFromTensorProto(const TensorProto& tensor_proto) {
     auto dims = tensor_proto.dims();
+    std::vector<int64_t> tensor_shape_vec(dims.size());
     for (auto& elem : dims) {
       tensor_shape_vec.push_back(elem);
     }
+    return tensor_shape_vec;
   }
 
   // This function does the following:

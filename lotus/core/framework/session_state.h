@@ -42,8 +42,17 @@ class SessionState {
   int GetMaxMLValueIdx() const;
 
   // initialized tensors
+  /**
+  * Adds an initialized tensor (weight) so that it can be used by the
+  * execution frame to setup the appropriate MLValue vectors.
+  */
   void AddInitializedTensor(int mlvalue_index, const MLValue& mlvalue);
-  const std::unordered_map<int, MLValue>& SessionState::GetInitializedTensors() const;
+
+  /**
+  * Gets the list of all initialized tensors (weights) so that it can be used by the
+  * execution frame to setup the appropriate MLValue vectors.
+  */
+  const std::unordered_map<int, MLValue>& GetInitializedTensors() const;
 
  private:
   // cache of the constructed kernels to avoid spending construction
