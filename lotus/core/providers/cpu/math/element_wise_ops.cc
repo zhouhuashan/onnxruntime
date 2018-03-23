@@ -26,8 +26,8 @@ int FindShapeSubsetAxis(const TensorShape& shape, const TensorShape& find) {
 }
 
 // Validate that 'find' matches 'shape' at location 'axis'
-void VerifyShapeSubsetAxis(const TensorShape& shape, const TensorShape& find, int64_t axis) {
-  LOTUS_ENFORCE(axis >= 0 && axis < shape.NumDimensions(), "Axis attribute out of range");
+void VerifyShapeSubsetAxis(const TensorShape& shape, const TensorShape& find, int axis) {
+  LOTUS_ENFORCE(axis >= 0 && axis < int(shape.NumDimensions()), "Axis attribute out of range");
   int dimensions = int(find.NumDimensions());
   for (int i = 0; i < dimensions; i++) {
     if (shape[int(axis) + i] != find[i])

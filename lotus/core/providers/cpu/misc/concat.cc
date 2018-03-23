@@ -46,7 +46,7 @@ void Concat<float>::compute(OpKernelContext* ctx) {
 
     // The inputAxisPitch is the number of elements to add to move to the next split axis in the input
     int64_t inputAxisPitch = 1;
-    for (auto i = data_n.shape().NumDimensions(); i-- > axis_;)
+    for (int i = int(data_n.shape().NumDimensions()); i-- > axis_;)
       inputAxisPitch *= data_n.shape()[int(i)];
 
     const float* input = data_n.data<float>();
