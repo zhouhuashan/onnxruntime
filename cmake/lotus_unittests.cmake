@@ -81,6 +81,7 @@ AddTest(
 )
 
 set(lotus_test_framework_libs
+    ${lotus_providers_whole_archive}  
     ${lotus_framework_whole_archive}
     ${lotusIR_graph_whole_archive}
     ${onnx_whole_archive}
@@ -107,7 +108,7 @@ AddTest(
     TARGET lotus_test_framework
     SOURCES ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
-    DEPENDS lotus_framework googletest
+    DEPENDS lotus_framework lotus_providers googletest
 )
 
 set(lotus_test_providers_libs

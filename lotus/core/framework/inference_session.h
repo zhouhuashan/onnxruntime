@@ -21,10 +21,8 @@ struct SessionOptions {
   // TODO what are the mandatory requirements for session options? and what should be the default
   // values for the remaining options? Tune this constructor appropriately once we learn more
   // about the answers to these questions.
-  SessionOptions(const vector<ProviderOption>& ep_options0,
-                 bool enable_sequential_execution0)
-      : ep_options(ep_options0),
-        enable_sequential_execution(enable_sequential_execution0) {
+  SessionOptions(const vector<ProviderOption>& ep_options0)
+      : ep_options(ep_options0) {
   }
   //int num_threads; // not used now until we re-introduce threadpools for async execution
   vector<ProviderOption> ep_options;

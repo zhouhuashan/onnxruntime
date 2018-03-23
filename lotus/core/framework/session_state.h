@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/framework/allocation_planner.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
@@ -41,6 +42,10 @@ class SessionState {
   size_t GetNumMLValues() const;
   int GetMaxMLValueIdx() const;
 
+  // execution plan
+  void SetExecutionPlan(std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan);
+  const SequentialExecutionPlan* GetExecutionPlan() const;
+
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
@@ -54,6 +59,8 @@ class SessionState {
   ExecutionProviderSet exec_provider_set_;
   std::unordered_map<std::string, int> mlvalue_name_idx_map_;
   int mlvalue_max_idx_ = 0;
+
+  std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
 
   // TODO add more
 };

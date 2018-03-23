@@ -2,6 +2,7 @@
 #define CORE_FRAMEWORK_OP_KERNEL_H
 
 #include "core/common/exceptions.h"
+#include "core/common/logging.h"
 #include "core/common/status.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/kernel_def_builder.h"
@@ -148,6 +149,31 @@ class KernelRegistry {
     UNUSED_PARAMETER(node);
     UNUSED_PARAMETER(allocator_info);
     UNUSED_PARAMETER(op_kernel);
+
+    // TODO following code exists for testing only
+    // Please replace it with real code
+    auto& name = op_schema.GetName();
+    auto& domain = op_schema.Domain();
+    auto it = kernel_creator_fn_map_.find(name);
+    if (it == kernel_creator_fn_map_.end()) {
+      LOG(ERROR) << "Could not find op name: " << name;
+      return Status(LOTUS, FAIL, "Kernel not found");
+    }
+    auto it2 = it->second.find(domain);
+    if (it2 == it->second.end()) {
+      LOG(ERROR) << "Could not find op domain: " << domain;
+      return Status(LOTUS, FAIL, "Kernel not found");
+    }
+    auto it3 = it2->second.find(provider_type);
+    if (it3 == it2->second.end() || it3->second.empty()) {
+      LOG(ERROR) << "Could not find provider_type: " << provider_type;
+      return Status(LOTUS, FAIL, "Kernel not found");
+    }
+    // pick the first one
+    auto fn = it3->second.front().kernel_create_fn;
+    OpKernelInfo info(node, allocator_info, it3->second.front().kernel_def);
+    op_kernel->reset(fn(info));
+
     return Status::OK();
   }
 
