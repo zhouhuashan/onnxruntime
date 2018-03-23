@@ -87,9 +87,9 @@ class Gemm final : public OpKernel {
     math::Gemm<T_X, CPUMathUtil>(
         transA_,
         transB_,
-        static_cast<int>(M),
-        static_cast<int>(N),
-        static_cast<int>(K),
+        M,
+        N,
+        K,
         alpha_,
         X->template data<T_X>(),
         W->template data<T_W>(),

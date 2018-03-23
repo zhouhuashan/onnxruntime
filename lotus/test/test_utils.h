@@ -151,7 +151,7 @@ struct SimpleFloatTest {
   }
 
   TestModel& model_;
-  AllocatorInfo allocator_info_{"CPUAllocator", Lotus::AllocatorType::ArenaAllocator};
+  AllocatorInfo allocator_info_{CPU, Lotus::AllocatorType::ArenaAllocator};
   KernelDef kernel_def_;
   OpKernelInfo info_{model_.Node(), allocator_info_, kernel_def_};
   Op<float> kernel_{info_};

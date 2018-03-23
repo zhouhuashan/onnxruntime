@@ -175,9 +175,9 @@ template <typename T, class Provider>
 void Gemm(
     const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB,
-    const int M,
-    const int N,
-    const int K,
+    const int64_t M,
+    const int64_t N,
+    const int64_t K,
     const float alpha,
     const T* A,
     const T* B,
@@ -323,15 +323,15 @@ void Axpby(
 template <typename T, class Provider, int order>
 void Im2colNd(
     const T* data_img,
-    const int* im_shape,
-    const int* col_shape,
-    const int img_size,
-    const int col_size,
-    const int* kernel_shape,
-    const int* stride,
-    const int* dilation,
-    const int* pad,
-    const int N,
+    const int64_t* im_shape,
+    const int64_t* col_shape,
+    const int64_t img_size,
+    const int64_t col_size,
+    const int64_t* kernel_shape,
+    const int64_t* stride,
+    const int64_t* dilation,
+    const int64_t* pad,
+    const int64_t N,
     T* data_col,
     Provider* provider,
     bool accumulate_output = false);
@@ -339,53 +339,53 @@ void Im2colNd(
 template <typename T, class Provider, int order>
 void Col2imNd(
     const T* data_col,
-    const int* img_shape,
-    const int* col_shape,
-    const int img_size,
-    const int col_size,
-    const int* kernel_shape,
-    const int* stride,
-    const int* dilation,
-    const int* pad,
-    const int N,
+    const int64_t* img_shape,
+    const int64_t* col_shape,
+    const int64_t img_size,
+    const int64_t col_size,
+    const int64_t* kernel_shape,
+    const int64_t* stride,
+    const int64_t* dilation,
+    const int64_t* pad,
+    const int64_t N,
     T* data_img,
     Provider* provider);
 
 template <typename T, class Provider, int order>
 void Im2col(
     const T* data_im,
-    const int channels,
-    const int height,
-    const int width,
-    const int kernel_h,
-    const int kernel_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int pad_t,
-    const int pad_l,
-    const int pad_b,
-    const int pad_r,
-    const int stride_h,
-    const int stride_w,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t kernel_h,
+    const int64_t kernel_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t pad_t,
+    const int64_t pad_l,
+    const int64_t pad_b,
+    const int64_t pad_r,
+    const int64_t stride_h,
+    const int64_t stride_w,
     T* data_col,
     Provider* provider);
 
 template <typename T, class Provider, int order>
 void Col2im(
     const T* data_col,
-    const int channels,
-    const int height,
-    const int width,
-    const int patch_h,
-    const int patch_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int pad_t,
-    const int pad_l,
-    const int pad_b,
-    const int pad_r,
-    const int stride_h,
-    const int stride_w,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t patch_h,
+    const int64_t patch_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t pad_t,
+    const int64_t pad_l,
+    const int64_t pad_b,
+    const int64_t pad_r,
+    const int64_t stride_h,
+    const int64_t stride_w,
     T* data_im,
     Provider* provider);
 
@@ -419,7 +419,7 @@ void CopyVector(const int N, const T* A, T* B, Provider* provider);
 
 uint32_t randomNumberSeed();
 
-// Function uses casting from int to unsigned to compare if value of
+// Function uses casting from int64_t to uint64_t to compare if value of
 // parameter a is greater or equal to zero and lower than value of
 // parameter b. The b parameter is of type signed and is always
 // positive,
@@ -427,8 +427,8 @@ uint32_t randomNumberSeed();
 // negative value of a parameter converts it to value higher than
 // 0x800...
 // The casting allows to use one condition instead of two.
-inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
-  return static_cast<unsigned>(a) < static_cast<unsigned>(b);
+inline bool is_a_ge_zero_and_a_lt_b(int64_t a, int64_t b) {
+  return static_cast<uint64_t>(a) < static_cast<uint64_t>(b);
 }
 
 // Calculates ceil(a / b). User must be careful to ensure that there

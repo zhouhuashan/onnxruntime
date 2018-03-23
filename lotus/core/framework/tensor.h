@@ -36,6 +36,11 @@ class TensorShape {
     return m_dims.size();
   }
 
+  /**
+  Return underlying vector representation.
+  */
+  const std::vector<int64_t>& GetDims() const { return m_dims; }
+
   /** 
   Return the total number of elements.
   */
@@ -54,7 +59,10 @@ class TensorShape {
   size_t SizeFromDimension(size_t dimension) const;
 
   // Return a new TensorShape of the dimensions from dimstart to dimend.
-  TensorShape Slice(int dimstart, int dimend) const;
+  TensorShape Slice(size_t dimstart, size_t dimend) const;
+
+  // Return a new TensorShape of the dimensions from dimstart to end.
+  TensorShape Slice(size_t dimstart) const;
 
  private:
   // We use negative numbers for unknown symbolic dimension. Each negative
