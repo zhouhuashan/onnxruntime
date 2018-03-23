@@ -5,11 +5,11 @@
 
 Google style from https://google.github.io/styleguide/cppguide.html with 3 minor alterations:
 
-*  Max line length 120
+* Max line length 120
   *	Aim for 80, but up to 120 is fine.
-*	Exceptions
+* Exceptions
   *	Allowed to throw fatal errors that are expected to result in a top level handler catching them, logging them and terminating the program.
-*	Non-const references
+* Non-const references
   *	Allowed
   *	However const correctness and usage of smart pointers (shared_ptr and unique_ptr) is expected, so a non-const reference equates to “this is a non-null object that you can change but are not being given ownership of”.
 
