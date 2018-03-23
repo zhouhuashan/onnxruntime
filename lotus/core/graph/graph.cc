@@ -35,7 +35,7 @@ const std::string& NodeArg::Name() const {
   return m_nodeArgInfo.name();
 }
 
-const PTYPE& NodeArg::Type() const {
+PTYPE NodeArg::Type() const {
   return m_type;
 }
 

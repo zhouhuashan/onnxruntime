@@ -155,14 +155,14 @@ class PlannerImpl {
   bool FindReusableTensor(const LotusIR::NodeArg& output_arg, MLValueIndex* reusable_tensor) {
     auto p_required_buffer_shape = output_arg.Shape();
     if (nullptr == p_required_buffer_shape) return false;
-    auto& required_buffer_type = output_arg.Type();
+    auto required_buffer_type = output_arg.Type();
 
     for (auto it = freelist_.begin(); it != freelist_.end(); ++it) {
       auto reusable = it->ml_value;
       auto p_node_arg = ml_value_info_.at(reusable).p_def_site;
       auto p_available_buffer_shape = p_node_arg->Shape();
       if (nullptr != p_available_buffer_shape) {
-        auto& available_buffer_type = p_node_arg->Type();
+        auto available_buffer_type = p_node_arg->Type();
         if (SameSize(*p_available_buffer_shape, available_buffer_type, *p_required_buffer_shape, required_buffer_type)) {
           *reusable_tensor = reusable;
           freelist_.erase(it);
@@ -295,7 +295,7 @@ class PlannerImpl {
 
   bool IsNonTensor(const LotusIR::NodeArg& nodearg) {
     // TODO: unclear why we should go through a string-representation of type
-    auto& ptype = nodearg.Type();
+    auto ptype = nodearg.Type();
     auto& type_proto = LotusIR::Utils::OpUtils::ToTypeProto(ptype);
     return type_proto.has_tensor_type();
   }
