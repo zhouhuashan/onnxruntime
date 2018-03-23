@@ -8,6 +8,9 @@ source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_framework_srcs})
 add_library(lotus_framework_obj OBJECT ${lotus_framework_srcs})
 set_target_properties(lotus_framework_obj PROPERTIES FOLDER "Lotus")
 
+# need onnx to build to create headers that this project includes
+add_dependencies(lotus_framework_obj onnx)
+
 if (WIN32)
     set(lotus_framework_static_library_flags
         -IGNORE:4221 # LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library

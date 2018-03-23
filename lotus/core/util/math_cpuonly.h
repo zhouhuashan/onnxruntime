@@ -1,5 +1,5 @@
 /**
-* Derived from caffe2, need copy right annoucement here.
+* Derived from caffe2, need copy right announcement here.
 */
 
 /**

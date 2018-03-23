@@ -63,6 +63,7 @@ endif()
 include(onnx.cmake)
 add_definitions(-DONNX_ML)
 include(date)
+include(gsl)
 
 set(lotus_EXTERNAL_DEPENDENCIES
     eigen
@@ -118,6 +119,7 @@ include_directories(
     ${PROTOBUF_INCLUDE_DIRS}
     ${eigen_INCLUDE_DIRS}
     ${date_INCLUDE_DIR}
+    ${gsl_INCLUDE_DIR}
 )
 
 set(lotus_EXTERNAL_LIBRARIES

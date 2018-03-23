@@ -7,7 +7,7 @@ source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_srcs})
 
 add_library(lotus_providers_obj OBJECT ${lotus_providers_srcs})
 
-add_dependencies(lotus_providers_obj eigen)
+add_dependencies(lotus_providers_obj eigen gsl)
 
 set_target_properties(lotus_providers_obj PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(lotus_providers_obj PROPERTIES FOLDER "Lotus")
