@@ -44,7 +44,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, configs,
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
-                 "-Dlotus_RUN_ONNX_TESTS=ON",
+                 "-Dlotus_RUN_ONNX_TESTS=OFF",
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
                  ]
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]

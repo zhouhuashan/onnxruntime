@@ -104,7 +104,7 @@ struct TestModel {
   auto& Frame() { return frame_; }
 
  private:
-  LotusIR::Model model_{"test", true};
+  LotusIR::Model model_{"test"};
   SessionState state_;
   std::shared_ptr<ExecutionFrame> frame_;
 };
