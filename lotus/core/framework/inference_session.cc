@@ -76,11 +76,10 @@ class InferenceSession::Impl {
     // hence we set it in the session for use by the executors
     session_state_.SetGraph(graph);
 
-    // TODO This function doesn't modify the graph, but I've to still
-    // pass it by non-const ref because the graph API doesn't support any
-    // const iterator today
-    LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping(*graph));
+    // All following initialization steps work on the frozen state of
+    // graph stored inside session_state.
 
+    LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
     LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
 
     // TODO add other per session initialization stuff here
@@ -243,13 +242,16 @@ class InferenceSession::Impl {
   // - builds the MLValue name->idx mapping and saves it in the session state
   // The reason we're doing 2 operations in the same function is so that we iterate
   // through all the nodes only once.
-  Common::Status SaveKernelsAndMLValueNameIndexMapping(Graph& graph) {
+  Common::Status SaveKernelsAndMLValueNameIndexMapping() {
+    // TODO: const_cast because no const_iterator available for the graph
+    Graph* p_graph = const_cast<Graph*>(session_state_.GetGraph());
+    LOTUS_ENFORCE(p_graph);
     int curr_idx = 0;
-    for (auto node_it = graph.Nodes_begin(); node_it != graph.Nodes_end(); ++node_it) {
+    for (auto node_it = p_graph->Nodes_begin(); node_it != p_graph->Nodes_end(); ++node_it) {
       Node* p_node = *node_it;
 
       // ignore source and sink nodes
-      if (graph.IsSourceNode(p_node->Index()) || graph.IsSinkNode(p_node->Index())) {
+      if (p_graph->IsSourceNode(p_node->Index()) || p_graph->IsSinkNode(p_node->Index())) {
         continue;
       }
 
@@ -280,8 +282,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernel(const Node& node, std::unique_ptr<OpKernel>* p_op_kernel) {
-    // TODO below line exists to make unit tests work until we've partitioning ready; replace with node.Device()
-    const std::string& exec_provider_name = "CPUExecutionProvider";
+    const std::string& exec_provider_name = node.GetExecutionProvider();
     if (exec_provider_name.empty() || !session_state_.GetExecutionProvider(exec_provider_name)) {
       std::ostringstream error_msg;
       error_msg << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";
