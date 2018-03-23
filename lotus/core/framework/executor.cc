@@ -36,8 +36,6 @@ class SequentialExecutor : public Executor {
     UNUSED_PARAMETER(run_options);
     UNUSED_PARAMETER(feeds);
 
-    // TODO write test for executor when execution frame is ready
-
     const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
     const auto& exec_plan_vec = p_seq_exec_plan->execution_plan;
     for (int i = 0; i < exec_plan_vec.size(); ++i) {
@@ -59,13 +57,13 @@ class SequentialExecutor : public Executor {
       ReleaseNodeMLValues(p_seq_exec_plan, node_exec_plan);
     }
 
-    LOTUS_RETURN_IF_ERROR(CopyOutput(output_names, p_fetches));
+    LOTUS_RETURN_IF_ERROR(FetchOutput(output_names, p_fetches));
 
     return Common::Status::OK();
   }
 
-  Common::Status CopyOutput(const std::vector<std::string>& output_names,
-                            std::vector<MLValue>* p_fetches) {
+  Common::Status FetchOutput(const std::vector<std::string>& output_names,
+                             std::vector<MLValue>* p_fetches) {
     for (const auto& oname : output_names) {
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(oname, &mlvalue_index));
@@ -82,13 +80,6 @@ class SequentialExecutor : public Executor {
       auto mlvalue_idx = p_seq_exec_plan->to_be_freed[i];
       root_frame_.ReleaseMLValue(mlvalue_idx);
     }
-  }
-
-  // this function doesn't belong to the class
-  static void GetDimensionsFromTensorShapeProto(const onnx::TensorShapeProto* p_tensor_shape_proto,
-                                                std::vector<int64_t>* dims) {
-    for (int index = 0; index < p_tensor_shape_proto->dim_size(); index++)
-      dims->push_back(p_tensor_shape_proto->dim(index).dim_value());
   }
 
  private:

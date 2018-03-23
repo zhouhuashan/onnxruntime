@@ -3,7 +3,6 @@
 
 #include "core/common/status.h"
 #include "core/framework/execution_provider.h"
-//#include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {

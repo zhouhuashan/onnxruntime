@@ -49,11 +49,6 @@ class ExecutionFrame {
                                             const AllocatorInfo& location,
                                             const TensorShape& shape);
 
-  Status AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
-                                            const MLDataType element_type,
-                                            const AllocatorInfo& location,
-                                            const TensorShape& shape);
-
   Status AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
                                                 int mlvalue_index_reuse,
                                                 const MLDataType element_type,
@@ -131,6 +126,11 @@ class ExecutionFrame {
   Common::Status AllocateAsPerAllocationPlan(int mlvalue_index,
                                              const TensorShape& shape);
 
+  Status AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
+                                            const MLDataType element_type,
+                                            const AllocatorInfo& location,
+                                            const TensorShape& shape);
+
   void Init(const LotusIR::Graph* graph,
             const std::unordered_map<string, MLValue>& feeds,
             const std::vector<string>& outputs);
@@ -159,6 +159,7 @@ class ExecutionFrame {
   Status status_;
 
   // The values for the inputs and outputs of the nodes.
+  // This vector contains the indices into the all_values_ vector.
   std::vector<int> node_values_;
 
   // All the intermedia values for the entire graph.
@@ -169,7 +170,7 @@ class ExecutionFrame {
   std::vector<int> node_offsets_;
 
   // i-th kernel is still waiting for pending_counts_[i] inputs.
-  std::vector<int> pending_counts_;
+  std::vector<int> pending_counts_;  // not used currently
 
   // The arenas used for current execution
   // Like mentioned in comments above, we could have two approach:

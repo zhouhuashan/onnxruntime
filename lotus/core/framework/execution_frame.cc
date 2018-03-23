@@ -1,4 +1,5 @@
 #include "core/framework/execution_frame.h"
+#include <sstream>
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 
@@ -159,8 +160,11 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
                                                                    shape));
       break;
     }
-    default:
-      return Common::Status(Common::LOTUS, Common::FAIL, "Invalid allocation kind");
+    default: {
+      std::ostringstream ostr;
+      ostr << "Invalid allocation kind: " << static_cast<std::underlying_type<AllocKind>::type>(alloc_kind);
+      return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+    }
   }
 
   return Common::Status::OK();

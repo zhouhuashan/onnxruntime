@@ -8,6 +8,7 @@ void Constant<float>::compute(OpKernelContext* ctx) {
   for (auto v : value_.dims())
     dims.push_back(v);
   TensorShape shape(dims);
+
   auto& C = *ctx->output(0, shape);
   float* pDest = C.mutable_data<float>();
   for (float v : value_.float_data())
