@@ -6,6 +6,8 @@
 
 namespace Lotus {
 namespace Test {
+static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
+
 template <class Op>
 void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(float)> expected_func, float abs_error = 0) {
   LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);

@@ -7,28 +7,42 @@
 
 namespace Lotus {
 
-template <typename T>
-class Add final : public OpKernel {
+class BroadcastAxisKernel : public OpKernel {
  public:
-  Add(const OpKernelInfo& info) : OpKernel(info) {
+  BroadcastAxisKernel(const OpKernelInfo& info) : OpKernel(info) {
+    int64_t broadcast;
+    broadcast_ = info.GetAttr("broadcast", &broadcast).IsOK() && broadcast == 1;
+    info.GetAttr("axis", &axis_).IsOK();
+    LOTUS_ENFORCE(axis_ == -1 || axis_ != -1 && broadcast_, "Must have valid 'axis' attribute when 'broadcast' attribute is set");
+  }
+
+ protected:
+  bool broadcast_;
+  int64_t axis_{-1};
+};
+
+template <typename T>
+class Add final : public BroadcastAxisKernel {
+ public:
+  Add(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
   void compute(OpKernelContext* context) override;
 };
 
 template <typename T>
-class Sub final : public OpKernel {
+class Sub final : public BroadcastAxisKernel {
  public:
-  Sub(const OpKernelInfo& info) : OpKernel(info) {
+  Sub(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
   void compute(OpKernelContext* context) override;
 };
 
 template <typename T>
-class Mul final : public OpKernel {
+class Mul final : public BroadcastAxisKernel {
  public:
-  Mul(const OpKernelInfo& info) : OpKernel(info) {
+  Mul(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
   void compute(OpKernelContext* context) override;
