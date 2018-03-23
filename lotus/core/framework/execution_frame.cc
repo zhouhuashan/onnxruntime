@@ -80,8 +80,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   //3. Todo: handle the weights.
   for (const auto& entry : session_state_.GetInitializedTensors()) {
     auto mlvalue_index = entry.first;
-    auto mlvalue = entry.second;
-    all_values_[mlvalue_index] = mlvalue;  // this copy should be cheap
+    all_values_[mlvalue_index] = entry.second;  // this copy should be cheap
   }
 
   //4. set node args

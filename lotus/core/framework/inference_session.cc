@@ -201,8 +201,11 @@ class InferenceSession::Impl {
         LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<std::string>(tensor_proto, tensor_shape, tensor_size, p_tensor));
         break;
       }
-      default:
-        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Initialized tensor with unexpected type.");
+      default: {
+        std::ostringstream ostr;
+        ostr << "Initialized tensor with unexpected type: " << tensor_proto.data_type();
+        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, ostr.str());
+      }
     }
 
     return Common::Status::OK();
