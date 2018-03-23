@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/framework/allocation_planner.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
@@ -54,6 +55,10 @@ class SessionState {
   */
   const std::unordered_map<int, MLValue>& GetInitializedTensors() const;
 
+  // execution plan
+  void SetExecutionPlan(std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan);
+  const SequentialExecutionPlan* GetExecutionPlan() const;
+
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
@@ -70,6 +75,7 @@ class SessionState {
 
   // initialized tensorset
   std::unordered_map<int, MLValue> initialized_tensors_;  // key is mlvalue_index
+  std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
 
   // TODO add more
 };
