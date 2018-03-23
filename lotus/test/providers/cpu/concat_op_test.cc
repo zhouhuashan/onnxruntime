@@ -30,16 +30,16 @@ TEST(MathOpTest, Concat2D_1) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), input3_def("A3", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model{"Concat", {&input1_def, &input2_def, &input3_def}, {&output_def}};
 
-  EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{1}));
+  EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{0}));
 
   SimpleFloatTest<Concat> test{model};
 
-  std::vector<int64_t> dims{4, 1};
+  std::vector<int64_t> dims{1, 4};
   test.AddInput(dims, {11.0f, 12.0f, 13.0f, 14.0f});
   test.AddInput(dims, {21.0f, 22.0f, 23.0f, 24.0f});
   test.AddInput(dims, {31.0f, 32.0f, 33.0f, 34.0f});
 
-  std::vector<int64_t> expected_dims{4, 3};
+  std::vector<int64_t> expected_dims{3, 4};
   test.AddOutput(expected_dims);
   float expected_vals[]{11.0f, 12.0f, 13.0f, 14.0f,
                         21.0f, 22.0f, 23.0f, 24.0f,
@@ -52,16 +52,16 @@ TEST(MathOpTest, Concat2D_2) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), input3_def("A3", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model{"Concat", {&input1_def, &input2_def, &input3_def}, {&output_def}};
 
-  EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{0}));
+  EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{1}));
 
   SimpleFloatTest<Concat> test{model};
 
-  std::vector<int64_t> dims{1, 4};
+  std::vector<int64_t> dims{4, 1};
   test.AddInput(dims, {11.0f,
                        21.0f,
                        31.0f,
                        41.0f});
-  test.AddInput({2, 4}, {12.0f, 13.0f,
+  test.AddInput({4, 2}, {12.0f, 13.0f,
                          22.0f, 23.0f,
                          32.0f, 33.0f,
                          42.0f, 43.0f});
@@ -84,10 +84,10 @@ TEST(MathOpTest, Concat3D_1) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), input3_def("A3", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model{"Concat", {&input1_def, &input2_def, &input3_def}, {&output_def}};
 
-  EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{2}));
+  EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{0}));
   SimpleFloatTest<Concat> test{model};
 
-  std::vector<int64_t> dims{3, 3, 1};
+  std::vector<int64_t> dims{1, 3, 3};
   test.AddInput(dims, {111.0f, 112.0f, 113.0f,
                        121.0f, 122.0f, 123.0f,
                        131.0f, 132.0f, 133.0f});

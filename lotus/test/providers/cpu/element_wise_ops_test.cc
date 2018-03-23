@@ -20,7 +20,7 @@ TEST(MathOpTest, Add) {
   test.Run(dims, expected_vals);
 }
 
-TEST(MathOpTest, Add_Broadcast) {
+TEST(MathOpTest, Add_Broadcast_Axis) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
 
@@ -33,15 +33,17 @@ TEST(MathOpTest, Add_Broadcast) {
   test.AddInput(dims, {1.0f, 2.0f, 3.0f,
                        4.0f, 5.0f, 6.0f,
                        7.0f, 8.0f, 9.0f});
-  test.AddInput({3}, {3.0f, 2.0f, 1.0f});
+  test.AddInput({3}, {3.0f,
+                      2.0f,
+                      1.0f});
   test.AddOutput(dims);
-  float expected_vals[]{4.0f, 4.0f, 4.0f,
-                        7.0f, 7.0f, 7.0f,
-                        10.0f, 10.0f, 10.0f};
+  float expected_vals[]{4.0f, 5.0f, 6.0f,
+                        6.0f, 7.0f, 8.0f,
+                        8.0f, 9.0f, 10.0f};
   test.Run(dims, expected_vals);
 }
 
-TEST(MathOpTest, Add_Broadcast2) {
+TEST(MathOpTest, Add_Broadcast) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
 
@@ -49,7 +51,7 @@ TEST(MathOpTest, Add_Broadcast2) {
 
   SimpleFloatTest<Add> test(model);
 
-  std::vector<int64_t> dims{2, 3};
+  std::vector<int64_t> dims{3, 2};
   test.AddInput(dims, {1.0f, 2.0f,
                        3.0f, 4.0f,
                        5.0f, 6.0f});

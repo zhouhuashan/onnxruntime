@@ -13,12 +13,12 @@ class BroadcastAxisKernel : public OpKernel {
     int64_t broadcast;
     broadcast_ = info.GetAttr("broadcast", &broadcast).IsOK() && broadcast == 1;
     info.GetAttr("axis", &axis_).IsOK();
-    LOTUS_ENFORCE(axis_ == -1 || axis_ != -1 && broadcast_, "Must have valid 'axis' attribute when 'broadcast' attribute is set");
+    LOTUS_ENFORCE(axis_ == -1 || axis_ != -1 && broadcast_, "If 'axis' attribute is specified, then 'broadcast' attribute should be set to one.");
   }
 
  protected:
   bool broadcast_;
-  int64_t axis_{-1};
+  int64_t axis_{-1};  // -1 means 'no axis specified'
 };
 
 template <typename T>

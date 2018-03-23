@@ -7,10 +7,13 @@ auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.mutable_data<T>(), t.shape
 template <typename T>
 auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.data<T>(), t.shape().Size()); }
 
+// Finds the axis inside 'shape' that matches 'find' starting from the end
+// For example if shape = {2, 3, 4, 5, 6} and find = {4, 5} it returns 2
+// If shape = {4, 5, 2, 4, 5} and find = {4, 5} it would return 3
 int FindShapeSubsetAxis(const TensorShape& shape, const TensorShape& find) {
   int findCount = int(find.NumDimensions());
 
-  for (int i = int(shape.NumDimensions()) - findCount; i > 0; i--) {
+  for (int i = int(shape.NumDimensions()) - findCount; i >= 0; i--) {
     int j = 0;
     for (; j < findCount; j++) {
       if (shape[i + j] != find[j])
@@ -22,6 +25,7 @@ int FindShapeSubsetAxis(const TensorShape& shape, const TensorShape& find) {
   LOTUS_THROW("Tensors have no common shape subset");
 }
 
+// Validate that 'find' matches 'shape' at location 'axis'
 void VerifyShapeSubsetAxis(const TensorShape& shape, const TensorShape& find, int64_t axis) {
   LOTUS_ENFORCE(axis >= 0 && axis < shape.NumDimensions(), "Axis attribute out of range");
   int dimensions = int(find.NumDimensions());
@@ -46,7 +50,7 @@ void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int a
   // and resetting the index every '2*3*4*5' elements (thus ignoring the last dimension)
 
   int64_t incrementPitch = 1;
-  for (int i = 0; i < axis; i++)
+  for (int i = int(input1.shape().NumDimensions()); --i > axis;)
     incrementPitch *= input1.shape()[i];
 
   int64_t resetPitch = input2.shape().Size();
