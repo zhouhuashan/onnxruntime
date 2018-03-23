@@ -37,15 +37,15 @@ void TestResolve(LotusIR::Graph* p_graph) {
   EXPECT_EQ(valueInfoBefore, valueInfoAfter);
 }
 
-TEST(ONNXModelsTest, super_resolution) {
+TEST(ONNXModelsTest, squeeze_net) {
   // NOTE: this requires the current directory to be where LotusIR_UT.exe is located
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./testdata/super_resolution.pb", &model).IsOK());
+  EXPECT_TRUE(Model::Load("./testdata/squeezenet/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 #ifdef _WIN32
   // wstring version
   std::shared_ptr<Model> model2;
-  EXPECT_TRUE(Model::Load(L"./testdata/super_resolution.pb", &model2).IsOK());
+  EXPECT_TRUE(Model::Load(L"./testdata/squeezenet/model.onnx", &model2).IsOK());
   TestResolve(model2->MainGraph());
 #endif
 }
