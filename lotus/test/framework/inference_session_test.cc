@@ -17,7 +17,7 @@ using namespace std;
 
 namespace Lotus {
 namespace Test {
-static const std::string MODEL_URI = "C:/Users/prs/work_projects/Lotus/lotus/test/testdata/mul_1.pb";
+static const std::string MODEL_URI = "testdata/mul_1.pb";
 //static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx"; // TODO enable this after we've weights?
 
 // TODO consider moving this function to some utils
