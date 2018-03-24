@@ -76,10 +76,11 @@ class InferenceSession::Impl {
     // hence we set it in the session for use by the executors
     session_state_.SetGraph(graph);
 
-    // TODO This function doesn't modify the graph, but I've to still
-    // pass it by non-const ref because the graph API doesn't support any
-    // const iterator today
-    LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping(*graph));
+    // All following initialization steps work on the frozen state of
+    // graph stored inside session_state.
+
+    LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
+    LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
 
     // TODO add other per session initialization stuff here
 
@@ -141,7 +142,7 @@ class InferenceSession::Impl {
         LOTUS_NOT_IMPLEMENTED;
       }
 
-      p_exec->Execute(run_options, feeds, output_names, p_fetches);
+      retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     }
@@ -159,18 +160,117 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
+  Common::Status SaveInitializedTensors() {
+    const Graph* p_graph = session_state_.GetGraph();
+    LOTUS_ENFORCE(p_graph);
+    LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
+
+    const InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
+    for (const auto& entry : initialized_tensor_set) {
+      const std::string& name = entry.first;
+      int mlvalue_index;
+      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
+
+      const TensorProto& tensor_proto = entry.second;
+      std::unique_ptr<Tensor> p_tensor = nullptr;
+      LOTUS_RETURN_IF_ERROR(GetTensorFromTensorProto(tensor_proto, &p_tensor));
+      MLValue mlvalue;
+      mlvalue.Init(p_tensor.release(),
+                   DataTypeImpl::GetType<Tensor>(),
+                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+      session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
+    }
+    return Common::Status::OK();
+  }
+
+  // TODO consider making this function static and outside this class
+  // if it has nothing to do with the class members
+  Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor) {
+    vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
+    if (tensor_shape_vec.empty()) {
+      std::ostringstream ostr;
+      ostr << "Shape is empty for tensor_proto name: " << tensor_proto.name();
+      return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+    }
+    TensorShape tensor_shape{tensor_shape_vec};
+    size_t tensor_size = tensor_shape.Size();
+
+    switch (tensor_proto.data_type()) {
+      case onnx::TensorProto_DataType::TensorProto_DataType_FLOAT: {
+        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<float>(tensor_proto, tensor_shape, tensor_size, p_tensor));
+        break;
+      }
+      case onnx::TensorProto_DataType::TensorProto_DataType_BOOL: {
+        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, tensor_size, p_tensor));
+        break;
+      }
+      case onnx::TensorProto_DataType::TensorProto_DataType_INT32: {
+        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<int32_t>(tensor_proto, tensor_shape, tensor_size, p_tensor));
+        break;
+      }
+      case onnx::TensorProto_DataType::TensorProto_DataType_INT64: {
+        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<int64_t>(tensor_proto, tensor_shape, tensor_size, p_tensor));
+        break;
+      }
+      case onnx::TensorProto_DataType::TensorProto_DataType_STRING: {
+        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<std::string>(tensor_proto, tensor_shape, tensor_size, p_tensor));
+        break;
+      }
+      default: {
+        std::ostringstream ostr;
+        ostr << "Initialized tensor with unexpected type: " << tensor_proto.data_type();
+        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, ostr.str());
+      }
+    }
+
+    return Common::Status::OK();
+  }
+
+  // TODO consider making this function static and outside this class
+  // if it has nothing to do with the class members
+  template <typename T>
+  Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
+                                                const TensorShape& tensor_shape,
+                                                size_t tensor_size,
+                                                std::unique_ptr<Tensor>* p_tensor) {
+    // TODO how should the buffer for this tensor be allocated? for now assuming CPU allocator
+    auto& alloc = AllocatorManager::Instance()->GetArena(CPU);
+    size_t size_to_allocate = sizeof(T) * tensor_shape.Size();
+    T* p_data = static_cast<T*>(alloc.Alloc(size_to_allocate));
+    // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
+    Common::Status retval = Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size);
+    BufferUniquePtr buffer_ptr = BufferUniquePtr(static_cast<void*>(p_data), BufferDeleter(&alloc));
+    p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(), tensor_shape, std::move(buffer_ptr), alloc.Info()));
+    return Common::Status::OK();
+  }
+
+  // TODO consider making this function static and outside this class
+  // if it has nothing to do with the class members
+  std::vector<int64_t> GetTensorShapeFromTensorProto(const TensorProto& tensor_proto) {
+    auto dims = tensor_proto.dims();
+    std::vector<int64_t> tensor_shape_vec(dims.size());
+    for (int i = 0; i < dims.size(); ++i) {
+      tensor_shape_vec[i] = dims[i];
+    }
+    return tensor_shape_vec;
+  }
+
   // This function does the following:
   // - constructs the kernels and saves them in the session state
   // - builds the MLValue name->idx mapping and saves it in the session state
   // The reason we're doing 2 operations in the same function is so that we iterate
   // through all the nodes only once.
-  Common::Status SaveKernelsAndMLValueNameIndexMapping(Graph& graph) {
+  Common::Status SaveKernelsAndMLValueNameIndexMapping() {
+    // TODO: const_cast because no const_iterator available for the graph
+    Graph* p_graph = const_cast<Graph*>(session_state_.GetGraph());
+    LOTUS_ENFORCE(p_graph);
     int curr_idx = 0;
-    for (auto node_it = graph.Nodes_begin(); node_it != graph.Nodes_end(); ++node_it) {
+    for (auto node_it = p_graph->Nodes_begin(); node_it != p_graph->Nodes_end(); ++node_it) {
       Node* p_node = *node_it;
 
       // ignore source and sink nodes
-      if (graph.IsSourceNode(p_node->Index()) || graph.IsSinkNode(p_node->Index())) {
+      if (p_graph->IsSourceNode(p_node->Index()) || p_graph->IsSinkNode(p_node->Index())) {
         continue;
       }
 
@@ -194,8 +294,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernel(const Node& node, std::unique_ptr<OpKernel>* p_op_kernel) {
-    // TODO below line exists to make unit tests work until we've partitioning ready; replace with node.Device()
-    const std::string& exec_provider_name = "CPUExecutionProvider";
+    const std::string& exec_provider_name = node.GetExecutionProvider();
     if (exec_provider_name.empty() || !session_state_.GetExecutionProvider(exec_provider_name)) {
       std::ostringstream error_msg;
       error_msg << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";

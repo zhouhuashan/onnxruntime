@@ -32,11 +32,11 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
 
   IAllocator* alloc = GetArena(location);
   void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
-  Tensor* tensor = new Tensor(element_type,
-                              shape,
-                              std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-                              location);
-  p_mlvalue->Init(tensor,
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
+                                                              shape,
+                                                              std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
+                                                              location);
+  p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
   return Status::OK();
@@ -76,11 +76,11 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlva
   if (p_mlvalue->IsAllocated()) {
     return Common::Status::OK();
   }
-  Tensor* tensor = new Tensor(element_type,
-                              shape,
-                              pBuffer,
-                              location);
-  p_mlvalue->Init(tensor,
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
+                                                              shape,
+                                                              pBuffer,
+                                                              location);
+  p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
@@ -190,10 +190,13 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
     all_values_[index] = it->second;
   }
 
-  //3. TODO: handle the weights.
+  //3. handle the weights.
+  for (const auto& entry : session_state_.GetInitializedTensors()) {
+    auto mlvalue_index = entry.first;
+    all_values_[mlvalue_index] = entry.second;  // this copy should be cheap
+  }
 
   //4. set node args
-
   // TODO const_cast is needed due to the lack of a const iterator in the graph
   Graph* p_graph = const_cast<Graph*>(graph);
 

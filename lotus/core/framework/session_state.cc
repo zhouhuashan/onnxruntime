@@ -34,7 +34,7 @@ void SessionState::AddKernel(LotusIR::NODEINDEX nodeId, std::unique_ptr<OpKernel
 }
 
 void SessionState::AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
-  exec_provider_set_.provider_idx_map.insert(std::make_pair(provider_id, exec_provider_set_.exec_providers.size()));
+  exec_provider_set_.provider_idx_map.insert({provider_id, exec_provider_set_.exec_providers.size()});
   exec_provider_set_.exec_providers.push_back(std::move(p_exec_provider));
 }
 
@@ -71,7 +71,7 @@ void SessionState::AddMLValueNameIdx(const std::string& name, int idx) {
   if (idx > mlvalue_max_idx_) {
     mlvalue_max_idx_ = idx;
   }
-  mlvalue_name_idx_map_.insert(std::make_pair(name, idx));
+  mlvalue_name_idx_map_.insert({name, idx});
 }
 
 // returns OK() if value is found
@@ -93,6 +93,15 @@ size_t SessionState::GetNumMLValues() const {
 
 int SessionState::GetMaxMLValueIdx() const {
   return mlvalue_max_idx_;
+}
+
+void SessionState::AddInitializedTensor(int mlvalue_index, const MLValue& mlvalue) {
+  LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index <= GetMaxMLValueIdx());
+  initialized_tensors_.insert({mlvalue_index, mlvalue});
+}
+
+const std::unordered_map<int, MLValue>& SessionState::GetInitializedTensors() const {
+  return initialized_tensors_;
 }
 
 }  // namespace Lotus

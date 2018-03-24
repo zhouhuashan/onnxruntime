@@ -34,12 +34,11 @@ void CreateMLValue(IAllocator* alloc,
     memcpy(buffer, &value[0], element_type->Size() * shape.Size());
   }
 
-  Tensor* tensor = new Tensor(
-      element_type,
-      shape,
-      std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-      location);
-  p_mlvalue->Init(tensor,
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
+                                                              shape,
+                                                              std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
+                                                              location);
+  p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 }
@@ -64,7 +63,7 @@ void RunModel(InferenceSession& session_object, const RunOptions& run_options) {
 
   // Now run
   Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
-
+  std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
   EXPECT_TRUE(st.IsOK());
   ASSERT_EQ(1, fetches.size());
   auto& rtensor = fetches.front().Get<Tensor>();
