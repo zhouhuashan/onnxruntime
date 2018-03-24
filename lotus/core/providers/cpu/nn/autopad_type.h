@@ -13,7 +13,9 @@ enum class AutoPadType {
 };
 
 inline AutoPadType StringToAutoPadType(const string& str) {
-  if (str == "VALID") {
+  if (str.empty()) {
+    return AutoPadType::NOTSET;
+  } else if (str == "VALID") {
     return AutoPadType::VALID;
   } else if (str == "SAME_UPPER") {
     return AutoPadType::SAME_UPPER;
@@ -25,4 +27,4 @@ inline AutoPadType StringToAutoPadType(const string& str) {
 }
 }  // namespace Lotus
 
-#endif !CORE_PROVIDERS_CPU_NN_AUTOPAD_TYPE_H
+#endif  // CORE_PROVIDERS_CPU_NN_AUTOPAD_TYPE_H
