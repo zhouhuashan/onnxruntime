@@ -71,14 +71,14 @@ class OpKernel {
     return op_kernel_info_.get_kernel_def();
   }
 
-  virtual void compute(OpKernelContext* context) = 0;
-  virtual void compute_async(OpKernelContext* context, DoneCallback done) {
+  virtual Status compute(OpKernelContext* context) const = 0;
+  virtual Status compute_async(OpKernelContext* context, DoneCallback done) const {
     UNUSED_PARAMETER(context);
     UNUSED_PARAMETER(done);
     LOTUS_NOT_IMPLEMENTED;
   }
 
-  const AllocatorInfo& allocator() { return op_kernel_info_.get_allocator_info(); }
+  const AllocatorInfo& allocator() const { return op_kernel_info_.get_allocator_info(); }
 
  protected:
   OpKernelInfo op_kernel_info_;
@@ -90,7 +90,7 @@ class OpKernelContext {
  public:
   typedef std::unordered_map<std::string, size_t> ArgMap;
 
-  explicit OpKernelContext(ExecutionFrame* frame, OpKernel* kernel);
+  explicit OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel);
 
   ~OpKernelContext(){};
 
@@ -113,7 +113,7 @@ class OpKernelContext {
  private:
   ExecutionFrame* execution_frame_ = nullptr;
 
-  OpKernel* kernel_ = nullptr;
+  const OpKernel* kernel_ = nullptr;
 
   // The argument starting index in ExecutionFrame.
   int arg_start_index_ = -1;

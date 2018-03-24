@@ -16,7 +16,7 @@ struct Constant final : OpKernel {
     }
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 
  private:
   TensorProto value_;

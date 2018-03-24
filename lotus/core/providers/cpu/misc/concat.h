@@ -16,7 +16,7 @@ struct Concat final : OpKernel {
     }
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 
  private:
   int64_t axis_;

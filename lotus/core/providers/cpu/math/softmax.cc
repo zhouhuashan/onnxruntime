@@ -9,7 +9,7 @@
 namespace Lotus {
 
 template <>
-void Softmax<float>::compute(OpKernelContext* ctx) {
+Status Softmax<float>::compute(OpKernelContext* ctx) const {
   const Tensor& X = *ctx->input<Tensor>(0);
   const TensorShape input_shape{X.shape()};
 
@@ -27,6 +27,7 @@ void Softmax<float>::compute(OpKernelContext* ctx) {
   const bool logarithmic = false;
   SoftmaxCPU(gsl::narrow_cast<int>(N), gsl::narrow_cast<int>(D), X.data<float>(), Ydata,
              scale_.data(), sum_multiplier_.data(), logarithmic, rowmax_.data());
+  return Status::OK();
 }
 
 REGISTER_KERNEL(KernelDef("Softmax")

@@ -27,7 +27,7 @@ class Gemm final : public OpKernel {
     LOTUS_ENFORCE(info.GetAttr<float>("beta", &beta_).IsOK());
   }
 
-  void compute(OpKernelContext* context) override {
+  Status compute(OpKernelContext* context) const override {
     const auto X = context->input<Tensor>(0);
     const auto W = context->input<Tensor>(1);
     const auto B = context->input<Tensor>(2);
@@ -96,6 +96,7 @@ class Gemm final : public OpKernel {
         beta_,
         Y->template mutable_data<T_Y>(),
         &CPUMathUtil::Instance());
+    return Status::OK();
   }
 
  private:

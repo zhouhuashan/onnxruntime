@@ -358,7 +358,8 @@ class GraphBase {
   virtual std::unordered_map<std::string, NodeArg*>* GetNodeArgMap() = 0;
 
   // Get node given specific node index.
-  Node* GetNode(NODEINDEX p_nodeIndex) const;
+  Node* GetNode(NODEINDEX p_nodeIndex);
+  const Node* GetNode(NODEINDEX p_nodeIndex) const;
 
   // Get node iterator to access all effective nodes in the graph.
   GraphBase::NodeIterator Nodes_begin();
@@ -507,6 +508,7 @@ class Graph : public GraphBase {
   bool GetInitializedTensor(const std::string& p_tensorName,
                             TensorProto& p_value) const;
   const InitializedTensorSet& GetAllInitializedTensors() const;
+  void CleanAllInitializedTensors();
 
   // Get graph inputs/outputs/valueinfos.
   virtual const std::vector<const NodeArg*>& GetInputs() const override;

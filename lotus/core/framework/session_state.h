@@ -27,7 +27,7 @@ class SessionState {
   const LotusIR::Graph* GetGraph() const;
 
   // kernels
-  OpKernel* GetKernel(LotusIR::NODEINDEX node_id) const;
+  const OpKernel* GetKernel(LotusIR::NODEINDEX node_id) const;
   void AddKernel(LotusIR::NODEINDEX node_id, std::unique_ptr<OpKernel> p_kernel);
   const std::vector<unique_ptr<OpKernel>>& GetKernelVector() const;
 
@@ -41,6 +41,19 @@ class SessionState {
   Common::Status GetMLValueIdx(const std::string& name, int* idx) const;
   size_t GetNumMLValues() const;
   int GetMaxMLValueIdx() const;
+
+  // initialized tensors
+  /**
+  * Adds an initialized tensor (weight) so that it can be used by the
+  * execution frame to setup the appropriate MLValue vectors.
+  */
+  void AddInitializedTensor(int mlvalue_index, const MLValue& mlvalue);
+
+  /**
+  * Gets the list of all initialized tensors (weights) so that it can be used by the
+  * execution frame to setup the appropriate MLValue vectors.
+  */
+  const std::unordered_map<int, MLValue>& GetInitializedTensors() const;
 
   // execution plan
   void SetExecutionPlan(std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan);
@@ -60,6 +73,8 @@ class SessionState {
   std::unordered_map<std::string, int> mlvalue_name_idx_map_;
   int mlvalue_max_idx_ = 0;
 
+  // initialized tensorset
+  std::unordered_map<int, MLValue> initialized_tensors_;  // key is mlvalue_index
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
 
   // TODO add more

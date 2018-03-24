@@ -41,7 +41,7 @@ class SequentialExecutor : public Executor {
     for (int i = 0; i < exec_plan_vec.size(); ++i) {
       const auto& node_exec_plan = exec_plan_vec[i];
       auto node_index = node_exec_plan.node_index;
-      OpKernel* p_op_kernel = session_state_.GetKernel(node_index);
+      auto p_op_kernel = session_state_.GetKernel(node_index);
       LOTUS_ENFORCE(p_op_kernel);  // if a kernel has been added in the session state, it better be NON-null.
 
       // construct OpKernelContext

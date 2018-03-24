@@ -26,7 +26,7 @@ class Add final : public BroadcastAxisKernel {
   Add(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -35,7 +35,7 @@ class Sub final : public BroadcastAxisKernel {
   Sub(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -44,7 +44,7 @@ class Mul final : public BroadcastAxisKernel {
   Mul(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -53,7 +53,7 @@ class Reciprocal final : public OpKernel {
   Reciprocal(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -62,7 +62,7 @@ class Sum final : public OpKernel {
   Sum(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 }  // namespace Lotus
