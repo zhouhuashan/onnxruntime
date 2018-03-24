@@ -6,6 +6,8 @@
 namespace Lotus {
 namespace Test {
 
+static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
+
 TEST(ConvTest, Conv) {
   LotusIR::NodeArg input1_def("X", &s_typeProto_float), input2_def("W", &s_typeProto_float), output_def("Y", &s_typeProto_float);
   TestModel model("Conv", {&input1_def, &input2_def}, {&output_def});

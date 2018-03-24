@@ -84,8 +84,6 @@ struct TypeProto_Set : TypeProto {
   }
 };
 
-extern TypeProto_Set s_typeProto_float;
-
 struct TestModel {
   TestModel(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs) {
     Graph()->AddNode("node1", szName, szName, inputDefs, outputDefs);
