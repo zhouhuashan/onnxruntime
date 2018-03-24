@@ -65,7 +65,7 @@ Tensor* OpKernelContext::output<Tensor>(int index) {
   return nullptr;
 }
 
-OpKernelContext::OpKernelContext(ExecutionFrame* frame, OpKernel* kernel)
+OpKernelContext::OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel)
     : execution_frame_(frame),
       kernel_(kernel) {
   LOTUS_ENFORCE(nullptr != frame && kernel != nullptr);

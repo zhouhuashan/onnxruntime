@@ -19,7 +19,7 @@ class Clip final : public OpKernel {
     }
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 
  private:
   T max_, min_;

@@ -19,7 +19,7 @@ const std::vector<unique_ptr<OpKernel>>& SessionState::GetKernelVector() const {
   return session_kernels_;
 }
 
-OpKernel* SessionState::GetKernel(LotusIR::NODEINDEX node_id) const {
+const OpKernel* SessionState::GetKernel(LotusIR::NODEINDEX node_id) const {
   if (node_id >= session_kernels_.size()) {
     return nullptr;
   }

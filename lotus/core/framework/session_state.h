@@ -27,7 +27,7 @@ class SessionState {
   const LotusIR::Graph* GetGraph() const;
 
   // kernels
-  OpKernel* GetKernel(LotusIR::NODEINDEX node_id) const;
+  const OpKernel* GetKernel(LotusIR::NODEINDEX node_id) const;
   void AddKernel(LotusIR::NODEINDEX node_id, std::unique_ptr<OpKernel> p_kernel);
   const std::vector<unique_ptr<OpKernel>>& GetKernelVector() const;
 

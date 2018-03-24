@@ -22,11 +22,13 @@ namespace Test {
 class TestOpKernel : public OpKernel {
  public:
   TestOpKernel(const OpKernelInfo& p) : OpKernel(p) {}
-  void compute(OpKernelContext* context) {
+  Status compute(OpKernelContext* context) const{
     UNUSED_PARAMETER(context);
+    return Status::OK();
   }
-  void compute_async(OpKernelContext* context, DoneCallback done) {
+  Status compute_async(OpKernelContext* context, DoneCallback done) const {
     UNUSED_PARAMETER(context);
+    return Status::OK();
   }
 };
 
@@ -56,7 +58,7 @@ TEST(SessionStateTest, AddGetKernelTest) {
 
   s.SetGraph(graph);
   s.AddKernel(p_node->Index(), std::move(p_kernel));
-  OpKernel* test_kernel = s.GetKernel(p_node->Index());
+  auto test_kernel = s.GetKernel(p_node->Index());
   std::cout << "orig: " << orig_num_outputs << " new: " << test_kernel->node().OutputDefs().size() << std::endl;
   EXPECT_EQ(orig_num_outputs, test_kernel->node().OutputDefs().size());
 }

@@ -2,7 +2,7 @@
 
 namespace Lotus {
 template <>
-void Concat<float>::compute(OpKernelContext* ctx) {
+Status Concat<float>::compute(OpKernelContext* ctx) const {
   auto inputCount = node().InputArgCount().front();
   LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
 
@@ -63,6 +63,7 @@ void Concat<float>::compute(OpKernelContext* ctx) {
     }
     outputBase += inputAxisPitch;
   }
+  return Status::OK();
 }
 
 }  // namespace Lotus

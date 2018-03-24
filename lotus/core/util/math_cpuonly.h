@@ -78,10 +78,11 @@ class CPUMathUtil {
                                                                  \
     class_name(const OpKernelInfo& info) : OpKernel(info) {}     \
                                                                  \
-    void compute(OpKernelContext* context) override {            \
+    Status compute(OpKernelContext* context) const override {    \
       const Tensor* X = context->template input<Tensor>(0);      \
       Tensor* Y = context->output(0, X->shape());                \
       func;                                                      \
+      return Status::OK();                                       \
     }                                                            \
   };
 

@@ -71,7 +71,7 @@ class Conv : public ConvBase {
   Conv(const OpKernelInfo& info) : ConvBase(info) {
   }
 
-  void compute(OpKernelContext* context) override {
+  Status compute(OpKernelContext* context) const override {
     size_t num_inputs = OpKernel::node().InputDefs().size();
     bool Is2DKernel = kernel_shape_.size() == 2;
     const Tensor* X = context->input<Tensor>(0);
@@ -193,10 +193,12 @@ class Conv : public ConvBase {
       Xdata += X_offset * group_;
       Ydata += Y_offset * group_;
     }
+
+    return Status::OK();
   }
 
  private:
-  void InferOutputShape(const TensorShape input_shape, vector<int64_t>* pads, vector<int64_t>* output_shape) {
+  void InferOutputShape(const TensorShape input_shape, vector<int64_t>* pads, vector<int64_t>* output_shape) const {
     for (int dim = 0; dim < input_shape.NumDimensions(); ++dim) {
       int64_t dim_size = 0;
       ComputeSizeAndPad(input_shape[dim],

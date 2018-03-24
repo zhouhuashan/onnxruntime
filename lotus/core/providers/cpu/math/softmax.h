@@ -21,7 +21,7 @@ class Softmax final : public OpKernel {
     LOTUS_ENFORCE(axis_ >= 0, "Invalid axis provided.");
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 
  private:
   int axis_;

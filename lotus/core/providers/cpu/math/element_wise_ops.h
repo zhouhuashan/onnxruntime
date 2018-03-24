@@ -13,7 +13,7 @@ class Add final : public OpKernel {
   Add(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -22,7 +22,7 @@ class Sub final : public OpKernel {
   Sub(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -31,7 +31,7 @@ class Mul final : public OpKernel {
   Mul(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -40,7 +40,7 @@ class Reciprocal final : public OpKernel {
   Reciprocal(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -49,7 +49,7 @@ class Sum final : public OpKernel {
   Sum(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  void compute(OpKernelContext* context) override;
+  Status compute(OpKernelContext* context) const override;
 };
 
 }  // namespace Lotus

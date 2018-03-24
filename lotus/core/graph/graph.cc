@@ -1217,6 +1217,10 @@ bool Graph::GetInitializedTensor(const std::string& p_tensorName,
   return true;
 }
 
+void Graph::CleanAllInitializedTensors() {
+    m_nameToInitialTensor.clear();
+}
+
 const InitializedTensorSet& Graph::GetAllInitializedTensors() const {
   return m_nameToInitialTensor;
 }
@@ -1233,7 +1237,15 @@ const std::vector<const NodeArg*>& Graph::GetValueInfo() const {
   return m_valueInfo;
 }
 
-Node* GraphBase::GetNode(NODEINDEX p_nodeIndex) const {
+Node* GraphBase::GetNode(NODEINDEX p_nodeIndex) {
+  if (MaxNodeIndex() <= p_nodeIndex) {
+    return nullptr;
+  }
+
+  return m_nodes[p_nodeIndex].get();
+}
+
+const Node* GraphBase::GetNode(NODEINDEX p_nodeIndex) const {
   if (MaxNodeIndex() <= p_nodeIndex) {
     return nullptr;
   }
