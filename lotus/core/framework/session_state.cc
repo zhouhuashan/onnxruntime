@@ -96,6 +96,7 @@ int SessionState::GetMaxMLValueIdx() const {
 }
 
 void SessionState::AddInitializedTensor(int mlvalue_index, const MLValue& mlvalue) {
+  LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index <= GetMaxMLValueIdx());
   initialized_tensors_.insert({mlvalue_index, mlvalue});
 }
 

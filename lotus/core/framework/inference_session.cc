@@ -142,7 +142,7 @@ class InferenceSession::Impl {
         LOTUS_NOT_IMPLEMENTED;
       }
 
-      p_exec->Execute(run_options, feeds, output_names, p_fetches);
+      retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     }
@@ -172,11 +172,10 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
 
       const TensorProto& tensor_proto = entry.second;
-      Tensor* p_tensor = nullptr;
+      std::unique_ptr<Tensor> p_tensor = nullptr;
       LOTUS_RETURN_IF_ERROR(GetTensorFromTensorProto(tensor_proto, &p_tensor));
-
       MLValue mlvalue;
-      mlvalue.Init(p_tensor,
+      mlvalue.Init(p_tensor.release(),
                    DataTypeImpl::GetType<Tensor>(),
                    DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
@@ -187,7 +186,7 @@ class InferenceSession::Impl {
 
   // TODO consider making this function static and outside this class
   // if it has nothing to do with the class members
-  Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, Tensor** p_tensor) {
+  Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor) {
     vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
     if (tensor_shape_vec.empty()) {
       std::ostringstream ostr;
@@ -202,7 +201,10 @@ class InferenceSession::Impl {
         LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<float>(tensor_proto, tensor_shape, tensor_size, p_tensor));
         break;
       }
-      case onnx::TensorProto_DataType::TensorProto_DataType_BOOL:  // bool is stored in int32_t
+      case onnx::TensorProto_DataType::TensorProto_DataType_BOOL: {
+        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, tensor_size, p_tensor));
+        break;
+      }
       case onnx::TensorProto_DataType::TensorProto_DataType_INT32: {
         LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<int32_t>(tensor_proto, tensor_shape, tensor_size, p_tensor));
         break;
@@ -231,7 +233,7 @@ class InferenceSession::Impl {
   Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
                                                 const TensorShape& tensor_shape,
                                                 size_t tensor_size,
-                                                Tensor** p_tensor) {
+                                                std::unique_ptr<Tensor>* p_tensor) {
     // TODO how should the buffer for this tensor be allocated? for now assuming CPU allocator
     auto& alloc = AllocatorManager::Instance()->GetArena(CPU);
     size_t size_to_allocate = sizeof(T) * tensor_shape.Size();
@@ -239,7 +241,7 @@ class InferenceSession::Impl {
     // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
     Common::Status retval = Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size);
     BufferUniquePtr buffer_ptr = BufferUniquePtr(static_cast<void*>(p_data), BufferDeleter(&alloc));
-    *p_tensor = new Tensor(DataTypeImpl::GetTensorType<T>(), tensor_shape, std::move(buffer_ptr), alloc.Info());
+    p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(), tensor_shape, std::move(buffer_ptr), alloc.Info()));
     return Common::Status::OK();
   }
 
@@ -248,8 +250,8 @@ class InferenceSession::Impl {
   std::vector<int64_t> GetTensorShapeFromTensorProto(const TensorProto& tensor_proto) {
     auto dims = tensor_proto.dims();
     std::vector<int64_t> tensor_shape_vec(dims.size());
-    for (auto& elem : dims) {
-      tensor_shape_vec.push_back(elem);
+    for (int i = 0; i < dims.size(); ++i) {
+      tensor_shape_vec[i] = dims[i];
     }
     return tensor_shape_vec;
   }

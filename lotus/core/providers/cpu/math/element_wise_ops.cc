@@ -49,7 +49,6 @@ void Mul<float>::compute(OpKernelContext* ctx) {
   auto& B = *ctx->input<Tensor>(1);
   LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
   auto& C = *ctx->output(0, A.shape());
-
   EigenMap<float>(C) = EigenMap<float>(A).cwiseProduct(EigenMap<float>(B));
 }
 

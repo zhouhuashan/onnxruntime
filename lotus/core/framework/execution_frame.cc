@@ -32,11 +32,11 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
 
   IAllocator* alloc = GetArena(location);
   void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
-  Tensor* tensor = new Tensor(element_type,
-                              shape,
-                              std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-                              location);
-  p_mlvalue->Init(tensor,
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
+                                                              shape,
+                                                              std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
+                                                              location);
+  p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
   return Status::OK();
@@ -76,11 +76,11 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlva
   if (p_mlvalue->IsAllocated()) {
     return Common::Status::OK();
   }
-  Tensor* tensor = new Tensor(element_type,
-                              shape,
-                              pBuffer,
-                              location);
-  p_mlvalue->Init(tensor,
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
+                                                              shape,
+                                                              pBuffer,
+                                                              location);
+  p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 

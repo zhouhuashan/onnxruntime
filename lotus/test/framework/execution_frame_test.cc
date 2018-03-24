@@ -82,13 +82,13 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   TensorShape shape({3, 2});
   void* buffer = cpu_allocator.Alloc(element_type->Size() * shape.Size());
   //create fake ml value with owned buffer.
-  Tensor* t = new Tensor(
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(
       element_type,
       shape,
       std::move(BufferUniquePtr(buffer, BufferDeleter(&cpu_allocator))),
       cpu_allocator.Info());
   MLValue value;
-  value.Init(t,
+  value.Init(p_tensor.release(),
              DataTypeImpl::GetType<Tensor>(),
              DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
