@@ -8,7 +8,7 @@
 namespace Lotus {
 
 class BroadcastAxisKernel : public OpKernel {
- public:
+ protected:
   BroadcastAxisKernel(const OpKernelInfo& info) : OpKernel(info) {
     int64_t broadcast;
     broadcast_ = info.GetAttr("broadcast", &broadcast).IsOK() && broadcast == 1;
@@ -16,7 +16,6 @@ class BroadcastAxisKernel : public OpKernel {
     LOTUS_ENFORCE(axis_ == -1 || axis_ != -1 && broadcast_, "If 'axis' attribute is specified, then 'broadcast' attribute should be set to one.");
   }
 
- protected:
   bool broadcast_;
   int64_t axis_{-1};  // -1 means 'no axis specified'
 };
