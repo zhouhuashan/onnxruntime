@@ -58,9 +58,13 @@ size_t TensorShape::SizeFromDimension(size_t dimension) const {
   return size;
 }
 
-TensorShape TensorShape::Slice(int dimstart, int dimend) const {
+TensorShape TensorShape::Slice(size_t dimstart, size_t dimend) const {
   LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= m_dims.size(), "Invalid tensor shape slice argument.");
   return TensorShape(std::vector<int64_t>(m_dims.begin() + dimstart, m_dims.begin() + dimend));
+}
+
+TensorShape TensorShape::Slice(size_t dimstart) const {
+  return Slice(dimstart, m_dims.size());
 }
 
 Tensor::Tensor() : alloc_info_(AllocatorManager::Instance()->GetArena(CPU).Info()),

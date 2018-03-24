@@ -61,6 +61,26 @@ add_whole_archive_flag(onnx onnx_whole_archive)
 # tests from lowest level library up.
 # the order of libraries should be maintained, with higher libraries being added first in the list
 
+set(lotus_test_common_libs
+    ${lotus_common_whole_archive}
+    ${protobuf_STATIC_LIBRARIES}
+    ${googletest_STATIC_LIBRARIES}
+)
+
+file(GLOB lotus_test_common_src
+    "${LOTUS_ROOT}/test/common/*.cc"
+    "${LOTUS_ROOT}/test/common/*.h"
+    "${LOTUS_ROOT}/test/common/logging/*.cc"
+    "${LOTUS_ROOT}/test/common/logging/*.h"
+)
+
+AddTest(
+    TARGET lotus_test_common
+    SOURCES ${lotus_test_common_src}
+    LIBS ${lotus_test_common_libs}
+  DEPENDS googletest 
+)
+
 set(lotus_test_ir_libs
     ${lotusIR_graph_whole_archive}
     ${onnx_whole_archive}

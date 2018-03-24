@@ -73,6 +73,8 @@ struct SequentialExecutionPlan {
     //    free ml-value corresponding to ml-value-index to_be_freed[i]
     int free_from_index;
     int free_to_index;
+
+    NodeExecutionPlan(LotusIR::NODEINDEX index) : node_index(index), free_from_index(1), free_to_index(0) {}
   };
 
   // Execution_plan: represents the nodes in the sequential order to be executed
@@ -84,8 +86,8 @@ struct SequentialExecutionPlan {
 
 class SequentialPlanner {
  public:
-  Status CreatePlan(const SessionState& session_state,
-                    SequentialExecutionPlan* plan);
+  static Status CreatePlan(const SessionState& session_state,
+                           SequentialExecutionPlan* plan);
 };
 
 /*

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WindowsPerformanceRecorder Version="1.0" Author="Microsoft Corporation" Copyright="Microsoft Corporation" Company="Microsoft Corporation">
+  <Profiles>
+    <EventCollector Id="EventCollector_SimpleTraceLoggingProvider" Name="LotusTraceLoggingProvider">
+      <BufferSize Value="64" />
+      <Buffers Value="4" />
+    </EventCollector>
+    <EventProvider Id="EventProvider_SimpleTraceLoggingProvider" Name="929DD115-1ECB-4CB5-B060-EBD4983C421D" />
+    
+    <Profile Id="LotusTraceLoggingProvider.Verbose.File" Name="LotusTraceLoggingProvider" Description="LotusTraceLoggingProvider" LoggingMode="File" DetailLevel="Verbose">
+      <Collectors>
+        <EventCollectorId Value="EventCollector_SimpleTraceLoggingProvider">
+          <EventProviders>
+            <EventProviderId Value="EventProvider_SimpleTraceLoggingProvider" />
+          </EventProviders>
+        </EventCollectorId>
+      </Collectors>
+    </Profile>
+
+    <Profile Id="LotusTraceLoggingProvider.Light.File" Name="LotusTraceLoggingProvider" Description="LotusTraceLoggingProvider" Base="LotusTraceLoggingProvider.Verbose.File" LoggingMode="File" DetailLevel="Light" />
+    <Profile Id="LotusTraceLoggingProvider.Verbose.Memory" Name="LotusTraceLoggingProvider" Description="LotusTraceLoggingProvider" Base="LotusTraceLoggingProvider.Verbose.File" LoggingMode="Memory" DetailLevel="Verbose" />
+    <Profile Id="LotusTraceLoggingProvider.Light.Memory" Name="LotusTraceLoggingProvider" Description="LotusTraceLoggingProvider" Base="LotusTraceLoggingProvider.Verbose.File" LoggingMode="Memory" DetailLevel="Light" />
+
+  </Profiles>
+</WindowsPerformanceRecorder>

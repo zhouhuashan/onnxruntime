@@ -63,7 +63,7 @@ class NodeArg {
   const std::string& Name() const;
 
   // Get node arg type.
-  const PTYPE& Type() const;
+  PTYPE Type() const;
 
   void SetType(PTYPE p_type);
   void SetType(const TypeProto& p_typeProto);

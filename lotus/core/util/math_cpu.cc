@@ -84,9 +84,9 @@ template <>
 void Gemm<float, CPUMathUtil>(
     const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB,
-    const int M,
-    const int N,
-    const int K,
+    const int64_t M,
+    const int64_t N,
+    const int64_t K,
     const float alpha,
     const float* A,
     const float* B,
@@ -827,29 +827,29 @@ void Select<float, CPUMathUtil>(
 template <>
 void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
     const float* data_img,
-    const int* im_shape,
-    const int* col_shape,
-    const int /* img_size*/,
-    const int /* col_size*/,
-    const int* kernel_shape,
-    const int* stride,
-    const int* dilation,
-    const int* pad,
-    const int N,
+    const int64_t* im_shape,
+    const int64_t* col_shape,
+    const int64_t /* img_size*/,
+    const int64_t /* col_size*/,
+    const int64_t* kernel_shape,
+    const int64_t* stride,
+    const int64_t* dilation,
+    const int64_t* pad,
+    const int64_t N,
     float* data_col,
     CPUMathUtil* /* context */,
     bool accumulate_output) {
-  int kernel_size = 1;
-  for (int i = 0; i < N; ++i) {
+  int64_t kernel_size = 1;
+  for (int64_t i = 0; i < N; ++i) {
     kernel_size *= kernel_shape[i];
   }
-  const int channels_col = col_shape[0];
-  vector<int> d_offset(N, 0);
-  vector<int> d_iter(N, 0);
-  for (int c_col = 0; c_col < channels_col; ++c_col) {
+  const int64_t channels_col = col_shape[0];
+  vector<int64_t> d_offset(N, 0);
+  vector<int64_t> d_iter(N, 0);
+  for (int64_t c_col = 0; c_col < channels_col; ++c_col) {
     // Loop over spatial axes in reverse order to compute a per-axis offset.
-    int offset = c_col;
-    for (int d_i = N - 1; d_i >= 0; --d_i) {
+    int64_t offset = c_col;
+    for (int64_t d_i = N - 1; d_i >= 0; --d_i) {
       if (d_i < N - 1) {
         offset /= kernel_shape[d_i + 1];
       }
@@ -858,12 +858,12 @@ void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
     for (bool incremented = true; incremented;) {
       // Loop over spatial axes in forward order to compute the indices in the
       // image and column, and whether the index lies in the padding.
-      int index_col = c_col;
-      int index_im = c_col / kernel_size;
+      int64_t index_col = c_col;
+      int64_t index_im = c_col / kernel_size;
       bool is_padding = false;
-      for (int d_i = 0; d_i < N; ++d_i) {
-        const int d = d_iter[d_i];
-        const int d_im =
+      for (int64_t d_i = 0; d_i < N; ++d_i) {
+        const int64_t d = d_iter[d_i];
+        const int64_t d_im =
             d * stride[d_i] - pad[d_i] + d_offset[d_i] * dilation[d_i];
         is_padding |= d_im < 0 || d_im >= im_shape[d_i + 1];
         index_col *= col_shape[d_i + 1];
@@ -883,8 +883,8 @@ void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
       // Loop over spatial axes in reverse order to choose an index,
       // like counting.
       incremented = false;
-      for (int d_i = N - 1; d_i >= 0; --d_i) {
-        const int d_max = col_shape[d_i + 1];
+      for (int64_t d_i = N - 1; d_i >= 0; --d_i) {
+        const int64_t d_max = col_shape[d_i + 1];
         DCHECK_LT(d_iter[d_i], d_max);
         if (d_iter[d_i] == d_max - 1) {
           d_iter[d_i] = 0;
@@ -901,15 +901,15 @@ void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
 template <>
 void Col2imNd<float, CPUMathUtil, StorageOrder::NCHW>(
     const float* data_col,
-    const int* img_shape,
-    const int* col_shape,
-    const int img_size,
-    const int col_size,
-    const int* kernel_shape,
-    const int* stride,
-    const int* dilation,
-    const int* pad,
-    const int N,
+    const int64_t* img_shape,
+    const int64_t* col_shape,
+    const int64_t img_size,
+    const int64_t col_size,
+    const int64_t* kernel_shape,
+    const int64_t* stride,
+    const int64_t* dilation,
+    const int64_t* pad,
+    const int64_t N,
     float* data_img,
     CPUMathUtil* context) {
   Set<float, CPUMathUtil>(img_size, 0, data_img, context);
@@ -932,25 +932,25 @@ void Col2imNd<float, CPUMathUtil, StorageOrder::NCHW>(
 template <>
 void Im2col<float, CPUMathUtil, StorageOrder::NCHW>(
     const float* data_im,
-    const int channels,
-    const int height,
-    const int width,
-    const int kernel_h,
-    const int kernel_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int pad_t,
-    const int pad_l,
-    const int pad_b,
-    const int pad_r,
-    const int stride_h,
-    const int stride_w,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t kernel_h,
+    const int64_t kernel_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t pad_t,
+    const int64_t pad_l,
+    const int64_t pad_b,
+    const int64_t pad_r,
+    const int64_t stride_h,
+    const int64_t stride_w,
     float* data_col,
     CPUMathUtil* /*context*/) {
-  const int output_h =
+  const int64_t output_h =
       (height + pad_b + pad_t - (dilation_h * (kernel_h - 1) + 1)) / stride_h +
       1;
-  const int output_w =
+  const int64_t output_w =
       (width + pad_l + pad_r - (dilation_w * (kernel_w - 1) + 1)) / stride_w +
       1;
 
@@ -990,21 +990,21 @@ void Im2col<float, CPUMathUtil, StorageOrder::NCHW>(
   // Fast path for equal padding
   if (pad_l == pad_r && pad_t == pad_b) {
     // From Intel, https://github.com/BVLC/caffe/pull/3536
-    const int pad_h = pad_t;
-    const int pad_w = pad_l;
-    const int channel_size = height * width;
-    for (int channel = channels; channel--; data_im += channel_size) {
-      for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
-        for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
-          int input_row = -pad_h + kernel_row * dilation_h;
-          for (int output_rows = output_h; output_rows; output_rows--) {
+    const int64_t pad_h = pad_t;
+    const int64_t pad_w = pad_l;
+    const int64_t channel_size = height * width;
+    for (int64_t channel = channels; channel--; data_im += channel_size) {
+      for (int64_t kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
+        for (int64_t kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
+          int64_t input_row = -pad_h + kernel_row * dilation_h;
+          for (int64_t output_rows = output_h; output_rows; output_rows--) {
             if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
-              for (int output_cols = output_w; output_cols; output_cols--) {
+              for (int64_t output_cols = output_w; output_cols; output_cols--) {
                 *(data_col++) = 0;
               }
             } else {
-              int input_col = -pad_w + kernel_col * dilation_w;
-              for (int output_col = output_w; output_col; output_col--) {
+              int64_t input_col = -pad_w + kernel_col * dilation_w;
+              for (int64_t output_col = output_w; output_col; output_col--) {
                 if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
                   *(data_col++) = data_im[input_row * width + input_col];
                 } else {
@@ -1022,21 +1022,21 @@ void Im2col<float, CPUMathUtil, StorageOrder::NCHW>(
   }
 
   // Baseline
-  const int dkernel_h = dilation_h * (kernel_h - 1) + 1;
-  const int dkernel_w = dilation_w * (kernel_w - 1) + 1;
+  const int64_t dkernel_h = dilation_h * (kernel_h - 1) + 1;
+  const int64_t dkernel_w = dilation_w * (kernel_w - 1) + 1;
 
-  int height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
-  int width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
+  int64_t height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
+  int64_t width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
 
-  int channels_col = channels * kernel_h * kernel_w;
-  for (int c = 0; c < channels_col; ++c) {
-    int w_offset = c % kernel_w;
-    int h_offset = (c / kernel_w) % kernel_h;
-    int c_im = c / kernel_h / kernel_w;
-    for (int h = 0; h < height_col; ++h) {
-      for (int w = 0; w < width_col; ++w) {
-        int h_pad = h * stride_h - pad_t + h_offset * dilation_h;
-        int w_pad = w * stride_w - pad_l + w_offset * dilation_w;
+  int64_t channels_col = channels * kernel_h * kernel_w;
+  for (int64_t c = 0; c < channels_col; ++c) {
+    int64_t w_offset = c % kernel_w;
+    int64_t h_offset = (c / kernel_w) % kernel_h;
+    int64_t c_im = c / kernel_h / kernel_w;
+    for (int64_t h = 0; h < height_col; ++h) {
+      for (int64_t w = 0; w < width_col; ++w) {
+        int64_t h_pad = h * stride_h - pad_t + h_offset * dilation_h;
+        int64_t w_pad = w * stride_w - pad_l + w_offset * dilation_w;
         if (h_pad >= 0 && h_pad < height && w_pad >= 0 && w_pad < width)
           data_col[(c * height_col + h) * width_col + w] =
               data_im[(c_im * height + h_pad) * width + w_pad];
@@ -1050,33 +1050,33 @@ void Im2col<float, CPUMathUtil, StorageOrder::NCHW>(
 template <>
 void Im2col<float, CPUMathUtil, StorageOrder::NHWC>(
     const float* data_im,
-    const int channels,
-    const int height,
-    const int width,
-    const int kernel_h,
-    const int kernel_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int pad_t,
-    const int pad_l,
-    const int pad_b,
-    const int pad_r,
-    const int stride_h,
-    const int stride_w,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t kernel_h,
+    const int64_t kernel_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t pad_t,
+    const int64_t pad_l,
+    const int64_t pad_b,
+    const int64_t pad_r,
+    const int64_t stride_h,
+    const int64_t stride_w,
     float* data_col,
     CPUMathUtil* /*context*/) {
-  const int dkernel_h = dilation_h * (kernel_h - 1) + 1;
-  const int dkernel_w = dilation_w * (kernel_w - 1) + 1;
+  const int64_t dkernel_h = dilation_h * (kernel_h - 1) + 1;
+  const int64_t dkernel_w = dilation_w * (kernel_w - 1) + 1;
 
-  int height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
-  int width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
+  int64_t height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
+  int64_t width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
 
-  int h_pad = -pad_t;
-  for (int h = 0; h < height_col; ++h) {
-    int w_pad = -pad_l;
-    for (int w = 0; w < width_col; ++w) {
-      for (int ih = h_pad; ih < h_pad + dkernel_h; ih += dilation_h) {
-        for (int iw = w_pad; iw < w_pad + dkernel_w; iw += dilation_w) {
+  int64_t h_pad = -pad_t;
+  for (int64_t h = 0; h < height_col; ++h) {
+    int64_t w_pad = -pad_l;
+    for (int64_t w = 0; w < width_col; ++w) {
+      for (int64_t ih = h_pad; ih < h_pad + dkernel_h; ih += dilation_h) {
+        for (int64_t iw = w_pad; iw < w_pad + dkernel_w; iw += dilation_w) {
           if (ih >= 0 && ih < height && iw >= 0 && iw < width) {
             memcpy(data_col, data_im + (ih * width + iw) * channels,
                    sizeof(float) * channels);
@@ -1096,25 +1096,25 @@ void Im2col<float, CPUMathUtil, StorageOrder::NHWC>(
 template <>
 void Col2im<float, CPUMathUtil, StorageOrder::NCHW>(
     const float* data_col,
-    const int channels,
-    const int height,
-    const int width,
-    const int kernel_h,
-    const int kernel_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int pad_t,
-    const int pad_l,
-    const int pad_b,
-    const int pad_r,
-    const int stride_h,
-    const int stride_w,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t kernel_h,
+    const int64_t kernel_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t pad_t,
+    const int64_t pad_l,
+    const int64_t pad_b,
+    const int64_t pad_r,
+    const int64_t stride_h,
+    const int64_t stride_w,
     float* data_im,
     CPUMathUtil* context) {
-  const int output_h =
+  const int64_t output_h =
       (height + pad_b + pad_t - (dilation_h * (kernel_h - 1) + 1)) / stride_h +
       1;
-  const int output_w =
+  const int64_t output_w =
       (width + pad_l + pad_r - (dilation_w * (kernel_w - 1) + 1)) / stride_w +
       1;
 
@@ -1157,19 +1157,19 @@ void Col2im<float, CPUMathUtil, StorageOrder::NCHW>(
   // Fast path for equal padding
   if (pad_l == pad_r && pad_t == pad_b) {
     // From Intel, https://github.com/BVLC/caffe/pull/3536
-    const int pad_h = pad_t;
-    const int pad_w = pad_l;
-    const int channel_size = height * width;
-    for (int channel = channels; channel--; data_im += channel_size) {
-      for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
-        for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
-          int input_row = -pad_h + kernel_row * dilation_h;
-          for (int output_rows = output_h; output_rows; output_rows--) {
+    const int64_t pad_h = pad_t;
+    const int64_t pad_w = pad_l;
+    const int64_t channel_size = height * width;
+    for (int64_t channel = channels; channel--; data_im += channel_size) {
+      for (int64_t kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
+        for (int64_t kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
+          int64_t input_row = -pad_h + kernel_row * dilation_h;
+          for (int64_t output_rows = output_h; output_rows; output_rows--) {
             if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
               data_col += output_w;
             } else {
-              int input_col = -pad_w + kernel_col * dilation_w;
-              for (int output_col = output_w; output_col; output_col--) {
+              int64_t input_col = -pad_w + kernel_col * dilation_w;
+              for (int64_t output_col = output_w; output_col; output_col--) {
                 if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
                   data_im[input_row * width + input_col] += *data_col;
                 }
@@ -1186,20 +1186,20 @@ void Col2im<float, CPUMathUtil, StorageOrder::NCHW>(
   }
 
   // Fallback
-  const int dkernel_h = dilation_h * (kernel_h - 1) + 1;
-  const int dkernel_w = dilation_w * (kernel_w - 1) + 1;
+  const int64_t dkernel_h = dilation_h * (kernel_h - 1) + 1;
+  const int64_t dkernel_w = dilation_w * (kernel_w - 1) + 1;
 
-  int height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
-  int width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
-  int channels_col = channels * kernel_h * kernel_w;
-  for (int c = 0; c < channels_col; ++c) {
-    int w_offset = c % kernel_w;
-    int h_offset = (c / kernel_w) % kernel_h;
-    int c_im = c / kernel_h / kernel_w;
-    for (int h = 0; h < height_col; ++h) {
-      for (int w = 0; w < width_col; ++w) {
-        int h_pad = h * stride_h - pad_t + h_offset * dilation_h;
-        int w_pad = w * stride_w - pad_l + w_offset * dilation_w;
+  int64_t height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
+  int64_t width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
+  int64_t channels_col = channels * kernel_h * kernel_w;
+  for (int64_t c = 0; c < channels_col; ++c) {
+    int64_t w_offset = c % kernel_w;
+    int64_t h_offset = (c / kernel_w) % kernel_h;
+    int64_t c_im = c / kernel_h / kernel_w;
+    for (int64_t h = 0; h < height_col; ++h) {
+      for (int64_t w = 0; w < width_col; ++w) {
+        int64_t h_pad = h * stride_h - pad_t + h_offset * dilation_h;
+        int64_t w_pad = w * stride_w - pad_l + w_offset * dilation_w;
         if (h_pad >= 0 && h_pad < height && w_pad >= 0 && w_pad < width) {
           data_im[(c_im * height + h_pad) * width + w_pad] +=
               data_col[(c * height_col + h) * width_col + w];
@@ -1212,37 +1212,37 @@ void Col2im<float, CPUMathUtil, StorageOrder::NCHW>(
 template <>
 void Col2im<float, CPUMathUtil, StorageOrder::NHWC>(
     const float* data_col,
-    const int channels,
-    const int height,
-    const int width,
-    const int kernel_h,
-    const int kernel_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int pad_t,
-    const int pad_l,
-    const int pad_b,
-    const int pad_r,
-    const int stride_h,
-    const int stride_w,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t kernel_h,
+    const int64_t kernel_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t pad_t,
+    const int64_t pad_l,
+    const int64_t pad_b,
+    const int64_t pad_r,
+    const int64_t stride_h,
+    const int64_t stride_w,
     float* data_im,
     CPUMathUtil* context) {
-  const int dkernel_h = dilation_h * (kernel_h - 1) + 1;
-  const int dkernel_w = dilation_w * (kernel_w - 1) + 1;
+  const int64_t dkernel_h = dilation_h * (kernel_h - 1) + 1;
+  const int64_t dkernel_w = dilation_w * (kernel_w - 1) + 1;
 
   Set<float, CPUMathUtil>(height * width * channels, 0, data_im, context);
-  int height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
-  int width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
-  int h_pad = -pad_t;
-  for (int h = 0; h < height_col; ++h) {
-    int w_pad = -pad_l;
-    for (int w = 0; w < width_col; ++w) {
-      for (int ih = h_pad; ih < h_pad + dkernel_h; ih += dilation_h) {
-        for (int iw = w_pad; iw < w_pad + dkernel_w; iw += dilation_w) {
+  int64_t height_col = (height + pad_t + pad_b - dkernel_h) / stride_h + 1;
+  int64_t width_col = (width + pad_l + pad_r - dkernel_w) / stride_w + 1;
+  int64_t h_pad = -pad_t;
+  for (int64_t h = 0; h < height_col; ++h) {
+    int64_t w_pad = -pad_l;
+    for (int64_t w = 0; w < width_col; ++w) {
+      for (int64_t ih = h_pad; ih < h_pad + dkernel_h; ih += dilation_h) {
+        for (int64_t iw = w_pad; iw < w_pad + dkernel_w; iw += dilation_w) {
           if (ih >= 0 && ih < height && iw >= 0 && iw < width) {
             auto* data_im_patch = data_im + (ih * width + iw) * channels;
             Add<float, CPUMathUtil>(
-                channels, data_im_patch, data_col, data_im_patch, context);
+                (int)channels, data_im_patch, data_col, data_im_patch, context);
           }
           data_col += channels;
         }
