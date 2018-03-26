@@ -2,6 +2,13 @@
 
 namespace Lotus {
 
+REGISTER_KERNEL(KernelDef("Constant")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Constant<float>);
+
 template <>
 Status Constant<float>::compute(OpKernelContext* ctx) const {
   std::vector<int64_t> dims;

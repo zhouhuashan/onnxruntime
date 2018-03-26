@@ -1,6 +1,14 @@
 #include "core/providers/cpu/misc/concat.h"
 
 namespace Lotus {
+
+REGISTER_KERNEL(KernelDef("Concat")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Concat<float>);
+
 template <>
 Status Concat<float>::compute(OpKernelContext* ctx) const {
   auto inputCount = node().InputArgCount().front();
