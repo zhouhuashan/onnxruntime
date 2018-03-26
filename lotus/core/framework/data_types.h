@@ -3,6 +3,7 @@
 
 #include <string>
 #include "core/common/common.h"
+#include "core/common/exceptions.h"
 #include "core/protobuf/onnx-ml.pb.h"
 
 using namespace onnx;
@@ -49,6 +50,8 @@ class DataTypeImpl {
   // Return the types for a concrete tensor type, like Tensor_Float
   template <typename T>
   static MLDataType GetTensorType();
+
+  static MLDataType TypeFromProto(const onnx::TypeProto& proto);
 };
 
 class TensorTypeBase : public DataTypeImpl {
@@ -66,6 +69,11 @@ class TensorTypeBase : public DataTypeImpl {
 
   virtual DeleteFunc GetDeleteFunc() const;
 
+  virtual MLDataType GetElementType() const {
+    // should never reach here.
+    LOTUS_NOT_IMPLEMENTED;
+  }
+
  protected:
   TensorTypeBase() = default;
 };
@@ -75,6 +83,10 @@ struct TensorType : public TensorTypeBase {
   static MLDataType Type() {
     static TensorType tensor_type;
     return &tensor_type;
+  }
+
+  virtual MLDataType GetElementType() const {
+    return DataTypeImpl::GetType<elemT>();
   }
 
  private:

@@ -1,7 +1,20 @@
-#include "allocation_planner.h"
 #include "core/framework/session_state.h"
+#include "core/framework/allocation_planner.h"
+#include "core/graph/utils.h"
 
 namespace Lotus {
+
+Status FillType(const LotusIR::NodeArg& arg, const SessionState& session_state, SequentialExecutionPlan* plan) {
+  int index;
+  LOTUS_RETURN_IF_ERROR(session_state.GetMLValueIdx(arg.Name(), &index));
+  auto type = DataTypeImpl::TypeFromProto(
+      LotusIR::Utils::OpUtils::ToTypeProto(arg.Type()));
+  if (plan->allocation_plan[index].value_type != nullptr &&
+      plan->allocation_plan[index].value_type != type)
+    return Status(LOTUS, FAIL, "Found MLValue has type conflict.");
+  plan->allocation_plan[index].value_type = type;
+  return Status::OK();
+}
 
 Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
                                            SequentialExecutionPlan* plan) {
@@ -12,9 +25,25 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
   plan->allocation_plan.resize(num_mlvalues);
   for (int i = 0; i < num_mlvalues; i++) {
     plan->allocation_plan[i].alloc_kind = AllocKind::kAllocate;
+    // TODO: resolve the correct location of the values.
+    plan->allocation_plan[i].location = AllocatorManager::Instance()->GetArena(CPU).Info();
   }
 
-  auto graph = session_state.GetGraph();
+  auto graph = const_cast<LotusIR::Graph*>(session_state.GetGraph());
+  // iterate all the values in the graph to assign the correct type.
+  for (auto it = graph->NodesBegin(); it != graph->NodesEnd(); ++it) {
+    if (graph->IsSinkNode((*it)->Index()) || graph->IsSourceNode((*it)->Index()))
+      continue;
+    auto& inputs = (*it)->InputDefs();
+    for (auto arg : inputs) {
+      FillType(*arg, session_state, plan);
+    }
+    auto& outputs = (*it)->OutputDefs();
+    for (auto arg : outputs) {
+      FillType(*arg, session_state, plan);
+    }
+  }
+
   auto& weights = graph->GetAllInitializedTensors();
   int index = 0;
   for (auto it = weights.begin(); it != weights.end(); it++) {

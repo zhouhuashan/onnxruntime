@@ -52,9 +52,17 @@ struct SequentialExecutionPlan {
   // Captures information required to allocate/reuse buffer for a ml-value
   struct AllocPlanPerValue {
     AllocKind alloc_kind;
+    MLDataType value_type;
+    AllocatorInfo location;
     // reused_buffer is valid only if alloc_kind == kReuse. It indicates
     // which MLValue's buffer must be reused for this MLValue.
     MLValueIndex reused_buffer;
+  public:
+    AllocPlanPerValue() : alloc_kind(AllocKind::kAllocate),
+                          value_type(nullptr),
+                          location(CPU, ArenaAllocator),
+                          reused_buffer(0)
+    {}
   };
 
   // The following vector is indexed by MLValueIndex

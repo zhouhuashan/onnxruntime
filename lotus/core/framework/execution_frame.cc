@@ -139,8 +139,11 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
 
   // TODO: both alloc_info and ml_data_type will be supplied by the allocation
   // plan later. This is a hack for now.
-  auto alloc_info = AllocatorManager::Instance()->GetArena(CPU).Info();
-  auto ml_data_type = DataTypeImpl::GetType<float>();
+  auto alloc_info = per_alloc_plan.location;
+  auto ml_type = per_alloc_plan.value_type;
+  if (!ml_type->IsTensorType())
+    return Status(LOTUS, FAIL, "Create non-tensor type is not implemented");
+  auto ml_data_type = static_cast<const TensorTypeBase*>(ml_type)->GetElementType();
 
   AllocKind alloc_kind = per_alloc_plan.alloc_kind;
   switch (alloc_kind) {
