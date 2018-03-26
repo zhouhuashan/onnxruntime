@@ -82,8 +82,6 @@ class OpKernel {
 
  protected:
   OpKernelInfo op_kernel_info_;
-
-  const KernelDef* kernel_def_;
 };
 
 class OpKernelContext {
@@ -141,41 +139,7 @@ class KernelRegistry {
                       const ProviderType& provider_type,
                       const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
-                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {  // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
-    // TODO: error check for op_name/op_domain/provider/since_version.
-    // TODO: find the real appropriate kernel create info for specific version.
-    UNUSED_PARAMETER(op_schema);
-    UNUSED_PARAMETER(provider_type);
-    UNUSED_PARAMETER(node);
-    UNUSED_PARAMETER(allocator_info);
-    UNUSED_PARAMETER(op_kernel);
-
-    // TODO following code exists for testing only
-    // Please replace it with real code
-    auto& name = op_schema.GetName();
-    auto& domain = op_schema.Domain();
-    auto it = kernel_creator_fn_map_.find(name);
-    if (it == kernel_creator_fn_map_.end()) {
-      LOG(ERROR) << "Could not find op name: " << name;
-      return Status(LOTUS, FAIL, "Kernel not found");
-    }
-    auto it2 = it->second.find(domain);
-    if (it2 == it->second.end()) {
-      LOG(ERROR) << "Could not find op domain: " << domain;
-      return Status(LOTUS, FAIL, "Kernel not found");
-    }
-    auto it3 = it2->second.find(provider_type);
-    if (it3 == it2->second.end() || it3->second.empty()) {
-      LOG(ERROR) << "Could not find provider_type: " << provider_type;
-      return Status(LOTUS, FAIL, "Kernel not found");
-    }
-    // pick the first one
-    auto fn = it3->second.front().kernel_create_fn;
-    OpKernelInfo info(node, allocator_info, it3->second.front().kernel_def);
-    op_kernel->reset(fn(info));
-
-    return Status::OK();
-  }
+                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const;  // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
 
   static KernelRegistry* Instance() {
     static KernelRegistry kernel_registry;
@@ -194,6 +158,7 @@ class KernelRegistry {
       kernel_create_fn = kernel_create_fn_;
     }
   };
+  static bool VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def);
 
   // Kernel create function map. Its structure is,
   // <op_name, <op_domain, <provider_type, kernel_create_functions>>>.
