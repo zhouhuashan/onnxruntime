@@ -42,6 +42,9 @@ class TensorShape {
     return m_dims.size();
   }
 
+  /**
+  Copy dims into an array with given size
+  */
   void CopyDims(int64_t* dims, size_t num_dims) const {
     memcpy(dims, &m_dims[0], sizeof(int64_t) * std::min(num_dims, NumDimensions()));
   }
