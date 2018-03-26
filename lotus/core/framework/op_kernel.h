@@ -158,6 +158,8 @@ class KernelRegistry {
       kernel_create_fn = kernel_create_fn_;
     }
   };
+  //Check if the node's input/output/attributes are compatible with this kernel_def,
+  //If so, we'll use this kernel_def to create a kernel for executing this node
   static bool VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def);
 
   // Kernel create function map. Its structure is,
