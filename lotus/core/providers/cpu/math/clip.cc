@@ -13,9 +13,9 @@ Status Clip<float>::compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 REGISTER_KERNEL(KernelDef("Clip")
-                    .Domain(LotusIR::c_onnxDomain)
+                    .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
-                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Clip<float>);
 }  // namespace Lotus

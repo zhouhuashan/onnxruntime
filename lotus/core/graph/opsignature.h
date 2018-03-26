@@ -1,5 +1,4 @@
-#ifndef CORE_GRAPH_OPSCHEMA_H
-#define CORE_GRAPH_OPSCHEMA_H
+#pragma once
 
 #include <functional>
 #include <unordered_map>
@@ -13,7 +12,7 @@ namespace LotusIR {
 typedef AttributeProto_AttributeType AttrType;
 
 // This string array should exactly match the AttrType defined above.
-static const std::string c_attrTypeStr[14] =
+static const std::string kAttrTypeStrings[14] =
     {
         "FLOAT",
         "INT",
@@ -35,14 +34,14 @@ typedef std::unordered_map<std::string, std::pair<DataTypeSet, std::string>> Typ
 // Once an operator signature created, it's "Read-Only".
 class OpSignature {
  public:
-  // Formal parameter represenation, including parameter name, type.
+  // Formal parameter representation, including parameter name, type.
   class FormalParameter {
    public:
     // Constructor.
-    explicit FormalParameter(const std::string& p_name,
-                             const std::string& p_type,
-                             const std::string& p_description,
-                             const TypeConstraintMap& p_constraintMap = TypeConstraintMap());
+    explicit FormalParameter(const std::string& name,
+                             const std::string& type,
+                             const std::string& description,
+                             const TypeConstraintMap& constraint_map = TypeConstraintMap());
 
     // Get formal parameter name.
     const std::string& GetName() const;
@@ -60,20 +59,20 @@ class OpSignature {
     FormalParameter() {}
 
     // Formal parameter name.
-    std::string m_name;
+    std::string name_;
 
     // A set of data types supported for <*this> formal parameter.
     // It should contain at least one element if this formal parameter
     // is good.
-    DataTypeSet m_types;
+    DataTypeSet types_;
 
-    // The <parameter type> string specified when registring an op.
+    // The <parameter type> string specified when registering an op.
     // It could be a supported data type or a type constraint key, which
     // maps to a set of supported data types.
-    std::string m_typeStr;
+    std::string type_str_;
 
     // Formal parameter description
-    std::string m_description;
+    std::string description_;
   };
 
   // Attribute representation, including name, type, and allowed values.
@@ -82,15 +81,15 @@ class OpSignature {
   class Attribute {
    public:
     // Constructor.
-    explicit Attribute(const std::string& p_attrName,
-                       AttrType p_type,
-                       const std::string& p_description);
+    explicit Attribute(const std::string& attr_name,
+                       AttrType type,
+                       const std::string& description);
 
     // Constructor with default value.
-    explicit Attribute(const std::string& p_attrName,
-                       AttrType p_type,
-                       const std::string& p_description,
-                       const AttributeProto& p_defaultVal);
+    explicit Attribute(const std::string& attr_name,
+                       AttrType type,
+                       const std::string& description,
+                       const AttributeProto& default_value);
 
     // Get attribute name.
     const std::string& GetName() const;
@@ -100,30 +99,30 @@ class OpSignature {
 
     // Get to know whether this attribute has default value,
     // if yes, <p_value> will be assigned to be the default value.
-    bool HasDefaultValue(const AttributeProto** p_value) const;
+    bool HasDefaultValue(const AttributeProto** pp_value) const;
 
    private:
     Attribute() {}
 
     // Attribute name.
-    std::string m_name;
+    std::string name_;
 
     // Attribute type.
-    AttrType m_type;
+    AttrType type_;
 
     // Attribute description.
-    std::string m_description;
+    std::string description_;
 
     // Flag indicates whether a default value specified.
-    // It it's true, the first element of <m_allowedValues> is the
+    // It it's true, the first element of <allowed_values_> is the
     // default value.
-    bool m_hasDefaultValue;
+    bool has_default_value_;
 
     // Allowed attribute values.
-    std::vector<AttributeProto> m_allowedValues;
+    std::vector<AttributeProto> allowed_values_;
   };
 
-  static bool IsValidAttribute(const AttributeProto& p_attribute);
+  static bool IsValidAttribute(const AttributeProto& attribute);
 
   // Constructor.
   OpSignature() = default;
@@ -153,24 +152,23 @@ class OpSignature {
   friend class OpSchemaRegistry;
 
   // Operator name.
-  std::string m_name;
-  int m_sinceVersion = 1;
-  std::string m_domain = "";
+  std::string name_;
+  int since_version_ = 1;
+  std::string domain_ = "";
 
   // Operator description.
-  std::string m_description;
+  std::string description_;
 
   // Operator input formal parameters.
-  std::vector<FormalParameter> m_inputs;
+  std::vector<FormalParameter> inputs_;
 
   // Operator output formal parameters.
-  std::vector<FormalParameter> m_outputs;
+  std::vector<FormalParameter> outputs_;
 
   // Operator attributes' definitions.
-  std::vector<Attribute> m_attributes;
+  std::vector<Attribute> attributes_;
 
   // Map from constraint name to DataTypeSet
-  TypeConstraintMap m_typeConstraintMap;
+  TypeConstraintMap type_constraint_map_;
 };
 }  // namespace LotusIR
-#endif

@@ -18,8 +18,7 @@
 * limitations under the License.
 */
 
-#ifndef LOTUS_CORE_COMMON_H_
-#define LOTUS_CORE_COMMON_H_
+#pragma once
 
 #include <algorithm>
 #include <functional>
@@ -32,7 +31,9 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+
 #include "core/common/status.h"
+#include "core/common/exceptions.h"
 
 namespace Lotus {
 
@@ -40,6 +41,7 @@ template <typename Key, typename Value>
 using LotusMap = std::unordered_map<Key, Value>;
 
 // Using statements for common classes that we refer to in lotus very often.
+// TODO(Task:137) Remove 'using' statements from header files
 using std::set;
 using std::string;
 using std::unique_ptr;
@@ -69,9 +71,15 @@ using Common::StatusCode;
 // Macros to disable the copy and/or move ctor and assignment methods
 // These are usually placed in the private: declarations for a class.
 
-#define LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName &) = delete;           \
+#define LOTUS_DISALLOW_COPY(TypeName) \
+  TypeName(const TypeName &) = delete
+
+#define LOTUS_DISALLOW_ASSIGN(TypeName) \
   TypeName &operator=(const TypeName &) = delete
+
+#define LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  LOTUS_DISALLOW_COPY(TypeName); \
+  LOTUS_DISALLOW_ASSIGN(TypeName)
 
 #define LOTUS_DISALLOW_MOVE(TypeName)   \
   TypeName(const TypeName &&) = delete; \
@@ -163,9 +171,8 @@ template <>
 inline string MakeString(const string& str) {
   return str;
 }
-inline string MakeString(const char* c_str) {
-  return string(c_str);
-}
+inline string MakeString(const char* p_str) {
+  return string(p_str);
+} 
 
 }  // namespace Lotus
-#endif

@@ -26,7 +26,12 @@ if (WIN32)
     target_compile_options(lotusIR_graph_obj PRIVATE
         /EHsc   # exception handling - C++ may throw, extern "C" will not
     )
+
+    # Add Code Analysis properties to enable C++ Core checks. Have to do it via a props file include. 
+    set_target_properties(lotusIR_graph_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/ConfigureVisualStudioCodeAnalysis.props)
 endif()
+
+
 
 add_library(lotusIR_graph $<TARGET_OBJECTS:lotusIR_graph_obj>)
 target_link_libraries(lotusIR_graph PUBLIC lotus_common onnx)

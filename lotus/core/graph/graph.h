@@ -1,10 +1,10 @@
-#ifndef CORE_GRAPH_GRAPH_H
-#define CORE_GRAPH_GRAPH_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
+#include "core/common/common.h"
 #include "core/common/status.h"
 #include "core/graph/constants.h"
 #include "core/graph/op.h"
@@ -24,8 +24,8 @@ class TestUtils;
 }  // namespace Lotus
 
 namespace LotusIR {
-typedef size_t NODEINDEX;
-typedef int64_t VERSION;
+typedef size_t NodeIndex;
+typedef int64_t Version;
 typedef ValueInfoProto NodeArgInfo;
 typedef std::unordered_map<std::string, TensorProto> InitializedTensorSet;
 typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
@@ -56,17 +56,17 @@ class NodeArg {
   // Constructor by specifying node arg name and type&shape which is
   // optional. This is called when loading a <Graph> from <GraphProto>
   // normally.
-  NodeArg(const std::string& p_name,
-          const TypeProto* p_argType);
+  NodeArg(const std::string& name,
+          const TypeProto* p_arg_type);
 
   // Get node arg name.
   const std::string& Name() const;
 
   // Get node arg type.
-  PTYPE Type() const;
+  const PTYPE Type() const;
 
   void SetType(PTYPE p_type);
-  void SetType(const TypeProto& p_typeProto);
+  void SetType(const TypeProto& type_proto);
 
   // Get node arg shape.
   // Return null pointer if there's no shape specified.
@@ -75,7 +75,7 @@ class NodeArg {
   // Set node arg shape.
   // Shape could only be set after setting type since shape information
   // now is part of TypeProto.
-  void SetShape(const TensorShapeProto& p_shape);
+  void SetShape(const TensorShapeProto& shape);
 
   // Get node arg info proto.
   const NodeArgInfo& ToProto() const;
@@ -83,7 +83,7 @@ class NodeArg {
   // Indicates whether <*this> node arg exists or not.
   // Optional inputs are allowed in ONNX. Empty arg name represents
   // a non-existing input argument.
-  bool Exist() const;
+  bool Exists() const;
 
  private:
   friend class Node;
@@ -92,13 +92,13 @@ class NodeArg {
   friend class lotusrt::LotusRT;
 
   // Node arg PType.
-  PTYPE m_type;
+  PTYPE type_;
 
   // Node arg name, type and shape.
-  NodeArgInfo m_nodeArgInfo;
+  NodeArgInfo node_arg_info_;
 
   // Flag indicates whether <*this> node arg exists or not.
-  bool m_exist;
+  bool exists_;
 };
 
 // A node representation class.
@@ -114,6 +114,7 @@ class Node {
     // Constructor.
     // An EdgeEnd contains a Node pointer, a NodeArg pointer.
     // NOTE: it does not own the Node pointer and NodeArg pointer.
+    // TODO: Can these values ever be null, or should they be references? Would also make the ownership explicit.
     EdgeEnd(const Node* p_node, const NodeArg* p_nodeArg);
 
     // Get the <Node*> that this edge end refers to.
@@ -123,30 +124,31 @@ class Node {
     const NodeArg* GetNodeArg() const;
 
    private:
-    const Node* m_node;
+    const Node* node_;
 
-    const NodeArg* m_nodeArg;
+    const NodeArg* node_arg_;
   };
 
   // An iterator helper class for iterating a Node's neighbour nodes.
+  // TODO(Task:134): Determine if Node::NodeConstIterator is really required.
   class NodeConstIterator {
    public:
-    NodeConstIterator(std::set<const Node*>::const_iterator p_iter);
+    NodeConstIterator(std::set<const Node*>::const_iterator iter);
 
-    bool operator==(const NodeConstIterator& p_other) const;
+    bool operator==(const NodeConstIterator& other) const;
 
-    bool operator!=(const NodeConstIterator& p_other) const;
+    bool operator!=(const NodeConstIterator& other) const;
 
     void operator++();
 
     const Node* operator*();
 
    private:
-    std::set<const Node*>::const_iterator m_iter;
+    std::set<const Node*>::const_iterator iter_;
   };
 
   // Get node index.
-  NODEINDEX Index() const;
+  NodeIndex Index() const;
 
   // Get node name.
   const std::string& Name() const;
@@ -154,7 +156,7 @@ class Node {
   // Get node operator type.
   const std::string& OpType() const;
 
-  // Get the domain of the OperatorSet that specifies the operator named by <m_opType>.
+  // Get the domain of the OperatorSet that specifies the operator named by <op_type_>.
   const std::string& Domain() const;
 
   // Get the OperatorSchema this node refers to.
@@ -166,40 +168,39 @@ class Node {
   // Read/Write <*this> node's input args' definition, including name,
   // type and shape.
   const std::vector<NodeArg*>& InputDefs() const;
-  std::vector<NodeArg*>& Mutable_InputDefs();
+  std::vector<NodeArg*>& MutableInputDefs();
 
   const std::vector<int>& InputArgCount() const;
-  std::vector<int>& Mutable_InputArgCount();
+  std::vector<int>& MutableInputArgCount();
 
   // Read/Write <*this> node's output args' definition, including name,
   // type and shape.
   const std::vector<NodeArg*>& OutputDefs() const;
-  std::vector<NodeArg*>& Mutable_OutputDefs();
+  std::vector<NodeArg*>& MutableOutputDefs();
 
   // Functions defined to traverse a Graph as below.
   // Read all input nodes of <*this>.
-  Node::NodeConstIterator InputNodes_begin() const;
-  Node::NodeConstIterator InputNodes_end() const;
+  Node::NodeConstIterator InputNodesBegin() const;
+  Node::NodeConstIterator InputNodesEnd() const;
   // Read all output nodes of <*this>.
-  Node::NodeConstIterator OutputNodes_begin() const;
-  Node::NodeConstIterator OutputNodes_end() const;
+  Node::NodeConstIterator OutputNodesBegin() const;
+  Node::NodeConstIterator OutputNodesEnd() const;
 
   // Get input/output edges.
   const std::set<EdgeEnd*>& InputEdges() const;
   const std::set<EdgeEnd*>& OutputEdges() const;
 
   // Given input arg, get the source end of an input edge.
-  bool InputEdgeSrcEnd(NodeArg* p_inputArg,
-                       /*out*/ const EdgeEnd** p_inputEdgeSrcEnd) const;
+  bool InputEdgeSrcEnd(NodeArg* p_input_arg, /*out*/ const EdgeEnd** pp_input_edge_src_end) const;
 
   // Add a node attribute with specified attribute name and value.
-  bool AddAttribute(const std::string& p_attrName, const AttributeProto& p_value);
+  bool AddAttribute(const std::string& attr_name, const AttributeProto& value);
 
-#define ADD_ATTR_INTERFACES(TypeName)              \
-  bool AddAttribute(const std::string& p_attrName, \
-                    const TypeName& p_value);      \
-  bool AddAttribute(const std::string& p_attrName, \
-                    const std::vector<TypeName>& p_values);
+#define ADD_ATTR_INTERFACES(TypeName)             \
+  bool AddAttribute(const std::string& attr_name, \
+                    const TypeName& value);       \
+  bool AddAttribute(const std::string& attr_name, \
+                    const std::vector<TypeName>& values);
 
   ADD_ATTR_INTERFACES(int64_t)
   ADD_ATTR_INTERFACES(float)
@@ -208,7 +209,7 @@ class Node {
   ADD_ATTR_INTERFACES(GraphProto)
 
   // Clear specified node attribute.
-  bool ClearAttribute(const std::string& p_attrName);
+  bool ClearAttribute(const std::string& attr_name);
 
   // Get node attributes.
   const NodeAttributes& GetAttributes() const;
@@ -218,10 +219,10 @@ class Node {
   // and set it properly.
   // TODO: may change the return value type to be an ENUM.
   const std::string& GetExecutionProvider() const;
-  void SetExecutionProvider(const std::string& p_execution_provider);
+  void SetExecutionProvider(const std::string& execution_provider);
 
   // Get the corresponding <NodeProto>.
-  void ToProto(NodeProto& p_proto) const;
+  void ToProto(NodeProto& proto) const;
 
  private:
   friend class GraphBase;
@@ -229,74 +230,74 @@ class Node {
 
   // Node could ONLY be constructed and owned by a <Graph>.
   Node() {}
-  Node(NODEINDEX p_index, GraphBase* p_graph)
-      : m_index(p_index),
-        m_graph(p_graph) {}
+  Node(NodeIndex index, GraphBase* p_graph)
+      : index_(index),
+        graph_(p_graph) {}
   Node(const Node& p_other);
 
   // Init node per <NodeProto>.
   // <p_nameToValueInfoMap> specifies the node's inputs'/outputs' value information,
   // including name, type and shape.
-  void Init(const NodeProto& p_nodeProto,
-            const ArgNameToTypeMap& p_nameToType);
-  void Init(const std::string& p_name,
-            const std::string& p_opType,
-            const std::string& p_description,
-            const std::vector<NodeArg*>& p_inputArgs,
-            const std::vector<NodeArg*>& p_outputArgs,
-            const std::string& p_domain);
+  void Init(const NodeProto& node_proto,
+            const ArgNameToTypeMap& name_to_type);
+  void Init(const std::string& name,
+            const std::string& op_type,
+            const std::string& description,
+            const std::vector<NodeArg*>& input_args,
+            const std::vector<NodeArg*>& output_args,
+            const std::string& domain);
 
   // Node index.
-  NODEINDEX m_index;
+  NodeIndex index_;
 
   // Node name.
-  std::string m_name;
+  std::string name_;
 
   // Node operator type.
-  std::string m_opType;
+  std::string op_type_;
 
-  // OperatorSet domain of <m_opType).
-  std::string m_domain;
+  // OperatorSet domain of <op_type_).
+  std::string domain_;
 
   // OperatorSchema that <*this> node refers to.
-  const OperatorSchema* m_op;
+  const OperatorSchema* op_;
 
   // Node doc string.
-  std::string m_description;
+  std::string description_;
 
   // Node inputs' definition.
-  std::vector<NodeArg*> m_inputDefs;
+  std::vector<NodeArg*> input_defs_;
   // The number of inputs for each argument of the operator or function which
   // this node refers.
-  // For example, <m_inputDefs> has 10 elements (inputs), and <m_inputArgCount>
-  // is {4, 6}. This means that 4 elements (inputs) of <m_inputDefs> map to the
+  // For example, <input_defs_> has 10 elements (inputs), and <input_arg_count_>
+  // is {4, 6}. This means that 4 elements (inputs) of <input_defs_> map to the
   // first argument of the operator or function, and the other 6 map to the
   // second argument.
-  std::vector<int> m_inputArgCount;
+  std::vector<int> input_arg_count_;
 
   // Node outputs' definition.
-  std::vector<NodeArg*> m_outputDefs;
+  std::vector<NodeArg*> output_defs_;
 
   // Node inputs edges.
-  std::set<EdgeEnd*> m_input_edges;
+  std::set<EdgeEnd*> input_edges_;
   // Node output edges.
-  std::set<EdgeEnd*> m_output_edges;
-  // Node input nodes, besides input nodes mentioned in <m_inputs> above,
+  std::set<EdgeEnd*> output_edges_;
+  // Node input nodes, besides input nodes mentioned in <inputs_> above,
   // it also contains all control input nodes;
-  std::set<const Node*> m_inputNodes;
+  std::set<const Node*> input_nodes_;
   // Control input nodes' names.
-  std::set<std::string> m_controlInputs;
+  std::set<std::string> control_inputs_;
   // Node's output nodes.
-  std::set<const Node*> m_outputNodes;
+  std::set<const Node*> output_nodes_;
 
   // Device.
-  std::string m_execution_provider;
+  std::string execution_provider_;
 
   // Map from attribute name to attribute.
   // This allows attribute adding and removing.
-  NodeAttributes m_attributes;
+  NodeAttributes attributes_;
 
-  GraphBase* m_graph;
+  GraphBase* graph_;
 };
 
 // TODO: Graph base class.
@@ -312,25 +313,27 @@ class GraphBase {
   class NodeIterator {
    public:
     // Constructor.
-    NodeIterator(NODEINDEX p_currentNodeIndex, GraphBase* p_graph)
-        : m_graph(p_graph),
-          m_currentNodeIndex(p_currentNodeIndex) {
+    NodeIterator(NodeIndex current_node_index, GraphBase* p_graph)
+        : graph_(p_graph),
+          current_node_index_(current_node_index) {
     }
 
-    bool operator==(const NodeIterator& p_other) const;
+    bool operator==(const NodeIterator& other) const;
 
-    bool operator!=(const NodeIterator& p_other) const;
+    bool operator!=(const NodeIterator& other) const;
 
     void operator++();
 
     Node* operator*();
 
    private:
-    GraphBase* m_graph;
+    GraphBase* graph_;
 
-    // it's the Node Index in <m_nodes> of the <m_graph>.
-    NODEINDEX m_currentNodeIndex;
+    // it's the Node Index in <m_nodes> of the <graph_>.
+    NodeIndex current_node_index_;
   };
+
+  GraphBase() = default;
 
   // Resolve <*this> graph to ensure it's in a good shape with full
   // functionality.
@@ -346,10 +349,10 @@ class GraphBase {
 
   // Getter and Setter for graph name.
   virtual const std::string& Name() const = 0;
-  virtual void SetName(const std::string& p_name) = 0;
+  virtual void SetName(const std::string& name) = 0;
 
   virtual const std::string& Description() const = 0;
-  virtual void SetDescription(const std::string& p_desription) = 0;
+  virtual void SetDescription(const std::string& description) = 0;
 
   // Get graph inputs/outputs.
   virtual const std::vector<const NodeArg*>& GetInputs() const = 0;
@@ -358,15 +361,15 @@ class GraphBase {
   virtual std::unordered_map<std::string, NodeArg*>* GetNodeArgMap() = 0;
 
   // Get node given specific node index.
-  Node* GetNode(NODEINDEX p_nodeIndex);
-  const Node* GetNode(NODEINDEX p_nodeIndex) const;
+  Node* GetNode(NodeIndex node_index);
+  const Node* GetNode(NodeIndex node_index) const;
 
   // Get node iterator to access all effective nodes in the graph.
-  GraphBase::NodeIterator Nodes_begin();
-  GraphBase::NodeIterator Nodes_end();
+  NodeIterator NodesBegin();
+  NodeIterator NodesEnd();
 
   // Max Node Index.
-  NODEINDEX MaxNodeIndex() const;
+  NodeIndex MaxNodeIndex() const;
 
   // Number of nodes in the <Graph>.
   // This is smaller than MaxNodeIndex(), since there may be nodes
@@ -374,33 +377,41 @@ class GraphBase {
   int NumberOfNodes() const;
 
   // Add, remove node from <*this> graph.
-  Node* AddNode(const std::string& p_name,
-                const std::string& p_opType,
-                const std::string& p_description,
-                const std::vector<NodeArg*>& p_inputArgs,
-                const std::vector<NodeArg*>& p_outputArgs,
-                const std::string& p_domain = "");
-  Node* AddNode(const Node& p_other);
-  bool RemoveNode(NODEINDEX p_nodeIndex);
+  Node* AddNode(const std::string& name,
+                const std::string& op_type,
+                const std::string& description,
+                const std::vector<NodeArg*>& input_args,
+                const std::vector<NodeArg*>& output_args,
+                const std::string& domain = "");
+
+  /**
+  Copy node and add to graph.
+  @param other Node to copy
+  @param returns Pointer to node that was created and inserted.
+  */
+  Node* AddNode(const Node& other);
+
+  bool RemoveNode(NodeIndex node_index);
 
   // Convenience method for adding a constant op
-  Node* AddConstantNode(const std::string& p_name,
-                        const std::string& p_description,
-                        const std::vector<NodeArg*>& p_outputArgs,
-                        const TensorProto& p_tensor);
+  Node* AddConstantNode(const std::string& name,
+                        const std::string& description,
+                        const std::vector<NodeArg*>& output_args,
+                        const TensorProto& tensor_proto);
 
   // Add control edge into <*this> graph.
-  // The <p_dstNodeIndex> node does not consume any data output by
-  // <p_srcNodeIndex>, but it's designed to be executed behind.
-  bool AddControlEdge(NODEINDEX p_srcNodeIndex, NODEINDEX p_dstNodeIndex);
+  // The <dst_node_index> node does not consume any data output by
+  // <src_node_index>, but it's designed to be executed behind.
+  bool AddControlEdge(NodeIndex src_node_index, NodeIndex dst_node_index);
 
-  bool IsSourceNode(NODEINDEX p_index) const;
-  bool IsSinkNode(NODEINDEX p_index) const;
+  bool IsSourceNode(NodeIndex index) const;
+  bool IsSinkNode(NodeIndex index) const;
 
   const Node* SourceNode() const;
   const Node* SinkNode() const;
 
-  Status GetNodesInTopologicalOrder(/*out*/ std::vector<NODEINDEX>** nodes);
+  // TODO(Task:135) See if GraphBase::GetNodesInTopologicalOrder can be made const
+  Status GetNodesInTopologicalOrder(/*out*/ const std::vector<NodeIndex>** pp_nodes);
 
  protected:
   friend class Node;
@@ -408,45 +419,48 @@ class GraphBase {
   // Add source/sink nodes to <*this> graph.
   void AddSourceSinkNodes();
 
-  // Add node with specified <p_nodeProto>.
-  Node* AddNode(const NodeProto& p_nodeProto,
-                const ArgNameToTypeMap& p_nameToType);
+  // Add node with specified <node_proto>.
+  Node* AddNode(const NodeProto& node_proto,
+                const ArgNameToTypeMap& name_to_type);
 
   // Graph nodes.
   // Element in <m_nodes> may be nullptr due to graph optimization.
-  std::vector<std::unique_ptr<Node>> m_nodes;
+  std::vector<std::unique_ptr<Node>> nodes_;
 
   // Number of nodes.
   // Normally this is smaller than the size of <m_nodes>, as some
   // elements in <m_nodes> may be removed when doing graph optimization,
   // or some elements may be merged, etc.
-  int m_numOfNodes;
+  int num_of_nodes_;
 
-  NODEINDEX m_sourceNodeIndex;
-  NODEINDEX m_sinkNodeIndex;
+  NodeIndex source_node_index_;
+  NodeIndex sink_node_index_;
 
   // A flag indicates whether <*this> graph needs to be resolved.
-  bool m_graphResolveNeeded;
+  bool graph_resolve_needed_;
 
-  bool m_graphProtoSyncNeeded;
+  bool graph_proto_sync_needed_;
 
-  int m_graphType = 0;
+  int graph_type_ = 0;
 
   // The topologic order of node index.
-  std::vector<NODEINDEX> m_nodesInTopologicalOrder;
+  std::vector<NodeIndex> nodes_in_topological_order_;
 
   // Graph inputs.
-  std::vector<const NodeArg*> m_graphInputs;
+  std::vector<const NodeArg*> graph_inputs_;
 
   // Graph outputs.
-  std::vector<const NodeArg*> m_graphOutputs;
+  std::vector<const NodeArg*> graph_outputs_;
 
-  const std::unordered_map<std::string, int>* m_domainToVersion;
+  const std::unordered_map<std::string, int>* domain_to_version_;
 
  private:
+  // need custom versions to handle the unique_ptr's in nodes_
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphBase);
+
   Node* AllocateNode();
 
-  void ReleaseNode(NODEINDEX p_nodeIndex);
+  void ReleaseNode(NodeIndex node_index);
 };
 
 // A graph representation class.
@@ -459,15 +473,15 @@ class Graph : public GraphBase {
   //public:
 
   //    // Constructor.
-  //    NodeIterator(NODEINDEX p_currentNodeIndex, Graph* p_graph)
-  //        : m_graph(p_graph),
-  //        m_currentNodeIndex(p_currentNodeIndex)
+  //    NodeIterator(NodeIndex current_node_index, Graph* p_graph)
+  //        : graph_(p_graph),
+  //        current_node_index_(current_node_index)
   //    {
   //    }
 
-  //    bool operator==(const NodeIterator& p_other) const;
+  //    bool operator==(const NodeIterator& other) const;
 
-  //    bool operator!=(const NodeIterator& p_other) const;
+  //    bool operator!=(const NodeIterator& other) const;
 
   //    void operator++();
 
@@ -475,10 +489,10 @@ class Graph : public GraphBase {
 
   //private:
 
-  //    Graph* m_graph;
+  //    Graph* graph_;
 
-  //    // it's the Node Index in <m_nodes> of the <m_graph>.
-  //    NODEINDEX m_currentNodeIndex;
+  //    // it's the Node Index in <m_nodes> of the <graph_>.
+  //    NodeIndex current_node_index_;
   //};
 
   // Resolve <*this> graph to ensure it's in a good shape with full
@@ -495,18 +509,18 @@ class Graph : public GraphBase {
 
   // Getter and Setter for graph name.
   virtual const std::string& Name() const override;
-  virtual void SetName(const std::string& p_name) override;
+  virtual void SetName(const std::string& name) override;
 
   virtual const std::string& Description() const override;
-  virtual void SetDescription(const std::string& p_desription) override;
+  virtual void SetDescription(const std::string& description) override;
 
   virtual std::unordered_map<std::string, NodeArg*>* GetNodeArgMap() override;
 
   // Add/Remove/Get initial tensors for some graph inputs.
-  void AddInitializedTensor(const TensorProto& p_tensor);
-  void RemoveInitializedTensor(const std::string& p_tensorName);
-  bool GetInitializedTensor(const std::string& p_tensorName,
-                            TensorProto& p_value) const;
+  void AddInitializedTensor(const TensorProto& tensor_proto);
+  void RemoveInitializedTensor(const std::string& tensor_name);
+  bool GetInitializedTensor(const std::string& tensor_name,
+                            TensorProto& value) const;
   const InitializedTensorSet& GetAllInitializedTensors() const;
   void CleanAllInitializedTensors();
 
@@ -516,31 +530,31 @@ class Graph : public GraphBase {
   const std::vector<const NodeArg*>& GetValueInfo() const;
 
   // Performs reverse DFS traversal from a set of nodes in 'from' up to
-  // the SOURCE node. 'enter' is a visit function that will be invoked 
+  // the SOURCE node. 'enter' is a visit function that will be invoked
   // on a node when it is visited but its parents haven't been. 'leave'
-  // is the visit function invoked on the node after its parents have 
+  // is the visit function invoked on the node after its parents have
   // all been visited. 'comp' is used to stable the traversal order.
   void ReverseDFSFrom(
-      const std::vector<NODEINDEX> &from,
-      const std::function<void(Node *)>& enter,
-      const std::function<void(Node *)>& leave,
+      const std::vector<NodeIndex>& from,
+      const std::function<void(Node*)>& enter,
+      const std::function<void(Node*)>& leave,
       const std::function<bool(const Node*, const Node*)>& comp = {});
 
   void ReverseDFSFrom(
-      const std::vector<Node *> &from,
-      const std::function<void(Node *)>& enter,
-      const std::function<void(Node *)>& leave,
+      const std::vector<Node*>& from,
+      const std::function<void(Node*)>& enter,
+      const std::function<void(Node*)>& leave,
       const std::function<bool(const Node*, const Node*)>& comp = {});
 
   // Get node given specific node index.
-  //Node* GetNode(NODEINDEX p_nodeIndex);
+  //Node* GetNode(NodeIndex node_index);
 
   // Get node iterator to access all effective nodes in the graph.
-  //Graph::NodeIterator Nodes_begin();
-  //Graph::NodeIterator Nodes_end();
+  //Graph::NodeIterator NodesBegin();
+  //Graph::NodeIterator NodesEnd();
 
   // Max Node Index.
-  //NODEINDEX MaxNodeIndex() const;
+  //NodeIndex MaxNodeIndex() const;
 
   // Number of nodes in the <Graph>.
   // This is smaller than MaxNodeIndex(), since there may be nodes
@@ -548,48 +562,48 @@ class Graph : public GraphBase {
   // int NumberOfNodes() const;
 
   // Add, remove node from <*this> graph.
-  //Node* AddNode(const std::string& p_name,
-  //    const std::string& p_opType,
-  //    const std::string& p_description,
-  //    const std::vector<NodeArg>& p_inputArgs,
-  //    const std::vector<NodeArg>& p_outputArgs,
-  //    const std::string& p_domain = "");
-  //Node* AddNode(const std::string& p_name,
-  //    const std::string& p_opType,
-  //    const std::string& p_description,
-  //    const std::vector<NodeArg>& p_inputArgs,
+  //Node* AddNode(const std::string& name,
+  //    const std::string& op_type,
+  //    const std::string& description,
+  //    const std::vector<NodeArg>& input_args,
+  //    const std::vector<NodeArg>& output_args,
+  //    const std::string& domain = "");
+  //Node* AddNode(const std::string& name,
+  //    const std::string& op_type,
+  //    const std::string& description,
+  //    const std::vector<NodeArg>& input_args,
   //    const std::vector<int>& p_inputArgCount,
-  //    const std::vector<NodeArg>& p_outputArgs,
-  //    const std::string& p_domain = "");
-  //Node* AddNode(const std::string& p_name,
-  //    const std::string& p_opType,
-  //    const std::string& p_description,
-  //    const std::vector<NodeArg>& p_outputArgs,
-  //    const std::string& p_domain = "");
-  //Node* AddNode(const Node& p_other);
-  //bool RemoveNode(NODEINDEX p_nodeIndex);
+  //    const std::vector<NodeArg>& output_args,
+  //    const std::string& domain = "");
+  //Node* AddNode(const std::string& name,
+  //    const std::string& op_type,
+  //    const std::string& description,
+  //    const std::vector<NodeArg>& output_args,
+  //    const std::string& domain = "");
+  //Node* AddNode(const Node& other);
+  //bool RemoveNode(NodeIndex node_index);
 
   //// Convenience method for adding a constant op
-  //Node* AddConstantNode(const std::string& p_name,
-  //    const std::string& p_description,
-  //    const std::vector<NodeArg>& p_outputArgs,
-  //    const TensorProto& p_tensor);
+  //Node* AddConstantNode(const std::string& name,
+  //    const std::string& description,
+  //    const std::vector<NodeArg>& output_args,
+  //    const TensorProto& tensor_proto);
 
   // Add control edge into <*this> graph.
-  // The <p_dstNodeIndex> node does not consume any data output by
-  // <p_srcNodeIndex>, but it's designed to be executed behind.
-  //bool AddControlEdge(NODEINDEX p_srcNodeIndex, NODEINDEX p_dstNodeIndex);
+  // The <dst_node_index> node does not consume any data output by
+  // <src_node_index>, but it's designed to be executed behind.
+  //bool AddControlEdge(NodeIndex src_node_index, NodeIndex dst_node_index);
 
   // Serialize the <Graph> into <GraphProto>.
   const GraphProto& ToGraphProto();
 
-  //bool IsSourceNode(NODEINDEX p_index) const;
-  //bool IsSinkNode(NODEINDEX p_index) const;
+  //bool IsSourceNode(NodeIndex index) const;
+  //bool IsSinkNode(NodeIndex index) const;
 
   //const Node* SourceNode() const;
   //const Node* SinkNode() const;
 
-  //Status GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes);
+  //Status GetNodesInTopologicalOrder(std::vector<NodeIndex>** nodes);
 
  private:
   friend class Model;
@@ -598,14 +612,14 @@ class Graph : public GraphBase {
 
   // Constructor from scratch.
   // going to construct a ONNX graph. With ONNX graph, strict
-  // type checking will be skiped.
-  Graph(const std::string& p_name,
-        const std::unordered_map<std::string, int>& p_domainToVersion);
+  // type checking will be skipped.
+  Graph(const std::string& name,
+        const std::unordered_map<std::string, int>& domain_to_version);
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object.
-  Graph(const GraphProto& p_graphProto,
-        const std::unordered_map<std::string, int>& p_domainToVersion);
+  Graph(const GraphProto& graph_proto,
+        const std::unordered_map<std::string, int>& domain_to_version);
 
   enum Type {
     // A main graph.
@@ -617,33 +631,33 @@ class Graph : public GraphBase {
   friend class Node;
 
   Status VerifyNoDuplicateName(
-      /*out*/ std::unordered_map<std::string, Node*>& p_outputArgs,
-      /*out*/ std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex);
+      /*out*/ std::unordered_map<std::string, Node*>& output_args,
+      /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
   // Build and verify node connection (edges).
   // Verify NodeArg name/type/shape matching correctly.
   Status BuildConnections(
-      const std::unordered_map<std::string, Node*>& p_outputArgs,
-      const std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex);
+      const std::unordered_map<std::string, Node*>& output_args,
+      const std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
   // Check whether <*this> graph is acyclic.
   // Depth-first going thru the graph and check whether there's any back
   // edge.
-  // <p_nodesInToplogicalOrder> returns nodes' indexes in toplogical
+  // <nodes_in_topological_order> returns nodes' indexes in toplogical
   // order if <Status> returned is "OK", otherwise it's undefined.
   Status CheckIsAcyclic(
-      /*out*/ std::vector<NODEINDEX>& p_nodesInToplogicalOrder);
+      /*out*/ std::vector<NodeIndex>& nodes_in_topological_order);
 
   // Given nodes in topological order, infer and set type information
   // across <*this> graph if needed, and verify type/attribute
   // information match between node and op.
   Status VerifyNodeAndOpMatch(
-      const std::vector<NODEINDEX>& p_nodesInToplogicalOrder,
-      std::unordered_map<std::string, Node*>& p_outputArgs);
+      const std::vector<NodeIndex>& nodes_in_topological_order,
+      std::unordered_map<std::string, Node*>& output_args);
 
   Status InferAndVerifyTypeMatch(Node* p_node,
                                  const OpSignature* p_op,
-                                 const std::unordered_map<std::string, Node*>& p_outputArgs);
+                                 const std::unordered_map<std::string, Node*>& output_args);
 
   // Set graph inputs/outputs when resolving a graph..
   Status SetGraphInputsOutputs();
@@ -661,45 +675,46 @@ class Graph : public GraphBase {
   // or some elements may be merged, etc.
   //int m_numOfNodes;
 
-  //NODEINDEX m_sourceNodeIndex;
-  //NODEINDEX m_sinkNodeIndex;
+  //NodeIndex m_sourceNodeIndex;
+  //NodeIndex m_sinkNodeIndex;
 
   // GraphProto to store name, version, initializer.
   // When serilizing <*this> Graph to a GraphProto, the nodes and
-  // functions in <Graph> will also be fed into <m_graphProto> so that
+  // functions in <Graph> will also be fed into <graph_proto_> so that
   // it's consistent with <*this> graph.
-  GraphProto m_graphProto;
+  GraphProto graph_proto_;
 
   // The node which refers to <*this> graph (Function).
-  //Node* m_node;
+  //Node* node_;
 
-  InitializedTensorSet m_nameToInitialTensor;
+  InitializedTensorSet name_to_initial_tensor_;
 
   // A flag indicates whether <*this> graph needs to be resolved.
-  //bool m_graphResolveNeeded;
+  //bool graph_resolve_needed_;
 
-  //bool m_graphProtoSyncNeeded;
+  //bool graph_proto_sync_needed_;
 
-  //int m_graphType = 0;
+  //int graph_type_ = 0;
 
   // The topologic order of node index.
-  //std::vector<NODEINDEX> m_nodesInTopologicalOrder;
+  //std::vector<NodeIndex> nodes_in_topological_order_;
 
   // Graph inputs.
-  //std::vector<const NodeArg*> m_graphInputs;
+  //std::vector<const NodeArg*> graph_inputs_;
 
   // Graph outputs.
-  //std::vector<const NodeArg*> m_graphOutputs;
+  //std::vector<const NodeArg*> graph_outputs_;
 
   // Graph value_info.
-  std::vector<const NodeArg*> m_valueInfo;
+  std::vector<const NodeArg*> value_info_;
 
   // Store NodeArg in this graph
   // QUESTION: what does the key represent here?
-  std::unordered_map<std::string, NodeArg*> m_nodeArgs;
+  std::unordered_map<std::string, NodeArg*> node_args_;
 
-  //const std::unordered_map<std::string, int>* m_domainToVersion;
+  //const std::unordered_map<std::string, int>* domain_to_version_;
+
+ private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
 };
 }  // namespace LotusIR
-
-#endif  // CORE_GRAPH_GRAPH_H

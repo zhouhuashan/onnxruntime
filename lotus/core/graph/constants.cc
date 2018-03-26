@@ -7,24 +7,25 @@ TypesWrapper& TypesWrapper::GetTypesWrapper() {
   return types;
 }
 
-std::unordered_set<std::string>& TypesWrapper::GetAllowedDataTypes() {
-  static std::unordered_set<std::string> allowedDataTypes = {
-      c_float16, c_float, c_double,
-      c_int8, c_int16, c_int32, c_int64,
-      c_uint8, c_uint16, c_uint32, c_uint64,
-      c_complex64, c_complex128,
-      c_string, c_bool};
-  return allowedDataTypes;
+const std::unordered_set<std::string>& TypesWrapper::GetAllowedDataTypes() {
+  static std::unordered_set<std::string> allowed_data_types = {
+      kFloat16, kFloat, kDouble,
+      kInt8, kInt16, kInt32, kInt64,
+      kUInt8, kUInt16, kUInt32, kUInt64,
+      kComplex64, kComplex128,
+      kString, kBool};
+
+  return allowed_data_types;
 }
 
-TypeStringsInitializer& TypeStringsInitializer::InitializeTypeStrings() {
-  static TypeStringsInitializer initTypes;
-  return initTypes;
+TypeStringsInitializer& TypeStringsInitializer::Instance() {
+  static TypeStringsInitializer init_types;
+  return init_types;
 }
 
 TypeStringsInitializer::TypeStringsInitializer() {
   // Initialize TypeStrToProtoMap using common type strings.
-  for (const auto& t : m_commonTypeStrings) {
+  for (const auto& t : kCommonTypeStrings) {
     Utils::OpUtils::ToType(t);
   }
 }
@@ -35,5 +36,5 @@ TypeStringsInitializer::TypeStringsInitializer() {
 // which calls GetTypesWrapper().
 // Note: due to non-deterministic static initialization order, some of the type strings
 // may have already been added via Op Registrations which use those type strings.
-static TypeStringsInitializer& _typeStrings = TypeStringsInitializer::InitializeTypeStrings();
+static TypeStringsInitializer& type_strings_ = TypeStringsInitializer::Instance();
 }  // namespace LotusIR

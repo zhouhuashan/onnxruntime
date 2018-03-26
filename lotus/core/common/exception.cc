@@ -23,15 +23,15 @@ EnforceNotMet::EnforceNotMet(
           " ")},
       stack_trace_(FetchStackTrace()) {
   caller_ = caller;
-  full_msg_ = this->msg();
+  full_msg_ = this->Msg();
 }
 
 void EnforceNotMet::AppendMessage(const string& msg) {
   msg_stack_.push_back(msg);
-  full_msg_ = this->msg();
+  full_msg_ = this->Msg();
 }
 
-string EnforceNotMet::msg() const {
+string EnforceNotMet::Msg() const {
   return std::accumulate(msg_stack_.begin(), msg_stack_.end(), string("")) +
          stack_trace_;
 }
@@ -40,7 +40,7 @@ const char* EnforceNotMet::what() const noexcept {
   return full_msg_.c_str();
 }
 
-const void* EnforceNotMet::caller() const noexcept {
+const void* EnforceNotMet::Caller() const noexcept {
   return caller_;
 }
 }  // namespace Lotus

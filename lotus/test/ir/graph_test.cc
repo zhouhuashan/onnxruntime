@@ -20,102 +20,102 @@ namespace Test {
 using google::protobuf::util::MessageDifferencer;
 
 TEST(GraphTraversalTest, ReverseDFS) {
-    REGISTER_OPERATOR_SCHEMA(Variable_DFS).Description("Input variable.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
-    REGISTER_OPERATOR_SCHEMA(Add_DFS).Description("Add two integers.").Input("input_1", "docstr for input_1.", "tensor(int32)").Input("input_2", "docstr for input_2.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
-    REGISTER_OPERATOR_SCHEMA(NoOp_DFS).Description("Operator doing nothing.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
+  REGISTER_OPERATOR_SCHEMA(Variable_DFS).Description("Input variable.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
+  REGISTER_OPERATOR_SCHEMA(Add_DFS).Description("Add two integers.").Input("input_1", "docstr for input_1.", "tensor(int32)").Input("input_2", "docstr for input_2.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
+  REGISTER_OPERATOR_SCHEMA(NoOp_DFS).Description("Operator doing nothing.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
 
-    Model model("graph_1");
-    auto &graph = *(model.MainGraph());
+  Model model("graph_1");
+  auto &graph = *(model.MainGraph());
 
-    // Case 1: A normal graph.
-    //                 SouceNode
-    //                 /       \
+  // Case 1: A normal graph.
+  //                 SouceNode
+  //                 /       \
     //  node_1 (Variable)      node_2 (Variable)
-    //                 \       /
-    //                 node_3 (Add)
-    //                     |
-    //                 node_4 (NoOp)
-    //                     |
-    //                  SinkNode
-    std::vector<NodeArg *> inputs;
-    std::vector<NodeArg *> outputs;
+  //                 \       /
+  //                 node_3 (Add)
+  //                     |
+  //                 node_4 (NoOp)
+  //                     |
+  //                  SinkNode
+  std::vector<NodeArg *> inputs;
+  std::vector<NodeArg *> outputs;
 
-    TypeProto tensor_int32;
-    tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-    tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+  TypeProto tensor_int32;
+  tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+  tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-    NodeArg *inputArg = new NodeArg("node_1_in_1", &tensor_int32);
-    inputs.push_back(inputArg);
-    NodeArg *outputArg = new NodeArg("node_1_out_1", &tensor_int32);
-    outputs.push_back(outputArg);
-    graph.AddNode("node_1", "Variable_DFS", "node 1", inputs, outputs);
+  NodeArg *inputArg = new NodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(inputArg);
+  NodeArg *outputArg = new NodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(outputArg);
+  graph.AddNode("node_1", "Variable_DFS", "node 1", inputs, outputs);
 
-    NodeArg *inputArg2 = new NodeArg("node_2_in_1", &tensor_int32);
-    inputs.clear();
-    inputs.push_back(inputArg2);
-    NodeArg *outputArg2 = new NodeArg("node_2_out_1", &tensor_int32);
-    outputs.clear();
-    outputs.push_back(outputArg2);
-    graph.AddNode("node_2", "Variable_DFS", "node 2", inputs, outputs);
+  NodeArg *inputArg2 = new NodeArg("node_2_in_1", &tensor_int32);
+  inputs.clear();
+  inputs.push_back(inputArg2);
+  NodeArg *outputArg2 = new NodeArg("node_2_out_1", &tensor_int32);
+  outputs.clear();
+  outputs.push_back(outputArg2);
+  graph.AddNode("node_2", "Variable_DFS", "node 2", inputs, outputs);
 
-    inputs.clear();
-    inputs.push_back(outputArg);
-    inputs.push_back(outputArg2);
-    NodeArg *outputArg3 = new NodeArg("node_3_out_1", &tensor_int32);
-    outputs.clear();
-    outputs.push_back(outputArg3);
-    graph.AddNode("node_3", "Add_DFS", "node 3", inputs, outputs);
+  inputs.clear();
+  inputs.push_back(outputArg);
+  inputs.push_back(outputArg2);
+  NodeArg *outputArg3 = new NodeArg("node_3_out_1", &tensor_int32);
+  outputs.clear();
+  outputs.push_back(outputArg3);
+  graph.AddNode("node_3", "Add_DFS", "node 3", inputs, outputs);
 
-    inputs.clear();
-    inputs.push_back(outputArg3);
-    NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_int32);
-    outputs.clear();
-    outputs.push_back(outputArg4);
-    graph.AddNode("node_4", "NoOp_DFS", "node 4", inputs, outputs);
-    auto status = graph.Resolve();
-    EXPECT_TRUE(status.IsOK());
+  inputs.clear();
+  inputs.push_back(outputArg3);
+  NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_int32);
+  outputs.clear();
+  outputs.push_back(outputArg4);
+  graph.AddNode("node_4", "NoOp_DFS", "node 4", inputs, outputs);
+  auto status = graph.Resolve();
+  EXPECT_TRUE(status.IsOK());
 
-    std::vector<Node *> from;
-    from.push_back(const_cast<Node *>(graph.SinkNode()));
+  std::vector<Node *> from;
+  from.push_back(const_cast<Node *>(graph.SinkNode()));
 
-    std::vector<std::string> enter_leave_sequence;
+  std::vector<std::string> enter_leave_sequence;
 
-    struct NodeCompareName {
-        bool operator()(const Node* n1, const Node* n2) const {
-            return n1->Name() < n2->Name();
-        }
-    };
+  struct NodeCompareName {
+    bool operator()(const Node *n1, const Node *n2) const {
+      return n1->Name() < n2->Name();
+    }
+  };
 
-    graph.ReverseDFSFrom(from,
-        [&enter_leave_sequence](Node *n) {
-            std::string s("enter:");
-            s += n->Name();
-            enter_leave_sequence.push_back(s);
-        },
-        [&enter_leave_sequence](Node *n) {
-            std::string s("leave:");
-            s += n->Name();
-            enter_leave_sequence.push_back(s);
-        },
-        NodeCompareName());
+  graph.ReverseDFSFrom(from,
+                       [&enter_leave_sequence](Node *n) {
+                         std::string s("enter:");
+                         s += n->Name();
+                         enter_leave_sequence.push_back(s);
+                       },
+                       [&enter_leave_sequence](Node *n) {
+                         std::string s("leave:");
+                         s += n->Name();
+                         enter_leave_sequence.push_back(s);
+                       },
+                       NodeCompareName());
 
-    /*for (size_t i = 0; i < enter_leave_sequence.size(); i++) {
+  /*for (size_t i = 0; i < enter_leave_sequence.size(); i++) {
         printf("%s\n", enter_leave_sequence[i].c_str());
     }*/
 
-    EXPECT_EQ(enter_leave_sequence.size(), 12);
-    EXPECT_EQ("enter:_Graph_Sink", enter_leave_sequence[0]);
-    EXPECT_EQ("enter:node_4", enter_leave_sequence[1]);
-    EXPECT_EQ("enter:node_3", enter_leave_sequence[2]);
-    EXPECT_EQ("enter:node_2", enter_leave_sequence[3]);
-    EXPECT_EQ("enter:_Graph_Source", enter_leave_sequence[4]);
-    EXPECT_EQ("leave:_Graph_Source", enter_leave_sequence[5]);
-    EXPECT_EQ("leave:node_2", enter_leave_sequence[6]);
-    EXPECT_EQ("enter:node_1", enter_leave_sequence[7]);
-    EXPECT_EQ("leave:node_1", enter_leave_sequence[8]);
-    EXPECT_EQ("leave:node_3", enter_leave_sequence[9]);
-    EXPECT_EQ("leave:node_4", enter_leave_sequence[10]);
-    EXPECT_EQ("leave:_Graph_Sink", enter_leave_sequence[11]);
+  EXPECT_EQ(enter_leave_sequence.size(), 12);
+  EXPECT_EQ("enter:_Graph_Sink", enter_leave_sequence[0]);
+  EXPECT_EQ("enter:node_4", enter_leave_sequence[1]);
+  EXPECT_EQ("enter:node_3", enter_leave_sequence[2]);
+  EXPECT_EQ("enter:node_2", enter_leave_sequence[3]);
+  EXPECT_EQ("enter:_Graph_Source", enter_leave_sequence[4]);
+  EXPECT_EQ("leave:_Graph_Source", enter_leave_sequence[5]);
+  EXPECT_EQ("leave:node_2", enter_leave_sequence[6]);
+  EXPECT_EQ("enter:node_1", enter_leave_sequence[7]);
+  EXPECT_EQ("leave:node_1", enter_leave_sequence[8]);
+  EXPECT_EQ("leave:node_3", enter_leave_sequence[9]);
+  EXPECT_EQ("leave:node_4", enter_leave_sequence[10]);
+  EXPECT_EQ("leave:_Graph_Sink", enter_leave_sequence[11]);
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
@@ -170,7 +170,7 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   auto status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ(
-      "Error: the operator or function (OpNotExist) refered by node (node_1) does not exist.",
+      "Error: the operator or function (OpNotExist) referred to by node (node_1) does not exist.",
       status.ErrorMessage());
 
   //delete outputArg;
@@ -258,7 +258,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   model2.reset(new Model(modelProto2));
   // Load the model again to ensure that it's still the right thing.
   Graph *graph2 = model2->MainGraph();
-  for (auto nodeIter = graph2->Nodes_begin(); nodeIter != graph2->Nodes_end(); ++nodeIter) {
+  for (auto nodeIter = graph2->NodesBegin(); nodeIter != graph2->NodesEnd(); ++nodeIter) {
     if (graph2->IsSourceNode((*nodeIter)->Index()) || graph2->IsSinkNode((*nodeIter)->Index())) {
       continue;
     }
@@ -279,7 +279,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   }
 
   // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
-  node_1->Mutable_InputDefs()[0] = outputArg4;
+  node_1->MutableInputDefs()[0] = outputArg4;
   status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
@@ -385,8 +385,8 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
 
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  node_2->Mutable_InputDefs()[0]->SetType(tensor_float);
-  node_2->Mutable_OutputDefs()[0]->SetType(tensor_float);
+  node_2->MutableInputDefs()[0]->SetType(tensor_float);
+  node_2->MutableOutputDefs()[0]->SetType(tensor_float);
   status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Node (node_4) has different input types (tensor(float),tensor(int32)) matching to same type string (T).", status.ErrorMessage());
@@ -400,7 +400,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
 }
 
 TEST(TestAddAttribute, AddTensorAttribute) {
-  REGISTER_OPERATOR_SCHEMA(__Constant).Description("Constant Op.").Attr(c_constantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR).Output("output_1", "docstr for output_1.", "tensor(int64)");
+  REGISTER_OPERATOR_SCHEMA(__Constant).Description("Constant Op.").Attr(kConstantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR).Output("output_1", "docstr for output_1.", "tensor(int64)");
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
   Model model("graph_1");
@@ -421,7 +421,7 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   *(t.mutable_int64_data()->Add()) = 3;
   *(t.mutable_dims()->Add()) = 1;
   *(t.mutable_dims()->Add()) = 3;
-  EXPECT_TRUE(node_1->AddAttribute(c_constantValue, t));
+  EXPECT_TRUE(node_1->AddAttribute(kConstantValue, t));
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
   //delete outputArg;

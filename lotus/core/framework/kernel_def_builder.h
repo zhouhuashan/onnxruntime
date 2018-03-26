@@ -44,7 +44,7 @@ class KernelDef {
   // each domain registered in OpSchemaRegistry::DomainToVersionRange in
   // \Lotus\lotus\core\graph\op.h as below.
   // Key: domain. Value: <lowest version, highest version> pair.
-  // std::unordered_map<std::string, std::pair<int, int>> m_map;
+  // std::unordered_map<std::string, std::pair<int, int>> map_;
   KernelDef& SinceVersion(int since_version_start, int since_version_end) {
     op_since_version_start_ = since_version_start;
     op_since_version_end_ = since_version_end;
@@ -144,7 +144,7 @@ class KernelDef {
   int op_since_version_end_ = INT_MAX;
 
   // THe operator domain supported by <*this> kernel.
-  std::string op_domain_ = LotusIR::c_onnxDomain;
+  std::string op_domain_ = LotusIR::kOnnxDomain;
 
   // The type of the execution provider.
   ProviderType provider_type_;

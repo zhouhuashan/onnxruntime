@@ -83,7 +83,7 @@ class ExecutionFrame {
   }
 
   // Index to the first argument of the given node.
-  int get_first_arg_index(LotusIR::NODEINDEX index) {
+  int get_first_arg_index(LotusIR::NodeIndex index) {
     LOTUS_ENFORCE(index >= 0 && index < node_offsets_.size());
     return node_offsets_[index];
   }

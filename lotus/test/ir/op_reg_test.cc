@@ -80,7 +80,7 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   NodeArg *outputArg1 = new NodeArg("node_1_out_1", &tensor_float);
   outputs.clear();
   outputs.push_back(outputArg1);
-  graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs, c_mlDomain);
+  graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs, kMLDomain);
 
   inputs.clear();
   inputs.push_back(outputArg1);
@@ -88,7 +88,7 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_float);
   outputs.clear();
   outputs.push_back(outputArg4);
-  graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, c_mlDomain);
+  graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, kMLDomain);
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
 

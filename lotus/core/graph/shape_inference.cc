@@ -3,30 +3,30 @@
 
 namespace LotusIR {
 InferenceContext::InferenceContext(Node* p_node,
-                                   const OpSignature* p_opSchema)
-    : m_node(p_node),
-      m_opSignature(p_opSchema) {
+                                   const OpSignature* p_op_schema)
+    : node_(p_node),
+      op_signature_(p_op_schema) {
 }
 
 const Node* InferenceContext::GetNode() const {
-  return m_node;
+  return node_;
 }
 
 const OpSignature* InferenceContext::GetOp() const {
-  return m_opSignature;
+  return op_signature_;
 }
 
 const std::vector<NodeArg*>* InferenceContext::GetInputs() const {
-  if (nullptr == m_node) {
+  if (nullptr == node_) {
     return nullptr;
   }
-  return &(m_node->InputDefs());
+  return &(node_->InputDefs());
 }
 
-std::vector<NodeArg*>* InferenceContext::Mutable_Outputs() {
-  if (nullptr == m_node) {
+std::vector<NodeArg*>* InferenceContext::MutableOutputs() {
+  if (nullptr == node_) {
     return nullptr;
   }
-  return &(m_node->Mutable_OutputDefs());
+  return &(node_->MutableOutputDefs());
 }
 }  // namespace LotusIR

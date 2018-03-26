@@ -1,5 +1,5 @@
-#ifndef CORE_FRAMEWORK_EXCEPTIONS_H
-#define CORE_FRAMEWORK_EXCEPTIONS_H
+#pragma once
+
 #include <exception>
 #include <stdexcept>
 #include "core/common/common.h"
@@ -22,24 +22,22 @@ class EnforceNotMet : public std::exception {
       const char* file,
       const int line,
       const char* condition,
-      const string& msg,
+      const std::string& msg,
       const void* caller = nullptr);
-  void AppendMessage(const string& msg);
-  string msg() const;
-  inline const vector<string>& msg_stack() const {
+  void AppendMessage(const std::string& msg);
+  std::string Msg() const;
+  inline const std::vector<std::string>& MsgStack() const {
     return msg_stack_;
   }
 
   const char* what() const noexcept override;
 
-  const void* caller() const noexcept;
+  const void* Caller() const noexcept;
 
  private:
-  vector<string> msg_stack_;
-  string full_msg_;
-  string stack_trace_;
+  std::vector<std::string> msg_stack_;
+  std::string full_msg_;
+  std::string stack_trace_;
   const void* caller_;
 };
 }  // namespace Lotus
-
-#endif

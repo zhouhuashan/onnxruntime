@@ -19,8 +19,8 @@ class FunctionKernel : OpKernel {
   }
 
  private:
-  Node* m_node;
-  ExecutionProvider* m_provider;
+  Node* node_;
+  ExecutionProvider* provider_;
 };
 }  // namespace Lotus
 #endif  // CORE_FRAMEWORK_FUNCTION_KERNEL_H

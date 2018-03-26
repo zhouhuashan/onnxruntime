@@ -1,5 +1,4 @@
-#ifndef CORE_GRAPH_STATUS_H
-#define CORE_GRAPH_STATUS_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -37,12 +36,12 @@ class Status {
  public:
   Status() {}
 
-  Status(StatusCategory p_category, int p_code, const std::string& p_msg);
+  Status(StatusCategory category, int code, const std::string& msg);
 
-  Status(StatusCategory p_category, int p_code);
+  Status(StatusCategory category, int code);
 
-  inline Status(const Status& p_other)
-      : m_state((p_other.m_state == NULL) ? NULL : new State(*p_other.m_state)) {}
+  inline Status(const Status& other)
+      : state_((other.state_ == nullptr) ? nullptr : std::make_unique<State>(*other.state_)) {}
 
   bool IsOK() const;
 
@@ -54,20 +53,22 @@ class Status {
 
   std::string ToString() const;
 
-  inline void operator=(const Status& p_other) {
-    if (nullptr == p_other.m_state) {
-      m_state.reset();
-    } else if (m_state != p_other.m_state) {
-      m_state.reset(new State(*p_other.m_state));
+  inline void operator=(const Status& other) {
+    if (&other != this) {
+      if (nullptr == other.state_) {
+        state_.reset();
+      } else if (state_ != other.state_) {
+        state_.reset(new State(*other.state_));
+      }
     }
   }
 
-  inline bool operator==(const Status& p_other) const {
-    return (this->m_state == p_other.m_state) || (ToString() == p_other.ToString());
+  inline bool operator==(const Status& other) const {
+    return (this->state_ == other.state_) || (ToString() == other.ToString());
   }
 
-  inline bool operator!=(const Status& p_other) const {
-    return !(*this == p_other);
+  inline bool operator!=(const Status& other) const {
+    return !(*this == other);
   }
 
   static const Status& OK();
@@ -76,15 +77,13 @@ class Status {
   static const std::string& EmptyString();
 
   struct State {
-    StatusCategory m_category;
-    int m_code;
-    std::string m_msg;
+    StatusCategory category_;
+    int code_;
+    std::string msg_;
   };
 
-  // As long as Code() is OK, m_state == NULL.
-  std::unique_ptr<State> m_state;
+  // As long as Code() is OK, state_ == nullptr.
+  std::unique_ptr<State> state_;
 };
 }  // namespace Common
 }  // namespace Lotus
-
-#endif  // !CORE_GRAPH_STATUS_H

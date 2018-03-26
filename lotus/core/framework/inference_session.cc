@@ -266,7 +266,7 @@ class InferenceSession::Impl {
     Graph* p_graph = const_cast<Graph*>(session_state_.GetGraph());
     LOTUS_ENFORCE(p_graph);
     int curr_idx = 0;
-    for (auto node_it = p_graph->Nodes_begin(); node_it != p_graph->Nodes_end(); ++node_it) {
+    for (auto node_it = p_graph->NodesBegin(); node_it != p_graph->NodesEnd(); ++node_it) {
       Node* p_node = *node_it;
 
       // ignore source and sink nodes

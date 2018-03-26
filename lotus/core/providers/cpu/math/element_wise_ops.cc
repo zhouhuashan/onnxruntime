@@ -91,9 +91,9 @@ Status Add<float>::compute(OpKernelContext* ctx) const {
 }
 
 REGISTER_KERNEL(KernelDef("Add")
-                    .Domain(LotusIR::c_onnxDomain)
+                    .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
-                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
                 Add<float>);
@@ -114,9 +114,9 @@ Status Sub<float>::compute(OpKernelContext* ctx) const {
 }
 
 REGISTER_KERNEL(KernelDef("Sub")
-                    .Domain(LotusIR::c_onnxDomain)
+                    .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
-                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
                 Sub<float>);
@@ -137,9 +137,9 @@ Status Mul<float>::compute(OpKernelContext* ctx) const {
 }
 
 REGISTER_KERNEL(KernelDef("Mul")
-                    .Domain(LotusIR::c_onnxDomain)
+                    .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
-                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
                 Mul<float>);

@@ -10,6 +10,8 @@
 using namespace onnx;
 
 namespace Lotus {
+
+// TODO(Task:130) Move TensorShape to separate.h / .cc
 class TensorShape {
  public:
   TensorShape();

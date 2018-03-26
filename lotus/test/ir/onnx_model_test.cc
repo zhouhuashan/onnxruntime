@@ -11,7 +11,7 @@ namespace Test {
 // inputs, outputs and valueInfo.
 // Assumes the graph passed in has been previously resolved.
 void TestResolve(LotusIR::Graph* p_graph) {
-  std::vector<LotusIR::NODEINDEX>* nodes;
+  const std::vector<LotusIR::NodeIndex>* nodes;
   p_graph->GetNodesInTopologicalOrder(&nodes);
   auto nodesBefore = *nodes;
   auto inputsBefore = p_graph->GetInputs();
@@ -19,10 +19,10 @@ void TestResolve(LotusIR::Graph* p_graph) {
   auto valueInfoBefore = p_graph->GetValueInfo();
 
   // Touch the graph to force Resolve() to recompute.
-  p_graph->GetNode(0)->Mutable_InputArgCount();
+  p_graph->GetNode(0)->MutableInputArgCount();
   EXPECT_TRUE(p_graph->Resolve().IsOK());
 
-  std::vector<LotusIR::NODEINDEX>* nodesAfter;
+  const std::vector<LotusIR::NodeIndex>* nodesAfter;
   p_graph->GetNodesInTopologicalOrder(&nodesAfter);
   auto& inputsAfter = p_graph->GetInputs();
   auto& outputsAfter = p_graph->GetOutputs();

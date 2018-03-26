@@ -19,14 +19,15 @@ const std::vector<unique_ptr<OpKernel>>& SessionState::GetKernelVector() const {
   return session_kernels_;
 }
 
-const OpKernel* SessionState::GetKernel(LotusIR::NODEINDEX node_id) const {
+const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
   if (node_id >= session_kernels_.size()) {
     return nullptr;
   }
+  
   return session_kernels_[node_id].get();
 }
 
-void SessionState::AddKernel(LotusIR::NODEINDEX nodeId, std::unique_ptr<OpKernel> p_kernel) {
+void SessionState::AddKernel(LotusIR::NodeIndex nodeId, std::unique_ptr<OpKernel> p_kernel) {
   // assumes vector is already resize()'ed to the number of nodes in the graph
   // and the nodeIds space is dense
   LOTUS_ENFORCE(p_graph_ && (session_kernels_.size() == p_graph_->NumberOfNodes()));

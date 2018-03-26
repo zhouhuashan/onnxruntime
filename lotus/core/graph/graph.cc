@@ -11,43 +11,43 @@ using namespace LotusIR::Utils;
 
 namespace LotusIR {
 
-#define NO_CHANGE_ON_SYNC_FLAG(...)           \
-  do {                                        \
-    bool syncNeeded = m_graphProtoSyncNeeded; \
-    { __VA_ARGS__; }                          \
-    m_graphProtoSyncNeeded = syncNeeded;      \
+#define NO_CHANGE_ON_SYNC_FLAG(...)              \
+  do {                                           \
+    bool sync_needed = graph_proto_sync_needed_; \
+    { __VA_ARGS__; }                             \
+    graph_proto_sync_needed_ = sync_needed;      \
   } while (0)
 
-NodeArg::NodeArg(const std::string& p_name,
-                 const TypeProto* p_nodeArgType) {
-  m_nodeArgInfo.set_name(p_name);
+NodeArg::NodeArg(const std::string& name,
+                 const TypeProto* p_node_arg_type) {
+  node_arg_info_.set_name(name);
   // If the name is empty, it means the arg does not exist.
-  m_exist = !(p_name.empty());
-  if (nullptr != p_nodeArgType) {
-    (*m_nodeArgInfo.mutable_type()) = *p_nodeArgType;
-    m_type = OpUtils::ToType(m_nodeArgInfo.type());
+  exists_ = !(name.empty());
+  if (nullptr != p_node_arg_type) {
+    (*node_arg_info_.mutable_type()) = *p_node_arg_type;
+    type_ = OpUtils::ToType(node_arg_info_.type());
   } else {
-    m_type = nullptr;
+    type_ = nullptr;
   }
 }
 
 const std::string& NodeArg::Name() const {
-  return m_nodeArgInfo.name();
+  return node_arg_info_.name();
 }
 
-PTYPE NodeArg::Type() const {
-  return m_type;
+const PTYPE NodeArg::Type() const {
+  return type_;
 }
 
 const TensorShapeProto* NodeArg::Shape() const {
-  if (!m_nodeArgInfo.has_type()) {
+  if (!node_arg_info_.has_type()) {
     return nullptr;
   }
 
-  auto typeCase = m_nodeArgInfo.type().value_case();
+  auto typeCase = node_arg_info_.type().value_case();
   switch (typeCase) {
     case TypeProto::kTensorType:
-      return &(m_nodeArgInfo.type().tensor_type().shape());
+      return &(node_arg_info_.type().tensor_type().shape());
     case TypeProto::kSequenceType:
     case TypeProto::kMapType:
     case TypeProto::VALUE_NOT_SET:
@@ -56,15 +56,15 @@ const TensorShapeProto* NodeArg::Shape() const {
   }
 }
 
-void NodeArg::SetShape(const TensorShapeProto& p_shape) {
-  if (!m_nodeArgInfo.has_type()) {
+void NodeArg::SetShape(const TensorShapeProto& shape) {
+  if (!node_arg_info_.has_type()) {
     return;
   }
 
-  auto typeCase = m_nodeArgInfo.type().value_case();
-  switch (typeCase) {
+  auto type_case = node_arg_info_.type().value_case();
+  switch (type_case) {
     case TypeProto::kTensorType:
-      *(m_nodeArgInfo.mutable_type()->mutable_tensor_type()->mutable_shape()) = p_shape;
+      *(node_arg_info_.mutable_type()->mutable_tensor_type()->mutable_shape()) = shape;
       break;
     case TypeProto::kSequenceType:
     case TypeProto::kMapType:
@@ -75,7 +75,7 @@ void NodeArg::SetShape(const TensorShapeProto& p_shape) {
 }
 
 const NodeArgInfo& NodeArg::ToProto() const {
-  return m_nodeArgInfo;
+  return node_arg_info_;
 }
 
 void NodeArg::SetType(PTYPE p_type) {
@@ -83,146 +83,146 @@ void NodeArg::SetType(PTYPE p_type) {
     return;
   }
 
-  m_type = p_type;
-  *(m_nodeArgInfo.mutable_type()) = OpUtils::ToTypeProto(p_type);
+  type_ = p_type;
+  *(node_arg_info_.mutable_type()) = OpUtils::ToTypeProto(p_type);
 }
 
-void NodeArg::SetType(const TypeProto& p_typeProto) {
-  m_type = OpUtils::ToType(p_typeProto);
-  *(m_nodeArgInfo.mutable_type()) = p_typeProto;
+void NodeArg::SetType(const TypeProto& type_proto) {
+  type_ = OpUtils::ToType(type_proto);
+  *(node_arg_info_.mutable_type()) = type_proto;
 }
 
-bool NodeArg::Exist() const {
-  return m_exist;
+bool NodeArg::Exists() const {
+  return exists_;
 }
 
-Node::EdgeEnd::EdgeEnd(const Node* p_node, const NodeArg* p_nodeArg)
-    : m_node(p_node), m_nodeArg(p_nodeArg) {
+Node::EdgeEnd::EdgeEnd(const Node* p_node, const NodeArg* p_node_arg)
+    : node_(p_node), node_arg_(p_node_arg) {
 }
 
 const Node* Node::EdgeEnd::GetNode() const {
-  return m_node;
+  return node_;
 }
 
 const NodeArg* Node::EdgeEnd::GetNodeArg() const {
-  return m_nodeArg;
+  return node_arg_;
 }
 
 Node::NodeConstIterator::NodeConstIterator(
-    std::set<const Node*>::const_iterator p_iter)
-    : m_iter(p_iter) {
+    std::set<const Node*>::const_iterator iter)
+    : iter_(iter) {
 }
 
 bool Node::NodeConstIterator::operator==(
-    const NodeConstIterator& p_other) const {
-  return m_iter == p_other.m_iter;
+    const NodeConstIterator& other) const {
+  return iter_ == other.iter_;
 }
 
 bool Node::NodeConstIterator::operator!=(
-    const NodeConstIterator& p_other) const {
-  return m_iter != p_other.m_iter;
+    const NodeConstIterator& other) const {
+  return iter_ != other.iter_;
 }
 
 void Node::NodeConstIterator::operator++() {
-  ++m_iter;
+  ++iter_;
 }
 
 const Node* Node::NodeConstIterator::operator*() {
-  return *m_iter;
+  return *iter_;
 }
 
-Node::Node(const Node& p_other) {
-  m_name = p_other.m_name;
-  m_opType = p_other.m_opType;
-  m_domain = p_other.m_domain;
-  m_inputDefs = p_other.m_inputDefs;
-  m_input_edges = p_other.m_input_edges;
-  m_output_edges = p_other.m_output_edges;
-  m_inputNodes = p_other.m_inputNodes;
-  m_controlInputs = p_other.m_controlInputs;
-  m_outputDefs = p_other.m_outputDefs;
-  m_outputNodes = p_other.m_outputNodes;
-  m_execution_provider = p_other.m_execution_provider;
-  m_attributes = p_other.m_attributes;
+Node::Node(const Node& other) {
+  name_ = other.name_;
+  op_type_ = other.op_type_;
+  domain_ = other.domain_;
+  input_defs_ = other.input_defs_;
+  input_edges_ = other.input_edges_;
+  output_edges_ = other.output_edges_;
+  input_nodes_ = other.input_nodes_;
+  control_inputs_ = other.control_inputs_;
+  output_defs_ = other.output_defs_;
+  output_nodes_ = other.output_nodes_;
+  execution_provider_ = other.execution_provider_;
+  attributes_ = other.attributes_;
 }
 
-NODEINDEX Node::Index() const {
-  return m_index;
+NodeIndex Node::Index() const {
+  return index_;
 }
 
 const std::string& Node::Name() const {
-  return m_name;
+  return name_;
 }
 
 const std::string& Node::OpType() const {
-  return m_opType;
+  return op_type_;
 }
 
 const std::string& Node::Description() const {
-  return m_description;
+  return description_;
 }
 
 const std::string& Node::Domain() const {
-  return m_domain;
+  return domain_;
 }
 
 const OperatorSchema* Node::Op() const {
-  return m_op;
+  return op_;
 }
 
 const std::vector<NodeArg*>& Node::InputDefs() const {
-  return m_inputDefs;
+  return input_defs_;
 }
 
-std::vector<NodeArg*>& Node::Mutable_InputDefs() {
-  m_graph->m_graphResolveNeeded = true;
-  m_graph->m_graphProtoSyncNeeded = true;
-  return m_inputDefs;
+std::vector<NodeArg*>& Node::MutableInputDefs() {
+  graph_->graph_resolve_needed_ = true;
+  graph_->graph_proto_sync_needed_ = true;
+  return input_defs_;
 }
 
 const std::vector<int>& Node::InputArgCount() const {
-  return m_inputArgCount;
+  return input_arg_count_;
 }
 
-std::vector<int>& Node::Mutable_InputArgCount() {
-  m_graph->m_graphResolveNeeded = true;
-  m_graph->m_graphProtoSyncNeeded = true;
-  return m_inputArgCount;
+std::vector<int>& Node::MutableInputArgCount() {
+  graph_->graph_resolve_needed_ = true;
+  graph_->graph_proto_sync_needed_ = true;
+  return input_arg_count_;
 }
 
-Node::NodeConstIterator Node::InputNodes_begin() const {
-  return NodeConstIterator(m_inputNodes.begin());
+Node::NodeConstIterator Node::InputNodesBegin() const {
+  return NodeConstIterator(input_nodes_.begin());
 }
 
-Node::NodeConstIterator Node::InputNodes_end() const {
-  return NodeConstIterator(m_inputNodes.end());
+Node::NodeConstIterator Node::InputNodesEnd() const {
+  return NodeConstIterator(input_nodes_.end());
 }
 
-Node::NodeConstIterator Node::OutputNodes_begin() const {
-  return NodeConstIterator(m_outputNodes.begin());
+Node::NodeConstIterator Node::OutputNodesBegin() const {
+  return NodeConstIterator(output_nodes_.begin());
 }
 
-Node::NodeConstIterator Node::OutputNodes_end() const {
-  return NodeConstIterator(m_outputNodes.end());
+Node::NodeConstIterator Node::OutputNodesEnd() const {
+  return NodeConstIterator(output_nodes_.end());
 }
 
 const std::set<Node::EdgeEnd*>& Node::InputEdges() const {
-  return m_input_edges;
+  return input_edges_;
 }
 
 const std::set<Node::EdgeEnd*>& Node::OutputEdges() const {
-  return m_output_edges;
+  return output_edges_;
 }
 
-bool Node::InputEdgeSrcEnd(NodeArg* p_inputArg,
-                           /*out*/ const EdgeEnd** p_inputEdgeSrcEnd) const {
-  if (nullptr == p_inputArg || nullptr == p_inputEdgeSrcEnd) {
+bool Node::InputEdgeSrcEnd(NodeArg* p_input_arg,
+                           /*out*/ const EdgeEnd** pp_input_edge_src_end) const {
+  if (nullptr == p_input_arg || nullptr == pp_input_edge_src_end) {
     return false;
   }
 
-  for (const EdgeEnd* edge : m_input_edges) {
-    if (edge->GetNodeArg() == p_inputArg) {
-      *p_inputEdgeSrcEnd = edge;
+  for (const EdgeEnd* edge : input_edges_) {
+    if (edge->GetNodeArg() == p_input_arg) {
+      *pp_input_edge_src_end = edge;
       return true;
     }
   }
@@ -231,250 +231,245 @@ bool Node::InputEdgeSrcEnd(NodeArg* p_inputArg,
 }
 
 const std::vector<NodeArg*>& Node::OutputDefs() const {
-  return m_outputDefs;
+  return output_defs_;
 }
 
-std::vector<NodeArg*>& Node::Mutable_OutputDefs() {
-  m_graph->m_graphResolveNeeded = true;
-  m_graph->m_graphProtoSyncNeeded = true;
-  return m_outputDefs;
+std::vector<NodeArg*>& Node::MutableOutputDefs() {
+  graph_->graph_resolve_needed_ = true;
+  graph_->graph_proto_sync_needed_ = true;
+  return output_defs_;
 }
 
 const std::string& Node::GetExecutionProvider() const {
-  return m_execution_provider;
+  return execution_provider_;
 }
 
-void Node::SetExecutionProvider(const std::string& p_execution_provider) {
-  m_execution_provider = p_execution_provider;
+void Node::SetExecutionProvider(const std::string& execution_provider) {
+  execution_provider_ = execution_provider;
 }
 
-void Node::ToProto(NodeProto& p_proto) const {
+void Node::ToProto(NodeProto& proto) const {
   // Set name.
-  p_proto.set_name(m_name);
+  proto.set_name(name_);
   // Set op type.
-  p_proto.set_op_type(m_opType);
+  proto.set_op_type(op_type_);
   // Set op domain;
-  p_proto.set_domain(m_domain);
+  proto.set_domain(domain_);
   // Set doc string.
-  p_proto.set_doc_string(m_description);
+  proto.set_doc_string(description_);
 
   // Set attributes.
-  p_proto.clear_attribute();
-  for (auto attribute : m_attributes) {
-    auto attr = p_proto.add_attribute();
+  proto.clear_attribute();
+  for (auto attribute : attributes_) {
+    auto attr = proto.add_attribute();
     *attr = attribute.second;
   }
 
   // Set inputs' definitions.
-  p_proto.clear_input();
-  for (auto& inputDef : m_inputDefs) {
-    auto input = p_proto.add_input();
-    *input = inputDef->Name();
+  proto.clear_input();
+  for (auto& input_def : input_defs_) {
+    auto input = proto.add_input();
+    *input = input_def->Name();
   }
 
   // Set outputs' definitions.
-  p_proto.clear_output();
-  for (auto& outputDef : m_outputDefs) {
-    auto output = p_proto.add_output();
-    *output = outputDef->Name();
+  proto.clear_output();
+  for (auto& output_def : output_defs_) {
+    auto output = proto.add_output();
+    *output = output_def->Name();
   }
 }
 
-void Node::Init(const NodeProto& p_nodeProto,
-                const ArgNameToTypeMap& p_nameToType) {
-  m_name = p_nodeProto.name();
-  m_opType = p_nodeProto.op_type();
-  m_domain = p_nodeProto.domain();
+void Node::Init(const NodeProto& node_proto,
+                const ArgNameToTypeMap& name_to_type) {
+  name_ = node_proto.name();
+  op_type_ = node_proto.op_type();
+  domain_ = node_proto.domain();
 
-  for (int i = 0; i < p_nodeProto.input().size(); ++i) {
+  for (int i = 0; i < node_proto.input().size(); ++i) {
     const TypeProto* type = nullptr;
 
-    auto nameToTypeIter = p_nameToType.find(p_nodeProto.input(i));
-    if (p_nameToType.end() != nameToTypeIter) {
+    auto name_to_type_iter = name_to_type.find(node_proto.input(i));
+    if (name_to_type.end() != name_to_type_iter) {
       // This node input arg type/shape does exist in graph proto.
       // Assign type/shape information to node input arg.
-      type = &(nameToTypeIter->second);
+      type = &(name_to_type_iter->second);
     }
 
-    NodeArg* nodeArg = nullptr;
-    auto nodeArgMap = m_graph->GetNodeArgMap();
-    auto nameToNodeArgIter = nodeArgMap->find(p_nodeProto.input(i));
-    if (nameToNodeArgIter == nodeArgMap->end()) {
-      nodeArg = new NodeArg(p_nodeProto.input(i), type);
-      (*nodeArgMap)[p_nodeProto.input(i)] = nodeArg;
+    NodeArg* node_arg = nullptr;
+    auto node_arg_map = graph_->GetNodeArgMap();
+    auto name_to_node_arg_iter = node_arg_map->find(node_proto.input(i));
+    if (name_to_node_arg_iter == node_arg_map->end()) {
+      node_arg = new NodeArg(node_proto.input(i), type);
+      (*node_arg_map)[node_proto.input(i)] = node_arg;
     } else {
-      nodeArg = nameToNodeArgIter->second;
+      node_arg = name_to_node_arg_iter->second;
     }
 
-    m_inputDefs.push_back(nodeArg);
+    input_defs_.push_back(node_arg);
   }
 
   // Set input arg count as 1:1 maping with input defs.
   // NOTE: it may be refined per operator definition.
   // There will be cases having arg count as, 1, 1, ..., 1, N.
   // It means that the last operator input is variadic.
-  m_inputArgCount.assign(m_inputDefs.size(), 1);
+  input_arg_count_.assign(input_defs_.size(), 1);
 
-  for (int i = 0; i < p_nodeProto.output().size(); ++i) {
+  for (int i = 0; i < node_proto.output().size(); ++i) {
     const TypeProto* type = nullptr;
 
-    auto nameToTypeIter = p_nameToType.find(p_nodeProto.output(i));
-    if (p_nameToType.end() != nameToTypeIter) {
+    auto name_to_type_iter = name_to_type.find(node_proto.output(i));
+    if (name_to_type.end() != name_to_type_iter) {
       // This output arg type/shape does exist in graph proto.
       // Assign type/shape information to node output arg.
-      type = &(nameToTypeIter->second);
+      type = &(name_to_type_iter->second);
     }
 
-    NodeArg* nodeArg = nullptr;
-    auto nodeArgMap = m_graph->GetNodeArgMap();
-    auto nameToNodeArgIter = nodeArgMap->find(p_nodeProto.output(i));
-    if (nameToNodeArgIter == nodeArgMap->end()) {
-      nodeArg = new NodeArg(p_nodeProto.output(i), type);
-      (*nodeArgMap)[p_nodeProto.output(i)] = nodeArg;
+    NodeArg* node_arg = nullptr;
+    auto node_arg_map = graph_->GetNodeArgMap();
+    auto name_to_node_arg_iter = node_arg_map->find(node_proto.output(i));
+    if (name_to_node_arg_iter == node_arg_map->end()) {
+      node_arg = new NodeArg(node_proto.output(i), type);
+      (*node_arg_map)[node_proto.output(i)] = node_arg;
     } else {
-      nodeArg = nameToNodeArgIter->second;
+      node_arg = name_to_node_arg_iter->second;
     }
 
-    m_outputDefs.push_back(nodeArg);
+    output_defs_.push_back(node_arg);
   }
 
-  for (int i = 0; i < p_nodeProto.attribute_size(); ++i) {
-    auto& attr = p_nodeProto.attribute(i);
-    m_attributes[attr.name()] = attr;
+  for (int i = 0; i < node_proto.attribute_size(); ++i) {
+    auto& attr = node_proto.attribute(i);
+    attributes_[attr.name()] = attr;
   }
 }
 
-void Node::Init(const std::string& p_name,
-                const std::string& p_opType,
-                const std::string& p_description,
-                const std::vector<NodeArg*>& p_inputArgs,
-                const std::vector<NodeArg*>& p_outputArgs,
-                const std::string& p_domain) {
-  m_name = p_name;
-  m_opType = p_opType;
-  m_description = p_description;
-  m_outputDefs = p_outputArgs;
-  m_domain = p_domain;
-  //Init(p_name, p_opType, p_description, p_outputArgs, p_domain);
-  m_inputDefs = p_inputArgs;
+void Node::Init(const std::string& name,
+                const std::string& op_type,
+                const std::string& description,
+                const std::vector<NodeArg*>& input_args,
+                const std::vector<NodeArg*>& output_args,
+                const std::string& domain) {
+  //Init(name, op_type, description, output_args, domain);
+  name_ = name;
+  op_type_ = op_type;
+  description_ = description;
+  output_defs_ = output_args;
+  domain_ = domain;
+  input_defs_ = input_args;
+
   // Set each arg count as 1 by default.
   // It could be adjusted when resolving the node with its operator
   // information.
-  m_inputArgCount.assign(m_inputDefs.size(), 1);
+  input_arg_count_.assign(input_defs_.size(), 1);
 
-  auto nodeArgMap = m_graph->GetNodeArgMap();
-  for (NodeArg* inputDef : p_inputArgs) {
-    auto nameToNodeArgIter = nodeArgMap->find(inputDef->Name());
-    if (nameToNodeArgIter == nodeArgMap->end()) {
-      (*nodeArgMap)[inputDef->Name()] = inputDef;
+  auto node_arg_map = graph_->GetNodeArgMap();
+  for (NodeArg* input_def : input_args) {
+    auto name_to_node_arg_iter = node_arg_map->find(input_def->Name());
+    if (name_to_node_arg_iter == node_arg_map->end()) {
+      (*node_arg_map)[input_def->Name()] = input_def;
     } else {
-      if (nameToNodeArgIter->second != inputDef) {
-        // TODO: What LOG and ASSERT utility to use?
-        exit(1);
-      }
+      LOTUS_ENFORCE(name_to_node_arg_iter->second == input_def, "Existing entry in NodeArg map for %s != input definition.", input_def->Name());
     }
   }
 
-  for (NodeArg* outputDef : p_outputArgs) {
-    auto nameToNodeArgIter = nodeArgMap->find(outputDef->Name());
-    if (nameToNodeArgIter == nodeArgMap->end()) {
-      (*nodeArgMap)[outputDef->Name()] = outputDef;
+  for (NodeArg* output_def : output_args) {
+    auto name_to_node_arg_iter = node_arg_map->find(output_def->Name());
+    if (name_to_node_arg_iter == node_arg_map->end()) {
+      (*node_arg_map)[output_def->Name()] = output_def;
     } else {
-      if (nameToNodeArgIter->second != outputDef) {
-        // TODO: What LOG and ASSERT utility to use?
-        exit(1);
-      }
+      LOTUS_ENFORCE(name_to_node_arg_iter->second == output_def, "Existing entry in NodeArg map for %s != input definition.", output_def->Name());
     }
   }
 }
 
-/*void Node::Init(const std::string& p_name,
-        const std::string& p_opType,
-        const std::string& p_description,
-        const std::vector<NodeArg>& p_inputArgs,
+/*void Node::Init(const std::string& name,
+        const std::string& op_type,
+        const std::string& description,
+        const std::vector<NodeArg>& input_args,
         const std::vector<int>& p_inputArgCount,
-        const std::vector<NodeArg>& p_outputArgs,
-        const std::string& p_domain)
+        const std::vector<NodeArg>& output_args,
+        const std::string& domain)
     {
-        Init(p_name, p_opType, p_description, p_outputArgs, p_domain);
-        m_inputDefs = p_inputArgs;
-        m_inputArgCount = p_inputArgCount;
+        Init(name, op_type, description, output_args, domain);
+        input_defs_ = input_args;
+        input_arg_count_ = p_inputArgCount;
     }
 
-    void Node::Init(const std::string& p_name,
-        const std::string& p_opType,
-        const std::string& p_description,
-        const std::vector<NodeArg>& p_outputArgs,
-        const std::string& p_domain)
+    void Node::Init(const std::string& name,
+        const std::string& op_type,
+        const std::string& description,
+        const std::vector<NodeArg>& output_args,
+        const std::string& domain)
     {
-        m_name = p_name;
-        m_opType = p_opType;
-        m_description = p_description;
-        m_outputDefs = p_outputArgs;
-        m_domain = p_domain;
+        name_ = name;
+        op_type_ = op_type;
+        description_ = description;
+        output_defs_ = output_args;
+        domain_ = domain;
     }*/
 
-bool Node::AddAttribute(const std::string& p_attrName, const AttributeProto& p_value) {
-  auto it = m_attributes.find(p_attrName);
-  if (it == m_attributes.end()) {
-    m_graph->m_graphResolveNeeded = true;
-    m_graph->m_graphProtoSyncNeeded = true;
-    m_attributes.emplace(p_attrName, p_value);
+bool Node::AddAttribute(const std::string& attr_name, const AttributeProto& value) {
+  auto it = attributes_.find(attr_name);
+  if (it == attributes_.end()) {
+    graph_->graph_resolve_needed_ = true;
+    graph_->graph_proto_sync_needed_ = true;
+    attributes_.emplace(attr_name, value);
     return true;
   } else {
     return false;
   }
 }
 
-#define ADD_BASIC_ATTR_IMPL(type, field)                                        \
-  bool Node::AddAttribute(const std::string& p_attrName, const type& p_value) { \
-    auto it = m_attributes.find(p_attrName);                                    \
-    if (it == m_attributes.end()) {                                             \
-      m_graph->m_graphResolveNeeded = true;                                     \
-      m_graph->m_graphProtoSyncNeeded = true;                                   \
-      AttributeProto a;                                                         \
-      a.set_name(p_attrName);                                                   \
-      a.set_##field(p_value);                                                   \
-      m_attributes.emplace(p_attrName, a);                                      \
-      return true;                                                              \
-    } else {                                                                    \
-      return false;                                                             \
-    }                                                                           \
+#define ADD_BASIC_ATTR_IMPL(type, field)                                     \
+  bool Node::AddAttribute(const std::string& attr_name, const type& value) { \
+    auto it = attributes_.find(attr_name);                                   \
+    if (it == attributes_.end()) {                                           \
+      graph_->graph_resolve_needed_ = true;                                  \
+      graph_->graph_proto_sync_needed_ = true;                               \
+      AttributeProto a;                                                      \
+      a.set_name(attr_name);                                                 \
+      a.set_##field(value);                                                  \
+      attributes_.emplace(attr_name, a);                                     \
+      return true;                                                           \
+    } else {                                                                 \
+      return false;                                                          \
+    }                                                                        \
   };
 
-#define ADD_ATTR_IMPL(type, field)                                              \
-  bool Node::AddAttribute(const std::string& p_attrName, const type& p_value) { \
-    auto it = m_attributes.find(p_attrName);                                    \
-    if (it == m_attributes.end()) {                                             \
-      m_graph->m_graphResolveNeeded = true;                                     \
-      m_graph->m_graphProtoSyncNeeded = true;                                   \
-      AttributeProto a;                                                         \
-      a.set_name(p_attrName);                                                   \
-      *(a.mutable_##field()) = p_value;                                         \
-      m_attributes.emplace(p_attrName, a);                                      \
-      return true;                                                              \
-    } else {                                                                    \
-      return false;                                                             \
-    }                                                                           \
+#define ADD_ATTR_IMPL(type, field)                                           \
+  bool Node::AddAttribute(const std::string& attr_name, const type& value) { \
+    auto it = attributes_.find(attr_name);                                   \
+    if (it == attributes_.end()) {                                           \
+      graph_->graph_resolve_needed_ = true;                                  \
+      graph_->graph_proto_sync_needed_ = true;                               \
+      AttributeProto a;                                                      \
+      a.set_name(attr_name);                                                 \
+      *(a.mutable_##field()) = value;                                        \
+      attributes_.emplace(attr_name, a);                                     \
+      return true;                                                           \
+    } else {                                                                 \
+      return false;                                                          \
+    }                                                                        \
   };
 
-#define ADD_LIST_ATTR_IMPL(type, field)                        \
-  bool Node::AddAttribute(const std::string& p_attrName,       \
-                          const std::vector<type>& p_values) { \
-    auto it = m_attributes.find(p_attrName);                   \
-    if (it == m_attributes.end()) {                            \
-      m_graph->m_graphResolveNeeded = true;                    \
-      m_graph->m_graphProtoSyncNeeded = true;                  \
-      AttributeProto a;                                        \
-      a.set_name(p_attrName);                                  \
-      for (const auto& val : p_values) {                       \
-        *(a.mutable_##field()->Add()) = val;                   \
-      }                                                        \
-      m_attributes.emplace(p_attrName, a);                     \
-      return true;                                             \
-    } else {                                                   \
-      return false;                                            \
-    }                                                          \
+#define ADD_LIST_ATTR_IMPL(type, field)                      \
+  bool Node::AddAttribute(const std::string& attr_name,      \
+                          const std::vector<type>& values) { \
+    auto it = attributes_.find(attr_name);                   \
+    if (it == attributes_.end()) {                           \
+      graph_->graph_resolve_needed_ = true;                  \
+      graph_->graph_proto_sync_needed_ = true;               \
+      AttributeProto a;                                      \
+      a.set_name(attr_name);                                 \
+      for (const auto& val : values) {                       \
+        *(a.mutable_##field()->Add()) = val;                 \
+      }                                                      \
+      attributes_.emplace(attr_name, a);                     \
+      return true;                                           \
+    } else {                                                 \
+      return false;                                          \
+    }                                                        \
   };
 
 ADD_BASIC_ATTR_IMPL(float, f)
@@ -488,321 +483,307 @@ ADD_LIST_ATTR_IMPL(std::string, strings)
 ADD_LIST_ATTR_IMPL(TensorProto, tensors)
 ADD_LIST_ATTR_IMPL(GraphProto, graphs)
 
-bool Node::ClearAttribute(const std::string& p_attrName) {
-  m_graph->m_graphResolveNeeded = true;
-  m_graph->m_graphProtoSyncNeeded = true;
-  return m_attributes.erase(p_attrName) > 0;
+bool Node::ClearAttribute(const std::string& attr_name) {
+  graph_->graph_resolve_needed_ = true;
+  graph_->graph_proto_sync_needed_ = true;
+  return attributes_.erase(attr_name) > 0;
 }
 
 const NodeAttributes& Node::GetAttributes() const {
-  return m_attributes;
+  return attributes_;
 }
 
-bool GraphBase::NodeIterator::operator==(
-    const GraphBase::NodeIterator& p_other) const {
-  return (m_graph == p_other.m_graph &&
-          m_currentNodeIndex == p_other.m_currentNodeIndex);
+bool GraphBase::NodeIterator::operator==(const GraphBase::NodeIterator& other) const {
+  return (graph_ == other.graph_ &&
+          current_node_index_ == other.current_node_index_);
 }
 
-bool GraphBase::NodeIterator::operator!=(
-    const GraphBase::NodeIterator& p_other) const {
-  return !(*this == p_other);
+bool GraphBase::NodeIterator::operator!=(const GraphBase::NodeIterator& other) const {
+  return !(*this == other);
 }
 
 void GraphBase::NodeIterator::operator++() {
   while (true) {
-    m_currentNodeIndex++;
-    if (m_currentNodeIndex >= m_graph->MaxNodeIndex() || nullptr != m_graph->GetNode(m_currentNodeIndex)) {
+    current_node_index_++;
+    if (current_node_index_ >= graph_->MaxNodeIndex() || nullptr != graph_->GetNode(current_node_index_)) {
       return;
     }
   }
 }
 
 Node* GraphBase::NodeIterator::operator*() {
-  return m_graph->GetNode(m_currentNodeIndex);
+  return graph_->GetNode(current_node_index_);
 }
 
-Graph::Graph(const GraphProto& p_graphProto,
-             const std::unordered_map<std::string, int>& p_domainToVersion)
-    : m_graphProto(p_graphProto) {
-  m_graphProtoSyncNeeded = false;
-  m_graphResolveNeeded = true;
-  m_numOfNodes = 0;
+Graph::Graph(const GraphProto& graph_proto,
+             const std::unordered_map<std::string, int>& domain_to_version)
+    : graph_proto_(graph_proto) {
+  graph_proto_sync_needed_ = false;
+  graph_resolve_needed_ = true;
+  num_of_nodes_ = 0;
 
-  m_domainToVersion = &p_domainToVersion;
-  m_graphType |= Type::Main;
+  domain_to_version_ = &domain_to_version;
+  graph_type_ |= Type::Main;
 
   // Copy initial tensors to a map.
-  for (auto tensor : p_graphProto.initializer()) {
-    m_nameToInitialTensor[tensor.name()] = tensor;
+  for (auto tensor : graph_proto.initializer()) {
+    name_to_initial_tensor_[tensor.name()] = tensor;
   }
 
   // Collect all node arg name, type, shape information in the graph.
   // type/shape information will be assigned to each node arg when going
   // thru all nodes later.
-  ArgNameToTypeMap nameToTypeMap;
-  for (auto& graphInput : m_graphProto.input()) {
-    if (graphInput.has_name() && graphInput.has_type()) {
-      nameToTypeMap[graphInput.name()] = graphInput.type();
+  ArgNameToTypeMap name_to_type_map;
+  for (auto& graph_input : graph_proto_.input()) {
+    if (graph_input.has_name() && graph_input.has_type()) {
+      name_to_type_map[graph_input.name()] = graph_input.type();
     }
   }
-  for (auto& graphOutput : m_graphProto.output()) {
-    if (graphOutput.has_name() && graphOutput.has_type()) {
-      nameToTypeMap[graphOutput.name()] = graphOutput.type();
+  for (auto& graph_output : graph_proto_.output()) {
+    if (graph_output.has_name() && graph_output.has_type()) {
+      name_to_type_map[graph_output.name()] = graph_output.type();
     }
   }
-  for (auto& nodeArg : m_graphProto.value_info()) {
-    if (nodeArg.has_name() && nodeArg.has_type()) {
-      nameToTypeMap[nodeArg.name()] = nodeArg.type();
+  for (auto& node_arg : graph_proto_.value_info()) {
+    if (node_arg.has_name() && node_arg.has_type()) {
+      name_to_type_map[node_arg.name()] = node_arg.type();
     }
   }
 
   // Add nodes.
   AddSourceSinkNodes();
-  for (auto nodeProto : p_graphProto.node()) {
-    AddNode(nodeProto, nameToTypeMap);
+  for (auto node_proto : graph_proto.node()) {
+    AddNode(node_proto, name_to_type_map);
   }
 }
 
-Graph::Graph(const std::string& p_name,
-             const std::unordered_map<std::string, int>& p_domainToVersion) {
-  m_graphProtoSyncNeeded = false;
-  m_graphResolveNeeded = true;
-  m_numOfNodes = 0;
+Graph::Graph(const std::string& name,
+             const std::unordered_map<std::string, int>& domain_to_version) {
+  graph_proto_sync_needed_ = false;
+  graph_resolve_needed_ = true;
+  num_of_nodes_ = 0;
 
-  m_domainToVersion = &p_domainToVersion;
-  m_graphProto.set_name(p_name);
-  m_graphType |= Type::Main;
+  domain_to_version_ = &domain_to_version;
+  graph_proto_.set_name(name);
+  graph_type_ |= Type::Main;
 
   AddSourceSinkNodes();
 }
 
-Status Graph::VerifyNoDuplicateName(
-    /*out*/ std::unordered_map<std::string, Node*>& p_outputArgs,
-    /*out*/ std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex) {
-  p_outputArgs.clear();
-  p_nodeNameToIndex.clear();
+Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node*>& output_args,
+                                    /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
+  output_args.clear();
+  node_name_to_index.clear();
 
-  for (auto nodeIter = Nodes_begin();
-       nodeIter != Nodes_end();
-       ++nodeIter) {
+  for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
     // Verify node name should be unique.
-    auto& nodeName = (*nodeIter)->Name();
+    auto& node_name = (*node_iter)->Name();
 
-    if (!nodeName.empty() && p_nodeNameToIndex.end() != p_nodeNameToIndex.find(nodeName)) {
+    if (!node_name.empty() && node_name_to_index.end() != node_name_to_index.find(node_name)) {
       // The node has name and its name was used by another node.
-      Status status(LOTUS,
-                    FAIL,
-                    "Error: two nodes with same node name (" + nodeName + ").");
+      Status status(LOTUS, FAIL,
+                    "Error: two nodes with same node name (" + node_name + ").");
       return status;
     }
-    p_nodeNameToIndex[nodeName] = (*nodeIter)->Index();
+
+    node_name_to_index[node_name] = (*node_iter)->Index();
 
     // Verify node outputs' name should be unique.
-    for (auto& outputDef : (*nodeIter)->OutputDefs()) {
-      std::string outputArgname = outputDef->Name();
-      if (p_outputArgs.end() != p_outputArgs.find(outputArgname)) {
+    for (auto& output_def : (*node_iter)->OutputDefs()) {
+      std::string output_arg_name = output_def->Name();
+      if (output_args.end() != output_args.find(output_arg_name)) {
         // Two outputs with same name.
-        Status status(LOTUS,
-                      FAIL,
-                      "Error: two output args with same name (" + outputArgname + ").");
+        Status status(LOTUS, FAIL,
+                      "Error: two output args with same name (" + output_arg_name + ").");
         return status;
       }
-      p_outputArgs.insert(
-          {outputArgname, *nodeIter});
+      output_args.insert({output_arg_name, *node_iter});
     }
   }
   return Status::OK();
 }
 
-Status Graph::BuildConnections(
-    const std::unordered_map<std::string, Node*>& p_outputArgs,
-    const std::unordered_map<std::string, NODEINDEX>& p_nodeNameToIndex) {
-  std::unordered_set<Node*> innerNodes;
-  for (auto nodeIter = Nodes_begin();
-       nodeIter != Nodes_end();
-       ++nodeIter) {
-    if (IsSourceNode((*nodeIter)->Index()) || IsSinkNode((*nodeIter)->Index())) {
+Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& output_args,
+                               const std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
+  std::unordered_set<Node*> inner_nodes;
+  for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
+    if (IsSourceNode((*node_iter)->Index()) || IsSinkNode((*node_iter)->Index())) {
       continue;
     }
 
-    for (auto& controlInput : (*nodeIter)->m_controlInputs) {
-      auto nameToIndexIter = p_nodeNameToIndex.find(controlInput);
-      if (p_nodeNameToIndex.end() == nameToIndexIter) {
+    for (auto& control_input : (*node_iter)->control_inputs_) {
+      auto name_to_index_iter = node_name_to_index.find(control_input);
+      if (node_name_to_index.end() == name_to_index_iter) {
         Status status(LOTUS, FAIL,
-                      "The control input (" + controlInput + ") of Node (" + (*nodeIter)->Name() + ") does not exist in the graph.");
+                      "The control input (" + control_input + ") of Node (" +
+                          (*node_iter)->Name() + ") does not exist in the graph.");
         return status;
       }
 
-      NODEINDEX srcNodeIndex = nameToIndexIter->second;
-      NODEINDEX dstNodeIndex = (*nodeIter)->Index();
-      m_nodes[srcNodeIndex]->m_outputNodes.insert(m_nodes[dstNodeIndex].get());
-      m_nodes[dstNodeIndex]->m_inputNodes.insert(m_nodes[srcNodeIndex].get());
+      NodeIndex src_node_index = name_to_index_iter->second;
+      NodeIndex dst_node_index = (*node_iter)->Index();
+      nodes_[src_node_index]->output_nodes_.insert(nodes_[dst_node_index].get());
+      nodes_[dst_node_index]->input_nodes_.insert(nodes_[src_node_index].get());
     }
 
-    auto& inputArgs = (*nodeIter)->InputDefs();
-    if (inputArgs.size() > 0) {
+    auto& input_args = (*node_iter)->InputDefs();
+    if (input_args.size() > 0) {
       // This node needs inputs.
 
-      for (auto& inputArg : inputArgs) {
-        if (!inputArg->Exist()) {
+      for (auto& input_arg : input_args) {
+        if (!input_arg->Exists()) {
           // This input could be optional and it does not exist in this case.
           continue;
         }
 
-        auto outputArgIter = p_outputArgs.find(inputArg->Name());
-        if (p_outputArgs.end() == outputArgIter) {
-          // No such outputArg matching this inputArg.
+        auto output_arg_iter = output_args.find(input_arg->Name());
+        if (output_args.end() == output_arg_iter) {
+          // No such output_arg matching this input_arg.
           // This input arg should be fed when running evaluation.
 
           // Add a control edge between <souce> node and this node.
-          AddControlEdge(m_sourceNodeIndex, (*nodeIter)->Index());
+          AddControlEdge(source_node_index_, (*node_iter)->Index());
           continue;
         }
 
-        // Setup input/output relationship between <*nodeIter>
-        // and <outputArgIter>.
-        Node* output_node = outputArgIter->second;
+        // Setup input/output relationship between <*node_iter>
+        // and <output_arg_iter>.
+        Node* output_node = output_arg_iter->second;
 
-        (*nodeIter)->m_inputNodes.insert(output_node);
-        Node::EdgeEnd* in_edge = new Node::EdgeEnd(output_node, inputArg);
-        (*nodeIter)->m_input_edges.insert(in_edge);
+        (*node_iter)->input_nodes_.insert(output_node);
+        Node::EdgeEnd* in_edge = new Node::EdgeEnd(output_node, input_arg);
+        (*node_iter)->input_edges_.insert(in_edge);
 
-        output_node->m_outputNodes.insert((*nodeIter));
-        Node::EdgeEnd* out_edge = new Node::EdgeEnd(*nodeIter, inputArg);
-        output_node->m_output_edges.insert(out_edge);
+        output_node->output_nodes_.insert((*node_iter));
+        Node::EdgeEnd* out_edge = new Node::EdgeEnd(*node_iter, input_arg);
+        output_node->output_edges_.insert(out_edge);
 
-        innerNodes.insert(output_node);
+        inner_nodes.insert(output_node);
       }
     } else {
-      if ((*nodeIter)->OutputDefs().size() <= 0) {
+      if ((*node_iter)->OutputDefs().size() <= 0) {
         // This is a useless node.
         // It has no input/output.
-        RemoveNode((*nodeIter)->Index());
+        RemoveNode((*node_iter)->Index());
       }
 
       // This is a starting node.
       // Add a control edge between <souce> node and this node.
-      AddControlEdge(m_sourceNodeIndex, (*nodeIter)->Index());
+      AddControlEdge(source_node_index_, (*node_iter)->Index());
     }
   }
 
-  for (auto nodeIter = Nodes_begin();
-       nodeIter != Nodes_end();
-       ++nodeIter) {
-    if (IsSourceNode((*nodeIter)->Index()) || IsSinkNode((*nodeIter)->Index())) {
+  for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
+    if (IsSourceNode((*node_iter)->Index()) || IsSinkNode((*node_iter)->Index())) {
       continue;
     }
 
-    if (innerNodes.size() <= 0 || innerNodes.end() == innerNodes.find((*nodeIter))) {
+    if (inner_nodes.size() <= 0 || inner_nodes.end() == inner_nodes.find((*node_iter))) {
       // This is an ending node.
       // Add a control edge from this node to sink node.
-      AddControlEdge((*nodeIter)->Index(), m_sinkNodeIndex);
+      AddControlEdge((*node_iter)->Index(), sink_node_index_);
     }
   }
 
   return Status::OK();
 }
 
-void Graph::ReverseDFSFrom(
-    const std::vector<NODEINDEX> &from,
-    const std::function<void(Node *)>& enter,
-    const std::function<void(Node *)>& leave,
-    const std::function<bool(const Node*, const Node*)>& comp) {
-    std::vector<Node *> node_vec;
-    for (auto i : from) {
-        node_vec.push_back(GetNode(i));
-    }
+void Graph::ReverseDFSFrom(const std::vector<NodeIndex>& from,
+                           const std::function<void(Node*)>& enter,
+                           const std::function<void(Node*)>& leave,
+                           const std::function<bool(const Node*, const Node*)>& comp) {
+  std::vector<Node*> node_vec;
+  for (auto i : from) {
+    node_vec.push_back(GetNode(i));
+  }
 
-    ReverseDFSFrom(node_vec, enter, leave, comp);
+  ReverseDFSFrom(node_vec, enter, leave, comp);
 }
 
-void Graph::ReverseDFSFrom(
-    const std::vector<Node *> &from,
-    const std::function<void(Node *)>& enter,
-    const std::function<void(Node *)>& leave,
-    const std::function<bool(const Node*, const Node*)>& comp) {
-    using WorkEntry = std::pair<Node *, bool>; // bool represents leave or not
-    std::vector<WorkEntry> stack(from.size());
-    for (size_t i = 0; i < from.size(); i++) {
-        stack[i] = WorkEntry(from[i], false);
+void Graph::ReverseDFSFrom(const std::vector<Node*>& from,
+                           const std::function<void(Node*)>& enter,
+                           const std::function<void(Node*)>& leave,
+                           const std::function<bool(const Node*, const Node*)>& comp) {
+  using WorkEntry = std::pair<Node*, bool>;  // bool represents leave or not
+  std::vector<WorkEntry> stack(from.size());
+  for (size_t i = 0; i < from.size(); i++) {
+    stack[i] = WorkEntry(from[i], false);
+  }
+
+  std::vector<bool> visited(nodes_.size(), false);
+  while (!stack.empty()) {
+    WorkEntry e = stack.back();
+    stack.pop_back();
+    Node* n = e.first;
+    if (e.second) {
+      // leave node
+      leave(n);
+      continue;
     }
 
-    std::vector<bool> visited(m_nodes.size(), false);
-    while (!stack.empty()) {
-        WorkEntry e = stack.back();
-        stack.pop_back();
-        Node *n = e.first;
-        if (e.second) {
-            // leave node
-            leave(n);
-            continue;
+    if (visited[n->Index()]) continue;
+    visited[n->Index()] = true;
+
+    if (enter) enter(n);
+
+    if (leave) stack.push_back(WorkEntry(n, true));
+
+    if (comp) {
+      std::vector<Node*> sorted_nodes;
+      for (auto iter = n->InputNodesBegin(); iter != n->InputNodesEnd(); ++iter) {
+        sorted_nodes.push_back(const_cast<Node*>(*iter));
+      }
+      std::sort(sorted_nodes.begin(), sorted_nodes.end(), comp);
+      for (auto in : sorted_nodes) {
+        NodeIndex idx = in->Index();
+        if (!visited[idx]) {
+          stack.push_back(WorkEntry(in, false));
         }
-
-        if (visited[n->Index()]) continue;
-        visited[n->Index()] = true;
-        if (enter) enter(n);
-
-        if (leave) stack.push_back(WorkEntry(n, true));
-
-        if (comp) {
-            std::vector<Node *> sorted_nodes;
-            for (auto iter = n->InputNodes_begin(); iter != n->InputNodes_end(); ++iter) {
-                sorted_nodes.push_back(const_cast<Node *>(*iter));
-            }
-            std::sort(sorted_nodes.begin(), sorted_nodes.end(), comp);
-            for (auto in : sorted_nodes) {
-                NODEINDEX idx = in->Index();
-                if (!visited[idx]) {
-                    stack.push_back(WorkEntry(in, false));
-                }
-            }
-        } else {
-            for (auto iter = n->InputNodes_begin(); iter != n->InputNodes_end(); ++iter) {
-                NODEINDEX idx = (*iter)->Index();
-                if (!visited[idx]) {
-                    stack.push_back(WorkEntry(GetNode(idx), false));
-                }
-            }
+      }
+    } else {
+      for (auto iter = n->InputNodesBegin(); iter != n->InputNodesEnd(); ++iter) {
+        NodeIndex idx = (*iter)->Index();
+        if (!visited[idx]) {
+          stack.push_back(WorkEntry(GetNode(idx), false));
         }
+      }
     }
+  }
 }
 
-Status Graph::CheckIsAcyclic(
-    std::vector<NODEINDEX>& p_nodesInTopologicalOrder) {
-  p_nodesInTopologicalOrder.clear();
-  // nodes that have been processed and added to p_nodesInTopologicalOrder.
-  std::unordered_set<NODEINDEX> visitedNodes;
-  std::unordered_set<NODEINDEX> ancestorNodes;
+Status Graph::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order) {
+  nodes_in_topological_order.clear();
+  // nodes that have been processed and added to nodes_in_topological_order.
+  std::unordered_set<NodeIndex> visited_nodes;
+  std::unordered_set<NodeIndex> ancestor_nodes;
   // tracks nodes whose child nodes have been processed.
-  std::unordered_set<NODEINDEX> childrenVisitedNodes;
-  std::stack<NODEINDEX> stack;
-  stack.push(m_sinkNodeIndex);
+  std::unordered_set<NodeIndex> children_visited_nodes;
+  std::stack<NodeIndex> stack;
+  stack.push(sink_node_index_);
 
   while (!stack.empty()) {
-    NODEINDEX current = stack.top();
+    NodeIndex current = stack.top();
     stack.pop();
 
-    if (visitedNodes.end() != visitedNodes.find(current)) {
+    if (visited_nodes.end() != visited_nodes.find(current)) {
       // The node has been visited before
       continue;
     }
 
-    if (childrenVisitedNodes.end() != childrenVisitedNodes.find(current)) {
+    if (children_visited_nodes.end() != children_visited_nodes.find(current)) {
       // children are done so we mark this one complete.
-      visitedNodes.insert(current);
-      p_nodesInTopologicalOrder.push_back(current);
-      ancestorNodes.erase(current);
+      visited_nodes.insert(current);
+      nodes_in_topological_order.push_back(current);
+      ancestor_nodes.erase(current);
       continue;
     }
 
-    if (m_nodes[current]->InputNodes_begin() ==
-        m_nodes[current]->InputNodes_end()) {
+    if (nodes_[current]->InputNodesBegin() == nodes_[current]->InputNodesEnd()) {
       // no children
-      childrenVisitedNodes.insert(current);
-      visitedNodes.insert(current);
-      p_nodesInTopologicalOrder.push_back(current);
-      ancestorNodes.erase(current);
+      children_visited_nodes.insert(current);
+      visited_nodes.insert(current);
+      nodes_in_topological_order.push_back(current);
+      ancestor_nodes.erase(current);
       continue;
     }
 
@@ -810,29 +791,26 @@ Status Graph::CheckIsAcyclic(
 
     // mark as children done. by the time the node is popped off the stack again,
     // its children will have been processed
-    childrenVisitedNodes.insert(current);
+    children_visited_nodes.insert(current);
 
-    ancestorNodes.insert(current);
+    ancestor_nodes.insert(current);
 
     // check children
-    for (auto iter = m_nodes[current]->InputNodes_begin();
-         iter != m_nodes[current]->InputNodes_end();
-         ++iter) {
-      NODEINDEX idx = (*iter)->Index();
-      if (ancestorNodes.end() != ancestorNodes.find(idx)) {
-        Status status(LOTUS, FAIL,
-                      "Error: the graph is not acyclic.");
+    for (auto iter = nodes_[current]->InputNodesBegin(); iter != nodes_[current]->InputNodesEnd(); ++iter) {
+      NodeIndex idx = (*iter)->Index();
+      if (ancestor_nodes.end() != ancestor_nodes.find(idx)) {
+        Status status(LOTUS, FAIL, "Error: the graph is not acyclic.");
         return status;
       }
 
       // avoid re-processing nodes
-      if (childrenVisitedNodes.end() == childrenVisitedNodes.find(idx)) {
+      if (children_visited_nodes.end() == children_visited_nodes.find(idx)) {
         stack.push(idx);
       }
     }
   }
 
-  if (this->NumberOfNodes() == p_nodesInTopologicalOrder.size()) {
+  if (this->NumberOfNodes() == nodes_in_topological_order.size()) {
     return Status::OK();
   } else {
     return Status(LOTUS, FAIL, "Error: the graph is not acyclic.");
@@ -841,59 +819,61 @@ Status Graph::CheckIsAcyclic(
 
 Status Graph::InferAndVerifyTypeMatch(Node* p_node,
                                       const OpSignature* p_op,
-                                      const std::unordered_map<std::string, Node*>& p_outputArgs) {
+                                      const std::unordered_map<std::string, Node*>& output_args) {
   auto& nodeName = p_node->Name();
 
   // <k> index used to navigate node->InputDefs().
   int k = 0;
-  std::unordered_map<std::string, PTYPE> typeParameterToTypeMap;
+  std::unordered_map<std::string, PTYPE> type_parameter_to_type_map;
 
   for (size_t i = 0; i < p_node->InputArgCount().size(); ++i) {
     // Number of inputs matching to the i-th argument.
-    int argCount = p_node->InputArgCount()[i];
+    int arg_count = p_node->InputArgCount()[i];
     // The i-th argument definition.
-    auto opFormalParameter = p_op->GetInputs()[i];
+    auto op_formal_parameter = p_op->GetInputs()[i];
 
     // Infer and verify all <arguCount> inputs (k-th input)
     // matching operator definition (i-th argument).
-    for (int j = 0; j < argCount; ++j, ++k) {
-      auto& inputDef = p_node->Mutable_InputDefs()[k];
+    for (int j = 0; j < arg_count; ++j, ++k) {
+      auto& input_def = p_node->MutableInputDefs()[k];
 
       // For each input arg.
-      auto outputArgsIter = p_outputArgs.find(inputDef->Name());
-      if (p_outputArgs.end() == outputArgsIter) {
+      auto output_args_iter = output_args.find(input_def->Name());
+      if (output_args.end() == output_args_iter) {
         // This input arg should either be fed by callers,
         // or be in initializers.
         // If it's fed by callers, it's needed to have type
         // information defined well.
-        auto initialTensorIter = m_nameToInitialTensor.find(inputDef->Name());
-        if (m_nameToInitialTensor.end() != initialTensorIter) {
+        auto initial_tensor_iter = name_to_initial_tensor_.find(input_def->Name());
+        if (name_to_initial_tensor_.end() != initial_tensor_iter) {
           // This input is fed with default value by initializer.
           // Infer its type from initializer tensor.
-          TypeProto initialTensorType;
-          initialTensorType.mutable_tensor_type()->set_elem_type(
-              initialTensorIter->second.data_type());
-          inputDef->SetType(OpUtils::ToType(initialTensorType));
+          TypeProto initial_tensor_type;
+          initial_tensor_type.mutable_tensor_type()->set_elem_type(
+              initial_tensor_iter->second.data_type());
+          input_def->SetType(OpUtils::ToType(initial_tensor_type));
 
           // Set shape accordingly.
           TensorShapeProto shape;
-          for (auto dim : initialTensorIter->second.dims()) {
+          for (auto dim : initial_tensor_iter->second.dims()) {
             shape.add_dim()->set_dim_value(dim);
           }
-          inputDef->SetShape(shape);
-        } else if (!inputDef->m_nodeArgInfo.has_type()) {
+          input_def->SetShape(shape);
+        } else if (!input_def->node_arg_info_.has_type()) {
           // This input is fed by callers and its type has to be specified.
 
           Status status(LOTUS, FAIL,
-                        "Node (" + nodeName + ") input arg (" + inputDef->Name() + ") does not have type information.");
+                        "Node (" + nodeName + ") input arg (" +
+                            input_def->Name() + ") does not have type information.");
           return status;
         }
       } else {
         // The type of this input should have been set by
         // its parent who ouputs the NodeArg
-        if (inputDef->Type() == nullptr) {
+        if (input_def->Type() == nullptr) {
           Status status(LOTUS, FAIL,
-                        "Node (" + nodeName + ") input arg (" + inputDef->Name() + ") does not have type information set by parent node.");
+                        "Node (" + nodeName + ") input arg (" +
+                            input_def->Name() + ") does not have type information set by parent node.");
           return status;
         }
       }
@@ -901,32 +881,29 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
       // Verify the input arg type complying with operator
       // definition.
 
-      auto iter = opFormalParameter.GetTypes().find(inputDef->Type());
-      if (opFormalParameter.GetTypes().end() == iter) {
+      auto iter = op_formal_parameter.GetTypes().find(input_def->Type());
+      if (op_formal_parameter.GetTypes().end() == iter) {
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") input arg (" + inputDef->Name() + ") type does not match operator (" + p_op->GetName() + ") definition.");
+                      "Node (" + nodeName + ") input arg (" +
+                          input_def->Name() + ") type does not match operator (" + p_op->GetName() + ") definition.");
         return status;
       }
 
-      auto paramToTypeIter = typeParameterToTypeMap.find(opFormalParameter.GetTypeStr());
-      if (typeParameterToTypeMap.end() == paramToTypeIter) {
-        typeParameterToTypeMap[opFormalParameter.GetTypeStr()] = inputDef->Type();
+      auto param_to_type_iter = type_parameter_to_type_map.find(op_formal_parameter.GetTypeStr());
+      if (type_parameter_to_type_map.end() == param_to_type_iter) {
+        type_parameter_to_type_map[op_formal_parameter.GetTypeStr()] = input_def->Type();
 
-      } else if (paramToTypeIter->second != inputDef->Type() && argCount == 1) {
+      } else if (param_to_type_iter->second != input_def->Type() && arg_count == 1) {
         // This is the case.
         // An operator's inputs' type is "T", and T"s allowed value set is "float, int32".
         // However, one input is specified as "float", and another one is specified as "int".
-        // NOTE: for variadic arguments (argCount > 1), this verification rule is not applicable.
+        // NOTE: for variadic arguments (arg_count > 1), this verification rule is not applicable.
         // Different types are allowed for variadic arguments although there's only one type "T"
         // specified in op definition.
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName +
-                          ") has different input"
-                          " types (" +
-                          *(paramToTypeIter->second) + "," + *(inputDef->Type()) +
-                          ") matching to same "
-                          "type string (" +
-                          opFormalParameter.GetTypeStr() + ").");
+                      "Node (" + nodeName + ") has different input types (" +
+                          *(param_to_type_iter->second) + "," + *(input_def->Type()) +
+                          ") matching to same type string (" + op_formal_parameter.GetTypeStr() + ").");
         return status;
       }
     }
@@ -934,47 +911,45 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
 
   // Infer and verify node output arg type information.
   int i = 0;
-  for (auto& outputDef : p_node->Mutable_OutputDefs()) {
+  for (auto& output_def : p_node->MutableOutputDefs()) {
     // For each output arg.
 
-    auto opFormalParameter = p_op->GetOutputs()[i++];
+    auto op_formal_parameter = p_op->GetOutputs()[i++];
 
     // Infer output arg type per input arg type if they share
     // the same type string. For example, type string is "T"
     // for both input arg and output arg.
-    auto inputTypesIter = typeParameterToTypeMap.find(opFormalParameter.GetTypeStr());
-    if (typeParameterToTypeMap.end() != inputTypesIter) {
-      outputDef->SetType(inputTypesIter->second);
+    auto input_types_iter = type_parameter_to_type_map.find(op_formal_parameter.GetTypeStr());
+    if (type_parameter_to_type_map.end() != input_types_iter) {
+      output_def->SetType(input_types_iter->second);
       continue;
     }
 
-    if (typeParameterToTypeMap.empty()) {
+    if (type_parameter_to_type_map.empty()) {
       // There's no input arg.
-      // The output should be read from an attribute named c_constantValue.
+      // The output should be read from an attribute named kConstantValue.
 
-      auto nodeAttributesIter = p_node->GetAttributes().find(c_constantValue);
-      if (p_node->GetAttributes().end() == nodeAttributesIter) {
+      auto node_attributes_iter = p_node->GetAttributes().find(kConstantValue);
+      if (p_node->GetAttributes().end() == node_attributes_iter) {
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName +
-                          ") output arg value should"
-                          "be specified via node attribute '" +
-                          c_constantValue + "'.");
+                      "Node (" + nodeName + ") output arg value should be specified via node attribute '" +
+                          kConstantValue + "'.");
         return status;
       }
 
-      AttrType attrType;
-      RETURN_IF_ERROR(TypeUtils::GetType(nodeAttributesIter->second, attrType));
-      if (AttrType::AttributeProto_AttributeType_TENSOR == attrType) {
-        auto& tensor = nodeAttributesIter->second.t();
-        TypeProto typeProto;
-        typeProto.mutable_tensor_type()->set_elem_type(tensor.data_type());
-        outputDef->SetType(OpUtils::ToType(typeProto));
+      AttrType attr_type;
+      RETURN_IF_ERROR(TypeUtils::GetType(node_attributes_iter->second, attr_type));
+
+      if (AttrType::AttributeProto_AttributeType_TENSOR == attr_type) {
+        auto& tensor = node_attributes_iter->second.t();
+        TypeProto type_proto;
+        type_proto.mutable_tensor_type()->set_elem_type(tensor.data_type());
+        output_def->SetType(OpUtils::ToType(type_proto));
       } else {
         Status status(LOTUS, FAIL,
-                      "For attribute " + c_constantValue +
-                          " , only Tensor type"
-                          "is allowed. The attribute type in this model is " +
-                          LotusIR::c_attrTypeStr[(int)attrType] + ".");
+                      "For attribute " + kConstantValue +
+                          " , only Tensor type is allowed. The attribute type in this model is " +
+                          LotusIR::kAttrTypeStrings[(int)attr_type] + ".");
         return status;
       }
 
@@ -982,23 +957,23 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
     }
 
     // For case that input arg and output arg have different types.
-    if (outputDef->m_nodeArgInfo.has_type()) {
+    if (output_def->node_arg_info_.has_type()) {
       // The output arg has already had type information.
       // Check whether it matches operator definition.
-      auto iter = opFormalParameter.GetTypes().find(outputDef->Type());
-      if (opFormalParameter.GetTypes().end() == iter) {
+      auto iter = op_formal_parameter.GetTypes().find(output_def->Type());
+      if (op_formal_parameter.GetTypes().end() == iter) {
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") output arg (" + outputDef->Name() + ") type does not match operator (" + p_op->GetName() + ") definition.");
+                      "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type does not match operator (" + p_op->GetName() + ") definition.");
         return status;
       }
       continue;
     }
 
     // Output arg has no type information.
-    if (1 == opFormalParameter.GetTypes().size()) {
+    if (1 == op_formal_parameter.GetTypes().size()) {
       // Infer output arg type as the only one type defined
       // in operator definition.
-      outputDef->SetType(*(opFormalParameter.GetTypes().begin()));
+      output_def->SetType(*(op_formal_parameter.GetTypes().begin()));
       continue;
     }
 
@@ -1006,7 +981,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
     // multiple allowed types defined in operator definition.
     // Type inference fails in this case.
     Status status(LOTUS, FAIL,
-                  "Node (" + nodeName + ") output arg (" + outputDef->Name() + ") type inference failed");
+                  "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type inference failed");
     return status;
   }
 
@@ -1014,31 +989,34 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
 }
 
 Status Graph::VerifyNodeAndOpMatch(
-    const std::vector<NODEINDEX>& p_nodesInTopologicalOrder,
-    std::unordered_map<std::string, Node*>& p_outputArgs) {
-  for (auto nodeIndex : p_nodesInTopologicalOrder) {
+    const std::vector<NodeIndex>& nodes_in_topological_order,
+    std::unordered_map<std::string, Node*>& output_args) {
+  for (auto nodeIndex : nodes_in_topological_order) {
     if (IsSourceNode(nodeIndex) || IsSinkNode(nodeIndex)) {
       continue;
     }
 
     auto node = GetNode(nodeIndex);
-    auto& nodeName = node->Name();
+    auto& node_name = node->Name();
     auto& op_type = node->OpType();
     auto& domain = node->Domain();
-    auto versionIter = m_domainToVersion->find(domain);
-    if (m_domainToVersion->end() == versionIter) {
+    auto version_iter = domain_to_version_->find(domain);
+    if (domain_to_version_->end() == version_iter) {
       // The domain referred by this node does not exist either
       // in <OpSetIdProto> in the <ModelProto> loaded (in the case of model loaded from file) or
       // in global DomainToVersionRange map (in the case of model constructed from scratch).
-      return Status(LOTUS, FAIL, "The op domain (" + domain + ") used by node (" + nodeName + ") is not supported for this model.");
+      return Status(LOTUS, FAIL,
+                    "The op domain (" + domain + ") used by node (" +
+                        node_name + ") is not supported for this model.");
     }
 
     // Get op schema given op name, max inclusive version and domain.
-    node->m_op = OpSchemaRegistry::Schema(op_type, versionIter->second, domain);
-    if (nullptr == node->m_op) {
+    node->op_ = OpSchemaRegistry::Schema(op_type, version_iter->second, domain);
+    if (nullptr == node->op_) {
       // A op_type refers to nothing.
       Status status(LOTUS, FAIL,
-                    "Error: the operator or function (" + op_type + ") refered by node (" + nodeName + ") does not exist.");
+                    "Error: the operator or function (" + op_type + ") referred to by node (" +
+                        node_name + ") does not exist.");
       return status;
     }
 
@@ -1046,84 +1024,90 @@ Status Graph::VerifyNodeAndOpMatch(
 
     // The node refers to a primitive operator.
     // Infer and verify node input arg type information.
-    auto totalArgCount = std::accumulate(node->InputArgCount().begin(),
-                                         node->InputArgCount().end(), 0);
-    if (totalArgCount != node->InputDefs().size()) {
+    auto total_arg_count = std::accumulate(node->InputArgCount().begin(),
+                                           node->InputArgCount().end(), 0);
+
+    if (total_arg_count != node->InputDefs().size()) {
       Status status(LOTUS, FAIL,
                     "The sum of input arg count is not equal to size of"
                     "input defs in node (" +
-                        nodeName + ").");
+                        node_name + ").");
       return status;
     }
 
     // Verify size of node arg count is same as input number in
     // operator definition.
     if (op.GetInputs().size() != node->InputArgCount().size()) {
-        // Adjust input arg count array with op definition
-        // The adjustment will work as below,
-        // In total, there're <totalArgCount> inputs, which
-        // will be split as <1, 1, 1, 1, ... 1, x> or
-        // <1, 1, 1, 1, ...1, 0, 0, ...0>. The final input
-        // arg count array's element number will be the same
-        // as op definition, and the sum of all elements will
-        // be equal to <totalArgCount>.
-        auto& inputArgCount = node->Mutable_InputArgCount();
-        inputArgCount.clear();
-        size_t m = 0;
-        auto argCountLeft = totalArgCount;
-        if (0 < op.GetInputs().size()) {
-          for (; m < op.GetInputs().size() - 1; ++m) {
-            if (argCountLeft > 0) {
-              inputArgCount.push_back(1);
-              argCountLeft--;
-            } else {
-              inputArgCount.push_back(0);
-            }
+      // Adjust input arg count array with op definition
+      // The adjustment will work as below,
+      // In total, there're <total_arg_count> inputs, which
+      // will be split as <1, 1, 1, 1, ... 1, x> or
+      // <1, 1, 1, 1, ...1, 0, 0, ...0>. The final input
+      // arg count array's element number will be the same
+      // as op definition, and the sum of all elements will
+      // be equal to <total_arg_count>.
+      auto& input_arg_count = node->MutableInputArgCount();
+      input_arg_count.clear();
+      size_t m = 0;
+      auto arg_count_left = total_arg_count;
+
+      if (0 < op.GetInputs().size()) {
+        for (; m < op.GetInputs().size() - 1; ++m) {
+          if (arg_count_left > 0) {
+            input_arg_count.push_back(1);
+            arg_count_left--;
+          } else {
+            input_arg_count.push_back(0);
           }
         }
+      }
 
-        // Set the arg count for the last input formal parameter.
-        // NOTE: in the case that there's no .input(...) defined
-        // in op schema, all input args will be fed as one input
-        // of the operator.
-        inputArgCount.push_back(argCountLeft);
+      // Set the arg count for the last input formal parameter.
+      // NOTE: in the case that there's no .input(...) defined
+      // in op schema, all input args will be fed as one input
+      // of the operator.
+      input_arg_count.push_back(arg_count_left);
     }
 
     // Verify node outputs have same size with operator definition.
     if (op.GetOutputs().size() != node->OutputDefs().size()) {
-      Status status(LOTUS, FAIL, "Error: node (" + nodeName + ")'s number of outputs does not match its operator (" + op_type + ") specification.");
+      Status status(LOTUS, FAIL,
+                    "Error: node (" + node_name + ")'s number of outputs does not match its operator (" +
+                        op_type + ") specification.");
       return status;
     }
 
-    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, p_outputArgs)));
-    
+    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, output_args)));
+
     // Attribute verification and fill node attribute with
     // default value defined in operator definition if needed.
-    auto attrParser = node->Op()->GetAttributeParser();
-    if (nullptr != attrParser) {
+    auto attr_parser = node->Op()->GetAttributeParser();
+    if (nullptr != attr_parser) {
       // Attribute parser registered.
       // Verifying attribute match by running attribute parser.
-      RETURN_IF_ERROR(attrParser(node->GetAttributes()));
+      RETURN_IF_ERROR(attr_parser(node->GetAttributes()));
     } else {
       // No attribute parser registered.
-      auto nodeAttributes = node->GetAttributes();
-      for (auto attrDef : op.GetAttributes()) {
-        auto nodeAttrIter = nodeAttributes.find(attrDef.GetName());
-        if (nodeAttributes.end() == nodeAttrIter) {
-          const AttributeProto* defaultValue = nullptr;
-          bool hasDefaultValue = attrDef.HasDefaultValue(&defaultValue);
-          if (hasDefaultValue) {
+      auto node_attributes = node->GetAttributes();
+      for (auto attr_def : op.GetAttributes()) {
+        auto node_attr_iter = node_attributes.find(attr_def.GetName());
+        if (node_attributes.end() == node_attr_iter) {
+          const AttributeProto* default_value = nullptr;
+          bool has_default_value = attr_def.HasDefaultValue(&default_value);
+          if (has_default_value) {
             // Set default value to the node attributes.
-            node->AddAttribute(attrDef.GetName(), *defaultValue);
+            node->AddAttribute(attr_def.GetName(), *default_value);
           }
         } else {
           // Verify node attribute type matching type of
           // attribute defined in operator definition.
-          AttrType nodeAttrType;
-          RETURN_IF_ERROR(TypeUtils::GetType(nodeAttrIter->second, nodeAttrType));
-          if (nodeAttrType != attrDef.GetType()) {
+          AttrType node_attr_type;
+          RETURN_IF_ERROR(TypeUtils::GetType(node_attr_iter->second, node_attr_type));
+
+          if (node_attr_type != attr_def.GetType()) {
             Status status(LOTUS, FAIL,
-                          "Node (" + nodeName + ") attribute (" + nodeAttrIter->first + ") type does not match operator definition.");
+                          "Node (" + node_name + ") attribute (" + node_attr_iter->first +
+                              ") type does not match operator definition.");
             return status;
           }
         }
@@ -1135,206 +1119,202 @@ Status Graph::VerifyNodeAndOpMatch(
 }
 
 Status Graph::Resolve() {
-  if (!m_graphResolveNeeded) {
+  if (!graph_resolve_needed_) {
     return Status::OK();
   }
 
-  std::unordered_map<std::string, Node*> outputArgs;
-  std::unordered_map<std::string, NODEINDEX> nodeNameToIndex;
-  RETURN_IF_ERROR(VerifyNoDuplicateName(outputArgs, nodeNameToIndex));
-  RETURN_IF_ERROR(BuildConnections(outputArgs, nodeNameToIndex));
-  RETURN_IF_ERROR(CheckIsAcyclic(m_nodesInTopologicalOrder));
-  RETURN_IF_ERROR(VerifyNodeAndOpMatch(m_nodesInTopologicalOrder, outputArgs));
+  std::unordered_map<std::string, Node*> output_args;
+  std::unordered_map<std::string, NodeIndex> node_name_to_index;
+  RETURN_IF_ERROR(VerifyNoDuplicateName(output_args, node_name_to_index));
+  RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
+  RETURN_IF_ERROR(CheckIsAcyclic(nodes_in_topological_order_));
+  RETURN_IF_ERROR(VerifyNodeAndOpMatch(nodes_in_topological_order_, output_args));
   RETURN_IF_ERROR(SetGraphInputsOutputs());
 
-  m_graphResolveNeeded = false;
+  graph_resolve_needed_ = false;
   return Status::OK();
 }
 
-Status GraphBase::GetNodesInTopologicalOrder(std::vector<NODEINDEX>** nodes) {
+Status GraphBase::GetNodesInTopologicalOrder(const std::vector<NodeIndex>** pp_nodes) {
   RETURN_IF_ERROR(Resolve());
 
-  *nodes = &m_nodesInTopologicalOrder;  // QUESTION: returning non-const ptr to a member?
+  *pp_nodes = &nodes_in_topological_order_;
   return Status::OK();
 }
 
 void GraphBase::AddSourceSinkNodes() {
-  std::vector<NodeArg*> emptyArgs;
-  m_sourceNodeIndex = AddNode("_Graph_Source",
-                              c_noOp,
-                              "Source node internally in a graph.",
-                              emptyArgs,
-                              emptyArgs)
-                          ->Index();
-  m_sinkNodeIndex = AddNode("_Graph_Sink",
-                            c_noOp,
-                            "Sink node internally in a graph.",
-                            emptyArgs,
-                            emptyArgs)
-                        ->Index();
-  AddControlEdge(m_sourceNodeIndex, m_sinkNodeIndex);
+  std::vector<NodeArg*> empty_args;
+
+  source_node_index_ = AddNode("_Graph_Source", kNoOp,
+                               "Source node internally in a graph.", empty_args, empty_args)
+                           ->Index();
+
+  sink_node_index_ = AddNode("_Graph_Sink", kNoOp,
+                             "Sink node internally in a graph.", empty_args, empty_args)
+                         ->Index();
+
+  AddControlEdge(source_node_index_, sink_node_index_);
 }
 
 const std::string& Graph::Name() const {
-  return m_graphProto.name();
+  return graph_proto_.name();
 }
 
-void Graph::SetName(const std::string& p_name) {
-  m_graphProto.set_name(p_name);
+void Graph::SetName(const std::string& name) {
+  graph_proto_.set_name(name);
 }
 
 const std::string& Graph::Description() const {
-  return m_graphProto.doc_string();
+  return graph_proto_.doc_string();
 }
 
-void Graph::SetDescription(const std::string& p_desription) {
-  m_graphProto.set_doc_string(p_desription);
+void Graph::SetDescription(const std::string& description) {
+  graph_proto_.set_doc_string(description);
 }
 
 std::unordered_map<std::string, NodeArg*>* Graph::GetNodeArgMap() {
-  return &m_nodeArgs;
+  return &node_args_;
 }
 
-void Graph::AddInitializedTensor(const TensorProto& p_tensor) {
-  m_nameToInitialTensor[p_tensor.name()] = p_tensor;
-  m_graphProtoSyncNeeded = true;
-  m_graphResolveNeeded = true;
+void Graph::AddInitializedTensor(const TensorProto& tensor) {
+  name_to_initial_tensor_[tensor.name()] = tensor;
+  graph_proto_sync_needed_ = true;
+  graph_resolve_needed_ = true;
 }
 
-void Graph::RemoveInitializedTensor(const std::string& p_tensorName) {
-  m_nameToInitialTensor.erase(p_tensorName);
-  m_graphProtoSyncNeeded = true;
-  m_graphResolveNeeded = true;
+void Graph::RemoveInitializedTensor(const std::string& tensor_name) {
+  name_to_initial_tensor_.erase(tensor_name);
+  graph_proto_sync_needed_ = true;
+  graph_resolve_needed_ = true;
 }
 
-bool Graph::GetInitializedTensor(const std::string& p_tensorName,
-                                 TensorProto& p_value) const {
-  auto iter = m_nameToInitialTensor.find(p_tensorName);
-  if (m_nameToInitialTensor.end() == iter) {
+bool Graph::GetInitializedTensor(const std::string& tensor_name, TensorProto& value) const {
+  auto iter = name_to_initial_tensor_.find(tensor_name);
+  if (name_to_initial_tensor_.end() == iter) {
     return false;
   }
-  p_value = iter->second;
+  value = iter->second;
   return true;
 }
 
 void Graph::CleanAllInitializedTensors() {
-    m_nameToInitialTensor.clear();
+  name_to_initial_tensor_.clear();
 }
 
 const InitializedTensorSet& Graph::GetAllInitializedTensors() const {
-  return m_nameToInitialTensor;
+  return name_to_initial_tensor_;
 }
 
 const std::vector<const NodeArg*>& Graph::GetInputs() const {
-  return m_graphInputs;
+  return graph_inputs_;
 }
 
 const std::vector<const NodeArg*>& Graph::GetOutputs() const {
-  return m_graphOutputs;
+  return graph_outputs_;
 }
 
 const std::vector<const NodeArg*>& Graph::GetValueInfo() const {
-  return m_valueInfo;
+  return value_info_;
 }
 
-Node* GraphBase::GetNode(NODEINDEX p_nodeIndex) {
-  if (MaxNodeIndex() <= p_nodeIndex) {
+Node* GraphBase::GetNode(NodeIndex node_index) {
+  if (MaxNodeIndex() <= node_index) {
     return nullptr;
   }
 
-  return m_nodes[p_nodeIndex].get();
+  return nodes_[node_index].get();
 }
 
-const Node* GraphBase::GetNode(NODEINDEX p_nodeIndex) const {
-  if (MaxNodeIndex() <= p_nodeIndex) {
+const Node* GraphBase::GetNode(NodeIndex node_index) const {
+  if (MaxNodeIndex() <= node_index) {
     return nullptr;
   }
 
-  return m_nodes[p_nodeIndex].get();
+  return nodes_[node_index].get();
 }
 
-GraphBase::NodeIterator GraphBase::Nodes_begin() {
+GraphBase::NodeIterator GraphBase::NodesBegin() {
   return GraphBase::NodeIterator(0, this);
 }
 
-GraphBase::NodeIterator GraphBase::Nodes_end() {
+GraphBase::NodeIterator GraphBase::NodesEnd() {
   return GraphBase::NodeIterator(MaxNodeIndex(), this);
 }
 
-NODEINDEX GraphBase::MaxNodeIndex() const {
-  return m_nodes.size();
+NodeIndex GraphBase::MaxNodeIndex() const {
+  return nodes_.size();
 }
 
 int GraphBase::NumberOfNodes() const {
-  return m_numOfNodes;
+  return num_of_nodes_;
 }
 
-Node* GraphBase::AddNode(const NodeProto& p_nodeProto,
-                         const ArgNameToTypeMap& p_nameToType) {
+Node* GraphBase::AddNode(const NodeProto& node_proto,
+                         const ArgNameToTypeMap& name_to_type_map) {
   auto node = AllocateNode();
-  node->Init(p_nodeProto, p_nameToType);
+  node->Init(node_proto, name_to_type_map);
   return node;
 }
 
-Node* GraphBase::AddNode(const std::string& p_name,
-                         const std::string& p_opType,
-                         const std::string& p_description,
-                         const std::vector<NodeArg*>& p_inputArgs,
-                         const std::vector<NodeArg*>& p_outputArgs,
-                         const std::string& p_domain) {
+Node* GraphBase::AddNode(const std::string& name,
+                         const std::string& op_type,
+                         const std::string& description,
+                         const std::vector<NodeArg*>& input_args,
+                         const std::vector<NodeArg*>& output_args,
+                         const std::string& domain) {
   auto node = AllocateNode();
-  node->Init(p_name, p_opType, p_description, p_inputArgs, p_outputArgs, p_domain);
-  if (0 != p_opType.compare(c_noOp)) {
-    m_graphProtoSyncNeeded = true;
+  node->Init(name, op_type, description, input_args, output_args, domain);
+  if (0 != op_type.compare(kNoOp)) {
+    graph_proto_sync_needed_ = true;
   }
   return node;
 }
 
-/*Node* GraphBase::AddNode(const std::string& p_name,
-        const std::string& p_opType,
-        const std::string& p_description,
-        const std::vector<NodeArg>& p_inputArgs,
+/*Node* GraphBase::AddNode(const std::string& name,
+        const std::string& op_type,
+        const std::string& description,
+        const std::vector<NodeArg>& input_args,
         const std::vector<int>& p_inputArgCount,
-        const std::vector<NodeArg>& p_outputArgs,
-        const std::string& p_domain)
+        const std::vector<NodeArg>& output_args,
+        const std::string& domain)
     {
         auto node = AllocateNode();
-        node->Init(p_name,
-            p_opType,
-            p_description,
-            p_inputArgs,
+        node->Init(name,
+            op_type,
+            description,
+            input_args,
             p_inputArgCount,
-            p_outputArgs,
-            p_domain);
-        m_graphProtoSyncNeeded = true;
+            output_args,
+            domain);
+        graph_proto_sync_needed_  = true;
         return node;
     }*/
 
-/*Node* GraphBase::AddNode(const std::string& p_name,
-        const std::string& p_opType,
-        const std::string& p_description,
-        const std::vector<NodeArg>& p_outputArgs,
-        const std::string& p_domain)
+/*Node* GraphBase::AddNode(const std::string& name,
+        const std::string& op_type,
+        const std::string& description,
+        const std::vector<NodeArg>& output_args,
+        const std::string& domain)
     {
         auto node = AllocateNode();
-        node->Init(p_name,
-            p_opType,
-            p_description,
-            p_outputArgs,
-            p_domain);
-        m_graphProtoSyncNeeded = true;
+        node->Init(name,
+            op_type,
+            description,
+            output_args,
+            domain);
+        graph_proto_sync_needed_  = true;
         return node;
     }*/
 
-Node* GraphBase::AddNode(const Node& p_other) {
+Node* GraphBase::AddNode(const Node& other) {
   auto node = AllocateNode();
-  *node = p_other;
-  m_graphProtoSyncNeeded = true;
+  *node = other;
+  graph_proto_sync_needed_ = true;
   return node;
 }
 
-bool GraphBase::RemoveNode(NODEINDEX p_index) {
-  if (MaxNodeIndex() <= p_index || nullptr == m_nodes[p_index]) {
+bool GraphBase::RemoveNode(NodeIndex p_index) {
+  if (MaxNodeIndex() <= p_index || nullptr == nodes_[p_index]) {
     return false;
   }
 
@@ -1342,239 +1322,242 @@ bool GraphBase::RemoveNode(NODEINDEX p_index) {
   return true;
 }
 
-Node* GraphBase::AddConstantNode(const std::string& p_name,
-                                 const std::string& p_description,
-                                 const std::vector<NodeArg*>& p_outputArgs,
-                                 const TensorProto& p_tensor) {
-  Node* node = AddNode(p_name, c_constantOp, p_description, std::vector<NodeArg*>{}, p_outputArgs);
-  node->AddAttribute(c_constantValue, p_tensor);
+Node* GraphBase::AddConstantNode(const std::string& name,
+                                 const std::string& description,
+                                 const std::vector<NodeArg*>& output_args,
+                                 const TensorProto& tensor) {
+  Node* node = AddNode(name, kConstant, description, std::vector<NodeArg*>{}, output_args);
+  node->AddAttribute(kConstantValue, tensor);
   return node;
 }
 
-bool GraphBase::AddControlEdge(NODEINDEX p_srcNodeIndex,
-                               NODEINDEX p_dstNodeIndex) {
-  if (MaxNodeIndex() <= p_srcNodeIndex || MaxNodeIndex() <= p_dstNodeIndex || nullptr == m_nodes[p_srcNodeIndex] || nullptr == m_nodes[p_dstNodeIndex]) {
+bool GraphBase::AddControlEdge(NodeIndex src_node_index, NodeIndex dst_node_index) {
+  if (MaxNodeIndex() <= src_node_index || MaxNodeIndex() <= dst_node_index ||
+      nullptr == nodes_[src_node_index] || nullptr == nodes_[dst_node_index]) {
     // Invalid node indexes specified.
     return false;
   }
-  m_nodes[p_srcNodeIndex]->m_outputNodes.insert(m_nodes[p_dstNodeIndex].get());
-  m_nodes[p_dstNodeIndex]->m_inputNodes.insert(m_nodes[p_srcNodeIndex].get());
-  m_nodes[p_dstNodeIndex]->m_controlInputs.insert(m_nodes[p_srcNodeIndex]->Name());
+  nodes_[src_node_index]->output_nodes_.insert(nodes_[dst_node_index].get());
+  nodes_[dst_node_index]->input_nodes_.insert(nodes_[src_node_index].get());
+  nodes_[dst_node_index]->control_inputs_.insert(nodes_[src_node_index]->Name());
 
-  if (!IsSourceNode(p_srcNodeIndex) && !IsSinkNode(p_dstNodeIndex)) {
-    m_graphProtoSyncNeeded = true;
-    m_graphResolveNeeded = true;
+  if (!IsSourceNode(src_node_index) && !IsSinkNode(dst_node_index)) {
+    graph_proto_sync_needed_ = true;
+    graph_resolve_needed_ = true;
   }
 
   return true;
 }
 
 const GraphProto& Graph::ToGraphProto() {
-  if (!m_graphProtoSyncNeeded) {
-    return m_graphProto;
+  if (!graph_proto_sync_needed_) {
+    return graph_proto_;
   }
 
   // Nodes.
-  m_graphProto.clear_node();
+  graph_proto_.clear_node();
 
   // Nodes must be sorted in Topological Order in the GraphProto per ONNX spec.
-  for (auto& nodeIdx : m_nodesInTopologicalOrder) {
-    if (IsSourceNode(nodeIdx) || IsSinkNode(nodeIdx)) {
+  for (auto& node_idx : nodes_in_topological_order_) {
+    if (IsSourceNode(node_idx) || IsSinkNode(node_idx)) {
       continue;
     }
-    auto nodeProto = m_graphProto.add_node();
-    m_nodes[nodeIdx]->ToProto(*nodeProto);
+    auto node_proto = graph_proto_.add_node();
+    nodes_[node_idx]->ToProto(*node_proto);
   }
 
   // Initial tensors;
-  m_graphProto.clear_initializer();
-  for (auto item : m_nameToInitialTensor) {
-    auto tensor = m_graphProto.add_initializer();
+  graph_proto_.clear_initializer();
+  for (auto item : name_to_initial_tensor_) {
+    auto tensor = graph_proto_.add_initializer();
     *tensor = item.second;
   }
 
   // Sync graph inputs/outputs/valueInfo.
   SyncGraphInputsOutputs();
 
-  m_graphProtoSyncNeeded = false;
+  graph_proto_sync_needed_ = false;
 
-  return m_graphProto;
+  return graph_proto_;
 }
 
 void Graph::SyncGraphInputsOutputs() {
-  m_graphProto.clear_input();
-  m_graphProto.clear_output();
-  m_graphProto.clear_value_info();
+  graph_proto_.clear_input();
+  graph_proto_.clear_output();
+  graph_proto_.clear_value_info();
 
-  for (auto inputArg : m_graphInputs) {
-    *(m_graphProto.mutable_input()->Add()) = inputArg->ToProto();
+  for (auto inputArg : graph_inputs_) {
+    *(graph_proto_.mutable_input()->Add()) = inputArg->ToProto();
   }
 
-  for (auto outputArg : m_graphOutputs) {
-    *(m_graphProto.mutable_output()->Add()) = outputArg->ToProto();
+  for (auto outputArg : graph_outputs_) {
+    *(graph_proto_.mutable_output()->Add()) = outputArg->ToProto();
   }
 
-  for (auto valueInfo : m_valueInfo) {
-    *(m_graphProto.mutable_value_info()->Add()) = valueInfo->ToProto();
+  for (auto valueInfo : value_info_) {
+    *(graph_proto_.mutable_value_info()->Add()) = valueInfo->ToProto();
   }
 }
 
 Status Graph::SetGraphInputsOutputs() {
   // Reset graphInputs/graphOutputs/valueInfo state.
-  m_graphInputs.clear();
-  m_graphOutputs.clear();
-  m_valueInfo.clear();
+  graph_inputs_.clear();
+  graph_outputs_.clear();
+  value_info_.clear();
 
   // Flag indicates that this graph is loaded from model file.
   // If it's true, then graph inputs and outputs will keep the same
   // as what are specified in the model, otherwise, graph inputs
   // and outputs will be inferred.
-  bool loadedFromModelFile = m_graphProto.input_size() != 0 || m_graphProto.output_size() != 0 || m_graphProto.value_info_size() != 0;
+  bool loaded_from_model_file = graph_proto_.input_size() != 0 ||
+                                graph_proto_.output_size() != 0 ||
+                                graph_proto_.value_info_size() != 0;
 
-  std::unordered_set<std::string> addedInputNames{};
-  if (loadedFromModelFile) {
+  std::unordered_set<std::string> added_input_names{};
+
+  if (loaded_from_model_file) {
     // Collect all graph inputs/outputs specified in original graph proto
-    std::unordered_set<std::string> specifiedGraphInputs;
-    std::unordered_set<std::string> specifiedGraphOutputs;
-    std::unordered_set<std::string> specifiedGraphValueInfo;
-    std::unordered_set<std::string> specifiedInitializers;
-    for (auto& graphInput : m_graphProto.input()) {
-      specifiedGraphInputs.insert(graphInput.name());
-    }
-    for (auto& graphOutput : m_graphProto.output()) {
-      specifiedGraphOutputs.insert(graphOutput.name());
-    }
-    for (auto& graphValueInfo : m_graphProto.value_info()) {
-      specifiedGraphValueInfo.insert(graphValueInfo.name());
-    }
-    for (auto& initializer : m_graphProto.initializer()) {
-      specifiedInitializers.insert(initializer.name());
+    std::unordered_set<std::string> specified_graph_inputs;
+    std::unordered_set<std::string> specified_graph_outputs;
+    std::unordered_set<std::string> specified_graph_value_info;
+    std::unordered_set<std::string> specified_initializers;
+
+    for (auto& graph_input : graph_proto_.input()) {
+      specified_graph_inputs.insert(graph_input.name());
     }
 
-    std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
-    for (auto nodeIter = Nodes_begin();
-         nodeIter != Nodes_end();
-         ++nodeIter) {
-      for (auto& outputDef : (*nodeIter)->OutputDefs()) {
-        if (specifiedGraphOutputs.erase(outputDef->Name()) >= 1) {
-          m_graphOutputs.push_back(outputDef);
+    for (auto& graph_output : graph_proto_.output()) {
+      specified_graph_outputs.insert(graph_output.name());
+    }
+
+    for (auto& graph_value_info : graph_proto_.value_info()) {
+      specified_graph_value_info.insert(graph_value_info.name());
+    }
+
+    for (auto& initializer : graph_proto_.initializer()) {
+      specified_initializers.insert(initializer.name());
+    }
+
+    std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
+    for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
+      for (auto& output_def : (*node_iter)->OutputDefs()) {
+        if (specified_graph_outputs.erase(output_def->Name()) >= 1) {
+          graph_outputs_.push_back(output_def);
         }
-        outputNameToNodeArg.insert({outputDef->Name(), outputDef});
+        output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
     }
-    if (specifiedGraphOutputs.size() != 0) {
+
+    if (specified_graph_outputs.size() != 0) {
       return Status(LOTUS, FAIL, "Some graph outputs which don't exist in the graph.");
     }
 
-    for (auto nodeIter = Nodes_begin();
-         nodeIter != Nodes_end();
-         ++nodeIter) {
+    for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
       // Go thru all node's inputs.
-      for (auto& inputArg : (*nodeIter)->InputDefs()) {
-        if (!inputArg->Exist()) {
+      for (auto& input_arg : (*node_iter)->InputDefs()) {
+        if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
         }
 
-        if (specifiedGraphInputs.end() != specifiedGraphInputs.find(inputArg->Name())) {
-          if (addedInputNames.end() == addedInputNames.find(inputArg->Name())) {
+        if (specified_graph_inputs.end() != specified_graph_inputs.find(input_arg->Name())) {
+          if (added_input_names.end() == added_input_names.find(input_arg->Name())) {
             // The node input is specified as graph input.
-            m_graphInputs.push_back(inputArg);
-            addedInputNames.insert(inputArg->Name());
+            graph_inputs_.push_back(input_arg);
+            added_input_names.insert(input_arg->Name());
           }
           continue;
         }
 
-        auto outputArgIter = outputNameToNodeArg.find(inputArg->Name());
-        if (outputNameToNodeArg.end() == outputArgIter && specifiedInitializers.end() == specifiedInitializers.find(inputArg->Name())) {
+        auto output_arg_iter = output_name_to_node_arg.find(input_arg->Name());
+        if (output_name_to_node_arg.end() == output_arg_iter && specified_initializers.end() == specified_initializers.find(input_arg->Name())) {
           // The node input is not specified as graph input,
           // and it's not fed by another node neither.
-          return Status(LOTUS, FAIL, "Node input (" + inputArg->Name() + ") should be a graph input.");
+          return Status(LOTUS, FAIL, "Node input (" + input_arg->Name() + ") should be a graph input.");
         }
 
-        if (specifiedGraphValueInfo.erase(inputArg->Name()) >= 1) {
-          m_valueInfo.push_back(inputArg);
+        if (specified_graph_value_info.erase(input_arg->Name()) >= 1) {
+          value_info_.push_back(input_arg);
         }
       }
     }
   } else {
-    std::unordered_map<std::string, const NodeArg*> outputNameToNodeArg;
-    for (auto nodeIter = Nodes_begin();
-         nodeIter != Nodes_end();
-         ++nodeIter) {
-      for (auto& outputDef : (*nodeIter)->OutputDefs()) {
-        outputNameToNodeArg.insert({outputDef->Name(), outputDef});
+    std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
+    for (auto node_iter = NodesBegin();
+         node_iter != NodesEnd();
+         ++node_iter) {
+      for (auto& output_def : (*node_iter)->OutputDefs()) {
+        output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
     }
-    // Init graph output args with all node output args.
-    auto graphOutputArgs = outputNameToNodeArg;
 
-    std::unordered_set<Node*> innerNodes;
-    for (auto nodeIter = Nodes_begin();
-         nodeIter != Nodes_end();
-         ++nodeIter) {
+    // Init graph output args with all node output args.
+    auto graph_output_args = output_name_to_node_arg;
+
+    std::unordered_set<Node*> inner_nodes;
+    for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
       // Go thru all node's inputs.
-      for (auto& inputArg : (*nodeIter)->InputDefs()) {
-        if (!inputArg->Exist()) {
+      for (auto& input_arg : (*node_iter)->InputDefs()) {
+        if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
         }
 
-        auto outputArgIter = outputNameToNodeArg.find(inputArg->Name());
-        if (outputNameToNodeArg.end() == outputArgIter) {
+        auto output_arg_iter = output_name_to_node_arg.find(input_arg->Name());
+        if (output_name_to_node_arg.end() == output_arg_iter) {
           // This input arg should be fed when running evaluation.
           // it should be a graph input.
-          if (addedInputNames.end() == addedInputNames.find(inputArg->Name())) {
-            // This graph input has not been added into <m_graphInputs>.
-            m_graphInputs.push_back(inputArg);
-            addedInputNames.insert(inputArg->Name());
+          if (added_input_names.end() == added_input_names.find(input_arg->Name())) {
+            // This graph input has not been added into <graph_inputs_>.
+            graph_inputs_.push_back(input_arg);
+            added_input_names.insert(input_arg->Name());
           }
-        } else if (graphOutputArgs.erase(outputArgIter->first) >= 1) {
+        } else if (graph_output_args.erase(output_arg_iter->first) >= 1) {
           // Remove the output arg name from graph outputs since it's
           // the input of another node, which we call it intermediate result
           // and store it in <m_valueinfo>.
-          m_valueInfo.push_back(inputArg);
+          value_info_.push_back(input_arg);
         }
       }
     }
 
     // Set graph outputs.
-    for (auto& outputArg : graphOutputArgs) {
-      m_graphOutputs.push_back(outputArg.second);
+    for (auto& output_arg : graph_output_args) {
+      graph_outputs_.push_back(output_arg.second);
     }
   }
 
   return Status::OK();
 }
 
-bool GraphBase::IsSourceNode(NODEINDEX p_index) const {
-  return m_sourceNodeIndex == p_index;
+bool GraphBase::IsSourceNode(NodeIndex index) const {
+  return source_node_index_ == index;
 }
 
-bool GraphBase::IsSinkNode(NODEINDEX p_index) const {
-  return m_sinkNodeIndex == p_index;
+bool GraphBase::IsSinkNode(NodeIndex index) const {
+  return sink_node_index_ == index;
 }
 
 const Node* GraphBase::SourceNode() const {
-  return m_nodes[m_sourceNodeIndex].get();
+  return nodes_[source_node_index_].get();
 }
 
 const Node* GraphBase::SinkNode() const {
-  return m_nodes[m_sinkNodeIndex].get();
+  return nodes_[sink_node_index_].get();
 }
 
 Node* GraphBase::AllocateNode() {
   std::unique_ptr<Node> node(new Node(MaxNodeIndex(), this));
-  m_nodes.push_back(std::move(node));
-  m_numOfNodes++;
-  m_graphResolveNeeded = true;
-  return m_nodes.back().get();
+  nodes_.push_back(std::move(node));
+  num_of_nodes_++;
+  graph_resolve_needed_ = true;
+  return nodes_.back().get();
 }
 
-void GraphBase::ReleaseNode(NODEINDEX p_nodeIndex) {
-  m_nodes[p_nodeIndex] = nullptr;
-  m_numOfNodes--;
-  m_graphProtoSyncNeeded = true;
-  m_graphResolveNeeded = true;
+void GraphBase::ReleaseNode(NodeIndex index) {
+  nodes_[index] = nullptr;
+  num_of_nodes_--;
+  graph_proto_sync_needed_ = true;
+  graph_resolve_needed_ = true;
 }
 }  // namespace LotusIR

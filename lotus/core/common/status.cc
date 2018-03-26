@@ -2,45 +2,45 @@
 
 namespace Lotus {
 namespace Common {
-Status::Status(StatusCategory p_category, int p_code, const std::string& p_msg) {
-  m_state.reset(new State());
-  m_state->m_category = p_category;
-  m_state->m_code = p_code;
-  m_state->m_msg = p_msg;
+Status::Status(StatusCategory category, int code, const std::string& msg) {
+  state_.reset(new State());
+  state_->category_ = category;
+  state_->code_ = code;
+  state_->msg_ = msg;
 }
 
-Status::Status(StatusCategory p_category, int p_code)
-    : Status(p_category, p_code, EmptyString()) {
+Status::Status(StatusCategory category, int code)
+    : Status(category, code, EmptyString()) {
 }
 
 bool Status::IsOK() const {
-  return (m_state == NULL);
+  return (state_ == NULL);
 }
 
 StatusCategory Status::Category() const {
-  return IsOK() ? StatusCategory::NONE : m_state->m_category;
+  return IsOK() ? StatusCategory::NONE : state_->category_;
 }
 
 int Status::Code() const {
-  return IsOK() ? static_cast<int>(StatusCode::OK) : m_state->m_code;
+  return IsOK() ? static_cast<int>(StatusCode::OK) : state_->code_;
 }
 
 const std::string& Status::ErrorMessage() const {
-  return IsOK() ? EmptyString() : m_state->m_msg;
+  return IsOK() ? EmptyString() : state_->msg_;
 }
 
 std::string Status::ToString() const {
-  if (m_state == nullptr) {
+  if (state_ == nullptr) {
     return std::string("OK");
   }
 
   std::string result;
 
-  if (StatusCategory::SYSTEM == m_state->m_category) {
+  if (StatusCategory::SYSTEM == state_->category_) {
     result += "SystemError";
     result += " : ";
     result += std::to_string(errno);
-  } else if (StatusCategory::LOTUS == m_state->m_category) {
+  } else if (StatusCategory::LOTUS == state_->category_) {
     result += "[LotusError]";
     result += " : ";
     result += std::to_string(static_cast<int>(Code()));
@@ -77,7 +77,7 @@ std::string Status::ToString() const {
     result += " : ";
     result += msg;
     result += " : ";
-    result += m_state->m_msg;
+    result += state_->msg_;
   }
 
   return result;

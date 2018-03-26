@@ -1,51 +1,50 @@
-#ifndef CORE_GRAPH_GRAPH_TRANSFORMER_H
-#define CORE_GRAPH_GRAPH_TRANSFORMER_H
+#pragma once
 
 #include "core/graph/graph.h"
+
+#include "core/common/common.h"
 
 namespace LotusIR {
 class GraphEditor {
  public:
-  explicit GraphEditor(Graph& p_graph) {
-    m_graph = &p_graph;
-  }
-  GraphEditor() = delete;
-  GraphEditor(const GraphEditor& p_other) = delete;
+  explicit GraphEditor(Graph& graph) : graph_{&graph} {}
 
-  // Add node from <m_graph>.
-  Node* AddNode(const std::string& p_name,
-                const std::string& p_opType,
-                const std::string& p_description,
-                const std::vector<NodeArg*>& p_inputArgs,
-                const std::vector<NodeArg*>& p_outputArgs,
-                const std::string& p_domain = "") {
-    return m_graph->AddNode(p_name, p_opType, p_description,
-                            p_inputArgs, p_outputArgs, p_domain);
+  // Add node from <graph_>.
+  Node* AddNode(const std::string& name,
+                const std::string& op_type,
+                const std::string& description,
+                const std::vector<NodeArg*>& input_args,
+                const std::vector<NodeArg*>& output_args,
+                const std::string& domain = "") {
+    return graph_->AddNode(name, op_type, description,
+                           input_args, output_args, domain);
   }
 
-  Node* AddNode(const Node& p_other) {
-    return m_graph->AddNode(p_other);
+  Node* AddNode(const Node& other) {
+    return graph_->AddNode(other);
   }
 
-  // Remove node from <m_graph>.
-  bool RemoveNode(NODEINDEX p_nodeIndex) {
-    return m_graph->RemoveNode(p_nodeIndex);
+  // Remove node from <graph_>.
+  bool RemoveNode(NodeIndex node_index) {
+    return graph_->RemoveNode(node_index);
   }
 
-  // Add control edge into <m_graph>.
-  // The <p_dstNodeIndex> node does not consume any data output by
-  // <p_srcNodeIndex>, but it's designed to be executed behind.
-  bool AddControlEdge(NODEINDEX p_srcNodeIndex, NODEINDEX p_dstNodeIndex) {
-    return m_graph->AddControlEdge(p_srcNodeIndex, p_dstNodeIndex);
+  // Add control edge into <graph_>.
+  // The <dst> node does not consume any data output by
+  // <src>, but it's designed to be executed behind.
+  bool AddControlEdge(NodeIndex src, NodeIndex dst) {
+    return graph_->AddControlEdge(src, dst);
   }
 
-  // Resolve <m_graph> after each editing.
+  // Resolve <graph_> after each editing.
   Status Resolve() {
-    return m_graph->Resolve();
+    return graph_->Resolve();
   }
 
  private:
-  Graph* m_graph;
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphEditor);
+
+  Graph* graph_;
 };
 
 // A rewrite-rule interface. A rewrite-rule represents a semantics-preserving transformation of a
@@ -56,7 +55,7 @@ class GraphEditor {
 // representing the root of an expression that is rewritten.
 class IRewriteRule {
  public:
-  virtual ~IRewriteRule() {}
+  virtual ~IRewriteRule() = default;
 
   // Rewrite rule name.
   virtual const std::string& Name() const = 0;
@@ -71,8 +70,8 @@ class IRewriteRule {
   // The transformation happens in-place. The return-value of node may be different
   // from the input-value due to rewriting.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual Status Apply(/*IN/OUT*/ Node& p_node,
-                       GraphEditor p_graphEditor,
+  virtual Status Apply(/*IN/OUT*/ Node& node,
+                       GraphEditor& graph_editor,
                        /*OUT*/ bool& modified) = 0;
 };
 
@@ -84,26 +83,28 @@ class IGraphTransformer {
   // Apply <*this> transformation to a specific graph.
   // Transformation happens in place.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) = 0;
+  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) = 0;
 };
 
 class GraphTransformerManager {
  public:
   // Register a graph transformer.
-  Status Register(const IGraphTransformer& p_graphTransformer);
+  Status Register(const IGraphTransformer& graph_transformer);
 
   // Going thru all transformers registered in <*this> manager on
   // specified graph.
-  Status ApplyAll(/*IN/OUT*/ Graph& p_graph);
+  Status ApplyAll(/*IN/OUT*/ Graph& graph);
 
-  static GraphTransformerManager Instance() {
-    static GraphTransformerManager s_graphTransformerMgr;
-    return s_graphTransformerMgr;
+  static GraphTransformerManager& Instance() {
+    static GraphTransformerManager s_graph_transformer_manager;
+    return s_graph_transformer_manager;
   }
 
  private:
   GraphTransformerManager() = default;
-  std::vector<IGraphTransformer*> m_transformers;
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphTransformerManager);
+
+  std::vector<IGraphTransformer*> transformers_;
 };
 
 // Rule based graph transformer.
@@ -121,20 +122,20 @@ class RuleBasedGraphTransformer : public IGraphTransformer {
   // TODO (revisit needed): Using OpSignature* here will ask that OpSignature should be storeed globally,
   // otherwise, there will be multiple adresses/pointers for the same operator or function.
   // To avoid this ask, we may use OpSignature ID as the key, which should be name_domain_version.
-  Status Register(IRewriteRule& p_rule, const std::vector<OpSignature*>& p_ops);
+  Status Register(IRewriteRule& rule, const std::vector<OpSignature*>& ops);
 
   // Apply for all applicable rules against one graph.
-  virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified);
+  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified);
 
   static RuleBasedGraphTransformer Instance() {
-    static RuleBasedGraphTransformer s_ruleBasedGraphTransformer;
-    return s_ruleBasedGraphTransformer;
+    static RuleBasedGraphTransformer s_rule_based_graph_transformer;
+    return s_rule_based_graph_transformer;
   }
 
  private:
   RuleBasedGraphTransformer() = default;
 
-  std::unordered_map<OpSignature*, std::vector<IRewriteRule*>> m_opToRules;
+  std::unordered_map<OpSignature*, std::vector<IRewriteRule*>> op_to_rules_;
 };
 
 // TODO: Design a loose way to register rewrite rules into RuleBasedGraphTransformer.
@@ -145,7 +146,7 @@ class Function : public GraphBase {
   const OperatorSchema& GetSchema() const;
 
  private:
-  OperatorSchema m_schema;
+  OperatorSchema schema_;
 };
 
 // A function-inlining rewrite-rule. The plan with ONNX is to capture most optimizations
@@ -156,11 +157,11 @@ class FunctionInliner : public IRewriteRule {
     (function);
   }
 
-  virtual Status Apply(/*IN/OUT*/ Node& p_node,
-                       GraphEditor p_graphEditor,
+  virtual Status Apply(/*IN/OUT*/ Node& node,
+                       GraphEditor& graph_editor,
                        /*OUT*/ bool& modified) override {
-    (p_node);
-    (p_graphEditor);
+    (node);
+    (graph_editor);
     (modified);
     return Status::OK();
   }
@@ -174,14 +175,13 @@ class FunctionExtraction : public IRewriteRule {
     (function);
   }
 
-  virtual Status Apply(/*IN/OUT*/ Node& p_node,
-                       GraphEditor p_graphEditor,
+  virtual Status Apply(/*IN/OUT*/ Node& node,
+                       GraphEditor& graph_editor,
                        /*OUT*/ bool& modified) override {
-    (p_node);
-    (p_graphEditor);
+    (node);
+    (graph_editor);
     (modified);
     return Status::OK();
   }
 };
 }  // namespace LotusIR
-#endif  // CORE_GRAPH_GRAPH_TRANSFORMER_H

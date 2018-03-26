@@ -200,7 +200,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   // TODO const_cast is needed due to the lack of a const iterator in the graph
   Graph* p_graph = const_cast<Graph*>(graph);
 
-  for (auto node_it = p_graph->Nodes_begin(); node_it != p_graph->Nodes_end(); ++node_it) {
+  for (auto node_it = p_graph->NodesBegin(); node_it != p_graph->NodesEnd(); ++node_it) {
     auto node = *node_it;
     LOTUS_ENFORCE(node && node->Index() < node_offsets_.size());
     node_offsets_[node->Index()] = static_cast<int>(node_values_.size());

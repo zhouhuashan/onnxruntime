@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef LOTUS_CORE_PLATFORM_ENV_H_
-#define LOTUS_CORE_PLATFORM_ENV_H_
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -54,10 +53,10 @@ class Env {
   static Env* Default();
 
   /// \brief Returns the number of micro-seconds since the Unix epoch.
-  virtual uint64 NowMicros() { return envTime->NowMicros(); };
+  virtual uint64 NowMicros() { return env_time_->NowMicros(); };
 
   /// \brief Returns the number of seconds since the Unix epoch.
-  virtual uint64 NowSeconds() { return envTime->NowSeconds(); }
+  virtual uint64 NowSeconds() { return env_time_->NowSeconds(); }
 
   /// Sleeps/delays the thread for the prescribed number of micro-seconds.
   virtual void SleepForMicroseconds(int64 micros) = 0;
@@ -75,7 +74,7 @@ class Env {
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Env);
-  EnvTime* envTime = EnvTime::Default();
+  EnvTime* env_time_ = EnvTime::Default();
 };
 
 /// Represents a thread used to run a Lotus function.
@@ -102,5 +101,3 @@ struct ThreadOptions {
 };
 
 }  // namespace Lotus
-
-#endif  // LOTUS_CORE_PLATFORM_ENV_H_

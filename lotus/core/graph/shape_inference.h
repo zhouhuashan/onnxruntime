@@ -1,5 +1,4 @@
-#ifndef CORE_GRAPH_SHAPEINFERENCE_H
-#define CORE_GRAPH_SHAPEINFERENCE_H
+#pragma once
 
 #include <functional>
 
@@ -18,8 +17,7 @@ class InferenceContext {
   // TODO: Add input tensors into constructor.
   // TODO: An abstract tensor interface will be needed.
   // In some cases, node evaluation will be needed to get output shapes.
-  InferenceContext(Node* p_node,
-                   const OpSignature* p_opSchema);
+  InferenceContext(Node* p_node, const OpSignature* p_op_schema);
 
   const Node* GetNode() const;
 
@@ -27,15 +25,14 @@ class InferenceContext {
 
   const std::vector<NodeArg*>* GetInputs() const;
 
-  std::vector<NodeArg*>* Mutable_Outputs();
+  std::vector<NodeArg*>* MutableOutputs();
 
  private:
-  Node* m_node;
+  Node* node_;
 
-  const OpSignature* m_opSignature;
+  const OpSignature* op_signature_;
 };
 
 // Shape inference function define.
 typedef std::function<Status(InferenceContext&)> ShapeInferenceFunc;
 }  // namespace LotusIR
-#endif

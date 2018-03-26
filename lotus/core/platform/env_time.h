@@ -12,8 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#ifndef LOTUS_CORE_PLATFORM_ENV_TIME_H_
-#define LOTUS_CORE_PLATFORM_ENV_TIME_H_
+#pragma once
 
 #include "core/platform/types.h"
 
@@ -40,5 +39,3 @@ class EnvTime {
 };
 
 }  // namespace Lotus
-
-#endif  // LOTUS_CORE_PLATFORM_ENV_TIME_H_

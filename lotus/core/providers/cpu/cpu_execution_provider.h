@@ -14,7 +14,7 @@ class DummyCPUTransformer : public IGraphTransformer {
         continue;
       auto node = p_graph.GetNode(i);
       if (node->GetExecutionProvider().empty()) {
-        node->SetExecutionProvider(LotusIR::c_cpuExecutionProvider);
+        node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
         modified = true;
       }
     }

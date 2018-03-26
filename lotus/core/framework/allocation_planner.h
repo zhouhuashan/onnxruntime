@@ -66,7 +66,7 @@ struct SequentialExecutionPlan {
   // NodeExecutionPlan: represents execution data for a single node
   struct NodeExecutionPlan {
     // node to be executed;
-    LotusIR::NODEINDEX node_index;
+    LotusIR::NodeIndex node_index;
 
     // ml-values to be freed after node execution:
     // for (auto i = free_from_index; i <= free_to_index; i++)
@@ -74,7 +74,7 @@ struct SequentialExecutionPlan {
     int free_from_index;
     int free_to_index;
 
-    NodeExecutionPlan(LotusIR::NODEINDEX index) : node_index(index), free_from_index(1), free_to_index(0) {}
+    NodeExecutionPlan(LotusIR::NodeIndex index) : node_index(index), free_from_index(1), free_to_index(0) {}
   };
 
   // Execution_plan: represents the nodes in the sequential order to be executed

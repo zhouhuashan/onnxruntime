@@ -3,9 +3,9 @@
 namespace Lotus {
 template class Tanh<float>;
 REGISTER_KERNEL(KernelDef("Tanh")
-                    .Domain(LotusIR::c_onnxDomain)
+                    .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
-                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Tanh<float>);
 }  // namespace Lotus

@@ -1,122 +1,121 @@
 #include "core/graph/opsignature.h"
 
 namespace LotusIR {
-OpSignature::FormalParameter::FormalParameter(
-    const std::string& p_name, const std::string& p_type,
-    const std::string& p_description,
-    const TypeConstraintMap& p_constraintMap)
-    : m_name(p_name), m_typeStr(p_type), m_description(p_description) {
-  auto it = p_constraintMap.find(p_type);
-  if (it != p_constraintMap.end()) {
-    m_types = it->second.first;
+OpSignature::FormalParameter::FormalParameter(const std::string& name, const std::string& type,
+                                              const std::string& description,
+                                              const TypeConstraintMap& constraint_map)
+    : name_(name), type_str_(type), description_(description) {
+  auto it = constraint_map.find(type);
+  if (it != constraint_map.end()) {
+    types_ = it->second.first;
   } else {
-    if (!p_type.empty()) {
-      m_types.emplace(Utils::OpUtils::ToType(m_typeStr));
+    if (!type.empty()) {
+      types_.emplace(Utils::OpUtils::ToType(type_str_));
     }
   }
 }
 
 const std::string& OpSignature::FormalParameter::GetName() const {
-  return m_name;
+  return name_;
 }
 
 const DataTypeSet& OpSignature::FormalParameter::GetTypes() const {
-  return m_types;
+  return types_;
 }
 
 const std::string& OpSignature::FormalParameter::GetTypeStr() const {
-  return m_typeStr;
+  return type_str_;
 }
 
 const std::string& OpSignature::FormalParameter::GetDescription() const {
-  return m_description;
+  return description_;
 }
 
 OpSignature::Attribute::Attribute(
-    const std::string& p_attrName,
-    AttrType p_type,
-    const std::string& p_description,
-    const AttributeProto& p_defaultVal)
-    : m_name(p_attrName), m_type(p_type), m_description(p_description), m_hasDefaultValue(true) {
-  m_allowedValues.push_back(p_defaultVal);
+    const std::string& attr_name,
+    AttrType type,
+    const std::string& description,
+    const AttributeProto& default_value)
+    : name_(attr_name), type_(type), description_(description), has_default_value_(true) {
+  allowed_values_.push_back(default_value);
 }
 
 OpSignature::Attribute::Attribute(
-    const std::string& p_attrName,
-    AttrType p_type,
-    const std::string& p_description)
-    : m_name(p_attrName), m_type(p_type), m_description(p_description), m_hasDefaultValue(false) {
+    const std::string& attr_name,
+    AttrType type,
+    const std::string& description)
+    : name_(attr_name), type_(type), description_(description), has_default_value_(false) {
 }
 
 const std::string& OpSignature::Attribute::GetName() const {
-  return m_name;
+  return name_;
 }
 
 AttrType OpSignature::Attribute::GetType() const {
-  return m_type;
+  return type_;
 }
 
 bool OpSignature::Attribute::HasDefaultValue(
-    const AttributeProto** p_value) const {
-  if (m_hasDefaultValue && nullptr != p_value) {
-    *p_value = &(m_allowedValues[0]);
+    const AttributeProto** pp_value) const {
+  if (has_default_value_ && nullptr != pp_value) {
+    *pp_value = &(allowed_values_[0]);
   }
 
-  return m_hasDefaultValue;
+  return has_default_value_;
 }
 
 const std::string& OpSignature::GetName() const {
-  return m_name;
+  return name_;
 }
 
 int OpSignature::SinceVersion() const {
-  return m_sinceVersion;
+  return since_version_;
 }
 
 const std::string& OpSignature::Domain() const {
-  return m_domain;
+  return domain_;
 }
 
 const std::string& OpSignature::GetDescription() const {
-  return m_description;
+  return description_;
 }
 
 const std::vector<OpSignature::FormalParameter>&
 OpSignature::GetInputs() const {
-  return m_inputs;
+  return inputs_;
 }
 
 const std::vector<OpSignature::FormalParameter>&
 OpSignature::GetOutputs() const {
-  return m_outputs;
+  return outputs_;
 }
 
 const std::vector<OpSignature::Attribute>&
 OpSignature::GetAttributes() const {
-  return m_attributes;
+  return attributes_;
 }
 
 const TypeConstraintMap& OpSignature::GetTypeConstraintMap() const {
-  return m_typeConstraintMap;
+  return type_constraint_map_;
 }
 
-bool OpSignature::IsValidAttribute(const AttributeProto& p_attr) {
-  if (p_attr.name().empty()) {
+bool OpSignature::IsValidAttribute(const AttributeProto& attr) {
+  if (attr.name().empty()) {
     return false;
   }
 
-  if (p_attr.type() == AttributeProto_AttributeType_UNDEFINED) {
+  if (attr.type() == AttributeProto_AttributeType_UNDEFINED) {
     int num_fields =
-        p_attr.has_f() +
-        p_attr.has_i() +
-        p_attr.has_s() +
-        p_attr.has_t() +
-        p_attr.has_g() +
-        (p_attr.floats_size() > 0) +
-        (p_attr.ints_size() > 0) +
-        (p_attr.strings_size() > 0) +
-        (p_attr.tensors_size() > 0) +
-        (p_attr.graphs_size() > 0);
+        attr.has_f() +
+        attr.has_i() +
+        attr.has_s() +
+        attr.has_t() +
+        attr.has_g() +
+        (attr.floats_size() > 0) +
+        (attr.ints_size() > 0) +
+        (attr.strings_size() > 0) +
+        (attr.tensors_size() > 0) +
+        (attr.graphs_size() > 0);
 
     if (num_fields != 1) {
       return false;

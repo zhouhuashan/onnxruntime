@@ -23,7 +23,7 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
   }
 
   //setup execution plan
-  std::vector<LotusIR::NODEINDEX>* order;
+  const std::vector<LotusIR::NodeIndex>* order;
   LOTUS_RETURN_IF_ERROR(const_cast<Graph*>(graph)->GetNodesInTopologicalOrder(&order));
   for (int i = 0; i < order->size(); i++) {
     if (graph->IsSinkNode((*order)[i]) || graph->IsSourceNode((*order)[i]))

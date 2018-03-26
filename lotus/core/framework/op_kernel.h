@@ -141,7 +141,7 @@ class KernelRegistry {
                       const ProviderType& provider_type,
                       const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
-                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
+                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {  // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
     // TODO: error check for op_name/op_domain/provider/since_version.
     // TODO: find the real appropriate kernel create info for specific version.
     UNUSED_PARAMETER(op_schema);

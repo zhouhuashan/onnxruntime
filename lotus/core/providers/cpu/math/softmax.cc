@@ -31,9 +31,9 @@ Status Softmax<float>::compute(OpKernelContext* ctx) const {
 }
 
 REGISTER_KERNEL(KernelDef("Softmax")
-                    .Domain(LotusIR::c_onnxDomain)
+                    .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
-                    .Provider(LotusIR::c_cpuExecutionProvider)
+                    .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Softmax<float>);
 
