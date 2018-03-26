@@ -2,6 +2,41 @@
 
 namespace Lotus {
 
+REGISTER_KERNEL(KernelDef("Add")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Add<float>);
+
+REGISTER_KERNEL(KernelDef("Sub")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Sub<float>);
+
+REGISTER_KERNEL(KernelDef("Mul")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Mul<float>);
+
+REGISTER_KERNEL(KernelDef("Reciprocal")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Reciprocal<float>);
+
+REGISTER_KERNEL(KernelDef("Sum")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Sum<float>);
+
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.mutable_data<T>(), t.shape().Size()); }
 template <typename T>
@@ -90,14 +125,6 @@ Status Add<float>::compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDef("Add")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
-                Add<float>);
-
 template <>
 Status Sub<float>::compute(OpKernelContext* ctx) const {
   auto& A = *ctx->input<Tensor>(0);
@@ -113,14 +140,6 @@ Status Sub<float>::compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDef("Sub")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
-                Sub<float>);
-
 template <>
 Status Mul<float>::compute(OpKernelContext* ctx) const {
   auto& A = *ctx->input<Tensor>(0);
@@ -135,14 +154,6 @@ Status Mul<float>::compute(OpKernelContext* ctx) const {
   }
   return Status::OK();
 }
-
-REGISTER_KERNEL(KernelDef("Mul")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("A", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("B", DataTypeImpl::GetTensorType<float>()),
-                Mul<float>);
 
 template <>
 Status Reciprocal<float>::compute(OpKernelContext* ctx) const {
