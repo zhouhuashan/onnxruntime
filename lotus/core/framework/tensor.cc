@@ -3,11 +3,7 @@
 
 namespace Lotus {
 
-namespace {
-// Calculate size between start and end.
-// Assumes start and end are between 0 and dimensions.size(), inclusive, and that
-// start < end.
-size_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end) {
+size_t TensorShape::SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end) {
   size_t size = 1;
   for (size_t i = start; i < end; i++) {
     LOTUS_ENFORCE(dimensions[i] >= 0, "Can't calculate size for a un-resolved tensor shape");
@@ -15,7 +11,6 @@ size_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t e
   }
   return size;
 }
-}  // namespace
 
 TensorShape::TensorShape() : TensorShape(std::vector<int64_t>()) {
 }

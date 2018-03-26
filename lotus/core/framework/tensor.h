@@ -24,6 +24,10 @@ class TensorShape {
   */
   const int64_t operator[](int idx) const;
 
+  const int64_t operator[](size_t idx) const {
+    return operator[]((int)idx);
+  }
+
   bool operator==(const TensorShape& other) const {
     return m_dims == other.m_dims;
   }
@@ -34,6 +38,10 @@ class TensorShape {
 
   const size_t NumDimensions() const {
     return m_dims.size();
+  }
+
+  void CopyDims(int64_t* dims, size_t num_dims) const {
+    memcpy(dims, &m_dims[0], sizeof(int64_t) * std::min(num_dims, NumDimensions()));
   }
 
   /**
@@ -63,6 +71,11 @@ class TensorShape {
 
   // Return a new TensorShape of the dimensions from dimstart to end.
   TensorShape Slice(size_t dimstart) const;
+
+  // Calculate size between start and end.
+  // Assumes start and end are between 0 and dimensions.size(), inclusive, and that
+  // start < end.
+  static size_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end);
 
  private:
   // We use negative numbers for unknown symbolic dimension. Each negative
