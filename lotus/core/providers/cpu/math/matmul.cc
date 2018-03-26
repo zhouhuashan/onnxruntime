@@ -23,8 +23,8 @@ class MatMulComputeHelper {
 
     size_t num_input_dims = std::max(left_num_dims, right_num_dims);
 
-    // use padded dims to compute matrix offsets, 1D would be padded
-    size_t num_dims_with_pad = num_input_dims + (has_1D_input ? 1 : 0);
+    // use padded dims to compute matrix offsets, right 1D would be padded
+    size_t num_dims_with_pad = num_input_dims + (right_num_dims == 1 ? 1 : 0);
 
     // output shape would squeeze the reduced 1D dimension
     size_t num_output_dims = num_input_dims - (has_1D_input ? 1 : 0);
@@ -47,8 +47,8 @@ class MatMulComputeHelper {
     } else {
       // pad 1 in the front for left
       left_shape.CopyDims(&left_padded_dims_[num_dims_with_pad - left_num_dims], left_num_dims);
-      // pad 1 in the front for right, and pad 1 to the end for 1D
-      right_shape.CopyDims(&right_padded_dims_[num_dims_with_pad - right_num_dims - (has_1D_input ? 1 : 0)], right_num_dims);
+      // pad 1 in the front for right
+      right_shape.CopyDims(&right_padded_dims_[num_dims_with_pad - right_num_dims], right_num_dims);
     }
 
     // validate input shape and generate output shape
@@ -63,38 +63,43 @@ class MatMulComputeHelper {
         LOTUS_ENFORCE(right_padded_dims_[idx_dim] == 1, "right operand cannot broadcast on dim %d", idx_dim);
     }
 
-    M_ = (left_num_dims >= 2) ? left_shape[left_num_dims - 2] : 1;
+    M_ = has_1D_input ? 1 : left_shape[left_num_dims - 2];
     K_ = left_shape[left_num_dims - 1];
-    N_ = (right_num_dims >= 2) ? right_shape[right_num_dims - 1] : 1;
+    N_ = (right_num_dims == 1) ? 1 : right_shape[right_num_dims - 1];
 
-    if (right_num_dims >= 2) {
+    if (!has_1D_input) {
       LOTUS_ENFORCE(K_ == right_shape[right_num_dims - 2], "MatMul dimension mismatch");
-      if (left_num_dims >= 2) {
-        // left (...M x K), right (...K x N), output (...M x N)
-        output_dims[num_output_dims - 2] = M_;
-        output_dims[num_output_dims - 1] = N_;
-      } else {
-        // left (K), right (...K x N), output (...N)
-        output_dims[num_output_dims - 1] = N_;
-      }
-    } else if (left_num_dims >= 2) {
-      LOTUS_ENFORCE(K_ == right_shape[0], "MatMul dimension mismatch");
-      // left(...M x K), right (K), output (...M)
-      output_dims[num_output_dims - 1] = M_;
+      // left (...M x K), right (...K x N), output (...M x N)
+      assert(num_dims_with_pad == num_output_dims);
+      output_dims[num_output_dims - 2] = M_;
+      output_dims[num_output_dims - 1] = N_;
     } else {
-      // for left and right being both vector, output is scalar thus no shape
-      LOTUS_ENFORCE(num_output_dims == 0 && M_ == 1 && N_ == 1);
+      if (num_output_dims == 0) {
+        // for left and right being both vector, output is scalar thus no shape
+        assert(M_ == 1 && N_ == 1);
+      } else {
+        if (left_num_dims == 1) {
+          assert(num_dims_with_pad - 1 == num_output_dims);
+          LOTUS_ENFORCE(K_ == right_shape[right_num_dims - 1], "MatMul dimension mismatch");
+          // left (K), right (...K,N), output (...N)
+          output_dims[num_output_dims - 1] = N_;
+        } else {
+          assert(num_dims_with_pad - 2 == num_output_dims);
+          LOTUS_ENFORCE(K_ == right_shape[0], "MatMul dimension mismatch");
+          // left(...K), right (K), output (...), already assigned
+        }
+      }
     }
 
     // assign shape
     output_shape_ = TensorShape(output_dims);
 
     // compute broadcast offsets
-    computeBroadcastOffsets();
+    ComputeBroadcastOffsets();
   }
 
  private:
-  void computeBroadcastOffsets() {
+  void ComputeBroadcastOffsets() {
     num_broadcasted_dims_ = left_padded_dims_.size() - 2;
 
     if (num_broadcasted_dims_ == 0) {
@@ -130,20 +135,20 @@ class MatMulComputeHelper {
   }
 
   void
-  RecursiveFill(size_t idx_dim, size_t iLeft, size_t iRight, size_t iOut) {
+  RecursiveFill(size_t idx_dim, size_t idx_left, size_t idx_right, size_t idx_out) {
     if (idx_dim == num_broadcasted_dims_) {
-      left_offsets_[iOut] = iLeft * left_mat_size_;
-      right_offsets_[iOut] = iRight * right_mat_size_;
-      output_offsets_[iOut] = iOut * output_mat_size_;
+      left_offsets_[idx_out] = idx_left * left_mat_size_;
+      right_offsets_[idx_out] = idx_right * right_mat_size_;
+      output_offsets_[idx_out] = idx_out * output_mat_size_;
     } else {
       auto left_dim = left_padded_dims_[idx_dim];
       auto right_dim = right_padded_dims_[idx_dim];
       auto output_dim = output_broadcast_dims_[idx_dim];
       for (int64_t i = 0; i < output_dim; ++i) {
         RecursiveFill(idx_dim + 1,
-                      iLeft + i * (left_dim == 1 ? 0 : left_padded_strides_[idx_dim]),
-                      iRight + i * (right_dim == 1 ? 0 : right_padded_strides_[idx_dim]),
-                      iOut + i * output_broadcast_strides_[idx_dim]);
+                      idx_left + i * (left_dim == 1 ? 0 : left_padded_strides_[idx_dim]),
+                      idx_right + i * (right_dim == 1 ? 0 : right_padded_strides_[idx_dim]),
+                      idx_out + i * output_broadcast_strides_[idx_dim]);
       }
     }
   }
@@ -163,19 +168,51 @@ class MatMulComputeHelper {
   std::vector<size_t> right_padded_strides_;
   std::vector<size_t> output_broadcast_strides_;
 
- public:
-  // output shape
   TensorShape output_shape_;
 
-  // Gemm dimensions
   int64_t M_;
   int64_t N_;
   int64_t K_;
 
-  // offsets in num elements for GemmBatched
   std::vector<size_t> left_offsets_;
   std::vector<size_t> right_offsets_;
   std::vector<size_t> output_offsets_;
+
+ public:
+  // output shape
+  const TensorShape& OutputShape() const {
+    return output_shape_;
+  }
+
+  // left and output matrices' first dim
+  int64_t M() const {
+    return M_;
+  }
+
+  // right and output matrices' second dim
+  int64_t N() const {
+    return N_;
+  }
+
+  // left matrices' second dim, and right matrices' first dim
+  int64_t K() const {
+    return K_;
+  }
+
+  // Batched Gemm offsets in left matrices
+  const std::vector<size_t>& LeftOffsets() const {
+    return left_offsets_;
+  }
+
+  // Batched Gemm offsets in right matrices
+  const std::vector<size_t>& RightOffsets() const {
+    return right_offsets_;
+  }
+
+  // Batched Gemm offsets in output matrices
+  const std::vector<size_t>& OutputOffsets() const {
+    return output_offsets_;
+  }
 };
 
 template <>
@@ -185,21 +222,21 @@ Status MatMul<float>::compute(OpKernelContext* ctx) const {
 
   MatMulComputeHelper<float> helper(left_X->shape(), right_X->shape());
 
-  Tensor* Y = ctx->output(0, helper.output_shape_);
+  Tensor* Y = ctx->output(0, helper.OutputShape());
 
   // TODO: replace it with GemmBatch for performance, it's OK for now as GemmBatch unrolls as well
-  for (int i = 0; i < helper.output_offsets_.size(); i++) {
+  for (int i = 0; i < helper.OutputOffsets().size(); i++) {
     math::Gemm<float, CPUMathUtil>(
         CblasNoTrans,
         CblasNoTrans,
-        (int)helper.M_,
-        (int)helper.N_,
-        (int)helper.K_,
-        1.0f,
-        left_X->data<float>() + helper.left_offsets_[i],
-        right_X->data<float>() + helper.right_offsets_[i],
-        0.0f,
-        Y->mutable_data<float>() + helper.output_offsets_[i],
+        static_cast<int>(helper.M()),
+        static_cast<int>(helper.N()),
+        static_cast<int>(helper.K()),
+        /* alpha */ 1.0f,
+        left_X->data<float>() + helper.LeftOffsets()[i],
+        right_X->data<float>() + helper.RightOffsets()[i],
+        /* beta */ 0.0f,
+        Y->mutable_data<float>() + helper.OutputOffsets()[i],
         &CPUMathUtil::Instance());
   }
   return Status::OK();
