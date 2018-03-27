@@ -107,6 +107,30 @@ TEST(MathOpTest, Div) {
   test.Run(dims, expected_vals);
 }
 
+TEST(MathOpTest, Abs) {
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Abs", {&input_def}, {&output_def});
+  SimpleFloatTest<Abs> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {1.0f, -2.0f, -0.0f, -10.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{1.0f, 2.0f, 0.0f, 10.0f};
+  test.Run(dims, expected_vals);
+}
+
+TEST(MathOpTest, Ceil) {
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Ceil", {&input_def}, {&output_def});
+  SimpleFloatTest<Ceil> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {-1.5f, 0.2f, -0.5f, 10.3f});
+  test.AddOutput(dims);
+  float expected_vals[]{-1.0f, 1.0f, 0.0f, 11.0f};
+  test.Run(dims, expected_vals);
+}
+
 TEST(MathOpTest, Reciprocal) {
   LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
   TestModel model("Reciprocal", {&input_def}, {&output_def});

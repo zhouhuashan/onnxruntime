@@ -178,6 +178,29 @@ Status Div<float>::compute(OpKernelContext* ctx) const {
 }
 
 template <>
+Status Abs<float>::compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->input<Tensor>(0);
+  auto& Y = *ctx->output(0, X.shape());
+
+  EigenMap<float>(Y) = EigenMap<float>(X).cwiseAbs();
+  return Status::OK();
+}
+
+template <>
+Status Ceil<float>::compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->input<Tensor>(0);
+  auto& Y = *ctx->output(0, X.shape());
+
+  // There is no Eigen function for ceiling, so do it ourselves
+  auto* pInput = X.data<float>();
+  auto* pOutput = Y.mutable_data<float>();
+  size_t count = Y.shape().Size();
+  for (size_t i = 0; i < count; i++)
+    pOutput[i] = ceil(pInput[i]);
+  return Status::OK();
+}
+
+template <>
 Status Reciprocal<float>::compute(OpKernelContext* ctx) const {
   auto& X = *ctx->input<Tensor>(0);
   auto& Y = *ctx->output(0, X.shape());

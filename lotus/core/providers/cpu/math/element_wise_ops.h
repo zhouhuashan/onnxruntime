@@ -57,6 +57,24 @@ class Div final : public BroadcastAxisKernel {
 };
 
 template <typename T>
+class Abs final : public OpKernel {
+ public:
+  Abs(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Ceil final : public OpKernel {
+ public:
+  Ceil(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
 class Reciprocal final : public OpKernel {
  public:
   Reciprocal(const OpKernelInfo& info) : OpKernel(info) {
