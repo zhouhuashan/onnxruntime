@@ -21,6 +21,12 @@ def parse_arguments():
                              "These are just CMake -D options without the leading -D.")
     parser.add_argument("--cmake_path", default="cmake", help="Path to the CMake program.")
     parser.add_argument("--ctest_path", default="ctest", help="Path to the CTest program.")
+    parser.add_argument("--update", action='store_true', help="Update makefiles.")
+    parser.add_argument("--enable_onnx_tests", action='store_true',
+                        help="When running the Update phase, enable running ONNX tests in the generated makefiles.")
+    parser.add_argument("--build", action='store_true', help="Build.")
+    parser.add_argument("--parallel", action='store_true', help="Use parallel build.")
+    parser.add_argument("--test", action='store_true', help="Run unit tests.")
 
     return parser.parse_args()
 
@@ -28,43 +34,46 @@ def is_windows():
     return sys.platform.startswith("win")
 
 def get_config_build_dir(build_dir, config):
-    if is_windows():
-        # assume Visual Studio generator, single build directory
-        return build_dir
-    else:
-        # build directory per configuration
-        return os.path.join(build_dir, config)
+    # build directory per configuration
+    return os.path.join(build_dir, config)
 
 def run_subprocess(args, cwd=None):
     log.debug("Running subprocess: \n%s", args)
     subprocess.run(args, cwd=cwd, check=True)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, configs,
-                        cmake_extra_defines):
+def generate_build_tree(cmake_path, source_dir, build_dir, configs, cmake_extra_defines, enable_onnx_tests):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
-                 "-Dlotus_RUN_ONNX_TESTS=OFF",
+                 "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if enable_onnx_tests else "OFF"),
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
                  ]
+
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 
     if is_windows():
-        run_subprocess(cmake_args + ["-A", "x64"], cwd=build_dir)
-    else:
-        for config in configs:
-            config_build_dir = get_config_build_dir(build_dir, config)
-            os.makedirs(config_build_dir, exist_ok=True)
-            run_subprocess(cmake_args + ["-DCMAKE_BUILD_TYPE={}".format(config)],
-                           cwd=config_build_dir)
+        cmake_args += ["-A", "x64"]
 
-def build_targets(cmake_path, build_dir, configs):
+    for config in configs:
+        config_build_dir = get_config_build_dir(build_dir, config)
+        os.makedirs(config_build_dir, exist_ok=True)
+
+        run_subprocess(cmake_args  + ["-DCMAKE_BUILD_TYPE={}".format(config)], cwd=config_build_dir)
+
+def build_targets(cmake_path, build_dir, configs, parallel):
     for config in configs:
         log.info("Building targets for %s configuration", config)
-        run_subprocess([cmake_path,
+        cmd_args = [cmake_path,
                        "--build", get_config_build_dir(build_dir, config),
                        "--config", config,
-                       ])
+                       ]
+        if (parallel):
+            if is_windows():
+                cmd_args += ["--", "/maxcpucount:4"]
+            else:
+                cmd_args += ["--", "-j4"]
+
+        run_subprocess(cmd_args)
 
 def run_tests(ctest_path, build_dir, configs):
     for config in configs:
@@ -76,8 +85,15 @@ def main():
     args = parse_arguments()
 
     cmake_path = args.cmake_path
-    cmake_extra_defines = \
-        args.cmake_extra_defines if args.cmake_extra_defines else []
+    cmake_extra_defines = args.cmake_extra_defines if args.cmake_extra_defines else []
+
+    # if there was no explicit argument saying what to do, default to update, build and test.
+    if (args.update == False and args.build == False and args.test == False):
+        log.debug("Defaulting to running update, build and test.")
+        args.update = True
+        args.build = True
+        args.test = True
+
     ctest_path = args.ctest_path
     build_dir = args.build_dir
     script_dir = os.path.realpath(os.path.dirname(__file__))
@@ -89,10 +105,14 @@ def main():
 
     log.info("Build started")
 
-    generate_build_tree(cmake_path, source_dir, build_dir, configs,
-                        cmake_extra_defines)
-    build_targets(cmake_path, build_dir, configs)
-    run_tests(ctest_path, build_dir, configs)
+    if (args.update):
+        generate_build_tree(cmake_path, source_dir, build_dir, configs, cmake_extra_defines, args.enable_onnx_tests)
+
+    if (args.build):
+        build_targets(cmake_path, build_dir, configs, args.parallel)
+
+    if (args.test):
+        run_tests(ctest_path, build_dir, configs)
 
     log.info("Build complete")
 
