@@ -280,12 +280,19 @@ class InferenceSession::Impl {
       session_state_.AddKernel(p_node->Index(), std::move(p_op_kernel));
 
       // build the MLValue->index map
+      int unused_var = -1;
       auto& inputs = p_node->InputDefs();
       for (auto& def : inputs) {
+        if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
+          continue;
+        }
         session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
       }
       auto& outputs = p_node->OutputDefs();
       for (auto def : outputs) {
+        if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
+          continue;
+        }
         session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
       }
     }
