@@ -60,6 +60,30 @@ class AllocationPlanTestUtility {
       }
     }
   }
+
+  static void BasicIntegrityCheck(const SequentialExecutionPlan& plan, int num_ml_values) {
+    // Sanity checks for plan.to_be_freed
+    std::unordered_set<MLValueIndex> freed;
+    for (MLValueIndex index : plan.to_be_freed) {
+      // Every index should be in the valid range [0, num_ml_values-1]
+      EXPECT_GE(index, 0);
+      EXPECT_LT(index, num_ml_values);
+      // An index should not be freed more than once
+      EXPECT_EQ(freed.count(index), 0) << "MLValue " << index << " freed multiple times";
+      freed.insert(index);
+    }
+    // Check the free-index information for every execution step: they should cover the
+    // range [0, plan.to_be_freed.size()-1] properly.
+    int next_free_index = 0;
+    int max_free_index = ((int)plan.to_be_freed.size()) - 1;
+    for (const SequentialExecutionPlan::NodeExecutionPlan& step : plan.execution_plan) {
+      if (step.free_from_index <= step.free_to_index) {
+        EXPECT_EQ(step.free_from_index, next_free_index);
+        EXPECT_LE(step.free_to_index, max_free_index);
+        next_free_index = step.free_to_index + 1;
+      }  // else nothing needs to be freed in this step
+    }
+  }
 };
 
 TEST(AllocationPlannerTest, ChainNoShapeTest) {
@@ -112,12 +136,50 @@ TEST(AllocationPlannerTest, ChainNoShapeTest) {
 
   std::vector<int> expected_num_freed({0, 1, 1});
   AllocationPlanTestUtility::CheckFreedAtEachStep(plan, expected_num_freed);
-
-  // ASSERT_EQ(plan.execution_plan.size(), 1) << "Execution plan has wrong size";
-
-  // EXPECT_GT(plan.execution_plan[0].free_from_index,
-  // EXPECT_EQ(plan.execution_plan[0].node_index, node->Index());
-  // EXPECT_GT(plan.execution_plan[0].free_from_index, plan.execution_plan[0].free_to_index);
 }
+
+/* InputOutputTest: Test that:
+(a) All inputs are classified as kPreExisting,
+(b) All outputs are classified as kAllocate (in this example),
+(c) Neither input nor outputs are freed.
+*/
+TEST(AllocationPlannerTest, InputOutputTest) {
+  LotusIR::Model model("test");
+  LotusIR::Graph* graph = model.MainGraph();
+
+  TypeProto tensor_float;
+  tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+
+  LotusIR::NodeArg X1("X1", &tensor_float);
+  LotusIR::NodeArg X2("X2", &tensor_float);
+  LotusIR::NodeArg Y1("Y1", &tensor_float);
+  LotusIR::NodeArg Y2("Y2", &tensor_float);
+
+  UnaryNode node1(graph, &X1, &Y1);
+  UnaryNode node2(graph, &X2, &Y2);
+
+  SessionState state;
+  state.SetGraph(graph);
+  state.AddMLValueNameIdx("X1", 0);
+  state.AddMLValueNameIdx("X2", 1);
+  state.AddMLValueNameIdx("Y1", 2);
+  state.AddMLValueNameIdx("Y2", 3);
+
+  SequentialExecutionPlan plan;
+  auto status = SequentialPlanner::CreatePlan(state, &plan);
+  ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
+
+  // X1: kPreExisting, X2: kPreExisting, Y1: kAllocate, Y2: kAllocate
+  std::vector<AllocKind> expected_alloc({AllocKind::kPreExisting, AllocKind::kPreExisting, AllocKind::kAllocate, AllocKind::kAllocate});
+  AllocationPlanTestUtility::CheckAllocationKind(plan, expected_alloc);
+
+  // Nothing should be freed (since they are either inputs or outputs)
+  std::vector<MLValueIndex> expected_to_be_freed({});
+  AllocationPlanTestUtility::CheckToBeFreed(plan, expected_to_be_freed);
+
+  std::vector<int> expected_num_freed({0, 0});
+  AllocationPlanTestUtility::CheckFreedAtEachStep(plan, expected_num_freed);
+}
+
 }  // namespace Test
 }  // namespace Lotus
