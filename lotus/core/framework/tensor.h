@@ -113,9 +113,9 @@ typedef std::unique_ptr<void, BufferDeleter> BufferUniquePtr;
 typedef void* BufferNakedPtr;
 
 /*
-    We want to keep tensor as simple as possible, it is just a placeholder for a piece of memory, with additional shape information.
-    Memory is owned and managed by Executor / Workspace, so Tensor just uses it, and won't do any allocation / release.
-    */
+We want to keep tensor as simple as possible, it is just a placeholder for a piece of memory, with additional shape information.
+Memory is owned and managed by Executor / Workspace, so Tensor just uses it, and won't do any allocation / release.
+*/
 class Tensor {
   friend class TensorUtil;
   friend class MLValue;

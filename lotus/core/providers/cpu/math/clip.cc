@@ -12,6 +12,7 @@ Status Clip<float>::compute(OpKernelContext* ctx) const {
           .cwiseMin(max_);
   return Status::OK();
 }
+
 REGISTER_KERNEL(KernelDef("Clip")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)

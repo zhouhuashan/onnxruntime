@@ -76,6 +76,31 @@ class TestUtils {
     LOTUS_ENFORCE(i >= 0 && i < node.OutputDefs().size());
     return PrepareTensor(i + (int)node.InputDefs().size(), frame, dims, value);
   }
+
+  static void SetupState(SessionState& state,
+      const std::vector<LotusIR::NodeArg*>& input_defs,
+      const std::vector<LotusIR::NodeArg*>& output_defs) {
+      int idx = 0;
+      for (auto& elem : input_defs) {
+          state.AddMLValueNameIdx(elem->Name(), idx++);
+      }
+      for (auto& elem : output_defs) {
+          state.AddMLValueNameIdx(elem->Name(), idx++);
+      }
+  }
+
+  static void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
+      const std::vector<LotusIR::NodeArg*>& output_defs,
+      std::unordered_map<std::string, MLValue>& feeds,
+      std::vector<std::string>& output_names) {
+      for (auto& elem : input_defs) {
+          feeds.insert(std::make_pair(elem->Name(), MLValue()));
+      }
+      for (auto& elem : output_defs) {
+          output_names.push_back(elem->Name());
+      }
+  }
+
 };
 
 struct TypeProto_Set : TypeProto {
