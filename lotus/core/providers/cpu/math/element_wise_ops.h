@@ -48,6 +48,15 @@ class Mul final : public BroadcastAxisKernel {
 };
 
 template <typename T>
+class Div final : public BroadcastAxisKernel {
+ public:
+  Div(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
 class Reciprocal final : public OpKernel {
  public:
   Reciprocal(const OpKernelInfo& info) : OpKernel(info) {

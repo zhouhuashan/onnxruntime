@@ -23,6 +23,13 @@ REGISTER_KERNEL(KernelDef("Mul")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Mul<float>);
 
+REGISTER_KERNEL(KernelDef("Div")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Div<float>);
+
 REGISTER_KERNEL(KernelDef("Reciprocal")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
@@ -151,6 +158,21 @@ Status Mul<float>::compute(OpKernelContext* ctx) const {
   else {
     LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
     EigenMap<float>(C) = EigenMap<float>(A).cwiseProduct(EigenMap<float>(B));
+  }
+  return Status::OK();
+}
+
+template <>
+Status Div<float>::compute(OpKernelContext* ctx) const {
+  auto& A = *ctx->input<Tensor>(0);
+  auto& B = *ctx->input<Tensor>(1);
+  auto& C = *ctx->output(0, A.shape());
+
+  if (broadcast_)
+    Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a / b; });
+  else {
+    LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
+    EigenMap<float>(C) = EigenMap<float>(A).cwiseQuotient(EigenMap<float>(B));
   }
   return Status::OK();
 }
