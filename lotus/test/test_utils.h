@@ -1,6 +1,7 @@
 #ifndef TEST_TEST_UTILS_H
 #define TEST_TEST_UTILS_H
 
+#include "gtest/gtest.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/op_kernel.h"

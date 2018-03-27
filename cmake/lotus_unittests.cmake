@@ -148,6 +148,7 @@ file(GLOB_RECURSE lotus_test_providers_src
 file(GLOB lotus_test_providers_helpers_src
     "${LOTUS_ROOT}/test/framework/framework_test_main.cc"
     "${LOTUS_ROOT}/test/*.h"
+    "${LOTUS_ROOT}/test/*.cc"
 )
 
 AddTest(
