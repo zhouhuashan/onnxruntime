@@ -78,7 +78,7 @@ AddTest(
     TARGET lotus_test_common
     SOURCES ${lotus_test_common_src}
     LIBS ${lotus_test_common_libs}
-  DEPENDS googletest 
+    DEPENDS googletest 
 )
 
 set(lotus_test_ir_libs
@@ -101,7 +101,7 @@ AddTest(
 )
 
 set(lotus_test_framework_libs
-    ${lotus_providers_whole_archive}  
+    ${lotus_providers_whole_archive}
     ${lotus_framework_whole_archive}
     ${lotusIR_graph_whole_archive}
     ${onnx_whole_archive}
@@ -156,6 +156,28 @@ AddTest(
     SOURCES ${lotus_test_providers_src} ${lotus_test_providers_helpers_src}
     LIBS ${lotus_test_providers_libs}
   DEPENDS lotus_providers googletest
+)
+
+file(GLOB_RECURSE lotus_model_tests_src
+    "${LOTUS_ROOT}/test/framework/framework_test_main.cc"
+    "${LOTUS_ROOT}/test/model_test/*.cc"
+)
+
+set(lotus_model_tests_libs
+    ${lotus_providers_whole_archive}
+    ${lotus_framework_whole_archive}
+    ${lotusIR_graph_whole_archive}
+    ${onnx_whole_archive}
+    ${lotus_common_whole_archive}
+    ${protobuf_STATIC_LIBRARIES}
+    ${googletest_STATIC_LIBRARIES}
+)
+
+AddTest(
+    TARGET lotus_model_tests
+    SOURCES ${lotus_model_tests_src}
+    LIBS ${lotus_model_tests_libs}
+    DEPENDS lotus_providers lotus_framework googletest
 )
 
 #

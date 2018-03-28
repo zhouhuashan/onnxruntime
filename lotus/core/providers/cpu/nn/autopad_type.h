@@ -15,6 +15,8 @@ enum class AutoPadType {
 inline AutoPadType StringToAutoPadType(const string& str) {
   if (str.empty()) {
     return AutoPadType::NOTSET;
+  } else if (str == "NOTSET") { // in onnx spec, default value is "NOTSET"
+    return AutoPadType::NOTSET;
   } else if (str == "VALID") {
     return AutoPadType::VALID;
   } else if (str == "SAME_UPPER") {
