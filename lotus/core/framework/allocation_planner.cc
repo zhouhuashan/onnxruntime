@@ -5,6 +5,7 @@
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/session_state.h"
 #include "core/graph/utils.h"
+#include "core/framework/data_types.h"
 
 /* TODO: Need to address
 - placement of constant tensors (e.g., weights) in shared
@@ -129,14 +130,26 @@ class PlannerImpl {
     return true;
   }
 
-  bool SameElementSize(const LotusIR::PTYPE& ptype1, const LotusIR::PTYPE& ptype2) {
-    // TODO: temporary; need to check sizes of elements of both types
-    return (0 == ptype1->compare(*ptype2));
+  MLDataType GetMLDataType(const LotusIR::NodeArg& arg) {
+    const PTYPE ptype = arg.Type();
+    const onnx::TypeProto& type_proto = LotusIR::Utils::OpUtils::ToTypeProto(ptype);
+    return DataTypeImpl::TypeFromProto(type_proto);
+  }
+
+  /*! \brief Given a tensor-type, return the size of an element of the tensor.
+  */
+  size_t GetElementSize(const LotusIR::PTYPE& tensor_type) {
+    const onnx::TypeProto& type_proto = LotusIR::Utils::OpUtils::ToTypeProto(tensor_type);
+    MLDataType ml_data_type = DataTypeImpl::TypeFromProto(type_proto);
+    const TensorTypeBase* tensor_type_base = ml_data_type->AsTensorType();
+    LOTUS_ENFORCE(nullptr != tensor_type_base);
+    MLDataType elt_type = tensor_type_base->GetElementType();
+    return elt_type->Size();
   }
 
   bool SameSize(const TensorShapeProto& shape1, const LotusIR::PTYPE& ptype1,
                 const TensorShapeProto& shape2, const LotusIR::PTYPE& ptype2) {
-    return SameElementSize(ptype1, ptype2) && SameShape(shape1, shape2);
+    return (GetElementSize(ptype1) == GetElementSize(ptype2)) && SameShape(shape1, shape2);
 
     /* TODO: we can generalize this if the concrete shapes are known for both:
     if (KnownSize(p_shape1) && KnownSize(p_shape2)) {
@@ -217,13 +230,17 @@ class PlannerImpl {
     // It must be allocated by the caller, and will not be reused during inference.
     for (auto graph_input : graph.GetInputs()) {
       auto input_index = index(graph_input->Name());
-      AllocPlan(input_index).alloc_kind = AllocKind::kPreExisting;
+      SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(input_index);
+      thisplan.alloc_kind = AllocKind::kPreExisting;
+      thisplan.value_type = GetMLDataType(*graph_input);
     }
 
     auto& weights = graph.GetAllInitializedTensors();
     for (auto it = weights.begin(); it != weights.end(); ++it) {
       auto wt_index = index(it->first);
-      AllocPlan(wt_index).alloc_kind = AllocKind::kAllocateStatically;
+      SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
+      thisplan.alloc_kind = AllocKind::kAllocateStatically;
+      // Note: thisplan.value_type should already have been setup since every initializer must be an input
     }
 
     for (int program_counter = 0; program_counter < execution_plan.size(); ++program_counter) {
@@ -233,6 +250,7 @@ class PlannerImpl {
       int output_arg_num = 0;
       for (auto node_output : pnode->OutputDefs()) {
         auto current = index(node_output->Name());
+        AllocPlan(current).value_type = GetMLDataType(*node_output);
         MLValueIndex reused;
         if (IsNonTensor(*node_output)) {
           // we do not try sharing-optimization for non-tensors

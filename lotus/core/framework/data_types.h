@@ -10,6 +10,7 @@ using namespace onnx;
 
 namespace Lotus {
 class DataTypeImpl;
+class TensorTypeBase;
 // DataTypeImpl pointer as unique DataTypeImpl identifier.
 typedef const DataTypeImpl* MLDataType;
 typedef std::function<void(void*)> DeleteFunc;
@@ -43,6 +44,11 @@ class DataTypeImpl {
     return false;
   }
 
+  // Returns this if this is of tensor-type and null otherwise
+  virtual const TensorTypeBase* AsTensorType() const {
+    return nullptr;
+  }
+
   // Return the type meta that we are using in the runtime.
   template <typename T>
   static MLDataType GetType();
@@ -63,6 +69,10 @@ class TensorTypeBase : public DataTypeImpl {
 
   virtual bool IsTensorType() const override {
     return true;
+  }
+
+  virtual const TensorTypeBase* AsTensorType() const override {
+    return this;
   }
 
   virtual const size_t Size() const;
