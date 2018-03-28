@@ -12,10 +12,10 @@ class Clip final : public OpKernel {
  public:
   Clip(const OpKernelInfo& info) : OpKernel(info) {
     if (!op_kernel_info_.GetAttr<T>("max", &max_).IsOK()) {
-      max_ = std::numeric_limits<T>::max();
+      has_max_ = false;
     }
     if (!op_kernel_info_.GetAttr<T>("min", &min_).IsOK()) {
-      min_ = std::numeric_limits<T>::min();
+      has_min_ = false;
     }
   }
 
@@ -23,6 +23,8 @@ class Clip final : public OpKernel {
 
  private:
   T max_, min_;
+  bool has_max_ = true;
+  bool has_min_ = true;
 };
 
 }  // namespace Lotus
