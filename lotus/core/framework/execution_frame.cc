@@ -184,19 +184,19 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
 
   all_values_.resize(session_state_.GetMaxMLValueIdx() + 1);
 
-  //2. handle feed in values
+  //2. handle the weights.
+  for (const auto& entry : session_state_.GetInitializedTensors()) {
+    auto mlvalue_index = entry.first;
+    all_values_[mlvalue_index] = entry.second;  // this copy should be cheap
+  }
+
+  //3. handle feed in values
   for (auto it = feeds.begin(); it != feeds.end(); it++) {
     int index;
     Common::Status status = session_state_.GetMLValueIdx(it->first, &index);
     LOTUS_ENFORCE(status.IsOK());
     // we are sharing the underline tensor/object for MLValue
     all_values_[index] = it->second;
-  }
-
-  //3. handle the weights.
-  for (const auto& entry : session_state_.GetInitializedTensors()) {
-    auto mlvalue_index = entry.first;
-    all_values_[mlvalue_index] = entry.second;  // this copy should be cheap
   }
 
   //4. set node args

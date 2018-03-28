@@ -23,7 +23,7 @@ const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
   if (node_id >= session_kernels_.size()) {
     return nullptr;
   }
-  
+
   return session_kernels_[node_id].get();
 }
 
@@ -65,7 +65,6 @@ void SessionState::AddMLValueNameIdx(const std::string& name, int idx) {
   int idx_ret;
   Common::Status status = GetMLValueIdx(name, &idx_ret);
   if (status.IsOK()) {
-    LOG(WARNING) << "MLValue name " << name << " already exists in the MLValueName -> idx map";
     return;
   }
 
