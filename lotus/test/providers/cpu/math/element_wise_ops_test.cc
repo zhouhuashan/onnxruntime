@@ -119,6 +119,30 @@ TEST(MathOpTest, Abs) {
   test.Run(dims, expected_vals);
 }
 
+TEST(MathOpTest, Neg) {
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Neg", {&input_def}, {&output_def});
+  SimpleFloatTest<Neg> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {1.0f, -2.0f, 0.0f, -10.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{-1.0f, 2.0f, -0.0f, 10.0f};
+  test.Run(dims, expected_vals);
+}
+
+TEST(MathOpTest, Floor) {
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Floor", {&input_def}, {&output_def});
+  SimpleFloatTest<Floor> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {-1.5f, 0.2f, -0.5f, 10.3f});
+  test.AddOutput(dims);
+  float expected_vals[]{-2.0f, 0.0f, -1.0f, 10.0f};
+  test.Run(dims, expected_vals);
+}
+
 TEST(MathOpTest, Ceil) {
   LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
   TestModel model("Ceil", {&input_def}, {&output_def});

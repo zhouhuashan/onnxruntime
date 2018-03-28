@@ -66,6 +66,24 @@ class Abs final : public OpKernel {
 };
 
 template <typename T>
+class Neg final : public OpKernel {
+ public:
+  Neg(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Floor final : public OpKernel {
+ public:
+  Floor(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
 class Ceil final : public OpKernel {
  public:
   Ceil(const OpKernelInfo& info) : OpKernel(info) {
