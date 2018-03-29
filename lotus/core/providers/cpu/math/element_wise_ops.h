@@ -146,6 +146,24 @@ class Sum final : public OpKernel {
   Status compute(OpKernelContext* context) const override;
 };
 
+template <typename T>
+class Min final : public OpKernel {
+ public:
+  Min(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Max final : public OpKernel {
+ public:
+  Max(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
 }  // namespace Lotus
 
 #endif  // !CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H

@@ -100,6 +100,20 @@ REGISTER_KERNEL(KernelDefBuilder("Sum")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Sum<float>);
 
+REGISTER_KERNEL(KernelDef("Min")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(6, 6)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Min<float>);
+
+REGISTER_KERNEL(KernelDef("Max")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(6, 6)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Max<float>);
+
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.mutable_data<T>(), t.shape().Size()); }
 template <typename T>
@@ -345,6 +359,42 @@ Status Sum<float>::compute(OpKernelContext* ctx) const {
     auto& data_n = *ctx->input<Tensor>(index);
     LOTUS_ENFORCE(data_n.shape() == shape, "All inputs must have the same shape");
     sum += EigenMap<float>(data_n);
+  }
+
+  return Status::OK();
+}
+
+template <>
+Status Min<float>::compute(OpKernelContext* ctx) const {
+  auto inputCount = node().InputArgCount().front();
+  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+  auto& data_0 = *ctx->input<Tensor>(0);
+  auto& shape = data_0.shape();
+  auto min = EigenMap<float>(*ctx->output(0, shape));
+
+  min = EigenMap<float>(data_0);
+  for (int index = 1; index < inputCount; index++) {
+    auto& data_n = *ctx->input<Tensor>(index);
+    LOTUS_ENFORCE(data_n.shape() == shape, "All inputs must have the same shape");
+    min = min.array().min(EigenMap<float>(data_n).array());
+  }
+
+  return Status::OK();
+}
+
+template <>
+Status Max<float>::compute(OpKernelContext* ctx) const {
+  auto inputCount = node().InputArgCount().front();
+  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+  auto& data_0 = *ctx->input<Tensor>(0);
+  auto& shape = data_0.shape();
+  auto max = EigenMap<float>(*ctx->output(0, shape));
+
+  max = EigenMap<float>(data_0);
+  for (int index = 1; index < inputCount; index++) {
+    auto& data_n = *ctx->input<Tensor>(index);
+    LOTUS_ENFORCE(data_n.shape() == shape, "All inputs must have the same shape");
+    max = max.array().max(EigenMap<float>(data_n).array());
   }
 
   return Status::OK();

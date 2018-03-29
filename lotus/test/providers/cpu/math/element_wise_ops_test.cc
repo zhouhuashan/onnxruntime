@@ -255,5 +255,33 @@ TEST(MathOpTest, Sum) {
   test.Run(dims, expected_vals);
 }
 
+TEST(MathOpTest, Min) {
+  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float), input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float), output_def("sum", &s_typeProto_float);
+  TestModel model("Min", {&input1_def, &input2_def, &input3_def}, {&output_def});
+  SimpleFloatTest<Min> test(model);
+
+  std::vector<int64_t> dims{3, 3};
+  test.AddInput(dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
+  test.AddInput(dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
+  test.AddInput(dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{1.0f, 0.0f, 1.0f, -3.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f};
+  test.Run(dims, expected_vals);
+}
+
+TEST(MathOpTest, Max) {
+  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float), input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float), output_def("sum", &s_typeProto_float);
+  TestModel model("Max", {&input1_def, &input2_def, &input3_def}, {&output_def});
+  SimpleFloatTest<Max> test(model);
+
+  std::vector<int64_t> dims{3, 3};
+  test.AddInput(dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
+  test.AddInput(dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
+  test.AddInput(dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{1.0f, 0.0f, 3.0f, -1.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f};
+  test.Run(dims, expected_vals);
+}
+
 }  // namespace Test
 }  // namespace Lotus
