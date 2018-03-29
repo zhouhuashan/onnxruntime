@@ -144,6 +144,7 @@ public:
     return *this;
   }
 
+  // allowing output j to reuse memory of input i
   KernelDefBuilder& MayInplace(int i, int j) {
     // TODO: validate inputs.
     kernelDef_->inplace_map_.push_back({i, j});

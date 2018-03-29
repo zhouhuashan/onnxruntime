@@ -1,6 +1,4 @@
-#include "core/providers/cpu/activation/relu.h"
-#include "core/providers/cpu/activation/sigmoid.h"
-#include "core/providers/cpu/activation/tanh.h"
+#include "core/providers/cpu/activation/activations.h"
 #include "gtest/gtest.h"
 #include "test/test_utils.h"
 
@@ -9,14 +7,16 @@ namespace Test {
 static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
 
 template <class Op>
-void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(float)> expected_func, float abs_error = 0) {
+void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(float)> expected_func, const std::unordered_map<std::string, float> attribs = {}, float abs_error = 0) {
   LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
   CREATE_NODE(Op::TypeTraits(), {&input_def}, {&output_def});
+
+  for (auto attr : attribs)
+    EXPECT_TRUE(node->AddAttribute(attr.first, attr.second));
 
   AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
-
   Op kernel(info);
   SessionState state;
   state.SetGraph(graph);
@@ -61,6 +61,7 @@ TEST(ActivationOpTest, Sigmoid) {
         y = x > 0 ? y : 1 - y;
         return y;
       },
+      {},
       FLT_EPSILON);
 }
 
@@ -68,13 +69,39 @@ TEST(ActivationOpTest, Tanh) {
   TestUnaryElementwiseOp<Tanh<float>>(
       input_vals,
       [](float x) { return std::tanh(x); },
+      {},
       FLT_MIN);
 }
 
 TEST(ActivationOpTest, Relu) {
   TestUnaryElementwiseOp<Relu<float>>(
       input_vals,
-      [](float f) { return std::max(f, 0.0f); });
+      [](float x) { return std::max(x, 0.0f); });
 }
+
+TEST(ActivationOpTest, Elu) {
+  float alpha = 0.1f;
+  TestUnaryElementwiseOp<Elu<float>>(
+      input_vals,
+      [alpha](float x) { return (x >= 0) ? x : alpha * (exp(x) - 1); },
+      {{"alpha", alpha}});
+}
+
+TEST(ActivationOpTest, LeakyRelu) {
+  float alpha = 0.1f;
+  TestUnaryElementwiseOp<LeakyRelu<float>>(
+      input_vals,
+      [alpha](float x) { return (x >= 0) ? x : alpha * x; },
+      {{"alpha", alpha}});
+}
+
+TEST(ActivationOpTest, ThresholdedRelu) {
+  float alpha = 0.1f;
+  TestUnaryElementwiseOp<ThresholdedRelu<float>>(
+      input_vals,
+      [alpha](float x) { return (x >= alpha) ? x : 0; },
+      {{"alpha", alpha}});
+}
+
 }  // namespace Test
 }  // namespace Lotus
