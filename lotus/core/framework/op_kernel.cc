@@ -58,7 +58,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
   for (size_t input_index = 0; input_index != len; ++input_index) {
     const LotusIR::OpSignature::FormalParameter& param = op_schema->GetOpSignature().GetInputs()[input_index];
     LOTUS_ENFORCE(!param.GetTypeStr().empty());
-    const std::unordered_map<std::string, std::vector<MLDataType>>& kernel_type_constraints = kernel_def.TypeConstraints();
+    auto& kernel_type_constraints = kernel_def.TypeConstraints();
     auto allowed_type_list_iter = kernel_type_constraints.find(param.GetTypeStr());
     if (allowed_type_list_iter == kernel_type_constraints.end()) {
       allowed_type_list_iter = kernel_type_constraints.find(param.GetName());
@@ -101,7 +101,9 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
       int start1 = 0, end1 = 0;
       i->second.kernel_def->SinceVersion(&start1, &end1);
       if (start <= end1 && end >= start1) {
-        Status status(LOTUS, FAIL, "Kernels for " + op_name + " have conflicting op versions.");
+        Status status(LOTUS, FAIL, "Failed to add kernel for " + op_name +
+                      ": Conflicting with a registered kernel with op versions [" +
+                      std::to_string(start1) + "," + std::to_string(end1) + "].");
         return status;
       }
     }
