@@ -79,29 +79,28 @@ class TestUtils {
   }
 
   static void SetupState(SessionState& state,
-      const std::vector<LotusIR::NodeArg*>& input_defs,
-      const std::vector<LotusIR::NodeArg*>& output_defs) {
-      int idx = 0;
-      for (auto& elem : input_defs) {
-          state.AddMLValueNameIdx(elem->Name(), idx++);
-      }
-      for (auto& elem : output_defs) {
-          state.AddMLValueNameIdx(elem->Name(), idx++);
-      }
+                         const std::vector<LotusIR::NodeArg*>& input_defs,
+                         const std::vector<LotusIR::NodeArg*>& output_defs) {
+    int idx = 0;
+    for (auto& elem : input_defs) {
+      state.AddMLValueNameIdx(elem->Name(), idx++);
+    }
+    for (auto& elem : output_defs) {
+      state.AddMLValueNameIdx(elem->Name(), idx++);
+    }
   }
 
   static void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
-      const std::vector<LotusIR::NodeArg*>& output_defs,
-      std::unordered_map<std::string, MLValue>& feeds,
-      std::vector<std::string>& output_names) {
-      for (auto& elem : input_defs) {
-          feeds.insert(std::make_pair(elem->Name(), MLValue()));
-      }
-      for (auto& elem : output_defs) {
-          output_names.push_back(elem->Name());
-      }
+                                      const std::vector<LotusIR::NodeArg*>& output_defs,
+                                      std::unordered_map<std::string, MLValue>& feeds,
+                                      std::vector<std::string>& output_names) {
+    for (auto& elem : input_defs) {
+      feeds.insert(std::make_pair(elem->Name(), MLValue()));
+    }
+    for (auto& elem : output_defs) {
+      output_names.push_back(elem->Name());
+    }
   }
-
 };
 
 struct TypeProto_Set : TypeProto {
@@ -150,7 +149,8 @@ struct SimpleFloatTest {
   template <size_t count>
   void Run(const std::vector<int64_t>& expectedDims, const float (&expected_vals)[count]) {
     OpKernelContext kernel_ctx(model_.Frame().get(), &kernel_);
-    kernel_.compute(&kernel_ctx);
+    Common::Status status = kernel_.compute(&kernel_ctx);
+    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     auto& output = *kernel_ctx.output(0, TensorShape(expectedDims));
     Check(output, expected_vals);
   }

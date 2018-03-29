@@ -48,7 +48,7 @@ TEST(ThreadPool, DoWork) {
       }
     }
     for (int i = 0; i < kWorkItems; i++) {
-      ASSERT_TRUE(work[i]);
+      EXPECT_TRUE(work[i]);
     }
   }
 }

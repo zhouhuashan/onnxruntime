@@ -35,6 +35,7 @@ add_library(lotus_util_obj OBJECT ${lotus_util_srcs})
 
 set_target_properties(lotus_util_obj PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(lotus_util_obj PROPERTIES FOLDER "Lotus")
+add_dependencies(lotus_util_obj onnx ${lotus_EXTERNAL_DEPENDENCIES})
 
 if (WIN32)
     target_compile_definitions(lotus_util_obj PRIVATE

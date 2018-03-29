@@ -52,11 +52,10 @@ DEFINE_GET_ATTRS(GraphProto, graphs)
 
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def) {
   const LotusIR::OperatorSchema* op_schema = node.Op();
-  const size_t len = node.InputDefs().size();
+  const size_t len = node.InputArgCount().size();
   if (len > op_schema->GetOpSignature().GetInputs().size()) return false;
+  int cur = 0;
   for (size_t input_index = 0; input_index != len; ++input_index) {
-    LotusIR::NodeArg* arg = node.InputDefs()[input_index];
-    if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
     const LotusIR::OpSignature::FormalParameter& param = op_schema->GetOpSignature().GetInputs()[input_index];
     LOTUS_ENFORCE(!param.GetTypeStr().empty());
     const std::unordered_map<std::string, std::vector<MLDataType>>& kernel_type_constraints = kernel_def.TypeConstraints();
@@ -65,14 +64,20 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
       allowed_type_list_iter = kernel_type_constraints.find(param.GetName());
     }
     if (allowed_type_list_iter == kernel_type_constraints.end()) return false;
-    const ::onnx::TypeProto& real_type = arg->ToProto().type();
-    if (!std::any_of(allowed_type_list_iter->second.begin(),
-                     allowed_type_list_iter->second.end(),
-                     [real_type](const MLDataType& expected_type) {
-                       return expected_type->IsCompatible(real_type);
-                     })) {
-      return false;
+    for (int i = 0; i < node.InputArgCount()[input_index]; i++)
+    {
+      LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
+      if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
+      const ::onnx::TypeProto& real_type = arg->ToProto().type();
+      if (!std::any_of(allowed_type_list_iter->second.begin(),
+                       allowed_type_list_iter->second.end(),
+                       [real_type](const MLDataType& expected_type) {
+                         return expected_type->IsCompatible(real_type);
+                       })) {
+        return false;
+      }
     }
+    cur += node.InputArgCount()[input_index];
   }
   // op_schema may have more inputs than the actual inputs in the node,
   // let's assume all others are optional

@@ -125,7 +125,7 @@ TEST(AllocationPlannerTest, ChainNoShapeTest) {
 
   SequentialExecutionPlan plan;
   auto status = SequentialPlanner::CreatePlan(state, &plan);
-  ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   std::vector<AllocKind> expected_alloc({AllocKind::kAllocateStatically, AllocKind::kAllocate, AllocKind::kAllocate, AllocKind::kAllocate});
   AllocationPlanTestUtility::CheckAllocationKind(plan, expected_alloc);
@@ -167,7 +167,7 @@ TEST(AllocationPlannerTest, InputOutputTest) {
 
   SequentialExecutionPlan plan;
   auto status = SequentialPlanner::CreatePlan(state, &plan);
-  ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   // X1: kPreExisting, X2: kPreExisting, Y1: kAllocate, Y2: kAllocate
   std::vector<AllocKind> expected_alloc({AllocKind::kPreExisting, AllocKind::kPreExisting, AllocKind::kAllocate, AllocKind::kAllocate});

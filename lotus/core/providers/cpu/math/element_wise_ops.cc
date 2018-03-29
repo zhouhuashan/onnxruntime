@@ -65,7 +65,35 @@ REGISTER_KERNEL(KernelDefBuilder("Reciprocal")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Reciprocal<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Sum")
+REGISTER_KERNEL(KernelDefBuilder("Sqrt")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Sqrt<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("Pow")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Pow<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("Exp")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Exp<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("Log")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1, 2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Log<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("Sum")                
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
@@ -228,12 +256,7 @@ Status Floor<float>::compute(OpKernelContext* ctx) const {
   auto& X = *ctx->input<Tensor>(0);
   auto& Y = *ctx->output(0, X.shape());
 
-  // There is no Eigen function for ceiling, so do it ourselves
-  auto* pInput = X.data<float>();
-  auto* pOutput = Y.mutable_data<float>();
-  size_t count = Y.shape().Size();
-  for (size_t i = 0; i < count; i++)
-    pOutput[i] = floor(pInput[i]);
+  EigenMap<float>(Y) = EigenMap<float>(X).array().floor();
   return Status::OK();
 }
 
@@ -242,12 +265,7 @@ Status Ceil<float>::compute(OpKernelContext* ctx) const {
   auto& X = *ctx->input<Tensor>(0);
   auto& Y = *ctx->output(0, X.shape());
 
-  // There is no Eigen function for ceiling, so do it ourselves
-  auto* pInput = X.data<float>();
-  auto* pOutput = Y.mutable_data<float>();
-  size_t count = Y.shape().Size();
-  for (size_t i = 0; i < count; i++)
-    pOutput[i] = ceil(pInput[i]);
+  EigenMap<float>(Y) = EigenMap<float>(X).array().ceil();
   return Status::OK();
 }
 
@@ -257,6 +275,52 @@ Status Reciprocal<float>::compute(OpKernelContext* ctx) const {
   auto& Y = *ctx->output(0, X.shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).cwiseInverse();
+  return Status::OK();
+}
+
+template <>
+Status Sqrt<float>::compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->input<Tensor>(0);
+  auto& Y = *ctx->output(0, X.shape());
+
+  EigenMap<float>(Y) = EigenMap<float>(X).cwiseSqrt();
+  return Status::OK();
+}
+
+template <>
+Status Pow<float>::compute(OpKernelContext* ctx) const {
+  auto& A = *ctx->input<Tensor>(0);
+  auto& B = *ctx->input<Tensor>(1);
+  auto& C = *ctx->output(0, A.shape());
+
+  if (broadcast_) {
+    if (B.shape().NumDimensions() == 0) {
+      LOTUS_ENFORCE(axis_ == -1, "When broadcasting by a scalar, axis cannot be set");
+      EigenMap<float>(C) = EigenMap<float>(A).array().pow(*B.data<float>());
+    } else
+      Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return pow(a, b); });
+  } else {
+    LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
+    EigenMap<float>(C) = EigenMap<float>(A).array().pow(EigenMap<float>(B).array());
+  }
+  return Status::OK();
+}
+
+template <>
+Status Exp<float>::compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->input<Tensor>(0);
+  auto& Y = *ctx->output(0, X.shape());
+
+  EigenMap<float>(Y) = EigenMap<float>(X).array().exp();
+  return Status::OK();
+}
+
+template <>
+Status Log<float>::compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->input<Tensor>(0);
+  auto& Y = *ctx->output(0, X.shape());
+
+  EigenMap<float>(Y) = EigenMap<float>(X).array().log();
   return Status::OK();
 }
 
