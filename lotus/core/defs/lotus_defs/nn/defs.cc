@@ -172,7 +172,7 @@ REGISTER_OPERATOR_SCHEMA(AveragePool)
            "T")
     .Output("Y",
             "Output data tensor from average pooling across the input tensor. "
-            "Dimensions will vary based on various kernel, stride, and pad sizes.")
+            "Dimensions will vary based on various kernel, stride, and pad sizes.", "T")
     .TypeConstraint("T", {"tensor(float16)", "tensor(float)", "tensor(double)"},
                     "Constrain input and output types to float tensors.")
     .Attr("auto_pad",
