@@ -68,22 +68,32 @@ class CPUMathUtil {
 #define EIGEN_X_VAR(var) ConstEigenVectorArrayMap<T> var(X->data<T>(), X->shape().Size())
 #define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->mutable_data<T>(), Y->shape().Size())
 
-#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func) \
-  template <typename T>                                          \
-  class class_name final : public OpKernel {                     \
-   public:                                                       \
-    static const char* TypeTraits() {                            \
-      return #class_name;                                        \
-    }                                                            \
-                                                                 \
-    class_name(const OpKernelInfo& info) : OpKernel(info) {}     \
-                                                                 \
-    Status compute(OpKernelContext* context) const override {    \
-      const Tensor* X = context->template input<Tensor>(0);      \
-      Tensor* Y = context->output(0, X->shape());                \
-      func;                                                      \
-      return Status::OK();                                       \
-    }                                                            \
+#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func, attrs)    \
+  template <typename T>                                                    \
+  class class_name final : public OpKernel {                               \
+   public:                                                                 \
+    static const char* TypeTraits() {                                      \
+      return #class_name;                                                  \
+    }                                                                      \
+                                                                           \
+    class_name(const OpKernelInfo& info) : OpKernel(info) {                \
+      for (auto name : std::vector<std::string>(attrs)) {                  \
+        T value;                                                           \
+        LOTUS_ENFORCE(op_kernel_info_.GetAttr<T>(name, &value).IsOK());    \
+        attr_.insert(std::make_pair(std::string(name), value));            \
+      }                                                                    \
+    }                                                                      \
+                                                                           \
+    Status compute(OpKernelContext* context) const override {              \
+      const Tensor* X = context->template input<Tensor>(0);                \
+      Tensor* Y = context->output(0, X->shape());                          \
+      func;                                                                \
+      return Status::OK();                                                 \
+    }                                                                      \
+                                                                           \
+   private:                                                                \
+    std::unordered_map<std::string, T> attr_;                              \
+    T Attr(const char* name) const { return attr_.at(std::string(name)); } \
   };
 
 }  // namespace Lotus

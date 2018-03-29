@@ -95,6 +95,7 @@ class KernelDef {
     return *this;
   }
 
+  // allowing output j to reuse memory of input i
   KernelDef& MayInplace(int i, int j) {
     // TODO: validate inputs.
     inplace_map_.push_back({i, j});
