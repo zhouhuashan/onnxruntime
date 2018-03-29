@@ -100,14 +100,14 @@ REGISTER_KERNEL(KernelDefBuilder("Sum")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Sum<float>);
 
-REGISTER_KERNEL(KernelDef("Min")
+REGISTER_KERNEL(KernelDefBuilder("Min")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(6, 6)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Min<float>);
 
-REGISTER_KERNEL(KernelDef("Max")
+REGISTER_KERNEL(KernelDefBuilder("Max")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(6, 6)
                     .Provider(LotusIR::kCpuExecutionProvider)
