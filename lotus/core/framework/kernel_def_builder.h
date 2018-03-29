@@ -172,8 +172,7 @@ public:
 
   // Return the kernel definition.
   const KernelDef* Build() {
-    KernelDef* def = kernelDef_.release();
-    return def;
+    return kernelDef_.release();
   }
   
 private:
