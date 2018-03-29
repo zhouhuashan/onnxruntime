@@ -58,7 +58,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
   for (size_t input_index = 0; input_index != len; ++input_index) {
     const LotusIR::OpSignature::FormalParameter& param = op_schema->GetOpSignature().GetInputs()[input_index];
     LOTUS_ENFORCE(!param.GetTypeStr().empty());
-    const std::unordered_map<std::string, std::vector<MLDataType>>& kernel_type_constraints = kernel_def.TypeConstraints();
+    auto& kernel_type_constraints = kernel_def.TypeConstraints();
     auto allowed_type_list_iter = kernel_type_constraints.find(param.GetTypeStr());
     if (allowed_type_list_iter == kernel_type_constraints.end()) {
       allowed_type_list_iter = kernel_type_constraints.find(param.GetName());
@@ -66,19 +66,52 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
     if (allowed_type_list_iter == kernel_type_constraints.end()) return false;
     for (int i = 0; i < node.InputArgCount()[input_index]; i++)
     {
-        LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
-        if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
-        const ::onnx::TypeProto& real_type = arg->ToProto().type();
-        if (!std::any_of(allowed_type_list_iter->second.begin(), allowed_type_list_iter->second.end(), [real_type](const MLDataType& expected_type) {
-            return expected_type->IsCompatible(real_type);
-        })) {
-            return false;
-        }
+      LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
+      if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
+      const ::onnx::TypeProto& real_type = arg->ToProto().type();
+      if (!std::any_of(allowed_type_list_iter->second.begin(),
+                       allowed_type_list_iter->second.end(),
+                       [real_type](const MLDataType& expected_type) {
+                         return expected_type->IsCompatible(real_type);
+                       })) {
+        return false;
+      }
     }
     cur += node.InputArgCount()[input_index];
   }
-  //op_schema may have more inputs than the actual inputs in the node, let's assume all others are optional
+  // op_schema may have more inputs than the actual inputs in the node,
+  // let's assume all others are optional
   return true;
+}
+
+Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
+                                KernelCreateFn kernel_creator) {
+  KernelCreateInfo kernel_info(kernel_builder.Build(), kernel_creator);
+  auto& op_name = kernel_info.kernel_def->OpName();
+  auto& domain = kernel_info.kernel_def->Domain();
+  auto& provider_type = kernel_info.kernel_def->Provider();
+  int start = 0, end = 0;
+  kernel_info.kernel_def->SinceVersion(&start, &end);
+
+  // Check no op version conflicts.
+  auto range = kernel_creator_fn_map_.equal_range(op_name);
+  for (auto i = range.first; i != range.second; ++i) {
+    if (domain == i->second.kernel_def->Domain() &&
+        provider_type == i->second.kernel_def->Provider()) {
+      int start1 = 0, end1 = 0;
+      i->second.kernel_def->SinceVersion(&start1, &end1);
+      if (start <= end1 && end >= start1) {
+        Status status(LOTUS, FAIL, "Failed to add kernel for " + op_name +
+                      ": Conflicting with a registered kernel with op versions [" +
+                      std::to_string(start1) + "," + std::to_string(end1) + "].");
+        return status;
+      }
+    }
+  }
+
+  // Register the kernel.
+  kernel_creator_fn_map_.insert({ op_name, kernel_info });
+  return Status::OK();
 }
 
 Status KernelRegistry::CreateKernel(const LotusIR::OperatorSchema& /*TODO:remove it*/,
@@ -93,39 +126,25 @@ Status KernelRegistry::CreateKernel(const LotusIR::OperatorSchema& /*TODO:remove
     Status status = op_schema->GetAttributeParser()(node.GetAttributes());
     RETURN_IF_ERROR(status);
   }
-  auto iter1 = kernel_creator_fn_map_.find(node.OpType());
-  if (iter1 == kernel_creator_fn_map_.end()) {
-    std::ostringstream oss;
-    oss << "OP Kernel not found for type: " << node.OpType();
-    return Status(LOTUS, INVALID_ARGUMENT, oss.str());
-  }
-  auto iter2 = iter1->second.find(node.Domain());
-  if (iter2 == iter1->second.end()) {
-    std::ostringstream oss;
-    oss << "OP Kernel not found for type: " << node.OpType() << " and domain: " << node.Domain();
-    return Status(LOTUS, INVALID_ARGUMENT, oss.str());
-  }
-  auto iter3 = iter2->second.find(provider_type);
-  if (iter3 == iter2->second.end()) {
-    std::ostringstream oss;
-    oss << "OP Kernel not found for type: " << node.OpType() << ", domain: " << node.Domain() << " and provider: " << provider_type;
-    return Status(LOTUS, INVALID_ARGUMENT, oss.str());
-  }
-  const std::vector<KernelCreateInfo>& info = iter3->second;
-  const KernelCreateInfo* creator = nullptr;
-  for (const KernelCreateInfo& i : info) {
-    if (VerifyKernelDef(node, i.kernel_def)) {
-      creator = &i;
-      break;
+
+  auto range = kernel_creator_fn_map_.equal_range(node.OpType());
+  for (auto i = range.first; i != range.second; ++i) {
+    if (node.Domain() == i->second.kernel_def->Domain() &&
+        provider_type == i->second.kernel_def->Provider()) {
+      int start, end;
+      i->second.kernel_def->SinceVersion(&start, &end);
+      int version = 1;  // TODO: Get version from somewhere.
+      if (start <= version && version <= end &&
+          VerifyKernelDef(node, *i->second.kernel_def)) {
+        OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def);
+        op_kernel->reset(i->second.kernel_create_fn(kernel_info));
+        return Status::OK();
+      }
     }
   }
-  if (!creator) {
-    return Status(LOTUS, NOT_IMPLEMENTED, "OP Kernel not found");
-  }
-  OpKernelInfo kernel_info(node, allocator_info, creator->kernel_def);
-  op_kernel->reset(creator->kernel_create_fn(kernel_info));
-  return Status::OK();
+  return Status(LOTUS, NOT_IMPLEMENTED, "OP Kernel not found");
 }
+
 Tensor* OpKernelContext::output(int index, const TensorShape& shape) {
   // In this case, it's assumed that the tensor hasn't been allocated yet,
   // so that it's calling ExecutionFrame to create a tensor in the given position with given shape.

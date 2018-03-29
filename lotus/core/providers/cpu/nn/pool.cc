@@ -166,28 +166,28 @@ namespace Lotus {
         return Status::OK();
     }
     
-    REGISTER_KERNEL(KernelDef("AveragePool")
+    REGISTER_KERNEL(KernelDefBuilder("AveragePool")
         .Domain(LotusIR::kOnnxDomain)
         .SinceVersion(1, 2)
         .Provider(LotusIR::kCpuExecutionProvider)
         .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
         Pool<float, AveragePool>);
    
-    REGISTER_KERNEL(KernelDef("MaxPool")
+    REGISTER_KERNEL(KernelDefBuilder("MaxPool")
         .Domain(LotusIR::kOnnxDomain)
         .SinceVersion(1, 2)
         .Provider(LotusIR::kCpuExecutionProvider)
         .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
         Pool<float, MaxPool>);
     
-    REGISTER_KERNEL(KernelDef("GlobalAveragePool")
+    REGISTER_KERNEL(KernelDefBuilder("GlobalAveragePool")
         .Domain(LotusIR::kOnnxDomain)
         .SinceVersion(1, 2)
         .Provider(LotusIR::kCpuExecutionProvider)
         .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
         Pool<float, AveragePool>);
 
-    REGISTER_KERNEL(KernelDef("GlobalMaxPool")
+    REGISTER_KERNEL(KernelDefBuilder("GlobalMaxPool")
         .Domain(LotusIR::kOnnxDomain)
         .SinceVersion(1, 2)
         .Provider(LotusIR::kCpuExecutionProvider)

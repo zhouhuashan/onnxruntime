@@ -2,7 +2,7 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDef("Gemm")
+REGISTER_KERNEL(KernelDefBuilder("Gemm")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

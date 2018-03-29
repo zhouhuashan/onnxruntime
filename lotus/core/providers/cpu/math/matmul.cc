@@ -242,7 +242,7 @@ Status MatMul<float>::compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDef("MatMul")
+REGISTER_KERNEL(KernelDefBuilder("MatMul")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

@@ -26,7 +26,7 @@ Status Clip<float>::compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDef("Clip")
+REGISTER_KERNEL(KernelDefBuilder("Clip")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

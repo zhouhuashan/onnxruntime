@@ -3,7 +3,7 @@
 namespace Lotus {
 
 #define REGISTER_UNARY_ELEMENTWISE_KERNEL(x)                                      \
-  REGISTER_KERNEL(KernelDef(#x)                                                   \
+  REGISTER_KERNEL(KernelDefBuilder(#x)                                            \
                       .Domain(LotusIR::kOnnxDomain)                               \
                       .SinceVersion(1, 2)                                         \
                       .Provider(LotusIR::kCpuExecutionProvider)                   \

@@ -2,7 +2,7 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDef("Concat")
+REGISTER_KERNEL(KernelDefBuilder("Concat")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

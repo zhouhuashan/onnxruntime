@@ -73,7 +73,7 @@ Status Transpose<float>::compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDef("Transpose")
+REGISTER_KERNEL(KernelDefBuilder("Transpose")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

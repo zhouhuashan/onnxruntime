@@ -8,7 +8,8 @@ namespace Test {
 static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
 
 TEST(MathOpTest, Add) {
-  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float),
+    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Add> test(model);
 
@@ -21,7 +22,8 @@ TEST(MathOpTest, Add) {
 }
 
 TEST(MathOpTest, Add_Broadcast_Axis) {
-  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float),
+    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
 
   EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{0}));
@@ -44,7 +46,8 @@ TEST(MathOpTest, Add_Broadcast_Axis) {
 }
 
 TEST(MathOpTest, Add_Broadcast) {
-  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float),
+    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
 
   EXPECT_TRUE(model.Node().AddAttribute("broadcast", int64_t{1}));
@@ -66,7 +69,8 @@ TEST(MathOpTest, Add_Broadcast) {
 }
 
 TEST(MathOpTest, Sub) {
-  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float),
+    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Sub", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Sub> test(model);
 
@@ -92,7 +96,8 @@ TEST(MathOpTest, Mul) {
 }
 
 TEST(MathOpTest, Div) {
-  LotusIR::NodeArg input1_def("A", &s_typeProto_float), input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("A", &s_typeProto_float),
+    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Div", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Div> test(model);
 
@@ -180,7 +185,8 @@ TEST(MathOpTest, Sqrt) {
 }
 
 TEST(MathOpTest, Pow) {
-  LotusIR::NodeArg input1_def("X", &s_typeProto_float), input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("X", &s_typeProto_float),
+    input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
   TestModel model("Pow", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Pow> test(model);
 
@@ -193,7 +199,8 @@ TEST(MathOpTest, Pow) {
 }
 
 TEST(MathOpTest, Pow_Broadcast_Scalar) {
-  LotusIR::NodeArg input1_def("X", &s_typeProto_float), input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("X", &s_typeProto_float),
+    input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
   TestModel model("Pow", {&input1_def, &input2_def}, {&output_def});
 
   EXPECT_TRUE(model.Node().AddAttribute("broadcast", int64_t{1}));
@@ -233,7 +240,9 @@ TEST(MathOpTest, Log) {
 }
 
 TEST(MathOpTest, Sum) {
-  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float), input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float), output_def("sum", &s_typeProto_float);
+  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float),
+    input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float),
+    output_def("sum", &s_typeProto_float);
   TestModel model("Sum", {&input1_def, &input2_def, &input3_def}, {&output_def});
   SimpleFloatTest<Sum> test(model);
 

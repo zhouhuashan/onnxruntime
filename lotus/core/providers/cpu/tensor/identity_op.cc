@@ -2,7 +2,7 @@
 
 namespace Lotus {
 //copying reshape kernel
-REGISTER_KERNEL(KernelDef("Dropout")
+REGISTER_KERNEL(KernelDefBuilder("Dropout")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
