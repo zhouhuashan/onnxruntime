@@ -102,6 +102,42 @@ class Reciprocal final : public OpKernel {
 };
 
 template <typename T>
+class Sqrt final : public OpKernel {
+ public:
+  Sqrt(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Pow final : public BroadcastAxisKernel {
+ public:
+  Pow(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Exp final : public BroadcastAxisKernel {
+ public:
+  Exp(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Log final : public BroadcastAxisKernel {
+ public:
+  Log(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
 class Sum final : public OpKernel {
  public:
   Sum(const OpKernelInfo& info) : OpKernel(info) {

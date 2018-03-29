@@ -167,6 +167,71 @@ TEST(MathOpTest, Reciprocal) {
   test.Run(dims, expected_vals);
 }
 
+TEST(MathOpTest, Sqrt) {
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Sqrt", {&input_def}, {&output_def});
+  SimpleFloatTest<Sqrt> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {1.0f, 4.0f, 0.0f, 9.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{1.0f, 2.0f, 0.0f, 3.0f};
+  test.Run(dims, expected_vals);
+}
+
+TEST(MathOpTest, Pow) {
+  LotusIR::NodeArg input1_def("X", &s_typeProto_float), input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
+  TestModel model("Pow", {&input1_def, &input2_def}, {&output_def});
+  SimpleFloatTest<Pow> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {2.0f, 2.0f, sqrt(2.0f), 1.0f});
+  test.AddInput(dims, {0.0f, 8.0f, 2.0f, 9.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{1.0f, 256.0f, 2.0f, 1.0f};
+  test.Run(dims, expected_vals);
+}
+
+TEST(MathOpTest, Pow_Broadcast_Scalar) {
+  LotusIR::NodeArg input1_def("X", &s_typeProto_float), input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
+  TestModel model("Pow", {&input1_def, &input2_def}, {&output_def});
+
+  EXPECT_TRUE(model.Node().AddAttribute("broadcast", int64_t{1}));
+
+  SimpleFloatTest<Pow> test(model);
+
+  std::vector<int64_t> dims{3};
+  test.AddInput(dims, {1.0f, 2.0f, 3.0f});
+  test.AddInput({}, {2.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{1.0f, 4.0f, 9.0f};
+  test.Run(dims, expected_vals);
+}
+
+TEST(MathOpTest, Exp) {
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Exp", {&input_def}, {&output_def});
+  SimpleFloatTest<Exp> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {0.0f, 1.0f, 2.0f, 10.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{1.0f, exp(1.0f), exp(2.0f), exp(10.0f)};
+  test.Run(dims, expected_vals);
+}
+
+TEST(MathOpTest, Log) {
+  LotusIR::NodeArg input_def("X", &s_typeProto_float), output_def("Y", &s_typeProto_float);
+  TestModel model("Log", {&input_def}, {&output_def});
+  SimpleFloatTest<Log> test(model);
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput(dims, {1.0f, 2.0f, 5.0f, 10.0f});
+  test.AddOutput(dims);
+  float expected_vals[]{0.0f, log(2.0f), log(5.0f), log(10.0f)};
+  test.Run(dims, expected_vals);
+}
+
 TEST(MathOpTest, Sum) {
   LotusIR::NodeArg input1_def("data_0", &s_typeProto_float), input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float), output_def("sum", &s_typeProto_float);
   TestModel model("Sum", {&input1_def, &input2_def, &input3_def}, {&output_def});
