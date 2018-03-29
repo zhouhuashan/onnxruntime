@@ -7,10 +7,12 @@
 #include "core/graph/utils.h"
 #include "core/framework/data_types.h"
 
-/* TODO: Need to address
-- placement of constant tensors (e.g., weights) in shared
-- ensure output buffers are allocated in appropriate arena
-- handle optional inputs
+/*
+TODO: 
+- (Not for milestone 1)
+- handle different types of devices:
+  - identify placement of all tensors and ml-values
+  - insert copies between different devices as required
 */
 
 namespace Lotus {
@@ -210,10 +212,13 @@ class PlannerImpl {
 
     for (SequentialExecutionPlan::NodeExecutionPlan& step : execution_plan) {
       auto pnode = graph.GetNode(step.node_index);
-      for (auto node_input : pnode->InputDefs())
-        UseCount(node_input->Name())++;
+      for (auto node_input : pnode->InputDefs()) {
+        if (node_input->Exists())
+          UseCount(node_input->Name())++;
+      }
       for (auto node_output : pnode->OutputDefs())
-        ProcessDef(node_output);
+        if (node_output->Exists())
+          ProcessDef(node_output);
     }
 
     for (auto graph_output : graph.GetOutputs()) {
@@ -249,6 +254,7 @@ class PlannerImpl {
       // determine allocation for outputs of pnode
       int output_arg_num = 0;
       for (auto node_output : pnode->OutputDefs()) {
+        if (!node_output->Exists()) continue;
         auto current = index(node_output->Name());
         AllocPlan(current).value_type = GetMLDataType(*node_output);
         MLValueIndex reused;
@@ -269,17 +275,21 @@ class PlannerImpl {
       }
       // determine if inputs of *pnode can be freed:
       for (auto node_input : pnode->InputDefs()) {
-        auto& sym = node_input->Name();
-        auto original = Buffer(index(sym));
-        if (0 == --UseCount(original))
-          freelist_.push_front(FreeBufferInfo(original, program_counter));
+        if (node_input->Exists()) {
+          auto& sym = node_input->Name();
+          auto original = Buffer(index(sym));
+          if (0 == --UseCount(original))
+            freelist_.push_front(FreeBufferInfo(original, program_counter));
+        }
       }
       // determine if any outputs of *pnode are unused and can be freed:
       for (auto node_output : pnode->OutputDefs()) {
-        auto& sym = node_output->Name();
-        auto original = Buffer(index(sym));
-        if (0 == UseCount(original))
-          freelist_.push_front(FreeBufferInfo(original, program_counter));
+        if (node_output->Exists()) {
+          auto& sym = node_output->Name();
+          auto original = Buffer(index(sym));
+          if (0 == UseCount(original))
+            freelist_.push_front(FreeBufferInfo(original, program_counter));
+        }
       }
     }
   }
