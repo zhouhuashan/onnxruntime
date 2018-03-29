@@ -2,70 +2,70 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDef("Add")
+REGISTER_KERNEL(KernelDefBuilder("Add")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Add<float>);
 
-REGISTER_KERNEL(KernelDef("Sub")
+REGISTER_KERNEL(KernelDefBuilder("Sub")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Sub<float>);
 
-REGISTER_KERNEL(KernelDef("Mul")
+REGISTER_KERNEL(KernelDefBuilder("Mul")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Mul<float>);
 
-REGISTER_KERNEL(KernelDef("Div")
+REGISTER_KERNEL(KernelDefBuilder("Div")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Div<float>);
 
-REGISTER_KERNEL(KernelDef("Abs")
+REGISTER_KERNEL(KernelDefBuilder("Abs")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Abs<float>);
 
-REGISTER_KERNEL(KernelDef("Neg")
+REGISTER_KERNEL(KernelDefBuilder("Neg")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Neg<float>);
 
-REGISTER_KERNEL(KernelDef("Floor")
+REGISTER_KERNEL(KernelDefBuilder("Floor")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Floor<float>);
 
-REGISTER_KERNEL(KernelDef("Ceil")
+REGISTER_KERNEL(KernelDefBuilder("Ceil")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Ceil<float>);
 
-REGISTER_KERNEL(KernelDef("Reciprocal")
+REGISTER_KERNEL(KernelDefBuilder("Reciprocal")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Reciprocal<float>);
 
-REGISTER_KERNEL(KernelDef("Sum")
+REGISTER_KERNEL(KernelDefBuilder("Sum")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

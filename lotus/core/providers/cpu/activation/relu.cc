@@ -3,7 +3,7 @@
 namespace Lotus {
 
 template class Relu<float>;
-REGISTER_KERNEL(KernelDef("ReLU")
+REGISTER_KERNEL(KernelDefBuilder("ReLU")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

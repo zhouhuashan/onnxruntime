@@ -3,7 +3,7 @@
 namespace Lotus {
 
 //copying reshape kernel
-REGISTER_KERNEL(KernelDef("Reshape")
+REGISTER_KERNEL(KernelDefBuilder("Reshape")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

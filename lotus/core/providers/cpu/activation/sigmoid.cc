@@ -3,7 +3,7 @@
 namespace Lotus {
 
 template class Sigmoid<float>;
-REGISTER_KERNEL(KernelDef("Sigmoid")
+REGISTER_KERNEL(KernelDefBuilder("Sigmoid")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

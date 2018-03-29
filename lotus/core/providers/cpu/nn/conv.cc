@@ -1,7 +1,7 @@
 #include "core/providers/cpu/nn/conv.h"
 
 namespace Lotus {
-REGISTER_KERNEL(KernelDef("Conv")
+REGISTER_KERNEL(KernelDefBuilder("Conv")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

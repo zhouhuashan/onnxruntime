@@ -14,7 +14,7 @@ class Pool final : public PoolBase {
 public:        
     Pool(OpKernelInfo info) : PoolBase(info) {}
 
-    virtual ~Pool() {}
+    ~Pool() {}
 
     Status compute(OpKernelContext* context) const override;
 

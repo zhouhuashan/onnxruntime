@@ -72,13 +72,17 @@ class OpKernel {
   }
 
   virtual Status compute(OpKernelContext* context) const = 0;
-  virtual Status compute_async(OpKernelContext* context, DoneCallback done) const {
+
+  virtual Status compute_async(OpKernelContext* context,
+                               DoneCallback done) const {
     UNUSED_PARAMETER(context);
     UNUSED_PARAMETER(done);
     LOTUS_NOT_IMPLEMENTED;
   }
 
-  const AllocatorInfo& allocator() const { return op_kernel_info_.get_allocator_info(); }
+  const AllocatorInfo& allocator() const {
+    return op_kernel_info_.get_allocator_info();
+  }
 
  protected:
   OpKernelInfo op_kernel_info_;
@@ -122,24 +126,17 @@ typedef OpKernel* (*KernelCreateFn)(const OpKernelInfo&);
 class KernelRegistry {
  public:
   // Register a kernel with kernel definition and function to create the kernel.
-  Status Register(const KernelDef& kernel_def, KernelCreateFn kernel_creator) {
-    auto& op_name = kernel_def.OpName();
-    auto& op_domain = kernel_def.Domain();
-    auto& provider = kernel_def.Provider();
-    // TODO: check version overlap issue. For example, there're multiple kernels registered for same version.
-    kernel_creator_fn_map_[op_name][op_domain][provider].push_back(KernelCreateInfo(kernel_def, kernel_creator));
-    return Status::OK();
-  }
+  Status Register(KernelDefBuilder& kernel_builder, KernelCreateFn kernel_creator);
 
-  /**/
   // factory functions should always return a unique_ptr for maximum flexibility
   // for its clients unless the factory is managing the lifecycle of the pointer
   // itself.
+  // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
   Status CreateKernel(const LotusIR::OperatorSchema& op_schema,
                       const ProviderType& provider_type,
                       const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
-                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const;  // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
+                      std::unique_ptr<OpKernel>* op_kernel) const;
 
   static KernelRegistry* Instance() {
     static KernelRegistry kernel_registry;
@@ -150,31 +147,36 @@ class KernelRegistry {
   KernelRegistry() = default;
 
   struct KernelCreateInfo {
-    KernelDef kernel_def;
+    const KernelDef* kernel_def;
     KernelCreateFn kernel_create_fn;
 
-    KernelCreateInfo(const KernelDef& kernel_def_, KernelCreateFn kernel_create_fn_) {
+    KernelCreateInfo(const KernelDef* kernel_def_,
+                     KernelCreateFn kernel_create_fn_) {
       kernel_def = kernel_def_;
       kernel_create_fn = kernel_create_fn_;
     }
   };
-  //Check if the node's input/output/attributes are compatible with this kernel_def,
-  //If so, we'll use this kernel_def to create a kernel for executing this node
-  static bool VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def);
+
+  // Check if the node's input/output/attributes are compatible with this
+  // kernel_def, If so, the kernel defined by the kernel_def is used to
+  // execute this node.
+  static bool VerifyKernelDef(const LotusIR::Node& node,
+                              const KernelDef& kernel_def);
 
   // Kernel create function map. Its structure is,
   // <op_name, <op_domain, <provider_type, kernel_create_functions>>>.
-  std::unordered_map<std::string,
-                     std::unordered_map<std::string,
-                                        std::unordered_map<ProviderType, std::vector<KernelCreateInfo>>>>
-      kernel_creator_fn_map_;
+  std::multimap<std::string, KernelCreateInfo> kernel_creator_fn_map_;
 };
 
-#define REGISTER_KERNEL(kernel_def, ...) REGISTER_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def, __VA_ARGS__)
-#define REGISTER_KERNEL_UNIQ_HELPER(counter, kernel_def, ...) REGISTER_KERNEL_UNIQ(counter, kernel_def, __VA_ARGS__)
-#define REGISTER_KERNEL_UNIQ(counter, kernel_def, ...)                                                          \
-  static Lotus::Common::Status kernel_def_##counter##_status = KernelRegistry::Instance()->Register(kernel_def, \
-                                                                                                    [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });
+#define REGISTER_KERNEL(kernel_builder, ...) \
+  REGISTER_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_builder, __VA_ARGS__)
+#define REGISTER_KERNEL_UNIQ_HELPER(counter, kernel_builder, ...) \
+  REGISTER_KERNEL_UNIQ(counter, kernel_builder, __VA_ARGS__)
+#define REGISTER_KERNEL_UNIQ(counter, kernel_builder, ...)                  \
+  static Lotus::Common::Status kernel_builder_##counter##_status =          \
+    KernelRegistry::Instance()->Register(                               \
+      kernel_builder,                                                       \
+      [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });
 
 }  // namespace Lotus
 #endif  // CORE_FRAMEWORK_OP_KERNEL_H

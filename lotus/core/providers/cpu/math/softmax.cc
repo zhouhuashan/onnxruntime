@@ -30,7 +30,7 @@ Status Softmax<float>::compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDef("Softmax")
+REGISTER_KERNEL(KernelDefBuilder("Softmax")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1, 2)
                     .Provider(LotusIR::kCpuExecutionProvider)

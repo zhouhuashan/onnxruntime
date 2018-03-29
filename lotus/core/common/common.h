@@ -72,27 +72,27 @@ using Common::StatusCode;
 // These are usually placed in the private: declarations for a class.
 
 #define LOTUS_DISALLOW_COPY(TypeName) \
-  TypeName(const TypeName &) = delete
+  TypeName(const TypeName&) = delete
 
 #define LOTUS_DISALLOW_ASSIGN(TypeName) \
-  TypeName &operator=(const TypeName &) = delete
+  TypeName& operator=(const TypeName&) = delete
 
 #define LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  LOTUS_DISALLOW_COPY(TypeName); \
+  LOTUS_DISALLOW_COPY(TypeName);                 \
   LOTUS_DISALLOW_ASSIGN(TypeName)
 
-#define LOTUS_DISALLOW_MOVE(TypeName)   \
-  TypeName(const TypeName &&) = delete; \
-  TypeName &operator=(const TypeName &&) = delete
+#define LOTUS_DISALLOW_MOVE(TypeName)  \
+  TypeName(const TypeName&&) = delete; \
+  TypeName& operator=(const TypeName&&) = delete
 
 #define LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName) \
   LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName);           \
   LOTUS_DISALLOW_MOVE(TypeName)
 
-#define LOTUS_RETURN_IF_ERROR(expr)       \
-  do {                                    \
-    auto _status = (expr);                \
-    if ((!_status.IsOK())) return _status;  \
+#define LOTUS_RETURN_IF_ERROR(expr)        \
+  do {                                     \
+    auto _status = (expr);                 \
+    if ((!_status.IsOK())) return _status; \
   } while (0)
 
 #if defined(__GNUC__)
@@ -173,6 +173,6 @@ inline string MakeString(const string& str) {
 }
 inline string MakeString(const char* p_str) {
   return string(p_str);
-} 
+}
 
 }  // namespace Lotus
