@@ -221,6 +221,16 @@ class InferenceSession::Impl {
     return Run(run_options, feeds, output_names, p_fetches);
   }
 
+  Common::Status Run(const NameMLValMap& feeds,
+                     std::vector<MLValue>* p_fetches) {
+    RunOptions run_options;
+    std::vector<std::string> output_names;
+    for (const NodeArg* arg : model_->MainGraph()->GetOutputs()) {
+      output_names.push_back(arg->Name());
+    }
+    return Run(run_options, feeds, output_names, p_fetches);
+  }
+
   Common::Status Run(const RunOptions& run_options,
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
@@ -501,6 +511,10 @@ Common::Status InferenceSession::Run(const NameMLValMap& feeds,
   return impl_->Run(feeds, output_names, p_fetches);
 }
 
+Common::Status InferenceSession::Run(const NameMLValMap& feeds,
+                                     std::vector<MLValue>* p_fetches) {
+  return impl_->Run(feeds, p_fetches);
+}
 Common::Status InferenceSession::Run(const RunOptions& run_options,
                                      const NameMLValMap& feeds,
                                      const std::vector<std::string>& output_names,

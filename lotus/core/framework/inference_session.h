@@ -70,6 +70,9 @@ class InferenceSession {
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches);
 
+  Common::Status Run(const NameMLValMap& feeds,
+                     std::vector<MLValue>* p_fetches);
+
   Common::Status Run(const RunOptions& run_options,
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
