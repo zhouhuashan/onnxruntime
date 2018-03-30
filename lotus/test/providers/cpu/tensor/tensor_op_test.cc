@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/reshape.h"
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/providers/provider_test_utils.h"
 
 namespace Lotus {
 namespace Test {
@@ -35,7 +35,7 @@ TEST(TensorOpTest, Reshape) {
   status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_shape);
   EXPECT_TRUE(status.IsOK());
 
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   kernel.compute(&kernel_ctx);
   auto res = kernel_ctx.output(0, TensorShape(expected_shape));
   for (int i = 0; i < input_vals.size(); ++i) {

@@ -58,9 +58,9 @@ class MatMulComputeHelper {
     for (int idx_dim = 0; idx_dim < num_dims_with_pad - 2; ++idx_dim) {
       output_dims[idx_dim] = std::max(left_padded_dims_[idx_dim], right_padded_dims_[idx_dim]);
       if (left_padded_dims_[idx_dim] != output_dims[idx_dim])
-        LOTUS_ENFORCE(left_padded_dims_[idx_dim] == 1, "left operand cannot broadcast on dim %d", idx_dim);
+        LOTUS_ENFORCE(left_padded_dims_[idx_dim] == 1, "left operand cannot broadcast on dim ", idx_dim);
       if (right_padded_dims_[idx_dim] != output_dims[idx_dim])
-        LOTUS_ENFORCE(right_padded_dims_[idx_dim] == 1, "right operand cannot broadcast on dim %d", idx_dim);
+        LOTUS_ENFORCE(right_padded_dims_[idx_dim] == 1, "right operand cannot broadcast on dim ", idx_dim);
     }
 
     M_ = has_1D_input ? 1 : left_shape[left_num_dims - 2];

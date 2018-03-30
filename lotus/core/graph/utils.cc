@@ -39,7 +39,7 @@ PTYPE OpUtils::ToType(const std::string& type) {
 const TypeProto& OpUtils::ToTypeProto(const PTYPE& p_type) {
   std::lock_guard<std::mutex> lock(GetTypeStrLock());
   auto it = GetTypeStrToProtoMap().find(*p_type);
-  LOTUS_ENFORCE(it != GetTypeStrToProtoMap().end(), "Type was not found: %s", *p_type);
+  LOTUS_ENFORCE(it != GetTypeStrToProtoMap().end(), "Type was not found: ", *p_type);
   return it->second;
 }
 

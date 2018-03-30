@@ -2,7 +2,7 @@
 #include "core/providers/cpu/math/gemm.h"
 #include "core/providers/cpu/math/matmul.h"
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/providers/provider_test_utils.h"
 
 namespace Lotus {
 namespace Test {
@@ -56,7 +56,7 @@ TEST(MathOpTest, GemmNoTrans) {
   status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
   EXPECT_TRUE(status.IsOK());
 
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   kernel.compute(&kernel_ctx);
   auto output = kernel_ctx.output(0, TensorShape(expected_dims));
   const float* res = output->data<float>();
@@ -114,7 +114,7 @@ TEST(MathOpTest, GemmBroadcast) {
   status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
   EXPECT_TRUE(status.IsOK());
 
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   kernel.compute(&kernel_ctx);
   auto output = kernel_ctx.output(0, TensorShape(expected_dims));
   const float* res = output->data<float>();
@@ -172,7 +172,7 @@ TEST(MathOpTest, GemmTrans) {
   status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
   EXPECT_TRUE(status.IsOK());
 
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   kernel.compute(&kernel_ctx);
   auto output = kernel_ctx.output(0, TensorShape(expected_dims));
   const float* res = output->data<float>();
@@ -230,7 +230,7 @@ TEST(MathOpTest, GemmAlphaBeta) {
   status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
   EXPECT_TRUE(status.IsOK());
 
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   kernel.compute(&kernel_ctx);
   auto output = kernel_ctx.output(0, TensorShape(expected_dims));
   const float* res = output->data<float>();
@@ -288,7 +288,7 @@ TEST(MathOpTest, GemmNaN) {
   status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
   EXPECT_TRUE(status.IsOK());
 
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   //set Y to Nan to making sure NaN does not propagate when beta == 0
   float nan = static_cast<float>(std::nan("1"));
   float* out_buffer = kernel_ctx.output(0, TensorShape(expected_dims))->mutable_data<float>();

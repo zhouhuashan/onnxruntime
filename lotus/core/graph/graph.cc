@@ -369,7 +369,8 @@ void Node::Init(const std::string& name,
     if (name_to_node_arg_iter == node_arg_map->end()) {
       (*node_arg_map)[input_def->Name()] = input_def;
     } else {
-      LOTUS_ENFORCE(name_to_node_arg_iter->second == input_def, "Existing entry in NodeArg map for %s != input definition.", input_def->Name());
+      LOTUS_ENFORCE(name_to_node_arg_iter->second == input_def,
+                    "Existing entry in NodeArg map for ", input_def->Name(), " != input definition.");
     }
   }
 
@@ -378,7 +379,8 @@ void Node::Init(const std::string& name,
     if (name_to_node_arg_iter == node_arg_map->end()) {
       (*node_arg_map)[output_def->Name()] = output_def;
     } else {
-      LOTUS_ENFORCE(name_to_node_arg_iter->second == output_def, "Existing entry in NodeArg map for %s != input definition.", output_def->Name());
+      LOTUS_ENFORCE(name_to_node_arg_iter->second == output_def,
+                    "Existing entry in NodeArg map for ", output_def->Name(), " != input definition.");
     }
   }
 }

@@ -16,7 +16,6 @@ limitations under the License.
 #include <thread>
 #include <vector>
 
-#include "core/common/logging.h"
 #include "core/platform/env.h"
 #include "core/platform/types.h"
 
@@ -38,9 +37,10 @@ class StdThread : public Thread {
 
 class PosixEnv : public Env {
  public:
-  PosixEnv() {}
-
-  ~PosixEnv() override { LOG(FATAL) << "Env::Default() must not be destroyed"; }
+  static PosixEnv& Instance() {
+    static PosixEnv default_env;
+    return default_env;
+  }
 
   void SleepForMicroseconds(int64 micros) override {
     while (micros > 0) {
@@ -67,6 +67,10 @@ class PosixEnv : public Env {
                       std::function<void()> fn) override {
     return new StdThread(thread_options, name, fn);
   }
+  
+  private:
+    PosixEnv() = default;
+
 };
 
 }  // namespace
@@ -75,8 +79,7 @@ class PosixEnv : public Env {
 // REGISTER_FILE_SYSTEM("", PosixFileSystem);
 // REGISTER_FILE_SYSTEM("file", LocalPosixFileSystem);
 Env* Env::Default() {
-  static Env* default_env = new PosixEnv;
-  return default_env;
+  return &PosixEnv::Instance();
 }
 #endif
 

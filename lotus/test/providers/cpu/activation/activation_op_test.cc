@@ -1,6 +1,6 @@
 #include "core/providers/cpu/activation/activations.h"
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/providers/provider_test_utils.h"
 
 namespace Lotus {
 namespace Test {
@@ -35,7 +35,7 @@ void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(
   status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, dims);
   EXPECT_TRUE(status.IsOK());
 
-  OpKernelContext ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+  OpKernelContext ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   kernel.compute(&ctx);
   auto output = ctx.output(0, TensorShape(dims));
   const float* res = output->data<float>();

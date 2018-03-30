@@ -1,6 +1,6 @@
 #include "core/providers/cpu/math/matmul.h"
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/providers/provider_test_utils.h"
 
 namespace Lotus {
 namespace Test {
@@ -85,7 +85,7 @@ TEST(MathOpTest, MatMul) {
     status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, t.expected_dims_);
     EXPECT_TRUE(status.IsOK());
 
-    OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel));
+    OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
     kernel.compute(&kernel_ctx);
     auto output = kernel_ctx.output(0, TensorShape(t.expected_dims_));
     const float* res = output->data<float>();

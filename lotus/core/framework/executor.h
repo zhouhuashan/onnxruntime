@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "core/common/status.h"
+#include "core/common/logging/logging.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/inference_session.h"
 #include "core/framework/ml_value.h"
@@ -19,6 +20,7 @@ class Executor {
                                                          const std::vector<std::string>& output_names /* required for execution frame construction */);
 
   virtual Common::Status Execute(const RunOptions& run_options,
+                                 const Logging::Logger& run_logger,
                                  const NameMLValMap& feeds,
                                  const std::vector<std::string>& output_names,
                                  std::vector<MLValue>* p_fetches);

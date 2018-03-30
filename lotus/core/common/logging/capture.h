@@ -3,35 +3,37 @@
 #include <cstdarg>
 
 #include "core/common/common.h"
-#include "core/common/logging/location.h"
-#include "core/common/logging/logging.h"
+#include "core/common/code_location.h"
+#include "core/common/logging/severity.h"
 
 namespace Lotus {
 namespace Logging {
-class Logger;
 
-/// <summary>
-/// Class to capture the details of a log message.
-/// </summary>
+class Logger;
+enum class DataType;
+
+/**
+Class to capture the details of a log message.
+*/
 class Capture {
  public:
-  /// <summary>
-  /// Initializes a new instance of the <see cref="Capture"/> class.
-  /// </summary>
-  /// <param name="logger">The logger.</param>
-  /// <param name="severity">The severity.</param>
-  /// <param name="category">The category.</param>
-  /// <param name="dataType">Type of the data.</param>
-  /// <param name="location">The file location the log message is coming from.</param>
-  Capture(const Logger *logger, Logging::Severity severity, const char *category,
-          Logging::DataType dataType, const Location &location)
-      : logger_{logger}, severity_{severity}, category_{category}, data_type_{dataType}, location_{location} {
+  /**
+  Initializes a new instance of the Capture class.
+  @param logger The logger.
+  @param severity The severity.
+  @param category The category.
+  @param dataType Type of the data.
+  @param location The file location the log message is coming from.
+  */
+  Capture(const Logger &logger, Logging::Severity severity, const char *category,
+          Logging::DataType dataType, const CodeLocation &location)
+      : logger_{&logger}, severity_{severity}, category_{category}, data_type_{dataType}, location_{location} {
   }
 
-  /// <summary>
-  /// The stream that can capture the message via operator<<.
-  /// </summary>
-  /// <returns>Output stream.</returns>
+  /**
+  The stream that can capture the message via operator<<.
+  @returns Output stream.
+  */
   std::ostream &Stream() noexcept {
     return stream_;
   }
@@ -44,26 +46,27 @@ class Capture {
 #define msvc_printf_check
 #endif
 
-  /// <summary>
-  /// Captures a printf style log message.
-  /// </summary>
-  /// <param name="format">The printf format.</param>
-  /// <param name="">Arguments to the printf format if needed.</param>
-  /// <remarks>
-  /// A maximum of 2K of output will be captured currently.
-  /// Non-static method, so 'this' is implicit first arg, and we use format(printf(2,3)
-  /// </remarks>
+  /**
+  Captures a printf style log message.
+  @param name="format">The printf format.
+  @param name="">Arguments to the printf format if needed.  
+  @remarks
+  A maximum of 2K of output will be captured currently.
+  Non-static method, so 'this' is implicit first arg, and we use format(printf(2,3)
+  */
   void CapturePrintf(msvc_printf_check const char *format, ...) __attribute__((format(printf, 2, 3)));
 
-  /// <summary>
-  /// Captures a printf style log message.
-  /// </summary>
-  /// <param name="format">The printf format.</param>
-  /// <param name="">Arguments to the printf format if needed.</param>
-  /// <remarks>
-  /// A maximum of 2K of output will be captured currently.
-  /// </remarks>
-  void CapturePrintf(msvc_printf_check const char *format, va_list args);
+  /**
+  Process a printf style log message.
+  @param format The printf format.
+  @param ... Arguments to the printf format if needed.
+  @remarks
+  A maximum of 2K of output will be captured currently.
+  Note: As va_list is 'char *', we have to disambiguate this from CapturePrintf
+  so that something like "One string: %s", "the string" does not consider "the string"
+  to be the va_list.
+  */
+  void ProcessPrintf(msvc_printf_check const char *format, va_list args);
 
   Logging::Severity Severity() const noexcept {
     return severity_;
@@ -81,7 +84,7 @@ class Capture {
     return data_type_;
   }
 
-  const Logging::Location &Location() const noexcept {
+  const CodeLocation &Location() const noexcept {
     return location_;
   }
 
@@ -98,7 +101,7 @@ class Capture {
   const Logging::Severity severity_;
   const char *category_;
   const Logging::DataType data_type_;
-  const Logging::Location location_;
+  const CodeLocation location_;
 
   std::ostringstream stream_;
 };

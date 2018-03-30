@@ -8,12 +8,12 @@ namespace Lotus {
 namespace Logging {
 class ISink {
  public:
-  /// <summary>
-  /// Sends the message to the sink.
-  /// </summary>
-  /// <param name="timestamp">The timestamp.</param>
-  /// <param name="logger_id">The logger identifier.</param>
-  /// <param name="message">The captured message.</param>
+  /**
+  Sends the message to the sink.
+  @param timestamp The timestamp.
+  @param logger_id The logger identifier.
+  @param message The captured message.
+  */
   void Send(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) {
     SendImpl(timestamp, logger_id, message);
   }

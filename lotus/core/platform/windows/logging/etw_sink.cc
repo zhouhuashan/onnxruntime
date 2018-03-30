@@ -66,9 +66,8 @@ void EtwSink::SendImpl(const Timestamp &timestamp, const std::string &logger_id,
                     TraceLoggingString(message.Message().c_str(), "message"))
 
   auto severity{message.Severity()};
-  CHECK_NE(severity, Severity::kFATAL);
 
-  switch (message.Severity()) {
+  switch (severity) {
     case Severity::kVERBOSE:
       TRACE_LOG_WRITE(TRACE_LEVEL_VERBOSE);
       break;
@@ -85,7 +84,7 @@ void EtwSink::SendImpl(const Timestamp &timestamp, const std::string &logger_id,
       TRACE_LOG_WRITE(TRACE_LEVEL_CRITICAL);
       break;
     default:
-      throw std::logic_error("Unexpected Severity of " + static_cast<int>(message.Severity()));
+      throw std::logic_error("Unexpected Severity of " + static_cast<int>(severity));
   }
 
 #undef ETW_EVENT_NAME

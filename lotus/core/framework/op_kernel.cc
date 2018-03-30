@@ -1,5 +1,6 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/execution_frame.h"
+#include "core/framework/session_state.h"
 
 namespace Lotus {
 
@@ -64,8 +65,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
       allowed_type_list_iter = kernel_type_constraints.find(param.GetName());
     }
     if (allowed_type_list_iter == kernel_type_constraints.end()) return false;
-    for (int i = 0; i < node.InputArgCount()[input_index]; i++)
-    {
+    for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
       LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
       if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
       const ::onnx::TypeProto& real_type = arg->ToProto().type();
@@ -73,7 +73,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
                        allowed_type_list_iter->second.end(),
                        [real_type](const MLDataType& expected_type) {
                          return expected_type->IsCompatible(real_type);
-                       })) {
+        })) {
         return false;
       }
     }
@@ -160,10 +160,13 @@ Tensor* OpKernelContext::output<Tensor>(int index) {
   return nullptr;
 }
 
-OpKernelContext::OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel)
+OpKernelContext::OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel, const Logging::Logger& logger)
     : execution_frame_(frame),
-      kernel_(kernel) {
-  LOTUS_ENFORCE(nullptr != frame && kernel != nullptr);
+      kernel_(kernel),
+      logger_(&logger) {
+  LOTUS_ENFORCE(frame != nullptr, "Execution frame was null");
+  LOTUS_ENFORCE(kernel != nullptr, "OpKernel was null");
+
   arg_start_index_ = frame->get_first_arg_index(kernel->node().Index());
 }
 }  // namespace Lotus

@@ -62,6 +62,34 @@ TensorShape TensorShape::Slice(size_t dimstart) const {
   return Slice(dimstart, m_dims.size());
 }
 
+// output dimensions
+std::string TensorShape::ToString() const {
+  std::string result;
+  result.reserve(2 + m_dims.size() * 5);  // generous calculation '{' + '}' and 4 digits + ',' for each entry
+
+  result.append("{");
+
+  bool first = true;
+  for (auto dim : m_dims) {
+    if (!first) {
+      result.append(",");
+    }
+
+    result.append(std::to_string(dim));
+
+    first = false;
+  }
+
+  result.append("}");
+
+  return result;
+}
+
+// operator<< to nicely output to a stream
+std::ostream& operator<<(std::ostream& out, const TensorShape& shape) {
+  return (out << shape.ToString());
+}
+
 Tensor::Tensor() : alloc_info_(AllocatorManager::Instance()->GetArena(CPU).Info()),
                    p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter())) {
   Init(DataTypeImpl::GetType<float>(),
@@ -175,9 +203,9 @@ Tensor::Tensor(const Tensor& src)
     : dtype_(src.dtype_), alloc_info_(src.alloc_info_), shape_(src.shape_), byte_offset_(src.byte_offset_) {
   // it may be better to refactor it a little bit to make it a compile error
   // but right now just keep it simple first.
-  if (src.buffer_strategy_ == OWNEDBUFFER) {
-    LOTUS_THROW("Can't copy tensor with its owned buffer. Please transfer ownership by move");
-  } else if (src.buffer_strategy_ == PREALLOCATEDBUFFER) {
+  LOTUS_ENFORCE(src.buffer_strategy_ != OWNEDBUFFER, "Can't copy tensor with its owned buffer. Please transfer ownership by move");
+
+  if (src.buffer_strategy_ == PREALLOCATEDBUFFER) {
     buffer_strategy_ = PREALLOCATEDBUFFER;
     p_naked_data_ = src.p_naked_data_;
   } else {
@@ -188,8 +216,9 @@ Tensor::Tensor(const Tensor& src)
 }
 
 Tensor& Tensor::ShallowCopy(const Tensor& other) {
-  // smiliar as above
-  LOTUS_ENFORCE(other.buffer_strategy_ != OWNEDBUFFER);
+  // similar as above
+  LOTUS_ENFORCE(other.buffer_strategy_ != OWNEDBUFFER, "Can't copy tensor with its owned buffer. Please transfer ownership by move");
+
   if (this != &other) {
     dtype_ = other.dtype_;
     alloc_info_ = other.alloc_info_;

@@ -50,6 +50,7 @@ class Env {
   /// implementation instead of relying on this default environment.
   ///
   /// The result of Default() belongs to this library and must never be deleted.
+  // TODO(Task:153) Lotus::Env::Default() should return const reference
   static Env* Default();
 
   /// \brief Returns the number of micro-seconds since the Unix epoch.

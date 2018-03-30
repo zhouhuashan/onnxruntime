@@ -8,6 +8,7 @@
 #include "test/common/logging/helpers.h"
 
 using namespace Lotus::Logging;
+using InstanceType = LoggingManager::InstanceType;
 
 namespace {
 void CheckStringInFile(const std::string &filename, const std::string &look_for) {
@@ -41,11 +42,12 @@ TEST(LoggingTests, TestCLogSink) {
 
   // create scoped manager so sink gets destroyed once done
   {
-    LoggingManager manager{std::unique_ptr<ISink>{new CLogSink{}}, minLogLevel, false, "default"};
+    LoggingManager manager{std::unique_ptr<ISink>{new CLogSink{}}, minLogLevel, false,
+                           InstanceType::Temporal};
 
     auto logger = manager.CreateLogger(logid);
 
-    LOGS(logger.get(), WARNING, Category::Lotus) << message;
+    LOGS(*logger, WARNING) << message;
   }
 
   // check message was flushed to file before we close ofs.
@@ -76,11 +78,12 @@ TEST(LoggingTests, TestCErrSink) {
 
   // create scoped manager so sink gets destroyed once done
   {
-    LoggingManager manager{std::unique_ptr<ISink>{new CErrSink{}}, minLogLevel, false, "default"};
+    LoggingManager manager{std::unique_ptr<ISink>{new CErrSink{}}, minLogLevel, false,
+                           InstanceType::Temporal};
 
     auto logger = manager.CreateLogger(logid);
 
-    LOGS(logger.get(), WARNING, Category::Lotus) << message;
+    LOGS(*logger, WARNING) << message;
   }
 
   // check message was flushed to file before we close ofs.
@@ -105,11 +108,11 @@ TEST(LoggingTests, TestFileSink) {
   // create scoped manager so sink gets destroyed once done
   {
     LoggingManager manager{std::unique_ptr<ISink>{new FileSink{filename, false, false}},
-                           minLogLevel, false, "default"};
+                           minLogLevel, false, InstanceType::Temporal};
 
     auto logger = manager.CreateLogger(logid);
 
-    LOGS(logger.get(), WARNING, Category::Lotus) << message;
+    LOGS(*logger, WARNING) << message;
   }
 
   CheckStringInFile(filename, message);
@@ -132,9 +135,9 @@ TEST(LoggingTests, TestCompositeSink) {
 
   CompositeSink *sink = new CompositeSink();
   sink->AddSink(std::unique_ptr<ISink>{sinkPtr1}).AddSink(std::unique_ptr<ISink>{sinkPtr2});
-  LoggingManager manager{std::unique_ptr<ISink>(sink), minLogLevel, false, "default"};
+  LoggingManager manager{std::unique_ptr<ISink>(sink), minLogLevel, false, InstanceType::Temporal};
 
   auto logger = manager.CreateLogger(logid);
 
-  LOGS(logger.get(), WARNING, "ArbitraryCategory") << "Warning";
+  LOGS_CATEGORY(*logger, WARNING, "ArbitraryCategory") << "Warning";
 }

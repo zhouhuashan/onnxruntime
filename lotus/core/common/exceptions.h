@@ -1,8 +1,14 @@
 #pragma once
 
+#include <algorithm>
 #include <exception>
+#include <iterator>
 #include <stdexcept>
+#include <string>
+#include <vector>
+
 #include "core/common/common.h"
+#include "core/common/code_location.h"
 
 namespace Lotus {
 
@@ -16,28 +22,41 @@ class TypeMismatchException : public std::logic_error {
   TypeMismatchException() : logic_error("Type mismatch"){};
 };
 
-class EnforceNotMet : public std::exception {
+class LotusException : public std::exception {
  public:
-  EnforceNotMet(
-      const char* file,
-      const int line,
-      const char* condition,
-      const std::string& msg,
-      const void* caller = nullptr);
-  void AppendMessage(const std::string& msg);
-  std::string Msg() const;
-  inline const std::vector<std::string>& MsgStack() const {
-    return msg_stack_;
+  LotusException(const CodeLocation& location, const std::string& msg)
+      : LotusException(location, nullptr, msg) {
   }
 
-  const char* what() const noexcept override;
+  /**
+  Create a new exception that captures the location it was thrown from.
+  @param location Location in the source code the exception is being thrown from
+  @param failed_condition Optional string containing the condition that failed. 
+                          e.g. "tensor.Size() == input.Size()". May be nullptr.
+  @param msg Message containing additional information about the exception cause.
+  */
+  LotusException(const CodeLocation& location, const char* failed_condition, const std::string& msg)
+      : location_{location} {
+    std::ostringstream ss;
 
-  const void* Caller() const noexcept;
+    ss << location.ToString(CodeLocation::kFilenameAndPath);  // output full path in case just the filename is ambiguous
+    if (failed_condition != nullptr) {
+      ss << " " << failed_condition << " was false.";
+    }
+
+    ss << " " << msg << "\n";
+    std::copy(location.stacktrace.begin(), location.stacktrace.end(), std::ostream_iterator<std::string>(ss, "\n"));
+    what_ = ss.str();
+  }
+
+  const char* what() const noexcept override {
+    return what_.c_str();
+  }
 
  private:
-  std::vector<std::string> msg_stack_;
-  std::string full_msg_;
-  std::string stack_trace_;
-  const void* caller_;
+  const CodeLocation location_;
+  const std::vector<std::string> stacktrace_;
+  std::string what_;
 };
+
 }  // namespace Lotus

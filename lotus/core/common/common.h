@@ -1,22 +1,22 @@
 /**
-* Derived from caffe2, need copy right annoucement here.
-*/
+ * Derived from caffe2, need copy right annoucement here.
+ */
 
 /**
-* Copyright (c) 2016-present, Facebook, Inc.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2016-present, Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #pragma once
 
@@ -32,8 +32,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "core/common/status.h"
+#include "core/common/code_location.h"
 #include "core/common/exceptions.h"
+#include "core/common/status.h"
 
 namespace Lotus {
 
@@ -53,29 +54,41 @@ using Common::StatusCode;
 
 #define UNUSED_PARAMETER(x) (x)
 
-#define LOTUS_THROW(...)        \
-  throw ::Lotus::EnforceNotMet( \
-      __FILE__, __LINE__, "", ::Lotus::MakeString(__VA_ARGS__))
+std::vector<std::string> GetStackTrace();
+
+// __PRETTY_FUNCTION__ isn't a macro on gcc, so use a check for _MSC_VER
+// so we only define it as one for MSVC
+#if (_MSC_VER && !defined(__PRETTY_FUNCTION__))
+#define __PRETTY_FUNCTION__ __FUNCTION__
+#endif
+
+// Capture where a message is coming from
+#define WHERE \
+  Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+
+#define WHERE_WITH_STACK \
+  Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__, Lotus::GetStackTrace())
+
+// Throw an exception with optional message. 
+// NOTE: The arguments get streamed into a string via ostringstream::operator<<
+// DO NOT use a printf format string, as that will not work as you expect.
+#define LOTUS_THROW(...) throw Lotus::LotusException(WHERE_WITH_STACK, Lotus::MakeString(__VA_ARGS__))
 
 // Just in order to mark things as not implemented. Do not use in final code.
 #define LOTUS_NOT_IMPLEMENTED LOTUS_THROW("Not Implemented.")
 
-#define LOTUS_ENFORCE(condition, ...)                                        \
-  do {                                                                       \
-    if (!(condition)) {                                                      \
-      throw ::Lotus::EnforceNotMet(                                          \
-          __FILE__, __LINE__, #condition, ::Lotus::MakeString(__VA_ARGS__)); \
-    }                                                                        \
-  } while (false)
+// Check condition. 
+// NOTE: The arguments get streamed into a string via ostringstream::operator<<
+// DO NOT use a printf format string, as that will not work as you expect.
+#define LOTUS_ENFORCE(condition, ...) \
+  if (!(condition)) throw Lotus::LotusException(WHERE_WITH_STACK, #condition, Lotus::MakeString(__VA_ARGS__))
 
 // Macros to disable the copy and/or move ctor and assignment methods
 // These are usually placed in the private: declarations for a class.
 
-#define LOTUS_DISALLOW_COPY(TypeName) \
-  TypeName(const TypeName&) = delete
+#define LOTUS_DISALLOW_COPY(TypeName) TypeName(const TypeName&) = delete
 
-#define LOTUS_DISALLOW_ASSIGN(TypeName) \
-  TypeName& operator=(const TypeName&) = delete
+#define LOTUS_DISALLOW_ASSIGN(TypeName) TypeName& operator=(const TypeName&) = delete
 
 #define LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   LOTUS_DISALLOW_COPY(TypeName);                 \
@@ -135,16 +148,6 @@ make_unique(Args&&...) = delete;
 
 #endif
 
-inline std::string StripBasename(const std::string& full_path) {
-  const char kSeparator = '/';
-  size_t pos = full_path.rfind(kSeparator);
-  if (pos != std::string::npos) {
-    return full_path.substr(pos + 1, std::string::npos);
-  } else {
-    return full_path;
-  }
-}
-
 inline void MakeStringInternal(std::stringstream& /*ss*/) {}
 
 template <typename T>
@@ -153,8 +156,7 @@ inline void MakeStringInternal(std::stringstream& ss, const T& t) {
 }
 
 template <typename T, typename... Args>
-inline void
-MakeStringInternal(std::stringstream& ss, const T& t, const Args&... args) {
+inline void MakeStringInternal(std::stringstream& ss, const T& t, const Args&... args) {
   MakeStringInternal(ss, t);
   MakeStringInternal(ss, args...);
 }

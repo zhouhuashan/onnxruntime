@@ -1,8 +1,11 @@
 #include "core/framework/inference_session.h"
 
+#include <algorithm>
 #include <functional>
+#include <iterator>
 #include <thread>
-#include "core/common/logging.h"
+
+#include "core/common/logging/logging.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
@@ -11,9 +14,14 @@
 #include "core/graph/op.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/providers/cpu/math/element_wise_ops.h"
+
+#include "test/capturing_sink.h"
+#include "test/test_utils.h"
+
 #include "gtest/gtest.h"
 
 using namespace std;
+using namespace Lotus::Logging;
 
 namespace Lotus {
 namespace Test {
@@ -73,12 +81,14 @@ void RunModel(InferenceSession& session_object, const RunOptions& run_options) {
   ASSERT_EQ(expected_values_mul_y, found);
 }
 
-TEST(InferenceSessionTestNoTimeout, RunTest) {
+TEST(InferenceSessionTests, NoTimeout) {
   ExecutionProviderInfo epi;
   ProviderOption po{"CPUExecutionProvider", epi};
   SessionOptions so(vector<ProviderOption>{po});
 
-  InferenceSession session_object{so};
+  so.session_logid = "InferenceSessionTests.NoTimeout";
+
+  InferenceSession session_object{so, &DefaultLoggingManager()};
   EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
   EXPECT_TRUE(session_object.Initialize().IsOK());
 
@@ -87,12 +97,48 @@ TEST(InferenceSessionTestNoTimeout, RunTest) {
   RunModel(session_object, run_options);
 }
 
-TEST(MultipleInferenceSessionTestNoTimeout, RunTest) {
+TEST(InferenceSessionTests, CheckRunLogger) {
+  ExecutionProviderInfo epi;
+  ProviderOption po{"CPUExecutionProvider", epi};
+  SessionOptions so(vector<ProviderOption>{po});
+
+  so.session_logid = "CheckRunLogger";
+
+  // create CapturingSink. LoggingManager will own it, but as long as the logging_manager
+  // is around our pointer stays valid.
+  auto capturing_sink = new CapturingSink();
+
+  auto logging_manager = std::make_unique<Logging::LoggingManager>(
+      std::unique_ptr<ISink>(capturing_sink), Logging::Severity::kVERBOSE, false, LoggingManager::InstanceType::Temporal);
+
+  InferenceSession session_object{so, logging_manager.get()};
+  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  EXPECT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "RunTag";
+  RunModel(session_object, run_options);
+
+#ifdef _DEBUG
+  // check for some VLOG output to make sure tag was correct. VLOG is not enabled in release build
+  auto& msgs = capturing_sink->Messages();
+  std::copy(msgs.begin(), msgs.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+  bool have_log_entry_with_run_tag =
+      (std::find_if(msgs.begin(), msgs.end(),
+                    [&run_options](std::string msg) { return msg.find(run_options.run_tag) != string::npos; }) != msgs.end());
+
+  EXPECT_TRUE(have_log_entry_with_run_tag);
+#endif
+}
+
+TEST(InferenceSessionTests, MultipleSessionsNoTimeout) {
   ExecutionProviderInfo epi;
   ProviderOption po{"CPUExecutionProvider", epi};
   SessionOptions session_options(vector<ProviderOption>{po});
   session_options.ep_options.push_back(po);
-  InferenceSession session_object{session_options};
+
+  session_options.session_logid = "InferenceSessionTests.MultipleSessionsNoTimeout";
+  InferenceSession session_object{session_options, &DefaultLoggingManager()};
   EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
   EXPECT_TRUE(session_object.Initialize().IsOK());
 

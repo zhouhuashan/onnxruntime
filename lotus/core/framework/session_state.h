@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/common/logging/logging.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/op_kernel.h"
@@ -59,6 +60,17 @@ class SessionState {
   void SetExecutionPlan(std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan);
   const SequentialExecutionPlan* GetExecutionPlan() const;
 
+  /**
+  Set the logger to use for this session. 
+  */
+  SessionState& SetLogger(const Logging::Logger& logger);
+
+  /**
+  Get the logger for this session. 
+  Falls back to returning Logging::LoggingManager::DefaultLogger if SetLogger has not been called.
+  */
+  const Logging::Logger& Logger() const;
+
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
@@ -76,6 +88,8 @@ class SessionState {
   // initialized tensorset
   std::unordered_map<int, MLValue> initialized_tensors_;  // key is mlvalue_index
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
+
+  const Logging::Logger* logger_;
 
   // TODO add more
 };

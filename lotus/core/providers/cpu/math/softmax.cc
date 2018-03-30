@@ -13,6 +13,8 @@ Status Softmax<float>::compute(OpKernelContext* ctx) const {
   const Tensor& X = *ctx->input<Tensor>(0);
   const TensorShape input_shape{X.shape()};
 
+  VLOGS(ctx->Logger(), 1) << "Input tensor shape: " << input_shape;
+
   Tensor* Y = ctx->output(0, input_shape);
 
   size_t N = input_shape.SizeToDimension(axis_);
@@ -27,6 +29,7 @@ Status Softmax<float>::compute(OpKernelContext* ctx) const {
   const bool logarithmic = false;
   SoftmaxCPU(gsl::narrow_cast<int>(N), gsl::narrow_cast<int>(D), X.data<float>(), Ydata,
              scale_.data(), sum_multiplier_.data(), logarithmic, rowmax_.data());
+
   return Status::OK();
 }
 

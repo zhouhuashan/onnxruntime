@@ -1,6 +1,7 @@
 #ifndef CORE_FRAMEWORK_TENSOR_H
 #define CORE_FRAMEWORK_TENSOR_H
 
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -81,6 +82,12 @@ class TensorShape {
   // Assumes start and end are between 0 and dimensions.size(), inclusive, and that
   // start < end.
   static size_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end);
+
+  // output dimensions nicely formatted
+  std::string ToString() const;
+
+  // operator<< to nicely output to a stream
+  friend std::ostream& operator<<(std::ostream& out, const TensorShape& shape);
 
  private:
   // We use negative numbers for unknown symbolic dimension. Each negative

@@ -19,11 +19,12 @@ TEST(LoggingTests, TestEtwSink) {
   // create scoped manager so sink gets destroyed once done and we check disposal
   // within the scope of this test
   {
-    LoggingManager manager{std::unique_ptr<ISink>{new EtwSink{}}, Severity::kWARNING, false, "default"};
+    LoggingManager manager{std::unique_ptr<ISink>{new EtwSink{}}, Severity::kWARNING, false,
+                           LoggingManager::InstanceType::Temporal};
 
     auto logger = manager.CreateLogger(logid);
 
-    LOGS(logger.get(), WARNING, Category::Lotus) << message;
+    LOGS(*logger, WARNING) << message;
 
     // can't test much else without creating an interface for ETW, using that in EtwSink
     // and mocking that interface here. too much work given how trivial the logic in EtwSink is.

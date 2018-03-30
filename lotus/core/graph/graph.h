@@ -233,7 +233,8 @@ class Node {
   Node(NodeIndex index, GraphBase* p_graph)
       : index_(index),
         graph_(p_graph) {}
-  Node(const Node& p_other);
+
+  Node(const Node& other);
 
   // Init node per <NodeProto>.
   // <p_nameToValueInfoMap> specifies the node's inputs'/outputs' value information,

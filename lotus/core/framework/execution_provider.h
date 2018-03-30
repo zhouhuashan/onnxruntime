@@ -57,8 +57,8 @@ class ExecutionProviderMgr {
       provider_map_[key] = creatorFn;
       return Status::OK();
     } else {
-      LOTUS_ENFORCE(false, "Execution provider () " + key + " already registered");
-      return Status(LOTUS, INVALID_ARGUMENT, "Execution provider () " + key + " already registered");
+      LOTUS_THROW("Execution provider () " + key + " already registered");
+      // return Status(LOTUS, INVALID_ARGUMENT, "Execution provider () " + key + " already registered");
     }
   }
 

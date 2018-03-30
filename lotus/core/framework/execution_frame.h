@@ -113,6 +113,10 @@ class ExecutionFrame {
     all_values_[mlvalue_idx].Reset();
   }
 
+  const Lotus::SessionState& SessionState() const {
+    return session_state_;
+  }
+
  private:
   friend class OpKernelContext;
 
@@ -151,7 +155,6 @@ class ExecutionFrame {
     // If later we want executor to host its own arena
     // Need to update this part.
     auto alloc_mgr = AllocatorManager::Instance();
-    LOTUS_ENFORCE(alloc_mgr);
     arenas_.push_back(&alloc_mgr->GetArena(CPU));
   }
 
@@ -162,7 +165,7 @@ class ExecutionFrame {
   // This vector contains the indices into the all_values_ vector.
   std::vector<int> node_values_;
 
-  // All the intermedia values for the entire graph.
+  // All the intermediate values for the entire graph.
   // Input and Output values are passed in by executors
   std::vector<MLValue> all_values_;
 
@@ -183,7 +186,7 @@ class ExecutionFrame {
 
   std::unordered_map<string, int> value_name_to_index_;
 
-  const SessionState& session_state_;
+  const Lotus::SessionState& session_state_;
 };
 }  // namespace Lotus
 

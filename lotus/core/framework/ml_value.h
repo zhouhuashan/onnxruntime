@@ -30,13 +30,13 @@ class MLValue {
 
   template <typename T>
   const T& Get() const {
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_);
+    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
     return *static_cast<T*>(pData_.get());
   }
 
   template <typename T>
   T* GetMutable() {
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_);
+    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
     return static_cast<T*>(pData_.get());
   }
 

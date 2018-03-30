@@ -1,4 +1,12 @@
+#include "test/providers/provider_test_utils.h"
+
+#include <memory>
+
+#include "core/common/logging/logging.h"
+#include "core/common/logging/sinks/clog_sink.h"
 #include "test/test_utils.h"
+
+using namespace Lotus::Logging;
 
 namespace Lotus {
 namespace Test {
@@ -18,6 +26,14 @@ void SetupState(SessionState& state,
   // TODO change SimpleAllocationPlanner to use SequentialPlanner; Simple exists for testing only.
   SimpleAllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
   state.SetExecutionPlan(std::move(p_seq_exec_plan));
+
+  // if you want to use a non-default logger this has to happen at a scope where ownership of that
+  // logger makes sense. below is example code to do that, which should run after a call to SetupState
+  //
+  // std::unique_ptr<Logging::Logger> logger{DefaultLoggingManager().CreateLogger("MyLogId")};
+  // state.SetLogger(*logger);
+
+  state.SetLogger(DefaultLoggingManager().DefaultLogger());
 }
 
 void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,

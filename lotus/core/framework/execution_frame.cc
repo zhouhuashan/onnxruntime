@@ -7,7 +7,7 @@ namespace Lotus {
 
 ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                                const std::vector<std::string>& output_names,
-                               const SessionState& session_state)
+                               const Lotus::SessionState& session_state)
     : session_state_(session_state) {
   Init(session_state.GetGraph(), feeds, output_names);
   InitArenas();

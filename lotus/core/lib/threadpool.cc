@@ -18,7 +18,7 @@ limitations under the License.
 // NonBlockingThreadPool.h(281): warning C4389: '==': signed/unsigned mismatch
 // NonBlockingThreadPool.h(252): warning C4267: '-=': conversion from 'size_t' to 'unsigned int', possible loss of data
 #pragma warning(disable : 4389 4267)
-#include "core/common/logging.h"
+#include "core/common/logging/logging.h"
 #include "core/platform/context.h"
 #include "unsupported/Eigen/CXX11/ThreadPool"
 
@@ -104,7 +104,7 @@ ThreadPool::ThreadPool(Env* env, const ThreadOptions& thread_options,
 ThreadPool::ThreadPool(Env* env, const ThreadOptions& thread_options,
                        const std::string& name, int num_threads,
                        bool low_latency_hint) {
-  CHECK_GE(num_threads, 1);
+  LOTUS_ENFORCE(num_threads >= 1);
   impl_.reset(new ThreadPool::Impl(env, thread_options, "lotus_" + name,
                                    num_threads, low_latency_hint));
 }
@@ -112,7 +112,7 @@ ThreadPool::ThreadPool(Env* env, const ThreadOptions& thread_options,
 ThreadPool::~ThreadPool() {}
 
 void ThreadPool::Schedule(std::function<void()> fn) {
-  CHECK(fn != nullptr);
+  LOTUS_ENFORCE(fn != nullptr);
   impl_->Schedule(std::move(fn));
 }
 

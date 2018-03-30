@@ -19,16 +19,12 @@ Initializer::Initializer(int* pargc, char*** pargv)
     : initialization_status_{Initialize(pargc, pargv)} {
 }
 
-bool InitLogSink(int* /*pargc*/, char*** /*pargv*/);
-
 Status Initializer::Initialize(int* pargc, char*** pargv) {
   try {
     Status status{};
 
     if (!pargc || !pargv) status = Status(LOTUS, StatusCode::INVALID_ARGUMENT);
     if (!status.IsOK()) return status;
-
-    Lotus::InitLogSink(pargc, pargv);
 
     // LotusDeviceManager
     auto allocator_manager = AllocatorManager::Instance();

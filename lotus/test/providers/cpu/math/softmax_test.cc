@@ -1,7 +1,7 @@
 #include "core/providers/cpu/math/softmax.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/providers/provider_test_utils.h"
 
 namespace Lotus {
 namespace Test {
@@ -45,7 +45,7 @@ static void RunTest(const std::vector<float> &x_vals,
   EXPECT_TRUE(status.IsOK());
 
   Softmax<float> kernel(info);
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel *>(&kernel));
+  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel *>(&kernel), DefaultLoggingManager().DefaultLogger());
   kernel.compute(&kernel_ctx);
 
   auto output = kernel_ctx.output(0, TensorShape(dimensions));

@@ -16,7 +16,7 @@ limitations under the License.
 #include <Shlwapi.h>
 #include <Windows.h>
 
-#include "core/common/logging.h"
+#include "core/common/logging/logging.h"
 #include "core/platform/env.h"
 #include "core/platform/types.h"
 
@@ -32,9 +32,9 @@ namespace {
 class StdThread : public Thread {
  public:
   // name and thread_options are both ignored for now.
-  StdThread(const ThreadOptions&, const std::string&,
-            std::function<void()> fn)
+  StdThread(const ThreadOptions&, const std::string&, std::function<void()> fn)
       : thread_(fn) {}
+
   ~StdThread() { thread_.join(); }
 
  private:
@@ -43,6 +43,19 @@ class StdThread : public Thread {
 
 class WindowsEnv : public Env {
  public:
+  void SleepForMicroseconds(int64 micros) override { Sleep(static_cast<DWORD>(micros) / 1000); }
+
+  Thread* StartThread(const ThreadOptions& thread_options, const std::string& name,
+                      std::function<void()> fn) override {
+    return new StdThread(thread_options, name, fn);
+  }
+
+  static WindowsEnv& Instance() {
+    static WindowsEnv default_env;
+    return default_env;
+  }
+
+ private:
   WindowsEnv()
       : GetSystemTimePreciseAsFileTime_(nullptr) {
     // GetSystemTimePreciseAsFileTime function is only available in the latest
@@ -57,18 +70,6 @@ class WindowsEnv : public Env {
     }
   }
 
-  ~WindowsEnv() override {
-    LOG(FATAL) << "Env::Default() must not be destroyed";
-  }
-
-  void SleepForMicroseconds(int64 micros) override { Sleep(static_cast<DWORD>(micros) / 1000); }
-
-  Thread* StartThread(const ThreadOptions& thread_options, const std::string& name,
-                      std::function<void()> fn) override {
-    return new StdThread(thread_options, name, fn);
-  }
-
- private:
   typedef VOID(WINAPI* FnGetSystemTimePreciseAsFileTime)(LPFILETIME);
   FnGetSystemTimePreciseAsFileTime GetSystemTimePreciseAsFileTime_;
 };
@@ -77,8 +78,7 @@ class WindowsEnv : public Env {
 
 #if defined(PLATFORM_WINDOWS)
 Env* Env::Default() {
-  static Env* default_env = new WindowsEnv;
-  return default_env;
+  return &WindowsEnv::Instance();
 }
 #endif
 

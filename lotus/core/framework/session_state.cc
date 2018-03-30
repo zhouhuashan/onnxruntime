@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-#include "core/common/logging.h"
+#include "core/common/logging/logging.h"
 
 namespace Lotus {
 
@@ -102,6 +102,17 @@ void SessionState::AddInitializedTensor(int mlvalue_index, const MLValue& mlvalu
 
 const std::unordered_map<int, MLValue>& SessionState::GetInitializedTensors() const {
   return initialized_tensors_;
+}
+
+SessionState& SessionState::SetLogger(const Logging::Logger& logger) {
+  logger_ = &logger;
+  return *this;
+}
+
+const Logging::Logger& SessionState::Logger() const {
+  // DefaultLogger either throws or returns a valid logger.
+  const Logging::Logger* logger = logger_ != nullptr ? logger_ : &Logging::LoggingManager::DefaultLogger();
+  return *logger;
 }
 
 }  // namespace Lotus

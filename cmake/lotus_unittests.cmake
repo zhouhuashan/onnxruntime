@@ -58,6 +58,11 @@ add_whole_archive_flag(lotus_framework lotus_framework_whole_archive)
 add_whole_archive_flag(lotus_providers lotus_providers_whole_archive)
 add_whole_archive_flag(onnx onnx_whole_archive)
 
+file(GLOB lotus_test_utils_src
+    "${LOTUS_ROOT}/test/*.h"
+    "${LOTUS_ROOT}/test/*.cc"
+)
+
 # tests from lowest level library up.
 # the order of libraries should be maintained, with higher libraries being added first in the list
 
@@ -76,7 +81,7 @@ file(GLOB lotus_test_common_src
 
 AddTest(
     TARGET lotus_test_common
-    SOURCES ${lotus_test_common_src}
+    SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
     LIBS ${lotus_test_common_libs}
     DEPENDS googletest 
 )
@@ -95,7 +100,7 @@ file(GLOB lotus_test_ir_src
 
 AddTest(
     TARGET lotus_test_ir
-    SOURCES ${lotus_test_ir_src}
+    SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
     LIBS ${lotus_test_ir_libs}
     DEPENDS googletest lotusIR_graph 
 )
@@ -126,7 +131,7 @@ file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 
 AddTest(
     TARGET lotus_test_framework
-    SOURCES ${lotus_test_framework_src}
+    SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
     DEPENDS lotus_framework lotus_providers googletest
 )
@@ -142,24 +147,18 @@ set(lotus_test_providers_libs
 )
 
 file(GLOB_RECURSE lotus_test_providers_src
+    "${LOTUS_ROOT}/test/providers/*.h"
     "${LOTUS_ROOT}/test/providers/*.cc"
-)
-
-file(GLOB lotus_test_providers_helpers_src
-    "${LOTUS_ROOT}/test/framework/framework_test_main.cc"
-    "${LOTUS_ROOT}/test/*.h"
-    "${LOTUS_ROOT}/test/*.cc"
 )
 
 AddTest(
     TARGET lotus_test_providers
-    SOURCES ${lotus_test_providers_src} ${lotus_test_providers_helpers_src}
+    SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
     LIBS ${lotus_test_providers_libs}
   DEPENDS lotus_providers googletest
 )
 
 file(GLOB_RECURSE lotus_model_tests_src
-    "${LOTUS_ROOT}/test/framework/framework_test_main.cc"
     "${LOTUS_ROOT}/test/model_test/*.cc"
 )
 
@@ -175,7 +174,7 @@ set(lotus_model_tests_libs
 
 AddTest(
     TARGET lotus_model_tests
-    SOURCES ${lotus_model_tests_src}
+    SOURCES ${lotus_test_utils_src} ${lotus_model_tests_src}
     LIBS ${lotus_model_tests_libs}
     DEPENDS lotus_providers lotus_framework googletest
 )

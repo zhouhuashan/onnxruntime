@@ -3,7 +3,7 @@
 #include <mutex>
 #include <sstream>
 
-#include "core/common/logging.h"
+#include "core/common/logging/logging.h"
 #include "core/framework/executor.h"
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/op_kernel.h"
@@ -19,89 +19,98 @@
 namespace Lotus {
 //This is temporary solution, should be removed once the default value is ready.
 class DummyAttrDefaultValueTransformer : public IGraphTransformer {
-public:
-    virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) override {
-        auto num_nodes = p_graph.NumberOfNodes();
-        for (int i = 0; i < num_nodes; i++) {
-            if (p_graph.IsSourceNode(i) || p_graph.IsSinkNode(i))
-                continue;
-            auto node = p_graph.GetNode(i);
-            if (node->OpType() == "Conv")
-            {
-                auto& attributes = node->GetAttributes();
-                if (attributes.find("auto_pad") == attributes.end()) {
-                    node->AddAttribute("auto_pad", "NOTSET");
-                    modified = true;
-                }
-
-                if (attributes.find("group") == attributes.end()) {
-                    node->AddAttribute("group", (int64_t)1);
-                    modified = true;
-                }
-
-                if (attributes.find("dilations") == attributes.end()) {
-                    if (node->InputDefs().size() > 0)
-                    {
-                        // shape inference is not ready, so hardcord to 4
-                        int ndim = 4;
-                        //auto input = node->InputDefs()[0];
-                        //auto ndim = input->Shape()->dim_size();
-                        node->AddAttribute("dilations", std::vector<int64_t>(ndim - 2, 1));
-                        modified = true;
-                    }
-                }
-            }
-            else if (node->OpType() == "AveragePool" ||
-                node->OpType() == "MaxPool" ||
-                node->OpType() == "GlobalAveragePool" ||
-                node->OpType() == "GlobalMaxPool")
-            {
-                auto& attributes = node->GetAttributes();
-                if (attributes.find("auto_pad") == attributes.end()) {
-                    node->AddAttribute("auto_pad", "NOTSET");
-                    modified = true;
-                }
-                if (attributes.find("strides") == attributes.end()) {
-                    if (node->InputDefs().size() > 0)
-                    {
-                        // shape inference is not ready, so hardcord to 4
-                        int ndim = 4;
-                        //auto input = node->InputDefs()[0];
-                        //auto ndim = input->Shape()->dim_size();
-                        node->AddAttribute("strides", std::vector<int64_t>(ndim - 2, 1));
-                        modified = true;
-                    }
-                }
-                if ((node->OpType() == "AveragePool" ||
-                    node->OpType() == "MaxPool") &&
-                    attributes.find("pads") == attributes.end())
-                {
-                    // shape inference is not ready, so hardcord to 4
-                    int ndim = 4;
-                    //auto input = node->InputDefs()[0];
-                    //auto ndim = input->Shape()->dim_size();
-                    node->AddAttribute("pads", std::vector<int64_t>(2 * (ndim - 2), 0));
-                    modified = true;
-                }
-            }
+ public:
+  virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) override {
+    auto num_nodes = p_graph.NumberOfNodes();
+    for (int i = 0; i < num_nodes; i++) {
+      if (p_graph.IsSourceNode(i) || p_graph.IsSinkNode(i))
+        continue;
+      auto node = p_graph.GetNode(i);
+      if (node->OpType() == "Conv") {
+        auto& attributes = node->GetAttributes();
+        if (attributes.find("auto_pad") == attributes.end()) {
+          node->AddAttribute("auto_pad", "NOTSET");
+          modified = true;
         }
-        return Common::Status::OK();
+
+        if (attributes.find("group") == attributes.end()) {
+          node->AddAttribute("group", (int64_t)1);
+          modified = true;
+        }
+
+        if (attributes.find("dilations") == attributes.end()) {
+          if (node->InputDefs().size() > 0) {
+            // shape inference is not ready, so hardcord to 4
+            int ndim = 4;
+            //auto input = node->InputDefs()[0];
+            //auto ndim = input->Shape()->dim_size();
+            node->AddAttribute("dilations", std::vector<int64_t>(ndim - 2, 1));
+            modified = true;
+          }
+        }
+      } else if (node->OpType() == "AveragePool" ||
+                 node->OpType() == "MaxPool" ||
+                 node->OpType() == "GlobalAveragePool" ||
+                 node->OpType() == "GlobalMaxPool") {
+        auto& attributes = node->GetAttributes();
+        if (attributes.find("auto_pad") == attributes.end()) {
+          node->AddAttribute("auto_pad", "NOTSET");
+          modified = true;
+        }
+        if (attributes.find("strides") == attributes.end()) {
+          if (node->InputDefs().size() > 0) {
+            // shape inference is not ready, so hardcord to 4
+            int ndim = 4;
+            //auto input = node->InputDefs()[0];
+            //auto ndim = input->Shape()->dim_size();
+            node->AddAttribute("strides", std::vector<int64_t>(ndim - 2, 1));
+            modified = true;
+          }
+        }
+        if ((node->OpType() == "AveragePool" ||
+             node->OpType() == "MaxPool") &&
+            attributes.find("pads") == attributes.end()) {
+          // shape inference is not ready, so hardcord to 4
+          int ndim = 4;
+          //auto input = node->InputDefs()[0];
+          //auto ndim = input->Shape()->dim_size();
+          node->AddAttribute("pads", std::vector<int64_t>(2 * (ndim - 2), 0));
+          modified = true;
+        }
+      }
     }
+    return Common::Status::OK();
+  }
 };
+
 class InferenceSession::Impl {
  public:
-  Impl(const SessionOptions& session_options)
-      : session_options_(session_options) {
+  Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
+      : session_options_{session_options}, logging_manager_{logging_manager} {
+    // create logger for session, using provided logging manager if possible
+    if (logging_manager != nullptr) {
+      std::string session_logid = !session_options.session_logid.empty()
+                                      ? session_options.session_logid
+                                      : "InferenceSession";  // there's probably a better default...
+
+      owned_session_logger_ = logging_manager->CreateLogger(session_logid);
+      session_logger_ = owned_session_logger_.get();
+    } else {
+      session_logger_ = &Logging::LoggingManager::DefaultLogger();
+    }
+
+    session_state_.SetLogger(*session_logger_);
+
     //env_(Env::Default()) {
     //thread_pool_(env_, "Compute", session_options.num_threads) {
     // QUESTION: what if the user doesn't provide his preferred list of execution
     // providers? Should we have our own default?
     auto& provider_mgr = ExecutionProviderMgr::Instance();
+
     for (auto& info : session_options.ep_options) {
       auto provider = provider_mgr.GetProvider(info.provider_type, info.provider_info);
       if (provider == nullptr) {
-        LOG(WARNING) << "Execution Provider with name: "
-                     << info.provider_type << "Not found.";
+        LOGS(*session_logger_, WARNING) << "Execution Provider with name: " << info.provider_type << "Not found.";
         continue;
       }
       session_state_.AddExecutionProvider(info.provider_type, std::move(provider));
@@ -113,7 +122,7 @@ class InferenceSession::Impl {
   Common::Status Load(const std::string& model_uri) {
     std::lock_guard<std::mutex> l(session_mutex_);
     if (is_model_loaded_) {  // already loaded
-      LOG(INFO) << "Model: " << model_uri << " has already been loaded.";
+      LOGS(*session_logger_, INFO) << "Model: " << model_uri << " has already been loaded.";
       return Common::Status::OK();
     }
     std::shared_ptr<Model> tmp_model_ptr;
@@ -129,12 +138,12 @@ class InferenceSession::Impl {
   Common::Status Initialize() {
     std::lock_guard<std::mutex> l(session_mutex_);
     if (!is_model_loaded_) {
-      LOG(ERROR) << "Model was not loaded";
+      LOGS(*session_logger_, ERROR) << "Model was not loaded";
       return Common::Status(Common::LOTUS, Common::FAIL, "Model was not loaded.");
     }
 
     if (is_inited_) {  // already initialized
-      LOG(INFO) << "Session has already been initialized.";
+      LOGS(*session_logger_, INFO) << "Session has already been initialized.";
       return Common::Status::OK();
     }
 
@@ -175,6 +184,36 @@ class InferenceSession::Impl {
     return current_num_runs_.load();
   }
 
+  // Create a Logger for a single execution if possible. Otherwise use the default logger.
+  // If a new logger is created, it will also be stored in new_run_logger,
+  // which must remain valid for the duration of the execution.
+  // If the default logger is used, new_run_logger will remain empty.
+  // The returned value should be used in the execution.
+  const Logging::Logger& CreateLoggerForRun(const RunOptions& run_options, unique_ptr<Logging::Logger>& new_run_logger) {
+    const Logging::Logger* run_logger;
+
+    // create a per-run logger if we can
+    if (logging_manager_ != nullptr) {
+      std::string run_log_id{session_options_.session_logid};
+
+      if (!session_options_.session_logid.empty() && !run_options.run_tag.empty()) {
+        run_log_id += ":";
+      }
+
+      run_log_id += run_options.run_tag;
+
+      new_run_logger = logging_manager_->CreateLogger(run_log_id);
+      run_logger = new_run_logger.get();
+      VLOGS(*run_logger, 1) << "Created logger for run with id of " << run_log_id;
+    } else {
+      // fallback to using default logger. this does NOT have any session or run specific id/tag in it
+      run_logger = session_logger_;
+      VLOGS(*run_logger, 1) << "Using default logger for run";
+    }
+
+    return *run_logger;
+  }
+
   Common::Status Run(const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches) {
@@ -191,14 +230,14 @@ class InferenceSession::Impl {
       {
         std::lock_guard<std::mutex> l(session_mutex_);
         if (!is_inited_) {
-          LOG(ERROR) << "Session was not initialized";
+          LOGS(*session_logger_, ERROR) << "Session was not initialized";
           return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
         }
       }
 
       // TODO add instrumentation to measure the time taken for this Run
       if (!run_options.run_tag.empty()) {
-        LOG(INFO) << "Running with tag: " << run_options.run_tag;
+        LOGS(*session_logger_, INFO) << "Running with tag: " << run_options.run_tag;
       }
 
       ++current_num_runs_;
@@ -212,7 +251,11 @@ class InferenceSession::Impl {
         LOTUS_NOT_IMPLEMENTED;
       }
 
-      retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
+      // scope of owned_run_logger is just the call to Execute. If Execute ever becomes async we need a different approach
+      unique_ptr<Logging::Logger> owned_run_logger;
+      auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
+
+      retval = p_exec->Execute(run_options, run_logger, feeds, output_names, p_fetches);
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     }
@@ -377,7 +420,7 @@ class InferenceSession::Impl {
     if (exec_provider_name.empty() || !session_state_.GetExecutionProvider(exec_provider_name)) {
       std::ostringstream error_msg;
       error_msg << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";
-      LOG(ERROR) << error_msg.str();
+      LOGS(*session_logger_, ERROR) << error_msg.str();
       return Common::Status(Common::LOTUS, Common::FAIL, error_msg.str());
     }
     auto& allocator_info = session_state_.GetExecutionProvider(exec_provider_name)->GetTempSpaceAllocator().Info();
@@ -395,6 +438,15 @@ class InferenceSession::Impl {
   }
 
   const SessionOptions& session_options_;
+
+  /// Logging manager if provided.
+  Logging::LoggingManager* logging_manager_;
+
+  /// Logger for this session. WARNING: Will contain nullptr if logging_manager_ is nullptr.
+  std::unique_ptr<Logging::Logger> owned_session_logger_;
+
+  /// convenience pointer to logger. should always be the same as session_state_.Logger();
+  const Logging::Logger* session_logger_;
 
   // The model served by this inference session instance.
   // Currently this has to be a shared ptr because the Model::Load method
@@ -423,12 +475,14 @@ class InferenceSession::Impl {
   std::mutex session_mutex_;      // to ensure only one thread can invoke Load/Initialize
   bool is_model_loaded_ = false;  // GUARDED_BY(session_mutex_)
   bool is_inited_ = false;        // GUARDED_BY(session_mutex_)
-};
+
+};  // namespace Lotus
 
 //
 // InferenceSession
 //
-InferenceSession::InferenceSession(const SessionOptions& session_options) : impl_(std::make_unique<Impl>(session_options)) {
+InferenceSession::InferenceSession(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
+    : impl_(std::make_unique<Impl>(session_options, logging_manager)) {
 }
 
 InferenceSession::~InferenceSession() = default;

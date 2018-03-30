@@ -217,7 +217,7 @@ OpSchemaRegistry::OpSchemaRegisterOnce::OpSchemaRegisterOnce(OperatorSchemaSette
     std::tie(name, types, desc) = constraint;
 
     auto it = op_schema.op_signature_.type_constraint_map_.find(name);
-    LOTUS_ENFORCE(it == op_schema.op_signature_.type_constraint_map_.end(), "Constraint %s already exists", name);
+    LOTUS_ENFORCE(it == op_schema.op_signature_.type_constraint_map_.end(), "Constraint " + name + " already exists");
 
     DataTypeSet d;
     for (const auto& t : types) {
@@ -252,7 +252,7 @@ OpSchemaRegistry::OpSchemaRegisterOnce::OpSchemaRegisterOnce(OperatorSchemaSette
   auto& op_name = op_schema_setter.op_schema_.GetName();
   auto& op_domain = op_schema_setter.op_schema_.Domain();
   auto ver = op_schema_setter.op_schema_.SinceVersion();
-  LOTUS_ENFORCE(m[op_name][op_domain].count(ver) == 0, "Entry exists for Op:%s Domain:%s Version:%d", op_name, op_domain, ver);
+  LOTUS_ENFORCE(m[op_name][op_domain].count(ver) == 0, "Entry exists for Op:", op_name, " Domain:", op_domain, " Version:", ver);
   m[op_name][op_domain].emplace(std::make_pair(ver, op_schema_setter.op_schema_));
 }
 

@@ -33,7 +33,7 @@ ACTION(PrintArgs) {
   //                  arg0                          arg1                        arg2
   std::cout << arg1 << "@" << arg0 << " "
             << arg2.SeverityPrefix() << ":" << arg2.Category() << ":"
-            << arg2.Location().ToString(Lotus::Logging::Location::kFilenameAndPath) << " " << arg2.Message() << std::endl;
+            << arg2.Location().ToString(Lotus::CodeLocation::kFilenameAndPath) << " " << arg2.Message() << std::endl;
 };
 
 #ifdef _MSC_VER

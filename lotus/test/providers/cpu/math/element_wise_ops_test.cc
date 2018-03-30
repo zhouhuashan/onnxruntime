@@ -1,6 +1,6 @@
 #include "core/providers/cpu/math/element_wise_ops.h"
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/providers/provider_test_utils.h"
 
 namespace Lotus {
 namespace Test {

@@ -2,7 +2,6 @@
 #define CORE_PROVIDERS_CPU_NN_POOL_BASE_H
 
 #include "core/common/common.h"
-#include "core/common/logging.h"
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/autopad_type.h"
 

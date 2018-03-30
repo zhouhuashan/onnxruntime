@@ -1,10 +1,12 @@
-#include "core/graph/utils.h"
-#include "core/providers/cpu/nn/batch_norm.h"
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-#include "test/test_utils.h"
 #include "core/framework/tensor.h"
 #include "core/framework/inference_session.h"
+#include "core/graph/utils.h"
+#include "core/providers/cpu/nn/batch_norm.h"
+
+#include "test/providers/provider_test_utils.h"
+
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 using namespace std;
 

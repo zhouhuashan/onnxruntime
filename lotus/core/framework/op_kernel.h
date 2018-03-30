@@ -2,8 +2,8 @@
 #define CORE_FRAMEWORK_OP_KERNEL_H
 
 #include "core/common/exceptions.h"
-#include "core/common/logging.h"
 #include "core/common/status.h"
+#include "core/common/logging/logging.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/ml_value.h"
@@ -92,7 +92,7 @@ class OpKernelContext {
  public:
   typedef std::unordered_map<std::string, size_t> ArgMap;
 
-  explicit OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel);
+  explicit OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel, const Logging::Logger& logger);
 
   ~OpKernelContext(){};
 
@@ -112,10 +112,14 @@ class OpKernelContext {
   // The memory allocation will be done on-the-fly with given tensor shape.
   Tensor* output(int index, const TensorShape& shape);
 
+  const Logging::Logger& Logger() const {
+    return *logger_;
+  }
+
  private:
   ExecutionFrame* execution_frame_ = nullptr;
-
   const OpKernel* kernel_ = nullptr;
+  const Logging::Logger* logger_ = nullptr;
 
   // The argument starting index in ExecutionFrame.
   int arg_start_index_ = -1;

@@ -37,7 +37,7 @@
 #include <random>
 #include <unordered_set>
 
-#include "core/common/logging.h"
+#include "core/common/logging/logging.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
@@ -112,7 +112,7 @@ void Gemm<float, CPUMathUtil>(
                                       ConstEigenMatrixMap<float>(A, K, M));
           return;
         default:
-          LOG(FATAL) << "Unexpected CBLAS_TRANSPOSE for TransB";
+          LOTUS_THROW("CblasNoTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     case CblasTrans: {
@@ -126,11 +126,11 @@ void Gemm<float, CPUMathUtil>(
                                       ConstEigenMatrixMap<float>(A, M, K).transpose());
           return;
         default:
-          LOG(FATAL) << "Unexpected CBLAS_TRANSPOSE for TransB";
+          LOTUS_THROW("CblasTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     default:
-      LOG(FATAL) << "Unexpected CBLAS_TRANSPOSE for TransA";
+      LOTUS_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
   }
 }
 
@@ -173,7 +173,7 @@ void GemmEx<float, CPUMathUtil>(
                        ConstStridedMap(A, K, M, OuterStride(lda)));
           return;
         default:
-          LOG(FATAL) << "Unexpected CBLAS_TRANSPOSE for TransB";
+          LOTUS_THROW("CblasNoTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     case CblasTrans: {
@@ -189,11 +189,11 @@ void GemmEx<float, CPUMathUtil>(
                        ConstStridedMap(A, M, K, OuterStride(lda)).transpose());
           return;
         default:
-          LOG(FATAL) << "Unexpected CBLAS_TRANSPOSE for TransB";
+          LOTUS_THROW("CblasTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     default:
-      LOG(FATAL) << "Unexpected CBLAS_TRANSPOSE for TransA";
+      LOTUS_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
   }
 }
 
@@ -229,7 +229,7 @@ void Gemv<float, CPUMathUtil>(
       return;
     }
     default:
-      LOG(FATAL) << "Gemv float found an unexpected CBLAS_TRANSPOSE input.";
+      LOTUS_THROW("Gemv float found an unexpected CBLAS_TRANSPOSE input of", TransA);
   }
 }
 
@@ -819,7 +819,7 @@ void Select<float, CPUMathUtil>(
     float* y,
     CPUMathUtil* /*context*/) {
   for (int i = 0; i < N; ++i) {
-    DCHECK_LT(idx[i], D);
+    LOTUS_ENFORCE(idx[i] < D);
     y[i] = x[i * D + idx[i]];
   }
 }
@@ -885,7 +885,7 @@ void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
       incremented = false;
       for (int64_t d_i = N - 1; d_i >= 0; --d_i) {
         const int64_t d_max = col_shape[d_i + 1];
-        DCHECK_LT(d_iter[d_i], d_max);
+        LOTUS_ENFORCE(d_iter[d_i] < d_max);
         if (d_iter[d_i] == d_max - 1) {
           d_iter[d_i] = 0;
         } else {  // d_iter[d_i] < d_max - 1

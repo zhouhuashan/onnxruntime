@@ -3,6 +3,7 @@
 
 #include "core/common/common.h"
 #include "core/common/status.h"
+#include "core/common/logging/logging.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/ml_value.h"
 #include "core/platform/types.h"
@@ -27,6 +28,9 @@ struct SessionOptions {
   //int num_threads; // not used now until we re-introduce threadpools for async execution
   vector<ProviderOption> ep_options;
   bool enable_sequential_execution = true;  // TODO: should we default to sequential execution?
+
+  string session_logid;  ///< logger id to use for session output
+
   // TODO add more
 };
 
@@ -40,7 +44,18 @@ using NameMLValMap = std::unordered_map<std::string, MLValue>;
 // Per model, handling multiple requests.
 class InferenceSession {
  public:
-  explicit InferenceSession(const SessionOptions& session_options);
+  /**
+     Create a new InferenceSession
+     @param session_options Session options.
+     @param logging_manager 
+       Optional logging manager instance that will enable per session logger output using
+       session_options.session_logid as the logger id in messages.
+       If nullptr, the default LoggingManager MUST have been created previously as it will be used
+       for logging. This will use the default logger id in messages.
+       See core/common/logging/logging.h for details on how to do that, and how LoggingManager::DefaultLogger works.
+     */
+  explicit InferenceSession(const SessionOptions& session_options,
+                            Logging::LoggingManager* logging_manager = nullptr);
   ~InferenceSession();
 
   // Load an ONNX model and initialize.
