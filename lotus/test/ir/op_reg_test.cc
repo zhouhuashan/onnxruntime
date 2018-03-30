@@ -2,7 +2,7 @@
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
-#include "core/protobuf/onnx-ml.pb.h"
+#include "onnx/onnx-ml.pb.h"
 #include "gtest/gtest.h"
 
 using namespace onnx;

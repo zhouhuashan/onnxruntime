@@ -4,10 +4,9 @@
 #include <unordered_map>
 
 #include "core/graph/utils.h"
-#include "core/protobuf/onnx-ml.pb.h"
+#include "onnx/onnx-ml.pb.h"
 
 using namespace onnx;
-
 namespace LotusIR {
 typedef AttributeProto_AttributeType AttrType;
 

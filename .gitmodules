@@ -1,4 +1,4 @@
 [submodule "core/onnx"]
 	path = external/onnx
 	url = https://github.com/onnx/onnx
-	branch = rel-0.3
+	branch = master

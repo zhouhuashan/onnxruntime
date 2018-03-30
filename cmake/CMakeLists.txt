@@ -64,6 +64,7 @@ include(onnx.cmake)
 add_definitions(-DONNX_ML)
 include(date)
 include(gsl)
+add_definitions(-Donnx=ONNX_NAMESPACE)
 
 set(lotus_EXTERNAL_DEPENDENCIES
     eigen

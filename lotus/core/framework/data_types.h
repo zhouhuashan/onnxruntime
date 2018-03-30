@@ -4,7 +4,7 @@
 #include <string>
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
-#include "core/protobuf/onnx-ml.pb.h"
+#include "onnx/onnx-ml.pb.h"
 
 using namespace onnx;
 

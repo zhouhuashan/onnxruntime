@@ -1,8 +1,21 @@
 RELATIVE_PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
-    ${LOTUS_ROOT} core/protobuf/onnx-ml.proto
+    ${LOTUS_ROOT} onnx/onnx-ml.proto
 )
 
-add_library(onnx ${PROTO_SRCS} ${PROTO_HDRS})
+file(GLOB_RECURSE onnx_src
+    "${LOTUS_ROOT}/../external/onnx/onnx/*.h"
+    "${LOTUS_ROOT}/../external/onnx/onnx/*.cc"
+)
+
+file(GLOB_RECURSE onnx_exclude_src
+    "${LOTUS_ROOT}/../external/onnx/onnx/py_utils.h"
+    "${LOTUS_ROOT}/../external/onnx/onnx/proto_utils.h"
+    "${LOTUS_ROOT}/../external/onnx/onnx/cpp2py_export.cc"
+)
+
+list(REMOVE_ITEM onnx_src ${onnx_exclude_src})
+add_library(onnx ${PROTO_SRCS} ${PROTO_HDRS} ${onnx_src})
+
 add_dependencies(onnx protobuf)
 
 if (WIN32)

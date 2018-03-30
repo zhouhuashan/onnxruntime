@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include "core/common/common.h"
 #include "core/common/status.h"
-#include "core/protobuf/onnx-ml.pb.h"
+#include "onnx/onnx-ml.pb.h"
 
 namespace {
 using namespace ::Lotus::Common;
