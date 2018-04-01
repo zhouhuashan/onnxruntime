@@ -177,6 +177,17 @@ class Tensor {
     return static_cast<const T*>(
         static_cast<void*>(static_cast<char*>(GetRaw()) + byte_offset_));
   }
+
+  void* mutable_data_raw(MLDataType type) {
+    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
+    return GetRaw();
+  }
+
+  const void* data_raw(MLDataType type) {
+    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
+    return GetRaw();
+  }
+
   // More API methods.
  private:
   void Init(MLDataType p_type,

@@ -5,11 +5,11 @@
 namespace Lotus {
 namespace Test {
 
-static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
+static const TTypeProto<float> s_typeProto_float;
 
 TEST(MathOpTest, Add) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float),
-    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+      input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Add> test(model);
 
@@ -23,7 +23,7 @@ TEST(MathOpTest, Add) {
 
 TEST(MathOpTest, Add_Broadcast_Axis) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float),
-    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+      input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
 
   EXPECT_TRUE(model.Node().AddAttribute("axis", int64_t{0}));
@@ -47,7 +47,7 @@ TEST(MathOpTest, Add_Broadcast_Axis) {
 
 TEST(MathOpTest, Add_Broadcast) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float),
-    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+      input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Add", {&input1_def, &input2_def}, {&output_def});
 
   EXPECT_TRUE(model.Node().AddAttribute("broadcast", int64_t{1}));
@@ -70,7 +70,7 @@ TEST(MathOpTest, Add_Broadcast) {
 
 TEST(MathOpTest, Sub) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float),
-    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+      input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Sub", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Sub> test(model);
 
@@ -97,7 +97,7 @@ TEST(MathOpTest, Mul) {
 
 TEST(MathOpTest, Div) {
   LotusIR::NodeArg input1_def("A", &s_typeProto_float),
-    input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
+      input2_def("B", &s_typeProto_float), output_def("C", &s_typeProto_float);
   TestModel model("Div", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Div> test(model);
 
@@ -186,7 +186,7 @@ TEST(MathOpTest, Sqrt) {
 
 TEST(MathOpTest, Pow) {
   LotusIR::NodeArg input1_def("X", &s_typeProto_float),
-    input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
+      input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
   TestModel model("Pow", {&input1_def, &input2_def}, {&output_def});
   SimpleFloatTest<Pow> test(model);
 
@@ -200,7 +200,7 @@ TEST(MathOpTest, Pow) {
 
 TEST(MathOpTest, Pow_Broadcast_Scalar) {
   LotusIR::NodeArg input1_def("X", &s_typeProto_float),
-    input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
+      input2_def("Y", &s_typeProto_float), output_def("Z", &s_typeProto_float);
   TestModel model("Pow", {&input1_def, &input2_def}, {&output_def});
 
   EXPECT_TRUE(model.Node().AddAttribute("broadcast", int64_t{1}));
@@ -240,47 +240,87 @@ TEST(MathOpTest, Log) {
 }
 
 TEST(MathOpTest, Sum) {
-  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float),
-    input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float),
-    output_def("sum", &s_typeProto_float);
-  TestModel model("Sum", {&input1_def, &input2_def, &input3_def}, {&output_def});
-  SimpleFloatTest<Sum> test(model);
-
+  OpTester test("Sum");
   std::vector<int64_t> dims{3, 3};
-  test.AddInput(dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
-  test.AddInput(dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
-  test.AddInput(dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
-  test.AddOutput(dims);
-  float expected_vals[]{3.0f, 0.0f, 6.0f, -6.0f, 6.6f, 28.0f, -1.0f, 0.06f, 0.1f};
-  test.Run(dims, expected_vals);
+  test.AddInput<float>("data_0", dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
+  test.AddInput<float>("data_1", dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
+  test.AddInput<float>("data_3", dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
+  test.AddOutput<float>("sum", dims, {3.0f, 0.0f, 6.0f, -6.0f, 6.6f, 28.0f, -1.0f, 0.06f, 0.1f});
+  test.Run<Sum<float>>();
 }
 
 TEST(MathOpTest, Min) {
-  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float), input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float), output_def("sum", &s_typeProto_float);
-  TestModel model("Min", {&input1_def, &input2_def, &input3_def}, {&output_def});
-  SimpleFloatTest<Min> test(model);
-
+  OpTester test("Min");
   std::vector<int64_t> dims{3, 3};
-  test.AddInput(dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
-  test.AddInput(dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
-  test.AddInput(dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
-  test.AddOutput(dims);
-  float expected_vals[]{1.0f, 0.0f, 1.0f, -3.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f};
-  test.Run(dims, expected_vals);
+  test.AddInput<float>("data_0", dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
+  test.AddInput<float>("data_1", dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
+  test.AddInput<float>("data_3", dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
+  test.AddOutput<float>("sum", dims, {1.0f, 0.0f, 1.0f, -3.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
+  test.Run<Min<float>>();
 }
 
 TEST(MathOpTest, Max) {
-  LotusIR::NodeArg input1_def("data_0", &s_typeProto_float), input2_def("data_1", &s_typeProto_float), input3_def("data_3", &s_typeProto_float), output_def("sum", &s_typeProto_float);
-  TestModel model("Max", {&input1_def, &input2_def, &input3_def}, {&output_def});
-  SimpleFloatTest<Max> test(model);
-
+  OpTester test("Max");
   std::vector<int64_t> dims{3, 3};
-  test.AddInput(dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
-  test.AddInput(dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
-  test.AddInput(dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
-  test.AddOutput(dims);
-  float expected_vals[]{1.0f, 0.0f, 3.0f, -1.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f};
-  test.Run(dims, expected_vals);
+  test.AddInput<float>("data_0", dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
+  test.AddInput<float>("data_1", dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
+  test.AddInput<float>("data_2", dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
+  test.AddOutput<float>("sum", dims, {1.0f, 0.0f, 3.0f, -1.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
+  test.Run<Max<float>>();
+}
+
+TEST(MathOpTest, And) {
+  OpTester test("And");
+  std::vector<int64_t> dims{4};
+  test.AddInput<bool>("A", dims, {false, true, false, true});
+  test.AddInput<bool>("B", dims, {false, false, true, true});
+  test.AddOutput<bool>("C", dims, {false, false, false, true});
+  test.Run<And<bool>>();
+}
+
+TEST(MathOpTest, Or) {
+  OpTester test("Or");
+  std::vector<int64_t> dims{4};
+  test.AddInput<bool>("A", dims, {false, true, false, true});
+  test.AddInput<bool>("B", dims, {false, false, true, true});
+  test.AddOutput<bool>("C", dims, {false, true, true, true});
+  test.Run<Or<bool>>();
+}
+
+TEST(MathOpTest, Xor) {
+  OpTester test("Xor");
+  std::vector<int64_t> dims{4};
+  test.AddInput<bool>("A", dims, {false, true, false, true});
+  test.AddInput<bool>("B", dims, {false, false, true, true});
+  test.AddOutput<bool>("C", dims, {false, true, true, false});
+  test.Run<Xor<bool>>();
+}
+
+TEST(MathOpTest, Less) {
+  OpTester test("Less");
+  std::vector<int64_t> dims{4};
+  test.AddInput<float>("A", dims, {1.0f, 0.0f, -1.0f, -1.0f});
+  test.AddInput<float>("B", dims, {1.0f, 1.0f, 2.0f, -1.0f});
+  test.AddOutput<bool>("C", dims, {false, true, true, false});
+  test.Run<Less<float>>();
+}
+
+TEST(MathOpTest, Greater) {
+  OpTester test("Greater");
+  std::vector<int64_t> dims{4};
+  test.AddInput<float>("A", dims, {1.0f, 0.0f, -1.0f, -1.0f});
+  test.AddInput<float>("B", dims, {1.0f, 1.0f, 2.0f, -1.0f});
+  test.AddOutput<bool>("C", dims, {false, false, false, false});
+  test.Run<Greater<float>>();
+}
+
+TEST(MathOpTest, Equal) {
+  OpTester test("Equal");
+  std::vector<int64_t> dims{4};
+  test.AddInput<float>("A", dims, {1.0f, 0.0f, -1.0f, -1.0f});
+  test.AddInput<float>("B", dims, {1.0f, 1.0f, 2.0f, -1.0f});
+  test.AddOutput<bool>("C", dims, {true, false, false, true});
+  test.Run<Equal<float>>();
 }
 
 }  // namespace Test

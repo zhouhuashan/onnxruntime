@@ -164,6 +164,60 @@ class Max final : public OpKernel {
   Status compute(OpKernelContext* context) const override;
 };
 
+template <typename T>
+class And final : public BroadcastAxisKernel {
+ public:
+  And(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Or final : public BroadcastAxisKernel {
+ public:
+  Or(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Xor final : public BroadcastAxisKernel {
+ public:
+  Xor(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Equal final : public BroadcastAxisKernel {
+ public:
+  Equal(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Less final : public BroadcastAxisKernel {
+ public:
+  Less(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Greater final : public BroadcastAxisKernel {
+ public:
+  Greater(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  }
+
+  Status compute(OpKernelContext* context) const override;
+};
+
 }  // namespace Lotus
 
 #endif  // !CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H

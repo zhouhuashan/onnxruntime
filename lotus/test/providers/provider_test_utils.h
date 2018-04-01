@@ -82,10 +82,146 @@ class TestUtils {
   }
 };
 
+// TODO(RyanHill): Remove once usage is switched over to s_typeProto<> type
 struct TypeProto_Set : TypeProto {
   TypeProto_Set(TensorProto_DataType type) {
     mutable_tensor_type()->set_elem_type(type);
   }
+};
+
+// Function templates to translate C++ types into TensorProto_DataTypes
+template <typename T>
+constexpr TensorProto_DataType TypeToDataType();
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<float>() { return TensorProto_DataType_FLOAT; }
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<bool>() { return TensorProto_DataType_BOOL; }
+
+template <typename T>
+struct TTypeProto : TypeProto {
+  TTypeProto() {
+    mutable_tensor_type()->set_elem_type(TypeToDataType<T>());
+  }
+};
+
+// Variable template for TensorProto_DataTypes, s_typeProto<float>
+template <typename T>
+const TTypeProto<T> s_typeProto;
+
+// To use OpTester:
+//  1. Create one with a name
+//  2. Call AddInput for all the inputs
+//  3. Call AddOutput with all expected outputs
+//  4. Call Run with the fully defined Op as the template parameter
+// Currently only works for float & bool tensors
+// See current usage for an example, should be self explanatory
+struct OpTester {
+  OpTester(const char* szName) : szName_(szName) {}
+
+  template <typename T>
+  void AddInput(const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& values) {
+    AddData(inputData_, szName, dims, values);
+  }
+
+  template <typename T>
+  void AddOutput(const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& expectedValues) {
+    AddData(outputData_, szName, dims, expectedValues);
+  }
+
+  template <typename Op>
+  void Run() {
+    // Generate the input & output def lists
+    std::vector<LotusIR::NodeArg*> pinputDefs, poutputDefs;
+    for (auto& data : inputData_)
+      pinputDefs.push_back(&data.def_);
+    for (auto& data : outputData_)
+      poutputDefs.push_back(&data.def_);
+
+    // Create a simple model
+    LotusIR::Model model{"test"};
+    LotusIR::Graph* graph = model.MainGraph();
+    graph->AddNode("node1", szName_, szName_, pinputDefs, poutputDefs);
+    graph->Resolve();
+
+    SessionState state;
+    state.SetGraph(graph);
+    SetupState(state, pinputDefs, poutputDefs);
+
+    std::unordered_map<std::string, MLValue> feeds;
+    std::vector<std::string> output_names;
+    FillFeedsAndOutputNames(pinputDefs, poutputDefs, feeds, output_names);
+
+    std::shared_ptr<ExecutionFrame> frame{TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names)};
+
+    // Create the node with the op
+    auto& node = *graph->GetNode(graph->NumberOfNodes() - 1);
+
+    AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::ArenaAllocator};
+    KernelDef kernel_def;
+    OpKernelInfo info{node, allocator_info, kernel_def};
+    Op kernel{info};
+
+    // Hookup the inputs and outputs
+    unsigned index = 0;
+    for (auto& input : inputData_) {
+      auto status = frame->AllocateTensorWithSelfOwnBuffer(index, input.dataType_, AllocatorManager::Instance()->GetArena(CPU).Info(), input.shape_);
+      // For inputs we have data to initialize with, so copy it into the buffer
+      auto* tensor = frame->get_mutable_value<Tensor>(index);
+      void* buffer = tensor->mutable_data_raw(input.dataType_);
+      memcpy(buffer, input.data_.get(), input.dataSize_);
+      index++;
+    }
+
+    index = 0;
+    for (auto& output : outputData_) {
+      auto status = frame->AllocateTensorWithSelfOwnBuffer(index++, output.dataType_, AllocatorManager::Instance()->GetArena(CPU).Info(), output.shape_);
+    }
+
+    // Run the model
+    OpKernelContext kernel_ctx(frame.get(), &kernel, DefaultLoggingManager().DefaultLogger());
+    Common::Status status = kernel.compute(&kernel_ctx);
+    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
+
+    // Verify the outputs
+    index = 0;
+    for (auto& output : outputData_) {
+      auto& outputTensor = *kernel_ctx.output(index++, output.shape_);
+      auto size = output.shape_.Size();
+
+      // Dispatch on the type
+      if (output.dataType_ == DataTypeImpl::GetType<float>())
+        Check<float>(output, outputTensor, size);
+      else if (output.dataType_ == DataTypeImpl::GetType<bool>())
+        Check<bool>(output, outputTensor, size);
+    }
+  }
+
+ private:
+  struct Data {
+    LotusIR::NodeArg def_;
+    TensorShape shape_;
+    std::unique_ptr<uint8_t[]> data_;
+    size_t dataSize_;
+    MLDataType dataType_;
+  };
+
+  template <typename T>
+  void AddData(std::vector<Data>& data, const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& values) {
+    LOTUS_ENFORCE(TensorShape(dims).Size() == values.size(), "Number of input values doesn't match tensor size");
+    auto size = values.size() * sizeof(T);
+    auto pData = std::make_unique<uint8_t[]>(size);
+    memcpy(pData.get(), values.begin(), size);
+    data.push_back({{szName, &s_typeProto<T>}, dims, std::move(pData), size, DataTypeImpl::GetType<T>()});
+  }
+
+  // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
+  template <typename T>
+  void Check(const Data& outputData, Tensor& outputTensor, size_t size);
+
+  const char* szName_;
+  std::vector<Data> inputData_, outputData_;
 };
 
 struct TestModel {

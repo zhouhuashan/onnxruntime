@@ -4,7 +4,7 @@ namespace Lotus {
 
 REGISTER_KERNEL(KernelDefBuilder("Concat")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Concat<float>);

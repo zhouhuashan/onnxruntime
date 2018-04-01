@@ -48,5 +48,23 @@ void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
   }
 }
 
+template <>
+void OpTester::Check<float>(const Data& outputData, Tensor& outputTensor, size_t size) {
+  auto* expected = reinterpret_cast<const float*>(outputData.data_.get());
+  auto* output = outputTensor.data<float>();
+  for (int i = 0; i < size; ++i) {
+    EXPECT_NEAR(expected[i], output[i], 0.001f);
+  }
+}
+
+template <>
+void OpTester::Check<bool>(const Data& outputData, Tensor& outputTensor, size_t size) {
+  auto* expected = reinterpret_cast<const bool*>(outputData.data_.get());
+  auto* output = outputTensor.data<bool>();
+  for (int i = 0; i < size; ++i) {
+    EXPECT_EQ(expected[i], output[i]);
+  }
+}
+
 }  // namespace Test
 }  // namespace Lotus

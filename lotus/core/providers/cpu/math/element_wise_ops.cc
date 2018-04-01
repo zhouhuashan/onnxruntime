@@ -4,115 +4,157 @@ namespace Lotus {
 
 REGISTER_KERNEL(KernelDefBuilder("Add")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Add<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Sub")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Sub<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Mul")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Mul<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Div")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Div<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Abs")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Abs<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Neg")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Neg<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Floor")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Floor<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Ceil")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Ceil<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Reciprocal")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Reciprocal<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Sqrt")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Sqrt<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Pow")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Pow<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Exp")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Exp<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Log")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Log<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Sum")                
+REGISTER_KERNEL(KernelDefBuilder("Sum")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Sum<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Min")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6, 6)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Min<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Max")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6, 6)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Max<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("And")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                And<bool>);
+
+REGISTER_KERNEL(KernelDefBuilder("Or")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                Or<bool>);
+
+REGISTER_KERNEL(KernelDefBuilder("Xor")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                Xor<bool>);
+
+REGISTER_KERNEL(KernelDefBuilder("Less")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                Less<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("Greater")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                Greater<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("Equal")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                Equal<float>);
 
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.mutable_data<T>(), t.shape().Size()); }
@@ -147,6 +189,29 @@ void VerifyShapeSubsetAxis(const TensorShape& shape, const TensorShape& find, in
   }
 }
 
+template <typename TInput, typename Op>
+void Loop(const Tensor& input1, const Tensor& input2, Tensor& output, Op op) {
+  using TOutput = std::result_of_t<Op(TInput, TInput)>;
+
+  const TInput* input1_data = input1.data<TInput>();
+  const TInput* input2_data = input2.data<TInput>();
+  TOutput* output_data = output.mutable_data<TOutput>();
+  auto outputSize = output.shape().Size();
+
+  for (auto i = 0; i < outputSize; i++)
+    output_data[i] = op(input1_data[i], input2_data[i]);
+}
+
+template <typename T, typename Op>
+void ScalarLoop(const Tensor& input1, T value, Tensor& output, Op op) {
+  const T* input1_data = input1.data<T>();
+  T* output_data = output.mutable_data<T>();
+  auto outputSize = output.shape().Size();
+
+  for (auto i = 0; i < outputSize; i++)
+    output_data[i] = op(input1_data[i], value);
+}
+
 template <typename T, typename Op>
 void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int axis, Op op) {
   // If the axis_ attribute exists, use and verify it, otherwise look for the matching suffix
@@ -169,7 +234,7 @@ void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int a
 
   const T* input1_data = input1.data<T>();
   const T* input2_data = input2.data<T>();
-  float* output_data = output.mutable_data<T>();
+  T* output_data = output.mutable_data<T>();
   auto outputSize = output.shape().Size();
 
   // Do the operation
@@ -398,6 +463,54 @@ Status Max<float>::compute(OpKernelContext* ctx) const {
   }
 
   return Status::OK();
+}
+
+template <typename TInput, typename Op>
+Status BooleanOp(OpKernelContext* ctx, bool broadcast, int64_t axis, Op op) {
+  auto& A = *ctx->input<Tensor>(0);
+  auto& B = *ctx->input<Tensor>(1);
+  auto& C = *ctx->output(0, A.shape());
+
+  if (broadcast) {
+    if (B.shape().NumDimensions() == 0) {
+      LOTUS_ENFORCE(axis == -1, "When broadcasting by a scalar, axis cannot be set");
+      ScalarLoop<TInput>(A, *B.data<TInput>(), C, op);
+    } else
+      Broadcast<TInput>(A, B, C, int(axis), op);
+  } else {
+    Loop<TInput>(A, B, C, op);
+  }
+  return Status::OK();
+}
+
+template <>
+Status And<bool>::compute(OpKernelContext* ctx) const {
+  return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return a && b; });
+}
+
+template <>
+Status Or<bool>::compute(OpKernelContext* ctx) const {
+  return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return a || b; });
+}
+
+template <>
+Status Xor<bool>::compute(OpKernelContext* ctx) const {
+  return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return (a ^ b) != 0; });
+}
+
+template <>
+Status Equal<float>::compute(OpKernelContext* ctx) const {
+  return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a == b; });
+}
+
+template <>
+Status Less<float>::compute(OpKernelContext* ctx) const {
+  return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a < b; });
+}
+
+template <>
+Status Greater<float>::compute(OpKernelContext* ctx) const {
+  return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a > b; });
 }
 
 }  // namespace Lotus
