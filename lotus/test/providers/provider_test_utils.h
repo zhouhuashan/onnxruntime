@@ -112,9 +112,10 @@ const TTypeProto<T> s_typeProto;
 
 // To use OpTester:
 //  1. Create one with a name
-//  2. Call AddInput for all the inputs
-//  3. Call AddOutput with all expected outputs
-//  4. Call Run with the fully defined Op as the template parameter
+//  2. Call AddAttribute with any attributes
+//  3. Call AddInput for all the inputs
+//  4. Call AddOutput with all expected outputs
+//  5. Call Run with the fully defined Op as the template parameter
 // Currently only works for float & bool tensors
 // See current usage for an example, should be self explanatory
 struct OpTester {
@@ -128,6 +129,15 @@ struct OpTester {
   template <typename T>
   void AddOutput(const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& expectedValues) {
     AddData(outputData_, szName, dims, expectedValues);
+  }
+
+  template <typename T>
+  void AddAttribute(const char* szName, T value) {
+    // Copy the attribute data for now, since we have to add them at a later point
+    auto pData = std::make_unique<uint8_t[]>(sizeof(T));
+    memcpy(pData.get(), &value, sizeof(T));
+    // Use a lambda to generate a type safe AddAttribute call later
+    attributes_.push_back({szName, std::move(pData), [](Node& node, Attribute& attribute) { EXPECT_TRUE(node.AddAttribute(attribute.szName_, *reinterpret_cast<T*>(attribute.data_.get()))); }});
   }
 
   template <typename Op>
@@ -155,9 +165,13 @@ struct OpTester {
 
     std::shared_ptr<ExecutionFrame> frame{TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names)};
 
-    // Create the node with the op
     auto& node = *graph->GetNode(graph->NumberOfNodes() - 1);
 
+    // Add the attributes if any
+    for (auto& attribute : attributes_)
+      attribute.AddAttribute_(node, attribute);
+
+    // Setup the op in the node
     AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::ArenaAllocator};
     KernelDef kernel_def;
     OpKernelInfo info{node, allocator_info, kernel_def};
@@ -216,12 +230,19 @@ struct OpTester {
     data.push_back({{szName, &s_typeProto<T>}, dims, std::move(pData), size, DataTypeImpl::GetType<T>()});
   }
 
+  struct Attribute {
+    const char* szName_;
+    std::unique_ptr<uint8_t[]> data_;
+    void (*AddAttribute_)(Node& node, Attribute& attribute);
+  };
+
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
   template <typename T>
   void Check(const Data& outputData, Tensor& outputTensor, size_t size);
 
   const char* szName_;
   std::vector<Data> inputData_, outputData_;
+  std::vector<Attribute> attributes_;
 };
 
 struct TestModel {

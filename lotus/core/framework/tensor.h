@@ -183,7 +183,7 @@ class Tensor {
     return GetRaw();
   }
 
-  const void* data_raw(MLDataType type) {
+  const void* data_raw(MLDataType type) const {
     LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
     return GetRaw();
   }
