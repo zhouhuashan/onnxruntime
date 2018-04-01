@@ -368,4 +368,19 @@ Status SequentialPlanner::CreatePlan(const SessionState& session_state, Sequenti
   return planner.CreatePlan(session_state, plan);
 }
 
+Status AllocationPlanner::CreatePlan(AllocationPlannerType allocation_planner_type,
+                                     const SessionState& session_state,
+                                     SequentialExecutionPlan* plan) {
+  switch (allocation_planner_type) {
+    case AllocationPlannerType::SEQUENTIAL_PLANNER: {
+      return SequentialPlanner::CreatePlan(session_state, plan);
+    }
+    case AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER: {
+      return SimpleAllocationPlanner::CreatePlan(session_state, plan);
+    }
+    default:
+      return Status(LOTUS, FAIL, "Invalid allocation planner type requested");
+  }
+}
+
 }  // namespace Lotus

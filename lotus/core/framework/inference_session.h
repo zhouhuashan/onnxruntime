@@ -9,6 +9,9 @@
 #include "core/platform/types.h"
 
 namespace Lotus {
+/**
+ * Use this to configure an execution provider.
+*/
 struct ProviderOption {
   ProviderOption(const std::string& provider_type0, const ExecutionProviderInfo& provider_info0)
       : provider_type(provider_type0),
@@ -18,6 +21,14 @@ struct ProviderOption {
   ExecutionProviderInfo provider_info;
 };
 
+enum class AllocationPlannerType {
+  SIMPLE_SEQUENTIAL_PLANNER,
+  SEQUENTIAL_PLANNER,
+};
+
+/**
+* Configuration information for a session.
+*/
 struct SessionOptions {
   // TODO what are the mandatory requirements for session options? and what should be the default
   // values for the remaining options? Tune this constructor appropriately once we learn more
@@ -29,11 +40,15 @@ struct SessionOptions {
   vector<ProviderOption> ep_options;
   bool enable_sequential_execution = true;  // TODO: should we default to sequential execution?
 
-  string session_logid;  ///< logger id to use for session output
+  // TODO: This has been added to facilitate testing only. It is not intended for production usage.
+  AllocationPlannerType allocation_planner_type = AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER;
 
-  // TODO add more
+  string session_logid;  ///< logger id to use for session output
 };
 
+/**
+* Configuration information for a single Run.
+*/
 struct RunOptions {
   bool enable_debug_mode = false;
   std::string run_tag = "";  // custom tag to tag all the runs
@@ -41,7 +56,26 @@ struct RunOptions {
 
 using NameMLValMap = std::unordered_map<std::string, MLValue>;
 
-// Per model, handling multiple requests.
+/**
+* @brief This is the main class used to Run a model.
+* Sample simple usage:
+*   ExecutionProviderInfo epi;
+*  ProviderOption po{"CPUExecutionProvider", epi};
+*  SessionOptions so(vector<ProviderOption>{po});
+*  InferenceSession session_object{so};
+*  Common::Status status = session_object.Load(MODEL_URI);
+*  Common::Status status = session_object.Initialize();
+*
+*  NameMLValMap feeds;
+*  feeds.insert({});
+*  ...
+*  std::vector<std::string> output_names;
+*  output_names.insert(...);
+*  ...
+*  std::vector<MLValue> fetches;
+*  Common::Status status = session_object.Run(run_options, feeds, output_names, &fetches);
+*  process the output here...
+*/
 class InferenceSession {
  public:
   /**
@@ -58,27 +92,60 @@ class InferenceSession {
                             Logging::LoggingManager* logging_manager = nullptr);
   ~InferenceSession();
 
-  // Load an ONNX model and initialize.
+  /**
+  * Load an ONNX model.
+  * @param model_uri absolute path of the model file.
+  * @return OK if success.
+  */
   Common::Status Load(const std::string& model_uri);
 
-  //
+  /**
+  * Initializes a previously loaded model. Initialization includes but is not
+  * limited to graph transformations, construction of kernels, etc.
+  * This method assumes that a method has been loaded previously.
+  * @return OK if success
+  */
   Common::Status Initialize();
 
-  // Both feeds and fetches are owned by client code, and can't be changed
-  // by client code during Run().
+  /**
+  * Run a pre-loaded and pre-intialized model.
+  * Multiple threads are allowed to run this function; hence its thread-safe.
+  * @param feeds named inputs owned by client code and should not be changed during
+  *        execution of this function.
+  * @param output_names output names
+  * @param p_fetches output values in the order specified by output_names.
+  *        This should not be changed during execution of this function.
+  * @return OK if success.
+  */
   Common::Status Run(const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches);
 
-  Common::Status Run(const NameMLValMap& feeds,
-                     std::vector<MLValue>* p_fetches);
-
+  /**
+  * See Run(const NameMLValMap& feeds, const std::vector<std::string>& output_names, std::vector<MLValue>* p_fetches)
+  * for details.
+  * @param run_options use this to tune the Run call to your needs.
+  */
   Common::Status Run(const RunOptions& run_options,
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches);
 
-  // Get current num threads running Run
+  /**
+  * TEST ONLY: This API exists to facilitate testing only since today the ONNX model
+  * input/outputs don't have names. Issue: https://github.com/onnx/onnx/issues/679.
+  * Fetches all possible outputs of the model. The order of the outputs is as obtained
+  * from Graph->GetOutputs().
+  * See Run(const NameMLValMap& feeds, const std::vector<std::string>& output_names, std::vector<MLValue>* p_fetches)
+  * for details.
+  * @return OK if success.
+  */
+  Common::Status Run(const NameMLValMap& feeds,
+                     std::vector<MLValue>* p_fetches);
+
+  /**
+  * Get current num threads running Run.
+  */
   int GetCurrentNumRuns();
 
  private:

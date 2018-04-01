@@ -4,6 +4,9 @@
 #include "core/common/status.h"
 #include "core/framework/execution_provider.h"
 #include "core/graph/graph.h"
+// TODO: inference_session is included to bring in the AllocationPlannerType
+// This is for testing only (not intended for production usage)
+#include "core/framework/inference_session.h"
 
 namespace Lotus {
 
@@ -57,12 +60,12 @@ struct SequentialExecutionPlan {
     // reused_buffer is valid only if alloc_kind == kReuse. It indicates
     // which MLValue's buffer must be reused for this MLValue.
     MLValueIndex reused_buffer;
-  public:
+
+   public:
     AllocPlanPerValue() : alloc_kind(AllocKind::kAllocate),
                           value_type(nullptr),
                           location(CPU, ArenaAllocator),
-                          reused_buffer(0)
-    {}
+                          reused_buffer(0) {}
   };
 
   // The following vector is indexed by MLValueIndex
@@ -108,6 +111,13 @@ any values in the middle of execution.
 class SimpleAllocationPlanner {
  public:
   static Status CreatePlan(const SessionState& session_state,
+                           SequentialExecutionPlan* plan);
+};
+
+class AllocationPlanner {
+ public:
+  static Status CreatePlan(AllocationPlannerType allocation_planner_type,
+                           const SessionState& session_state,
                            SequentialExecutionPlan* plan);
 };
 
