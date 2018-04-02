@@ -8,8 +8,7 @@ Status FillType(const LotusIR::NodeArg& arg, const SessionState& session_state, 
   int index;
   LOTUS_RETURN_IF_ERROR(session_state.GetMLValueIdx(arg.Name(), &index));
   auto type = DataTypeImpl::TypeFromProto(
-      LotusIR::Utils::OpUtils::ToTypeProto(arg.Type()));
-
+      onnx::Utils::DataTypeUtils::ToTypeProto(arg.Type()));
   if (plan->allocation_plan[index].value_type != nullptr &&
       plan->allocation_plan[index].value_type != type)
     return Status(LOTUS, FAIL, "Found MLValue has type conflict.");

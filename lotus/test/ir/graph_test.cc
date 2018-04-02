@@ -20,9 +20,19 @@ namespace Test {
 using google::protobuf::util::MessageDifferencer;
 
 TEST(GraphTraversalTest, ReverseDFS) {
-  REGISTER_OPERATOR_SCHEMA(Variable_DFS).Description("Input variable.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
-  REGISTER_OPERATOR_SCHEMA(Add_DFS).Description("Add two integers.").Input("input_1", "docstr for input_1.", "tensor(int32)").Input("input_2", "docstr for input_2.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
-  REGISTER_OPERATOR_SCHEMA(NoOp_DFS).Description("Operator doing nothing.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
+  ONNX_OPERATOR_SCHEMA(Variable_DFS)
+      .SetDoc("Input variable.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+  ONNX_OPERATOR_SCHEMA(Add_DFS)
+      .SetDoc("Add two integers.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+  ONNX_OPERATOR_SCHEMA(NoOp_DFS)
+      .SetDoc("Operator doing nothing.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
   Model model("graph_1");
   auto &graph = *(model.MainGraph());
@@ -177,9 +187,19 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
-  REGISTER_OPERATOR_SCHEMA(Variable_Fake).Description("Input variable.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
-  REGISTER_OPERATOR_SCHEMA(Add_Fake).Description("Add two integers.").Input("input_1", "docstr for input_1.", "tensor(int32)").Input("input_2", "docstr for input_2.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
-  REGISTER_OPERATOR_SCHEMA(NoOp_Fake).Description("Operator doing nothing.").Input("input_1", "docstr for input_1.", "tensor(int32)").Output("output_1", "docstr for output_1.", "tensor(int32)");
+  ONNX_OPERATOR_SCHEMA(Variable_Fake)
+      .SetDoc("Input variable.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+  ONNX_OPERATOR_SCHEMA(Add_Fake)
+      .SetDoc("Add two integers.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+  ONNX_OPERATOR_SCHEMA(NoOp_Fake)
+      .SetDoc("Operator doing nothing.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
   Model model("graph_1");
   auto &graph = *(model.MainGraph());
@@ -306,9 +326,19 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
-  REGISTER_OPERATOR_SCHEMA(Variable2_Fake).Description("Input variable.").Input("input_1", "docstr for input_1.", "T").Output("output_1", "docstr for output_1.", "T").TypeConstraint("T", {"tensor(int32)", "tensor(float)"}, "input/output types");
+  ONNX_OPERATOR_SCHEMA(Variable2_Fake)
+      .SetDoc("Input variable.")
+      .Input(0, "input_1", "docstr for input_1.", "T")
+      .Output(0, "output_1", "docstr for output_1.", "T")
+      .TypeConstraint("T", {"tensor(int32)", "tensor(float)"}, "input/output types");
 
-  REGISTER_OPERATOR_SCHEMA(Max_Fake).Description("Add two integers.").Input("input_1", "docstr for input_1.", "T").Input("input_2", "docstr for input_2.", "T").Input("input_3", "docstr for input_3.", "T").Output("output_1", "docstr for output_1.", "T").TypeConstraint("T", {"tensor(int32)", "tensor(float)"}, "input/output types");
+  ONNX_OPERATOR_SCHEMA(Max_Fake)
+      .SetDoc("Add two integers.")
+      .Input(0, "input_1", "docstr for input_1.", "T")
+      .Input(1, "input_2", "docstr for input_2.", "T")
+      .Input(2, "input_3", "docstr for input_3.", "T")
+      .Output(0, "output_1", "docstr for output_1.", "T")
+      .TypeConstraint("T", {"tensor(int32)", "tensor(float)"}, "input/output types");
 
   Model model("graph_1");
   auto graph = model.MainGraph();
@@ -400,7 +430,10 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
 }
 
 TEST(TestAddAttribute, AddTensorAttribute) {
-  REGISTER_OPERATOR_SCHEMA(__Constant).Description("Constant Op.").Attr(kConstantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR).Output("output_1", "docstr for output_1.", "tensor(int64)");
+  ONNX_OPERATOR_SCHEMA(__Constant)
+      .SetDoc("Constant Op.")
+      .Attr(kConstantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR)
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int64)");
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
   Model model("graph_1");
@@ -421,7 +454,7 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   *(t.mutable_int64_data()->Add()) = 3;
   *(t.mutable_dims()->Add()) = 1;
   *(t.mutable_dims()->Add()) = 3;
-  EXPECT_TRUE(node_1->AddAttribute(kConstantValue, t));
+  node_1->AddAttribute(kConstantValue, t);
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
   //delete outputArg;

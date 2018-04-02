@@ -12,8 +12,8 @@ TEST(MathOpTest, Clip) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("Clip", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("min", -10.0f));
-  EXPECT_TRUE(node->AddAttribute("max", 10.0f));
+  node->AddAttribute("min", -10.0f);
+  node->AddAttribute("max", 10.0f);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;

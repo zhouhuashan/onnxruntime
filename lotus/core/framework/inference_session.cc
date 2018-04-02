@@ -449,7 +449,7 @@ class InferenceSession::Impl {
     }
 
     auto& allocator_info = session_state_.GetExecutionProvider(exec_provider_name)->GetTempSpaceAllocator().Info();
-    return KernelRegistry::Instance().CreateKernel(exec_provider_name, node, allocator_info, p_op_kernel);
+    return KernelRegistry::Instance().CreateKernel(node, allocator_info, p_op_kernel);
   }
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {

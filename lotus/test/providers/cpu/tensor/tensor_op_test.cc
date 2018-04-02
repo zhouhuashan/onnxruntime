@@ -14,7 +14,7 @@ TEST(TensorOpTest, Reshape) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("Reshape", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("shape", std::vector<int64_t>{-1, 0, 2}));
+  node->AddAttribute("shape", std::vector<int64_t>{-1, 0, 2});
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;

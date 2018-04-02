@@ -15,10 +15,10 @@ TEST(PoolTest, MaxPool) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("MaxPool", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("auto_pad", ""));
-  EXPECT_TRUE(node->AddAttribute("strides", std::vector<int64_t>{1, 1}));
-  EXPECT_TRUE(node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0}));
-  EXPECT_TRUE(node->AddAttribute("kernel_shape", vector<int64_t>{8, 8}));
+  node->AddAttribute("auto_pad", "");
+  node->AddAttribute("strides", std::vector<int64_t>{1, 1});
+  node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0});
+  node->AddAttribute("kernel_shape", vector<int64_t>{8, 8});
 
   AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
   KernelDefBuilder kernel_builder("MaxPool");
@@ -229,10 +229,10 @@ TEST(PoolTest, AveragePool) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("AveragePool", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("auto_pad", ""));
-  EXPECT_TRUE(node->AddAttribute("strides", std::vector<int64_t>{1, 1}));
-  EXPECT_TRUE(node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0}));
-  EXPECT_TRUE(node->AddAttribute("kernel_shape", vector<int64_t>{8, 8}));
+  node->AddAttribute("auto_pad", "");
+  node->AddAttribute("strides", std::vector<int64_t>{1, 1});
+  node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0});
+  node->AddAttribute("kernel_shape", vector<int64_t>{8, 8});
 
   AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
   KernelDefBuilder kernel_builder("AveragePool");

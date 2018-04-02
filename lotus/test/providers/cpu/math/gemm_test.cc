@@ -17,11 +17,11 @@ TEST(MathOpTest, GemmNoTrans) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("Gemm", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("transA", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("transB", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("broadcast", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
-  EXPECT_TRUE(node->AddAttribute("beta", 1.0f));
+  node->AddAttribute("transA", (int64_t)0);
+  node->AddAttribute("transB", (int64_t)0);
+  node->AddAttribute("broadcast", (int64_t)0);
+  node->AddAttribute("alpha", 1.0f);
+  node->AddAttribute("beta", 1.0f);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
@@ -75,11 +75,11 @@ TEST(MathOpTest, GemmBroadcast) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("Gemm", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("transA", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("transB", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("broadcast", (int64_t)1));
-  EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
-  EXPECT_TRUE(node->AddAttribute("beta", 1.0f));
+  node->AddAttribute("transA", (int64_t)0);
+  node->AddAttribute("transB", (int64_t)0);
+  node->AddAttribute("broadcast", (int64_t)1);
+  node->AddAttribute("alpha", 1.0f);
+  node->AddAttribute("beta", 1.0f);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
@@ -133,11 +133,11 @@ TEST(MathOpTest, GemmTrans) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("Gemm", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("transA", (int64_t)1));
-  EXPECT_TRUE(node->AddAttribute("transB", (int64_t)1));
-  EXPECT_TRUE(node->AddAttribute("broadcast", (int64_t)1));
-  EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
-  EXPECT_TRUE(node->AddAttribute("beta", 1.0f));
+  node->AddAttribute("transA", (int64_t)1);
+  node->AddAttribute("transB", (int64_t)1);
+  node->AddAttribute("broadcast", (int64_t)1);
+  node->AddAttribute("alpha", 1.0f);
+  node->AddAttribute("beta", 1.0f);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
@@ -191,11 +191,11 @@ TEST(MathOpTest, GemmAlphaBeta) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("Gemm", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("transA", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("transB", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("broadcast", (int64_t)1));
-  EXPECT_TRUE(node->AddAttribute("alpha", 0.5f));
-  EXPECT_TRUE(node->AddAttribute("beta", 2.0f));
+  node->AddAttribute("transA", (int64_t)0);
+  node->AddAttribute("transB", (int64_t)0);
+  node->AddAttribute("broadcast", (int64_t)1);
+  node->AddAttribute("alpha", 0.5f);
+  node->AddAttribute("beta", 2.0f);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
@@ -249,11 +249,11 @@ TEST(MathOpTest, GemmNaN) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("Gemm", input_defs, output_defs);
 
-  EXPECT_TRUE(node->AddAttribute("transA", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("transB", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("broadcast", (int64_t)0));
-  EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
-  EXPECT_TRUE(node->AddAttribute("beta", 0.0f));
+  node->AddAttribute("transA", (int64_t)0);
+  node->AddAttribute("transB", (int64_t)0);
+  node->AddAttribute("broadcast", (int64_t)0);
+  node->AddAttribute("alpha", 1.0f);
+  node->AddAttribute("beta", 0.0f);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;

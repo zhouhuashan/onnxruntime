@@ -141,8 +141,8 @@ struct OpTester {
         {szName,
          std::move(data),
          [](LotusIR::Node& node, Attribute& attribute) {
-           EXPECT_TRUE(node.AddAttribute(attribute.szName_,
-                                         *reinterpret_cast<T*>(attribute.data_.get())));
+           node.AddAttribute(attribute.szName_,
+                                         *reinterpret_cast<T*>(attribute.data_.get()));
          }});
   }
 
@@ -175,9 +175,9 @@ struct OpTester {
     auto& node = *graph->GetNode(graph->NumberOfNodes() - 1);
 
     // Add the attributes if any
-    for (auto& attribute : attributes_)
-      attribute.AddAttribute_(node, attribute);
-
+    for (auto& attribute : attributes_) {
+        attribute.AddAttribute_(node, attribute);
+    }
     // Setup the op in the node
     AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::kArenaAllocator};
     KernelDef kernel_def;

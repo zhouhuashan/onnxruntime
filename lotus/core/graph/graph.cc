@@ -7,7 +7,7 @@
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
 
-using namespace LotusIR::Utils;
+using namespace onnx::Utils;
 
 namespace LotusIR {
 
@@ -25,7 +25,7 @@ NodeArg::NodeArg(const std::string& name,
   exists_ = !(name.empty());
   if (nullptr != p_node_arg_type) {
     (*node_arg_info_.mutable_type()) = *p_node_arg_type;
-    type_ = OpUtils::ToType(node_arg_info_.type());
+    type_ = DataTypeUtils::ToType(node_arg_info_.type());
   } else {
     type_ = nullptr;
   }
@@ -35,7 +35,7 @@ const std::string& NodeArg::Name() const {
   return node_arg_info_.name();
 }
 
-const PTYPE NodeArg::Type() const {
+const DataType NodeArg::Type() const {
   return type_;
 }
 
@@ -78,17 +78,17 @@ const NodeArgInfo& NodeArg::ToProto() const {
   return node_arg_info_;
 }
 
-void NodeArg::SetType(PTYPE p_type) {
+void NodeArg::SetType(DataType p_type) {
   if (nullptr == p_type) {
     return;
   }
 
   type_ = p_type;
-  *(node_arg_info_.mutable_type()) = OpUtils::ToTypeProto(p_type);
+  *(node_arg_info_.mutable_type()) = DataTypeUtils::ToTypeProto(p_type);
 }
 
 void NodeArg::SetType(const TypeProto& type_proto) {
-  type_ = OpUtils::ToType(type_proto);
+  type_ = DataTypeUtils::ToType(type_proto);
   *(node_arg_info_.mutable_type()) = type_proto;
 }
 
@@ -166,7 +166,7 @@ const std::string& Node::Domain() const {
   return domain_;
 }
 
-const OperatorSchema* Node::Op() const {
+const OpSchema* Node::Op() const {
   return op_;
 }
 
@@ -386,92 +386,68 @@ void Node::Init(const std::string& name,
 }
 
 /*void Node::Init(const std::string& name,
-        const std::string& op_type,
-        const std::string& description,
-        const std::vector<NodeArg>& input_args,
-        const std::vector<int>& p_inputArgCount,
-        const std::vector<NodeArg>& output_args,
-        const std::string& domain)
+    const std::string& op_type,
+    const std::string& description,
+    const std::vector<NodeArg>& input_args,
+    const std::vector<int>& p_inputArgCount,
+    const std::vector<NodeArg>& output_args,
+    const std::string& domain)
     {
-        Init(name, op_type, description, output_args, domain);
-        input_defs_ = input_args;
-        input_arg_count_ = p_inputArgCount;
+    Init(name, op_type, description, output_args, domain);
+    input_defs_ = input_args;
+    input_arg_count_ = p_inputArgCount;
     }
 
     void Node::Init(const std::string& name,
-        const std::string& op_type,
-        const std::string& description,
-        const std::vector<NodeArg>& output_args,
-        const std::string& domain)
+    const std::string& op_type,
+    const std::string& description,
+    const std::vector<NodeArg>& output_args,
+    const std::string& domain)
     {
-        name_ = name;
-        op_type_ = op_type;
-        description_ = description;
-        output_defs_ = output_args;
-        domain_ = domain;
+    name_ = name;
+    op_type_ = op_type;
+    description_ = description;
+    output_defs_ = output_args;
+    domain_ = domain;
     }*/
 
-bool Node::AddAttribute(const std::string& attr_name, const AttributeProto& value) {
-  auto it = attributes_.find(attr_name);
-  if (it == attributes_.end()) {
-    graph_->graph_resolve_needed_ = true;
-    graph_->graph_proto_sync_needed_ = true;
-    attributes_.emplace(attr_name, value);
-    return true;
-  } else {
-    return false;
-  }
+void Node::AddAttribute(const std::string& attr_name, const AttributeProto& value) {
+  graph_->graph_resolve_needed_ = true;
+  graph_->graph_proto_sync_needed_ = true;
+  attributes_[attr_name] = value;
 }
 
 #define ADD_BASIC_ATTR_IMPL(type, field)                                     \
-  bool Node::AddAttribute(const std::string& attr_name, const type& value) { \
-    auto it = attributes_.find(attr_name);                                   \
-    if (it == attributes_.end()) {                                           \
-      graph_->graph_resolve_needed_ = true;                                  \
-      graph_->graph_proto_sync_needed_ = true;                               \
-      AttributeProto a;                                                      \
-      a.set_name(attr_name);                                                 \
-      a.set_##field(value);                                                  \
-      attributes_.emplace(attr_name, a);                                     \
-      return true;                                                           \
-    } else {                                                                 \
-      return false;                                                          \
-    }                                                                        \
+  void Node::AddAttribute(const std::string& attr_name, const type& value) { \
+    graph_->graph_resolve_needed_ = true;                                    \
+    graph_->graph_proto_sync_needed_ = true;                                 \
+    AttributeProto a;                                                        \
+    a.set_name(attr_name);                                                   \
+    a.set_##field(value);                                                    \
+    attributes_[attr_name] = a;                                              \
   };
 
 #define ADD_ATTR_IMPL(type, field)                                           \
-  bool Node::AddAttribute(const std::string& attr_name, const type& value) { \
-    auto it = attributes_.find(attr_name);                                   \
-    if (it == attributes_.end()) {                                           \
-      graph_->graph_resolve_needed_ = true;                                  \
-      graph_->graph_proto_sync_needed_ = true;                               \
-      AttributeProto a;                                                      \
-      a.set_name(attr_name);                                                 \
-      *(a.mutable_##field()) = value;                                        \
-      attributes_.emplace(attr_name, a);                                     \
-      return true;                                                           \
-    } else {                                                                 \
-      return false;                                                          \
-    }                                                                        \
+  void Node::AddAttribute(const std::string& attr_name, const type& value) { \
+    graph_->graph_resolve_needed_ = true;                                    \
+    graph_->graph_proto_sync_needed_ = true;                                 \
+    AttributeProto a;                                                        \
+    a.set_name(attr_name);                                                   \
+    *(a.mutable_##field()) = value;                                          \
+    attributes_[attr_name] = a;                                              \
   };
 
 #define ADD_LIST_ATTR_IMPL(type, field)                      \
-  bool Node::AddAttribute(const std::string& attr_name,      \
+  void Node::AddAttribute(const std::string& attr_name,      \
                           const std::vector<type>& values) { \
-    auto it = attributes_.find(attr_name);                   \
-    if (it == attributes_.end()) {                           \
-      graph_->graph_resolve_needed_ = true;                  \
-      graph_->graph_proto_sync_needed_ = true;               \
-      AttributeProto a;                                      \
-      a.set_name(attr_name);                                 \
-      for (const auto& val : values) {                       \
-        *(a.mutable_##field()->Add()) = val;                 \
-      }                                                      \
-      attributes_.emplace(attr_name, a);                     \
-      return true;                                           \
-    } else {                                                 \
-      return false;                                          \
+    graph_->graph_resolve_needed_ = true;                    \
+    graph_->graph_proto_sync_needed_ = true;                 \
+    AttributeProto a;                                        \
+    a.set_name(attr_name);                                   \
+    for (const auto& val : values) {                         \
+      *(a.mutable_##field()->Add()) = val;                   \
     }                                                        \
+    attributes_[attr_name] = a;                              \
   };
 
 ADD_BASIC_ATTR_IMPL(float, f)
@@ -820,19 +796,19 @@ Status Graph::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order)
 }
 
 Status Graph::InferAndVerifyTypeMatch(Node* p_node,
-                                      const OpSignature* p_op,
+                                      const OpSchema* p_op,
                                       const std::unordered_map<std::string, Node*>& output_args) {
   auto& nodeName = p_node->Name();
 
   // <k> index used to navigate node->InputDefs().
   int k = 0;
-  std::unordered_map<std::string, PTYPE> type_parameter_to_type_map;
+  std::unordered_map<std::string, DataType> type_parameter_to_type_map;
 
   for (size_t i = 0; i < p_node->InputArgCount().size(); ++i) {
     // Number of inputs matching to the i-th argument.
     int arg_count = p_node->InputArgCount()[i];
     // The i-th argument definition.
-    auto op_formal_parameter = p_op->GetInputs()[i];
+    auto op_formal_parameter = p_op->inputs()[i];
 
     // Infer and verify all <arguCount> inputs (k-th input)
     // matching operator definition (i-th argument).
@@ -853,7 +829,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
           TypeProto initial_tensor_type;
           initial_tensor_type.mutable_tensor_type()->set_elem_type(
               initial_tensor_iter->second.data_type());
-          input_def->SetType(OpUtils::ToType(initial_tensor_type));
+          input_def->SetType(DataTypeUtils::ToType(initial_tensor_type));
 
           // Set shape accordingly.
           TensorShapeProto shape;
@@ -887,7 +863,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
       if (op_formal_parameter.GetTypes().end() == iter) {
         Status status(LOTUS, FAIL,
                       "Node (" + nodeName + ") input arg (" +
-                          input_def->Name() + ") type does not match operator (" + p_op->GetName() + ") definition.");
+                          input_def->Name() + ") type does not match operator (" + p_op->Name() + ") definition.");
         return status;
       }
 
@@ -916,7 +892,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
   for (auto& output_def : p_node->MutableOutputDefs()) {
     // For each output arg.
 
-    auto op_formal_parameter = p_op->GetOutputs()[i++];
+    auto op_formal_parameter = p_op->outputs()[i++];
 
     // Infer output arg type per input arg type if they share
     // the same type string. For example, type string is "T"
@@ -946,7 +922,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
         auto& tensor = node_attributes_iter->second.t();
         TypeProto type_proto;
         type_proto.mutable_tensor_type()->set_elem_type(tensor.data_type());
-        output_def->SetType(OpUtils::ToType(type_proto));
+        output_def->SetType(DataTypeUtils::ToType(type_proto));
       } else {
         Status status(LOTUS, FAIL,
                       "For attribute " + kConstantValue +
@@ -965,7 +941,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
       auto iter = op_formal_parameter.GetTypes().find(output_def->Type());
       if (op_formal_parameter.GetTypes().end() == iter) {
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type does not match operator (" + p_op->GetName() + ") definition.");
+                      "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type does not match operator (" + p_op->Name() + ") definition.");
         return status;
       }
       continue;
@@ -1022,7 +998,7 @@ Status Graph::VerifyNodeAndOpMatch(
       return status;
     }
 
-    auto& op = node->Op()->GetOpSignature();
+    auto op = node->Op();
 
     // The node refers to a primitive operator.
     // Infer and verify node input arg type information.
@@ -1039,7 +1015,7 @@ Status Graph::VerifyNodeAndOpMatch(
 
     // Verify size of node arg count is same as input number in
     // operator definition.
-    if (op.GetInputs().size() != node->InputArgCount().size()) {
+    if (op->inputs().size() != node->InputArgCount().size()) {
       // Adjust input arg count array with op definition
       // The adjustment will work as below,
       // In total, there're <total_arg_count> inputs, which
@@ -1053,8 +1029,8 @@ Status Graph::VerifyNodeAndOpMatch(
       size_t m = 0;
       auto arg_count_left = total_arg_count;
 
-      if (0 < op.GetInputs().size()) {
-        for (; m < op.GetInputs().size() - 1; ++m) {
+      if (0 < op->inputs().size()) {
+        for (; m < op->inputs().size() - 1; ++m) {
           if (arg_count_left > 0) {
             input_arg_count.push_back(1);
             arg_count_left--;
@@ -1072,46 +1048,44 @@ Status Graph::VerifyNodeAndOpMatch(
     }
 
     // Verify node outputs have same size with operator definition.
-    if (op.GetOutputs().size() != node->OutputDefs().size()) {
+    if (op->outputs().size() != node->OutputDefs().size()) {
       Status status(LOTUS, FAIL,
                     "Error: node (" + node_name + ")'s number of outputs does not match its operator (" +
                         op_type + ") specification.");
       return status;
     }
 
-    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, &op, output_args)));
+    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, op, output_args)));
 
     // Attribute verification and fill node attribute with
     // default value defined in operator definition if needed.
-    auto attr_parser = node->Op()->GetAttributeParser();
-    if (nullptr != attr_parser) {
-      // Attribute parser registered.
-      // Verifying attribute match by running attribute parser.
-      RETURN_IF_ERROR(attr_parser(node->GetAttributes()));
-    } else {
-      // No attribute parser registered.
-      auto node_attributes = node->GetAttributes();
-      for (auto attr_def : op.GetAttributes()) {
-        auto node_attr_iter = node_attributes.find(attr_def.GetName());
-        if (node_attributes.end() == node_attr_iter) {
-          const AttributeProto* default_value = nullptr;
-          bool has_default_value = attr_def.HasDefaultValue(&default_value);
-          if (has_default_value) {
+    auto node_attributes = node->GetAttributes();
+    for (auto attr_def : op->attributes()) {
+      auto node_attr_iter = node_attributes.find(attr_def.first);
+      if (node_attributes.end() == node_attr_iter) {
+        if (!attr_def.second.required) {
+          if (attr_def.second.default_value.has_name()) {
             // Set default value to the node attributes.
-            node->AddAttribute(attr_def.GetName(), *default_value);
+            node->AddAttribute(attr_def.first, attr_def.second.default_value);
           }
+          // TODO: Handle optional attribute but no default value specified in op definition.
         } else {
-          // Verify node attribute type matching type of
-          // attribute defined in operator definition.
-          AttrType node_attr_type;
-          RETURN_IF_ERROR(TypeUtils::GetType(node_attr_iter->second, node_attr_type));
+          Status status(LOTUS, FAIL,
+                        "Node (" + node_name + ") attribute (" + attr_def.first +
+                            ") is required but not specified.");
+          return status;
+        }
+      } else {
+        // Verify node attribute type matching type of
+        // attribute defined in operator definition.
+        AttrType node_attr_type;
+        RETURN_IF_ERROR(TypeUtils::GetType(node_attr_iter->second, node_attr_type));
 
-          if (node_attr_type != attr_def.GetType()) {
-            Status status(LOTUS, FAIL,
-                          "Node (" + node_name + ") attribute (" + node_attr_iter->first +
-                              ") type does not match operator definition.");
-            return status;
-          }
+        if (node_attr_type != attr_def.second.type) {
+          Status status(LOTUS, FAIL,
+                        "Node (" + node_name + ") attribute (" + node_attr_iter->first +
+                            ") type does not match operator definition.");
+          return status;
         }
       }
     }
@@ -1273,39 +1247,39 @@ Node* GraphBase::AddNode(const std::string& name,
 }
 
 /*Node* GraphBase::AddNode(const std::string& name,
-        const std::string& op_type,
-        const std::string& description,
-        const std::vector<NodeArg>& input_args,
-        const std::vector<int>& p_inputArgCount,
-        const std::vector<NodeArg>& output_args,
-        const std::string& domain)
+    const std::string& op_type,
+    const std::string& description,
+    const std::vector<NodeArg>& input_args,
+    const std::vector<int>& p_inputArgCount,
+    const std::vector<NodeArg>& output_args,
+    const std::string& domain)
     {
-        auto node = AllocateNode();
-        node->Init(name,
-            op_type,
-            description,
-            input_args,
-            p_inputArgCount,
-            output_args,
-            domain);
-        graph_proto_sync_needed_  = true;
-        return node;
+    auto node = AllocateNode();
+    node->Init(name,
+    op_type,
+    description,
+    input_args,
+    p_inputArgCount,
+    output_args,
+    domain);
+    graph_proto_sync_needed_  = true;
+    return node;
     }*/
 
 /*Node* GraphBase::AddNode(const std::string& name,
-        const std::string& op_type,
-        const std::string& description,
-        const std::vector<NodeArg>& output_args,
-        const std::string& domain)
+    const std::string& op_type,
+    const std::string& description,
+    const std::vector<NodeArg>& output_args,
+    const std::string& domain)
     {
-        auto node = AllocateNode();
-        node->Init(name,
-            op_type,
-            description,
-            output_args,
-            domain);
-        graph_proto_sync_needed_  = true;
-        return node;
+    auto node = AllocateNode();
+    node->Init(name,
+    op_type,
+    description,
+    output_args,
+    domain);
+    graph_proto_sync_needed_  = true;
+    return node;
     }*/
 
 Node* GraphBase::AddNode(const Node& other) {

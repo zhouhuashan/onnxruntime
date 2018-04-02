@@ -143,10 +143,12 @@ class RuleBasedGraphTransformer : public IGraphTransformer {
 class Function : public GraphBase {
  public:
   // Get <*this> function's schema.
-  const OperatorSchema& GetSchema() const;
+  const OpSchema& GetSchema() const {
+    return schema_;
+  }
 
  private:
-  OperatorSchema schema_;
+  OpSchema schema_;
 };
 
 // A function-inlining rewrite-rule. The plan with ONNX is to capture most optimizations
