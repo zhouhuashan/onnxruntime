@@ -51,6 +51,15 @@ DEFINE_GET_ATTRS(std::string, strings)
 DEFINE_GET_ATTRS(TensorProto, tensors)
 DEFINE_GET_ATTRS(GraphProto, graphs)
 
+std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
+  std::vector<std::string> ret(kernel_creator_fn_map_.size());
+  size_t i = 0;
+  for (const auto& kvp : kernel_creator_fn_map_) {
+    ret[i++] = kvp.first;
+  }
+  return ret;
+}
+
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def) {
   const LotusIR::OperatorSchema* op_schema = node.Op();
   const size_t len = node.InputArgCount().size();
@@ -116,11 +125,11 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
   return Status::OK();
 }
 
-Status KernelRegistry::CreateKernel(const LotusIR::OperatorSchema& /*TODO:remove it*/,
-                                    const ProviderType& provider_type,
-                                    const LotusIR::Node& node,
-                                    const AllocatorInfo& allocator_info,
-                                    /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
+Status KernelRegistry::CreateKernel(
+    const ProviderType& provider_type,
+    const LotusIR::Node& node,
+    const AllocatorInfo& allocator_info,
+    /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
   // TODO: error check for op_name/op_domain/provider/since_version.
   // TODO: find the real appropriate kernel create info for specific version.
   const LotusIR::OperatorSchema* op_schema = node.Op();
@@ -135,9 +144,8 @@ Status KernelRegistry::CreateKernel(const LotusIR::OperatorSchema& /*TODO:remove
         provider_type == i->second.kernel_def->Provider()) {
       int start, end;
       i->second.kernel_def->SinceVersion(&start, &end);
-      int version = 1;  // TODO: Get version from somewhere.
-      if (start <= version && version <= end &&
-          VerifyKernelDef(node, *i->second.kernel_def)) {
+      //TODO: check version
+      if (VerifyKernelDef(node, *i->second.kernel_def)) {
         OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def);
         op_kernel->reset(i->second.kernel_create_func(kernel_info));
         return Status::OK();
@@ -145,7 +153,7 @@ Status KernelRegistry::CreateKernel(const LotusIR::OperatorSchema& /*TODO:remove
     }
   }
 
-  return Status(LOTUS, NOT_IMPLEMENTED, "OP Kernel not found");
+  return Status(LOTUS, NOT_IMPLEMENTED, "OP Kernel " + node.OpType() + " not found");
 }
 
 Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {

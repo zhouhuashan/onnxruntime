@@ -131,12 +131,14 @@ class KernelRegistry {
   // Register a kernel with kernel definition and function to create the kernel.
   Status Register(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
+  // Mainly for provide debug info
+  std::vector<std::string> GetAllRegisteredOpNames() const;
+
   // factory functions should always return a unique_ptr for maximum flexibility
   // for its clients unless the factory is managing the lifecycle of the pointer
   // itself.
   // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
-  Status CreateKernel(const LotusIR::OperatorSchema& op_schema,
-                      const ProviderType& provider_type,
+  Status CreateKernel(const ProviderType& provider_type,
                       const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
                       std::unique_ptr<OpKernel>* op_kernel) const;
