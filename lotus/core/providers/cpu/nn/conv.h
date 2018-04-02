@@ -104,16 +104,6 @@ class Conv : public ConvBase {
     BufferUniquePtr col_buffer(col_data, BufferDeleter(&alloc));
     T* col_buffer_data = static_cast<T*>(col_buffer.get());
 
-    T* bias_multiplier_data = nullptr;
-    BufferUniquePtr bias_multiplier_buffer(nullptr, BufferDeleter(&alloc));
-    if (B != nullptr) {
-      auto b_data = alloc.Alloc(sizeof(T) * output_image_size);
-      bias_multiplier_buffer.reset(b_data);
-      bias_multiplier_data = static_cast<T*>(bias_multiplier_buffer.get());
-      Math::Set<T, CPUMathUtil>(output_image_size, static_cast<T>(1),
-                                bias_multiplier_data, &CPUMathUtil::Instance());
-    }
-
     const T* Xdata = X->template Data<T>();
     T* Ydata = Y->template MutableData<T>();
 
@@ -173,20 +163,9 @@ class Conv : public ConvBase {
       }
 
       if (B != nullptr) {
-        LOTUS_ENFORCE(bias_multiplier_data != nullptr);
-        auto bias_data = B->template Data<T>();
-        Math::Gemm<T, CPUMathUtil>(
-            CblasNoTrans,
-            CblasNoTrans,
-            M,
-            output_image_size,
-            1,
-            1,
-            bias_data,
-            bias_multiplier_data,
-            1,
-            Ydata,
-            &CPUMathUtil::Instance());
+        auto Ymatrix = EigenMatrixMap<T>(Ydata, output_image_size, M);
+        auto Bvec = ConstEigenVectorMap<T>(B->template Data<T>(), M);
+        Ymatrix.rowwise() += Bvec.transpose();
       }
 
       Xdata += X_offset * group_;

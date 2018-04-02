@@ -202,8 +202,29 @@ TEST(ConvTest, Conv2D_2) {
   TestConvOp("Conv2D_2", attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
 }
 
+TEST(ConvTest, Conv2D_Bias_1) {
+  ConvOpAttributes attrs = {
+      "",                           // auto_pad
+      vector<int64_t>{1, 1},        // dilations
+      1,                            // group
+      vector<int64_t>{2, 2},        // kernel_shape
+      vector<int64_t>{0, 0, 0, 0},  // pads
+      vector<int64_t>{1, 1}         // strides
+  };
+  vector<float> X = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f};
+  vector<int64_t> X_shape = {1, 1, 3, 3};
+  vector<float> W = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+  vector<int64_t> W_shape = {2, 1, 2, 2};
+  vector<int64_t> Y_shape = {1, 2, 2, 2};
+  vector<float> B = {1.0f, -1.0f};
+  vector<int64_t> B_shape = {2};
+  float expected_vals[] = {13.0f, 17.0f, 25.0f, 29.0f, 11.0f, 15.0f, 23.0f, 27.0f};
+
+  TestConvOp("Conv2D_Bias_1", attrs, {X, W, B}, {X_shape, W_shape, B_shape}, expected_vals, Y_shape);
+}
+
 // Conv48
-TEST(ConvTest, Conv2D_Bias) {
+TEST(ConvTest, Conv2D_Bias_2) {
   ConvOpAttributes attrs = {
       "",                           // auto_pad
       vector<int64_t>{1, 1},        // dilations
@@ -245,7 +266,7 @@ TEST(ConvTest, Conv2D_Bias) {
   vector<int64_t> Y_shape = {1, 1, 4, 2};
   float expected_vals[] = {-0.3419531583786011f, -0.6116723418235779f, -0.39677709341049194f, -0.7316848039627075f,
                            -0.5647197365760803f, 0.02788025140762329f, -0.30450713634490967f, -0.6786775588989258f};
-  TestConvOp("Conv2D_Bias", attrs, {X, W, B}, {X_shape, W_shape, B_shape}, expected_vals, Y_shape);
+  TestConvOp("Conv2D_Bias_2", attrs, {X, W, B}, {X_shape, W_shape, B_shape}, expected_vals, Y_shape);
 }
 
 // Conv10
