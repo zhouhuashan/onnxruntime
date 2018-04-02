@@ -18,14 +18,15 @@
 
 namespace Lotus {
 //This is temporary solution, should be removed once the default value is ready.
-class DummyAttrDefaultValueTransformer : public IGraphTransformer {
+class DummyAttrDefaultValueTransformer : public LotusIR::IGraphTransformer {
  public:
-  virtual Status Apply(/*IN/OUT*/ Graph& p_graph, /*OUT*/ bool& modified) override {
-    auto num_nodes = p_graph.NumberOfNodes();
+  virtual Status Apply(/*IN/OUT*/ LotusIR::Graph& graph, /*OUT*/ bool& modified) override {
+    auto num_nodes = graph.NumberOfNodes();
     for (int i = 0; i < num_nodes; i++) {
-      if (p_graph.IsSourceNode(i) || p_graph.IsSinkNode(i))
+      if (graph.IsSourceNode(i) || graph.IsSinkNode(i))
         continue;
-      auto node = p_graph.GetNode(i);
+
+      auto node = graph.GetNode(i);
       if (node->OpType() == "Conv") {
         auto& attributes = node->GetAttributes();
         if (attributes.find("auto_pad") == attributes.end()) {
@@ -57,6 +58,7 @@ class DummyAttrDefaultValueTransformer : public IGraphTransformer {
           node->AddAttribute("auto_pad", "NOTSET");
           modified = true;
         }
+
         if (attributes.find("strides") == attributes.end()) {
           if (node->InputDefs().size() > 0) {
             // shape inference is not ready, so hardcord to 4
@@ -67,8 +69,8 @@ class DummyAttrDefaultValueTransformer : public IGraphTransformer {
             modified = true;
           }
         }
-        if ((node->OpType() == "AveragePool" ||
-             node->OpType() == "MaxPool") &&
+
+        if ((node->OpType() == "AveragePool" || node->OpType() == "MaxPool") &&
             attributes.find("pads") == attributes.end()) {
           // shape inference is not ready, so hardcord to 4
           int ndim = 4;
@@ -113,6 +115,7 @@ class InferenceSession::Impl {
         LOGS(*session_logger_, WARNING) << "Execution Provider with name: " << info.provider_type << "Not found.";
         continue;
       }
+
       session_state_.AddExecutionProvider(info.provider_type, std::move(provider));
     }
   }
@@ -125,8 +128,9 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, INFO) << "Model: " << model_uri << " has already been loaded.";
       return Common::Status::OK();
     }
-    std::shared_ptr<Model> tmp_model_ptr;
-    Common::Status status = Model::Load(model_uri, &tmp_model_ptr);
+
+    std::shared_ptr<LotusIR::Model> tmp_model_ptr;
+    Common::Status status = LotusIR::Model::Load(model_uri, &tmp_model_ptr);
     if (status.IsOK()) {
       is_model_loaded_ = true;
       model_ = tmp_model_ptr;
@@ -147,7 +151,7 @@ class InferenceSession::Impl {
       return Common::Status::OK();
     }
 
-    Graph* graph = model_->MainGraph();
+    LotusIR::Graph* graph = model_->MainGraph();
     LOTUS_RETURN_IF_ERROR(TransformGraph(*graph));
     LOTUS_RETURN_IF_ERROR(graph->Resolve());
 
@@ -182,7 +186,7 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  int GetCurrentNumRuns() {
+  int GetCurrentNumRuns() const {
     return current_num_runs_.load();
   }
 
@@ -210,7 +214,7 @@ class InferenceSession::Impl {
     } else {
       // fallback to using default logger. this does NOT have any session or run specific id/tag in it
       run_logger = session_logger_;
-      VLOGS(*run_logger, 1) << "Using default logger for run";
+      VLOGS(*run_logger, 1) << "Using default logger for run " << run_options.run_tag;
     }
 
     return *run_logger;
@@ -227,7 +231,7 @@ class InferenceSession::Impl {
                      std::vector<MLValue>* p_fetches) {
     RunOptions run_options;
     std::vector<std::string> output_names;
-    for (const NodeArg* arg : model_->MainGraph()->GetOutputs()) {
+    for (const LotusIR::NodeArg* arg : model_->MainGraph()->GetOutputs()) {
       output_names.push_back(arg->Name());
     }
     return Run(run_options, feeds, output_names, p_fetches);
@@ -258,7 +262,7 @@ class InferenceSession::Impl {
 
       std::unique_ptr<Executor> p_exec;
       if (session_options_.enable_sequential_execution) {
-        p_exec = std::move(Executor::NewSequentialExecutor(session_state_, feeds, output_names));
+        p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names);
       } else {
         LOTUS_NOT_IMPLEMENTED;
       }
@@ -277,23 +281,25 @@ class InferenceSession::Impl {
   }
 
  private:
-  Common::Status TransformGraph(Graph& graph) {
+  Common::Status TransformGraph(LotusIR::Graph& graph) {
     bool is_modified;
     for (auto& ep : session_state_.GetExecutionProviders()) {
       ep->GetTransformer().Apply(graph, is_modified);
     }
+
     //this is a temporary hack.
     DummyAttrDefaultValueTransformer set_conv_attr;
     set_conv_attr.Apply(graph, is_modified);
+
     return Common::Status::OK();
   }
 
   Common::Status SaveInitializedTensors() {
-    const Graph* p_graph = session_state_.GetGraph();
+    const LotusIR::Graph* p_graph = session_state_.GetGraph();
     LOTUS_ENFORCE(p_graph);
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
 
-    const InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
+    const LotusIR::InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
     for (const auto& entry : initialized_tensor_set) {
       const std::string& name = entry.first;
       int mlvalue_index;
@@ -309,6 +315,7 @@ class InferenceSession::Impl {
 
       session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
     }
+
     return Common::Status::OK();
   }
 
@@ -321,6 +328,7 @@ class InferenceSession::Impl {
       ostr << "Shape is empty for tensor_proto name: " << tensor_proto.name();
       return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
     }
+
     TensorShape tensor_shape{tensor_shape_vec};
     size_t tensor_size = tensor_shape.Size();
 
@@ -363,13 +371,14 @@ class InferenceSession::Impl {
                                                 size_t tensor_size,
                                                 std::unique_ptr<Tensor>* p_tensor) {
     // TODO how should the buffer for this tensor be allocated? for now assuming CPU allocator
-    auto& alloc = AllocatorManager::Instance()->GetArena(CPU);
+    auto& alloc = AllocatorManager::Instance().GetArena(CPU);
     size_t size_to_allocate = sizeof(T) * tensor_shape.Size();
     T* p_data = static_cast<T*>(alloc.Alloc(size_to_allocate));
     // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
     Common::Status retval = Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size);
     BufferUniquePtr buffer_ptr = BufferUniquePtr(static_cast<void*>(p_data), BufferDeleter(&alloc));
     p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(), tensor_shape, std::move(buffer_ptr), alloc.Info()));
+
     return Common::Status::OK();
   }
 
@@ -381,6 +390,7 @@ class InferenceSession::Impl {
     for (int i = 0; i < dims.size(); ++i) {
       tensor_shape_vec[i] = dims[i];
     }
+
     return tensor_shape_vec;
   }
 
@@ -391,11 +401,11 @@ class InferenceSession::Impl {
   // through all the nodes only once.
   Common::Status SaveKernelsAndMLValueNameIndexMapping() {
     // TODO: const_cast because no const_iterator available for the graph
-    Graph* p_graph = const_cast<Graph*>(session_state_.GetGraph());
+    LotusIR::Graph* p_graph = const_cast<LotusIR::Graph*>(session_state_.GetGraph());
     LOTUS_ENFORCE(p_graph);
     int curr_idx = 0;
     for (auto node_it = p_graph->NodesBegin(); node_it != p_graph->NodesEnd(); ++node_it) {
-      Node* p_node = *node_it;
+      LotusIR::Node* p_node = *node_it;
 
       // ignore source and sink nodes
       if (p_graph->IsSourceNode(p_node->Index()) || p_graph->IsSinkNode(p_node->Index())) {
@@ -416,6 +426,7 @@ class InferenceSession::Impl {
         }
         session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
       }
+
       auto& outputs = p_node->OutputDefs();
       for (auto def : outputs) {
         if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
@@ -424,10 +435,11 @@ class InferenceSession::Impl {
         session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
       }
     }
+
     return Status::OK();
   }
 
-  Common::Status CreateOpKernel(const Node& node, std::unique_ptr<OpKernel>* p_op_kernel) {
+  Common::Status CreateOpKernel(const LotusIR::Node& node, std::unique_ptr<OpKernel>* p_op_kernel) {
     const std::string& exec_provider_name = node.GetExecutionProvider();
     if (exec_provider_name.empty() || !session_state_.GetExecutionProvider(exec_provider_name)) {
       std::ostringstream error_msg;
@@ -435,8 +447,9 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << error_msg.str();
       return Common::Status(Common::LOTUS, Common::FAIL, error_msg.str());
     }
+
     auto& allocator_info = session_state_.GetExecutionProvider(exec_provider_name)->GetTempSpaceAllocator().Info();
-    auto status = KernelRegistry::Instance()->CreateKernel(*(node.Op()), exec_provider_name, node, allocator_info, p_op_kernel);
+    auto status = KernelRegistry::Instance().CreateKernel(*(node.Op()), exec_provider_name, node, allocator_info, p_op_kernel);
     return status;
   }
 
@@ -446,6 +459,7 @@ class InferenceSession::Impl {
     } else {
       p_executor_done->WaitForNotification();
     }
+
     return Status::OK();
   }
 
@@ -465,7 +479,7 @@ class InferenceSession::Impl {
   // returns a shared_ptr only. Ideally factory functions should always return
   // unique_ptr for maximum flexibility. Client can always upgrade it to shared_ptr
   // if they need.
-  std::shared_ptr<Model> model_;
+  std::shared_ptr<LotusIR::Model> model_;
 
   // A set of executors that can run in parallel.
   std::vector<std::unique_ptr<Executor>> executors_;  // TODO do we need this vector?

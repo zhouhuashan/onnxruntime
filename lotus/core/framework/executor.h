@@ -1,5 +1,4 @@
-#ifndef LOTUS_CORE_FRAMEWORK_EXECUTOR_H_
-#define LOTUS_CORE_FRAMEWORK_EXECUTOR_H_
+#pragma once
 
 #include <vector>
 #include "core/common/status.h"
@@ -26,5 +25,3 @@ class Executor {
                                  std::vector<MLValue>* p_fetches);
 };
 }  // namespace Lotus
-
-#endif  // LOTUS_CORE_FRAMEWORK_EXECUTOR_H_

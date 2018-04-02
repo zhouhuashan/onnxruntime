@@ -26,7 +26,7 @@ size_t CPUAllocator::MaxChunkSize() {
 }
 
 const AllocatorInfo& CPUAllocator::Info() const {
-  static AllocatorInfo cpuAllocatorInfo(CPU, AllocatorType::DeviceAllocator);
+  static AllocatorInfo cpuAllocatorInfo(CPU, AllocatorType::kDeviceAllocator);
   return cpuAllocatorInfo;
 }
 }  // namespace Lotus

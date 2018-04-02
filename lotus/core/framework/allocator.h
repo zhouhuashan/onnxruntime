@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_ALLOCATOR_H
-#define CORE_FRAMEWORK_ALLOCATOR_H
+#pragma once
 
 #include <map>
 #include <string>
@@ -7,30 +6,28 @@
 #include "core/common/exceptions.h"
 #include "core/common/status.h"
 
-using namespace Lotus::Common;
-
 namespace Lotus {
 #define CPU "CPU"
 
 enum AllocatorType {
-  DeviceAllocator = 0,
-  ArenaAllocator = 1
+  kDeviceAllocator = 0,
+  kArenaAllocator = 1
 };
 
 struct AllocatorInfo {
-  // use string for name, so we could have customzied allocator in execution provider.
-  std::string name_;
-  int id_;
-  AllocatorType type_;
+  // use string for name, so we could have customized allocator in execution provider.
+  std::string name;
+  int id;
+  AllocatorType type;
 
  public:
   AllocatorInfo(const std::string& name, AllocatorType type, const int id = 0)
-      : name_(name),
-        id_(id),
-        type_(type) {}
+      : name(name),
+        id(id),
+        type(type) {}
 
-  bool operator==(const AllocatorInfo& p_other) const {
-    return name_ == p_other.name_ && id_ == p_other.id_ && type_ == p_other.type_;
+  bool operator==(const AllocatorInfo& other) const {
+    return name == other.name && id == other.id && type == other.type;
   }
 };
 
@@ -42,7 +39,7 @@ class IAllocator {
   virtual const AllocatorInfo& Info() const = 0;
 };
 
-// The resource allocator on a physcial device.
+// The resource allocator on a physical device.
 // This allocator will directly allocate resource from system call
 class IDeviceAllocator : public IAllocator {
  public:
@@ -63,5 +60,3 @@ class CPUAllocator : public IDeviceAllocator {
   virtual const AllocatorInfo& Info() const override;
 };
 }  // namespace Lotus
-
-#endif  // CORE_FRAMEWORK_ALLOCATOR_H

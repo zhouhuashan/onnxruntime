@@ -1,5 +1,4 @@
-﻿#ifndef CORE_PROVIDERS_CPU_TENSOR_RESHAPE_H
-#define CORE_PROVIDERS_CPU_TENSOR_RESHAPE_H
+﻿#pragma once
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
@@ -16,11 +15,11 @@ class Reshape final : public OpKernel {
     LOTUS_ENFORCE(status.IsOK(), "Attribute shape is not set.");
   }
 
-  Status compute(OpKernelContext* context) const override {
+  Status Compute(OpKernelContext* context) const override {
     std::vector<int64_t> shape = shape_;
     int64_t unknown_dim = -1;
-    const Tensor* X = context->input<Tensor>(0);
-    const TensorShape& current_shape = X->shape();
+    const Tensor* X = context->Input<Tensor>(0);
+    const TensorShape& current_shape = X->Shape();
     int64_t size = 1;
 
     for (int i = 0; i < shape.size(); ++i) {
@@ -50,16 +49,16 @@ class Reshape final : public OpKernel {
                     "The input tensor cannot be reshaped to the requested shape");
     }
 
-    Tensor* Y = context->output(0, TensorShape(shape));
-    const std::vector<std::pair<int, int>>& alias = kernel_def().Alias();
+    Tensor* Y = context->Output(0, TensorShape(shape));
+    const std::vector<std::pair<int, int>>& alias = KernelDef().Alias();
     //If input X and output Y are not aliases, it means the kernel is not doing inplace operation.
     if (std::find(alias.begin(), alias.end(), std::pair<int, int>(0, 0)) == alias.end()) {
       //copying reshape
       for (int i = 0; i < current_shape.Size(); ++i) {
-        Y->mutable_data<T>()[i] = X->data<T>()[i];
+        Y->MutableData<T>()[i] = X->Data<T>()[i];
       }
     } else {  //non-copying reshape
-      *(Y->mutable_data<T>()) = *(X->data<T>());
+      *(Y->MutableData<T>()) = *(X->Data<T>());
     }
 
     return Status::OK();
@@ -70,5 +69,3 @@ class Reshape final : public OpKernel {
 };
 
 }  //namespace Lotus
-
-#endif  // !CORE_PROVIDERS_CPU_TENSOR_RESHAPE_H

@@ -15,8 +15,8 @@
 */
 /* Modifications Copyright (c) Microsoft. */
 
-#ifndef CORE_PROVIDERS_CPU_NN_CONV_H
-#define CORE_PROVIDERS_CPU_NN_CONV_H
+#pragma once
+
 #include "core/providers/cpu/nn/conv_base.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
@@ -36,10 +36,7 @@ inline void ComputeSizeAndPad(
   const int64_t dkernel = dilation * (kernel - 1) + 1;
 
   if (pad_type == AutoPadType::NOTSET) {
-    *out_dim = static_cast<int64_t>(
-        static_cast<float>(in_dim + *pad_head + *pad_tail - dkernel) /
-            stride +
-        1);
+    *out_dim = static_cast<int64_t>(static_cast<float>(in_dim + *pad_head + *pad_tail - dkernel) / stride + 1);
   } else {
     switch (pad_type) {
       case AutoPadType::VALID:
@@ -54,11 +51,13 @@ inline void ComputeSizeAndPad(
         int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
         *pad_tail = pad_needed - *pad_head;
         *out_dim = (in_dim + pad_needed - dkernel) / stride + 1;
+
         if (pad_type == AutoPadType::SAME_UPPER) {
           *pad_head = (pad_needed + 1) / 2;
         } else {
           *pad_head = pad_needed / 2;
         }
+
         break;
     }
   }
@@ -71,35 +70,35 @@ class Conv : public ConvBase {
   Conv(const OpKernelInfo& info) : ConvBase(info) {
   }
 
-  Status compute(OpKernelContext* context) const override {
-    size_t num_inputs = OpKernel::node().InputDefs().size();
+  Status Compute(OpKernelContext* context) const override {
+    size_t num_inputs = OpKernel::Node().InputDefs().size();
     bool Is2DKernel = kernel_shape_.size() == 2;
-    const Tensor* X = context->input<Tensor>(0);
-    const Tensor* W = context->input<Tensor>(1);
-    const Tensor* B = num_inputs == 3 ? context->input<Tensor>(2) : nullptr;
-    const int64_t N = X->shape()[0];
-    const int64_t C = X->shape()[1];
-    const int64_t M = W->shape()[0];
+    const Tensor* X = context->Input<Tensor>(0);
+    const Tensor* W = context->Input<Tensor>(1);
+    const Tensor* B = num_inputs == 3 ? context->Input<Tensor>(2) : nullptr;
+    const int64_t N = X->Shape()[0];
+    const int64_t C = X->Shape()[1];
+    const int64_t M = W->Shape()[0];
 
     vector<int64_t> pads(pads_);  // copy pads since it can be modified by InferOutputShape
     vector<int64_t> Y_dims;
     Y_dims.insert(Y_dims.begin(), {N, M});
-    TensorShape input_shape = X->shape().Slice(2);
+    TensorShape input_shape = X->Shape().Slice(2);
     InferOutputShape(input_shape, &pads, &Y_dims);
-    Tensor* Y = context->output(0, TensorShape(Y_dims));
-    TensorShape output_shape = Y->shape().Slice(2);
+    Tensor* Y = context->Output(0, TensorShape(Y_dims));
+    TensorShape output_shape = Y->Shape().Slice(2);
 
     const int64_t input_image_size = input_shape.Size();
     const int64_t output_image_size = output_shape.Size();
     const int64_t kernel_size = TensorShape(kernel_shape_).Size();
     const int64_t X_offset = C / group_ * input_image_size;
-    const int64_t Y_offset = Y->shape().Size() / Y->shape()[0] / group_;
-    const int64_t W_offset = W->shape().Size() / group_;
+    const int64_t Y_offset = Y->Shape().Size() / Y->Shape()[0] / group_;
+    const int64_t W_offset = W->Shape().Size() / group_;
     const int64_t kernel_dim = C / group_ * kernel_size;
     const int64_t col_buffer_size = kernel_dim * output_image_size;
 
-    auto& info = OpKernel::allocator();
-    auto& alloc = AllocatorManager::Instance()->GetArena(info.name_, info.id_);
+    auto& info = OpKernel::Allocator();
+    auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
 
     auto col_data = alloc.Alloc(sizeof(T) * col_buffer_size);
     BufferUniquePtr col_buffer(col_data, BufferDeleter(&alloc));
@@ -111,14 +110,14 @@ class Conv : public ConvBase {
       auto b_data = alloc.Alloc(sizeof(T) * output_image_size);
       bias_multiplier_buffer.reset(b_data);
       bias_multiplier_data = static_cast<T*>(bias_multiplier_buffer.get());
-      math::Set<T, CPUMathUtil>(output_image_size, static_cast<T>(1),
+      Math::Set<T, CPUMathUtil>(output_image_size, static_cast<T>(1),
                                 bias_multiplier_data, &CPUMathUtil::Instance());
     }
 
-    const T* Xdata = X->template data<T>();
-    T* Ydata = Y->template mutable_data<T>();
+    const T* Xdata = X->template Data<T>();
+    T* Ydata = Y->template MutableData<T>();
 
-    TensorShape image_shape = X->shape().Slice(1);
+    TensorShape image_shape = X->Shape().Slice(1);
     vector<int64_t> col_buffer_shape{kernel_dim};
     col_buffer_shape.insert(col_buffer_shape.end(), output_shape.GetDims().begin(),
                             output_shape.GetDims().end());
@@ -126,7 +125,7 @@ class Conv : public ConvBase {
     for (int image_id = 0; image_id < N; ++image_id) {
       for (int group_id = 0; group_id < group_; ++group_id) {
         if (Is2DKernel) {
-          math::Im2col<T, CPUMathUtil, StorageOrder::NCHW>(
+          Math::Im2col<T, CPUMathUtil, StorageOrder::NCHW>(
               Xdata + group_id * X_offset,
               C / group_,
               input_shape[0],
@@ -144,7 +143,7 @@ class Conv : public ConvBase {
               col_buffer_data,
               &CPUMathUtil::Instance());
         } else {
-          math::Im2colNd<T, CPUMathUtil, StorageOrder::NCHW>(
+          Math::Im2colNd<T, CPUMathUtil, StorageOrder::NCHW>(
               Xdata + group_id * X_offset,
               image_shape.GetDims().data(),
               col_buffer_shape.data(),
@@ -159,14 +158,14 @@ class Conv : public ConvBase {
               &CPUMathUtil::Instance());
         }
 
-        math::Gemm<T, CPUMathUtil>(
+        Math::Gemm<T, CPUMathUtil>(
             CblasNoTrans,
             CblasNoTrans,
             M / group_,
             output_image_size,
             kernel_dim,
             1,
-            W->template data<T>() + group_id * W_offset,
+            W->template Data<T>() + group_id * W_offset,
             col_buffer_data,
             0,
             Ydata + group_id * Y_offset,
@@ -175,8 +174,8 @@ class Conv : public ConvBase {
 
       if (B != nullptr) {
         LOTUS_ENFORCE(bias_multiplier_data != nullptr);
-        auto bias_data = B->template data<T>();
-        math::Gemm<T, CPUMathUtil>(
+        auto bias_data = B->template Data<T>();
+        Math::Gemm<T, CPUMathUtil>(
             CblasNoTrans,
             CblasNoTrans,
             M,
@@ -215,5 +214,3 @@ class Conv : public ConvBase {
 };
 
 }  // namespace Lotus
-
-#endif  // CORE_PROVIDERS_CPU_NN_CONV_H

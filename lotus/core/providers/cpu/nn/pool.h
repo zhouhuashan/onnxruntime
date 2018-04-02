@@ -1,5 +1,4 @@
-#ifndef CORE_PROVIDERS_CPU_NN_POOL_H
-#define CORE_PROVIDERS_CPU_NN_POOL_H
+#pragma once
 
 #include "core/providers/cpu/nn/pool_base.h"
 
@@ -14,10 +13,9 @@ class Pool final : public PoolBase {
  public:
   Pool(OpKernelInfo info) : PoolBase(info) {}
 
-  ~Pool() {}
+  ~Pool() = default;
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 }  // namespace Lotus
-#endif  //!CORE_PROVIDERS_CPU_NN_POOL_H

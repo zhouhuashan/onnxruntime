@@ -23,7 +23,7 @@ static void RunTest(const std::vector<float> &x_vals,
     EXPECT_TRUE(node->AddAttribute("axis", axis));
   }
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
 
@@ -46,10 +46,10 @@ static void RunTest(const std::vector<float> &x_vals,
 
   Softmax<float> kernel(info);
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel *>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
+  kernel.Compute(&kernel_ctx);
 
-  auto output = kernel_ctx.output(0, TensorShape(dimensions));
-  const float *res = output->data<float>();
+  auto output = kernel_ctx.Output(0, TensorShape(dimensions));
+  const float *res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_FLOAT_EQ(expected_vals[i], res[i]);

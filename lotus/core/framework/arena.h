@@ -1,10 +1,7 @@
-#ifndef CORE_FRAMEWORK_ARENA_H
-#define CORE_FRAMEWORK_ARENA_H
+#pragma once
 
 #include <string>
 #include "core/framework/allocator.h"
-
-using namespace Lotus::Common;
 
 namespace Lotus {
 // The interface for arena which manage memory allocations
@@ -28,8 +25,8 @@ class IArenaAllocator : public IAllocator {
 class DummyArena : public IArenaAllocator {
  public:
   DummyArena(IDeviceAllocator* resource_allocator)
-      : m_allocator(resource_allocator),
-        m_info(resource_allocator->Info().name_, AllocatorType::ArenaAllocator, resource_allocator->Info().id_) {
+      : allocator_(resource_allocator),
+        info_(resource_allocator->Info().name, AllocatorType::kArenaAllocator, resource_allocator->Info().id) {
   }
 
   virtual ~DummyArena() {}
@@ -37,11 +34,11 @@ class DummyArena : public IArenaAllocator {
   virtual void* Alloc(size_t size) override {
     if (size == 0)
       return nullptr;
-    return m_allocator->Alloc(size);
+    return allocator_->Alloc(size);
   }
 
   virtual void Free(void* p) override {
-    m_allocator->Free(p);
+    allocator_->Free(p);
   }
 
   virtual size_t Used() const override {
@@ -53,13 +50,11 @@ class DummyArena : public IArenaAllocator {
   }
 
   virtual const AllocatorInfo& Info() const override {
-    return m_info;
+    return info_;
   }
 
  private:
-  IDeviceAllocator* m_allocator;
-  AllocatorInfo m_info;
+  IDeviceAllocator* allocator_;
+  AllocatorInfo info_;
 };
 }  // namespace Lotus
-
-#endif  // CORE_FRAMEWORK_ALLOCATOR_H

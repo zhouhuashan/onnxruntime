@@ -26,7 +26,7 @@ class Transpose final : public OpKernel {
     }
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 
  private:
   bool perm_specified_;

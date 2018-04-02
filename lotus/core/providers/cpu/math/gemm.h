@@ -1,5 +1,4 @@
-#ifndef CORE_PROVIDERS_CPU_MATH_GEMM_H
-#define CORE_PROVIDERS_CPU_MATH_GEMM_H
+#pragma once
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
@@ -17,66 +16,71 @@ class Gemm final : public OpKernel {
   Gemm(const OpKernelInfo& info) : OpKernel(info) {
     int64_t temp;
     LOTUS_ENFORCE(info.GetAttr<int64_t>("transA", &temp).IsOK());
-    transA_ = temp == 0 ? CblasNoTrans : CblasTrans;
+    trans_A_ = temp == 0 ? CblasNoTrans : CblasTrans;
 
     LOTUS_ENFORCE(info.GetAttr<int64_t>("transB", &temp).IsOK());
-    transB_ = temp == 0 ? CblasNoTrans : CblasTrans;
+    trans_B_ = temp == 0 ? CblasNoTrans : CblasTrans;
 
     LOTUS_ENFORCE(info.GetAttr<int64_t>("broadcast", &broadcast_).IsOK());
     LOTUS_ENFORCE(info.GetAttr<float>("alpha", &alpha_).IsOK());
     LOTUS_ENFORCE(info.GetAttr<float>("beta", &beta_).IsOK());
   }
 
-  Status compute(OpKernelContext* context) const override {
-    const auto X = context->input<Tensor>(0);
-    const auto W = context->input<Tensor>(1);
-    const auto B = context->input<Tensor>(2);
+  Status Compute(OpKernelContext* context) const override {
+    const auto X = context->Input<Tensor>(0);
+    const auto W = context->Input<Tensor>(1);
+    const auto B = context->Input<Tensor>(2);
     //dimension check
-    LOTUS_ENFORCE(X->shape().NumDimensions() == 2);
-    LOTUS_ENFORCE(W->shape().NumDimensions() == 2);
+    LOTUS_ENFORCE(X->Shape().NumDimensions() == 2);
+    LOTUS_ENFORCE(W->Shape().NumDimensions() == 2);
     // batch size
     int64_t M, K, N;
-    if (transA_ == CblasTrans) {
-      M = X->shape()[1];
-      K = X->shape()[0];
+
+    if (trans_A_ == CblasTrans) {
+      M = X->Shape()[1];
+      K = X->Shape()[0];
     } else {
-      M = X->shape()[0];
-      K = X->shape()[1];
+      M = X->Shape()[0];
+      K = X->Shape()[1];
     }
-    if (transB_ == CblasTrans) {
-      N = W->shape()[0];
+
+    if (trans_B_ == CblasTrans) {
+      N = W->Shape()[0];
     } else {
-      N = W->shape()[1];
+      N = W->Shape()[1];
     }
-    LOTUS_ENFORCE(W->shape().Size(), K * N);
+
+    LOTUS_ENFORCE(W->Shape().Size(), K * N);
+
     if (broadcast_) {
-      LOTUS_ENFORCE(B->shape().NumDimensions() == 1);
-      LOTUS_ENFORCE(B->shape()[0] == N);
+      LOTUS_ENFORCE(B->Shape().NumDimensions() == 1);
+      LOTUS_ENFORCE(B->Shape()[0] == N);
     } else {
-      LOTUS_ENFORCE(B->shape().NumDimensions() == 2);
-      LOTUS_ENFORCE(B->shape()[0] == M && B->shape()[1] == N);
+      LOTUS_ENFORCE(B->Shape().NumDimensions() == 2);
+      LOTUS_ENFORCE(B->Shape()[0] == M && B->Shape()[1] == N);
     }
 
     LOTUS_ENFORCE(M > 0 && N > 0 && K > 0);
-    auto Y = context->output(0, TensorShape(std::vector<int64_t>{M, N}));
+    auto Y = context->Output(0, TensorShape(std::vector<int64_t>{M, N}));
 
     //bias
     // Todo: we might should move this part into math::gemm to let eigen
     // have better chance to further optimize it.
     if (beta_ != 0) {
       auto output_mat = EigenMatrixMap<T_Y>(
-          Y->template mutable_data<T_Y>(),
+          Y->template MutableData<T_Y>(),
           M,
           N);
       output_mat.setZero();
+
       if (broadcast_) {
         auto bias_vec = ConstEigenVectorMap<T_B>(
-            B->template data<float>(),
+            B->template Data<float>(),
             N);
         output_mat.rowwise() += bias_vec.transpose();
       } else {
         auto bias_mat = ConstEigenMatrixMap<T_B>(
-            B->template data<T_B>(),
+            B->template Data<T_B>(),
             M,
             N);
         output_mat += bias_mat;
@@ -84,29 +88,28 @@ class Gemm final : public OpKernel {
     }
 
     // W * x
-    math::Gemm<T_X, CPUMathUtil>(
-        transA_,
-        transB_,
+    Math::Gemm<T_X, CPUMathUtil>(
+        trans_A_,
+        trans_B_,
         M,
         N,
         K,
         alpha_,
-        X->template data<T_X>(),
-        W->template data<T_W>(),
+        X->template Data<T_X>(),
+        W->template Data<T_W>(),
         beta_,
-        Y->template mutable_data<T_Y>(),
+        Y->template MutableData<T_Y>(),
         &CPUMathUtil::Instance());
+
     return Status::OK();
   }
 
  private:
-  CBLAS_TRANSPOSE transA_;
-  CBLAS_TRANSPOSE transB_;
+  CBLAS_TRANSPOSE trans_A_;
+  CBLAS_TRANSPOSE trans_B_;
   int64_t broadcast_;
   float alpha_;
   float beta_;
 };
 
 }  // namespace Lotus
-
-#endif  // !CORE_PROVIDERS_CPU_MATH_CLIP_H

@@ -157,9 +157,9 @@ REGISTER_KERNEL(KernelDefBuilder("Equal")
                 Equal<float>);
 
 template <typename T>
-auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.mutable_data<T>(), t.shape().Size()); }
+auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
 template <typename T>
-auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.data<T>(), t.shape().Size()); }
+auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.Data<T>(), t.Shape().Size()); }
 
 // Finds the axis inside 'shape' that matches 'find' starting from the end
 // For example if shape = {2, 3, 4, 5, 6} and find = {4, 5} it returns 2
@@ -173,9 +173,11 @@ int FindShapeSubsetAxis(const TensorShape& shape, const TensorShape& find) {
       if (shape[i + j] != find[j])
         break;
     }
+
     if (j == findCount)
       return i;
   }
+
   LOTUS_THROW("Tensors have no common shape subset");
 }
 
@@ -193,10 +195,10 @@ template <typename TInput, typename Op>
 void Loop(const Tensor& input1, const Tensor& input2, Tensor& output, Op op) {
   using TOutput = std::result_of_t<Op(TInput, TInput)>;
 
-  const TInput* input1_data = input1.data<TInput>();
-  const TInput* input2_data = input2.data<TInput>();
-  TOutput* output_data = output.mutable_data<TOutput>();
-  auto outputSize = output.shape().Size();
+  const TInput* input1_data = input1.Data<TInput>();
+  const TInput* input2_data = input2.Data<TInput>();
+  TOutput* output_data = output.MutableData<TOutput>();
+  auto outputSize = output.Shape().Size();
 
   for (auto i = 0; i < outputSize; i++)
     output_data[i] = op(input1_data[i], input2_data[i]);
@@ -204,9 +206,9 @@ void Loop(const Tensor& input1, const Tensor& input2, Tensor& output, Op op) {
 
 template <typename T, typename Op>
 void ScalarLoop(const Tensor& input1, T value, Tensor& output, Op op) {
-  const T* input1_data = input1.data<T>();
-  T* output_data = output.mutable_data<T>();
-  auto outputSize = output.shape().Size();
+  const T* input1_data = input1.Data<T>();
+  T* output_data = output.MutableData<T>();
+  auto outputSize = output.Shape().Size();
 
   for (auto i = 0; i < outputSize; i++)
     output_data[i] = op(input1_data[i], value);
@@ -216,9 +218,9 @@ template <typename T, typename Op>
 void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int axis, Op op) {
   // If the axis_ attribute exists, use and verify it, otherwise look for the matching suffix
   if (axis == -1)
-    axis = FindShapeSubsetAxis(input1.shape(), input2.shape());
+    axis = FindShapeSubsetAxis(input1.Shape(), input2.Shape());
   else
-    VerifyShapeSubsetAxis(input1.shape(), input2.shape(), axis);
+    VerifyShapeSubsetAxis(input1.Shape(), input2.Shape(), axis);
 
   // If the input tensor has dimensions like [2][3][4][5][6] and the second input has dimensions like [4][5]
   // Then we want to access the second as though the first two and last index is ignored, like this: [x][x][4][5][x] ('x' means value has no effect)
@@ -227,15 +229,15 @@ void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int a
   // and resetting the index every '2*3*4*5' elements (thus ignoring the last dimension)
 
   int64_t incrementPitch = 1;
-  for (int i = int(input1.shape().NumDimensions()); --i > axis;)
-    incrementPitch *= input1.shape()[i];
+  for (int i = int(input1.Shape().NumDimensions()); --i > axis;)
+    incrementPitch *= input1.Shape()[i];
 
-  int64_t resetPitch = input2.shape().Size();
+  int64_t resetPitch = input2.Shape().Size();
 
-  const T* input1_data = input1.data<T>();
-  const T* input2_data = input2.data<T>();
-  T* output_data = output.mutable_data<T>();
-  auto outputSize = output.shape().Size();
+  const T* input1_data = input1.Data<T>();
+  const T* input2_data = input2.Data<T>();
+  T* output_data = output.MutableData<T>();
+  auto outputSize = output.Shape().Size();
 
   // Do the operation
   int input2_index = 0;
@@ -253,194 +255,206 @@ void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int a
 }
 
 template <>
-Status Add<float>::compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->input<Tensor>(0);
-  auto& B = *ctx->input<Tensor>(1);
-  auto& C = *ctx->output(0, A.shape());
+Status Add<float>::Compute(OpKernelContext* ctx) const {
+  auto& A = *ctx->Input<Tensor>(0);
+  auto& B = *ctx->Input<Tensor>(1);
+  auto& C = *ctx->Output(0, A.Shape());
 
   if (broadcast_)
     Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a + b; });
   else {
-    LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
+    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
     EigenMap<float>(C) = EigenMap<float>(A) + EigenMap<float>(B);
   }
+
   return Status::OK();
 }
 
 template <>
-Status Sub<float>::compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->input<Tensor>(0);
-  auto& B = *ctx->input<Tensor>(1);
-  auto& C = *ctx->output(0, A.shape());
+Status Sub<float>::Compute(OpKernelContext* ctx) const {
+  auto& A = *ctx->Input<Tensor>(0);
+  auto& B = *ctx->Input<Tensor>(1);
+  auto& C = *ctx->Output(0, A.Shape());
 
   if (broadcast_)
     Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a - b; });
   else {
-    LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
+    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
     EigenMap<float>(C) = EigenMap<float>(A) - EigenMap<float>(B);
   }
+
   return Status::OK();
 }
 
 template <>
-Status Mul<float>::compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->input<Tensor>(0);
-  auto& B = *ctx->input<Tensor>(1);
-  auto& C = *ctx->output(0, A.shape());
+Status Mul<float>::Compute(OpKernelContext* ctx) const {
+  auto& A = *ctx->Input<Tensor>(0);
+  auto& B = *ctx->Input<Tensor>(1);
+  auto& C = *ctx->Output(0, A.Shape());
 
   if (broadcast_)
     Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a * b; });
   else {
-    LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
+    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
     EigenMap<float>(C) = EigenMap<float>(A).cwiseProduct(EigenMap<float>(B));
   }
+
   return Status::OK();
 }
 
 template <>
-Status Div<float>::compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->input<Tensor>(0);
-  auto& B = *ctx->input<Tensor>(1);
-  auto& C = *ctx->output(0, A.shape());
+Status Div<float>::Compute(OpKernelContext* ctx) const {
+  auto& A = *ctx->Input<Tensor>(0);
+  auto& B = *ctx->Input<Tensor>(1);
+  auto& C = *ctx->Output(0, A.Shape());
 
   if (broadcast_)
     Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a / b; });
   else {
-    LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
+    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
     EigenMap<float>(C) = EigenMap<float>(A).cwiseQuotient(EigenMap<float>(B));
   }
+
   return Status::OK();
 }
 
 template <>
-Status Abs<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Abs<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).cwiseAbs();
+
   return Status::OK();
 }
 
 template <>
-Status Neg<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Neg<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = -EigenMap<float>(X);
+
   return Status::OK();
 }
 
 template <>
-Status Floor<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Floor<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).array().floor();
+
   return Status::OK();
 }
 
 template <>
-Status Ceil<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Ceil<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).array().ceil();
+
   return Status::OK();
 }
 
 template <>
-Status Reciprocal<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Reciprocal<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).cwiseInverse();
+
   return Status::OK();
 }
 
 template <>
-Status Sqrt<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Sqrt<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).cwiseSqrt();
+
   return Status::OK();
 }
 
 template <>
-Status Pow<float>::compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->input<Tensor>(0);
-  auto& B = *ctx->input<Tensor>(1);
-  auto& C = *ctx->output(0, A.shape());
+Status Pow<float>::Compute(OpKernelContext* ctx) const {
+  auto& A = *ctx->Input<Tensor>(0);
+  auto& B = *ctx->Input<Tensor>(1);
+  auto& C = *ctx->Output(0, A.Shape());
 
   if (broadcast_) {
-    if (B.shape().NumDimensions() == 0) {
+    if (B.Shape().NumDimensions() == 0) {
       LOTUS_ENFORCE(axis_ == -1, "When broadcasting by a scalar, axis cannot be set");
-      EigenMap<float>(C) = EigenMap<float>(A).array().pow(*B.data<float>());
+      EigenMap<float>(C) = EigenMap<float>(A).array().pow(*B.Data<float>());
     } else
       Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return pow(a, b); });
   } else {
-    LOTUS_ENFORCE(A.shape() == B.shape(), "Inputs must have the same shape");
+    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
     EigenMap<float>(C) = EigenMap<float>(A).array().pow(EigenMap<float>(B).array());
   }
+
   return Status::OK();
 }
 
 template <>
-Status Exp<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Exp<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).array().exp();
+
   return Status::OK();
 }
 
 template <>
-Status Log<float>::compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->input<Tensor>(0);
-  auto& Y = *ctx->output(0, X.shape());
+Status Log<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
 
   EigenMap<float>(Y) = EigenMap<float>(X).array().log();
+
   return Status::OK();
 }
 
 template <>
-Status Sum<float>::compute(OpKernelContext* ctx) const {
-  auto inputCount = node().InputArgCount().front();
+Status Sum<float>::Compute(OpKernelContext* ctx) const {
+  auto inputCount = Node().InputArgCount().front();
   LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
-  auto& data_0 = *ctx->input<Tensor>(0);
-  auto& shape = data_0.shape();
-  auto sum = EigenMap<float>(*ctx->output(0, shape));
+  auto& data_0 = *ctx->Input<Tensor>(0);
+  auto& shape = data_0.Shape();
+  auto sum = EigenMap<float>(*ctx->Output(0, shape));
 
   if (inputCount == 1) {
     sum = EigenMap<float>(data_0);
-    return Status::OK();
-  }
+  } else {
+    auto& data_1 = *ctx->Input<Tensor>(1);
+    LOTUS_ENFORCE(data_1.Shape() == shape, "All inputs must have the same shape");
 
-  auto& data_1 = *ctx->input<Tensor>(1);
-  LOTUS_ENFORCE(data_1.shape() == shape, "All inputs must have the same shape");
-
-  sum = EigenMap<float>(data_0) + EigenMap<float>(data_1);
-  for (int index = 2; index < inputCount; index++) {
-    auto& data_n = *ctx->input<Tensor>(index);
-    LOTUS_ENFORCE(data_n.shape() == shape, "All inputs must have the same shape");
-    sum += EigenMap<float>(data_n);
+    sum = EigenMap<float>(data_0) + EigenMap<float>(data_1);
+    for (int index = 2; index < inputCount; index++) {
+      auto& data_n = *ctx->Input<Tensor>(index);
+      LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+      sum += EigenMap<float>(data_n);
+    }
   }
 
   return Status::OK();
 }
 
 template <>
-Status Min<float>::compute(OpKernelContext* ctx) const {
-  auto inputCount = node().InputArgCount().front();
+Status Min<float>::Compute(OpKernelContext* ctx) const {
+  auto inputCount = Node().InputArgCount().front();
   LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
-  auto& data_0 = *ctx->input<Tensor>(0);
-  auto& shape = data_0.shape();
-  auto min = EigenMap<float>(*ctx->output(0, shape));
+  auto& data_0 = *ctx->Input<Tensor>(0);
+  auto& shape = data_0.Shape();
+  auto min = EigenMap<float>(*ctx->Output(0, shape));
 
   min = EigenMap<float>(data_0);
   for (int index = 1; index < inputCount; index++) {
-    auto& data_n = *ctx->input<Tensor>(index);
-    LOTUS_ENFORCE(data_n.shape() == shape, "All inputs must have the same shape");
+    auto& data_n = *ctx->Input<Tensor>(index);
+    LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
     min = min.array().min(EigenMap<float>(data_n).array());
   }
 
@@ -448,17 +462,17 @@ Status Min<float>::compute(OpKernelContext* ctx) const {
 }
 
 template <>
-Status Max<float>::compute(OpKernelContext* ctx) const {
-  auto inputCount = node().InputArgCount().front();
+Status Max<float>::Compute(OpKernelContext* ctx) const {
+  auto inputCount = Node().InputArgCount().front();
   LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
-  auto& data_0 = *ctx->input<Tensor>(0);
-  auto& shape = data_0.shape();
-  auto max = EigenMap<float>(*ctx->output(0, shape));
+  auto& data_0 = *ctx->Input<Tensor>(0);
+  auto& shape = data_0.Shape();
+  auto max = EigenMap<float>(*ctx->Output(0, shape));
 
   max = EigenMap<float>(data_0);
   for (int index = 1; index < inputCount; index++) {
-    auto& data_n = *ctx->input<Tensor>(index);
-    LOTUS_ENFORCE(data_n.shape() == shape, "All inputs must have the same shape");
+    auto& data_n = *ctx->Input<Tensor>(index);
+    LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
     max = max.array().max(EigenMap<float>(data_n).array());
   }
 
@@ -467,14 +481,14 @@ Status Max<float>::compute(OpKernelContext* ctx) const {
 
 template <typename TInput, typename Op>
 Status BooleanOp(OpKernelContext* ctx, bool broadcast, int64_t axis, Op op) {
-  auto& A = *ctx->input<Tensor>(0);
-  auto& B = *ctx->input<Tensor>(1);
-  auto& C = *ctx->output(0, A.shape());
+  auto& A = *ctx->Input<Tensor>(0);
+  auto& B = *ctx->Input<Tensor>(1);
+  auto& C = *ctx->Output(0, A.Shape());
 
   if (broadcast) {
-    if (B.shape().NumDimensions() == 0) {
+    if (B.Shape().NumDimensions() == 0) {
       LOTUS_ENFORCE(axis == -1, "When broadcasting by a scalar, axis cannot be set");
-      ScalarLoop<TInput>(A, *B.data<TInput>(), C, op);
+      ScalarLoop<TInput>(A, *B.Data<TInput>(), C, op);
     } else
       Broadcast<TInput>(A, B, C, int(axis), op);
   } else {
@@ -484,32 +498,32 @@ Status BooleanOp(OpKernelContext* ctx, bool broadcast, int64_t axis, Op op) {
 }
 
 template <>
-Status And<bool>::compute(OpKernelContext* ctx) const {
+Status And<bool>::Compute(OpKernelContext* ctx) const {
   return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return a && b; });
 }
 
 template <>
-Status Or<bool>::compute(OpKernelContext* ctx) const {
+Status Or<bool>::Compute(OpKernelContext* ctx) const {
   return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return a || b; });
 }
 
 template <>
-Status Xor<bool>::compute(OpKernelContext* ctx) const {
+Status Xor<bool>::Compute(OpKernelContext* ctx) const {
   return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return (a ^ b) != 0; });
 }
 
 template <>
-Status Equal<float>::compute(OpKernelContext* ctx) const {
+Status Equal<float>::Compute(OpKernelContext* ctx) const {
   return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a == b; });
 }
 
 template <>
-Status Less<float>::compute(OpKernelContext* ctx) const {
+Status Less<float>::Compute(OpKernelContext* ctx) const {
   return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a < b; });
 }
 
 template <>
-Status Greater<float>::compute(OpKernelContext* ctx) const {
+Status Greater<float>::Compute(OpKernelContext* ctx) const {
   return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a > b; });
 }
 

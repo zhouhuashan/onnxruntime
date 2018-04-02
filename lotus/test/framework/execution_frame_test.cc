@@ -29,7 +29,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
   LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::kArenaAllocator);
 
   SessionState state;
   state.SetGraph(graph);
@@ -39,33 +39,33 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
                        std::vector<std::string>{},
                        state);
 
-  int start_index = frame.get_first_arg_index(node->Index());
+  int start_index = frame.GetFirstArgIndex(node->Index());
   EXPECT_EQ(start_index, 0);
 
   TensorShape shape(std::vector<int64_t>{2, 3});
   auto status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
-                                                      AllocatorManager::Instance()->GetArena(CPU).Info(), shape);
+                                                      AllocatorManager::Instance().GetArena(CPU).Info(), shape);
   EXPECT_TRUE(status.IsOK());
 
-  auto tensor = frame.get_mutable_value<Tensor>(0);
+  auto tensor = frame.GetMutableValue<Tensor>(0);
   EXPECT_TRUE(tensor);
-  EXPECT_EQ(tensor->shape(), shape);
-  EXPECT_EQ(tensor->dtype(), DataTypeImpl::GetType<float>());
+  EXPECT_EQ(tensor->Shape(), shape);
+  EXPECT_EQ(tensor->DataType(), DataTypeImpl::GetType<float>());
 
   //test share memory from tensor
   TensorShape shape2(std::vector<int64_t>{3, 2});
   status = frame.AllocateTensorWithPreAllocateBuffer(
       start_index + 1,
-      tensor->mutable_data<float>(),
+      tensor->MutableData<float>(),
       DataTypeImpl::GetType<float>(),
-      tensor->location(),
+      tensor->Location(),
       shape2);
   EXPECT_TRUE(status.IsOK());
 
-  auto tensor2 = frame.get_value<Tensor>(1);
+  auto tensor2 = frame.GetValue<Tensor>(1);
   EXPECT_TRUE(tensor2);
-  EXPECT_EQ(tensor2->shape(), shape2);
-  EXPECT_EQ(tensor2->data<float>(), tensor->data<float>());
+  EXPECT_EQ(tensor2->Shape(), shape2);
+  EXPECT_EQ(tensor2->Data<float>(), tensor->Data<float>());
 }
 
 TEST(ExecutionFrameTest, FeedInDataTest) {
@@ -77,7 +77,7 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
 
   graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
 
-  auto& cpu_allocator = AllocatorManager::Instance()->GetArena(CPU);
+  auto& cpu_allocator = AllocatorManager::Instance().GetArena(CPU);
   auto element_type = DataTypeImpl::GetType<float>();
   TensorShape shape({3, 2});
   void* buffer = cpu_allocator.Alloc(element_type->Size() * shape.Size());
@@ -100,11 +100,11 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
                        std::vector<std::string>{},
                        state);
 
-  auto tensor = frame.get_mutable_value<Tensor>(0);
+  auto tensor = frame.GetMutableValue<Tensor>(0);
   EXPECT_TRUE(tensor);
-  EXPECT_EQ(tensor->shape(), shape);
-  EXPECT_EQ(tensor->dtype(), DataTypeImpl::GetType<float>());
-  EXPECT_EQ(tensor->mutable_data<float>(), buffer);
+  EXPECT_EQ(tensor->Shape(), shape);
+  EXPECT_EQ(tensor->DataType(), DataTypeImpl::GetType<float>());
+  EXPECT_EQ(tensor->MutableData<float>(), buffer);
 }
 }  // namespace Test
 }  // namespace Lotus

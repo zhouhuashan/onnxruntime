@@ -10,17 +10,17 @@ REGISTER_KERNEL(KernelDefBuilder("Constant")
                 Constant<float>);
 
 template <>
-Status Constant<float>::compute(OpKernelContext* ctx) const {
-  std::vector<int64_t> dims;
-  for (auto v : value_.dims())
-    dims.push_back(v);
+Status Constant<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<int64_t> dims{value_.dims().begin(), value_.dims().end()};
+
   TensorShape shape(dims);
 
-  auto& C = *ctx->output(0, shape);
-  float* pDest = C.mutable_data<float>();
+  auto& C = *ctx->Output(0, shape);
+  float* dest = C.MutableData<float>();
   for (float v : value_.float_data()) {
-    *pDest++ = v;
+    *dest++ = v;
   }
+
   return Lotus::Common::Status::OK();
 }
 

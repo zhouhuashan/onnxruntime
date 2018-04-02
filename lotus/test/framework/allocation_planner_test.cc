@@ -23,8 +23,8 @@ struct UnaryNode {
   LotusIR::Node* p_node;
 
   UnaryNode(LotusIR::Graph* graph,
-            NodeArg* p_inputArg,
-            NodeArg* p_outputArg) : input_args({p_inputArg}), output_args({p_outputArg}) {
+            LotusIR::NodeArg* p_inputArg,
+            LotusIR::NodeArg* p_outputArg) : input_args({p_inputArg}), output_args({p_outputArg}) {
     int num = NodeCounter::Next();
     p_node = graph->AddNode("node" + std::to_string(num), "Clip", "test op", input_args, output_args);
   }

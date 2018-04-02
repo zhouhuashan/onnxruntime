@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_DATA_TYPES_H
-#define CORE_FRAMEWORK_DATA_TYPES_H
+#pragma once
 
 #include <string>
 #include "core/common/common.h"
@@ -152,5 +151,3 @@ class NonOnnxType : public DataTypeImpl {
     return NonOnnxType<TYPE>::Type();        \
   }
 }  // namespace Lotus
-
-#endif

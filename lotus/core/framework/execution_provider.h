@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_EXECUTION_PROVIDER_H
-#define CORE_FRAMEWORK_EXECUTION_PROVIDER_H
+#pragma once
 
 #include <unordered_map>
 #include "core/framework/arena.h"
@@ -7,12 +6,10 @@
 #include "core/graph/graph.h"
 #include "core/graph/graph_transformer.h"
 
-using namespace LotusIR;
-
 namespace Lotus {
 typedef std::shared_ptr<void> ExecutionProviderInfo;
 
-// Logical device represenatation.
+// Logical device representation.
 class IExecutionProvider {
  public:
   virtual ~IExecutionProvider() {}
@@ -20,7 +17,7 @@ class IExecutionProvider {
   // Graph to graph transformation. The resulting graph may contain custom
   // operators introduced by this execution provider. Newly formed custom
   // functions must be registered in kernelRegistry_.
-  virtual IGraphTransformer& GetTransformer() = 0;
+  virtual LotusIR::IGraphTransformer& GetTransformer() = 0;
 
   // Get IAllocator for <*this> execution provider.
   // It will be used for allocating tensors (inputs/outputs) or copying tensors
@@ -28,17 +25,15 @@ class IExecutionProvider {
   virtual IArenaAllocator& GetTempSpaceAllocator() const = 0;
 
   // Run the computation of a given node.
-  virtual Common::Status Compute(const Node& node, OpKernelContext* context) = 0;
+  virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) = 0;
 
   // TODO: Do we still need these copy methods?
-  virtual Status CopyTensorTo(const Tensor& srcTensor,
-                              Tensor* p_dstTensor) = 0;
-
-  virtual Status CopyTensorFrom(const Tensor& srcTensor,
-                                Tensor* p_dstTensor) = 0;
+  // TODO: Shouldn't tensor copy be implemented in the Tensor class, with it optionally taking
+  // a parameter to provide device specific logic?
+  virtual Status CopyTensor(const Tensor& src, Tensor& dst) = 0;
 };
 
-typedef std::function<unique_ptr<IExecutionProvider>(const ExecutionProviderInfo&)> ProviderCreateFn;
+typedef std::function<unique_ptr<IExecutionProvider>(const ExecutionProviderInfo&)> ProviderCreateFunc;
 typedef std::unique_ptr<IExecutionProvider> ExecutionProviderPtr;
 
 // Singleton execution provider manager.
@@ -47,14 +42,14 @@ typedef std::unique_ptr<IExecutionProvider> ExecutionProviderPtr;
 class ExecutionProviderMgr {
  public:
   static ExecutionProviderMgr& Instance() {
-    static ExecutionProviderMgr s_providerMgr;
-    return s_providerMgr;
+    static ExecutionProviderMgr instance;
+    return instance;
   }
 
   // TODO: registration for provider type to provider finder.
-  Status AddProviderCreater(const string& key, ProviderCreateFn creatorFn) {
+  Status AddProviderCreater(const string& key, ProviderCreateFunc creator_func) {
     if (provider_map_.find(key) == provider_map_.end()) {
-      provider_map_[key] = creatorFn;
+      provider_map_[key] = creator_func;
       return Status::OK();
     } else {
       LOTUS_THROW("Execution provider () " + key + " already registered");
@@ -73,7 +68,7 @@ class ExecutionProviderMgr {
  private:
   ExecutionProviderMgr() {}
 
-  std::unordered_map<std::string, ProviderCreateFn> provider_map_;
+  std::unordered_map<std::string, ProviderCreateFunc> provider_map_;
 };
 
 // Execution provider registration macro.
@@ -90,4 +85,3 @@ class ExecutionProviderMgr {
                                                       });                                                                  \
   }
 }  // namespace Lotus
-#endif  // CORE_FRAMEWORK_EXECUTION_PROVIDER_H

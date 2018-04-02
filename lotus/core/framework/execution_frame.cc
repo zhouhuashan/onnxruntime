@@ -99,11 +99,11 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBuffer(const int offset,
 
 void ExecutionFrame::Release(const int offset) {
   LOTUS_ENFORCE(offset >= 0 && offset < node_offsets_.size());
-  all_values_[node_values_[offset]].Reset();
+  all_values_[node_values_[offset]] = MLValue();
 }
 
 // This method is not thread safe!
-Tensor* ExecutionFrame::get_or_create_tensor(int index, const TensorShape& shape) {
+Tensor* ExecutionFrame::GetOrCreateTensor(int index, const TensorShape& shape) {
   LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
   auto mlvalue_index = node_values_[index];
   LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
@@ -115,7 +115,7 @@ Tensor* ExecutionFrame::get_or_create_tensor(int index, const TensorShape& shape
     // if they match each other, then return, else throw error.
     // TODO: type also needs to be checked and then use static_cast.
     Tensor* tensor = p_mlvalue->GetMutable<Tensor>();
-    LOTUS_ENFORCE(tensor->shape() == shape);
+    LOTUS_ENFORCE(tensor->Shape() == shape);
     return tensor;
   } else {
     // It's not allocated, then allocate it with given shape and return.
@@ -201,7 +201,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
 
   //4. set node args
   // TODO const_cast is needed due to the lack of a const iterator in the graph
-  Graph* p_graph = const_cast<Graph*>(graph);
+  LotusIR::Graph* p_graph = const_cast<LotusIR::Graph*>(graph);
 
   for (auto node_it = p_graph->NodesBegin(); node_it != p_graph->NodesEnd(); ++node_it) {
     auto node = *node_it;

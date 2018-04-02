@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_EXECUTION_FRAME_H
-#define CORE_FRAMEWORK_EXECUTION_FRAME_H
+#pragma once
 
 #include <mutex>
 #include <vector>
@@ -19,7 +18,7 @@ class ExecutionFrame {
   typedef MLValue* NodeArgValue;
 
   // For arena management design, we could have two options:
-  // 1. For each device, arena is global in the entire process,
+  // 1. For each device, arena is global in the entire Process,
   //    like all the infer session shared the same cpu arena.
   //    The benefit is it gives us protential to share memory
   //    between different session/request, but will pay the cost
@@ -83,19 +82,19 @@ class ExecutionFrame {
   }
 
   // Index to the first argument of the given node.
-  int get_first_arg_index(LotusIR::NodeIndex index) {
+  int GetFirstArgIndex(LotusIR::NodeIndex index) {
     LOTUS_ENFORCE(index >= 0 && index < node_offsets_.size());
     return node_offsets_[index];
   }
 
   template <typename T>
-  const T* get_value(int index) const {
+  const T* GetValue(int index) const {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
     return &all_values_[node_values_[index]].Get<T>();
   }
 
   template <typename T>
-  T* get_mutable_value(int index) {
+  T* GetMutableValue(int index) {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
     return all_values_[node_values_[index]].GetMutable<T>();
   }
@@ -110,7 +109,7 @@ class ExecutionFrame {
 
   void ReleaseMLValue(int mlvalue_idx) {
     LOTUS_ENFORCE(mlvalue_idx >= 0 || mlvalue_idx < all_values_.size());
-    all_values_[mlvalue_idx].Reset();
+    all_values_[mlvalue_idx] = MLValue();
   }
 
   const Lotus::SessionState& SessionState() const {
@@ -148,17 +147,17 @@ class ExecutionFrame {
                                                    const TensorShape& shape);
 
   // This method is not thread safe!
-  Tensor* get_or_create_tensor(int index, const TensorShape& shape);
+  Tensor* GetOrCreateTensor(int index, const TensorShape& shape);
 
   void InitArenas() {
     // For milestone 1, we only have CPU arena.
     // If later we want executor to host its own arena
     // Need to update this part.
-    auto alloc_mgr = AllocatorManager::Instance();
-    arenas_.push_back(&alloc_mgr->GetArena(CPU));
+    auto& alloc_mgr = AllocatorManager::Instance();
+    arenas_.push_back(&alloc_mgr.GetArena(CPU));
   }
 
-  std::mutex mu_;
+  std::mutex mutex_;
   Status status_;
 
   // The values for the inputs and outputs of the nodes.
@@ -189,5 +188,3 @@ class ExecutionFrame {
   const Lotus::SessionState& session_state_;
 };
 }  // namespace Lotus
-
-#endif  // CORE_FRAMEWORK_EXECUTION_FRAME_H

@@ -1,5 +1,4 @@
-#ifndef LOTUS_CORE_FRAMEWORK_INFERENCE_SESSION_H_
-#define LOTUS_CORE_FRAMEWORK_INFERENCE_SESSION_H_
+#pragma once
 
 #include "core/common/common.h"
 #include "core/common/status.h"
@@ -149,10 +148,9 @@ class InferenceSession {
   int GetCurrentNumRuns();
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
+
   class Impl;
   std::unique_ptr<Impl> impl_;
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
 };
 }  // namespace Lotus
-
-#endif  // LOTUS_CORE_FRAMEWORK_INFERENCE_SESSION_H_

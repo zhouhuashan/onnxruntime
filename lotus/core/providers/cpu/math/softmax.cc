@@ -9,25 +9,25 @@
 namespace Lotus {
 
 template <>
-Status Softmax<float>::compute(OpKernelContext* ctx) const {
-  const Tensor& X = *ctx->input<Tensor>(0);
-  const TensorShape input_shape{X.shape()};
+Status Softmax<float>::Compute(OpKernelContext* ctx) const {
+  const Tensor& X = *ctx->Input<Tensor>(0);
+  const TensorShape input_shape{X.Shape()};
 
   VLOGS(ctx->Logger(), 1) << "Input tensor shape: " << input_shape;
 
-  Tensor* Y = ctx->output(0, input_shape);
+  Tensor* Y = ctx->Output(0, input_shape);
 
   size_t N = input_shape.SizeToDimension(axis_);
   size_t D = input_shape.SizeFromDimension(axis_);
 
-  float* Ydata = Y->mutable_data<float>();
+  float* Ydata = Y->MutableData<float>();
 
   std::vector<float> scale_(N);
   std::vector<float> rowmax_(N);
   std::vector<float> sum_multiplier_(D, 1.f);  // initialize all multiplier values to 1.0
 
   const bool logarithmic = false;
-  SoftmaxCPU(gsl::narrow_cast<int>(N), gsl::narrow_cast<int>(D), X.data<float>(), Ydata,
+  SoftmaxCPU(gsl::narrow_cast<int>(N), gsl::narrow_cast<int>(D), X.Data<float>(), Ydata,
              scale_.data(), sum_multiplier_.data(), logarithmic, rowmax_.data());
 
   return Status::OK();

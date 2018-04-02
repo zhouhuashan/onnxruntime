@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_ALLOCATION_PLANNER_H
-#define CORE_FRAMEWORK_ALLOCATION_PLANNER_H
+#pragma once
 
 #include "core/common/status.h"
 #include "core/framework/execution_provider.h"
@@ -48,7 +47,7 @@ class SessionState;
 // planner for a sequential execution, to be used by a SequentialExecutor.
 struct SequentialExecutionPlan {
   // Allocation plan:
-  // ExecutionFrame::get_or_create_tensor() should use the following information
+  // ExecutionFrame::GetOrCreateTensor() should use the following information
   // to decide whether to allocate a new buffer or reuse an existing buffer
 
   // AllocPlanPerValue: (a simplified form of AllocationPlanPerValue above)
@@ -64,7 +63,7 @@ struct SequentialExecutionPlan {
    public:
     AllocPlanPerValue() : alloc_kind(AllocKind::kAllocate),
                           value_type(nullptr),
-                          location(CPU, ArenaAllocator),
+                          location(CPU, kArenaAllocator),
                           reused_buffer(0) {}
   };
 
@@ -122,5 +121,3 @@ class AllocationPlanner {
 };
 
 }  // namespace Lotus
-
-#endif  // CORE_FRAMEWORK_ALLOCATION_PLANNER_H

@@ -15,7 +15,7 @@ TEST(MathOpTest, MatMul) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("MatMul", input_defs, output_defs);
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   MatMul<float> kernel(info);
@@ -86,9 +86,9 @@ TEST(MathOpTest, MatMul) {
     EXPECT_TRUE(status.IsOK());
 
     OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-    kernel.compute(&kernel_ctx);
-    auto output = kernel_ctx.output(0, TensorShape(t.expected_dims_));
-    const float* res = output->data<float>();
+    kernel.Compute(&kernel_ctx);
+    auto output = kernel_ctx.Output(0, TensorShape(t.expected_dims_));
+    const float* res = output->Data<float>();
 
     for (int i = 0; i < t.expected_vals_.size(); ++i) {
       EXPECT_EQ(t.expected_vals_[i], res[i]);

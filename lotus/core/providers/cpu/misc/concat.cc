@@ -10,66 +10,66 @@ REGISTER_KERNEL(KernelDefBuilder("Concat")
                 Concat<float>);
 
 template <>
-Status Concat<float>::compute(OpKernelContext* ctx) const {
-  auto inputCount = node().InputArgCount().front();
-  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+Status Concat<float>::Compute(OpKernelContext* ctx) const {
+  auto input_count = Node().InputArgCount().front();
+  LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
 
-  auto& inputs_0 = *ctx->input<Tensor>(0);
+  auto& inputs_0 = *ctx->Input<Tensor>(0);
 
   // Ensure all of the non concatenated axes match each other
-  for (int index = 1; index < inputCount; index++) {
-    auto& data_n = *ctx->input<Tensor>(index);
+  for (int index = 1; index < input_count; index++) {
+    auto& data_n = *ctx->Input<Tensor>(index);
     // Ensure all the other axes match
-    auto dimensionCount = inputs_0.shape().NumDimensions();
-    for (int axisIndex = 0; axisIndex < dimensionCount; axisIndex++) {
-      if (axisIndex == axis_)
+    auto dimension_count = inputs_0.Shape().NumDimensions();
+    for (int axis_index = 0; axis_index < dimension_count; axis_index++) {
+      if (axis_index == axis_)
         continue;
-      LOTUS_ENFORCE(data_n.shape()[axisIndex] == inputs_0.shape()[axisIndex], "Non concat axis dimensions must match");
+      LOTUS_ENFORCE(data_n.Shape()[axis_index] == inputs_0.Shape()[axis_index], "Non concat axis dimensions must match");
     }
   }
 
   // Calculate the size of the concatenated axis, and verify all other dimensions match
-  size_t concatAxisSize = 0;
-  for (int index = 0; index < inputCount; index++) {
-    concatAxisSize += ctx->input<Tensor>(index)->shape()[int(axis_)];
+  size_t concat_axis_size = 0;
+  for (int index = 0; index < input_count; index++) {
+    concat_axis_size += ctx->Input<Tensor>(index)->Shape()[int(axis_)];
   }
 
   // Calculate the shape of the output tensor
   std::vector<int64_t> dims;
-  for (int dimensionIndex = 0; dimensionIndex < inputs_0.shape().NumDimensions(); dimensionIndex++)
-    dims.emplace_back(inputs_0.shape()[dimensionIndex]);
-  dims[axis_] = concatAxisSize;
+  for (int dimension_index = 0; dimension_index < inputs_0.Shape().NumDimensions(); dimension_index++)
+    dims.emplace_back(inputs_0.Shape()[dimension_index]);
+  dims[axis_] = concat_axis_size;
   TensorShape outputShape(dims);
 
-  // The outputAxisPitch is the number of elements to add to move to the next split axis in the output
-  int64_t outputAxisPitch = 1;
+  // The output_axis_pitch is the number of elements to add to move to the next split axis in the output
+  int64_t output_axis_pitch = 1;
   for (auto i = int64_t(dims.size()); i-- > axis_;)
-    outputAxisPitch *= dims[axis_];
+    output_axis_pitch *= dims[axis_];
 
-  auto& concat_result = *ctx->output(0, outputShape);
-  float* outputBase = concat_result.mutable_data<float>();
+  auto& concat_result = *ctx->Output(0, outputShape);
+  float* output_base = concat_result.MutableData<float>();
 
-  for (int inputIndex = 0; inputIndex < inputCount; inputIndex++) {
-    auto& data_n = *ctx->input<Tensor>(inputIndex);
+  for (int input_index = 0; input_index < input_count; input_index++) {
+    auto& data_n = *ctx->Input<Tensor>(input_index);
 
-    // The inputAxisPitch is the number of elements to add to move to the next split axis in the input
-    int64_t inputAxisPitch = 1;
-    for (int i = int(data_n.shape().NumDimensions()); i-- > axis_;)
-      inputAxisPitch *= data_n.shape()[int(i)];
+    // The input_axis_pitch is the number of elements to add to move to the next split axis in the input
+    int64_t input_axis_pitch = 1;
+    for (int i = int(data_n.Shape().NumDimensions()); i-- > axis_;)
+      input_axis_pitch *= data_n.Shape()[int(i)];
 
-    const float* input = data_n.data<float>();
-    auto inputSize = data_n.shape().Size();
+    const float* input = data_n.Data<float>();
+    auto input_size = data_n.Shape().Size();
 
-    // Copy the data across. For every 'inputAxisPitch' values copied, we move over by the 'outputAxisPitch'
-    float* output = outputBase;
-    for (int i = 0, j = 0; i < inputSize; i++) {
+    // Copy the data across. For every 'input_axis_pitch' values copied, we move over by the 'output_axis_pitch'
+    float* output = output_base;
+    for (int i = 0, j = 0; i < input_size; i++) {
       output[i] = input[i];
-      if (++j == inputAxisPitch) {
-        output += outputAxisPitch - inputAxisPitch;  // Subtract inputAxisPitch because output is being indexed by 'i'
+      if (++j == input_axis_pitch) {
+        output += output_axis_pitch - input_axis_pitch;  // Subtract input_axis_pitch because output is being indexed by 'i'
         j = 0;
       }
     }
-    outputBase += inputAxisPitch;
+    output_base += input_axis_pitch;
   }
   return Status::OK();
 }

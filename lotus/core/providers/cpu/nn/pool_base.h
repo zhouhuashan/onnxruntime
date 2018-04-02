@@ -1,5 +1,4 @@
-#ifndef CORE_PROVIDERS_CPU_NN_POOL_BASE_H
-#define CORE_PROVIDERS_CPU_NN_POOL_BASE_H
+#pragma once
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
@@ -10,7 +9,7 @@ namespace Lotus {
 class PoolBase : public OpKernel {
  public:
   PoolBase(OpKernelInfo info) : OpKernel(info) {
-    const std::string op_name = info.get_kernel_def().OpName();
+    const std::string op_name = info.GetKernelDef().OpName();
     global_pooling_ = (op_name == "GlobalAveragePool" || op_name == "GlobalMaxPool" || op_name == "GlobalLpPool");
 
     if (!global_pooling_) {
@@ -22,7 +21,6 @@ class PoolBase : public OpKernel {
       auto_pad_ = StringToAutoPadType(auto_padding);
 
       LOTUS_ENFORCE(info.GetAttrs<int64_t>("pads", pads_).IsOK());
-
       LOTUS_ENFORCE(info.GetAttrs<int64_t>("strides", strides_).IsOK());
       LOTUS_ENFORCE(strides_.size() == kernel_shape_.size());
     }
@@ -42,52 +40,46 @@ class PoolBase : public OpKernel {
     }
   }
 
-  virtual ~PoolBase() {}
+  virtual ~PoolBase() = default;
 
-  std::vector<int64_t> SetOutputSize(
-      const TensorShape& input_shape,
-      int64_t output_channel,
-      std::vector<int64_t>* pads) const {
+  std::vector<int64_t> SetOutputSize(const TensorShape& input_shape,
+                                     int64_t output_channel,
+                                     std::vector<int64_t>* pads) const {
     LOTUS_ENFORCE(input_shape.Size() > 0);
     std::vector<int64_t> output_dims;
     int64_t N = input_shape[0];
-    InferOutputSize(
-        input_shape.GetDims(),
-        &output_dims,
-        pads);
+    InferOutputSize(input_shape.GetDims(), &output_dims, pads);
 
     output_dims.insert(output_dims.begin(), {N, output_channel});
+
     return output_dims;
   }
 
-  inline void InferOutputSize(
-      const vector<int64_t>& input_dims,
-      vector<int64_t>* output_dims,
-      vector<int64_t>* pads) const {
+  inline void InferOutputSize(const vector<int64_t>& input_dims,
+                              vector<int64_t>* output_dims,
+                              vector<int64_t>* pads) const {
     if (global_pooling_) {
       output_dims->assign(input_dims.size() - 2, 1);
     } else {
       for (int dim = 0; dim < input_dims.size() - 2; ++dim) {
         int64_t dim_size = 0;
-        ComputeSizeAndPad(
-            static_cast<int>(input_dims[dim + 2]),
-            strides_[dim],
-            kernel_shape_[dim],
-            &pads->at(dim),
-            &pads->at(input_dims.size() + dim - 2),
-            &dim_size);
+        ComputeSizeAndPad(static_cast<int>(input_dims[dim + 2]),
+                          strides_[dim],
+                          kernel_shape_[dim],
+                          &pads->at(dim),
+                          &pads->at(input_dims.size() + dim - 2),
+                          &dim_size);
         output_dims->push_back(dim_size);
       }
     }
   }
 
-  inline void ComputeSizeAndPad(
-      const int64_t in_size,
-      const int64_t stride,
-      const int64_t kernel,
-      int64_t* pad_head,
-      int64_t* pad_tail,
-      int64_t* out_size) const {
+  inline void ComputeSizeAndPad(const int64_t in_size,
+                                const int64_t stride,
+                                const int64_t kernel,
+                                int64_t* pad_head,
+                                int64_t* pad_tail,
+                                int64_t* out_size) const {
     if (auto_pad_ != AutoPadType::NOTSET) {
       switch (auto_pad_) {
         case AutoPadType::VALID:
@@ -139,4 +131,3 @@ class PoolBase : public OpKernel {
 };
 
 }  // namespace Lotus
-#endif  //!CORE_PROVIDERS_CPU_NN_POOL_BASE_H

@@ -51,7 +51,7 @@
 #endif  // _MSC_VER
 
 namespace Lotus {
-namespace math {
+namespace Math {
 
 #ifdef max
 #undef max  // Visual Studio defines this macro
@@ -424,7 +424,7 @@ void GemmBatched<float, CPUMathUtil>(
   auto y_offset = M * N;
   // loop over matrices in the batch
   for (int i = 0; i < A_batches; ++i) {
-    math::Gemm<float, CPUMathUtil>(
+    Math::Gemm<float, CPUMathUtil>(
         TransA,
         TransB,
         M,
@@ -1408,5 +1408,5 @@ uint32_t randomNumberSeed() {
          kPrime2 * tv_sec + kPrime3 * tv_usec;
 }
 
-}  // namespace math
+}  // namespace Math
 }  // namespace Lotus

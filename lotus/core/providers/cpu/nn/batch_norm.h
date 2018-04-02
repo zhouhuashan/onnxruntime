@@ -44,7 +44,7 @@ class BatchNorm final : public OpKernel {
                         const Tensor* mean,
                         const Tensor* var) const;
 
-  Status compute(OpKernelContext* p_op_kernel_context) const override;
+  Status Compute(OpKernelContext* p_op_kernel_context) const override;
 
  private:
   float epsilon_;

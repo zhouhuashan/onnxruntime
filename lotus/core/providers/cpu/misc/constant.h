@@ -1,6 +1,4 @@
 #pragma once
-#ifndef CORE_PROVIDERS_CPU_MISC_CONSTANT_H
-#define CORE_PROVIDERS_CPU_MISC_CONSTANT_H
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
@@ -16,12 +14,10 @@ struct Constant final : OpKernel {
     }
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 
  private:
   TensorProto value_;
 };
 
 }  // namespace Lotus
-
-#endif  // !CORE_PROVIDERS_CPU_MISC_CONSTANT_H

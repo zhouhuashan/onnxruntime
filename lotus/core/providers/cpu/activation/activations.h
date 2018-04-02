@@ -1,5 +1,4 @@
-#ifndef CORE_PROVIDERS_CPU_ACTIVATION_RELU_H
-#define CORE_PROVIDERS_CPU_ACTIVATION_RELU_H
+#pragma once
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
@@ -43,5 +42,3 @@ DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu,
                                        {"alpha"})
 
 }  // namespace Lotus
-
-#endif  // !CORE_PROVIDERS_CPU_ACTIVATION_RELU_H

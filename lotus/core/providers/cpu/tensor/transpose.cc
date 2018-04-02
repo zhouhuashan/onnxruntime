@@ -13,9 +13,9 @@ namespace Lotus {
 // TODO: Optimize the implementation to use memcpy for sub-blocks that can be so copied.
 
 template <>
-Status Transpose<float>::compute(OpKernelContext* ctx) const {
-  const Tensor& X = *ctx->input<Tensor>(0);
-  const TensorShape& input_shape = X.shape();
+Status Transpose<float>::Compute(OpKernelContext* ctx) const {
+  const Tensor& X = *ctx->Input<Tensor>(0);
+  const TensorShape& input_shape = X.Shape();
   const std::vector<int64_t>& input_dims = input_shape.GetDims();
   size_t rank = input_dims.size();
 
@@ -48,9 +48,9 @@ Status Transpose<float>::compute(OpKernelContext* ctx) const {
   }
 
   TensorShape output_shape{output_dims};
-  Tensor* Y = ctx->output(0, output_shape);
-  const float* Xdata = X.data<float>();
-  float* Ydata = Y->mutable_data<float>();
+  Tensor* Y = ctx->Output(0, output_shape);
+  const float* Xdata = X.Data<float>();
+  float* Ydata = Y->MutableData<float>();
   auto size = output_shape.Size();
   std::vector<int64_t> y_index(rank, 0);  // index used to iterate over Y's iteration-space
   for (size_t i = 0; i < size; ++i) {
@@ -59,9 +59,11 @@ Status Transpose<float>::compute(OpKernelContext* ctx) const {
     for (int j = 0; j < rank; ++j) {
       x_offset += y_index[j] * stride[j];
     }
+
     // copy
     LOTUS_ENFORCE((0 <= x_offset) && (x_offset < size));
     *(Ydata + i) = *(Xdata + x_offset);
+
     // increment y_index:
     for (int64_t k = rank - 1; k >= 0; --k) {
       y_index[k]++;

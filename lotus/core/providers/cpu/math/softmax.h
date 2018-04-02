@@ -1,4 +1,5 @@
 #pragma once
+
 #include "gsl/gsl_util"
 
 #include "core/common/common.h"
@@ -21,7 +22,7 @@ class Softmax final : public OpKernel {
     LOTUS_ENFORCE(axis_ >= 0, "Invalid axis provided.");
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 
  private:
   int axis_;

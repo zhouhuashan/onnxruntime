@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 
+#include "core/common/common.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/session_state.h"
@@ -56,7 +57,7 @@ class SequentialExecutor : public Executor {
       // TODO Today the kernels don't return any status code.
       // They throw exceptions instead. We should change the compute
       // method to return a status code.
-      p_op_kernel->compute(&op_kernel_context);
+      p_op_kernel->Compute(&op_kernel_context);
 
       // free ml-values corresponding to this node
       ReleaseNodeMLValues(p_seq_exec_plan, node_exec_plan);
@@ -88,6 +89,8 @@ class SequentialExecutor : public Executor {
   }
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SequentialExecutor);
+
   ExecutionFrame root_frame_;
   const SessionState& session_state_;
 };

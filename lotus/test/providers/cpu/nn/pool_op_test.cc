@@ -20,7 +20,7 @@ TEST(PoolTest, MaxPool) {
   EXPECT_TRUE(node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0}));
   EXPECT_TRUE(node->AddAttribute("kernel_shape", vector<int64_t>{8, 8}));
 
-  AllocatorInfo allocator_info(CPU, Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
   KernelDefBuilder kernel_builder("MaxPool");
   std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
   OpKernelInfo info(*node, allocator_info, *kernel_def.get());
@@ -109,9 +109,9 @@ TEST(PoolTest, MaxPool) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
@@ -125,7 +125,7 @@ TEST(PoolTest, GlobalMaxPool) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("GlobalMaxPool", input_defs, output_defs);
 
-  AllocatorInfo allocator_info(CPU, Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
   KernelDefBuilder kernel_builder("GlobalMaxPool");
   std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
   OpKernelInfo info(*node, allocator_info, *kernel_def.get());
@@ -213,9 +213,9 @@ TEST(PoolTest, GlobalMaxPool) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
@@ -234,7 +234,7 @@ TEST(PoolTest, AveragePool) {
   EXPECT_TRUE(node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0}));
   EXPECT_TRUE(node->AddAttribute("kernel_shape", vector<int64_t>{8, 8}));
 
-  AllocatorInfo allocator_info(CPU, Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
   KernelDefBuilder kernel_builder("AveragePool");
   std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
   OpKernelInfo info(*node, allocator_info, *kernel_def.get());
@@ -323,9 +323,9 @@ TEST(PoolTest, AveragePool) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
@@ -339,7 +339,7 @@ TEST(PoolTest, GlobalAveragePool) {
   std::vector<LotusIR::NodeArg*> output_defs{&output_def};
   CREATE_NODE("GlobalAveragePool", input_defs, output_defs);
 
-  AllocatorInfo allocator_info(CPU, Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
   KernelDefBuilder kernel_builder("GlobalAveragePool");
   std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
   OpKernelInfo info(*node, allocator_info, *kernel_def.get());
@@ -427,9 +427,9 @@ TEST(PoolTest, GlobalAveragePool) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);

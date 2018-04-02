@@ -216,29 +216,30 @@ class MatMulComputeHelper {
 };
 
 template <>
-Status MatMul<float>::compute(OpKernelContext* ctx) const {
-  const Tensor* left_X = ctx->template input<Tensor>(0);
-  const Tensor* right_X = ctx->template input<Tensor>(1);
+Status MatMul<float>::Compute(OpKernelContext* ctx) const {
+  const Tensor* left_X = ctx->Input<Tensor>(0);
+  const Tensor* right_X = ctx->Input<Tensor>(1);
 
-  MatMulComputeHelper<float> helper(left_X->shape(), right_X->shape());
+  MatMulComputeHelper<float> helper(left_X->Shape(), right_X->Shape());
 
-  Tensor* Y = ctx->output(0, helper.OutputShape());
+  Tensor* Y = ctx->Output(0, helper.OutputShape());
 
   // TODO: replace it with GemmBatch for performance, it's OK for now as GemmBatch unrolls as well
   for (int i = 0; i < helper.OutputOffsets().size(); i++) {
-    math::Gemm<float, CPUMathUtil>(
+    Math::Gemm<float, CPUMathUtil>(
         CblasNoTrans,
         CblasNoTrans,
         static_cast<int>(helper.M()),
         static_cast<int>(helper.N()),
         static_cast<int>(helper.K()),
         /* alpha */ 1.0f,
-        left_X->data<float>() + helper.LeftOffsets()[i],
-        right_X->data<float>() + helper.RightOffsets()[i],
+        left_X->Data<float>() + helper.LeftOffsets()[i],
+        right_X->Data<float>() + helper.RightOffsets()[i],
         /* beta */ 0.0f,
-        Y->mutable_data<float>() + helper.OutputOffsets()[i],
+        Y->MutableData<float>() + helper.OutputOffsets()[i],
         &CPUMathUtil::Instance());
   }
+
   return Status::OK();
 }
 

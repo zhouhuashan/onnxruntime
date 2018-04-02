@@ -1,4 +1,5 @@
 #pragma once
+
 #include "gsl/gsl_util"
 
 #include "core/common/common.h"
@@ -26,7 +27,7 @@ class LRN : public OpKernel {
     }
   }
 
-  Status compute(OpKernelContext* p_op_kernel_context) const override;
+  Status Compute(OpKernelContext* p_op_kernel_context) const override;
 
  private:
   float alpha_;

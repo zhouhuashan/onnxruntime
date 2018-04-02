@@ -3,6 +3,8 @@
 
 namespace Lotus {
 
+using namespace Lotus::Common;
+
 Status Initializer::EnsureInitialized(int* pargc, char*** pargv) {
   static Initializer initializer{pargc, pargv};
   return initializer.initialization_status_;
@@ -27,11 +29,9 @@ Status Initializer::Initialize(int* pargc, char*** pargv) {
     if (!status.IsOK()) return status;
 
     // LotusDeviceManager
-    auto allocator_manager = AllocatorManager::Instance();
-    if (!allocator_manager)
-      return Status(LOTUS, StatusCode::FAIL, "Init allocator manager failed");
+    auto& allocator_manager = AllocatorManager::Instance();
 
-    status = allocator_manager->InitializeAllocators();
+    status = allocator_manager.InitializeAllocators();
     if (status.IsOK())
       return status;
 

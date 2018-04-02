@@ -1,5 +1,5 @@
 /**
-* Derived from caffe2, need copy right annoucement here.
+* Derived from caffe2, need copyright announcement here.
 */
 
 /**
@@ -18,8 +18,8 @@
 * limitations under the License.
 */
 
-#ifndef LOTUS_UTILS_MATH_H_
-#define LOTUS_UTILS_MATH_H_
+#pragma once
+
 // This is a simple translation from the old Caffe math interfaces. We aim to
 // still keep it simple, so all platforms would be able to support it fairly
 // easily.
@@ -43,7 +43,7 @@ enum StorageOrder {
 
 #define FLOAT_TYPE DataTypeImpl::GetType<float>()
 
-namespace math {
+namespace Math {
 
 template <typename T, class Provider>
 void Exp(const int N, const T* x, T* y, Provider* provider);
@@ -471,7 +471,5 @@ constexpr T integerNextHighestPowerOf2(T v) {
   return (integerIsPowerOf2(v) ? (T)2 * v : ((T)1 << (integerLog2(v) + 1)));
 }
 
-}  // namespace math
+}  // namespace Math
 }  // namespace Lotus
-
-#endif  // LOTUS_UTILS_MATH_H_

@@ -1,5 +1,5 @@
-#ifndef CORE_PROVIDERS_CPU_NN_AUTOPAD_TYPE_H
-#define CORE_PROVIDERS_CPU_NN_AUTOPAD_TYPE_H
+#pragma once
+
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
 
@@ -28,5 +28,3 @@ inline AutoPadType StringToAutoPadType(const string& str) {
   }
 }
 }  // namespace Lotus
-
-#endif  // CORE_PROVIDERS_CPU_NN_AUTOPAD_TYPE_H

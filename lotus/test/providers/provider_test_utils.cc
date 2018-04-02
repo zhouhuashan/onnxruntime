@@ -49,18 +49,18 @@ void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
 }
 
 template <>
-void OpTester::Check<float>(const Data& outputData, Tensor& outputTensor, size_t size) {
-  auto* expected = reinterpret_cast<const float*>(outputData.data_.get());
-  auto* output = outputTensor.data<float>();
+void OpTester::Check<float>(const Data& output_data, Tensor& output_tensor, size_t size) {
+  auto* expected = reinterpret_cast<const float*>(output_data.data_.get());
+  auto* output = output_tensor.Data<float>();
   for (int i = 0; i < size; ++i) {
     EXPECT_NEAR(expected[i], output[i], 0.001f);
   }
 }
 
 template <>
-void OpTester::Check<bool>(const Data& outputData, Tensor& outputTensor, size_t size) {
-  auto* expected = reinterpret_cast<const bool*>(outputData.data_.get());
-  auto* output = outputTensor.data<bool>();
+void OpTester::Check<bool>(const Data& output_data, Tensor& output_tensor, size_t size) {
+  auto* expected = reinterpret_cast<const bool*>(output_data.data_.get());
+  auto* output = output_tensor.Data<bool>();
   for (int i = 0; i < size; ++i) {
     EXPECT_EQ(expected[i], output[i]);
   }

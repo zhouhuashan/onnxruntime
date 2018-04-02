@@ -73,7 +73,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
                        allowed_type_list_iter->second.end(),
                        [real_type](const MLDataType& expected_type) {
                          return expected_type->IsCompatible(real_type);
-        })) {
+                       })) {
         return false;
       }
     }
@@ -101,16 +101,18 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
       int start1 = 0, end1 = 0;
       i->second.kernel_def->SinceVersion(&start1, &end1);
       if (start <= end1 && end >= start1) {
-        Status status(LOTUS, FAIL, "Failed to add kernel for " + op_name +
-                      ": Conflicting with a registered kernel with op versions [" +
-                      std::to_string(start1) + "," + std::to_string(end1) + "].");
+        Status status(LOTUS, FAIL,
+                      "Failed to add kernel for " + op_name +
+                          ": Conflicting with a registered kernel with op versions [" +
+                          std::to_string(start1) + "," + std::to_string(end1) + "].");
         return status;
       }
     }
   }
 
   // Register the kernel.
-  kernel_creator_fn_map_.insert({ op_name, kernel_info });
+  // Ownership of the kernel_info (and KernelDef within it) is transferred to the map.
+  kernel_creator_fn_map_.emplace(op_name, std::move(kernel_info));
   return Status::OK();
 }
 
@@ -137,24 +139,25 @@ Status KernelRegistry::CreateKernel(const LotusIR::OperatorSchema& /*TODO:remove
       if (start <= version && version <= end &&
           VerifyKernelDef(node, *i->second.kernel_def)) {
         OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def);
-        op_kernel->reset(i->second.kernel_create_fn(kernel_info));
+        op_kernel->reset(i->second.kernel_create_func(kernel_info));
         return Status::OK();
       }
     }
   }
+
   return Status(LOTUS, NOT_IMPLEMENTED, "OP Kernel not found");
 }
 
-Tensor* OpKernelContext::output(int index, const TensorShape& shape) {
+Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
   // In this case, it's assumed that the tensor hasn't been allocated yet,
   // so that it's calling ExecutionFrame to create a tensor in the given position with given shape.
-  auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->node().InputDefs().size()) + index;
-  return execution_frame_->get_or_create_tensor(output_arg_index, shape);
+  auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
+  return execution_frame_->GetOrCreateTensor(output_arg_index, shape);
 }
 
 // Fetching output tensor without shape is not allowed.
 template <>
-Tensor* OpKernelContext::output<Tensor>(int index) {
+Tensor* OpKernelContext::Output<Tensor>(int index) {
   LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
   (index);
   return nullptr;
@@ -167,6 +170,6 @@ OpKernelContext::OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel, 
   LOTUS_ENFORCE(frame != nullptr, "Execution frame was null");
   LOTUS_ENFORCE(kernel != nullptr, "OpKernel was null");
 
-  arg_start_index_ = frame->get_first_arg_index(kernel->node().Index());
+  arg_start_index_ = frame->GetFirstArgIndex(kernel->Node().Index());
 }
 }  // namespace Lotus

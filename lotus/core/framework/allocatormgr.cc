@@ -5,6 +5,8 @@
 
 namespace Lotus {
 
+using namespace Lotus::Common;
+
 std::unordered_map<std::string, std::unique_ptr<IDeviceAllocator>>& _getDeviceAllocatorMap() {
   static std::unordered_map<std::string, std::unique_ptr<IDeviceAllocator>> gDeviceAllocatorMap;
   return gDeviceAllocatorMap;
@@ -25,16 +27,16 @@ Status AllocatorManager::AddDeviceAllocator(IDeviceAllocator* allocator, const b
   auto& device_map = _getDeviceAllocatorMap();
   auto& arena_map = _getArenaAllocatorMap();
   auto& info = allocator->Info();
-  auto allocator_id = GetAllocatorId(info.name_, info.id_, false);
+  auto allocator_id = GetAllocatorId(info.name, info.id, false);
   if (device_map.find(allocator_id) != device_map.end())
     return Status(LOTUS, FAIL, "device allocator already exist");
 
-  auto arena_id = GetAllocatorId(info.name_, info.id_, true);
+  auto arena_id = GetAllocatorId(info.name, info.id, true);
   if (create_arena && arena_map.find(arena_id) != arena_map.end())
     return Status(LOTUS, FAIL, "arena already exist");
 
-  device_map[allocator_id] = std::move(std::unique_ptr<IDeviceAllocator>(allocator));
-  arena_map[arena_id] = std::move(std::unique_ptr<IArenaAllocator>(new DummyArena(allocator)));
+  device_map[allocator_id] = std::unique_ptr<IDeviceAllocator>(allocator);
+  arena_map[arena_id] = std::unique_ptr<IArenaAllocator>(new DummyArena(allocator));
   return Status::OK();
 }
 
@@ -42,10 +44,10 @@ Status AllocatorManager::AddArenaAllocator(IArenaAllocator* allocator) {
   std::lock_guard<std::mutex> lock(_getLocalMutex());
   auto& arena_map = _getArenaAllocatorMap();
   auto& info = allocator->Info();
-  auto arena_id = GetAllocatorId(info.name_, info.id_, true);
+  auto arena_id = GetAllocatorId(info.name, info.id, true);
   if (arena_map.find(arena_id) != arena_map.end())
     return Status(LOTUS, FAIL, "arena already exist");
-  arena_map[arena_id] = std::move(std::unique_ptr<IArenaAllocator>(allocator));
+  arena_map[arena_id] = std::unique_ptr<IArenaAllocator>(allocator);
   return Status::OK();
 }
 

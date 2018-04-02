@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_ML_VALUE_H
-#define CORE_FRAMEWORK_ML_VALUE_H
+#pragma once
 
 #include <string>
 #include "core/common/common.h"
@@ -11,33 +10,28 @@
 namespace Lotus {
 class MLValue {
  public:
-  MLValue() : pData_(nullptr), type_(nullptr) {}
-  virtual ~MLValue() { Reset(); }
+  MLValue() : data_(nullptr), type_(nullptr) {}
+  virtual ~MLValue() = default;
 
   void Init(void* pData, MLDataType type, DeleteFunc deleter) {
-    pData_.reset(pData, deleter);
+    data_.reset(pData, deleter);
     type_ = type;
   }
 
-  void Reset() {
-    pData_ = nullptr;
-    type_ = nullptr;
-  }
-
   bool IsAllocated() {
-    return pData_ && type_;
+    return data_ && type_;
   }
 
   template <typename T>
   const T& Get() const {
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
-    return *static_cast<T*>(pData_.get());
+    return *static_cast<T*>(data_.get());
   }
 
   template <typename T>
   T* GetMutable() {
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
-    return static_cast<T*>(pData_.get());
+    return static_cast<T*>(data_.get());
   }
 
   bool IsTensor() {
@@ -45,9 +39,7 @@ class MLValue {
   }
 
  private:
-  std::shared_ptr<void> pData_;
+  std::shared_ptr<void> data_;
   MLDataType type_;
 };
 }  // namespace Lotus
-
-#endif  // CORE_FRAMEWORK_ML_VALUE_H

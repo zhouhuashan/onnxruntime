@@ -7,7 +7,7 @@ TEST(CPUExecutionProviderTest, MetadataTest) {
   ExecutionProviderInfo info;
   auto provider = ExecutionProviderMgr::Instance().GetProvider("CPUExecutionProvider", info);
   EXPECT_TRUE(provider != nullptr);
-  EXPECT_EQ(provider->GetTempSpaceAllocator().Info().name_, CPU);
+  EXPECT_EQ(provider->GetTempSpaceAllocator().Info().name, CPU);
 }
 }  // namespace Test
 }  // namespace Lotus

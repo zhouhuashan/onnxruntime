@@ -48,9 +48,9 @@ class LotusModelTest : public testing::Test {
     ASSERT_EQ(1, fetches.size());
     auto& rtensor = fetches.front().Get<Tensor>();
     TensorShape expected_shape(out_dims);
-    EXPECT_EQ(expected_shape, rtensor.shape());
+    EXPECT_EQ(expected_shape, rtensor.Shape());
 
-    const std::vector<Tout> found(rtensor.data<Tout>(), rtensor.data<Tout>() + expected_shape.Size());
+    const std::vector<Tout> found(rtensor.Data<Tout>(), rtensor.Data<Tout>() + expected_shape.Size());
     ASSERT_EQ(expected_output, found);
   }
 
@@ -58,7 +58,7 @@ class LotusModelTest : public testing::Test {
   Status CreateMLValue(const std::vector<int64_t>& dims, const std::vector<T>& value, MLValue* output,
                        IAllocator* alloc = nullptr) {
     if (!alloc) {
-      alloc = &AllocatorManager::Instance()->GetArena(CPU);
+      alloc = &AllocatorManager::Instance().GetArena(CPU);
     }
     TensorShape shape(dims);
     auto location = alloc->Info();

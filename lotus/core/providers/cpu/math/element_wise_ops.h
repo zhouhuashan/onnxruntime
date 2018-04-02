@@ -1,5 +1,4 @@
-#ifndef CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H
-#define CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H
+#pragma once
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
@@ -26,7 +25,7 @@ class Add final : public BroadcastAxisKernel {
   Add(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -35,7 +34,7 @@ class Sub final : public BroadcastAxisKernel {
   Sub(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -44,7 +43,7 @@ class Mul final : public BroadcastAxisKernel {
   Mul(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -53,7 +52,7 @@ class Div final : public BroadcastAxisKernel {
   Div(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -62,7 +61,7 @@ class Abs final : public OpKernel {
   Abs(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -71,7 +70,7 @@ class Neg final : public OpKernel {
   Neg(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -80,7 +79,7 @@ class Floor final : public OpKernel {
   Floor(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -89,7 +88,7 @@ class Ceil final : public OpKernel {
   Ceil(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -98,7 +97,7 @@ class Reciprocal final : public OpKernel {
   Reciprocal(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -107,7 +106,7 @@ class Sqrt final : public OpKernel {
   Sqrt(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -116,7 +115,7 @@ class Pow final : public BroadcastAxisKernel {
   Pow(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -125,7 +124,7 @@ class Exp final : public BroadcastAxisKernel {
   Exp(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -134,7 +133,7 @@ class Log final : public BroadcastAxisKernel {
   Log(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -143,7 +142,7 @@ class Sum final : public OpKernel {
   Sum(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -152,7 +151,7 @@ class Min final : public OpKernel {
   Min(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -161,7 +160,7 @@ class Max final : public OpKernel {
   Max(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -170,7 +169,7 @@ class And final : public BroadcastAxisKernel {
   And(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -179,7 +178,7 @@ class Or final : public BroadcastAxisKernel {
   Or(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -188,7 +187,7 @@ class Xor final : public BroadcastAxisKernel {
   Xor(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -197,7 +196,7 @@ class Equal final : public BroadcastAxisKernel {
   Equal(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -206,7 +205,7 @@ class Less final : public BroadcastAxisKernel {
   Less(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
@@ -215,9 +214,7 @@ class Greater final : public BroadcastAxisKernel {
   Greater(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 }  // namespace Lotus
-
-#endif  // !CORE_PROVIDERS_CPU_MATH_ELEMENT_WISE_OPS_H

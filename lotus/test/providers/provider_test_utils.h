@@ -47,14 +47,14 @@ class TestUtils {
     auto status = frame->AllocateTensorWithSelfOwnBuffer(
         index,
         DataTypeImpl::GetType<T>(),
-        AllocatorManager::Instance()->GetArena(CPU).Info(),
+        AllocatorManager::Instance().GetArena(CPU).Info(),
         TensorShape(dims));
     if (!status.IsOK())
       return status;
     if (value) {
-      auto tensor = frame->get_mutable_value<Tensor>(index);
-      LOTUS_ENFORCE(size_t(tensor->shape().Size()) == value->size(), "Number of input values doesn't match tensor size");
-      T* buffer = tensor->mutable_data<T>();
+      auto tensor = frame->GetMutableValue<Tensor>(index);
+      LOTUS_ENFORCE(size_t(tensor->Shape().Size()) == value->size(), "Number of input values doesn't match tensor size");
+      T* buffer = tensor->MutableData<T>();
       for (int i = 0; i < value->size(); i++)
         buffer[i] = (*value)[i];
     }
@@ -134,10 +134,16 @@ struct OpTester {
   template <typename T>
   void AddAttribute(const char* szName, T value) {
     // Copy the attribute data for now, since we have to add them at a later point
-    auto pData = std::make_unique<uint8_t[]>(sizeof(T));
-    memcpy(pData.get(), &value, sizeof(T));
+    auto data = std::make_unique<uint8_t[]>(sizeof(T));
+    memcpy(data.get(), &value, sizeof(T));
     // Use a lambda to generate a type safe AddAttribute call later
-    attributes_.push_back({szName, std::move(pData), [](Node& node, Attribute& attribute) { EXPECT_TRUE(node.AddAttribute(attribute.szName_, *reinterpret_cast<T*>(attribute.data_.get()))); }});
+    attributes_.push_back(
+        {szName,
+         std::move(data),
+         [](LotusIR::Node& node, Attribute& attribute) {
+           EXPECT_TRUE(node.AddAttribute(attribute.szName_,
+                                         *reinterpret_cast<T*>(attribute.data_.get())));
+         }});
   }
 
   template <typename Op>
@@ -146,6 +152,7 @@ struct OpTester {
     std::vector<LotusIR::NodeArg*> pinputDefs, poutputDefs;
     for (auto& data : inputData_)
       pinputDefs.push_back(&data.def_);
+
     for (auto& data : outputData_)
       poutputDefs.push_back(&data.def_);
 
@@ -172,7 +179,7 @@ struct OpTester {
       attribute.AddAttribute_(node, attribute);
 
     // Setup the op in the node
-    AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::ArenaAllocator};
+    AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::kArenaAllocator};
     KernelDef kernel_def;
     OpKernelInfo info{node, allocator_info, kernel_def};
     Op kernel{info};
@@ -180,28 +187,30 @@ struct OpTester {
     // Hookup the inputs and outputs
     unsigned index = 0;
     for (auto& input : inputData_) {
-      auto status = frame->AllocateTensorWithSelfOwnBuffer(index, input.dataType_, AllocatorManager::Instance()->GetArena(CPU).Info(), input.shape_);
+      auto status = frame->AllocateTensorWithSelfOwnBuffer(
+          index, input.dataType_, AllocatorManager::Instance().GetArena(CPU).Info(), input.shape_);
       // For inputs we have data to initialize with, so copy it into the buffer
-      auto* tensor = frame->get_mutable_value<Tensor>(index);
-      void* buffer = tensor->mutable_data_raw(input.dataType_);
+      auto* tensor = frame->GetMutableValue<Tensor>(index);
+      void* buffer = tensor->MutableDataRaw(input.dataType_);
       memcpy(buffer, input.data_.get(), input.dataSize_);
       index++;
     }
 
     index = 0;
     for (auto& output : outputData_) {
-      auto status = frame->AllocateTensorWithSelfOwnBuffer(index++, output.dataType_, AllocatorManager::Instance()->GetArena(CPU).Info(), output.shape_);
+      auto status = frame->AllocateTensorWithSelfOwnBuffer(
+          index++, output.dataType_, AllocatorManager::Instance().GetArena(CPU).Info(), output.shape_);
     }
 
     // Run the model
     OpKernelContext kernel_ctx(frame.get(), &kernel, DefaultLoggingManager().DefaultLogger());
-    Common::Status status = kernel.compute(&kernel_ctx);
+    Common::Status status = kernel.Compute(&kernel_ctx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
 
     // Verify the outputs
     index = 0;
     for (auto& output : outputData_) {
-      auto& outputTensor = *kernel_ctx.output(index++, output.shape_);
+      auto& outputTensor = *kernel_ctx.Output(index++, output.shape_);
       auto size = output.shape_.Size();
 
       // Dispatch on the type
@@ -233,12 +242,12 @@ struct OpTester {
   struct Attribute {
     const char* szName_;
     std::unique_ptr<uint8_t[]> data_;
-    void (*AddAttribute_)(Node& node, Attribute& attribute);
+    void (*AddAttribute_)(LotusIR::Node& node, Attribute& attribute);
   };
 
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
   template <typename T>
-  void Check(const Data& outputData, Tensor& outputTensor, size_t size);
+  void Check(const Data& output_data, Tensor& output_tensor, size_t size);
 
   const char* szName_;
   std::vector<Data> inputData_, outputData_;
@@ -285,16 +294,16 @@ struct SimpleFloatTest {
   template <size_t count>
   void Run(const std::vector<int64_t>& expectedDims, const float (&expected_vals)[count]) {
     OpKernelContext kernel_ctx(model_.Frame().get(), &kernel_, DefaultLoggingManager().DefaultLogger());
-    Common::Status status = kernel_.compute(&kernel_ctx);
+    Common::Status status = kernel_.Compute(&kernel_ctx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
-    auto& output = *kernel_ctx.output(0, TensorShape(expectedDims));
+    auto& output = *kernel_ctx.Output(0, TensorShape(expectedDims));
     Check(output, expected_vals);
   }
 
   template <size_t count>
   static void Check(Tensor& output, const float (&expected_vals)[count]) {
-    LOTUS_ENFORCE(output.shape().Size() == count);
-    const float* res = output.data<float>();
+    LOTUS_ENFORCE(output.Shape().Size() == count);
+    const float* res = output.Data<float>();
     for (int i = 0; i < count; ++i) {
       EXPECT_NEAR(expected_vals[i], res[i], 0.001f);
     }
@@ -311,7 +320,7 @@ struct SimpleFloatTest {
   }
 
   TestModel& model_;
-  AllocatorInfo allocator_info_{CPU, Lotus::AllocatorType::ArenaAllocator};
+  AllocatorInfo allocator_info_{CPU, AllocatorType::kArenaAllocator};
   KernelDef kernel_def_;
   OpKernelInfo info_{model_.Node(), allocator_info_, kernel_def_};
   Op<float> kernel_{info_};

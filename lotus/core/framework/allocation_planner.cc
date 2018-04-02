@@ -87,7 +87,7 @@ class PlannerImpl {
   bool FindReusableInput(const LotusIR::Node& node, int output_arg_num, MLValueIndex* reusable_input) {
     auto p_opkernel = p_session_state_->GetKernel(node.Index());
     if (nullptr == p_opkernel) return false;
-    const KernelDef& kernel_def = p_opkernel->kernel_def();
+    const KernelDef& kernel_def = p_opkernel->KernelDef();
     const std::vector<std::pair<int, int>>& alias_map = kernel_def.Alias();
     for (auto pair : alias_map) {
       if (pair.second == output_arg_num) {
@@ -133,7 +133,7 @@ class PlannerImpl {
   }
 
   MLDataType GetMLDataType(const LotusIR::NodeArg& arg) {
-    const PTYPE ptype = arg.Type();
+    const LotusIR::PTYPE ptype = arg.Type();
     const onnx::TypeProto& type_proto = LotusIR::Utils::OpUtils::ToTypeProto(ptype);
     return DataTypeImpl::TypeFromProto(type_proto);
   }
@@ -155,15 +155,15 @@ class PlannerImpl {
 
     /* TODO: we can generalize this if the concrete shapes are known for both:
     if (KnownSize(p_shape1) && KnownSize(p_shape2)) {
-	  // Comparison of statically-known size
+      // Comparison of statically-known size
       auto size1 = NumElements(p_shape1) * EltSize(ptype1);
       auto size2 = NumElements(p_shape2) * EltSize(ptype2);
       return size1 == size2;
     } else {
-	  // Comparison of statically-unknown size buffers
-	  return SameElementSize(ptype1, ptype2) && SameShape(shape1, shape2);
-	}
-	*/
+      // Comparison of statically-unknown size buffers
+      return SameElementSize(ptype1, ptype2) && SameShape(shape1, shape2);
+    }
+    */
   }
 
   // Find if freelist contains a buffer of the same size as output_arg

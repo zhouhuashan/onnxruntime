@@ -22,11 +22,11 @@ namespace Test {
 class TestOpKernel : public OpKernel {
  public:
   TestOpKernel(const OpKernelInfo& p) : OpKernel(p) {}
-  Status compute(OpKernelContext* context) const{
+  Status Compute(OpKernelContext* context) const {
     UNUSED_PARAMETER(context);
     return Status::OK();
   }
-  Status compute_async(OpKernelContext* context, DoneCallback done) const {
+  Status ComputeAsync(OpKernelContext* context, DoneCallback done) const {
     UNUSED_PARAMETER(context);
     return Status::OK();
   }
@@ -48,19 +48,19 @@ TEST(SessionStateTest, AddGetKernelTest) {
   outputs.push_back(&outputArg);
   LotusIR::Node* p_node = graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo p_info(*p_node, allocator_info, kernel_def);
   unique_ptr<TestOpKernel> p_kernel;
   p_kernel.reset(new TestOpKernel(p_info));
-  size_t orig_num_outputs = p_kernel->node().OutputDefs().size();
+  size_t orig_num_outputs = p_kernel->Node().OutputDefs().size();
   std::cout << "node_idx: " << p_node->Index() << std::endl;
 
   s.SetGraph(graph);
   s.AddKernel(p_node->Index(), std::move(p_kernel));
   auto test_kernel = s.GetKernel(p_node->Index());
-  std::cout << "orig: " << orig_num_outputs << " new: " << test_kernel->node().OutputDefs().size() << std::endl;
-  EXPECT_EQ(orig_num_outputs, test_kernel->node().OutputDefs().size());
+  std::cout << "orig: " << orig_num_outputs << " new: " << test_kernel->Node().OutputDefs().size() << std::endl;
+  EXPECT_EQ(orig_num_outputs, test_kernel->Node().OutputDefs().size());
 }
 }  // namespace Test
 }  // namespace Lotus

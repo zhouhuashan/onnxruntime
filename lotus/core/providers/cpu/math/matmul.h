@@ -12,7 +12,7 @@ class MatMul final : public OpKernel {
       : OpKernel(info) {
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 };
 
 }  // namespace Lotus

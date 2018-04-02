@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_ALLOCATORMGR_H
-#define CORE_FRAMEWORK_ALLOCATORMGR_H
+#pragma once
 
 #include "core/framework/arena.h"
 
@@ -8,12 +7,12 @@ class AllocatorManager {
   friend class Initializer;
 
  public:
-  // the allocator manager is a global object for entire process.
-  // all the inference engine in the same process will use the same allocator manager.
+  // the allocator manager is a global object for entire Process.
+  // all the inference engine in the same Process will use the same allocator manager.
   // TODO(Task:151) AllocatorManager::Instance could return reference
-  static AllocatorManager* Instance() {
+  static AllocatorManager& Instance() {
     static AllocatorManager manager;
-    return &manager;
+    return manager;
   }
 
   IArenaAllocator& GetArena(const std::string& name, const int id = 0);
@@ -31,5 +30,3 @@ class AllocatorManager {
   Status InitializeAllocators();
 };
 }  // namespace Lotus
-
-#endif

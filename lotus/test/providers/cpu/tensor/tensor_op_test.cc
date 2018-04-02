@@ -16,7 +16,7 @@ TEST(TensorOpTest, Reshape) {
 
   EXPECT_TRUE(node->AddAttribute("shape", std::vector<int64_t>{-1, 0, 2}));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Reshape<float> kernel(info);
@@ -36,10 +36,10 @@ TEST(TensorOpTest, Reshape) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto res = kernel_ctx.output(0, TensorShape(expected_shape));
+  kernel.Compute(&kernel_ctx);
+  auto res = kernel_ctx.Output(0, TensorShape(expected_shape));
   for (int i = 0; i < input_vals.size(); ++i) {
-    EXPECT_EQ(input_vals[i], res->data<float>()[i]);
+    EXPECT_EQ(input_vals[i], res->Data<float>()[i]);
   }
 }
 }  // namespace Test

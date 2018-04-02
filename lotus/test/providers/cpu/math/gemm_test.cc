@@ -23,7 +23,7 @@ TEST(MathOpTest, GemmNoTrans) {
   EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
   EXPECT_TRUE(node->AddAttribute("beta", 1.0f));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Gemm<float, float, float, float> kernel(info);
@@ -57,9 +57,9 @@ TEST(MathOpTest, GemmNoTrans) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
@@ -81,7 +81,7 @@ TEST(MathOpTest, GemmBroadcast) {
   EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
   EXPECT_TRUE(node->AddAttribute("beta", 1.0f));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Gemm<float, float, float, float> kernel(info);
@@ -115,9 +115,9 @@ TEST(MathOpTest, GemmBroadcast) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
@@ -139,7 +139,7 @@ TEST(MathOpTest, GemmTrans) {
   EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
   EXPECT_TRUE(node->AddAttribute("beta", 1.0f));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Gemm<float, float, float, float> kernel(info);
@@ -173,9 +173,9 @@ TEST(MathOpTest, GemmTrans) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
@@ -197,7 +197,7 @@ TEST(MathOpTest, GemmAlphaBeta) {
   EXPECT_TRUE(node->AddAttribute("alpha", 0.5f));
   EXPECT_TRUE(node->AddAttribute("beta", 2.0f));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Gemm<float, float, float, float> kernel(info);
@@ -231,9 +231,9 @@ TEST(MathOpTest, GemmAlphaBeta) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);
@@ -255,7 +255,7 @@ TEST(MathOpTest, GemmNaN) {
   EXPECT_TRUE(node->AddAttribute("alpha", 1.0f));
   EXPECT_TRUE(node->AddAttribute("beta", 0.0f));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Gemm<float, float, float, float> kernel(info);
@@ -291,14 +291,14 @@ TEST(MathOpTest, GemmNaN) {
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
   //set Y to Nan to making sure NaN does not propagate when beta == 0
   float nan = static_cast<float>(std::nan("1"));
-  float* out_buffer = kernel_ctx.output(0, TensorShape(expected_dims))->mutable_data<float>();
+  float* out_buffer = kernel_ctx.Output(0, TensorShape(expected_dims))->MutableData<float>();
   for (int i = 0; i < expected_vals.size(); ++i) {
     out_buffer[i] = nan;
   }
 
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(expected_dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
+  const float* res = output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);

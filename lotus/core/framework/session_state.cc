@@ -27,11 +27,11 @@ const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
   return session_kernels_[node_id].get();
 }
 
-void SessionState::AddKernel(LotusIR::NodeIndex nodeId, std::unique_ptr<OpKernel> p_kernel) {
+void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel) {
   // assumes vector is already resize()'ed to the number of nodes in the graph
   // and the nodeIds space is dense
   LOTUS_ENFORCE(p_graph_ && (session_kernels_.size() == p_graph_->NumberOfNodes()));
-  session_kernels_[nodeId] = std::move(p_kernel);
+  session_kernels_[node_id] = std::move(p_kernel);
 }
 
 void SessionState::AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
@@ -71,6 +71,7 @@ void SessionState::AddMLValueNameIdx(const std::string& name, int idx) {
   if (idx > mlvalue_max_idx_) {
     mlvalue_max_idx_ = idx;
   }
+
   mlvalue_name_idx_map_.insert({name, idx});
 }
 

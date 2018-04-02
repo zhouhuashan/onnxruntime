@@ -4,42 +4,42 @@ namespace Lotus {
 
 class AveragePool {
  public:
-  static float initialize() {
+  static float Initialize() {
     return 0.0;
   }
 
   template <typename T>
-  static void process(const T& x_data, T& y_data) {
+  static void Process(const T& x_data, T& y_data) {
     y_data += x_data;
   }
 
   template <typename T>
-  static void finalize(const int64_t size, T& y_data) {
+  static void Finalize(const int64_t size, T& y_data) {
     y_data /= size;
   }
 };
 
 class MaxPool {
  public:
-  static float initialize() {
+  static float Initialize() {
     return std::numeric_limits<float>::lowest();
   }
 
   template <typename T>
-  static void process(const T& x_data, T& y_data) {
+  static void Process(const T& x_data, T& y_data) {
     if (x_data > y_data) {
       y_data = x_data;
     }
   }
 
   template <typename T>
-  static void finalize(const int64_t /*size*/, T& /*y_data*/) {}
+  static void Finalize(const int64_t /*size*/, T& /*y_data*/) {}
 };
 
 template <typename T, typename PoolType>
-Status Pool<T, PoolType>::compute(OpKernelContext* context) const {
-  const Tensor* X = context->template input<Tensor>(0);
-  TensorShape x_shape = X->shape();
+Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
+  const Tensor* X = context->Input<Tensor>(0);
+  TensorShape x_shape = X->Shape();
   LOTUS_ENFORCE(x_shape.NumDimensions() > 2, "Input dimension cannot be less than 3.");
 
   std::vector<int64_t> pads = pads_;
@@ -58,10 +58,10 @@ Status Pool<T, PoolType>::compute(OpKernelContext* context) const {
   }
 
   std::vector<int64_t> output_dims = PoolBase::SetOutputSize(x_shape, x_shape[1], &pads);
-  Tensor* Y = context->output(0, TensorShape(output_dims));
+  Tensor* Y = context->Output(0, TensorShape(output_dims));
 
-  const float* Xdata = X->template data<float>();
-  float* Ydata = Y->template mutable_data<float>();
+  const float* Xdata = X->template Data<float>();
+  float* Ydata = Y->template MutableData<float>();
   // The main loop
   int64_t channels = x_shape[1];
   int64_t height = x_shape[2];
@@ -79,11 +79,11 @@ Status Pool<T, PoolType>::compute(OpKernelContext* context) const {
             int64_t hstart = ph * stride_h() - pads[0];
             int64_t hend = std::min(hstart + kernel_shape[0], height);
             hstart = std::max(hstart, static_cast<int64_t>(0));
-            T Yh = PoolType::initialize();
+            T Yh = PoolType::Initialize();
             for (int64_t h = hstart; h < hend; ++h) {
-              PoolType::process(Xdata[h], Yh);
+              PoolType::Process(Xdata[h], Yh);
             }
-            PoolType::finalize(hend - hstart, Yh);
+            PoolType::Finalize(hend - hstart, Yh);
             Ydata[ph] = Yh;
           }
           // Do offset.
@@ -104,14 +104,14 @@ Status Pool<T, PoolType>::compute(OpKernelContext* context) const {
               int64_t wend = std::min(wstart + kernel_shape[1], width);
               wstart = std::max(wstart, static_cast<int64_t>(0));
               const int64_t pool_index = ph * pooled_width + pw;
-              T Yh = PoolType::initialize();
+              T Yh = PoolType::Initialize();
               for (int64_t h = hstart; h < hend; ++h) {
                 for (int64_t w = wstart; w < wend; ++w) {
                   const int64_t input_index = h * width + w;
-                  PoolType::process(Xdata[input_index], Yh);
+                  PoolType::Process(Xdata[input_index], Yh);
                 }
               }
-              PoolType::finalize((hend - hstart) * (wend - wstart), Yh);
+              PoolType::Finalize((hend - hstart) * (wend - wstart), Yh);
               Ydata[pool_index] = Yh;
             }
           }
@@ -138,16 +138,16 @@ Status Pool<T, PoolType>::compute(OpKernelContext* context) const {
                 dstart = std::max(dstart, static_cast<int64_t>(0));
                 const int64_t pool_index =
                     ph * pooled_width * pooled_depth + pw * pooled_depth + pd;
-                T Yh = PoolType::initialize();
+                T Yh = PoolType::Initialize();
                 for (int64_t h = hstart; h < hend; ++h) {
                   for (int64_t w = wstart; w < wend; ++w) {
                     for (int64_t d = dstart; d < dend; ++d) {
                       const int64_t input_index = h * width * depth + w * depth + d;
-                      PoolType::process(Xdata[input_index], Yh);
+                      PoolType::Process(Xdata[input_index], Yh);
                     }
                   }
                 }
-                PoolType::finalize(
+                PoolType::Finalize(
                     (hend - hstart) * (wend - wstart) * (dend - dstart), Yh);
                 Ydata[pool_index] = Yh;
               }
@@ -162,6 +162,7 @@ Status Pool<T, PoolType>::compute(OpKernelContext* context) const {
     default:
       return Status(LOTUS, INVALID_ARGUMENT, "Unsupported pooling size : ");
   }
+
   return Status::OK();
 }
 

@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_OP_KERNEL_H
-#define CORE_FRAMEWORK_OP_KERNEL_H
+#pragma once
 
 #include "core/common/exceptions.h"
 #include "core/common/status.h"
@@ -39,11 +38,11 @@ class OpKernelInfo {
     return node_;
   }
 
-  const AllocatorInfo& get_allocator_info() const {
+  const AllocatorInfo& GetAllocatorInfo() const {
     return allocator_info_;
   }
 
-  const KernelDef& get_kernel_def() const {
+  const KernelDef& GetKernelDef() const {
     return kernel_def_;
   }
 
@@ -63,25 +62,25 @@ class OpKernel {
     // LOTUS_ENFORCE(nullptr != kernel_def, "kernel_def should be not nullptr.")
   }
 
-  const LotusIR::Node& node() const {
+  const LotusIR::Node& Node() const {
     return op_kernel_info_.node();
   }
 
-  const KernelDef& kernel_def() const {
-    return op_kernel_info_.get_kernel_def();
+  const Lotus::KernelDef& KernelDef() const {
+    return op_kernel_info_.GetKernelDef();
   }
 
-  virtual Status compute(OpKernelContext* context) const = 0;
+  virtual Status Compute(OpKernelContext* context) const = 0;
 
-  virtual Status compute_async(OpKernelContext* context,
-                               DoneCallback done) const {
+  virtual Status ComputeAsync(OpKernelContext* context,
+                              DoneCallback done) const {
     UNUSED_PARAMETER(context);
     UNUSED_PARAMETER(done);
     LOTUS_NOT_IMPLEMENTED;
   }
 
-  const AllocatorInfo& allocator() const {
-    return op_kernel_info_.get_allocator_info();
+  const AllocatorInfo& Allocator() const {
+    return op_kernel_info_.GetAllocatorInfo();
   }
 
  protected:
@@ -97,20 +96,20 @@ class OpKernelContext {
   ~OpKernelContext(){};
 
   template <typename T>
-  const T* input(int index) const {
-    return execution_frame_->get_value<T>(arg_start_index_ + index);
+  const T* Input(int index) const {
+    return execution_frame_->GetValue<T>(arg_start_index_ + index);
   }
 
   // Fetch output (non-tensor) with specified index.
   template <typename T>
-  T* output(int index) {
-    auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->node().InputDefs().size()) + index;
-    return execution_frame_->get_mutable_value<T>(output_arg_index);
+  T* Output(int index) {
+    auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
+    return execution_frame_->GetMutableValue<T>(output_arg_index);
   }
 
   // In the case that memory allocation has not been done for an output tensor,
   // The memory allocation will be done on-the-fly with given tensor shape.
-  Tensor* output(int index, const TensorShape& shape);
+  Tensor* Output(int index, const TensorShape& shape);
 
   const Logging::Logger& Logger() const {
     return *logger_;
@@ -142,22 +141,26 @@ class KernelRegistry {
                       const AllocatorInfo& allocator_info,
                       std::unique_ptr<OpKernel>* op_kernel) const;
 
-  static KernelRegistry* Instance() {
+  static KernelRegistry& Instance() {
     static KernelRegistry kernel_registry;
-    return &kernel_registry;
+    return kernel_registry;
   }
 
  private:
   KernelRegistry() = default;
 
   struct KernelCreateInfo {
-    const KernelDef* kernel_def;  // Owned and stored in the global kernel registry.
-    KernelCreateFn kernel_create_fn;
+    unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
+    KernelCreateFn kernel_create_func;
 
-    KernelCreateInfo(const KernelDef* kernel_def_,
-                     KernelCreateFn kernel_create_fn_)
-    : kernel_def(kernel_def_),
-      kernel_create_fn(kernel_create_fn_) {}
+    KernelCreateInfo(unique_ptr<KernelDef> definition,
+                     KernelCreateFn create_func)
+        : kernel_def(std::move(definition)),
+          kernel_create_func(create_func) {}
+
+    KernelCreateInfo(KernelCreateInfo&& other) : kernel_def(std::move(other.kernel_def)),
+                                                 kernel_create_func(other.kernel_create_func) {
+    }
   };
 
   // Check if the node's input/output/attributes are compatible with this
@@ -176,11 +179,10 @@ class KernelRegistry {
 #define REGISTER_KERNEL_UNIQ_HELPER(counter, kernel_def_builder, ...) \
   REGISTER_KERNEL_UNIQ(counter, kernel_def_builder, __VA_ARGS__)
 
-#define REGISTER_KERNEL_UNIQ(counter, kernel_def_builder, ...)                  \
-  static Lotus::Common::Status kernel_def_builder_##counter##_status =          \
-    KernelRegistry::Instance()->Register(                                       \
-      kernel_def_builder,                                                       \
-      [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });
+#define REGISTER_KERNEL_UNIQ(counter, kernel_def_builder, ...)         \
+  static Lotus::Common::Status kernel_def_builder_##counter##_status = \
+      KernelRegistry::Instance().Register(                             \
+          kernel_def_builder,                                          \
+          [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); })
 
 }  // namespace Lotus
-#endif  // CORE_FRAMEWORK_OP_KERNEL_H

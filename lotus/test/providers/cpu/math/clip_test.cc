@@ -15,7 +15,7 @@ TEST(MathOpTest, Clip) {
   EXPECT_TRUE(node->AddAttribute("min", -10.0f));
   EXPECT_TRUE(node->AddAttribute("max", 10.0f));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Clip<float> kernel(info);
@@ -39,9 +39,9 @@ TEST(MathOpTest, Clip) {
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&kernel_ctx);
-  auto output = kernel_ctx.output(0, TensorShape(dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&kernel_ctx);
+  auto Output = kernel_ctx.Output(0, TensorShape(dims));
+  const float* res = Output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     EXPECT_EQ(expected_vals[i], res[i]);

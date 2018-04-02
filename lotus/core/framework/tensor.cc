@@ -15,62 +15,62 @@ size_t TensorShape::SizeHelper(const std::vector<int64_t>& dimensions, size_t st
 TensorShape::TensorShape() : TensorShape(std::vector<int64_t>()) {
 }
 
-TensorShape::TensorShape(const std::vector<int64_t>& dims) : m_dims(dims) {
+TensorShape::TensorShape(const std::vector<int64_t>& dims) : dims_(dims) {
 }
 
 TensorShape::TensorShape(const TensorShape& other) {
-  m_dims.assign(other.m_dims.begin(), other.m_dims.end());
+  dims_.assign(other.dims_.begin(), other.dims_.end());
 }
 
 const int64_t TensorShape::operator[](int idx) const {
   //Since we don't have status in return value,
   //the caller should be responsible for invalid idx.
   //In that case, stl throws an exception.
-  return m_dims.at(idx);
+  return dims_.at(idx);
 }
 
 size_t TensorShape::Size() const {
-  size_t size = SizeHelper(m_dims, 0, m_dims.size());
+  size_t size = SizeHelper(dims_, 0, dims_.size());
   //should we cache the size? as multiple operation may be expensive.
   return size;
 }
 
 size_t TensorShape::SizeToDimension(size_t dimension) const {
-  const size_t num_dims = m_dims.size();
+  const size_t num_dims = dims_.size();
   LOTUS_ENFORCE(dimension <= num_dims,
                 "Invalid dimension of %d for SizeToDimension. Tensor has %d dimensions.", dimension, num_dims);
 
-  size_t size = SizeHelper(m_dims, 0, dimension);
+  size_t size = SizeHelper(dims_, 0, dimension);
   return size;
 }
 
 size_t TensorShape::SizeFromDimension(size_t dimension) const {
-  const size_t num_dims = m_dims.size();
+  const size_t num_dims = dims_.size();
   LOTUS_ENFORCE(dimension < num_dims,
                 "Invalid dimension of %d for SizeFromDimension. Tensor has %d dimensions.", dimension, num_dims);
 
-  size_t size = SizeHelper(m_dims, dimension, num_dims);
+  size_t size = SizeHelper(dims_, dimension, num_dims);
   return size;
 }
 
 TensorShape TensorShape::Slice(size_t dimstart, size_t dimend) const {
-  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= m_dims.size(), "Invalid tensor shape slice argument.");
-  return TensorShape(std::vector<int64_t>(m_dims.begin() + dimstart, m_dims.begin() + dimend));
+  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= dims_.size(), "Invalid tensor shape slice argument.");
+  return TensorShape(std::vector<int64_t>(dims_.begin() + dimstart, dims_.begin() + dimend));
 }
 
 TensorShape TensorShape::Slice(size_t dimstart) const {
-  return Slice(dimstart, m_dims.size());
+  return Slice(dimstart, dims_.size());
 }
 
 // output dimensions
 std::string TensorShape::ToString() const {
   std::string result;
-  result.reserve(2 + m_dims.size() * 5);  // generous calculation '{' + '}' and 4 digits + ',' for each entry
+  result.reserve(2 + dims_.size() * 5);  // generous calculation '{' + '}' and 4 digits + ',' for each entry
 
   result.append("{");
 
   bool first = true;
-  for (auto dim : m_dims) {
+  for (auto dim : dims_) {
     if (!first) {
       result.append(",");
     }
@@ -90,23 +90,23 @@ std::ostream& operator<<(std::ostream& out, const TensorShape& shape) {
   return (out << shape.ToString());
 }
 
-Tensor::Tensor() : alloc_info_(AllocatorManager::Instance()->GetArena(CPU).Info()),
+Tensor::Tensor() : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()),
                    p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter())) {
   Init(DataTypeImpl::GetType<float>(),
        TensorShape(std::vector<int64_t>(1, 0)),
        UNKNOWN,
        nullptr,
-       AllocatorManager::Instance()->GetArena(CPU).Info(),
+       AllocatorManager::Instance().GetArena(CPU).Info(),
        0);
 }
 
-Tensor::Tensor(MLDataType p_type) : alloc_info_(AllocatorManager::Instance()->GetArena(CPU).Info()),
+Tensor::Tensor(MLDataType p_type) : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()),
                                     p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter())) {
   Init(p_type,
        TensorShape(std::vector<int64_t>(1, 0)),
        UNKNOWN,
        nullptr,
-       AllocatorManager::Instance()->GetArena(CPU).Info(),
+       AllocatorManager::Instance().GetArena(CPU).Info(),
        0);
 }
 
@@ -203,7 +203,8 @@ Tensor::Tensor(const Tensor& src)
     : dtype_(src.dtype_), alloc_info_(src.alloc_info_), shape_(src.shape_), byte_offset_(src.byte_offset_) {
   // it may be better to refactor it a little bit to make it a compile error
   // but right now just keep it simple first.
-  LOTUS_ENFORCE(src.buffer_strategy_ != OWNEDBUFFER, "Can't copy tensor with its owned buffer. Please transfer ownership by move");
+  LOTUS_ENFORCE(src.buffer_strategy_ != OWNEDBUFFER,
+                "Can't copy tensor with its owned buffer. Please transfer ownership by move");
 
   if (src.buffer_strategy_ == PREALLOCATEDBUFFER) {
     buffer_strategy_ = PREALLOCATEDBUFFER;
@@ -217,7 +218,8 @@ Tensor::Tensor(const Tensor& src)
 
 Tensor& Tensor::ShallowCopy(const Tensor& other) {
   // similar as above
-  LOTUS_ENFORCE(other.buffer_strategy_ != OWNEDBUFFER, "Can't copy tensor with its owned buffer. Please transfer ownership by move");
+  LOTUS_ENFORCE(other.buffer_strategy_ != OWNEDBUFFER,
+                "Can't copy tensor with its owned buffer. Please transfer ownership by move");
 
   if (this != &other) {
     dtype_ = other.dtype_;

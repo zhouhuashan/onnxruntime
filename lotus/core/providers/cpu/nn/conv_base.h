@@ -1,5 +1,5 @@
-#ifndef CORE_PROVIDERS_CPU_NN_CONV_BASE_H
-#define CORE_PROVIDERS_CPU_NN_CONV_BASE_H
+#pragma once
+
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
 #include "core/framework/op_kernel.h"
@@ -62,5 +62,3 @@ class ConvBase : public OpKernel {
 };
 
 }  // namespace Lotus
-
-#endif  // CORE_PROVIDERS_CPU_NN_CONV_BASE_H

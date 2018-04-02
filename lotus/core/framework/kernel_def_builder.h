@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_KERNEL_DEF_BUILDER_H
-#define CORE_FRAMEWORK_KERNEL_DEF_BUILDER_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -50,7 +49,7 @@ class KernelDef {
 
  private:
   friend class KernelDefBuilder;
-  
+
   // The operator name supported by <*this> kernel..
   std::string op_name_;
 
@@ -81,24 +80,24 @@ class KernelDef {
 };
 
 class KernelDefBuilder {
-public:
+ public:
   KernelDefBuilder() = default;
-  
+
   // Starts with just the name field set.
   explicit KernelDefBuilder(const std::string& op_name)
-    : kernelDef_(new KernelDef()) {
-      kernelDef_->op_name_ = op_name;
+      : kernel_def_(new KernelDef()) {
+    kernel_def_->op_name_ = op_name;
   }
 
   KernelDefBuilder& Domain(const std::string& domain) {
-    kernelDef_->op_domain_ = domain;
+    kernel_def_->op_domain_ = domain;
     return *this;
   }
 
   // This kernel supports operator definition since <since_version> (to latest).
   KernelDefBuilder& SinceVersion(int since_version) {
-    kernelDef_->op_since_version_start_ = since_version;
-    kernelDef_->op_since_version_end_ = INT_MAX;
+    kernel_def_->op_since_version_start_ = since_version;
+    kernel_def_->op_since_version_end_ = INT_MAX;
     return *this;
   }
 
@@ -108,14 +107,14 @@ public:
   // Key: domain. Value: <lowest version, highest version> pair.
   // std::unordered_map<std::string, std::pair<int, int>> map_;
   KernelDefBuilder& SinceVersion(int since_version_start, int since_version_end) {
-    kernelDef_->op_since_version_start_ = since_version_start;
-    kernelDef_->op_since_version_end_ = since_version_end;
+    kernel_def_->op_since_version_start_ = since_version_start;
+    kernel_def_->op_since_version_end_ = since_version_end;
     return *this;
   }
 
   // The execution provider type of the kernel.
   KernelDefBuilder& Provider(const ProviderType& provider_type) {
-    kernelDef_->provider_type_ = provider_type;
+    kernel_def_->provider_type_ = provider_type;
     return *this;
   }
 
@@ -124,15 +123,15 @@ public:
   // The arg name could be either op formal parameter name, say "X", or type
   // argument name specified in op schema, say "T".
   KernelDefBuilder& TypeConstraint(const std::string& arg_name,
-                            const std::vector<MLDataType>& supported_types) {
-    kernelDef_->type_constraints_[arg_name] = supported_types;
+                                   const std::vector<MLDataType>& supported_types) {
+    kernel_def_->type_constraints_[arg_name] = supported_types;
     return *this;
   }
 
   // Like TypeConstraint but supports just a single type.
   KernelDefBuilder& TypeConstraint(const std::string& arg_name,
                                    MLDataType supported_type) {
-    kernelDef_->type_constraints_[arg_name] = std::vector<MLDataType>{supported_type};
+    kernel_def_->type_constraints_[arg_name] = std::vector<MLDataType>{supported_type};
     return *this;
   }
 
@@ -140,14 +139,14 @@ public:
   // It means that uplayer runtime could do memory in-place optimization
   // as it will not impact the correctness of this kernel.
   KernelDefBuilder& MayInplace(const std::vector<std::pair<int, int>>& inplaces) {
-    kernelDef_->inplace_map_ = inplaces;
+    kernel_def_->inplace_map_ = inplaces;
     return *this;
   }
 
   // allowing output j to reuse memory of input i
   KernelDefBuilder& MayInplace(int i, int j) {
     // TODO: validate inputs.
-    kernelDef_->inplace_map_.push_back({i, j});
+    kernel_def_->inplace_map_.push_back({i, j});
     return *this;
   }
 
@@ -155,31 +154,30 @@ public:
   // content of the tensor is not changed. This is to take care of operators
   // such as Identity and Reshape.
   KernelDefBuilder& Alias(const std::vector<std::pair<int, int>>& aliases) {
-    kernelDef_->alias_map_ = aliases;
+    kernel_def_->alias_map_ = aliases;
     return *this;
   }
 
   KernelDefBuilder& Alias(int i, int j) {
-    kernelDef_->alias_map_.push_back({i, j});
+    kernel_def_->alias_map_.push_back({i, j});
     return *this;
   }
 
   // Specify that this kernel requires/provides an input/output arg
   // in host memory (instead of the default, device memory).
   KernelDefBuilder& HostMemory(int index, bool is_input) {
-    kernelDef_->host_memory_args_.push_back({index, is_input});
+    kernel_def_->host_memory_args_.push_back({index, is_input});
     return *this;
   }
 
-  // Return the kernel definition.
-  const KernelDef* Build() {
-    return kernelDef_.release();
+  // Return the kernel definition, passing ownership of the KernelDef to the caller
+  unique_ptr<KernelDef> Build() {
+    return std::move(kernel_def_);
   }
-  
-private:
-  std::unique_ptr<KernelDef> kernelDef_;   // not owned.
+
+ private:
+  // we own the KernelDef until Build() is called.
+  std::unique_ptr<KernelDef> kernel_def_;
 };
 
 }  // namespace Lotus
-
-#endif  // CORE_FRAMEWORK_KERNEL_DEF_BUILDER_H

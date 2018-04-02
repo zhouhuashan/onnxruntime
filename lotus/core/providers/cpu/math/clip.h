@@ -1,5 +1,4 @@
-#ifndef CORE_PROVIDERS_CPU_MATH_CLIP_H
-#define CORE_PROVIDERS_CPU_MATH_CLIP_H
+#pragma once
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
@@ -19,14 +18,13 @@ class Clip final : public OpKernel {
     }
   }
 
-  Status compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override;
 
  private:
-  T max_, min_;
+  T max_;
+  T min_;
   bool has_max_ = true;
   bool has_min_ = true;
 };
 
 }  // namespace Lotus
-
-#endif  // !CORE_PROVIDERS_CPU_MATH_CLIP_H

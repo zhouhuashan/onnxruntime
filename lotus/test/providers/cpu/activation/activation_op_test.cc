@@ -14,7 +14,7 @@ void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(
   for (auto attr : attribs)
     EXPECT_TRUE(node->AddAttribute(attr.first, attr.second));
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::ArenaAllocator);
+  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
   OpKernelInfo info(*node, allocator_info, kernel_def);
   Op kernel(info);
@@ -36,9 +36,9 @@ void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(
   EXPECT_TRUE(status.IsOK());
 
   OpKernelContext ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.compute(&ctx);
-  auto output = ctx.output(0, TensorShape(dims));
-  const float* res = output->data<float>();
+  kernel.Compute(&ctx);
+  auto Output = ctx.Output(0, TensorShape(dims));
+  const float* res = Output->Data<float>();
 
   for (int i = 0; i < expected_vals.size(); ++i) {
     if (abs_error == 0)

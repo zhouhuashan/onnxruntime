@@ -33,7 +33,7 @@ void SoftmaxCPU(
     const float* sum_multiplier,
     bool logarithmic,
     float* rowmax) {
-  math::RowwiseMax<float, CPUMathUtil>(N, D, Xdata, rowmax, nullptr);
+  Math::RowwiseMax<float, CPUMathUtil>(N, D, Xdata, rowmax, nullptr);
 
   // Put the intermediate result X - max(X) into Y by first copying X to Y, and then subtracting max from each entry
   // VC++ generates warning C4996 for use of std::copy with raw pointers, and I couldn't find a way to turn it off for just this line,
@@ -41,11 +41,11 @@ void SoftmaxCPU(
   // std::copy(Xdata, Xdata + (N * D), Ydata);
   memcpy(Ydata, Xdata, (N * D * sizeof(*Xdata)));
 
-  math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, N, D, 1, -1, rowmax, sum_multiplier, 1, Ydata, nullptr);
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, N, D, 1, -1, rowmax, sum_multiplier, 1, Ydata, nullptr);
 
   // Exponentiation
-  math::Exp<float, CPUMathUtil>(N * D, Ydata, Ydata, nullptr);
-  math::Gemv<float, CPUMathUtil>(CblasNoTrans, N, D, 1, Ydata, sum_multiplier, 0, scale, nullptr);
+  Math::Exp<float, CPUMathUtil>(N * D, Ydata, Ydata, nullptr);
+  Math::Gemv<float, CPUMathUtil>(CblasNoTrans, N, D, 1, Ydata, sum_multiplier, 0, scale, nullptr);
 
   // Do division
   if (!logarithmic) {

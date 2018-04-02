@@ -1,5 +1,4 @@
-#ifndef CORE_FRAMEWORK_TENSOR_H
-#define CORE_FRAMEWORK_TENSOR_H
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -32,7 +31,7 @@ class TensorShape {
   }
 
   bool operator==(const TensorShape& other) const {
-    return m_dims == other.m_dims;
+    return dims_ == other.dims_;
   }
 
   bool operator!=(const TensorShape& other) const {
@@ -40,20 +39,20 @@ class TensorShape {
   }
 
   const size_t NumDimensions() const {
-    return m_dims.size();
+    return dims_.size();
   }
 
   /**
   Copy dims into an array with given size
   */
   void CopyDims(int64_t* dims, size_t num_dims) const {
-    memcpy(dims, &m_dims[0], sizeof(int64_t) * std::min(num_dims, NumDimensions()));
+    memcpy(dims, &dims_[0], sizeof(int64_t) * std::min(num_dims, NumDimensions()));
   }
 
   /**
   Return underlying vector representation.
   */
-  const std::vector<int64_t>& GetDims() const { return m_dims; }
+  const std::vector<int64_t>& GetDims() const { return dims_; }
 
   /** 
   Return the total number of elements.
@@ -93,10 +92,21 @@ class TensorShape {
   // We use negative numbers for unknown symbolic dimension. Each negative
   // number represents a unique symbolic dimension.
   // InlinedVector<int64_t, 4> dims_;
-  std::vector<int64_t> m_dims;
+  std::vector<int64_t> dims_;
 };
 
-struct BufferDeleter {
+class BufferDeleter {
+ public:
+  BufferDeleter() : alloc_(nullptr) {}
+  BufferDeleter(IAllocator* alloc)
+      : alloc_(alloc) {}
+
+  void operator()(void* p) const {
+    if (alloc_)
+      alloc_->Free(p);
+  }
+
+ private:
   // TODO: we may need consider the lifetime of alloc carefully
   // The alloc_ here is the allocator that used to allocate the buffer
   // And need go with the unique_ptr together. If it is using our internal
@@ -106,14 +116,6 @@ struct BufferDeleter {
   // change our current allocator mgr to use shared_ptr. Will revisit it
   // later.
   IAllocator* alloc_;
-  BufferDeleter() : alloc_(nullptr) {}
-  BufferDeleter(IAllocator* alloc)
-      : alloc_(alloc) {}
-
-  void operator()(void* p) const {
-    if (alloc_)
-      alloc_->Free(p);
-  }
 };
 
 typedef std::unique_ptr<void, BufferDeleter> BufferUniquePtr;
@@ -154,36 +156,34 @@ class Tensor {
   Tensor& operator=(Tensor&& other);
 
   // Returns the data type.
-  MLDataType dtype() const { return dtype_; }
+  MLDataType DataType() const { return dtype_; }
 
   // Returns the shape of the tensor.
-  const TensorShape& shape() const { return shape_; }
+  const TensorShape& Shape() const { return shape_; }
 
   // Returns the location of the tensor's memory
-  const AllocatorInfo& location() const { return alloc_info_; }
+  const AllocatorInfo& Location() const { return alloc_info_; }
 
   template <typename T>
-  T* mutable_data() {
+  T* MutableData() {
     //Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch.");
-    return static_cast<T*>(
-        static_cast<void*>(static_cast<char*>(GetRaw()) + byte_offset_));
+    return reinterpret_cast<T*>(static_cast<char*>(GetRaw()) + byte_offset_);
   }
 
   template <typename T>
-  const T* data() const {
+  const T* Data() const {
     //Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch.");
-    return static_cast<const T*>(
-        static_cast<void*>(static_cast<char*>(GetRaw()) + byte_offset_));
+    return reinterpret_cast<const T*>(static_cast<char*>(GetRaw()) + byte_offset_);
   }
 
-  void* mutable_data_raw(MLDataType type) {
+  void* MutableDataRaw(MLDataType type) {
     LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
     return GetRaw();
   }
 
-  const void* data_raw(MLDataType type) const {
+  const void* DataRaw(MLDataType type) const {
     LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
     return GetRaw();
   }
@@ -222,5 +222,3 @@ class Tensor {
 };
 
 }  // namespace Lotus
-
-#endif  // CORE_FRAMEWORK_TENSOR_H

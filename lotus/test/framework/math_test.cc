@@ -30,8 +30,8 @@ TEST(MathTest, GemmNoTransNoTrans) {
   std::vector<float> X(50);  // 5 * 10
   std::vector<float> W(60);  // 10 * 6
   std::vector<float> Y(30);  // 5 * 6
-  math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
-  math::Set<float, CPUMathUtil>(W.size(), 1, VECTOR_HEAD(W), &provider);
+  Math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
+  Math::Set<float, CPUMathUtil>(W.size(), 1, VECTOR_HEAD(W), &provider);
   EXPECT_EQ(Y.size(), 30);
   for (int i = 0; i < X.size(); ++i) {
     EXPECT_EQ(X[i], 1);
@@ -43,7 +43,7 @@ TEST(MathTest, GemmNoTransNoTrans) {
   const float kOne = 1.0;
   const float kPointFive = 0.5;
   const float kZero = 0.0;
-  math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, 5, 6, 10, kOne,
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, 5, 6, 10, kOne,
                                  VECTOR_HEAD(X), VECTOR_HEAD(W), kZero, VECTOR_HEAD(Y),
                                  &provider);
   EXPECT_EQ(Y.size(), 30);
@@ -51,7 +51,7 @@ TEST(MathTest, GemmNoTransNoTrans) {
     EXPECT_EQ(Y[i], 10) << i;
   }
   // Test Accumulate
-  math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, 5, 6, 10, kOne,
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, 5, 6, 10, kOne,
                                  VECTOR_HEAD(X), VECTOR_HEAD(W), kPointFive,
                                  VECTOR_HEAD(Y), &provider);
   EXPECT_EQ(Y.size(), 30);
@@ -59,7 +59,7 @@ TEST(MathTest, GemmNoTransNoTrans) {
     EXPECT_EQ(Y[i], 15) << i;
   }
   // Test Accumulate
-  math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, 5, 6, 10,
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, 5, 6, 10,
                                  kPointFive,
                                  VECTOR_HEAD(X), VECTOR_HEAD(W), kOne, VECTOR_HEAD(Y),
                                  &provider);
@@ -74,8 +74,8 @@ TEST(MathTest, GemmNoTransTrans) {
   std::vector<float> X(50);  // 5 * 10
   std::vector<float> W(60);  // 10 * 6
   std::vector<float> Y(30);  // 5 * 6
-  math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
-  math::Set<float, CPUMathUtil>(W.size(), 1, VECTOR_HEAD(W), &provider);
+  Math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
+  Math::Set<float, CPUMathUtil>(W.size(), 1, VECTOR_HEAD(W), &provider);
   EXPECT_EQ(Y.size(), 30);
   for (int i = 0; i < X.size(); ++i) {
     EXPECT_EQ(X[i], 1);
@@ -87,7 +87,7 @@ TEST(MathTest, GemmNoTransTrans) {
   const float kOne = 1.0;
   const float kPointFive = 0.5;
   const float kZero = 0.0;
-  math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasTrans, 5, 6, 10, kOne,
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasTrans, 5, 6, 10, kOne,
                                  VECTOR_HEAD(X), VECTOR_HEAD(W), kZero, VECTOR_HEAD(Y),
                                  &provider);
   EXPECT_EQ(Y.size(), 30);
@@ -95,14 +95,14 @@ TEST(MathTest, GemmNoTransTrans) {
     EXPECT_EQ(Y[i], 10) << i;
   }
   // Test Accumulate
-  math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasTrans, 5, 6, 10, kOne,
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasTrans, 5, 6, 10, kOne,
                                  VECTOR_HEAD(X), VECTOR_HEAD(W), kPointFive,
                                  VECTOR_HEAD(Y), &provider);
   EXPECT_EQ(Y.size(), 30);
   for (int i = 0; i < Y.size(); ++i) {
     EXPECT_EQ(Y[i], 15) << i;
   }
-  math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasTrans, 5, 6, 10, kPointFive,
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasTrans, 5, 6, 10, kPointFive,
                                  VECTOR_HEAD(X), VECTOR_HEAD(W), kOne, VECTOR_HEAD(Y),
                                  &provider);
   EXPECT_EQ(Y.size(), 30);
@@ -116,8 +116,8 @@ TEST(MathTest, GemvNoTrans) {
   std::vector<float> A(50);  // 5 * 10
   std::vector<float> X(10);
   std::vector<float> Y(5);
-  math::Set<float, CPUMathUtil>(A.size(), 1, VECTOR_HEAD(A), &provider);
-  math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
+  Math::Set<float, CPUMathUtil>(A.size(), 1, VECTOR_HEAD(A), &provider);
+  Math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
   EXPECT_EQ(Y.size(), 5);
   for (int i = 0; i < A.size(); ++i) {
     EXPECT_EQ(A[i], 1);
@@ -129,19 +129,19 @@ TEST(MathTest, GemvNoTrans) {
   const float kOne = 1.0;
   const float kPointFive = 0.5;
   const float kZero = 0.0;
-  math::Gemv<float, CPUMathUtil>(CblasNoTrans, 5, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
+  Math::Gemv<float, CPUMathUtil>(CblasNoTrans, 5, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
                                  kZero, VECTOR_HEAD(Y), &provider);
   for (int i = 0; i < Y.size(); ++i) {
     EXPECT_EQ(Y[i], 10) << i;
   }
   // Test Accumulate
-  math::Gemv<float, CPUMathUtil>(CblasNoTrans, 5, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
+  Math::Gemv<float, CPUMathUtil>(CblasNoTrans, 5, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
                                  kPointFive, VECTOR_HEAD(Y), &provider);
   for (int i = 0; i < Y.size(); ++i) {
     EXPECT_EQ(Y[i], 15) << i;
   }
   // Test Accumulate
-  math::Gemv<float, CPUMathUtil>(CblasNoTrans, 5, 10, kPointFive, VECTOR_HEAD(A),
+  Math::Gemv<float, CPUMathUtil>(CblasNoTrans, 5, 10, kPointFive, VECTOR_HEAD(A),
                                  VECTOR_HEAD(X), kOne, VECTOR_HEAD(Y),
                                  &provider);
   for (int i = 0; i < Y.size(); ++i) {
@@ -154,8 +154,8 @@ TEST(MathTest, GemvTrans) {
   std::vector<float> A(60);  // 6 * 10
   std::vector<float> X(6);
   std::vector<float> Y(10);
-  math::Set<float, CPUMathUtil>(A.size(), 1, VECTOR_HEAD(A), &provider);
-  math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
+  Math::Set<float, CPUMathUtil>(A.size(), 1, VECTOR_HEAD(A), &provider);
+  Math::Set<float, CPUMathUtil>(X.size(), 1, VECTOR_HEAD(X), &provider);
   EXPECT_EQ(Y.size(), 10);
   for (int i = 0; i < A.size(); ++i) {
     EXPECT_EQ(A[i], 1);
@@ -167,19 +167,19 @@ TEST(MathTest, GemvTrans) {
   const float kOne = 1.0;
   const float kPointFive = 0.5;
   const float kZero = 0.0;
-  math::Gemv<float, CPUMathUtil>(CblasTrans, 6, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
+  Math::Gemv<float, CPUMathUtil>(CblasTrans, 6, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
                                  kZero, VECTOR_HEAD(Y), &provider);
   for (int i = 0; i < Y.size(); ++i) {
     EXPECT_EQ(Y[i], 6) << i;
   }
   // Test Accumulate
-  math::Gemv<float, CPUMathUtil>(CblasTrans, 6, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
+  Math::Gemv<float, CPUMathUtil>(CblasTrans, 6, 10, kOne, VECTOR_HEAD(A), VECTOR_HEAD(X),
                                  kPointFive, VECTOR_HEAD(Y), &provider);
   for (int i = 0; i < Y.size(); ++i) {
     EXPECT_EQ(Y[i], 9) << i;
   }
   // Test Accumulate
-  math::Gemv<float, CPUMathUtil>(CblasTrans, 6, 10, kPointFive, VECTOR_HEAD(A),
+  Math::Gemv<float, CPUMathUtil>(CblasTrans, 6, 10, kPointFive, VECTOR_HEAD(A),
                                  VECTOR_HEAD(X), kOne, VECTOR_HEAD(Y),
                                  &provider);
   for (int i = 0; i < Y.size(); ++i) {

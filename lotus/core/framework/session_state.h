@@ -1,5 +1,4 @@
-#ifndef LOTUS_CORE_FRAMEWORK_SESSION_STATE_H_
-#define LOTUS_CORE_FRAMEWORK_SESSION_STATE_H_
+#pragma once
 
 #include <memory>
 #include <mutex>
@@ -81,6 +80,7 @@ class SessionState {
     std::vector<std::unique_ptr<IExecutionProvider>> exec_providers;
     std::unordered_map<std::string, size_t> provider_idx_map;  // this merely exists to facilitate fast lookup
   };
+
   ExecutionProviderSet exec_provider_set_;
   std::unordered_map<std::string, int> mlvalue_name_idx_map_;
   int mlvalue_max_idx_ = 0;
@@ -94,5 +94,3 @@ class SessionState {
   // TODO add more
 };
 }  // namespace Lotus
-
-#endif  // LOTUS_CORE_FRAMEWORK_SESSION_STATE_H_

@@ -1,11 +1,13 @@
-#ifndef CORE_FRAMEWORK_FUNCTION_KERNEL_H
-#define CORE_FRAMEWORK_FUNCTION_KERNEL_H
+#pragma once
 
 #include "core/common/status.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
+/* Currently there's no OpKernelInfo.provider so this doesn't work.
+   It must get ignored during compilation otherwise it should break a build.
+
 // FunctionKernel is used to provide custom implementation of functions.
 // It is also used to implement custom operators.
 class FunctionKernel : OpKernel {
@@ -19,8 +21,8 @@ class FunctionKernel : OpKernel {
   }
 
  private:
-  Node* node_;
-  ExecutionProvider* provider_;
+  LotusIR::Node* node_;
+  IExecutionProvider* provider_;
 };
+*/
 }  // namespace Lotus
-#endif  // CORE_FRAMEWORK_FUNCTION_KERNEL_H

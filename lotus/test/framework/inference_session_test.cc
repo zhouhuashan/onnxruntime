@@ -56,7 +56,7 @@ void RunModel(InferenceSession& session_object, const RunOptions& run_options) {
   std::vector<int64_t> dims_mul_x = {3, 2};
   std::vector<float> values_mul_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
   MLValue ml_value;
-  CreateMLValue<float>(&AllocatorManager::Instance()->GetArena(CPU), dims_mul_x, values_mul_x, &ml_value);
+  CreateMLValue<float>(&AllocatorManager::Instance().GetArena(CPU), dims_mul_x, values_mul_x, &ml_value);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value));
 
@@ -76,8 +76,8 @@ void RunModel(InferenceSession& session_object, const RunOptions& run_options) {
   ASSERT_EQ(1, fetches.size());
   auto& rtensor = fetches.front().Get<Tensor>();
   TensorShape expected_shape(expected_dims_mul_y);
-  EXPECT_EQ(expected_shape, rtensor.shape());
-  const std::vector<float> found(rtensor.data<float>(), rtensor.data<float>() + expected_shape.Size());
+  EXPECT_EQ(expected_shape, rtensor.Shape());
+  const std::vector<float> found(rtensor.Data<float>(), rtensor.Data<float>() + expected_shape.Size());
   ASSERT_EQ(expected_values_mul_y, found);
 }
 
