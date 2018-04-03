@@ -9,7 +9,7 @@ namespace Test {
 static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
 
 TEST(LRNTest, LRN_1) {
-  OpTester test("LRN_1");
+  OpTester test("LRN");
   test.AddAttribute("alpha", .001f);
   test.AddAttribute("beta", .75f);
   test.AddAttribute("bias", 2.0f);
@@ -42,7 +42,7 @@ TEST(LRNTest, LRN_1) {
 }
 
 TEST(LRNTest, LRN_2) {
-  OpTester test("LRN_2");
+  OpTester test("LRN");
   test.AddAttribute("alpha", .0001f);
   test.AddAttribute("beta", .75f);
   // default bias attribute value is 1.0f

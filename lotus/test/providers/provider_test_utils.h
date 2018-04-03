@@ -183,17 +183,22 @@ struct OpTester {
     for (auto& addAttributeFn : addAttributeFns_)
       addAttributeFn(node);
 
+    node.SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+
     // Setup the op in the node
     AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::kArenaAllocator};
     KernelDef kernel_def;
     OpKernelInfo info{node, allocator_info, kernel_def};
-    Op kernel{info};
+    unique_ptr<OpKernel> kernel;
+    Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, &kernel);
+    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
 
     // Hookup the inputs and outputs
     unsigned index = 0;
     for (auto& input : inputData_) {
-      auto status = frame->AllocateTensorWithSelfOwnBuffer(
+      status = frame->AllocateTensorWithSelfOwnBuffer(
           index, input.dataType_, AllocatorManager::Instance().GetArena(CPU).Info(), input.shape_);
+      LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
       // For inputs we have data to initialize with, so copy it into the buffer
       auto* tensor = frame->GetMutableValue<Tensor>(index);
       void* buffer = tensor->MutableDataRaw(input.dataType_);
@@ -203,13 +208,14 @@ struct OpTester {
 
     // Note, index isn't reset here since outputs are indexed after inputs
     for (auto& output : outputData_) {
-      auto status = frame->AllocateTensorWithSelfOwnBuffer(
+      status = frame->AllocateTensorWithSelfOwnBuffer(
           index++, output.dataType_, AllocatorManager::Instance().GetArena(CPU).Info(), output.shape_);
+      LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     }
 
     // Run the model
-    OpKernelContext kernel_ctx(frame.get(), &kernel, DefaultLoggingManager().DefaultLogger());
-    Common::Status status = kernel.Compute(&kernel_ctx);
+    OpKernelContext kernel_ctx(frame.get(), kernel.get(), DefaultLoggingManager().DefaultLogger());
+    status = kernel->Compute(&kernel_ctx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
 
     // Verify the outputs

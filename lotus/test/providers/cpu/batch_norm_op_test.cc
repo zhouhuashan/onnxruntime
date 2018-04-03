@@ -16,13 +16,12 @@ namespace Test {
 using InputDataMap = unordered_map<string, vector<float>>;
 using InputShapesMap = unordered_map<string, vector<int64_t>>;
 
-void TestBatchNorm(const string& test_name,
-                   const InputDataMap& input_data_map,
+void TestBatchNorm(const InputDataMap& input_data_map,
                    const InputShapesMap& input_shapes_map,
                    float epsilon,
                    const std::initializer_list<float>& expected_output,
                    const vector<int64_t>& expected_output_shape) {
-  OpTester test(test_name.c_str());
+  OpTester test("BatchNormalization");
   test.AddAttribute("epsilon", epsilon);
   test.AddInput<float>("X", input_shapes_map.at("X"), input_data_map.at("X"));
   test.AddInput<float>("scale", input_shapes_map.at("scale"), input_data_map.at("scale"));
@@ -67,7 +66,7 @@ TEST(BatchNormTest, PositiveTestCase) {
                           1.03375f, 0.707961f, 0.968646f, 0.621757f, 0.973095f, 0.700301f, 0.916723f, 0.807602f, 0.692598f,
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
-  TestBatchNorm("PositiveTest", input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
+  TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
 }
 
 TEST(BatchNormTest, InvalidXDim) {
@@ -104,7 +103,7 @@ TEST(BatchNormTest, InvalidXDim) {
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
   try {
-    TestBatchNorm("Invalid X Dim", input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
+    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
   } catch (const std::exception& ex) {
     EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input X"));
   }
@@ -144,7 +143,7 @@ TEST(BatchNormTest, InvalidScaleDim) {
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
   try {
-    TestBatchNorm("Invalid scale Dim", input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
+    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
   } catch (const std::exception& ex) {
     EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input scale"));
   }
@@ -184,7 +183,7 @@ TEST(BatchNormTest, InvalidBDim) {
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
   try {
-    TestBatchNorm("Invalid B Dim", input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
+    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
   } catch (const std::exception& ex) {
     EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input B"));
   }
@@ -224,7 +223,7 @@ TEST(BatchNormTest, InvalidMeanDim) {
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
   try {
-    TestBatchNorm("Invalid mean Dim", input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
+    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
   } catch (const std::exception& ex) {
     EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input mean"));
   }
@@ -264,7 +263,7 @@ TEST(BatchNormTest, InvalidVarDim) {
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
   try {
-    TestBatchNorm("Invalid var dim", input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
+    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape);
   } catch (const std::exception& ex) {
     EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input var"));
   }
