@@ -85,8 +85,9 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(
       element_type,
       shape,
-      std::move(BufferUniquePtr(buffer, BufferDeleter(&cpu_allocator))),
-      cpu_allocator.Info());
+      buffer,
+      cpu_allocator.Info(),
+      &cpu_allocator);
   MLValue value;
   value.Init(p_tensor.release(),
              DataTypeImpl::GetType<Tensor>(),

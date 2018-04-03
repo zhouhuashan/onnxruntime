@@ -131,11 +131,6 @@ class Tensor {
   friend class ExecutionFrame;
 
  public:
-  enum BufferStrategy {
-    UNKNOWN,
-    PREALLOCATEDBUFFER,
-    OWNEDBUFFER
-  };
 
   // Create an empty tensor with float type.
   // empty tensor is a tensor with 1-d shape (0,), and 0 elements.
@@ -143,8 +138,14 @@ class Tensor {
   // Create a empty tensor with given type
   Tensor(MLDataType p_type);
   // Create tensor with given type, shape, pre-allocate memory and allocator info.
-  Tensor(MLDataType p_type, const TensorShape& shape, BufferNakedPtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
-  Tensor(MLDataType p_type, const TensorShape& shape, BufferUniquePtr p_data, const AllocatorInfo& alloc, const int64_t offset = 0);
+  Tensor(MLDataType p_type,
+         const TensorShape& shape,
+         BufferNakedPtr p_data,
+         const AllocatorInfo& alloc,
+         IAllocator* deleter = nullptr,
+         const int64_t offset = 0);
+
+  virtual ~Tensor();
 
   // Copy constructor and assign op will just pass the shape and memory reference to another tensor.
   // No deep clone / copy happened.
@@ -192,28 +193,20 @@ class Tensor {
  private:
   void Init(MLDataType p_type,
             const TensorShape& shape,
-            BufferStrategy strategy,
-            BufferNakedPtr p_raw_data,
+            void* p_raw_data,
             const AllocatorInfo& alloc,
+            IAllocator* deleter,
             const int64_t offset = 0);
 
   void* GetRaw() const {
-    switch (buffer_strategy_) {
-      case PREALLOCATEDBUFFER:
-        return p_naked_data_;
-      case OWNEDBUFFER:
-        return p_unique_data_.get();
-      default:
-        if (shape_.Size() == 0)  //empty tensor
-          return nullptr;
-        else
-          LOTUS_THROW("Unknown buffer strategy!");
-    }
+    return p_data_;
   }
 
-  BufferNakedPtr p_naked_data_;
-  BufferUniquePtr p_unique_data_;
-  BufferStrategy buffer_strategy_;
+  void* p_data_;
+  // if buffer_deleter_ is null, it means tensor does not own the buffer.
+  // otherwise tensor will use the deleter to release the buffer when
+  // tensor is released.
+  IAllocator* buffer_deleter_;
 
   TensorShape shape_;
   MLDataType dtype_;
