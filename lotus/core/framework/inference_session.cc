@@ -13,6 +13,7 @@
 //#include "core/platform/env.h"
 //#include "core/lib/threadpool.h"
 #include "core/framework/execution_frame.h"
+#include "core/framework/tensorprotoutils.h"
 #include "core/graph/tensorutils.h"
 #include "core/platform/notification.h"
 
@@ -298,7 +299,7 @@ class InferenceSession::Impl {
     const LotusIR::Graph* p_graph = session_state_.GetGraph();
     LOTUS_ENFORCE(p_graph);
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
-
+    auto& alloc = AllocatorManager::Instance().GetArena(CPU);
     const LotusIR::InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
     for (const auto& entry : initialized_tensor_set) {
       const std::string& name = entry.first;
@@ -307,7 +308,7 @@ class InferenceSession::Impl {
 
       const TensorProto& tensor_proto = entry.second;
       std::unique_ptr<Tensor> p_tensor = nullptr;
-      LOTUS_RETURN_IF_ERROR(GetTensorFromTensorProto(tensor_proto, &p_tensor));
+      LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc));
       MLValue mlvalue;
       mlvalue.Init(p_tensor.release(),
                    DataTypeImpl::GetType<Tensor>(),
@@ -317,84 +318,6 @@ class InferenceSession::Impl {
     }
 
     return Common::Status::OK();
-  }
-
-  // TODO consider making this function static and outside this class
-  // if it has nothing to do with the class members
-  Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor) {
-    vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
-    if (tensor_shape_vec.empty()) {
-      std::ostringstream ostr;
-      ostr << "Shape is empty for tensor_proto name: " << tensor_proto.name();
-      return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
-    }
-
-    TensorShape tensor_shape{tensor_shape_vec};
-    size_t tensor_size = tensor_shape.Size();
-
-    switch (tensor_proto.data_type()) {
-      case onnx::TensorProto_DataType::TensorProto_DataType_FLOAT: {
-        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<float>(tensor_proto, tensor_shape, tensor_size, p_tensor));
-        break;
-      }
-      case onnx::TensorProto_DataType::TensorProto_DataType_BOOL: {
-        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, tensor_size, p_tensor));
-        break;
-      }
-      case onnx::TensorProto_DataType::TensorProto_DataType_INT32: {
-        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<int32_t>(tensor_proto, tensor_shape, tensor_size, p_tensor));
-        break;
-      }
-      case onnx::TensorProto_DataType::TensorProto_DataType_INT64: {
-        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<int64_t>(tensor_proto, tensor_shape, tensor_size, p_tensor));
-        break;
-      }
-      case onnx::TensorProto_DataType::TensorProto_DataType_STRING: {
-        LOTUS_RETURN_IF_ERROR(GetTensorByTypeFromTensorProto<std::string>(tensor_proto, tensor_shape, tensor_size, p_tensor));
-        break;
-      }
-      default: {
-        std::ostringstream ostr;
-        ostr << "Initialized tensor with unexpected type: " << tensor_proto.data_type();
-        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, ostr.str());
-      }
-    }
-
-    return Common::Status::OK();
-  }
-
-  // TODO consider making this function static and outside this class
-  // if it has nothing to do with the class members
-  template <typename T>
-  Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
-                                                const TensorShape& tensor_shape,
-                                                size_t tensor_size,
-                                                std::unique_ptr<Tensor>* p_tensor) {
-    // TODO how should the buffer for this tensor be allocated? for now assuming CPU allocator
-    auto& alloc = AllocatorManager::Instance().GetArena(CPU);
-    size_t size_to_allocate = sizeof(T) * tensor_shape.Size();
-    T* p_data = static_cast<T*>(alloc.Alloc(size_to_allocate));
-    // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-    Common::Status retval = Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size);
-    p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
-                               tensor_shape,
-                               static_cast<void*>(p_data),
-                               alloc.Info(),
-                               static_cast<IAllocator*>(&alloc)));
-
-    return Common::Status::OK();
-  }
-
-  // TODO consider making this function static and outside this class
-  // if it has nothing to do with the class members
-  std::vector<int64_t> GetTensorShapeFromTensorProto(const TensorProto& tensor_proto) {
-    auto dims = tensor_proto.dims();
-    std::vector<int64_t> tensor_shape_vec(dims.size());
-    for (int i = 0; i < dims.size(); ++i) {
-      tensor_shape_vec[i] = dims[i];
-    }
-
-    return tensor_shape_vec;
   }
 
   // This function does the following:
