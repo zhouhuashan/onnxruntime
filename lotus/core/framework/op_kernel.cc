@@ -1,6 +1,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/session_state.h"
+#include "core/graph/op.h"
 
 namespace Lotus {
 
@@ -61,12 +62,12 @@ std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
 }
 
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def) {
-  const LotusIR::OperatorSchema* op_schema = node.Op();
+  const OpSchema* op_schema = node.Op();
   const size_t len = node.InputArgCount().size();
-  if (len > op_schema->GetOpSignature().GetInputs().size()) return false;
+  if (len > op_schema->inputs().size()) return false;
   int cur = 0;
   for (size_t input_index = 0; input_index != len; ++input_index) {
-    const LotusIR::OpSignature::FormalParameter& param = op_schema->GetOpSignature().GetInputs()[input_index];
+    auto& param = op_schema->inputs()[input_index];
     LOTUS_ENFORCE(!param.GetTypeStr().empty());
     auto& kernel_type_constraints = kernel_def.TypeConstraints();
     auto allowed_type_list_iter = kernel_type_constraints.find(param.GetTypeStr());
@@ -125,27 +126,18 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
   return Status::OK();
 }
 
-Status KernelRegistry::CreateKernel(
-    const ProviderType& provider_type,
-    const LotusIR::Node& node,
-    const AllocatorInfo& allocator_info,
-    /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
-  // TODO: error check for op_name/op_domain/provider/since_version.
-  // TODO: find the real appropriate kernel create info for specific version.
-  const LotusIR::OperatorSchema* op_schema = node.Op();
-  if (op_schema->GetAttributeParser()) {
-    Status status = op_schema->GetAttributeParser()(node.GetAttributes());
-    RETURN_IF_ERROR(status);
-  }
-
+Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
+                                    const AllocatorInfo& allocator_info,
+                                    /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   for (auto i = range.first; i != range.second; ++i) {
     if (node.Domain() == i->second.kernel_def->Domain() &&
-        provider_type == i->second.kernel_def->Provider()) {
+        node.GetExecutionProvider() == i->second.kernel_def->Provider()) {
       int start, end;
       i->second.kernel_def->SinceVersion(&start, &end);
-      //TODO: check version
-      if (VerifyKernelDef(node, *i->second.kernel_def)) {
+      int version = node.Op()->since_version();
+      if (start <= version && version <= end &&
+        VerifyKernelDef(node, *i->second.kernel_def)) {
         OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def);
         op_kernel->reset(i->second.kernel_create_func(kernel_info));
         return Status::OK();

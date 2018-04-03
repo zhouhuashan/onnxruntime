@@ -10,39 +10,42 @@ using namespace onnx;
 namespace LotusIR {
 namespace Test {
 TEST(OpRegistrationTest, AffineOp) {
-  auto opSchema = OpSchemaRegistry::Schema("Affine");
-  EXPECT_TRUE(nullptr != opSchema);
-  const OpSignature *op = &(opSchema->GetOpSignature());
-  size_t input_size = op->GetInputs().size();
+  auto op = OpSchemaRegistry::Schema("Affine");
+  EXPECT_TRUE(nullptr != op);
+  size_t input_size = op->inputs().size();
   EXPECT_EQ(input_size, 1);
-  EXPECT_EQ(op->GetInputs()[0].GetTypes(), op->GetOutputs()[0].GetTypes());
-  size_t attr_size = op->GetAttributes().size();
+  EXPECT_EQ(op->inputs()[0].GetTypes(), op->outputs()[0].GetTypes());
+  size_t attr_size = op->attributes().size();
   EXPECT_EQ(attr_size, 2);
-  EXPECT_EQ(op->GetAttributes()[0].GetName(), "alpha");
-  EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::AttributeProto_AttributeType_FLOAT);
-  EXPECT_EQ(op->GetAttributes()[1].GetName(), "beta");
-  EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_FLOAT);
+  auto attr_alpha = op->attributes().find("alpha")->second;
+  EXPECT_EQ(attr_alpha.name, "alpha");
+  EXPECT_EQ(attr_alpha.type, AttrType::AttributeProto_AttributeType_FLOAT);
+  auto attr_beta = op->attributes().find("beta")->second;
+  EXPECT_EQ(attr_beta.name, "beta");
+  EXPECT_EQ(attr_beta.type, AttrType::AttributeProto_AttributeType_FLOAT);
 }
 
 TEST(OpRegistrationTest, EmbeddingOp) {
-  auto opSchema = OpSchemaRegistry::Schema("Embedding");
-  EXPECT_TRUE(nullptr != opSchema);
-  const OpSignature *op = &(opSchema->GetOpSignature());
-  size_t input_size = op->GetInputs().size();
+  auto op = OpSchemaRegistry::Schema("Embedding");
+  EXPECT_TRUE(nullptr != op);
+  size_t input_size = op->inputs().size();
   EXPECT_EQ(input_size, 2);
   DataTypeSet input_types, output_types;
-  input_types.emplace(Utils::OpUtils::ToType("tensor(uint64)"));
-  output_types.emplace(Utils::OpUtils::ToType("tensor(float16)"));
-  output_types.emplace(Utils::OpUtils::ToType("tensor(float)"));
-  output_types.emplace(Utils::OpUtils::ToType("tensor(double)"));
-  EXPECT_EQ(op->GetInputs()[0].GetTypes(), input_types);
-  EXPECT_EQ(op->GetOutputs()[0].GetTypes(), output_types);
-  size_t attr_size = op->GetAttributes().size();
+  input_types.emplace(Utils::DataTypeUtils::ToType("tensor(uint64)"));
+  output_types.emplace(Utils::DataTypeUtils::ToType("tensor(float16)"));
+  output_types.emplace(Utils::DataTypeUtils::ToType("tensor(float)"));
+  output_types.emplace(Utils::DataTypeUtils::ToType("tensor(double)"));
+  EXPECT_EQ(op->inputs()[0].GetTypes(), input_types);
+  EXPECT_EQ(op->outputs()[0].GetTypes(), output_types);
+
+  size_t attr_size = op->attributes().size();
   EXPECT_EQ(attr_size, 2);
-  EXPECT_EQ(op->GetAttributes()[0].GetName(), "input_dim");
-  EXPECT_EQ(op->GetAttributes()[0].GetType(), AttrType::AttributeProto_AttributeType_INT);
-  EXPECT_EQ(op->GetAttributes()[1].GetName(), "output_dim");
-  EXPECT_EQ(op->GetAttributes()[1].GetType(), AttrType::AttributeProto_AttributeType_INT);
+  auto input_dim_attr = op->attributes().find("input_dim")->second;
+  EXPECT_EQ(input_dim_attr.name, "input_dim");
+  EXPECT_EQ(input_dim_attr.type, AttrType::AttributeProto_AttributeType_INT);
+  auto output_dim_attr = op->attributes().find("output_dim")->second;
+  EXPECT_EQ(output_dim_attr.name, "output_dim");
+  EXPECT_EQ(output_dim_attr.type, AttrType::AttributeProto_AttributeType_INT);
 }
 
 TEST(FeatureVectorizerTest, TraditionalMlOpTest) {

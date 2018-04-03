@@ -133,15 +133,15 @@ class PlannerImpl {
   }
 
   MLDataType GetMLDataType(const LotusIR::NodeArg& arg) {
-    const LotusIR::PTYPE ptype = arg.Type();
-    const onnx::TypeProto& type_proto = LotusIR::Utils::OpUtils::ToTypeProto(ptype);
+    const DataType ptype = arg.Type();
+    const onnx::TypeProto& type_proto = onnx::Utils::DataTypeUtils::ToTypeProto(ptype);
     return DataTypeImpl::TypeFromProto(type_proto);
   }
 
   /*! \brief Given a tensor-type, return the size of an element of the tensor.
   */
-  size_t GetElementSize(const LotusIR::PTYPE& tensor_type) {
-    const onnx::TypeProto& type_proto = LotusIR::Utils::OpUtils::ToTypeProto(tensor_type);
+  size_t GetElementSize(const DataType& tensor_type) {
+    const onnx::TypeProto& type_proto = onnx::Utils::DataTypeUtils::ToTypeProto(tensor_type);
     MLDataType ml_data_type = DataTypeImpl::TypeFromProto(type_proto);
     const TensorTypeBase* tensor_type_base = ml_data_type->AsTensorType();
     LOTUS_ENFORCE(nullptr != tensor_type_base);
@@ -149,8 +149,8 @@ class PlannerImpl {
     return elt_type->Size();
   }
 
-  bool SameSize(const TensorShapeProto& shape1, const LotusIR::PTYPE& ptype1,
-                const TensorShapeProto& shape2, const LotusIR::PTYPE& ptype2) {
+  bool SameSize(const TensorShapeProto& shape1, const DataType& ptype1,
+                const TensorShapeProto& shape2, const DataType& ptype2) {
     return (GetElementSize(ptype1) == GetElementSize(ptype2)) && SameShape(shape1, shape2);
 
     /* TODO: we can generalize this if the concrete shapes are known for both:
@@ -324,7 +324,7 @@ class PlannerImpl {
   bool IsNonTensor(const LotusIR::NodeArg& nodearg) {
     // TODO: unclear why we should go through a string-representation of type
     auto ptype = nodearg.Type();
-    auto& type_proto = LotusIR::Utils::OpUtils::ToTypeProto(ptype);
+    auto& type_proto = onnx::Utils::DataTypeUtils::ToTypeProto(ptype);
     return type_proto.has_tensor_type();
   }
 

@@ -12,7 +12,7 @@ void TestUnaryElementwiseOp(std::vector<float>& input_vals, std::function<float(
   CREATE_NODE(Op::TypeTraits(), {&input_def}, {&output_def});
 
   for (auto attr : attribs)
-    EXPECT_TRUE(node->AddAttribute(attr.first, attr.second));
+    node->AddAttribute(attr.first, attr.second);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;

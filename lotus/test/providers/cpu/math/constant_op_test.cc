@@ -21,7 +21,7 @@ TEST(MathOpTest, Constant) {
   for (auto v : expected_vals)
     *t.mutable_float_data()->Add() = v;
 
-  EXPECT_TRUE(model.Node().AddAttribute("value", t));
+  model.Node().AddAttribute("value", t);
 
   SimpleFloatTest<Constant> test(model);
   test.Run(dims, expected_vals);

@@ -20,7 +20,7 @@ static void RunTest(const std::vector<float> &x_vals,
   CREATE_NODE("Softmax", input_defs, output_defs);
 
   if (axis != 1) {
-    EXPECT_TRUE(node->AddAttribute("axis", axis));
+    node->AddAttribute("axis", axis);
   }
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);

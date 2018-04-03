@@ -9,7 +9,8 @@
 #include "core/framework/tensor.h"
 #include "core/graph/constants.h"
 #include "core/graph/graph.h"
-#include "core/graph/op.h"
+#include "onnx/defs/schema.h"
+//#include "core/graph/op.h"
 
 namespace Lotus {
 class OpKernelContext;
@@ -138,8 +139,7 @@ class KernelRegistry {
   // for its clients unless the factory is managing the lifecycle of the pointer
   // itself.
   // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
-  Status CreateKernel(const ProviderType& provider_type,
-                      const LotusIR::Node& node,
+  Status CreateKernel(const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
                       std::unique_ptr<OpKernel>* op_kernel) const;
 

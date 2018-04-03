@@ -7,11 +7,12 @@
 #include "core/common/common.h"
 #include "core/common/status.h"
 #include "core/graph/constants.h"
-#include "core/graph/op.h"
+#include "onnx/defs/schema.h"
 #include "core/graph/utils.h"
 #include "onnx/onnx-ml.pb.h"
 
 using namespace onnx;
+typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
 
 namespace lotusrt {
 class LotusRT;
@@ -63,9 +64,9 @@ class NodeArg {
   const std::string& Name() const;
 
   // Get node arg type.
-  const PTYPE Type() const;
+  const DataType Type() const;
 
-  void SetType(PTYPE p_type);
+  void SetType(DataType p_type);
   void SetType(const TypeProto& type_proto);
 
   // Get node arg shape.
@@ -92,7 +93,7 @@ class NodeArg {
   friend class lotusrt::LotusRT;
 
   // Node arg PType.
-  PTYPE type_;
+  DataType type_;
 
   // Node arg name, type and shape.
   NodeArgInfo node_arg_info_;
@@ -160,7 +161,7 @@ class Node {
   const std::string& Domain() const;
 
   // Get the OperatorSchema this node refers to.
-  const OperatorSchema* Op() const;
+  const OpSchema* Op() const;
 
   // Get node description.
   const std::string& Description() const;
@@ -194,12 +195,12 @@ class Node {
   bool InputEdgeSrcEnd(NodeArg* p_input_arg, /*out*/ const EdgeEnd** pp_input_edge_src_end) const;
 
   // Add a node attribute with specified attribute name and value.
-  bool AddAttribute(const std::string& attr_name, const AttributeProto& value);
+  void AddAttribute(const std::string& attr_name, const AttributeProto& value);
 
 #define ADD_ATTR_INTERFACES(TypeName)             \
-  bool AddAttribute(const std::string& attr_name, \
+  void AddAttribute(const std::string& attr_name, \
                     const TypeName& value);       \
-  bool AddAttribute(const std::string& attr_name, \
+  void AddAttribute(const std::string& attr_name, \
                     const std::vector<TypeName>& values);
 
   ADD_ATTR_INTERFACES(int64_t)
@@ -261,7 +262,7 @@ class Node {
   std::string domain_;
 
   // OperatorSchema that <*this> node refers to.
-  const OperatorSchema* op_;
+  const OpSchema* op_;
 
   // Node doc string.
   std::string description_;
@@ -657,7 +658,7 @@ class Graph : public GraphBase {
       std::unordered_map<std::string, Node*>& output_args);
 
   Status InferAndVerifyTypeMatch(Node* p_node,
-                                 const OpSignature* p_op,
+                                 const OpSchema* p_op,
                                  const std::unordered_map<std::string, Node*>& output_args);
 
   // Set graph inputs/outputs when resolving a graph..
