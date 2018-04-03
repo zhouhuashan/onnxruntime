@@ -376,8 +376,11 @@ class InferenceSession::Impl {
     T* p_data = static_cast<T*>(alloc.Alloc(size_to_allocate));
     // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
     Common::Status retval = Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size);
-    BufferUniquePtr buffer_ptr = BufferUniquePtr(static_cast<void*>(p_data), BufferDeleter(&alloc));
-    p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(), tensor_shape, std::move(buffer_ptr), alloc.Info()));
+    p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
+                               tensor_shape,
+                               static_cast<void*>(p_data),
+                               alloc.Info(),
+                               static_cast<IAllocator*>(&alloc)));
 
     return Common::Status::OK();
   }

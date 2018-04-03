@@ -71,8 +71,9 @@ class LotusModelTest : public testing::Test {
     Tensor* tensor = new Tensor(
         element_type,
         shape,
-        std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-        location);
+        buffer,
+        location,
+        alloc);
     output->Init(tensor,
                  DataTypeImpl::GetType<Tensor>(),
                  DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());

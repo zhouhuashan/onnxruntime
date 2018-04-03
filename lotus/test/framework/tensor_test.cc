@@ -6,11 +6,12 @@ namespace Lotus {
 namespace Test {
 template <typename T>
 void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
+  //not own the buffer
   TensorShape shape(dims);
   auto& alloc = AllocatorManager::Instance().GetArena(CPU);
   auto data = alloc.Alloc(sizeof(T) * (shape.Size() + offset));
   EXPECT_TRUE(data);
-  Tensor t(DataTypeImpl::GetType<T>(), shape, data, alloc.Info(), offset);
+  Tensor t(DataTypeImpl::GetType<T>(), shape, data, alloc.Info(), nullptr, offset);
   auto tensor_shape = t.Shape();
   EXPECT_EQ(shape, tensor_shape);
   EXPECT_EQ(t.DataType(), DataTypeImpl::GetType<T>());
@@ -27,8 +28,7 @@ void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
   // owned buffer
   data = alloc.Alloc(sizeof(T) * (shape.Size() + offset));
   EXPECT_TRUE(data);
-  BufferUniquePtr buffer_ptr(data, BufferDeleter(&alloc));
-  Tensor new_t(DataTypeImpl::GetType<T>(), shape, std::move(buffer_ptr), alloc.Info(), offset);
+  Tensor new_t(DataTypeImpl::GetType<T>(), shape, data, alloc.Info(), &alloc, offset);
 
   tensor_shape = new_t.Shape();
   EXPECT_EQ(shape, tensor_shape);

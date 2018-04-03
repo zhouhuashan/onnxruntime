@@ -34,8 +34,9 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
   void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
                                                               shape,
-                                                              std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-                                                              location);
+                                                              buffer,
+                                                              location,
+                                                              alloc);
   p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());

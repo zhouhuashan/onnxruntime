@@ -90,23 +90,21 @@ std::ostream& operator<<(std::ostream& out, const TensorShape& shape) {
   return (out << shape.ToString());
 }
 
-Tensor::Tensor() : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()),
-                   p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter())) {
+Tensor::Tensor() : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
   Init(DataTypeImpl::GetType<float>(),
        TensorShape(std::vector<int64_t>(1, 0)),
-       UNKNOWN,
        nullptr,
        AllocatorManager::Instance().GetArena(CPU).Info(),
+       nullptr,
        0);
 }
 
-Tensor::Tensor(MLDataType p_type) : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()),
-                                    p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter())) {
+Tensor::Tensor(MLDataType p_type) : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
   Init(p_type,
        TensorShape(std::vector<int64_t>(1, 0)),
-       UNKNOWN,
        nullptr,
        AllocatorManager::Instance().GetArena(CPU).Info(),
+       nullptr,
        0);
 }
 
@@ -114,43 +112,28 @@ Tensor::Tensor(MLDataType p_type,
                const TensorShape& shape,
                BufferNakedPtr p_data,
                const AllocatorInfo& alloc,
+               IAllocator* deleter,
                const int64_t offset)
-    : alloc_info_(alloc),
-      p_unique_data_(BufferUniquePtr(nullptr, BufferDeleter())) {
+    : alloc_info_(alloc) {
   Init(p_type,
        shape,
-       PREALLOCATEDBUFFER,
        p_data,
        alloc,
-       offset);
-}
-
-Tensor::Tensor(MLDataType p_type,
-               const TensorShape& shape,
-               BufferUniquePtr p_data,
-               const AllocatorInfo& alloc,
-               const int64_t offset)
-    : alloc_info_(alloc),
-      p_unique_data_(std::move(p_data)) {
-  Init(p_type,
-       shape,
-       OWNEDBUFFER,
-       nullptr,
-       alloc,
+       deleter,
        offset);
 }
 
 void Tensor::Init(MLDataType p_type,
                   const TensorShape& shape,
-                  BufferStrategy strategy,
-                  BufferNakedPtr p_raw_data,
+                  void* p_raw_data,
                   const AllocatorInfo& alloc,
+                  IAllocator* deleter,
                   const int64_t offset) {
   dtype_ = p_type;
   shape_ = shape;
-  buffer_strategy_ = strategy;
-  p_naked_data_ = p_raw_data;
+  p_data_ = p_raw_data;
   alloc_info_ = alloc;
+  buffer_deleter_ = deleter;
   byte_offset_ = offset;
 }
 
@@ -159,20 +142,13 @@ Tensor::Tensor(Tensor&& other)
       shape_(other.shape_),
       alloc_info_(other.alloc_info_),
       byte_offset_(other.byte_offset_),
-      buffer_strategy_(other.buffer_strategy_) {
-  if (other.buffer_strategy_ == OWNEDBUFFER) {
-    p_unique_data_ = std::move(other.p_unique_data_);
-    p_naked_data_ = nullptr;
-  } else {
-    p_naked_data_ = other.p_naked_data_;
-    p_unique_data_ = nullptr;
-  }
-
+      p_data_(other.p_data_),
+      buffer_deleter_(other.buffer_deleter_) {
   other.dtype_ = DataTypeImpl::GetType<float>();
   other.shape_ = TensorShape(std::vector<int64_t>(1, 0));
-  other.buffer_strategy_ = UNKNOWN;
+  other.p_data_ = nullptr;
+  other.buffer_deleter_ = nullptr;
   other.byte_offset_ = 0;
-  other.p_unique_data_ = nullptr;
 }
 
 Tensor& Tensor::operator=(Tensor&& other) {
@@ -181,20 +157,14 @@ Tensor& Tensor::operator=(Tensor&& other) {
     shape_ = other.shape_;
     alloc_info_ = other.alloc_info_;
     byte_offset_ = other.byte_offset_;
-    buffer_strategy_ = other.buffer_strategy_;
-    if (other.buffer_strategy_ == OWNEDBUFFER) {
-      p_unique_data_ = std::move(other.p_unique_data_);
-      p_naked_data_ = nullptr;
-    } else {
-      p_naked_data_ = other.p_naked_data_;
-      p_unique_data_ = nullptr;
-    }
+    p_data_ = other.p_data_;
+    buffer_deleter_ = other.buffer_deleter_;
 
     other.dtype_ = DataTypeImpl::GetType<float>();
     other.shape_ = TensorShape(std::vector<int64_t>(1, 0));
-    other.buffer_strategy_ = UNKNOWN;
+    other.p_data_ = nullptr;
     other.byte_offset_ = 0;
-    other.p_unique_data_ = nullptr;
+    other.buffer_deleter_ = nullptr;
   }
   return *this;
 }
@@ -203,22 +173,21 @@ Tensor::Tensor(const Tensor& src)
     : dtype_(src.dtype_), alloc_info_(src.alloc_info_), shape_(src.shape_), byte_offset_(src.byte_offset_) {
   // it may be better to refactor it a little bit to make it a compile error
   // but right now just keep it simple first.
-  LOTUS_ENFORCE(src.buffer_strategy_ != OWNEDBUFFER,
+  LOTUS_ENFORCE(src.buffer_deleter_ == nullptr,
                 "Can't copy tensor with its owned buffer. Please transfer ownership by move");
 
-  if (src.buffer_strategy_ == PREALLOCATEDBUFFER) {
-    buffer_strategy_ = PREALLOCATEDBUFFER;
-    p_naked_data_ = src.p_naked_data_;
-  } else {
-    buffer_strategy_ = UNKNOWN;
-    p_naked_data_ = nullptr;
-    p_unique_data_ = nullptr;
-  }
+  p_data_ = src.p_data_;
+  buffer_deleter_ = nullptr;
+}
+
+Tensor::~Tensor() {
+    if (buffer_deleter_)
+        buffer_deleter_->Free(p_data_);
 }
 
 Tensor& Tensor::ShallowCopy(const Tensor& other) {
   // similar as above
-  LOTUS_ENFORCE(other.buffer_strategy_ != OWNEDBUFFER,
+  LOTUS_ENFORCE(other.buffer_deleter_ == nullptr,
                 "Can't copy tensor with its owned buffer. Please transfer ownership by move");
 
   if (this != &other) {
@@ -226,9 +195,8 @@ Tensor& Tensor::ShallowCopy(const Tensor& other) {
     alloc_info_ = other.alloc_info_;
     shape_ = other.shape_;
     byte_offset_ = other.byte_offset_;
-    buffer_strategy_ = other.buffer_strategy_;
-    p_naked_data_ = other.p_naked_data_;
-    p_naked_data_ = nullptr;
+    p_data_ = other.p_data_;
+    buffer_deleter_ = nullptr;
   }
   return *this;
 }
