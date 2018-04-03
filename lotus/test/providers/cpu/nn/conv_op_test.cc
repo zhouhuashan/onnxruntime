@@ -36,7 +36,7 @@ void TestConvOp(const ConvOpAttributes& attributes,
     test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);
   }
   test.AddOutput<float>("Y", expected_output_shape, expected_output);
-  test.Run<Conv<float>>();
+  test.Run();
 }
 }  // namespace
 

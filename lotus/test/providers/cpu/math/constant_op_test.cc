@@ -5,6 +5,13 @@
 namespace Lotus {
 namespace Test {
 
+REGISTER_KERNEL(KernelDefBuilder("Constant")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Constant<float>);
+
 TEST(MathOpTest, Constant) {
   OpTester test("Constant");
 
@@ -21,7 +28,7 @@ TEST(MathOpTest, Constant) {
   test.AddAttribute("value", t);
 
   test.AddOutput<float>("output", dims, expected_vals);
-  test.Run<Constant<float>>();
+  test.Run();
 }
 
 }  // namespace Test

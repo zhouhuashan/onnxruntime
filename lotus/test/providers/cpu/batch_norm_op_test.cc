@@ -29,7 +29,7 @@ void TestBatchNorm(const InputDataMap& input_data_map,
   test.AddInput<float>("mean", input_shapes_map.at("mean"), input_data_map.at("mean"));
   test.AddInput<float>("var", input_shapes_map.at("var"), input_data_map.at("var"));
   test.AddOutput<float>("output", expected_output_shape, expected_output);
-  test.Run<BatchNorm<float>>();
+  test.Run();
 }
 
 TEST(BatchNormTest, PositiveTestCase) {

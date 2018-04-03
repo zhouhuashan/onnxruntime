@@ -15,7 +15,7 @@ void TransposeTest(std::vector<int64_t>& input_shape,
     test.AddAttribute("perm", *p_perm);
   test.AddInput<float>("X", input_shape, input_vals);
   test.AddOutput<float>("Y", expected_shape, expected_vals);
-  test.Run<Transpose<float>>();
+  test.Run();
 }
 
 // Test 2 dimensional transpose, with no permutation attribute specified
