@@ -33,9 +33,11 @@ class TestUtils {
       const SessionState& session_state,
       std::unordered_map<std::string, MLValue> feeds,
       const std::vector<std::string> output_names) {
+    static std::vector<MLValue> outputs;
     return std::make_shared<ExecutionFrame>(
         feeds,
         output_names,
+        outputs,
         session_state);
   }
 

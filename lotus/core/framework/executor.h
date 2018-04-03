@@ -15,8 +15,9 @@ class Executor {
   virtual ~Executor() {}
 
   static std::unique_ptr<Executor> NewSequentialExecutor(const SessionState& session_state,
-                                                         const NameMLValMap& feeds, /* required for execution frame construction */
-                                                         const std::vector<std::string>& output_names /* required for execution frame construction */);
+                                                         const NameMLValMap& feeds,                    /* required for execution frame construction */
+                                                         const std::vector<std::string>& output_names, /* required for execution frame construction */
+                                                         const std::vector<MLValue>& fetches);
 
   virtual Common::Status Execute(const RunOptions& run_options,
                                  const Logging::Logger& run_logger,

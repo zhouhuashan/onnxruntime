@@ -228,6 +228,25 @@ class InferenceSession::Impl {
     return Run(run_options, feeds, output_names, p_fetches);
   }
 
+  static Common::Status ValidateOutputs(const std::vector<std::string>& output_names,
+                                        const std::vector<MLValue>* p_fetches) {
+    if (!p_fetches) {
+      return Common::Status(Common::LOTUS, Common::FAIL, "Output vector pointer is NULL");
+    }
+
+    if (!p_fetches->empty() &&
+        (output_names.size() != p_fetches->size())) {
+      std::ostringstream ostr;
+      ostr << "Output vector incorrectly sized: output_names.size(): " << output_names.size()
+           << "p_fetches->size(): " << p_fetches->size();
+      return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+    }
+
+    // TODO add more validation here like checking shape of the allocated buffers
+
+    return Common::Status::OK();
+  }
+
   Common::Status Run(const NameMLValMap& feeds,
                      std::vector<MLValue>* p_fetches) {
     RunOptions run_options;
@@ -252,6 +271,9 @@ class InferenceSession::Impl {
         }
       }
 
+      // if the output vector is non-empty, ensure that its the same size as the output_names
+      LOTUS_RETURN_IF_ERROR(ValidateOutputs(output_names, p_fetches));
+
       // TODO add instrumentation to measure the time taken for this Run
       if (!run_options.run_tag.empty()) {
         LOGS(*session_logger_, INFO) << "Running with tag: " << run_options.run_tag;
@@ -263,7 +285,7 @@ class InferenceSession::Impl {
 
       std::unique_ptr<Executor> p_exec;
       if (session_options_.enable_sequential_execution) {
-        p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names);
+        p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names, *p_fetches);
       } else {
         LOTUS_NOT_IMPLEMENTED;
       }

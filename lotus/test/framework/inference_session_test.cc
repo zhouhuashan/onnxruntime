@@ -52,7 +52,7 @@ void CreateMLValue(IAllocator* alloc,
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 }
 
-void RunModel(InferenceSession& session_object, const RunOptions& run_options) {
+void RunModel(InferenceSession& session_object, const RunOptions& run_options, bool is_preallocate_output_vec = false) {
   // prepare inputs
   std::vector<int64_t> dims_mul_x = {3, 2};
   std::vector<float> values_mul_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
@@ -65,6 +65,13 @@ void RunModel(InferenceSession& session_object, const RunOptions& run_options) {
   std::vector<std::string> output_names;
   output_names.push_back("Y");
   std::vector<MLValue> fetches;
+
+  if (is_preallocate_output_vec) {
+    fetches.resize(output_names.size());
+    for (auto& elem : fetches) {
+      CreateMLValue<float>(&AllocatorManager::Instance().GetArena(CPU), dims_mul_x, values_mul_x, &elem);
+    }
+  }
 
   // prepare expected inputs and outputs
   std::vector<int64_t> expected_dims_mul_y = {3, 2};
@@ -157,6 +164,23 @@ TEST(InferenceSessionTests, MultipleSessionsNoTimeout) {
 
   thread1.join();
   thread2.join();
+}
+
+TEST(InferenceSessionTests, PreAllocateOutputVector) {
+  ExecutionProviderInfo epi;
+  ProviderOption po{"CPUExecutionProvider", epi};
+  SessionOptions so(vector<ProviderOption>{po});
+
+  so.session_logid = "InferenceSessionTests.PreAllocateOutputVector";
+
+  InferenceSession session_object{so, &DefaultLoggingManager()};
+  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  EXPECT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "InferenceSessionTests.PreAllocateOutputVector";
+  bool is_preallocate_output_vec = true;
+  RunModel(session_object, run_options, is_preallocate_output_vec);
 }
 
 // TODO write test with timeout

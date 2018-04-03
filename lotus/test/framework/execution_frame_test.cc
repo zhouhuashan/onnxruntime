@@ -35,8 +35,10 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   state.SetGraph(graph);
   state.AddMLValueNameIdx("X", 0);
   state.AddMLValueNameIdx("Y", 1);
+  vector<MLValue> outputs;
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{},
                        std::vector<std::string>{},
+                       outputs,
                        state);
 
   int start_index = frame.GetFirstArgIndex(node->Index());
@@ -97,8 +99,10 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   state.SetGraph(graph);
   state.AddMLValueNameIdx("X", 0);
   state.AddMLValueNameIdx("Y", 1);
+  vector<MLValue> outputs;
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X", value}},
                        std::vector<std::string>{},
+                       outputs,
                        state);
 
   auto tensor = frame.GetMutableValue<Tensor>(0);

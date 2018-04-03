@@ -27,8 +27,9 @@ class SequentialExecutor : public Executor {
  public:
   SequentialExecutor(const SessionState& session_state,
                      const NameMLValMap& feeds,
-                     const std::vector<std::string>& output_names)
-      : root_frame_(feeds, output_names, session_state),
+                     const std::vector<std::string>& output_names,
+                     const std::vector<MLValue>& fetches)
+      : root_frame_(feeds, output_names, fetches, session_state),
         session_state_(session_state) {
   }
 
@@ -70,11 +71,20 @@ class SequentialExecutor : public Executor {
 
   Common::Status FetchOutput(const std::vector<std::string>& output_names,
                              std::vector<MLValue>* p_fetches) {
+    LOTUS_ENFORCE(p_fetches);  // this should've been checked before already.
+
+    if (p_fetches->empty()) {
+      p_fetches->resize(output_names.size());
+    } else {
+      LOTUS_ENFORCE(output_names.size() == p_fetches->size());  // this should've been checked before already
+    }
+
+    auto idx = 0;
     for (const auto& oname : output_names) {
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(oname, &mlvalue_index));
       const MLValue& output_mlvalue = root_frame_.GetMLValue(mlvalue_index);
-      p_fetches->push_back(output_mlvalue);
+      (*p_fetches)[idx++] = output_mlvalue;
     }
 
     return Common::Status::OK();
@@ -97,7 +107,8 @@ class SequentialExecutor : public Executor {
 
 std::unique_ptr<Executor> Executor::NewSequentialExecutor(const SessionState& session_state,
                                                           const NameMLValMap& feeds,
-                                                          const std::vector<std::string>& output_names) {
-  return std::unique_ptr<Executor>(new SequentialExecutor(session_state, feeds, output_names));
+                                                          const std::vector<std::string>& output_names,
+                                                          const std::vector<MLValue>& fetches) {
+  return std::unique_ptr<Executor>(new SequentialExecutor(session_state, feeds, output_names, fetches));
 }
 }  // namespace Lotus
