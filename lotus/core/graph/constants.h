@@ -13,6 +13,7 @@ static const std::string kConstantValue = "value";
 static const std::string kOnnxDomain = "";
 static const std::string kMLDomain = "ai.onnx.ml";
 static const std::string kCpuExecutionProvider = "CPUExecutionProvider";
+static const std::string kCudaExecutionProvider = "CudaExecutionProvider";
 
 // Singleton wrapper around allowed data types.
 // This implements construct on first use which is needed to ensure
@@ -61,11 +62,12 @@ class TypeStringsInitializer {
   // Common string representations of TypeProto. These are used to pre-initialize
   // typeStringToProto map. Note: some of these strings may have already been initialized in
   // the map via op registration depending on static initialization order.
-  const std::vector<std::string> kCommonTypeStrings = {"tensor(float16)", "tensor(float)",
-                                                       "tensor(double)", "tensor(int8)", "tensor(int16)", "tensor(int32)",
-                                                       "tensor(int64)", "tensor(uint8)", "tensor(uint16)", "tensor(uint32)",
-                                                       "tensor(uint64)", "tensor(complex64)", "tensor(complex128)", "tensor(string)",
-                                                       "tensor(bool)"};
+  const std::vector<std::string>
+    kCommonTypeStrings = {"tensor(float16)", "tensor(float)", "tensor(double)",
+                          "tensor(int8)", "tensor(int16)", "tensor(int32)",
+                          "tensor(int64)", "tensor(uint8)", "tensor(uint16)",
+                          "tensor(uint32)", "tensor(uint64)", "tensor(complex64)",
+                          "tensor(complex128)", "tensor(string)", "tensor(bool)"};
 };
 
 }  // namespace LotusIR
