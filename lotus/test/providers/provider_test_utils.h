@@ -121,29 +121,32 @@ const TTypeProto<T> s_typeProto;
 struct OpTester {
   OpTester(const char* szName) : szName_(szName) {}
 
+  // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
+  // bools and we can't get the raw data out. So those cases must use an initializer_list
   template <typename T>
   void AddInput(const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& values) {
-    AddData(inputData_, szName, dims, values);
+    AddData(inputData_, szName, dims, values.begin(), values.size());
+  }
+
+  template <typename T>
+  void AddInput(const char* szName, const std::vector<int64_t>& dims, const std::vector<T>& values) {
+    AddData(inputData_, szName, dims, values.data(), values.size());
   }
 
   template <typename T>
   void AddOutput(const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& expectedValues) {
-    AddData(outputData_, szName, dims, expectedValues);
+    AddData(outputData_, szName, dims, expectedValues.begin(), expectedValues.size());
+  }
+
+  template <typename T>
+  void AddOutput(const char* szName, const std::vector<int64_t>& dims, const std::vector<T>& expectedValues) {
+    AddData(outputData_, szName, dims, expectedValues.data(), expectedValues.size());
   }
 
   template <typename T>
   void AddAttribute(const char* szName, T value) {
-    // Copy the attribute data for now, since we have to add them at a later point
-    auto data = std::make_unique<uint8_t[]>(sizeof(T));
-    memcpy(data.get(), &value, sizeof(T));
-    // Use a lambda to generate a type safe AddAttribute call later
-    attributes_.push_back(
-        {szName,
-         std::move(data),
-         [](LotusIR::Node& node, Attribute& attribute) {
-           node.AddAttribute(attribute.szName_,
-                                         *reinterpret_cast<T*>(attribute.data_.get()));
-         }});
+    // Generate a the proper AddAttribute call for later
+    addAttributeFns_.emplace_back([szName, value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(szName, value); });
   }
 
   template <typename Op>
@@ -175,9 +178,9 @@ struct OpTester {
     auto& node = *graph->GetNode(graph->NumberOfNodes() - 1);
 
     // Add the attributes if any
-    for (auto& attribute : attributes_) {
-        attribute.AddAttribute_(node, attribute);
-    }
+    for (auto& addAttributeFn : addAttributeFns_)
+      addAttributeFn(node);
+
     // Setup the op in the node
     AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::kArenaAllocator};
     KernelDef kernel_def;
@@ -192,11 +195,11 @@ struct OpTester {
       // For inputs we have data to initialize with, so copy it into the buffer
       auto* tensor = frame->GetMutableValue<Tensor>(index);
       void* buffer = tensor->MutableDataRaw(input.dataType_);
-      memcpy(buffer, input.data_.get(), input.dataSize_);
+      memcpy(buffer, input.data_.get(), input.dataSizeInBytes_);
       index++;
     }
 
-    index = 0;
+    // Note, index isn't reset here since outputs are indexed after inputs
     for (auto& output : outputData_) {
       auto status = frame->AllocateTensorWithSelfOwnBuffer(
           index++, output.dataType_, AllocatorManager::Instance().GetArena(CPU).Info(), output.shape_);
@@ -226,24 +229,19 @@ struct OpTester {
     LotusIR::NodeArg def_;
     TensorShape shape_;
     std::unique_ptr<uint8_t[]> data_;
-    size_t dataSize_;
+    size_t dataSizeInBytes_;
     MLDataType dataType_;
   };
 
   template <typename T>
-  void AddData(std::vector<Data>& data, const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& values) {
-    LOTUS_ENFORCE(TensorShape(dims).Size() == values.size(), "Number of input values doesn't match tensor size");
-    auto size = values.size() * sizeof(T);
-    auto pData = std::make_unique<uint8_t[]>(size);
-    memcpy(pData.get(), values.begin(), size);
-    data.push_back({{szName, &s_typeProto<T>}, dims, std::move(pData), size, DataTypeImpl::GetType<T>()});
+  void AddData(std::vector<Data>& data, const char* szName, const std::vector<int64_t>& dims, const T* values, size_t valuesCount) {
+    static_assert(std::is_trivial<T>::value, "Only works on trivial types (where byte copies of the values are safe)");
+    LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
+    auto sizeInBytes = valuesCount * sizeof(T);
+    auto pData = std::make_unique<uint8_t[]>(sizeInBytes);
+    memcpy(pData.get(), values, sizeInBytes);
+    data.push_back({{szName, &s_typeProto<T>}, dims, std::move(pData), sizeInBytes, DataTypeImpl::GetType<T>()});
   }
-
-  struct Attribute {
-    const char* szName_;
-    std::unique_ptr<uint8_t[]> data_;
-    void (*AddAttribute_)(LotusIR::Node& node, Attribute& attribute);
-  };
 
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
   template <typename T>
@@ -251,81 +249,7 @@ struct OpTester {
 
   const char* szName_;
   std::vector<Data> inputData_, outputData_;
-  std::vector<Attribute> attributes_;
-};
-
-struct TestModel {
-  TestModel(const char* szName, const std::vector<LotusIR::NodeArg*>& inputDefs, const std::vector<LotusIR::NodeArg*>& outputDefs) {
-    Graph()->AddNode("node1", szName, szName, inputDefs, outputDefs);
-
-    Graph()->Resolve();
-    state_.SetGraph(Graph());
-    SetupState(state_, inputDefs, outputDefs);
-
-    std::unordered_map<std::string, MLValue> feeds;
-    std::vector<std::string> output_names;
-    FillFeedsAndOutputNames(inputDefs, outputDefs, feeds, output_names);
-    frame_ = TestUtils::CreateSingleNodeCPUExecutionFrame(state_, feeds, output_names);
-  }
-
-  LotusIR::Graph* Graph() { return model_.MainGraph(); }
-  LotusIR::Node& Node() { return *Graph()->GetNode(Graph()->NumberOfNodes() - 1); };
-  auto& State() { return state_; }
-  auto& Frame() { return frame_; }
-
- private:
-  LotusIR::Model model_{"test"};
-  SessionState state_;
-  std::shared_ptr<ExecutionFrame> frame_;
-};
-
-// To use SimpleFloatTest:
-//  1. Create a TestModel
-//  2. Add any attributes
-//  3. Create a SimpleFloatTest
-//  4. Add any inputs/outputs
-//  5. Call SimpleFloatTest::Run with the expected output
-template <template <typename> typename Op>
-struct SimpleFloatTest {
-  SimpleFloatTest(TestModel& model)
-      : model_(model) {
-  }
-
-  template <size_t count>
-  void Run(const std::vector<int64_t>& expectedDims, const float (&expected_vals)[count]) {
-    OpKernelContext kernel_ctx(model_.Frame().get(), &kernel_, DefaultLoggingManager().DefaultLogger());
-    Common::Status status = kernel_.Compute(&kernel_ctx);
-    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
-    auto& output = *kernel_ctx.Output(0, TensorShape(expectedDims));
-    Check(output, expected_vals);
-  }
-
-  template <size_t count>
-  static void Check(Tensor& output, const float (&expected_vals)[count]) {
-    LOTUS_ENFORCE(output.Shape().Size() == count);
-    const float* res = output.Data<float>();
-    for (int i = 0; i < count; ++i) {
-      EXPECT_NEAR(expected_vals[i], res[i], 0.001f);
-    }
-  }
-
-  void AddInput(const std::vector<int64_t>& dims, const std::vector<float>& values) {
-    auto status = TestUtils::PrepareIthInput<float>(model_.Node(), inputCount_++, model_.Frame(), dims, &values);
-    EXPECT_TRUE(status.IsOK());
-  }
-
-  void AddOutput(const std::vector<int64_t>& dims) {
-    auto status = TestUtils::PrepareIthOutput<float>(model_.Node(), 0, model_.Frame(), dims, nullptr);
-    EXPECT_TRUE(status.IsOK());
-  }
-
-  TestModel& model_;
-  AllocatorInfo allocator_info_{CPU, AllocatorType::kArenaAllocator};
-  KernelDef kernel_def_;
-  OpKernelInfo info_{model_.Node(), allocator_info_, kernel_def_};
-  Op<float> kernel_{info_};
-
-  unsigned inputCount_{};
+  std::vector<std::function<void(LotusIR::Node& node)>> addAttributeFns_;
 };
 
 #define CREATE_NODE(op_name, inputs, outputs)                 \

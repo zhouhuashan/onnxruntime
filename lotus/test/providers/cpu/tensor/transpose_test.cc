@@ -5,27 +5,17 @@
 namespace Lotus {
 namespace Test {
 
-template <size_t count>
 void TransposeTest(std::vector<int64_t>& input_shape,
                    std::vector<float>& input_vals,
                    std::vector<int64_t>* p_perm,
                    std::vector<int64_t> expected_shape,
-                   const float (&expected_vals)[count]) {
-  TypeProto tensor_float;
-  tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&input_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-
-  TestModel model("TransposeTest", input_defs, output_defs);
-
+                   std::initializer_list<float>& expected_vals) {
+  OpTester test("Transpose");
   if (nullptr != p_perm)
-    model.Node().AddAttribute("perm", *p_perm);
-
-  SimpleFloatTest<Transpose> test(model);
-  test.AddInput(input_shape, input_vals);
-  test.AddOutput(expected_shape);
-  test.Run(expected_shape, expected_vals);
+    test.AddAttribute("perm", *p_perm);
+  test.AddInput<float>("X", input_shape, input_vals);
+  test.AddOutput<float>("Y", expected_shape, expected_vals);
+  test.Run<Transpose<float>>();
 }
 
 // Test 2 dimensional transpose, with no permutation attribute specified
@@ -36,7 +26,7 @@ TEST(TransposeOpTest, TwoDimNoAttr) {
       4.0f, 5.0f, 6.0f};
 
   std::vector<int64_t> expected_shape({3, 2});
-  float expected_vals[] = {
+  auto expected_vals = {
       1.0f, 4.0f,
       2.0f, 5.0f,
       3.0f, 6.0f};
@@ -53,7 +43,7 @@ TEST(TransposeOpTest, TwoDim) {
 
   std::vector<int64_t> perm = {1, 0};
   std::vector<int64_t> expected_shape({3, 2});
-  float expected_vals[] = {
+  auto expected_vals = {
       1.0f, 4.0f,
       2.0f, 5.0f,
       3.0f, 6.0f};
@@ -79,7 +69,7 @@ TEST(TransposeOpTest, ThreeDim) {
 
   std::vector<int64_t> perm = {0, 2, 1};
   std::vector<int64_t> expected_shape({4, 3, 2});
-  float expected_vals[] = {
+  auto expected_vals = {
       1.0f,
       4.0f,
       2.0f,
