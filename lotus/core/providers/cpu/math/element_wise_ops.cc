@@ -139,22 +139,22 @@ REGISTER_KERNEL(KernelDefBuilder("Less")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Less<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Greater")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Greater<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Equal")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                Equal<float>);
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+                Equal<int32_t>);
 
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
@@ -191,13 +191,11 @@ void VerifyShapeSubsetAxis(const TensorShape& shape, const TensorShape& find, in
   }
 }
 
-template <typename TInput, typename Op>
+template <typename T, typename Op>
 void Loop(const Tensor& input1, const Tensor& input2, Tensor& output, Op op) {
-  using TOutput = std::result_of_t<Op(TInput, TInput)>;
-
-  const TInput* input1_data = input1.Data<TInput>();
-  const TInput* input2_data = input2.Data<TInput>();
-  TOutput* output_data = output.MutableData<TOutput>();
+  auto* input1_data = input1.Data<T>();
+  auto* input2_data = input2.Data<T>();
+  auto* output_data = output.MutableData<std::result_of_t<Op(T, T)>>();
   auto outputSize = output.Shape().Size();
 
   for (auto i = 0; i < outputSize; i++)
@@ -206,8 +204,8 @@ void Loop(const Tensor& input1, const Tensor& input2, Tensor& output, Op op) {
 
 template <typename T, typename Op>
 void ScalarLoop(const Tensor& input1, T value, Tensor& output, Op op) {
-  const T* input1_data = input1.Data<T>();
-  T* output_data = output.MutableData<T>();
+  auto* input1_data = input1.Data<T>();
+  auto* output_data = output.MutableData<std::result_of_t<Op(T, T)>>();
   auto outputSize = output.Shape().Size();
 
   for (auto i = 0; i < outputSize; i++)
@@ -234,9 +232,9 @@ void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int a
 
   int64_t resetPitch = input2.Shape().Size();
 
-  const T* input1_data = input1.Data<T>();
-  const T* input2_data = input2.Data<T>();
-  T* output_data = output.MutableData<T>();
+  auto* input1_data = input1.Data<T>();
+  auto* input2_data = input2.Data<T>();
+  auto* output_data = output.MutableData<std::result_of_t<Op(T, T)>>();
   auto outputSize = output.Shape().Size();
 
   // Do the operation
@@ -513,18 +511,18 @@ Status Xor<bool>::Compute(OpKernelContext* ctx) const {
 }
 
 template <>
-Status Equal<float>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a == b; });
+Status Equal<int32_t>::Compute(OpKernelContext* ctx) const {
+  return BooleanOp<int32_t>(ctx, broadcast_, axis_, [](auto a, auto b) { return a == b; });
 }
 
 template <>
 Status Less<float>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a < b; });
+  return BooleanOp<float>(ctx, broadcast_, axis_, [](auto a, auto b) { return a < b; });
 }
 
 template <>
 Status Greater<float>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<float>(ctx, broadcast_, axis_, [](float a, float b) { return a > b; });
+  return BooleanOp<float>(ctx, broadcast_, axis_, [](auto a, auto b) { return a > b; });
 }
 
 }  // namespace Lotus
