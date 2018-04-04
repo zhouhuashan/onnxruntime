@@ -26,7 +26,7 @@ TEST(OpRegistrationTest, AffineOp) {
 }
 
 TEST(OpRegistrationTest, EmbeddingOp) {
-  auto op = OpSchemaRegistry::Schema("Embedding");
+  auto op = OpSchemaRegistry::Schema("Embedding", kMSDomain);
   EXPECT_TRUE(nullptr != op);
   size_t input_size = op->inputs().size();
   EXPECT_EQ(input_size, 2);
