@@ -1,5 +1,4 @@
 #include "core/graph/utils.h"
-#include "core/providers/cpu/nn/lrn.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 

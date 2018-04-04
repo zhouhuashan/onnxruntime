@@ -1,4 +1,3 @@
-#include "core/providers/cpu/math/clip.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 

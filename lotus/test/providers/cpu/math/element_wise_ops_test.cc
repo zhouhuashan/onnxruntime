@@ -1,4 +1,3 @@
-#include "core/providers/cpu/math/element_wise_ops.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
@@ -155,9 +154,9 @@ TEST(MathOpTest, Sum) {
   OpTester test("Sum");
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("data_0", dims, {1.0f, 0.0f, 1.0f, -1.0f, 1.1f, -100.0f, -5.4f, 0.01f, -10'000.0f});
-  test.AddInput<float>("data_1", dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.1f});
+  test.AddInput<float>("data_1", dims, {1.0f, 0.0f, 2.0f, -2.0f, 2.2f, 64.0f, -1.0f, 0.02f, 0.25f});
   test.AddInput<float>("data_3", dims, {1.0f, 0.0f, 3.0f, -3.0f, 3.3f, 64.0f, 5.4f, 0.03f, 10'000.0f});
-  test.AddOutput<float>("sum", dims, {3.0f, 0.0f, 6.0f, -6.0f, 6.6f, 28.0f, -1.0f, 0.06f, 0.1f});
+  test.AddOutput<float>("sum", dims, {3.0f, 0.0f, 6.0f, -6.0f, 6.6f, 28.0f, -1.0f, 0.06f, 0.25f});
   test.Run();
 }
 

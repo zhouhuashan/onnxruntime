@@ -84,19 +84,15 @@ class TestUtils {
   }
 };
 
-// TODO(RyanHill): Remove once usage is switched over to s_typeProto<> type
-struct TypeProto_Set : TypeProto {
-  TypeProto_Set(TensorProto_DataType type) {
-    mutable_tensor_type()->set_elem_type(type);
-  }
-};
-
 // Function templates to translate C++ types into TensorProto_DataTypes
 template <typename T>
 constexpr TensorProto_DataType TypeToDataType();
 
 template <>
 constexpr TensorProto_DataType TypeToDataType<float>() { return TensorProto_DataType_FLOAT; }
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<int64_t>() { return TensorProto_DataType_INT64; }
 
 template <>
 constexpr TensorProto_DataType TypeToDataType<bool>() { return TensorProto_DataType_BOOL; }
@@ -118,10 +114,12 @@ const TTypeProto<T> s_typeProto;
 //  3. Call AddInput for all the inputs
 //  4. Call AddOutput with all expected outputs
 //  5. Call Run
-// Currently only works for float & bool tensors
+// Not all tensor types and output types are added, if a new input type is used, add it to the TypeToDataType list above
+// for new output types, add a new specialization for Check<>
 // See current usage for an example, should be self explanatory
 struct OpTester {
   OpTester(const char* szOp) : szOp_(szOp) {}
+  ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
   // bools and we can't get the raw data out. So those cases must use an initializer_list
@@ -146,9 +144,9 @@ struct OpTester {
   }
 
   template <typename T>
-  void AddAttribute(const char* szName, T value) {
+  void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
-    addAttributeFns_.emplace_back([szName, value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(szName, value); });
+    addAttributeFns_.emplace_back([name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
   }
 
   void Run();
@@ -179,12 +177,10 @@ struct OpTester {
   const char* szOp_;
   std::vector<Data> inputData_, outputData_;
   std::vector<std::function<void(LotusIR::Node& node)>> addAttributeFns_;
+#if _DEBUG
+  bool m_fRun{};
+#endif
 };
 
-#define CREATE_NODE(op_name, inputs, outputs)                 \
-  LotusIR::Model model("test");                               \
-  LotusIR::Graph* graph = model.MainGraph();                  \
-  graph->AddNode("node1", op_name, op_name, inputs, outputs); \
-  LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
 }  // namespace Test
 }  // namespace Lotus
