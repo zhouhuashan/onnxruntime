@@ -92,6 +92,9 @@ template <>
 constexpr TensorProto_DataType TypeToDataType<float>() { return TensorProto_DataType_FLOAT; }
 
 template <>
+constexpr TensorProto_DataType TypeToDataType<int32_t>() { return TensorProto_DataType_INT32; }
+
+template <>
 constexpr TensorProto_DataType TypeToDataType<int64_t>() { return TensorProto_DataType_INT64; }
 
 template <>

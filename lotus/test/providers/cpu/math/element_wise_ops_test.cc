@@ -228,8 +228,8 @@ TEST(MathOpTest, Greater) {
 TEST(MathOpTest, Equal) {
   OpTester test("Equal");
   std::vector<int64_t> dims{4};
-  test.AddInput<float>("A", dims, {1.0f, 0.0f, -1.0f, -1.0f});
-  test.AddInput<float>("B", dims, {1.0f, 1.0f, 2.0f, -1.0f});
+  test.AddInput<int32_t>("A", dims, {1, 0, -1, -1});
+  test.AddInput<int32_t>("B", dims, {1, 1, 2, -1});
   test.AddOutput<bool>("C", dims, {true, false, false, true});
   test.Run();
 }

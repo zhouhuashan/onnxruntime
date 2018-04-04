@@ -18,74 +18,6 @@
 #include "core/platform/notification.h"
 
 namespace Lotus {
-// TODO: This is temporary solution, should be removed once the default value is ready.
-class DummyAttrDefaultValueTransformer : public LotusIR::IGraphTransformer {
- public:
-  virtual Status Apply(/*IN/OUT*/ LotusIR::Graph& graph, /*OUT*/ bool& modified) override {
-    auto num_nodes = graph.NumberOfNodes();
-    for (int i = 0; i < num_nodes; i++) {
-      if (graph.IsSourceNode(i) || graph.IsSinkNode(i))
-        continue;
-
-      auto node = graph.GetNode(i);
-      if (node->OpType() == "Conv") {
-        auto& attributes = node->GetAttributes();
-        if (attributes.find("auto_pad") == attributes.end()) {
-          node->AddAttribute("auto_pad", "NOTSET");
-          modified = true;
-        }
-
-        if (attributes.find("group") == attributes.end()) {
-          node->AddAttribute("group", (int64_t)1);
-          modified = true;
-        }
-
-        if (attributes.find("dilations") == attributes.end()) {
-          if (node->InputDefs().size() > 0) {
-            // shape inference is not ready, so hardcord to 4
-            int ndim = 4;
-            //auto input = node->InputDefs()[0];
-            //auto ndim = input->Shape()->dim_size();
-            node->AddAttribute("dilations", std::vector<int64_t>(ndim - 2, 1));
-            modified = true;
-          }
-        }
-      } else if (node->OpType() == "AveragePool" ||
-                 node->OpType() == "MaxPool" ||
-                 node->OpType() == "GlobalAveragePool" ||
-                 node->OpType() == "GlobalMaxPool") {
-        auto& attributes = node->GetAttributes();
-        if (attributes.find("auto_pad") == attributes.end()) {
-          node->AddAttribute("auto_pad", "NOTSET");
-          modified = true;
-        }
-
-        if (attributes.find("strides") == attributes.end()) {
-          if (node->InputDefs().size() > 0) {
-            // shape inference is not ready, so hardcord to 4
-            int ndim = 4;
-            //auto input = node->InputDefs()[0];
-            //auto ndim = input->Shape()->dim_size();
-            node->AddAttribute("strides", std::vector<int64_t>(ndim - 2, 1));
-            modified = true;
-          }
-        }
-
-        if ((node->OpType() == "AveragePool" || node->OpType() == "MaxPool") &&
-            attributes.find("pads") == attributes.end()) {
-          // shape inference is not ready, so hardcord to 4
-          int ndim = 4;
-          //auto input = node->InputDefs()[0];
-          //auto ndim = input->Shape()->dim_size();
-          node->AddAttribute("pads", std::vector<int64_t>(2 * (ndim - 2), 0));
-          modified = true;
-        }
-      }
-    }
-    return Common::Status::OK();
-  }
-};
-
 class InferenceSession::Impl {
  public:
   Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
@@ -319,10 +251,6 @@ class InferenceSession::Impl {
       // TODO: log which execution provider is transforming the graph and whether is_modified is true/false.
       ep->GetTransformer().Apply(graph, is_modified);
     }
-
-    // TODO: remove this in production; this is a temporary hack.
-    DummyAttrDefaultValueTransformer set_conv_attr;
-    set_conv_attr.Apply(graph, is_modified);
 
     return Common::Status::OK();
   }
