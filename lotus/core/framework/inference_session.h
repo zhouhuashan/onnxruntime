@@ -42,15 +42,18 @@ struct SessionOptions {
   // TODO: This has been added to facilitate testing only. It is not intended for production usage.
   AllocationPlannerType allocation_planner_type = AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER;
 
-  string session_logid;  ///< logger id to use for session output
+  string session_logid;                        ///< logger id to use for session output
+  unsigned short session_verbosity_level = 0;  // TODO: needs support from logging infra
+                                               // so that only certain verbose logs are logged
 };
 
 /**
 * Configuration information for a single Run.
 */
 struct RunOptions {
-  bool enable_debug_mode = false;
-  std::string run_tag = "";  // custom tag to tag all the runs
+  unsigned short run_verbosity_level = 0;  // TODO: needs support from logging infra
+                                           // so that only certain verbose logs are logged
+  std::string run_tag = "";                // custom tag to tag all the runs
 };
 
 using NameMLValMap = std::unordered_map<std::string, MLValue>;
