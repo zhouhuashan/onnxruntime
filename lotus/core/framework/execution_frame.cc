@@ -204,7 +204,11 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
 
   // 4. Handle non-empty output vector
   if (!fetches.empty()) {
-    LOTUS_ENFORCE(output_names.size() == fetches.size());  // should've already verified this much before when Run() starts
+    // should've already verified this much before when Run() starts
+    LOTUS_ENFORCE(output_names.size() == fetches.size(),
+                  "output_names vector size: " + std::to_string(output_names.size()) +
+                      " does not match that of fetches vector: " + std::to_string(fetches.size()));
+
     auto idx = 0;
     for (const auto& oname : output_names) {
       int mlvalue_idx;

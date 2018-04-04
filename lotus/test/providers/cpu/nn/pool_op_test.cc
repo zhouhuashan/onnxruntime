@@ -6,25 +6,13 @@
 namespace Lotus {
 namespace Test {
 
-static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
-
 TEST(PoolTest, MaxPool) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("MaxPool", input_defs, output_defs);
+  OpTester test("MaxPool");
 
-  node->AddAttribute("auto_pad", "");
-  node->AddAttribute("strides", std::vector<int64_t>{1, 1});
-  node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0});
-  node->AddAttribute("kernel_shape", vector<int64_t>{8, 8});
-
-  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
-  KernelDefBuilder kernel_builder("MaxPool");
-  std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
-  OpKernelInfo info(*node, allocator_info, *kernel_def.get());
-  Pool<float, MaxPool> kernel(info);
+  test.AddAttribute("auto_pad", "");
+  test.AddAttribute("strides", std::vector<int64_t>{1, 1});
+  test.AddAttribute("pads", vector<int64_t>{0, 0, 0, 0});
+  test.AddAttribute("kernel_shape", vector<int64_t>{8, 8});
 
   std::vector<float> x_vals = {0.19151945412158966, 0.6221087574958801, 0.43772774934768677,
                                0.7853586077690125, 0.7799758315086365, 0.27259260416030884,
@@ -93,43 +81,15 @@ TEST(PoolTest, MaxPool) {
   std::vector<int64_t> x_dims = {1, 3, 8, 8};
   std::vector<int64_t> expected_dims = {1, 3, 1, 1};
   std::vector<float> expected_vals = {0.9920814633369446, 0.9820047616958618, 0.9946538209915161};
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("X", x_dims, x_vals);
+  test.AddOutput<float>("Y", expected_dims, expected_vals);
+  test.Run();
 }
 
 TEST(PoolTest, GlobalMaxPool) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("GlobalMaxPool", input_defs, output_defs);
+  OpTester test("GlobalMaxPool");
 
-  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
-  KernelDefBuilder kernel_builder("GlobalMaxPool");
-  std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
-  OpKernelInfo info(*node, allocator_info, *kernel_def.get());
-  Pool<float, MaxPool> kernel(info);
   std::vector<float> x_vals = {0.19151945412158966, 0.6221087574958801, 0.43772774934768677,
                                0.7853586077690125, 0.7799758315086365, 0.27259260416030884,
                                0.2764642536640167, 0.801872193813324, 0.9581393599510193,
@@ -197,48 +157,19 @@ TEST(PoolTest, GlobalMaxPool) {
   std::vector<int64_t> x_dims = {1, 3, 8, 8};
   std::vector<int64_t> expected_dims = {1, 3, 1, 1};
   std::vector<float> expected_vals = {0.9920814633369446, 0.9820047616958618, 0.9946538209915161};
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("X", x_dims, x_vals);
+  test.AddOutput<float>("Y", expected_dims, expected_vals);
+  test.Run();
 }
 
 TEST(PoolTest, AveragePool) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("AveragePool", input_defs, output_defs);
+  OpTester test("AveragePool");
 
-  node->AddAttribute("auto_pad", "");
-  node->AddAttribute("strides", std::vector<int64_t>{1, 1});
-  node->AddAttribute("pads", vector<int64_t>{0, 0, 0, 0});
-  node->AddAttribute("kernel_shape", vector<int64_t>{8, 8});
-
-  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
-  KernelDefBuilder kernel_builder("AveragePool");
-  std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
-  OpKernelInfo info(*node, allocator_info, *kernel_def.get());
-  Pool<float, AveragePool> kernel(info);
+  test.AddAttribute("auto_pad", "");
+  test.AddAttribute("strides", std::vector<int64_t>{1, 1});
+  test.AddAttribute("pads", vector<int64_t>{0, 0, 0, 0});
+  test.AddAttribute("kernel_shape", vector<int64_t>{8, 8});
 
   std::vector<float> x_vals = {0.3337382376194, 0.8794041872024536, 0.33745908737182617,
                                0.666634202003479, 0.44255536794662476, 0.6473854184150696,
@@ -307,43 +238,15 @@ TEST(PoolTest, AveragePool) {
   std::vector<int64_t> x_dims = {1, 3, 8, 8};
   std::vector<int64_t> expected_dims = {1, 3, 1, 1};
   std::vector<float> expected_vals = {0.5146896243095398, 0.4851023256778717, 0.4756942689418793};
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("X", x_dims, x_vals);
+  test.AddOutput<float>("Y", expected_dims, expected_vals);
+  test.Run();
 }
 
 TEST(PoolTest, GlobalAveragePool) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("GlobalAveragePool", input_defs, output_defs);
+  OpTester test("GlobalAveragePool");
 
-  AllocatorInfo allocator_info(CPU, AllocatorType::kArenaAllocator);
-  KernelDefBuilder kernel_builder("GlobalAveragePool");
-  std::unique_ptr<const KernelDef> kernel_def(kernel_builder.Build());
-  OpKernelInfo info(*node, allocator_info, *kernel_def.get());
-  Pool<float, AveragePool> kernel(info);
   std::vector<float> x_vals = {0.3337382376194, 0.8794041872024536, 0.33745908737182617,
                                0.666634202003479, 0.44255536794662476, 0.6473854184150696,
                                0.7674617171287537, 0.8822641968727112, 0.8852233290672302,
@@ -411,29 +314,10 @@ TEST(PoolTest, GlobalAveragePool) {
   std::vector<int64_t> x_dims = {1, 3, 8, 8};
   std::vector<int64_t> expected_dims = {1, 3, 1, 1};
   std::vector<float> expected_vals = {0.5146896243095398, 0.4851023256778717, 0.4756942689418793};
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
 
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel*>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("X", x_dims, x_vals);
+  test.AddOutput<float>("Y", expected_dims, expected_vals);
+  test.Run();
 }
 
 }  // namespace Test

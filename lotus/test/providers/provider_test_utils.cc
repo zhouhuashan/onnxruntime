@@ -54,7 +54,10 @@ void OpTester::Check<float>(const Data& output_data, Tensor& output_tensor, size
   auto* expected = reinterpret_cast<const float*>(output_data.data_.get());
   auto* output = output_tensor.Data<float>();
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(expected[i], output[i], 0.001f);
+    if (std::isinf(expected[i]))  // Test infinity for equality
+      EXPECT_EQ(expected[i], output[i]);
+    else
+      EXPECT_NEAR(expected[i], output[i], 0.001f);
   }
 }
 
@@ -67,7 +70,20 @@ void OpTester::Check<bool>(const Data& output_data, Tensor& output_tensor, size_
   }
 }
 
+OpTester::~OpTester() {
+#if _DEBUG
+  if (!m_fRun) {
+    std::cerr << "Someone forgot to call OpTester::Run()" << std::endl;
+    __debugbreak();
+  }
+#endif
+}
+
 void OpTester::Run() {
+#if _DEBUG
+  m_fRun = true;
+#endif
+
   // Generate the input & output def lists
   std::vector<LotusIR::NodeArg*> pinputDefs, poutputDefs;
   for (auto& data : inputData_)
@@ -138,6 +154,7 @@ void OpTester::Run() {
   for (auto& output : outputData_) {
     auto& outputTensor = *kernel_ctx.Output(index++, output.shape_);
     auto size = output.shape_.Size();
+    LOTUS_ENFORCE(output.shape_ == outputTensor.Shape(), "Output shape did not match expected output shape");
 
     // Dispatch on the type
     if (output.dataType_ == DataTypeImpl::GetType<float>())

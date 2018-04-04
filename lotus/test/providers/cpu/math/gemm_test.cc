@@ -1,343 +1,87 @@
-#include "core/providers/cpu/math/clip.h"
-#include "core/providers/cpu/math/gemm.h"
-#include "core/providers/cpu/math/matmul.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
 namespace Lotus {
 namespace Test {
-static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
 
 TEST(MathOpTest, GemmNoTrans) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      w_def("W", &s_typeProto_float),
-      b_def("B", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def, &w_def, &b_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("Gemm", input_defs, output_defs);
+  OpTester test("Gemm");
 
-  node->AddAttribute("transA", (int64_t)0);
-  node->AddAttribute("transB", (int64_t)0);
-  node->AddAttribute("broadcast", (int64_t)0);
-  node->AddAttribute("alpha", 1.0f);
-  node->AddAttribute("beta", 1.0f);
-  node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  test.AddAttribute("transA", (int64_t)0);
+  test.AddAttribute("transB", (int64_t)0);
+  test.AddAttribute("broadcast", (int64_t)0);
+  test.AddAttribute("alpha", 1.0f);
+  test.AddAttribute("beta", 1.0f);
 
-  EXPECT_TRUE(graph->Resolve().IsOK());
-
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-  KernelDef kernel_def;
-  OpKernelInfo info(*node, allocator_info, kernel_def);
-  std::unique_ptr<OpKernel> kernel;
-  auto status = KernelRegistry::Instance().CreateKernel(
-      *node,
-      allocator_info,
-      &kernel);
-
-  std::vector<float> x_vals{1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f};
-  std::vector<int64_t> x_dims{2, 4};
-  std::vector<float> y_vals(12, 1.0f);
-  std::vector<int64_t> y_dims{4, 3};
-  std::vector<float> b_vals(6, 1.0f);
-  std::vector<int64_t> b_dims{2, 3};
-  std::vector<float> expected_vals{11.0f, 11.0f, 11.0f, -9.0f, -9.0f, -9.0f};
-  std::vector<int64_t> expected_dims{2, 3};
-
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
-
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 1, frame, y_dims, &y_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 2, frame, b_dims, &b_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), kernel.get(), DefaultLoggingManager().DefaultLogger());
-  kernel->Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("A", {2, 4}, {1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f});
+  test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {2, 3}, std::vector<float>(6, 1.0f));
+  test.AddOutput<float>("Y", {2, 3}, {11.0f, 11.0f, 11.0f, -9.0f, -9.0f, -9.0f});
+  test.Run();
 }
 
 TEST(MathOpTest, GemmBroadcast) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      w_def("W", &s_typeProto_float),
-      b_def("B", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def, &w_def, &b_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("Gemm", input_defs, output_defs);
+  OpTester test("Gemm");
 
-  node->AddAttribute("transA", (int64_t)0);
-  node->AddAttribute("transB", (int64_t)0);
-  node->AddAttribute("broadcast", (int64_t)1);
-  node->AddAttribute("alpha", 1.0f);
-  node->AddAttribute("beta", 1.0f);
-  node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  test.AddAttribute("transA", (int64_t)0);
+  test.AddAttribute("transB", (int64_t)0);
+  test.AddAttribute("broadcast", (int64_t)1);
+  test.AddAttribute("alpha", 1.0f);
+  test.AddAttribute("beta", 1.0f);
 
-  EXPECT_TRUE(graph->Resolve().IsOK());
-
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-  KernelDef kernel_def;
-  OpKernelInfo info(*node, allocator_info, kernel_def);
-  std::unique_ptr<OpKernel> kernel;
-  auto status = KernelRegistry::Instance().CreateKernel(
-      *node,
-      allocator_info,
-      &kernel);
-
-  std::vector<float> x_vals{1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f};
-  std::vector<int64_t> x_dims{2, 4};
-  std::vector<float> y_vals(12, 1.0f);
-  std::vector<int64_t> y_dims{4, 3};
-  std::vector<float> b_vals(3, 1.0f);
-  std::vector<int64_t> b_dims{3};
-  std::vector<float> expected_vals{11.0f, 11.0f, 11.0f, -9.0f, -9.0f, -9.0f};
-  std::vector<int64_t> expected_dims{2, 3};
-
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
-
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 1, frame, y_dims, &y_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 2, frame, b_dims, &b_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), kernel.get(), DefaultLoggingManager().DefaultLogger());
-  kernel->Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("A", {2, 4}, {1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f});
+  test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {3}, std::vector<float>(3, 1.0f));
+  test.AddOutput<float>("Y", {2, 3}, {11.0f, 11.0f, 11.0f, -9.0f, -9.0f, -9.0f});
+  test.Run();
 }
 
 TEST(MathOpTest, GemmTrans) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      w_def("W", &s_typeProto_float),
-      b_def("B", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def, &w_def, &b_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("Gemm", input_defs, output_defs);
+  OpTester test("Gemm");
 
-  node->AddAttribute("transA", (int64_t)1);
-  node->AddAttribute("transB", (int64_t)1);
-  node->AddAttribute("broadcast", (int64_t)1);
-  node->AddAttribute("alpha", 1.0f);
-  node->AddAttribute("beta", 1.0f);
-  node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  test.AddAttribute("transA", (int64_t)1);
+  test.AddAttribute("transB", (int64_t)1);
+  test.AddAttribute("broadcast", (int64_t)1);
+  test.AddAttribute("alpha", 1.0f);
+  test.AddAttribute("beta", 1.0f);
 
-  EXPECT_TRUE(graph->Resolve().IsOK());
-
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-  KernelDef kernel_def;
-  OpKernelInfo info(*node, allocator_info, kernel_def);
-  std::unique_ptr<OpKernel> kernel;
-  auto status = KernelRegistry::Instance().CreateKernel(
-      *node,
-      allocator_info,
-      &kernel);
-
-  std::vector<float> x_vals{1.0f, -1.0f, 2.0f, -2.0f, 3.0f, -3.0f, 4.0f, -4.0f};
-  std::vector<int64_t> x_dims{4, 2};
-  std::vector<float> y_vals(12, 1.0f);
-  std::vector<int64_t> y_dims{3, 4};
-  std::vector<float> b_vals(3, 1.0f);
-  std::vector<int64_t> b_dims{3};
-  std::vector<float> expected_vals{11.0f, 11.0f, 11.0f, -9.0f, -9.0f, -9.0f};
-  std::vector<int64_t> expected_dims{2, 3};
-
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
-
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 1, frame, y_dims, &y_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 2, frame, b_dims, &b_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), kernel.get(), DefaultLoggingManager().DefaultLogger());
-  kernel->Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("A", {4, 2}, {1.0f, -1.0f, 2.0f, -2.0f, 3.0f, -3.0f, 4.0f, -4.0f});
+  test.AddInput<float>("B", {3, 4}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {3}, std::vector<float>(3, 1.0f));
+  test.AddOutput<float>("Y", {2, 3}, {11.0f, 11.0f, 11.0f, -9.0f, -9.0f, -9.0f});
+  test.Run();
 }
 
 TEST(MathOpTest, GemmAlphaBeta) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      w_def("W", &s_typeProto_float),
-      b_def("B", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def, &w_def, &b_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("Gemm", input_defs, output_defs);
+  OpTester test("Gemm");
 
-  node->AddAttribute("transA", (int64_t)0);
-  node->AddAttribute("transB", (int64_t)0);
-  node->AddAttribute("broadcast", (int64_t)1);
-  node->AddAttribute("alpha", 0.5f);
-  node->AddAttribute("beta", 2.0f);
-  node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  test.AddAttribute("transA", (int64_t)0);
+  test.AddAttribute("transB", (int64_t)0);
+  test.AddAttribute("broadcast", (int64_t)1);
+  test.AddAttribute("alpha", 0.5f);
+  test.AddAttribute("beta", 2.0f);
 
-  EXPECT_TRUE(graph->Resolve().IsOK());
-
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-  KernelDef kernel_def;
-  OpKernelInfo info(*node, allocator_info, kernel_def);
-  std::unique_ptr<OpKernel> kernel;
-  auto status = KernelRegistry::Instance().CreateKernel(
-      *node,
-      allocator_info,
-      &kernel);
-
-  std::vector<float> x_vals{1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f};
-  std::vector<int64_t> x_dims{2, 4};
-  std::vector<float> y_vals(12, 1.0f);
-  std::vector<int64_t> y_dims{4, 3};
-  std::vector<float> b_vals(3, 1.0f);
-  std::vector<int64_t> b_dims{3};
-  std::vector<float> expected_vals{7.0f, 7.0f, 7.0f, -3.0f, -3.0f, -3.0f};
-  std::vector<int64_t> expected_dims{2, 3};
-
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
-
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 1, frame, y_dims, &y_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 2, frame, b_dims, &b_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), kernel.get(), DefaultLoggingManager().DefaultLogger());
-  kernel->Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("A", {2, 4}, {1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f});
+  test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {3}, std::vector<float>(3, 1.0f));
+  test.AddOutput<float>("Y", {2, 3}, {7.0f, 7.0f, 7.0f, -3.0f, -3.0f, -3.0f});
+  test.Run();
 }
 
 TEST(MathOpTest, GemmNaN) {
-  LotusIR::NodeArg x_def("X", &s_typeProto_float),
-      w_def("W", &s_typeProto_float),
-      b_def("B", &s_typeProto_float),
-      output_def("Y", &s_typeProto_float);
-  std::vector<LotusIR::NodeArg*> input_defs{&x_def, &w_def, &b_def};
-  std::vector<LotusIR::NodeArg*> output_defs{&output_def};
-  CREATE_NODE("Gemm", input_defs, output_defs);
+  OpTester test("Gemm");
 
-  node->AddAttribute("transA", (int64_t)0);
-  node->AddAttribute("transB", (int64_t)0);
-  node->AddAttribute("broadcast", (int64_t)0);
-  node->AddAttribute("alpha", 1.0f);
-  node->AddAttribute("beta", 0.0f);
-  node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  test.AddAttribute("transA", (int64_t)0);
+  test.AddAttribute("transB", (int64_t)0);
+  test.AddAttribute("broadcast", (int64_t)0);
+  test.AddAttribute("alpha", 1.0f);
+  test.AddAttribute("beta", 0.0f);
 
-  EXPECT_TRUE(graph->Resolve().IsOK());
-
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-  KernelDef kernel_def;
-  OpKernelInfo info(*node, allocator_info, kernel_def);
-  std::unique_ptr<OpKernel> kernel;
-  auto status = KernelRegistry::Instance().CreateKernel(
-      *node,
-      allocator_info,
-      &kernel);
-
-  std::vector<float> x_vals{1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f};
-  std::vector<int64_t> x_dims{2, 4};
-  std::vector<float> y_vals(12, 1.0f);
-  std::vector<int64_t> y_dims{4, 3};
-  std::vector<float> b_vals(6, 1.0f);
-  std::vector<int64_t> b_dims{2, 3};
-  std::vector<float> expected_vals{10.0f, 10.0f, 10.0f, -10.0f, -10.0f, -10.0f};
-  std::vector<int64_t> expected_dims{2, 3};
-
-  SessionState state;
-  state.SetGraph(graph);
-  SetupState(state, input_defs, output_defs);
-
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  status = TestUtils::PrepareIthInput<float>(*node, 0, frame, x_dims, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 1, frame, y_dims, &y_vals);
-  EXPECT_TRUE(status.IsOK());
-  status = TestUtils::PrepareIthInput<float>(*node, 2, frame, b_dims, &b_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, expected_dims);
-  EXPECT_TRUE(status.IsOK());
-
-  OpKernelContext kernel_ctx(frame.get(), kernel.get(), DefaultLoggingManager().DefaultLogger());
-  //set Y to Nan to making sure NaN does not propagate when beta == 0
-  float nan = static_cast<float>(std::nan("1"));
-  float* out_buffer = kernel_ctx.Output(0, TensorShape(expected_dims))->MutableData<float>();
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    out_buffer[i] = nan;
-  }
-
-  kernel->Compute(&kernel_ctx);
-  auto output = kernel_ctx.Output(0, TensorShape(expected_dims));
-  const float* res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("A", {2, 4}, {1.0f, 2.0f, 3.0f, 4.0f, -1.0f, -2.0f, -3.0f, -4.0f});
+  test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {2, 3}, std::vector<float>(6, 1.0f));
+  test.AddOutput<float>("Y", {2, 3}, {10.0f, 10.0f, 10.0f, -10.0f, -10.0f, -10.0f});
+  test.Run();
 }
 
 }  // namespace Test

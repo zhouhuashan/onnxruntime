@@ -69,28 +69,41 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
   for (size_t input_index = 0; input_index != len; ++input_index) {
     auto& param = op_schema->inputs()[input_index];
     LOTUS_ENFORCE(!param.GetTypeStr().empty());
+    //param.type_str_ could be a real type string(e.g. int32), or a symbolic one(e.g. T)
+    //If it's a real type string, we check exact match at there
+    //Otherwise, there should be an entry in the type_constraints_ of this kernel_def
+    //  1. Either with this param name
+    //  2. Or with this type_str_
     auto& kernel_type_constraints = kernel_def.TypeConstraints();
     auto allowed_type_list_iter = kernel_type_constraints.find(param.GetTypeStr());
     if (allowed_type_list_iter == kernel_type_constraints.end()) {
       allowed_type_list_iter = kernel_type_constraints.find(param.GetName());
     }
-    if (allowed_type_list_iter == kernel_type_constraints.end()) return false;
-    for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
-      LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
-      if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
-      const ::onnx::TypeProto& real_type = arg->ToProto().type();
-      if (!std::any_of(allowed_type_list_iter->second.begin(),
-                       allowed_type_list_iter->second.end(),
-                       [real_type](const MLDataType& expected_type) {
-                         return expected_type->IsCompatible(real_type);
-                       })) {
-        return false;
+    if (allowed_type_list_iter == kernel_type_constraints.end()) {
+      for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
+        LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
+        if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
+        onnx::DataType real_type = arg->Type();
+        if (*real_type != param.GetTypeStr()) {
+          return false;
+        }
+      }
+    } else {
+      for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
+        LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
+        if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
+        const ::onnx::TypeProto& real_type = arg->ToProto().type();
+        if (!std::any_of(allowed_type_list_iter->second.begin(),
+                         allowed_type_list_iter->second.end(),
+                         [real_type](const MLDataType& expected_type) {
+                           return expected_type->IsCompatible(real_type);
+                         })) {
+          return false;
+        }
       }
     }
     cur += node.InputArgCount()[input_index];
   }
-  // op_schema may have more inputs than the actual inputs in the node,
-  // let's assume all others are optional
   return true;
 }
 

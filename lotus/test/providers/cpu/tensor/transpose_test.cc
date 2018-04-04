@@ -1,4 +1,3 @@
-#include "core/providers/cpu/tensor/transpose.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 

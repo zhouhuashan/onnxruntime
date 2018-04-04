@@ -5,7 +5,7 @@ namespace Lotus {
 #define REGISTER_UNARY_ELEMENTWISE_KERNEL(x)                                      \
   REGISTER_KERNEL(KernelDefBuilder(#x)                                            \
                       .Domain(LotusIR::kOnnxDomain)                               \
-                      .SinceVersion(1, 2)                                         \
+                      .SinceVersion(1)                                            \
                       .Provider(LotusIR::kCpuExecutionProvider)                   \
                       .MayInplace(0, 0)                                           \
                       .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()), \

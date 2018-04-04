@@ -1,4 +1,3 @@
-#include "core/providers/cpu/math/softmax.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
@@ -6,54 +5,19 @@
 namespace Lotus {
 namespace Test {
 
-static const TypeProto_Set typeProto_float{TensorProto_DataType_FLOAT};
-
 static void RunTest(const std::vector<float> &x_vals,
                     const std::vector<float> &expected_vals,
                     const std::vector<int64_t> &dimensions,
                     int64_t axis = 1) {
-  LotusIR::NodeArg x_def("X", &typeProto_float);
-  LotusIR::NodeArg output_def("Y", &typeProto_float);
-
-  std::vector<LotusIR::NodeArg *> input_defs{&x_def};
-  std::vector<LotusIR::NodeArg *> output_defs{&output_def};
-  CREATE_NODE("Softmax", input_defs, output_defs);
+  OpTester test("Softmax");
 
   if (axis != 1) {
-    node->AddAttribute("axis", axis);
+    test.AddAttribute("axis", axis);
   }
 
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-  KernelDef kernel_def;
-  OpKernelInfo info(*node, allocator_info, kernel_def);
-
-  SessionState state;
-  state.SetGraph(graph);
-
-  SetupState(state, input_defs, output_defs);
-
-  std::unordered_map<std::string, MLValue> feeds;
-  std::vector<std::string> output_names;
-
-  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
-
-  auto frame = TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names);
-  auto status = TestUtils::PrepareIthInput<float>(*node, 0, frame, dimensions, &x_vals);
-  EXPECT_TRUE(status.IsOK());
-
-  status = TestUtils::PrepareIthOutput<float>(*node, 0, frame, dimensions);
-  EXPECT_TRUE(status.IsOK());
-
-  Softmax<float> kernel(info);
-  OpKernelContext kernel_ctx(frame.get(), static_cast<OpKernel *>(&kernel), DefaultLoggingManager().DefaultLogger());
-  kernel.Compute(&kernel_ctx);
-
-  auto output = kernel_ctx.Output(0, TensorShape(dimensions));
-  const float *res = output->Data<float>();
-
-  for (int i = 0; i < expected_vals.size(); ++i) {
-    EXPECT_FLOAT_EQ(expected_vals[i], res[i]);
-  }
+  test.AddInput<float>("X", dimensions, x_vals);
+  test.AddOutput<float>("Y", dimensions, expected_vals);
+  test.Run();
 }
 
 TEST(SoftmaxOperator, Simple) {
@@ -179,7 +143,7 @@ TEST(SoftmaxOperator, ThreeDimsAxis2) {
 
 TEST(SoftmaxOperator, InvalidAxis) {
   std::vector<float> x_vals = {-1.0f, 0.0f, 1.0f};
-  std::vector<float> expected_vals = {};
+  std::vector<float> expected_vals = {0.0f, 0.0f, 0.0f};
   std::vector<int64_t> dimensions = {1, 3};
 
   try {

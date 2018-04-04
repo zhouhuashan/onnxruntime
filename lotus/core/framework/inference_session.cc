@@ -18,7 +18,7 @@
 #include "core/platform/notification.h"
 
 namespace Lotus {
-//This is temporary solution, should be removed once the default value is ready.
+// TODO: This is temporary solution, should be removed once the default value is ready.
 class DummyAttrDefaultValueTransformer : public LotusIR::IGraphTransformer {
  public:
   virtual Status Apply(/*IN/OUT*/ LotusIR::Graph& graph, /*OUT*/ bool& modified) override {
@@ -90,19 +90,7 @@ class InferenceSession::Impl {
  public:
   Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
       : session_options_{session_options}, logging_manager_{logging_manager} {
-    // create logger for session, using provided logging manager if possible
-    if (logging_manager != nullptr) {
-      std::string session_logid = !session_options.session_logid.empty()
-                                      ? session_options.session_logid
-                                      : "InferenceSession";  // there's probably a better default...
-
-      owned_session_logger_ = logging_manager->CreateLogger(session_logid);
-      session_logger_ = owned_session_logger_.get();
-    } else {
-      session_logger_ = &Logging::LoggingManager::DefaultLogger();
-    }
-
-    session_state_.SetLogger(*session_logger_);
+    InitLogger(logging_manager);
 
     //env_(Env::Default()) {
     //thread_pool_(env_, "Compute", session_options.num_threads) {
@@ -110,6 +98,7 @@ class InferenceSession::Impl {
     // providers? Should we have our own default?
     auto& provider_mgr = ExecutionProviderMgr::Instance();
 
+    VLOGS(*session_logger_, 1) << "Adding execution providers.";
     for (auto& info : session_options.ep_options) {
       auto provider = provider_mgr.GetProvider(info.provider_type, info.provider_info);
       if (provider == nullptr) {
@@ -117,13 +106,13 @@ class InferenceSession::Impl {
         continue;
       }
 
+      VLOGS(*session_logger_, 1) << "Adding execution provider with name: " << info.provider_type;
       session_state_.AddExecutionProvider(info.provider_type, std::move(provider));
     }
   }
 
-  // TODO add the methods of the parent class
-
   Common::Status Load(const std::string& model_uri) {
+    LOGS(*session_logger_, INFO) << "Loading model: " << model_uri;
     std::lock_guard<std::mutex> l(session_mutex_);
     if (is_model_loaded_) {  // already loaded
       LOGS(*session_logger_, INFO) << "Model: " << model_uri << " has already been loaded.";
@@ -135,12 +124,14 @@ class InferenceSession::Impl {
     if (status.IsOK()) {
       is_model_loaded_ = true;
       model_ = tmp_model_ptr;
+      LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
     }
 
     return status;
   }
 
   Common::Status Initialize() {
+    LOGS(*session_logger_, INFO) << "Initializing session.";
     std::lock_guard<std::mutex> l(session_mutex_);
     if (!is_model_loaded_) {
       LOGS(*session_logger_, ERROR) << "Model was not loaded";
@@ -166,7 +157,7 @@ class InferenceSession::Impl {
     LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
     LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
 
-    // TODO add other per session initialization stuff here
+    // add other per session initialization stuff here before invoking the executor
 
     // get execution plan
     if (session_options_.enable_sequential_execution) {
@@ -184,6 +175,7 @@ class InferenceSession::Impl {
     }
 
     is_inited_ = true;
+    LOGS(*session_logger_, INFO) << "Session successfully initialized.";
     return Status::OK();
   }
 
@@ -196,7 +188,8 @@ class InferenceSession::Impl {
   // which must remain valid for the duration of the execution.
   // If the default logger is used, new_run_logger will remain empty.
   // The returned value should be used in the execution.
-  const Logging::Logger& CreateLoggerForRun(const RunOptions& run_options, unique_ptr<Logging::Logger>& new_run_logger) {
+  const Logging::Logger& CreateLoggerForRun(const RunOptions& run_options,
+                                            unique_ptr<Logging::Logger>& new_run_logger) {
     const Logging::Logger* run_logger;
 
     // create a per-run logger if we can
@@ -283,18 +276,18 @@ class InferenceSession::Impl {
 
       // TODO should we add this exec to the list of executors? i guess its not needed now?
 
-      std::unique_ptr<Executor> p_exec;
-      if (session_options_.enable_sequential_execution) {
-        p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names, *p_fetches);
-      } else {
-        LOTUS_NOT_IMPLEMENTED;
-      }
-
       // scope of owned_run_logger is just the call to Execute. If Execute ever becomes async we need a different approach
       unique_ptr<Logging::Logger> owned_run_logger;
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
-      retval = p_exec->Execute(run_options, run_logger, feeds, output_names, p_fetches);
+      std::unique_ptr<Executor> p_exec;
+      if (session_options_.enable_sequential_execution) {
+        p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names, *p_fetches, run_logger);
+      } else {
+        LOTUS_NOT_IMPLEMENTED;
+      }
+
+      retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     }
@@ -304,13 +297,30 @@ class InferenceSession::Impl {
   }
 
  private:
+  void InitLogger(Logging::LoggingManager* logging_manager) {
+    // create logger for session, using provided logging manager if possible
+    if (logging_manager != nullptr) {
+      std::string session_logid = !session_options_.session_logid.empty()
+                                      ? session_options_.session_logid
+                                      : "InferenceSession";  // there's probably a better default...
+
+      owned_session_logger_ = logging_manager->CreateLogger(session_logid);
+      session_logger_ = owned_session_logger_.get();
+    } else {
+      session_logger_ = &Logging::LoggingManager::DefaultLogger();
+    }
+
+    session_state_.SetLogger(*session_logger_);
+  }
+
   Common::Status TransformGraph(LotusIR::Graph& graph) {
     bool is_modified;
     for (auto& ep : session_state_.GetExecutionProviders()) {
+      // TODO: log which execution provider is transforming the graph and whether is_modified is true/false.
       ep->GetTransformer().Apply(graph, is_modified);
     }
 
-    //this is a temporary hack.
+    // TODO: remove this in production; this is a temporary hack.
     DummyAttrDefaultValueTransformer set_conv_attr;
     set_conv_attr.Apply(graph, is_modified);
 
@@ -318,8 +328,9 @@ class InferenceSession::Impl {
   }
 
   Common::Status SaveInitializedTensors() {
+    LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
     const LotusIR::Graph* p_graph = session_state_.GetGraph();
-    LOTUS_ENFORCE(p_graph);
+    LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
     auto& alloc = AllocatorManager::Instance().GetArena(CPU);
     const LotusIR::InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
@@ -337,8 +348,10 @@ class InferenceSession::Impl {
                    DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
       session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
+      VLOGS(*session_logger_, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
     }
 
+    LOGS(*session_logger_, INFO) << "Done saving initialized tensors";
     return Common::Status::OK();
   }
 
@@ -348,9 +361,10 @@ class InferenceSession::Impl {
   // The reason we're doing 2 operations in the same function is so that we iterate
   // through all the nodes only once.
   Common::Status SaveKernelsAndMLValueNameIndexMapping() {
+    LOGS(*session_logger_, INFO) << "Saving kernels and MLValue mappings.";
     // TODO: const_cast because no const_iterator available for the graph
     LotusIR::Graph* p_graph = const_cast<LotusIR::Graph*>(session_state_.GetGraph());
-    LOTUS_ENFORCE(p_graph);
+    LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
     int curr_idx = 0;
     for (auto node_it = p_graph->NodesBegin(); node_it != p_graph->NodesEnd(); ++node_it) {
       LotusIR::Node* p_node = *node_it;
@@ -372,6 +386,8 @@ class InferenceSession::Impl {
         if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
           continue;
         }
+        VLOGS(*session_logger_, 1)
+            << "Adding input argument with name: " << def->Name() << " to MLValueIndex with index: " << curr_idx;
         session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
       }
 
@@ -380,10 +396,13 @@ class InferenceSession::Impl {
         if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
           continue;
         }
+        VLOGS(*session_logger_, 1)
+            << "Adding output argument with name: " << def->Name() << " to MLValueIndex with index: " << curr_idx;
         session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
       }
     }
 
+    LOGS(*session_logger_, INFO) << "Done saving kernels and MLValue mappings.";
     return Status::OK();
   }
 
@@ -397,7 +416,12 @@ class InferenceSession::Impl {
     }
 
     auto& allocator_info = session_state_.GetExecutionProvider(exec_provider_name)->GetTempSpaceAllocator().Info();
-    return KernelRegistry::Instance().CreateKernel(node, allocator_info, p_op_kernel);
+    Common::Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, p_op_kernel);
+    if (!status.IsOK()) {
+      LOGS(*session_logger_, ERROR) << "Kernel creation failed for node: "
+                                    << node.Name() << " with error: " << status.ErrorMessage();
+    }
+    return status;
   }
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {
