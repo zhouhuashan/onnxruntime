@@ -12,7 +12,7 @@ static const std::string kConstant = "Constant";
 static const std::string kConstantValue = "value";
 static const std::string kOnnxDomain = "";
 static const std::string kMLDomain = "ai.onnx.ml";
-static const std::string kMSDomain = "ms.onnx.ml";
+static const std::string kMSDomain = "com.microsoft";
 static const std::string kCpuExecutionProvider = "CPUExecutionProvider";
 
 }  // namespace LotusIR

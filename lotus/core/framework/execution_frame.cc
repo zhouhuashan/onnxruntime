@@ -7,9 +7,10 @@ namespace Lotus {
 
 ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                                const std::vector<std::string>& output_names,
+                               const std::vector<MLValue>& fetches,
                                const Lotus::SessionState& session_state)
     : session_state_(session_state) {
-  Init(session_state.GetGraph(), feeds, output_names);
+  Init(session_state.GetGraph(), feeds, output_names, fetches);
   InitArenas();
 }
 
@@ -176,31 +177,44 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
 
 void ExecutionFrame::Init(const LotusIR::Graph* graph,
                           const std::unordered_map<string, MLValue>& feeds,
-                          const std::vector<string>& output_names) {
+                          const std::vector<string>& output_names,
+                          const std::vector<MLValue>& fetches) {
   LOTUS_ENFORCE(graph);
 
-  //1. resize the node_offsets and all_value_ vector
+  // 1. resize the node_offsets and all_value_ vector
   auto num_nodes = graph->NumberOfNodes();
   node_offsets_.resize(num_nodes);
 
   all_values_.resize(session_state_.GetMaxMLValueIdx() + 1);
 
-  //2. handle the weights.
+  // 2. handle the weights.
   for (const auto& entry : session_state_.GetInitializedTensors()) {
     auto mlvalue_index = entry.first;
     all_values_[mlvalue_index] = entry.second;  // this copy should be cheap
   }
 
-  //3. handle feed in values
+  // 3. handle feed in values
   for (auto it = feeds.begin(); it != feeds.end(); it++) {
-    int index;
-    Common::Status status = session_state_.GetMLValueIdx(it->first, &index);
+    int mlvalue_idx;
+    Common::Status status = session_state_.GetMLValueIdx(it->first, &mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK());
     // we are sharing the underline tensor/object for MLValue
-    all_values_[index] = it->second;
+    all_values_[mlvalue_idx] = it->second;
   }
 
-  //4. set node args
+  // 4. Handle non-empty output vector
+  if (!fetches.empty()) {
+    LOTUS_ENFORCE(output_names.size() == fetches.size());  // should've already verified this much before when Run() starts
+    auto idx = 0;
+    for (const auto& oname : output_names) {
+      int mlvalue_idx;
+      Common::Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+      LOTUS_ENFORCE(status.IsOK());
+      all_values_[mlvalue_idx] = fetches.at(idx++);
+    }
+  }
+
+  // 5. set node args
   // TODO const_cast is needed due to the lack of a const iterator in the graph
   LotusIR::Graph* p_graph = const_cast<LotusIR::Graph*>(graph);
 
@@ -217,10 +231,6 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
       SetupNodeArg(def);
     }
   }
-
-  //5. for outputs, we may limit the buffer strategy, for example,
-  // output tensor should always use its own buffer. TBD
-  UNUSED_PARAMETER(output_names);
 }
 
 void ExecutionFrame::SetupNodeArg(LotusIR::NodeArg* arg) {

@@ -38,6 +38,7 @@ class ExecutionFrame {
 
   ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                  const std::vector<std::string>& output_names,
+                 const std::vector<MLValue>& fetches,
                  const SessionState& session_state);
 
   ~ExecutionFrame() {
@@ -136,7 +137,8 @@ class ExecutionFrame {
 
   void Init(const LotusIR::Graph* graph,
             const std::unordered_map<string, MLValue>& feeds,
-            const std::vector<string>& outputs);
+            const std::vector<string>& output_names,
+            const std::vector<MLValue>& fetches);
 
   void SetupNodeArg(LotusIR::NodeArg* arg);
 

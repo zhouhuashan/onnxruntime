@@ -1,5 +1,7 @@
 #include "core/framework/init.h"
 #include "core/framework/allocatormgr.h"
+#include "core/graph/constants.h"
+#include "core/graph/op.h"
 
 namespace Lotus {
 
@@ -27,6 +29,11 @@ Status Initializer::Initialize(int* pargc, char*** pargv) {
 
     if (!pargc || !pargv) status = Status(LOTUS, StatusCode::INVALID_ARGUMENT);
     if (!status.IsOK()) return status;
+
+    // Register microsoft domain with min/max op_set version as 1/1.
+    onnx::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(LotusIR::kMSDomain, 1, 1);
+    // Register microsoft domain ops.
+    RETURN_IF_ERROR(LotusIR::MsOpRegistry::RegisterMsOps());
 
     // LotusDeviceManager
     auto& allocator_manager = AllocatorManager::Instance();

@@ -3,9 +3,7 @@ include (ExternalProject)
 set(date_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/date)
 set(date_INCLUDE_DIR ${date_ROOT_DIR}/include)
 set(date_URL "https://github.com/HowardHinnant/date.git")
-# NOTE: Use v2.5 when released. We need a bugfix from the listed commit to build on VS2017 15.6
-#set(date_TAG "v2.4")
-set(date_TAG "a1ceec19fed2196ff4e22929100b221160651aa6")
+set(date_TAG "v2.4.1")
 
 find_package(Git)
 if(NOT GIT_FOUND)

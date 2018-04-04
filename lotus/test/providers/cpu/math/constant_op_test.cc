@@ -5,14 +5,18 @@
 namespace Lotus {
 namespace Test {
 
-static const TypeProto_Set s_typeProto_float{TensorProto_DataType_FLOAT};
+REGISTER_KERNEL(KernelDefBuilder("Constant")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Constant<float>);
 
 TEST(MathOpTest, Constant) {
-  LotusIR::NodeArg output_def("output", &s_typeProto_float);
-  TestModel model("Constant", {}, {&output_def});
+  OpTester test("Constant");
 
   std::vector<int64_t> dims{2, 3};
-  float expected_vals[]{11.0f, 12.0f, 13.0f, 21.0f, 22.0f, 33.0f};
+  auto expected_vals = {11.0f, 12.0f, 13.0f, 21.0f, 22.0f, 33.0f};
 
   TensorProto t;
   t.set_data_type(TensorProto_DataType_FLOAT);
@@ -21,10 +25,10 @@ TEST(MathOpTest, Constant) {
   for (auto v : expected_vals)
     *t.mutable_float_data()->Add() = v;
 
-  model.Node().AddAttribute("value", t);
+  test.AddAttribute("value", t);
 
-  SimpleFloatTest<Constant> test(model);
-  test.Run(dims, expected_vals);
+  test.AddOutput<float>("output", dims, expected_vals);
+  test.Run();
 }
 
 }  // namespace Test
