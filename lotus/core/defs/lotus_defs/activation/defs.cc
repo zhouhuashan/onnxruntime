@@ -11,7 +11,7 @@ Status MsOpRegistry::RegisterMsActivationOps() {
           "producing one output data (Tensor<T>) where the function, "
           "y = alpha * log(1 + exp(beta * x), is applied to the tensor elementwise.")
       .Input(0, "X", "Input tensor, typically 1-D.", "T")
-      .Output(1, "Y", "Output tensor of same shape and type as input X.", "T")
+      .Output(0, "Y", "Output tensor of same shape and type as input X.", "T")
       .TypeConstraint("T", {"tensor(float16)", "tensor(float)", "tensor(double)"},
                       "Constrain input and output types to float tensors.")
       .Attr("alpha",

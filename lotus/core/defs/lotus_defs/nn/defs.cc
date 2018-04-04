@@ -27,7 +27,7 @@ Each input value is divided by
       .SetDomain(kMSDomain)
       .SetDoc("Subtracts the provided mean image from the input image.")
       .Input(0, "input", "Input tensor of shape [N,C,H,W]", "T")
-      .Output(1, "output", "Result, has same shape and type as X", "T")
+      .Output(0, "output", "Result, has same shape and type as X", "T")
       .TypeConstraint("T", {"tensor(float16)", "tensor(float)", "tensor(double)"},
                       "Constrain input and output types to float tensors.")
       .Attr("image", "Image tensor stored as a sequence of floats [C,H,W].", AttrType::AttributeProto_AttributeType_TENSOR);
