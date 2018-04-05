@@ -69,7 +69,7 @@ std::vector<std::string> GetStackTrace();
 #define WHERE_WITH_STACK \
   Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__, Lotus::GetStackTrace())
 
-// Throw an exception with optional message. 
+// Throw an exception with optional message.
 // NOTE: The arguments get streamed into a string via ostringstream::operator<<
 // DO NOT use a printf format string, as that will not work as you expect.
 #define LOTUS_THROW(...) throw Lotus::LotusException(WHERE_WITH_STACK, Lotus::MakeString(__VA_ARGS__))
@@ -77,7 +77,7 @@ std::vector<std::string> GetStackTrace();
 // Just in order to mark things as not implemented. Do not use in final code.
 #define LOTUS_NOT_IMPLEMENTED LOTUS_THROW("Not Implemented.")
 
-// Check condition. 
+// Check condition.
 // NOTE: The arguments get streamed into a string via ostringstream::operator<<
 // DO NOT use a printf format string, as that will not work as you expect.
 #define LOTUS_ENFORCE(condition, ...) \
@@ -94,9 +94,9 @@ std::vector<std::string> GetStackTrace();
   LOTUS_DISALLOW_COPY(TypeName);                 \
   LOTUS_DISALLOW_ASSIGN(TypeName)
 
-#define LOTUS_DISALLOW_MOVE(TypeName)  \
-  TypeName(const TypeName&&) = delete; \
-  TypeName& operator=(const TypeName&&) = delete
+#define LOTUS_DISALLOW_MOVE(TypeName) \
+  TypeName(TypeName&&) = delete;      \
+  TypeName& operator=(TypeName&&) = delete
 
 #define LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TypeName) \
   LOTUS_DISALLOW_COPY_AND_ASSIGN(TypeName);           \
@@ -107,6 +107,13 @@ std::vector<std::string> GetStackTrace();
     auto _status = (expr);                 \
     if ((!_status.IsOK())) return _status; \
   } while (0)
+
+// C++ Core Guideline check suppression
+#ifdef _MSC_VER
+#define GSL_SUPPRESS(tag) [[gsl::suppress(tag)]]
+#else
+#define GSL_SUPPRESS(tag)
+#endif
 
 #if defined(__GNUC__)
 #if __GNUC_PREREQ(4, 9)
@@ -148,15 +155,15 @@ make_unique(Args&&...) = delete;
 
 #endif
 
-inline void MakeStringInternal(std::stringstream& /*ss*/) {}
+inline void MakeStringInternal(std::stringstream& /*ss*/) noexcept {}
 
 template <typename T>
-inline void MakeStringInternal(std::stringstream& ss, const T& t) {
+inline void MakeStringInternal(std::stringstream& ss, const T& t) noexcept {
   ss << t;
 }
 
 template <typename T, typename... Args>
-inline void MakeStringInternal(std::stringstream& ss, const T& t, const Args&... args) {
+inline void MakeStringInternal(std::stringstream& ss, const T& t, const Args&... args) noexcept {
   MakeStringInternal(ss, t);
   MakeStringInternal(ss, args...);
 }

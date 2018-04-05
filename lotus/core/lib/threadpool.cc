@@ -27,11 +27,13 @@ namespace thread {
 
 struct EigenEnvironment {
   typedef Thread EnvThread;
+
   struct TaskImpl {
     std::function<void()> f;
     Context context;
     uint64 trace_id;
   };
+
   struct Task {
     std::unique_ptr<TaskImpl> f;
   };
@@ -57,24 +59,23 @@ struct EigenEnvironment {
   }
 
   Task CreateTask(std::function<void()> f) {
-    uint64 id = 0;
+    const uint64 id = 0;  // temporarily const until TODO below is done.
     // TODO
+    // uint64 id = 0;
     // if (port::Tracing::IsActive()) {
     //   id = port::Tracing::UniqueId();
     //   port::Tracing::RecordEvent(port::Tracing::EventCategory::kScheduleClosure,
     //                              id);
     // }
-    return Task{
-        std::unique_ptr<TaskImpl>(new TaskImpl{
-            std::move(f),
-            Context(ContextKind::kThread),
-            id,
-        }),
-    };
+
+    GSL_SUPPRESS(r .11)  // using 'new' with aggregate initialization of TaskImpl
+    {
+      return Task{std::unique_ptr<TaskImpl>(new TaskImpl{std::move(f), Context(ContextKind::kThread), id})};
+    }
   }
 
   void ExecuteTask(const Task& t) {
-    WithContext wc(t.f->context);
+    const WithContext wc(t.f->context);
     if (t.f->trace_id != 0) {
       // TODO
       // port::Tracing::ScopedActivity region(
@@ -105,8 +106,7 @@ ThreadPool::ThreadPool(Env* env, const ThreadOptions& thread_options,
                        const std::string& name, int num_threads,
                        bool low_latency_hint) {
   LOTUS_ENFORCE(num_threads >= 1);
-  impl_.reset(new ThreadPool::Impl(env, thread_options, "lotus_" + name,
-                                   num_threads, low_latency_hint));
+  impl_ = std::make_unique<ThreadPool::Impl>(env, thread_options, "lotus_" + name, num_threads, low_latency_hint);
 }
 
 ThreadPool::~ThreadPool() {}

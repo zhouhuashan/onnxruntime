@@ -145,6 +145,9 @@ class LoggingManager final {
   ~LoggingManager();
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(LoggingManager);
+  static std::unique_ptr<Logger> &GetDefaultLogger() noexcept;
+
   Timestamp GetTimestamp() const noexcept;
   void CreateDefaultLogger(const std::string &logger_id);
 
@@ -154,10 +157,13 @@ class LoggingManager final {
 
   std::unique_ptr<ISink> sink_;
 
-  static std::unique_ptr<Logger> default_logger_;
-  static const std::chrono::time_point<std::chrono::high_resolution_clock> high_res_epoch_;
-  static const std::chrono::time_point<std::chrono::system_clock> system_epoch_;
-  static const std::chrono::minutes localtime_offset_from_utc_;
+  struct Epochs {
+    const std::chrono::time_point<std::chrono::high_resolution_clock> high_res;
+    const std::chrono::time_point<std::chrono::system_clock> system;
+    const std::chrono::minutes localtime_offset_from_utc;
+  };
+
+  static const Epochs &GetEpochs() noexcept;
 };
 
 /**
@@ -198,7 +204,9 @@ class Logger {
 };
 
 inline const Logger &LoggingManager::DefaultLogger() {
-  const Logger *default_logger = default_logger_.get();
+  // fetch the container for the default logger once to void function calls in the future
+  static unique_ptr<Logger> &default_logger = GetDefaultLogger();
+
   if (default_logger == nullptr) {
     // fail early for attempted misuse. don't use logging macros as we have no logger.
     throw std::logic_error("Attempt to use DefaultLogger but none has been registered.");
@@ -214,8 +222,10 @@ inline bool LoggingManager::OutputIsEnabled(Severity severity, DataType data_typ
 inline Timestamp LoggingManager::GetTimestamp() const noexcept {
   using namespace std::chrono;
 
+  static const Epochs &epochs = GetEpochs();
+
   const auto high_res_now = high_resolution_clock::now();
-  return time_point_cast<system_clock::duration>(system_epoch_ + (high_res_now - high_res_epoch_) + localtime_offset_from_utc_);
+  return time_point_cast<system_clock::duration>(epochs.system + (high_res_now - epochs.high_res) + epochs.localtime_offset_from_utc);
 }
 
 }  // namespace Logging

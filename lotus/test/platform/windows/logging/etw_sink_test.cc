@@ -4,6 +4,7 @@
 
 #include "core/common/logging/capture.h"
 #include "core/common/logging/logging.h"
+#include "core/common/logging/sinks/composite_sink.h"
 
 #include "test/common/logging/helpers.h"
 
@@ -32,12 +33,23 @@ TEST(LoggingTests, TestEtwSink) {
 }
 
 /// <summary>
-/// Test that attempting to create two ETW sinks fails
+/// Test that attempting to create two ETW sinks is fine.
+/// We register the ETW handler for the duration of the program so it can be shared
+/// across multiple sinks.
 /// </summary>
 TEST(LoggingTests, TestEtwSinkCtor) {
-  EtwSink sink1{};
+  CompositeSink *sinks = new CompositeSink();
+  sinks->AddSink(std::unique_ptr<ISink>(new EtwSink()))
+      .AddSink(std::unique_ptr<ISink>(new EtwSink()));
 
-  EXPECT_THROW(EtwSink sink2, std::logic_error);
+  LoggingManager manager{std::unique_ptr<ISink>{sinks},
+                         Severity::kWARNING,
+                         false,
+                         LoggingManager::InstanceType::Temporal};
+
+  auto logger = manager.CreateLogger("logid");
+
+  LOGS(*logger, WARNING) << "Two sinks aren't better than one";
 }
 
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

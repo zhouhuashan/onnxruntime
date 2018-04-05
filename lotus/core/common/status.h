@@ -34,52 +34,58 @@ enum StatusCode {
 
 class Status {
  public:
-  Status() {}
+  Status() noexcept {}
 
   Status(StatusCategory category, int code, const std::string& msg);
 
   Status(StatusCategory category, int code);
 
-  inline Status(const Status& other)
+  Status(const Status& other)
       : state_((other.state_ == nullptr) ? nullptr : std::make_unique<State>(*other.state_)) {}
 
-  bool IsOK() const;
+  void operator=(const Status& other) {
+    if (&other != this) {
+      if (nullptr == other.state_) {
+        state_.reset();
+      } else if (state_ != other.state_) {
+        state_ = std::make_unique<State>(*other.state_);
+      }
+    }
+  }
 
-  int Code() const;
+  Status(Status&& other) = default;
+  Status& operator=(Status&& other) = default;
+  ~Status() = default;
 
-  StatusCategory Category() const;
+  bool IsOK() const noexcept;
+
+  int Code() const noexcept;
+
+  StatusCategory Category() const noexcept;
 
   const std::string& ErrorMessage() const;
 
   std::string ToString() const;
 
-  inline void operator=(const Status& other) {
-    if (&other != this) {
-      if (nullptr == other.state_) {
-        state_.reset();
-      } else if (state_ != other.state_) {
-        state_.reset(new State(*other.state_));
-      }
-    }
-  }
-
-  inline bool operator==(const Status& other) const {
+  bool operator==(const Status& other) const {
     return (this->state_ == other.state_) || (ToString() == other.ToString());
   }
 
-  inline bool operator!=(const Status& other) const {
+  bool operator!=(const Status& other) const {
     return !(*this == other);
   }
 
-  static const Status& OK();
+  static const Status& OK() noexcept;
 
  private:
   static const std::string& EmptyString();
 
   struct State {
-    StatusCategory category_;
-    int code_;
-    std::string msg_;
+    State(StatusCategory cat0, int code0, const std::string& msg0) : category(cat0), code(code0), msg(msg0) {}
+
+    StatusCategory category = StatusCategory::NONE;
+    int code = 0;
+    std::string msg;
   };
 
   // As long as Code() is OK, state_ == nullptr.

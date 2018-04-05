@@ -18,19 +18,7 @@ class CompositeSink : public ISink {
   /// Initializes a new instance of the <see cref="CompositeSink"/> class.
   /// Use AddSink to add sinks.
   /// </summary>
-  CompositeSink() {
-  }
-
-  /// <summary>
-  /// Initializes a new instance of the <see cref="CompositeSink"/> class.
-  /// CompositeSink will own the provided ISink instances, so expects an iterator of unique_ptr{ISink}.
-  /// </summary>
-  /// <param name="first">The first.</param>
-  /// <param name="last">The last.</param>
-  template <class InputIterator>
-  CompositeSink(InputIterator first, InputIterator last)
-      : sinks_{first, last} {
-  }
+  CompositeSink() {}
 
   /// <summary>
   /// Adds a sink. Takes ownership of the sink (so pass unique_ptr by value).
