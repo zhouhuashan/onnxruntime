@@ -2,9 +2,7 @@
 #include <onnx/onnx-ml.pb.h>
 #include <core/graph/model.h>
 #include <core/framework/allocator.h>
-#include <core/framework/kernel_def_builder.h>
 #include <core/framework/op_kernel.h>
-#include <core/framework/session_state.h>
 #include <core/framework/tensorprotoutils.h>
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/framework/inference_session.h>
@@ -57,21 +55,6 @@ MLDataType ElementTypeFromProto(::onnx::TensorProto_DataType type) {
   }
 }
 
-/**
-  * \return true, equal. false, not equal.
-  */
-bool TestDimEquals(const std::vector<int64_t>& dims, const ::google::protobuf::RepeatedField< ::google::protobuf::int64>& dims2) {
-  if (dims.size() != (size_t)dims2.size()) {
-    return false;
-  }
-  for (int i = 0; i != (int)dims.size(); ++i) {
-    if (dims.at(i) != dims2.Get(i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 inline bool IsTheSameType(MLDataType left, ::onnx::TensorProto_DataType right) {
   return ElementTypeFromProto(right) == left;
 }
@@ -104,12 +87,49 @@ std::unordered_map<std::string, MLValue> ConvertPbsToMLValues(const ::google::pr
   return feeds;
 }
 
-/**
- * \return 0: success. -1:unknown error -2: failed to run -3: result mismatch
- */
-int ExecuteModelWithProtobufs(InferenceSession& sess, const std::vector<onnx::TensorProto>& input_pbs,
-                              const std::vector<onnx::TensorProto>& output_pbs, const char* test_case_name,
-                              const onnx::ModelProto& model_pb) {
+enum class EXECUTE_RESULT {
+  SUCCESS = 0,
+  UNKNOWN_ERROR = -1,
+  FAILED_TO_RUN = -2,
+  RESULT_DIFFERS = -3,
+  SHAPE_MISMATCH = -4,
+  TYPE_MISMATCH = -5
+};
+
+EXECUTE_RESULT compare_float_result(const Tensor& outvalue, const Tensor& expected_value, const char* test_case_name, int i) {
+  const float abs_error = 1e-6f;
+  if (expected_value.Shape() != outvalue.Shape()) return EXECUTE_RESULT::SHAPE_MISMATCH;
+  const size_t size1 = expected_value.Shape().Size();
+  const float* expected_output = expected_value.Data<float>();
+  const float* real_output = outvalue.Data<float>();
+  for (size_t di = 0; di != size1; ++di) {
+    const double diff = fabs(expected_output[di] - real_output[di]);
+    if (diff > abs_error) {
+      fprintf(stderr, "%s: the %d-th value of the %d-th output differs\n", test_case_name, (int)di, (int)i);
+      return EXECUTE_RESULT::RESULT_DIFFERS;
+    }
+  }
+  return EXECUTE_RESULT::SUCCESS;
+}
+
+template <typename T>
+EXECUTE_RESULT is_result_exactly_match(const Tensor& outvalue, const Tensor& expected_value, const char* test_case_name, int i) {
+  if (expected_value.Shape() != outvalue.Shape()) return EXECUTE_RESULT::SHAPE_MISMATCH;
+  const size_t size1 = expected_value.Shape().Size();
+  const T* expected_output = expected_value.Data<T>();
+  const T* real_output = outvalue.Data<T>();
+  for (size_t di = 0; di != size1; ++di) {
+    if (expected_output[di] != real_output[di]) {
+      fprintf(stderr, "%s: the %d-th value of the %d-th output differs\n", test_case_name, (int)di, (int)i);
+      return EXECUTE_RESULT::RESULT_DIFFERS;
+    }
+  }
+  return EXECUTE_RESULT::SUCCESS;
+}
+
+EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vector<onnx::TensorProto>& input_pbs,
+                                         const std::vector<onnx::TensorProto>& output_pbs, const char* test_case_name,
+                                         const onnx::ModelProto& model_pb) {
   auto& cpu_allocator = AllocatorManager::Instance().GetArena(CPU);
   std::unordered_map<std::string, MLValue> feeds = ConvertPbsToMLValues(model_pb.graph().input(), input_pbs, cpu_allocator);
   std::vector<MLValue> p_fetches;
@@ -117,43 +137,48 @@ int ExecuteModelWithProtobufs(InferenceSession& sess, const std::vector<onnx::Te
     Common::Status status = sess.Run(feeds, &p_fetches);
     if (!status.IsOK()) {
       fprintf(stderr, "%s:%s\n", test_case_name, status.ErrorMessage().c_str());
-      return -2;
+      return EXECUTE_RESULT::FAILED_TO_RUN;
     }
   } catch (std::exception& ex) {
     fprintf(stderr, "%s:%s\n", test_case_name, ex.what());
-    return -2;
+    return EXECUTE_RESULT::FAILED_TO_RUN;
   } catch (...) {
     fprintf(stderr, "%s:got unknown error\n", test_case_name);
-    return -2;
+    return EXECUTE_RESULT::FAILED_TO_RUN;
   }
 
   for (size_t i = 0; i != output_pbs.size(); ++i) {
     const Tensor& outvalue = p_fetches.at(i).Get<Tensor>();
-    onnx::TensorProto expected_value = output_pbs.at(i);
-    if (!TestDimEquals(outvalue.Shape().GetDims(), expected_value.dims())) {
-      fprintf(stderr, "%s:dims mismatch\n", test_case_name);
-      return -3;
-    }
+    const onnx::TensorProto& expected_value = output_pbs.at(i);
     if (!IsTheSameType(outvalue.DataType(), expected_value.data_type())) {
       fprintf(stderr, "%s:type mismatch\n", test_case_name);
-      return -3;
+      return EXECUTE_RESULT::TYPE_MISMATCH;
     }
-    //TODO: support comparisons other than float
-    if (expected_value.data_type() != TensorProto_DataType_FLOAT) continue;
-    const float abs_error = 1e-6f;
-    size_t data_len = expected_value.raw_data().size() / sizeof(float);
-    const float* expected_output = (const float*)expected_value.raw_data().c_str();
-    const float* real_output = outvalue.Data<float>();
-    for (size_t di = 0; di != data_len; ++di) {
-      const double diff = fabs(expected_output[di] - real_output[di]);
-      if (diff > abs_error) {
-        fprintf(stderr, "%s: the %d-th value of the %d-th output differs\n", test_case_name, (int)di, (int)i);
-        return -3;
-      }
+    std::unique_ptr<Tensor> expected_tensor;
+    LOTUS_ENFORCE(Lotus::Utils::GetTensorFromTensorProto(expected_value, &expected_tensor, cpu_allocator).IsOK());
+    //TODO: support comparisons other than float/bool/int32/...
+    EXECUTE_RESULT compare_result = EXECUTE_RESULT::UNKNOWN_ERROR;
+    switch (expected_value.data_type()) {
+      case TensorProto_DataType_FLOAT:
+        compare_result = compare_float_result(outvalue, *expected_tensor.get(), test_case_name, (int)i);
+        break;
+      case TensorProto_DataType_BOOL:
+        compare_result = is_result_exactly_match<bool>(outvalue, *expected_tensor.get(), test_case_name, (int)i);
+        break;
+      case TensorProto_DataType_INT32:
+        compare_result = is_result_exactly_match<int32_t>(outvalue, *expected_tensor.get(), test_case_name, (int)i);
+        break;
+      case TensorProto_DataType_INT64:
+        compare_result = is_result_exactly_match<int64_t>(outvalue, *expected_tensor.get(), test_case_name, (int)i);
+        break;
+      default:
+        LOTUS_NOT_IMPLEMENTED;
     }
+    if (compare_result != EXECUTE_RESULT::SUCCESS)
+      return compare_result;
   }
   printf("test %s succeeded\n", test_case_name);
-  return 0;
+  return EXECUTE_RESULT::SUCCESS;
 }
 
 //load tensors from disk
@@ -197,16 +222,14 @@ std::string containerToStr(const T1& input) {
   return oss.str();
 }
 
-class TestCaseInfo {
- public:
+struct TestCaseInfo {
   std::string model_url;
   std::string test_case_name;
   std::vector<path> input_pb_files;
   std::vector<path> output_pb_files;
 };
 
-class TestResultStat {
- public:
+struct NodeTestResultStat {
   int total_test_case_count = 0;
   int succeeded = 0;
   int not_implemented = 0;
@@ -218,16 +241,19 @@ class TestResultStat {
   std::unordered_set<std::string> covered_ops;
 };
 
-void print_result(const TestResultStat& stat) {
-  std::unordered_set<std::string> succeeded_kernels(stat.covered_ops);
-  for (const std::string& name : stat.not_implemented_kernels) {
-    succeeded_kernels.erase(name);
-  }
-  for (const std::string& name : stat.failed_kernels) {
-    succeeded_kernels.erase(name);
-  }
+struct ModelTestResultStat {
+  int total_test_case_count = 0;
+  int succeeded = 0;
+  int not_implemented = 0;
+  int load_model_failed = 0;
+  int throwed_exception = 0;
+  int result_differs = 0;
+  std::unordered_set<std::string> not_implemented_kernels;
+  std::unordered_set<std::string> covered_ops;
+};
+
+void print_result(const ModelTestResultStat& stat) {
   std::string not_implemented_kernels_str = containerToStr(stat.not_implemented_kernels);
-  std::string failed_kernels_str = containerToStr(stat.failed_kernels);
   int failed = stat.total_test_case_count - stat.succeeded;
   int other_reason_failed = failed - stat.not_implemented - stat.load_model_failed - stat.result_differs - stat.throwed_exception;
   printf(
@@ -238,16 +264,53 @@ void print_result(const TestResultStat& stat) {
       "\t\t\tKernel not implemented:%d\n"
       "\t\t\tLoad model Failed:%d\n"
       "\t\t\tThrew exception while runnning:%d\n"
-      "\t\t\tResult_differs:%d\n"
+      "\t\t\tResult differs:%d\n"
       "\t\t\tOther reason:%d\n"
-      "\tTotal OPs covered:%d\n"
-      "\t\tSucceeded:%d\n"
-      "\tNot implemented Kernels:%s\n"
-      "\tFailed Kernels:%s\n",
-      stat.total_test_case_count, stat.succeeded, failed, stat.not_implemented, stat.load_model_failed, stat.throwed_exception, stat.result_differs, other_reason_failed, (int)stat.covered_ops.size(), (int)succeeded_kernels.size(), not_implemented_kernels_str.c_str(), failed_kernels_str.c_str());
+      "\tTotal OPs covered:%d\n",
+      stat.total_test_case_count, stat.succeeded, failed, stat.not_implemented, stat.load_model_failed, stat.throwed_exception, stat.result_differs, other_reason_failed, (int)stat.covered_ops.size());
+}
+void print_result(const NodeTestResultStat& stat, const std::vector<std::string>& all_implemented_ops, bool no_coverage_info) {
+  std::unordered_set<std::string> succeeded_kernels(stat.covered_ops);
+  std::vector<std::string> not_tested;
+  for (const std::string& s : all_implemented_ops) {
+    if (stat.covered_ops.find(s) == stat.covered_ops.end())
+      not_tested.push_back(s);
+  }
+  for (const std::string& name : stat.not_implemented_kernels) {
+    succeeded_kernels.erase(name);
+  }
+  for (const std::string& name : stat.failed_kernels) {
+    succeeded_kernels.erase(name);
+  }
+  std::string not_implemented_kernels_str = containerToStr(stat.not_implemented_kernels);
+  std::string failed_kernels_str = containerToStr(stat.failed_kernels);
+  std::string not_tested_str = containerToStr(not_tested);
+  int failed = stat.total_test_case_count - stat.succeeded;
+  int other_reason_failed = failed - stat.not_implemented - stat.load_model_failed - stat.result_differs - stat.throwed_exception;
+  std::ostringstream oss;
+  oss << "result: \n"
+         "\tTotal test cases:"
+      << stat.total_test_case_count << "\n\t\tSucceeded:"
+      << stat.succeeded << "\n\t\tFailed:"
+      << failed << "\n\t\t\tKernel not implemented:"
+      << stat.not_implemented << "\n\t\t\tLoad model Failed:"
+      << stat.load_model_failed << "\n\t\t\tThrew exception while runnning:"
+      << stat.throwed_exception << "\n\t\t\tResult_differs:"
+      << stat.result_differs << "\n\t\t\tOther reason:"
+      << other_reason_failed << "\n";
+  if (!no_coverage_info) {
+    oss << "\tTotal OPs implemented:" << all_implemented_ops.size() << "\n\t\tNot covered by any test("
+        << not_tested.size() << "): " << not_tested_str << "\n\tTotal OPs covered:"
+        << stat.covered_ops.size() << "\n\t\tSucceeded:"
+        << succeeded_kernels.size() << "\n";
+  }
+  oss << "\t\tNot implemented Kernels(" << stat.not_implemented_kernels.size() << "): " << not_implemented_kernels_str << "\n\tFailed Kernels:"
+      << failed_kernels_str << "\n";
+  std::string res = oss.str();
+  fwrite(res.c_str(), 1, res.size(), stdout);
 }
 
-void RunNodeTests(const std::vector<TestCaseInfo>& tests, const std::vector<std::string>& all_implemented_ops, TestResultStat& stat, AllocationPlannerType planner) {
+void RunNodeTests(const std::vector<TestCaseInfo>& tests, const std::vector<std::string>& all_implemented_ops, NodeTestResultStat& stat, AllocationPlannerType planner) {
   for (TestCaseInfo info : tests) {
     onnx::ModelProto model_pb;
     {
@@ -302,13 +365,13 @@ void RunNodeTests(const std::vector<TestCaseInfo>& tests, const std::vector<std:
     fprintf(stderr, "testing %s\n", info.test_case_name.c_str());
     std::vector<onnx::TensorProto> input_pbs = LoadTensors(info.input_pb_files);
     std::vector<onnx::TensorProto> output_pbs = LoadTensors(info.output_pb_files);
-    int ret = ExecuteModelWithProtobufs(session_object, input_pbs, output_pbs, info.test_case_name.c_str(), model_pb);
-    if (ret == 0) {
+    EXECUTE_RESULT ret = ExecuteModelWithProtobufs(session_object, input_pbs, output_pbs, info.test_case_name.c_str(), model_pb);
+    if (ret == EXECUTE_RESULT::SUCCESS) {
       ++stat.succeeded;
-    } else if (ret == -2) {
+    } else if (ret == EXECUTE_RESULT::FAILED_TO_RUN) {
       ++stat.throwed_exception;
       stat.failed_kernels.insert(node_pb.op_type());
-    } else if (ret == -3) {
+    } else if (ret == EXECUTE_RESULT::RESULT_DIFFERS) {
       ++stat.result_differs;
       stat.failed_kernels.insert(node_pb.op_type());
     } else {
@@ -317,7 +380,7 @@ void RunNodeTests(const std::vector<TestCaseInfo>& tests, const std::vector<std:
   }
 }
 
-void RunModelTests(const std::vector<TestCaseInfo>& tests, const std::vector<std::string>& all_implemented_ops, TestResultStat& stat, AllocationPlannerType planner) {
+void RunModelTests(const std::vector<TestCaseInfo>& tests, const std::vector<std::string>& all_implemented_ops, ModelTestResultStat& stat, AllocationPlannerType planner) {
   for (TestCaseInfo info : tests) {
     onnx::ModelProto model_pb;
     {
@@ -371,10 +434,10 @@ void RunModelTests(const std::vector<TestCaseInfo>& tests, const std::vector<std
     fprintf(stderr, "testing %s\n", info.test_case_name.c_str());
     std::vector<onnx::TensorProto> input_pbs = LoadTensors(info.input_pb_files);
     std::vector<onnx::TensorProto> output_pbs = LoadTensors(info.output_pb_files);
-    int ret = ExecuteModelWithProtobufs(session_object, input_pbs, output_pbs, info.test_case_name.c_str(), model_pb);
-    if (ret == 0) {
+    EXECUTE_RESULT ret = ExecuteModelWithProtobufs(session_object, input_pbs, output_pbs, info.test_case_name.c_str(), model_pb);
+    if (ret == EXECUTE_RESULT::SUCCESS) {
       ++stat.succeeded;
-    } else if (ret == -3) {
+    } else if (ret == EXECUTE_RESULT::RESULT_DIFFERS) {
       ++stat.result_differs;
     } else {
     }
@@ -467,7 +530,7 @@ enum class RUN_MODE {
 int main(int argc, char* argv[]) {
   std::string default_logger_id{"Default"};
   Logging::LoggingManager default_logging_manager{std::unique_ptr<Logging::ISink>{new Logging::CLogSink{}},
-                                                  Logging::Severity::kINFO, false, Logging::LoggingManager::InstanceType::Default,
+                                                  Logging::Severity::kWARNING, false, Logging::LoggingManager::InstanceType::Default,
                                                   &default_logger_id};
   Initializer::EnsureInitialized(&argc, &argv);
   int ch;
@@ -519,12 +582,12 @@ int main(int argc, char* argv[]) {
   const char* test_data_root = argv[0];
   path test_data_root_path(test_data_root);
   if (mode == RUN_MODE::NODE_TEST) {
-    TestResultStat stat;
+    NodeTestResultStat stat;
     std::vector<TestCaseInfo> tests = LoadTests(test_data_root_path / path("node"), whitelisted_test_cases);
     RunNodeTests(tests, all_implemented_ops, stat, planner);
-    print_result(stat);
+    print_result(stat, all_implemented_ops, !whitelisted_test_cases.empty());
   } else {
-    TestResultStat stat;
+    ModelTestResultStat stat;
     std::vector<TestCaseInfo> tests = LoadTests(test_data_root_path, whitelisted_test_cases);
     RunModelTests(tests, all_implemented_ops, stat, planner);
     print_result(stat);
