@@ -52,7 +52,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, configs, cmake_extra_
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 
     if is_windows():
-        cmake_args += ["-A", "x64"]
+        cmake_args += ["-A", "x64", "-DCMAKE_GENERATOR='Visual Studio 15 2017'"]
 
     for config in configs:
         config_build_dir = get_config_build_dir(build_dir, config)
@@ -63,15 +63,22 @@ def generate_build_tree(cmake_path, source_dir, build_dir, configs, cmake_extra_
 def build_targets(cmake_path, build_dir, configs, parallel):
     for config in configs:
         log.info("Building targets for %s configuration", config)
+        build_dir = get_config_build_dir(build_dir, config)
         cmd_args = [cmake_path,
-                       "--build", get_config_build_dir(build_dir, config),
+                       "--build", build_dir,
                        "--config", config,
                        ]
-        if (parallel):
+
+        build_tool_args = []
+        if parallel:
             if is_windows():
-                cmd_args += ["--", "/maxcpucount:4"]
+                build_tool_args += ["/maxcpucount:4"]
             else:
-                cmd_args += ["--", "-j4"]
+                build_tool_args += ["-j4"]
+
+        if (build_tool_args):
+            cmd_args += [ "--" ]
+            cmd_args += build_tool_args
 
         run_subprocess(cmd_args)
 

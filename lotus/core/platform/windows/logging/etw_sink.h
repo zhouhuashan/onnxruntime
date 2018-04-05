@@ -24,9 +24,8 @@ namespace Logging {
 
 class EtwSink : public ISink {
  public:
-  EtwSink();
-
-  ~EtwSink() override;
+  EtwSink() = default;
+  ~EtwSink() = default;
 
   constexpr static const char *kEventName = "LotusLogEvent";
 

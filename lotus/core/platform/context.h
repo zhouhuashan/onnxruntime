@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef LOTUS_CORE_PLATFORM_CONTEXT_H_
-#define LOTUS_CORE_PLATFORM_CONTEXT_H_
+#pragma once
 
 namespace Lotus {
 
@@ -30,18 +29,15 @@ enum class ContextKind {
 // all relevant context.
 class Context {
  public:
-  Context() {}
-  Context(const ContextKind) {}
+  Context() noexcept {}
+  Context(const ContextKind) noexcept {}
 };
 
 // Scoped object that sets the current thread's context until the object is
 // destroyed.
 class WithContext {
  public:
-  explicit WithContext(const Context&) {}
-  ~WithContext() {}
+  explicit WithContext(const Context&) noexcept {}
 };
 
 }  // namespace Lotus
-
-#endif  // LOTUS_CORE_PLATFORM_CONTEXT_H_

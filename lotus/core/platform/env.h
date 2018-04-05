@@ -81,7 +81,7 @@ class Env {
 /// Represents a thread used to run a Lotus function.
 class Thread {
  public:
-  Thread() {}
+  Thread() noexcept {}
 
   /// Blocks until the thread of control stops running.
   virtual ~Thread();

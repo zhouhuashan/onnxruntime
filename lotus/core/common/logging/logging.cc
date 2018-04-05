@@ -16,33 +16,49 @@ As LoggingManager can be a static, we need to wrap the default instance and mute
 to ensure they're initialized before use in LoggingManager::LoggingManager. If we don't, and
 a static LoggingManager is created at startup, the file scope statics here may not have been
 initialized.
+
+We use 'new' to avoid static initialization issues
+  https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
+Suppressing r.11 due to that
+   Warning C26409 Avoid calling new and delete explicitly, use std::make_unique<T> instead
+   r.11: http://go.microsoft.com/fwlink/?linkid=845485
+
 */
 
-static std::atomic<void *> &DefaultLoggerManagerInstance() {
+GSL_SUPPRESS(r .11)
+static std::atomic<void *> &DefaultLoggerManagerInstance() noexcept {
   // this atomic is to protect against attempts to log being made after the default LoggingManager is destroyed.
   // Theoretically this can happen if a Logger instance is still alive and calls Log via its internal
   // pointer to the LoggingManager.
   // As the first thing LoggingManager::Log does is check the static DefaultLoggerManagerInstance() is not null,
   // any further damage should be prevented (in theory).
-  static std::atomic<void *> default_instance(nullptr);
-  return default_instance;
+  static std::atomic<void *> *default_instance = new std::atomic<void *>();
+  return *default_instance;
 }
 
-static std::mutex &DefaultLoggerMutex() {
-  static std::mutex mutex;
-  return mutex;
+GSL_SUPPRESS(r .11)
+static std::mutex &DefaultLoggerMutex() noexcept {
+  static std::mutex *mutex = new std::mutex();
+  return *mutex;
 }
 
-std::unique_ptr<Logger> LoggingManager::default_logger_;
+GSL_SUPPRESS(r .11)
+std::unique_ptr<Logger> &LoggingManager::GetDefaultLogger() noexcept {
+  static std::unique_ptr<Logger> *default_logger = new std::unique_ptr<Logger>();
+  return *default_logger;
+}
 
-static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch);
+static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch) noexcept;
 
-// we save the value from system clock (which we can convert to a timestamp) as well as the high_resolution_clock.
-// from then on, we use the delta from the high_resolution_clock and apply that to the
-// system clock value.
-const time_point<high_resolution_clock> LoggingManager::high_res_epoch_{high_resolution_clock::now()};
-const time_point<system_clock> LoggingManager::system_epoch_{system_clock::now()};
-const minutes LoggingManager::localtime_offset_from_utc_{InitLocaltimeOffset(LoggingManager::system_epoch_)};
+const LoggingManager::Epochs &LoggingManager::GetEpochs() noexcept {
+  // we save the value from system clock (which we can convert to a timestamp) as well as the high_resolution_clock.
+  // from then on, we use the delta from the high_resolution_clock and apply that to the
+  // system clock value.
+  static Epochs epochs{high_resolution_clock::now(),
+                       system_clock::now(),
+                       InitLocaltimeOffset(system_clock::now())};
+  return epochs;
+}
 
 LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity min_severity, bool filter_user_data,
                                const InstanceType instance_type, const std::string *default_logger_id)
@@ -86,18 +102,18 @@ LoggingManager::~LoggingManager() {
 
     DefaultLoggerManagerInstance().store(nullptr, std::memory_order::memory_order_release);
 
-    default_logger_.reset();
+    GetDefaultLogger().reset();
   }
 }
 
 void LoggingManager::CreateDefaultLogger(const std::string &logger_id) {
   // only called from ctor in scope where DefaultLoggerMutex() is already locked
 
-  if (default_logger_ != nullptr) {
+  if (GetDefaultLogger() != nullptr) {
     throw std::logic_error("Default logger already set. ");
   }
 
-  default_logger_ = std::make_unique<Logger>(*this, logger_id);
+  GetDefaultLogger() = std::make_unique<Logger>(*this, logger_id);
 }
 
 std::unique_ptr<Logger> LoggingManager::CreateLogger(std::string logger_id) {
@@ -111,7 +127,7 @@ void LoggingManager::Log(const std::string &logger_id, const Capture &message) c
   sink_->Send(GetTimestamp(), logger_id, message);
 }
 
-static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch) {
+static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch) noexcept {
   // convert the system_clock time_point (UTC) to localtime and gmtime to calculate the difference.
   // we do this once, and apply that difference in GetTimestamp().
   // NOTE: If we happened to be running over a period where the time changed (e.g. daylight saving started)
@@ -129,7 +145,7 @@ static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch) {
   gmtime_r(&system_time_t, &utc_tm);
 #endif
 
-  double seconds = difftime(mktime(&local_tm), mktime(&utc_tm));
+  const double seconds = difftime(mktime(&local_tm), mktime(&utc_tm));
 
   // minutes should be accurate enough for timezone conversion
   return minutes{static_cast<int64_t>(seconds / 60)};

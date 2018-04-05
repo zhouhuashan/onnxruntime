@@ -8,6 +8,8 @@ namespace Lotus {
 namespace Logging {
 class ISink {
  public:
+  ISink() = default;
+
   /**
   Sends the message to the sink.
   @param timestamp The timestamp.
@@ -21,6 +23,9 @@ class ISink {
   virtual ~ISink() = default;
 
  private:
+  // Make Code Analysis happy by disabling all for now. Enable as needed.
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ISink);
+
   virtual void SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) = 0;
 };
 }  // namespace Logging

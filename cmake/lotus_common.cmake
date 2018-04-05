@@ -34,14 +34,14 @@ source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_common_src})
 add_library(lotus_common_obj OBJECT ${lotus_common_src})
 
 # logging uses date. threadpool uses eigen
-add_dependencies(lotus_common_obj date eigen)
+add_dependencies(lotus_common_obj date eigen gsl)
 
 set_target_properties(lotus_common_obj PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(lotus_common_obj PROPERTIES FOLDER "Lotus")
 
 if(WIN32)
     # Add Code Analysis properties to enable C++ Core checks. Have to do it via a props file include. 
-    set_target_properties(lotus_common_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/ConfigureVisualStudioCodeAnalysis.props)
+    set_target_properties(lotus_common_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/EnableVisualStudioCodeAnalysis.props)
 endif()
 
 # add library that tests can link against

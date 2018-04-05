@@ -19,31 +19,55 @@ namespace Logging {
 
 namespace {
 
+GSL_SUPPRESS(f .6)
+// Warning C26440 Function 'Lotus::Logging::`anonymous namespace'::_TlgDefineProvider_annotation__Tlgetw_provider_handleProv' can be declared 'noexcept' (f.6: http://go.microsoft.com/fwlink/?linkid=853927).	lotus_common_obj	d:\src\git\lotus\lotus\core\platform\windows\logging\etw_sink.cc	22	Active
 TRACELOGGING_DEFINE_PROVIDER(etw_provider_handle, "LotusTraceLoggingProvider",
                              // {929DD115-1ECB-4CB5-B060-EBD4983C421D}
                              (0x929dd115, 0x1ecb, 0x4cb5, 0xb0, 0x60, 0xeb, 0xd4, 0x98, 0x3c, 0x42, 0x1d));
 }  // namespace
 
-std::atomic_flag EtwSink::have_instance_ = ATOMIC_FLAG_INIT;
+// Class to unregister ETW provider at shutdown.
+// We expect one static instance to be created for the lifetime of the program.
+class EtwRegistrationManager {
+ public:
+  static EtwRegistrationManager &Register() {
+    const HRESULT etw_status = ::TraceLoggingRegister(etw_provider_handle);
 
-EtwSink::EtwSink() {
-  // attempt to set to true, returning the current value
-  if (EtwSink::have_instance_.test_and_set() == true) {
-    // in use
-    throw std::logic_error(
-        "Attempt to create second EtwSink instance. "
-        "Only one can be used at any point in time in order to manage the ETW registration correctly.");
+    if (FAILED(etw_status)) {
+      throw std::runtime_error("ETW registration failed. Logging will be broken: " + std::to_string(etw_status));
+    }
+
+    // return an instance that is just used to unregister as the program exits
+    static EtwRegistrationManager instance(etw_status);
+    return instance;
   }
 
-  const HRESULT etw_status = ::TraceLoggingRegister(etw_provider_handle);
-
-  if (FAILED(etw_status)) {
-    throw std::runtime_error("ETW registration failed. Logging will be broken: " + std::to_string(etw_status));
+  const HRESULT Status() const noexcept {
+    return etw_status_;
   }
-}
+
+  ~EtwRegistrationManager() {
+    ::TraceLoggingUnregister(etw_provider_handle);
+  }
+
+ private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(EtwRegistrationManager);
+
+  EtwRegistrationManager(const HRESULT status) noexcept : etw_status_{status} {}
+  const HRESULT etw_status_;
+};
 
 void EtwSink::SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) {
   UNREFERENCED_PARAMETER(timestamp);
+
+  // register on first usage
+  static EtwRegistrationManager &etw_manager = EtwRegistrationManager::Register();
+
+  // do something (not that meaningful) with etw_manager so it doesn't get optimized out
+  // as we want an instance around to do the unregister
+  if (FAILED(etw_manager.Status())) {
+    return;
+  }
 
   // Do we want to output Verbose level messages via ETW at any point it time?
   // TODO: Validate if this filtering makes sense.
@@ -65,36 +89,33 @@ void EtwSink::SendImpl(const Timestamp &timestamp, const std::string &logger_id,
                     TraceLoggingString(message.Location().ToString().c_str(), "location"), \
                     TraceLoggingString(message.Message().c_str(), "message"))
 
-  auto severity{message.Severity()};
+  const auto severity{message.Severity()};
 
-  switch (severity) {
-    case Severity::kVERBOSE:
-      TRACE_LOG_WRITE(TRACE_LEVEL_VERBOSE);
-      break;
-    case Severity::kINFO:
-      TRACE_LOG_WRITE(TRACE_LEVEL_INFORMATION);
-      break;
-    case Severity::kWARNING:
-      TRACE_LOG_WRITE(TRACE_LEVEL_WARNING);
-      break;
-    case Severity::kERROR:
-      TRACE_LOG_WRITE(TRACE_LEVEL_ERROR);
-      break;
-    case Severity::kFATAL:
-      TRACE_LOG_WRITE(TRACE_LEVEL_CRITICAL);
-      break;
-    default:
-      throw std::logic_error("Unexpected Severity of " + static_cast<int>(severity));
+  GSL_SUPPRESS(bounds)
+  GSL_SUPPRESS(type) {
+    switch (severity) {
+      case Severity::kVERBOSE:
+        TRACE_LOG_WRITE(TRACE_LEVEL_VERBOSE);
+        break;
+      case Severity::kINFO:
+        TRACE_LOG_WRITE(TRACE_LEVEL_INFORMATION);
+        break;
+      case Severity::kWARNING:
+        TRACE_LOG_WRITE(TRACE_LEVEL_WARNING);
+        break;
+      case Severity::kERROR:
+        TRACE_LOG_WRITE(TRACE_LEVEL_ERROR);
+        break;
+      case Severity::kFATAL:
+        TRACE_LOG_WRITE(TRACE_LEVEL_CRITICAL);
+        break;
+      default:
+        throw std::logic_error("Unexpected Severity of " + static_cast<int>(severity));
+    }
   }
 
 #undef ETW_EVENT_NAME
 #undef TRACE_LOG_WRITE
-}
-
-EtwSink::~EtwSink() {
-  ::TraceLoggingUnregister(etw_provider_handle);
-
-  EtwSink::have_instance_.clear();
 }
 }  // namespace Logging
 }  // namespace Lotus

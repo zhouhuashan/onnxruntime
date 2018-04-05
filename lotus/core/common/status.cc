@@ -1,32 +1,30 @@
 #include "core/common/status.h"
+#include "core/common/common.h"
 
 namespace Lotus {
 namespace Common {
 Status::Status(StatusCategory category, int code, const std::string& msg) {
-  state_.reset(new State());
-  state_->category_ = category;
-  state_->code_ = code;
-  state_->msg_ = msg;
+  state_ = std::make_unique<State>(category, code, msg);
 }
 
 Status::Status(StatusCategory category, int code)
     : Status(category, code, EmptyString()) {
 }
 
-bool Status::IsOK() const {
+bool Status::IsOK() const noexcept {
   return (state_ == NULL);
 }
 
-StatusCategory Status::Category() const {
-  return IsOK() ? StatusCategory::NONE : state_->category_;
+StatusCategory Status::Category() const noexcept {
+  return IsOK() ? StatusCategory::NONE : state_->category;
 }
 
-int Status::Code() const {
-  return IsOK() ? static_cast<int>(StatusCode::OK) : state_->code_;
+int Status::Code() const noexcept {
+  return IsOK() ? static_cast<int>(StatusCode::OK) : state_->code;
 }
 
 const std::string& Status::ErrorMessage() const {
-  return IsOK() ? EmptyString() : state_->msg_;
+  return IsOK() ? EmptyString() : state_->msg;
 }
 
 std::string Status::ToString() const {
@@ -36,15 +34,16 @@ std::string Status::ToString() const {
 
   std::string result;
 
-  if (StatusCategory::SYSTEM == state_->category_) {
+  if (StatusCategory::SYSTEM == state_->category) {
     result += "SystemError";
     result += " : ";
     result += std::to_string(errno);
-  } else if (StatusCategory::LOTUS == state_->category_) {
+  } else if (StatusCategory::LOTUS == state_->category) {
     result += "[LotusError]";
     result += " : ";
-    result += std::to_string(static_cast<int>(Code()));
+    result += std::to_string(Code());
     std::string msg;
+
     switch (static_cast<StatusCode>(Code())) {
       case INVALID_ARGUMENT:
         msg = "INVALID_ARGUMENT";
@@ -77,20 +76,29 @@ std::string Status::ToString() const {
     result += " : ";
     result += msg;
     result += " : ";
-    result += state_->msg_;
+    result += state_->msg;
   }
 
   return result;
 }
 
-const Status& Status::OK() {
-  static Status s_ok;
-  return s_ok;
+const Status& Status::OK() noexcept {
+  // We use 'new' to avoid static initialization issues
+  //   https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
+  // Suppressing r.11 due to that
+  //   Warning C26409 Avoid calling new and delete explicitly, use std::make_unique<T> instead
+  //   r.11: http://go.microsoft.com/fwlink/?linkid=845485
+  GSL_SUPPRESS(r .11) {
+    static Status* s_ok = new Status();
+    return *s_ok;
+  }
 }
 
 const std::string& Status::EmptyString() {
-  static std::string s_emptyStr = "";
-  return s_emptyStr;
+  GSL_SUPPRESS(r .11) {
+    static std::string* s_empty = new std::string();
+    return *s_empty;
+  }
 }
 }  // namespace Common
 }  // namespace Lotus
