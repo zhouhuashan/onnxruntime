@@ -107,7 +107,7 @@ struct TTypeProto : TypeProto {
   }
 };
 
-// Variable template for TensorProto_DataTypes, s_typeProto<float>
+// Variable template for TensorProto_DataTypes, s_typeProto<float>, etc..
 template <typename T>
 const TTypeProto<T> s_typeProto;
 
