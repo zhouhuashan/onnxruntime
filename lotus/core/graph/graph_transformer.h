@@ -83,7 +83,7 @@ class IGraphTransformer {
   // Apply <*this> transformation to a specific graph.
   // Transformation happens in place.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) = 0;
+  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) const = 0;
 };
 
 class GraphTransformerManager {
@@ -122,10 +122,20 @@ class RuleBasedGraphTransformer : public IGraphTransformer {
   // TODO (revisit needed): Using OpSignature* here will ask that OpSignature should be storeed globally,
   // otherwise, there will be multiple adresses/pointers for the same operator or function.
   // To avoid this ask, we may use OpSignature ID as the key, which should be name_domain_version.
-  Status Register(IRewriteRule& rule, const std::vector<OpSignature*>& ops);
+     Status Register(IRewriteRule& rule, const std::vector<OpSignature*>& ops) {
+         UNUSED_PARAMETER(rule);
+         UNUSED_PARAMETER(ops);
+         LOTUS_NOT_IMPLEMENTED;
+         return Status::OK();
+  }
 
   // Apply for all applicable rules against one graph.
-  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified);
+  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) const override{
+      UNUSED_PARAMETER(graph);
+      UNUSED_PARAMETER(modified);
+      LOTUS_NOT_IMPLEMENTED;
+      return Status::OK();
+  }
 
   static RuleBasedGraphTransformer Instance() {
     static RuleBasedGraphTransformer s_rule_based_graph_transformer;
@@ -165,6 +175,7 @@ class FunctionInliner : public IRewriteRule {
     (node);
     (graph_editor);
     (modified);
+    LOTUS_NOT_IMPLEMENTED;
     return Status::OK();
   }
 };
@@ -183,6 +194,7 @@ class FunctionExtraction : public IRewriteRule {
     (node);
     (graph_editor);
     (modified);
+    LOTUS_NOT_IMPLEMENTED;
     return Status::OK();
   }
 };

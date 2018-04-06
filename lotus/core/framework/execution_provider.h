@@ -2,12 +2,14 @@
 
 #include <unordered_map>
 #include "core/framework/arena.h"
-#include "core/framework/op_kernel.h"
+#include "core/framework/tensor.h"
 #include "core/graph/graph.h"
 #include "core/graph/graph_transformer.h"
 
 namespace Lotus {
 typedef std::shared_ptr<void> ExecutionProviderInfo;
+
+class OpKernelContext;
 
 // Logical device representation.
 class IExecutionProvider {
@@ -17,15 +19,15 @@ class IExecutionProvider {
   // Graph to graph transformation. The resulting graph may contain custom
   // operators introduced by this execution provider. Newly formed custom
   // functions must be registered in kernelRegistry_.
-  virtual LotusIR::IGraphTransformer& GetTransformer() = 0;
+  virtual const LotusIR::IGraphTransformer& GetTransformer() const = 0;
 
   // Get IAllocator for <*this> execution provider.
   // It will be used for allocating tensors (inputs/outputs) or copying tensors
   // (IN/OUT) for this execution provider.
-  virtual IArenaAllocator& GetTempSpaceAllocator() const = 0;
+  virtual IArenaAllocator& GetTempSpaceAllocator() = 0;
 
   // Run the computation of a given node.
-  virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) = 0;
+  virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;
 
   // TODO: Do we still need these copy methods?
   // TODO: Shouldn't tensor copy be implemented in the Tensor class, with it optionally taking

@@ -439,8 +439,9 @@ class InferenceSession::Impl {
       return Common::Status(Common::LOTUS, Common::FAIL, error_msg.str());
     }
 
-    auto& allocator_info = session_state_.GetExecutionProvider(exec_provider_name)->GetTempSpaceAllocator().Info();
-    Common::Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, p_op_kernel);
+    auto exec_provider = session_state_.GetExecutionProvider(exec_provider_name);
+    auto& allocator_info = exec_provider->GetTempSpaceAllocator().Info();
+    Common::Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
     if (!status.IsOK()) {
       LOGS(*session_logger_, ERROR) << "Kernel creation failed for node: "
                                     << node.Name() << " with error: " << status.ErrorMessage();

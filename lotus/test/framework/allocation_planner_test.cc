@@ -234,10 +234,10 @@ TEST(AllocationPlannerTest, InputOutputTest) {
   auto kernel_def1 = KernelDefBuilder("Transpose").Build();
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
 
-  OpKernelInfo info1(*(node1.p_node), allocator_info, *kernel_def1);
+  OpKernelInfo info1(*(node1.p_node), allocator_info, *kernel_def1, nullptr);
   state.AddKernel(node1.p_node->Index(), std::make_unique<DummyOpKernel>(info1));
 
-  OpKernelInfo info2(*(node2.p_node), allocator_info, *kernel_def1);
+  OpKernelInfo info2(*(node2.p_node), allocator_info, *kernel_def1, nullptr);
   state.AddKernel(node2.p_node->Index(), std::make_unique<DummyOpKernel>(info2));
 
   SequentialExecutionPlan plan;
@@ -283,13 +283,13 @@ TEST(AllocationPlannerTest, InPlaceTest) {
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
 
-  OpKernelInfo info1(*(node1.p_node), allocator_info, *kernel_def1);
+  OpKernelInfo info1(*(node1.p_node), allocator_info, *kernel_def1, nullptr);
   state.AddKernel(node1.p_node->Index(), std::make_unique<DummyOpKernel>(info1));
 
-  OpKernelInfo info2(*(node2.p_node), allocator_info, *kernel_def2);
+  OpKernelInfo info2(*(node2.p_node), allocator_info, *kernel_def2, nullptr);
   state.AddKernel(node2.p_node->Index(), std::make_unique<DummyOpKernel>(info2));
 
-  OpKernelInfo info3(*(node3.p_node), allocator_info, *kernel_def1);
+  OpKernelInfo info3(*(node3.p_node), allocator_info, *kernel_def1, nullptr);
   state.AddKernel(node3.p_node->Index(), std::make_unique<DummyOpKernel>(info3));
 
   SequentialExecutionPlan plan;

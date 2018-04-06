@@ -4,13 +4,14 @@
 #include "core/common/status.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/execution_frame.h"
+#include "core/framework/execution_provider.h"
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
 #include "core/graph/constants.h"
 #include "core/graph/graph.h"
 #include "onnx/defs/schema.h"
-//#include "core/graph/op.h"
+
 
 namespace Lotus {
 class OpKernelContext;
@@ -22,10 +23,12 @@ class OpKernelInfo {
  public:
   explicit OpKernelInfo(const LotusIR::Node& node,
                         const AllocatorInfo& allocator_info,
-                        const KernelDef& kernel_def)
+                        const KernelDef& kernel_def,
+                        const IExecutionProvider* execution_provider)
       : node_(node),
         allocator_info_(allocator_info),
-        kernel_def_(kernel_def) {}
+        kernel_def_(kernel_def),
+        execution_provider_(execution_provider){}
 
   //Get a single attribute
   template <typename T>
@@ -47,10 +50,17 @@ class OpKernelInfo {
     return kernel_def_;
   }
 
+  const IExecutionProvider* GetExecutionProvider() const {
+    return execution_provider_;
+  }
+
  private:
   const LotusIR::Node& node_;
   const AllocatorInfo& allocator_info_;
   const KernelDef& kernel_def_;
+  // For non cpu/cuda case, this pointer should be set so that function kernel will delegate kernel
+  // compute call to <execution_provider> compute call.
+  const Lotus::IExecutionProvider* execution_provider_;
 };
 
 class OpKernel {
@@ -141,6 +151,7 @@ class KernelRegistry {
   // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
   Status CreateKernel(const LotusIR::Node& node,
                       const AllocatorInfo& allocator_info,
+                      const IExecutionProvider* execution_provider,
                       std::unique_ptr<OpKernel>* op_kernel) const;
 
   static KernelRegistry& Instance() {
