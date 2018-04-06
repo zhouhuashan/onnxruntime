@@ -13,6 +13,10 @@ class IArenaAllocator : public IAllocator {
   virtual ~IArenaAllocator() {}
   // Alloc call need to be thread safe.
   virtual void* Alloc(size_t size) = 0;
+  // The chunck allocated by Reserve call won't be reused with other request.
+  // It will be return to the devices when it is freed.
+  // Reserve call need to be thread safe.
+  virtual void* Reserve(size_t size) = 0;
   // Free call need to be thread safe.
   virtual void Free(void* p) = 0;
   virtual size_t Used() const = 0;
@@ -39,6 +43,10 @@ class DummyArena : public IArenaAllocator {
 
   virtual void Free(void* p) override {
     allocator_->Free(p);
+  }
+
+  virtual void* Reserve(size_t size) override {
+    return Alloc(size);
   }
 
   virtual size_t Used() const override {

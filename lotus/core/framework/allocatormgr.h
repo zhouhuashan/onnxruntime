@@ -22,7 +22,7 @@ class AllocatorManager {
   AllocatorManager() = default;
 
   // after add allocator, allocator manager will take the ownership.
-  Status AddDeviceAllocator(IDeviceAllocator* allocator, const bool create_arena = true);
+  Status RegisterBFCArena(IDeviceAllocator* allocator, size_t memory_limit);
   Status AddArenaAllocator(IArenaAllocator* allocator);
 
   static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena);

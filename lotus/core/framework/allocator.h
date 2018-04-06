@@ -46,8 +46,6 @@ class IDeviceAllocator : public IAllocator {
   virtual ~IDeviceAllocator() {}
   virtual void* Alloc(size_t size) = 0;
   virtual void Free(void* p) = 0;
-  virtual size_t MinChunkSize() = 0;
-  virtual size_t MaxChunkSize() = 0;
   virtual const AllocatorInfo& Info() const = 0;
 };
 
@@ -55,8 +53,6 @@ class CPUAllocator : public IDeviceAllocator {
  public:
   virtual void* Alloc(size_t size) override;
   virtual void Free(void* p) override;
-  virtual size_t MinChunkSize() override;
-  virtual size_t MaxChunkSize() override;
   virtual const AllocatorInfo& Info() const override;
 };
 }  // namespace Lotus
