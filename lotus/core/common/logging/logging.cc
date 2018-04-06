@@ -60,11 +60,13 @@ const LoggingManager::Epochs &LoggingManager::GetEpochs() noexcept {
   return epochs;
 }
 
-LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity min_severity, bool filter_user_data,
-                               const InstanceType instance_type, const std::string *default_logger_id)
+LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity default_min_severity, bool filter_user_data,
+                               const InstanceType instance_type, const std::string *default_logger_id,
+                               int default_max_vlog_level)
     : sink_{std::move(sink)},
-      min_severity_{min_severity},
-      filter_user_data_{filter_user_data},
+      default_min_severity_{default_min_severity},
+      default_filter_user_data_{filter_user_data},
+      default_max_vlog_level_{default_max_vlog_level},
       owns_default_logger_{false} {
   if (!sink_) {
     throw std::logic_error("ISink must be provided.");
@@ -83,11 +85,10 @@ LoggingManager::LoggingManager(std::unique_ptr<ISink> sink, Severity min_severit
       throw std::logic_error("Only one instance of LoggingManager created with InstanceType::Default can exist at any point in time.");
     }
 
-    DefaultLoggerManagerInstance().store(this);
-
     // This assertion passes, so using the atomic to validate calls to Log should
     // be reasonably economical.
     // assert(DefaultLoggerManagerInstance().is_lock_free());
+    DefaultLoggerManagerInstance().store(this);
 
     CreateDefaultLogger(*default_logger_id);
 
@@ -107,23 +108,30 @@ LoggingManager::~LoggingManager() {
 }
 
 void LoggingManager::CreateDefaultLogger(const std::string &logger_id) {
-  // only called from ctor in scope where DefaultLoggerMutex() is already locked
+  // this method is only called from ctor in scope where DefaultLoggerMutex() is already locked
 
-  if (GetDefaultLogger() != nullptr) {
+  unique_ptr<Logger> &default_logger{GetDefaultLogger()};
+
+  if (default_logger != nullptr) {
     throw std::logic_error("Default logger already set. ");
   }
 
-  GetDefaultLogger() = std::make_unique<Logger>(*this, logger_id);
+  default_logger = CreateLogger(logger_id);
 }
 
 std::unique_ptr<Logger> LoggingManager::CreateLogger(std::string logger_id) {
-  auto logger = std::make_unique<Logger>(*this, logger_id);
+  return CreateLogger(logger_id, default_min_severity_, default_filter_user_data_, default_max_vlog_level_);
+}
+
+std::unique_ptr<Logger> LoggingManager::CreateLogger(std::string logger_id,
+                                                     const Severity severity,
+                                                     bool filter_user_data,
+                                                     int vlog_level) {
+  auto logger = std::make_unique<Logger>(*this, logger_id, severity, filter_user_data, vlog_level);
   return logger;
 }
 
 void LoggingManager::Log(const std::string &logger_id, const Capture &message) const {
-  // note: assumes check on OutputIsEnabled is done previously.
-  // TODO: Is that good enough or do we need to double-check here
   sink_->Send(GetTimestamp(), logger_id, message);
 }
 

@@ -62,9 +62,9 @@ std::vector<std::string> GetStackTrace();
 #define __PRETTY_FUNCTION__ __FUNCTION__
 #endif
 
-// Capture where a message is coming from
+// Capture where a message is coming from. Use __FUNCTION__ rather than the much longer __PRETTY_FUNCTION__
 #define WHERE \
-  Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__)
+  Lotus::CodeLocation(__FILE__, __LINE__, __FUNCTION__)
 
 #define WHERE_WITH_STACK \
   Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__, Lotus::GetStackTrace())
