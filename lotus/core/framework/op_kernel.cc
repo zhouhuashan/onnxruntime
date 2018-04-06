@@ -150,7 +150,7 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
       i->second.kernel_def->SinceVersion(&start, &end);
       int version = node.Op()->since_version();
       if (start <= version && version <= end &&
-        VerifyKernelDef(node, *i->second.kernel_def)) {
+          VerifyKernelDef(node, *i->second.kernel_def)) {
         OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def);
         op_kernel->reset(i->second.kernel_create_func(kernel_info));
         return Status::OK();

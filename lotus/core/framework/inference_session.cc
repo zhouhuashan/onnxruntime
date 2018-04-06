@@ -53,13 +53,17 @@ class InferenceSession::Impl {
 
     std::shared_ptr<LotusIR::Model> tmp_model_ptr;
     Common::Status status = LotusIR::Model::Load(model_uri, &tmp_model_ptr);
-    if (status.IsOK()) {
-      is_model_loaded_ = true;
-      model_ = tmp_model_ptr;
-      LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
+    if (!status.IsOK()) {
+      return status;
     }
 
-    return status;
+    is_model_loaded_ = true;
+    model_ = tmp_model_ptr;
+
+    LOTUS_RETURN_IF_ERROR(SaveModelMetadata(*model_.get()));
+    LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
+
+    return Common::Status::OK();
   }
 
   Common::Status Initialize() {
@@ -113,37 +117,6 @@ class InferenceSession::Impl {
 
   int GetCurrentNumRuns() const {
     return current_num_runs_.load();
-  }
-
-  // Create a Logger for a single execution if possible. Otherwise use the default logger.
-  // If a new logger is created, it will also be stored in new_run_logger,
-  // which must remain valid for the duration of the execution.
-  // If the default logger is used, new_run_logger will remain empty.
-  // The returned value should be used in the execution.
-  const Logging::Logger& CreateLoggerForRun(const RunOptions& run_options,
-                                            unique_ptr<Logging::Logger>& new_run_logger) {
-    const Logging::Logger* run_logger;
-
-    // create a per-run logger if we can
-    if (logging_manager_ != nullptr) {
-      std::string run_log_id{session_options_.session_logid};
-
-      if (!session_options_.session_logid.empty() && !run_options.run_tag.empty()) {
-        run_log_id += ":";
-      }
-
-      run_log_id += run_options.run_tag;
-
-      new_run_logger = logging_manager_->CreateLogger(run_log_id);
-      run_logger = new_run_logger.get();
-      VLOGS(*run_logger, 1) << "Created logger for run with id of " << run_log_id;
-    } else {
-      // fallback to using default logger. this does NOT have any session or run specific id/tag in it
-      run_logger = session_logger_;
-      VLOGS(*run_logger, 1) << "Using default logger for run " << run_options.run_tag;
-    }
-
-    return *run_logger;
   }
 
   Common::Status Run(const NameMLValMap& feeds,
@@ -228,7 +201,130 @@ class InferenceSession::Impl {
     return retval;
   }
 
+  std::pair<Common::Status, const ModelMetadata*> GetModelMetadata() const {
+    {
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (!is_model_loaded_) {
+        LOGS(*session_logger_, ERROR) << "Model was not loaded";
+        return std::make_pair(Common::Status(Common::LOTUS, Common::FAIL, "Model was not loaded."),
+                              nullptr);
+      }
+    }
+
+    return std::make_pair(Common::Status::OK(), &model_metadata_);
+  }
+
+  std::pair<Common::Status, const InputDefList*> GetInputs() const {
+    {
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (!is_model_loaded_) {
+        LOGS(*session_logger_, ERROR) << "Model was not loaded";
+        return std::make_pair(Common::Status(Common::LOTUS, Common::FAIL, "Model was not loaded."),
+                              nullptr);
+      }
+    }
+
+    return std::make_pair(Common::Status::OK(), &input_def_list_);
+  }
+
+  std::pair<Common::Status, const OutputDefList*> GetOutputs() const {
+    {
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (!is_model_loaded_) {
+        LOGS(*session_logger_, ERROR) << "Model was not loaded";
+        return std::make_pair(Common::Status(Common::LOTUS, Common::FAIL, "Model was not loaded."),
+                              nullptr);
+      }
+    }
+
+    return std::make_pair(Common::Status::OK(), &output_def_list_);
+  }
+
  private:
+  static void GetNodeArgDef(const LotusIR::NodeArg& arg, NodeArgDef& nf) {
+    nf.name = arg.Name();
+    nf.data_type = *arg.Type();
+    nf.shape = Utils::GetTensorShapeFromTensorShapeProto(*arg.Shape());
+  }
+
+  Common::Status SaveModelMetadata(const LotusIR::Model& model) {
+    VLOGS(*session_logger_, 1) << "Saving model metadata";
+    const LotusIR::Graph* p_graph = model.MainGraph();
+    if (!p_graph) {
+      return Common::Status(Common::LOTUS, Common::FAIL, "Got null graph ptr while saving model metadata");
+    }
+
+    // save model metadata
+    model_metadata_.producer_name = model.ProducerName();
+    model_metadata_.description = model.DocString();
+    model_metadata_.domain = model.Domain();
+    model_metadata_.version = model.ModelVersion();
+    model_metadata_.custom_metadata_map = model.MetaData();
+    model_metadata_.graph_name = p_graph->Name();
+
+    // save inputs
+    auto inputs = p_graph->GetInputs();
+    auto weights = p_graph->GetAllInitializedTensors();
+    input_def_list_.reserve(inputs.size());
+    for (const auto& elem : inputs) {
+      if (!elem) {
+        return Common::Status(Common::LOTUS, Common::FAIL, "Got null input nodearg ptr");
+      }
+      // skip inputs that are weights
+      if (weights.count(elem->Name())) {
+        continue;
+      }
+      NodeArgDef nf;
+      GetNodeArgDef(*elem, nf);
+      input_def_list_.push_back(nf);
+    }
+
+    // save outputs
+    auto outputs = p_graph->GetOutputs();
+    output_def_list_.reserve(outputs.size());
+    for (const auto& elem : outputs) {
+      if (!elem) {
+        return Common::Status(Common::LOTUS, Common::FAIL, "Got null output nodearg ptr");
+      }
+      NodeArgDef nf;
+      GetNodeArgDef(*elem, nf);
+      output_def_list_.push_back(nf);
+    }
+    VLOGS(*session_logger_, 1) << "Done saving model metadata";
+    return Common::Status::OK();
+  }
+
+  // Create a Logger for a single execution if possible. Otherwise use the default logger.
+  // If a new logger is created, it will also be stored in new_run_logger,
+  // which must remain valid for the duration of the execution.
+  // If the default logger is used, new_run_logger will remain empty.
+  // The returned value should be used in the execution.
+  const Logging::Logger& CreateLoggerForRun(const RunOptions& run_options,
+                                            unique_ptr<Logging::Logger>& new_run_logger) {
+    const Logging::Logger* run_logger;
+
+    // create a per-run logger if we can
+    if (logging_manager_ != nullptr) {
+      std::string run_log_id{session_options_.session_logid};
+
+      if (!session_options_.session_logid.empty() && !run_options.run_tag.empty()) {
+        run_log_id += ":";
+      }
+
+      run_log_id += run_options.run_tag;
+
+      new_run_logger = logging_manager_->CreateLogger(run_log_id);
+      run_logger = new_run_logger.get();
+      VLOGS(*run_logger, 1) << "Created logger for run with id of " << run_log_id;
+    } else {
+      // fallback to using default logger. this does NOT have any session or run specific id/tag in it
+      run_logger = session_logger_;
+      VLOGS(*run_logger, 1) << "Using default logger for run " << run_options.run_tag;
+    }
+
+    return *run_logger;
+  }
+
   void InitLogger(Logging::LoggingManager* logging_manager) {
     // create logger for session, using provided logging manager if possible
     if (logging_manager != nullptr) {
@@ -386,6 +482,10 @@ class InferenceSession::Impl {
   // Immutable state for each op in the model. Shared by all executors.
   SessionState session_state_;
 
+  ModelMetadata model_metadata_;
+  InputDefList input_def_list_;
+  OutputDefList output_def_list_;
+
   // Environment for this session
   // not used now; we'll need it when we introduce threadpool
   // statically allocated pointer, no need to manage its lifetime.
@@ -397,9 +497,9 @@ class InferenceSession::Impl {
   // Number of concurrently running executors
   std::atomic<int> current_num_runs_;
 
-  std::mutex session_mutex_;      // to ensure only one thread can invoke Load/Initialize
-  bool is_model_loaded_ = false;  // GUARDED_BY(session_mutex_)
-  bool is_inited_ = false;        // GUARDED_BY(session_mutex_)
+  mutable std::mutex session_mutex_;  // to ensure only one thread can invoke Load/Initialize
+  bool is_model_loaded_ = false;      // GUARDED_BY(session_mutex_)
+  bool is_inited_ = false;            // GUARDED_BY(session_mutex_)
 
 };  // namespace Lotus
 
@@ -435,6 +535,18 @@ Common::Status InferenceSession::Run(const RunOptions& run_options,
                                      const std::vector<std::string>& output_names,
                                      std::vector<MLValue>* p_fetches) {
   return impl_->Run(run_options, feeds, output_names, p_fetches);
+}
+
+std::pair<Common::Status, const ModelMetadata*> InferenceSession::GetModelMetadata() const {
+  return impl_->GetModelMetadata();
+}
+
+std::pair<Common::Status, const InputDefList*> InferenceSession::GetInputs() const {
+  return impl_->GetInputs();
+}
+
+std::pair<Common::Status, const OutputDefList*> InferenceSession::GetOutputs() const {
+  return impl_->GetOutputs();
 }
 
 int InferenceSession::GetCurrentNumRuns() {
