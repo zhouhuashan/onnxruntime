@@ -55,6 +55,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   } else {
     const std::vector<int64_t> input_dims = x_shape.GetDims();
     kernel_shape.assign(input_dims.begin() + 2, input_dims.end());
+    pads.assign(kernel_shape.size(), 0);
   }
 
   std::vector<int64_t> output_dims = PoolBase::SetOutputSize(x_shape, x_shape[1], &pads);
@@ -133,7 +134,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
               int64_t wend = std::min(wstart + kernel_shape[1], width);
               wstart = std::max(wstart, static_cast<int64_t>(0));
               for (int64_t pd = 0; pd < pooled_depth; ++pd) {
-                int64_t dstart = pd * strides_[2] - pads_[2];
+                int64_t dstart = pd * stride_d() - pads_[2];
                 int64_t dend = std::min(dstart + kernel_shape[2], depth);
                 dstart = std::max(dstart, static_cast<int64_t>(0));
                 const int64_t pool_index =
