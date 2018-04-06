@@ -1,4 +1,5 @@
 #include "core/providers/cpu/reduction/reduction_ops.h"
+#include "core/util/math_cpuonly.h"
 
 namespace Lotus {
 
@@ -16,12 +17,61 @@ REGISTER_KERNEL(KernelDefBuilder("ReduceL2")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 ReduceL2<float>);
 
+REGISTER_KERNEL(KernelDefBuilder("ReduceLogSum")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ReduceLogSum<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("ReduceLogSumExp")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ReduceLogSumExp<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("ReduceMax")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ReduceMax<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("ReduceMean")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ReduceMean<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("ReduceMin")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ReduceMin<float>);
+
 REGISTER_KERNEL(KernelDefBuilder("ReduceProd")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 ReduceProd<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("ReduceSum")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ReduceSum<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("ReduceSumSquare")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ReduceSumSquare<float>);
 
 void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
                                     std::vector<float>& transposedInputData,
@@ -199,6 +249,105 @@ Status ReduceL2<float>::Compute(OpKernelContext* ctx) const {
 }
 
 template <>
+Status ReduceLogSum<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  float* output_data = reduced->MutableData<float>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float log_sum = 0;
+    for (int i = 0; i < blocks; ++i) {
+      log_sum += std::log(transposedInputData[i * block_size + j]);
+    }
+    *(output_data++) = log_sum;
+  }
+  return Status::OK();
+}
+
+template <>
+Status ReduceLogSumExp<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  float* output_data = reduced->MutableData<float>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float max_value = std::numeric_limits<float>::lowest();
+    for (int i = 0; i < blocks; ++i) {
+      max_value = std::max(max_value, transposedInputData[i * block_size + j]);
+    }
+    float scaled_exp_sum = 0;
+    for (int i = 0; i < blocks; ++i) {
+      scaled_exp_sum += std::exp(transposedInputData[i * block_size + j] - max_value);
+    }
+    *(output_data++) = std::log(scaled_exp_sum) + max_value;
+  }
+  return Status::OK();
+}
+
+template <>
+Status ReduceMax<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  float* output_data = reduced->MutableData<float>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float max_value = std::numeric_limits<float>::lowest();
+    for (int i = 0; i < blocks; ++i) {
+      max_value = std::max(max_value, transposedInputData[i * block_size + j]);
+    }
+    *(output_data++) = max_value;
+  }
+  return Status::OK();
+}
+
+template <>
+Status ReduceMean<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  float* output_data = reduced->MutableData<float>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float avg_value = 0;
+    for (int i = 0; i < blocks; ++i) {
+      avg_value += transposedInputData[i * block_size + j] / blocks;
+    }
+    *(output_data++) = avg_value;
+  }
+  return Status::OK();
+}
+
+template <>
+Status ReduceMin<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  float* output_data = reduced->MutableData<float>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float min_value = std::numeric_limits<float>::max();
+    for (int i = 0; i < blocks; ++i) {
+      min_value = std::min(min_value, transposedInputData[i * block_size + j]);
+    }
+    *(output_data++) = min_value;
+  }
+  return Status::OK();
+}
+
+template <>
 Status ReduceProd<float>::Compute(OpKernelContext* ctx) const {
   std::vector<float> transposedInputData;
   int64_t block_size, blocks;
@@ -213,6 +362,39 @@ Status ReduceProd<float>::Compute(OpKernelContext* ctx) const {
       prod *= transposedInputData[i * block_size + j];
     }
     *(output_data++) = prod;
+  }
+  return Status::OK();
+}
+
+template <>
+Status ReduceSum<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  float* output_data = reduced->MutableData<float>();
+
+  EigenVectorMap<float> out_vec(output_data, block_size);
+  out_vec = ConstEigenMatrixMap<float>(&transposedInputData[0], block_size, blocks).rowwise().sum();
+  return Status::OK();
+}
+
+template <>
+Status ReduceSumSquare<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  float* output_data = reduced->MutableData<float>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float square_sum = 0;
+    for (int i = 0; i < blocks; ++i) {
+      square_sum += std::pow(transposedInputData[i * block_size + j], 2);
+    }
+    *(output_data++) = square_sum;
   }
   return Status::OK();
 }
