@@ -56,6 +56,30 @@ struct RunOptions {
   std::string run_tag = "";                // custom tag to tag all the runs
 };
 
+/**
+* Pre-defined and custom metadata about the model.
+*/
+struct ModelMetadata {
+  std::string producer_name;
+  std::string graph_name;
+  std::string domain;
+  std::string description;
+  int64_t version;
+  std::unordered_map<std::string, std::string> custom_metadata_map;
+};
+
+/**
+* Definition of input/outpus. Use this to get names/types/shapes.
+*/
+struct NodeArgDef {
+  std::string name;
+  std::string data_type;
+  std::vector<int64_t> shape;
+};
+
+using InputDefList = std::vector<NodeArgDef>;
+using OutputDefList = std::vector<NodeArgDef>;
+
 using NameMLValMap = std::unordered_map<std::string, MLValue>;
 
 /**
@@ -144,6 +168,24 @@ class InferenceSession {
   */
   Common::Status Run(const NameMLValMap& feeds,
                      std::vector<MLValue>* p_fetches);
+
+  /**
+  * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
+  */
+  std::pair<Common::Status, const ModelMetadata*> GetModelMetadata() const;
+
+  /**
+  * Get all input definitions of the model. This does not include weights. Use this
+  * to get the name/type/shapes of the inputs.
+  * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
+  */
+  std::pair<Common::Status, const InputDefList*> GetInputs() const;
+
+  /**
+  * Get all output definitions of the model. Use this to get the name/type/shapes of the outputs.
+  * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
+  */
+  std::pair<Common::Status, const OutputDefList*> GetOutputs() const;
 
   /**
   * Get current num threads running Run.

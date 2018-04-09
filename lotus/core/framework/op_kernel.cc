@@ -141,6 +141,7 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
 
 Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
                                     const AllocatorInfo& allocator_info,
+                                    const IExecutionProvider* execution_provider,
                                     /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   for (auto i = range.first; i != range.second; ++i) {
@@ -151,7 +152,7 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
       int version = node.Op()->since_version();
       if (start <= version && version <= end &&
         VerifyKernelDef(node, *i->second.kernel_def)) {
-        OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def);
+        OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def, execution_provider);
         op_kernel->reset(i->second.kernel_create_func(kernel_info));
         return Status::OK();
       }

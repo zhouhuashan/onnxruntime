@@ -20,9 +20,18 @@ TEST(MathOpTest, Add_Broadcast_Axis) {
   test.AddAttribute("broadcast", int64_t{1});
 
   std::vector<int64_t> dims{3, 3};
-  test.AddInput<float>("A", dims, {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f});
-  test.AddInput<float>("B", {3}, {3.0f, 2.0f, 1.0f});
-  test.AddOutput<float>("C", dims, {4.0f, 5.0f, 6.0f, 6.0f, 7.0f, 8.0f, 8.0f, 9.0f, 10.0f});
+  test.AddInput<float>("A", dims,
+                       {1.0f, 2.0f, 3.0f,
+                        4.0f, 5.0f, 6.0f,
+                        7.0f, 8.0f, 9.0f});
+  test.AddInput<float>("B", {3},
+                       {3.0f,
+                        2.0f,
+                        1.0f});
+  test.AddOutput<float>("C", dims,
+                        {4.0f, 5.0f, 6.0f,
+                         6.0f, 7.0f, 8.0f,
+                         8.0f, 9.0f, 10.0f});
   test.Run();
 }
 
@@ -32,9 +41,18 @@ TEST(MathOpTest, Add_Broadcast) {
   test.AddAttribute("broadcast", int64_t{1});
 
   std::vector<int64_t> dims{3, 2};
-  test.AddInput<float>("A", dims, {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f});
-  test.AddInput<float>("B", {3}, {1.0f, 2.0f, 3.0f});
-  test.AddOutput<float>("C", dims, {2.0f, 3.0f, 5.0f, 6.0f, 8.0f, 9.0f});
+  test.AddInput<float>("A", dims,
+                       {1.0f, 2.0f,
+                        3.0f, 4.0f,
+                        5.0f, 6.0f});
+  test.AddInput<float>("B", {3},
+                       {1.0f,
+                        2.0f,
+                        3.0f});
+  test.AddOutput<float>("C", dims,
+                        {2.0f, 3.0f,
+                         5.0f, 6.0f,
+                         8.0f, 9.0f});
   test.Run();
 }
 
@@ -204,6 +222,33 @@ TEST(MathOpTest, Xor) {
   test.AddInput<bool>("A", dims, {false, true, false, true});
   test.AddInput<bool>("B", dims, {false, false, true, true});
   test.AddOutput<bool>("C", dims, {false, true, true, false});
+  test.Run();
+}
+
+TEST(MathOpTest, Xor_bcast3v2d) {
+  OpTester test("Xor");
+  test.AddAttribute("broadcast", int64_t{1});
+
+  test.AddInput<bool>("A", {2, 3, 4},
+                      {false, true, false, true,
+                       false, true, false, true,
+                       false, true, false, true,
+
+                       false, true, false, true,
+                       false, true, false, true,
+                       false, true, false, true});
+  test.AddInput<bool>("B", {3, 4},
+                      {false, false, true, true,
+                       false, false, true, true,
+                       false, false, true, true});
+  test.AddOutput<bool>("C", {2, 3, 4},
+                       {false, true, true, false,
+                        false, true, true, false,
+                        false, true, true, false,
+
+                        false, true, true, false,
+                        false, true, true, false,
+                        false, true, true, false});
   test.Run();
 }
 

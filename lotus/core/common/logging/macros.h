@@ -162,11 +162,13 @@ Conditional logging
 #define LOGF_DEFAULT_IF(boolean_expression, severity, format_str, ...) \
   LOGF_DEFAULT_CATEGORY_IF(boolean_expression, severity, Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_IF(boolean_expression, logger, severity, format_str, ...) \
-  LOGF_USER_CATEGORY_IF(boolean_expression, logger, severity, Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+#define LOGF_USER_IF(boolean_expression, logger, severity, format_str, ...)                    \
+  LOGF_USER_CATEGORY_IF(boolean_expression, logger, severity, Lotus::Logging::Category::Lotus, \
+                        format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_DEFAULT_IF(boolean_expression, severity, format_str, ...) \
-  LOGF_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+#define LOGF_USER_DEFAULT_IF(boolean_expression, severity, format_str, ...)                    \
+  LOGF_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, Lotus::Logging::Category::Lotus, \
+                                format_str, ##__VA_ARGS__)
 
 /*
 
@@ -174,17 +176,21 @@ Debug verbose logging of caller provided level.
 Disabled in Release builds.
 Use the _USER variants for VLOG statements involving user data that may need to be filtered.
 */
-#define VLOGS(logger, level) \
-  if (level < Lotus::Logging::max_vlog_level) LOGS_CATEGORY(logger, VERBOSE, "VLOG" #level)
+#define VLOGS(logger, level)                                            \
+  if (Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+  LOGS_CATEGORY(logger, VERBOSE, "VLOG" #level)
 
-#define VLOGS_USER(logger, level) \
-  if (level < Lotus::Logging::max_vlog_level) LOGS_USER_CATEGORY(logger, VERBOSE, "VLOG" #level)
+#define VLOGS_USER(logger, level)                                       \
+  if (Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+  LOGS_USER_CATEGORY(logger, VERBOSE, "VLOG" #level)
 
-#define VLOGF(logger, level, format_str, ...) \
-  if (level < Lotus::Logging::max_vlog_level) LOGF_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
+#define VLOGF(logger, level, format_str, ...)                           \
+  if (Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+  LOGF_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
 
-#define VLOGF_USER(logger, level, format_str, ...) \
-  if (level < Lotus::Logging::max_vlog_level) LOGF_USER_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
+#define VLOGF_USER(logger, level, format_str, ...)                      \
+  if (Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+  LOGF_USER_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
 
 // Default logger variants
 #define VLOGS_DEFAULT(level) \
@@ -198,48 +204,3 @@ Use the _USER variants for VLOG statements involving user data that may need to 
 
 #define VLOGF_USER_DEFAULT(level, format_str, ...) \
   VLOGF_USER(Lotus::Logging::LoggingManager::DefaultLogger(), level, format_str, ##__VA_ARGS__)
-
-/***
-Disabling in favor of LOTUS_THROW and LOTUS_ENFORCE (throws exception, relies on something else to log).
-Leaving here in case we decide we want macros to provide log first, throw second behavior.
-// TODO: Consider alternative.
-// The below *FATAL* macros are more testable in that they throw via LogFatalAndThrow.
-// Alternatively, LoggingManager can throw after sending a Severity::kFatal message
-// as that happens in the context of Capture destructor, leading to std::terminate being
-// called. That behavior is more consistent (using kFatal with any log statement will exit)
-// however possibly harder to debug, especially if the log message with the fatal error
-// hasn't been flushed to the sink when the terminate occurs. Throwing here and catching in a
-// top level handler has cleaner unwind semantics, even if that simply re-throws.
-
-// Log at Severity::Fatal and throw.
-#define FATAL(category, format_str, ...) \
-  throw Lotus::Logging::LoggingManager::LogFatalAndCreateException(category, WHERE_WITH_STACK, format_str, ##__VA_ARGS__)
-
-// If condition is true, log the condition at Severity::Fatal and throw
-#define FATAL_IF(boolean_expression) \
-  if (boolean_expression)            \
-  FATAL(Lotus::Logging::Category::Lotus, #boolean_expression)
-
-* 
-Check macros
-*
-
-// The CHECK* macros are of questionable value, given we log the condition in FATAL_IF anyway.
-// e.g. using CHECK_EQ(a, b) is not that different to FATAL_IF(a != b), and using FATAL_IF
-// everywhere is more consistent and easier for a new developer to know what to do.
-
-#define CHECK_NOTNULL(ptr) \
-  FATAL_IF((ptr) == nullptr)
-
-// kFatal if the check does not pass
-#define CHECK_OP(val1, val2, op) \
-  FATAL_IF(!(val1 op val2))
-#define CHECK(val) CHECK_OP(val, true, ==)
-#define CHECK_EQ(val1, val2) CHECK_OP(val1, val2, ==)
-#define CHECK_NE(val1, val2) CHECK_OP(val1, val2, !=)
-#define CHECK_LE(val1, val2) CHECK_OP(val1, val2, <=)
-#define CHECK_LT(val1, val2) CHECK_OP(val1, val2, <)
-#define CHECK_GE(val1, val2) CHECK_OP(val1, val2, >=)
-#define CHECK_GT(val1, val2) CHECK_OP(val1, val2, >)
-
-*/

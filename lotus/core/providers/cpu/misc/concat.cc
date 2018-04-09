@@ -44,7 +44,7 @@ Status Concat<float>::Compute(OpKernelContext* ctx) const {
   // The output_axis_pitch is the number of elements to add to move to the next split axis in the output
   int64_t output_axis_pitch = 1;
   for (auto i = int64_t(dims.size()); i-- > axis_;)
-    output_axis_pitch *= dims[axis_];
+    output_axis_pitch *= dims[i];
 
   auto& concat_result = *ctx->Output(0, outputShape);
   float* output_base = concat_result.MutableData<float>();
@@ -55,7 +55,7 @@ Status Concat<float>::Compute(OpKernelContext* ctx) const {
     // The input_axis_pitch is the number of elements to add to move to the next split axis in the input
     int64_t input_axis_pitch = 1;
     for (int i = int(data_n.Shape().NumDimensions()); i-- > axis_;)
-      input_axis_pitch *= data_n.Shape()[int(i)];
+      input_axis_pitch *= data_n.Shape()[i];
 
     const float* input = data_n.Data<float>();
     auto input_size = data_n.Shape().Size();

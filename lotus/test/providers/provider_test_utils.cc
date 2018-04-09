@@ -119,9 +119,8 @@ void OpTester::Run() {
   // Setup the op in the node
   AllocatorInfo allocator_info{CPU, Lotus::AllocatorType::kArenaAllocator};
   KernelDef kernel_def;
-  OpKernelInfo info{node, allocator_info, kernel_def};
   unique_ptr<OpKernel> kernel;
-  Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, &kernel);
+  Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, nullptr, &kernel);
   LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
 
   // Hookup the inputs and outputs

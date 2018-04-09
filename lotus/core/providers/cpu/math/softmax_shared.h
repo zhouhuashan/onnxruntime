@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/common/status.h"
+
 namespace Lotus {
 /**
 Calculate Softmax using CPU memory.
@@ -12,13 +14,12 @@ Calculate Softmax using CPU memory.
 @param logarithmic If true, compute LogSoftmax. If false compute Softmax.
 @param rowmax Storage for calculation of maximum in each row. Size must be >= N.
 */
-void SoftmaxCPU(
-    const int N,
-    const int D,
-    const float* Xdata,
-    float* Ydata,
-    float* scale,
-    const float* sum_multiplier,
-    bool logarithmic,
-    float* rowmax);
+Common::Status SoftmaxCPU(const int64_t N,
+                          const int64_t D,
+                          const float* Xdata,
+                          float* Ydata,
+                          float* scale,
+                          const float* sum_multiplier,
+                          bool logarithmic,
+                          float* rowmax);
 }  // namespace Lotus

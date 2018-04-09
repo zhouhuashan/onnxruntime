@@ -41,6 +41,51 @@ class ReduceL2 final : public ReduceKernel {
 };
 
 template <typename T>
+class ReduceLogSum final : public ReduceKernel {
+ public:
+  ReduceLogSum(const OpKernelInfo& info) : ReduceKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class ReduceLogSumExp final : public ReduceKernel {
+ public:
+  ReduceLogSumExp(const OpKernelInfo& info) : ReduceKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class ReduceMax final : public ReduceKernel {
+ public:
+  ReduceMax(const OpKernelInfo& info) : ReduceKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class ReduceMean final : public ReduceKernel {
+ public:
+  ReduceMean(const OpKernelInfo& info) : ReduceKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class ReduceMin final : public ReduceKernel {
+ public:
+  ReduceMin(const OpKernelInfo& info) : ReduceKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
 class ReduceProd final : public ReduceKernel {
  public:
   ReduceProd(const OpKernelInfo& info) : ReduceKernel(info) {
@@ -49,6 +94,23 @@ class ReduceProd final : public ReduceKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
+template <typename T>
+class ReduceSum final : public ReduceKernel {
+ public:
+  ReduceSum(const OpKernelInfo& info) : ReduceKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class ReduceSumSquare final : public ReduceKernel {
+ public:
+  ReduceSumSquare(const OpKernelInfo& info) : ReduceKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
 }  // namespace Lotus
 
 #endif  // !CORE_PROVIDERS_CPU_REDUCTION_OPS_H

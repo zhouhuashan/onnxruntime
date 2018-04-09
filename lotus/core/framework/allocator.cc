@@ -17,14 +17,6 @@ void CPUAllocator::Free(void* p) {
   free(p);
 }
 
-size_t CPUAllocator::MinChunkSize() {
-  LOTUS_NOT_IMPLEMENTED;
-}
-
-size_t CPUAllocator::MaxChunkSize() {
-  LOTUS_NOT_IMPLEMENTED;
-}
-
 const AllocatorInfo& CPUAllocator::Info() const {
   static AllocatorInfo cpuAllocatorInfo(CPU, AllocatorType::kDeviceAllocator);
   return cpuAllocatorInfo;

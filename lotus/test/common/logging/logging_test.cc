@@ -32,7 +32,7 @@ class LoggingTestsFixture : public ::testing::Test {
 
     default_logging_manager_ = std::make_unique<LoggingManager>(
         std::unique_ptr<ISink>{new CLogSink{}}, Severity::kWARNING, filter_user_data,
-        InstanceType::Default, &default_logger_id);
+        InstanceType::Default, &default_logger_id, /*default_max_vlog_level*/ 5);
   }
 
   static void TearDownTestCase() {
@@ -55,7 +55,7 @@ TEST_F(LoggingTestsFixture, TestWhereMacro) {
   const Severity log_level = Severity::kERROR;
 
   const std::string file = __FILE__;
-  const std::string function = __PRETTY_FUNCTION__;
+  const std::string function = __FUNCTION__;
   int log_line = 0;
 
   std::cout << function << std::endl;
@@ -67,7 +67,7 @@ TEST_F(LoggingTestsFixture, TestWhereMacro) {
                                           AllOf(Field(&CodeLocation::line_num, Eq(std::ref(log_line))),
                                                 Field(&CodeLocation::file_and_path, HasSubstr("lotus")),            // path
                                                 Field(&CodeLocation::file_and_path, HasSubstr("logging_test.cc")),  // filename
-                                                Field(&CodeLocation::function, HasSubstr("TestWhereMacro"))))))
+                                                Field(&CodeLocation::function, HasSubstr(function))))))
       .WillRepeatedly(PrintArgs());
 
   LoggingManager manager{std::unique_ptr<ISink>(sinkPtr), min_log_level, false, InstanceType::Temporal};
@@ -81,8 +81,8 @@ TEST_F(LoggingTestsFixture, TestWhereMacro) {
 /// <summary>
 /// Tests that the logging manager filters based on severity and user data correctly.
 /// </summary>
-TEST_F(LoggingTestsFixture, TestFiltering) {
-  const std::string logid{"TestFiltering"};
+TEST_F(LoggingTestsFixture, TestDefaultFiltering) {
+  const std::string logid{"TestDefaultFiltering"};
   const Severity minLogLevel = Severity::kWARNING;
   const bool filter_user_data = true;
 
@@ -106,6 +106,37 @@ TEST_F(LoggingTestsFixture, TestFiltering) {
   LOGS_USER_DEFAULT(ERROR) << "Filtered user data";
   LOGF_DEFAULT(VERBOSE, "Filtered by severity");
   LOGF_USER_DEFAULT(WARNING, "Filtered user data");
+}
+
+/// <summary>
+/// Tests that the logger filter overrides work correctly.
+/// </summary>
+TEST_F(LoggingTestsFixture, TestLoggerFiltering) {
+  const std::string logid{"TestLoggerFiltering"};
+  const Severity default_min_log_level = Severity::kWARNING;
+  const bool default_filter_user_data = true;
+  const int default_max_vlog_level = -1;
+
+  MockSink *sinkPtr = new MockSink();
+
+  int num_expected_calls = 2;
+#ifdef _DEBUG
+  ++num_expected_calls;  // VLOG output enabled in DEBUG
+#endif
+  EXPECT_CALL(*sinkPtr, SendImpl(testing::_, HasSubstr(logid), testing::_))  // Property(&Capture::Severity, Ge(minLogLevel))))
+      .Times(num_expected_calls)
+      .WillRepeatedly(PrintArgs());
+
+  LoggingManager manager{std::unique_ptr<ISink>(sinkPtr), Severity::kERROR, default_filter_user_data,
+                         InstanceType::Temporal, nullptr, default_max_vlog_level};
+
+  bool filter_user_data = false;
+  int max_vlog_level = 2;
+  auto logger = manager.CreateLogger(logid, Severity::kVERBOSE, filter_user_data, max_vlog_level);
+
+  LOGS(*logger, VERBOSE) << "VERBOSE enabled in this logger";
+  LOGS_USER(*logger, ERROR) << "USER data not filtered in this logger";
+  VLOGS(*logger, 2) << "VLOG enabled up to " << max_vlog_level;
 }
 
 /// <summary>
@@ -177,74 +208,29 @@ TEST_F(LoggingTestsFixture, TestVLog) {
       .Times(0);
 #endif
 
-  LoggingManager manager{std::unique_ptr<ISink>(sinkPtr), Severity::kVERBOSE, false, InstanceType::Temporal};
+  const bool filter_user_data = false;
+  LoggingManager manager{std::unique_ptr<ISink>(sinkPtr), Severity::kVERBOSE, filter_user_data, InstanceType::Temporal};
 
-  auto logger = manager.CreateLogger(logid);
+  int max_vlog_level = 2;
+  auto logger = manager.CreateLogger(logid, Severity::kVERBOSE, filter_user_data, max_vlog_level);
 
-  // test non-default
-  VLOGS(*logger, 1) << "Stream";
-  VLOGF(*logger, 2, "Printf %d", 1);
+  // test local logger
+  VLOGS(*logger, max_vlog_level) << "Stream";          // logged
+  VLOGF(*logger, max_vlog_level + 1, "Printf %d", 1);  // ignored due to level
 
-  VLOGS_USER(*logger, Logging::max_vlog_level) << "User data";    // ignored
-  VLOGF_USER(*logger, Logging::max_vlog_level, "User Id %d", 1);  // ignored
+  VLOGS_USER(*logger, max_vlog_level + 1) << "User data";  // ignored due to level
+  VLOGF_USER(*logger, 0, "User Id %d", 1);                 // logged
 
-  // test default
-  VLOGS_DEFAULT(1) << "Stream";
-  VLOGF_DEFAULT(2, "Printf %d", 1);
+  // test default logger
+  VLOGS_DEFAULT(0) << "Stream";       // logged
+  VLOGF_DEFAULT(10, "Printf %d", 1);  // ignored due to level
 
-  VLOGS_USER_DEFAULT(Logging::max_vlog_level) << "User data";    // ignored
-  VLOGF_USER_DEFAULT(Logging::max_vlog_level, "User Id %d", 1);  // ignored
+  VLOGS_USER_DEFAULT(0) << "User data";    // ignored as USER data
+  VLOGF_USER_DEFAULT(0, "User Id %d", 1);  // ignored as USER data
 
 #ifdef _DEBUG
-  // test we can set the max level
-  max_vlog_level = INT_MIN;
-  VLOGS(*logger, 0) << "Should be ignored.";
+  // test we can globally disable
+  Logging::vlog_enabled = false;
+  VLOGS(*logger, 0) << "Should be ignored.";  // ignored as disabled
 #endif
 }
-
-/*
-/// <summary>
-/// Tests the *kFatal* macros.
-/// </summary>
-TEST_F(LoggingTestsFixture, TestFatalMacros) {
-  const std::string logid{"TestFatalMacros"};
-
-  MockSink *sinkPtr = new MockSink();
-
-  EXPECT_CALL(*sinkPtr, SendImpl(testing::_, testing::_, testing::_))
-      .Times(2)
-      .WillRepeatedly(PrintArgs());
-
-  LoggingManager manager{std::unique_ptr<ISink>(sinkPtr), Severity::kVERBOSE, false, logid};
-
-  EXPECT_THROW(FATAL("Category:Test", "Severity::Fatal should throw"), std::runtime_error);
-  EXPECT_THROW(FATAL_IF(logid.length() == 15), std::runtime_error);
-}
-
-TEST_F(LoggingTestsFixture, TestNotNull) {
-  const std::string logid{"NotNull"};
-
-  MockSink *sinkPtr = new MockSink();
-
-  EXPECT_CALL(*sinkPtr, SendImpl(testing::_, testing::_, testing::_))
-      .Times(5)  // 5 failed checks, 2 succeed so no logging
-      .WillRepeatedly(PrintArgs());
-
-  LoggingManager manager{std::unique_ptr<ISink>(sinkPtr), Severity::kVERBOSE, false, logid};
-
-  // test smart and raw pointers
-  std::shared_ptr<std::string> strptr1;
-  std::unique_ptr<std::string> strptr2;
-  std::string *strptr3 = nullptr;
-
-  EXPECT_THROW(CHECK_NOTNULL(strptr1), std::runtime_error);
-  EXPECT_THROW(CHECK_NOTNULL(strptr2), std::runtime_error);
-  EXPECT_THROW(CHECK_NOTNULL(strptr3), std::runtime_error);
-
-  // validate some CHECK_OP based tests
-  EXPECT_THROW(CHECK_EQ(1, 2), std::runtime_error);
-  EXPECT_THROW(CHECK_GE(1, 2), std::runtime_error);
-  EXPECT_NO_THROW(CHECK_NE(1, 2));
-  EXPECT_NO_THROW(CHECK_LT(1, 2));
-}
-*/

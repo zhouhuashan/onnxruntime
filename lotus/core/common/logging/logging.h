@@ -52,9 +52,9 @@ namespace Logging {
 typedef std::chrono::time_point<std::chrono::system_clock> Timestamp;
 
 #ifdef _DEBUG
-static int max_vlog_level = 3;  // Set directly based on your needs.
+static bool vlog_enabled = true;  // Set directly based on your needs.
 #else
-static const int max_vlog_level = INT_MIN;  // no VLOG output
+static const bool vlog_enabled = false;  // no VLOG output
 #endif
 
 enum class DataType {
@@ -89,22 +89,38 @@ class LoggingManager final {
   /**
   Initializes a new instance of the LoggingManager class.
   @param sink The sink to write to. Use CompositeSink if you need to write to multiple places.
-  @param min_severity The minimum severity. Attempts to log messages with lower severity will be ignored.
-  @param filter_user_data If set to true ignore messages with DataType::User.
+  @param default_min_severity The default minimum severity. Messages with lower severity will be ignored unless 
+                              overridden in CreateLogger.
+  @param default_filter_user_data If set to true ignore messages with DataType::USER unless overridden in CreateLogger.
   @param instance_type If InstanceType::Default, this is the default instance of the LoggingManager 
-  and is expected to exist for the lifetime of the program. 
-  It creates and owns the default logger that calls to the static DefaultLogger method return.
+                       and is expected to exist for the lifetime of the program. 
+                       It creates and owns the default logger that calls to the static DefaultLogger method return.
   @param default_logger_id Logger Id to use for the default logger. nullptr/ignored if instance_type == Temporal.
+  @param default_max_vlog_level Default maximum level for VLOG messages to be created unless overridden in CreateLogger. 
+                                Requires a severity of kVERBOSE for VLOG messages to be logged.
   */
-  LoggingManager(std::unique_ptr<ISink> sink, Severity min_severity, bool filter_user_data,
-                 const InstanceType instance_type, const std::string *default_logger_id = nullptr);
+  LoggingManager(std::unique_ptr<ISink> sink, Severity default_min_severity, bool default_filter_user_data,
+                 const InstanceType instance_type,
+                 const std::string *default_logger_id = nullptr,
+                 int default_max_vlog_level = -1);
 
   /**
-  Creates a new logger instance which will use the provided logger_id. 
+  Creates a new logger instance which will use the provided logger_id and default severity and vlog levels.
   @param logger_id The log identifier.
   @returns A new Logger instance that the caller owns.
   */
   std::unique_ptr<Logger> CreateLogger(std::string logger_id);
+
+  /**
+  Creates a new logger instance which will use the provided logger_id, severity and vlog levels.
+  @param logger_id The log identifier.
+  @param min_severity The minimum severity. Requests to create messages with lower severity will be ignored.
+  @param filter_user_data If set to true ignore messages with DataType::USER.
+  @param max_vlog_level Maximum level for VLOG messages to be created.
+  @returns A new Logger instance that the caller owns.
+  */
+  std::unique_ptr<Logger> CreateLogger(std::string logger_id,
+                                       Severity min_severity, bool filter_user_data, int max_vlog_level = -1);
 
   /**
   Gets the default logger instance if set. Throws if no default logger is currently registered.
@@ -128,14 +144,6 @@ class LoggingManager final {
                                                    const char *format_str, ...);
 
   /**
-  Check if output is enabled for the provided LogSeverity and DataType values.
-  @param severity The severity.
-  @param data_type Type of the data.
-  @returns True if a message with these values will be logged.
-  */
-  bool OutputIsEnabled(Severity severity, DataType data_type) const noexcept;
-
-  /**
   Logs the message using the provided logger id.
   @param logger_id The log identifier.
   @param message The log message.
@@ -151,8 +159,9 @@ class LoggingManager final {
   Timestamp GetTimestamp() const noexcept;
   void CreateDefaultLogger(const std::string &logger_id);
 
-  const Severity min_severity_;
-  const bool filter_user_data_;
+  const Severity default_min_severity_;
+  const bool default_filter_user_data_;
+  const int default_max_vlog_level_;
   bool owns_default_logger_;
 
   std::unique_ptr<ISink> sink_;
@@ -174,10 +183,19 @@ class Logger {
   /**
   Initializes a new instance of the Logger class.
   @param loggingManager The logging manager.
-  @param id The identifier for messages coming from this Logger
+  @param id The identifier for messages coming from this Logger.
+  @param severity Minimum severity for messages to be created and logged.
+  @param filter_user_data Should USER data be filtered from output.
+  @param vlog_level Minimum level for VLOG messages to be created. Note that a severity of kVERBOSE must be provided
+                    for VLOG messages to be logged.
   */
-  Logger(const LoggingManager &loggingManager, std::string id)
-      : logging_manager_{&loggingManager}, id_{id} {
+  Logger(const LoggingManager &loggingManager, std::string id,
+         Severity severity, bool filter_user_data, int vlog_level)
+      : logging_manager_{&loggingManager},
+        id_{id},
+        min_severity_{severity},
+        filter_user_data_{filter_user_data},
+        max_vlog_level_{severity > Severity::kVERBOSE ? -1 : vlog_level} {  // disable unless logging VLOG messages
   }
 
   /**
@@ -187,7 +205,14 @@ class Logger {
   @returns True if a message with these values will be logged.
   */
   bool OutputIsEnabled(Severity severity, DataType data_type) const noexcept {
-    return logging_manager_->OutputIsEnabled(severity, data_type);
+    return (severity >= min_severity_ && (data_type != DataType::USER || !filter_user_data_));
+  }
+
+  /**
+  Return the maximum VLOG level allowed.
+  */
+  const int VLOGMaxLevel() const noexcept {
+    return max_vlog_level_;
   }
 
   /**
@@ -201,6 +226,9 @@ class Logger {
  private:
   const LoggingManager *logging_manager_;
   const std::string id_;
+  const Severity min_severity_;
+  const bool filter_user_data_;
+  const int max_vlog_level_;
 };
 
 inline const Logger &LoggingManager::DefaultLogger() {
@@ -215,9 +243,6 @@ inline const Logger &LoggingManager::DefaultLogger() {
   return *default_logger;
 }
 
-inline bool LoggingManager::OutputIsEnabled(Severity severity, DataType data_type) const noexcept {
-  return (severity >= min_severity_ && (data_type != DataType::USER || !filter_user_data_));
-}
 
 inline Timestamp LoggingManager::GetTimestamp() const noexcept {
   using namespace std::chrono;

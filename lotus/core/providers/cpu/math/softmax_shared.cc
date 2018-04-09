@@ -18,34 +18,57 @@
 * limitations under the License.
 */
 
+// disable noisy warning about use of std::copy_n by gsl::copy. gsl_algorithm does the same thing
+// but that's too late for the disable to work
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+#include <algorithm>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #include "core/providers/cpu/math/softmax_shared.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
+#include "gsl/gsl_algorithm"
+#include "gsl/gsl_util"
+
 namespace Lotus {
 
-void SoftmaxCPU(
-    const int N,
-    const int D,
-    const float* Xdata,
-    float* Ydata,
-    float* scale,
-    const float* sum_multiplier,
-    bool logarithmic,
-    float* rowmax) {
-  Math::RowwiseMax<float, CPUMathUtil>(N, D, Xdata, rowmax, nullptr);
+Common::Status SoftmaxCPU(const int64_t N,
+                          const int64_t D,
+                          const float* Xdata,
+                          float* Ydata,
+                          float* scale,
+                          const float* sum_multiplier,
+                          bool logarithmic,
+                          float* rowmax) {
+  // the Math functions SoftmaxCPU uses only support int32_t as input, so enforce that
+  if (N * D > INT32_MAX || N > INT32_MAX || D > INT32_MAX) {
+    std::ostringstream ss;
+    ss << "SoftmaxCPU inputs N, D and N * D must be < " << INT32_MAX << ". N=" << N << ", D=" << D;
+    std::string msg = ss.str();
+
+    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, msg);
+  }
+
+  const int n = gsl::narrow_cast<int>(N);
+  const int d = gsl::narrow_cast<int>(D);
+  const int nd = gsl::narrow_cast<int>(N * D);
+
+  Math::RowwiseMax<float, CPUMathUtil>(n, d, Xdata, rowmax, nullptr);
 
   // Put the intermediate result X - max(X) into Y by first copying X to Y, and then subtracting max from each entry
-  // VC++ generates warning C4996 for use of std::copy with raw pointers, and I couldn't find a way to turn it off for just this line,
-  // so use memcpy instead of disabling the warning everywhere.
-  // std::copy(Xdata, Xdata + (N * D), Ydata);
-  memcpy(Ydata, Xdata, (N * D * sizeof(*Xdata)));
+  gsl::copy(gsl::make_span(Xdata, nd), gsl::make_span(Ydata, nd));
 
-  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, N, D, 1, -1, rowmax, sum_multiplier, 1, Ydata, nullptr);
+  Math::Gemm<float, CPUMathUtil>(CblasNoTrans, CblasNoTrans, n, d, 1, -1, rowmax, sum_multiplier, 1, Ydata, nullptr);
 
   // Exponentiation
-  Math::Exp<float, CPUMathUtil>(N * D, Ydata, Ydata, nullptr);
-  Math::Gemv<float, CPUMathUtil>(CblasNoTrans, N, D, 1, Ydata, sum_multiplier, 0, scale, nullptr);
+  Math::Exp<float, CPUMathUtil>(nd, Ydata, Ydata, nullptr);
+  Math::Gemv<float, CPUMathUtil>(CblasNoTrans, n, d, 1, Ydata, sum_multiplier, 0, scale, nullptr);
 
   // Do division
   if (!logarithmic) {
@@ -61,5 +84,7 @@ void SoftmaxCPU(
       }
     }
   }
+
+  return Status::OK();
 }
 }  // namespace Lotus

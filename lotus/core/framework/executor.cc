@@ -65,7 +65,7 @@ class SequentialExecutor : public Executor {
       // They throw exceptions instead. We should change the compute
       // method to return a status code.
       VLOGS(run_logger_, 1) << "Computing kernel: " << p_op_kernel->Node().Name();
-      p_op_kernel->Compute(&op_kernel_context);
+      LOTUS_RETURN_IF_ERROR(p_op_kernel->Compute(&op_kernel_context));
 
       // free ml-values corresponding to this node
       VLOGS(run_logger_, 1) << "Releasing node ML values after computing kernel: " << p_op_kernel->Node().Name();

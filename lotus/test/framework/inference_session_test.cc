@@ -14,6 +14,7 @@
 #include "core/graph/op.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/providers/cpu/math/element_wise_ops.h"
+#include "core/framework/tensorprotoutils.h"
 
 #include "test/capturing_sink.h"
 #include "test/test_utils.h"
@@ -25,6 +26,7 @@ using namespace Lotus::Logging;
 
 namespace Lotus {
 namespace Test {
+static bool Compare(const vector<const LotusIR::NodeArg*>& f_arg, const vector<NodeArgDef>& s_arg);
 static const std::string MODEL_URI = "testdata/mul_1.pb";
 //static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx"; // TODO enable this after we've weights?
 
@@ -103,6 +105,91 @@ TEST(InferenceSessionTests, NoTimeout) {
   RunOptions run_options;
   run_options.run_tag = "one session/one tag";
   RunModel(session_object, run_options);
+}
+
+static bool Compare(const vector<const LotusIR::NodeArg*>& f_arg, const vector<NodeArgDef>& s_arg) {
+  if (f_arg.size() != s_arg.size()) {
+    cout << "Sizes differ: f_arg size: " << f_arg.size() << " s_arg size: " << s_arg.size() << endl;
+    return false;
+  }
+
+  for (auto i = 0; i < f_arg.size(); ++i) {
+    const LotusIR::NodeArg* x = f_arg[i];
+    const NodeArgDef& y = s_arg[i];
+    vector<int64_t> x_shape = Utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
+    if (x->Name() == y.name && x_shape == y.shape && *x->Type() == y.data_type) {
+      continue;
+    } else {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+TEST(InferenceSessionTests, ModelMetadata) {
+  ExecutionProviderInfo epi;
+  ProviderOption po{"CPUExecutionProvider", epi};
+  SessionOptions so(vector<ProviderOption>{po});
+
+  so.session_logid = "InferenceSessionTests.ModelMetadata";
+
+  InferenceSession session_object{so, &DefaultLoggingManager()};
+  string model_uri = "testdata/squeezenet/model.onnx";
+  EXPECT_TRUE(session_object.Load(model_uri).IsOK());
+
+  std::shared_ptr<LotusIR::Model> p_model;
+  Status st = LotusIR::Model::Load(model_uri, &p_model);
+  EXPECT_TRUE(st.IsOK());
+  const LotusIR::Graph* p_graph = p_model->MainGraph();
+  EXPECT_TRUE(p_graph != nullptr);
+
+  // 1. first test the model meta
+  {
+    auto retval = session_object.GetModelMetadata();
+    EXPECT_TRUE(retval.first.IsOK());
+    const ModelMetadata* m = retval.second;
+    EXPECT_TRUE(m->custom_metadata_map == p_model->MetaData() &&
+                m->description == p_model->DocString() &&
+                m->domain == p_model->Domain() &&
+                m->graph_name == p_graph->Name() &&
+                m->producer_name == p_model->ProducerName() &&
+                m->version == p_model->ModelVersion());
+  }
+
+  {
+    // 2. test inputs
+    auto inputs = p_graph->GetInputs();
+    auto weights = p_graph->GetAllInitializedTensors();
+
+    // skip the weights
+    vector<const LotusIR::NodeArg*> inputs_no_weights;
+    for (auto& elem : inputs) {
+      if (weights.find(elem->Name()) != weights.end()) {
+        continue;
+      } else {
+        inputs_no_weights.push_back(elem);
+      }
+    }
+
+    auto retval = session_object.GetInputs();
+    cout << "weights size: " << weights.size()
+         << " inputs.size(): " << inputs.size()
+         << " from session: " << retval.second->size() << endl;
+    EXPECT_TRUE(retval.first.IsOK());
+    EXPECT_TRUE(Compare(inputs_no_weights, *retval.second));
+  }
+
+  // 3. test outputs
+  {
+    auto retval = session_object.GetOutputs();
+    EXPECT_TRUE(retval.first.IsOK());
+
+    auto outputs = p_graph->GetOutputs();
+    retval = session_object.GetOutputs();
+    EXPECT_TRUE(retval.first.IsOK());
+    EXPECT_TRUE(Compare(outputs, *retval.second));
+  }
 }
 
 TEST(InferenceSessionTests, CheckRunLogger) {

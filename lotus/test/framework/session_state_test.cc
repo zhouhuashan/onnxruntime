@@ -50,7 +50,7 @@ TEST(SessionStateTest, AddGetKernelTest) {
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
   KernelDef kernel_def;
-  OpKernelInfo p_info(*p_node, allocator_info, kernel_def);
+  OpKernelInfo p_info(*p_node, allocator_info, kernel_def, nullptr);
   unique_ptr<TestOpKernel> p_kernel;
   p_kernel.reset(new TestOpKernel(p_info));
   size_t orig_num_outputs = p_kernel->Node().OutputDefs().size();

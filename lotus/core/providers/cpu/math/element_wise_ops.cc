@@ -220,14 +220,15 @@ void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int a
   else
     VerifyShapeSubsetAxis(input1.Shape(), input2.Shape(), axis);
 
-  // If the input tensor has dimensions like [2][3][4][5][6] and the second input has dimensions like [4][5]
-  // Then we want to access the second as though the first two and last index is ignored, like this: [x][x][4][5][x] ('x' means value has no effect)
+  // If the input tensor has dimensions like [2][3][4][5][6] and the second input has dimensions like [3][4]
+  // Then we want to access the second as though the first one and last two indices are ignored, like this: [x][3][4][x][x] ('x' means value has no effect)
   // Since we're iterating sequentially through both tensors, we can do this by incrementing the index into
-  // the second tensor every '2*3' elements (thus ignoring the first two dimensions),
-  // and resetting the index every '2*3*4*5' elements (thus ignoring the last dimension)
+  // the second tensor every '5*6' elements (thus ignoring the last two dimensions),
+  // and resetting the index every '3*4*5*6' elements (thus ignoring the first dimension)
 
+  axis += int(input2.Shape().NumDimensions());  // Since we start from the last dimension, make axis based on the last index vs first
   int64_t incrementPitch = 1;
-  for (int i = int(input1.Shape().NumDimensions()); --i > axis;)
+  for (int i = int(input1.Shape().NumDimensions()); --i >= axis;)
     incrementPitch *= input1.Shape()[i];
 
   int64_t resetPitch = input2.Shape().Size();

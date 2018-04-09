@@ -5,10 +5,20 @@
 namespace Lotus {
 namespace Utils {
 std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tensor_proto) {
-  auto dims = tensor_proto.dims();
+  const auto& dims = tensor_proto.dims();
   std::vector<int64_t> tensor_shape_vec(dims.size());
   for (int i = 0; i < dims.size(); ++i) {
     tensor_shape_vec[i] = dims[i];
+  }
+
+  return tensor_shape_vec;
+}
+
+std::vector<int64_t> GetTensorShapeFromTensorShapeProto(const onnx::TensorShapeProto& tensor_shape_proto) {
+  const auto& dims = tensor_shape_proto.dim();
+  std::vector<int64_t> tensor_shape_vec(dims.size());
+  for (int i = 0; i < dims.size(); ++i) {
+    tensor_shape_vec[i] = dims[i].dim_value();
   }
 
   return tensor_shape_vec;
@@ -23,12 +33,12 @@ static Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_p
   size_t size_to_allocate = sizeof(T) * tensor_shape.Size();
   T* p_data = static_cast<T*>(alloc.Alloc(size_to_allocate));
   // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));  
+  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
-	  tensor_shape,
-	  static_cast<void*>(p_data),
-	  alloc.Info(),
-	  &alloc));
+                             tensor_shape,
+                             static_cast<void*>(p_data),
+                             alloc.Info(),
+                             &alloc));
 
   return Common::Status::OK();
 }

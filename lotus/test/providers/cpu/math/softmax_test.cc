@@ -1,3 +1,4 @@
+#include "core/providers/cpu/math/softmax_shared.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
@@ -154,5 +155,46 @@ TEST(SoftmaxOperator, InvalidAxis) {
   }
 }
 
+TEST(SoftmaxOperator, TestInputTooLarge) {
+  float *ignored = nullptr;
+
+  // N > INT32_MAX
+  int64_t N = int64_t(INT32_MAX) + 1;
+  int64_t D = 1;
+  auto status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
+  EXPECT_EQ(status.Code(), StatusCode::INVALID_ARGUMENT);
+
+  // D > INT32_MAX
+  N = 1;
+  D = int64_t(INT32_MAX) + 1;
+  status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
+  EXPECT_EQ(status.Code(), StatusCode::INVALID_ARGUMENT);
+
+  // N * D > INT32_MAX
+  N = int64_t(INT32_MAX) / 2;
+  D = 3;
+  status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
+  EXPECT_EQ(status.Code(), StatusCode::INVALID_ARGUMENT);
+
+  /*
+    Common::Status SoftmaxCPU(const int64_t N,
+                              const int64_t D,
+                              const float* Xdata,
+                              float* Ydata,
+                              float* scale,
+                              const float* sum_multiplier,
+                              bool logarithmic,
+                              float* rowmax)
+    {
+        // the Math functions SoftmaxCPU uses only support int32_t as input, so enforce that
+        if (N * D > INT32_MAX || N > INT32_MAX || D > INT32_MAX)
+        {
+            std::ostringstream ss;
+            ss << "SoftmaxCPU inputs N, D and N * D must be < " << INT32_MAX << ". N=" << N << ", D=" << D;
+            std::string msg = ss.str();
+
+            return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, msg);
+        }*/
+}
 }  // namespace Test
 }  // namespace Lotus

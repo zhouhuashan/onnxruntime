@@ -20,23 +20,19 @@ class PoolBase : public OpKernel {
       LOTUS_ENFORCE(info.GetAttr<std::string>("auto_pad", &auto_padding).IsOK());
       auto_pad_ = StringToAutoPadType(auto_padding);
 
-      LOTUS_ENFORCE(info.GetAttrs<int64_t>("pads", pads_).IsOK());
-      LOTUS_ENFORCE(info.GetAttrs<int64_t>("strides", strides_).IsOK());
+      info.GetAttrs<int64_t>("pads", pads_);
+
+      info.GetAttrs<int64_t>("strides", strides_);
+
+      //default values
+      if (pads_.empty()) {
+        pads_.resize(kernel_shape_.size() * 2, 0);
+      }
+      if (strides_.empty()) {
+        strides_.resize(kernel_shape_.size(), 1);
+      }
+
       LOTUS_ENFORCE(strides_.size() == kernel_shape_.size());
-    }
-
-    // Fill default values.
-    //TODO: remove it when LotusIR populates default values.
-    if (kernel_shape_.size() == 0) {
-      kernel_shape_.assign({0, 0});
-    }
-
-    if (strides_.size() == 0) {
-      strides_.resize(kernel_shape_.size(), 1);
-    }
-
-    if (pads_.size() == 0) {
-      pads_.resize(kernel_shape_.size() * 2, 0);
     }
   }
 
@@ -122,11 +118,15 @@ class PoolBase : public OpKernel {
   AutoPadType auto_pad_;
 
   inline int64_t stride_h() const {
-    return strides_[0];
+    return global_pooling_ ? 1 : strides_[0];
   }
 
   inline int64_t stride_w() const {
-    return strides_[1];
+    return global_pooling_ ? 1 : strides_[1];
+  }
+
+  inline int64_t stride_d() const {
+    return global_pooling_ ? 1 : strides_[2];
   }
 };
 

@@ -1,3 +1,4 @@
+#include "core/framework/allocatormgr.h"
 #include "core/framework/inference_session.h"
 #include "gtest/gtest.h"
 

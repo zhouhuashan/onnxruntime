@@ -85,6 +85,7 @@ class PlannerImpl {
 
   // Find if there exists some input tensor that we can use in-place for output_arg
   bool FindReusableInput(const LotusIR::Node& node, int output_arg_num, MLValueIndex* reusable_input) {
+    auto p_output_arg = node.OutputDefs()[output_arg_num];
     auto p_opkernel = p_session_state_->GetKernel(node.Index());
     if (nullptr == p_opkernel) return false;
     const KernelDef& kernel_def = p_opkernel->KernelDef();
@@ -105,9 +106,11 @@ class PlannerImpl {
         auto input_arg_index = index(p_input_arg->Name());
         auto original = Buffer(input_arg_index);
         if (1 == UseCount(original)) {
-          // we can reuse this input since it is its last use and permitted for in-place update
-          *reusable_input = input_arg_index;  // or original; both should be okay
-          return true;
+          if (SameSize(*p_input_arg, *p_output_arg)) {
+            // we can reuse this input since it is its last use and permitted for in-place update
+            *reusable_input = input_arg_index;  // or original; both should be okay
+            return true;
+          }
         }
       }
     }
@@ -164,6 +167,15 @@ class PlannerImpl {
       return SameElementSize(ptype1, ptype2) && SameShape(shape1, shape2);
     }
     */
+  }
+
+  bool SameSize(const LotusIR::NodeArg& arg1, const LotusIR::NodeArg& arg2) {
+    if ((!arg1.Exists()) || (!arg2.Exists())) return false;
+    auto p_shape1 = arg1.Shape();
+    auto p_shape2 = arg2.Shape();
+    // If the shapes are unknown, we conservatively assume they may be of different size.
+    if ((nullptr == p_shape1) || (nullptr == p_shape2)) return false;
+    return SameSize(*p_shape1, arg1.Type(), *p_shape2, arg2.Type());
   }
 
   // Find if freelist contains a buffer of the same size as output_arg
@@ -325,7 +337,7 @@ class PlannerImpl {
     // TODO: unclear why we should go through a string-representation of type
     auto ptype = nodearg.Type();
     auto& type_proto = onnx::Utils::DataTypeUtils::ToTypeProto(ptype);
-    return type_proto.has_tensor_type();
+    return !type_proto.has_tensor_type();
   }
 
  public:

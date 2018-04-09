@@ -6,7 +6,7 @@
 namespace Lotus {
 class DummyCPUTransformer : public LotusIR::IGraphTransformer {
  public:
-  virtual Status Apply(/*IN/OUT*/ LotusIR::Graph& graph, /*OUT*/ bool& modified) override {
+  virtual Status Apply(/*IN/OUT*/ LotusIR::Graph& graph, /*OUT*/ bool& modified) const override {
     auto num_nodes = graph.NumberOfNodes();
     for (int i = 0; i < num_nodes; i++) {
       if (graph.IsSourceNode(i) || graph.IsSinkNode(i))
@@ -29,20 +29,21 @@ class CPUExecutionProvider : public IExecutionProvider {
     UNUSED_PARAMETER(info);
   }
 
-  virtual LotusIR::IGraphTransformer& GetTransformer() override {
+  virtual const LotusIR::IGraphTransformer& GetTransformer() const override {
     return dummy_transformer_;
   }
 
-  virtual IArenaAllocator& GetTempSpaceAllocator() const override {
+  virtual IArenaAllocator& GetTempSpaceAllocator() override {
     auto& alloc_mgr = AllocatorManager::Instance();
     return alloc_mgr.GetArena(CPU);
   }
 
-  virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) override {
+  virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
     UNUSED_PARAMETER(node);
     UNUSED_PARAMETER(context);
-    //LOTUS_NOT_IMPLEMENTED;
-    return Common::Status::OK();
+    return Common::Status(LOTUS,
+                          FAIL,
+                          "CPU execution provider should not be delegated to run a node with op_type:(" + node.OpType() + ").");
   }
 
   virtual Status CopyTensor(const Tensor& src, Tensor& dst) override {
