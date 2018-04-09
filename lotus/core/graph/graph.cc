@@ -1047,14 +1047,6 @@ Status Graph::VerifyNodeAndOpMatch(
       input_arg_count.push_back(arg_count_left);
     }
 
-    // Verify node outputs have same size with operator definition.
-    if (op->outputs().size() != node->OutputDefs().size()) {
-      Status status(LOTUS, FAIL,
-                    "Error: node (" + node_name + ")'s number of outputs does not match its operator (" +
-                        op_type + ") specification.");
-      return status;
-    }
-
     NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, op, output_args)));
 
     // Attribute verification and fill node attribute with
@@ -1088,6 +1080,17 @@ Status Graph::VerifyNodeAndOpMatch(
           return status;
         }
       }
+    }
+
+    // Verify node with operator definition.
+    NodeProto node_proto;
+    node->ToProto(node_proto);
+    try {
+      node->Op()->Verify(node_proto);
+    } catch (const std::exception& ex) {
+      std::ostringstream errmsg;
+      errmsg << "Exception throw while verifying node with schema with message: " << ex.what();
+      return Status(LOTUS, FAIL, errmsg.str());
     }
   }
 
