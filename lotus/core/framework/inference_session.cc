@@ -244,7 +244,11 @@ class InferenceSession::Impl {
   static void GetNodeArgDef(const LotusIR::NodeArg& arg, NodeArgDef& nf) {
     nf.name = arg.Name();
     nf.data_type = *arg.Type();
-    nf.shape = Utils::GetTensorShapeFromTensorShapeProto(*arg.Shape());
+    nf.shape.clear();
+    auto shape = arg.Shape();
+    if (nullptr != shape) {
+      nf.shape = Utils::GetTensorShapeFromTensorShapeProto(*arg.Shape());
+    }
   }
 
   Common::Status SaveModelMetadata(const LotusIR::Model& model) {

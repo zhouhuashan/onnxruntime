@@ -116,6 +116,11 @@ static bool Compare(const vector<const LotusIR::NodeArg*>& f_arg, const vector<N
   for (auto i = 0; i < f_arg.size(); ++i) {
     const LotusIR::NodeArg* x = f_arg[i];
     const NodeArgDef& y = s_arg[i];
+    if (nullptr == x->Shape() && y.shape.size() == 0) {
+      continue;
+    } else if (nullptr == x->Shape()) {
+      return false;
+    }
     vector<int64_t> x_shape = Utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
     if (x->Name() == y.name && x_shape == y.shape && *x->Type() == y.data_type) {
       continue;

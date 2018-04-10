@@ -162,7 +162,7 @@ class AllocationPlanTestUtility {
   }
 };
 
-TEST(AllocationPlannerTest, ChainTest) {
+TEST(DISABLED_AllocationPlannerTest, ChainTest) {
   LotusIR::Model model("test");
   LotusIR::Graph* graph = model.MainGraph();
 
@@ -197,14 +197,14 @@ TEST(AllocationPlannerTest, ChainTest) {
   // Expected plan:
   //   W: kAllocateStatically; X: kAllocate; B: kAllocate; Y: kReuse (X); post-node3: free(B); X is returned output
   std::vector<AllocKind> expected_alloc(
-      {AllocKind::kAllocateStatically, AllocKind::kAllocate, AllocKind::kAllocate, AllocKind::kReuse});
+      {AllocKind::kAllocateStatically, AllocKind::kAllocate, AllocKind::kAllocate, AllocKind::kReuse });
   AllocationPlanTestUtility::CheckAllocationKind(plan, expected_alloc);
 
   // Note: Y (which reuses X) is treated as graph output and should not be freed
-  std::vector<MLValueIndex> expected_to_be_freed({b_idx});
+  std::vector<MLValueIndex> expected_to_be_freed({ b_idx });
   AllocationPlanTestUtility::CheckToBeFreed(plan, expected_to_be_freed);
 
-  std::vector<int> expected_num_freed({0, 0, 1});
+  std::vector<int> expected_num_freed({ 0, 0, 1 });
   AllocationPlanTestUtility::CheckFreedAtEachStep(plan, expected_num_freed);
 }
 
@@ -259,7 +259,7 @@ TEST(AllocationPlannerTest, InputOutputTest) {
 
 // InPlaceTest: Check that we reuse when Inplace allows us to.
 
-TEST(AllocationPlannerTest, InPlaceTest) {
+TEST(DISABLED_AllocationPlannerTest, InPlaceTest) {
   LotusIR::Model model("test");
   LotusIR::Graph* graph = model.MainGraph();
 

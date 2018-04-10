@@ -46,8 +46,13 @@ const TensorShapeProto* NodeArg::Shape() const {
 
   auto typeCase = node_arg_info_.type().value_case();
   switch (typeCase) {
-    case TypeProto::kTensorType:
-      return &(node_arg_info_.type().tensor_type().shape());
+    case TypeProto::kTensorType: {
+      if (node_arg_info_.type().tensor_type().has_shape()) {
+        return &(node_arg_info_.type().tensor_type().shape());
+      } else {
+        return nullptr;
+      }
+    }
     case TypeProto::kSequenceType:
     case TypeProto::kMapType:
     case TypeProto::VALUE_NOT_SET:
