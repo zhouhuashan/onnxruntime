@@ -4,11 +4,33 @@
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
 #include "core/framework/op_kernel.h"
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Lotus {
 namespace Test {
 
 namespace GraphBuilder {
+
+struct Shape {
+  TensorShapeProto value;
+
+  // construct a shape with given constant dimensions
+  Shape(std::initializer_list<int> dims) {
+    for (auto d : dims) {
+      auto dim = value.add_dim();
+      dim->set_dim_value(d);
+    }
+  }
+
+  // construct a shape with given symbolic dimensions
+  Shape(std::initializer_list<string> dims) {
+    for (auto d : dims) {
+      auto dim = value.add_dim();
+      dim->set_dim_param(d);
+    }
+  }
+};
 
 // Type: a wrapper to build a TypeProto
 struct Type {
@@ -40,22 +62,6 @@ struct Type {
   }
 };
 
-// Arg: A wrapper to build a NodeArg
-struct Arg {
-  LotusIR::NodeArg value;
-
-  Arg(const std::string& name, const TypeProto* p_arg_type) : value(name, p_arg_type) {}
-
-  Arg(const std::string& name, const Type& type) : value(name, &type.value) {}
-};
-
-void AddNames(SessionState& state, std::initializer_list<string> names) {
-  int count = 0;
-  for (auto& name : names) {
-    state.AddMLValueNameIdx(name, count++);
-  }
-}
-
 class NodeCounter {
  private:
   static int node_count_;
@@ -79,12 +85,6 @@ struct UnaryNode {
   }
 
   UnaryNode(LotusIR::Graph* graph, LotusIR::NodeArg* p_input_arg, LotusIR::NodeArg* p_output_arg)
-      : UnaryNode(graph, "Transpose", p_input_arg, p_output_arg) {}
-
-  UnaryNode(LotusIR::Graph* graph, const std::string& op, Arg* p_input_arg, Arg* p_output_arg)
-      : UnaryNode(graph, op, &p_input_arg->value, &p_output_arg->value) {}
-
-  UnaryNode(LotusIR::Graph* graph, Arg* p_input_arg, Arg* p_output_arg)
       : UnaryNode(graph, "Transpose", p_input_arg, p_output_arg) {}
 };
 
@@ -137,7 +137,7 @@ class AllocationPlanTestUtility {
     }
   }
 
-  static void BasicIntegrityCheck(const SequentialExecutionPlan& plan, int num_ml_values) {
+  static void BasicIntegrityCheck(const SequentialExecutionPlan& plan, size_t num_ml_values) {
     // Sanity checks for plan.to_be_freed
     std::unordered_set<MLValueIndex> freed;
     for (MLValueIndex index : plan.to_be_freed) {
@@ -162,50 +162,174 @@ class AllocationPlanTestUtility {
   }
 };
 
-TEST(DISABLED_AllocationPlannerTest, ChainTest) {
-  LotusIR::Model model("test");
-  LotusIR::Graph* graph = model.MainGraph();
+typedef std::unordered_map<const LotusIR::NodeArg*, TensorShapeProto*> ShapeMap;
 
-  Type type1{100, 50};
-  Type type2{1};
+class SequentialPlannerTestContext : public ISequentialPlannerContext {
+ public:
+  SequentialPlannerTestContext(ShapeMap* shape_map) : shape_map_(shape_map) {}
 
-  LotusIR::NodeArg w_def("W", &type2.value);
-  LotusIR::NodeArg x_def("X", &type1.value);
-  LotusIR::NodeArg b_def("B", &type1.value);
-  LotusIR::NodeArg y_def("Y", &type1.value);
+  virtual TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
+    auto iter = shape_map_->find(&arg);
+    return (shape_map_->end() != iter) ? iter->second : nullptr;
+  }
+
+ private:
+  ShapeMap* shape_map_;
+};
+
+class PlannerTest : public ::testing::Test {
+ protected:
+  LotusIR::Model model_;
+  LotusIR::Graph* graph_;
+
+  // some standard components used to build test-cases:
+  Type float_type_;
+
+  std::unique_ptr<Lotus::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
+  std::unique_ptr<Lotus::KernelDef> in_place_kernel_;  // a unary kernel with in-place
+
+  std::unordered_map<string, LotusIR::NodeArg*> name_to_arg_;
+  std::vector<UnaryNode*> nodes_;
+  std::vector<OpKernelInfo*> op_kernel_infos_;
+  std::vector<std::pair<LotusIR::Node*, KernelDef&>> kernel_bindings_;
+  SessionState state_;
+  AllocatorInfo allocator_info_;
+  ShapeMap shape_map_;
+
+ public:
+  PlannerTest() : model_("test"), allocator_info_("CPUAllocator", AllocatorType::kArenaAllocator) {
+    graph_ = model_.MainGraph();
+    std_kernel_ = KernelDefBuilder("Transpose").Build();
+    in_place_kernel_ = KernelDefBuilder("Clip").MayInplace(0, 0).Build();
+  }
+
+  ~PlannerTest() {
+    for (auto& pair : name_to_arg_)
+      delete pair.second;
+    for (auto p_node : nodes_)
+      delete p_node;
+    for (auto p_op_kernel_info : op_kernel_infos_)
+      delete p_op_kernel_info;
+  }
+
+  LotusIR::NodeArg* Arg(const std::string& name) {
+    auto iter = name_to_arg_.find(name);
+    if (name_to_arg_.end() != iter) return iter->second;
+    auto arg = new LotusIR::NodeArg(name, &float_type_.value);
+    name_to_arg_[name] = arg;
+    return arg;
+  }
+
+  LotusIR::Node* AddNode(Lotus::KernelDef& kernel_def, std::string& input, std::string& output) {
+    auto t = new UnaryNode(graph_, kernel_def.OpName(), Arg(input), Arg(output));
+    nodes_.push_back(t);
+    kernel_bindings_.emplace_back(t->p_node, kernel_def);
+    return t->p_node;
+  }
+
+  LotusIR::Node* AddNormalNode(std::string& input, std::string& output) {
+    return AddNode(*std_kernel_, input, output);
+  }
+
+  LotusIR::Node* AddInplaceNode(std::string& input, std::string& output) {
+    return AddNode(*in_place_kernel_, input, output);
+  }
+
+  void BindKernel(LotusIR::Node* p_node, Lotus::KernelDef& kernel_def) {
+    auto t = new OpKernelInfo(*p_node, allocator_info_, kernel_def, nullptr);
+    op_kernel_infos_.push_back(t);
+    state_.AddKernel(p_node->Index(), std::make_unique<DummyOpKernel>(*t));
+  }
+
+  void SetShape(std::string& name, TensorShapeProto* shape) {
+    shape_map_[Arg(name)] = shape;
+  }
+
+  void SetShape(std::initializer_list<std::pair<std::string&, TensorShapeProto*>> shapes) {
+    for (auto& pair : shapes) {
+      SetShape(pair.first, pair.second);
+    }
+  }
+
+  SequentialExecutionPlan plan_;
+
+  void CreatePlan() {
+    state_.SetGraph(graph_);
+
+    int count = 0;
+    for (auto& pair : name_to_arg_) {
+      state_.AddMLValueNameIdx(pair.first, count++);
+    }
+
+    for (auto& binding : kernel_bindings_) {
+      BindKernel(binding.first, binding.second);
+    }
+
+    SequentialPlannerTestContext test_context(&shape_map_);
+    auto status = SequentialPlanner::CreatePlan(state_, test_context, &plan_);
+    EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+    AllocationPlanTestUtility::BasicIntegrityCheck(plan_, name_to_arg_.size());
+  }
+
+  int index(const std::string& name) {
+    int indx;
+    state_.GetMLValueIdx(name, &indx);
+    return indx;
+  }
+
+  void CheckAllocKind(const std::string& name, AllocKind kind) {
+    EXPECT_EQ(plan_.allocation_plan[index(name)].alloc_kind, kind) << "Error in allocation kind for " << name;
+  }
+
+  void CheckFreed(int step_number, std::initializer_list<std::string> freed_items) {
+    // create set and check equality
+    std::unordered_set<int> expected;
+    for (auto& name : freed_items) {
+      expected.insert(index(name));
+    }
+    std::unordered_set<int> plan_result;
+    auto& step_plan = plan_.execution_plan[step_number];
+    for (int i = step_plan.free_from_index; i <= step_plan.free_to_index; ++i)
+      plan_result.insert(plan_.to_be_freed[i]);
+    EXPECT_EQ(plan_result, expected) << "Freed items incorrect for step " << step_number;
+  }
+};
+
+TEST_F(PlannerTest, ChainTest) {
+  // tensor variables:
+  std::string W("W"), X("X"), B("B"), Y("Y");
+
+  // graph structure:
 
   onnx::TensorProto tensor;
   tensor.add_dims(1);
   tensor.add_float_data(1.0f);
   tensor.set_data_type(TensorProto_DataType_FLOAT);
   tensor.set_name("W");
-  graph->AddInitializedTensor(tensor);
+  graph_->AddInitializedTensor(tensor);
 
-  UnaryNode node1(graph, &w_def, &x_def);
-  UnaryNode node2(graph, &x_def, &b_def);
-  UnaryNode node3(graph, &b_def, &y_def);
+  AddNormalNode(W, X);
+  AddNormalNode(X, B);
+  AddNormalNode(B, Y);
 
-  SessionState state;
-  state.SetGraph(graph);
-  int b_idx = 2;  // w_idx = 0, x_idx = 1, y_idx = 3;
-  AddNames(state, {"W", "X", "B", "Y"});
+  // simulate shape-inference results:
+  Shape shape1{50, 100};
+  auto shape = &shape1.value;
+  SetShape({{X, shape}, {B, shape}, {Y, shape}});
 
-  SequentialExecutionPlan plan;
-  auto status = SequentialPlanner::CreatePlan(state, &plan);
-  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+  CreatePlan();
 
   // Expected plan:
   //   W: kAllocateStatically; X: kAllocate; B: kAllocate; Y: kReuse (X); post-node3: free(B); X is returned output
-  std::vector<AllocKind> expected_alloc(
-      {AllocKind::kAllocateStatically, AllocKind::kAllocate, AllocKind::kAllocate, AllocKind::kReuse });
-  AllocationPlanTestUtility::CheckAllocationKind(plan, expected_alloc);
+  CheckAllocKind(W, AllocKind::kAllocateStatically);
+  CheckAllocKind(X, AllocKind::kAllocate);
+  CheckAllocKind(B, AllocKind::kAllocate);
+  CheckAllocKind(Y, AllocKind::kReuse);
 
   // Note: Y (which reuses X) is treated as graph output and should not be freed
-  std::vector<MLValueIndex> expected_to_be_freed({ b_idx });
-  AllocationPlanTestUtility::CheckToBeFreed(plan, expected_to_be_freed);
-
-  std::vector<int> expected_num_freed({ 0, 0, 1 });
-  AllocationPlanTestUtility::CheckFreedAtEachStep(plan, expected_num_freed);
+  CheckFreed(0, {});
+  CheckFreed(1, {});
+  CheckFreed(2, {"B"});
 }
 
 /* InputOutputTest: Test that:
@@ -213,161 +337,90 @@ TEST(DISABLED_AllocationPlannerTest, ChainTest) {
 (b) All outputs are classified as kAllocate (in this example),
 (c) Neither input nor outputs are freed.
 */
-TEST(AllocationPlannerTest, InputOutputTest) {
-  LotusIR::Model model("test");
-  LotusIR::Graph* graph = model.MainGraph();
+TEST_F(PlannerTest, InputOutputTest) {
+  // tensor variables:
+  std::string X1("X1"), X2("X2"), Y1("Y1"), Y2("Y2");
 
-  Type type;
+  // graph structure:
+  AddNormalNode(X1, Y1);
+  AddNormalNode(X2, Y2);
 
-  Arg X1("X1", type);
-  Arg X2("X2", type);
-  Arg Y1("Y1", type);
-  Arg Y2("Y2", type);
+  // simulate no shape-inference:
 
-  UnaryNode node1(graph, &X1, &Y1);
-  UnaryNode node2(graph, &X2, &Y2);
-
-  SessionState state;
-  state.SetGraph(graph);
-  AddNames(state, {"X1", "X2", "Y1", "Y2"});
-
-  auto kernel_def1 = KernelDefBuilder("Transpose").Build();
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-
-  OpKernelInfo info1(*(node1.p_node), allocator_info, *kernel_def1, nullptr);
-  state.AddKernel(node1.p_node->Index(), std::make_unique<DummyOpKernel>(info1));
-
-  OpKernelInfo info2(*(node2.p_node), allocator_info, *kernel_def1, nullptr);
-  state.AddKernel(node2.p_node->Index(), std::make_unique<DummyOpKernel>(info2));
-
-  SequentialExecutionPlan plan;
-  auto status = SequentialPlanner::CreatePlan(state, &plan);
-  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+  CreatePlan();
 
   // X1: kPreExisting, X2: kPreExisting, Y1: kAllocate, Y2: kAllocate
-  std::vector<AllocKind> expected_alloc(
-      {AllocKind::kPreExisting, AllocKind::kPreExisting, AllocKind::kAllocate, AllocKind::kAllocate});
-  AllocationPlanTestUtility::CheckAllocationKind(plan, expected_alloc);
+  CheckAllocKind(X1, AllocKind::kPreExisting);
+  CheckAllocKind(X2, AllocKind::kPreExisting);
+  CheckAllocKind(Y1, AllocKind::kAllocate);
+  CheckAllocKind(Y2, AllocKind::kAllocate);
 
   // Nothing should be freed (since they are either inputs or outputs)
-  std::vector<MLValueIndex> expected_to_be_freed({});
-  AllocationPlanTestUtility::CheckToBeFreed(plan, expected_to_be_freed);
-
-  std::vector<int> expected_num_freed({0, 0});
-  AllocationPlanTestUtility::CheckFreedAtEachStep(plan, expected_num_freed);
+  CheckFreed(0, {});
+  CheckFreed(1, {});
 }
 
 // InPlaceTest: Check that we reuse when Inplace allows us to.
 
-TEST(DISABLED_AllocationPlannerTest, InPlaceTest) {
-  LotusIR::Model model("test");
-  LotusIR::Graph* graph = model.MainGraph();
+TEST_F(PlannerTest, InPlaceTest) {
+  // tensor variables:
+  std::string X1("X1"), X2("X2"), X3("X3"), X4("X4");
 
-  Type type1{"M", "N"};
+  // graph structure:
+  AddNormalNode(X1, X2);   // no in-place operator; X1: input; X2: temporary
+  AddInplaceNode(X2, X3);  // may-in-place operator; X3: temporary
+  AddNormalNode(X3, X4);   // no in-place operator; X4: output
 
-  Arg X1("X1", type1);
-  Arg X2("X2", type1);
-  Arg X3("X3", type1);
-  Arg X4("X4", type1);
+  // simulate shape-inference results:
+  Shape shape1{"M", "N"};
+  auto shape = &shape1.value;
+  SetShape({{X1, shape}, {X2, shape}, {X3, shape}, {X4, shape}});
 
-  UnaryNode node1(graph, "Transpose", &X1, &X2);  // no in-place operator; X1: input; X2: temporary
-  UnaryNode node2(graph, "Clip", &X2, &X3);       // may-in-place operator; X3: temporary
-  UnaryNode node3(graph, "Transpose", &X3, &X4);  // no in-place operator; X4: output
+  CreatePlan();
 
-  SessionState state;
-  state.SetGraph(graph);
-  AddNames(state, {"X1", "X2", "X3", "X4"});
+  // check allocation kind:
+  CheckAllocKind(X1, AllocKind::kPreExisting);
+  CheckAllocKind(X2, AllocKind::kAllocate);
+  CheckAllocKind(X3, AllocKind::kReuse);
+  CheckAllocKind(X4, AllocKind::kAllocate);
 
-  auto kernel_def1 = KernelDefBuilder("Transpose").Build();
-  auto kernel_def2 = KernelDefBuilder("Clip").MayInplace(0, 0).Build();
-
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-
-  OpKernelInfo info1(*(node1.p_node), allocator_info, *kernel_def1, nullptr);
-  state.AddKernel(node1.p_node->Index(), std::make_unique<DummyOpKernel>(info1));
-
-  OpKernelInfo info2(*(node2.p_node), allocator_info, *kernel_def2, nullptr);
-  state.AddKernel(node2.p_node->Index(), std::make_unique<DummyOpKernel>(info2));
-
-  OpKernelInfo info3(*(node3.p_node), allocator_info, *kernel_def1, nullptr);
-  state.AddKernel(node3.p_node->Index(), std::make_unique<DummyOpKernel>(info3));
-
-  SequentialExecutionPlan plan;
-  auto status = SequentialPlanner::CreatePlan(state, &plan);
-  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
-
-  // X1: kPreExisting, X2: kAllocate, X3: kReuse, X4: kAllocate
-  std::vector<AllocKind> expected_alloc(
-      {AllocKind::kPreExisting, AllocKind::kAllocate, AllocKind::kReuse, AllocKind::kAllocate});
-  AllocationPlanTestUtility::CheckAllocationKind(plan, expected_alloc);
-
-  // X2 should be freed
-  std::vector<MLValueIndex> expected_to_be_freed({1});
-  AllocationPlanTestUtility::CheckToBeFreed(plan, expected_to_be_freed);
-
-  // X2 should be freed after last node
-  std::vector<int> expected_num_freed({0, 0, 1});
-  AllocationPlanTestUtility::CheckFreedAtEachStep(plan, expected_num_freed);
+  // check each ml-value is freed at appropriate step
+  CheckFreed(0, {});
+  CheckFreed(1, {});
+  CheckFreed(2, {X2});
 }
-
-/* TODO: We can't yet test for size/shape mismatch; need some more infrastructure to
-    enable this.
 
 // InPlaceSizeMismatchTest: Check that Inplace reuse is not allowed when sizes don't match.
 // Also tests reuse of disjoint lifetime tensors.
-TEST(AllocationPlannerTest, InPlaceSizeMismatchTest) {
-  LotusIR::Model model("test");
-  LotusIR::Graph* graph = model.MainGraph();
+TEST_F(PlannerTest, InPlaceSizeMismatchTest) {
+  // tensor variables:
+  std::string X1("X1"), X2("X2"), X3("X3"), X4("X4");
 
-  Type type1{"M", "N"};
-  Type type2{"M", "K"};
+  // graph structure:
+  AddNormalNode(X1, X2);   // no in-place operator; X1: input; X2: temporary
+  AddInplaceNode(X2, X3);  // may-in-place operator; X3: temporary
+  AddNormalNode(X3, X4);   // no in-place operator; X4: output
 
-  Arg X1("X1", type1);
-  Arg X2("X2", type1);
-  Arg X3("X3", type2);
-  Arg X4("X4", type1);
+  // simulate shape-inference results:
+  Shape shape1w{"M", "N"};
+  auto shape1 = &shape1w.value;
+  Shape shape2w{"M", "K"};
+  auto shape2 = &shape2w.value;
+  SetShape({{X1, shape1}, {X2, shape1}, {X3, shape2}, {X4, shape1}});
 
-  UnaryNode node1(graph, "Transpose", &X1, &X2);  // no in-place operator; X1: input; X2: temporary
-  UnaryNode node2(graph, "Clip", &X2, &X3);       // may-in-place operator; X3: temporary
-  UnaryNode node3(graph, "Transpose", &X3, &X4);  // no in-place operator; X4: output
+  CreatePlan();
 
-  SessionState state;
-  state.SetGraph(graph);
-  AddNames(state, {"X1", "X2", "X3", "X4"});
+  // check allocation kind:
+  CheckAllocKind(X1, AllocKind::kPreExisting);
+  CheckAllocKind(X2, AllocKind::kAllocate);
+  CheckAllocKind(X3, AllocKind::kAllocate);
+  CheckAllocKind(X4, AllocKind::kReuse);
 
-  auto kernel_def1 = KernelDefBuilder("Transpose").Build();
-  auto kernel_def2 = KernelDefBuilder("Clip").MayInplace(0, 0).Build();
-
-  AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);
-
-  OpKernelInfo info1(*(node1.p_node), allocator_info, *kernel_def1);
-  state.AddKernel(node1.p_node->Index(), std::make_unique<DummyOpKernel>(info1));
-
-  OpKernelInfo info2(*(node2.p_node), allocator_info, *kernel_def2);
-  state.AddKernel(node2.p_node->Index(), std::make_unique<DummyOpKernel>(info2));
-
-  OpKernelInfo info3(*(node3.p_node), allocator_info, *kernel_def1);
-  state.AddKernel(node3.p_node->Index(), std::make_unique<DummyOpKernel>(info3));
-
-  SequentialExecutionPlan plan;
-  auto status = SequentialPlanner::CreatePlan(state, &plan);
-  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
-
-  // X1: kPreExisting, X2: kAllocate, X3: kAllocate, X4: kReuse (X2)
-  std::vector<AllocKind> expected_alloc(
-      {AllocKind::kPreExisting, AllocKind::kAllocate, AllocKind::kAllocate, AllocKind::kReuse});
-  AllocationPlanTestUtility::CheckAllocationKind(plan, expected_alloc);
-
-  // X3 should be freed
-  std::vector<MLValueIndex> expected_to_be_freed({2});
-  AllocationPlanTestUtility::CheckToBeFreed(plan, expected_to_be_freed);
-
-  // X3 should be freed after last node
-  std::vector<int> expected_num_freed({0, 0, 1});
-  AllocationPlanTestUtility::CheckFreedAtEachStep(plan, expected_num_freed);
+  // check each ml-value is freed at appropriate step
+  CheckFreed(0, {});
+  CheckFreed(1, {});
+  CheckFreed(2, {X3});
 }
-
-*/
 
 }  // namespace Test
 }  // namespace Lotus
