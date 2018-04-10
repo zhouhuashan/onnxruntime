@@ -93,6 +93,9 @@ template <>
 constexpr TensorProto_DataType TypeToDataType<float>() { return TensorProto_DataType_FLOAT; }
 
 template <>
+constexpr TensorProto_DataType TypeToDataType<double>() { return TensorProto_DataType_DOUBLE; }
+
+template <>
 constexpr TensorProto_DataType TypeToDataType<int32_t>() { return TensorProto_DataType_INT32; }
 
 template <>
@@ -100,6 +103,21 @@ constexpr TensorProto_DataType TypeToDataType<int64_t>() { return TensorProto_Da
 
 template <>
 constexpr TensorProto_DataType TypeToDataType<bool>() { return TensorProto_DataType_BOOL; }
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<int16_t>() { return TensorProto_DataType_INT16; }
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<uint8_t>() { return TensorProto_DataType_UINT8; }
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<uint16_t>() { return TensorProto_DataType_UINT16; }
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<uint32_t>() { return TensorProto_DataType_UINT32; }
+
+template <>
+constexpr TensorProto_DataType TypeToDataType<uint64_t>() { return TensorProto_DataType_UINT64; }
 
 template <typename T>
 struct TTypeProto : TypeProto {
