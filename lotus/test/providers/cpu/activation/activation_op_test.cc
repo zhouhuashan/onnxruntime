@@ -5,7 +5,9 @@
 namespace Lotus {
 namespace Test {
 
-void TestUnaryElementwiseOp(const char* szOp, std::vector<float>& input_vals, std::function<float(float)> expected_func, const std::unordered_map<std::string, float> attribs = {}) {
+void TestUnaryElementwiseOp(const char* szOp, std::vector<float>& input_vals,
+                            std::function<float(float)> expected_func,
+                            const std::unordered_map<std::string, float> attribs = {}) {
   OpTester test(szOp);
 
   for (auto attr : attribs)

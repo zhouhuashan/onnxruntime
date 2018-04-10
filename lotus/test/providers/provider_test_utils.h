@@ -29,16 +29,15 @@ class TestUtils {
   typedef std::shared_ptr<ExecutionFrame> ExecutionFramePtr;
 
  public:
-  static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(
-      const SessionState& session_state,
-      std::unordered_map<std::string, MLValue> feeds,
-      const std::vector<std::string> output_names) {
+  static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(const SessionState& session_state,
+                                                             std::unordered_map<std::string, MLValue> feeds,
+                                                             const std::vector<std::string> output_names) {
     static std::vector<MLValue> outputs;
-    return std::make_shared<ExecutionFrame>(
-        feeds,
-        output_names,
-        outputs,
-        session_state);
+
+    return std::make_shared<ExecutionFrame>(feeds,
+                                            output_names,
+                                            outputs,
+                                            session_state);
   }
 
   template <typename T>
@@ -46,20 +45,22 @@ class TestUtils {
                               ExecutionFramePtr frame,
                               const std::vector<int64_t>& dims,
                               const std::vector<T>* value) {
-    auto status = frame->AllocateTensorWithSelfOwnBuffer(
-        index,
-        DataTypeImpl::GetType<T>(),
-        AllocatorManager::Instance().GetArena(CPU).Info(),
-        TensorShape(dims));
+    auto status = frame->AllocateTensorWithSelfOwnBuffer(index,
+                                                         DataTypeImpl::GetType<T>(),
+                                                         AllocatorManager::Instance().GetArena(CPU).Info(),
+                                                         TensorShape(dims));
     if (!status.IsOK())
       return status;
+
     if (value) {
       auto tensor = frame->GetMutableValue<Tensor>(index);
       LOTUS_ENFORCE(size_t(tensor->Shape().Size()) == value->size(), "Number of input values doesn't match tensor size");
       T* buffer = tensor->MutableData<T>();
+
       for (int i = 0; i < value->size(); i++)
         buffer[i] = (*value)[i];
     }
+
     return Status::OK();
   }
 
@@ -121,35 +122,36 @@ const TTypeProto<T> s_typeProto;
 // for new output types, add a new specialization for Check<>
 // See current usage for an example, should be self explanatory
 struct OpTester {
-  OpTester(const char* szOp) : szOp_(szOp) {}
+  OpTester(const char* op) : op_(op) {}
   ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
-  // bools and we can't get the raw data out. So those cases must use an initializer_list
+  // bool and we can't get the raw data out. So those cases must use an initializer_list
   template <typename T>
-  void AddInput(const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& values) {
-    AddData(inputData_, szName, dims, values.begin(), values.size());
+  void AddInput(const char* name, const std::vector<int64_t>& dims, const std::initializer_list<T>& values) {
+    AddData(input_data_, name, dims, values.begin(), values.size());
   }
 
   template <typename T>
-  void AddInput(const char* szName, const std::vector<int64_t>& dims, const std::vector<T>& values) {
-    AddData(inputData_, szName, dims, values.data(), values.size());
+  void AddInput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& values) {
+    AddData(input_data_, name, dims, values.data(), values.size());
   }
 
   template <typename T>
-  void AddOutput(const char* szName, const std::vector<int64_t>& dims, const std::initializer_list<T>& expectedValues) {
-    AddData(outputData_, szName, dims, expectedValues.begin(), expectedValues.size());
+  void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::initializer_list<T>& expectedValues) {
+    AddData(output_data_, name, dims, expectedValues.begin(), expectedValues.size());
   }
 
   template <typename T>
-  void AddOutput(const char* szName, const std::vector<int64_t>& dims, const std::vector<T>& expectedValues) {
-    AddData(outputData_, szName, dims, expectedValues.data(), expectedValues.size());
+  void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& expectedValues) {
+    AddData(output_data_, name, dims, expectedValues.data(), expectedValues.size());
   }
 
   template <typename T>
   void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
-    addAttributeFns_.emplace_back([name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
+    add_attribute_funcs_.emplace_back(
+        [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
   }
 
   void Run();
@@ -159,29 +161,30 @@ struct OpTester {
     LotusIR::NodeArg def_;
     TensorShape shape_;
     std::unique_ptr<uint8_t[]> data_;
-    size_t dataSizeInBytes_;
-    MLDataType dataType_;
+    size_t data_size_in_bytes_;
+    MLDataType data_type_;
   };
 
   template <typename T>
-  void AddData(std::vector<Data>& data, const char* szName, const std::vector<int64_t>& dims, const T* values, size_t valuesCount) {
+  void AddData(std::vector<Data>& data, const char* name, const std::vector<int64_t>& dims, const T* values, size_t valuesCount) {
     static_assert(std::is_trivial<T>::value, "Only works on trivial types (where byte copies of the values are safe)");
     LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
-    auto sizeInBytes = valuesCount * sizeof(T);
-    auto pData = std::make_unique<uint8_t[]>(sizeInBytes);
-    memcpy(pData.get(), values, sizeInBytes);
-    data.push_back({{szName, &s_typeProto<T>}, dims, std::move(pData), sizeInBytes, DataTypeImpl::GetType<T>()});
+    auto size_in_bytes = valuesCount * sizeof(T);
+    auto p_data = std::make_unique<uint8_t[]>(size_in_bytes);
+    memcpy(p_data.get(), values, size_in_bytes);
+    data.push_back({{name, &s_typeProto<T>}, dims, std::move(p_data), size_in_bytes, DataTypeImpl::GetType<T>()});
   }
 
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
   template <typename T>
   void Check(const Data& output_data, Tensor& output_tensor, size_t size);
 
-  const char* szOp_;
-  std::vector<Data> inputData_, outputData_;
-  std::vector<std::function<void(LotusIR::Node& node)>> addAttributeFns_;
+  const char* op_;
+  std::vector<Data> input_data_;
+  std::vector<Data> output_data_;
+  std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;
 #if _DEBUG
-  bool m_fRun{};
+  bool run_called_ = false;
 #endif
 };
 

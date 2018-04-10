@@ -32,7 +32,7 @@ TEST(LoggingTests, TestCLogSink) {
   const std::string filename{"TestCLogSink.out"};
   const std::string logid{"CLogSink"};
   const std::string message{"Test clog message"};
-  const Severity minLogLevel = Severity::kWARNING;
+  const Severity min_log_level = Severity::kWARNING;
 
   // redirect clog to a file so we can check the output
   std::ofstream ofs(filename);
@@ -42,7 +42,7 @@ TEST(LoggingTests, TestCLogSink) {
 
   // create scoped manager so sink gets destroyed once done
   {
-    LoggingManager manager{std::unique_ptr<ISink>{new CLogSink{}}, minLogLevel, false,
+    LoggingManager manager{std::unique_ptr<ISink>{new CLogSink{}}, min_log_level, false,
                            InstanceType::Temporal};
 
     auto logger = manager.CreateLogger(logid);
@@ -67,7 +67,7 @@ TEST(LoggingTests, TestCErrSink) {
   const std::string filename{"TestCErrSink.out"};
   const std::string logid{"CErrSink"};
   const std::string message{"Test cerr message"};
-  const Severity minLogLevel = Severity::kWARNING;
+  const Severity min_log_level = Severity::kWARNING;
 
   // redirect clog to a file so we can check the output
   std::ofstream ofs(filename);
@@ -78,7 +78,7 @@ TEST(LoggingTests, TestCErrSink) {
 
   // create scoped manager so sink gets destroyed once done
   {
-    LoggingManager manager{std::unique_ptr<ISink>{new CErrSink{}}, minLogLevel, false,
+    LoggingManager manager{std::unique_ptr<ISink>{new CErrSink{}}, min_log_level, false,
                            InstanceType::Temporal};
 
     auto logger = manager.CreateLogger(logid);
@@ -103,12 +103,12 @@ TEST(LoggingTests, TestFileSink) {
   const std::string filename{"TestFileSink.out"};
   const std::string logid{"FileSink"};
   const std::string message{"Test message"};
-  const Severity minLogLevel = Severity::kWARNING;
+  const Severity min_log_level = Severity::kWARNING;
 
   // create scoped manager so sink gets destroyed once done
   {
     LoggingManager manager{std::unique_ptr<ISink>{new FileSink{filename, false, false}},
-                           minLogLevel, false, InstanceType::Temporal};
+                           min_log_level, false, InstanceType::Temporal};
 
     auto logger = manager.CreateLogger(logid);
 
@@ -124,18 +124,18 @@ TEST(LoggingTests, TestFileSink) {
 /// </summary>
 TEST(LoggingTests, TestCompositeSink) {
   const std::string logid{"TestCompositeSink"};
-  const Severity minLogLevel = Severity::kWARNING;
+  const Severity min_log_level = Severity::kWARNING;
 
-  MockSink *sinkPtr1 = new MockSink();
-  MockSink *sinkPtr2 = new MockSink();
+  MockSink *sink_ptr1 = new MockSink();
+  MockSink *sink_ptr2 = new MockSink();
 
   // both should be called for a single log statement
-  EXPECT_CALL(*sinkPtr1, SendImpl(testing::_, testing::_, testing::_)).Times(1);
-  EXPECT_CALL(*sinkPtr2, SendImpl(testing::_, testing::_, testing::_)).Times(1);
+  EXPECT_CALL(*sink_ptr1, SendImpl(testing::_, testing::_, testing::_)).Times(1);
+  EXPECT_CALL(*sink_ptr2, SendImpl(testing::_, testing::_, testing::_)).Times(1);
 
   CompositeSink *sink = new CompositeSink();
-  sink->AddSink(std::unique_ptr<ISink>{sinkPtr1}).AddSink(std::unique_ptr<ISink>{sinkPtr2});
-  LoggingManager manager{std::unique_ptr<ISink>(sink), minLogLevel, false, InstanceType::Temporal};
+  sink->AddSink(std::unique_ptr<ISink>{sink_ptr1}).AddSink(std::unique_ptr<ISink>{sink_ptr2});
+  LoggingManager manager{std::unique_ptr<ISink>(sink), min_log_level, false, InstanceType::Temporal};
 
   auto logger = manager.CreateLogger(logid);
 

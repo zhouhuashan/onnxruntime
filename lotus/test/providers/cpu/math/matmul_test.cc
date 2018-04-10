@@ -8,10 +8,10 @@ TEST(MathOpTest, MatMul) {
   std::vector<float> vals{0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
 
   struct MatMulTest {
-    std::vector<int64_t> input0_dims_;
-    std::vector<int64_t> input1_dims_;
-    std::vector<int64_t> expected_dims_;
-    std::vector<float> expected_vals_;
+    std::vector<int64_t> input0_dims;
+    std::vector<int64_t> input1_dims;
+    std::vector<int64_t> expected_dims;
+    std::vector<float> expected_vals;
   };
 
   MatMulTest testcases[] =
@@ -51,13 +51,13 @@ TEST(MathOpTest, MatMul) {
   for (auto t : testcases) {
     OpTester test("MatMul");
 
-    std::vector<float> input0_vals(vals.cbegin(), vals.cbegin() + TensorShape::SizeHelper(t.input0_dims_, 0, t.input0_dims_.size()));
-    test.AddInput<float>("A", t.input0_dims_, input0_vals);
+    std::vector<float> input0_vals(vals.cbegin(), vals.cbegin() + TensorShape::SizeHelper(t.input0_dims, 0, t.input0_dims.size()));
+    test.AddInput<float>("A", t.input0_dims, input0_vals);
 
-    std::vector<float> input1_vals(vals.cbegin(), vals.cbegin() + TensorShape::SizeHelper(t.input1_dims_, 0, t.input1_dims_.size()));
-    test.AddInput<float>("B", t.input1_dims_, input1_vals);
+    std::vector<float> input1_vals(vals.cbegin(), vals.cbegin() + TensorShape::SizeHelper(t.input1_dims, 0, t.input1_dims.size()));
+    test.AddInput<float>("B", t.input1_dims, input1_vals);
 
-    test.AddOutput<float>("Y", t.expected_dims_, t.expected_vals_);
+    test.AddOutput<float>("Y", t.expected_dims, t.expected_vals);
     test.Run();
   }
 }

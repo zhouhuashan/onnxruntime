@@ -54,33 +54,33 @@ TEST(GraphTraversalTest, ReverseDFS) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *inputArg = new NodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(inputArg);
-  NodeArg *outputArg = new NodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(outputArg);
+  NodeArg *input_arg = new NodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(input_arg);
+  NodeArg *output_arg = new NodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(output_arg);
   graph.AddNode("node_1", "Variable_DFS", "node 1", inputs, outputs);
 
-  NodeArg *inputArg2 = new NodeArg("node_2_in_1", &tensor_int32);
+  NodeArg *input_arg2 = new NodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
-  inputs.push_back(inputArg2);
-  NodeArg *outputArg2 = new NodeArg("node_2_out_1", &tensor_int32);
+  inputs.push_back(input_arg2);
+  NodeArg *output_arg2 = new NodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg2);
+  outputs.push_back(output_arg2);
   graph.AddNode("node_2", "Variable_DFS", "node 2", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(outputArg);
-  inputs.push_back(outputArg2);
-  NodeArg *outputArg3 = new NodeArg("node_3_out_1", &tensor_int32);
+  inputs.push_back(output_arg);
+  inputs.push_back(output_arg2);
+  NodeArg *output_arg3 = new NodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg3);
+  outputs.push_back(output_arg3);
   graph.AddNode("node_3", "Add_DFS", "node 3", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(outputArg3);
-  NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_int32);
+  inputs.push_back(output_arg3);
+  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg4);
+  outputs.push_back(output_arg4);
   graph.AddNode("node_4", "NoOp_DFS", "node 4", inputs, outputs);
   auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
@@ -138,27 +138,27 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
   std::vector<NodeArg *> outputs;
 
   // INT32 vector.
-  TypeProto outputType;
-  outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-  outputType.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+  TypeProto output_type;
+  output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+  output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *outputArg = new NodeArg("node_1_out_1", &outputType);
-  outputs.push_back(outputArg);
+  NodeArg *output_arg = new NodeArg("node_1_out_1", &output_type);
+  outputs.push_back(output_arg);
   graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   // Case 1: Adding two nodes with same node name should fail.
-  auto nodeWithDupName = graph->AddNode("node_1", "Variable", "node 2", inputs, outputs);
+  auto node_with_dup_name = graph->AddNode("node_1", "Variable", "node 2", inputs, outputs);
   auto status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMessage());
-  graph->RemoveNode(nodeWithDupName->Index());
+  graph->RemoveNode(node_with_dup_name->Index());
 
   // Case 2: Adding two nodes with same output arg name should fail.
   graph->AddNode("node_2", "Variable", "node 2", inputs, outputs);
   status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMessage());
-  //delete outputArg;
+  //delete output_arg;
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
@@ -169,12 +169,12 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   std::vector<NodeArg *> outputs;
 
   // INT32 vector.
-  TypeProto outputType;
-  outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-  outputType.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+  TypeProto output_type;
+  output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+  output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *outputArg = new NodeArg("node_1_out_1", &outputType);
-  outputs.push_back(outputArg);
+  NodeArg *output_arg = new NodeArg("node_1_out_1", &output_type);
+  outputs.push_back(output_arg);
   // Case: Adding node refering to non-existing operator should fail.
   graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
   auto status = graph->Resolve();
@@ -183,7 +183,7 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
       "Error: the operator or function (OpNotExist) referred to by node (node_1) does not exist.",
       status.ErrorMessage());
 
-  //delete outputArg;
+  //delete output_arg;
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
@@ -217,43 +217,44 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
 
-  std::unordered_map<std::string, std::pair<std::vector<NodeArg *>, std::vector<NodeArg *>>> expectedNodeNameToInputOutputArgs;
+  std::unordered_map<std::string, std::pair<std::vector<NodeArg *>, std::vector<NodeArg *>>>
+      expected_node_name_to_input_output_args;
 
   TypeProto tensor_int32;
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *inputArg = new NodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(inputArg);
-  NodeArg *outputArg = new NodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(outputArg);
-  expectedNodeNameToInputOutputArgs["node_1"] = {inputs, outputs};
+  NodeArg *input_arg = new NodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(input_arg);
+  NodeArg *output_arg = new NodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(output_arg);
+  expected_node_name_to_input_output_args["node_1"] = {inputs, outputs};
   auto node_1 = graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
-  NodeArg *inputArg2 = new NodeArg("node_2_in_1", &tensor_int32);
+  NodeArg *input_arg2 = new NodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
-  inputs.push_back(inputArg2);
-  NodeArg *outputArg2 = new NodeArg("node_2_out_1", &tensor_int32);
+  inputs.push_back(input_arg2);
+  NodeArg *output_arg2 = new NodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg2);
-  expectedNodeNameToInputOutputArgs["node_2"] = {inputs, outputs};
+  outputs.push_back(output_arg2);
+  expected_node_name_to_input_output_args["node_2"] = {inputs, outputs};
   graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(outputArg);
-  inputs.push_back(outputArg2);
-  NodeArg *outputArg3 = new NodeArg("node_3_out_1", &tensor_int32);
+  inputs.push_back(output_arg);
+  inputs.push_back(output_arg2);
+  NodeArg *output_arg3 = new NodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg3);
-  expectedNodeNameToInputOutputArgs["node_3"] = {inputs, outputs};
+  outputs.push_back(output_arg3);
+  expected_node_name_to_input_output_args["node_3"] = {inputs, outputs};
   graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(outputArg3);
-  NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_int32);
+  inputs.push_back(output_arg3);
+  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg4);
-  expectedNodeNameToInputOutputArgs["node_4"] = {inputs, outputs};
+  outputs.push_back(output_arg4);
+  expected_node_name_to_input_output_args["node_4"] = {inputs, outputs};
   graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
   auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
@@ -262,44 +263,44 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   std::shared_ptr<Model> model2;
   EXPECT_TRUE(Model::Load("graph_1.pb", &model2).IsOK());
 
-  auto &modelProto = model.ToProto();
-  auto &modelProto2 = model2->ToProto();
-  bool equalProto1And2 = MessageDifferencer::MessageDifferencer::Equals(modelProto, modelProto2);
+  auto &model_proto = model.ToProto();
+  auto &model_proto2 = model2->ToProto();
+  bool equal_proto_1_and_2 = MessageDifferencer::MessageDifferencer::Equals(model_proto, model_proto2);
   std::string diff;
-  if (!equalProto1And2) {
+  if (!equal_proto_1_and_2) {
     MessageDifferencer d;
     d.ReportDifferencesToString(&diff);
-    d.Compare(modelProto, modelProto2);
+    d.Compare(model_proto, model_proto2);
   } else {
     diff = "it's fine";
   }
-  EXPECT_TRUE(equalProto1And2) << diff;
+  EXPECT_TRUE(equal_proto_1_and_2) << diff;
 
-  model2.reset(new Model(modelProto2));
+  model2.reset(new Model(model_proto2));
   // Load the model again to ensure that it's still the right thing.
   Graph *graph2 = model2->MainGraph();
-  for (auto nodeIter = graph2->NodesBegin(); nodeIter != graph2->NodesEnd(); ++nodeIter) {
-    if (graph2->IsSourceNode((*nodeIter)->Index()) || graph2->IsSinkNode((*nodeIter)->Index())) {
+  for (auto node_iter = graph2->NodesBegin(); node_iter != graph2->NodesEnd(); ++node_iter) {
+    if (graph2->IsSourceNode((*node_iter)->Index()) || graph2->IsSinkNode((*node_iter)->Index())) {
       continue;
     }
-    auto nodeNameToInputOutputIter = expectedNodeNameToInputOutputArgs.find((*nodeIter)->Name());
-    EXPECT_FALSE(nodeNameToInputOutputIter == expectedNodeNameToInputOutputArgs.end());
+    auto node_name_to_input_output_iter = expected_node_name_to_input_output_args.find((*node_iter)->Name());
+    EXPECT_FALSE(node_name_to_input_output_iter == expected_node_name_to_input_output_args.end());
 
-    EXPECT_EQ(nodeNameToInputOutputIter->second.first.size(), (*nodeIter)->InputDefs().size());
-    for (size_t i = 0; i < nodeNameToInputOutputIter->second.first.size(); ++i) {
-      EXPECT_EQ(nodeNameToInputOutputIter->second.first[i]->Name(), (*nodeIter)->InputDefs()[i]->Name());
-      EXPECT_EQ(nodeNameToInputOutputIter->second.first[i]->Type(), (*nodeIter)->InputDefs()[i]->Type());
+    EXPECT_EQ(node_name_to_input_output_iter->second.first.size(), (*node_iter)->InputDefs().size());
+    for (size_t i = 0; i < node_name_to_input_output_iter->second.first.size(); ++i) {
+      EXPECT_EQ(node_name_to_input_output_iter->second.first[i]->Name(), (*node_iter)->InputDefs()[i]->Name());
+      EXPECT_EQ(node_name_to_input_output_iter->second.first[i]->Type(), (*node_iter)->InputDefs()[i]->Type());
     }
 
-    EXPECT_EQ(nodeNameToInputOutputIter->second.second.size(), (*nodeIter)->OutputDefs().size());
-    for (size_t i = 0; i < nodeNameToInputOutputIter->second.second.size(); ++i) {
-      EXPECT_EQ(nodeNameToInputOutputIter->second.second[i]->Name(), (*nodeIter)->OutputDefs()[i]->Name());
-      EXPECT_EQ(nodeNameToInputOutputIter->second.second[i]->Type(), (*nodeIter)->OutputDefs()[i]->Type());
+    EXPECT_EQ(node_name_to_input_output_iter->second.second.size(), (*node_iter)->OutputDefs().size());
+    for (size_t i = 0; i < node_name_to_input_output_iter->second.second.size(); ++i) {
+      EXPECT_EQ(node_name_to_input_output_iter->second.second[i]->Name(), (*node_iter)->OutputDefs()[i]->Name());
+      EXPECT_EQ(node_name_to_input_output_iter->second.second[i]->Type(), (*node_iter)->OutputDefs()[i]->Type());
     }
   }
 
   // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
-  node_1->MutableInputDefs()[0] = outputArg4;
+  node_1->MutableInputDefs()[0] = output_arg4;
   status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
@@ -317,12 +318,12 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   auto status_2 = graph_2.Resolve();
   EXPECT_TRUE(status_2.IsOK());
 
-  //delete inputArg;
-  //delete outputArg;
-  //delete inputArg2;
-  //delete outputArg2;
-  //delete outputArg3;
-  //delete outputArg4;
+  //delete input_arg;
+  //delete output_arg;
+  //delete input_arg2;
+  //delete output_arg2;
+  //delete output_arg3;
+  //delete output_arg4;
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
@@ -358,43 +359,43 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *inputArg = new NodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(inputArg);
-  NodeArg *outputArg = new NodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(outputArg);
+  NodeArg *input_arg = new NodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(input_arg);
+  NodeArg *output_arg = new NodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(output_arg);
   graph->AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(inputArg);
-  NodeArg *outputArg2 = new NodeArg("node_2_out_1", &tensor_int32);
+  inputs.push_back(input_arg);
+  NodeArg *output_arg2 = new NodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg2);
+  outputs.push_back(output_arg2);
   auto node_2 = graph->AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
-  NodeArg *inputArg3 = new NodeArg("node_3_in_1", &tensor_int32);
+  NodeArg *input_arg3 = new NodeArg("node_3_in_1", &tensor_int32);
   inputs.clear();
-  inputs.push_back(inputArg3);
-  NodeArg *outputArg3 = new NodeArg("node_3_out_1", &tensor_int32);
+  inputs.push_back(input_arg3);
+  NodeArg *output_arg3 = new NodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg3);
+  outputs.push_back(output_arg3);
   graph->AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(outputArg);
-  inputs.push_back(outputArg2);
-  inputs.push_back(outputArg3);
-  NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_int32);
+  inputs.push_back(output_arg);
+  inputs.push_back(output_arg2);
+  inputs.push_back(output_arg3);
+  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(outputArg4);
+  outputs.push_back(output_arg4);
   auto node_4 = graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
   EXPECT_NE(node_4, nullptr);
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
 
-  std::unordered_set<std::string> expectedGraphInputs = {"node_1_in_1", "node_3_in_1"};
+  std::unordered_set<std::string> expected_graph_inputs = {"node_1_in_1", "node_3_in_1"};
   EXPECT_EQ(2, graph->GetInputs().size());
-  for (auto &graphInput : graph->GetInputs()) {
-    EXPECT_TRUE(expectedGraphInputs.find(graphInput->Name()) != expectedGraphInputs.end());
+  for (auto &graph_input : graph->GetInputs()) {
+    EXPECT_TRUE(expected_graph_inputs.find(graph_input->Name()) != expected_graph_inputs.end());
   }
   EXPECT_EQ(1, graph->GetOutputs().size());
   EXPECT_EQ("node_4_out_1", graph->GetOutputs()[0]->Name());
@@ -405,13 +406,13 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   EXPECT_TRUE(Model::Load("model_x.pb", &loaded_model).IsOK());
   EXPECT_EQ(2, loaded_model->MainGraph()->GetInputs().size());
 
-  auto &graphProto = graph->ToGraphProto();
-  EXPECT_EQ(2, graphProto.input_size());
-  for (auto &graphProtoInput : graphProto.input()) {
-    EXPECT_TRUE(expectedGraphInputs.find(graphProtoInput.name()) != expectedGraphInputs.end());
+  auto &graph_proto = graph->ToGraphProto();
+  EXPECT_EQ(2, graph_proto.input_size());
+  for (auto &graphProtoInput : graph_proto.input()) {
+    EXPECT_TRUE(expected_graph_inputs.find(graphProtoInput.name()) != expected_graph_inputs.end());
   }
-  EXPECT_EQ(1, graphProto.output_size());
-  EXPECT_EQ("node_4_out_1", graphProto.output(0).name());
+  EXPECT_EQ(1, graph_proto.output_size());
+  EXPECT_EQ("node_4_out_1", graph_proto.output(0).name());
 
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
@@ -421,12 +422,12 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Node (node_4) has different input types (tensor(float),tensor(int32)) matching to same type string (T).", status.ErrorMessage());
 
-  //delete inputArg;
-  //delete outputArg;
-  //delete outputArg2;
-  //delete inputArg3;
-  //delete outputArg3;
-  //delete outputArg4;
+  //delete input_arg;
+  //delete output_arg;
+  //delete output_arg2;
+  //delete input_arg3;
+  //delete output_arg3;
+  //delete output_arg4;
 }
 
 TEST(TestAddAttribute, AddTensorAttribute) {
@@ -438,14 +439,14 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   std::vector<NodeArg *> outputs;
   Model model("graph_1");
   auto graph = model.MainGraph();
-  TypeProto outputType;
-  outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
-  TensorShapeProto outputShape;
-  outputShape.mutable_dim()->Add()->set_dim_value(1);
-  outputShape.mutable_dim()->Add()->set_dim_value(3);
-  *(outputType.mutable_tensor_type()->mutable_shape()) = outputShape;
-  NodeArg *outputArg = new NodeArg("node_1_out_1", &outputType);
-  outputs.push_back(outputArg);
+  TypeProto output_type;
+  output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
+  TensorShapeProto output_shape;
+  output_shape.mutable_dim()->Add()->set_dim_value(1);
+  output_shape.mutable_dim()->Add()->set_dim_value(3);
+  *(output_type.mutable_tensor_type()->mutable_shape()) = output_shape;
+  NodeArg *output_arg = new NodeArg("node_1_out_1", &output_type);
+  outputs.push_back(output_arg);
   auto node_1 = graph->AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
   TensorProto t;
   t.set_data_type(TensorProto_DataType_INT64);
@@ -457,7 +458,7 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   node_1->AddAttribute(kConstantValue, t);
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
-  //delete outputArg;
+  //delete output_arg;
 }
 
 }  // namespace Test
