@@ -275,6 +275,49 @@ TEST(InferenceSessionTests, PreAllocateOutputVector) {
   RunModel(session_object, run_options, is_preallocate_output_vec);
 }
 
+TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
+  ExecutionProviderInfo epi;
+  ProviderOption po{"CPUExecutionProvider", epi};
+  SessionOptions so(vector<ProviderOption>{po});
+
+  so.session_logid = "ConfigureVerbosityLevel";
+  so.session_log_verbosity_level = 1;
+
+  // create CapturingSink. LoggingManager will own it, but as long as the logging_manager
+  // is around our pointer stays valid.
+  auto capturing_sink = new CapturingSink();
+
+  auto logging_manager = std::make_unique<Logging::LoggingManager>(
+      std::unique_ptr<ISink>(capturing_sink), Logging::Severity::kVERBOSE, false, LoggingManager::InstanceType::Temporal);
+
+  InferenceSession session_object{so, logging_manager.get()};
+  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  EXPECT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "ConfigureVerbosityLevel";
+  run_options.run_log_verbosity_level = 1;
+  RunModel(session_object, run_options);
+
+#ifdef _DEBUG
+  // check for some VLOG output to make sure tag was correct. VLOG is not enabled in release build
+  auto& msgs = capturing_sink->Messages();
+  std::copy(msgs.begin(), msgs.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+  bool have_log_entry_with_vlog_session_msg =
+      (std::find_if(msgs.begin(), msgs.end(),
+                    [&run_options](std::string msg) { return msg.find("Adding input argument with name") != string::npos; }) !=
+       msgs.end());
+
+  EXPECT_TRUE(have_log_entry_with_vlog_session_msg);
+
+  bool have_log_entry_with_vlog_run_msg =
+      (std::find_if(msgs.begin(), msgs.end(),
+                    [&run_options](std::string msg) { return msg.find("Size of execution plan vector") != string::npos; }) !=
+       msgs.end());
+
+  EXPECT_TRUE(have_log_entry_with_vlog_run_msg);
+#endif
+}
 // TODO write test with timeout
 
 }  // namespace Test
