@@ -19,6 +19,7 @@ REGISTER_UNARY_ELEMENTWISE_KERNEL(Tanh, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(Selu, 6);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(PRelu, 6);
+REGISTER_UNARY_ELEMENTWISE_KERNEL(HardSigmoid, 6);
 
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }

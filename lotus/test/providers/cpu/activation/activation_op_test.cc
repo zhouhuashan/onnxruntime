@@ -39,6 +39,17 @@ TEST(ActivationOpTest, Sigmoid) {
                          });
 }
 
+TEST(ActivationOpTest, HardSigmoid) {
+  float alpha = 0.2f;
+  float beta = 0.5f;
+  TestUnaryElementwiseOp("HardSigmoid",
+                         input_vals,
+                         [alpha, beta](float x) {
+                           return std::max(std::min((alpha * x + beta), 1.0f), 0.0f);
+                         },
+                         {{"alpha", alpha}, {"beta", beta}});
+}
+
 TEST(ActivationOpTest, Tanh) {
   TestUnaryElementwiseOp("Tanh",
                          input_vals,
