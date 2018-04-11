@@ -61,7 +61,7 @@ class CPUMathUtil {
 #define EIGEN_Y EigenVectorArrayMap<T>(Y->MutableData<T>(), Y->Shape().Size())
 #define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->MutableData<T>(), Y->Shape().Size())
 
-#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func, attrs)    \
+#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func, ...)      \
   template <typename T>                                                    \
   class class_name final : public OpKernel {                               \
    public:                                                                 \
@@ -70,9 +70,9 @@ class CPUMathUtil {
     }                                                                      \
                                                                            \
     class_name(const OpKernelInfo& info) : OpKernel(info) {                \
-      for (auto name : std::vector<std::string>(attrs)) {                  \
+      for (auto name : std::vector<std::string>(__VA_ARGS__)) {            \
         T value;                                                           \
-        LOTUS_ENFORCE(op_kernel_info_.GetAttr<T>(name, &value).IsOK());    \
+        LOTUS_ENFORCE(op_kernel_info_.GetAttr(name, &value).IsOK());       \
         attr_.insert(std::make_pair(std::string(name), value));            \
       }                                                                    \
     }                                                                      \

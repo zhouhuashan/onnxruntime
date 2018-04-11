@@ -71,16 +71,71 @@ MLValue ConvertTensorProtoToMLValue(const onnx::TensorProto& input, IAllocator& 
 
 //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
 // for https://github.com/onnx/onnx/issues/679
-std::unordered_map<std::string, MLValue> ConvertPbsToMLValues(const ::google::protobuf::RepeatedPtrField< ::onnx::ValueInfoProto>& /*input_value_info*/, const std::vector<onnx::TensorProto>& input_pbs, IAllocator& allocator) {
+std::unordered_map<std::string, MLValue> ConvertPbsToMLValues(const ::google::protobuf::RepeatedPtrField< ::onnx::ValueInfoProto>& input_value_info, const std::vector<onnx::TensorProto>& input_pbs, IAllocator& allocator) {
   std::unordered_map<std::string, MLValue> feeds;
+  int len = input_value_info.size();
+  bool has_valid_names = true;
+  //"0","1",...
+  bool use_number_names = true;
+  //"data_0","data_1",...
+  bool use_data_number_names = true;
+  //"gpu_0/data_0","gpu_0/data_1",...
+  bool use_gpu_data_number_names = true;
+
+  std::vector<std::string> var_names(input_pbs.size());
   for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
-    //TODO: may get name from input_value_info
     std::string name = input_pbs[input_index].name();
     if (name.empty()) {
-      std::ostringstream oss;
-      oss << "data_" << input_index;
-      name = oss.str();
+      has_valid_names = false;
+      break;
     }
+    var_names[input_index] = name;
+  }
+  if (!has_valid_names) {
+    if (len == input_pbs.size()) {
+      for (int i = 0; i != len; ++i) {
+        std::string vname = input_value_info[i].name();
+        var_names[i] = vname;
+      }
+    } else {
+      char buf[64];
+      char buf2[64];
+      char buf3[64];
+      for (int i = 0; i != input_pbs.size(); ++i) {
+        snprintf(buf, sizeof(buf), "%d", i);
+        snprintf(buf2, sizeof(buf2), "data_%d", i);
+        snprintf(buf3, sizeof(buf3), "gpu_0/data_%d", i);
+        if (use_number_names && std::find_if(input_value_info.begin(), input_value_info.end(), [buf](const ::onnx::ValueInfoProto& info) {
+                                  return info.name() == buf;
+                                }) == input_value_info.end()) use_number_names = false;
+        if (use_data_number_names && std::find_if(input_value_info.begin(), input_value_info.end(), [buf2](const ::onnx::ValueInfoProto& info) {
+                                       return info.name() == buf2;
+                                     }) == input_value_info.end()) use_data_number_names = false;
+        if (use_data_number_names && std::find_if(input_value_info.begin(), input_value_info.end(), [buf3](const ::onnx::ValueInfoProto& info) {
+                                       return info.name() == buf3;
+                                     }) == input_value_info.end()) use_gpu_data_number_names = false;
+      }
+    }
+    for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
+      std::string name = var_names[input_index];
+      char buf[64];
+      if (name.empty()) {
+        if (use_number_names) {
+          snprintf(buf, sizeof(buf), "%d", (int)input_index);
+          var_names[input_index] = buf;
+        } else if (use_data_number_names) {
+          snprintf(buf, sizeof(buf), "data_%d", (int)input_index);
+          var_names[input_index] = buf;
+        } else if (use_gpu_data_number_names) {
+          snprintf(buf, sizeof(buf), "gpu_0/data_%d", (int)input_index);
+          var_names[input_index] = buf;
+        } else
+          throw std::runtime_error("cannot guess a valid input name");
+      }
+    }
+  }
+  for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
+    std::string name = var_names[input_index];
     const onnx::TensorProto& input = input_pbs[input_index];
     feeds.insert(std::make_pair(name, ConvertTensorProtoToMLValue(input, allocator)));
   }
@@ -583,7 +638,7 @@ int main(int argc, char* argv[]) {
   path test_data_root_path(test_data_root);
   if (mode == RUN_MODE::NODE_TEST) {
     NodeTestResultStat stat;
-    std::vector<TestCaseInfo> tests = LoadTests(test_data_root_path / path("node"), whitelisted_test_cases);
+    std::vector<TestCaseInfo> tests = LoadTests(test_data_root_path, whitelisted_test_cases);
     RunNodeTests(tests, all_implemented_ops, stat, planner);
     print_result(stat, all_implemented_ops, !whitelisted_test_cases.empty());
   } else {

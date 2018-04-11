@@ -13,10 +13,10 @@ namespace Test {
 void TestResolve(LotusIR::Graph* p_graph) {
   const std::vector<LotusIR::NodeIndex>* nodes;
   p_graph->GetNodesInTopologicalOrder(&nodes);
-  auto nodesBefore = *nodes;
-  auto inputsBefore = p_graph->GetInputs();
-  auto outputsBefore = p_graph->GetOutputs();
-  auto valueInfoBefore = p_graph->GetValueInfo();
+  auto nodes_before = *nodes;
+  auto& inputs_before = p_graph->GetInputs();
+  auto& outputs_before = p_graph->GetOutputs();
+  auto& value_info_before = p_graph->GetValueInfo();
 
   // Touch the graph to force Resolve() to recompute.
   p_graph->GetNode(0)->MutableInputArgCount();
@@ -24,17 +24,17 @@ void TestResolve(LotusIR::Graph* p_graph) {
 
   const std::vector<LotusIR::NodeIndex>* nodesAfter;
   p_graph->GetNodesInTopologicalOrder(&nodesAfter);
-  auto& inputsAfter = p_graph->GetInputs();
-  auto& outputsAfter = p_graph->GetOutputs();
-  auto& valueInfoAfter = p_graph->GetValueInfo();
+  auto& inputs_after = p_graph->GetInputs();
+  auto& outputs_after = p_graph->GetOutputs();
+  auto& value_info_after = p_graph->GetValueInfo();
 
   // Multiple calls to Resolve() should not alter the sorted nodes,
   // inputs, outputs and valueInfo. The internal state should be
   // cleared.
-  EXPECT_EQ(nodesBefore, *nodesAfter);
-  EXPECT_EQ(inputsBefore, inputsAfter);
-  EXPECT_EQ(outputsBefore, outputsAfter);
-  EXPECT_EQ(valueInfoBefore, valueInfoAfter);
+  EXPECT_EQ(nodes_before, *nodesAfter);
+  EXPECT_EQ(inputs_before, inputs_after);
+  EXPECT_EQ(outputs_before, outputs_after);
+  EXPECT_EQ(value_info_before, value_info_after);
 }
 
 TEST(ONNXModelsTest, squeeze_net) {
@@ -62,8 +62,8 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
   std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
   // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
   coded_input->SetTotalBytesLimit(INT_MAX, INT_MAX);
-  ModelProto modelProto;
-  bool result = modelProto.ParseFromCodedStream(coded_input.get());
+  ModelProto model_proto;
+  bool result = model_proto.ParseFromCodedStream(coded_input.get());
   coded_input.reset();
   raw_input.reset();
   EXPECT_TRUE(result);
@@ -73,9 +73,9 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
   EXPECT_TRUE(Model::Load("./models/bvlc_alexnet/model.pb", &model).IsOK());
 
   // Check the graph input/output/value_info should have the same size as specified in the model file.
-  EXPECT_EQ(modelProto.graph().value_info_size(), model->MainGraph()->GetValueInfo().size());
-  EXPECT_EQ(modelProto.graph().input_size(), model->MainGraph()->GetInputs().size());
-  EXPECT_EQ(modelProto.graph().output_size(), model->MainGraph()->GetOutputs().size());
+  EXPECT_EQ(model_proto.graph().value_info_size(), model->MainGraph()->GetValueInfo().size());
+  EXPECT_EQ(model_proto.graph().input_size(), model->MainGraph()->GetInputs().size());
+  EXPECT_EQ(model_proto.graph().output_size(), model->MainGraph()->GetOutputs().size());
   TestResolve(model->MainGraph());
 }
 

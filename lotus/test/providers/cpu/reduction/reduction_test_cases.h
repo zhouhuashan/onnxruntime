@@ -10,10 +10,10 @@ struct ReductionAttribute {
 typedef std::tuple<ReductionAttribute, std::vector<int64_t>, std::vector<float>> OpAttributesResult;
 typedef std::multimap<std::string, OpAttributesResult> OpAttributesResultMap;
 struct ReductionTestCases {
-  std::vector<float> input_data_;
-  std::vector<int64_t> input_dims_;
+  std::vector<float> input_data;
+  std::vector<int64_t> input_dims;
 
-  OpAttributesResultMap map_op_attribute_expected_;
+  OpAttributesResultMap map_op_attribute_expected;
 };
 
 /*
@@ -86,17 +86,17 @@ input_shape = [2,3,2,2,3]
 input_data = np.random.uniform(size=input_shape)
 axes_options = [(2,3), (2, 1, 4), (0, 2, 3)]
 keepdims_options = [0, 1]
-print ("// input_data_")
+print ("// input_data")
 print ("{")
 for i in range(0, input_data.size):
 print("%5.6ff," % input_data.item(i),)
 print ("},")
-print ("// input_dims_")
+print ("// input_dims")
 print ("{", end='')
 print(*input_shape, sep=", ", end='')
 print ("},")
 
-print("  // map_op_attribute_expected_")
+print("  // map_op_attribute_expected")
 print ("{")
 
 for config in product(axes_options, keepdims_options):
@@ -146,7 +146,7 @@ print ("}")
 */
 
 ReductionTestCases testcases = {
-    // input_data_
+    // input_data
     {
         0.386928f,
         0.366349f,
@@ -221,9 +221,9 @@ ReductionTestCases testcases = {
         0.127394f,
         0.964857f,
     },
-    // input_dims_
+    // input_dims
     {2, 3, 2, 2, 3},
-    // map_op_attribute_expected_
+    // map_op_attribute_expected
     {
         {"ReduceL1",
          OpAttributesResult(

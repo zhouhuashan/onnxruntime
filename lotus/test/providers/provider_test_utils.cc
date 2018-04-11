@@ -43,6 +43,7 @@ void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
   for (auto& elem : input_defs) {
     feeds.insert(std::make_pair(elem->Name(), MLValue()));
   }
+
   for (auto& elem : output_defs) {
     output_names.push_back(elem->Name());
   }
@@ -72,7 +73,7 @@ void OpTester::Check<bool>(const Data& output_data, Tensor& output_tensor, size_
 
 OpTester::~OpTester() {
 #if _DEBUG
-  if (!m_fRun) {
+  if (!run_called_) {
     std::cerr << "Someone forgot to call OpTester::Run()" << std::endl;
     __debugbreak();
   }
@@ -81,38 +82,40 @@ OpTester::~OpTester() {
 
 void OpTester::Run() {
 #if _DEBUG
-  m_fRun = true;
+  run_called_ = true;
 #endif
 
   // Generate the input & output def lists
-  std::vector<LotusIR::NodeArg*> pinputDefs, poutputDefs;
-  for (auto& data : inputData_)
-    pinputDefs.push_back(&data.def_);
+  std::vector<LotusIR::NodeArg*> input_defs;
+  std::vector<LotusIR::NodeArg*> output_defs;
 
-  for (auto& data : outputData_)
-    poutputDefs.push_back(&data.def_);
+  for (auto& data : input_data_)
+    input_defs.push_back(&data.def_);
+
+  for (auto& data : output_data_)
+    output_defs.push_back(&data.def_);
 
   // Create a simple model
   LotusIR::Model model{"test"};
   LotusIR::Graph* graph = model.MainGraph();
-  graph->AddNode("node1", szOp_, szOp_, pinputDefs, poutputDefs);
+  graph->AddNode("node1", op_, op_, input_defs, output_defs);
   graph->Resolve();
 
   SessionState state;
   state.SetGraph(graph);
-  SetupState(state, pinputDefs, poutputDefs);
+  SetupState(state, input_defs, output_defs);
 
   std::unordered_map<std::string, MLValue> feeds;
   std::vector<std::string> output_names;
-  FillFeedsAndOutputNames(pinputDefs, poutputDefs, feeds, output_names);
+  FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
 
   std::shared_ptr<ExecutionFrame> frame{TestUtils::CreateSingleNodeCPUExecutionFrame(state, feeds, output_names)};
 
   auto& node = *graph->GetNode(graph->NumberOfNodes() - 1);
 
   // Add the attributes if any
-  for (auto& addAttributeFn : addAttributeFns_)
-    addAttributeFn(node);
+  for (auto& add_attribute_fn : add_attribute_funcs_)
+    add_attribute_fn(node);
 
   node.SetExecutionProvider(LotusIR::kCpuExecutionProvider);
 
@@ -125,21 +128,21 @@ void OpTester::Run() {
 
   // Hookup the inputs and outputs
   unsigned index = 0;
-  for (auto& input : inputData_) {
+  for (auto& input : input_data_) {
     status = frame->AllocateTensorWithSelfOwnBuffer(
-        index, input.dataType_, AllocatorManager::Instance().GetArena(CPU).Info(), input.shape_);
+        index, input.data_type_, AllocatorManager::Instance().GetArena(CPU).Info(), input.shape_);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     // For inputs we have data to initialize with, so copy it into the buffer
     auto* tensor = frame->GetMutableValue<Tensor>(index);
-    void* buffer = tensor->MutableDataRaw(input.dataType_);
-    memcpy(buffer, input.data_.get(), input.dataSizeInBytes_);
+    void* buffer = tensor->MutableDataRaw(input.data_type_);
+    memcpy(buffer, input.data_.get(), input.data_size_in_bytes_);
     index++;
   }
 
   // Note, index isn't reset here since outputs are indexed after inputs
-  for (auto& output : outputData_) {
+  for (auto& output : output_data_) {
     status = frame->AllocateTensorWithSelfOwnBuffer(
-        index++, output.dataType_, AllocatorManager::Instance().GetArena(CPU).Info(), output.shape_);
+        index++, output.data_type_, AllocatorManager::Instance().GetArena(CPU).Info(), output.shape_);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
   }
 
@@ -150,15 +153,15 @@ void OpTester::Run() {
 
   // Verify the outputs
   index = 0;
-  for (auto& output : outputData_) {
+  for (auto& output : output_data_) {
     auto& outputTensor = *kernel_ctx.Output(index++, output.shape_);
     auto size = output.shape_.Size();
     LOTUS_ENFORCE(output.shape_ == outputTensor.Shape(), "Output shape did not match expected output shape");
 
     // Dispatch on the type
-    if (output.dataType_ == DataTypeImpl::GetType<float>())
+    if (output.data_type_ == DataTypeImpl::GetType<float>())
       Check<float>(output, outputTensor, size);
-    else if (output.dataType_ == DataTypeImpl::GetType<bool>())
+    else if (output.data_type_ == DataTypeImpl::GetType<bool>())
       Check<bool>(output, outputTensor, size);
   }
 }

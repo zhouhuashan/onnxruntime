@@ -22,6 +22,11 @@ limitations under the License.
 #include <array>
 #include <sstream>
 
+#if defined(PLATFORM_WINDOWS)
+#include <intrin.h>
+#endif 
+
+
 namespace Lotus {
 // Runtime statistics collected by an allocator.
 struct AllocatorStats {

@@ -20,6 +20,7 @@ namespace Lotus {
 class PlannerImpl {
  private:
   const SessionState* p_session_state_;
+  const ISequentialPlannerContext* p_context_;
   SequentialExecutionPlan* plan_;
 
   // MLValueInfo: Auxiliary information about an MLValue used only during plan-generation:
@@ -171,8 +172,8 @@ class PlannerImpl {
 
   bool SameSize(const LotusIR::NodeArg& arg1, const LotusIR::NodeArg& arg2) {
     if ((!arg1.Exists()) || (!arg2.Exists())) return false;
-    auto p_shape1 = arg1.Shape();
-    auto p_shape2 = arg2.Shape();
+    auto p_shape1 = p_context_->GetShape(arg1);
+    auto p_shape2 = p_context_->GetShape(arg2);
     // If the shapes are unknown, we conservatively assume they may be of different size.
     if ((nullptr == p_shape1) || (nullptr == p_shape2)) return false;
     return SameSize(*p_shape1, arg1.Type(), *p_shape2, arg2.Type());
@@ -180,14 +181,14 @@ class PlannerImpl {
 
   // Find if freelist contains a buffer of the same size as output_arg
   bool FindReusableTensor(const LotusIR::NodeArg& output_arg, MLValueIndex* reusable_tensor) {
-    auto p_required_buffer_shape = output_arg.Shape();
+    auto p_required_buffer_shape = p_context_->GetShape(output_arg);
     if (nullptr == p_required_buffer_shape) return false;
     auto required_buffer_type = output_arg.Type();
 
     for (auto it = freelist_.begin(); it != freelist_.end(); ++it) {
       auto reusable = it->ml_value;
       auto p_node_arg = ml_value_info_.at(reusable).p_def_site;
-      auto p_available_buffer_shape = p_node_arg->Shape();
+      auto p_available_buffer_shape = p_context_->GetShape(*p_node_arg);
       if (nullptr != p_available_buffer_shape) {
         auto available_buffer_type = p_node_arg->Type();
         if (SameSize(*p_available_buffer_shape, available_buffer_type, *p_required_buffer_shape, required_buffer_type)) {
@@ -341,8 +342,9 @@ class PlannerImpl {
   }
 
  public:
-  Status CreatePlan(const SessionState& session_state, SequentialExecutionPlan* plan) {
+  Status CreatePlan(const SessionState& session_state, const ISequentialPlannerContext& context, SequentialExecutionPlan* plan) {
     p_session_state_ = &session_state;
+    p_context_ = &context;
     plan_ = plan;
 
     auto p_graph = p_session_state_->GetGraph();
@@ -375,9 +377,10 @@ class PlannerImpl {
   }
 };
 
-Status SequentialPlanner::CreatePlan(const SessionState& session_state, SequentialExecutionPlan* plan) {
+Status SequentialPlanner::CreatePlan(const SessionState& session_state, const ISequentialPlannerContext& context,
+                                     SequentialExecutionPlan* plan) {
   PlannerImpl planner;
-  return planner.CreatePlan(session_state, plan);
+  return planner.CreatePlan(session_state, context, plan);
 }
 
 Status AllocationPlanner::CreatePlan(AllocationPlannerType allocation_planner_type,

@@ -244,7 +244,11 @@ class InferenceSession::Impl {
   static void GetNodeArgDef(const LotusIR::NodeArg& arg, NodeArgDef& nf) {
     nf.name = arg.Name();
     nf.data_type = *arg.Type();
-    nf.shape = Utils::GetTensorShapeFromTensorShapeProto(*arg.Shape());
+    nf.shape.clear();
+    auto shape = arg.Shape();
+    if (nullptr != shape) {
+      nf.shape = Utils::GetTensorShapeFromTensorShapeProto(*arg.Shape());
+    }
   }
 
   Common::Status SaveModelMetadata(const LotusIR::Model& model) {
@@ -313,7 +317,15 @@ class InferenceSession::Impl {
 
       run_log_id += run_options.run_tag;
 
-      new_run_logger = logging_manager_->CreateLogger(run_log_id);
+      if (run_options.run_log_verbosity_level > 0) {
+        new_run_logger = logging_manager_->CreateLogger(run_log_id,
+                                                        Logging::Severity::kVERBOSE,
+                                                        false,
+                                                        run_options.run_log_verbosity_level);
+      } else {
+        new_run_logger = logging_manager_->CreateLogger(run_log_id);
+      }
+
       run_logger = new_run_logger.get();
       VLOGS(*run_logger, 1) << "Created logger for run with id of " << run_log_id;
     } else {
@@ -332,7 +344,14 @@ class InferenceSession::Impl {
                                       ? session_options_.session_logid
                                       : "InferenceSession";  // there's probably a better default...
 
-      owned_session_logger_ = logging_manager->CreateLogger(session_logid);
+      if (session_options_.session_log_verbosity_level > 0) {
+        owned_session_logger_ = logging_manager->CreateLogger(session_logid,
+                                                              Logging::Severity::kVERBOSE,
+                                                              false,
+                                                              session_options_.session_log_verbosity_level);
+      } else {
+        owned_session_logger_ = logging_manager->CreateLogger(session_logid);
+      }
       session_logger_ = owned_session_logger_.get();
     } else {
       session_logger_ = &Logging::LoggingManager::DefaultLogger();

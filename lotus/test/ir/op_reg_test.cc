@@ -71,33 +71,33 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
 
   // Type: map(int64,float);
   TypeProto map_int64_float;
-  auto mapType = map_int64_float.mutable_map_type();
-  mapType->set_key_type(TensorProto::INT64);
-  auto mapValueType = mapType->mutable_value_type()->mutable_tensor_type();
-  mapValueType->set_elem_type(TensorProto::FLOAT);
-  mapValueType->mutable_shape();
+  auto map_type = map_int64_float.mutable_map_type();
+  map_type->set_key_type(TensorProto::INT64);
+  auto map_value_type = map_type->mutable_value_type()->mutable_tensor_type();
+  map_value_type->set_elem_type(TensorProto::FLOAT);
+  map_value_type->mutable_shape();
 
-  NodeArg *inputArg1 = new NodeArg("node_1_in_1", &map_int64_float);
+  NodeArg *input_arg1 = new NodeArg("node_1_in_1", &map_int64_float);
   inputs.clear();
-  inputs.push_back(inputArg1);
-  NodeArg *outputArg1 = new NodeArg("node_1_out_1", &tensor_float);
+  inputs.push_back(input_arg1);
+  NodeArg *output_arg1 = new NodeArg("node_1_out_1", &tensor_float);
   outputs.clear();
-  outputs.push_back(outputArg1);
+  outputs.push_back(output_arg1);
   graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs, kMLDomain);
 
   inputs.clear();
-  inputs.push_back(outputArg1);
+  inputs.push_back(output_arg1);
 
-  NodeArg *outputArg4 = new NodeArg("node_4_out_1", &tensor_float);
+  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_float);
   outputs.clear();
-  outputs.push_back(outputArg4);
+  outputs.push_back(output_arg4);
   graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, kMLDomain);
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
 
-  delete inputArg1;
-  delete outputArg1;
-  delete outputArg4;
+  delete input_arg1;
+  delete output_arg1;
+  delete output_arg4;
 }
 }  // namespace Test
 }  // namespace LotusIR

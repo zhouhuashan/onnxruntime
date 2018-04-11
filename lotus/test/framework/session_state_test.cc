@@ -41,11 +41,11 @@ TEST(SessionStateTest, AddGetKernelTest) {
   auto graph = model.MainGraph();
   std::vector<LotusIR::NodeArg*> inputs;
   std::vector<LotusIR::NodeArg*> outputs;
-  TypeProto outputType;
-  outputType.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
-  outputType.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
-  LotusIR::NodeArg outputArg("node_1_out_1", &outputType);
-  outputs.push_back(&outputArg);
+  TypeProto output_type;
+  output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+  output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+  LotusIR::NodeArg output_arg("node_1_out_1", &output_type);
+  outputs.push_back(&output_arg);
   LotusIR::Node* p_node = graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   AllocatorInfo allocator_info("CPUAllocator", AllocatorType::kArenaAllocator);

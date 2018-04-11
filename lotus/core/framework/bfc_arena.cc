@@ -33,9 +33,6 @@ BFCArena::BFCArena(IDeviceAllocator* resource_allocator,
 }
 
 BFCArena::~BFCArena() {
-  // Return memory back.
-  LOGS_DEFAULT(INFO) << "Number of regions allocated: "
-                     << region_manager_.regions().size();
   for (const auto& region : region_manager_.regions()) {
     device_allocator_->Free(region.ptr());
   }

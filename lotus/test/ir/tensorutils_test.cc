@@ -8,21 +8,21 @@ using namespace onnx;
 namespace Lotus {
 namespace Test {
 TEST(TensorParseTest, TensorUtilsTest) {
-  TensorProto boolTensorProto;
-  boolTensorProto.set_data_type(TensorProto_DataType_BOOL);
-  boolTensorProto.add_int32_data(1);
+  TensorProto bool_tensor_proto;
+  bool_tensor_proto.set_data_type(TensorProto_DataType_BOOL);
+  bool_tensor_proto.add_int32_data(1);
 
-  bool boolData[1];
-  auto status = TensorUtils::UnpackTensor(boolTensorProto, boolData, 1);
+  bool bool_data[1];
+  auto status = TensorUtils::UnpackTensor(bool_tensor_proto, bool_data, 1);
   EXPECT_TRUE(status.IsOK());
-  EXPECT_TRUE(boolData[0]);
+  EXPECT_TRUE(bool_data[0]);
 
-  float floatData[1];
-  status = TensorUtils::UnpackTensor(boolTensorProto, floatData, 1);
+  float float_data[1];
+  status = TensorUtils::UnpackTensor(bool_tensor_proto, float_data, 1);
   EXPECT_FALSE(status.IsOK());
 
-  TensorProto floatTensorProto;
-  floatTensorProto.set_data_type(TensorProto_DataType_FLOAT);
+  TensorProto float_tensor_proto;
+  float_tensor_proto.set_data_type(TensorProto_DataType_FLOAT);
   float f[4] = {1.1f, 2.2f, 3.3f, 4.4f};
   char rawdata[sizeof(float) * 4 + 1];
   for (int i = 0; i < 4; ++i) {
@@ -30,27 +30,27 @@ TEST(TensorParseTest, TensorUtilsTest) {
   }
 
   rawdata[sizeof(float) * 4] = '\0';
-  floatTensorProto.set_raw_data(rawdata);
-  float floatData2[4];
-  status = TensorUtils::UnpackTensor(floatTensorProto, floatData2, 4);
+  float_tensor_proto.set_raw_data(rawdata);
+  float float_data2[4];
+  status = TensorUtils::UnpackTensor(float_tensor_proto, float_data2, 4);
   EXPECT_TRUE(status.IsOK());
-  EXPECT_EQ(1.1f, floatData2[0]);
-  EXPECT_EQ(2.2f, floatData2[1]);
-  EXPECT_EQ(3.3f, floatData2[2]);
-  EXPECT_EQ(4.4f, floatData2[3]);
+  EXPECT_EQ(1.1f, float_data2[0]);
+  EXPECT_EQ(2.2f, float_data2[1]);
+  EXPECT_EQ(3.3f, float_data2[2]);
+  EXPECT_EQ(4.4f, float_data2[3]);
 
-  TensorProto stringTensorProto;
-  stringTensorProto.set_data_type(TensorProto_DataType_STRING);
-  stringTensorProto.add_string_data("a");
-  stringTensorProto.add_string_data("b");
+  TensorProto string_tensor_proto;
+  string_tensor_proto.set_data_type(TensorProto_DataType_STRING);
+  string_tensor_proto.add_string_data("a");
+  string_tensor_proto.add_string_data("b");
 
-  std::string stringData[2];
-  status = TensorUtils::UnpackTensor(stringTensorProto, stringData, 2);
+  std::string string_data[2];
+  status = TensorUtils::UnpackTensor(string_tensor_proto, string_data, 2);
   EXPECT_TRUE(status.IsOK());
-  EXPECT_EQ("a", stringData[0]);
-  EXPECT_EQ("b", stringData[1]);
+  EXPECT_EQ("a", string_data[0]);
+  EXPECT_EQ("b", string_data[1]);
 
-  status = TensorUtils::UnpackTensor(boolTensorProto, stringData, 2);
+  status = TensorUtils::UnpackTensor(bool_tensor_proto, string_data, 2);
   EXPECT_FALSE(status.IsOK());
 }
 }  // namespace Test

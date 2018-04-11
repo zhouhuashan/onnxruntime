@@ -94,10 +94,35 @@ struct SequentialExecutionPlan {
   std::vector<MLValueIndex> to_be_freed;
 };
 
+// ISequentialPlannerContext abstracts how the planner accesses information (such as inferred shape)
+// to do the planning.
+class ISequentialPlannerContext {
+ public:
+  virtual const TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const = 0;
+};
+
+class SequentialPlannerContext : public ISequentialPlannerContext {
+ public:
+  virtual const TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
+    (arg);
+    // Once shape-inference is in place, we can return the result of shape-inference
+    return nullptr;
+  }
+};
+
 class SequentialPlanner {
  public:
+  // This API allows user to provide a custom planner context. Currently, this is used
+  // primarily for testing.
   static Status CreatePlan(const SessionState& session_state,
+                           const ISequentialPlannerContext& context,
                            SequentialExecutionPlan* plan);
+
+  // This uses a standard planner context and is meant to be the primary API for creating a plan.
+  static Status CreatePlan(const SessionState& session_state, SequentialExecutionPlan* plan) {
+    SequentialPlannerContext context;
+    return CreatePlan(session_state, context, plan);
+  }
 };
 
 /*
