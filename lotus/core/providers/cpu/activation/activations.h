@@ -32,6 +32,14 @@ DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Sigmoid,
                                        },
                                        {})
 
+DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(HardSigmoid,
+                                       {
+                                         EIGEN_X_VAR(xm);
+                                         EIGEN_Y_VAR(ym);
+                                         ym = ((Attr("alpha") * xm + Attr("beta")).cwiseMin(1.0f)).cwiseMax(0.0f);
+                                       },
+                                       (std::vector<std::string>{"alpha", "beta"}))
+
 DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Tanh, { EIGEN_Y = EIGEN_X.tanh(); }, {})
 
 DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu,
