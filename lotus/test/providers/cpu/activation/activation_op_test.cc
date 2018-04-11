@@ -75,5 +75,61 @@ TEST(ActivationOpTest, ThresholdedRelu) {
                          {{"alpha", alpha}});
 }
 
+TEST(ActivationOpTest, Selu) {
+  static constexpr float alpha = 1.6732f;
+  static constexpr float gamma = 1.0507f;
+
+  TestUnaryElementwiseOp("Selu",
+                         input_vals,
+                         [](float x) { return x <= 0 ? gamma * (alpha * exp(x) - alpha) : gamma * x; },
+                         {{"alpha", alpha}, {"gamma", gamma}});
+}
+
+TEST(ActivationOpTest, Selu_Attributes) {
+  static constexpr float alpha = 1.8f;
+  static constexpr float gamma = 0.5f;
+
+  TestUnaryElementwiseOp("Selu",
+                         input_vals,
+                         [](float x) { return x <= 0 ? gamma * (alpha * exp(x) - alpha) : gamma * x; },
+                         {{"alpha", alpha}, {"gamma", gamma}});
+}
+
+TEST(ActivationOpTest, PRelu) {
+  OpTester test("PRelu");
+
+  auto formula = [](float x, float slope) { return x < 0 ? slope * x : x; };
+
+  std::vector<float> inputs{1.0f, -4.0f, 0.0f, -9.0f};
+  std::vector<float> slopes{1.0f, -2.0f, 3.0f, -4.0f};
+  std::vector<float> outputs;
+  for (unsigned i = 0; i < inputs.size(); i++)
+    outputs.push_back(formula(inputs[i], slopes[i]));
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput<float>("X", dims, inputs);
+  test.AddInput<float>("slope", dims, slopes);
+  test.AddOutput<float>("Y", dims, outputs);
+  test.Run();
+}
+
+TEST(ActivationOpTest, PRelu_SingleSlope) {
+  OpTester test("PRelu");
+
+  auto formula = [](float x, float slope) { return x < 0 ? slope * x : x; };
+
+  auto inputs = {1.0f, -4.0f, 0.0f, -9.0f};
+  auto slope = 1.5f;
+  std::vector<float> outputs;
+  for (auto& input : inputs)
+    outputs.push_back(formula(input, slope));
+
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput<float>("X", dims, inputs);
+  test.AddInput<float>("slope", {}, {slope});
+  test.AddOutput<float>("Y", dims, outputs);
+  test.Run();
+}
+
 }  // namespace Test
 }  // namespace Lotus

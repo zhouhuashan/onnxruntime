@@ -41,4 +41,20 @@ DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu,
                                        },
                                        {"alpha"})
 
+DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Selu,
+                                       {
+                                         EIGEN_X_VAR(xm);
+                                         EIGEN_Y = Attr("gamma") * (xm.cwiseMax(0.0f) + (Attr("alpha") * (xm.array().exp() - 1.0f)).cwiseMin(0.0f));
+                                       },
+                                       {"alpha", "gamma"})
+
+template <typename T>
+class PRelu final : public OpKernel {
+ public:
+  PRelu(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
 }  // namespace Lotus
