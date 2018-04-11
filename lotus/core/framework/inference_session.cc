@@ -405,26 +405,23 @@ class InferenceSession::Impl {
   // through all the nodes only once.
   Common::Status SaveKernelsAndMLValueNameIndexMapping() {
     LOGS(*session_logger_, INFO) << "Saving kernels and MLValue mappings.";
-    // TODO: const_cast because no const_iterator available for the graph
-    LotusIR::Graph* p_graph = const_cast<LotusIR::Graph*>(session_state_.GetGraph());
+    const LotusIR::Graph* p_graph = session_state_.GetGraph();
     LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
     int curr_idx = 0;
-    for (auto node_it = p_graph->NodesBegin(); node_it != p_graph->NodesEnd(); ++node_it) {
-      LotusIR::Node* p_node = *node_it;
-
+    for (auto& node : p_graph->Nodes()) {
       // ignore source and sink nodes
-      if (p_graph->IsSourceNode(p_node->Index()) || p_graph->IsSinkNode(p_node->Index())) {
+      if (p_graph->IsSourceNode(node.Index()) || p_graph->IsSinkNode(node.Index())) {
         continue;
       }
 
       // construct and save the kernels
       std::unique_ptr<OpKernel> p_op_kernel;
-      LOTUS_RETURN_IF_ERROR(CreateOpKernel(*p_node, &p_op_kernel));
-      session_state_.AddKernel(p_node->Index(), std::move(p_op_kernel));
+      LOTUS_RETURN_IF_ERROR(CreateOpKernel(node, &p_op_kernel));
+      session_state_.AddKernel(node.Index(), std::move(p_op_kernel));
 
       // build the MLValue->index map
       int unused_var = -1;
-      auto& inputs = p_node->InputDefs();
+      auto& inputs = node.InputDefs();
       for (auto& def : inputs) {
         if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
           continue;
@@ -434,7 +431,7 @@ class InferenceSession::Impl {
         session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
       }
 
-      auto& outputs = p_node->OutputDefs();
+      auto& outputs = node.OutputDefs();
       for (auto def : outputs) {
         if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
           continue;

@@ -1,12 +1,14 @@
 #pragma once
 
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "core/common/common.h"
 #include "core/common/status.h"
 #include "core/graph/constants.h"
+#include "core/graph/graph_nodes.h"
 #include "onnx/defs/schema.h"
 #include "core/graph/utils.h"
 #include "onnx/onnx-ml.pb.h"
@@ -310,31 +312,6 @@ class Node {
 // 3. Graph does have value_info, while function does not.
 class GraphBase {
  public:
-  // An iterator helper to access graph nodes without copy.
-  // The iterator itself does not own any data.
-  class NodeIterator {
-   public:
-    // Constructor.
-    NodeIterator(NodeIndex current_node_index, GraphBase* p_graph)
-        : graph_(p_graph),
-          current_node_index_(current_node_index) {
-    }
-
-    bool operator==(const NodeIterator& other) const;
-
-    bool operator!=(const NodeIterator& other) const;
-
-    void operator++();
-
-    Node* operator*();
-
-   private:
-    GraphBase* graph_;
-
-    // it's the Node Index in <m_nodes> of the <graph_>.
-    NodeIndex current_node_index_;
-  };
-
   GraphBase() = default;
 
   // Resolve <*this> graph to ensure it's in a good shape with full
@@ -366,9 +343,13 @@ class GraphBase {
   Node* GetNode(NodeIndex node_index);
   const Node* GetNode(NodeIndex node_index) const;
 
-  // Get node iterator to access all effective nodes in the graph.
-  NodeIterator NodesBegin();
-  NodeIterator NodesEnd();
+  GraphNodes& Nodes() {
+    return iterable_nodes_;
+  }
+
+  const GraphNodes& Nodes() const {
+    return iterable_nodes_;
+  }
 
   // Max Node Index.
   NodeIndex MaxNodeIndex() const;
@@ -428,6 +409,9 @@ class GraphBase {
   // Graph nodes.
   // Element in <m_nodes> may be nullptr due to graph optimization.
   std::vector<std::unique_ptr<Node>> nodes_;
+
+  // Wrapper of Graph nodes to provide iteration services that hide nullptr entries
+  GraphNodes iterable_nodes_{nodes_};
 
   // Number of nodes.
   // Normally this is smaller than the size of <m_nodes>, as some

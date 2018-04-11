@@ -279,23 +279,23 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   model2.reset(new Model(model_proto2));
   // Load the model again to ensure that it's still the right thing.
   Graph *graph2 = model2->MainGraph();
-  for (auto node_iter = graph2->NodesBegin(); node_iter != graph2->NodesEnd(); ++node_iter) {
-    if (graph2->IsSourceNode((*node_iter)->Index()) || graph2->IsSinkNode((*node_iter)->Index())) {
+  for (auto &node : graph2->Nodes()) {
+    if (graph2->IsSourceNode(node.Index()) || graph2->IsSinkNode(node.Index())) {
       continue;
     }
-    auto node_name_to_input_output_iter = expected_node_name_to_input_output_args.find((*node_iter)->Name());
+    auto node_name_to_input_output_iter = expected_node_name_to_input_output_args.find(node.Name());
     EXPECT_FALSE(node_name_to_input_output_iter == expected_node_name_to_input_output_args.end());
 
-    EXPECT_EQ(node_name_to_input_output_iter->second.first.size(), (*node_iter)->InputDefs().size());
+    EXPECT_EQ(node_name_to_input_output_iter->second.first.size(), node.InputDefs().size());
     for (size_t i = 0; i < node_name_to_input_output_iter->second.first.size(); ++i) {
-      EXPECT_EQ(node_name_to_input_output_iter->second.first[i]->Name(), (*node_iter)->InputDefs()[i]->Name());
-      EXPECT_EQ(node_name_to_input_output_iter->second.first[i]->Type(), (*node_iter)->InputDefs()[i]->Type());
+      EXPECT_EQ(node_name_to_input_output_iter->second.first[i]->Name(), node.InputDefs()[i]->Name());
+      EXPECT_EQ(node_name_to_input_output_iter->second.first[i]->Type(), node.InputDefs()[i]->Type());
     }
 
-    EXPECT_EQ(node_name_to_input_output_iter->second.second.size(), (*node_iter)->OutputDefs().size());
+    EXPECT_EQ(node_name_to_input_output_iter->second.second.size(), node.OutputDefs().size());
     for (size_t i = 0; i < node_name_to_input_output_iter->second.second.size(); ++i) {
-      EXPECT_EQ(node_name_to_input_output_iter->second.second[i]->Name(), (*node_iter)->OutputDefs()[i]->Name());
-      EXPECT_EQ(node_name_to_input_output_iter->second.second[i]->Type(), (*node_iter)->OutputDefs()[i]->Type());
+      EXPECT_EQ(node_name_to_input_output_iter->second.second[i]->Name(), node.OutputDefs()[i]->Name());
+      EXPECT_EQ(node_name_to_input_output_iter->second.second[i]->Type(), node.OutputDefs()[i]->Type());
     }
   }
 
@@ -347,7 +347,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   // Case 1: A normal graph.
   //                         SouceNode
   //                     /       |           \
-			//  node_1 (Variable)    node_2 (Variable) node_3 (Variable)
+            //  node_1 (Variable)    node_2 (Variable) node_3 (Variable)
   //                            \|/ (it's all 3 nodes above outputs to the one input of node_4)
   //                        node_4 (Max)
   //                             |
