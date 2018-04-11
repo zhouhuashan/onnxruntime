@@ -31,18 +31,18 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
     plan->allocation_plan[i].location = AllocatorManager::Instance().GetArena(CPU).Info();
   }
 
-  auto graph = const_cast<LotusIR::Graph*>(session_state.GetGraph());
+  auto graph = session_state.GetGraph();
   // iterate all the values in the graph to assign the correct type.
-  for (auto it = graph->NodesBegin(); it != graph->NodesEnd(); ++it) {
-    if (graph->IsSinkNode((*it)->Index()) || graph->IsSourceNode((*it)->Index()))
+  for (auto& node : graph->Nodes()) {
+    if (graph->IsSinkNode(node.Index()) || graph->IsSourceNode(node.Index()))
       continue;
 
-    auto& inputs = (*it)->InputDefs();
+    auto& inputs = node.InputDefs();
     for (auto arg : inputs) {
       FillType(*arg, session_state, plan);
     }
 
-    auto& outputs = (*it)->OutputDefs();
+    auto& outputs = node.OutputDefs();
     for (auto arg : outputs) {
       FillType(*arg, session_state, plan);
     }

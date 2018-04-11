@@ -476,28 +476,6 @@ const NodeAttributes& Node::GetAttributes() const {
   return attributes_;
 }
 
-bool GraphBase::NodeIterator::operator==(const GraphBase::NodeIterator& other) const {
-  return (graph_ == other.graph_ &&
-          current_node_index_ == other.current_node_index_);
-}
-
-bool GraphBase::NodeIterator::operator!=(const GraphBase::NodeIterator& other) const {
-  return !(*this == other);
-}
-
-void GraphBase::NodeIterator::operator++() {
-  while (true) {
-    current_node_index_++;
-    if (current_node_index_ >= graph_->MaxNodeIndex() || nullptr != graph_->GetNode(current_node_index_)) {
-      return;
-    }
-  }
-}
-
-Node* GraphBase::NodeIterator::operator*() {
-  return graph_->GetNode(current_node_index_);
-}
-
 Graph::Graph(const GraphProto& graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version)
     : graph_proto_(graph_proto) {
@@ -558,9 +536,9 @@ Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node
   output_args.clear();
   node_name_to_index.clear();
 
-  for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
+  for (auto& node : Nodes()) {
     // Verify node name should be unique.
-    auto& node_name = (*node_iter)->Name();
+    auto& node_name = node.Name();
 
     if (!node_name.empty() && node_name_to_index.end() != node_name_to_index.find(node_name)) {
       // The node has name and its name was used by another node.
@@ -569,10 +547,10 @@ Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node
       return status;
     }
 
-    node_name_to_index[node_name] = (*node_iter)->Index();
+    node_name_to_index[node_name] = node.Index();
 
     // Verify node outputs' name should be unique.
-    for (auto& output_def : (*node_iter)->OutputDefs()) {
+    for (auto& output_def : node.OutputDefs()) {
       std::string output_arg_name = output_def->Name();
       if (output_args.end() != output_args.find(output_arg_name)) {
         // Two outputs with same name.
@@ -580,7 +558,7 @@ Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node
                       "Error: two output args with same name (" + output_arg_name + ").");
         return status;
       }
-      output_args.insert({output_arg_name, *node_iter});
+      output_args.insert({output_arg_name, &node});
     }
   }
   return Status::OK();
@@ -589,27 +567,27 @@ Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node
 Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& output_args,
                                const std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
   std::unordered_set<Node*> inner_nodes;
-  for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
-    if (IsSourceNode((*node_iter)->Index()) || IsSinkNode((*node_iter)->Index())) {
+  for (auto& node : Nodes()) {
+    if (IsSourceNode(node.Index()) || IsSinkNode(node.Index())) {
       continue;
     }
 
-    for (auto& control_input : (*node_iter)->control_inputs_) {
+    for (auto& control_input : node.control_inputs_) {
       auto name_to_index_iter = node_name_to_index.find(control_input);
       if (node_name_to_index.end() == name_to_index_iter) {
         Status status(LOTUS, FAIL,
                       "The control input (" + control_input + ") of Node (" +
-                          (*node_iter)->Name() + ") does not exist in the graph.");
+                          node.Name() + ") does not exist in the graph.");
         return status;
       }
 
       NodeIndex src_node_index = name_to_index_iter->second;
-      NodeIndex dst_node_index = (*node_iter)->Index();
+      NodeIndex dst_node_index = node.Index();
       nodes_[src_node_index]->output_nodes_.insert(nodes_[dst_node_index].get());
       nodes_[dst_node_index]->input_nodes_.insert(nodes_[src_node_index].get());
     }
 
-    auto& input_args = (*node_iter)->InputDefs();
+    auto& input_args = node.InputDefs();
     if (input_args.size() > 0) {
       // This node needs inputs.
 
@@ -625,7 +603,7 @@ Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& out
           // This input arg should be fed when running evaluation.
 
           // Add a control edge between <souce> node and this node.
-          AddControlEdge(source_node_index_, (*node_iter)->Index());
+          AddControlEdge(source_node_index_, node.Index());
           continue;
         }
 
@@ -633,38 +611,38 @@ Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& out
         // and <output_arg_iter>.
         Node* output_node = output_arg_iter->second;
 
-        (*node_iter)->input_nodes_.insert(output_node);
+        node.input_nodes_.insert(output_node);
         Node::EdgeEnd* in_edge = new Node::EdgeEnd(output_node, input_arg);
-        (*node_iter)->input_edges_.insert(in_edge);
+        node.input_edges_.insert(in_edge);
 
-        output_node->output_nodes_.insert((*node_iter));
-        Node::EdgeEnd* out_edge = new Node::EdgeEnd(*node_iter, input_arg);
+        output_node->output_nodes_.insert(&node);
+        Node::EdgeEnd* out_edge = new Node::EdgeEnd(&node, input_arg);
         output_node->output_edges_.insert(out_edge);
 
         inner_nodes.insert(output_node);
       }
     } else {
-      if ((*node_iter)->OutputDefs().size() <= 0) {
+      if (node.OutputDefs().size() <= 0) {
         // This is a useless node.
         // It has no input/output.
-        RemoveNode((*node_iter)->Index());
+        RemoveNode(node.Index());
       }
 
       // This is a starting node.
       // Add a control edge between <souce> node and this node.
-      AddControlEdge(source_node_index_, (*node_iter)->Index());
+      AddControlEdge(source_node_index_, node.Index());
     }
   }
 
-  for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
-    if (IsSourceNode((*node_iter)->Index()) || IsSinkNode((*node_iter)->Index())) {
+  for (auto& node : Nodes()) {
+    if (IsSourceNode(node.Index()) || IsSinkNode(node.Index())) {
       continue;
     }
 
-    if (inner_nodes.size() <= 0 || inner_nodes.end() == inner_nodes.find((*node_iter))) {
+    if (inner_nodes.size() <= 0 || inner_nodes.end() == inner_nodes.find(&node)) {
       // This is an ending node.
       // Add a control edge from this node to sink node.
-      AddControlEdge((*node_iter)->Index(), sink_node_index_);
+      AddControlEdge(node.Index(), sink_node_index_);
     }
   }
 
@@ -1217,14 +1195,6 @@ const Node* GraphBase::GetNode(NodeIndex node_index) const {
   return nodes_[node_index].get();
 }
 
-GraphBase::NodeIterator GraphBase::NodesBegin() {
-  return GraphBase::NodeIterator(0, this);
-}
-
-GraphBase::NodeIterator GraphBase::NodesEnd() {
-  return GraphBase::NodeIterator(MaxNodeIndex(), this);
-}
-
 NodeIndex GraphBase::MaxNodeIndex() const {
   return nodes_.size();
 }
@@ -1423,8 +1393,8 @@ Status Graph::SetGraphInputsOutputs() {
     }
 
     std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
-    for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
-      for (auto& output_def : (*node_iter)->OutputDefs()) {
+    for (auto& node : Nodes()) {
+      for (auto& output_def : node.OutputDefs()) {
         if (specified_graph_outputs.erase(output_def->Name()) >= 1) {
           graph_outputs_.push_back(output_def);
         }
@@ -1436,9 +1406,9 @@ Status Graph::SetGraphInputsOutputs() {
       return Status(LOTUS, FAIL, "Some graph outputs which don't exist in the graph.");
     }
 
-    for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
+    for (auto& node : Nodes()) {
       // Go thru all node's inputs.
-      for (auto& input_arg : (*node_iter)->InputDefs()) {
+      for (auto& input_arg : node.InputDefs()) {
         if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
@@ -1467,10 +1437,8 @@ Status Graph::SetGraphInputsOutputs() {
     }
   } else {
     std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
-    for (auto node_iter = NodesBegin();
-         node_iter != NodesEnd();
-         ++node_iter) {
-      for (auto& output_def : (*node_iter)->OutputDefs()) {
+    for (auto& node : Nodes()) {
+      for (auto& output_def : node.OutputDefs()) {
         output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
     }
@@ -1479,9 +1447,9 @@ Status Graph::SetGraphInputsOutputs() {
     auto graph_output_args = output_name_to_node_arg;
 
     std::unordered_set<Node*> inner_nodes;
-    for (auto node_iter = NodesBegin(); node_iter != NodesEnd(); ++node_iter) {
+    for (auto& node : Nodes()) {
       // Go thru all node's inputs.
-      for (auto& input_arg : (*node_iter)->InputDefs()) {
+      for (auto& input_arg : node.InputDefs()) {
         if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
