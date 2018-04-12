@@ -73,6 +73,20 @@ REGISTER_KERNEL(KernelDefBuilder("ReduceSumSquare")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 ReduceSumSquare<float>);
 
+REGISTER_KERNEL(KernelDefBuilder("ArgMax")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ArgMax<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("ArgMin")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                ArgMin<float>);
+
 void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
                                     std::vector<float>& transposedInputData,
                                     Tensor** reducedTensor,
@@ -131,6 +145,15 @@ void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
     memcpy(to_data, from_data, count * sizeof(float));
     block_size = 1;
     blocks = (int)count;
+
+    std::vector<int64_t> out_dims;
+    if (keepdims_) {
+      out_dims = in_dims;
+      out_dims[0] = 1;
+    } else {
+      out_dims = std::vector<int64_t>(in_dims.begin() + 1, in_dims.end());
+    }
+    *reducedTensor = ctx->Output(0, out_dims);
     return;
   }
 
@@ -398,4 +421,53 @@ Status ReduceSumSquare<float>::Compute(OpKernelContext* ctx) const {
   }
   return Status::OK();
 }
+
+template <>
+Status ArgMax<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  int64_t* output_data = reduced->MutableData<int64_t>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float v_max = transposedInputData[j];
+    int i_max = 0;
+    for (int i = 1; i < blocks; ++i) {
+      float v = transposedInputData[i * block_size + j];
+      if (v > v_max) {
+        i_max = i;
+        v_max = v;
+      }
+    }
+    *(output_data++) = static_cast<int64_t>(i_max);
+  }
+  return Status::OK();
+}
+
+template <>
+Status ArgMin<float>::Compute(OpKernelContext* ctx) const {
+  std::vector<float> transposedInputData;
+  int64_t block_size, blocks;
+  Tensor* reduced;
+  PrepareForReduce(ctx, transposedInputData, &reduced, block_size, blocks);
+
+  int64_t* output_data = reduced->MutableData<int64_t>();
+
+  for (int j = 0; j < block_size; ++j) {
+    float v_min = transposedInputData[j];
+    int i_min = 0;
+    for (int i = 1; i < blocks; ++i) {
+      float v = transposedInputData[i * block_size + j];
+      if (v < v_min) {
+        i_min = i;
+        v_min = v;
+      }
+    }
+    *(output_data++) = static_cast<int64_t>(i_min);
+  }
+  return Status::OK();
+}
+
 }  // namespace Lotus

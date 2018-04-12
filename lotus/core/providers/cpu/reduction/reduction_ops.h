@@ -8,11 +8,16 @@ namespace Lotus {
 
 class ReduceKernel : public OpKernel {
  protected:
-  ReduceKernel(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(info.GetAttrs("axes", axes_).IsOK());
+  ReduceKernel(const OpKernelInfo& info, bool allow_multi_axes = true) : OpKernel(info) {
+    if (allow_multi_axes) {
+      LOTUS_ENFORCE(info.GetAttrs("axes", axes_).IsOK());
+    } else {
+      axes_.resize(1);
+      LOTUS_ENFORCE(info.GetAttr("axis", &axes_[0]).IsOK());
+    }
     int64_t keepdims = 1;
     if (info.GetAttr("keepdims", &keepdims).IsOK())
-      keepdims_ = keepdims == 1;
+      keepdims_ = (keepdims == 1);
   }
 
   void PrepareForReduce(OpKernelContext* ctx, std::vector<float>& transposedInputData, Tensor** reducedTensor,
@@ -111,6 +116,25 @@ class ReduceSumSquare final : public ReduceKernel {
 
   Status Compute(OpKernelContext* context) const override;
 };
+
+template <typename T>
+class ArgMax final : public ReduceKernel {
+ public:
+  ArgMax(const OpKernelInfo& info) : ReduceKernel(info, false) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class ArgMin final : public ReduceKernel {
+ public:
+  ArgMin(const OpKernelInfo& info) : ReduceKernel(info, false) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
 }  // namespace Lotus
 
 #endif  // !CORE_PROVIDERS_CPU_REDUCTION_OPS_H
