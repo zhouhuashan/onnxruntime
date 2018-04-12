@@ -60,11 +60,12 @@ class ExecutionProviderMgr {
   }
 
   ExecutionProviderPtr GetProvider(const string& key, const ExecutionProviderInfo& info) {
-    if (provider_map_.find(key) == provider_map_.end()) {
+    auto iter = provider_map_.find(key);
+    if (iter == provider_map_.end()) {
       return nullptr;
-    } else {
-      return ExecutionProviderPtr(provider_map_[key](info));
     }
+
+    return iter->second(info);
   }
 
  private:
