@@ -651,6 +651,9 @@ class Graph : public GraphBase {
   // Sync graph inputs/outputs when serializing to proto.
   void SyncGraphInputsOutputs();
 
+  //Verify if all the initializers are valid inputs
+  void CleanInitializers();
+
   // Graph nodes.
   // Element in <m_nodes> may be nullptr due to graph optimization.
   //std::vector<std::unique_ptr<Node>> m_nodes;
