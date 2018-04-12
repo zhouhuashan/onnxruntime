@@ -152,7 +152,7 @@ Status Transpose<float>::Compute(OpKernelContext* ctx) const {
 
 REGISTER_KERNEL(KernelDefBuilder("Transpose")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 6)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Transpose<float>);
