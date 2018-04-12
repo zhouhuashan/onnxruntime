@@ -3,6 +3,7 @@
 namespace Lotus {
 
 const std::vector<MLDataType> castOpTypeConstraints{
+    DataTypeImpl::GetTensorType<bool>(),
     DataTypeImpl::GetTensorType<float>(),
     DataTypeImpl::GetTensorType<double>(),
     DataTypeImpl::GetTensorType<uint8_t>(),
