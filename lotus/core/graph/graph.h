@@ -11,7 +11,7 @@
 #include "core/graph/graph_nodes.h"
 #include "onnx/defs/schema.h"
 #include "core/graph/utils.h"
-#include "onnx/onnx-ml.pb.h"
+#include "onnx/onnx_pb.h"
 
 using namespace onnx;
 typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;

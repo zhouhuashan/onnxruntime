@@ -28,7 +28,7 @@ Status Cast<float>::Compute(OpKernelContext* context) const {
   Tensor* Y = context->Output(0, TensorShape(shape));
 
   switch (to_) {
-    case TensorProto_DataType_BOOL:
+  case TensorProto_DataType_BOOL:
       CastData<float, bool>(X, Y, shape);
       break;
     case TensorProto_DataType_INT16:

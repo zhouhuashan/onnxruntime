@@ -1,5 +1,5 @@
 #include "core/graph/tensorutils.h"
-#include "onnx/onnx-ml.pb.h"
+#include "onnx/onnx_pb.h"
 #include "gtest/gtest.h"
 
 using namespace Lotus::Utils;

@@ -9,6 +9,7 @@
 namespace LotusIR {
 static const std::string kNoOp = "NoOp";
 static const std::string kConstant = "Constant";
+static const std::string kFunctionOp = "_kFunctionOp";
 static const std::string kConstantValue = "value";
 static const std::string kOnnxDomain = "";
 static const std::string kMLDomain = "ai.onnx.ml";

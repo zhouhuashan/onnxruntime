@@ -10,7 +10,7 @@
 #pragma warning(pop)
 #endif
 #include "onnx/defs/data_type_utils.h"
-#include "onnx/onnx-ml.pb.h"
+#include "onnx/onnx_pb.h"
 #include "gtest/gtest.h"
 
 using google::protobuf::util::MessageDifferencer;

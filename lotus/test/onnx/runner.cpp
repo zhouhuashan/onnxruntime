@@ -1,5 +1,6 @@
 #include <core/framework/init.h>
-#include <onnx/onnx-ml.pb.h>
+//#include <onnx/onnx-ml.pb.h>
+#include "onnx/onnx_pb.h"
 #include <core/graph/model.h>
 #include <core/framework/allocator.h>
 #include <core/framework/op_kernel.h>
