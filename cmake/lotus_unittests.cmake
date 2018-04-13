@@ -158,27 +158,6 @@ AddTest(
   DEPENDS lotus_providers googletest
 )
 
-file(GLOB_RECURSE lotus_model_tests_src
-    "${LOTUS_ROOT}/test/model_test/*.cc"
-)
-
-set(lotus_model_tests_libs
-    ${lotus_providers_whole_archive}
-    ${lotus_framework_whole_archive}
-    ${lotusIR_graph_whole_archive}
-    ${onnx_whole_archive}
-    ${lotus_common_whole_archive}
-    ${protobuf_STATIC_LIBRARIES}
-    ${googletest_STATIC_LIBRARIES}
-)
-
-AddTest(
-    TARGET lotus_model_tests
-    SOURCES ${lotus_test_utils_src} ${lotus_model_tests_src}
-    LIBS ${lotus_model_tests_libs}
-    DEPENDS lotus_providers lotus_framework googletest
-)
-
 #
 # LotusIR_graph test data
 #
