@@ -56,6 +56,8 @@ Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, std::un
   switch (tensor_proto.data_type()) {
     case onnx::TensorProto_DataType::TensorProto_DataType_FLOAT:
       return GetTensorByTypeFromTensorProto<float>(tensor_proto, tensor_shape, tensor_size, p_tensor, allocator);
+    case onnx::TensorProto_DataType::TensorProto_DataType_DOUBLE:
+      return GetTensorByTypeFromTensorProto<double>(tensor_proto, tensor_shape, tensor_size, p_tensor, allocator);
     case onnx::TensorProto_DataType::TensorProto_DataType_BOOL:
       return GetTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, tensor_size, p_tensor, allocator);
     case onnx::TensorProto_DataType::TensorProto_DataType_INT32:

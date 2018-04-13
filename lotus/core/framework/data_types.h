@@ -3,7 +3,7 @@
 #include <string>
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
-#include "onnx/onnx-ml.pb.h"
+#include "onnx/onnx_pb.h"
 
 using namespace onnx;
 

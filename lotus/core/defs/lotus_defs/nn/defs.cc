@@ -50,32 +50,6 @@ Each input value is divided by
                       "Constrain output types to float tensors.")
       .Attr("input_dim", "Size of the input vocabulary.", AttrType::AttributeProto_AttributeType_INT)
       .Attr("output_dim", "Dimension of the embedding output vectors.", AttrType::AttributeProto_AttributeType_INT);
-
-  ONNX_OPERATOR_SCHEMA(LegacyPadding)
-      .SetDomain(kMSDomain)
-      .SetDoc(
-          "his operator is designed to support CoreML's pooling operator under IncludeLastPixel padding mode.. "
-          "To simulate CoreML's pooling operator, First, copy kernel shape, strides, padding "
-          "amounts from the original pooling operator to this LegacyPadding operator. "
-          "Second, create a pooling operator under auto_pad=VALID with the kernel and strides used in the original pooling. "
-          "Third, connect the output of LegacyPadding operator with the pooling operator we just create. ")
-      .Input(0, "data", "Input tensor.", "T")
-      .Output(0, "output", "Tensor after padding.", "T")
-      .TypeConstraint("T", { "tensor(float16)", "tensor(float)", "tensor(double)" },
-          "Constrain input and output types to float tensors.")
-      .Attr("pads",
-          "Padding amounts along H- and W-axes, [pad_h, pad_w]. ",
-          AttrType::AttributeProto_AttributeType_INTS, OPTIONAL)
-      .Attr("kernel_shape",
-          "The size of the kernel along H- and W-axes, [k_h, k_w]. Notice that the kernel is a 2-D tensor. ",
-          AttrType::AttributeProto_AttributeType_INTS, OPTIONAL)
-      .Attr("strides",
-          "Stride along H- and W-axes, [stride_h, stride_w].",
-          AttrType::AttributeProto_AttributeType_INTS, OPTIONAL)
-      .Attr("value",
-          "One float, indicates the value to be filled, default is 0",
-          AttrType::AttributeProto_AttributeType_FLOAT, float(0));
-
   return Status::OK();  
 }
 }  // namespace LotusIR

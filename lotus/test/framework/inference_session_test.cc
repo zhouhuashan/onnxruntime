@@ -138,7 +138,6 @@ TEST(InferenceSessionTests, ModelMetadata) {
   SessionOptions so(vector<ProviderOption>{po});
 
   so.session_logid = "InferenceSessionTests.ModelMetadata";
-
   InferenceSession session_object{so, &DefaultLoggingManager()};
   string model_uri = "testdata/squeezenet/model.onnx";
   EXPECT_TRUE(session_object.Load(model_uri).IsOK());

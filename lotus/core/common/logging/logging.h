@@ -243,7 +243,6 @@ inline const Logger &LoggingManager::DefaultLogger() {
   return *default_logger;
 }
 
-
 inline Timestamp LoggingManager::GetTimestamp() const noexcept {
   using namespace std::chrono;
 

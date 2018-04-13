@@ -11,7 +11,7 @@
 #include "core/graph/graph_nodes.h"
 #include "onnx/defs/schema.h"
 #include "core/graph/utils.h"
-#include "onnx/onnx-ml.pb.h"
+#include "onnx/onnx_pb.h"
 
 using namespace onnx;
 typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
@@ -650,6 +650,9 @@ class Graph : public GraphBase {
 
   // Sync graph inputs/outputs when serializing to proto.
   void SyncGraphInputsOutputs();
+
+  //Verify if all the initializers are valid inputs
+  void CleanInitializers();
 
   // Graph nodes.
   // Element in <m_nodes> may be nullptr due to graph optimization.

@@ -13,6 +13,10 @@ template <typename T_X,
           typename T_Y>
 class Gemm final : public OpKernel {
  public:
+  template <typename T>
+  using EigenMatrixMapRowMajor = Eigen::Map<
+      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
+
   Gemm(const OpKernelInfo& info) : OpKernel(info) {
     int64_t temp;
     LOTUS_ENFORCE(info.GetAttr<int64_t>("transA", &temp).IsOK());
@@ -67,7 +71,7 @@ class Gemm final : public OpKernel {
     // Todo: we might should move this part into math::gemm to let eigen
     // have better chance to further optimize it.
     if (beta_ != 0) {
-      auto output_mat = EigenMatrixMap<T_Y>(
+      auto output_mat = EigenMatrixMapRowMajor<T_Y>(
           Y->template MutableData<T_Y>(),
           M,
           N);

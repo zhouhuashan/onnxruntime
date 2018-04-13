@@ -9,14 +9,14 @@
 namespace Lotus {
 // FunctionKernel is used to provide custom implementation of functions.
 // It is also used to implement custom operators.
-class FunctionKernel : OpKernel {
+class FunctionKernel : public OpKernel {
  public:
   explicit FunctionKernel(const OpKernelInfo& info)
       : OpKernel(info),
         provider_(info.GetExecutionProvider()){}
 
-  void Compute(OpKernelContext* context) {
-    provider_->Compute(Node(), context);
+   Status Compute(OpKernelContext* context) const override {
+    return provider_->Compute(Node(), context);
   }
 
  private:

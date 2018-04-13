@@ -131,7 +131,6 @@ class Tensor {
   friend class ExecutionFrame;
 
  public:
-
   // Create an empty tensor with float type.
   // empty tensor is a tensor with 1-d shape (0,), and 0 elements.
   Tensor();
@@ -187,6 +186,18 @@ class Tensor {
   const void* DataRaw(MLDataType type) const {
     LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
     return GetRaw();
+  }
+
+  /**
+  * Resizes the tensor without touching underlying storage.
+  * This requires the total size of the tensor to remains constant.
+  * @warning this function is NOT thread-safe.
+  */
+  inline void Reshape(const TensorShape& new_shape) {
+    LOTUS_ENFORCE(shape_.Size() == new_shape.Size(),
+                  "Tensor size (" + std::to_string(shape_.Size()) +
+                      ") != new size (" + std::to_string(new_shape.Size()) + ")");
+    shape_ = new_shape;
   }
 
   // More API methods.

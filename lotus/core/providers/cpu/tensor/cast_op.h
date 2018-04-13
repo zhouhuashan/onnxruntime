@@ -9,11 +9,10 @@ template <typename T>
 class Cast final : public OpKernel {
  public:
   Cast(const OpKernelInfo& info) : OpKernel(info) {
-    std::vector<std::string> to;
-    Status status = info.GetAttrs<std::string>("to", to);
+    std::string to;
+    Status status = info.GetAttr("to", &to);
     LOTUS_ENFORCE(status.IsOK(), "Attribute to is not set.");
-    LOTUS_ENFORCE(to.size() == 1, "Attribute to can have only one Cast type.");
-    LOTUS_ENFORCE(TensorProto_DataType_Parse(to[0], &to_), "Cast type: %s is not supported.", to[0]);
+    LOTUS_ENFORCE(TensorProto_DataType_Parse(to, &to_), "Cast type: %s is not supported.", to);
   }
 
   Status Compute(OpKernelContext* context) const override;
