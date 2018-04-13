@@ -35,8 +35,12 @@ class TensorUtils {
   DEFINE_UNPACK_TENSOR(int32_t, onnx::TensorProto_DataType_INT32, int32_data, int32_data_size);
   DEFINE_UNPACK_TENSOR(int64_t, onnx::TensorProto_DataType_INT64, int64_data, int64_data_size);
 
-  static Status UnpackTensor(const onnx::TensorProto& tensor, /*out*/ std::string* p_data, int64_t expected_size);
-  static Status UnpackTensor(const onnx::TensorProto& tensor, /*out*/ bool* p_data, int64_t expected_size);
+  static Status UnpackTensor(const onnx::TensorProto& tensor,
+                             /*out*/ std::string* p_data,
+                             int64_t expected_size);
+  static Status UnpackTensor(const onnx::TensorProto& tensor,
+                             /*out*/ bool* p_data,
+                             int64_t expected_size);
 
  private:
   static inline bool IsLittleEndianOrder() {
