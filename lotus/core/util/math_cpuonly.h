@@ -61,33 +61,36 @@ class CPUMathUtil {
 #define EIGEN_Y EigenVectorArrayMap<T>(Y->MutableData<T>(), Y->Shape().Size())
 #define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->MutableData<T>(), Y->Shape().Size())
 
-#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func, ...)                                 \
-  template <typename T>                                                                               \
-  class class_name final : public OpKernel {                                                          \
-   public:                                                                                            \
-    static const char* TypeTraits() {                                                                 \
-      return #class_name;                                                                             \
-    }                                                                                                 \
-                                                                                                      \
-    class_name(const OpKernelInfo& info) : OpKernel(info) {                                           \
-      for (const auto name_and_default_value : std::vector<std::pair<std::string, float>>(__VA_ARGS__)) { \
-        const std::string& name = name_and_default_value.first;                                              \
-        T value = (T)name_and_default_value.second;                                                      \
-        op_kernel_info_.GetAttr(name, &value);                                                        \
-        attr_.insert(std::make_pair(name, value));                                                    \
-      }                                                                                               \
-    }                                                                                                 \
-                                                                                                      \
-    Status Compute(OpKernelContext* context) const override {                                         \
-      const Tensor* X = context->Input<Tensor>(0);                                                    \
-      Tensor* Y = context->Output(0, X->Shape());                                                     \
-      func;                                                                                           \
-      return Status::OK();                                                                            \
-    }                                                                                                 \
-                                                                                                      \
-   private:                                                                                           \
-    std::unordered_map<std::string, T> attr_;                                                         \
-    T Attr(const char* name) const { return attr_.at(std::string(name)); }                            \
+#define DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(class_name, func, ...) \
+  template <typename T>                                               \
+  class class_name final : public OpKernel {                          \
+   public:                                                            \
+    static const char* TypeTraits() {                                 \
+      return #class_name;                                             \
+    }                                                                 \
+                                                                      \
+    class_name(const OpKernelInfo& info) : OpKernel(info) {           \
+      for (const auto name_and_default_value :                        \
+           std::vector<std::pair<std::string, float>>(__VA_ARGS__)) { \
+        const std::string& name = name_and_default_value.first;       \
+        T value = (T)name_and_default_value.second;                   \
+        op_kernel_info_.GetAttr(name, &value);                        \
+        attr_.insert(std::make_pair(name, value));                    \
+      }                                                               \
+    }                                                                 \
+                                                                      \
+    Status Compute(OpKernelContext* context) const override {         \
+      const Tensor* X = context->Input<Tensor>(0);                    \
+      Tensor* Y = context->Output(0, X->Shape());                     \
+      func;                                                           \
+      return Status::OK();                                            \
+    }                                                                 \
+                                                                      \
+   private:                                                           \
+    std::unordered_map<std::string, T> attr_;                         \
+    T Attr(const char* name) const {                                  \
+      return attr_.at(std::string(name));                             \
+    }                                                                 \
   };
 
 }  // namespace Lotus
