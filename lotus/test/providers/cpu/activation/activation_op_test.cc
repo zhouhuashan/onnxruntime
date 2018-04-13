@@ -29,6 +29,10 @@ std::vector<float> input_vals = {
     FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10,                        // min, denorm, -denorm
     FLT_MAX, -FLT_MAX, std::numeric_limits<float>::infinity()};  // max, -max, inf
 
+std::vector<float> exp_safe_input_vals = {
+    -1.0f, 0, 1.0f,                                   // normal input values for activation
+    FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10, -FLT_MAX};  // min, denorm, -denorm, -max
+
 TEST(ActivationOpTest, Sigmoid) {
   TestUnaryElementwiseOp("Sigmoid",
                          input_vals,
@@ -140,6 +144,22 @@ TEST(ActivationOpTest, PRelu_SingleSlope) {
   test.AddInput<float>("slope", {}, {slope});
   test.AddOutput<float>("Y", dims, outputs);
   test.Run();
+}
+
+TEST(ActivationOpTest, ParametricSoftplus) {
+  static constexpr float alpha = 2.0f;
+  static constexpr float beta = 1.5f;
+
+  TestUnaryElementwiseOp("ParametricSoftplus",
+                         exp_safe_input_vals,
+                         [](float x) { return alpha * log(exp(beta * x) + 1); },
+                         {{"alpha", alpha}, {"beta", beta}});
+}
+
+TEST(ActivationOpTest, Softplus) {
+  TestUnaryElementwiseOp("Softplus",
+                         exp_safe_input_vals,
+                         [](float x) { return log(exp(x) + 1); });
 }
 
 }  // namespace Test
