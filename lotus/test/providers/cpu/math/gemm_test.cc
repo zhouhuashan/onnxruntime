@@ -37,10 +37,10 @@ TEST(MathOpTest, GemmBroadcast) {
                        {1.0f, 2.0f, 3.0f, 4.0f,
                         -1.0f, -2.0f, -3.0f, -4.0f});
   test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
-  test.AddInput<float>("C", {3}, std::vector<float>(3, 1.0f));
+  test.AddInput<float>("C", { 3 }, std::vector<float>{1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("Y", {2, 3},
-                        {11.0f, 11.0f, 11.0f,
-                         -9.0f, -9.0f, -9.0f});
+                        {11.0f, 12.0f, 13.0f,
+                         -9.0f, -8.0f, -7.0f});
   test.Run();
 }
 
