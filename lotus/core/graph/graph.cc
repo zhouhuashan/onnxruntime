@@ -6,6 +6,7 @@
 #include "core/graph/graph.h"
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
+#include "core/common/logging/logging.h"
 
 using namespace onnx::Utils;
 
@@ -1092,7 +1093,7 @@ Status Graph::Resolve() {
   RETURN_IF_ERROR(CheckIsAcyclic(nodes_in_topological_order_));
   RETURN_IF_ERROR(VerifyNodeAndOpMatch(nodes_in_topological_order_, output_args));
   RETURN_IF_ERROR(SetGraphInputsOutputs());
-
+  CleanInitializers();
   graph_resolve_needed_ = false;
   return Status::OK();
 }
@@ -1353,6 +1354,22 @@ void Graph::SyncGraphInputsOutputs() {
   }
 }
 
+void Graph::CleanInitializers() {
+  std::vector<std::string> wrong_names;
+  for (const auto& pv : name_to_initial_tensor_) {
+    const std::string& s = pv.first;
+    if (std::none_of(graph_inputs_.begin(), graph_inputs_.end(), [&s](const NodeArg* input) -> bool {
+          return s == input->Name();
+        })) {
+      wrong_names.push_back(s);
+    }
+  }
+  for (const std::string& s : wrong_names) {
+    LOGF_DEFAULT(WARNING, "%s exists in this graph's initializers but it is not in its input list", s.c_str());
+    name_to_initial_tensor_.erase(s);
+  }
+}
+
 Status Graph::SetGraphInputsOutputs() {
   // Reset graphInputs/graphOutputs/valueInfo state.
   graph_inputs_.clear();
@@ -1415,10 +1432,9 @@ Status Graph::SetGraphInputsOutputs() {
         }
 
         if (specified_graph_inputs.end() != specified_graph_inputs.find(input_arg->Name())) {
-          if (added_input_names.end() == added_input_names.find(input_arg->Name())) {
+          if (added_input_names.insert(input_arg->Name()).second) {
             // The node input is specified as graph input.
             graph_inputs_.push_back(input_arg);
-            added_input_names.insert(input_arg->Name());
           }
           continue;
         }

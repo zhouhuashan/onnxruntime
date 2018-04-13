@@ -149,15 +149,17 @@ enum class EXECUTE_RESULT {
   FAILED_TO_RUN = -2,
   RESULT_DIFFERS = -3,
   SHAPE_MISMATCH = -4,
-  TYPE_MISMATCH = -5
+  TYPE_MISMATCH = -5,
+  NOT_SUPPORT = -6,
 };
 
+template <typename FLOAT_TYPE>
 EXECUTE_RESULT compare_float_result(const Tensor& outvalue, const Tensor& expected_value, const char* test_case_name, int i) {
   const float abs_error = 1e-6f;
   if (expected_value.Shape() != outvalue.Shape()) return EXECUTE_RESULT::SHAPE_MISMATCH;
   const size_t size1 = expected_value.Shape().Size();
-  const float* expected_output = expected_value.Data<float>();
-  const float* real_output = outvalue.Data<float>();
+  const FLOAT_TYPE* expected_output = expected_value.Data<FLOAT_TYPE>();
+  const FLOAT_TYPE* real_output = outvalue.Data<FLOAT_TYPE>();
   for (size_t di = 0; di != size1; ++di) {
     const double diff = fabs(expected_output[di] - real_output[di]);
     if (diff > abs_error) {
@@ -187,6 +189,14 @@ EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vect
                                          const std::vector<onnx::TensorProto>& output_pbs, const char* test_case_name,
                                          const onnx::ModelProto& model_pb) {
   auto& cpu_allocator = AllocatorManager::Instance().GetArena(CPU);
+  for (const ValueInfoProto& a : model_pb.graph().input()) {
+    if (a.type().tensor_type().elem_type() != TensorProto_DataType_FLOAT)
+      return EXECUTE_RESULT::NOT_SUPPORT;
+  }
+  for (const ValueInfoProto& a : model_pb.graph().output()) {
+    if (a.type().tensor_type().elem_type() != TensorProto_DataType_FLOAT)
+      return EXECUTE_RESULT::NOT_SUPPORT;
+  }
   std::unordered_map<std::string, MLValue> feeds = ConvertPbsToMLValues(model_pb.graph().input(), input_pbs, cpu_allocator);
   std::vector<MLValue> p_fetches;
   try {
@@ -216,7 +226,10 @@ EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vect
     EXECUTE_RESULT compare_result = EXECUTE_RESULT::UNKNOWN_ERROR;
     switch (expected_value.data_type()) {
       case TensorProto_DataType_FLOAT:
-        compare_result = compare_float_result(outvalue, *expected_tensor.get(), test_case_name, (int)i);
+        compare_result = compare_float_result<float>(outvalue, *expected_tensor.get(), test_case_name, (int)i);
+        break;
+      case TensorProto_DataType_DOUBLE:
+        compare_result = compare_float_result<double>(outvalue, *expected_tensor.get(), test_case_name, (int)i);
         break;
       case TensorProto_DataType_BOOL:
         compare_result = is_result_exactly_match<bool>(outvalue, *expected_tensor.get(), test_case_name, (int)i);
@@ -292,6 +305,7 @@ struct NodeTestResultStat {
   int load_model_failed = 0;
   int throwed_exception = 0;
   int result_differs = 0;
+  int skipped = 0;
   std::unordered_set<std::string> not_implemented_kernels;
   std::unordered_set<std::string> failed_kernels;
   std::unordered_set<std::string> covered_ops;
@@ -342,13 +356,14 @@ void print_result(const NodeTestResultStat& stat, const std::vector<std::string>
   std::string failed_kernels_str = containerToStr(stat.failed_kernels);
   std::string not_tested_str = containerToStr(not_tested);
   int failed = stat.total_test_case_count - stat.succeeded;
-  int other_reason_failed = failed - stat.not_implemented - stat.load_model_failed - stat.result_differs - stat.throwed_exception;
+  int other_reason_failed = failed - stat.not_implemented - stat.load_model_failed - stat.result_differs - stat.throwed_exception - stat.skipped;
   std::ostringstream oss;
   oss << "result: \n"
          "\tTotal test cases:"
-      << stat.total_test_case_count << "\n\t\tSucceeded:"
-      << stat.succeeded << "\n\t\tFailed:"
-      << failed << "\n\t\t\tKernel not implemented:"
+      << stat.total_test_case_count
+      << "\n\t\tSucceeded:" << stat.succeeded
+      << "\n\t\tSkipped:" << stat.skipped
+      << "\n\t\tFailed:" << failed << "\n\t\t\tKernel not implemented:"
       << stat.not_implemented << "\n\t\t\tLoad model Failed:"
       << stat.load_model_failed << "\n\t\t\tThrew exception while runnning:"
       << stat.throwed_exception << "\n\t\t\tResult_differs:"
@@ -430,6 +445,8 @@ void RunNodeTests(const std::vector<TestCaseInfo>& tests, const std::vector<std:
     } else if (ret == EXECUTE_RESULT::RESULT_DIFFERS) {
       ++stat.result_differs;
       stat.failed_kernels.insert(node_pb.op_type());
+    } else if (ret == EXECUTE_RESULT::NOT_SUPPORT) {
+      ++stat.skipped;
     } else {
       stat.failed_kernels.insert(node_pb.op_type());
     }
