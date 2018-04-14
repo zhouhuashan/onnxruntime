@@ -267,8 +267,8 @@ class InferenceSession::Impl {
     model_metadata_.graph_name = p_graph->Name();
 
     // save inputs
-    auto inputs = p_graph->GetInputs();
-    auto weights = p_graph->GetAllInitializedTensors();
+    auto& inputs = p_graph->GetInputs();
+    auto& weights = p_graph->GetAllInitializedTensors();
     input_def_list_.reserve(inputs.size());
     for (const auto& elem : inputs) {
       if (!elem) {
@@ -284,7 +284,7 @@ class InferenceSession::Impl {
     }
 
     // save outputs
-    auto outputs = p_graph->GetOutputs();
+    auto& outputs = p_graph->GetOutputs();
     output_def_list_.reserve(outputs.size());
     for (const auto& elem : outputs) {
       if (!elem) {
@@ -421,24 +421,22 @@ class InferenceSession::Impl {
 
       // build the MLValue->index map
       int unused_var = -1;
-      auto& inputs = node.InputDefs();
-      for (auto& def : inputs) {
-        if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
+      for (gsl::not_null<const LotusIR::NodeArg*> input_def : node.InputDefs()) {
+        if (session_state_.GetMLValueIdx(input_def->Name(), &unused_var).IsOK()) {
           continue;
         }
         VLOGS(*session_logger_, 1)
-            << "Adding input argument with name: " << def->Name() << " to MLValueIndex with index: " << curr_idx;
-        session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
+            << "Adding input argument with name: " << input_def->Name() << " to MLValueIndex with index: " << curr_idx;
+        session_state_.AddMLValueNameIdx(input_def->Name(), curr_idx++);
       }
 
-      auto& outputs = node.OutputDefs();
-      for (auto def : outputs) {
-        if (session_state_.GetMLValueIdx(def->Name(), &unused_var).IsOK()) {
+      for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
+        if (session_state_.GetMLValueIdx(output_def->Name(), &unused_var).IsOK()) {
           continue;
         }
         VLOGS(*session_logger_, 1)
-            << "Adding output argument with name: " << def->Name() << " to MLValueIndex with index: " << curr_idx;
-        session_state_.AddMLValueNameIdx(def->Name(), curr_idx++);
+            << "Adding output argument with name: " << output_def->Name() << " to MLValueIndex with index: " << curr_idx;
+        session_state_.AddMLValueNameIdx(output_def->Name(), curr_idx++);
       }
     }
 

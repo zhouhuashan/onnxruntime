@@ -17,9 +17,10 @@ class GraphEditor {
                 const std::vector<NodeArg*>& output_args,
                 const std::string& domain = "") {
     return graph_->AddNode(name, op_type, description,
-                           input_args, output_args, domain);
+                           input_args, output_args, nullptr, domain);
   }
 
+  // Copy an existing node into this graph
   Node* AddNode(const Node& other) {
     return graph_->AddNode(other);
   }
@@ -122,19 +123,19 @@ class RuleBasedGraphTransformer : public IGraphTransformer {
   // TODO (revisit needed): Using OpSignature* here will ask that OpSignature should be storeed globally,
   // otherwise, there will be multiple adresses/pointers for the same operator or function.
   // To avoid this ask, we may use OpSignature ID as the key, which should be name_domain_version.
-     Status Register(IRewriteRule& rule, const std::vector<OpSignature*>& ops) {
-         UNUSED_PARAMETER(rule);
-         UNUSED_PARAMETER(ops);
-         LOTUS_NOT_IMPLEMENTED;
-         return Status::OK();
+  Status Register(IRewriteRule& rule, const std::vector<OpSignature*>& ops) {
+    UNUSED_PARAMETER(rule);
+    UNUSED_PARAMETER(ops);
+    LOTUS_NOT_IMPLEMENTED;
+    return Status::OK();
   }
 
   // Apply for all applicable rules against one graph.
-  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) const override{
-      UNUSED_PARAMETER(graph);
-      UNUSED_PARAMETER(modified);
-      LOTUS_NOT_IMPLEMENTED;
-      return Status::OK();
+  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) const override {
+    UNUSED_PARAMETER(graph);
+    UNUSED_PARAMETER(modified);
+    LOTUS_NOT_IMPLEMENTED;
+    return Status::OK();
   }
 
   static RuleBasedGraphTransformer Instance() {

@@ -32,6 +32,7 @@ TEST(AllocationPlannerTest, DummyPlannerTest) {
   tensor.set_data_type(TensorProto_DataType_FLOAT);
   tensor.set_name("W");
   graph->AddInitializedTensor(tensor);
+  graph->Resolve();
 
   SessionState state;
   state.SetGraph(graph);

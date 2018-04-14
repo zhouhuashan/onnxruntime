@@ -1,6 +1,10 @@
 #pragma once
 
+#include <type_traits>
 #include <vector>
+
+#include "gsl/pointers"
+#include "gsl/span"
 
 #include "core/common/common.h"
 #include "core/common/status.h"
@@ -25,45 +29,52 @@ class TensorUtils {
     if (tensor.field_size() != expected_size)                                                             \
       return Status(StatusCategory::LOTUS, StatusCode::FAIL,                                              \
                     "UnpackTensor: the pre-allocated size does not match the size in proto");             \
-    for (auto elem : tensor.field_name()) {                                                               \
-      *p_data++ = static_cast<T>(elem);                                                                   \
-    }                                                                                                     \
+    const auto span = gsl::make_span(p_data, expected_size);                                              \
+    auto& data = tensor.field_name();                                                                     \
+    std::copy(data.cbegin(), data.cend(), span.begin());                                                  \
     return Status::OK();                                                                                  \
   }
 
-  DEFINE_UNPACK_TENSOR(float, onnx::TensorProto_DataType_FLOAT, float_data, float_data_size);
+  DEFINE_UNPACK_TENSOR(float, onnx::TensorProto_DataType_FLOAT, float_data, float_data_size)
   DEFINE_UNPACK_TENSOR(double, onnx::TensorProto_DataType_DOUBLE, double_data, double_data_size);
-  DEFINE_UNPACK_TENSOR(int32_t, onnx::TensorProto_DataType_INT32, int32_data, int32_data_size);
-  DEFINE_UNPACK_TENSOR(int64_t, onnx::TensorProto_DataType_INT64, int64_data, int64_data_size);
+  DEFINE_UNPACK_TENSOR(int32_t, onnx::TensorProto_DataType_INT32, int32_data, int32_data_size)
+  DEFINE_UNPACK_TENSOR(int64_t, onnx::TensorProto_DataType_INT64, int64_data, int64_data_size)
 
   static Status UnpackTensor(const onnx::TensorProto& tensor, /*out*/ std::string* p_data, int64_t expected_size);
   static Status UnpackTensor(const onnx::TensorProto& tensor, /*out*/ bool* p_data, int64_t expected_size);
 
  private:
-  static inline bool IsLittleEndianOrder() {
+  GSL_SUPPRESS(type .4)  // allow use of C-style cast for this special case
+  static inline bool IsLittleEndianOrder() noexcept {
     static int n = 1;
     return (*(char*)&n == 1);
   }
 
   template <typename T>
   static void UnpackTensorWithRawData(const onnx::TensorProto& tensor, /*out*/ T* p_data) {
-    auto& raw_data = tensor.raw_data();
-    auto buff = raw_data.c_str();
-    size_t type_size = sizeof(T);
+    // allow this low level routine to be somewhat unsafe. assuming it's thoroughly tested and valid
+    GSL_SUPPRESS(type)       // type.1 reinterpret-cast; type.4 C-style casts; type.5 'T result;' is uninitialized;
+    GSL_SUPPRESS(bounds .1)  // pointer arithmetic
+    GSL_SUPPRESS(f .23)      // buff and temp_bytes never tested for nullness and could be gsl::not_null
+    {
+      auto& raw_data = tensor.raw_data();
+      auto buff = raw_data.c_str();
+      const size_t type_size = sizeof(T);
 
-    if (IsLittleEndianOrder()) {
-      memcpy((void*)p_data, (void*)buff, raw_data.size() * sizeof(char));
-    } else {
-      for (size_t i = 0; i < raw_data.size(); i += type_size, buff += type_size) {
-        T result;
-        const char* tempBytes = reinterpret_cast<char*>(&result);
-        for (size_t j = 0; j < type_size; ++j) {
-          memcpy((void*)&tempBytes[j], (void*)&buff[type_size - 1 - i], sizeof(char));
+      if (IsLittleEndianOrder()) {
+        memcpy((void*)p_data, (void*)buff, raw_data.size() * sizeof(char));
+      } else {
+        for (size_t i = 0; i < raw_data.size(); i += type_size, buff += type_size) {
+          T result;
+          const char* temp_bytes = reinterpret_cast<char*>(&result);
+          for (size_t j = 0; j < type_size; ++j) {
+            memcpy((void*)&temp_bytes[j], (void*)&buff[type_size - 1 - i], sizeof(char));
+          }
+          p_data[i] = result;
         }
-        p_data[i] = result;
       }
     }
   }
-};
+};  // namespace Utils
 }  // namespace Utils
 }  // namespace Lotus

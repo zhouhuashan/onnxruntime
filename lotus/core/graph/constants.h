@@ -7,12 +7,12 @@
 #include "core/common/common.h"
 
 namespace LotusIR {
-static const std::string kNoOp = "NoOp";
-static const std::string kConstant = "Constant";
-static const std::string kFunctionOp = "_kFunctionOp";
-static const std::string kConstantValue = "value";
-static const std::string kOnnxDomain = "";
-static const std::string kMLDomain = "ai.onnx.ml";
-static const std::string kMSDomain = "com.microsoft";
-static const std::string kCpuExecutionProvider = "CPUExecutionProvider";
+constexpr const char* kNoOp = "NoOp";
+constexpr const char* kConstant = "Constant";
+constexpr const char* kFunctionOp = "_kFunctionOp";
+constexpr const char* kConstantValue = "value";
+constexpr const char* kOnnxDomain = "";
+constexpr const char* kMLDomain = "ai.onnx.ml";
+constexpr const char* kMSDomain = "com.microsoft";
+constexpr const char* kCpuExecutionProvider = "CPUExecutionProvider";
 }  // namespace LotusIR

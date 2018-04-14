@@ -348,10 +348,9 @@ class PlannerImpl {
     plan_ = plan;
 
     auto p_graph = p_session_state_->GetGraph();
-    LotusIR::Graph* p_nonconst_graph = const_cast<LotusIR::Graph*>(p_graph);
 
     const std::vector<LotusIR::NodeIndex>* p_graph_nodes;
-    LOTUS_RETURN_IF_ERROR(p_nonconst_graph->GetNodesInTopologicalOrder(&p_graph_nodes));
+    LOTUS_RETURN_IF_ERROR(p_graph->GetNodesInTopologicalOrder(&p_graph_nodes));
 
     auto num_ml_values = session_state.GetMaxMLValueIdx() + 1;
 

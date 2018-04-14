@@ -182,8 +182,10 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   LOTUS_ENFORCE(graph);
 
   // 1. resize the node_offsets and all_value_ vector
-  auto num_nodes = graph->NumberOfNodes();
-  node_offsets_.resize(num_nodes);
+  // We need to use the max index rather than number of nodes as we use Node.Index()
+  // when inserting into node_offsets_
+  auto max_node_index = graph->MaxNodeIndex();
+  node_offsets_.resize(max_node_index);
 
   all_values_.resize(session_state_.GetMaxMLValueIdx() + 1);
 
@@ -222,18 +224,18 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   for (auto& node : graph->Nodes()) {
     LOTUS_ENFORCE(node.Index() < node_offsets_.size());
     node_offsets_[node.Index()] = static_cast<int>(node_values_.size());
-    auto& inputs = node.InputDefs();
-    for (auto def : inputs) {
-      SetupNodeArg(def);
+
+    for (auto input_def : node.InputDefs()) {
+      SetupNodeArg(input_def);
     }
-    auto& outputs = node.OutputDefs();
-    for (auto def : outputs) {
-      SetupNodeArg(def);
+
+    for (auto output_def : node.OutputDefs()) {
+      SetupNodeArg(output_def);
     }
   }
 }
 
-void ExecutionFrame::SetupNodeArg(LotusIR::NodeArg* arg) {
+void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
   LOTUS_ENFORCE(arg);
   auto& name = arg->Name();
   int index;

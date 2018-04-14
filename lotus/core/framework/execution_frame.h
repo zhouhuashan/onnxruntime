@@ -120,10 +120,6 @@ class ExecutionFrame {
  private:
   friend class OpKernelContext;
 
-  // The TestUtils need hack this class to provide input/output
-  // tensors since the class is not fully implemented yet.
-  friend class Lotus::Test::TestUtils;
-
   // This method is not thread safe!
   void Release(const int offset);
 
@@ -140,7 +136,7 @@ class ExecutionFrame {
             const std::vector<string>& output_names,
             const std::vector<MLValue>& fetches);
 
-  void SetupNodeArg(LotusIR::NodeArg* arg);
+  void SetupNodeArg(const LotusIR::NodeArg* arg);
 
   Status AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlvalue,
                                                    void* pBuffer,

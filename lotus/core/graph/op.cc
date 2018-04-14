@@ -11,7 +11,7 @@ bool TypeUtils::IsValidAttribute(const AttributeProto& attr) {
   }
 
   if (attr.type() == AttributeProto_AttributeType_UNDEFINED) {
-    int num_fields =
+    const int num_fields =
         attr.has_f() +
         attr.has_i() +
         attr.has_s() +
