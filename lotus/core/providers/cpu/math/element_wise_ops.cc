@@ -156,6 +156,13 @@ REGISTER_KERNEL(KernelDefBuilder("Equal")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
                 Equal<int32_t>);
 
+REGISTER_KERNEL(KernelDefBuilder("Mean")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(6)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Mean<float>);
+
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
 template <typename T>
@@ -524,6 +531,35 @@ Status Less<float>::Compute(OpKernelContext* ctx) const {
 template <>
 Status Greater<float>::Compute(OpKernelContext* ctx) const {
   return BooleanOp<float>(ctx, broadcast_, axis_, [](auto a, auto b) { return a > b; });
+}
+
+template <>
+Status Mean<float>::Compute(OpKernelContext* ctx) const {
+  auto inputCount = Node().InputArgCount().front();
+  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+  auto& data_0 = *ctx->Input<Tensor>(0);
+  auto& shape = data_0.Shape();
+  auto mean = EigenMap<float>(*ctx->Output(0, shape));
+
+  if (inputCount == 1) {
+    mean = EigenMap<float>(data_0);
+  } else {
+    auto& data_1 = *ctx->Input<Tensor>(1);
+    LOTUS_ENFORCE(data_1.Shape() == shape, "All inputs must have the same shape");
+
+    mean = EigenMap<float>(data_0) + EigenMap<float>(data_1);
+    for (int index = 2; index < inputCount; index++) {
+      auto& data_n = *ctx->Input<Tensor>(index);
+      LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+      mean += EigenMap<float>(data_n);
+    }
+  }
+
+  // Take the mean
+  float weight = 1.0f / static_cast<float>(inputCount);
+  mean = mean * weight;
+
+  return Status::OK();
 }
 
 }  // namespace Lotus
