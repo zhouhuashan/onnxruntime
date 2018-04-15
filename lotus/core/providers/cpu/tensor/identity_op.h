@@ -16,7 +16,7 @@ class IdentityOp final : public OpKernel {
     const TensorShape& shape = X->Shape();
     Tensor* Y = context->Output(0, TensorShape(shape));
 
-    for (size_t i = 0; i < shape.Size(); ++i) {
+    for (int64_t i = 0; i < shape.Size(); ++i) {
       Y->MutableData<T>()[i] = X->Data<T>()[i];
     }
 

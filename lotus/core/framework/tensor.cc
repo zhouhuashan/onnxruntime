@@ -3,59 +3,55 @@
 
 namespace Lotus {
 
-size_t TensorShape::SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end) {
-  size_t size = 1;
-  for (size_t i = start; i < end; i++) {
-    LOTUS_ENFORCE(dimensions[i] >= 0, "Can't calculate size for a un-resolved tensor shape");
-    size *= dimensions[i];
-  }
-  return size;
-}
+TensorShape::TensorShape() { }
 
-TensorShape::TensorShape() : TensorShape(std::vector<int64_t>()) {
-}
-
-TensorShape::TensorShape(const std::vector<int64_t>& dims) : dims_(dims) {
+TensorShape::TensorShape(const std::vector<int64_t>& dims) {
+  dims_.assign(dims.begin(), dims.end());
 }
 
 TensorShape::TensorShape(const TensorShape& other) {
   dims_.assign(other.dims_.begin(), other.dims_.end());
 }
 
+TensorShape::TensorShape(const std::vector<int64_t>& dims, size_t start, size_t end) {
+  dims_.assign(dims.begin() + start, dims.begin() + end);
+}
+
 const int64_t TensorShape::operator[](int idx) const {
-  //Since we don't have status in return value,
-  //the caller should be responsible for invalid idx.
-  //In that case, stl throws an exception.
+  // NOTE: Caller is responsible for invalid idx.
   return dims_.at(idx);
 }
 
-size_t TensorShape::Size() const {
-  size_t size = SizeHelper(dims_, 0, dims_.size());
+int64_t TensorShape::Size() const {
+  int64_t size = SizeHelper(dims_, 0, dims_.size());
   //should we cache the size? as multiple operation may be expensive.
   return size;
 }
 
-size_t TensorShape::SizeToDimension(size_t dimension) const {
+int64_t TensorShape::SizeToDimension(size_t dimension) const {
   const size_t num_dims = dims_.size();
   LOTUS_ENFORCE(dimension <= num_dims,
-                "Invalid dimension of %d for SizeToDimension. Tensor has %d dimensions.", dimension, num_dims);
+                "Invalid dimension of %d for SizeToDimension. Tensor has %d dimensions.",
+                dimension, num_dims);
 
-  size_t size = SizeHelper(dims_, 0, dimension);
+  int64_t size = SizeHelper(dims_, 0, dimension);
   return size;
 }
 
-size_t TensorShape::SizeFromDimension(size_t dimension) const {
+int64_t TensorShape::SizeFromDimension(size_t dimension) const {
   const size_t num_dims = dims_.size();
   LOTUS_ENFORCE(dimension < num_dims,
-                "Invalid dimension of %d for SizeFromDimension. Tensor has %d dimensions.", dimension, num_dims);
+                "Invalid dimension of %d for SizeFromDimension. Tensor has %d dimensions.",
+                dimension, num_dims);
 
-  size_t size = SizeHelper(dims_, dimension, num_dims);
+  int64_t size = SizeHelper(dims_, dimension, num_dims);
   return size;
 }
 
 TensorShape TensorShape::Slice(size_t dimstart, size_t dimend) const {
-  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= dims_.size(), "Invalid tensor shape slice argument.");
-  return TensorShape(std::vector<int64_t>(dims_.begin() + dimstart, dims_.begin() + dimend));
+  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= dims_.size(),
+                "Invalid tensor shape slice argument.");
+  return TensorShape(dims_, dimstart, dimend);
 }
 
 TensorShape TensorShape::Slice(size_t dimstart) const {
@@ -65,10 +61,8 @@ TensorShape TensorShape::Slice(size_t dimstart) const {
 // output dimensions
 std::string TensorShape::ToString() const {
   std::string result;
-  result.reserve(2 + dims_.size() * 5);  // generous calculation '{' + '}' and 4 digits + ',' for each entry
 
   result.append("{");
-
   bool first = true;
   for (auto dim : dims_) {
     if (!first) {
@@ -76,13 +70,21 @@ std::string TensorShape::ToString() const {
     }
 
     result.append(std::to_string(dim));
-
     first = false;
   }
-
   result.append("}");
 
   return result;
+}
+
+int64_t TensorShape::SizeHelper(const std::vector<int64_t>& dims,
+                                size_t start, size_t end) {
+  int64_t size = 1;
+  for (size_t i = start; i < end; i++) {
+    if (dims[i] < 0) return -1;
+    size *= dims[i];
+  }
+  return size;
 }
 
 // operator<< to nicely output to a stream
@@ -90,7 +92,8 @@ std::ostream& operator<<(std::ostream& out, const TensorShape& shape) {
   return (out << shape.ToString());
 }
 
-Tensor::Tensor() : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
+Tensor::Tensor()
+  : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
   Init(DataTypeImpl::GetType<float>(),
        TensorShape(std::vector<int64_t>(1, 0)),
        nullptr,
@@ -99,7 +102,8 @@ Tensor::Tensor() : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()
        0);
 }
 
-Tensor::Tensor(MLDataType p_type) : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
+Tensor::Tensor(MLDataType p_type)
+  : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
   Init(p_type,
        TensorShape(std::vector<int64_t>(1, 0)),
        nullptr,
@@ -114,13 +118,8 @@ Tensor::Tensor(MLDataType p_type,
                const AllocatorInfo& alloc,
                IAllocator* deleter,
                const int64_t offset)
-    : alloc_info_(alloc) {
-  Init(p_type,
-       shape,
-       p_data,
-       alloc,
-       deleter,
-       offset);
+  : alloc_info_(alloc) {
+  Init(p_type, shape, p_data, alloc, deleter, offset);
 }
 
 void Tensor::Init(MLDataType p_type,
@@ -174,21 +173,21 @@ Tensor::Tensor(const Tensor& src)
   // it may be better to refactor it a little bit to make it a compile error
   // but right now just keep it simple first.
   LOTUS_ENFORCE(src.buffer_deleter_ == nullptr,
-                "Can't copy tensor with its owned buffer. Please transfer ownership by move");
+                "Can't copy tensor with its owned buffer. Please transfer ownership by move.");
 
   p_data_ = src.p_data_;
   buffer_deleter_ = nullptr;
 }
 
 Tensor::~Tensor() {
-    if (buffer_deleter_)
-        buffer_deleter_->Free(p_data_);
+  if (buffer_deleter_)
+    buffer_deleter_->Free(p_data_);
 }
 
 Tensor& Tensor::ShallowCopy(const Tensor& other) {
   // similar as above
   LOTUS_ENFORCE(other.buffer_deleter_ == nullptr,
-                "Can't copy tensor with its owned buffer. Please transfer ownership by move");
+                "Can't copy tensor with its owned buffer. Please transfer ownership by move.");
 
   if (this != &other) {
     dtype_ = other.dtype_;

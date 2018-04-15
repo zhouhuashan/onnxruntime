@@ -33,7 +33,8 @@ class SessionState {
 
   // exec providers
   IExecutionProvider* GetExecutionProvider(const std::string& provider_id) const;
-  void AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> exec_provider);
+  void AddExecutionProvider(const std::string& provider_id,
+                            std::unique_ptr<IExecutionProvider> exec_provider);
   const std::vector<std::unique_ptr<IExecutionProvider>>& GetExecutionProviders() const;
 
   // MLValueName idx map
@@ -78,7 +79,7 @@ class SessionState {
 
   struct ExecutionProviderSet {
     std::vector<std::unique_ptr<IExecutionProvider>> exec_providers;
-    std::unordered_map<std::string, size_t> provider_idx_map;  // this merely exists to facilitate fast lookup
+    std::unordered_map<std::string, size_t> provider_idx_map;  // for fast lookup
   };
 
   ExecutionProviderSet exec_provider_set_;

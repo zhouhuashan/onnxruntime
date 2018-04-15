@@ -21,7 +21,7 @@ class Cast final : public OpKernel {
   template <typename SrcType,
             typename DstType>
   void CastData(const Tensor* in, Tensor* out, const TensorShape& shape) const {
-    for (size_t i = 0; i < shape.Size(); ++i) {
+    for (int64_t i = 0; i < shape.Size(); ++i) {
       out->MutableData<DstType>()[i] = static_cast<DstType>(in->Data<SrcType>()[i]);
     }
   }

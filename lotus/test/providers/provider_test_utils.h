@@ -184,7 +184,9 @@ struct OpTester {
   };
 
   template <typename T>
-  void AddData(std::vector<Data>& data, const char* name, const std::vector<int64_t>& dims, const T* values, size_t valuesCount) {
+  void AddData(std::vector<Data>& data, const char* name,
+               const std::vector<int64_t>& dims, const T* values,
+               int64_t valuesCount) {
     static_assert(std::is_trivial<T>::value, "Only works on trivial types (where byte copies of the values are safe)");
     LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
     auto size_in_bytes = valuesCount * sizeof(T);
