@@ -18,7 +18,7 @@ class Reshape final : public OpKernel {
     const Tensor* shapeTensor = context->Input<Tensor>(1);
     LOTUS_ENFORCE(shapeTensor->Shape().NumDimensions() == 1, 
                   "A shape tensor must be a vector tensor.");
-    size_t nDims = static_cast<size_t>(shapeTensor->Shape().Size());
+    size_t nDims = static_cast<size_t>(shapeTensor->Shape()[0]);
     const int64_t* data = shapeTensor->Data<int64_t>();
     std::vector<int64_t> shape;
     for (size_t i = 0; i < nDims; ++i)
