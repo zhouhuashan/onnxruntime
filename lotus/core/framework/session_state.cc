@@ -34,8 +34,10 @@ void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKerne
   session_kernels_[node_id] = std::move(p_kernel);
 }
 
-void SessionState::AddExecutionProvider(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
-  exec_provider_set_.provider_idx_map.insert({provider_id, exec_provider_set_.exec_providers.size()});
+void SessionState::AddExecutionProvider(const std::string& provider_id,
+                                        std::unique_ptr<IExecutionProvider> p_exec_provider) {
+  exec_provider_set_.provider_idx_map.insert(
+    { provider_id, exec_provider_set_.exec_providers.size() });
   exec_provider_set_.exec_providers.push_back(std::move(p_exec_provider));
 }
 

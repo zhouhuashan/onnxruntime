@@ -20,6 +20,8 @@ class TensorShape {
 
   TensorShape(const TensorShape& other);
 
+  TensorShape(const std::vector<int64_t>& dims, size_t start, size_t end);
+
   /**
   Return the dimension specified by <idx>.
   @throws Throws if idx is invalid.
@@ -27,7 +29,8 @@ class TensorShape {
   const int64_t operator[](int idx) const;
 
   const int64_t operator[](size_t idx) const {
-    return operator[]((int)idx);
+    //return operator[]((int)idx);
+    return operator[](static_cast<int>(idx));
   }
 
   bool operator==(const TensorShape& other) const {
@@ -57,19 +60,19 @@ class TensorShape {
   /** 
   Return the total number of elements.
   */
-  size_t Size() const;
+  int64_t Size() const;
 
   /** 
   Return the total number of elements up to the specified dimension.
   @param dimension Return size up to this dimension. Value must be >= 0 and < this.Size().
   */
-  size_t SizeToDimension(size_t dimension) const;
+  int64_t SizeToDimension(size_t dimension) const;
 
   /**
   Return the total number of elements from the specified dimension to the end of the tensor shape.
-  @param dimension Return size up to this dimension. Value must be >= 0 and < this.Size().
+  @param dimension Return size up to this dimension. 0 <= dimension < this.Size().
   */
-  size_t SizeFromDimension(size_t dimension) const;
+  int64_t SizeFromDimension(size_t dimension) const;
 
   // Return a new TensorShape of the dimensions from dimstart to dimend.
   TensorShape Slice(size_t dimstart, size_t dimend) const;
@@ -77,16 +80,16 @@ class TensorShape {
   // Return a new TensorShape of the dimensions from dimstart to end.
   TensorShape Slice(size_t dimstart) const;
 
-  // Calculate size between start and end.
-  // Assumes start and end are between 0 and dimensions.size(), inclusive, and that
-  // start < end.
-  static size_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end);
-
   // output dimensions nicely formatted
   std::string ToString() const;
 
   // operator<< to nicely output to a stream
   friend std::ostream& operator<<(std::ostream& out, const TensorShape& shape);
+
+  // Calculate size between start and end.
+  // Assumes start and end are between 0 and dimensions.size(), inclusive, and that
+  // start < end.
+  static int64_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end);
 
  private:
   // We use negative numbers for unknown symbolic dimension. Each negative
@@ -122,8 +125,10 @@ typedef std::unique_ptr<void, BufferDeleter> BufferUniquePtr;
 typedef void* BufferNakedPtr;
 
 /*
-We want to keep tensor as simple as possible, it is just a placeholder for a piece of memory, with additional shape information.
-Memory is owned and managed by Executor / Workspace, so Tensor just uses it, and won't do any allocation / release.
+We want to keep tensor as simple as possible, it is just a placeholder 
+for a piece of memory, with additional shape information.
+Memory is owned and managed by Executor / Workspace, so Tensor just uses 
+it, and won't do any allocation / release.
 */
 class Tensor {
   friend class TensorUtil;
@@ -146,8 +151,8 @@ class Tensor {
 
   virtual ~Tensor();
 
-  // Copy constructor and assign op will just pass the shape and memory reference to another tensor.
-  // No deep clone / copy happened.
+  // Copy constructor and assign op will just pass the shape and memory
+  // reference to another tensor. Not deep clone/copy.
   Tensor(const Tensor& src);
   Tensor& ShallowCopy(const Tensor& other);
 
@@ -166,14 +171,14 @@ class Tensor {
 
   template <typename T>
   T* MutableData() {
-    //Type check
+    // Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch.");
     return reinterpret_cast<T*>(static_cast<char*>(GetRaw()) + byte_offset_);
   }
 
   template <typename T>
   const T* Data() const {
-    //Type check
+    // Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch.");
     return reinterpret_cast<const T*>(static_cast<char*>(GetRaw()) + byte_offset_);
   }
