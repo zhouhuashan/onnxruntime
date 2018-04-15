@@ -254,6 +254,7 @@ class PlannerTest : public ::testing::Test {
   SequentialExecutionPlan plan_;
 
   void CreatePlan() {
+    EXPECT_EQ(graph_->Resolve(), Status::OK());
     state_.SetGraph(graph_);
 
     int count = 0;

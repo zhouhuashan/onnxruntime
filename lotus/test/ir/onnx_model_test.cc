@@ -4,6 +4,7 @@
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "gtest/gtest.h"
+#include "test/ir/node_helper.h"
 
 namespace LotusIR {
 namespace Test {
@@ -19,11 +20,11 @@ void TestResolve(LotusIR::Graph* p_graph) {
   auto& value_info_before = p_graph->GetValueInfo();
 
   // Touch the graph to force Resolve() to recompute.
-  p_graph->GetNode(0)->MutableInputArgCount();
+  NodeTestHelper::MutableDefinitions(*p_graph->GetNode(0)).input_arg_count;
   EXPECT_TRUE(p_graph->Resolve().IsOK());
 
-  const std::vector<LotusIR::NodeIndex>* nodesAfter;
-  p_graph->GetNodesInTopologicalOrder(&nodesAfter);
+  const std::vector<LotusIR::NodeIndex>* nodes_after;
+  p_graph->GetNodesInTopologicalOrder(&nodes_after);
   auto& inputs_after = p_graph->GetInputs();
   auto& outputs_after = p_graph->GetOutputs();
   auto& value_info_after = p_graph->GetValueInfo();
@@ -31,7 +32,7 @@ void TestResolve(LotusIR::Graph* p_graph) {
   // Multiple calls to Resolve() should not alter the sorted nodes,
   // inputs, outputs and valueInfo. The internal state should be
   // cleared.
-  EXPECT_EQ(nodes_before, *nodesAfter);
+  EXPECT_EQ(nodes_before, *nodes_after);
   EXPECT_EQ(inputs_before, inputs_after);
   EXPECT_EQ(outputs_before, outputs_after);
   EXPECT_EQ(value_info_before, value_info_after);
@@ -74,8 +75,8 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
 
   // Check the graph input/output/value_info should have the same size as specified in the model file.
   EXPECT_EQ(model_proto.graph().value_info_size(), model->MainGraph()->GetValueInfo().size());
-  EXPECT_EQ(model_proto.graph().input_size(), model->MainGraph()->GetInputs().size());
-  EXPECT_EQ(model_proto.graph().output_size(), model->MainGraph()->GetOutputs().size());
+  EXPECT_EQ(modelProto.graph().input_size(), model->MainGraph()->GetInputs().size());
+  EXPECT_EQ(modelProto.graph().output_size(), model->MainGraph()->GetOutputs().size());
   TestResolve(model->MainGraph());
 }
 

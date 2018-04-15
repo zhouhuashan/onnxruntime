@@ -20,32 +20,32 @@ class GraphNodes {
   class NodeIterator;
 
   // construct a wrapper of the nodes that provides iteration services
-  GraphNodes(TNodesContainer& nodes) : nodes_(nodes) {}
+  GraphNodes(TNodesContainer& nodes) noexcept : nodes_(nodes) {}
 
   using ConstNodeIterator = NodeIterator<TNodesContainer::const_iterator>;
   using MutableNodeIterator = NodeIterator<TNodesContainer::iterator>;
 
-  ConstNodeIterator cbegin() const {
+  ConstNodeIterator cbegin() const noexcept {
     return ConstNodeIterator(nodes_.cbegin(), nodes_.cend());
   }
 
-  ConstNodeIterator cend() const {
+  ConstNodeIterator cend() const noexcept {
     return ConstNodeIterator(nodes_.cend(), nodes_.cend());
   }
 
-  ConstNodeIterator begin() const {
+  ConstNodeIterator begin() const noexcept {
     return cbegin();
   }
 
-  ConstNodeIterator end() const {
+  ConstNodeIterator end() const noexcept {
     return cend();
   }
 
-  MutableNodeIterator begin() {
+  MutableNodeIterator begin() noexcept {
     return MutableNodeIterator(nodes_.begin(), nodes_.end());
   }
 
-  MutableNodeIterator end() {
+  MutableNodeIterator end() noexcept {
     return MutableNodeIterator(nodes_.end(), nodes_.end());
   }
 

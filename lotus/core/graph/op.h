@@ -14,18 +14,32 @@ typedef AttributeProto_AttributeType AttrType;
 typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
 
 // This string array should exactly match the AttrType defined above.
-static const std::string kAttrTypeStrings[14] =
+/*
+AttributeProto_AttributeType_UNDEFINED = 0,
+AttributeProto_AttributeType_FLOAT = 1,
+AttributeProto_AttributeType_INT = 2,
+AttributeProto_AttributeType_STRING = 3,
+AttributeProto_AttributeType_TENSOR = 4,
+AttributeProto_AttributeType_GRAPH = 5,
+AttributeProto_AttributeType_FLOATS = 6,
+AttributeProto_AttributeType_INTS = 7,
+AttributeProto_AttributeType_STRINGS = 8,
+AttributeProto_AttributeType_TENSORS = 9,
+AttributeProto_AttributeType_GRAPHS = 10
+*/
+static constexpr const char* kAttrTypeStrings[] =
     {
+        "UNDEFINED",
         "FLOAT",
         "INT",
         "STRING",
-        "GRAPH",
         "TENSOR",
+        "GRAPH",
         "FLOATS",
         "INTS",
         "STRINGS",
-        "GRAPHS",
-        "TENSORS"};
+        "TENSORS",
+        "GRAPHS"};
 
 class TypeUtils {
  public:

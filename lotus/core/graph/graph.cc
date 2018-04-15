@@ -3,6 +3,7 @@
 #include <numeric>
 #include <stack>
 
+#include "gsl/pointers"
 #include "core/graph/graph.h"
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
@@ -12,11 +13,11 @@ using namespace onnx::Utils;
 
 namespace LotusIR {
 
-#define NO_CHANGE_ON_SYNC_FLAG(...)              \
-  do {                                           \
-    bool sync_needed = graph_proto_sync_needed_; \
-    { __VA_ARGS__; }                             \
-    graph_proto_sync_needed_ = sync_needed;      \
+#define NO_CHANGE_ON_SYNC_FLAG(...)                  \
+  do {                                               \
+    const bool sync_needed = GraphProtoSyncNeeded(); \
+    { __VA_ARGS__; }                                 \
+    GraphProtoSyncNeeded(sync_needed);               \
   } while (0)
 
 NodeArg::NodeArg(const std::string& name,
@@ -32,11 +33,11 @@ NodeArg::NodeArg(const std::string& name,
   }
 }
 
-const std::string& NodeArg::Name() const {
+const std::string& NodeArg::Name() const noexcept {
   return node_arg_info_.name();
 }
 
-const DataType NodeArg::Type() const {
+const DataType NodeArg::Type() const noexcept {
   return type_;
 }
 
@@ -45,7 +46,7 @@ const TensorShapeProto* NodeArg::Shape() const {
     return nullptr;
   }
 
-  auto typeCase = node_arg_info_.type().value_case();
+  const auto typeCase = node_arg_info_.type().value_case();
   switch (typeCase) {
     case TypeProto::kTensorType: {
       if (node_arg_info_.type().tensor_type().has_shape()) {
@@ -67,7 +68,7 @@ void NodeArg::SetShape(const TensorShapeProto& shape) {
     return;
   }
 
-  auto type_case = node_arg_info_.type().value_case();
+  const auto type_case = node_arg_info_.type().value_case();
   switch (type_case) {
     case TypeProto::kTensorType:
       *(node_arg_info_.mutable_type()->mutable_tensor_type()->mutable_shape()) = shape;
@@ -78,10 +79,6 @@ void NodeArg::SetShape(const TensorShapeProto& shape) {
     default:
       return;
   }
-}
-
-const NodeArgInfo& NodeArg::ToProto() const {
-  return node_arg_info_;
 }
 
 void NodeArg::SetType(DataType p_type) {
@@ -98,155 +95,64 @@ void NodeArg::SetType(const TypeProto& type_proto) {
   *(node_arg_info_.mutable_type()) = type_proto;
 }
 
-bool NodeArg::Exists() const {
+bool NodeArg::Exists() const noexcept {
   return exists_;
 }
 
-Node::EdgeEnd::EdgeEnd(const Node* p_node, const NodeArg* p_node_arg)
-    : node_(p_node), node_arg_(p_node_arg) {
+Node::EdgeEnd::EdgeEnd(const Node& node, const NodeArg& node_arg) noexcept
+    : node_(&node), node_arg_(&node_arg) {
 }
 
-const Node* Node::EdgeEnd::GetNode() const {
-  return node_;
+const Node& Node::EdgeEnd::GetNode() const noexcept {
+  return *node_;
 }
 
-const NodeArg* Node::EdgeEnd::GetNodeArg() const {
-  return node_arg_;
+const NodeArg& Node::EdgeEnd::GetNodeArg() const noexcept {
+  return *node_arg_;
 }
 
-Node::NodeConstIterator::NodeConstIterator(
-    std::set<const Node*>::const_iterator iter)
-    : iter_(iter) {
-}
-
-bool Node::NodeConstIterator::operator==(
-    const NodeConstIterator& other) const {
-  return iter_ == other.iter_;
-}
-
-bool Node::NodeConstIterator::operator!=(
-    const NodeConstIterator& other) const {
-  return iter_ != other.iter_;
-}
-
-void Node::NodeConstIterator::operator++() {
-  ++iter_;
-}
-
-const Node* Node::NodeConstIterator::operator*() {
-  return *iter_;
-}
-
-Node::Node(const Node& other) {
-  name_ = other.name_;
-  op_type_ = other.op_type_;
-  domain_ = other.domain_;
-  input_defs_ = other.input_defs_;
-  input_edges_ = other.input_edges_;
-  output_edges_ = other.output_edges_;
-  input_nodes_ = other.input_nodes_;
-  control_inputs_ = other.control_inputs_;
-  output_defs_ = other.output_defs_;
-  output_nodes_ = other.output_nodes_;
-  execution_provider_ = other.execution_provider_;
-  attributes_ = other.attributes_;
-}
-
-NodeIndex Node::Index() const {
+NodeIndex Node::Index() const noexcept {
   return index_;
 }
 
-const std::string& Node::Name() const {
+const std::string& Node::Name() const noexcept {
   return name_;
 }
 
-const std::string& Node::OpType() const {
+const std::string& Node::OpType() const noexcept {
   return op_type_;
 }
 
-const std::string& Node::Description() const {
+const std::string& Node::Description() const noexcept {
   return description_;
 }
 
-const std::string& Node::Domain() const {
+const std::string& Node::Domain() const noexcept {
   return domain_;
 }
 
-const OpSchema* Node::Op() const {
+const OpSchema* Node::Op() const noexcept {
   return op_;
 }
 
-const std::vector<NodeArg*>& Node::InputDefs() const {
-  return input_defs_;
-}
+Status Node::ValidateVersion(int version) noexcept {
+  auto p_op = OpSchemaRegistry::Schema(op_type_, version, domain_);
 
-std::vector<NodeArg*>& Node::MutableInputDefs() {
-  graph_->graph_resolve_needed_ = true;
-  graph_->graph_proto_sync_needed_ = true;
-  return input_defs_;
-}
-
-const std::vector<int>& Node::InputArgCount() const {
-  return input_arg_count_;
-}
-
-std::vector<int>& Node::MutableInputArgCount() {
-  graph_->graph_resolve_needed_ = true;
-  graph_->graph_proto_sync_needed_ = true;
-  return input_arg_count_;
-}
-
-Node::NodeConstIterator Node::InputNodesBegin() const {
-  return NodeConstIterator(input_nodes_.begin());
-}
-
-Node::NodeConstIterator Node::InputNodesEnd() const {
-  return NodeConstIterator(input_nodes_.end());
-}
-
-Node::NodeConstIterator Node::OutputNodesBegin() const {
-  return NodeConstIterator(output_nodes_.begin());
-}
-
-Node::NodeConstIterator Node::OutputNodesEnd() const {
-  return NodeConstIterator(output_nodes_.end());
-}
-
-const std::set<Node::EdgeEnd*>& Node::InputEdges() const {
-  return input_edges_;
-}
-
-const std::set<Node::EdgeEnd*>& Node::OutputEdges() const {
-  return output_edges_;
-}
-
-bool Node::InputEdgeSrcEnd(NodeArg* p_input_arg,
-                           /*out*/ const EdgeEnd** pp_input_edge_src_end) const {
-  if (nullptr == p_input_arg || nullptr == pp_input_edge_src_end) {
-    return false;
+  if (nullptr == p_op) {
+    // A op_type refers to nothing.
+    Status status(LOTUS, FAIL,
+                  "Error: the operator or function (" + op_type_ + ") referred to by node (" +
+                      name_ + ") does not exist.");
+    return status;
   }
 
-  for (const EdgeEnd* edge : input_edges_) {
-    if (edge->GetNodeArg() == p_input_arg) {
-      *pp_input_edge_src_end = edge;
-      return true;
-    }
-  }
+  op_ = p_op;
 
-  return false;
+  auto status = UpdateInputArgCount();
+  return status;
 }
 
-const std::vector<NodeArg*>& Node::OutputDefs() const {
-  return output_defs_;
-}
-
-std::vector<NodeArg*>& Node::MutableOutputDefs() {
-  graph_->graph_resolve_needed_ = true;
-  graph_->graph_proto_sync_needed_ = true;
-  return output_defs_;
-}
-
-const std::string& Node::GetExecutionProvider() const {
+const std::string& Node::GetExecutionProvider() const noexcept {
   return execution_provider_;
 }
 
@@ -267,86 +173,20 @@ void Node::ToProto(NodeProto& proto) const {
   // Set attributes.
   proto.clear_attribute();
   for (auto attribute : attributes_) {
-    auto attr = proto.add_attribute();
+    const gsl::not_null<AttributeProto*> attr = proto.add_attribute();
     *attr = attribute.second;
   }
 
   // Set inputs' definitions.
   proto.clear_input();
-  for (auto& input_def : input_defs_) {
-    auto input = proto.add_input();
-    *input = input_def->Name();
+  for (auto& input_def : definitions_.input_defs) {
+    proto.add_input(input_def->Name());
   }
 
   // Set outputs' definitions.
   proto.clear_output();
-  for (auto& output_def : output_defs_) {
-    auto output = proto.add_output();
-    *output = output_def->Name();
-  }
-}
-
-void Node::Init(const NodeProto& node_proto,
-                const ArgNameToTypeMap& name_to_type) {
-  name_ = node_proto.name();
-  op_type_ = node_proto.op_type();
-  domain_ = node_proto.domain();
-
-  for (int i = 0; i < node_proto.input().size(); ++i) {
-    const TypeProto* type = nullptr;
-
-    auto name_to_type_iter = name_to_type.find(node_proto.input(i));
-    if (name_to_type.end() != name_to_type_iter) {
-      // This node input arg type/shape does exist in graph proto.
-      // Assign type/shape information to node input arg.
-      type = &(name_to_type_iter->second);
-    }
-
-    NodeArg* node_arg = nullptr;
-    auto node_arg_map = graph_->GetNodeArgMap();
-    auto name_to_node_arg_iter = node_arg_map->find(node_proto.input(i));
-    if (name_to_node_arg_iter == node_arg_map->end()) {
-      node_arg = new NodeArg(node_proto.input(i), type);
-      (*node_arg_map)[node_proto.input(i)] = node_arg;
-    } else {
-      node_arg = name_to_node_arg_iter->second;
-    }
-
-    input_defs_.push_back(node_arg);
-  }
-
-  // Set input arg count as 1:1 maping with input defs.
-  // NOTE: it may be refined per operator definition.
-  // There will be cases having arg count as, 1, 1, ..., 1, N.
-  // It means that the last operator input is variadic.
-  input_arg_count_.assign(input_defs_.size(), 1);
-
-  for (int i = 0; i < node_proto.output().size(); ++i) {
-    const TypeProto* type = nullptr;
-
-    auto name_to_type_iter = name_to_type.find(node_proto.output(i));
-    if (name_to_type.end() != name_to_type_iter) {
-      // This output arg type/shape does exist in graph proto.
-      // Assign type/shape information to node output arg.
-      type = &(name_to_type_iter->second);
-    }
-
-    NodeArg* node_arg = nullptr;
-    auto node_arg_map = graph_->GetNodeArgMap();
-    auto name_to_node_arg_iter = node_arg_map->find(node_proto.output(i));
-    if (name_to_node_arg_iter == node_arg_map->end()) {
-      node_arg = new NodeArg(node_proto.output(i), type);
-      (*node_arg_map)[node_proto.output(i)] = node_arg;
-    } else {
-      node_arg = name_to_node_arg_iter->second;
-    }
-
-    output_defs_.push_back(node_arg);
-  }
-
-  for (int i = 0; i < node_proto.attribute_size(); ++i) {
-    auto& attr = node_proto.attribute(i);
-    attributes_[attr.name()] = attr;
+  for (auto& output_def : definitions_.output_defs) {
+    proto.add_output(output_def->Name());
   }
 }
 
@@ -355,78 +195,49 @@ void Node::Init(const std::string& name,
                 const std::string& description,
                 const std::vector<NodeArg*>& input_args,
                 const std::vector<NodeArg*>& output_args,
+                const NodeAttributes* attributes,
                 const std::string& domain) {
-  //Init(name, op_type, description, output_args, domain);
   name_ = name;
   op_type_ = op_type;
   description_ = description;
-  output_defs_ = output_args;
+  definitions_.input_defs = input_args;
+  definitions_.output_defs = output_args;
   domain_ = domain;
-  input_defs_ = input_args;
 
   // Set each arg count as 1 by default.
   // It could be adjusted when resolving the node with its operator
   // information.
-  input_arg_count_.assign(input_defs_.size(), 1);
+  definitions_.input_arg_count.assign(input_args.size(), 1);
 
-  auto node_arg_map = graph_->GetNodeArgMap();
-  for (NodeArg* input_def : input_args) {
-    auto name_to_node_arg_iter = node_arg_map->find(input_def->Name());
-    if (name_to_node_arg_iter == node_arg_map->end()) {
-      (*node_arg_map)[input_def->Name()] = input_def;
-    } else {
-      LOTUS_ENFORCE(name_to_node_arg_iter->second == input_def,
-                    "Existing entry in NodeArg map for ", input_def->Name(), " != input definition.");
-    }
-  }
-
-  for (NodeArg* output_def : output_args) {
-    auto name_to_node_arg_iter = node_arg_map->find(output_def->Name());
-    if (name_to_node_arg_iter == node_arg_map->end()) {
-      (*node_arg_map)[output_def->Name()] = output_def;
-    } else {
-      LOTUS_ENFORCE(name_to_node_arg_iter->second == output_def,
-                    "Existing entry in NodeArg map for ", output_def->Name(), " != input definition.");
-    }
+  if (attributes) {
+    attributes_ = *attributes;
   }
 }
 
-/*void Node::Init(const std::string& name,
-    const std::string& op_type,
-    const std::string& description,
-    const std::vector<NodeArg>& input_args,
-    const std::vector<int>& p_inputArgCount,
-    const std::vector<NodeArg>& output_args,
-    const std::string& domain)
-    {
-    Init(name, op_type, description, output_args, domain);
-    input_defs_ = input_args;
-    input_arg_count_ = p_inputArgCount;
-    }
+Node::Definitions& Node::MutableDefinitions() noexcept {
+  // someone fetching these is going to change something
+  graph_->SetGraphResolveNeeded();
+  graph_->SetGraphProtoSyncNeeded();
+  return definitions_;
+}
 
-    void Node::Init(const std::string& name,
-    const std::string& op_type,
-    const std::string& description,
-    const std::vector<NodeArg>& output_args,
-    const std::string& domain)
-    {
-    name_ = name;
-    op_type_ = op_type;
-    description_ = description;
-    output_defs_ = output_args;
-    domain_ = domain;
-    }*/
+Node::Relationships& Node::MutableRelationships() noexcept {
+  // someone fetching these is going to change something
+  graph_->SetGraphResolveNeeded();
+  graph_->SetGraphProtoSyncNeeded();
+  return relationships_;
+}
 
 void Node::AddAttribute(const std::string& attr_name, const AttributeProto& value) {
-  graph_->graph_resolve_needed_ = true;
-  graph_->graph_proto_sync_needed_ = true;
+  graph_->SetGraphResolveNeeded();
+  graph_->SetGraphProtoSyncNeeded();
   attributes_[attr_name] = value;
 }
 
 #define ADD_BASIC_ATTR_IMPL(type, field)                                     \
   void Node::AddAttribute(const std::string& attr_name, const type& value) { \
-    graph_->graph_resolve_needed_ = true;                                    \
-    graph_->graph_proto_sync_needed_ = true;                                 \
+    graph_->SetGraphResolveNeeded();                                         \
+    graph_->SetGraphProtoSyncNeeded();                                       \
     AttributeProto a;                                                        \
     a.set_name(attr_name);                                                   \
     a.set_##field(value);                                                    \
@@ -435,8 +246,8 @@ void Node::AddAttribute(const std::string& attr_name, const AttributeProto& valu
 
 #define ADD_ATTR_IMPL(type, field)                                           \
   void Node::AddAttribute(const std::string& attr_name, const type& value) { \
-    graph_->graph_resolve_needed_ = true;                                    \
-    graph_->graph_proto_sync_needed_ = true;                                 \
+    graph_->SetGraphResolveNeeded();                                         \
+    graph_->SetGraphProtoSyncNeeded();                                       \
     AttributeProto a;                                                        \
     a.set_name(attr_name);                                                   \
     *(a.mutable_##field()) = value;                                          \
@@ -446,8 +257,8 @@ void Node::AddAttribute(const std::string& attr_name, const AttributeProto& valu
 #define ADD_LIST_ATTR_IMPL(type, field)                      \
   void Node::AddAttribute(const std::string& attr_name,      \
                           const std::vector<type>& values) { \
-    graph_->graph_resolve_needed_ = true;                    \
-    graph_->graph_proto_sync_needed_ = true;                 \
+    graph_->SetGraphResolveNeeded();                         \
+    graph_->SetGraphProtoSyncNeeded();                       \
     AttributeProto a;                                        \
     a.set_name(attr_name);                                   \
     for (const auto& val : values) {                         \
@@ -468,72 +279,139 @@ ADD_LIST_ATTR_IMPL(TensorProto, tensors)
 ADD_LIST_ATTR_IMPL(GraphProto, graphs)
 
 bool Node::ClearAttribute(const std::string& attr_name) {
-  graph_->graph_resolve_needed_ = true;
-  graph_->graph_proto_sync_needed_ = true;
+  graph_->SetGraphResolveNeeded();
+  graph_->SetGraphProtoSyncNeeded();
   return attributes_.erase(attr_name) > 0;
 }
 
-const NodeAttributes& Node::GetAttributes() const {
+Status Node::UpdateInputArgCount() {
+  // The node refers to a primitive operator.
+  // Infer and verify node input arg type information.
+  auto total_arg_count = std::accumulate(definitions_.input_arg_count.cbegin(),
+                                         definitions_.input_arg_count.cend(), 0);
+
+  if (total_arg_count != definitions_.input_defs.size()) {
+    Status status(LOTUS, FAIL,
+                  "The sum of input arg count is not equal to size of input defs in node (" + name_ + ").");
+    return status;
+  }
+
+  // op_ is always valid when this is called
+  auto& op = *op_;
+
+  // Verify size of node arg count is same as input number in
+  // operator definition.
+  if (op.inputs().size() != definitions_.input_arg_count.size()) {
+    // Adjust input arg count array with op definition
+    // The adjustment will work as below,
+    // In total, there're <total_arg_count> inputs, which
+    // will be split as <1, 1, 1, 1, ... 1, x> or
+    // <1, 1, 1, 1, ...1, 0, 0, ...0>. The final input
+    // arg count array's element number will be the same
+    // as op definition, and the sum of all elements will
+    // be equal to <total_arg_count>.
+    auto& input_arg_count = definitions_.input_arg_count;
+    input_arg_count.clear();
+    size_t m = 0;
+    auto arg_count_left = total_arg_count;
+
+    if (0 < op.inputs().size()) {
+      for (; m < op.inputs().size() - 1; ++m) {
+        if (arg_count_left > 0) {
+          input_arg_count.push_back(1);
+          arg_count_left--;
+        } else {
+          input_arg_count.push_back(0);
+        }
+      }
+    }
+
+    // Set the arg count for the last input formal parameter.
+    // NOTE: in the case that there's no .input(...) defined
+    // in op schema, all input args will be fed as one input
+    // of the operator.
+    input_arg_count.push_back(arg_count_left);
+
+    graph_->SetGraphResolveNeeded();
+    graph_->SetGraphProtoSyncNeeded();
+  }
+
+  return Status::OK();
+}
+
+const NodeAttributes& Node::GetAttributes() const noexcept {
   return attributes_;
 }
 
-Graph::Graph(const GraphProto& graph_proto,
+// Constructor: Given a <GraphProto> loaded from model file, construct
+// a <Graph> object and Resolve() it.
+Status Graph::LoadGraph(const GraphProto& graph_proto,
+                        const std::unordered_map<std::string, int>& domain_to_version,
+                        std::unique_ptr<Graph>& new_graph) {
+  // create instance. need to call private ctor so can't use make_unique
+  GSL_SUPPRESS(r .11)
+  new_graph.reset(new Graph(nullptr, &graph_proto, domain_to_version));
+
+  // as we just loaded from file we want to fully initialize/Resolve, but not let that change
+  // the proto sync flag
+  auto status = new_graph->Resolve(/* no_proto_sync_required */ true);
+  return status;
+}
+
+Graph::Graph(const std::string* name,
+             const GraphProto* graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version)
-    : graph_proto_(graph_proto) {
-  graph_proto_sync_needed_ = false;
-  graph_resolve_needed_ = true;
-  num_of_nodes_ = 0;
+    : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version),
+      graph_proto_{graph_proto != nullptr ? *graph_proto : GraphProto()},
+      graph_type_{Type::Main} {
+  LOTUS_ENFORCE(name != nullptr || graph_proto != nullptr, "Expected either name or graph_proto.");
 
-  domain_to_version_ = &domain_to_version;
-  graph_type_ |= Type::Main;
-
-  // Copy initial tensors to a map.
-  for (auto tensor : graph_proto.initializer()) {
-    name_to_initial_tensor_[tensor.name()] = tensor;
+  if (name != nullptr) {
+    LOTUS_ENFORCE(graph_proto == nullptr, "Expect either name or graph_proto but not both.");
+    graph_proto_.set_name(*name);
   }
 
-  // Collect all node arg name, type, shape information in the graph.
-  // type/shape information will be assigned to each node arg when going
-  // thru all nodes later.
   ArgNameToTypeMap name_to_type_map;
-  for (auto& graph_input : graph_proto_.input()) {
-    if (graph_input.has_name() && graph_input.has_type()) {
-      name_to_type_map[graph_input.name()] = graph_input.type();
+
+  // these are all empty unless we received a graph_proto as input
+  if (graph_proto != nullptr) {
+    // Copy initial tensors to a map.
+    for (auto tensor : graph_proto_.initializer()) {
+      name_to_initial_tensor_[tensor.name()] = tensor;
     }
-  }
-  for (auto& graph_output : graph_proto_.output()) {
-    if (graph_output.has_name() && graph_output.has_type()) {
-      name_to_type_map[graph_output.name()] = graph_output.type();
+
+    // Collect all node arg name, type, shape information in the graph.
+    // type/shape information will be assigned to each node arg when going
+    // thru all nodes later.
+    for (auto& graph_input : graph_proto_.input()) {
+      if (graph_input.has_name() && graph_input.has_type()) {
+        name_to_type_map[graph_input.name()] = graph_input.type();
+      }
     }
-  }
-  for (auto& node_arg : graph_proto_.value_info()) {
-    if (node_arg.has_name() && node_arg.has_type()) {
-      name_to_type_map[node_arg.name()] = node_arg.type();
+
+    for (auto& graph_output : graph_proto_.output()) {
+      if (graph_output.has_name() && graph_output.has_type()) {
+        name_to_type_map[graph_output.name()] = graph_output.type();
+      }
+    }
+
+    for (auto& node_arg : graph_proto_.value_info()) {
+      if (node_arg.has_name() && node_arg.has_type()) {
+        name_to_type_map[node_arg.name()] = node_arg.type();
+      }
     }
   }
 
   // Add nodes.
   AddSourceSinkNodes();
-  for (auto node_proto : graph_proto.node()) {
+
+  for (auto node_proto : graph_proto_.node()) {
     AddNode(node_proto, name_to_type_map);
   }
 }
 
-Graph::Graph(const std::string& name,
-             const std::unordered_map<std::string, int>& domain_to_version) {
-  graph_proto_sync_needed_ = false;
-  graph_resolve_needed_ = true;
-  num_of_nodes_ = 0;
-
-  domain_to_version_ = &domain_to_version;
-  graph_proto_.set_name(name);
-  graph_type_ |= Type::Main;
-
-  AddSourceSinkNodes();
-}
-
-Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node*>& output_args,
-                                    /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
+Status GraphBase::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node*>& output_args,
+                                        /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
   output_args.clear();
   node_name_to_index.clear();
 
@@ -551,7 +429,7 @@ Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node
     node_name_to_index[node_name] = node.Index();
 
     // Verify node outputs' name should be unique.
-    for (auto& output_def : node.OutputDefs()) {
+    for (const gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
       std::string output_arg_name = output_def->Name();
       if (output_args.end() != output_args.find(output_arg_name)) {
         // Two outputs with same name.
@@ -559,21 +437,24 @@ Status Graph::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node
                       "Error: two output args with same name (" + output_arg_name + ").");
         return status;
       }
-      output_args.insert({output_arg_name, &node});
+
+      auto ignored = output_args.insert({output_arg_name, &node});
     }
   }
   return Status::OK();
 }
 
-Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& output_args,
-                               const std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
+GSL_SUPPRESS(es .84)  // ignoring return value from unordered_map::insert causes noisy complaint
+Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>& output_args,
+                                   const std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
   std::unordered_set<Node*> inner_nodes;
+
   for (auto& node : Nodes()) {
-    if (IsSourceNode(node.Index()) || IsSinkNode(node.Index())) {
+    if (IsSourceNode(node) || IsSinkNode(node)) {
       continue;
     }
 
-    for (auto& control_input : node.control_inputs_) {
+    for (auto& control_input : node.ControlInputs()) {
       auto name_to_index_iter = node_name_to_index.find(control_input);
       if (node_name_to_index.end() == name_to_index_iter) {
         Status status(LOTUS, FAIL,
@@ -582,17 +463,20 @@ Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& out
         return status;
       }
 
-      NodeIndex src_node_index = name_to_index_iter->second;
-      NodeIndex dst_node_index = node.Index();
-      nodes_[src_node_index]->output_nodes_.insert(nodes_[dst_node_index].get());
-      nodes_[dst_node_index]->input_nodes_.insert(nodes_[src_node_index].get());
+      const NodeIndex src_node_index = name_to_index_iter->second;
+      const NodeIndex dst_node_index = node.Index();
+      auto dst = GetNode(dst_node_index);
+      auto src = GetNode(src_node_index);
+      LOTUS_ENFORCE(dst && src, "ControlInputs should not have invalid nodes. dst=", dst, " src=", src);
+      src->MutableRelationships().output_nodes.insert(dst);
+      dst->MutableRelationships().input_nodes.insert(src);
     }
 
     auto& input_args = node.InputDefs();
     if (input_args.size() > 0) {
       // This node needs inputs.
 
-      for (auto& input_arg : input_args) {
+      for (const gsl::not_null<const NodeArg*> input_arg : input_args) {
         if (!input_arg->Exists()) {
           // This input could be optional and it does not exist in this case.
           continue;
@@ -610,17 +494,21 @@ Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& out
 
         // Setup input/output relationship between <*node_iter>
         // and <output_arg_iter>.
-        Node* output_node = output_arg_iter->second;
+        Node& output_node = *output_arg_iter->second;
 
-        node.input_nodes_.insert(output_node);
-        Node::EdgeEnd* in_edge = new Node::EdgeEnd(output_node, input_arg);
-        node.input_edges_.insert(in_edge);
+        node.MutableRelationships().input_nodes.insert(&output_node);
 
-        output_node->output_nodes_.insert(&node);
-        Node::EdgeEnd* out_edge = new Node::EdgeEnd(&node, input_arg);
-        output_node->output_edges_.insert(out_edge);
+        auto new_edge = std::make_unique<Node::EdgeEnd>(output_node, *input_arg);
+        node.MutableRelationships().input_edges.insert(new_edge.get());
+        owned_edges_.push_back(std::move(new_edge));
 
-        inner_nodes.insert(output_node);
+        output_node.MutableRelationships().output_nodes.insert(&node);
+
+        new_edge = std::make_unique<Node::EdgeEnd>(node, *input_arg);
+        output_node.MutableRelationships().output_edges.insert(new_edge.get());
+        owned_edges_.push_back(std::move(new_edge));
+
+        inner_nodes.insert(&output_node);
       }
     } else {
       if (node.OutputDefs().size() <= 0) {
@@ -636,7 +524,7 @@ Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& out
   }
 
   for (auto& node : Nodes()) {
-    if (IsSourceNode(node.Index()) || IsSinkNode(node.Index())) {
+    if (IsSourceNode(node) || IsSinkNode(node)) {
       continue;
     }
 
@@ -650,11 +538,11 @@ Status Graph::BuildConnections(const std::unordered_map<std::string, Node*>& out
   return Status::OK();
 }
 
-void Graph::ReverseDFSFrom(const std::vector<NodeIndex>& from,
-                           const std::function<void(Node*)>& enter,
-                           const std::function<void(Node*)>& leave,
-                           const std::function<bool(const Node*, const Node*)>& comp) {
-  std::vector<Node*> node_vec;
+void GraphBase::ReverseDFSFrom(const std::vector<NodeIndex>& from,
+                               const std::function<void(const Node*)>& enter,
+                               const std::function<void(const Node*)>& leave,
+                               const std::function<bool(const Node*, const Node*)>& comp) const {
+  std::vector<const Node*> node_vec;
   for (auto i : from) {
     node_vec.push_back(GetNode(i));
   }
@@ -662,49 +550,50 @@ void Graph::ReverseDFSFrom(const std::vector<NodeIndex>& from,
   ReverseDFSFrom(node_vec, enter, leave, comp);
 }
 
-void Graph::ReverseDFSFrom(const std::vector<Node*>& from,
-                           const std::function<void(Node*)>& enter,
-                           const std::function<void(Node*)>& leave,
-                           const std::function<bool(const Node*, const Node*)>& comp) {
-  using WorkEntry = std::pair<Node*, bool>;  // bool represents leave or not
+void GraphBase::ReverseDFSFrom(const std::vector<const Node*>& from,
+                               const std::function<void(const Node*)>& enter,
+                               const std::function<void(const Node*)>& leave,
+                               const std::function<bool(const Node*, const Node*)>& comp) const {
+  using WorkEntry = std::pair<const Node*, bool>;  // bool represents leave or not
   std::vector<WorkEntry> stack(from.size());
   for (size_t i = 0; i < from.size(); i++) {
     stack[i] = WorkEntry(from[i], false);
   }
 
-  std::vector<bool> visited(nodes_.size(), false);
+  std::vector<bool> visited(MaxNodeIndex(), false);
   while (!stack.empty()) {
-    WorkEntry e = stack.back();
+    const WorkEntry last_entry = stack.back();
     stack.pop_back();
-    Node* n = e.first;
-    if (e.second) {
+    const Node& n = *last_entry.first;
+    if (last_entry.second) {
       // leave node
-      leave(n);
+      leave(&n);
       continue;
     }
 
-    if (visited[n->Index()]) continue;
-    visited[n->Index()] = true;
+    if (visited[n.Index()]) continue;
 
-    if (enter) enter(n);
+    visited[n.Index()] = true;
 
-    if (leave) stack.push_back(WorkEntry(n, true));
+    if (enter) enter(&n);
+
+    if (leave) stack.push_back(WorkEntry(&n, true));
 
     if (comp) {
-      std::vector<Node*> sorted_nodes;
-      for (auto iter = n->InputNodesBegin(); iter != n->InputNodesEnd(); ++iter) {
-        sorted_nodes.push_back(const_cast<Node*>(*iter));
+      std::vector<const Node*> sorted_nodes;
+      for (auto iter = n.InputNodesBegin(); iter != n.InputNodesEnd(); ++iter) {
+        sorted_nodes.push_back((*iter));
       }
       std::sort(sorted_nodes.begin(), sorted_nodes.end(), comp);
-      for (auto in : sorted_nodes) {
-        NodeIndex idx = in->Index();
+      for (gsl::not_null<const LotusIR::Node*> in : sorted_nodes) {
+        const NodeIndex idx = in->Index();
         if (!visited[idx]) {
           stack.push_back(WorkEntry(in, false));
         }
       }
     } else {
-      for (auto iter = n->InputNodesBegin(); iter != n->InputNodesEnd(); ++iter) {
-        NodeIndex idx = (*iter)->Index();
+      for (auto iter = n.InputNodesBegin(); iter != n.InputNodesEnd(); ++iter) {
+        const NodeIndex idx = (*iter)->Index();
         if (!visited[idx]) {
           stack.push_back(WorkEntry(GetNode(idx), false));
         }
@@ -713,7 +602,8 @@ void Graph::ReverseDFSFrom(const std::vector<Node*>& from,
   }
 }
 
-Status Graph::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order) {
+GSL_SUPPRESS(es .84)  // noisy warning about ignoring return value from insert(...)
+Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order) const {
   nodes_in_topological_order.clear();
   // nodes that have been processed and added to nodes_in_topological_order.
   std::unordered_set<NodeIndex> visited_nodes;
@@ -724,7 +614,7 @@ Status Graph::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order)
   stack.push(sink_node_index_);
 
   while (!stack.empty()) {
-    NodeIndex current = stack.top();
+    const NodeIndex current = stack.top();
     stack.pop();
 
     if (visited_nodes.end() != visited_nodes.find(current)) {
@@ -740,7 +630,10 @@ Status Graph::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order)
       continue;
     }
 
-    if (nodes_[current]->InputNodesBegin() == nodes_[current]->InputNodesEnd()) {
+    const Node* node = GetNode(current);
+    LOTUS_ENFORCE(node != nullptr, "Invalid null entry in current graph.");
+
+    if (node->InputNodesBegin() == node->InputNodesEnd()) {
       // no children
       children_visited_nodes.insert(current);
       visited_nodes.insert(current);
@@ -758,8 +651,8 @@ Status Graph::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order)
     ancestor_nodes.insert(current);
 
     // check children
-    for (auto iter = nodes_[current]->InputNodesBegin(); iter != nodes_[current]->InputNodesEnd(); ++iter) {
-      NodeIndex idx = (*iter)->Index();
+    for (auto iter = node->InputNodesBegin(); iter != node->InputNodesEnd(); ++iter) {
+      const NodeIndex idx = (*iter)->Index();
       if (ancestor_nodes.end() != ancestor_nodes.find(idx)) {
         Status status(LOTUS, FAIL, "Error: the graph is not acyclic.");
         return status;
@@ -772,32 +665,32 @@ Status Graph::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order)
     }
   }
 
-  if (this->NumberOfNodes() == nodes_in_topological_order.size()) {
+  if (NumberOfNodes() == nodes_in_topological_order.size()) {
     return Status::OK();
   } else {
     return Status(LOTUS, FAIL, "Error: the graph is not acyclic.");
   }
 }
 
-Status Graph::InferAndVerifyTypeMatch(Node* p_node,
-                                      const OpSchema* p_op,
+Status Graph::InferAndVerifyTypeMatch(Node& node,
+                                      const OpSchema& op,
                                       const std::unordered_map<std::string, Node*>& output_args) {
-  auto& nodeName = p_node->Name();
+  auto& nodeName = node.Name();
 
   // <k> index used to navigate node->InputDefs().
   int k = 0;
   std::unordered_map<std::string, DataType> type_parameter_to_type_map;
 
-  for (size_t i = 0; i < p_node->InputArgCount().size(); ++i) {
+  for (size_t i = 0; i < node.InputArgCount().size(); ++i) {
     // Number of inputs matching to the i-th argument.
-    int arg_count = p_node->InputArgCount()[i];
+    const int arg_count = node.InputArgCount()[i];
     // The i-th argument definition.
-    auto op_formal_parameter = p_op->inputs()[i];
+    auto op_formal_parameter = op.inputs()[i];
 
     // Infer and verify all <arguCount> inputs (k-th input)
     // matching operator definition (i-th argument).
     for (int j = 0; j < arg_count; ++j, ++k) {
-      auto& input_def = p_node->MutableInputDefs()[k];
+      auto& input_def = node.MutableDefinitions().input_defs[k];
 
       // For each input arg.
       auto output_args_iter = output_args.find(input_def->Name());
@@ -821,7 +714,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
             shape.add_dim()->set_dim_value(dim);
           }
           input_def->SetShape(shape);
-        } else if (!input_def->node_arg_info_.has_type()) {
+        } else if (!input_def->ToProto().has_type()) {
           // This input is fed by callers and its type has to be specified.
 
           Status status(LOTUS, FAIL,
@@ -831,7 +724,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
         }
       } else {
         // The type of this input should have been set by
-        // its parent who ouputs the NodeArg
+        // its parent who outputs the NodeArg
         if (input_def->Type() == nullptr) {
           Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") input arg (" +
@@ -847,7 +740,7 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
       if (op_formal_parameter.GetTypes().end() == iter) {
         Status status(LOTUS, FAIL,
                       "Node (" + nodeName + ") input arg (" +
-                          input_def->Name() + ") type does not match operator (" + p_op->Name() + ") definition.");
+                          input_def->Name() + ") type does not match operator (" + op.Name() + ") definition.");
         return status;
       }
 
@@ -873,10 +766,10 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
 
   // Infer and verify node output arg type information.
   int i = 0;
-  for (auto& output_def : p_node->MutableOutputDefs()) {
+  for (auto& output_def : node.MutableDefinitions().output_defs) {
     // For each output arg.
 
-    auto op_formal_parameter = p_op->outputs()[i++];
+    auto op_formal_parameter = op.outputs()[i++];
 
     // Infer output arg type per input arg type if they share
     // the same type string. For example, type string is "T"
@@ -891,8 +784,8 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
       // There's no input arg.
       // The output should be read from an attribute named kConstantValue.
 
-      auto node_attributes_iter = p_node->GetAttributes().find(kConstantValue);
-      if (p_node->GetAttributes().end() == node_attributes_iter) {
+      auto node_attributes_iter = node.GetAttributes().find(kConstantValue);
+      if (node.GetAttributes().end() == node_attributes_iter) {
         Status status(LOTUS, FAIL,
                       "Node (" + nodeName + ") output arg value should be specified via node attribute '" +
                           kConstantValue + "'.");
@@ -908,24 +801,27 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
         type_proto.mutable_tensor_type()->set_elem_type(tensor.data_type());
         output_def->SetType(DataTypeUtils::ToType(type_proto));
       } else {
-        Status status(LOTUS, FAIL,
-                      "For attribute " + kConstantValue +
-                          " , only Tensor type is allowed. The attribute type in this model is " +
-                          LotusIR::kAttrTypeStrings[(int)attr_type] + ".");
-        return status;
+        GSL_SUPPRESS(bounds .2)  // using attr_type as index to LotusIR::kAttrTypeSTrings should be safe
+        {
+          Status status(LOTUS, FAIL,
+                        std::string("For attribute ") + kConstantValue +
+                            " , only Tensor type is allowed. The attribute type in this model is " +
+                            LotusIR::kAttrTypeStrings[static_cast<int>(attr_type)] + ".");
+          return status;
+        }
       }
 
       continue;
     }
 
     // For case that input arg and output arg have different types.
-    if (output_def->node_arg_info_.has_type()) {
+    if (output_def->ToProto().has_type()) {
       // The output arg has already had type information.
       // Check whether it matches operator definition.
       auto iter = op_formal_parameter.GetTypes().find(output_def->Type());
       if (op_formal_parameter.GetTypes().end() == iter) {
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type does not match operator (" + p_op->Name() + ") definition.");
+                      "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type does not match operator (" + op.Name() + ") definition.");
         return status;
       }
       continue;
@@ -950,20 +846,20 @@ Status Graph::InferAndVerifyTypeMatch(Node* p_node,
   return Status::OK();
 }
 
-Status Graph::VerifyNodeAndOpMatch(
-    const std::vector<NodeIndex>& nodes_in_topological_order,
-    std::unordered_map<std::string, Node*>& output_args) {
+Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
+                                   const std::unordered_map<std::string, Node*>& output_args) {
   for (auto nodeIndex : nodes_in_topological_order) {
     if (IsSourceNode(nodeIndex) || IsSinkNode(nodeIndex)) {
       continue;
     }
 
-    auto node = GetNode(nodeIndex);
-    auto& node_name = node->Name();
-    auto& op_type = node->OpType();
-    auto& domain = node->Domain();
-    auto version_iter = domain_to_version_->find(domain);
-    if (domain_to_version_->end() == version_iter) {
+    auto& node = *GetNode(nodeIndex);
+
+    auto& node_name = node.Name();
+    auto& domain = node.Domain();
+
+    auto version_iter = DomainToVersionMap().find(domain);
+    if (DomainToVersionMap().end() == version_iter) {
       // The domain referred by this node does not exist either
       // in <OpSetIdProto> in the <ModelProto> loaded (in the case of model loaded from file) or
       // in global DomainToVersionRange map (in the case of model constructed from scratch).
@@ -972,77 +868,25 @@ Status Graph::VerifyNodeAndOpMatch(
                         node_name + ") is not supported for this model.");
     }
 
-    // Get op schema given op name, max inclusive version and domain.
-    node->op_ = OpSchemaRegistry::Schema(op_type, version_iter->second, domain);
-    if (nullptr == node->op_) {
-      // A op_type refers to nothing.
-      Status status(LOTUS, FAIL,
-                    "Error: the operator or function (" + op_type + ") referred to by node (" +
-                        node_name + ") does not exist.");
-      return status;
-    }
+    // validate the OpType for this version. updates Node.Op and InputArgCount
+    RETURN_IF_ERROR(node.ValidateVersion(version_iter->second));
 
-    auto op = node->Op();
+    // currently an Op is required by ValidateVersion, so we use gsl::not_null.
+    // This may change in the future to allow a null Op
+    const gsl::not_null<const OpSchema*> p_op = node.Op();
 
-    // The node refers to a primitive operator.
-    // Infer and verify node input arg type information.
-    auto total_arg_count = std::accumulate(node->InputArgCount().begin(),
-                                           node->InputArgCount().end(), 0);
-
-    if (total_arg_count != node->InputDefs().size()) {
-      Status status(LOTUS, FAIL,
-                    "The sum of input arg count is not equal to size of"
-                    "input defs in node (" +
-                        node_name + ").");
-      return status;
-    }
-
-    // Verify size of node arg count is same as input number in
-    // operator definition.
-    if (op->inputs().size() != node->InputArgCount().size()) {
-      // Adjust input arg count array with op definition
-      // The adjustment will work as below,
-      // In total, there're <total_arg_count> inputs, which
-      // will be split as <1, 1, 1, 1, ... 1, x> or
-      // <1, 1, 1, 1, ...1, 0, 0, ...0>. The final input
-      // arg count array's element number will be the same
-      // as op definition, and the sum of all elements will
-      // be equal to <total_arg_count>.
-      auto& input_arg_count = node->MutableInputArgCount();
-      input_arg_count.clear();
-      size_t m = 0;
-      auto arg_count_left = total_arg_count;
-
-      if (0 < op->inputs().size()) {
-        for (; m < op->inputs().size() - 1; ++m) {
-          if (arg_count_left > 0) {
-            input_arg_count.push_back(1);
-            arg_count_left--;
-          } else {
-            input_arg_count.push_back(0);
-          }
-        }
-      }
-
-      // Set the arg count for the last input formal parameter.
-      // NOTE: in the case that there's no .input(...) defined
-      // in op schema, all input args will be fed as one input
-      // of the operator.
-      input_arg_count.push_back(arg_count_left);
-    }
-
-    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, op, output_args)));
+    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op, output_args)));
 
     // Attribute verification and fill node attribute with
     // default value defined in operator definition if needed.
-    auto node_attributes = node->GetAttributes();
-    for (auto attr_def : op->attributes()) {
+    auto node_attributes = node.GetAttributes();
+    for (auto attr_def : p_op->attributes()) {
       auto node_attr_iter = node_attributes.find(attr_def.first);
       if (node_attributes.end() == node_attr_iter) {
         if (!attr_def.second.required) {
           if (attr_def.second.default_value.has_name()) {
             // Set default value to the node attributes.
-            node->AddAttribute(attr_def.first, attr_def.second.default_value);
+            node.AddAttribute(attr_def.first, attr_def.second.default_value);
           }
           // TODO: Handle optional attribute but no default value specified in op definition.
         } else {
@@ -1068,9 +912,9 @@ Status Graph::VerifyNodeAndOpMatch(
 
     // Verify node with operator definition.
     NodeProto node_proto;
-    node->ToProto(node_proto);
+    node.ToProto(node_proto);
     try {
-      node->Op()->Verify(node_proto);
+      p_op->Verify(node_proto);
     } catch (const std::exception& ex) {
       std::ostringstream errmsg;
       errmsg << "Exception throw while verifying node with schema with message: " << ex.what();
@@ -1080,9 +924,12 @@ Status Graph::VerifyNodeAndOpMatch(
 
   return Status::OK();
 }
-
 Status Graph::Resolve() {
-  if (!graph_resolve_needed_) {
+  return Resolve(false);
+}
+
+Status Graph::Resolve(bool no_proto_sync_required) {
+  if (!GraphResolveNeeded()) {
     return Status::OK();
   }
 
@@ -1090,16 +937,26 @@ Status Graph::Resolve() {
   std::unordered_map<std::string, NodeIndex> node_name_to_index;
   RETURN_IF_ERROR(VerifyNoDuplicateName(output_args, node_name_to_index));
   RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
-  RETURN_IF_ERROR(CheckIsAcyclic(nodes_in_topological_order_));
-  RETURN_IF_ERROR(VerifyNodeAndOpMatch(nodes_in_topological_order_, output_args));
+  RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
+  RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
   RETURN_IF_ERROR(SetGraphInputsOutputs());
   CleanInitializers();
-  graph_resolve_needed_ = false;
+  GraphResolveNeeded(false);
+
+  // if we are resolving immediately after loading from a GraphProto, we don't need to
+  // do a proto sync
+  if (no_proto_sync_required) {
+    GraphProtoSyncNeeded(false);
+  }
+
   return Status::OK();
 }
 
-Status GraphBase::GetNodesInTopologicalOrder(const std::vector<NodeIndex>** pp_nodes) {
-  RETURN_IF_ERROR(Resolve());
+Status GraphBase::GetNodesInTopologicalOrder(gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const {
+  if (graph_resolve_needed_) {
+    return Status{StatusCategory::LOTUS, StatusCode::FAIL,
+                  "Resolve() must be called before using the graph as modifications have been made to it."};
+  }
 
   *pp_nodes = &nodes_in_topological_order_;
   return Status::OK();
@@ -1119,7 +976,7 @@ void GraphBase::AddSourceSinkNodes() {
   AddControlEdge(source_node_index_, sink_node_index_);
 }
 
-const std::string& Graph::Name() const {
+const std::string& Graph::Name() const noexcept {
   return graph_proto_.name();
 }
 
@@ -1127,7 +984,7 @@ void Graph::SetName(const std::string& name) {
   graph_proto_.set_name(name);
 }
 
-const std::string& Graph::Description() const {
+const std::string& Graph::Description() const noexcept {
   return graph_proto_.doc_string();
 }
 
@@ -1135,20 +992,16 @@ void Graph::SetDescription(const std::string& description) {
   graph_proto_.set_doc_string(description);
 }
 
-std::unordered_map<std::string, NodeArg*>* Graph::GetNodeArgMap() {
-  return &node_args_;
-}
-
 void Graph::AddInitializedTensor(const TensorProto& tensor) {
   name_to_initial_tensor_[tensor.name()] = tensor;
-  graph_proto_sync_needed_ = true;
-  graph_resolve_needed_ = true;
+  SetGraphProtoSyncNeeded();
+  SetGraphResolveNeeded();
 }
 
 void Graph::RemoveInitializedTensor(const std::string& tensor_name) {
   name_to_initial_tensor_.erase(tensor_name);
-  graph_proto_sync_needed_ = true;
-  graph_resolve_needed_ = true;
+  SetGraphProtoSyncNeeded();
+  SetGraphResolveNeeded();
 }
 
 bool Graph::GetInitializedTensor(const std::string& tensor_name, TensorProto& value) const {
@@ -1160,54 +1013,107 @@ bool Graph::GetInitializedTensor(const std::string& tensor_name, TensorProto& va
   return true;
 }
 
-void Graph::CleanAllInitializedTensors() {
+void Graph::CleanAllInitializedTensors() noexcept {
   name_to_initial_tensor_.clear();
 }
 
-const InitializedTensorSet& Graph::GetAllInitializedTensors() const {
+const InitializedTensorSet& Graph::GetAllInitializedTensors() const noexcept {
   return name_to_initial_tensor_;
 }
 
-const std::vector<const NodeArg*>& Graph::GetInputs() const {
-  return graph_inputs_;
-}
-
-const std::vector<const NodeArg*>& Graph::GetOutputs() const {
-  return graph_outputs_;
-}
-
-const std::vector<const NodeArg*>& Graph::GetValueInfo() const {
+const std::vector<const NodeArg*>& Graph::GetValueInfo() const noexcept {
   return value_info_;
 }
 
-Node* GraphBase::GetNode(NodeIndex node_index) {
-  if (MaxNodeIndex() <= node_index) {
-    return nullptr;
+// Ensure the NodeArgs in the input are created and in this Graph's node arg map
+static void AddNodeArgs(const std::vector<NodeArg*>& input_args,
+                        std::unordered_map<std::string, NodeArg*>& node_arg_map) {
+  for (const gsl::not_null<NodeArg*> input_arg : input_args) {
+    auto& key = input_arg->Name();
+    auto existing_entry = node_arg_map.find(key);
+
+    NodeArg* node_arg = existing_entry == node_arg_map.end() ? nullptr : existing_entry->second;
+
+    if (node_arg == nullptr) {
+      node_arg_map[key] = node_arg;
+    } else {
+      // check that if an existing entry was found, it was for the same instance
+      LOTUS_ENFORCE(node_arg == input_arg,
+                    "Existing entry in NodeArg map for ", key, " != input definition.");
+    }
+  }
+}
+
+static std::vector<NodeArg*> CreateNodeArgs(const google::protobuf::RepeatedPtrField<std::string>& names,
+                                            const ArgNameToTypeMap& name_to_type_map,
+                                            std::unordered_map<std::string, NodeArg*>& node_arg_map,
+                                            std::vector<std::unique_ptr<NodeArg>>& owned_node_args) {
+  const auto name_to_type_map_end = name_to_type_map.end();
+  std::vector<NodeArg*> results;
+  results.reserve(names.size());
+
+  for (auto& name : names) {
+    const TypeProto* type = nullptr;
+
+    auto name_to_type_iter = name_to_type_map.find(name);
+    if (name_to_type_iter != name_to_type_map_end) {
+      // This node input arg type/shape does exist in graph proto.
+      // Assign type/shape information to node input arg.
+      type = &(name_to_type_iter->second);
+    }
+
+    auto existing_entry = node_arg_map.find(name);
+    NodeArg* node_arg = existing_entry == node_arg_map.end() ? nullptr : existing_entry->second;
+
+    if (node_arg == nullptr) {
+      auto new_node_arg = std::make_unique<NodeArg>(name, type);
+      node_arg = new_node_arg.get();
+      owned_node_args.push_back(std::move(new_node_arg));
+      node_arg_map[name] = node_arg;
+    }
+
+    results.push_back(node_arg);
   }
 
-  return nodes_[node_index].get();
+  return results;
 }
 
-const Node* GraphBase::GetNode(NodeIndex node_index) const {
-  if (MaxNodeIndex() <= node_index) {
-    return nullptr;
-  }
+Node* GraphBase::AddNode(const Node& other) {
+  const auto& definitions = other.GetDefinitions();
 
-  return nodes_[node_index].get();
-}
+  auto new_node = AddNode(other.Name(), other.OpType(), other.Description(),
+                          definitions.input_defs,
+                          definitions.output_defs,
+                          &other.GetAttributes(),
+                          other.Domain());
 
-NodeIndex GraphBase::MaxNodeIndex() const {
-  return nodes_.size();
-}
-
-int GraphBase::NumberOfNodes() const {
-  return num_of_nodes_;
+  return new_node;
 }
 
 Node* GraphBase::AddNode(const NodeProto& node_proto,
                          const ArgNameToTypeMap& name_to_type_map) {
-  auto node = AllocateNode();
-  node->Init(node_proto, name_to_type_map);
+  const gsl::not_null<Node*> node = AllocateNode();
+
+  auto input_defs = CreateNodeArgs(node_proto.input(), name_to_type_map, node_args_, owned_node_args_);
+  auto output_defs = CreateNodeArgs(node_proto.output(), name_to_type_map, node_args_, owned_node_args_);
+
+  const int num_attributes = node_proto.attribute_size();
+  NodeAttributes attributes;
+  attributes.reserve(num_attributes);
+
+  for (int i = 0; i < num_attributes; ++i) {
+    auto& attr = node_proto.attribute(i);
+    attributes[attr.name()] = attr;
+  }
+
+  node->Init(node_proto.name(),
+             node_proto.op_type(),
+             node_proto.doc_string(),
+             input_defs,
+             output_defs,
+             &attributes,
+             node_proto.domain());
+
   return node;
 }
 
@@ -1216,85 +1122,47 @@ Node* GraphBase::AddNode(const std::string& name,
                          const std::string& description,
                          const std::vector<NodeArg*>& input_args,
                          const std::vector<NodeArg*>& output_args,
+                         const NodeAttributes* attributes,
                          const std::string& domain) {
-  auto node = AllocateNode();
-  node->Init(name, op_type, description, input_args, output_args, domain);
+  AddNodeArgs(input_args, node_args_);
+  AddNodeArgs(output_args, node_args_);
+
+  const gsl::not_null<Node*> node = AllocateNode();
+  node->Init(name, op_type, description, input_args, output_args, attributes, domain);
   if (0 != op_type.compare(kNoOp)) {
     graph_proto_sync_needed_ = true;
   }
-  return node;
-}
 
-/*Node* GraphBase::AddNode(const std::string& name,
-    const std::string& op_type,
-    const std::string& description,
-    const std::vector<NodeArg>& input_args,
-    const std::vector<int>& p_inputArgCount,
-    const std::vector<NodeArg>& output_args,
-    const std::string& domain)
-    {
-    auto node = AllocateNode();
-    node->Init(name,
-    op_type,
-    description,
-    input_args,
-    p_inputArgCount,
-    output_args,
-    domain);
-    graph_proto_sync_needed_  = true;
-    return node;
-    }*/
-
-/*Node* GraphBase::AddNode(const std::string& name,
-    const std::string& op_type,
-    const std::string& description,
-    const std::vector<NodeArg>& output_args,
-    const std::string& domain)
-    {
-    auto node = AllocateNode();
-    node->Init(name,
-    op_type,
-    description,
-    output_args,
-    domain);
-    graph_proto_sync_needed_  = true;
-    return node;
-    }*/
-
-Node* GraphBase::AddNode(const Node& other) {
-  auto node = AllocateNode();
-  *node = other;
-  graph_proto_sync_needed_ = true;
   return node;
 }
 
 bool GraphBase::RemoveNode(NodeIndex p_index) {
-  if (MaxNodeIndex() <= p_index || nullptr == nodes_[p_index]) {
-    return false;
-  }
-
-  ReleaseNode(p_index);
-  return true;
+  return ReleaseNode(p_index);
 }
 
 Node* GraphBase::AddConstantNode(const std::string& name,
                                  const std::string& description,
                                  const std::vector<NodeArg*>& output_args,
                                  const TensorProto& tensor) {
-  Node* node = AddNode(name, kConstant, description, std::vector<NodeArg*>{}, output_args);
+  const gsl::not_null<Node*> node = AddNode(name, kConstant, description, std::vector<NodeArg*>{}, output_args);
   node->AddAttribute(kConstantValue, tensor);
   return node;
 }
 
 bool GraphBase::AddControlEdge(NodeIndex src_node_index, NodeIndex dst_node_index) {
-  if (MaxNodeIndex() <= src_node_index || MaxNodeIndex() <= dst_node_index ||
-      nullptr == nodes_[src_node_index] || nullptr == nodes_[dst_node_index]) {
+  if (nodes_.size() <= src_node_index ||
+      nodes_.size() <= dst_node_index ||
+      nullptr == nodes_[src_node_index] ||
+      nullptr == nodes_[dst_node_index]) {
     // Invalid node indexes specified.
     return false;
   }
-  nodes_[src_node_index]->output_nodes_.insert(nodes_[dst_node_index].get());
-  nodes_[dst_node_index]->input_nodes_.insert(nodes_[src_node_index].get());
-  nodes_[dst_node_index]->control_inputs_.insert(nodes_[src_node_index]->Name());
+
+  GSL_SUPPRESS(es .84) {  // ignoring return from insert()
+    nodes_[src_node_index]->MutableRelationships().output_nodes.insert(nodes_[dst_node_index].get());
+    nodes_[dst_node_index]->MutableRelationships().input_nodes.insert(nodes_[src_node_index].get());
+    nodes_[dst_node_index]->MutableRelationships().control_inputs.insert(nodes_[src_node_index]->Name());
+  }
 
   if (!IsSourceNode(src_node_index) && !IsSinkNode(dst_node_index)) {
     graph_proto_sync_needed_ = true;
@@ -1305,7 +1173,7 @@ bool GraphBase::AddControlEdge(NodeIndex src_node_index, NodeIndex dst_node_inde
 }
 
 const GraphProto& Graph::ToGraphProto() {
-  if (!graph_proto_sync_needed_) {
+  if (!GraphProtoSyncNeeded()) {
     return graph_proto_;
   }
 
@@ -1313,25 +1181,27 @@ const GraphProto& Graph::ToGraphProto() {
   graph_proto_.clear_node();
 
   // Nodes must be sorted in Topological Order in the GraphProto per ONNX spec.
-  for (auto& node_idx : nodes_in_topological_order_) {
+  for (auto& node_idx : NodesInTopologicalOrder()) {
     if (IsSourceNode(node_idx) || IsSinkNode(node_idx)) {
       continue;
     }
-    auto node_proto = graph_proto_.add_node();
-    nodes_[node_idx]->ToProto(*node_proto);
+
+    const gsl::not_null<NodeProto*> node_proto = graph_proto_.add_node();
+    const gsl::not_null<Node*> p_node = GetNode(node_idx);
+    p_node->ToProto(*node_proto);
   }
 
   // Initial tensors;
   graph_proto_.clear_initializer();
   for (auto item : name_to_initial_tensor_) {
-    auto tensor = graph_proto_.add_initializer();
+    const gsl::not_null<TensorProto*> tensor = graph_proto_.add_initializer();
     *tensor = item.second;
   }
 
   // Sync graph inputs/outputs/valueInfo.
   SyncGraphInputsOutputs();
 
-  graph_proto_sync_needed_ = false;
+  GraphProtoSyncNeeded(false);
 
   return graph_proto_;
 }
@@ -1341,48 +1211,54 @@ void Graph::SyncGraphInputsOutputs() {
   graph_proto_.clear_output();
   graph_proto_.clear_value_info();
 
-  for (auto inputArg : graph_inputs_) {
-    *(graph_proto_.mutable_input()->Add()) = inputArg->ToProto();
+  for (const gsl::not_null<const LotusIR::NodeArg*> input_arg : GetInputs()) {
+    *(graph_proto_.mutable_input()->Add()) = input_arg->ToProto();
   }
 
-  for (auto outputArg : graph_outputs_) {
-    *(graph_proto_.mutable_output()->Add()) = outputArg->ToProto();
+  for (const gsl::not_null<const LotusIR::NodeArg*> output_arg : GetOutputs()) {
+    *(graph_proto_.mutable_output()->Add()) = output_arg->ToProto();
   }
 
-  for (auto valueInfo : value_info_) {
-    *(graph_proto_.mutable_value_info()->Add()) = valueInfo->ToProto();
+  for (const gsl::not_null<const LotusIR::NodeArg*> value_info : value_info_) {
+    *(graph_proto_.mutable_value_info()->Add()) = value_info->ToProto();
   }
 }
 
 void Graph::CleanInitializers() {
   std::vector<std::string> wrong_names;
+  const auto& inputs = GetInputs();
+
   for (const auto& pv : name_to_initial_tensor_) {
     const std::string& s = pv.first;
-    if (std::none_of(graph_inputs_.begin(), graph_inputs_.end(), [&s](const NodeArg* input) -> bool {
-          return s == input->Name();
-        })) {
+    if (std::none_of(inputs.begin(), inputs.end(),
+                     [&s](const gsl::not_null<const NodeArg*> input) noexcept->bool { return s == input->Name(); })) {
       wrong_names.push_back(s);
     }
   }
+
   for (const std::string& s : wrong_names) {
     LOGF_DEFAULT(WARNING, "%s exists in this graph's initializers but it is not in its input list", s.c_str());
     name_to_initial_tensor_.erase(s);
   }
 }
 
+GSL_SUPPRESS(es .84)  // warning about ignoring return value from insert(...)
 Status Graph::SetGraphInputsOutputs() {
   // Reset graphInputs/graphOutputs/valueInfo state.
-  graph_inputs_.clear();
-  graph_outputs_.clear();
+  auto& graph_inputs = MutableInputs();
+  auto& graph_outputs = MutableOutputs();
+
+  graph_inputs.clear();
+  graph_outputs.clear();
   value_info_.clear();
 
   // Flag indicates that this graph is loaded from model file.
   // If it's true, then graph inputs and outputs will keep the same
   // as what are specified in the model, otherwise, graph inputs
   // and outputs will be inferred.
-  bool loaded_from_model_file = graph_proto_.input_size() != 0 ||
-                                graph_proto_.output_size() != 0 ||
-                                graph_proto_.value_info_size() != 0;
+  const bool loaded_from_model_file = graph_proto_.input_size() != 0 ||
+                                      graph_proto_.output_size() != 0 ||
+                                      graph_proto_.value_info_size() != 0;
 
   std::unordered_set<std::string> added_input_names{};
 
@@ -1410,10 +1286,10 @@ Status Graph::SetGraphInputsOutputs() {
     }
 
     std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
-    for (auto& node : Nodes()) {
-      for (auto& output_def : node.OutputDefs()) {
+    for (const auto& node : Nodes()) {
+      for (gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
         if (specified_graph_outputs.erase(output_def->Name()) >= 1) {
-          graph_outputs_.push_back(output_def);
+          graph_outputs.push_back(output_def);
         }
         output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
@@ -1423,9 +1299,9 @@ Status Graph::SetGraphInputsOutputs() {
       return Status(LOTUS, FAIL, "Some graph outputs which don't exist in the graph.");
     }
 
-    for (auto& node : Nodes()) {
+    for (const auto& node : Nodes()) {
       // Go thru all node's inputs.
-      for (auto& input_arg : node.InputDefs()) {
+      for (const gsl::not_null<const NodeArg*> input_arg : node.InputDefs()) {
         if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
@@ -1434,13 +1310,14 @@ Status Graph::SetGraphInputsOutputs() {
         if (specified_graph_inputs.end() != specified_graph_inputs.find(input_arg->Name())) {
           if (added_input_names.insert(input_arg->Name()).second) {
             // The node input is specified as graph input.
-            graph_inputs_.push_back(input_arg);
+            graph_inputs.push_back(input_arg);
           }
           continue;
         }
 
         auto output_arg_iter = output_name_to_node_arg.find(input_arg->Name());
-        if (output_name_to_node_arg.end() == output_arg_iter && specified_initializers.end() == specified_initializers.find(input_arg->Name())) {
+        if (output_name_to_node_arg.end() == output_arg_iter &&
+            specified_initializers.end() == specified_initializers.find(input_arg->Name())) {
           // The node input is not specified as graph input,
           // and it's not fed by another node neither.
           return Status(LOTUS, FAIL, "Node input (" + input_arg->Name() + ") should be a graph input.");
@@ -1453,8 +1330,8 @@ Status Graph::SetGraphInputsOutputs() {
     }
   } else {
     std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
-    for (auto& node : Nodes()) {
-      for (auto& output_def : node.OutputDefs()) {
+    for (const auto& node : Nodes()) {
+      for (gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
         output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
     }
@@ -1463,9 +1340,9 @@ Status Graph::SetGraphInputsOutputs() {
     auto graph_output_args = output_name_to_node_arg;
 
     std::unordered_set<Node*> inner_nodes;
-    for (auto& node : Nodes()) {
+    for (const auto& node : Nodes()) {
       // Go thru all node's inputs.
-      for (auto& input_arg : node.InputDefs()) {
+      for (const gsl::not_null<const NodeArg*> input_arg : node.InputDefs()) {
         if (!input_arg->Exists()) {
           // It's an optional input and does not exist in this case.
           continue;
@@ -1477,7 +1354,7 @@ Status Graph::SetGraphInputsOutputs() {
           // it should be a graph input.
           if (added_input_names.end() == added_input_names.find(input_arg->Name())) {
             // This graph input has not been added into <graph_inputs_>.
-            graph_inputs_.push_back(input_arg);
+            graph_inputs.push_back(input_arg);
             added_input_names.insert(input_arg->Name());
           }
         } else if (graph_output_args.erase(output_arg_iter->first) >= 1) {
@@ -1491,18 +1368,18 @@ Status Graph::SetGraphInputsOutputs() {
 
     // Set graph outputs.
     for (auto& output_arg : graph_output_args) {
-      graph_outputs_.push_back(output_arg.second);
+      graph_outputs.push_back(output_arg.second);
     }
   }
 
   return Status::OK();
 }
 
-bool GraphBase::IsSourceNode(NodeIndex index) const {
+bool GraphBase::IsSourceNode(NodeIndex index) const noexcept {
   return source_node_index_ == index;
 }
 
-bool GraphBase::IsSinkNode(NodeIndex index) const {
+bool GraphBase::IsSinkNode(NodeIndex index) const noexcept {
   return sink_node_index_ == index;
 }
 
@@ -1514,18 +1391,33 @@ const Node* GraphBase::SinkNode() const {
   return nodes_[sink_node_index_].get();
 }
 
-Node* GraphBase::AllocateNode() {
-  std::unique_ptr<Node> node(new Node(MaxNodeIndex(), this));
-  nodes_.push_back(std::move(node));
-  num_of_nodes_++;
+// calling private ctor
+GSL_SUPPRESS(r .11)
+gsl::not_null<Node*> GraphBase::AllocateNode() {
+  std::unique_ptr<Node> new_node(new Node(nodes_.size(), *this));
+  Node* node{new_node.get()};
+
+  nodes_.push_back(std::move(new_node));
+  ++num_of_nodes_;
   graph_resolve_needed_ = true;
-  return nodes_.back().get();
+
+  return node;
 }
 
-void GraphBase::ReleaseNode(NodeIndex index) {
-  nodes_[index] = nullptr;
-  num_of_nodes_--;
-  graph_proto_sync_needed_ = true;
-  graph_resolve_needed_ = true;
+// TODO: Does this need (and maybe AllocateNode) to be threadsafe so nodes_ and num_of_nodes_ managed more carefully?
+bool GraphBase::ReleaseNode(NodeIndex index) {
+  if (index >= nodes_.size()) {
+    return false;
+  }
+
+  // index is valid, but the entry may already be empty
+  if (nodes_[index] != nullptr) {
+    nodes_[index] = nullptr;
+    --num_of_nodes_;
+    graph_proto_sync_needed_ = true;
+    graph_resolve_needed_ = true;
+  }
+
+  return true;
 }
 }  // namespace LotusIR

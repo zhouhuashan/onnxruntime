@@ -163,7 +163,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
 
   {
     // 2. test inputs
-    auto inputs = p_graph->GetInputs();
+    auto& inputs = p_graph->GetInputs();
     auto weights = p_graph->GetAllInitializedTensors();
 
     // skip the weights
@@ -189,7 +189,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
     auto retval = session_object.GetOutputs();
     EXPECT_TRUE(retval.first.IsOK());
 
-    auto outputs = p_graph->GetOutputs();
+    auto& outputs = p_graph->GetOutputs();
     retval = session_object.GetOutputs();
     EXPECT_TRUE(retval.first.IsOK());
     EXPECT_TRUE(Compare(outputs, *retval.second));

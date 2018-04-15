@@ -8,7 +8,7 @@ file(GLOB_RECURSE lotusIR_defs_src
 )
 
 add_library(lotusIR_graph_obj OBJECT ${lotusIR_graph_src} ${lotusIR_defs_src})
-add_dependencies(lotusIR_graph_obj onnx)
+add_dependencies(lotusIR_graph_obj onnx gsl)
 
 set_target_properties(lotusIR_graph_obj PROPERTIES FOLDER "Lotus")
 set_target_properties(lotusIR_graph_obj PROPERTIES LINKER_LANGUAGE CXX)
@@ -28,7 +28,7 @@ if (WIN32)
     )
 
     # Add Code Analysis properties to enable C++ Core checks. Have to do it via a props file include. 
-    set_target_properties(lotusIR_graph_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/ConfigureVisualStudioCodeAnalysis.props)
+    set_target_properties(lotusIR_graph_obj PROPERTIES VS_USER_PROPS ${PROJECT_SOURCE_DIR}/EnableVisualStudioCodeAnalysis.props)
 endif()
 
 

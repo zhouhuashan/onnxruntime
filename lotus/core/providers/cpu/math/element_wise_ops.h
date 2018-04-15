@@ -217,4 +217,13 @@ class Greater final : public BroadcastAxisKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
+template <typename T>
+class Mean final : public OpKernel {
+ public:
+  Mean(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
 }  // namespace Lotus

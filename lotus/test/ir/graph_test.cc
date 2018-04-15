@@ -14,6 +14,7 @@
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "gtest/gtest.h"
+#include "test/ir/node_helper.h"
 
 namespace LotusIR {
 namespace Test {
@@ -40,7 +41,7 @@ TEST(GraphTraversalTest, ReverseDFS) {
   // Case 1: A normal graph.
   //                 SouceNode
   //                 /       \
-    //  node_1 (Variable)      node_2 (Variable)
+  //  node_1 (Variable)      node_2 (Variable)
   //                 \       /
   //                 node_3 (Add)
   //                     |
@@ -85,8 +86,8 @@ TEST(GraphTraversalTest, ReverseDFS) {
   auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
 
-  std::vector<Node *> from;
-  from.push_back(const_cast<Node *>(graph.SinkNode()));
+  std::vector<const Node *> from;
+  from.push_back(graph.SinkNode());
 
   std::vector<std::string> enter_leave_sequence;
 
@@ -97,12 +98,12 @@ TEST(GraphTraversalTest, ReverseDFS) {
   };
 
   graph.ReverseDFSFrom(from,
-                       [&enter_leave_sequence](Node *n) {
+                       [&enter_leave_sequence](const Node *n) {
                          std::string s("enter:");
                          s += n->Name();
                          enter_leave_sequence.push_back(s);
                        },
-                       [&enter_leave_sequence](Node *n) {
+                       [&enter_leave_sequence](const Node *n) {
                          std::string s("leave:");
                          s += n->Name();
                          enter_leave_sequence.push_back(s);
@@ -276,8 +277,8 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   }
   EXPECT_TRUE(equal_proto_1_and_2) << diff;
 
-  model2.reset(new Model(model_proto2));
   // Load the model again to ensure that it's still the right thing.
+  EXPECT_EQ(Model::Load(model_proto2, &model2), Status::OK());
   Graph *graph2 = model2->MainGraph();
   for (auto &node : graph2->Nodes()) {
     if (graph2->IsSourceNode(node.Index()) || graph2->IsSinkNode(node.Index())) {
@@ -300,7 +301,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   }
 
   // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
-  node_1->MutableInputDefs()[0] = output_arg4;
+  NodeTestHelper::MutableDefinitions(*node_1).input_defs[0] = output_arg4;
   status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
@@ -345,10 +346,10 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   auto graph = model.MainGraph();
 
   // Case 1: A normal graph.
-  //                         SouceNode
-  //                     /       |           \
-            //  node_1 (Variable)    node_2 (Variable) node_3 (Variable)
-  //                            \|/ (it's all 3 nodes above outputs to the one input of node_4)
+  //                         SourceNode
+  //                   /         |         \
+  //  node_1 (Variable)  node_2 (Variable)  node_3 (Variable)
+  //                   \         |         / (it's all 3 nodes above outputs to the one input of node_4)
   //                        node_4 (Max)
   //                             |
   //                          SinkNode
@@ -416,8 +417,8 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
 
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  node_2->MutableInputDefs()[0]->SetType(tensor_float);
-  node_2->MutableOutputDefs()[0]->SetType(tensor_float);
+  NodeTestHelper::MutableDefinitions(*node_2).input_defs[0]->SetType(tensor_float);
+  NodeTestHelper::MutableDefinitions(*node_2).output_defs[0]->SetType(tensor_float);
   status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Node (node_4) has different input types (tensor(float),tensor(int32)) matching to same type string (T).", status.ErrorMessage());

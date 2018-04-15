@@ -7,13 +7,12 @@ namespace Lotus {
 class DummyCPUTransformer : public LotusIR::IGraphTransformer {
  public:
   virtual Status Apply(/*IN/OUT*/ LotusIR::Graph& graph, /*OUT*/ bool& modified) const override {
-    auto num_nodes = graph.NumberOfNodes();
-    for (int i = 0; i < num_nodes; i++) {
-      if (graph.IsSourceNode(i) || graph.IsSinkNode(i))
+    for (auto& node : graph.Nodes()) {
+      if (graph.IsSourceNode(node) || graph.IsSinkNode(node))
         continue;
-      auto node = graph.GetNode(i);
-      if (node->GetExecutionProvider().empty()) {
-        node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+
+      if (node.GetExecutionProvider().empty()) {
+        node.SetExecutionProvider(LotusIR::kCpuExecutionProvider);
         modified = true;
       }
     }

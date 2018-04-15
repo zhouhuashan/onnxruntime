@@ -34,17 +34,15 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
   auto graph = session_state.GetGraph();
   // iterate all the values in the graph to assign the correct type.
   for (auto& node : graph->Nodes()) {
-    if (graph->IsSinkNode(node.Index()) || graph->IsSourceNode(node.Index()))
+    if (graph->IsSinkNode(node) || graph->IsSourceNode(node))
       continue;
 
-    auto& inputs = node.InputDefs();
-    for (auto arg : inputs) {
-      FillType(*arg, session_state, plan);
+    for (gsl::not_null<const LotusIR::NodeArg*> input_def : node.InputDefs()) {
+      FillType(*input_def, session_state, plan);
     }
 
-    auto& outputs = node.OutputDefs();
-    for (auto arg : outputs) {
-      FillType(*arg, session_state, plan);
+    for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
+      FillType(*output_def, session_state, plan);
     }
   }
 
@@ -57,7 +55,7 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
 
   //setup execution plan
   const std::vector<LotusIR::NodeIndex>* order;
-  LOTUS_RETURN_IF_ERROR(const_cast<LotusIR::Graph*>(graph)->GetNodesInTopologicalOrder(&order));
+  LOTUS_RETURN_IF_ERROR(graph->GetNodesInTopologicalOrder(&order));
   for (int i = 0; i < order->size(); i++) {
     if (graph->IsSinkNode((*order)[i]) || graph->IsSourceNode((*order)[i]))
       continue;

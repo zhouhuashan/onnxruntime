@@ -2,6 +2,8 @@
 
 #include "core/graph/graph.h"
 
+#include "gsl/pointers"
+
 namespace LotusIR {
 typedef std::unordered_map<std::string, std::string> ModelMetaData;
 
@@ -15,8 +17,6 @@ class Model {
   Model(const std::string& graph_name,
         bool is_ONNX = false,
         const ModelMetaData& model_metadata = ModelMetaData());
-
-  Model(const ModelProto& model_proto);
 
   // Get model's IR version.
   // Return <kNoVersion> if not specified.
@@ -52,13 +52,13 @@ class Model {
   // Set models' doc string.
   void SetDocString(const std::string& doc_string);
 
-  const ModelMetaData& MetaData() const;
+  const ModelMetaData& MetaData() const noexcept;
 
   // Get model's main graph.
   // The return pointer is owned by <*this> model.
   // TODO(Task:131) Model::MainGraph can return reference as the value is never null
-  Graph* MainGraph();
-  const Graph* MainGraph() const;
+  Graph* MainGraph() noexcept;
+  const Graph* MainGraph() const noexcept;
 
   // Get model's serialization proto data.
   const ModelProto& ToProto();
@@ -73,14 +73,18 @@ class Model {
 
   static Status Save(Model& model, int fd);
 
-  static Status Load(const std::string& file_path, /*out*/ std::shared_ptr<Model>* p_model);
+  static Status Load(const std::string& file_path, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model);
 
-  static Status Load(int fd, /*out*/ std::shared_ptr<Model>* p_model);
+  static Status Load(int fd, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model);
 
   // 'int' rather than 'size_t' because of a protobuf design choice; let callers handle type checks
-  static Status LoadFromBytes(int count, void* pBytes, /*out*/ std::shared_ptr<Model>* p_model);
+  static Status LoadFromBytes(int count, void* pBytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model);
+
+  static Status Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model);
 
  private:
+  Model(const ModelProto& model_proto);
+
   // Set <domain_to_version_> and <model_proto_> to contain related domains
   // with latest version in OpSchemaRegistry.
   // if <is_ONNX> is true, then only onnx domain will be contained.

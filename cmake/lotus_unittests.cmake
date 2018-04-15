@@ -96,6 +96,7 @@ set(lotus_test_ir_libs
 
 file(GLOB lotus_test_ir_src
     "${LOTUS_ROOT}/test/ir/*.cc"
+    "${LOTUS_ROOT}/test/ir/*.h"
 )
 
 AddTest(

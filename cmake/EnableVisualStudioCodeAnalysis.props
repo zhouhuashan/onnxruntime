@@ -3,8 +3,9 @@
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <!-- External libraries are in or below the directory with the sln file. Source is under \lotus so not affected by this -->
-    <CAExcludePath>$(SolutionDir);</CAExcludePath>
+    <!-- External libraries are in or below the directory with the sln file. Source is under \lotus so not affected by this.
+         Also need to exclude things under \external such as onnx. -->
+    <CAExcludePath>$(SolutionDir);$(SolutionDir)..\..\..\external;</CAExcludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RunCodeAnalysis>true</RunCodeAnalysis>

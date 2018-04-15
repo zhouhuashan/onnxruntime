@@ -11,17 +11,24 @@
 #include "core/graph/model.h"
 #include "core/graph/utils.h"
 
+#include "gsl/pointers"
+#include "gsl/gsl_util"
+
 namespace LotusIR {
 Model::Model(const std::string& graph_name, bool isOnnx, const ModelMetaData& model_metadata) {
   model_proto_.set_ir_version(onnx::Version::IR_VERSION);
   model_metadata_ = model_metadata;
   for (auto& metadata : model_metadata_) {
-    auto prop = model_proto_.add_metadata_props();
+    const gsl::not_null<StringStringEntryProto*> prop = model_proto_.add_metadata_props();
     prop->set_key(metadata.first);
     prop->set_value(metadata.second);
   }
+
   // Set domain_to_version_ to contain related domains with latest version.
   AddImportOpSets(isOnnx);
+
+  // need to call private ctor so can't use make_shared
+  GSL_SUPPRESS(r .11)
   graph_.reset(new Graph(graph_name, domain_to_version_));
 }
 
@@ -37,12 +44,8 @@ Model::Model(const ModelProto& model_proto) {
     AddImportOpSets(false);
   } else {
     for (auto& op_set : model_proto_.opset_import()) {
-      domain_to_version_[op_set.domain()] = static_cast<int>(op_set.version());
+      domain_to_version_[op_set.domain()] = gsl::narrow_cast<int>(op_set.version());
     }
-  }
-
-  if (model_proto_.has_graph()) {
-    graph_.reset(new Graph(model_proto_.graph(), domain_to_version_));
   }
 }
 
@@ -96,15 +99,15 @@ void Model::SetDocString(const std::string& doc_string) {
   model_proto_.set_doc_string(doc_string);
 }
 
-const ModelMetaData& Model::MetaData() const {
+const ModelMetaData& Model::MetaData() const noexcept {
   return model_metadata_;
 }
 
-Graph* Model::MainGraph() {
+Graph* Model::MainGraph() noexcept {
   return graph_.get();
 }
 
-const Graph* Model::MainGraph() const {
+const Graph* Model::MainGraph() const noexcept {
   return graph_.get();
 }
 
@@ -123,10 +126,28 @@ void Model::AddImportOpSets(bool is_ONNX) {
     }
 
     domain_to_version_[domainToVersionRange.first] = domainToVersionRange.second.second;
-    auto opset_id_proto = model_proto_.add_opset_import();
+    const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_.add_opset_import();
     opset_id_proto->set_domain(domainToVersionRange.first);
     opset_id_proto->set_version(domainToVersionRange.second.second);
   }
+}
+
+Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model) {
+  // we expect a graph to be present
+  if (!model_proto.has_graph()) {
+    return Status(LOTUS, INVALID_ARGUMENT, "No graph was found in the protobuf.");
+  }
+
+  // need to call private ctor so can't use make_shared
+  GSL_SUPPRESS(r .11)
+  (*p_model).reset(new Model(model_proto));
+
+  auto& model = **p_model;
+
+  // load and resolve graph
+  auto status = Graph::LoadGraph(model.model_proto_.graph(), model.domain_to_version_, model.graph_);
+
+  return status;
 }
 
 #ifdef _WIN32
@@ -148,7 +169,7 @@ Status Model::Save(Model& model, const std::wstring& file_path) {
 
 #endif
 
-Status Model::Load(const std::string& file_path, std::shared_ptr<Model>* p_model) {
+Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<Model>*> p_model) {
   int fd;
   RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
   auto status = Load(fd, p_model);
@@ -156,17 +177,14 @@ Status Model::Load(const std::string& file_path, std::shared_ptr<Model>* p_model
   return status;
 }
 
-Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Model>* p_model) {
+Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model) {
   ModelProto model_proto;
-  bool result = model_proto.ParseFromArray(p_bytes, count);
+  const bool result = model_proto.ParseFromArray(p_bytes, count);
   if (!result) {
     return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
   }
 
-  (*p_model).reset(new Model(model_proto));
-  RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve());
-
-  return Status::OK();
+  return Load(model_proto, p_model);
 }
 
 Status Model::Save(Model& model, const std::string& file_path) {
@@ -181,19 +199,19 @@ using ::google::protobuf::io::CodedInputStream;
 using ::google::protobuf::io::FileInputStream;
 using ::google::protobuf::io::ZeroCopyInputStream;
 
-Status Model::Load(int fd, std::shared_ptr<Model>* p_model) {
-  if (fd < 0 || nullptr == p_model) {
-    return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> less than 0 or <p_model> is nullptr.");
+Status Model::Load(int fd, gsl::not_null<std::shared_ptr<Model>*> p_model) {
+  if (fd < 0) {
+    return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> less than 0.");
   }
 
-  std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
-  std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
+  auto raw_input = std::unique_ptr<ZeroCopyInputStream>(std::make_unique<FileInputStream>(fd));
+  auto coded_input = std::make_unique<CodedInputStream>(raw_input.get());
 
   // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
   coded_input->SetTotalBytesLimit(INT_MAX, INT_MAX);
 
   ModelProto model_proto;
-  bool result = model_proto.ParseFromCodedStream(coded_input.get());
+  const bool result = model_proto.ParseFromCodedStream(coded_input.get());
   coded_input.reset();
   raw_input.reset();
 
@@ -201,10 +219,7 @@ Status Model::Load(int fd, std::shared_ptr<Model>* p_model) {
     return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
   }
 
-  (*p_model).reset(new Model(model_proto));
-  RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve());
-
-  return Status::OK();
+  return Load(model_proto, p_model);
 }
 
 Status Model::Save(Model& model, int p_fd) {
@@ -214,7 +229,7 @@ Status Model::Save(Model& model, int p_fd) {
 
   RETURN_IF_ERROR(model.MainGraph()->Resolve());
   auto& model_proto = model.ToProto();
-  bool result = model_proto.SerializeToFileDescriptor(p_fd);
+  const bool result = model_proto.SerializeToFileDescriptor(p_fd);
   if (result) {
     return Status::OK();
   } else {

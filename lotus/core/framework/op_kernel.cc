@@ -62,12 +62,12 @@ std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
 }
 
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def) {
-  const OpSchema* op_schema = node.Op();
+  const OpSchema& op_schema = *node.Op();
   const size_t len = node.InputArgCount().size();
-  if (len > op_schema->inputs().size()) return false;
+  if (len > op_schema.inputs().size()) return false;
   int cur = 0;
   for (size_t input_index = 0; input_index != len; ++input_index) {
-    auto& param = op_schema->inputs()[input_index];
+    auto& param = op_schema.inputs()[input_index];
     LOTUS_ENFORCE(!param.GetTypeStr().empty());
     //param.type_str_ could be a real type string(e.g. int32), or a symbolic one(e.g. T)
     //If it's a real type string, we check exact match at there
@@ -81,7 +81,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
     }
     if (allowed_type_list_iter == kernel_type_constraints.end()) {
       for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
-        LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
+        const LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
         if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
         onnx::DataType real_type = arg->Type();
         if (*real_type != param.GetTypeStr()) {
@@ -90,7 +90,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
       }
     } else {
       for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
-        LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
+        const LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
         if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
         const ::onnx::TypeProto& real_type = arg->ToProto().type();
         if (!std::any_of(allowed_type_list_iter->second.begin(),

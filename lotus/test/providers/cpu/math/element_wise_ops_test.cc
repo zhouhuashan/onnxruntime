@@ -382,5 +382,26 @@ TEST(MathOpTest, Equal) {
   test.Run();
 }
 
+TEST(MathOpTest, Mean) {
+  OpTester test("Mean");
+  std::vector<int64_t> dims{3, 3};
+  test.AddInput<float>("data_0", dims,
+                       {1.0f, 0.0f, 1.0f,
+                        -1.0f, 1.1f, -100.0f,
+                        -5.0f, 0.01f, -10.0f});
+  test.AddInput<float>("data_1", dims,
+                       {1.0f, 0.0f, 2.0f,
+                        -2.0f, 2.2f, 65.0f,
+                        -1.0f, 0.02f, -1.0f});
+  test.AddInput<float>("data_3", dims,
+                       {1.0f, 0.0f, 3.0f,
+                        -3.0f, 3.3f, 65.0f,
+                        -3.0f, 0.03f, -1.0f});
+  test.AddOutput<float>("mean", dims,
+                        {1.0f, 0.0f, 2.0f,
+                         -2.0f, 2.2f, 10.0f,
+                         -3.0f, 0.02f, -4.0f});
+  test.Run();
+}
 }  // namespace Test
 }  // namespace Lotus

@@ -11,6 +11,11 @@
 // TraceLoggingProvider.h must follow Windows.h
 #include <Windows.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 26440)  // Warning C26440 from TRACELOGGING_DEFINE_PROVIDER
+#endif
+
 #include <TraceLoggingProvider.h>
 #include <evntrace.h>
 
@@ -18,13 +23,14 @@ namespace Lotus {
 namespace Logging {
 
 namespace {
-
-GSL_SUPPRESS(f .6)
-// Warning C26440 Function 'Lotus::Logging::`anonymous namespace'::_TlgDefineProvider_annotation__Tlgetw_provider_handleProv' can be declared 'noexcept' (f.6: http://go.microsoft.com/fwlink/?linkid=853927).	lotus_common_obj	d:\src\git\lotus\lotus\core\platform\windows\logging\etw_sink.cc	22	Active
 TRACELOGGING_DEFINE_PROVIDER(etw_provider_handle, "LotusTraceLoggingProvider",
                              // {929DD115-1ECB-4CB5-B060-EBD4983C421D}
                              (0x929dd115, 0x1ecb, 0x4cb5, 0xb0, 0x60, 0xeb, 0xd4, 0x98, 0x3c, 0x42, 0x1d));
 }  // namespace
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 // Class to unregister ETW provider at shutdown.
 // We expect one static instance to be created for the lifetime of the program.
