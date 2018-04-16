@@ -7,9 +7,13 @@
 #include "core/graph/graph_transformer.h"
 
 namespace Lotus {
-typedef std::shared_ptr<void> ExecutionProviderInfo;
 
 class OpKernelContext;
+
+// Information needed to construct execution providers.  
+struct ExecutionProviderInfo {
+  std::string name;
+};
 
 // Logical device representation.
 class IExecutionProvider {
@@ -19,7 +23,7 @@ class IExecutionProvider {
   // Graph to graph transformation. The resulting graph may contain custom
   // operators introduced by this execution provider. Newly formed custom
   // functions must be registered in kernelRegistry_.
-  virtual const LotusIR::IGraphTransformer& GetTransformer() const = 0;
+  virtual const LotusIR::GraphTransformer& GetTransformer() const = 0;
 
   // Get IAllocator for <*this> execution provider.
   // It will be used for allocating tensors (inputs/outputs) or copying tensors

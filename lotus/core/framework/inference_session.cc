@@ -80,7 +80,7 @@ class InferenceSession::Impl {
     }
 
     LotusIR::Graph* graph = model_->MainGraph();
-    LOTUS_RETURN_IF_ERROR(TransformGraph(*graph));
+    LOTUS_RETURN_IF_ERROR(TransformGraph(graph));
     LOTUS_RETURN_IF_ERROR(graph->Resolve());
 
     // at this point the graph should be in a frozen state
@@ -360,11 +360,13 @@ class InferenceSession::Impl {
     session_state_.SetLogger(*session_logger_);
   }
 
-  Common::Status TransformGraph(LotusIR::Graph& graph) {
-    bool is_modified;
+  Common::Status TransformGraph(LotusIR::Graph* graph) {
+    bool modified = false;
     for (auto& ep : session_state_.GetExecutionProviders()) {
-      // TODO: log which execution provider is transforming the graph and whether is_modified is true/false.
-      ep->GetTransformer().Apply(graph, is_modified);
+      // TODO: log which execution provider is transforming the graph and
+      // whether modified is true/false.
+      Status s = ep->GetTransformer().Apply(graph, &modified);
+      if (!s.IsOK()) return s;
     }
 
     return Common::Status::OK();

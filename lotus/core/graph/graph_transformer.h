@@ -1,111 +1,54 @@
 #pragma once
 
-#include "core/graph/graph.h"
-
 #include "core/common/common.h"
+#include "core/graph/graph.h"
+#include "core/graph/rewrite_rule.h"
 
 namespace LotusIR {
-class GraphEditor {
- public:
-  explicit GraphEditor(Graph& graph) : graph_{&graph} {}
-
-  // Add node from <graph_>.
-  Node* AddNode(const std::string& name,
-                const std::string& op_type,
-                const std::string& description,
-                const std::vector<NodeArg*>& input_args,
-                const std::vector<NodeArg*>& output_args,
-                const std::string& domain = "") {
-    return graph_->AddNode(name, op_type, description,
-                           input_args, output_args, nullptr, domain);
-  }
-
-  // Copy an existing node into this graph
-  Node* AddNode(const Node& other) {
-    return graph_->AddNode(other);
-  }
-
-  // Remove node from <graph_>.
-  bool RemoveNode(NodeIndex node_index) {
-    return graph_->RemoveNode(node_index);
-  }
-
-  // Add control edge into <graph_>.
-  // The <dst> node does not consume any data output by
-  // <src>, but it's designed to be executed behind.
-  bool AddControlEdge(NodeIndex src, NodeIndex dst) {
-    return graph_->AddControlEdge(src, dst);
-  }
-
-  // Resolve <graph_> after each editing.
-  Status Resolve() {
-    return graph_->Resolve();
-  }
-
- private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphEditor);
-
-  Graph* graph_;
-};
-
-// A rewrite-rule interface. A rewrite-rule represents a semantics-preserving transformation of a
-// computation-graph. It can be used to represent, for example, the elimination of operators that
-// serve as no-ops (for example, dropout during inference), as well as inlining of "function"
-// definitions or the dual (replacing a complex expression by an equivalent function-call).
-// Unlike the more general IGraphTransformer, a rewrite-rule is applied at a single node,
-// representing the root of an expression that is rewritten.
-class IRewriteRule {
- public:
-  virtual ~IRewriteRule() = default;
-
-  // Rewrite rule name.
-  virtual const std::string& Name() const = 0;
-
-  // Rewrite rule description.
-  virtual const std::string& Description() const {
-    static const std::string description("");
-    return description;
-  }
-
-  // Apply the rewrite rule to a specific node.
-  // The transformation happens in-place. The return-value of node may be different
-  // from the input-value due to rewriting.
-  // The return value of "modified" indicates if the graph was modified or not.
-  virtual Status Apply(/*IN/OUT*/ Node& node,
-                       GraphEditor& graph_editor,
-                       /*OUT*/ bool& modified) = 0;
-};
 
 // A graph transformer interface. A graph transformer transforms a graph in-place.
-class IGraphTransformer {
+class GraphTransformer {
  public:
-  virtual ~IGraphTransformer() {}
+  GraphTransformer(const std::string& name, const std::string& desc)
+    : name_(name), desc_(desc) {
+  }
+  
+  virtual ~GraphTransformer() = default;
 
   // Apply <*this> transformation to a specific graph.
   // Transformation happens in place.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) const = 0;
+  virtual Status Apply(Graph* graph, bool* modified) const = 0;
+
+private:
+  const std::string name_;
+  const std::string desc_;
 };
 
+// A list of graph transformers.
 class GraphTransformerManager {
  public:
+  GraphTransformerManager(int32_t steps) : steps_(steps) {
+  }
+  
   // Register a graph transformer.
-  Status Register(const IGraphTransformer& graph_transformer);
-
-  // Going thru all transformers registered in <*this> manager on
-  // specified graph.
-  Status ApplyAll(/*IN/OUT*/ Graph& graph);
-
-  static GraphTransformerManager& Instance() {
-    static GraphTransformerManager s_graph_transformer_manager;
-    return s_graph_transformer_manager;
+  Status Register(std::unique_ptr<GraphTransformer> transformer) {
+    transformers_.push_back(std::move(transformer));
   }
 
+  // Apply the list of graph transformers registered on the specified graph
+  // up to the given number of steps.
+  Status ApplyAll(Graph* graph);
+
+  // A helper to set the basic default list of graph transformers. 
+  Status SetDefault();
+  
  private:
   GraphTransformerManager() = default;
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphTransformerManager);
 
-  std::vector<IGraphTransformer*> transformers_;
+  std::vector<std::unique_ptr<GraphTransformer>> transformers_;
+  const int32_t steps_;
 };
 
 // Rule based graph transformer.
@@ -117,36 +60,31 @@ class GraphTransformerManager {
 // the underlying rewriting-strategy.
 // TODO: Several rewriting-strategies are possible, with different tradeoffs.
 // To begin with, we may use a simple, bottom-up, rewriting strategy.
-class RuleBasedGraphTransformer : public IGraphTransformer {
+class RuleBasedGraphTransformer : public GraphTransformer {
  public:
   // Register a rewriting rule.
-  // TODO (revisit needed): Using OpSignature* here will ask that OpSignature should be storeed globally,
-  // otherwise, there will be multiple adresses/pointers for the same operator or function.
-  // To avoid this ask, we may use OpSignature ID as the key, which should be name_domain_version.
-  Status Register(IRewriteRule& rule, const std::vector<OpSignature*>& ops) {
-    UNUSED_PARAMETER(rule);
-    UNUSED_PARAMETER(ops);
-    LOTUS_NOT_IMPLEMENTED;
+  // TODO (revisit needed): Using OpSignature* here will ask that OpSignature
+  // should be stored globally. Otherwise, there will be multiple addresses/pointers
+  // for the same operator or function. To avoid this, we may use OpSignature ID
+  // as the key, which should be name_domain_version.
+  Status Register(const OpSignature* op, std::unique_ptr<RewriteRule> rule) {
+    op_to_rules_[op].push_back(std::move(rule));
     return Status::OK();
   }
 
   // Apply for all applicable rules against one graph.
-  virtual Status Apply(/*IN/OUT*/ Graph& graph, /*OUT*/ bool& modified) const override {
+  Status Apply(Graph* graph, bool* modified) const override {
     UNUSED_PARAMETER(graph);
     UNUSED_PARAMETER(modified);
     LOTUS_NOT_IMPLEMENTED;
     return Status::OK();
   }
 
-  static RuleBasedGraphTransformer Instance() {
-    static RuleBasedGraphTransformer s_rule_based_graph_transformer;
-    return s_rule_based_graph_transformer;
-  }
-
  private:
-  RuleBasedGraphTransformer() = default;
+  typedef std::unordered_map<const OpSignature*, std::vector<std::unique_ptr<RewriteRule>>>
+    RewriteRuleSet;
 
-  std::unordered_map<OpSignature*, std::vector<IRewriteRule*>> op_to_rules_;
+  RewriteRuleSet op_to_rules_;
 };
 
 // TODO: Design a loose way to register rewrite rules into RuleBasedGraphTransformer.
@@ -164,36 +102,41 @@ class Function : public GraphBase {
 
 // A function-inlining rewrite-rule. The plan with ONNX is to capture most optimizations
 // as function-inlining or function-extraction.
-class FunctionInliner : public IRewriteRule {
+class FunctionInliner : public RewriteRule {
  public:
-  FunctionInliner(const Function& function) {
+  FunctionInliner(const std::string& name, const std::string& desc,
+                  const Function& function)
+    : RewriteRule(name, desc) {
     (function);
   }
 
-  virtual Status Apply(/*IN/OUT*/ Node& node,
-                       GraphEditor& graph_editor,
-                       /*OUT*/ bool& modified) override {
-    (node);
+  virtual Status Apply(GraphEditor graph_editor,
+                       Node* node,
+                       bool* modified) override {
     (graph_editor);
+    (node);
     (modified);
     LOTUS_NOT_IMPLEMENTED;
     return Status::OK();
   }
 };
 
-// A function-extraction rewrite-rule is the dual of function-inlining. It identifies
-// occurrences of the body of a function-definition and replaces it by a call to the function.
-class FunctionExtraction : public IRewriteRule {
+// A function-extraction rewrite-rule is the dual of function-inlining.
+// It identifies occurrences of the body of a function-definition and
+// replaces it by a call to the function.
+class FunctionExtraction : public RewriteRule {
  public:
-  FunctionExtraction(const Function& function) {
+  FunctionExtraction(const std::string& name, const std::string& desc,
+                     const Function& function)
+    : RewriteRule(name, desc) {
     (function);
   }
 
-  virtual Status Apply(/*IN/OUT*/ Node& node,
-                       GraphEditor& graph_editor,
-                       /*OUT*/ bool& modified) override {
-    (node);
+  virtual Status Apply(GraphEditor graph_editor,
+                       Node* node,
+                       bool* modified) override {
     (graph_editor);
+    (node);
     (modified);
     LOTUS_NOT_IMPLEMENTED;
     return Status::OK();
