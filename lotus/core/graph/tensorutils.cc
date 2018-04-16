@@ -5,7 +5,9 @@
 
 namespace Lotus {
 namespace Utils {
-Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor, /*out*/ std::string* p_data, int64_t expected_size) {
+Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
+                                 /*out*/ std::string* p_data,
+                                 int64_t expected_size) {
   if (onnx::TensorProto_DataType_STRING != tensor.data_type() || nullptr == p_data) {
     return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
   }
@@ -22,7 +24,9 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor, /*out*/ std::s
   return Status::OK();
 }
 
-Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor, /*out*/ bool* p_data, int64_t expected_size) {
+Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
+                                 /*out*/ bool* p_data,
+                                 int64_t expected_size) {
   if (onnx::TensorProto_DataType_BOOL != tensor.data_type() || nullptr == p_data) {
     return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
   }

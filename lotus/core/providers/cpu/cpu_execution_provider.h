@@ -4,16 +4,21 @@
 #include "core/framework/execution_provider.h"
 
 namespace Lotus {
-class DummyCPUTransformer : public LotusIR::IGraphTransformer {
+
+class CPUTransformer : public LotusIR::GraphTransformer {
  public:
-  virtual Status Apply(/*IN/OUT*/ LotusIR::Graph& graph, /*OUT*/ bool& modified) const override {
-    for (auto& node : graph.Nodes()) {
-      if (graph.IsSourceNode(node) || graph.IsSinkNode(node))
+  CPUTransformer(const std::string& name)
+    : LotusIR::GraphTransformer(name, "Transformer for CPU execution provider") {
+  }
+  
+  Status Apply(LotusIR::Graph* graph, bool* modified) const override {
+    for (auto& node : graph->Nodes()) {
+      if (graph->IsSourceNode(node) || graph->IsSinkNode(node))
         continue;
 
       if (node.GetExecutionProvider().empty()) {
         node.SetExecutionProvider(LotusIR::kCpuExecutionProvider);
-        modified = true;
+        *modified = true;
       }
     }
 
@@ -24,28 +29,28 @@ class DummyCPUTransformer : public LotusIR::IGraphTransformer {
 // Logical device representation.
 class CPUExecutionProvider : public IExecutionProvider {
  public:
-  explicit CPUExecutionProvider(const ExecutionProviderInfo& info) {
-    UNUSED_PARAMETER(info);
+  explicit CPUExecutionProvider(const ExecutionProviderInfo& info)
+    : cpu_transformer_(info.name) {
   }
 
-  virtual const LotusIR::IGraphTransformer& GetTransformer() const override {
-    return dummy_transformer_;
+  const LotusIR::GraphTransformer& GetTransformer() const override {
+    return cpu_transformer_;
   }
 
-  virtual IArenaAllocator& GetTempSpaceAllocator() override {
+  IArenaAllocator& GetTempSpaceAllocator() override {
     auto& alloc_mgr = AllocatorManager::Instance();
     return alloc_mgr.GetArena(CPU);
   }
 
-  virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
+  Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
     UNUSED_PARAMETER(node);
     UNUSED_PARAMETER(context);
-    return Common::Status(LOTUS,
-                          FAIL,
-                          "CPU execution provider should not be delegated to run a node with op_type:(" + node.OpType() + ").");
+    return Common::Status(
+      LOTUS, FAIL,
+      "CPU execution provider: can not run an op of type `" + node.OpType() + "'.");
   }
 
-  virtual Status CopyTensor(const Tensor& src, Tensor& dst) override {
+  Status CopyTensor(const Tensor& src, Tensor& dst) override {
     LOTUS_ENFORCE(dst.Location().name == CPU);
 
     // Todo: support copy with different devices.
@@ -59,6 +64,6 @@ class CPUExecutionProvider : public IExecutionProvider {
   }
 
  private:
-  DummyCPUTransformer dummy_transformer_;
+  CPUTransformer cpu_transformer_;
 };
 }  // namespace Lotus

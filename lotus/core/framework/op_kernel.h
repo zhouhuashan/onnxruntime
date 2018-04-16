@@ -58,8 +58,8 @@ class OpKernelInfo {
   const LotusIR::Node& node_;
   const AllocatorInfo& allocator_info_;
   const KernelDef& kernel_def_;
-  // For non cpu/cuda case, this pointer should be set so that function kernel will delegate kernel
-  // compute call to <execution_provider> compute call.
+  // For non cpu/cuda case, this pointer should be set so that function kernel
+  // will delegate kernel compute call to <execution_provider> compute call.
   const Lotus::IExecutionProvider* execution_provider_;
 };
 
