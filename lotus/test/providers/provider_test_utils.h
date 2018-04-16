@@ -123,9 +123,9 @@ struct TTypeProto : TypeProto {
   }
 };
 
-// Variable template for TensorProto_DataTypes, s_typeProto<float>, etc..
+// Variable template for TensorProto_DataTypes, s_type_proto<float>, etc..
 template <typename T>
-const TTypeProto<T> s_typeProto;
+const TTypeProto<T> s_type_proto;
 
 // To use OpTester:
 //  1. Create one with the op name
@@ -153,13 +153,13 @@ struct OpTester {
   }
 
   template <typename T>
-  void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::initializer_list<T>& expectedValues) {
-    AddData(output_data_, name, dims, expectedValues.begin(), expectedValues.size());
+  void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::initializer_list<T>& expected_values) {
+    AddData(output_data_, name, dims, expected_values.begin(), expected_values.size());
   }
 
   template <typename T>
-  void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& expectedValues) {
-    AddData(output_data_, name, dims, expectedValues.data(), expectedValues.size());
+  void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& expected_values) {
+    AddData(output_data_, name, dims, expected_values.data(), expected_values.size());
   }
 
   template <typename T>
@@ -201,7 +201,7 @@ struct OpTester {
     auto size_in_bytes = valuesCount * sizeof(T);
     auto p_data = std::make_unique<gsl::byte[]>(size_in_bytes);
     memcpy(p_data.get(), values, size_in_bytes);
-    data.push_back({{name, &s_typeProto<T>}, dims, std::move(p_data), size_in_bytes, DataTypeImpl::GetType<T>()});
+    data.push_back({{name, &s_type_proto<T>}, dims, std::move(p_data), size_in_bytes, DataTypeImpl::GetType<T>()});
   }
 
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
