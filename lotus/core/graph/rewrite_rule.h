@@ -8,7 +8,7 @@ namespace LotusIR {
 // The graph rewrite API for rewrite rules.
 class GraphEditor {
  public:
-  explicit GraphEditor(Graph* graph) : graph_{graph} {}
+  explicit GraphEditor(Graph* graph) noexcept : graph_{graph} {}
 
   // Add a node in <graph_>.
   Node* AddNode(const std::string& name,
@@ -65,12 +65,12 @@ class RewriteRule {
   virtual ~RewriteRule() = default;
 
   // The name of this rewrite rule.
-  const std::string& Name() const {
+  const std::string& Name() const noexcept {
     return name_;
   }
 
   // An description of this rewrite rule.
-  const std::string& Description() const {
+  const std::string& Description() const noexcept {
     return desc_;
   }
 
@@ -81,6 +81,8 @@ class RewriteRule {
   virtual Status Apply(GraphEditor graph_editor, Node* node, bool* modified) = 0;
 
 private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RewriteRule);
+  
   const std::string name_;
   const std::string desc_;
 };

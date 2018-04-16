@@ -18,7 +18,7 @@ class XPUExecutionProvider : public IExecutionProvider {
  public:
   XPUExecutionProvider() = default;
 
-  const LotusIR::IGraphTransformer& GetTransformer() const override {
+  const LotusIR::GraphTransformer& GetTransformer() const override {
     return *graph_transformer_;
   }
 
@@ -40,7 +40,7 @@ class XPUExecutionProvider : public IExecutionProvider {
 
  private:
   IArenaAllocator* arena_allocator_ = nullptr;
-  IGraphTransformer* graph_transformer_ = nullptr;
+  GraphTransformer* graph_transformer_ = nullptr;
 };
 
 TEST(OpKernelTest, CreateFunctionKernelTest) {
