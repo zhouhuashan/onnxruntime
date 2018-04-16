@@ -7,6 +7,10 @@
 #include "core/framework/ml_value.h"
 #include "core/platform/types.h"
 
+namespace LotusIR {  // TODO: for testing only; see note below.
+class Model;
+}
+
 namespace Lotus {
 /**
  * Use this to configure an execution provider.
@@ -122,6 +126,15 @@ class InferenceSession {
   * @return OK if success.
   */
   Common::Status Load(const std::string& model_uri);
+
+  /**
+  * FOR TESTING ONLY. Load an ONNX model
+  * TODO: should we expose Model in this API? This was done for now
+  * to make testing easier.
+  * @param model_uri absolute path of the model file.
+  * @return OK if success.
+  */
+  Common::Status Load(std::unique_ptr<LotusIR::Model> p_model);
 
   /**
   * Initializes a previously loaded model. Initialization includes but is not
