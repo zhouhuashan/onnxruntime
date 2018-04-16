@@ -51,18 +51,37 @@ class InferenceSession::Impl {
       return Common::Status::OK();
     }
 
-    std::shared_ptr<LotusIR::Model> tmp_model_ptr;
-    Common::Status status = LotusIR::Model::Load(model_uri, &tmp_model_ptr);
+    std::shared_ptr<LotusIR::Model> p_tmp_model;
+    Common::Status status = LotusIR::Model::Load(model_uri, &p_tmp_model);
     if (!status.IsOK()) {
       return status;
     }
 
-    is_model_loaded_ = true;
-    model_ = tmp_model_ptr;
-
+    model_ = p_tmp_model;
     LOTUS_RETURN_IF_ERROR(SaveModelMetadata(*model_.get()));
-    LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
 
+    // all steps complete, mark the model as loaded.
+    is_model_loaded_ = true;
+
+    LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
+    return Common::Status::OK();
+  }
+
+  Common::Status Load(std::unique_ptr<LotusIR::Model> p_model) {
+    LOGS(*session_logger_, INFO) << "Loading model";
+    std::lock_guard<std::mutex> l(session_mutex_);
+    if (is_model_loaded_) {  // already loaded
+      LOGS(*session_logger_, INFO) << "Model: has already been loaded.";
+      return Common::Status::OK();
+    }
+
+    model_ = std::move(p_model);
+    LOTUS_RETURN_IF_ERROR(SaveModelMetadata(*model_.get()));
+
+    // all steps complete, mark the model as loaded.
+    is_model_loaded_ = true;
+
+    LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     return Common::Status::OK();
   }
 
@@ -529,6 +548,10 @@ InferenceSession::~InferenceSession() = default;
 
 Common::Status InferenceSession::Load(const std::string& model_uri) {
   return impl_->Load(model_uri);
+}
+
+Common::Status InferenceSession::Load(std::unique_ptr<LotusIR::Model> p_model) {
+  return impl_->Load(std::move(p_model));
 }
 
 Common::Status InferenceSession::Initialize() {

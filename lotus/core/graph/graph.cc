@@ -820,9 +820,15 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
       // Check whether it matches operator definition.
       auto iter = op_formal_parameter.GetTypes().find(output_def->Type());
       if (op_formal_parameter.GetTypes().end() == iter) {
-        Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type does not match operator (" + op.Name() + ") definition.");
-        return status;
+        std::ostringstream err_msg;
+        err_msg << "Node (" << nodeName << ") output arg ("
+                << output_def->Name() << ") type (" << *output_def->Type()
+                << ") does not match operator (" << op.Name() << ") definition. ";
+        err_msg << "Operator definition has the following types: ";
+        for (auto e : op_formal_parameter.GetTypes()) {
+          err_msg << *e << " ";
+        }
+        return Status(LOTUS, FAIL, err_msg.str());
       }
       continue;
     }
@@ -902,9 +908,11 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
         RETURN_IF_ERROR(TypeUtils::GetType(node_attr_iter->second, node_attr_type));
 
         if (node_attr_type != attr_def.second.type) {
-          Status status(LOTUS, FAIL,
-                        "Node (" + node_name + ") attribute (" + node_attr_iter->first +
-                            ") type does not match operator definition.");
+          std::ostringstream err_msg;
+          err_msg << "Node (" << node_name << ") attribute ("
+                  << node_attr_iter->first << ") type with value ("
+                  << node_attr_type << ") does not match operator definition (" << attr_def.second.type << ")";
+          Status status(LOTUS, FAIL, err_msg.str());
           return status;
         }
       }

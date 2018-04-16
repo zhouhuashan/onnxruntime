@@ -12,13 +12,10 @@
 #include "test/test_utils.h"
 
 #include "gtest/gtest.h"
+#include <gsl/gsl_byte>
 
 namespace Lotus {
 namespace Test {
-
-void SetupState(SessionState& state,
-                const std::vector<LotusIR::NodeArg*>& input_defs,
-                const std::vector<LotusIR::NodeArg*>& output_defs);
 
 void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
                              const std::vector<LotusIR::NodeArg*>& output_defs,
@@ -172,16 +169,28 @@ struct OpTester {
         [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
   }
 
-  void Run();
+  void Run(bool expect_failure = false);
 
  private:
   struct Data {
     LotusIR::NodeArg def_;
     TensorShape shape_;
-    std::unique_ptr<uint8_t[]> data_;
+    std::unique_ptr<gsl::byte[]> data_;
     size_t data_size_in_bytes_;
     MLDataType data_type_;
   };
+
+  void CreateMLValue(IAllocator* alloc,
+                     const std::vector<int64_t>& dims,
+                     MLDataType element_type,
+                     const gsl::byte* p_value,
+                     size_t input_size_bytes,
+                     MLValue* p_mlvalue);
+
+  void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
+                               const std::vector<LotusIR::NodeArg*>& output_defs,
+                               std::unordered_map<std::string, MLValue>& feeds,
+                               std::vector<std::string>& output_names);
 
   template <typename T>
   void AddData(std::vector<Data>& data, const char* name,
@@ -190,14 +199,14 @@ struct OpTester {
     static_assert(std::is_trivial<T>::value, "Only works on trivial types (where byte copies of the values are safe)");
     LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
     auto size_in_bytes = valuesCount * sizeof(T);
-    auto p_data = std::make_unique<uint8_t[]>(size_in_bytes);
+    auto p_data = std::make_unique<gsl::byte[]>(size_in_bytes);
     memcpy(p_data.get(), values, size_in_bytes);
     data.push_back({{name, &s_typeProto<T>}, dims, std::move(p_data), size_in_bytes, DataTypeImpl::GetType<T>()});
   }
 
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
   template <typename T>
-  void Check(const Data& output_data, Tensor& output_tensor, size_t size);
+  void Check(const Data& output_data, const Tensor& output_tensor, size_t size);
 
   const char* op_;
   std::vector<Data> input_data_;

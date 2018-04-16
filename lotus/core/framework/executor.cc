@@ -97,9 +97,11 @@ class SequentialExecutor : public Executor {
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(oname, &mlvalue_index));
       const MLValue& output_mlvalue = root_frame_.GetMLValue(mlvalue_index);
+      VLOGS(run_logger_, 1) << "Copying fetched MLValue to output vector";
       (*p_fetches)[idx++] = output_mlvalue;
     }
 
+    VLOGS(run_logger_, 1) << "Done with execution.";
     return Common::Status::OK();
   }
 
