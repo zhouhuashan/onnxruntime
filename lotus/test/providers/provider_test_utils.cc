@@ -102,7 +102,7 @@ void OpTester::Run(bool expect_failure) {
     // Create a simple model
     std::unique_ptr<LotusIR::Model> p_model = std::make_unique<LotusIR::Model>("test");
     LotusIR::Graph* graph = p_model->MainGraph();
-    auto& node = *graph->AddNode("node1", op_, op_, input_defs, output_defs);
+    auto& node = *graph->AddNode("node1", op_, op_, input_defs, output_defs, nullptr, domain_);
 
     // Add the attributes if any
     for (auto& add_attribute_fn : add_attribute_funcs_)

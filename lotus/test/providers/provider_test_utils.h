@@ -137,7 +137,7 @@ const TTypeProto<T> s_type_proto;
 // for new output types, add a new specialization for Check<>
 // See current usage for an example, should be self explanatory
 struct OpTester {
-  OpTester(const char* op) : op_(op) {}
+  OpTester(const char* op, const char* domain = LotusIR::kOnnxDomain) : op_(op), domain_(domain) {}
   ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
@@ -209,6 +209,7 @@ struct OpTester {
   void Check(const Data& output_data, const Tensor& output_tensor, size_t size);
 
   const char* op_;
+  const char* domain_;
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;
