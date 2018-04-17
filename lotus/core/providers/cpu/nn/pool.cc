@@ -169,28 +169,28 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
 
 REGISTER_KERNEL(KernelDefBuilder("AveragePool")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Pool<float, AveragePool>);
 
 REGISTER_KERNEL(KernelDefBuilder("MaxPool")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Pool<float, MaxPool>);
 
 REGISTER_KERNEL(KernelDefBuilder("GlobalAveragePool")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Pool<float, AveragePool>);
 
 REGISTER_KERNEL(KernelDefBuilder("GlobalMaxPool")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Pool<float, MaxPool>);

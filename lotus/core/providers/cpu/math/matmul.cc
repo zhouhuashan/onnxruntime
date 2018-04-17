@@ -245,7 +245,7 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
 
 REGISTER_KERNEL(KernelDefBuilder("MatMul")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 2)
+                    .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 MatMul<float>);

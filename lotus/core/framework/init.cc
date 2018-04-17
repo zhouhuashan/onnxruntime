@@ -34,6 +34,7 @@ Status Initializer::Initialize(int* pargc, char*** pargv) {
     onnx::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(LotusIR::kMSDomain, 1, 1);
     // Register microsoft domain ops.
     RETURN_IF_ERROR(LotusIR::MsOpRegistry::RegisterMsOps());
+    // TODO: Should register microsoft domain kernels here.
 
     // LotusDeviceManager
     auto& allocator_manager = AllocatorManager::Instance();
