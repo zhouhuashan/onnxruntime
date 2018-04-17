@@ -47,18 +47,15 @@ class InferenceSession::Impl {
     LOGS(*session_logger_, INFO) << "Loading model: " << model_uri;
     std::lock_guard<std::mutex> l(session_mutex_);
     if (is_model_loaded_) {  // already loaded
-      LOGS(*session_logger_, INFO) << "Model: " << model_uri << " has already been loaded.";
-      return Common::Status::OK();
+      LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+      return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
     }
 
     std::shared_ptr<LotusIR::Model> p_tmp_model;
-    Common::Status status = LotusIR::Model::Load(model_uri, &p_tmp_model);
-    if (!status.IsOK()) {
-      return status;
-    }
-
+    LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, &p_tmp_model));
     model_ = p_tmp_model;
-    LOTUS_RETURN_IF_ERROR(SaveModelMetadata(*model_.get()));
+
+    LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
 
     // all steps complete, mark the model as loaded.
     is_model_loaded_ = true;
@@ -67,16 +64,44 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
+  Common::Status Load(std::istream& model_istream) {
+    LOGS(*session_logger_, INFO) << "Loading model using istream";
+    std::lock_guard<std::mutex> l(session_mutex_);
+    if (is_model_loaded_) {  // already loaded
+      LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+      return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+    }
+
+    ModelProto model_proto;
+    const bool result = model_proto.ParseFromIstream(&model_istream);
+    if (!result) {
+      return Status(LOTUS, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
+    }
+
+    std::shared_ptr<LotusIR::Model> p_tmp_model;
+    LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model));
+    model_ = p_tmp_model;
+
+    LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+
+    // all steps complete, mark the model as loaded.
+    is_model_loaded_ = true;
+
+    LOGS(*session_logger_, INFO) << "Model successfully loaded.";
+    return Common::Status::OK();
+  }
+
   Common::Status Load(std::unique_ptr<LotusIR::Model> p_model) {
     LOGS(*session_logger_, INFO) << "Loading model";
     std::lock_guard<std::mutex> l(session_mutex_);
     if (is_model_loaded_) {  // already loaded
-      LOGS(*session_logger_, INFO) << "Model: has already been loaded.";
-      return Common::Status::OK();
+      LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+      return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
     }
 
     model_ = std::move(p_model);
-    LOTUS_RETURN_IF_ERROR(SaveModelMetadata(*model_.get()));
+
+    LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
 
     // all steps complete, mark the model as loaded.
     is_model_loaded_ = true;
@@ -168,7 +193,8 @@ class InferenceSession::Impl {
                      std::vector<MLValue>* p_fetches) {
     RunOptions run_options;
     std::vector<std::string> output_names;
-    for (const LotusIR::NodeArg* arg : model_->MainGraph()->GetOutputs()) {
+    const LotusIR::Graph* p_graph = model_->MainGraph();
+    for (const LotusIR::NodeArg* arg : p_graph->GetOutputs()) {
       output_names.push_back(arg->Name());
     }
     return Run(run_options, feeds, output_names, p_fetches);
@@ -260,6 +286,13 @@ class InferenceSession::Impl {
   }
 
  private:
+  // assumes model has already been loaded before
+  Common::Status DoPostLoadProcessing(LotusIR::Model& model) {
+    // TODO add other post load processing here
+    Common::Status status = SaveModelMetadata(model);
+    return status;
+  }
+
   static void GetNodeArgDef(const LotusIR::NodeArg& arg, NodeArgDef& nf) {
     nf.name = arg.Name();
     nf.data_type = *arg.Type();
@@ -273,9 +306,6 @@ class InferenceSession::Impl {
   Common::Status SaveModelMetadata(const LotusIR::Model& model) {
     VLOGS(*session_logger_, 1) << "Saving model metadata";
     const LotusIR::Graph* p_graph = model.MainGraph();
-    if (!p_graph) {
-      return Common::Status(Common::LOTUS, Common::FAIL, "Got null graph ptr while saving model metadata");
-    }
 
     // save model metadata
     model_metadata_.producer_name = model.ProducerName();
@@ -554,6 +584,10 @@ Common::Status InferenceSession::Load(const std::string& model_uri) {
 
 Common::Status InferenceSession::Load(std::unique_ptr<LotusIR::Model> p_model) {
   return impl_->Load(std::move(p_model));
+}
+
+Common::Status InferenceSession::Load(std::istream& model_istream) {
+  return impl_->Load(model_istream);
 }
 
 Common::Status InferenceSession::Initialize() {

@@ -54,7 +54,9 @@ void CreateMLValue(IAllocator* alloc,
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 }
 
-void RunModel(InferenceSession& session_object, const RunOptions& run_options, bool is_preallocate_output_vec = false) {
+void RunModel(InferenceSession& session_object,
+              const RunOptions& run_options,
+              bool is_preallocate_output_vec = false) {
   // prepare inputs
   std::vector<int64_t> dims_mul_x = {3, 2};
   std::vector<float> values_mul_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
@@ -287,7 +289,10 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
   auto capturing_sink = new CapturingSink();
 
   auto logging_manager = std::make_unique<Logging::LoggingManager>(
-      std::unique_ptr<ISink>(capturing_sink), Logging::Severity::kVERBOSE, false, LoggingManager::InstanceType::Temporal);
+      std::unique_ptr<ISink>(capturing_sink),
+      Logging::Severity::kVERBOSE,
+      false,
+      LoggingManager::InstanceType::Temporal);
 
   InferenceSession session_object{so, logging_manager.get()};
   EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
@@ -317,7 +322,25 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
   EXPECT_TRUE(have_log_entry_with_vlog_run_msg);
 #endif
 }
-// TODO write test with timeout
+
+TEST(InferenceSessionTests, TestWithIstream) {
+  ExecutionProviderInfo epi;
+  ProviderOption po{"CPUExecutionProvider", epi};
+  SessionOptions so(vector<ProviderOption>{po});
+
+  so.session_logid = "InferenceSessionTests.TestWithIstream";
+
+  InferenceSession session_object{so};
+
+  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
+  EXPECT_TRUE(model_file_stream.good());
+  EXPECT_TRUE(session_object.Load(model_file_stream).IsOK());
+  EXPECT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "InferenceSessionTests.TestWithIstream";
+  RunModel(session_object, run_options);
+}
 
 }  // namespace Test
 }  // namespace Lotus

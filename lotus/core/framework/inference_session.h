@@ -128,6 +128,13 @@ class InferenceSession {
   Common::Status Load(const std::string& model_uri);
 
   /**
+  * Load an ONNX model.
+  * @param istream object of the model.
+  * @return OK if success.
+  */
+  Common::Status Load(std::istream& model_istream);
+
+  /**
   * FOR TESTING ONLY. Load an ONNX model
   * TODO: should we expose Model in this API? This was done for now
   * to make testing easier.
