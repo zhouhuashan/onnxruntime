@@ -397,7 +397,7 @@ class BFCArena : public IArenaAllocator {
     return 63 ^ __builtin_clzll(n);
 #elif defined(PLATFORM_WINDOWS)
     unsigned long index;
-    _BitScanReverse64(&index, n);
+    BitScanReverse(&index, n);
     return index;
 #else
     return Log2FloorNonZeroSlow(n);
