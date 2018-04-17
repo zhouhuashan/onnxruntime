@@ -14,18 +14,19 @@ limitations under the License.
 ==============================================================================*/
 
 #pragma once
+#include <array>
+#include <memory>
+#include <mutex>
+#include <sstream>
+
 #include "core/common/common.h"
-#include "core/framework/arena.h"
 #include "core/common/logging/logging.h"
 #include "core/common/logging/severity.h"
-#include <mutex>
-#include <array>
-#include <sstream>
+#include "core/framework/arena.h"
 
 #if defined(PLATFORM_WINDOWS)
 #include <intrin.h>
-#endif 
-
+#endif
 
 namespace Lotus {
 // Runtime statistics collected by an allocator.
@@ -73,8 +74,7 @@ struct AllocatorStats {
 // all requests to allocate memory go through this interface.
 class BFCArena : public IArenaAllocator {
  public:
-  BFCArena(IDeviceAllocator* resource_allocator,
-           size_t total_memory);
+  BFCArena(std::unique_ptr<IDeviceAllocator> resource_allocator, size_t total_memory);
 
   virtual ~BFCArena() override;
 
@@ -382,7 +382,7 @@ class BFCArena : public IArenaAllocator {
   // Structures immutable after construction
   size_t memory_limit_ = 0;
 
-  inline int Log2FloorNonZeroSlow(uint64_t n) {
+  int Log2FloorNonZeroSlow(uint64_t n) {
     int r = 0;
     while (n > 0) {
       r++;
@@ -392,7 +392,7 @@ class BFCArena : public IArenaAllocator {
   }
 
   // Returns floor(log2(n)).
-  inline int Log2FloorNonZero(uint64_t n) {
+  int Log2FloorNonZero(uint64_t n) {
 #if defined(__GNUC__)
     return 63 ^ __builtin_clzll(n);
 #elif defined(PLATFORM_WINDOWS)

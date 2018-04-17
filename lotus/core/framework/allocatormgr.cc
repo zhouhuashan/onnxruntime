@@ -9,58 +9,12 @@ namespace Lotus {
 
 using namespace Lotus::Common;
 
-std::unordered_map<std::string, std::unique_ptr<IArenaAllocator>>& _getArenaAllocatorMap() {
-  static std::unordered_map<std::string, std::unique_ptr<IArenaAllocator>> gArenaAllocatorMap;
-  return gArenaAllocatorMap;
+static std::mutex& Mutex() {
+  static std::mutex mutex;
+  return mutex;
 }
 
-std::mutex& _getLocalMutex() {
-  static std::mutex gMtx;
-  return gMtx;
-}
-
-Status AllocatorManager::RegisterBFCArena(IDeviceAllocator* allocator, size_t memory_limit) {
-  std::lock_guard<std::mutex> lock(_getLocalMutex());
-  auto& arena_map = _getArenaAllocatorMap();
-  auto& info = allocator->Info();
-  auto allocator_id = GetAllocatorId(info.name, info.id, true);
-  auto arena_id = GetAllocatorId(info.name, info.id, true);
-  if (arena_map.find(arena_id) != arena_map.end())
-    return Status(LOTUS, FAIL, "arena already exist");
-
-  arena_map[arena_id] = std::unique_ptr<IArenaAllocator>(new BFCArena(allocator, memory_limit));
-  return Status::OK();
-}
-
-Status AllocatorManager::AddArenaAllocator(IArenaAllocator* allocator) {
-  std::lock_guard<std::mutex> lock(_getLocalMutex());
-  auto& arena_map = _getArenaAllocatorMap();
-  auto& info = allocator->Info();
-  auto arena_id = GetAllocatorId(info.name, info.id, true);
-  if (arena_map.find(arena_id) != arena_map.end())
-    return Status(LOTUS, FAIL, "arena already exist");
-  arena_map[arena_id] = std::unique_ptr<IArenaAllocator>(allocator);
-  return Status::OK();
-}
-
-Status AllocatorManager::InitializeAllocators() {
-  //right now we only have cpu allocator;
-  //TODO: set correct cpu memory limit?
-  static const size_t cpu_memory_limit = std::numeric_limits<size_t>::max();
-  return RegisterBFCArena(new CPUAllocator(), cpu_memory_limit);
-}
-
-IArenaAllocator& AllocatorManager::GetArena(const std::string& name, const int id) {
-  auto& arena_map = _getArenaAllocatorMap();
-  auto arena_id = GetAllocatorId(name, id, true);
-
-  std::lock_guard<std::mutex> lock(_getLocalMutex());
-  if (arena_map.find(arena_id) == arena_map.end())
-    throw std::logic_error("Arena not found.");
-  return *(arena_map[arena_id]);
-}
-
-std::string AllocatorManager::GetAllocatorId(const std::string& name, const int id, const bool isArena) {
+static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena) {
   std::stringstream ss;
   if (isArena)
     ss << "arena_";
@@ -69,4 +23,82 @@ std::string AllocatorManager::GetAllocatorId(const std::string& name, const int 
   ss << name << "_" << id;
   return ss.str();
 }
+
+static Status RegisterBFCArena(std::unordered_map<std::string, std::unique_ptr<IArenaAllocator>>& arena_map,
+                               std::unique_ptr<IDeviceAllocator> allocator, size_t memory_limit) {
+  auto& info = allocator->Info();
+  auto allocator_id = GetAllocatorId(info.name, info.id, true);
+  auto arena_id = GetAllocatorId(info.name, info.id, true);
+
+  auto status = Status::OK();
+  if (arena_map.find(arena_id) != arena_map.end())
+    status = Status(LOTUS, FAIL, "arena already exists");
+  else {
+    arena_map[arena_id] = std::unique_ptr<IArenaAllocator>(
+        std::make_unique<BFCArena>(std::move(allocator), memory_limit));
+  }
+
+  return status;
+}
+
+static AllocatorManager* s_instance_ = nullptr;
+
+Status AllocatorManager::Create(std::unique_ptr<AllocatorManager>& allocator_manager) {
+  std::lock_guard<std::mutex> lock(Mutex());
+
+  // private ctor so can't use make_unique
+  allocator_manager.reset(new AllocatorManager());
+  auto status = allocator_manager->InitializeAllocators();
+
+  if (status == Status::OK()) {
+    s_instance_ = allocator_manager.get();
+    allocator_manager->owns_instance_ = true;
+  }
+
+  return status;
+}
+
+AllocatorManager::AllocatorManager() {
+  LOTUS_ENFORCE(s_instance_ == nullptr, "AllocatorManager instance already exists.");
+}
+
+AllocatorManager& AllocatorManager::Instance() {
+  LOTUS_ENFORCE(s_instance_ != nullptr, "Create a Lotus::Environment instance before executing the model.");
+  return *s_instance_;
+}
+
+Status AllocatorManager::InitializeAllocators() {
+  //right now we only have cpu allocator;
+  //TODO: set correct cpu memory limit?
+  static const size_t cpu_memory_limit = std::numeric_limits<size_t>::max();
+
+  auto allocator = std::unique_ptr<IDeviceAllocator>(std::make_unique<CPUAllocator>());
+  auto status = RegisterBFCArena(arena_map_, std::move(allocator), cpu_memory_limit);
+
+  return status;
+}
+
+AllocatorManager::~AllocatorManager() {
+  std::lock_guard<std::mutex> lock(Mutex());
+
+  // if we set s_instance_ we need to unset it
+  if (owns_instance_)
+    s_instance_ = nullptr;
+
+  for (auto& entry : arena_map_) {
+    LOGS_DEFAULT(INFO) << "Freeing arena: " << entry.first;
+    entry.second.reset();
+  }
+}
+
+IArenaAllocator& AllocatorManager::GetArena(const std::string& name, const int id) {
+  auto arena_id = GetAllocatorId(name, id, true);
+
+  std::lock_guard<std::mutex> lock(Mutex());
+  auto entry = arena_map_.find(arena_id);
+  LOTUS_ENFORCE(entry != arena_map_.end(), "Arena not found:", arena_id);
+
+  return *(entry->second);
+}
+
 }  // namespace Lotus

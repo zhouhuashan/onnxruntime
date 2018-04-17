@@ -1,12 +1,18 @@
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/test_environment.h"
 
 GTEST_API_ int main(int argc, char** argv) {
-  // we test logging in this library so need to control the default logging manager
-  // from within those tests
-  const bool create_default_logging_manager = false;
+  int status = 0;
 
-  Lotus::Test::DefaultInitialize(argc, argv, create_default_logging_manager);
+  try {
+    const bool create_default_logger = false;
+    Lotus::Test::TestEnvironment environment{argc, argv, create_default_logger};
 
-  return RUN_ALL_TESTS();
+    status = RUN_ALL_TESTS();
+  } catch (const std::exception& ex) {
+    std::cerr << ex.what();
+    status = -1;
+  }
+
+  return status;
 }

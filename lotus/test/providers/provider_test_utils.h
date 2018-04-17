@@ -9,7 +9,7 @@
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
 
-#include "test/test_utils.h"
+#include "test/test_environment.h"
 
 #include "gtest/gtest.h"
 #include <gsl/gsl_byte>

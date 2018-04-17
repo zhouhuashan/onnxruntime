@@ -5,7 +5,6 @@
 
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
-#include "test/test_utils.h"
 
 using namespace Lotus::Logging;
 

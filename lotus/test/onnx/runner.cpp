@@ -1,4 +1,4 @@
-#include <core/framework/init.h>
+#include <core/framework/environment.h>
 //#include <onnx/onnx-ml.pb.h>
 #include "onnx/onnx_pb.h"
 #include <core/graph/model.h>
@@ -603,9 +603,14 @@ enum class RUN_MODE {
 int main(int argc, char* argv[]) {
   std::string default_logger_id{"Default"};
   Logging::LoggingManager default_logging_manager{std::unique_ptr<Logging::ISink>{new Logging::CLogSink{}},
-                                                  Logging::Severity::kWARNING, false, Logging::LoggingManager::InstanceType::Default,
+                                                  Logging::Severity::kWARNING, false,
+                                                  Logging::LoggingManager::InstanceType::Default,
                                                   &default_logger_id};
-  Initializer::EnsureInitialized(&argc, &argv);
+
+  std::unique_ptr<Environment> env;
+  auto status = Environment::Create(env);
+  LOTUS_ENFORCE(status == Status::OK(), "Error creating environment: ", status);
+
   int ch;
   RUN_MODE mode = RUN_MODE::NODE_TEST;
   AllocationPlannerType planner = AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER;

@@ -1,11 +1,18 @@
-#include "core/framework/init.h"
+#include "core/framework/environment.h"
 #include "gtest/gtest.h"
-#include "test/test_utils.h"
+#include "test/test_environment.h"
 
 GTEST_API_ int main(int argc, char** argv) {
-  Lotus::Test::DefaultInitialize(argc, argv);
+  int status = 0;
 
-  Lotus::Initializer::EnsureInitialized(&argc, &argv);
+  try {
+    Lotus::Test::TestEnvironment test_environment{argc, argv};
 
-  return RUN_ALL_TESTS();
+    status = RUN_ALL_TESTS();
+  } catch (const std::exception& ex) {
+    std::cerr << ex.what();
+    status = -1;
+  }
+
+  return status;
 }

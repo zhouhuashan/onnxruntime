@@ -91,5 +91,10 @@ class Status {
   // As long as Code() is OK, state_ == nullptr.
   std::unique_ptr<State> state_;
 };
+
+inline std::ostream& operator<<(std::ostream& out, const Status& status) {
+  return out << status.ToString();
+}
+
 }  // namespace Common
 }  // namespace Lotus

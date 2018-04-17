@@ -4,29 +4,31 @@
 
 namespace Lotus {
 class AllocatorManager {
-  friend class Initializer;
-
  public:
   // the allocator manager is a global object for entire Process.
   // all the inference engine in the same Process will use the same allocator manager.
-  // TODO(Task:151) AllocatorManager::Instance could return reference
-  static AllocatorManager& Instance() {
-    static AllocatorManager manager;
-    return manager;
-  }
+  static AllocatorManager& Instance();
+
+  /**
+  Create an AllocatorManager instance. This is expected to be called once and remain valid
+  for the duration of execution. It will populate Instance() for convenient access.
+  */
+  static Status Create(std::unique_ptr<AllocatorManager>& allocator_manager);
+
+  /**
+  Destruct th AllocatorManager. Will unset Instance().
+  */
+  ~AllocatorManager();
 
   IArenaAllocator& GetArena(const std::string& name, const int id = 0);
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(AllocatorManager);
-  AllocatorManager() = default;
 
-  // after add allocator, allocator manager will take the ownership.
-  Status RegisterBFCArena(IDeviceAllocator* allocator, size_t memory_limit);
-  Status AddArenaAllocator(IArenaAllocator* allocator);
-
-  static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena);
-
+  AllocatorManager();
   Status InitializeAllocators();
+
+  std::unordered_map<std::string, std::unique_ptr<IArenaAllocator>> arena_map_;
+  bool owns_instance_;
 };
 }  // namespace Lotus

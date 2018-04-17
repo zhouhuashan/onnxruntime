@@ -1,14 +1,13 @@
 #include "core/framework/bfc_arena.h"
 
 namespace Lotus {
-BFCArena::BFCArena(IDeviceAllocator* resource_allocator,
+BFCArena::BFCArena(std::unique_ptr<IDeviceAllocator> resource_allocator,
                    size_t total_memory)
-    : device_allocator_(resource_allocator),
+    : device_allocator_(std::move(resource_allocator)),
       free_chunks_list_(kInvalidChunkHandle),
       next_allocation_id_(1),
-      info_(resource_allocator->Info().name, AllocatorType::kArenaAllocator, resource_allocator->Info().id) {
-  curr_region_allocation_bytes_ =
-      RoundedBytes(std::min(total_memory, size_t{1048576}));
+      info_(device_allocator_->Info().name, AllocatorType::kArenaAllocator, device_allocator_->Info().id) {
+  curr_region_allocation_bytes_ = RoundedBytes(std::min(total_memory, size_t{1048576}));
 
   // Allocate the requested amount of memory.
   memory_limit_ = total_memory;
@@ -33,6 +32,8 @@ BFCArena::BFCArena(IDeviceAllocator* resource_allocator,
 }
 
 BFCArena::~BFCArena() {
+  LOGS_DEFAULT(INFO) << "Number of regions allocated: " << region_manager_.regions().size();
+
   for (const auto& region : region_manager_.regions()) {
     device_allocator_->Free(region.ptr());
   }

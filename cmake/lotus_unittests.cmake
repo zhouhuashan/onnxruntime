@@ -39,6 +39,12 @@ function(AddTest)
     )
   endif()
 
+  # Add the define for conditionally using the framework Environment class in TestEnvironment
+  if (${lotus_framework_whole_archive} IN_LIST _UT_LIBS)
+    # message("Adding -DHAVE_FRAMEWORK_LIB for " ${_UT_TARGET})
+    target_compile_definitions(${_UT_TARGET} PUBLIC -DHAVE_FRAMEWORK_LIB)
+  endif()
+  
   set(TEST_ARGS)
   if (lotus_GENERATE_TEST_REPORTS)
     # generate a report file next to the test program
@@ -103,11 +109,11 @@ AddTest(
     TARGET lotus_test_ir
     SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
     LIBS ${lotus_test_ir_libs}
-    DEPENDS googletest lotusIR_graph 
+    DEPENDS lotusIR_graph googletest
 )
 
 set(lotus_test_framework_libs
-    ${lotus_providers_whole_archive}
+    ${lotus_providers_whole_archive} # code smell! see if CPUExecutionProvider should move to framework so this isn't needed.
     ${lotus_framework_whole_archive}
     ${lotusIR_graph_whole_archive}
     ${onnx_whole_archive}
@@ -115,7 +121,7 @@ set(lotus_test_framework_libs
     ${protobuf_STATIC_LIBRARIES}
     ${googletest_STATIC_LIBRARIES}
 )
-
+    
 set(lotus_test_framework_src_patterns
     "${LOTUS_ROOT}/test/framework/*.cc"
     "${LOTUS_ROOT}/test/platform/*.cc"
@@ -134,6 +140,7 @@ AddTest(
     TARGET lotus_test_framework
     SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
+    # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
     DEPENDS lotus_framework lotus_providers googletest
 )
 

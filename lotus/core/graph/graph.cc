@@ -825,7 +825,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
                 << output_def->Name() << ") type (" << *output_def->Type()
                 << ") does not match operator (" << op.Name() << ") definition. ";
         err_msg << "Operator definition has the following types: ";
-        for (auto e : op_formal_parameter.GetTypes()) {
+        for (const gsl::not_null<DataType> e : op_formal_parameter.GetTypes()) {
           err_msg << *e << " ";
         }
         return Status(LOTUS, FAIL, err_msg.str());

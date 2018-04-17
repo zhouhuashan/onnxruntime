@@ -17,7 +17,7 @@
 #include "core/framework/tensorprotoutils.h"
 
 #include "test/capturing_sink.h"
-#include "test/test_utils.h"
+#include "test/test_environment.h"
 
 #include "gtest/gtest.h"
 
