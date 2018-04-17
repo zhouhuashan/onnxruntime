@@ -14,6 +14,22 @@ TEST(TensorOpTest, Reshape) {
   test.Run();
 }
 
+TEST(TensorOpTest, ShapeTest2D) {
+  OpTester test("Shape");
+
+  test.AddInput<float>("data", {2, 3}, std::vector<float>(6, 1.0f));
+  test.AddOutput<int64_t>("shape", {2}, {2, 3});
+  test.Run();
+}
+
+TEST(TensorOpTest, ShapeTest3D) {
+  OpTester test("Shape");
+
+  test.AddInput<float>("data", {2, 3, 4}, std::vector<float>(24, 1.0f));
+  test.AddOutput<int64_t>("shape", {3}, {2, 3, 4});
+  test.Run();
+}
+
 template <typename SrcType,
           typename DstType>
 void TestCastOp(const std::initializer_list<SrcType> &input,
