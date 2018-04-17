@@ -53,7 +53,6 @@ class BatchNorm final : public OpKernel {
   int64_t spatial_;  // ignored in this implementation since we're doing inferencing only.
 
   // defined as per spec and used for validation
-  const int kNumInputXDimensions = 4;
   const int kNumInputScaleDimensions = 1;
   const int kNumInputBiasDimensions = 1;
   const int kNumInputMeanDimensions = 1;

@@ -21,9 +21,9 @@ Status BatchNorm<float>::ValidateInputs(const Tensor* X,
                                         const Tensor* B,
                                         const Tensor* mean,
                                         const Tensor* var) const {
-  if (X->Shape().NumDimensions() != kNumInputXDimensions) {
+  if (X->Shape().GetDims().empty()) {
     std::ostringstream ostr;
-    ostr << "Invalid input X: NumDimensions() != " << kNumInputXDimensions;
+    ostr << "Invalid input X: Empty dimensions";
     return Status(LOTUS, INVALID_ARGUMENT, ostr.str());
   }
   if (scale->Shape().NumDimensions() != kNumInputScaleDimensions) {
@@ -63,12 +63,15 @@ Status BatchNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   const TensorShape& x_shape = X->Shape();
   Tensor* Y = p_op_kernel_context->Output(0, x_shape);
 
-  const size_t N = x_shape[0];
-  const size_t C = x_shape[1];  // assume NCHW as per the spec
-  const size_t H = x_shape[2];
-  const size_t W = x_shape[3];
+  const auto& dims_vec = x_shape.GetDims();
+  const size_t N = dims_vec[0];
+  const size_t C = dims_vec[1];  // assume NCHW as per the spec
 
-  const size_t sample_size = H * W;
+  // calculate sample_size
+  size_t sample_size = 1;
+  for (size_t i = 2; i < dims_vec.size(); ++i) {
+    sample_size *= dims_vec[i];
+  }
 
   ConstEigenVectorArrayMap<float> scale_arr(scale->Data<float>(), C);
   ConstEigenVectorArrayMap<float> bias_arr(B->Data<float>(), C);
@@ -86,8 +89,7 @@ Status BatchNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   // to
   //   (x * inv_var * scale) + (bias - est_mean * inv_var * scale)
   Eigen::Array<float, Eigen::Dynamic, 1> new_scale = inv_std * scale_arr;
-  Eigen::Array<float, Eigen::Dynamic, 1> new_bias =
-      bias_arr - mean_arr * inv_std * scale_arr;
+  Eigen::Array<float, Eigen::Dynamic, 1> new_bias = bias_arr - mean_arr * new_scale;
   EigenArrayMap<float> Y_arr(Y->MutableData<float>(), sample_size, N * C);
   ConstEigenArrayMap<float> X_arr(X->Data<float>(), sample_size, N * C);
   for (int nc = 0; nc < N * C; ++nc) {
