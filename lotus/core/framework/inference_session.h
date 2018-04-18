@@ -48,6 +48,11 @@ struct SessionOptions {
 
   string session_logid;                            ///< logger id to use for session output
   unsigned short session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
+  // enable the memory pattern optimization.
+  // The idea is if the input shapes are the same, we could trace the internal memory allocation
+  // and generate a memory pattern for future request. So next time we could just do one allocation
+  // with a big chunk for all the internal memory allocation.
+  bool enable_mem_pattern = true;
   int max_num_graph_transformation_steps = 5;      // TODO choose a good default here?
   std::vector<std::unique_ptr<LotusIR::GraphTransformer>> list_graph_transformers;
 };

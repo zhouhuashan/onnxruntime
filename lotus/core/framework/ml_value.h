@@ -34,7 +34,7 @@ class MLValue {
     return static_cast<T*>(data_.get());
   }
 
-  bool IsTensor() {
+  bool IsTensor() const{
     return DataTypeImpl::GetType<Tensor>() == type_;
   }
 

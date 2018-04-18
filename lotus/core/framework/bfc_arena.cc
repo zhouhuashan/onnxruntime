@@ -38,6 +38,10 @@ BFCArena::~BFCArena() {
     device_allocator_->Free(region.ptr());
   }
 
+  for (const auto& reserve_chunk : reserved_chunks_) {
+      device_allocator_->Free(reserve_chunk.first);
+  }
+
   for (BinNum b = 0; b < kNumBins; b++) {
     BinFromIndex(b)->~Bin();
   }
@@ -332,6 +336,7 @@ void BFCArena::Free(void* p) {
     device_allocator_->Free(it->first);
     stats_.bytes_in_use -= it->second;
     stats_.total_allocated_bytes_ -= it->second;
+    reserved_chunks_.erase(it);
   } else {
     DeallocateRawInternal(p);
   }

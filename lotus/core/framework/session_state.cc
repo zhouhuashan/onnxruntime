@@ -9,6 +9,8 @@ namespace Lotus {
 void SessionState::SetGraph(const LotusIR::Graph* graph) {
   p_graph_ = graph;
   session_kernels_.resize(p_graph_->NumberOfNodes());
+  //enable by default
+  enable_mem_pattern_ = true;
 }
 
 const LotusIR::Graph* SessionState::GetGraph() const {
@@ -116,6 +118,45 @@ const Logging::Logger& SessionState::Logger() const {
   // DefaultLogger either throws or returns a valid logger.
   const Logging::Logger* logger = logger_ != nullptr ? logger_ : &Logging::LoggingManager::DefaultLogger();
   return *logger;
+}
+
+int64_t CalculateMemoryPatternsKey(const std::vector<TensorShape>& shapes) {
+  int64_t key = 0;
+  for (auto& shape : shapes) {
+    for (auto dim : shape.GetDims())
+      key ^= dim;
+  }
+  return key;
+}
+
+const MemoryPatternGroup* SessionState::GetMemoryPatternGroup(const std::vector<TensorShape>& input_shapes) const {
+  std::lock_guard<std::mutex> lock(mem_patterns_lock_);
+  int64_t key = CalculateMemoryPatternsKey(input_shapes);
+  auto it = mem_patterns_.find(key);
+  if (it == mem_patterns_.end())
+    return nullptr;
+  else
+    return it->second.get();
+}
+
+Status SessionState::SetMemoryPatternGroup(const std::vector<TensorShape>& input_shape, std::unique_ptr<MemoryPatternGroup> mem_patterns) {
+  std::lock_guard<std::mutex> lock(mem_patterns_lock_);
+  int64_t key = CalculateMemoryPatternsKey(input_shape);
+  auto it = mem_patterns_.find(key);
+  if (it != mem_patterns_.end()) {
+    LOGS_DEFAULT(WARNING) << "memory pattern already exist, ignored";
+    return Status::OK();
+  }
+  mem_patterns_[key] = std::move(mem_patterns);
+  return Status::OK();
+}
+
+void SessionState::SetEnableMemoryPattern(bool flag) {
+  enable_mem_pattern_ = flag;
+}
+
+bool SessionState::GetEnableMemoryPattern() const {
+  return enable_mem_pattern_;
 }
 
 }  // namespace Lotus

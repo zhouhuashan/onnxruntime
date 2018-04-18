@@ -7,12 +7,14 @@
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
 #include "core/graph/graph.h"
+#include "core/framework/ml_value_patterns_planner.h"
 #include "core/common/logging/logging.h"
 // #include "core/framework/session_state.h"
 
 namespace Lotus {
 
 class SessionState;
+struct MemoryPatternGroup;
 
 struct MLValueAllocationParameters {
   TensorShape tensor_shape;
@@ -122,10 +124,17 @@ class ExecutionFrame {
   void ReleaseMLValue(int mlvalue_idx) {
     LOTUS_ENFORCE(mlvalue_idx >= 0 || mlvalue_idx < all_values_.size());
     all_values_[mlvalue_idx] = MLValue();
+    TraceFree(mlvalue_idx);
   }
 
   const Lotus::SessionState& SessionState() const {
     return session_state_;
+  }
+
+  Status GeneratePatterns(MemoryPatternGroup* out) const;
+
+  bool HasPlan() const {
+    return planner_ != nullptr;
   }
 
  private:
@@ -136,10 +145,10 @@ class ExecutionFrame {
   Common::Status AllocateAsPerAllocationPlan(int mlvalue_index,
                                              const MLValueAllocationParameters& parameters);
 
-  Status AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
-                                            const MLDataType element_type,
-                                            const AllocatorInfo& location,
-                                            const TensorShape& shape);
+  Status AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_index,
+                                                  const MLDataType element_type,
+                                                  const AllocatorInfo& location,
+                                                  const TensorShape& shape);
 
   void Init(const LotusIR::Graph* graph,
             const std::unordered_map<string, MLValue>& feeds,
@@ -194,6 +203,10 @@ class ExecutionFrame {
     arenas_.push_back(&alloc_mgr.GetArena(CPU));
   }
 
+  void TraceAllocate(int mlvalue_idx, size_t size);
+
+  void TraceFree(int mlvalue_idx);
+
   std::mutex mutex_;
   Status status_;
 
@@ -223,5 +236,21 @@ class ExecutionFrame {
   std::unordered_map<string, int> value_name_to_index_;
 
   const Lotus::SessionState& session_state_;
+
+  // If we already have cached memory pattern on these input shapes
+  // Use this mem pattern that create a big chunk for all the internal
+  // kernel's input/output tensors.
+  const MemoryPatternGroup* mem_patterns_;
+
+  // If no cached memory pattern, and we enable the memory pattern optimization
+  // use this planner_ to trace the memory allocation in current executor.
+  std::unique_ptr<MLValuePatternPlanner> planner_;
+
+  // Record the ml value indices for output values. we won't include those
+  // values' allocation in memory pattern, as they can't be shared.
+  std::vector<int> output_indices_;
+
+  // Big chunks on different locations that will be used by mem_pattern.
+  std::map<AllocatorInfo, BufferUniquePtr> buffers_;
 };
 }  // namespace Lotus

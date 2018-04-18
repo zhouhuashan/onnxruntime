@@ -17,6 +17,7 @@
 #include "core/framework/tensorprotoutils.h"
 #include "core/graph/tensorutils.h"
 #include "core/platform/notification.h"
+#include "core/framework/allocatormgr.h"
 
 namespace Lotus {
 class InferenceSession::Impl {
@@ -45,6 +46,7 @@ class InferenceSession::Impl {
       session_state_.AddExecutionProvider(info.provider_type, std::move(provider));
     }
 
+    session_state_.SetEnableMemoryPattern(session_options.enable_mem_pattern);
     // Register graph transformers if the user has provided any
     // TODO do we need to support overrides of the transformers?
     // Need const_cast here since we need non-const graph transformer objects from
@@ -147,8 +149,6 @@ class InferenceSession::Impl {
     // graph stored inside session_state.
 
     LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
-    LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
-
     // add other per session initialization stuff here before invoking the executor
 
     // get execution plan
@@ -165,6 +165,8 @@ class InferenceSession::Impl {
     } else {
       LOTUS_NOT_IMPLEMENTED;
     }
+
+    LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
 
     is_inited_ = true;
     LOGS(*session_logger_, INFO) << "Session successfully initialized.";
@@ -436,7 +438,7 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
-  Common::Status SaveInitializedTensors() {
+  Common::Status SaveInitializedTensorsWithSeperateBuffer() {
     LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
     const LotusIR::Graph* p_graph = session_state_.GetGraph();
     LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
@@ -462,6 +464,97 @@ class InferenceSession::Impl {
 
     LOGS(*session_logger_, INFO) << "Done saving initialized tensors";
     return Common::Status::OK();
+  }
+
+  Common::Status SaveInitializedTensorsWithMemPattern() {
+    LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
+    const LotusIR::Graph* p_graph = session_state_.GetGraph();
+    LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
+    LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
+    auto execution_plan = session_state_.GetExecutionPlan();
+    LOTUS_ENFORCE(execution_plan);  // execution plan must be ready.
+
+    MLValuePatternPlanner planner(session_state_);
+    //1. first plan the memory
+    const LotusIR::InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
+    for (const auto& entry : initialized_tensor_set) {
+      const std::string& name = entry.first;
+      int mlvalue_index;
+      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
+
+      const TensorProto& tensor_proto = entry.second;
+      LOTUS_RETURN_IF_ERROR(Lotus::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
+    }
+    //2. allocate weight buffer on different locations
+    MemoryPatternGroup mem_patterns;
+    LOTUS_RETURN_IF_ERROR(planner.GeneratePatterns(&mem_patterns));
+    for (int i = 0; i < mem_patterns.locations.size(); i++) {
+      auto& location = mem_patterns.locations[i];
+      LOTUS_ENFORCE(weights_buffers_.find(location) == weights_buffers_.end());
+      auto& alloc = AllocatorManager::Instance().GetArena(location.name, location.id);
+      //use Reserve to reserve a big chunk. This chunk could be unload when session closed.
+      void* buffer = alloc.Reserve(mem_patterns.patterns[i].peak_size());
+      weights_buffers_[location] = BufferUniquePtr(buffer, &alloc);
+    }
+    //3. create weight tensors based on weights buffer
+    for (const auto& entry : initialized_tensor_set) {
+      const std::string& name = entry.first;
+      int mlvalue_index;
+      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
+      const TensorProto& tensor_proto = entry.second;
+
+      auto& location = execution_plan->allocation_plan[mlvalue_index].location;
+      auto it = weights_buffers_.find(location);
+      if (it == weights_buffers_.end())
+        return Status(LOTUS, FAIL, "Weight buffer not found");
+
+      std::unique_ptr<Tensor> p_tensor = nullptr;
+      auto pattern = mem_patterns.GetPatterns(location);
+      auto block = pattern->GetBlock(mlvalue_index);
+      // if block is not found, means this mlvalue is not traced
+      // fall back to allocate seperate buffer.
+      if (!block) {
+        //TODO: support load weight on different device
+        //Right now GetTensorFromTensorProto only works with cpu buffers
+        //Need enhancement later.
+        auto& alloc = AllocatorManager::Instance().GetArena(CPU);
+        LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc));
+        MLValue mlvalue;
+        mlvalue.Init(p_tensor.release(),
+                     DataTypeImpl::GetType<Tensor>(),
+                     DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+      } else {
+        LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProtoWithMemoryPattern(
+            tensor_proto,
+            location,
+            it->second.get(),
+            &p_tensor,
+            *block));
+      }
+
+      MLValue mlvalue;
+      mlvalue.Init(p_tensor.release(),
+                   DataTypeImpl::GetType<Tensor>(),
+                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+      session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
+      VLOGS(*session_logger_, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
+    }
+
+    LOGS(*session_logger_, INFO) << "Done saving initialized tensors";
+    return Common::Status::OK();
+  }
+
+  Common::Status SaveInitializedTensors() {
+    auto execution_plan = session_state_.GetExecutionPlan();
+    // if we enable the meory pattern and already have the execution plan
+    // go with mem pattern approach, which will allocate a big chunk for all
+    // the weights.
+    if (session_state_.GetEnableMemoryPattern() && execution_plan) {
+      return SaveInitializedTensorsWithMemPattern();
+    } else {
+      return SaveInitializedTensorsWithSeperateBuffer();
+    }
   }
 
   // This function does the following:
@@ -584,6 +677,7 @@ class InferenceSession::Impl {
   bool is_model_loaded_ = false;      // GUARDED_BY(session_mutex_)
   bool is_inited_ = false;            // GUARDED_BY(session_mutex_)
 
+  std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
 };  // namespace Lotus
 
 //

@@ -75,6 +75,25 @@ class SequentialExecutor : public Executor {
     VLOGS(run_logger_, 1) << "Fetching output.";
     LOTUS_RETURN_IF_ERROR(FetchOutput(output_names, p_fetches));
 
+    if (root_frame_.HasPlan()) {
+      std::vector<TensorShape> input_shapes;
+      bool all_tensors = true;
+      for (auto it = feeds.begin(); it != feeds.end(); it++) {
+        if (!(it->second.IsTensor())) {
+          all_tensors = false;
+          break;
+        }
+        auto& tensor = it->second.Get<Tensor>();
+        input_shapes.push_back(tensor.Shape());
+      }
+
+      if (all_tensors) {
+        auto mem_patterns = std::make_unique<MemoryPatternGroup>();
+        LOTUS_RETURN_IF_ERROR(root_frame_.GeneratePatterns(mem_patterns.get()));
+        const_cast<SessionState&>(session_state_).SetMemoryPatternGroup(input_shapes, std::move(mem_patterns));
+      }
+    }
+
     return Common::Status::OK();
   }
 

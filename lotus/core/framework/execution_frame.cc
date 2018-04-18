@@ -2,6 +2,7 @@
 #include <sstream>
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
+#include "core/framework/mem_pattern_planner.h"
 
 namespace Lotus {
 
@@ -9,9 +10,45 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
                                const std::vector<std::string>& output_names,
                                const std::vector<MLValue>& fetches,
                                const Lotus::SessionState& session_state)
-    : session_state_(session_state) {
+    : session_state_(session_state), mem_patterns_(nullptr), planner_(nullptr) {
   Init(session_state.GetGraph(), feeds, output_names, fetches);
   InitArenas();
+
+  // If the session enable memory pattern optimization
+  // and we have execution plan generated, try to setup
+  // memory pattern optimizaiton.
+  if (session_state.GetEnableMemoryPattern() &&
+      session_state.GetExecutionPlan()) {
+    std::vector<TensorShape> input_shapes;
+    bool all_tensors = true;
+    for (auto it = feeds.begin(); it != feeds.end(); it++) {
+      if (!(it->second.IsTensor())) {
+        all_tensors = false;
+        break;
+      }
+      auto& tensor = it->second.Get<Tensor>();
+      input_shapes.push_back(tensor.Shape());
+    }
+    // if there is some traditional ml value type in inputs
+    // disable the memory pattern optimization.
+    if (all_tensors) {
+      mem_patterns_ = session_state.GetMemoryPatternGroup(input_shapes);
+      // if no existing patterns, generate one in this executionframe
+      if (!mem_patterns_) {
+        planner_ = std::make_unique<MLValuePatternPlanner>(session_state);
+      } else {
+        // pre-allocate the big chunk requested in memory pattern.
+        // all the internal kernel's input/output tensors will be allocated on these buffer.
+        for (int i = 0; i < mem_patterns_->locations.size(); i++) {
+          LOTUS_ENFORCE(buffers_.find(mem_patterns_->locations[i]) == buffers_.end());
+          ArenaPtr alloc = GetArena(mem_patterns_->locations[i]);
+          //use Reserve to reserve a big chunk. This chunk could be unload when session closed.
+          void* buffer = alloc->Reserve(mem_patterns_->patterns[i].peak_size());
+          buffers_[mem_patterns_->locations[i]] = BufferUniquePtr(buffer, alloc);
+        }
+      }
+    }
+  }
 }
 
 Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
@@ -19,20 +56,51 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
                                                           const AllocatorInfo& location,
                                                           const TensorShape& shape) {
   LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
-  MLValue* p_mlvalue = &all_values_[mlvalue_index];
-  return AllocateMLValueTensorSelfOwnBuffer(p_mlvalue, element_type, location, shape);
+  return AllocateMLValueTensorSelfOwnBufferHelper(mlvalue_index, element_type, location, shape);
 }
 
-Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
-                                                          const MLDataType element_type,
-                                                          const AllocatorInfo& location,
-                                                          const TensorShape& shape) {
+Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_index,
+                                                                const MLDataType element_type,
+                                                                const AllocatorInfo& location,
+                                                                const TensorShape& shape) {
+  auto p_mlvalue = &all_values_[mlvalue_index];
   if (p_mlvalue->IsAllocated()) {
     return Status::OK();
   }
+  auto alloc = GetArena(location);
+  auto size = element_type->Size() * shape.Size();
 
-  IAllocator* alloc = GetArena(location);
-  void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
+  // if we have pre-calcuated memory pattern, and the mlvalue is not output mlvalue
+  // try to alloacted on pre-allocated big chunk.
+  if (mem_patterns_ &&
+      std::find(output_indices_.begin(), output_indices_.end(), mlvalue_index) == output_indices_.end()) {
+    auto pattern = mem_patterns_->GetPatterns(location);
+    if (pattern) {
+      auto block = pattern->GetBlock(mlvalue_index);
+      // if block not found, fall back to default behavior
+      if (block) {
+        auto it = buffers_.find(location);
+        // if the block is not correct, log messsage then fall back to default behavior
+        if (it != buffers_.end() && block->size_ == size) {
+          void* buffer = it->second.get();
+          AllocateTensorWithPreAllocateBufferHelper(p_mlvalue,
+                                                    static_cast<void*>(static_cast<char*>(buffer) + block->offset_),
+                                                    element_type,
+                                                    location,
+                                                    shape);
+          return Status::OK();
+        } else if (block->size_ != size) {
+          LOGS_DEFAULT(WARNING) << "For mlvalue with index: " << mlvalue_index << ", block in memory pattern size is: "
+                                << block->size_ << " but the actually size is: " << size << ", fall back to default allocation behavior";
+        } else if (it == buffers_.end()) {
+          LOGS_DEFAULT(WARNING) << "For mlvalue with index: " << mlvalue_index << ", block not found in target loation. "
+                                                                                  " fall back to default allocation behavior";
+        }
+      }
+    }
+  }
+  //no memory pattern, or the pattern is not correct.
+  void* buffer = alloc->Reserve(size);
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
                                                               shape,
                                                               buffer,
@@ -41,7 +109,18 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(MLValue* p_mlvalue,
   p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+  // trace the memory allocation.
+  TraceAllocate(mlvalue_index, size);
+
   return Status::OK();
+}
+
+void ExecutionFrame::TraceAllocate(int mlvalue_idx, size_t size) {
+  // don't trace the output tensors.
+  if (planner_ &&
+      std::find(output_indices_.begin(), output_indices_.end(), mlvalue_idx) == output_indices_.end()) {
+    planner_->TraceAllocation(mlvalue_idx, size);
+  }
 }
 
 Status ExecutionFrame::AllocateTensorWithSelfOwnBuffer(const int index,
@@ -49,8 +128,7 @@ Status ExecutionFrame::AllocateTensorWithSelfOwnBuffer(const int index,
                                                        const AllocatorInfo& location,
                                                        const TensorShape& shape) {
   LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-  auto value = &all_values_[node_values_[index]];
-  return AllocateMLValueTensorSelfOwnBuffer(value, element_type, location, shape);
+  return AllocateMLValueTensorSelfOwnBufferHelper(node_values_[index], element_type, location, shape);
 }
 
 Status ExecutionFrame::AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
@@ -102,6 +180,7 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBuffer(const int offset,
 void ExecutionFrame::Release(const int offset) {
   LOTUS_ENFORCE(offset >= 0 && offset < node_offsets_.size());
   all_values_[node_values_[offset]] = MLValue();
+  TraceFree(node_values_[offset]);
 }
 
 Common::Status AllocateTraditionalMLValue(MLValue* p_mlvalue,
@@ -199,6 +278,14 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   }
 
   // 4. Handle non-empty output vector
+  // setup output_indices_, we dont' want to generate mem plan on output tensors.
+  for (const auto& oname : output_names) {
+    int mlvalue_idx;
+    Common::Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+    LOTUS_ENFORCE(status.IsOK());
+    output_indices_.push_back(mlvalue_idx);
+  }
+
   if (!fetches.empty()) {
     // should've already verified this much before when Run() starts
     LOTUS_ENFORCE(output_names.size() == fetches.size(),
@@ -211,6 +298,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
       Common::Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
       LOTUS_ENFORCE(status.IsOK());
       all_values_[mlvalue_idx] = fetches.at(idx++);
+      output_indices_.push_back(mlvalue_idx);
     }
   }
 
@@ -237,4 +325,23 @@ void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
   LOTUS_ENFORCE(status.IsOK());
   node_values_.push_back(index);
 }
+
+void ExecutionFrame::TraceFree(int mlvalue_idx) {
+  // don't trace free on output tensors.
+  if (planner_ &&
+      std::find(output_indices_.begin(), output_indices_.end(), mlvalue_idx) == output_indices_.end()) {
+    planner_->TraceFree(mlvalue_idx);
+  }
+}
+
+// generate memory pattern based on the tracing of memory allocation/free in current execution
+// return error if the planner is not setup.
+Status ExecutionFrame::GeneratePatterns(MemoryPatternGroup* out) const {
+  if (!planner_) {
+    return Status(LOTUS, FAIL, "Memory pattern planner is not enabled on this execution framework.");
+  }
+
+  return planner_->GeneratePatterns(out);
+}
+
 }  // namespace Lotus

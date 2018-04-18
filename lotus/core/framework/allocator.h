@@ -26,8 +26,18 @@ struct AllocatorInfo {
         id(id),
         type(type) {}
 
-  bool operator==(const AllocatorInfo& other) const {
+  inline bool operator==(const AllocatorInfo& other) const {
     return name == other.name && id == other.id && type == other.type;
+  }
+
+  // To make AllocatorInfo become a valid key in std map
+  inline bool operator<(const AllocatorInfo& other) const {
+      if (type != other.type)
+          return type < other.type;
+      else if (id != other.id)
+          return id < other.id;
+      else
+          return name < other.name;
   }
 };
 

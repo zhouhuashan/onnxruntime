@@ -10,6 +10,7 @@
 #include "core/framework/execution_provider.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
+#include "core/framework/mem_pattern.h"
 
 namespace Lotus {
 // SessionState should be modified by the inference session class only.
@@ -71,6 +72,26 @@ class SessionState {
   */
   const Logging::Logger& Logger() const;
 
+  /**
+  Get cached memory pattern based on input shapes
+  */
+  const MemoryPatternGroup* GetMemoryPatternGroup(const std::vector<TensorShape>& input_shapes) const;
+
+  /**
+  Set generated memory pattern with a given input shapes
+  */
+  Status SetMemoryPatternGroup(const std::vector<TensorShape>& input_shape, std::unique_ptr<MemoryPatternGroup> mem_patterns);
+
+  /**
+  Set enable memory pattern flag
+  */
+  void SetEnableMemoryPattern(bool flag);
+
+  /**
+  Get enable memory pattern flag
+  */
+  bool GetEnableMemoryPattern() const;
+
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
@@ -91,6 +112,13 @@ class SessionState {
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
 
   const Logging::Logger* logger_;
+
+  // switch for enable memory pattern optimization or not.
+  bool enable_mem_pattern_;
+  // lock for the mem_patterns_
+  mutable std::mutex mem_patterns_lock_;
+  // cache for the generated mem_patterns. key is cauclated based on input shapes.
+  std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
   // TODO add more
 };
