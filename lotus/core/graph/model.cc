@@ -29,7 +29,7 @@ Model::Model(const std::string& graph_name, bool isOnnx, const ModelMetaData& mo
 
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
-  graph_.reset(new Graph(graph_name, domain_to_version_));
+  graph_.reset(new Graph(graph_name, domain_to_version_, IrVersion()));
 }
 
 Model::Model(const ModelProto& model_proto) {
@@ -145,7 +145,7 @@ Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<
   auto& model = **p_model;
 
   // load and resolve graph
-  auto status = Graph::LoadGraph(model.model_proto_.graph(), model.domain_to_version_, model.graph_);
+  auto status = Graph::LoadGraph(model.model_proto_.graph(), model.domain_to_version_, model.IrVersion(), model.graph_);
 
   return status;
 }

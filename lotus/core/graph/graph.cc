@@ -8,8 +8,10 @@
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
 #include "core/common/logging/logging.h"
+#include "onnx/checker.h"
 
 using namespace onnx::Utils;
+using namespace onnx::checker;
 
 namespace LotusIR {
 
@@ -135,23 +137,6 @@ const OpSchema* Node::Op() const noexcept {
   return op_;
 }
 
-Status Node::ValidateVersion(int version) noexcept {
-  auto p_op = OpSchemaRegistry::Schema(op_type_, version, domain_);
-
-  if (nullptr == p_op) {
-    // A op_type refers to nothing.
-    Status status(LOTUS, FAIL,
-                  "Error: the operator or function (" + op_type_ + ") referred to by node (" +
-                      name_ + ") does not exist.");
-    return status;
-  }
-
-  op_ = p_op;
-
-  auto status = UpdateInputArgCount();
-  return status;
-}
-
 const std::string& Node::GetExecutionProvider() const noexcept {
   return execution_provider_;
 }
@@ -234,49 +219,52 @@ void Node::AddAttribute(const std::string& attr_name, const AttributeProto& valu
   attributes_[attr_name] = value;
 }
 
-#define ADD_BASIC_ATTR_IMPL(type, field)                                     \
+#define ADD_BASIC_ATTR_IMPL(type, enumType, field)                           \
   void Node::AddAttribute(const std::string& attr_name, const type& value) { \
     graph_->SetGraphResolveNeeded();                                         \
     graph_->SetGraphProtoSyncNeeded();                                       \
     AttributeProto a;                                                        \
     a.set_name(attr_name);                                                   \
+    a.set_type(enumType);                                                    \
     a.set_##field(value);                                                    \
     attributes_[attr_name] = a;                                              \
   };
 
-#define ADD_ATTR_IMPL(type, field)                                           \
+#define ADD_ATTR_IMPL(type, enumType, field)                                 \
   void Node::AddAttribute(const std::string& attr_name, const type& value) { \
     graph_->SetGraphResolveNeeded();                                         \
     graph_->SetGraphProtoSyncNeeded();                                       \
     AttributeProto a;                                                        \
     a.set_name(attr_name);                                                   \
-    *(a.mutable_##field()) = value;                                          \
+    a.set_type(enumType);                                                    \
+	*(a.mutable_##field()) = value;                                          \
     attributes_[attr_name] = a;                                              \
   };
 
-#define ADD_LIST_ATTR_IMPL(type, field)                      \
+#define ADD_LIST_ATTR_IMPL(type, enumType, field)            \
   void Node::AddAttribute(const std::string& attr_name,      \
                           const std::vector<type>& values) { \
     graph_->SetGraphResolveNeeded();                         \
     graph_->SetGraphProtoSyncNeeded();                       \
     AttributeProto a;                                        \
     a.set_name(attr_name);                                   \
-    for (const auto& val : values) {                         \
+    a.set_type(enumType);                                    \
+	for(const auto& val : values) {                          \
       *(a.mutable_##field()->Add()) = val;                   \
     }                                                        \
     attributes_[attr_name] = a;                              \
   };
 
-ADD_BASIC_ATTR_IMPL(float, f)
-ADD_BASIC_ATTR_IMPL(int64_t, i)
-ADD_BASIC_ATTR_IMPL(std::string, s)
-ADD_ATTR_IMPL(TensorProto, t)
-ADD_ATTR_IMPL(GraphProto, g)
-ADD_LIST_ATTR_IMPL(float, floats)
-ADD_LIST_ATTR_IMPL(int64_t, ints)
-ADD_LIST_ATTR_IMPL(std::string, strings)
-ADD_LIST_ATTR_IMPL(TensorProto, tensors)
-ADD_LIST_ATTR_IMPL(GraphProto, graphs)
+ADD_BASIC_ATTR_IMPL(float, AttributeProto_AttributeType::AttributeProto_AttributeType_FLOAT, f)
+ADD_BASIC_ATTR_IMPL(int64_t, AttributeProto_AttributeType::AttributeProto_AttributeType_INT, i)
+ADD_BASIC_ATTR_IMPL(std::string, AttributeProto_AttributeType::AttributeProto_AttributeType_STRING, s)
+ADD_ATTR_IMPL(TensorProto, AttributeProto_AttributeType::AttributeProto_AttributeType_TENSOR, t)
+ADD_ATTR_IMPL(GraphProto, AttributeProto_AttributeType::AttributeProto_AttributeType_GRAPH, g)
+ADD_LIST_ATTR_IMPL(float, AttributeProto_AttributeType::AttributeProto_AttributeType_FLOATS, floats)
+ADD_LIST_ATTR_IMPL(int64_t, AttributeProto_AttributeType::AttributeProto_AttributeType_INTS, ints)
+ADD_LIST_ATTR_IMPL(std::string, AttributeProto_AttributeType::AttributeProto_AttributeType_STRINGS, strings)
+ADD_LIST_ATTR_IMPL(TensorProto, AttributeProto_AttributeType::AttributeProto_AttributeType_TENSORS, tensors)
+ADD_LIST_ATTR_IMPL(GraphProto, AttributeProto_AttributeType::AttributeProto_AttributeType_GRAPHS, graphs)
 
 bool Node::ClearAttribute(const std::string& attr_name) {
   graph_->SetGraphResolveNeeded();
@@ -347,10 +335,11 @@ const NodeAttributes& Node::GetAttributes() const noexcept {
 // a <Graph> object and Resolve() it.
 Status Graph::LoadGraph(const GraphProto& graph_proto,
                         const std::unordered_map<std::string, int>& domain_to_version,
+                        Version ir_version,
                         std::unique_ptr<Graph>& new_graph) {
   // create instance. need to call private ctor so can't use make_unique
   GSL_SUPPRESS(r .11)
-  new_graph.reset(new Graph(nullptr, &graph_proto, domain_to_version));
+  new_graph.reset(new Graph(nullptr, &graph_proto, domain_to_version, ir_version));
 
   // as we just loaded from file we want to fully initialize/Resolve, but not let that change
   // the proto sync flag
@@ -360,8 +349,9 @@ Status Graph::LoadGraph(const GraphProto& graph_proto,
 
 Graph::Graph(const std::string* name,
              const GraphProto* graph_proto,
-             const std::unordered_map<std::string, int>& domain_to_version)
-    : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version),
+             const std::unordered_map<std::string, int>& domain_to_version,
+             Version ir_version)
+    : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version, ir_version),
       graph_proto_{graph_proto != nullptr ? *graph_proto : GraphProto()},
       graph_type_{Type::Main} {
   LOTUS_ENFORCE(name != nullptr || graph_proto != nullptr, "Expected either name or graph_proto.");
@@ -430,15 +420,14 @@ Status GraphBase::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, 
 
     // Verify node outputs' name should be unique.
     for (const gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
-      std::string output_arg_name = output_def->Name();
-      if (output_args.end() != output_args.find(output_arg_name)) {
-        // Two outputs with same name.
+      auto& output_arg_name = output_def->Name();
+      auto result = output_args.insert({output_arg_name, &node});
+      if (!result.second) {
+        // Two outputs with same name, so that insertion fails.
         Status status(LOTUS, FAIL,
                       "Error: two output args with same name (" + output_arg_name + ").");
         return status;
       }
-
-      auto ignored = output_args.insert({output_arg_name, &node});
     }
   }
   return Status::OK();
@@ -858,24 +847,29 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     if (IsSourceNode(nodeIndex) || IsSinkNode(nodeIndex)) {
       continue;
     }
-
+    // Node verification.
     auto& node = *GetNode(nodeIndex);
+    CheckerContext ctx;
+    ctx.set_ir_version(static_cast<int>(IrVersion()));
+    ctx.set_opset_imports(DomainToVersionMap());
+    LexicalScopeContext lsc;
+    for (auto& kv : output_args) {
+      lsc.output_names.insert(kv.first);
+    }
+    NodeProto node_proto;
+    node.ToProto(node_proto);
+    try {
+      checker::check_node(node_proto, ctx, lsc);
+    } catch (const std::exception& ex) {
+      return Status(LOTUS, FAIL, ex.what());
+    }
 
     auto& node_name = node.Name();
     auto& domain = node.Domain();
 
-    auto version_iter = DomainToVersionMap().find(domain);
-    if (DomainToVersionMap().end() == version_iter) {
-      // The domain referred by this node does not exist either
-      // in <OpSetIdProto> in the <ModelProto> loaded (in the case of model loaded from file) or
-      // in global DomainToVersionRange map (in the case of model constructed from scratch).
-      return Status(LOTUS, FAIL,
-                    "The op domain (" + domain + ") used by node (" +
-                        node_name + ") is not supported for this model.");
-    }
-
-    // validate the OpType for this version. updates Node.Op and InputArgCount
-    RETURN_IF_ERROR(node.ValidateVersion(version_iter->second));
+    auto maxInclusiveVersion = DomainToVersionMap().find(domain)->second;
+    node.op_ = OpSchemaRegistry::Schema(node.OpType(), maxInclusiveVersion, node.Domain());
+    RETURN_IF_ERROR(node.UpdateInputArgCount());
 
     // currently an Op is required by ValidateVersion, so we use gsl::not_null.
     // This may change in the future to allow a null Op
@@ -883,12 +877,12 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
 
     NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op, output_args)));
 
-    // Attribute verification and fill node attribute with
-    // default value defined in operator definition if needed.
+    // Fill node attribute with default value specified in operator definition if any.
     auto node_attributes = node.GetAttributes();
     for (auto attr_def : p_op->attributes()) {
       auto node_attr_iter = node_attributes.find(attr_def.first);
       if (node_attributes.end() == node_attr_iter) {
+        // The attribute was not specified in the node.
         if (!attr_def.second.required) {
           if (attr_def.second.default_value.has_name()) {
             // Set default value to the node attributes.
@@ -901,32 +895,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
                             ") is required but not specified.");
           return status;
         }
-      } else {
-        // Verify node attribute type matching type of
-        // attribute defined in operator definition.
-        AttrType node_attr_type;
-        RETURN_IF_ERROR(TypeUtils::GetType(node_attr_iter->second, node_attr_type));
-
-        if (node_attr_type != attr_def.second.type) {
-          std::ostringstream err_msg;
-          err_msg << "Node (" << node_name << ") attribute ("
-                  << node_attr_iter->first << ") type with value ("
-                  << node_attr_type << ") does not match operator definition (" << attr_def.second.type << ")";
-          Status status(LOTUS, FAIL, err_msg.str());
-          return status;
-        }
       }
-    }
-
-    // Verify node with operator definition.
-    NodeProto node_proto;
-    node.ToProto(node_proto);
-    try {
-      p_op->Verify(node_proto);
-    } catch (const std::exception& ex) {
-      std::ostringstream errmsg;
-      errmsg << "Exception throw while verifying node with schema with message: " << ex.what();
-      return Status(LOTUS, FAIL, errmsg.str());
     }
   }
 

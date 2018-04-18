@@ -290,10 +290,6 @@ class Node {
   // the links between nodes.
   Relationships& MutableRelationships() noexcept;
 
-  // Validate OpType for the version
-  // Set Op and updates InputArgCount if valid.
-  Status ValidateVersion(int version) noexcept;
-
   const Definitions& GetDefinitions() const noexcept { return definitions_; }
   const Relationships& GetRelationships() const noexcept { return relationships_; }
 
@@ -474,11 +470,14 @@ class GraphBase {
 
  protected:
   GraphBase() = default;
-  GraphBase(bool graph_resolve_needed, bool graph_proto_sync_needed,
-            const std::unordered_map<std::string, int>& domain_to_version)
+  GraphBase(bool graph_resolve_needed,
+            bool graph_proto_sync_needed,
+            const std::unordered_map<std::string, int>& domain_to_version,
+            Version ir_version)
       : graph_resolve_needed_(graph_resolve_needed),
         graph_proto_sync_needed_(graph_proto_sync_needed),
-        domain_to_version_(domain_to_version) {}
+        domain_to_version_(domain_to_version),
+        ir_version_(ir_version) {}
 
   // Add source/sink nodes to <*this> graph.
   void AddSourceSinkNodes();
@@ -512,6 +511,10 @@ class GraphBase {
 
   const std::unordered_map<std::string, int>& DomainToVersionMap() const noexcept {
     return domain_to_version_;
+  }
+
+  Version IrVersion() const noexcept {
+    return ir_version_;
   }
 
   GraphBase& GraphResolveNeeded(bool needed) noexcept {
@@ -604,6 +607,9 @@ class GraphBase {
   std::vector<std::unique_ptr<Node::EdgeEnd>> owned_edges_;
 
   const std::unordered_map<std::string, int> domain_to_version_;
+
+  // Model IR version.
+  Version ir_version_;
 };
 
 // A graph representation class.
@@ -652,20 +658,23 @@ class Graph : public GraphBase {
   // going to construct a ONNX graph. With ONNX graph, strict
   // type checking will be skipped.
   Graph(const std::string& name,
-        const std::unordered_map<std::string, int>& domain_to_version)
-      : Graph(&name, nullptr, domain_to_version) {}
+        const std::unordered_map<std::string, int>& domain_to_version,
+        Version ir_version)
+      : Graph(&name, nullptr, domain_to_version, ir_version) {}
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object and Resolve() it.
   static Status LoadGraph(const GraphProto& graph_proto,
                           const std::unordered_map<std::string, int>& domain_to_version,
+                          Version ir_version,
                           std::unique_ptr<Graph>& new_graph);
 
   Graph() = delete;
 
   Graph(const std::string* name,
         const GraphProto* graph_proto,
-        const std::unordered_map<std::string, int>& domain_to_version);
+        const std::unordered_map<std::string, int>& domain_to_version,
+        Version ir_version);
 
   enum class Type {
     // A main graph.

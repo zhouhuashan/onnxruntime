@@ -180,9 +180,7 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
   auto status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
-  EXPECT_EQ(
-      "Error: the operator or function (OpNotExist) referred to by node (node_1) does not exist.",
-      status.ErrorMessage());
+  EXPECT_EQ(0, status.ErrorMessage().find_first_of("No Schema registered for OpNotExist"));
 
   //delete output_arg;
 }
