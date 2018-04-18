@@ -172,7 +172,9 @@ Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
   // In this case, it's assumed that the tensor hasn't been allocated yet,
   // so that it's calling ExecutionFrame to create a tensor in the given position with given shape.
   auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
-  return execution_frame_->GetOrCreateTensor(output_arg_index, shape);
+  MLValueAllocationParameters parameters;
+  parameters.tensor_shape = shape;
+  return execution_frame_->GetOrCreateMLValue<Tensor>(output_arg_index, parameters);
 }
 
 // Fetching output tensor without shape is not allowed.

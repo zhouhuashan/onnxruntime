@@ -104,36 +104,25 @@ void ExecutionFrame::Release(const int offset) {
   all_values_[node_values_[offset]] = MLValue();
 }
 
-// This method is not thread safe!
-Tensor* ExecutionFrame::GetOrCreateTensor(int index, const TensorShape& shape) {
-  LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-  auto mlvalue_index = node_values_[index];
-  LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
-  auto p_mlvalue = &all_values_[mlvalue_index];
-
-  if (p_mlvalue->IsAllocated()) {
-    // The tensor has already been allocated.
-    // TODO: Check the size of the allocated tensor with given shape,
-    // if they match each other, then return, else throw error.
-    // TODO: type also needs to be checked and then use static_cast.
-    Tensor* tensor = p_mlvalue->GetMutable<Tensor>();
-    LOTUS_ENFORCE(tensor->Shape() == shape);
-    return tensor;
-  } else {
-    // It's not allocated, then allocate it with given shape and return.
-    // TODO: at this point, we should already know the location and dtype
-    // for the tensor, the graph should be able to tell us. But now graph
-    // don't have it. So here hack to default as CPU and float.
-
-    // perform allocation based on the allocation plan
-    Status s = AllocateAsPerAllocationPlan(mlvalue_index, shape);
-    LOTUS_ENFORCE(s.IsOK());
-    return p_mlvalue->GetMutable<Tensor>();
-  }
+Common::Status AllocateTraditionalMLValue(MLValue* p_mlvalue,
+                                          const NonTensorTypeBase* type,
+                                          const MLValueAllocationParameters& parameters) {
+  // right now we don't need any parameter for ml value creation,
+  // keep it in api for extensibility
+  UNUSED_PARAMETER(parameters);
+  auto creator = type->GetCreateFunc();
+  p_mlvalue->Init(creator(),
+                  type,
+                  type->GetDeleteFunc());
+  return Status::OK();
 }
 
+// This method is not thread safe!
 Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
-                                                           const TensorShape& shape) {
+                                                           const MLValueAllocationParameters& parameters) {
+  if (mlvalue_index < 0 || mlvalue_index >= all_values_.size())
+    return Status(LOTUS, INVALID_ARGUMENT,
+                  "Tried to allocated with invalid mlvalue index: " + std::to_string(mlvalue_index));
   const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
   const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
   LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < alloc_plan.size());
@@ -143,8 +132,13 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
   // plan later. This is a hack for now.
   auto alloc_info = per_alloc_plan.location;
   auto ml_type = per_alloc_plan.value_type;
-  if (!ml_type->IsTensorType())
-    return Status(LOTUS, FAIL, "Create non-tensor type is not implemented");
+  if (!ml_type->IsTensorType()) {
+    return AllocateTraditionalMLValue(&all_values_[mlvalue_index],
+                                      static_cast<const NonTensorTypeBase*>(ml_type),
+                                      parameters);
+  }
+
+  // tensors
   auto ml_data_type = static_cast<const TensorTypeBase*>(ml_type)->GetElementType();
 
   AllocKind alloc_kind = per_alloc_plan.alloc_kind;
@@ -153,7 +147,7 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
       LOTUS_RETURN_IF_ERROR(AllocateMLValueTensorSelfOwnBuffer(mlvalue_index,
                                                                ml_data_type,
                                                                alloc_info,
-                                                               shape));
+                                                               parameters.tensor_shape));
       break;
     }
     case AllocKind::kReuse: {
@@ -162,7 +156,7 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
                                                                    reuse_mlvalue_index,
                                                                    ml_data_type,
                                                                    alloc_info,
-                                                                   shape));
+                                                                   parameters.tensor_shape));
       break;
     }
     default: {

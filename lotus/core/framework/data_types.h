@@ -13,6 +13,7 @@ class TensorTypeBase;
 // DataTypeImpl pointer as unique DataTypeImpl identifier.
 typedef const DataTypeImpl* MLDataType;
 typedef std::function<void(void*)> DeleteFunc;
+typedef std::function<void*(void)> CreateFunc;
 
 template <typename T>
 static void Delete(void* p) {
@@ -102,12 +103,36 @@ struct TensorType : public TensorTypeBase {
   TensorType() = default;
 };
 
+class NonTensorTypeBase : public DataTypeImpl {
+ public:
+  virtual const size_t Size() const = 0;
+
+  virtual DeleteFunc GetDeleteFunc() const = 0;
+
+  virtual CreateFunc GetCreateFunc() const = 0;
+
+ protected:
+  NonTensorTypeBase() = default;
+};
+
 template <typename T>
-class NonTensorType : public DataTypeImpl {
+class NonTensorType : public NonTensorTypeBase {
  public:
   static MLDataType Type() {
     static NonTensorType non_tensor_type;
     return &non_tensor_type;
+  }
+
+  CreateFunc GetCreateFunc() const {
+    return []() { return new T(); };
+  }
+
+  virtual const size_t Size() const override {
+    return sizeof(T);
+  }
+
+  virtual DeleteFunc GetDeleteFunc() const override {
+    return &Delete<T>;
   }
 
  private:
@@ -138,6 +163,12 @@ class NonOnnxType : public DataTypeImpl {
  private:
   NonOnnxType() = default;
 };
+
+#define LOTUS_REGISTER_NON_TENSOR_TYPE(TYPE) \
+  template <>                                \
+  MLDataType DataTypeImpl::GetType<TYPE>() { \
+    return NonTensorType<TYPE>::Type();      \
+  }
 
 #define LOTUS_REGISTER_TENSOR_TYPE(ELEM_TYPE)           \
   template <>                                           \

@@ -12,7 +12,6 @@
 #include "core/graph/graph.h"
 #include "onnx/defs/schema.h"
 
-
 namespace Lotus {
 class OpKernelContext;
 
@@ -28,7 +27,7 @@ class OpKernelInfo {
       : node_(node),
         allocator_info_(allocator_info),
         kernel_def_(kernel_def),
-        execution_provider_(execution_provider){}
+        execution_provider_(execution_provider) {}
 
   //Get a single attribute
   template <typename T>
@@ -111,11 +110,16 @@ class OpKernelContext {
     return execution_frame_->GetValue<T>(arg_start_index_ + index);
   }
 
+  MLDataType InputType(int index) const {
+    return execution_frame_->GetType(arg_start_index_ + index);
+  }
+
   // Fetch output (non-tensor) with specified index.
   template <typename T>
   T* Output(int index) {
     auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
-    return execution_frame_->GetMutableValue<T>(output_arg_index);
+    MLValueAllocationParameters paramerters;
+    return execution_frame_->GetOrCreateMLValue<T>(output_arg_index, paramerters);
   }
 
   // In the case that memory allocation has not been done for an output tensor,

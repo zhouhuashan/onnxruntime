@@ -38,6 +38,10 @@ class MLValue {
     return DataTypeImpl::GetType<Tensor>() == type_;
   }
 
+  MLDataType Type() const {
+	  return type_;
+  }
+
  private:
   std::shared_ptr<void> data_;
   MLDataType type_;

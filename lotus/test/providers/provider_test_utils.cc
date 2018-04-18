@@ -14,7 +14,8 @@ namespace Test {
 // These have to be defined before Run() since Run() tries to instantiate them
 template <>
 void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor, size_t size) {
-  auto* expected = reinterpret_cast<const float*>(output_data.data_.get());
+  auto& expected_tensor = output_data.data_.Get<Tensor>();
+  auto* expected = expected_tensor.Data<float>();
   auto* output = output_tensor.Data<float>();
   for (int i = 0; i < size; ++i) {
     if (std::isinf(expected[i]))  // Test infinity for equality
@@ -26,8 +27,19 @@ void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor
 
 template <>
 void OpTester::Check<bool>(const Data& output_data, const Tensor& output_tensor, size_t size) {
-  auto* expected = reinterpret_cast<const bool*>(output_data.data_.get());
+  auto& expected_tensor = output_data.data_.Get<Tensor>();
+  auto* expected = expected_tensor.Data<bool>();
   auto* output = output_tensor.Data<bool>();
+  for (int i = 0; i < size; ++i) {
+    EXPECT_EQ(expected[i], output[i]);
+  }
+}
+
+template <>
+void OpTester::Check<int64_t>(const Data& output_data, const Tensor& output_tensor, size_t size) {
+  auto& expected_tensor = output_data.data_.Get<Tensor>();
+  auto* expected = expected_tensor.Data<int64_t>();
+  auto* output = output_tensor.Data<int64_t>();
   for (int i = 0; i < size; ++i) {
     EXPECT_EQ(expected[i], output[i]);
   }
@@ -70,14 +82,7 @@ void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& inp
   }
 
   for (auto& input : input_data_) {
-    MLValue mlvalue;
-    CreateMLValue(&AllocatorManager::Instance().GetArena(CPU),
-                  input.shape_.GetDims(),
-                  input.data_type_,
-                  input.data_.get(),
-                  input.data_size_in_bytes_,
-                  &mlvalue);
-    feeds[input.def_.Name()] = mlvalue;
+    feeds[input.def_.Name()] = input.data_;
   }
 }
 
@@ -108,7 +113,6 @@ void OpTester::Run(bool expect_failure) {
       add_attribute_fn(node);
 
     node.SetExecutionProvider(LotusIR::kCpuExecutionProvider);
-
     Status status = graph->Resolve();
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
 
@@ -156,18 +160,23 @@ void OpTester::Run(bool expect_failure) {
     }
 
     // Verify the outputs
+    // Todo: support check output with map/sequence/....
     int idx = 0;
     for (auto& output : output_data_) {
+      LOTUS_ENFORCE(output.data_.IsTensor());
+      auto& output_tensor = output.data_.Get<Tensor>();
       MLValue& mlvalue = fetches[idx];
       auto& result_tensor = mlvalue.Get<Tensor>();
-      LOTUS_ENFORCE(output.shape_ == result_tensor.Shape(), "Output shape did not match expected output shape");
-      auto size = output.shape_.Size();
+      LOTUS_ENFORCE(output_tensor.Shape() == result_tensor.Shape(), "Output shape did not match expected output shape");
+      auto size = output_tensor.Shape().Size();
 
       // Dispatch on the type
-      if (output.data_type_ == DataTypeImpl::GetType<float>()) {
+      if (output_tensor.DataType() == DataTypeImpl::GetType<float>()) {
         Check<float>(output, result_tensor, size);
-      } else if (output.data_type_ == DataTypeImpl::GetType<bool>()) {
+      } else if (output_tensor.DataType() == DataTypeImpl::GetType<bool>()) {
         Check<bool>(output, result_tensor, size);
+      } else if (output_tensor.DataType() == DataTypeImpl::GetType<int64_t>()) {
+        Check<int64_t>(output, result_tensor, size);
       }
       ++idx;
     }

@@ -116,6 +116,9 @@ constexpr TensorProto_DataType TypeToDataType<uint32_t>() { return TensorProto_D
 template <>
 constexpr TensorProto_DataType TypeToDataType<uint64_t>() { return TensorProto_DataType_UINT64; }
 
+template <>
+constexpr TensorProto_DataType TypeToDataType<std::string>() { return TensorProto_DataType_STRING; }
+
 template <typename T>
 struct TTypeProto : TypeProto {
   TTypeProto() {
@@ -123,9 +126,22 @@ struct TTypeProto : TypeProto {
   }
 };
 
+//TypeProto for map<TKey, TVal>
+template <typename TKey, typename TVal>
+struct MTypeProto : TypeProto {
+  MTypeProto() {
+    mutable_map_type()->set_key_type(TypeToDataType<TKey>());
+    mutable_map_type()->mutable_value_type()->mutable_tensor_type()->set_elem_type(TypeToDataType<TVal>());
+    mutable_map_type()->mutable_value_type()->mutable_tensor_type()->mutable_shape()->clear_dim();
+  }
+};
+
 // Variable template for TensorProto_DataTypes, s_type_proto<float>, etc..
 template <typename T>
 const TTypeProto<T> s_type_proto;
+
+template <typename TKey, typename TVal>
+const MTypeProto<TKey, TVal> s_map_type_proto;
 
 // To use OpTester:
 //  1. Create one with the op name
@@ -152,6 +168,16 @@ struct OpTester {
     AddData(input_data_, name, dims, values.data(), values.size());
   }
 
+  template <typename TKey, typename TVal>
+  void AddInput(const char* name, const std::map<TKey, TVal>& val) {
+    std::unique_ptr<std::map<TKey, TVal>> ptr = make_unique<std::map<TKey, TVal>>(val);
+    MLValue value;
+    value.Init(ptr.release(),
+               DataTypeImpl::GetType<std::map<TKey, TVal>>(),
+               DataTypeImpl::GetType<std::map<TKey, TVal>>()->GetDeleteFunc());
+    input_data_.push_back({{name, &s_map_type_proto<TKey, TVal>}, value});
+  }
+
   template <typename T>
   void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::initializer_list<T>& expected_values) {
     AddData(output_data_, name, dims, expected_values.begin(), expected_values.size());
@@ -174,10 +200,7 @@ struct OpTester {
  private:
   struct Data {
     LotusIR::NodeArg def_;
-    TensorShape shape_;
-    std::unique_ptr<gsl::byte[]> data_;
-    size_t data_size_in_bytes_;
-    MLDataType data_type_;
+    MLValue data_;
   };
 
   void CreateMLValue(IAllocator* alloc,
@@ -198,10 +221,18 @@ struct OpTester {
                int64_t valuesCount) {
     static_assert(std::is_trivial<T>::value, "Only works on trivial types (where byte copies of the values are safe)");
     LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
+    auto& allocator = AllocatorManager::Instance().GetArena(CPU);
     auto size_in_bytes = valuesCount * sizeof(T);
-    auto p_data = std::make_unique<gsl::byte[]>(size_in_bytes);
-    memcpy(p_data.get(), values, size_in_bytes);
-    data.push_back({{name, &s_type_proto<T>}, dims, std::move(p_data), size_in_bytes, DataTypeImpl::GetType<T>()});
+    void* buffer = allocator.Alloc(size_in_bytes);
+    memcpy(buffer, values, size_in_bytes);
+    std::unique_ptr<Tensor> ptr = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
+                                                      TensorShape(dims),
+                                                      buffer,
+                                                      allocator.Info(),
+                                                      &allocator);
+    MLValue value;
+    value.Init(ptr.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+    data.push_back({{name, &s_type_proto<T>}, value});
   }
 
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
