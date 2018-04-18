@@ -86,14 +86,86 @@ def build_targets(cmake_path, build_dir, configs, parallel):
 
         run_subprocess(cmd_args)
 
-def run_tests(ctest_path, build_dir, configs, test_data_dir):
+
+def install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir):
+    "Install ONNX and create test data."
+
+    run_subprocess([sys.executable, '-m', 'pip', 'install', '--upgrade', 'setuptools', 'numpy'])
+
+    pb_config = None
+    release_build_dir = None
+    pb_src_dir = None
+
+    if 'Release' in configs:
+        pb_config = 'Release'
+        release_build_dir = get_config_build_dir(build_dir, pb_config)
+        pb_src_dir = os.path.join(release_build_dir, 'protobuf\src\protobuf')
+    elif 'RelWithDebInfo' in configs:
+        pb_config = 'RelWithDebInfo'
+        release_build_dir = get_config_build_dir(build_dir, pb_config)
+        pb_src_dir = os.path.join(release_build_dir, 'protobuf\src\protobuf')
+    else:
+        # make a protobuf release build
+        pb_config = 'Release'
+        release_build_dir = get_config_build_dir(build_dir, pb_config)
+        pb_build_dir = os.path.join(release_build_dir, 'protobuf\src\protobuf')
+        os.makedirs(pb_build_dir, exist_ok=True)
+        pb_src_dir = os.path.join(get_config_build_dir(build_dir, 'Debug'), 'protobuf', 'src', 'protobuf')
+        # clean up old config
+        pb_cmake_cache = os.path.join(pb_src_dir, 'CMakeCache.txt')
+        if (os.path.isfile(pb_cmake_cache)):
+            os.remove(pb_cmake_cache)
+
+        shutil.rmtree(os.path.join(pb_src_dir, 'CMakeFiles'), ignore_errors=True)
+        run_subprocess(
+            [cmake_path, os.path.join(pb_src_dir, 'cmake'), '-Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=OFF', '-T', 'host=x64',
+             '-G', 'Visual Studio 15 2017 Win64', '-Dprotobuf_BUILD_TESTS=OFF'],
+            cwd=pb_build_dir)
+        run_subprocess([cmake_path,
+                        "--build", pb_build_dir,
+                        "--config", pb_config])
+
+    # Add protoc to PATH
+    pb_bin_path = os.path.join(release_build_dir, 'protobuf\src\protobuf', pb_config)
+    print('Add %s to PATH' % pb_bin_path)
+    os.environ["PATH"] += os.pathsep + pb_bin_path
+    # Add cmake to PATH
+    os.environ["PATH"] += os.pathsep + os.path.dirname(cmake_path)
+    os.environ["LIB"] += os.pathsep + pb_bin_path
+    pb_inc_dir = os.path.join(pb_src_dir, 'src')
+    print('Add %s to INCLUDE' % pb_inc_dir)
+    os.environ["INCLUDE"] += os.pathsep + pb_inc_dir
+    onnx_src = os.path.join(source_dir, 'external', 'onnx')
+
+    # patch onnx source code
+    with fileinput.input(os.path.join(onnx_src, 'CMakeLists.txt'), inplace=1) as f:
+        for line in f:
+            print(line.replace("onnx_cpp2py_export PRIVATE /MT", "onnx_cpp2py_export PRIVATE /MD").rstrip('\r\n'))
+
+    with fileinput.input(os.path.join(onnx_src, 'setup.py'), inplace=1) as f:
+        for line in f:
+            line = line.replace('DONNX_USE_MSVC_STATIC_RUNTIME=ON', 'DONNX_USE_MSVC_STATIC_RUNTIME=OFF').rstrip('\r\n')
+            line = line.replace('os.curdir]', 'os.curdir,\'--config\',\'Release\']')
+            print(line)
+
+    run_subprocess([sys.executable, 'setup.py', 'install'], cwd=onnx_src)
+    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', onnx_test_data_dir])
+
+
+def run_tests(ctest_path, build_dir, configs, onnx_test_data_dir):
     for config in configs:
         log.info("Running tests for %s configuration", config)
         cwd = get_config_build_dir(build_dir, config)
         run_subprocess([ctest_path, "--build-config", config, "--verbose"],
                        cwd=cwd)
-        if test_data_dir is not None:
-          run_subprocess([os.path.join(cwd,config,'onnx_test_runner'), os.path.join(test_data_dir, 'node')],cwd=cwd)
+
+        # If test data dir exists and looks valid, assume we've run with --install_onnx
+        # and run the onnx tests.
+        # TODO: Add additional arg if this isn't a good default behaviour and user should explicitly enable
+        if os.path.isdir(onnx_test_data_dir):
+            node_dir = os.path.join(onnx_test_data_dir, 'node')
+            if (os.path.isdir(node_dir)):
+                run_subprocess([os.path.join(cwd,config,'onnx_test_runner'), node_dir],cwd=cwd)
 
 def main():
     args = parse_arguments()
@@ -113,6 +185,11 @@ def main():
     script_dir = os.path.realpath(os.path.dirname(__file__))
     source_dir = os.path.join(script_dir, "..", "..")
 
+    # directory that ONNX test data is created in if this script is run with --install_onnx
+    # If the directory exists and looks valid we assume ONNX is installed and run tests
+    # using that data.
+    onnx_test_data_dir = os.path.join(build_dir, 'test_data')
+
     os.makedirs(build_dir, exist_ok=True)
 
     configs = set(args.config)
@@ -122,65 +199,15 @@ def main():
     if (args.update):
         generate_build_tree(cmake_path, source_dir, build_dir, configs, cmake_extra_defines, args.enable_onnx_tests)
 
-    run_subprocess([sys.executable,'-m','pip', 'install','--upgrade','setuptools','numpy'])
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel)
 
-    #try to install onnx from this source tree
-    test_data_dir = None
-    if sys.platform.startswith('win') and args.install_onnx:
-      pb_config = None
-      release_build_dir = None
-      pb_src_dir = None
-      if 'Release' in configs:
-          pb_config = 'Release'
-          release_build_dir = get_config_build_dir(build_dir, pb_config)
-          pb_src_dir = os.path.join(release_build_dir,'protobuf\src\protobuf')
-      elif 'RelWithDebInfo' in configs:
-          pb_config = 'RelWithDebInfo'
-          release_build_dir = get_config_build_dir(build_dir, pb_config)
-          pb_src_dir = os.path.join(release_build_dir,'protobuf\src\protobuf')
-      else:
-          #make a protobuf release build
-          pb_config = 'Release'
-          release_build_dir = get_config_build_dir(build_dir, pb_config)
-          pb_build_dir = os.path.join(release_build_dir,'protobuf\src\protobuf')
-          os.makedirs(pb_build_dir, exist_ok=True)
-          pb_src_dir = os.path.join(get_config_build_dir(build_dir, 'Debug'),'protobuf','src','protobuf')
-          #clean up old config
-          os.remove(os.path.join(pb_src_dir,'CMakeCache.txt'))
-          shutil.rmtree(os.path.join(pb_src_dir,'CMakeFiles'),ignore_errors=True)
-          run_subprocess([cmake_path, os.path.join(pb_src_dir,'cmake'),'-Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=OFF', '-T','host=x64', '-G','Visual Studio 15 2017 Win64', '-Dprotobuf_BUILD_TESTS=OFF'],
-                         cwd=pb_build_dir)
-          run_subprocess([cmake_path,
-                       "--build", pb_build_dir,
-                       "--config", pb_config])
-      #Add protoc to PATH
-      pb_bin_path = os.path.join(release_build_dir,'protobuf\src\protobuf' , pb_config)
-      print('Add %s to PATH' % pb_bin_path)
-      os.environ["PATH"] += os.pathsep + pb_bin_path
-      #Add cmake to PATH
-      os.environ["PATH"] += os.pathsep + os.path.dirname(cmake_path)
-      os.environ["LIB"] += os.pathsep + pb_bin_path      
-      pb_inc_dir = os.path.join(pb_src_dir,'src')
-      print('Add %s to INCLUDE' % pb_inc_dir)
-      os.environ["INCLUDE"] += os.pathsep + pb_inc_dir
-      onnx_src = os.path.join(source_dir,'external', 'onnx')
-      #patch onnx source code
-      with fileinput.input(os.path.join(onnx_src,'CMakeLists.txt'),inplace=1) as f:
-          for line in f:
-            print(line.replace("onnx_cpp2py_export PRIVATE /MT", "onnx_cpp2py_export PRIVATE /MD").rstrip('\r\n'))
-      with fileinput.input(os.path.join(onnx_src,'setup.py'),inplace=1) as f:
-          for line in f:
-            line = line.replace('DONNX_USE_MSVC_STATIC_RUNTIME=ON', 'DONNX_USE_MSVC_STATIC_RUNTIME=OFF').rstrip('\r\n')
-            line = line.replace('os.curdir]','os.curdir,\'--config\',\'Release\']')
-            print(line)
-      run_subprocess([sys.executable,'setup.py','install'], cwd=onnx_src)
-      test_data_dir = os.path.join(build_dir,'test_data')
-      run_subprocess([sys.executable,'-m','onnx.backend.test.cmd_tools', 'generate-data', '-o',test_data_dir])
+    if (args.install_onnx and sys.platform.startswith('win')):
+        #try to install onnx from this source tree
+        install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir)
 
     if (args.test):
-        run_tests(ctest_path, build_dir, configs, test_data_dir)
+        run_tests(ctest_path, build_dir, configs, onnx_test_data_dir)
 
     log.info("Build complete")
 
