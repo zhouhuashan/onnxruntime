@@ -25,29 +25,6 @@ TEST(OpRegistrationTest, AffineOp) {
   EXPECT_EQ(attr_beta.type, AttrType::AttributeProto_AttributeType_FLOAT);
 }
 
-TEST(OpRegistrationTest, EmbeddingOp) {
-  auto op = OpSchemaRegistry::Schema("Embedding", kMSDomain);
-  EXPECT_TRUE(nullptr != op);
-  size_t input_size = op->inputs().size();
-  EXPECT_EQ(input_size, 2);
-  DataTypeSet input_types, output_types;
-  input_types.emplace(Utils::DataTypeUtils::ToType("tensor(uint64)"));
-  output_types.emplace(Utils::DataTypeUtils::ToType("tensor(float16)"));
-  output_types.emplace(Utils::DataTypeUtils::ToType("tensor(float)"));
-  output_types.emplace(Utils::DataTypeUtils::ToType("tensor(double)"));
-  EXPECT_EQ(op->inputs()[0].GetTypes(), input_types);
-  EXPECT_EQ(op->outputs()[0].GetTypes(), output_types);
-
-  size_t attr_size = op->attributes().size();
-  EXPECT_EQ(attr_size, 2);
-  auto input_dim_attr = op->attributes().find("input_dim")->second;
-  EXPECT_EQ(input_dim_attr.name, "input_dim");
-  EXPECT_EQ(input_dim_attr.type, AttrType::AttributeProto_AttributeType_INT);
-  auto output_dim_attr = op->attributes().find("output_dim")->second;
-  EXPECT_EQ(output_dim_attr.name, "output_dim");
-  EXPECT_EQ(output_dim_attr.type, AttrType::AttributeProto_AttributeType_INT);
-}
-
 TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   Model model("traditionalMl");
   auto graph = model.MainGraph();

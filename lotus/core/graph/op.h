@@ -51,13 +51,11 @@ class TypeUtils {
 class MsOpRegistry {
  public:
   static Status RegisterMsOps() {
-    RETURN_IF_ERROR(RegisterMsActivationOps());
     RETURN_IF_ERROR(RegisterMsNNOps());
     return Status::OK();
   }
 
  private:
-  static Status RegisterMsActivationOps();
   static Status RegisterMsNNOps();
 };
 
