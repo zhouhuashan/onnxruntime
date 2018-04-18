@@ -398,7 +398,8 @@ class BFCArena : public IArenaAllocator {
 #elif defined(PLATFORM_WINDOWS)
 #if defined(_WIN64)
     _BitScanReverse64(&index, n);
-#elif  auto high = static_cast<unsigned long>(n >> 32);
+#elif
+    auto high = static_cast<unsigned long>(n >> 32);
     if (_BitScanReverse(&index, high) > 0)
     {
         index += 32;
