@@ -6,7 +6,8 @@ Lotus is the runtime for ONNX. Here is the [design document](https://microsoft.s
 Install cmake-3.10 or better from https://cmake.org/download/.
 
 Checkout the source tree:
-```git clone --recursive https://aiinfra.visualstudio.com/_git/Lotus
+```
+git clone --recursive https://aiinfra.visualstudio.com/_git/Lotus
 cd Lotus
 ```
 
