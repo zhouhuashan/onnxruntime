@@ -19,6 +19,7 @@ LOTUS_REGISTER_TENSOR_TYPE(int);
 LOTUS_REGISTER_TENSOR_TYPE(float);
 LOTUS_REGISTER_TENSOR_TYPE(bool);
 LOTUS_REGISTER_TENSOR_TYPE(std::string);
+LOTUS_REGISTER_TENSOR_TYPE(int8_t);
 LOTUS_REGISTER_TENSOR_TYPE(uint8_t);
 LOTUS_REGISTER_TENSOR_TYPE(uint16_t);
 LOTUS_REGISTER_TENSOR_TYPE(int16_t);
@@ -172,6 +173,7 @@ LOTUS_REGISTER_NON_ONNX_TYPE(int);
 LOTUS_REGISTER_NON_ONNX_TYPE(float);
 LOTUS_REGISTER_NON_ONNX_TYPE(bool);
 LOTUS_REGISTER_NON_ONNX_TYPE(std::string);
+LOTUS_REGISTER_NON_ONNX_TYPE(int8_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(uint8_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(uint16_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(int16_t);
@@ -179,4 +181,33 @@ LOTUS_REGISTER_NON_ONNX_TYPE(int64_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(double);
 LOTUS_REGISTER_NON_ONNX_TYPE(uint32_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(uint64_t);
+
+MLDataType DataTypeImpl::ElementTypeFromProto(onnx::TensorProto_DataType type) {
+  switch (type) {
+    case TensorProto_DataType_FLOAT:
+      return DataTypeImpl::GetType<float>();
+    case TensorProto_DataType_BOOL:
+      return DataTypeImpl::GetType<bool>();
+    case TensorProto_DataType_INT32:
+      return DataTypeImpl::GetType<int>();
+    case TensorProto_DataType_DOUBLE:
+      return DataTypeImpl::GetType<double>();
+    case TensorProto_DataType_STRING:
+      return DataTypeImpl::GetType<std::string>();
+    case TensorProto_DataType_UINT8:
+      return DataTypeImpl::GetType<uint8_t>();
+    case TensorProto_DataType_UINT16:
+      return DataTypeImpl::GetType<uint16_t>();
+    case TensorProto_DataType_INT16:
+      return DataTypeImpl::GetType<int16_t>();
+    case TensorProto_DataType_INT64:
+      return DataTypeImpl::GetType<int64_t>();
+    case TensorProto_DataType_UINT32:
+      return DataTypeImpl::GetType<uint32_t>();
+    case TensorProto_DataType_UINT64:
+      return DataTypeImpl::GetType<uint64_t>();
+    default:
+      LOTUS_NOT_IMPLEMENTED;
+  }
+}
 }  // namespace Lotus
