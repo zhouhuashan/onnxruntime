@@ -74,7 +74,6 @@ file(GLOB lotus_test_utils_src
 
 set(lotus_test_common_libs
     ${lotus_common_whole_archive}
-    ${protobuf_STATIC_LIBRARIES}
     ${googletest_STATIC_LIBRARIES}
 )
 
