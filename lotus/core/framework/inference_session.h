@@ -40,7 +40,7 @@ struct SessionOptions {
       : ep_options(ep_options0) {
   }
   //int num_threads; // not used now until we re-introduce threadpools for async execution
-  vector<ProviderOption> ep_options;
+  std::vector<ProviderOption> ep_options;
   bool enable_sequential_execution = true;  // TODO: should we default to sequential execution?
 
   // TODO: This has been added to facilitate testing only. It is not intended for production usage.
@@ -48,6 +48,8 @@ struct SessionOptions {
 
   string session_logid;                            ///< logger id to use for session output
   unsigned short session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
+  int max_num_graph_transformation_steps = 5;      // TODO choose a good default here?
+  std::vector<std::unique_ptr<LotusIR::GraphTransformer>> list_graph_transformers;
 };
 
 /**

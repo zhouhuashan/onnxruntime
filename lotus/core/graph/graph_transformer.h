@@ -10,9 +10,9 @@ namespace LotusIR {
 class GraphTransformer {
  public:
   GraphTransformer(const std::string& name, const std::string& desc)
-    : name_(name), desc_(desc) {
+      : name_(name), desc_(desc) {
   }
-  
+
   virtual ~GraphTransformer() = default;
 
   // The name of this graph transformer.
@@ -30,9 +30,9 @@ class GraphTransformer {
   // The return value of "modified" indicates if the graph was modified or not.
   virtual Status Apply(Graph* graph, bool* modified) const = 0;
 
-private:
+ private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphTransformer);
-  
+
   const std::string name_;
   const std::string desc_;
 };
@@ -68,7 +68,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
 
  private:
   typedef std::unordered_map<const OpSchema*, std::vector<std::unique_ptr<RewriteRule>>>
-    RewriteRuleSet;
+      RewriteRuleSet;
 
   RewriteRuleSet op_to_rules_;
 };
@@ -80,7 +80,7 @@ class GraphTransformerManager {
   GraphTransformerManager(int32_t steps) noexcept : steps_(steps) {
     // TODO: Register default transformers.
   }
-  
+
   // Register a graph transformer.
   Status Register(std::unique_ptr<GraphTransformer> transformer) {
     transformers_.push_back(std::move(transformer));

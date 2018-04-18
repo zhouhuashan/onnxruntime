@@ -16,4 +16,4 @@ Status GraphTransformerManager::ApplyAll(Graph* graph) {
   return Status::OK();
 }
 
-}  // namespace LotusIR  
+}  // namespace LotusIR

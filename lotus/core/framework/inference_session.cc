@@ -9,6 +9,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
+#include "core/graph/graph_transformer.h"
 #include "core/graph/model.h"
 //#include "core/platform/env.h"
 //#include "core/lib/threadpool.h"
@@ -21,7 +22,9 @@ namespace Lotus {
 class InferenceSession::Impl {
  public:
   Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
-      : session_options_{session_options}, logging_manager_{logging_manager} {
+      : session_options_{session_options},
+        graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
+        logging_manager_{logging_manager} {
     InitLogger(logging_manager);
 
     //env_(Env::Default()) {
@@ -40,6 +43,15 @@ class InferenceSession::Impl {
 
       VLOGS(*session_logger_, 1) << "Adding execution provider with name: " << info.provider_type;
       session_state_.AddExecutionProvider(info.provider_type, std::move(provider));
+    }
+
+    // Register graph transformers if the user has provided any
+    // TODO do we need to support overrides of the transformers?
+    // Need const_cast here since we need non-const graph transformer objects from
+    // const SessionOptions to Register(). One option to remove const_cast is to make
+    // session_options_ non-const in the session object.
+    for (auto& elem : const_cast<SessionOptions&>(session_options_).list_graph_transformers) {
+      graph_transformation_mgr_.Register(std::move(elem));
     }
   }
 
@@ -410,12 +422,15 @@ class InferenceSession::Impl {
   }
 
   Common::Status TransformGraph(LotusIR::Graph* graph) {
+    // first apply the default/system/basic transformations
+    LOTUS_RETURN_IF_ERROR(graph_transformation_mgr_.ApplyAll(graph));
+
+    // now apply the transformations from the execution providers
     bool modified = false;
     for (auto& ep : session_state_.GetExecutionProviders()) {
       // TODO: log which execution provider is transforming the graph and
       // whether modified is true/false.
-      Status s = ep->GetTransformer().Apply(graph, &modified);
-      if (!s.IsOK()) return s;
+      LOTUS_RETURN_IF_ERROR(ep->GetTransformer().Apply(graph, &modified));
     }
 
     return Common::Status::OK();
@@ -525,6 +540,8 @@ class InferenceSession::Impl {
   }
 
   const SessionOptions& session_options_;
+
+  LotusIR::GraphTransformerManager graph_transformation_mgr_;
 
   /// Logging manager if provided.
   Logging::LoggingManager* logging_manager_;
