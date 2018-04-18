@@ -399,7 +399,7 @@ class BFCArena : public IArenaAllocator {
     unsigned long index;
 #if defined(_WIN64)
     _BitScanReverse64(&index, n);
-#elif
+#else
     auto high = static_cast<unsigned long>(n >> 32);
     if (_BitScanReverse(&index, high) > 0)
     {
