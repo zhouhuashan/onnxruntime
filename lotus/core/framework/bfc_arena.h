@@ -396,8 +396,19 @@ class BFCArena : public IArenaAllocator {
 #if defined(__GNUC__)
     return 63 ^ __builtin_clzll(n);
 #elif defined(PLATFORM_WINDOWS)
-    unsigned long index;
-    _BitScanReverse(&index, n);
+#if defined(_WIN64)
+    _BitScanReverse64(&index, n);
+#elif  auto high = static_cast<unsigned long>(n >> 32);
+    if (_BitScanReverse(&index, high) > 0)
+    {
+        index += 32;
+    }
+    else
+    {
+        auto low = static_cast<unsigned long>((n << 32) >> 32);
+        _BitScanReverse(&index, low);
+    }
+#endif
     return index;
 #else
     return Log2FloorNonZeroSlow(n);
