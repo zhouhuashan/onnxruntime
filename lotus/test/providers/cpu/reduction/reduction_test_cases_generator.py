@@ -74,6 +74,7 @@ def PrintResult(op, axes, keepdims, res):
 if __name__ == "__main__":
     from itertools import product
     input_shape = [2,3,2,2,3]
+    np.random.seed(0)
     input_data = np.random.uniform(size=input_shape)
     axes_options = [(2,3), (2, 1, 4), (0, 2, 3), (0,), (2,), (4,)]
     keepdims_options = [0, 1]
@@ -101,8 +102,6 @@ if __name__ == "__main__":
         skip = False;
         if op == "ArgMax" or op == "ArgMin":
             skip = len(axes) > 1
-        else:
-            skip = (len(axes) == 1) # currently there's bug in other reduce ops, will be addressed in a separate change
 
         if not skip:
             res = TestReduction(op, input_data, axes, keepdims)

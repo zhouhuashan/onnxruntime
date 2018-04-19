@@ -141,19 +141,26 @@ void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
   float* to_data = &transposedInputData[0];
   size_t count = input.Shape().Size();
 
+  //set to-be-reduced axes to one. squeeze is keepdims_ is false
+  int64_t first_dim = 1;
+  std::vector<int64_t> reduced_dims;
+  for (int i = 0; i < in_dims.size(); i++) {
+    if (keep_axis[i]) {
+      reduced_dims.push_back(in_dims[i]);
+    } else {
+      first_dim *= in_dims[i];
+      if (keepdims_) {
+        reduced_dims.push_back(1);
+      }
+    }
+  }
+
+  *reducedTensor = ctx->Output(0, reduced_dims);
+  block_size = input.Shape().Size() / first_dim;
+  blocks = first_dim;
+
   if (num_axes < 2 || n_shared_idxs == num_axes) {
     memcpy(to_data, from_data, count * sizeof(float));
-    block_size = 1;
-    blocks = (int)count;
-
-    std::vector<int64_t> out_dims;
-    if (keepdims_) {
-      out_dims = in_dims;
-      out_dims[0] = 1;
-    } else {
-      out_dims = std::vector<int64_t>(in_dims.begin() + 1, in_dims.end());
-    }
-    *reducedTensor = ctx->Output(0, out_dims);
     return;
   }
 
@@ -213,24 +220,6 @@ void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
       }
     }
   }
-
-  //set to-be-reduced axes to one. squeeze is keepdims_ is false
-  int64_t first_dim = 1;
-  std::vector<int64_t> reduced_dims;
-  for (int i = 0; i < in_dims.size(); i++) {
-    if (keep_axis[i]) {
-      reduced_dims.push_back(in_dims[i]);
-    } else {
-      first_dim *= in_dims[i];
-      if (keepdims_) {
-        reduced_dims.push_back(1);
-      }
-    }
-  }
-
-  *reducedTensor = ctx->Output(0, reduced_dims);
-  block_size = input.Shape().Size() / first_dim;
-  blocks = first_dim;
 }
 
 template <>

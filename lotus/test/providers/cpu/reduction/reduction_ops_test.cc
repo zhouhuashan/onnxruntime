@@ -240,7 +240,7 @@ TEST(MathOpTest, ArgMax) {
   test.Run();
 }
 
-TEST(MathOpTest, DISABLED_ArgMin) {
+TEST(MathOpTest, ArgMin) {
   OpTester test("ArgMin");
   test.AddAttribute("axis", (int64_t)0);
   test.AddAttribute("keepdims", (int64_t)0);
