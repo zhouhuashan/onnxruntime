@@ -17,11 +17,24 @@ void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor
   auto& expected_tensor = output_data.data_.Get<Tensor>();
   auto* expected = expected_tensor.Data<float>();
   auto* output = output_tensor.Data<float>();
+  bool has_abs_err = output_data.absolute_error_.has_value();
+  bool has_rel_err = output_data.relative_error_.has_value();
   for (int i = 0; i < size; ++i) {
     if (std::isinf(expected[i]))  // Test infinity for equality
       EXPECT_EQ(expected[i], output[i]);
-    else
-      EXPECT_NEAR(expected[i], output[i], 0.001f);
+    else {
+      if (!has_abs_err && !has_rel_err) {
+        // the default for existing tests
+        EXPECT_NEAR(expected[i], output[i], 0.001f);
+      } else {
+        if (has_abs_err) {
+          EXPECT_NEAR(expected[i], output[i], output_data.absolute_error_.value());
+        }
+        if (has_rel_err) {
+          EXPECT_NEAR(expected[i], output[i], output_data.relative_error_.value() * std::abs(expected[i]));
+        }
+      }
+    }
   }
 }
 

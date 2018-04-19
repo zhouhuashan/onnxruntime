@@ -12,37 +12,7 @@ REGISTER_KERNEL(KernelDefBuilder("SVMClassifier")
                 SVMClassifier<float>);
 
 template <typename T>
-float SVMClassifier<T>::kernel_dot(const T* A, int64_t a, const std::vector<float>& B, int64_t b, int64_t len, KERNEL k) const {
-  float sum = 0.f;
-
-  if (k == KERNEL::POLY) {
-    for (int64_t i = 0; i < len; i++) {
-      sum += B[b + i] * static_cast<float>(A[a + i]);
-    }
-    sum = gamma_ * sum + coef0_;
-    sum = std::pow(sum, degree_);
-  } else if (k == KERNEL::SIGMOID) {
-    for (int64_t i = 0; i < len; i++) {
-      sum += B[b + i] * static_cast<float>(A[a + i]);
-    }
-    sum = gamma_ * sum + coef0_;
-    sum = std::tanh(sum);
-  } else if (k == KERNEL::RBF) {
-    for (int64_t i = 0; i < len; i++) {
-      float val = static_cast<float>(A[a + i]) - B[b + i];
-      sum += (val * val);
-    }
-    sum = std::exp(-gamma_ * sum);
-  } else if (k == KERNEL::LINEAR) {
-    for (int64_t i = 0; i < len; i++) {
-      sum += B[b + i] * static_cast<float>(A[a + i]);
-    }
-  }
-  return sum;
-}
-
-template <typename T>
-SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info) : OpKernel(info) {
+SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info) : OpKernel(info), SVMCommon<T>(info) {
   LOTUS_ENFORCE(op_kernel_info_.GetAttrs<float>("rho", rho_).IsOK());
   LOTUS_ENFORCE(op_kernel_info_.GetAttrs<float>("coefficients", coefficients_).IsOK());
 
@@ -59,24 +29,10 @@ SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info) : OpKernel(info) {
   LOTUS_ENFORCE(op_kernel_info_.GetAttrs<std::string>("classlabels_strings", classlabels_strings_).IsOK() ||
                 op_kernel_info_.GetAttrs<int64_t>("classlabels_ints", classlabels_ints_).IsOK());
 
-  std::vector<float> kernel_params;
-  LOTUS_ENFORCE(op_kernel_info_.GetAttrs<float>("kernel_params", kernel_params).IsOK());
-
   std::string tmp = "NONE";
   op_kernel_info_.GetAttr<std::string>("post_transform", &tmp);
   POST_EVAL_TRANSFORM tmpval = MakeTransform(tmp);
   post_transform_ = tmpval;
-
-  tmp = "LINEAR";
-  op_kernel_info_.GetAttr<std::string>("kernel_type", &tmp);
-  KERNEL tmpval2 = MakeKernel(tmp);
-  kernel_type_ = tmpval2;
-
-  if (kernel_params.size() > 0) {
-    gamma_ = kernel_params[0];
-    coef0_ = kernel_params[1];
-    degree_ = kernel_params[2];
-  }
 
   vector_count_ = 0;
   feature_count_ = 0;
@@ -101,7 +57,7 @@ SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info) : OpKernel(info) {
   } else {
     feature_count_ = coefficients_.size() / class_count_;  //liblinear mode
     mode_ = SVM_TYPE::SVM_LINEAR;
-    kernel_type_ = KERNEL::LINEAR;
+    set_kernel_type(KERNEL::LINEAR);
   }
   LOTUS_ENFORCE(classlabels_strings_.size() > 0 || classlabels_ints_.size() > 0);
   LOTUS_ENFORCE(proba_.size() == probb_.size());
@@ -147,7 +103,7 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
 
     if (mode_ == SVM_TYPE::SVM_SVC) {
       for (int64_t j = 0; j < vector_count_; j++) {
-        float val = kernel_dot(x_data, current_weight_0, support_vectors_, feature_count_ * j, feature_count_, kernel_type_);
+        float val = kernel_dot(x_data, current_weight_0, support_vectors_, feature_count_ * j, feature_count_, get_kernel_type());
         kernels.push_back(val);
       }
       for (int64_t j = 0; j < class_count_; j++) {
@@ -188,7 +144,7 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
       }
     } else if (mode_ == SVM_TYPE::SVM_LINEAR) {     //liblinear
       for (int64_t j = 0; j < class_count_; j++) {  //for each class
-        float val = kernel_dot(x_data, current_weight_0, coefficients_, feature_count_ * j, feature_count_, kernel_type_);
+        float val = kernel_dot(x_data, current_weight_0, coefficients_, feature_count_ * j, feature_count_, get_kernel_type());
         val += rho_[0];
         scores.push_back(val);
       }

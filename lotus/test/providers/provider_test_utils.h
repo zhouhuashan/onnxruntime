@@ -188,6 +188,28 @@ struct OpTester {
     AddData(output_data_, name, dims, expected_values.data(), expected_values.size());
   }
 
+  void SetOutputAbsErr(const char* name, float v) {
+    auto it = std::find_if(
+        output_data_.begin(),
+        output_data_.end(),
+        [name](Data& data) {
+          return (data.def_.Name() == name);
+        });
+    LOTUS_ENFORCE(it != output_data_.end());
+    it->absolute_error_ = optional<float>(v);
+  }
+
+  void SetOutputRelErr(const char* name, float v) {
+    auto it = std::find_if(
+        output_data_.begin(),
+        output_data_.end(),
+        [name](Data& data) {
+          return (data.def_.Name() == name);
+        });
+    LOTUS_ENFORCE(it != output_data_.end());
+    it->relative_error_ = optional<float>(v);
+  }
+
   template <typename T>
   void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
@@ -198,9 +220,28 @@ struct OpTester {
   void Run(bool expect_failure = false);
 
  private:
+  // unfortunately std::optional is in C++17 so use a miniversion of it
+  template <typename T>
+  class optional {
+   public:
+    optional(T v) : has_value_(true), value_(v) {}
+    optional() : has_value_(false) {}
+    bool has_value() const { return has_value_; }
+    const T& value() const {
+      LOTUS_ENFORCE(has_value_);
+      return value_;
+    }
+
+   private:
+    bool has_value_;
+    T value_;
+  };
+
   struct Data {
     LotusIR::NodeArg def_;
     MLValue data_;
+    optional<float> relative_error_;
+    optional<float> absolute_error_;
   };
 
   void CreateMLValue(IAllocator* alloc,

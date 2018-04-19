@@ -4,7 +4,7 @@
 namespace Lotus {
 namespace Test {
 
-TEST(MlOpTest, SVMClassifierMulticlassSVC) {
+TEST(MLOpTest, SVMClassifierMulticlassSVC) {
   OpTester test("SVMClassifier", LotusIR::kMLDomain);
 
   std::vector<float> dual_coefficients = {1.14360327f, 1.95968249f, -1.175683f, -1.92760275f, -1.32575698f, -1.32575698f, 0.66332785f, 0.66242913f, 0.53120854f, 0.53510444f, -1.06631298f, -1.06631298f, 0.66332785f, 0.66242913f, 0.53120854f, 0.53510444f, 1.f, -1.f};
@@ -41,7 +41,7 @@ TEST(MlOpTest, SVMClassifierMulticlassSVC) {
   test.Run();
 }
 
-TEST(MlOpTest, SVMClassifierMulticlassLinearSVC) {
+TEST(MLOpTest, SVMClassifierMulticlassLinearSVC) {
   OpTester test("SVMClassifier", LotusIR::kMLDomain);
 
   std::vector<float> dual_coefficients = {-1.55181212e-01f, 2.42698956e-01f, 7.01893432e-03f, 4.07614474e-01f, -3.24927823e-02f, 2.79897536e-04f, -1.95771302e-01f, -3.52437368e-01f, -2.15973096e-02f, -4.38190277e-01f, 4.56869105e-02f, -1.29375499e-02f};
@@ -74,7 +74,7 @@ TEST(MlOpTest, SVMClassifierMulticlassLinearSVC) {
   test.Run();
 }
 
-TEST(MlOpTest, SVMClassifierSVCProbabilities) {
+TEST(MLOpTest, SVMClassifierSVCProbabilities) {
   OpTester test("SVMClassifier", LotusIR::kMLDomain);
 
   std::vector<float> coefficients = {1.14360327f, 1.95968249f, -1.175683f, -1.92760275f, -1.32575698f, -1.32575698f, 0.66332785f, 0.66242913f, 0.53120854f, 0.53510444f, -1.06631298f, -1.06631298f, 0.66332785f, 0.66242913f, 0.53120854f, 0.53510444f, 1.f, -1.f};
