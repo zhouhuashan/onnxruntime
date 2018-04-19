@@ -90,6 +90,16 @@ TEST(ActivationOpTest, ThresholdedRelu) {
                          {{"alpha", alpha}});
 }
 
+TEST(ActivationOpTest, ScaledTanh) {
+  static constexpr float alpha = 2.0f;
+  static constexpr float beta = 1.5f;
+
+  TestUnaryElementwiseOp("ScaledTanh",
+                         input_vals,
+                         [](float x) { return alpha * tanh(beta * x); },
+                         {{"alpha", alpha}, {"beta", beta}});
+}
+
 TEST(ActivationOpTest, Selu) {
   static constexpr float alpha = 1.6732f;
   static constexpr float gamma = 1.0507f;

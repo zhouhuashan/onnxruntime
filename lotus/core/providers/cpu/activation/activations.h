@@ -39,6 +39,10 @@ DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Relu,
                                        { EIGEN_Y = EIGEN_X.cwiseMax(0); },
                                        {})
 
+DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ScaledTanh,
+                                       { EIGEN_Y = Attr("alpha") * (EIGEN_X * Attr("beta")).tanh(); },
+                                       {{"alpha", 1.0f}, {"beta", 1.0f}})
+
 DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Selu,
                                        {
                                          EIGEN_X_VAR(xm);
