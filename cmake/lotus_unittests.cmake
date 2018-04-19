@@ -197,12 +197,11 @@ ${onnx_test_runner_src_dir}/testenv.h
 ${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
 ${onnx_test_runner_src_dir}/IFinishCallback.h
 ${onnx_test_runner_src_dir}/testenv.cc
-${onnx_test_runner_src_dir}/sysutil.h
 )
 if(WIN32)
-  set(onnx_test_runner_srcs ${onnx_test_runner_srcs} ${onnx_test_runner_src_dir}/sysutil_win.cc ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h ${onnx_test_runner_src_dir}/parallel_runner_win.cc)
+  set(onnx_test_runner_srcs ${onnx_test_runner_srcs} ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h ${onnx_test_runner_src_dir}/parallel_runner_win.cc)
 else()
-  set(onnx_test_runner_srcs ${onnx_test_runner_srcs} ${onnx_test_runner_src_dir}/sysutil_posix.cc)
+  set(onnx_test_runner_srcs ${onnx_test_runner_srcs} )
   set(FS_STDLIB stdc++fs)
 endif()
 add_executable(onnx_test_runner ${onnx_test_runner_srcs})

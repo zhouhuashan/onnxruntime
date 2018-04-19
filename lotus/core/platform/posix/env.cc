@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "core/platform/env.h"
 #include "core/platform/types.h"
+#include "core/common/common.h"
 
 namespace Lotus {
 
@@ -40,6 +41,11 @@ class PosixEnv : public Env {
   static PosixEnv& Instance() {
     static PosixEnv default_env;
     return default_env;
+  }
+
+  //TODO: implement this
+  virtual int GetNumCpuCores() override {
+    LOTUS_NOT_IMPLEMENTED;
   }
 
   void SleepForMicroseconds(int64 micros) override {
@@ -67,10 +73,9 @@ class PosixEnv : public Env {
                       std::function<void()> fn) override {
     return new StdThread(thread_options, name, fn);
   }
-  
-  private:
-    PosixEnv() = default;
 
+ private:
+  PosixEnv() = default;
 };
 
 }  // namespace

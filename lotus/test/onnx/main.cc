@@ -8,6 +8,7 @@
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/framework/inference_session.h>
 #include <core/common/logging/logging.h>
+#include <core/platform/env.h>
 #include <core/providers/cpu/cpu_execution_provider.h>
 #include <iostream>
 #include <experimental/filesystem>
@@ -24,7 +25,6 @@
 #include "TestCaseInfo.h"
 #include "TestResultStat.h"
 #include "testenv.h"
-#include "sysutil.h"
 #include "runner.h"
 
 using namespace std::experimental::filesystem::v1;
@@ -505,7 +505,7 @@ int main(int argc, char* argv[]) {
   AllocationPlannerType planner = AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER;
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
-  int p_models = getCoreNum();
+  int p_models = Env::Default()->GetNumCpuCores();
   {
     int ch;
     while ((ch = getopt(argc, argv, "hj:m:n:p:")) != -1) {

@@ -53,8 +53,10 @@ class Env {
   // TODO(Task:153) Lotus::Env::Default() should return const reference
   static Env* Default();
 
+  virtual int GetNumCpuCores() = 0;
+
   /// \brief Returns the number of micro-seconds since the Unix epoch.
-  virtual uint64 NowMicros() { return env_time_->NowMicros(); };
+  virtual uint64 NowMicros() { return env_time_->NowMicros(); }
 
   /// \brief Returns the number of seconds since the Unix epoch.
   virtual uint64 NowSeconds() { return env_time_->NowSeconds(); }
