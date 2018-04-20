@@ -58,8 +58,6 @@ function(AddTest)
   )
 endfunction(AddTest)
 
-add_whole_archive_flag(lotus_common lotus_common_whole_archive)
-add_whole_archive_flag(lotusIR_graph lotusIR_graph_whole_archive)
 add_whole_archive_flag(lotus_framework lotus_framework_whole_archive)
 add_whole_archive_flag(lotus_providers lotus_providers_whole_archive)
 add_whole_archive_flag(onnx onnx_whole_archive)
@@ -73,7 +71,7 @@ file(GLOB lotus_test_utils_src
 # the order of libraries should be maintained, with higher libraries being added first in the list
 
 set(lotus_test_common_libs
-    ${lotus_common_whole_archive}
+    lotus_common
     ${googletest_STATIC_LIBRARIES}
 )
 
@@ -92,9 +90,9 @@ AddTest(
 )
 
 set(lotus_test_ir_libs
-    ${lotusIR_graph_whole_archive}
+    lotusIR_graph
     ${onnx_whole_archive}
-    ${lotus_common_whole_archive}
+    lotus_common
     ${protobuf_STATIC_LIBRARIES}
     ${googletest_STATIC_LIBRARIES}
 )
@@ -114,9 +112,9 @@ AddTest(
 set(lotus_test_framework_libs
     ${lotus_providers_whole_archive} # code smell! see if CPUExecutionProvider should move to framework so this isn't needed.
     ${lotus_framework_whole_archive}
-    ${lotusIR_graph_whole_archive}
+    lotusIR_graph
     ${onnx_whole_archive}
-    ${lotus_common_whole_archive}
+    lotus_common
     ${protobuf_STATIC_LIBRARIES}
     ${googletest_STATIC_LIBRARIES}
 )
@@ -146,9 +144,9 @@ AddTest(
 set(lotus_test_providers_libs
     ${lotus_providers_whole_archive}
     ${lotus_framework_whole_archive}
-    ${lotusIR_graph_whole_archive}
+    lotusIR_graph
     ${onnx_whole_archive}
-    ${lotus_common_whole_archive}
+    lotus_common
     ${protobuf_STATIC_LIBRARIES}
     ${googletest_STATIC_LIBRARIES}
 )
@@ -207,4 +205,4 @@ endif()
 add_executable(onnx_test_runner ${onnx_test_runner_srcs})
 target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
 add_dependencies(onnx_test_runner lotus_providers lotus_framework lotusIR_graph onnx)
-target_link_libraries(onnx_test_runner ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} ${lotusIR_graph_whole_archive} ${onnx_whole_archive} ${lotus_common_whole_archive} ${protobuf_STATIC_LIBRARIES}  ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(onnx_test_runner ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} lotus_common ${protobuf_STATIC_LIBRARIES}  ${CMAKE_THREAD_LIBS_INIT})
