@@ -110,7 +110,10 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
   // trace the memory allocation.
-  TraceAllocate(mlvalue_index, size);
+  // don't trace the memory allocation on string tensors, as it need
+  // placement new, we don't suppport it in memory pattern optimizaiton.
+  if (element_type != DataTypeImpl::GetType<std::string>())
+    TraceAllocate(mlvalue_index, size);
 
   return Status::OK();
 }
@@ -330,7 +333,20 @@ void ExecutionFrame::TraceFree(int mlvalue_idx) {
   // don't trace free on output tensors.
   if (planner_ &&
       std::find(output_indices_.begin(), output_indices_.end(), mlvalue_idx) == output_indices_.end()) {
-    planner_->TraceFree(mlvalue_idx);
+    const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
+    const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
+    const auto& per_alloc_plan = alloc_plan.at(mlvalue_idx);
+
+    // only trace tensors
+    auto alloc_info = per_alloc_plan.location;
+    auto ml_type = per_alloc_plan.value_type;
+    if (ml_type->IsTensorType()) {
+      // tensors
+      auto ml_data_type = static_cast<const TensorTypeBase*>(ml_type)->GetElementType();
+      // don't trace string tensors
+      if (ml_data_type != DataTypeImpl::GetType<std::string>())
+        planner_->TraceFree(mlvalue_idx);
+    }
   }
 }
 

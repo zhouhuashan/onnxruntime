@@ -3,7 +3,7 @@
 
 namespace Lotus {
 
-TensorShape::TensorShape() { }
+TensorShape::TensorShape() {}
 
 TensorShape::TensorShape(const std::vector<int64_t>& dims) {
   dims_.assign(dims.begin(), dims.end());
@@ -93,7 +93,7 @@ std::ostream& operator<<(std::ostream& out, const TensorShape& shape) {
 }
 
 Tensor::Tensor()
-  : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
+    : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
   Init(DataTypeImpl::GetType<float>(),
        TensorShape(std::vector<int64_t>(1, 0)),
        nullptr,
@@ -103,7 +103,7 @@ Tensor::Tensor()
 }
 
 Tensor::Tensor(MLDataType p_type)
-  : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
+    : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
   Init(p_type,
        TensorShape(std::vector<int64_t>(1, 0)),
        nullptr,
@@ -118,7 +118,7 @@ Tensor::Tensor(MLDataType p_type,
                const AllocatorInfo& alloc,
                IAllocator* deleter,
                const int64_t offset)
-  : alloc_info_(alloc) {
+    : alloc_info_(alloc) {
   Init(p_type, shape, p_data, alloc, deleter, offset);
 }
 
@@ -131,8 +131,18 @@ void Tensor::Init(MLDataType p_type,
   dtype_ = p_type;
   shape_ = shape;
   p_data_ = p_raw_data;
-  alloc_info_ = alloc;
+  // if caller passed in a deleter, that means this tensor own this buffer
+  // we will release the buffer when this tensor is deconstructed.
   buffer_deleter_ = deleter;
+  // for string tensors, if this tensor own the buffer (caller passed in the deleter)
+  // do the placement new for strings on pre-allocated buffer.
+  if (buffer_deleter_ && dtype_ == DataTypeImpl::GetType<std::string>()) {
+    std::string* ptr = static_cast<std::string*>(p_data_);
+    for (int64_t i = 0, n = shape.Size(); i < n; ++i) {
+      new (ptr + i) std::string();
+    }
+  }
+  alloc_info_ = alloc;
   byte_offset_ = offset;
 }
 
@@ -180,8 +190,17 @@ Tensor::Tensor(const Tensor& src)
 }
 
 Tensor::~Tensor() {
-  if (buffer_deleter_)
+  if (buffer_deleter_) {
+    // if current tensor is responsible for delete the buffer
+    // and it is a string tensor, need to explict call string's
+    // deconstructor.
+    if (dtype_ == DataTypeImpl::GetType<std::string>()) {
+      std::string* ptr = static_cast<std::string*>(p_data_);
+      for (int i = 0; i < shape_.Size(); i++)
+        ptr[i].~string();
+    }
     buffer_deleter_->Free(p_data_);
+  }
 }
 
 Tensor& Tensor::ShallowCopy(const Tensor& other) {

@@ -260,17 +260,20 @@ struct OpTester {
   void AddData(std::vector<Data>& data, const char* name,
                const std::vector<int64_t>& dims, const T* values,
                int64_t valuesCount) {
-    static_assert(std::is_trivial<T>::value, "Only works on trivial types (where byte copies of the values are safe)");
     LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
     auto& allocator = AllocatorManager::Instance().GetArena(CPU);
     auto size_in_bytes = valuesCount * sizeof(T);
     void* buffer = allocator.Alloc(size_in_bytes);
-    memcpy(buffer, values, size_in_bytes);
     std::unique_ptr<Tensor> ptr = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
                                                       TensorShape(dims),
                                                       buffer,
                                                       allocator.Info(),
                                                       &allocator);
+    T* data_ptr = ptr->MutableData<T>();
+    for (int64_t i = 0; i < valuesCount; i++) {
+      data_ptr[i] = values[i];
+    }
+
     MLValue value;
     value.Init(ptr.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
     data.push_back({{name, &s_type_proto<T>}, value});
