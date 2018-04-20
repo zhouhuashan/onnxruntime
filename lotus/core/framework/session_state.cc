@@ -39,7 +39,7 @@ void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKerne
 void SessionState::AddExecutionProvider(const std::string& provider_id,
                                         std::unique_ptr<IExecutionProvider> p_exec_provider) {
   exec_provider_set_.provider_idx_map.insert(
-    { provider_id, exec_provider_set_.exec_providers.size() });
+      {provider_id, exec_provider_set_.exec_providers.size()});
   exec_provider_set_.exec_providers.push_back(std::move(p_exec_provider));
 }
 
@@ -144,7 +144,6 @@ Status SessionState::SetMemoryPatternGroup(const std::vector<TensorShape>& input
   int64_t key = CalculateMemoryPatternsKey(input_shape);
   auto it = mem_patterns_.find(key);
   if (it != mem_patterns_.end()) {
-    LOGS_DEFAULT(WARNING) << "memory pattern already exist, ignored";
     return Status::OK();
   }
   mem_patterns_[key] = std::move(mem_patterns);
