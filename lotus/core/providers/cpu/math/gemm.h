@@ -13,10 +13,6 @@ template <typename T_X,
           typename T_Y>
 class Gemm final : public OpKernel {
  public:
-  template <typename T>
-  using EigenMatrixMapRowMajor = Eigen::Map<
-      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
-
   Gemm(const OpKernelInfo& info) : OpKernel(info) {
     int64_t temp;
     LOTUS_ENFORCE(info.GetAttr<int64_t>("transA", &temp).IsOK());
@@ -83,7 +79,7 @@ class Gemm final : public OpKernel {
             N);
         output_mat.rowwise() += bias_vec.transpose();
       } else {
-        auto bias_mat = ConstEigenMatrixMap<T_B>(
+        auto bias_mat = ConstEigenMatrixMapRowMajor<T_B>(
             B->template Data<T_B>(),
             M,
             N);

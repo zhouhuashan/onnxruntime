@@ -42,6 +42,12 @@ template <typename T>
 using ConstEigenVectorMap = Eigen::Map<const Eigen::Matrix<T, Eigen::Dynamic, 1>>;
 template <typename T>
 using ConstEigenVectorArrayMap = Eigen::Map<const Eigen::Array<T, Eigen::Dynamic, 1>>;
+template <typename T>
+using EigenMatrixMapRowMajor = Eigen::Map<
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
+template <typename T>
+using ConstEigenMatrixMapRowMajor = Eigen::Map<
+    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
 
 class CPUMathUtil {
  public:
