@@ -31,8 +31,8 @@ int64_t TensorShape::Size() const {
 int64_t TensorShape::SizeToDimension(size_t dimension) const {
   const size_t num_dims = dims_.size();
   LOTUS_ENFORCE(dimension <= num_dims,
-                "Invalid dimension of %d for SizeToDimension. Tensor has %d dimensions.",
-                dimension, num_dims);
+                "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
+                num_dims, " dimensions.");
 
   int64_t size = SizeHelper(dims_, 0, dimension);
   return size;
@@ -40,9 +40,9 @@ int64_t TensorShape::SizeToDimension(size_t dimension) const {
 
 int64_t TensorShape::SizeFromDimension(size_t dimension) const {
   const size_t num_dims = dims_.size();
-  LOTUS_ENFORCE(dimension < num_dims,
-                "Invalid dimension of %d for SizeFromDimension. Tensor has %d dimensions.",
-                dimension, num_dims);
+  LOTUS_ENFORCE(dimension <= num_dims,
+                "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
+                num_dims, " dimensions.");
 
   int64_t size = SizeHelper(dims_, dimension, num_dims);
   return size;

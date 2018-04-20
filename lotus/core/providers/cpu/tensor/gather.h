@@ -1,0 +1,59 @@
+#pragma once
+
+#include "core/common/common.h"
+#include "core/framework/op_kernel.h"
+
+namespace Lotus {
+template <typename T, typename TInd>
+class Gather final : public OpKernel {
+ public:
+  Gather(const OpKernelInfo& info) : OpKernel(info) {
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("axis", &axis_).IsOK());
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* data = context->Input<Tensor>(0);
+    const TensorShape& data_shape = data->Shape();
+    const Tensor* indices = context->Input<Tensor>(1);
+    const TensorShape& indices_shape = indices->Shape();
+
+    const int64_t rank = data_shape.NumDimensions();
+    LOTUS_ENFORCE(axis_ >= -rank && axis_ <= rank - 1, "axis ", axis_,
+                  " is not in valid range [-", rank, ",", rank - 1, "]");
+    // Handle negative axis
+    const int64_t axis = axis_ < 0 ? axis_ + rank : axis_;
+
+    std::vector<int64_t>
+        shape(indices_shape.GetDims().begin(), indices_shape.GetDims().end());
+    shape.insert(shape.begin(), data_shape.GetDims().begin(), data_shape.GetDims().begin() + axis);
+    shape.insert(shape.end(), data_shape.GetDims().begin() + axis + 1, data_shape.GetDims().end());
+    Tensor* output = context->Output(0, TensorShape(shape));
+
+    const int64_t block = data_shape.SizeFromDimension(axis + 1);
+    const int64_t block_size = block * sizeof(T);
+    const int64_t M = data_shape.SizeToDimension(axis);
+    const int64_t N = indices_shape.Size();
+    const int64_t data_batch = data_shape.SizeFromDimension(axis);
+    const int64_t gathered_batch = N * data_shape.SizeFromDimension(axis + 1);
+
+    const TInd* idxs = indices->template Data<TInd>();
+    const T* src_base = data->template Data<T>();
+    T* out = output->template MutableData<T>();
+
+    for (int64_t batch = 0; batch < M; ++batch) {
+      const T* src_p = src_base + batch * data_batch;
+      T* dst_p = out + batch * gathered_batch;
+      for (int64_t i = 0; i < N; ++i) {
+        const T* src = src_p + idxs[i] * block;
+        T* dst = dst_p + i * block;
+        memcpy(dst, src, block_size);
+      }
+    }
+
+    return Status::OK();
+  }
+
+ private:
+  int64_t axis_;
+};
+}  // namespace Lotus

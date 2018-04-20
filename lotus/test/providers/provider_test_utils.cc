@@ -1,3 +1,4 @@
+#include "gmock/gmock.h"
 #include "test/providers/provider_test_utils.h"
 
 #include <exception>
@@ -99,7 +100,7 @@ void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& inp
   }
 }
 
-void OpTester::Run(bool expect_failure) {
+void OpTester::Run(bool expect_failure, const std::string& expected_failure_string) {
   try {
 #if _DEBUG
     run_called_ = true;
@@ -163,6 +164,7 @@ void OpTester::Run(bool expect_failure) {
     status = session_object.Run(run_options, feeds, output_names, &fetches);
     if (expect_failure) {
       EXPECT_TRUE(!status.IsOK());
+      EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
     } else {
       EXPECT_TRUE(status.IsOK());
     }

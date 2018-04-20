@@ -217,7 +217,7 @@ struct OpTester {
         [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
   }
 
-  void Run(bool expect_failure = false);
+  void Run(bool expect_failure = false, const std::string& expected_failure_string = "");
 
  private:
   // unfortunately std::optional is in C++17 so use a miniversion of it

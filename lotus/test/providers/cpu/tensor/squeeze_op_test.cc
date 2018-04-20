@@ -50,7 +50,7 @@ TEST(SqueezeOpTest, BadAxes) {
   test.AddOutput<float>("squeezed", {3, 4, 5}, std::vector<float>(60, 1.0f));
 
   // Expect failure.
-  test.Run(true);
+  test.Run(true, "Dimension of input 0 must be 1 instead of 3");
 }
 }  // namespace Test
 }  // namespace Lotus
