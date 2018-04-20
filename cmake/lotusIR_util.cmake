@@ -7,7 +7,6 @@ function(RELATIVE_PROTOBUF_GENERATE_CPP SRCS HDRS ROOT_DIR)
   set(${SRCS})
   set(${HDRS})
   foreach(FIL ${ARGN})
-    message(${FIL})
     set(ABS_FIL ${ROOT_DIR}/${FIL})
     get_filename_component(FIL_WE ${FIL} NAME_WE)
     get_filename_component(FIL_DIR ${ABS_FIL} DIRECTORY)
@@ -16,7 +15,6 @@ function(RELATIVE_PROTOBUF_GENERATE_CPP SRCS HDRS ROOT_DIR)
     list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${REL_DIR}/${FIL_WE}.pb.cc")
     list(APPEND ${HDRS} "${CMAKE_CURRENT_BINARY_DIR}/${REL_DIR}/${FIL_WE}.pb.h")
 
-    message(${REL_DIR})
     add_custom_command(
       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${REL_DIR}/${FIL_WE}.pb.cc"
              "${CMAKE_CURRENT_BINARY_DIR}/${REL_DIR}/${FIL_WE}.pb.h"
