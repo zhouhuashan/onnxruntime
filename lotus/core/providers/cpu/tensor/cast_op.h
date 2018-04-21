@@ -9,10 +9,10 @@ template <typename T>
 class Cast final : public OpKernel {
  public:
   Cast(const OpKernelInfo& info) : OpKernel(info) {
-    std::string to;
+    int64_t to;
     Status status = info.GetAttr("to", &to);
     LOTUS_ENFORCE(status.IsOK(), "Attribute to is not set.");
-    LOTUS_ENFORCE(TensorProto_DataType_Parse(to, &to_), "Cast type: %s is not supported.", to);
+    to_ = gsl::narrow_cast<TensorProto_DataType>(to);
   }
 
   Status Compute(OpKernelContext* context) const override;
