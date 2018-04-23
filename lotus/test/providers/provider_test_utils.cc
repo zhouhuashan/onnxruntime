@@ -146,14 +146,14 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     status = session_object.Load(std::move(p_model));
     EXPECT_TRUE(status.IsOK());
     if (!status.IsOK()) {
-      LOGS_DEFAULT(INFO) << "Load failed with error: " << status.ErrorMessage();
+      LOGS_DEFAULT(ERROR) << "Load failed with error: " << status.ErrorMessage();
       return;
     }
 
     status = session_object.Initialize();
     EXPECT_TRUE(status.IsOK());
     if (!status.IsOK()) {
-      LOGS_DEFAULT(INFO) << "Initialize failed with error: " << status.ErrorMessage();
+      LOGS_DEFAULT(ERROR) << "Initialize failed with error: " << status.ErrorMessage();
       return;
     }
 
@@ -166,11 +166,13 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
       EXPECT_TRUE(!status.IsOK());
       EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
     } else {
+      if (!status.IsOK()) {
+        LOGS_DEFAULT(ERROR) << "Run failed with status: " << status.ErrorMessage();
+      }
       EXPECT_TRUE(status.IsOK());
     }
 
     if (!status.IsOK()) {
-      LOGS_DEFAULT(INFO) << "Run failed with error: " << status.ErrorMessage();
       return;
     }
 
