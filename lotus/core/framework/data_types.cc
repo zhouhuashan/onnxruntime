@@ -210,4 +210,12 @@ MLDataType DataTypeImpl::ElementTypeFromProto(onnx::TensorProto_DataType type) {
       LOTUS_NOT_IMPLEMENTED;
   }
 }
+
+// helper to stream. expected to only be used for error output, so any typeid lookup
+// cost should be fine. alternative would be to add a static string field to DataTypeImpl
+// that we set in the register macro to the type name, and output that instead.
+std::ostream& operator<<(std::ostream& out, const MLDataType data_type) {
+  return out << typeid(*data_type).name();
+}
+
 }  // namespace Lotus

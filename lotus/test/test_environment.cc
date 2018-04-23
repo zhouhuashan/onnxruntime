@@ -47,8 +47,7 @@ TestEnvironment::TestEnvironment(int argc, char** argv, bool create_default_logg
 
 #ifdef HAVE_FRAMEWORK_LIB
   auto status = Environment::Create(runtime_environment_);
-  // LOTUS_ENFORCE(status == Status::OK(), "Failed creating runtime environment. ", status.ErrorMessage());
-  std::clog << status.ErrorMessage();
+  LOTUS_ENFORCE(status == Status::OK(), "Failed creating runtime environment. ", status.ErrorMessage());
 #endif
 }
 

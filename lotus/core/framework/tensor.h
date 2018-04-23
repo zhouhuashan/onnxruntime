@@ -83,9 +83,6 @@ class TensorShape {
   // output dimensions nicely formatted
   std::string ToString() const;
 
-  // operator<< to nicely output to a stream
-  friend std::ostream& operator<<(std::ostream& out, const TensorShape& shape);
-
   // Calculate size between start and end.
   // Assumes start and end are between 0 and dimensions.size(), inclusive, and that
   // start < end.
@@ -97,6 +94,9 @@ class TensorShape {
   // InlinedVector<int64_t, 4> dims_;
   std::vector<int64_t> dims_;
 };
+
+// operator<< to nicely output to a stream
+std::ostream& operator<<(std::ostream& out, const TensorShape& shape);
 
 class BufferDeleter {
  public:

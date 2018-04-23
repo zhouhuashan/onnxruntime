@@ -61,6 +61,8 @@ class DataTypeImpl {
   static MLDataType ElementTypeFromProto(onnx::TensorProto_DataType type);
 };
 
+std::ostream& operator<<(std::ostream& out, const MLDataType data_type);
+
 class TensorTypeBase : public DataTypeImpl {
  public:
   static MLDataType Type() {

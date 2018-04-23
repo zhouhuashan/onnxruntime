@@ -13,6 +13,19 @@ namespace Lotus {
 namespace Test {
 
 // These have to be defined before Run() since Run() tries to instantiate them
+// The Check templates have to be defined before Run() since Run() instantiates them
+
+// The default implementation compares for equality, specialized versions for other types are below
+template <typename T>
+void OpTester::Check(const Data& output_data, const Tensor& output_tensor, size_t size) {
+  auto& expected_tensor = output_data.data_.Get<Tensor>();
+  auto* expected = expected_tensor.Data<T>();
+  auto* output = output_tensor.Data<T>();
+  for (int i = 0; i < size; ++i) {
+    EXPECT_EQ(expected[i], output[i]);
+  }
+}
+
 template <>
 void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor, size_t size) {
   auto& expected_tensor = output_data.data_.Get<Tensor>();
@@ -36,26 +49,6 @@ void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor
         }
       }
     }
-  }
-}
-
-template <>
-void OpTester::Check<bool>(const Data& output_data, const Tensor& output_tensor, size_t size) {
-  auto& expected_tensor = output_data.data_.Get<Tensor>();
-  auto* expected = expected_tensor.Data<bool>();
-  auto* output = output_tensor.Data<bool>();
-  for (int i = 0; i < size; ++i) {
-    EXPECT_EQ(expected[i], output[i]);
-  }
-}
-
-template <>
-void OpTester::Check<int64_t>(const Data& output_data, const Tensor& output_tensor, size_t size) {
-  auto& expected_tensor = output_data.data_.Get<Tensor>();
-  auto* expected = expected_tensor.Data<int64_t>();
-  auto* output = output_tensor.Data<int64_t>();
-  for (int i = 0; i < size; ++i) {
-    EXPECT_EQ(expected[i], output[i]);
   }
 }
 
@@ -188,12 +181,32 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
       auto size = output_tensor.Shape().Size();
 
       // Dispatch on the type
-      if (output_tensor.DataType() == DataTypeImpl::GetType<float>()) {
+      auto type = output_tensor.DataType();
+
+      if (type == DataTypeImpl::GetType<float>()) {
         Check<float>(output, result_tensor, size);
-      } else if (output_tensor.DataType() == DataTypeImpl::GetType<bool>()) {
+      } else if (type == DataTypeImpl::GetType<bool>()) {
         Check<bool>(output, result_tensor, size);
-      } else if (output_tensor.DataType() == DataTypeImpl::GetType<int64_t>()) {
+      } else if (type == DataTypeImpl::GetType<int64_t>()) {
         Check<int64_t>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<double>()) {
+        Check<double>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<uint8_t>()) {
+        Check<uint8_t>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<uint16_t>()) {
+        Check<uint16_t>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<uint32_t>()) {
+        Check<uint32_t>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<uint64_t>()) {
+        Check<uint64_t>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<int16_t>()) {
+        Check<int16_t>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<int32_t>()) {
+        Check<int32_t>(output, result_tensor, size);
+      } else if (type == DataTypeImpl::GetType<std::string>()) {
+        Check<std::string>(output, result_tensor, size);
+      } else {
+        LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
       }
       ++idx;
     }
@@ -202,7 +215,7 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     // rethrow as some tests for error handling expect this
     throw;
   }
-}
+}  // namespace Test
 
 }  // namespace Test
 }  // namespace Lotus

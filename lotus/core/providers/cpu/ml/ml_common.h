@@ -92,8 +92,10 @@ static inline CAST_TO MakeCast(const std::string& input) {
     return CAST_TO::TO_FLOAT;
   } else if (input == "TO_STRING") {
     return CAST_TO::TO_STRING;
-  } else {
+  } else if (input == "TO_INT64") {
     return CAST_TO::TO_INT64;
+  } else {
+    LOTUS_THROW("Invalid CAST_TO value of ", input, " Expected TO_FLOAT, TO_STRING or TO_INT64");
   }
 }
 
@@ -105,8 +107,10 @@ enum PACK_MAP {
 static inline PACK_MAP MakePack(const std::string& input) {
   if (input == "DENSE") {
     return PACK_MAP::DENSE;
-  } else {
+  } else if (input == "SPARSE") {
     return PACK_MAP::SPARSE;
+  } else {
+    LOTUS_THROW("Invalid PACK_MAP value of ", input, " Expected DENSE or SPARSE");
   }
 }
 
