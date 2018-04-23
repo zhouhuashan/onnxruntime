@@ -89,8 +89,8 @@ def build_targets(cmake_path, build_dir, configs, parallel):
 
 def install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir):
     "Install ONNX and create test data."
-
-    run_subprocess([sys.executable, '-m', 'pip', 'install', '--upgrade', 'setuptools', 'numpy'])
+    dep_packages = ['typing_extensions','typing','six','protobuf','setuptools', 'numpy', 'pytest_runner']
+    run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org', '--upgrade'] + dep_packages)
 
     pb_config = None
     release_build_dir = None
