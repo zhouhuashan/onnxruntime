@@ -73,7 +73,7 @@ void OpTester::CreateMLValue(IAllocator* alloc,
   LOTUS_ENFORCE(p_value);
   memcpy(buffer, p_value, input_size_bytes);
 
-  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type, shape, buffer, location, alloc);
+  auto p_tensor = std::make_unique<Tensor>(element_type, shape, buffer, location, alloc);
   p_mlvalue->Init(p_tensor.release(),
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
@@ -91,6 +91,28 @@ void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& inp
   for (auto& input : input_data_) {
     feeds[input.def_.Name()] = input.data_;
   }
+}
+
+void OpTester::SetOutputAbsErr(const char* name, float v) {
+  auto it = std::find_if(
+      output_data_.begin(),
+      output_data_.end(),
+      [name](Data& data) {
+        return (data.def_.Name() == name);
+      });
+  LOTUS_ENFORCE(it != output_data_.end());
+  it->absolute_error_ = optional<float>(v);
+}
+
+void OpTester::SetOutputRelErr(const char* name, float v) {
+  auto it = std::find_if(
+      output_data_.begin(),
+      output_data_.end(),
+      [name](Data& data) {
+        return (data.def_.Name() == name);
+      });
+  LOTUS_ENFORCE(it != output_data_.end());
+  it->relative_error_ = optional<float>(v);
 }
 
 void OpTester::Run(bool expect_failure, const std::string& expected_failure_string) {
@@ -111,7 +133,7 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     }
 
     // Create a simple model
-    std::unique_ptr<LotusIR::Model> p_model = std::make_unique<LotusIR::Model>("test");
+    auto p_model = std::make_unique<LotusIR::Model>("test");
     LotusIR::Graph* graph = p_model->MainGraph();
     auto& node = *graph->AddNode("node1", op_, op_, input_defs, output_defs, nullptr, domain_);
 

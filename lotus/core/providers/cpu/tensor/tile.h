@@ -1,0 +1,17 @@
+#include "core/common/common.h"
+#include "core/framework/op_kernel.h"
+#include "core/util/math_cpuonly.h"
+
+namespace Lotus {
+
+template <typename T>
+struct Tile final : OpKernel {
+  Tile(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+
+ private:
+};
+
+}  // namespace Lotus

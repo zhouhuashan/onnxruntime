@@ -188,27 +188,8 @@ struct OpTester {
     AddData(output_data_, name, dims, expected_values.data(), expected_values.size());
   }
 
-  void SetOutputAbsErr(const char* name, float v) {
-    auto it = std::find_if(
-        output_data_.begin(),
-        output_data_.end(),
-        [name](Data& data) {
-          return (data.def_.Name() == name);
-        });
-    LOTUS_ENFORCE(it != output_data_.end());
-    it->absolute_error_ = optional<float>(v);
-  }
-
-  void SetOutputRelErr(const char* name, float v) {
-    auto it = std::find_if(
-        output_data_.begin(),
-        output_data_.end(),
-        [name](Data& data) {
-          return (data.def_.Name() == name);
-        });
-    LOTUS_ENFORCE(it != output_data_.end());
-    it->relative_error_ = optional<float>(v);
-  }
+  void SetOutputAbsErr(const char* name, float v);
+  void SetOutputRelErr(const char* name, float v);
 
   template <typename T>
   void AddAttribute(std::string name, T value) {
