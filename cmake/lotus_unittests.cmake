@@ -86,7 +86,7 @@ AddTest(
     TARGET lotus_test_common
     SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
     LIBS ${lotus_test_common_libs}
-    DEPENDS lotus_common googletest
+    DEPENDS googletest 
 )
 
 set(lotus_test_ir_libs
