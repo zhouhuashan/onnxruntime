@@ -419,7 +419,8 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   NodeTestHelper::MutableDefinitions(*node_2).output_defs[0]->SetType(tensor_float);
   status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
-  EXPECT_EQ("Node (node_4) has different input types (tensor(float),tensor(int32)) matching to same type string (T).", status.ErrorMessage());
+  auto error_msg_contains_type_error = (status.ErrorMessage().find("Type Error") != std::string::npos);
+  EXPECT_TRUE(error_msg_contains_type_error);
 
   //delete input_arg;
   //delete output_arg;

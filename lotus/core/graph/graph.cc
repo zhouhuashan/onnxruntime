@@ -43,6 +43,13 @@ const DataType NodeArg::Type() const noexcept {
   return type_;
 }
 
+const TypeProto* NodeArg::TypeAsProto() const noexcept {
+  if (node_arg_info_.has_type())
+    return &node_arg_info_.type();
+  else
+    return nullptr;
+}
+
 const TensorShapeProto* NodeArg::Shape() const {
   if (!node_arg_info_.has_type()) {
     return nullptr;
@@ -237,7 +244,7 @@ void Node::AddAttribute(const std::string& attr_name, const AttributeProto& valu
     AttributeProto a;                                                        \
     a.set_name(attr_name);                                                   \
     a.set_type(enumType);                                                    \
-	*(a.mutable_##field()) = value;                                          \
+    *(a.mutable_##field()) = value;                                          \
     attributes_[attr_name] = a;                                              \
   };
 
@@ -249,7 +256,7 @@ void Node::AddAttribute(const std::string& attr_name, const AttributeProto& valu
     AttributeProto a;                                        \
     a.set_name(attr_name);                                   \
     a.set_type(enumType);                                    \
-	for(const auto& val : values) {                          \
+    for (const auto& val : values) {                         \
       *(a.mutable_##field()->Add()) = val;                   \
     }                                                        \
     attributes_[attr_name] = a;                              \
@@ -661,6 +668,92 @@ Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_or
   }
 }
 
+bool FullyDefinedType(const TypeProto& type_proto) {
+  switch (type_proto.value_case()) {
+    case TypeProto::kTensorType: {
+      auto& tensor_type = type_proto.tensor_type();
+      return tensor_type.has_elem_type() && (tensor_type.elem_type() != TensorProto::UNDEFINED);
+    }
+    case TypeProto::kSequenceType: {
+      auto& seq_type = type_proto.sequence_type();
+      return seq_type.has_elem_type() && FullyDefinedType(seq_type.elem_type());
+    }
+    case TypeProto::kMapType: {
+      auto& map_type = type_proto.map_type();
+      return map_type.has_key_type() &&
+             (map_type.key_type() != TensorProto::UNDEFINED) &&
+             map_type.has_value_type() &&
+             FullyDefinedType(map_type.value_type());
+    }
+    case TypeProto::VALUE_NOT_SET:
+    default:
+      return false;
+  }
+}
+
+// An implementation of the InferenceContext interface required by operator-specific
+// shape inference for Lotus graphs.
+class InferenceContextImpl : public onnx::InferenceContext {
+ public:
+  InferenceContextImpl(Node& node, std::vector<TypeProto>& inferred_shapes) noexcept
+      : node_(node),
+        allOutputTypes_(inferred_shapes) {}
+
+  const AttributeProto* getAttribute(const std::string& name) const override {
+    auto& attribute_value_map = node_.GetAttributes();
+    auto iter = attribute_value_map.find(name);
+    if (iter == attribute_value_map.end()) {
+      return nullptr;
+    } else {
+      return &iter->second;
+    }
+  }
+
+  size_t getNumInputs() const override {
+    return node_.InputDefs().size();
+  }
+
+  const TypeProto* getInputType(size_t index) const override {
+    auto p_node_arg = node_.InputDefs().at(index);
+    if ((nullptr != p_node_arg) && p_node_arg->Exists()) {
+      return p_node_arg->TypeAsProto();
+      // auto p_type_proto = p_node_arg->TypeAsProto();
+      //if ((p_type_proto != nullptr) && p_type_proto->has_tensor_type()) {
+      //  return &p_type_proto->tensor_type();
+      //}
+    }
+    return nullptr;
+  }
+
+  size_t getNumOutputs() const override {
+    return allOutputTypes_.size();
+  }
+
+  TypeProto* getOutputType(size_t index) override {
+    return &allOutputTypes_[index];
+  }
+
+ private:
+  Node& node_;
+  // allOutputTypes_ will be populated by the operator-specific shape inference.
+  std::vector<TypeProto>& allOutputTypes_;
+  // std::vector<TypeProto_Tensor>& allOutputTypes_;
+};
+
+// A wrapper for invoking ONNX-defined shape+type inference for a single node.
+// Returns inferred shape+type for every output of the node in output parameter inferredShapes.
+Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<TypeProto>& inferred_shapes) {
+  inferred_shapes.clear();
+  inferred_shapes.resize(node.OutputDefs().size());
+  auto schema = node.Op();
+  if (nullptr != schema) {
+    InferenceContextImpl context(node, inferred_shapes);
+    schema->GetTypeAndShapeInferenceFunction()(context);
+  }
+  return Status::OK();
+}
+
+// Implementation of type-inference and type-checking for a single node
 Status Graph::InferAndVerifyTypeMatch(Node& node,
                                       const OpSchema& op,
                                       const std::unordered_map<std::string, Node*>& output_args) {
@@ -671,23 +764,27 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   std::unordered_map<std::string, DataType> type_parameter_to_type_map;
 
   for (size_t i = 0; i < node.InputArgCount().size(); ++i) {
-    // Number of inputs matching to the i-th argument.
+    // Number of inputs corresponding to the i-th argument.
     const int arg_count = node.InputArgCount()[i];
-    // The i-th argument definition.
+    // The i-th formal parameter definition.
     auto op_formal_parameter = op.inputs()[i];
 
-    // Infer and verify all <arguCount> inputs (k-th input)
-    // matching operator definition (i-th argument).
+    // Check all <arg_count> actual parameters (corresponding to the k-th input)
+    // match the formal parameter definition (i-th argument).
     for (int j = 0; j < arg_count; ++j, ++k) {
       auto& input_def = node.MutableDefinitions().input_defs[k];
 
-      // For each input arg.
+      // Determine the type of the actual input parameter:
+
+      // Check if the actual input parameter is the output of some preceding node:
       auto output_args_iter = output_args.find(input_def->Name());
       if (output_args.end() == output_args_iter) {
-        // This input arg should either be fed by callers,
-        // or be in initializers.
-        // If it's fed by callers, it's needed to have type
-        // information defined well.
+        // An input parmeter that is not the output of a preceding node
+        // should be a graph input (either fed by callers or in initializers).
+        // The ONNX spec requires every initializer to be included in the graph input,
+        // and that every graph input's type should be specified.
+        //
+        // TODO: We relax this requirement here and this requires some rethinking.
         auto initial_tensor_iter = name_to_initial_tensor_.find(input_def->Name());
         if (name_to_initial_tensor_.end() != initial_tensor_iter) {
           // This input is fed with default value by initializer.
@@ -712,9 +809,10 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
           return status;
         }
       } else {
-        // The type of this input should have been set by
-        // its parent who outputs the NodeArg
+        // The type of this input should have been set during type-inference of the
+        // node that outputs this NodeArg
         if (input_def->Type() == nullptr) {
+          // Logic error: This should not happen.
           Status status(LOTUS, FAIL,
                         "Node (" + nodeName + ") input arg (" +
                             input_def->Name() + ") does not have type information set by parent node.");
@@ -722,35 +820,47 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
         }
       }
 
-      // Verify the input arg type complying with operator
-      // definition.
-
-      auto iter = op_formal_parameter.GetTypes().find(input_def->Type());
-      if (op_formal_parameter.GetTypes().end() == iter) {
+      // Verify that the actual parameter's type is one of permitted types of the formal parameter
+      DataType input_type = input_def->Type();
+      auto& permitted_types = op_formal_parameter.GetTypes();
+      if (0 == permitted_types.count(input_type)) {
+        // Type error in input model/graph.
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") input arg (" +
-                          input_def->Name() + ") type does not match operator (" + op.Name() + ") definition.");
+                      "Type Error: Type of input parameter (" + input_def->Name() +
+                          ") of operator (" + op.Name() + ") in node (" + nodeName + ") is invalid.");
         return status;
       }
 
+      // Check that type-parameters are bound to the same value:
       auto param_to_type_iter = type_parameter_to_type_map.find(op_formal_parameter.GetTypeStr());
       if (type_parameter_to_type_map.end() == param_to_type_iter) {
-        type_parameter_to_type_map[op_formal_parameter.GetTypeStr()] = input_def->Type();
+        // Bind the corresponding type-parameter's value to the actual type:
+        type_parameter_to_type_map[op_formal_parameter.GetTypeStr()] = input_type;
+      } else if (param_to_type_iter->second != input_type) {
+        // Type error in input model/graph:
+        // The type-parameter T is bound to different values for different inputs.
+        // E.g., Add(A,B) where A is of type "tensor(int32)" and B is of type "tensor(float)".
+        // NOTE: for variadic arguments, this verification rule is currently applicable:
+        // e.g., Concat/Max/Mean/Min/Sum all require all input tensors to be of same type.
+        // However, this will need to be extended to handle the If-Then-Else and Loop
+        // constructs in future which will have variadic inputs and outputs of different types.
 
-      } else if (param_to_type_iter->second != input_def->Type() && arg_count == 1) {
-        // This is the case.
-        // An operator's inputs' type is "T", and T"s allowed value set is "float, int32".
-        // However, one input is specified as "float", and another one is specified as "int".
-        // NOTE: for variadic arguments (arg_count > 1), this verification rule is not applicable.
-        // Different types are allowed for variadic arguments although there's only one type "T"
-        // specified in op definition.
         Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") has different input types (" +
-                          *(param_to_type_iter->second) + "," + *(input_def->Type()) +
-                          ") matching to same type string (" + op_formal_parameter.GetTypeStr() + ").");
+                      "Type Error: Type parameter (" + op_formal_parameter.GetTypeStr() +
+                          ") bound to different types (" + *(param_to_type_iter->second) +
+                          " and " + *(input_def->Type()) +
+                          " in node (" + nodeName + ").");
         return status;
       }
     }
+  }
+
+  // Apply ONNX's shape/type inference to node
+  std::vector<TypeProto> onnx_inferred_types;
+  try {
+    InferOutputTypesAndShapes(node, onnx_inferred_types);
+  } catch (const std::exception& ex) {
+    return Status(LOTUS, FAIL, ex.what());
   }
 
   // Infer and verify node output arg type information.
@@ -758,14 +868,30 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   for (auto& output_def : node.MutableDefinitions().output_defs) {
     // For each output arg.
 
-    auto op_formal_parameter = op.outputs()[i++];
+    auto op_formal_parameter = op.outputs()[i];
+    const TypeProto& onnx_inferred_type = onnx_inferred_types[i++];
+
+    // Need to combine type/shape information from ONNX inference as well as inference below:
+    // set_output_type combines these information and updates output_def's type accordingly.
+    const auto set_output_type = [&](DataType inferred_type) {
+      // const TypeProto& type_proto = DataTypeUtils::ToType(inferred_type)
+      // For now, we take the shape from ONNX inference and the type inferred here.
+      // We could potentially double-check both inferred types are same.
+      output_def->SetType(inferred_type);
+      if (onnx_inferred_type.has_tensor_type()) {
+        auto tensor_type = onnx_inferred_type.tensor_type();
+        if (tensor_type.has_shape()) {
+          output_def->SetShape(tensor_type.shape());
+        }
+      }
+    };
 
     // Infer output arg type per input arg type if they share
     // the same type string. For example, type string is "T"
     // for both input arg and output arg.
     auto input_types_iter = type_parameter_to_type_map.find(op_formal_parameter.GetTypeStr());
     if (type_parameter_to_type_map.end() != input_types_iter) {
-      output_def->SetType(input_types_iter->second);
+      set_output_type(input_types_iter->second);
       continue;
     }
 
@@ -781,14 +907,14 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
         return status;
       }
 
-      AttrType attr_type;
+      AttributeProto_AttributeType attr_type;
       RETURN_IF_ERROR(TypeUtils::GetType(node_attributes_iter->second, attr_type));
 
-      if (AttrType::AttributeProto_AttributeType_TENSOR == attr_type) {
+      if (AttributeProto_AttributeType::AttributeProto_AttributeType_TENSOR == attr_type) {
         auto& tensor = node_attributes_iter->second.t();
         TypeProto type_proto;
         type_proto.mutable_tensor_type()->set_elem_type(tensor.data_type());
-        output_def->SetType(DataTypeUtils::ToType(type_proto));
+        set_output_type(DataTypeUtils::ToType(type_proto));
       } else {
         GSL_SUPPRESS(bounds .2)  // using attr_type as index to LotusIR::kAttrTypeSTrings should be safe
         {
@@ -826,8 +952,20 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
     if (1 == op_formal_parameter.GetTypes().size()) {
       // Infer output arg type as the only one type defined
       // in operator definition.
-      output_def->SetType(*(op_formal_parameter.GetTypes().begin()));
+      set_output_type(*(op_formal_parameter.GetTypes().begin()));
       continue;
+    }
+
+    // Check if ONNX inference produced the output type:
+    if (FullyDefinedType(onnx_inferred_type)) {
+      output_def->SetType(onnx_inferred_type);
+      if (onnx_inferred_type.has_tensor_type()) {
+        auto& tensor_type = onnx_inferred_type.tensor_type();
+        if (tensor_type.has_shape()) {
+          output_def->SetShape(tensor_type.shape());
+        }
+        continue;
+      }
     }
 
     // Output arg has no type information, and there're
@@ -875,8 +1013,8 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     // This may change in the future to allow a null Op
     const gsl::not_null<const OpSchema*> p_op = node.Op();
 
-    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op, output_args)));
-
+    // Attribute verification and fill node attribute with
+    // default value defined in operator definition if needed.
     // Fill node attribute with default value specified in operator definition if any.
     auto node_attributes = node.GetAttributes();
     for (auto attr_def : p_op->attributes()) {
@@ -897,6 +1035,8 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
         }
       }
     }
+
+    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op, output_args)));
   }
 
   return Status::OK();

@@ -69,6 +69,7 @@ class NodeArg {
 
   // Get node arg type.
   const DataType Type() const noexcept;
+  const TypeProto* TypeAsProto() const noexcept;
 
   void SetType(DataType p_type);
   void SetType(const TypeProto& type_proto);
@@ -544,6 +545,13 @@ class GraphBase {
   // order if <Status> returned is "OK", otherwise it's undefined.
   Status CheckIsAcyclic(
       /*out*/ std::vector<NodeIndex>& nodes_in_topological_order) const;
+
+  // Apply shape/type inference to a single node. This is a wrapper for
+  // invoking ONNX-defined shape+type inference for a single node.
+  // Returns the inferred shape+type for every output of the node in
+  // output parameter inferredShapes.
+  Status InferOutputTypesAndShapes(LotusIR::Node& node,
+                                   /*out*/ std::vector<TypeProto>& inferred_shapes);
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_

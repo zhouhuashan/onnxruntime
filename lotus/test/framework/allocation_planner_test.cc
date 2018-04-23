@@ -1,66 +1,18 @@
-#include "core/framework/allocation_planner.h"
+
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include "core/framework/session_state.h"
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
 #include "core/framework/op_kernel.h"
-#include <unordered_map>
-#include <unordered_set>
+#include "test/framework/model_builder_utils.h"
+#include "core/framework/allocation_planner.h"
 
 namespace Lotus {
 namespace Test {
 
-namespace GraphBuilder {
-
-struct Shape {
-  TensorShapeProto value;
-
-  // construct a shape with given constant dimensions
-  Shape(std::initializer_list<int> dims) {
-    for (auto d : dims) {
-      auto dim = value.add_dim();
-      dim->set_dim_value(d);
-    }
-  }
-
-  // construct a shape with given symbolic dimensions
-  Shape(std::initializer_list<string> dims) {
-    for (auto d : dims) {
-      auto dim = value.add_dim();
-      dim->set_dim_param(d);
-    }
-  }
-};
-
-// Type: a wrapper to build a TypeProto
-struct Type {
-  TypeProto value;
-
-  // construct a float-tensor-type
-  Type() {
-    value.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  }
-
-  // construct a float-tensor-type with given constant dimensions
-  Type(std::initializer_list<int> dims) {
-    value.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-    auto p_shape = value.mutable_tensor_type()->mutable_shape();
-    for (auto d : dims) {
-      auto dim = p_shape->add_dim();
-      dim->set_dim_value(d);
-    }
-  }
-
-  // construct a float-tensor-type with given symbolic dimensions
-  Type(std::initializer_list<string> symbolic_dims) {
-    value.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-    auto p_shape = value.mutable_tensor_type()->mutable_shape();
-    for (auto d : symbolic_dims) {
-      auto dim = p_shape->add_dim();
-      dim->set_dim_param(d);
-    }
-  }
-};
+namespace ModelBuilder {
 
 class NodeCounter {
  private:
@@ -101,9 +53,9 @@ class DummyOpKernel : public OpKernel {
   }
 };
 
-}  // namespace GraphBuilder
+}  // namespace ModelBuilder
 
-using namespace GraphBuilder;
+using namespace ModelBuilder;
 
 class AllocationPlanTestUtility {
  public:

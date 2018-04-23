@@ -17,7 +17,6 @@ namespace Lotus {
 typedef int MLValueIndex;
 typedef std::string MLValueName;
 
-// ?? Rama: Do we need to treat non-tensor values differently??
 // The ML-Values fall into the following categories with respect to their
 // memory management:
 //   - inference inputs: owned (allocated and freed) by caller, and is by
@@ -104,9 +103,7 @@ class ISequentialPlannerContext {
 class SequentialPlannerContext : public ISequentialPlannerContext {
  public:
   virtual const TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
-    (arg);
-    // Once shape-inference is in place, we can return the result of shape-inference
-    return nullptr;
+    return arg.Shape();
   }
 };
 
