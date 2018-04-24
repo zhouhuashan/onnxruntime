@@ -37,7 +37,7 @@ TEST(MathOpTest, GemmBroadcast) {
                        {1.0f, 2.0f, 3.0f, 4.0f,
                         -1.0f, -2.0f, -3.0f, -4.0f});
   test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
-  test.AddInput<float>("C", { 3 }, std::vector<float>{1.0f, 2.0f, 3.0f});
+  test.AddInput<float>("C", {3}, std::vector<float>{1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("Y", {2, 3},
                         {11.0f, 12.0f, 13.0f,
                          -9.0f, -8.0f, -7.0f});
@@ -103,6 +103,66 @@ TEST(MathOpTest, GemmNaN) {
   test.AddOutput<float>("Y", {2, 3},
                         {10.0f, 10.0f, 10.0f,
                          -10.0f, -10.0f, -10.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, GemmScalarBroadcast) {
+  OpTester test("Gemm");
+
+  test.AddAttribute("transA", (int64_t)0);
+  test.AddAttribute("transB", (int64_t)0);
+  test.AddAttribute("broadcast", (int64_t)1);
+  test.AddAttribute("alpha", 1.0f);
+  test.AddAttribute("beta", 1.0f);
+
+  test.AddInput<float>("A", {2, 4},
+                       {1.0f, 2.0f, 3.0f, 4.0f,
+                        -1.0f, -2.0f, -3.0f, -4.0f});
+  test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {1}, std::vector<float>{1.0f});
+  test.AddOutput<float>("Y", {2, 3},
+                        {11.0f, 11.0f, 11.0f,
+                         -9.0f, -9.0f, -9.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Gemm2DBroadcast) {
+  OpTester test("Gemm");
+
+  test.AddAttribute("transA", (int64_t)0);
+  test.AddAttribute("transB", (int64_t)0);
+  test.AddAttribute("broadcast", (int64_t)1);
+  test.AddAttribute("alpha", 1.0f);
+  test.AddAttribute("beta", 1.0f);
+
+  test.AddInput<float>("A", {2, 4},
+                       {1.0f, 2.0f, 3.0f, 4.0f,
+                        -1.0f, -2.0f, -3.0f, -4.0f});
+  test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {2, 1}, std::vector<float>{1.0f, 2.0f});
+  test.AddOutput<float>("Y", {2, 3},
+                        {11.0f, 11.0f, 11.0f,
+                         -8.0f, -8.0f, -8.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, GemmFalseBroadcast) {
+  OpTester test("Gemm");
+
+  test.AddAttribute("transA", (int64_t)0);
+  test.AddAttribute("transB", (int64_t)0);
+  test.AddAttribute("broadcast", (int64_t)1);
+  test.AddAttribute("alpha", 1.0f);
+  test.AddAttribute("beta", 1.0f);
+
+  test.AddInput<float>("A", {2, 4},
+                       {1.0f, 2.0f, 3.0f, 4.0f,
+                        -1.0f, -2.0f, -3.0f, -4.0f});
+  test.AddInput<float>("B", {4, 3}, std::vector<float>(12, 1.0f));
+  test.AddInput<float>("C", {2, 3}, std::vector<float>{1.0f, 1.0f, 1.0f, 2.0f, 2.0f, 2.0f});
+  test.AddOutput<float>("Y", {2, 3},
+                        {11.0f, 11.0f, 11.0f,
+                         -8.0f, -8.0f, -8.0f});
   test.Run();
 }
 
