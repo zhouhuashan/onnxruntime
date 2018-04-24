@@ -164,14 +164,14 @@ inline void MakeStringInternal(std::stringstream& ss, const T& t) noexcept {
 
 template <typename T, typename... Args>
 inline void MakeStringInternal(std::stringstream& ss, const T& t, const Args&... args) noexcept {
-  MakeStringInternal(ss, t);
-  MakeStringInternal(ss, args...);
+  ::Lotus::MakeStringInternal(ss, t);
+  ::Lotus::MakeStringInternal(ss, args...);
 }
 
 template <typename... Args>
 string MakeString(const Args&... args) {
   std::stringstream ss;
-  MakeStringInternal(ss, args...);
+  ::Lotus::MakeStringInternal(ss, args...);
   return string(ss.str());
 }
 
