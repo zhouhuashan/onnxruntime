@@ -77,7 +77,9 @@ OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), 
 template<typename T>
 std::vector<int64_t> OneHotEncoderOp<T>::InferOutputSize(const TensorShape& input_shape) const
 {  
-  return std::vector<int64_t> ({ input_shape[0], input_shape[1], category_ });
+  std::vector<int64_t> ret = input_shape.GetDims();
+  ret.push_back(category_);
+  return ret;
 }
 
 
@@ -86,9 +88,9 @@ template <typename T>
 Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {	
   const Tensor* X = context->Input<Tensor>(0);  
   const TensorShape& input_shape = X->Shape();
-  LOTUS_ENFORCE(input_shape.NumDimensions() == 2);
+  LOTUS_ENFORCE(input_shape.NumDimensions() <= 2);
   
-  std::vector<int64_t> output_shape = InferOutputSize(input_shape);
+  auto output_shape = InferOutputSize(input_shape);
   Tensor* Y = context->Output(0, TensorShape(output_shape));
   
   if (context->InputType(0) == DataTypeImpl::GetType<std::string>())
@@ -97,8 +99,8 @@ Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
   }
   else
   {    
-    auto* x_data = X->Data<T>();
-    float* y_data = Y->MutableData<float>();    
+    auto x_data = X->Data<T>();
+    auto y_data = Y->MutableData<float>();    
     int64_t count = 0;
     
     for (int64_t i = 0; i < input_shape.Size(); ++i)

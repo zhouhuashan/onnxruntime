@@ -8,22 +8,35 @@ namespace Test {
 template <typename T> 
 void TestIntCategory(std::vector<T> &input)
 {
-  OpTester test("OneHotEncoder", LotusIR::kMLDomain);
   std::vector<int64_t> categories{ 0, 1, 2, 3, 4, 5, 6, 7 };
-  test.AddAttribute("cats_int64s", categories);
-  
-  vector<float> expected_output;
+  std::vector<float> expected_output;
   for (size_t i = 0; i < input.size(); ++i)
     for (size_t j = 0; j < categories.size(); ++j)
       if (static_cast<int64_t>(input[i]) != categories[j]) expected_output.push_back(0.0);
       else expected_output.push_back(1.0);
+  
+  // Test Matrix [Batch * Labels]
+  OpTester test_matrix("OneHotEncoder", LotusIR::kMLDomain);  
+  test_matrix.AddAttribute("cats_int64s", categories);
+  
+  test_matrix.AddInput<T>("X", { 1, 7 }, input);
+  test_matrix.AddOutput<float>("Y", { 1, 7, 8 }, expected_output);
+  test_matrix.Run();
 
-  test.AddInput<T>("X", { 1, 7 }, input);
-  test.AddOutput<float>("Y", { 1, 7, 8 }, expected_output);
-  test.Run();
+  test_matrix.AddAttribute("zeros", 0LL);
+  test_matrix.Run(true);
 
-  test.AddAttribute("zeros", 0LL);
-  test.Run(true);
+  
+  // Test Vector [Labels]
+  OpTester test_vector("OneHotEncoder", LotusIR::kMLDomain);
+  test_vector.AddAttribute("cats_int64s", categories);
+  
+  test_vector.AddInput<T>("X", { 7 }, input);
+  test_vector.AddOutput<float>("Y", { 7, 8 }, expected_output);
+  test_vector.Run();
+
+  test_vector.AddAttribute("zeros", 0LL);
+  test_vector.Run(true);
 }
   
 TEST(OneHotEncoderOpTest, IntegerWithInt64) {
