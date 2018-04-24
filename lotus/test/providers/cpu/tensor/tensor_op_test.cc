@@ -14,6 +14,14 @@ TEST(TensorOpTest, Reshape) {
   test.Run();
 }
 
+TEST(TensorOpTest, Identity) {
+  OpTester test("Identity");
+  std::vector<float> X{1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+  test.AddInput<float>("input", {2, 3}, X);
+  test.AddOutput<float>("output", {2, 3}, X);
+  test.Run();
+}
+
 TEST(TensorOpTest, ShapeTest2D) {
   OpTester test("Shape");
 

@@ -16,8 +16,11 @@ class IdentityOp final : public OpKernel {
     const TensorShape& shape = X->Shape();
     Tensor* Y = context->Output(0, TensorShape(shape));
 
-    for (int64_t i = 0; i < shape.Size(); ++i) {
-      Y->MutableData<T>()[i] = X->Data<T>()[i];
+    const T* source = X->Data<T>();
+    T* target = Y->MutableData<T>();
+    //If source and target pointers are not equal, we need to copy the data.
+    if (target != source) {
+      memcpy(target, source, shape.Size() * sizeof(T));
     }
 
     return Status::OK();
