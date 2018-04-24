@@ -1,7 +1,8 @@
 onnx_test_runner [options...] <data_root>
 Options:
-        -m TEST_MODE: TEST_MODE could be 'node' or 'model'. Default: 'node'.
-        -p PLANNER_TYPE: PLANNER_TYPE could be 'seq' or 'simple'. Default: 'simple'.
+        -j [models]: Specifies the number of models to run simultaneously.
+        -c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.
+        -p [PLANNER_TYPE]: PLANNER_TYPE could be 'seq' or 'simple'. Default: 'simple'.
         -h: help
 
 How to run node tests:

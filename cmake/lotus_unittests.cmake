@@ -195,6 +195,8 @@ ${onnx_test_runner_src_dir}/testenv.h
 ${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
 ${onnx_test_runner_src_dir}/IFinishCallback.h
 ${onnx_test_runner_src_dir}/testenv.cc
+${onnx_test_runner_src_dir}/runner.h
+${onnx_test_runner_src_dir}/runner.cc
 )
 if(WIN32)
   set(onnx_test_runner_srcs ${onnx_test_runner_srcs} ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h ${onnx_test_runner_src_dir}/parallel_runner_win.cc)
