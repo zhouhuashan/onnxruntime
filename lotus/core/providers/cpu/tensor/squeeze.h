@@ -41,14 +41,13 @@ class Squeeze final : public OpKernel {
     std::vector<int64_t> output_shape = ComputeOutputShape(X_shape.GetDims(), axes_);
 
     Tensor* Y = context->Output(0, TensorShape(output_shape));
-    const std::vector<std::pair<int, int>>& alias = KernelDef().Alias();
-    //If input X and output Y are not aliases, it means the kernel is not doing inplace operation.
-    if (std::find(alias.begin(), alias.end(), std::pair<int, int>(0, 0)) == alias.end()) {
-      //copying
-      memcpy(Y->MutableData<T>(), X->Data<T>(), X_shape.Size() * sizeof(T));
-    } else {  //non-copying
-      *(Y->MutableData<T>()) = *(X->Data<T>());
+    const T* source = X->Data<T>();
+    T* target = Y->MutableData<T>();
+    //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
+    if (target != source) {
+      memcpy(target, source, X_shape.Size() * sizeof(T));
     }
+
     return Status::OK();
   }
 
