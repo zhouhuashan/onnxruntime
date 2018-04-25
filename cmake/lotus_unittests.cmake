@@ -32,7 +32,7 @@ function(AddTest)
 
   add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
-  target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
   if (WIN32)
     target_compile_options(${_UT_TARGET} PRIVATE
         /EHsc   # exception handling - C++ may throw, extern "C" will not
@@ -61,6 +61,9 @@ endfunction(AddTest)
 add_whole_archive_flag(lotus_framework lotus_framework_whole_archive)
 add_whole_archive_flag(lotus_providers lotus_providers_whole_archive)
 add_whole_archive_flag(onnx onnx_whole_archive)
+if(lotus_USE_CUDA)
+  add_whole_archive_flag(lotus_providers_cuda lotus_providers_cuda_whole_archive)
+endif()
 
 file(GLOB lotus_test_utils_src
     "${LOTUS_ROOT}/test/*.h"
@@ -143,6 +146,7 @@ AddTest(
 
 set(lotus_test_providers_libs
     ${lotus_providers_whole_archive}
+    ${lotus_providers_cuda_whole_archive}
     ${lotus_framework_whole_archive}
     lotusIR_graph
     ${onnx_whole_archive}
@@ -151,16 +155,32 @@ set(lotus_test_providers_libs
     ${googletest_STATIC_LIBRARIES}
 )
 
+
 file(GLOB_RECURSE lotus_test_providers_src
     "${LOTUS_ROOT}/test/providers/*.h"
     "${LOTUS_ROOT}/test/providers/*.cc"
 )
 
+if(NOT lotus_USE_CUDA)
+    file(GLOB_RECURSE cuda_tests "${LOTUS_ROOT}/test/providers/cuda/*")  
+    list(LENGTH cuda_tests len)
+    if(len GREATER 0)
+        list(REMOVE_ITEM lotus_test_providers_src ${cuda_tests})
+    endif()
+endif()
+
+set (lotus_test_provides_dependencies lotus_providers googletest)
+
+if(lotus_USE_CUDA)
+    list(APPEND lotus_test_provides_dependencies lotus_providers_cuda)
+    list(APPEND lotus_test_providers_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+endif()
+
 AddTest(
     TARGET lotus_test_providers
     SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
     LIBS ${lotus_test_providers_libs}
-  DEPENDS lotus_providers googletest
+  DEPENDS ${lotus_test_provides_dependencies}
 )
 
 #

@@ -98,9 +98,10 @@ To pass in additional compiler flags, for example to build with SIMD instruction
 cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
 ```
 ## CUDA
-To build Lotus with CUDA support, download CUDA8 and CUDNN6 from NVidia. Once installed you can call cmake for Lotus as follows:
+To build Lotus with CUDA support, download CUDA9.1 and CUDNN6 from NVidia and CMake 3.11 For VisualStudio 2017, it also need VC compiler v14.11, instead of default v14.13.
+Once installed you can call cmake for Lotus as follows:
 ```
-cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=%CUDNN_HOME%
+python %~dp0\tools\ci_build\build.py --build_dir %~dp0\build\Windows --use_cuda --cudnn_home %CUDNN_HOME% %* 
 
 you may have to specify your root CUDA installation directory via -DCUDA_TOOLKIT_ROOT_DIR
 ```

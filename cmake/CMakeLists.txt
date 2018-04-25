@@ -83,24 +83,25 @@ endif()
 if (WIN32)
     add_definitions(-DPLATFORM_WINDOWS)
     # parallel build
-    add_compile_options(/MP)
-    add_compile_options(
-      /wd4503 # Decorated name length exceeded.
-      /wd4127 # conditional expression is constant
+    # These compiler opitions cannot be forwarded to NVCC, so cannot use add_compiler_options
+    string(APPEND CMAKE_CXX_FLAGS " /MP")
+    string(APPEND CMAKE_CXX_FLAGS 
+      " /wd4503" # Decorated name length exceeded.
+      " /wd4127" # conditional expression is constant. 
     )
     if (lotus_ENABLE_STATIC_ANALYSIS)
-        add_compile_options(
-            /analyze:WX-
+        string(APPEND CMAKE_CXX_FLAGS 
+            " /analyze:WX- "
             # disable warning because there are many occurrences from test macros
-            /wd6326 # potential comparison of a constant with another constant
+            " /wd6326 " # potential comparison of a constant with another constant
         )
     endif()
 
     # compile warning level 4
-    add_compile_options(/W4)
+    string(APPEND CMAKE_CXX_FLAGS " /W4")  
 
-    # treat warnings as errors
     if (NOT lotus_USE_CUDA)
+    # treat warnings as errors
       add_compile_options(/WX)
       foreach(type EXE STATIC SHARED)
         set(CMAKE_${type}_LINKER_FLAGS "${CMAKE_${type}_LINKER_FLAGS} /WX")
@@ -140,22 +141,10 @@ if (lotus_USE_OPENBLAS)
 endif()
 
 if (lotus_USE_CUDA)
-    find_package(CUDA 8.0 REQUIRED)
+    enable_language(CUDA)
+    find_package(CUDA 9.1)
+
     include(cub)
-
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_35,code=\"sm_35,compute_35\";-gencode arch=compute_52,code=\"sm_52,compute_52\")
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};--include-path ${PROJECT_BINARY_DIR}/$\{build_configuration\};--expt-relaxed-constexpr)
-    if (WIN32)
-      set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-ftz=true)
-    else()
-      set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-ftz=true;-std=c++11;-Xcompiler -fPIC)
-    endif()
-
-    set(CUDA_INCLUDE ${CUDA_TOOLKIT_TARGET_DIR} ${CUDA_TOOLKIT_TARGET_DIR}/extras/CUPTI/include
-      ${lotus_CUDNN_HOME}/include ${cub_INCLUDE_DIR})
-    include_directories(${CUDA_INCLUDE})
-    add_definitions(-DUSE_CUDA=1)
-
     set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
       ${CUDA_curand_LIBRARY} ${CUDA_cupti_LIBRARY} ${CUDA_cusolver_LIBRARY})
     if (WIN32)

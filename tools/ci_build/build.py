@@ -18,6 +18,7 @@ def parse_arguments():
     parser.add_argument("--config", nargs="+", default=["Debug"],
                         choices=["Debug", "MinSizeRel", "Release", "RelWithDebInfo"],
                         help="Configuration(s) to build.")
+    parser.add_argument("--cudnn_home", help="Path to CUDNN home.")
     parser.add_argument("--cmake_extra_defines", nargs="+",
                         help="Extra definitions to pass to CMake during build system generation. " +
                              "These are just CMake -D options without the leading -D.")
@@ -31,6 +32,7 @@ def parse_arguments():
     parser.add_argument("--build", action='store_true', help="Build.")
     parser.add_argument("--parallel", action='store_true', help="Use parallel build.")
     parser.add_argument("--test", action='store_true', help="Run unit tests.")
+    parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
 
     return parser.parse_args()
 
@@ -45,12 +47,14 @@ def run_subprocess(args, cwd=None):
     log.debug("Running subprocess: \n%s", args)
     subprocess.run(args, cwd=cwd, check=True)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, configs, cmake_extra_defines, enable_onnx_tests):
+def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
                  "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if enable_onnx_tests else "OFF"),
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
+                 "-Dlotus_USE_CUDA=" + ("ON" if use_cuda else "OFF"),
+                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if use_cuda else "")  
                  ]
 
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
@@ -182,6 +186,7 @@ def main():
 
     ctest_path = args.ctest_path
     build_dir = args.build_dir
+    cudnn_home = args.cudnn_home
     script_dir = os.path.realpath(os.path.dirname(__file__))
     source_dir = os.path.join(script_dir, "..", "..")
 
@@ -197,7 +202,7 @@ def main():
     log.info("Build started")
 
     if (args.update):
-        generate_build_tree(cmake_path, source_dir, build_dir, configs, cmake_extra_defines, args.enable_onnx_tests)
+        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, args.enable_onnx_tests, args.use_cuda)
 
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel)

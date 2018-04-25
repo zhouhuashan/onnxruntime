@@ -174,7 +174,7 @@ class ExecutionFrame {
       // The ml has already been allocated.
       // TODO: Check if the allocated mlvalue consistent with given parameter.
       // Now only tensor need to be check.
-      T* value = p_mlvalue->GetMutable<T>();
+      T* value = p_mlvalue->template GetMutable<T>();
       if (p_mlvalue->IsTensor()) {
         Tensor* tensor = static_cast<Tensor*>(value);
         if (tensor->Shape() != parameters.tensor_shape) {
@@ -191,7 +191,7 @@ class ExecutionFrame {
       // perform allocation based on the allocation plan
       Status s = AllocateAsPerAllocationPlan(node_values_[index], parameters);
       LOTUS_ENFORCE(s.IsOK());
-      return p_mlvalue->GetMutable<T>();
+      return p_mlvalue->template GetMutable<T>();
     }
   }
 
