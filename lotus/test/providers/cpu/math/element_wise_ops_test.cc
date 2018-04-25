@@ -403,5 +403,24 @@ TEST(MathOpTest, Mean) {
                          -3.0f, 0.02f, -4.0f});
   test.Run();
 }
+
+TEST(MathOpTest, AffineDefaultAttributes) {
+  OpTester test("Affine");
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("B", dims, {0.0f, 1.0f, 2.0f, 3.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Affine) {
+  OpTester test("Affine");
+  std::vector<int64_t> dims{2, 2};
+  test.AddAttribute("alpha", 2.0f);
+  test.AddAttribute("beta", 1.0f);
+  test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("B", dims, {1.0f, 3.0f, 5.0f, 7.0f});
+  test.Run();
+}
+
 }  // namespace Test
 }  // namespace Lotus

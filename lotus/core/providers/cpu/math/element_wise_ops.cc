@@ -163,10 +163,22 @@ REGISTER_KERNEL(KernelDefBuilder("Mean")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Mean<float>);
 
+REGISTER_KERNEL(KernelDefBuilder("Affine")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Affine<float>);
+
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
 template <typename T>
 auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.Data<T>(), t.Shape().Size()); }
+
+template <typename T>
+auto MakeEigenArrayMap(Tensor& t) { return EigenVectorArrayMap<T>(t.MutableData<T>(), t.Shape().Size()); }
+template <typename T>
+auto MakeEigenArrayMap(const Tensor& t) { return ConstEigenVectorArrayMap<T>(t.Data<T>(), t.Shape().Size()); }
 
 // Finds the axis inside 'shape' that matches 'find' starting from the end
 // For example if shape = {2, 3, 4, 5, 6} and find = {4, 5} it returns 2
@@ -559,6 +571,14 @@ Status Mean<float>::Compute(OpKernelContext* ctx) const {
   float weight = 1.0f / static_cast<float>(inputCount);
   mean = mean * weight;
 
+  return Status::OK();
+}
+
+template <>
+Status Affine<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
+  MakeEigenArrayMap<float>(Y) = alpha_ * MakeEigenArrayMap<float>(X) + beta_;
   return Status::OK();
 }
 

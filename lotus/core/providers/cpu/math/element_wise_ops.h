@@ -226,4 +226,21 @@ class Mean final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
+template <typename T>
+class Affine final : public OpKernel {
+ public:
+  Affine(const OpKernelInfo& info) : OpKernel(info) {
+    alpha_ = 1.0f;  // default value; TODO : can be omitted once added to ONNX spec.
+    beta_ = 0.0f;   // default value; TODO : can be omitted once added to ONNX spec.
+    info.GetAttr("alpha", &alpha_);
+    info.GetAttr("beta", &beta_);
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+
+ private:
+  float alpha_;
+  float beta_;
+};
+
 }  // namespace Lotus
