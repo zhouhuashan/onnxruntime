@@ -30,6 +30,7 @@ def parse_arguments():
     parser.add_argument("--install_onnx", action='store_true',
                         help="Install onnx after building Lotus, for running tests")
     parser.add_argument("--build", action='store_true', help="Build.")
+    parser.add_argument("--x86", action='store_true', help="Build.")
     parser.add_argument("--parallel", action='store_true', help="Use parallel build.")
     parser.add_argument("--test", action='store_true', help="Run unit tests.")
     parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
@@ -47,7 +48,8 @@ def run_subprocess(args, cwd=None):
     log.debug("Running subprocess: \n%s", args)
     subprocess.run(args, cwd=cwd, check=True)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda):
+
+def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, cmake_extra_args):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
@@ -60,7 +62,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, 
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 
     if is_windows():
-        cmake_args += ["-A", "x64", "-DCMAKE_GENERATOR='Visual Studio 15 2017'"]
+        cmake_args += cmake_extra_args
 
     for config in configs:
         config_build_dir = get_config_build_dir(build_dir, config)
@@ -91,50 +93,44 @@ def build_targets(cmake_path, build_dir, configs, parallel):
         run_subprocess(cmd_args)
 
 
-def install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir):
+def install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir, cmake_extra_args):
     "Install ONNX and create test data."
     dep_packages = ['typing_extensions','typing','six','protobuf','setuptools', 'numpy', 'pytest_runner']
     run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org', '--upgrade'] + dep_packages)
 
     pb_config = None
     release_build_dir = None
-    pb_src_dir = None
-
+    pb_bin_path = None
+    pb_src_dir = os.path.join(source_dir, 'cmake', 'external', 'protobuf')
     if 'Release' in configs:
         pb_config = 'Release'
         release_build_dir = get_config_build_dir(build_dir, pb_config)
-        pb_src_dir = os.path.join(release_build_dir, 'protobuf\src\protobuf')
+        pb_bin_path = os.path.join(release_build_dir, 'external', 'protobuf','cmake', pb_config)
     elif 'RelWithDebInfo' in configs:
         pb_config = 'RelWithDebInfo'
         release_build_dir = get_config_build_dir(build_dir, pb_config)
-        pb_src_dir = os.path.join(release_build_dir, 'protobuf\src\protobuf')
+        pb_bin_path = os.path.join(release_build_dir, 'external', 'protobuf','cmake', pb_config)
     else:
         # make a protobuf release build
         pb_config = 'Release'
         release_build_dir = get_config_build_dir(build_dir, pb_config)
-        pb_build_dir = os.path.join(release_build_dir, 'protobuf\src\protobuf')
+        pb_build_dir = os.path.join(release_build_dir, 'protobuf', 'src', 'protobuf')
         os.makedirs(pb_build_dir, exist_ok=True)
-        pb_src_dir = os.path.join(get_config_build_dir(build_dir, 'Debug'), 'protobuf', 'src', 'protobuf')
-        # clean up old config
-        pb_cmake_cache = os.path.join(pb_src_dir, 'CMakeCache.txt')
-        if (os.path.isfile(pb_cmake_cache)):
-            os.remove(pb_cmake_cache)
-
-        shutil.rmtree(os.path.join(pb_src_dir, 'CMakeFiles'), ignore_errors=True)
         run_subprocess(
-            [cmake_path, os.path.join(pb_src_dir, 'cmake'), '-Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=OFF', '-T', 'host=x64',
-             '-G', 'Visual Studio 15 2017 Win64', '-Dprotobuf_BUILD_TESTS=OFF'],
+            [cmake_path, os.path.join(pb_src_dir, 'cmake'), '-Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=OFF', '-Dprotobuf_BUILD_TESTS=OFF'] + cmake_extra_args,
             cwd=pb_build_dir)
         run_subprocess([cmake_path,
                         "--build", pb_build_dir,
                         "--config", pb_config])
+        pb_bin_path = os.path.join(pb_build_dir, pb_config)
 
     # Add protoc to PATH
-    pb_bin_path = os.path.join(release_build_dir, 'protobuf\src\protobuf', pb_config)
-    print('Add %s to PATH' % pb_bin_path)
+    print('Adding %s to PATH' % pb_bin_path)
     os.environ["PATH"] += os.pathsep + pb_bin_path
     # Add cmake to PATH
-    os.environ["PATH"] += os.pathsep + os.path.dirname(cmake_path)
+    cmake_path_dir = os.path.dirname(cmake_path)
+    print('Adding %s to PATH' % cmake_path_dir)
+    os.environ["PATH"] += os.pathsep + cmake_path_dir
     os.environ["LIB"] += os.pathsep + pb_bin_path
     pb_inc_dir = os.path.join(pb_src_dir, 'src')
     print('Add %s to INCLUDE' % pb_inc_dir)
@@ -201,15 +197,21 @@ def main():
 
     log.info("Build started")
 
+    cmake_extra_args = None
+    if (args.x86):
+        cmake_extra_args = ['-G', 'Visual Studio 15 2017']
+    else:
+        cmake_extra_args = ['-T', 'host=x64', '-G', 'Visual Studio 15 2017 Win64']
+
     if (args.update):
-        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, args.enable_onnx_tests, args.use_cuda)
+        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, args.enable_onnx_tests, args.use_cuda, cmake_extra_args)
 
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel)
 
     if (args.install_onnx and sys.platform.startswith('win')):
         #try to install onnx from this source tree
-        install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir)
+        install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir, cmake_extra_args)
 
     if (args.test):
         run_tests(ctest_path, build_dir, configs, onnx_test_data_dir)

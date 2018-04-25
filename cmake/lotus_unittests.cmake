@@ -30,7 +30,9 @@ function(AddTest)
   source_group(TREE ${LOTUS_ROOT}/test FILES ${_UT_SOURCES})
   set_target_properties(${_UT_TARGET} PROPERTIES FOLDER "LotusTest")
 
-  add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
+  if (_UT_DEPENDS)
+    add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
+  endif(_UT_DEPENDS)
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
   if (WIN32)
@@ -75,7 +77,8 @@ file(GLOB lotus_test_utils_src
 
 set(lotus_test_common_libs
     lotus_common
-    ${googletest_STATIC_LIBRARIES}
+    gtest
+    gmock
 )
 
 file(GLOB lotus_test_common_src
@@ -89,15 +92,14 @@ AddTest(
     TARGET lotus_test_common
     SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
     LIBS ${lotus_test_common_libs}
-    DEPENDS googletest 
 )
 
 set(lotus_test_ir_libs
     lotusIR_graph
     ${onnx_whole_archive}
     lotus_common
-    ${protobuf_STATIC_LIBRARIES}
-    ${googletest_STATIC_LIBRARIES}
+    libprotobuf
+    gtest gmock
 )
 
 file(GLOB lotus_test_ir_src
@@ -109,7 +111,7 @@ AddTest(
     TARGET lotus_test_ir
     SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
     LIBS ${lotus_test_ir_libs}
-    DEPENDS lotusIR_graph googletest
+    DEPENDS lotusIR_graph
 )
 
 set(lotus_test_framework_libs
@@ -118,8 +120,8 @@ set(lotus_test_framework_libs
     lotusIR_graph
     ${onnx_whole_archive}
     lotus_common
-    ${protobuf_STATIC_LIBRARIES}
-    ${googletest_STATIC_LIBRARIES}
+    libprotobuf
+    gtest gmock
 )
     
 set(lotus_test_framework_src_patterns
@@ -141,7 +143,7 @@ AddTest(
     SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
     # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
-    DEPENDS lotus_framework lotus_providers googletest
+    DEPENDS lotus_framework lotus_providers
 )
 
 set(lotus_test_providers_libs
@@ -151,8 +153,8 @@ set(lotus_test_providers_libs
     lotusIR_graph
     ${onnx_whole_archive}
     lotus_common
-    ${protobuf_STATIC_LIBRARIES}
-    ${googletest_STATIC_LIBRARIES}
+    libprotobuf
+    gtest gmock
 )
 
 
@@ -169,7 +171,7 @@ if(NOT lotus_USE_CUDA)
     endif()
 endif()
 
-set (lotus_test_provides_dependencies lotus_providers googletest)
+set (lotus_test_provides_dependencies lotus_providers)
 
 if(lotus_USE_CUDA)
     list(APPEND lotus_test_provides_dependencies lotus_providers_cuda)
@@ -180,7 +182,7 @@ AddTest(
     TARGET lotus_test_providers
     SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
     LIBS ${lotus_test_providers_libs}
-  DEPENDS ${lotus_test_provides_dependencies}
+    DEPENDS ${lotus_test_provides_dependencies}
 )
 
 #
@@ -227,4 +229,4 @@ endif()
 add_executable(onnx_test_runner ${onnx_test_runner_srcs})
 target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
 add_dependencies(onnx_test_runner lotus_providers lotus_framework lotusIR_graph onnx)
-target_link_libraries(onnx_test_runner ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} lotus_common ${protobuf_STATIC_LIBRARIES}  ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(onnx_test_runner ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} lotus_common libprotobuf  ${CMAKE_THREAD_LIBS_INIT})

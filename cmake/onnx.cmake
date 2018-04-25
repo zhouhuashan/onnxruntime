@@ -16,7 +16,7 @@ file(GLOB_RECURSE onnx_exclude_src
 list(REMOVE_ITEM onnx_src ${onnx_exclude_src})
 add_library(onnx ${PROTO_SRCS} ${PROTO_HDRS} ${onnx_src})
 
-add_dependencies(onnx protobuf)
+add_dependencies(onnx libprotobuf protoc)
 
 if (WIN32)
     target_compile_options(onnx PRIVATE

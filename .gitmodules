@@ -2,3 +2,9 @@
 	path = external/onnx
 	url = https://github.com/onnx/onnx
 	branch = master
+[submodule "external/protobuf"]
+	path = cmake/external/protobuf
+	url = https://aiinfra.visualstudio.com/Lotus/_git/protobuf
+[submodule "cmake/external/googletest"]
+	path = cmake/external/googletest
+	url = https://github.com/google/googletest.git

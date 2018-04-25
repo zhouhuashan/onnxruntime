@@ -31,6 +31,12 @@ option(lotus_ENABLE_DEBUG_LOGGING "Enable debug logging (e.g., enable VLOG)" ON)
 else()
 option(lotus_ENABLE_DEBUG_LOGGING "Enable debug logging (e.g., enable VLOG)" OFF)
 endif()
+set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
+set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
+set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
+
+set(PROTOBUF_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/protobuf/src)
+set(googletest_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/googletest/googletest/include ${PROJECT_SOURCE_DIR}/external/googletest/googlemock/include)
 
 if (lotus_USE_CUDA AND "${lotus_CUDNN_HOME}" STREQUAL "")
   message(FATAL_ERROR "lotus_CUDNN_HOME required for lotus_USE_CUDA")
@@ -53,8 +59,8 @@ include(lotusIR_util.cmake)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
 include(zlib)
-include(protobuf)
-include(googletest)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/googletest)
 include(eigen)
 if (lotus_RUN_ONNX_TESTS)
   include(models)
@@ -100,8 +106,8 @@ if (WIN32)
     # compile warning level 4
     string(APPEND CMAKE_CXX_FLAGS " /W4")  
 
-    if (NOT lotus_USE_CUDA)
-    # treat warnings as errors
+    if (NOT lotus_USE_CUDA AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+      # treat warnings as errors
       add_compile_options(/WX)
       foreach(type EXE STATIC SHARED)
         set(CMAKE_${type}_LINKER_FLAGS "${CMAKE_${type}_LINKER_FLAGS} /WX")
@@ -124,10 +130,7 @@ include_directories(
     ${gsl_INCLUDE_DIR}
 )
 
-set(lotus_EXTERNAL_LIBRARIES
-    ${zlib_STATIC_LIBRARIES}
-    ${protobuf_STATIC_LIBRARIES}
-)
+set(lotus_EXTERNAL_LIBRARIES libprotobuf)
 
 if (lotus_USE_OPENBLAS)
   add_definitions(-DUSE_OPENBLAS=1)
