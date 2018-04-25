@@ -144,8 +144,10 @@ static inline NORMALIZE MakeNormalize(const std::string& input) {
     return NORMALIZE::NMAX;
   } else if (input == "L1") {
     return NORMALIZE::L1;
-  } else {
+  } else if (input == "L2") {
     return NORMALIZE::L2;
+  } else {
+    LOTUS_THROW("Invalid normalize value of ", input);
   }
 }
 
