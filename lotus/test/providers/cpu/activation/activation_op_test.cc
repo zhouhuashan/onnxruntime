@@ -29,6 +29,11 @@ std::vector<float> input_vals = {
     FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10,                        // min, denorm, -denorm
     FLT_MAX, -FLT_MAX, std::numeric_limits<float>::infinity()};  // max, -max, inf
 
+std::vector<float> no_inf_input_vals = {
+    -1.0f, 0, 1.0f,                        // normal input values for activation
+    FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10,  // min, denorm, -denorm
+    FLT_MAX, -FLT_MAX};                    // max, -max
+
 std::vector<float> exp_safe_input_vals = {
     -1.0f, 0, 1.0f,                                   // normal input values for activation
     FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10, -FLT_MAX};  // min, denorm, -denorm, -max
@@ -37,7 +42,7 @@ TEST(ActivationOpTest, Sigmoid) {
   TestUnaryElementwiseOp("Sigmoid",
                          input_vals,
                          [](float x) {
-                           auto y = 1.f / (1.f + std::exp(-abs(x)));  // safe sigmoid
+                           auto y = 1.f / (1.f + std::exp(-std::abs(x)));  // safe sigmoid
                            y = x > 0 ? y : 1 - y;
                            return y;
                          });
@@ -170,6 +175,12 @@ TEST(ActivationOpTest, Softplus) {
   TestUnaryElementwiseOp("Softplus",
                          exp_safe_input_vals,
                          [](float x) { return log(exp(x) + 1); });
+}
+
+TEST(ActivationOpTest, Softsign) {
+  TestUnaryElementwiseOp("Softsign",
+                         no_inf_input_vals,
+                         [](float x) { return x / (1 + std::abs(x)); });
 }
 
 }  // namespace Test

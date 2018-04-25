@@ -58,6 +58,13 @@ DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Sigmoid,
                                        },
                                        {})
 
+DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Softsign,
+                                       {
+                                         EIGEN_X_VAR(xm);
+                                         EIGEN_Y = (1 + xm.abs()).inverse() * xm;
+                                       },
+                                       {})
+
 DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Tanh, { EIGEN_Y = EIGEN_X.tanh(); }, {})
 
 DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu,
