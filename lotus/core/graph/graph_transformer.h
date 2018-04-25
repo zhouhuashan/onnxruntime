@@ -62,8 +62,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
   Status Apply(Graph* graph, bool* modified) const override {
     UNUSED_PARAMETER(graph);
     UNUSED_PARAMETER(modified);
-    LOTUS_NOT_IMPLEMENTED;
-    return Status::OK();
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
  private:

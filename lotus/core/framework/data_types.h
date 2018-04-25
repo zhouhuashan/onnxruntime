@@ -84,7 +84,7 @@ class TensorTypeBase : public DataTypeImpl {
 
   virtual MLDataType GetElementType() const {
     // should never reach here.
-    LOTUS_NOT_IMPLEMENTED;
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
  protected:

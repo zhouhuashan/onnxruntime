@@ -86,7 +86,7 @@ class OpKernel {
                               DoneCallback done) const {
     UNUSED_PARAMETER(context);
     UNUSED_PARAMETER(done);
-    LOTUS_NOT_IMPLEMENTED;
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   const AllocatorInfo& Allocator() const {

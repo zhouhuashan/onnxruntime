@@ -163,7 +163,7 @@ class InferenceSession::Impl {
                                                           p_seq_exec_plan.get()));
       session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
     } else {
-      LOTUS_NOT_IMPLEMENTED;
+      LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
     }
 
     LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
@@ -248,7 +248,7 @@ class InferenceSession::Impl {
       if (session_options_.enable_sequential_execution) {
         p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names, *p_fetches, run_logger);
       } else {
-        LOTUS_NOT_IMPLEMENTED;
+        LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
       }
 
       retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
@@ -624,7 +624,7 @@ class InferenceSession::Impl {
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {
     if (timeout_in_ms > 0) {
-      LOTUS_NOT_IMPLEMENTED;  // TODO
+      LOTUS_NOT_IMPLEMENTED(__FUNCTION__, "timeout_in_ms >0 is not supported");  // TODO
     } else {
       p_executor_done->WaitForNotification();
     }

@@ -14,7 +14,8 @@ namespace Lotus {
 
 class NotImplementedException : public std::logic_error {
  public:
-  NotImplementedException() noexcept : std::logic_error("Function not yet implemented"){};
+  explicit NotImplementedException(const char* _Message = "Function not yet implemented") noexcept : std::logic_error(_Message){};
+  explicit NotImplementedException(const std::string& _Message = "Function not yet implemented") noexcept : std::logic_error(_Message){};
 };
 
 class TypeMismatchException : public std::logic_error {

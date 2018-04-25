@@ -45,7 +45,7 @@ class PosixEnv : public Env {
 
   //TODO: implement this
   virtual int GetNumCpuCores() override {
-    LOTUS_NOT_IMPLEMENTED;
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   void SleepForMicroseconds(int64 micros) override {

@@ -50,11 +50,11 @@ class DummyArena : public IArenaAllocator {
   }
 
   virtual size_t Used() const override {
-    LOTUS_NOT_IMPLEMENTED;
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   virtual size_t Max() const override {
-    LOTUS_NOT_IMPLEMENTED;
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   virtual const AllocatorInfo& Info() const override {

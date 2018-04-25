@@ -75,7 +75,7 @@ std::vector<std::string> GetStackTrace();
 #define LOTUS_THROW(...) throw Lotus::LotusException(WHERE_WITH_STACK, Lotus::MakeString(__VA_ARGS__))
 
 // Just in order to mark things as not implemented. Do not use in final code.
-#define LOTUS_NOT_IMPLEMENTED LOTUS_THROW("Not Implemented.")
+#define LOTUS_NOT_IMPLEMENTED(...) throw Lotus::NotImplementedException(Lotus::MakeString(__VA_ARGS__))
 
 // Check condition.
 // NOTE: The arguments get streamed into a string via ostringstream::operator<<

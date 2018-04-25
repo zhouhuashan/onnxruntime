@@ -90,7 +90,7 @@ std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const onnx::Te
     case TensorProto_DataType_COMPLEX64:
     case TensorProto_DataType_COMPLEX128:
     default:
-      LOTUS_NOT_IMPLEMENTED;
+      LOTUS_NOT_IMPLEMENTED("Onnx type: ", expected_value.data_type(), " is not supported.");
   }
 }
 

@@ -8,9 +8,9 @@ namespace Lotus {
 class CPUTransformer : public LotusIR::GraphTransformer {
  public:
   CPUTransformer(const std::string& name)
-    : LotusIR::GraphTransformer(name, "Transformer for CPU execution provider") {
+      : LotusIR::GraphTransformer(name, "Transformer for CPU execution provider") {
   }
-  
+
   Status Apply(LotusIR::Graph* graph, bool* modified) const override {
     for (auto& node : graph->Nodes()) {
       if (graph->IsSourceNode(node) || graph->IsSinkNode(node))
@@ -30,7 +30,7 @@ class CPUTransformer : public LotusIR::GraphTransformer {
 class CPUExecutionProvider : public IExecutionProvider {
  public:
   explicit CPUExecutionProvider(const ExecutionProviderInfo& info)
-    : cpu_transformer_(info.name) {
+      : cpu_transformer_(info.name) {
   }
 
   const LotusIR::GraphTransformer& GetTransformer() const override {
@@ -46,8 +46,8 @@ class CPUExecutionProvider : public IExecutionProvider {
     UNUSED_PARAMETER(node);
     UNUSED_PARAMETER(context);
     return Common::Status(
-      LOTUS, FAIL,
-      "CPU execution provider: can not run an op of type `" + node.OpType() + "'.");
+        LOTUS, FAIL,
+        "CPU execution provider: can not run an op of type `" + node.OpType() + "'.");
   }
 
   Status CopyTensor(const Tensor& src, Tensor& dst) override {
@@ -55,7 +55,7 @@ class CPUExecutionProvider : public IExecutionProvider {
 
     // Todo: support copy with different devices.
     if (src.Location().name != CPU)
-      LOTUS_NOT_IMPLEMENTED;
+      LOTUS_NOT_IMPLEMENTED("copy to ", src.Location().name, " is not implemented");
 
     // no really copy needed if is copy to cpu.
     dst.ShallowCopy(src);

@@ -86,7 +86,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
         case TensorProto_DataType_UINT64:
           return DataTypeImpl::GetTensorType<uint64_t>();
         default:
-          LOTUS_NOT_IMPLEMENTED;
+          LOTUS_NOT_IMPLEMENTED("tensor type ", tensor_type.elem_type(), " is not supported");
       }
     } break;
     case TypeProto::ValueCase::kMapType: {
@@ -95,7 +95,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
       auto value_type = maptype.value_type();
       if (value_type.value_case() != TypeProto::ValueCase::kTensorType ||
           value_type.tensor_type().shape().dim_size() != 0) {
-        LOTUS_THROW("Nested map/sequence type is not supported");
+        LOTUS_NOT_IMPLEMENTED("Nested map/sequence type is not supported");
       }
 
       auto value_elem_type = value_type.tensor_type().elem_type();
@@ -107,7 +107,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
             case TensorProto_DataType_INT64:
               return DataTypeImpl::GetType<MapInt64ToString>();
             default:
-              LOTUS_THROW("Map with key type: ", keytype, " is not supported");
+              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
           }
         }
         case TensorProto_DataType_INT64:
@@ -117,7 +117,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
             case TensorProto_DataType_INT64:
               return DataTypeImpl::GetType<MapInt64ToInt64>();
             default:
-              LOTUS_THROW("Map with key type: ", keytype, " is not supported");
+              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
           }
         case TensorProto_DataType_FLOAT:
           switch (keytype) {
@@ -126,7 +126,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
             case TensorProto_DataType_INT64:
               return DataTypeImpl::GetType<MapInt64Float>();
             default:
-              LOTUS_THROW("Map with key type: ", keytype, " is not supported");
+              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
           }
         case TensorProto_DataType_DOUBLE:
           switch (keytype) {
@@ -135,10 +135,10 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
             case TensorProto_DataType_INT64:
               return DataTypeImpl::GetType<MapInt64Double>();
             default:
-              LOTUS_THROW("Map with key type: ", keytype, " is not supported");
+              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
           }
         default:
-          LOTUS_THROW("Map with value type: ", value_elem_type, " is not supported");
+          LOTUS_NOT_IMPLEMENTED("Map with value type: ", value_elem_type, " is not supported");
       }
     } break;
     case TypeProto::ValueCase::kSequenceType: {
@@ -146,7 +146,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
       auto val_type = seq_type.elem_type();
       if (val_type.value_case() != TypeProto::ValueCase::kTensorType ||
           val_type.tensor_type().shape().dim_size() != 0) {
-        LOTUS_THROW("Nested map/sequence type is not supported");
+        LOTUS_NOT_IMPLEMENTED("Nested map/sequence type is not supported");
       }
       auto val_elem_type = val_type.tensor_type().elem_type();
       switch (val_elem_type) {
@@ -159,11 +159,11 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
         case TensorProto_DataType_DOUBLE:
           return DataTypeImpl::GetType<VectorDouble>();
         default:
-          LOTUS_THROW("Sequence with value type: ", val_elem_type, " is not supported");
+          LOTUS_NOT_IMPLEMENTED("Sequence with value type: ", val_elem_type, " is not supported");
       }
     }
     default:
-      LOTUS_THROW("Onnx type: ", proto.value_case(), " is not supported.");
+      LOTUS_NOT_IMPLEMENTED("Onnx type: ", proto.value_case(), " is not supported.");
   }
 }
 
@@ -207,7 +207,7 @@ MLDataType DataTypeImpl::ElementTypeFromProto(onnx::TensorProto_DataType type) {
     case TensorProto_DataType_UINT64:
       return DataTypeImpl::GetType<uint64_t>();
     default:
-      LOTUS_NOT_IMPLEMENTED;
+      LOTUS_NOT_IMPLEMENTED(__FUNCTION__, ":tensor type ", type, " is not supported");
   }
 }
 
