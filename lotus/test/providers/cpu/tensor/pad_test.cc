@@ -4,7 +4,17 @@
 namespace Lotus {
 namespace Test {
 
-TEST(TensorOpTest, Pad_Constant) {
+TEST(TensorOpTest, Pad_Constant_1D) {
+  OpTester test("Pad");
+
+  test.AddAttribute("pads", std::vector<int64_t>{1, 2});
+  test.AddAttribute("value", 1234.0f);
+  test.AddInput<float>("data", {2}, {1.0f, 2.0f});
+  test.AddOutput<float>("output", {5}, {1234.0f, 1.0f, 2.0f, 1234.0f, 1234.0f});
+  test.Run();
+}
+
+TEST(TensorOpTest, Pad_Constant_2D) {
   OpTester test("Pad");
 
   test.AddAttribute("pads", std::vector<int64_t>{1, 2, 1, 2});
@@ -20,7 +30,7 @@ TEST(TensorOpTest, Pad_Constant) {
   test.Run();
 }
 
-TEST(TensorOpTest, Pad_Edge) {
+TEST(TensorOpTest, Pad_Edge_2D) {
   OpTester test("Pad");
 
   test.AddAttribute("pads", std::vector<int64_t>{2, 2, 2, 2});
@@ -71,7 +81,7 @@ TEST(TensorOpTest, Pad_Edge_3D) {
   test.Run();
 }
 
-TEST(TensorOpTest, Pad_Reflect) {
+TEST(TensorOpTest, Pad_Reflect_2D) {
   OpTester test("Pad");
 
   test.AddAttribute("pads", std::vector<int64_t>{2, 2, 2, 2});

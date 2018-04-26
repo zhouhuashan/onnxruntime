@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Test {
 
 #if 0  // These changes depent on changes to the Onnx defs.cc file (that the tiles & axis inputs are int64, not float)
-TEST(MathOpTest, Tile1D) {
+TEST(TensorOpTest, Tile1D) {
   OpTester test("Tile");
 
   test.AddInput<float>("input", {3}, {1.0f, 2.0f, 3.0f});
@@ -15,7 +15,7 @@ TEST(MathOpTest, Tile1D) {
   test.Run();
 }
 
-TEST(MathOpTest, Tile2D) {
+TEST(TensorOpTest, Tile2D) {
   OpTester test("Tile");
 
   std::vector<int64_t> dims{1, 4};
@@ -33,7 +33,7 @@ TEST(MathOpTest, Tile2D) {
   test.Run();
 }
 
-TEST(MathOpTest, Tile3D) {
+TEST(TensorOpTest, Tile3D) {
   OpTester test("Tile");
 
   test.AddInput<float>("input", {2, 1, 3},

@@ -91,6 +91,9 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
         PadAxisConstant(output, value_, pads_[axis + dimension_count]);
         output += pads_[axis + dimension_count];
 
+        if (axis == 0)  // If this is a 1D tensor, we're done
+          break;
+
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
         while (++axis_index[--axis] == input_tensor.Shape()[axis]) {
           axis_index[axis] = 0;
@@ -124,6 +127,9 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
         PadInnermostAxis(output, output - 1, 0 /* inputDelta */, pads_[axis + dimension_count]);
         output += pads_[axis + dimension_count];
 
+        if (axis == 0)  // If this is a 1D tensor, we're done
+          break;
+
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
         while (++axis_index[--axis] == input_tensor.Shape()[axis]) {
           ptrdiff_t inner_pitch = inner_pitches[axis];
@@ -156,6 +162,9 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
         PadInnermostAxis(output - size - pads_[axis], output - size + pads_[axis], -1 /* inputDelta */, pads_[axis]);
         PadInnermostAxis(output, output - pads_[axis + dimension_count], -1 /* inputDelta */, pads_[axis + dimension_count]);
         output += pads_[axis + dimension_count];
+
+        if (axis == 0)  // If this is a 1D tensor, we're done
+          break;
 
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
         while (++axis_index[--axis] == input_tensor.Shape()[axis]) {
