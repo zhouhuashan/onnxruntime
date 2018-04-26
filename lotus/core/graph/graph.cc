@@ -1,3 +1,4 @@
+
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -753,6 +754,28 @@ Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<Typ
   return Status::OK();
 }
 
+// For several operators, the output type is specified by an attribute value.
+// The following is an initial type-inference support for handling such operators.
+
+// TODO: The following should be formalized and pushed into ONNX, e.g., by
+// providing operator-specific type-inference functions. This is a temporary
+// placeholder until that happens.
+
+// GetTypeAttributeName: returns the name of the attribute that specifies the
+// type of the output if the operator has one. Returns null otherwise.
+const std::string* GetTypeAttributeName(const std::string& op_name) {
+  static const std::unordered_map<std::string, std::string> op_to_type_attribute_map{
+      {"RandomNormal", "dtype"},
+      {"RandomNormalLike", "dtype"},
+      {"RandomUniform", "dtype"},
+      {"RandomUniformLike", "dtype"},
+      {"ConstantFill", "dtype"},
+  };
+  auto find_result = op_to_type_attribute_map.find(op_name);
+  if (op_to_type_attribute_map.end() == find_result) return nullptr;
+  return &find_result->second;
+}
+
 // Implementation of type-inference and type-checking for a single node
 Status Graph::InferAndVerifyTypeMatch(Node& node,
                                       const OpSchema& op,
@@ -773,6 +796,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
     // match the formal parameter definition (i-th argument).
     for (int j = 0; j < arg_count; ++j, ++k) {
       auto& input_def = node.MutableDefinitions().input_defs[k];
+      if (!input_def->Exists()) continue;
 
       // Determine the type of the actual input parameter:
 
@@ -866,6 +890,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   // Infer and verify node output arg type information.
   int i = 0;
   for (auto& output_def : node.MutableDefinitions().output_defs) {
+    if (!output_def->Exists()) continue;
     // For each output arg.
 
     auto op_formal_parameter = op.outputs()[i];
@@ -886,18 +911,44 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
       }
     };
 
-    // Infer output arg type per input arg type if they share
-    // the same type string. For example, type string is "T"
-    // for both input arg and output arg.
+    // Infer output arg type if it is constrained to be of the same type as some input:
+    // For example, the output of "Abs" is of the same type as its input.
     auto input_types_iter = type_parameter_to_type_map.find(op_formal_parameter.GetTypeStr());
     if (type_parameter_to_type_map.end() != input_types_iter) {
       set_output_type(input_types_iter->second);
       continue;
     }
 
+    // Infer output arg type if it is specified by an attribute value.
+    // For example, the output of "RandomNormal" is specified by attribute "dtype".
+    const std::string* p_type_attribute_name = GetTypeAttributeName(node.OpType());
+    if (nullptr != p_type_attribute_name) {
+      auto find_type_attr = node.GetAttributes().find(*p_type_attribute_name);
+      if (node.GetAttributes().end() == find_type_attr) {
+        return Status(LOTUS, FAIL,
+                      "Value of attribute '" + *p_type_attribute_name + "' not specified in node (" +
+                          nodeName + ").");
+      }
+      AttributeProto_AttributeType attr_type;
+      RETURN_IF_ERROR(TypeUtils::GetType(find_type_attr->second, attr_type));
+
+      if (AttributeProto_AttributeType::AttributeProto_AttributeType_INT == attr_type) {
+        auto elem_type = gsl::narrow_cast<TensorProto_DataType>(find_type_attr->second.i());
+        TypeProto type_proto;
+        type_proto.mutable_tensor_type()->set_elem_type(elem_type);
+        set_output_type(DataTypeUtils::ToType(type_proto));
+        continue;
+      } else {
+        return Status(LOTUS, FAIL,
+                      "Attribute '" + *p_type_attribute_name + "' in node (" + nodeName +
+                          ") has wrong type. It should be of int type.");
+      }
+    }
+
     if (type_parameter_to_type_map.empty()) {
-      // There's no input arg.
-      // The output should be read from an attribute named kConstantValue.
+      // Infer the output type from the type of the value of attribute named kConstantValue.
+      // TODO: We should be doing this only for operators where this is appropriate
+      // (e.g., the "Constant" operator).
 
       auto node_attributes_iter = node.GetAttributes().find(kConstantValue);
       if (node.GetAttributes().end() == node_attributes_iter) {

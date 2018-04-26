@@ -461,5 +461,40 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   //delete output_arg;
 }
 
+void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, int64_t attr_value) {
+  AttributeProto attr;
+  attr.set_name(attr_name);
+  attr.set_type(AttributeProto_AttributeType_INT);
+  attr.set_i(attr_value);
+  p_node->AddAttribute(attr_name, attr);
+}
+
+void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, std::initializer_list<int64_t> attr_value) {
+  AttributeProto attr;
+  attr.set_name(attr_name);
+  attr.set_type(AttributeProto_AttributeType_INTS);
+  for (auto v : attr_value) {
+    attr.add_ints(v);
+  }
+  p_node->AddAttribute(attr_name, attr);
+}
+
+// Test that output type can be inferred for ops with a type-attribute
+TEST(TypeInferenceTest, TypeAttribute) {
+  std::vector<NodeArg *> inputs;
+  std::vector<NodeArg *> outputs;
+  // NodeAttributes attributes;
+  Model model("graph_1");
+  auto graph = model.MainGraph();
+  NodeArg *output_arg = new NodeArg("node_1_out_1", nullptr);
+  outputs.push_back(output_arg);
+  auto node_1 = graph->AddNode("node_1", "RandomNormal", "node 1.", inputs, outputs);
+  AddAttribute(node_1, "dtype", TensorProto_DataType_FLOAT);
+  AddAttribute(node_1, "shape", {2, 3});
+  auto status = graph->Resolve();
+  EXPECT_TRUE(status.IsOK());
+  // delete output_arg;
+}
+
 }  // namespace Test
 }  // namespace LotusIR
