@@ -126,6 +126,10 @@ struct TTypeProto : TypeProto {
   }
 };
 
+// Variable template for TensorProto_DataTypes, s_type_proto<float>, etc..
+template <typename T>
+const TTypeProto<T> s_type_proto;
+
 //TypeProto for map<TKey, TVal>
 template <typename TKey, typename TVal>
 struct MTypeProto : TypeProto {
@@ -136,12 +140,22 @@ struct MTypeProto : TypeProto {
   }
 };
 
-// Variable template for TensorProto_DataTypes, s_type_proto<float>, etc..
-template <typename T>
-const TTypeProto<T> s_type_proto;
-
 template <typename TKey, typename TVal>
 const MTypeProto<TKey, TVal> s_map_type_proto;
+
+//TypeProto for vector<map<TKey, TVal>>
+template <typename TKey, typename TVal>
+struct VectorOfMapTypeProto : TypeProto {
+  VectorOfMapTypeProto() {
+    auto* map_type = mutable_sequence_type()->mutable_elem_type()->mutable_map_type();
+    map_type->set_key_type(TypeToDataType<TKey>());
+    map_type->mutable_value_type()->mutable_tensor_type()->set_elem_type(TypeToDataType<TVal>());
+    map_type->mutable_value_type()->mutable_tensor_type()->mutable_shape()->clear_dim();
+  }
+};
+
+template <typename TKey, typename TVal>
+const VectorOfMapTypeProto<TKey, TVal> s_vec_map_type_proto;
 
 // To use OpTester:
 //  1. Create one with the op name
@@ -186,6 +200,17 @@ struct OpTester {
   template <typename T>
   void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& expected_values) {
     AddData(output_data_, name, dims, expected_values.data(), expected_values.size());
+  }
+
+  // Add non tensor output
+  template <typename TKey, typename TVal>
+  void AddOutput(const char* name, const std::vector<std::map<TKey, TVal>>& val) {
+    auto ptr = make_unique<std::vector<std::map<TKey, TVal>>>(val);
+    MLValue ml_value;
+    ml_value.Init(ptr.release(),
+                  DataTypeImpl::GetType<std::vector<std::map<TKey, TVal>>>(),
+                  DataTypeImpl::GetType<std::vector<std::map<TKey, TVal>>>()->GetDeleteFunc());
+    output_data_.push_back({{name, &s_vec_map_type_proto<TKey, TVal>}, ml_value});
   }
 
   void SetOutputAbsErr(const char* name, float v);
@@ -263,6 +288,9 @@ struct OpTester {
   // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
   template <typename T>
   void Check(const Data& output_data, const Tensor& output_tensor, size_t size);
+
+  template <typename T>
+  void Check(const Data& output_data, const T& run_output);
 
   const char* op_;
   const char* domain_;

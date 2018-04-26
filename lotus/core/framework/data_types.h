@@ -8,6 +8,24 @@
 using namespace onnx;
 
 namespace Lotus {
+//maps
+using MapStringToString = std::map<std::string, std::string>;
+using MapStringToInt64 = std::map<std::string, int64_t>;
+using MapStringToFloat = std::map<std::string, float>;
+using MapStringToDouble = std::map<std::string, double>;
+using MapInt64ToString = std::map<int64_t, std::string>;
+using MapInt64ToInt64 = std::map<int64_t, int64_t>;
+using MapInt64ToFloat = std::map<int64_t, float>;
+using MapInt64ToDouble = std::map<int64_t, double>;
+
+//vectors/sequences
+using VectorString = std::vector<std::string>;
+using VectorInt64 = std::vector<int64_t>;
+using VectorFloat = std::vector<float>;
+using VectorDouble = std::vector<double>;
+using VectorMapStringToFloat = std::vector<MapStringToFloat>;
+using VectorMapInt64ToFloat = std::vector<MapInt64ToFloat>;
+
 class DataTypeImpl;
 class TensorTypeBase;
 // DataTypeImpl pointer as unique DataTypeImpl identifier.

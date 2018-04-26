@@ -26,6 +26,11 @@ void OpTester::Check(const Data& output_data, const Tensor& output_tensor, size_
   }
 }
 
+template <typename T>
+void OpTester::Check(const Data& output_data, const T& run_output) {
+  EXPECT_EQ(output_data.data_.Get<T>(), run_output);
+}
+
 template <>
 void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor, size_t size) {
   auto& expected_tensor = output_data.data_.Get<Tensor>();
@@ -195,40 +200,53 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     // Todo: support check output with map/sequence/....
     int idx = 0;
     for (auto& output : output_data_) {
-      LOTUS_ENFORCE(output.data_.IsTensor());
-      auto& output_tensor = output.data_.Get<Tensor>();
       MLValue& mlvalue = fetches[idx];
-      auto& result_tensor = mlvalue.Get<Tensor>();
-      LOTUS_ENFORCE(output_tensor.Shape() == result_tensor.Shape(), "Output shape did not match expected output shape");
-      auto size = output_tensor.Shape().Size();
+      if (output.data_.IsTensor()) {
+        LOTUS_ENFORCE(output.data_.IsTensor());
+        auto& output_tensor = output.data_.Get<Tensor>();
+        auto& run_output = mlvalue.Get<Tensor>();
+        LOTUS_ENFORCE(output_tensor.Shape() == run_output.Shape(), "Output shape did not match expected output shape");
+        auto size = output_tensor.Shape().Size();
 
-      // Dispatch on the type
-      auto type = output_tensor.DataType();
+        // Dispatch on the type
+        auto type = output_tensor.DataType();
 
-      if (type == DataTypeImpl::GetType<float>()) {
-        Check<float>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<bool>()) {
-        Check<bool>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<int64_t>()) {
-        Check<int64_t>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<double>()) {
-        Check<double>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<uint8_t>()) {
-        Check<uint8_t>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<uint16_t>()) {
-        Check<uint16_t>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<uint32_t>()) {
-        Check<uint32_t>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<uint64_t>()) {
-        Check<uint64_t>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<int16_t>()) {
-        Check<int16_t>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<int32_t>()) {
-        Check<int32_t>(output, result_tensor, size);
-      } else if (type == DataTypeImpl::GetType<std::string>()) {
-        Check<std::string>(output, result_tensor, size);
+        if (type == DataTypeImpl::GetType<float>()) {
+          Check<float>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<bool>()) {
+          Check<bool>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<int64_t>()) {
+          Check<int64_t>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<double>()) {
+          Check<double>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<uint8_t>()) {
+          Check<uint8_t>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<uint16_t>()) {
+          Check<uint16_t>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<uint32_t>()) {
+          Check<uint32_t>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<uint64_t>()) {
+          Check<uint64_t>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<int16_t>()) {
+          Check<int16_t>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<int32_t>()) {
+          Check<int32_t>(output, run_output, size);
+        } else if (type == DataTypeImpl::GetType<std::string>()) {
+          Check<std::string>(output, run_output, size);
+        } else {
+          LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
+        }
       } else {
-        LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
+        auto ml_type = output.data_.Type();
+        if (ml_type == DataTypeImpl::GetType<std::vector<std::map<std::string, float>>>()) {
+          auto& run_output = mlvalue.Get<std::vector<std::map<std::string, float>>>();
+          Check<std::vector<std::map<std::string, float>>>(output, run_output);
+        } else if (ml_type == DataTypeImpl::GetType<std::vector<std::map<int64_t, float>>>()) {
+          auto& run_output = mlvalue.Get<std::vector<std::map<int64_t, float>>>();
+          Check<std::vector<std::map<int64_t, float>>>(output, run_output);
+        } else {
+          LOTUS_THROW("OpTester:Check() not implemented for output type of ", ml_type);
+        }
       }
       ++idx;
     }

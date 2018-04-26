@@ -21,6 +21,38 @@ struct MLValueAllocationParameters {
   //todo: is there any parameter needed for ml types?
 };
 
+template <typename T>
+inline void VerifyShape(const T* value,
+                        const MLValue* p_mlvalue,
+                        const MLValueAllocationParameters& parameters) {
+  if (p_mlvalue->IsTensor()) {
+    const Tensor* tensor = static_cast<const Tensor*>(value);
+    if (tensor->Shape() != parameters.tensor_shape) {
+      LOTUS_THROW("MLValue shape verification failed.");
+    }
+  }
+}
+
+template <>
+inline void VerifyShape<VectorMapStringToFloat>(const VectorMapStringToFloat* value,
+                                                const MLValue* p_mlvalue,
+                                                const MLValueAllocationParameters& parameters) {
+  // no verification needed in this case.
+  UNUSED_PARAMETER(value);
+  UNUSED_PARAMETER(p_mlvalue);
+  UNUSED_PARAMETER(parameters);
+}
+
+template <>
+inline void VerifyShape<VectorMapInt64ToFloat>(const VectorMapInt64ToFloat* value,
+                                               const MLValue* p_mlvalue,
+                                               const MLValueAllocationParameters& parameters) {
+  // no verification needed in this case.
+  UNUSED_PARAMETER(value);
+  UNUSED_PARAMETER(p_mlvalue);
+  UNUSED_PARAMETER(parameters);
+}
+
 class ExecutionFrame {
  public:
   typedef MLValue* NodeArgValue;
@@ -172,15 +204,9 @@ class ExecutionFrame {
 
     if (p_mlvalue->IsAllocated()) {
       // The ml has already been allocated.
-      // TODO: Check if the allocated mlvalue consistent with given parameter.
       // Now only tensor need to be check.
-      T* value = p_mlvalue->template GetMutable<T>();
-      if (p_mlvalue->IsTensor()) {
-        Tensor* tensor = static_cast<Tensor*>(value);
-        if (tensor->Shape() != parameters.tensor_shape) {
-          LOTUS_THROW("MLValue shape verification failed.");
-        }
-      }
+      T* value = p_mlvalue->GetMutable<T>();
+      VerifyShape<T>(value, p_mlvalue, parameters);  // TODO find a better way to do this
       return value;
     } else {
       // It's not allocated, then allocate it with given shape and return.
