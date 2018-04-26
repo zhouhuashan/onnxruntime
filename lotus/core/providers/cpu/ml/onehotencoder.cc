@@ -35,9 +35,9 @@ namespace ML {
 REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
                     .Domain(LotusIR::kMLDomain)
                     .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)               
-	          				.TypeConstraint("T", { DataTypeImpl::GetTensorType<int64_t>() }),
-				        OneHotEncoderOp<int64_t>);
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<int64_t>()}),
+                OneHotEncoderOp<int64_t>);
 
 /*
 REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
@@ -48,79 +48,78 @@ REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
                 OneHotEncoderOp<int>);
 
 REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
-  .Domain(LotusIR::kMLDomain)
-  .SinceVersion(1)
-  .Provider(LotusIR::kCpuExecutionProvider)
-  .TypeConstraint("T", { DataTypeImpl::GetTensorType<double>() }),
-  OneHotEncoderOp<double>);
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", { DataTypeImpl::GetTensorType<double>() }),
+                OneHotEncoderOp<double>);
 
 REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
-  .Domain(LotusIR::kMLDomain)
-  .SinceVersion(1)
-  .Provider(LotusIR::kCpuExecutionProvider)
-  .TypeConstraint("T", { DataTypeImpl::GetTensorType<std::string>() }),
-  OneHotEncoderOp<std::string>);
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", { DataTypeImpl::GetTensorType<std::string>() }),
+                OneHotEncoderOp<std::string>);
 */
 
 template <typename T>
-OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(1), category_(0) {
-  info.GetAttrs<int64_t>("cats_int64s", cats_int64s_);    // optional
-  info.GetAttrs<string>("cats_strings", cats_strings_);    // optional
-  info.GetAttr<int64_t>("zeros", &zeros_);  // optional
+OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(1), num_category_(0) {
+  std::vector<int64_t> tmp_cats_int64s;
+  std::vector<std::string> tmp_cats_strings;
+  info.GetAttrs<int64_t>("cats_int64s", tmp_cats_int64s);   // optional
+  info.GetAttrs<string>("cats_strings", tmp_cats_strings);  // optional
+  info.GetAttr<int64_t>("zeros", &zeros_);                  // optional
 
-  LOTUS_ENFORCE(cats_int64s_.empty() || cats_strings_.empty());
-  if (!cats_int64s_.empty()) category_ = cats_int64s_.size();
-  else category_ = cats_strings_.size();
-  LOTUS_ENFORCE(category_ > 0);
+  LOTUS_ENFORCE(tmp_cats_int64s.empty() || tmp_cats_strings.empty());
+  if (!tmp_cats_int64s.empty()) {
+    num_category_ = tmp_cats_int64s.size();
+    for (size_t idx = 0; idx < tmp_cats_int64s.size(); ++idx) {
+      cats_int64s_[tmp_cats_int64s[idx]] = idx;
+    }
+  } else {
+    num_category_ = tmp_cats_strings.size();
+    for (size_t idx = 0; idx < tmp_cats_strings.size(); ++idx) {
+      cats_strings_[tmp_cats_strings[idx]] = idx;
+    }
+  }
+  LOTUS_ENFORCE(num_category_ > 0);
 }
 
-template<typename T>
-std::vector<int64_t> OneHotEncoderOp<T>::InferOutputSize(const TensorShape& input_shape) const
-{  
+template <typename T>
+std::vector<int64_t> OneHotEncoderOp<T>::InferOutputSize(const TensorShape& input_shape) const {
   std::vector<int64_t> ret = input_shape.GetDims();
-  ret.push_back(category_);
+  ret.push_back(num_category_);
   return ret;
 }
 
-
-
 template <typename T>
-Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {	
-  const Tensor* X = context->Input<Tensor>(0);  
+Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
+  const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& input_shape = X->Shape();
   LOTUS_ENFORCE(input_shape.NumDimensions() <= 2);
-  
+
   auto output_shape = InferOutputSize(input_shape);
   Tensor* Y = context->Output(0, TensorShape(output_shape));
-  
-  if (context->InputType(0) == DataTypeImpl::GetType<std::string>())
-  {
-    // TODO: Handle String type
-  }
-  else
-  {    
-    auto x_data = X->Data<T>();
-    auto y_data = Y->MutableData<float>();    
-    int64_t count = 0;
-    
-    for (int64_t i = 0; i < input_shape.Size(); ++i)
-    {
-      bool found = false;
-      for (int64_t j = 0; j < category_; ++j)
-        if (static_cast<int64_t>(x_data[i]) == cats_int64s_[j])
-        {
-          y_data[count++] = 1.0f;
-          found = true;
-        }
-        else
-        {
-          y_data[count++] = 0.0f;
-        }
+  auto y_data = Y->MutableData<float>();
+  std::fill_n(y_data, Y->Shape().Size(), 0.0f);
 
-      if (!found && !zeros_)
-      {
-        return Status(LOTUS, FAIL, "Unknown Category and zeros = 0..");
-      }
+  if (!cats_strings_.empty()) {
+    auto x_data = X->Data<std::string>();
+    std::unordered_map<std::string, size_t>::const_iterator idx;
+    for (int64_t i = 0; i < input_shape.Size(); ++i) {
+      if ((idx = cats_strings_.find(x_data[i])) != cats_strings_.end())
+        y_data[i * num_category_ + idx->second] = 1.0f;
+      else if (!zeros_)
+        return Status(LOTUS, FAIL, "Unknown Category and zeros = 0.");
+    }
+  } else {
+    auto x_data = X->Data<T>();
+    std::unordered_map<int64_t, size_t>::const_iterator idx;
+    for (int64_t i = 0; i < input_shape.Size(); ++i) {
+      if ((idx = cats_int64s_.find(static_cast<int64_t>(x_data[i]))) != cats_int64s_.end())
+        y_data[i * num_category_ + idx->second] = 1.0f;
+      else if (!zeros_)
+        return Status(LOTUS, FAIL, "Unknown Category and zeros = 0.");
     }
   }
   return Status::OK();
