@@ -15,6 +15,66 @@ DeleteFunc TensorTypeBase::GetDeleteFunc() const {
   return &Delete<Tensor>;
 }
 
+template <>
+bool TensorType<float>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_FLOAT;
+}
+
+template <>
+bool TensorType<double>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_DOUBLE;
+}
+
+template <>
+bool TensorType<std::string>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_STRING;
+}
+
+template <>
+bool TensorType<int>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT32;
+}
+
+template <>
+bool TensorType<bool>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_BOOL;
+}
+
+template <>
+bool TensorType<int8_t>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT8;
+}
+
+template <>
+bool TensorType<int16_t>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT16;
+}
+
+template <>
+bool TensorType<uint8_t>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT8;
+}
+
+template <>
+bool TensorType<uint16_t>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT16;
+}
+
+template <>
+bool TensorType<uint32_t>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT32;
+}
+
+template <>
+bool TensorType<int64_t>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT64;
+}
+
+template <>
+bool TensorType<uint64_t>::IsCompatible(const TypeProto& type_proto) const {
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT64;
+}
+
 LOTUS_REGISTER_TENSOR_TYPE(int);
 LOTUS_REGISTER_TENSOR_TYPE(float);
 LOTUS_REGISTER_TENSOR_TYPE(bool);
@@ -159,11 +219,11 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
         case TensorProto_DataType_DOUBLE:
           return DataTypeImpl::GetType<VectorDouble>();
         default:
-          LOTUS_NOT_IMPLEMENTED("Sequence with value type: ", val_elem_type, " is not supported");
+          throw Lotus::NotImplementedException(Lotus::MakeString("Sequence with value type: ", val_elem_type, " is not supported"));
       }
     }
     default:
-      LOTUS_NOT_IMPLEMENTED("Onnx type: ", proto.value_case(), " is not supported.");
+      throw Lotus::NotImplementedException(Lotus::MakeString("Onnx type: ", proto.value_case(), " is not supported."));
   }
 }
 

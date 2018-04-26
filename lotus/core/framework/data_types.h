@@ -24,18 +24,14 @@ class DataTypeImpl {
  public:
   virtual ~DataTypeImpl() {}
 
-  virtual bool IsCompatible(const TypeProto& type_proto) const {
-    // TODO: this API will be used to check type in runtime really
-    // matches type defined in a model.
-    // 1) This should be overriden by sub-classes and have detail check implementation.
-    // 2) The reason is checking compatibility is because one runtime type may be
-    // able to represent multiple type protos, for example, "float" could match float16, float.
-    // 3) After sub-class having the implementation of this function in-place, we should either
-    // change the return value from true to false here or make this function as a pure virtual function.
-    UNUSED_PARAMETER(type_proto);
-    return true;
-  }
-
+  // TODO: this API will be used to check type in runtime really
+  // matches type defined in a model.
+  // 1) This should be overriden by sub-classes and have detail check implementation.
+  // 2) The reason is checking compatibility is because one runtime type may be
+  // able to represent multiple type protos, for example, "float" could match float16, float.
+  // 3) After sub-class having the implementation of this function in-place, we should either
+  // change the return value from true to false here or make this function as a pure virtual function.
+  virtual bool IsCompatible(const TypeProto& type_proto) const = 0;
   virtual const size_t Size() const = 0;
 
   virtual DeleteFunc GetDeleteFunc() const = 0;
@@ -86,6 +82,9 @@ class TensorTypeBase : public DataTypeImpl {
     // should never reach here.
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
+  virtual bool IsCompatible(const TypeProto&) const override {
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  }
 
  protected:
   TensorTypeBase() = default;
@@ -101,6 +100,7 @@ struct TensorType : public TensorTypeBase {
   virtual MLDataType GetElementType() const {
     return DataTypeImpl::GetType<elemT>();
   }
+  virtual bool IsCompatible(const TypeProto& type_proto) const override;
 
  private:
   TensorType() = default;
@@ -113,6 +113,10 @@ class NonTensorTypeBase : public DataTypeImpl {
   virtual DeleteFunc GetDeleteFunc() const = 0;
 
   virtual CreateFunc GetCreateFunc() const = 0;
+  virtual bool IsCompatible(const TypeProto&) const override {
+    //TODO: Implement this function for DictVectorizerOp and the others
+    return true;
+  }
 
  protected:
   NonTensorTypeBase() = default;
