@@ -9,12 +9,12 @@ class AveragePool {
   }
 
   template <typename T>
-  static void Process(const T& x_data, T& y_data) {
+  static void Process(const T& x_data, T& y_data, const PoolProcessContext& /*cxt*/) {
     y_data += x_data;
   }
 
   template <typename T>
-  static void Finalize(const int64_t size, T& y_data) {
+  static void Finalize(const int64_t size, T& y_data, const PoolProcessContext& /*cxt*/) {
     y_data /= size;
   }
 };
@@ -26,14 +26,31 @@ class MaxPool {
   }
 
   template <typename T>
-  static void Process(const T& x_data, T& y_data) {
+  static void Process(const T& x_data, T& y_data, const PoolProcessContext& /*cxt*/) {
     if (x_data > y_data) {
       y_data = x_data;
     }
   }
 
   template <typename T>
-  static void Finalize(const int64_t /*size*/, T& /*y_data*/) {}
+  static void Finalize(const int64_t /*size*/, T& /*y_data*/, const PoolProcessContext& /*cxt*/) {}
+};
+
+class LpPool {
+ public:
+  static float Initialize() {
+    return 0.0f;
+  }
+
+  template <typename T>
+  static void Process(const T& x_data, T& y_data, const PoolProcessContext& cxt) {
+    y_data += static_cast<T>(std::pow(std::abs(x_data), cxt.p_));
+  }
+
+  template <typename T>
+  static void Finalize(const int64_t /*size*/, T& y_data, const PoolProcessContext& cxt) {
+    y_data = static_cast<T>(std::pow(y_data, 1.0f / cxt.p_));
+  }
 };
 
 template <typename T, typename PoolType>
@@ -82,9 +99,9 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
             hstart = std::max(hstart, static_cast<int64_t>(0));
             T Yh = PoolType::Initialize();
             for (int64_t h = hstart; h < hend; ++h) {
-              PoolType::Process(Xdata[h], Yh);
+              PoolType::Process(Xdata[h], Yh, pool_context_);
             }
-            PoolType::Finalize(hend - hstart, Yh);
+            PoolType::Finalize(hend - hstart, Yh, pool_context_);
             Ydata[ph] = Yh;
           }
           // Do offset.
@@ -109,10 +126,10 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
               for (int64_t h = hstart; h < hend; ++h) {
                 for (int64_t w = wstart; w < wend; ++w) {
                   const int64_t input_index = h * width + w;
-                  PoolType::Process(Xdata[input_index], Yh);
+                  PoolType::Process(Xdata[input_index], Yh, pool_context_);
                 }
               }
-              PoolType::Finalize((hend - hstart) * (wend - wstart), Yh);
+              PoolType::Finalize((hend - hstart) * (wend - wstart), Yh, pool_context_);
               Ydata[pool_index] = Yh;
             }
           }
@@ -144,12 +161,12 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
                   for (int64_t w = wstart; w < wend; ++w) {
                     for (int64_t d = dstart; d < dend; ++d) {
                       const int64_t input_index = h * width * depth + w * depth + d;
-                      PoolType::Process(Xdata[input_index], Yh);
+                      PoolType::Process(Xdata[input_index], Yh, pool_context_);
                     }
                   }
                 }
                 PoolType::Finalize(
-                    (hend - hstart) * (wend - wstart) * (dend - dstart), Yh);
+                    (hend - hstart) * (wend - wstart) * (dend - dstart), Yh, pool_context_);
                 Ydata[pool_index] = Yh;
               }
             }
@@ -180,6 +197,20 @@ REGISTER_KERNEL(KernelDefBuilder("MaxPool")
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Pool<float, MaxPool>);
+
+REGISTER_KERNEL(KernelDefBuilder("LpPool")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Pool<float, LpPool>);
+
+REGISTER_KERNEL(KernelDefBuilder("GlobalLpPool")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(2)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Pool<float, LpPool>);
 
 REGISTER_KERNEL(KernelDefBuilder("GlobalAveragePool")
                     .Domain(LotusIR::kOnnxDomain)
