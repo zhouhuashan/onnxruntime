@@ -21,4 +21,5 @@ const AllocatorInfo& CPUAllocator::Info() const {
   static AllocatorInfo cpuAllocatorInfo(CPU, AllocatorType::kDeviceAllocator);
   return cpuAllocatorInfo;
 }
+
 }  // namespace Lotus

@@ -68,12 +68,20 @@ AllocatorManager& AllocatorManager::Instance() {
 }
 
 Status AllocatorManager::InitializeAllocators() {
-  //right now we only have cpu allocator;
+  //right now we  have cpu and cuda allocators;
   //TODO: set correct cpu memory limit?
   static const size_t cpu_memory_limit = std::numeric_limits<size_t>::max();
+  static const size_t cuda_memory_limit = std::numeric_limits<size_t>::max();
 
   auto allocator = std::unique_ptr<IDeviceAllocator>(std::make_unique<CPUAllocator>());
   auto status = RegisterBFCArena(arena_map_, std::move(allocator), cpu_memory_limit);
+
+#ifdef USECUDA
+  if (status.IsOK()) {
+    auto cuda_allocator = std::unique_ptr<IDeviceAllocator>(std::make_unique<CUDAAllocator>());
+    status = RegisterBFCArena(arena_map_, std::move(cuda_allocator), cuda_memory_limit);
+  }
+#endif  // lotus_USE_CUDA
 
   return status;
 }

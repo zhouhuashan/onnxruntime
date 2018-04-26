@@ -157,6 +157,8 @@ if (lotus_USE_CUDA)
     endif()
     list(APPEND lotus_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
     list(APPEND lotus_EXTERNAL_DEPENDENCIES cub)
+
+    add_definitions(-DUSECUDA)
 endif()
 
 include(lotus_common.cmake)

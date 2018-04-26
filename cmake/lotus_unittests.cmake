@@ -35,10 +35,11 @@ function(AddTest)
   endif(_UT_DEPENDS)
   target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
+  
   if (WIN32)
-    target_compile_options(${_UT_TARGET} PRIVATE
-        /EHsc   # exception handling - C++ may throw, extern "C" will not
-    )
+    #It's cmake bug, cannot add this compile option for cuda compiler
+    #(https://gitlab.kitware.com/cmake/cmake/issues/17535)
+    string(APPEND CMAKE_CXX_FLAGS " /EHsc") # exception handling - C++ may throw, extern "C" will not
   endif()
 
   # Add the define for conditionally using the framework Environment class in TestEnvironment
@@ -136,6 +137,11 @@ if(WIN32)
          "${LOTUS_ROOT}/test/platform/windows/logging/*.cc" )
 endif()
 
+if(lotus_USE_CUDA)
+    list(APPEND lotus_test_framework_src_patterns  ${LOTUS_ROOT}/test/framework/*.cu)  
+    list(APPEND lotus_test_framework_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+endif()
+
 file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 
 AddTest(
@@ -229,4 +235,8 @@ endif()
 add_executable(onnx_test_runner ${onnx_test_runner_srcs})
 target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
 add_dependencies(onnx_test_runner lotus_providers lotus_framework lotusIR_graph onnx)
-target_link_libraries(onnx_test_runner ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} lotus_common libprotobuf  ${CMAKE_THREAD_LIBS_INIT})
+set(onnx_test_lib ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} lotus_common libprotobuf ${CMAKE_THREAD_LIBS_INIT} )
+if(lotus_USE_CUDA)
+  list(APPEND onnx_test_lib ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+endif()
+target_link_libraries(onnx_test_runner ${onnx_test_lib})

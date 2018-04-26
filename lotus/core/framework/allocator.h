@@ -8,6 +8,7 @@
 
 namespace Lotus {
 #define CPU "CPU"
+#define CUDA "CUDA"
 
 enum AllocatorType {
   kDeviceAllocator = 0,
@@ -32,12 +33,12 @@ struct AllocatorInfo {
 
   // To make AllocatorInfo become a valid key in std map
   inline bool operator<(const AllocatorInfo& other) const {
-      if (type != other.type)
-          return type < other.type;
-      else if (id != other.id)
-          return id < other.id;
-      else
-          return name < other.name;
+    if (type != other.type)
+      return type < other.type;
+    else if (id != other.id)
+      return id < other.id;
+    else
+      return name < other.name;
   }
 };
 
@@ -65,4 +66,13 @@ class CPUAllocator : public IDeviceAllocator {
   virtual void Free(void* p) override;
   virtual const AllocatorInfo& Info() const override;
 };
+
+#ifdef USECUDA
+class CUDAAllocator : public IDeviceAllocator {
+ public:
+  virtual void* Alloc(size_t size) override;
+  virtual void Free(void* p) override;
+  virtual const AllocatorInfo& Info() const override;
+};
+#endif
 }  // namespace Lotus
