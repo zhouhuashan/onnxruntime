@@ -69,6 +69,9 @@ std::string Status::ToString() const {
       case NOT_IMPLEMENTED:
         msg = "NOT_IMPLEMENTED";
         break;
+      case INVALID_GRAPH:
+        msg = "INVALID_GRAPH";
+        break;
       default:
         msg = "GENERAL ERROR";
         break;

@@ -30,6 +30,7 @@ enum StatusCode {
   INVALID_PROTOBUF = 7,
   MODEL_LOADED = 8,
   NOT_IMPLEMENTED = 9,
+  INVALID_GRAPH = 10,
 };
 
 class Status {
