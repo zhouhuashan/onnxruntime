@@ -34,6 +34,7 @@ def parse_arguments():
     parser.add_argument("--parallel", action='store_true', help="Use parallel build.")
     parser.add_argument("--test", action='store_true', help="Run unit tests.")
     parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
+    parser.add_argument("--skip_submodule_sync", action='store_true', help="Don't do a 'git submodule update'.")
 
     return parser.parse_args()
 
@@ -48,6 +49,8 @@ def run_subprocess(args, cwd=None):
     log.debug("Running subprocess: \n%s", args)
     subprocess.run(args, cwd=cwd, check=True)
 
+def update_submodules(source_dir):
+    run_subprocess("git submodule update --init --recursive", cwd=source_dir)
 
 def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, cmake_extra_args):
     log.info("Generating CMake build tree")
@@ -184,7 +187,7 @@ def main():
     build_dir = args.build_dir
     cudnn_home = args.cudnn_home
     script_dir = os.path.realpath(os.path.dirname(__file__))
-    source_dir = os.path.join(script_dir, "..", "..")
+    source_dir = os.path.normpath(os.path.join(script_dir, "..", ".."))
 
     # directory that ONNX test data is created in if this script is run with --install_onnx
     # If the directory exists and looks valid we assume ONNX is installed and run tests
@@ -204,7 +207,11 @@ def main():
         cmake_extra_args = ['-T', 'host=x64', '-G', 'Visual Studio 15 2017 Win64']
 
     if (args.update):
-        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, args.enable_onnx_tests, args.use_cuda, cmake_extra_args)
+        if (not args.skip_submodule_sync):
+            update_submodules(source_dir)
+			
+        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines,
+                            args.enable_onnx_tests, args.use_cuda, cmake_extra_args)
 
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel)
