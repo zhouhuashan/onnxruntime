@@ -21,11 +21,15 @@ typedef const char * MLConstStringParam;
 // TODO - Consider using this directly in Lotus and merging error handling
 class MLStatusException : public std::exception {
  public:
-  MLStatusException(const MLStatus& status) : status_(status), std::exception(MLStatusToString(status)) {
+  MLStatusException(const MLStatus& status) : status_(status) {
   }
 
   MLStatus GetStatus() const noexcept{
     return status_;
+  }
+
+  const char* what() const noexcept override {
+    return MLStatusToString(status_);
   }
 
  private:

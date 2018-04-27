@@ -106,10 +106,10 @@ MLStatus OpKernelInfoWrapper::GetAttributeArrayHelper(
     uint32_t element_count,
     uint32_t element_byte_size,
     void* values) const {
-  typedef MLAttributeArrayTypeTraits<T>::Type elementType_t;
+  typedef typename MLAttributeArrayTypeTraits<T>::Type elementType_t;
   ML_CHECK_BOOL(sizeof(elementType_t) == element_byte_size);
 
-  ML_CHECK_STATUS(ToABIStatus(impl_->GetAttrs(name, gsl::span<elementType_t>(static_cast<MLAttributeArrayTypeTraits<T>::Type*>(values), element_count))));
+  ML_CHECK_STATUS(ToABIStatus(impl_->GetAttrs(name, gsl::span<elementType_t>(static_cast<typename MLAttributeArrayTypeTraits<T>::Type*>(values), element_count))));
   return MLStatus::OK;
 }
 
@@ -221,9 +221,9 @@ MLStatus OpKernelInfoWrapper::GetAttributeHelper(
     const char* name,
     uint32_t element_byte_size,
     void* value) const {
-  typedef MLAttributeTypeTraits<T>::Type elementType_t;
+  typedef typename MLAttributeTypeTraits<T>::Type elementType_t;
   ML_CHECK_BOOL(sizeof(elementType_t) == element_byte_size);
-  return ToABIStatus(impl_->GetAttr<MLAttributeTypeTraits<T>::Type>(name, static_cast<elementType_t*>(value)));
+  return ToABIStatus(impl_->GetAttr<typename MLAttributeTypeTraits<T>::Type>(name, static_cast<elementType_t*>(value)));
 }
 
 TensorWrapper::TensorWrapper(Tensor* impl) : impl_(impl) {
