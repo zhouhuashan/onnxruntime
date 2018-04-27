@@ -42,6 +42,8 @@ inline const char *MLStatusToString(MLStatus status)
     return "MODEL_LOADED";
   case MLStatus::NOT_IMPLEMENTED:
     return "NOT_IMPLEMENTED";
+  case MLStatus::INVALID_GRAPH:
+    return "INVALID_GRAPH";
   default:
     return "GENERAL ERROR";
   }
