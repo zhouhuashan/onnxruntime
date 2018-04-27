@@ -63,7 +63,7 @@ REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
 */
 
 template <typename T>
-OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(1), num_category_(0) {
+OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(1), num_categories_(0) {
   std::vector<int64_t> tmp_cats_int64s;
   std::vector<std::string> tmp_cats_strings;
   info.GetAttrs<int64_t>("cats_int64s", tmp_cats_int64s);   // optional
@@ -72,24 +72,17 @@ OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), 
 
   LOTUS_ENFORCE(tmp_cats_int64s.empty() || tmp_cats_strings.empty());
   if (!tmp_cats_int64s.empty()) {
-    num_category_ = tmp_cats_int64s.size();
-    for (size_t idx = 0; idx < tmp_cats_int64s.size(); ++idx) {
+    num_categories_ = tmp_cats_int64s.size();
+    for (size_t idx = 0, end = tmp_cats_int64s.size(); idx < end; ++idx) {
       cats_int64s_[tmp_cats_int64s[idx]] = idx;
     }
   } else {
-    num_category_ = tmp_cats_strings.size();
-    for (size_t idx = 0; idx < tmp_cats_strings.size(); ++idx) {
+    num_categories_ = tmp_cats_strings.size();
+    for (size_t idx = 0, end = tmp_cats_strings.size(); idx < end; ++idx) {
       cats_strings_[tmp_cats_strings[idx]] = idx;
     }
   }
-  LOTUS_ENFORCE(num_category_ > 0);
-}
-
-template <typename T>
-std::vector<int64_t> OneHotEncoderOp<T>::InferOutputSize(const TensorShape& input_shape) const {
-  std::vector<int64_t> ret = input_shape.GetDims();
-  ret.push_back(num_category_);
-  return ret;
+  LOTUS_ENFORCE(num_categories_ > 0);
 }
 
 template <typename T>
@@ -98,17 +91,19 @@ Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
   const TensorShape& input_shape = X->Shape();
   LOTUS_ENFORCE(input_shape.NumDimensions() <= 2);
 
-  auto output_shape = InferOutputSize(input_shape);
+  std::vector<int64_t> output_shape(input_shape.GetDims());
+  output_shape.push_back(num_categories_);
+
   Tensor* Y = context->Output(0, TensorShape(output_shape));
   auto y_data = Y->MutableData<float>();
   std::fill_n(y_data, Y->Shape().Size(), 0.0f);
 
   if (!cats_strings_.empty()) {
     auto x_data = X->Data<std::string>();
-    std::unordered_map<std::string, size_t>::const_iterator idx;
     for (int64_t i = 0; i < input_shape.Size(); ++i) {
-      if ((idx = cats_strings_.find(x_data[i])) != cats_strings_.end())
-        y_data[i * num_category_ + idx->second] = 1.0f;
+      auto str_idx = cats_strings_.find(x_data[i]);
+      if (str_idx != cats_strings_.cend())
+        y_data[i * num_categories_ + str_idx->second] = 1.0f;
       else if (!zeros_)
         return Status(LOTUS, FAIL, "Unknown Category and zeros = 0.");
     }
@@ -116,8 +111,9 @@ Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
     auto x_data = X->Data<T>();
     std::unordered_map<int64_t, size_t>::const_iterator idx;
     for (int64_t i = 0; i < input_shape.Size(); ++i) {
-      if ((idx = cats_int64s_.find(static_cast<int64_t>(x_data[i]))) != cats_int64s_.end())
-        y_data[i * num_category_ + idx->second] = 1.0f;
+      auto int_idx = cats_int64s_.find(static_cast<int64_t>(x_data[i]));
+      if (int_idx != cats_int64s_.cend())
+        y_data[i * num_categories_ + int_idx->second] = 1.0f;
       else if (!zeros_)
         return Status(LOTUS, FAIL, "Unknown Category and zeros = 0.");
     }
