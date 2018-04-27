@@ -3,8 +3,6 @@
 //  Copyright (c) Microsoft Corporation. All rights reserved.
 //
 //-----------------------------------------------------------------------------
-#pragma once
-
 #include "core/framework/op_kernel.h"
 #include "core/framework/execution_frame.h"
 #include "op_kernel_abi_wrapper.h"
