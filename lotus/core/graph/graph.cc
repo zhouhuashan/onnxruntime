@@ -892,8 +892,9 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   for (auto& output_def : node.MutableDefinitions().output_defs) {
     if (!output_def->Exists()) continue;
     // For each output arg.
-
-    auto op_formal_parameter = op.outputs()[i];
+    //TODO: BUG #473: 'i' may be equal or larger than op.outputs.size()
+    //if this op has variadic outputs
+    auto op_formal_parameter = op.outputs().at(i);
     const TypeProto& onnx_inferred_type = onnx_inferred_types[i++];
 
     // Need to combine type/shape information from ONNX inference as well as inference below:
