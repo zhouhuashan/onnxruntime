@@ -483,7 +483,6 @@ void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, std::init
 TEST(TypeInferenceTest, TypeAttribute) {
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
-  // NodeAttributes attributes;
   Model model("graph_1");
   auto graph = model.MainGraph();
   NodeArg *output_arg = new NodeArg("node_1_out_1", nullptr);
@@ -493,6 +492,35 @@ TEST(TypeInferenceTest, TypeAttribute) {
   AddAttribute(node_1, "shape", {2, 3});
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
+  // delete output_arg;
+}
+
+void CheckTensorEltType(const TypeProto *ptype, TensorProto_DataType elt_type) {
+  EXPECT_NE(ptype, nullptr);
+  EXPECT_TRUE(ptype->has_tensor_type());
+  EXPECT_TRUE(ptype->tensor_type().has_elem_type());
+  EXPECT_EQ(ptype->tensor_type().elem_type(), elt_type);
+}
+
+// Test that output type can be inferred for ops with variadic outputs
+TEST(TypeInferenceTest, VariadicOutput) {
+  std::vector<NodeArg *> inputs;
+  std::vector<NodeArg *> outputs;
+  TypeProto int64_tensor_type;
+  int64_tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  Model model("graph_1");
+  auto graph = model.MainGraph();
+  NodeArg *X = new NodeArg("X", &int64_tensor_type);
+  inputs.push_back(X);
+  NodeArg *Y = new NodeArg("Y", nullptr);
+  outputs.push_back(Y);
+  NodeArg *Z = new NodeArg("Z", nullptr);
+  outputs.push_back(Z);
+  graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
+  auto status = graph->Resolve();
+  EXPECT_TRUE(status.IsOK());
+  CheckTensorEltType(Y->TypeAsProto(), TensorProto_DataType_FLOAT);
+  CheckTensorEltType(Z->TypeAsProto(), TensorProto_DataType_FLOAT);
   // delete output_arg;
 }
 

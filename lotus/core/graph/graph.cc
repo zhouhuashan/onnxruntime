@@ -891,10 +891,16 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   int i = 0;
   for (auto& output_def : node.MutableDefinitions().output_defs) {
     if (!output_def->Exists()) continue;
-    // For each output arg.
-    //TODO: BUG #473: 'i' may be equal or larger than op.outputs.size()
-    //if this op has variadic outputs
-    auto op_formal_parameter = op.outputs().at(i);
+
+    // if the number of actual parameters exceeds the number of formal parameters,
+    // then the op has variadic outputs and the trailing extra actual parameters
+    // correspond to the last formal parameter. (The ONNX schema verification check
+    // would have checked that the corresponding formal parameter is variadic.)
+
+    int num_formal_params = gsl::narrow_cast<int>(op.outputs().size());
+    auto operand_index = std::min(i, num_formal_params - 1);
+    auto op_formal_parameter = op.outputs().at(operand_index);
+
     const TypeProto& onnx_inferred_type = onnx_inferred_types[i++];
 
     // Need to combine type/shape information from ONNX inference as well as inference below:
