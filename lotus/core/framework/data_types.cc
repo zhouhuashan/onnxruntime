@@ -32,7 +32,7 @@ bool TensorType<std::string>::IsCompatible(const TypeProto& type_proto) const {
 }
 
 template <>
-bool TensorType<int>::IsCompatible(const TypeProto& type_proto) const {
+bool TensorType<int32_t>::IsCompatible(const TypeProto& type_proto) const {
   return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT32;
 }
 
@@ -76,7 +76,7 @@ bool TensorType<uint64_t>::IsCompatible(const TypeProto& type_proto) const {
   return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT64;
 }
 
-LOTUS_REGISTER_TENSOR_TYPE(int);
+LOTUS_REGISTER_TENSOR_TYPE(int32_t);
 LOTUS_REGISTER_TENSOR_TYPE(float);
 LOTUS_REGISTER_TENSOR_TYPE(bool);
 LOTUS_REGISTER_TENSOR_TYPE(std::string);
@@ -115,7 +115,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
         case TensorProto_DataType_BOOL:
           return DataTypeImpl::GetTensorType<bool>();
         case TensorProto_DataType_INT32:
-          return DataTypeImpl::GetTensorType<int>();
+          return DataTypeImpl::GetTensorType<int32_t>();
         case TensorProto_DataType_DOUBLE:
           return DataTypeImpl::GetTensorType<double>();
         case TensorProto_DataType_STRING:
@@ -242,7 +242,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
 
 //Below are the types the we need to execute the runtime
 //They are not compatible with TypeProto in ONNX.
-LOTUS_REGISTER_NON_ONNX_TYPE(int);
+LOTUS_REGISTER_NON_ONNX_TYPE(int32_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(float);
 LOTUS_REGISTER_NON_ONNX_TYPE(bool);
 LOTUS_REGISTER_NON_ONNX_TYPE(std::string);

@@ -5,57 +5,57 @@ namespace Lotus {
 
 TensorShape::TensorShape() {}
 
-TensorShape::TensorShape(const std::vector<int64_t>& dims) {
-  dims_.assign(dims.begin(), dims.end());
+TensorShape::TensorShape(const std::vector<int64_t>& dims) : std::vector<int64_t>(dims){
 }
 
-TensorShape::TensorShape(const TensorShape& other) {
-  dims_.assign(other.dims_.begin(), other.dims_.end());
+TensorShape::TensorShape(const int64_t* dimension_sizes, size_t dimension_count) : std::vector<int64_t>(dimension_count) {
+  for (size_t i = 0; i < dimension_count; ++i) {
+    (*this)[i] = dimension_sizes[i];
+  }
+}
+
+TensorShape::TensorShape(const TensorShape& other) : std::vector<int64_t>(other){
 }
 
 TensorShape::TensorShape(const std::vector<int64_t>& dims, size_t start, size_t end) {
-  dims_.assign(dims.begin() + start, dims.begin() + end);
-}
-
-const int64_t TensorShape::operator[](int idx) const {
-  // NOTE: Caller is responsible for invalid idx.
-  return dims_.at(idx);
+  assign(dims.begin() + start, dims.begin() + end);
 }
 
 int64_t TensorShape::Size() const {
-  int64_t size = SizeHelper(dims_, 0, dims_.size());
+  size_t arraySize = size();
+  int64_t size = SizeHelper(0, arraySize);
   //should we cache the size? as multiple operation may be expensive.
   return size;
 }
 
 int64_t TensorShape::SizeToDimension(size_t dimension) const {
-  const size_t num_dims = dims_.size();
+  const size_t num_dims = size();
   LOTUS_ENFORCE(dimension <= num_dims,
                 "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
                 num_dims, " dimensions.");
 
-  int64_t size = SizeHelper(dims_, 0, dimension);
+  int64_t size = SizeHelper(0, dimension);
   return size;
 }
 
 int64_t TensorShape::SizeFromDimension(size_t dimension) const {
-  const size_t num_dims = dims_.size();
+  const size_t num_dims = size();
   LOTUS_ENFORCE(dimension <= num_dims,
                 "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
                 num_dims, " dimensions.");
 
-  int64_t size = SizeHelper(dims_, dimension, num_dims);
+  int64_t size = SizeHelper(dimension, num_dims);
   return size;
 }
 
 TensorShape TensorShape::Slice(size_t dimstart, size_t dimend) const {
-  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= dims_.size(),
+  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= size(),
                 "Invalid tensor shape slice argument.");
-  return TensorShape(dims_, dimstart, dimend);
+  return TensorShape(*this, dimstart, dimend);
 }
 
 TensorShape TensorShape::Slice(size_t dimstart) const {
-  return Slice(dimstart, dims_.size());
+  return Slice(dimstart, size());
 }
 
 // output dimensions
@@ -64,7 +64,7 @@ std::string TensorShape::ToString() const {
 
   result.append("{");
   bool first = true;
-  for (auto dim : dims_) {
+  for (auto dim : (*this)) {
     if (!first) {
       result.append(",");
     }
@@ -77,12 +77,11 @@ std::string TensorShape::ToString() const {
   return result;
 }
 
-int64_t TensorShape::SizeHelper(const std::vector<int64_t>& dims,
-                                size_t start, size_t end) {
+int64_t TensorShape::SizeHelper(size_t start, size_t end) const {
   int64_t size = 1;
   for (size_t i = start; i < end; i++) {
-    if (dims[i] < 0) return -1;
-    size *= dims[i];
+    if ((*this)[i] < 0) return -1;
+    size *= (*this)[i];
   }
   return size;
 }

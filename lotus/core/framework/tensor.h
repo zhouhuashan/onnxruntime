@@ -12,9 +12,15 @@ using namespace onnx;
 namespace Lotus {
 
 // TODO(Task:130) Move TensorShape to separate.h / .cc
-class TensorShape {
+// TODO - Use a custom STL allocator to avoid heap allocations in the common case.
+// We use negative numbers for unknown symbolic dimension. Each negative
+// number represents a unique symbolic dimension.
+// Private inheritance is used to prevent ambiguity of element versus dimension size
+class TensorShape : private std::vector<int64_t> {
  public:
   TensorShape();
+
+  TensorShape(const int64_t* dimension_sizes, size_t dimension_count);
 
   TensorShape(const std::vector<int64_t>& dims);
 
@@ -24,38 +30,40 @@ class TensorShape {
 
   /**
   Return the dimension specified by <idx>.
-  @throws Throws if idx is invalid.
   */
-  const int64_t operator[](int idx) const;
-
-  const int64_t operator[](size_t idx) const {
-    //return operator[]((int)idx);
-    return operator[](static_cast<int>(idx));
+  const int64_t &operator[](size_t idx) const {
+    return std::vector<int64_t>::operator[](static_cast<int>(idx));
+  }
+  
+  int64_t &operator[](size_t idx) {
+    return std::vector<int64_t>::operator[](static_cast<int>(idx));
   }
 
-  bool operator==(const TensorShape& other) const {
-    return dims_ == other.dims_;
+  bool operator==(const TensorShape& other) const noexcept {
+    auto thisVector = static_cast<const std::vector<int64_t> *>(this);
+    auto otherVector = static_cast<const std::vector<int64_t> *>(&other);
+    return *thisVector == *otherVector;
   }
 
-  bool operator!=(const TensorShape& other) const {
+  bool operator!=(const TensorShape& other) const noexcept {
     return !(*this == other);
   }
 
   const size_t NumDimensions() const {
-    return dims_.size();
+    return size();
   }
 
   /**
   Copy dims into an array with given size
   */
   void CopyDims(int64_t* dims, size_t num_dims) const {
-    memcpy(dims, &dims_[0], sizeof(int64_t) * std::min(num_dims, NumDimensions()));
+    memcpy(dims, data(), sizeof(value_type) * std::min(num_dims, NumDimensions()));
   }
 
   /**
   Return underlying vector representation.
   */
-  const std::vector<int64_t>& GetDims() const { return dims_; }
+  const std::vector<int64_t>& GetDims() const { return *this; }
 
   /** 
   Return the total number of elements.
@@ -86,13 +94,12 @@ class TensorShape {
   // Calculate size between start and end.
   // Assumes start and end are between 0 and dimensions.size(), inclusive, and that
   // start < end.
-  static int64_t SizeHelper(const std::vector<int64_t>& dimensions, size_t start, size_t end);
+  int64_t SizeHelper(size_t start, size_t end) const;
 
- private:
-  // We use negative numbers for unknown symbolic dimension. Each negative
-  // number represents a unique symbolic dimension.
-  // InlinedVector<int64_t, 4> dims_;
-  std::vector<int64_t> dims_;
+  static const TensorShape& ReinterpretBaseType(const std::vector<int64_t>& dimensions) {
+    static_assert(sizeof(TensorShape) == sizeof(std::vector<int64_t>), "Size of TensorShape prevents safe casting from vector");
+    return *static_cast<const TensorShape*>(&dimensions);
+  }
 };
 
 // operator<< to nicely output to a stream
@@ -193,6 +200,14 @@ class Tensor {
     return GetRaw();
   }
 
+  void* MutableDataRaw() noexcept {
+    return GetRaw();
+  }
+
+  const void* DataRaw() const noexcept {
+    return GetRaw();
+  }
+
   /**
   * Resizes the tensor without touching underlying storage.
   * This requires the total size of the tensor to remains constant.
@@ -214,7 +229,7 @@ class Tensor {
             IAllocator* deleter,
             const int64_t offset = 0);
 
-  void* GetRaw() const {
+  void* GetRaw() const noexcept{
     return p_data_;
   }
 

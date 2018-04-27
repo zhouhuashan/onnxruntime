@@ -5,6 +5,7 @@ set(lotus_common_src_patterns
     "${LOTUS_ROOT}/core/common/logging/*.cc"
     "${LOTUS_ROOT}/core/common/logging/sinks/*.h"
     "${LOTUS_ROOT}/core/common/logging/sinks/*.cc"
+    "${LOTUS_ROOT}/core/inc/*.h"
     "${LOTUS_ROOT}/core/lib/*.h"
     "${LOTUS_ROOT}/core/lib/*.cc"
     "${LOTUS_ROOT}/core/platform/env.h"

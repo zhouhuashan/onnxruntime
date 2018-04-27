@@ -11,9 +11,13 @@
 #include "core/graph/constants.h"
 #include "core/graph/graph.h"
 #include "onnx/defs/schema.h"
+#include "gsl/span"
+
+class IMLOpKernel;
 
 namespace Lotus {
 class OpKernelContext;
+class OpKernelWrapper;
 
 // A very light-weight class, which works as an aggregated
 // view of all data needed for constructing a Kernel instance.
@@ -37,6 +41,15 @@ class OpKernelInfo {
   template <typename T>
   Status GetAttrs(const std::string& name, std::vector<T>& values) const;
 
+  template <typename T>
+  Status GetAttrs(const std::string& name, gsl::span<T> values) const;
+
+  template<typename T>
+  uint32_t GetPrimitiveAttrElementCount(const std::string &name) const noexcept;
+  uint32_t GetPrimitiveAttrElementCount(AttributeProto_AttributeType type, const std::string &name) const noexcept;
+
+  bool HasPrimitiveAttribute(AttributeProto_AttributeType type, const std::string &name) const noexcept;
+  
   const LotusIR::Node& node() const {
     return node_;
   }
@@ -53,6 +66,8 @@ class OpKernelInfo {
     return execution_provider_;
   }
 
+  Status GetAttributeProto(const std::string& name, const AttributeProto **attribute) const;
+
  private:
   const LotusIR::Node& node_;
   const AllocatorInfo& allocator_info_;
@@ -66,10 +81,8 @@ class OpKernel {
  public:
   typedef std::function<void()> DoneCallback;
 
-  explicit OpKernel(const OpKernelInfo& info)
-      : op_kernel_info_(info) {
-    // TODO: enable this
-    // LOTUS_ENFORCE(nullptr != kernel_def, "kernel_def should be not nullptr.")
+  explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info)
+  {
   }
 
   const LotusIR::Node& Node() const {
@@ -130,6 +143,14 @@ class OpKernelContext {
     return *logger_;
   }
 
+  int InputCount() const {
+    return static_cast<int>(kernel_->Node().InputDefs().size());
+  }
+
+  int OutputCount() const {
+    return static_cast<int>(kernel_->Node().OutputDefs().size());
+  }
+
  private:
   ExecutionFrame* execution_frame_ = nullptr;
   const OpKernel* kernel_ = nullptr;
@@ -139,7 +160,8 @@ class OpKernelContext {
   int arg_start_index_ = -1;
 };
 
-typedef OpKernel* (*KernelCreateFn)(const OpKernelInfo&);
+typedef OpKernel* (*KernelCreateFn)(const OpKernelInfo& info);
+typedef IMLOpKernel* (*IMLOpKernelCreateFn)();
 
 class KernelRegistry {
  public:
@@ -180,7 +202,7 @@ class KernelRegistry {
     }
   };
 
-  // Check if the node's input/output/attributes are compatible with this
+  // Check if the node's input/outpuData/attributes are compatible with this
   // kernel_def, If so, the kernel defined by the kernel_def is used to
   // execute this node.
   static bool VerifyKernelDef(const LotusIR::Node& node,
@@ -201,5 +223,22 @@ class KernelRegistry {
       KernelRegistry::Instance().Register(                             \
           kernel_def_builder,                                          \
           [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); })
+
+
+#define REGISTER_ABI_KERNEL(kernel_def_builder, ...) \
+  REGISTER_ABI_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def_builder, __VA_ARGS__)
+
+#define REGISTER_ABI_KERNEL_UNIQ_HELPER(counter, kernel_def_builder, ...) \
+  REGISTER_ABI_KERNEL_UNIQ(counter, kernel_def_builder, __VA_ARGS__)
+
+#define REGISTER_ABI_KERNEL_UNIQ(counter, kernel_def_builder, ...)                                \
+  static Lotus::Common::Status kernel_def_builder_##counter##_status =                            \
+      KernelRegistry::Instance().Register(                                                        \
+          kernel_def_builder,                                                                     \
+          [](const OpKernelInfo& info)                                                            \
+              -> OpKernel* {                                                                      \
+            auto create_op_kernel = []() -> IMLOpKernel* { return new MLOpKernel<__VA_ARGS__>(); }; \
+            return new AbiOpKernel(create_op_kernel, info);                                         \
+          });
 
 }  // namespace Lotus

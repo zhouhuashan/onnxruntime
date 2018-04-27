@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include "core/inc/ml_status.h"
 
 namespace Lotus {
 namespace Common {
@@ -20,17 +21,16 @@ enum StatusCategory {
 
 // Error code for lotus.
 enum StatusCode {
-  OK = 0,
-  FAIL = 1,
-  INVALID_ARGUMENT = 2,
-  NO_SUCHFILE = 3,
-  NO_MODEL = 4,
-  ENGINE_ERROR = 5,
-  RUNTIME_EXCEPTION = 6,
-  INVALID_PROTOBUF = 7,
-  MODEL_LOADED = 8,
-  NOT_IMPLEMENTED = 9,
-  INVALID_GRAPH = 10,
+  OK = MLStatus::OK,
+  FAIL = MLStatus::FAIL,
+  INVALID_ARGUMENT = MLStatus::INVALID_ARGUMENT,
+  NO_SUCHFILE = MLStatus::NO_SUCHFILE,
+  NO_MODEL = MLStatus::NO_MODEL,
+  ENGINE_ERROR = MLStatus::ENGINE_ERROR,
+  RUNTIME_EXCEPTION = MLStatus::RUNTIME_EXCEPTION,
+  INVALID_PROTOBUF = MLStatus::INVALID_PROTOBUF,
+  MODEL_LOADED = MLStatus::MODEL_LOADED,
+  NOT_IMPLEMENTED = MLStatus::NOT_IMPLEMENTED,
 };
 
 class Status {

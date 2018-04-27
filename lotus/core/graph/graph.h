@@ -20,6 +20,12 @@
 #include "onnx/onnx_pb.h"
 
 using namespace onnx;
+
+// TODO - Evaluate switching the types below to support transparent comparators and enable
+// lookups based on gsl::cstring_span<> and std::string_view.  This would reduces allocations
+// converting to std::string, but requires conversion to std::map<std::string, foo, std::less<>> 
+// instead of std::unordered_map<std::string, foo, [std::less<foo>]>.
+
 typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
 
 namespace LotusIR {
