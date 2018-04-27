@@ -21,16 +21,16 @@ enum StatusCategory {
 
 // Error code for lotus.
 enum StatusCode {
-  OK = MLStatus::OK,
-  FAIL = MLStatus::FAIL,
-  INVALID_ARGUMENT = MLStatus::INVALID_ARGUMENT,
-  NO_SUCHFILE = MLStatus::NO_SUCHFILE,
-  NO_MODEL = MLStatus::NO_MODEL,
-  ENGINE_ERROR = MLStatus::ENGINE_ERROR,
-  RUNTIME_EXCEPTION = MLStatus::RUNTIME_EXCEPTION,
-  INVALID_PROTOBUF = MLStatus::INVALID_PROTOBUF,
-  MODEL_LOADED = MLStatus::MODEL_LOADED,
-  NOT_IMPLEMENTED = MLStatus::NOT_IMPLEMENTED,
+  OK = static_cast<unsigned int>(MLStatus::OK),
+  FAIL = static_cast<unsigned int>(MLStatus::FAIL),
+  INVALID_ARGUMENT = static_cast<unsigned int>(MLStatus::INVALID_ARGUMENT),
+  NO_SUCHFILE = static_cast<unsigned int>(MLStatus::NO_SUCHFILE),
+  NO_MODEL = static_cast<unsigned int>(MLStatus::NO_MODEL),
+  ENGINE_ERROR = static_cast<unsigned int>(MLStatus::ENGINE_ERROR),
+  RUNTIME_EXCEPTION = static_cast<unsigned int>(MLStatus::RUNTIME_EXCEPTION),
+  INVALID_PROTOBUF = static_cast<unsigned int>(MLStatus::INVALID_PROTOBUF),
+  MODEL_LOADED = static_cast<unsigned int>(MLStatus::MODEL_LOADED),
+  NOT_IMPLEMENTED = static_cast<unsigned int>(MLStatus::NOT_IMPLEMENTED),
 };
 
 class Status {

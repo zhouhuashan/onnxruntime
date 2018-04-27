@@ -21,13 +21,7 @@ typedef const char * MLConstStringParam;
 // TODO - Consider using this directly in Lotus and merging error handling
 class MLStatusException : public std::exception {
  public:
-  MLStatusException(const MLStatus& status) : status_(status) {
-    what_ = "ML Error";
-    what_ += std::string(": ") + MLStatusToString(status);
-  }
-
-  const char* what() const noexcept override {
-    return what_.c_str();
+  MLStatusException(const MLStatus& status) : status_(status), std::exception(MLStatusToString(status)) {
   }
 
   MLStatus GetStatus() const noexcept{
@@ -36,7 +30,6 @@ class MLStatusException : public std::exception {
 
  private:
   MLStatus status_;
-  std::string what_;
 };
 
 #define ML_CHECK_STATUS(x)           \
@@ -164,7 +157,7 @@ class MLOpKernelInfo {
         sizeof(T),
         values.data()));
 
-    return std::move(values);
+    return values;
   }
 
   std::string GetAttribute(MLConstStringParam name) const {
@@ -180,7 +173,7 @@ class MLOpKernelInfo {
       values[i] = GetAttributeElement(name, i);
     }
 
-    return std::move(values);
+    return values;
   }
 
   std::string GetAttributeElement(MLConstStringParam name, uint32_t element_index) const {
@@ -192,7 +185,7 @@ class MLOpKernelInfo {
     std::vector<char> temp(length);
     ML_CHECK_STATUS(impl_->GetStringAttributeElement(name, element_index, length, temp.data()));
     std::string value(temp.data());
-    return std::move(value);
+    return value;
   }
 
  private:
@@ -291,7 +284,7 @@ class MLOpKernelContext {
 
     const IMLOpTensor* tensor = nullptr;
     ML_CHECK_STATUS(impl_->GetInputTensor(input_index, &tensor));
-    return std::move(const_cast<IMLOpTensor*>(tensor));
+    return const_cast<IMLOpTensor*>(tensor);
   }
 
   MLOpTensor GetOutputTensor(uint32_t output_index, const std::vector<int64_t> dimension_sizes) const {
@@ -299,7 +292,7 @@ class MLOpKernelContext {
 
     IMLOpTensor* tensor = nullptr;
     ML_CHECK_STATUS(impl_->GetOutputTensor(output_index, dimension_sizes.data(), static_cast<uint32_t>(dimension_sizes.size()), &tensor));
-    return std::move(MLOpTensor(tensor));
+    return MLOpTensor(tensor);
   }
 
  private:
