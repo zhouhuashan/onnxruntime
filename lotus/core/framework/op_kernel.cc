@@ -2,43 +2,48 @@
 #include "core/framework/execution_frame.h"
 #include "core/framework/session_state.h"
 #include "core/graph/op.h"
-
+#include "op_kernel_abi_wrapper.h"
 namespace Lotus {
 
-#define DEFINE_GET_ATTR(T, type)                                           \
-  template <>                                                              \
-  Status OpKernelInfo::GetAttr<T>(                                         \
-      const std::string& name, T* value) const {                           \
-    const LotusIR::Node& op_def = node();                                  \
-    const LotusIR::NodeAttributes attributes = op_def.GetAttributes();     \
-    auto it = attributes.find(name);                                       \
-    if (it != attributes.end()) {                                          \
-      const AttributeProto attr = it->second;                              \
-      if (!attr.has_##type()) {                                            \
-        return Status(LOTUS, FAIL, "Attibute name and type don't match");  \
-      } else {                                                             \
-        *value = static_cast<T>(attr.type());                              \
-        return Status::OK();                                               \
-      }                                                                    \
-    }                                                                      \
-    return Status(LOTUS, FAIL, "No attribute with this name is defined."); \
+#define DEFINE_GET_ATTR(T, type)                                        \
+  template <>                                                           \
+  Status OpKernelInfo::GetAttr<T>(                                      \
+      const std::string& name, T* value) const {                        \
+    const AttributeProto* attr = nullptr;                               \
+    RETURN_IF_ERROR(GetAttributeProto(name, &attr));                    \
+    if (!attr->has_##type()) {                                          \
+      return Status(LOTUS, FAIL, "Attibute name and type don't match"); \
+    } else {                                                            \
+      *value = static_cast<T>(attr->type());                            \
+      return Status::OK();                                              \
+    }                                                                   \
   }
 
-#define DEFINE_GET_ATTRS(T, list)                                          \
-  template <>                                                              \
-  Status OpKernelInfo::GetAttrs<T>(                                        \
-      const std::string& name, std::vector<T>& values) const {             \
-    const LotusIR::Node& op_def = node();                                  \
-    const LotusIR::NodeAttributes attributes = op_def.GetAttributes();     \
-    auto it = attributes.find(name);                                       \
-    if (it != attributes.end()) {                                          \
-      const AttributeProto attr = it->second;                              \
-      for (int i = 0; i < attr.list##_size(); ++i) {                       \
-        values.push_back(static_cast<T>(attr.list(i)));                    \
-      }                                                                    \
-      return Status::OK();                                                 \
-    }                                                                      \
-    return Status(LOTUS, FAIL, "No attribute with this name is defined."); \
+#define DEFINE_GET_ATTRS(T, list)                              \
+  template <>                                                  \
+  Status OpKernelInfo::GetAttrs<T>(                            \
+      const std::string& name, std::vector<T>& values) const { \
+    const AttributeProto* attr = nullptr;                      \
+    RETURN_IF_ERROR(GetAttributeProto(name, &attr));           \
+    values.reserve(attr->list##_size());                       \
+    for (int i = 0; i < attr->list##_size(); ++i) {            \
+      values.push_back(static_cast<T>(attr->list(i)));         \
+    }                                                          \
+    return Status::OK();                                       \
+  }                                                            \
+  template <>                                                  \
+  Status OpKernelInfo::GetAttrs<T>(                            \
+      const std::string& name, gsl::span<T> values) const {    \
+    const AttributeProto* attr = nullptr;                      \
+    Status status = GetAttributeProto(name, &attr);            \
+    if (!status.IsOK()) {                                      \
+      return status;                                           \
+    }                                                          \
+    LOTUS_ENFORCE(values.size() == attr->list##_size());       \
+    for (int i = 0; i < attr->list##_size(); ++i) {            \
+      values[i] = static_cast<T>(attr->list(i));               \
+    }                                                          \
+    return Status::OK();                                       \
   }
 
 DEFINE_GET_ATTR(float, f)
@@ -51,6 +56,52 @@ DEFINE_GET_ATTRS(int64_t, ints)
 DEFINE_GET_ATTRS(std::string, strings)
 DEFINE_GET_ATTRS(TensorProto, tensors)
 DEFINE_GET_ATTRS(GraphProto, graphs)
+
+Status OpKernelInfo::GetAttributeProto(const std::string& name, const AttributeProto **attribute) const {
+  const LotusIR::NodeAttributes &attributes = node().GetAttributes();
+  auto it = attributes.find(name);
+  if (it != attributes.end()) {
+    *attribute = &it->second;
+    return Status::OK();
+  }
+  return Status(LOTUS, FAIL, "No attribute with this name is defined.");
+}
+
+uint32_t OpKernelInfo::GetPrimitiveAttrElementCount(AttributeProto_AttributeType type, const std::string& name) const noexcept {
+  const LotusIR::NodeAttributes &attributes = node().GetAttributes();
+  auto it = attributes.find(name);
+  if (it != attributes.end()) {
+    const AttributeProto attr = it->second;
+    switch (type) {
+      case AttributeProto_AttributeType_FLOAT:
+      case AttributeProto_AttributeType_INT:
+      case AttributeProto_AttributeType_STRING:
+        return 1;
+
+      case AttributeProto_AttributeType_FLOATS:
+        return attr.floats_size();
+      case AttributeProto_AttributeType_INTS:
+        return attr.ints_size();
+      case AttributeProto_AttributeType_STRINGS:
+        return attr.strings_size();
+
+        // The following are unsupported through this method
+      case AttributeProto_AttributeType_UNDEFINED:
+      case AttributeProto_AttributeType_TENSOR:
+      case AttributeProto_AttributeType_GRAPH:
+      case AttributeProto_AttributeType_TENSORS:
+      case AttributeProto_AttributeType_GRAPHS:
+      default:
+        return 0;
+    }
+  }
+
+  return 0;
+}
+
+bool OpKernelInfo::HasPrimitiveAttribute(AttributeProto_AttributeType type, const std::string& name) const noexcept {
+  return GetPrimitiveAttrElementCount(type, name) > 0;
+}
 
 std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
   std::vector<std::string> ret(kernel_creator_fn_map_.size());
@@ -107,6 +158,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
   return true;
 }
 
+  
 Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
                                 KernelCreateFn kernel_creator) {
   KernelCreateInfo kernel_info(kernel_builder.Build(), kernel_creator);
@@ -194,4 +246,5 @@ OpKernelContext::OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel, 
 
   arg_start_index_ = frame->GetFirstArgIndex(kernel->Node().Index());
 }
+
 }  // namespace Lotus

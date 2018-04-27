@@ -11,7 +11,7 @@ const std::vector<MLDataType> castOpTypeConstraints{
     DataTypeImpl::GetTensorType<uint32_t>(),
     DataTypeImpl::GetTensorType<uint64_t>(),
     DataTypeImpl::GetTensorType<int16_t>(),
-    DataTypeImpl::GetTensorType<int>(),
+    DataTypeImpl::GetTensorType<int32_t>(),
     DataTypeImpl::GetTensorType<int64_t>()};
 
 REGISTER_KERNEL(KernelDefBuilder("Cast")
@@ -36,7 +36,7 @@ Status Cast<float>::Compute(OpKernelContext* context) const {
       CastData<float, int16_t>(X, Y, shape);
       break;
     case TensorProto_DataType_INT32:
-      CastData<float, int>(X, Y, shape);
+      CastData<float, int32_t>(X, Y, shape);
       break;
     case TensorProto_DataType_INT64:
       CastData<float, int64_t>(X, Y, shape);

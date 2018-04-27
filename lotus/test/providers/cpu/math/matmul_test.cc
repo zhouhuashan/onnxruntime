@@ -51,11 +51,11 @@ TEST(MathOpTest, MatMul) {
   for (auto t : testcases) {
     OpTester test("MatMul");
 
-    int64_t size0 = TensorShape::SizeHelper(t.input0_dims, 0, t.input0_dims.size());
+    int64_t size0 = TensorShape::ReinterpretBaseType(t.input0_dims).SizeHelper(0, t.input0_dims.size());
     std::vector<float> input0_vals(vals.cbegin(), vals.cbegin() + size0);
     test.AddInput<float>("A", t.input0_dims, input0_vals);
 
-    int64_t size1 = TensorShape::SizeHelper(t.input1_dims, 0, t.input1_dims.size());
+    int64_t size1 = TensorShape::ReinterpretBaseType(t.input1_dims).SizeHelper(0, t.input1_dims.size());
     std::vector<float> input1_vals(vals.cbegin(), vals.cbegin() + size1);
     test.AddInput<float>("B", t.input1_dims, input1_vals);
 

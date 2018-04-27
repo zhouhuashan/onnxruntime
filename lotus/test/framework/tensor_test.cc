@@ -52,7 +52,7 @@ TEST(TensorTest, CPUFloatTensorTest) {
 }
 
 TEST(TensorTest, CPUInt32TensorTest) {
-  CPUTensorTest<int>(std::vector<int64_t>({3, 2, 4}));
+  CPUTensorTest<int32_t>(std::vector<int64_t>({3, 2, 4}));
 }
 
 TEST(TensorTest, CPUUInt8TensorTest) {
@@ -88,7 +88,7 @@ TEST(TensorTest, CPUFloatTensorOffsetTest) {
 }
 
 TEST(TensorTest, CPUInt32TensorOffsetTest) {
-  CPUTensorTest<int>(std::vector<int64_t>({3, 2, 4}), 5);
+  CPUTensorTest<int32_t>(std::vector<int64_t>({3, 2, 4}), 5);
 }
 
 TEST(TensorTest, CPUUInt8TensorOffsetTest) {

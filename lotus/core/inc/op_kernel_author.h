@@ -6,22 +6,22 @@
 #pragma once
 
 #include <cstdint>
+#include "ml_status.h"
 
 typedef uint8_t MLBool;
 
-// TODO: Merge status codes and exceptions with Lotus
-enum class MLStatus : uint32_t {
-  Success = 0,
-  GenericFailure = 0xffffffff
-};
 
 // TODO - calling convention for former case
 #if defined(__GNUC__)
 #define ML_API(name) virtual MLStatus name
+#define ML_API_IMP(name) MLStatus name
 #define ML_API_(returnType, name) virtual returnType name
+#define ML_API_IMP_(returnType, name) returnType name
 #else
 #define ML_API(name) virtual MLStatus __stdcall name
+#define ML_API_IMP(name) MLStatus __stdcall name
 #define ML_API_(returnType, name) virtual returnType __stdcall name
+#define ML_API_IMP_(returnType, name) returnType __stdcall name
 #endif
 
 // Attribute types with numeric values matching the ONNX specification
@@ -58,100 +58,82 @@ class IMLOpKernelInfo {
  public:
   // Gets the count of elements in an attribute
   ML_API(GetAttributeElementCount)(
+      MLAttributeType type,
       const char* name,
-      uint32_t* elementCount) const noexcept = 0;
-  
-  // Returns whether an attribute with the specified name exists
-  ML_API_(MLBool, HasAttribute)(const char* name) const noexcept = 0;
+      uint32_t* element_count) const noexcept = 0;
 
   // Gets the array of values in a numeric attribute
-  ML_API(GetNumericAttribute)(
+  ML_API(GetAttribute)(
       const char* name,
       MLAttributeType type,
-      uint32_t elementCount,
-      uint32_t elementByteSize,
+      uint32_t element_count,
+      uint32_t element_byte_size,
       void* value) const noexcept = 0;
 
-  // Gets the size of an element within a UTF-8 string attribute,
+  // Gets the length of an element within a UTF-8 string attribute,
   // including null termination
-  ML_API(GetStringAttributeElementSize)(
+  ML_API(GetStringAttributeElementLength)(
       const char* name,
-      uint32_t elementIndex,
-      uint32_t* attributeElementSize) const noexcept = 0;
+      uint32_t element_index,
+      uint32_t* attribute_element_length) const noexcept = 0;
 
   // Gets the contents of an element within a UTF-8 string attribute.  The size
   // includes null termination.
   ML_API(GetStringAttributeElement)(
       const char* name,
-      uint32_t elementIndex,
-      uint32_t attributeElementSize,
-      char* attributeElement) const noexcept = 0;
+      uint32_t element_index,
+      uint32_t attribute_element_length,
+      char* attribute_element) const noexcept = 0;
 };
 
 // Tensors methods used by implementations of IMLOpKernel::Compute
 class IMLOpTensor {
  public:
-  ML_API_(uint32_t, GetDimensionCount)() const noexcept = 0;
+  ML_API(GetDimensionCount)(uint32_t *dimensions) const = 0;
 
   ML_API(GetDimensions)(
       int64_t* dimensions,
-      uint32_t dimensionCount) const noexcept = 0;
+      uint32_t dimension_count) const noexcept = 0;
 
   ML_API_(MLTensorDataType, GetTensorDataType)() const noexcept = 0;
 
-  ML_API_(MLBool, IsHostData)() const noexcept = 0;
+  // Whether the tensor's memory is CPU-addressible.  This is controlled
+  // by the registration parameters of the kernel.
+  ML_API_(MLBool, IsCPUData)() const noexcept = 0;
 
-  // This method should be called for tensors stored in host memory.
-  // For outputs, SetDimensions should be called first.
-  ML_API(GetHostData)(void** data) noexcept = 0;
-
-  // This method should be called for tensors stored in host memory.
-  // For outputs, SetDimensions should be called first.
-  ML_API(GetHostData)(const void** data) const noexcept = 0;
-
-  // Returns a handle whose type varies based on the kernel type.
-  // This method should be called for tensors not stored in host memory.
-  // For outputs, SetDimensions should be called first.
+  // Whether the tensor's memory is a handle type, such as an interface object.
+  // This is controlled by the registration parameters of the kernel.
+  // This returns false for tensors with blobs of raw CPU or device memory.  If
+  // this returns true, then the caller may cast or offset the pointer returned
+  // by GetData().
+  ML_API_(MLBool, IsDataHandle)() const noexcept = 0;
+  
+  // Returns a pointer whose type varies  based on the kernel type. 
   // For D3D kernels this returns a pointer to an IUnknown supporting QueryInterface
-  // to ID3D12Resource. D3D kernels should call Release on the returned value.
-  ML_API(GetDataHandle)(void** data) const noexcept = 0;
-
-  ML_API(SetDimensions)(
-      const int64_t* dimensions,
-      uint32_t dimensionCount) noexcept = 0;
+  // to ID3D12Resource. 
+  ML_API_(void*, GetData)() noexcept = 0;
+  ML_API_(const void*, GetData)() const noexcept = 0;
 };
 
 enum class MLEdgeType {
   kUndefined = 0,
   kTensor = 1,
-  kMap = 2
-};
-
-struct MLEdge {
-  MLEdgeType type;
-
-  union {
-    IMLOpTensor* tensor;
-
-    // (IMLMap, IMLSequence, etc.)
-    // ...
-  };
-
-  inline bool IsTensor() {
-    return type == MLEdgeType::kTensor;
-  }
+  kMap = 2,
+  kSequence = 3
 };
 
 class IMLOpKernelContext {
  public:
   // Returns a handle whose type varies based on the kernel type.
   // For D3D kernels, this returns an IUnknown supporting QueryInterface to
-  // ID3D12GraphicsCommandList1.   D3D kernels must call Release on the
-  // returned value.
-  ML_API_(void, GetExecutionHandle)(void** executionHandle) const noexcept;
+  // ID3D12GraphicsCommandList1.
+  ML_API_(void *, GetExecutionHandle)() const noexcept = 0;
 
-  ML_API(GetInputEdge)(uint32_t inputIndex, MLEdge* edge) const noexcept;
-  ML_API(GetOutputEdge)(uint32_t outputIndex, MLEdge* edge) const noexcept;
+  ML_API(GetInputEdgeType)(uint32_t input_index, MLEdgeType* edge_type) const noexcept = 0;
+  ML_API(GetOutputEdgeType)(uint32_t output_index, MLEdgeType* edge_type) const noexcept = 0;
+
+  ML_API(GetInputTensor)(uint32_t input_index, const IMLOpTensor** tensor) const noexcept = 0;
+  ML_API(GetOutputTensor)(uint32_t output_index, const int64_t* dimension_sizes, uint32_t dimensions, IMLOpTensor** tensor) noexcept = 0;
 };
 
 class IMLOpKernel {

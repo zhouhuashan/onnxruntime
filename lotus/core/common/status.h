@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include "core/inc/ml_status.h"
 
 namespace Lotus {
 namespace Common {
@@ -20,17 +21,17 @@ enum StatusCategory {
 
 // Error code for lotus.
 enum StatusCode {
-  OK = 0,
-  FAIL = 1,
-  INVALID_ARGUMENT = 2,
-  NO_SUCHFILE = 3,
-  NO_MODEL = 4,
-  ENGINE_ERROR = 5,
-  RUNTIME_EXCEPTION = 6,
-  INVALID_PROTOBUF = 7,
-  MODEL_LOADED = 8,
-  NOT_IMPLEMENTED = 9,
-  INVALID_GRAPH = 10,
+  OK = static_cast<unsigned int>(MLStatus::OK),
+  FAIL = static_cast<unsigned int>(MLStatus::FAIL),
+  INVALID_ARGUMENT = static_cast<unsigned int>(MLStatus::INVALID_ARGUMENT),
+  NO_SUCHFILE = static_cast<unsigned int>(MLStatus::NO_SUCHFILE),
+  NO_MODEL = static_cast<unsigned int>(MLStatus::NO_MODEL),
+  ENGINE_ERROR = static_cast<unsigned int>(MLStatus::ENGINE_ERROR),
+  RUNTIME_EXCEPTION = static_cast<unsigned int>(MLStatus::RUNTIME_EXCEPTION),
+  INVALID_PROTOBUF = static_cast<unsigned int>(MLStatus::INVALID_PROTOBUF),
+  MODEL_LOADED = static_cast<unsigned int>(MLStatus::MODEL_LOADED),
+  NOT_IMPLEMENTED = static_cast<unsigned int>(MLStatus::NOT_IMPLEMENTED),
+  INVALID_GRAPH = static_cast<unsigned int>(MLStatus::INVALID_GRAPH),
 };
 
 class Status {

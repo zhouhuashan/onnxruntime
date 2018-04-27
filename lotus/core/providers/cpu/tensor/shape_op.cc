@@ -7,7 +7,7 @@ const std::vector<MLDataType> shapeOpTypeConstraints{
     DataTypeImpl::GetTensorType<float>(),
     DataTypeImpl::GetTensorType<double>(),
     DataTypeImpl::GetTensorType<int16_t>(),
-    DataTypeImpl::GetTensorType<int>(),
+    DataTypeImpl::GetTensorType<int32_t>(),
     DataTypeImpl::GetTensorType<int64_t>(),
     DataTypeImpl::GetTensorType<uint8_t>(),
     DataTypeImpl::GetTensorType<uint16_t>()};

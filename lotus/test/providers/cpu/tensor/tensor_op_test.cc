@@ -79,7 +79,7 @@ TEST(TensorOpTest, Cast) {
   const std::initializer_list<int16_t> int16_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   TestCastOp(input, int16_t_output, shape, TensorProto::INT16);
 
-  const std::initializer_list<int> int_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  const std::initializer_list<int32_t> int_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   TestCastOp(input, int_output, shape, TensorProto::INT32);
 
   const std::initializer_list<int64_t> int64_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};

@@ -32,7 +32,7 @@ static Status RegisterBFCArena(std::unordered_map<std::string, std::unique_ptr<I
 
   auto status = Status::OK();
   if (arena_map.find(arena_id) != arena_map.end())
-    status = Status(LOTUS, FAIL, "arena already exists");
+    status = Status(LOTUS, StatusCode::FAIL, "arena already exists");
   else {
     arena_map[arena_id] = std::unique_ptr<IArenaAllocator>(
         std::make_unique<BFCArena>(std::move(allocator), memory_limit));

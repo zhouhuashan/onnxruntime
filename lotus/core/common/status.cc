@@ -4,6 +4,9 @@
 namespace Lotus {
 namespace Common {
 Status::Status(StatusCategory category, int code, const std::string& msg) {
+  // state_ will be allocated here causing the status to be treated as a failure
+  LOTUS_ENFORCE (code != static_cast<int>(MLStatus::OK));
+
   state_ = std::make_unique<State>(category, code, msg);
 }
 
@@ -44,40 +47,8 @@ std::string Status::ToString() const {
     result += std::to_string(Code());
     std::string msg;
 
-    switch (static_cast<StatusCode>(Code())) {
-      case INVALID_ARGUMENT:
-        msg = "INVALID_ARGUMENT";
-        break;
-      case NO_SUCHFILE:
-        msg = "NO_SUCHFILE";
-        break;
-      case NO_MODEL:
-        msg = "NO_MODEL";
-        break;
-      case ENGINE_ERROR:
-        msg = "ENGINE_ERROR";
-        break;
-      case RUNTIME_EXCEPTION:
-        msg = "RUNTIME_EXCEPTION";
-        break;
-      case INVALID_PROTOBUF:
-        msg = "INVALID_PROTOBUF";
-        break;
-      case MODEL_LOADED:
-        msg = "MODEL_LOADED";
-        break;
-      case NOT_IMPLEMENTED:
-        msg = "NOT_IMPLEMENTED";
-        break;
-      case INVALID_GRAPH:
-        msg = "INVALID_GRAPH";
-        break;
-      default:
-        msg = "GENERAL ERROR";
-        break;
-    }
     result += " : ";
-    result += msg;
+    result += MLStatusToString(static_cast<MLStatus>(Code()));
     result += " : ";
     result += state_->msg;
   }
