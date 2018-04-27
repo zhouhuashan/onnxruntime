@@ -6,18 +6,6 @@ using std::experimental::filesystem::v1::path;
 using namespace Lotus;
 
 namespace {
-bool IsImplemented(const onnx::ModelProto& model_pb, const std::vector<std::string>& all_implemented_ops, TestResultStat& stat) {
-  bool ret = true;
-  for (const auto& node_pb : model_pb.graph().node()) {
-    stat.AddCoveredOps(node_pb.op_type());
-    if (std::find(all_implemented_ops.begin(), all_implemented_ops.end(), node_pb.op_type()) == all_implemented_ops.end()) {
-      stat.AddNotImplementedKernels(node_pb.op_type());
-      ret = false;
-    }
-  }
-  return ret;
-}
-
 template <typename FLOAT_TYPE>
 std::pair<EXECUTE_RESULT, size_t> compare_float_result(const Tensor& outvalue, const Tensor& expected_value) {
   const FLOAT_TYPE abs_error = 1e-6f;
@@ -198,6 +186,17 @@ std::vector<onnx::TensorProto> LoadTensors(const std::vector<path>& pb_files) {
   return input_pbs;
 }
 
+EXECUTE_RESULT StatusCodeToExecuteResult(int input) {
+  switch (input) {
+    case StatusCode::NOT_IMPLEMENTED:
+      return EXECUTE_RESULT::NOT_SUPPORT;
+    case StatusCode::INVALID_GRAPH:
+      return EXECUTE_RESULT::INVALID_GRAPH;
+    default:
+      return EXECUTE_RESULT::UNKNOWN_ERROR;
+  }
+}
+
 EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vector<onnx::TensorProto>& input_pbs,
                                          const std::vector<onnx::TensorProto>& output_pbs, const char* test_case_name,
                                          const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, AllocatorManager& allocatorManager) {
@@ -208,14 +207,14 @@ EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vect
     Common::Status status = sess.Run(feeds, &p_fetches);
     if (!status.IsOK()) {
       fprintf(stderr, "%s:%s\n", test_case_name, status.ErrorMessage().c_str());
-      return EXECUTE_RESULT::FAILED_TO_RUN;
+      return StatusCodeToExecuteResult(status.Code());
     }
   } catch (std::exception& ex) {
     fprintf(stderr, "%s:%s\n", test_case_name, ex.what());
-    return EXECUTE_RESULT::FAILED_TO_RUN;
+    return EXECUTE_RESULT::WITH_EXCEPTION;
   } catch (...) {
     fprintf(stderr, "%s:got unknown error\n", test_case_name);
-    return EXECUTE_RESULT::FAILED_TO_RUN;
+    return EXECUTE_RESULT::WITH_EXCEPTION;
   }
 
   for (size_t i = 0; i != output_pbs.size(); ++i) {
@@ -243,7 +242,6 @@ RunContext::RunContext(const TestCaseInfo& test_case1, const std::string& node_n
 }
 void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, std::function<void(TestCaseResult& result)> on_finished) {
   const TestCaseInfo& info = env.tests[test_index];
-  const std::vector<std::string>& all_implemented_ops = env.all_implemented_ops;
   const AllocationPlannerType planner = env.planner;
   onnx::ModelProto model_pb;
   {
@@ -265,11 +263,6 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
   if (model_pb.graph().node().size() == 1) {
     node_name = model_pb.graph().node()[0].op_type();
   }
-  if (!IsImplemented(model_pb, all_implemented_ops, env.stat)) {
-    TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::KERNEL_NOT_IMPLEMENTED), node_name};
-    on_finished(ret);
-    return;
-  }
   ExecutionProviderInfo epi;
   ProviderOption po{"CPUExecutionProvider", epi};
   SessionOptions* so = new SessionOptions(vector<ProviderOption>{po});
@@ -278,7 +271,7 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
   Common::Status status = session_object->Load(info.model_url);
   if (!status.IsOK()) {
     fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
-    TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::LOAD_MODEL_FAILED), node_name};
+    TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
     on_finished(ret);
     return;
   }
@@ -286,10 +279,15 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
     status = session_object->Initialize();
     if (!status.IsOK()) {
       fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
-      TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::LOAD_MODEL_FAILED), node_name};
+      TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
       on_finished(ret);
       return;
     }
+  } catch (Lotus::NotImplementedException& ex) {
+    fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), ex.what());
+    TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::NOT_SUPPORT), node_name};
+    on_finished(ret);
+    return;
   } catch (std::exception& ex) {
     fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), ex.what());
     TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::LOAD_MODEL_FAILED), node_name};

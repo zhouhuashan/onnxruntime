@@ -60,8 +60,12 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
       });
     }
   }
-  for (const TestCaseResult& r : results) {
+  for (size_t i = 0; i != env.tests.size(); ++i) {
+    const TestCaseResult& r = results[i];
     for (const EXECUTE_RESULT res : r.excution_result) {
+      if (res != EXECUTE_RESULT::SUCCESS && res != EXECUTE_RESULT::NOT_SUPPORT) {
+        stat.AddFailedTest(env.tests[i].test_case_name);
+      }
       switch (res) {
         case EXECUTE_RESULT::SUCCESS:
           stat.succeeded++;
@@ -69,7 +73,10 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
         case EXECUTE_RESULT::UNKNOWN_ERROR:
           if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
           break;
-        case EXECUTE_RESULT::FAILED_TO_RUN:
+        case EXECUTE_RESULT::INVALID_GRAPH:
+          stat.invalid_graph++;
+          break;
+        case EXECUTE_RESULT::WITH_EXCEPTION:
           stat.throwed_exception++;
           if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
           break;
@@ -86,16 +93,15 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
           if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
           break;
         case EXECUTE_RESULT::NOT_SUPPORT:
-          stat.skipped++;
+          stat.not_implemented++;
+          if (!r.node_name.empty()) stat.AddNotImplementedKernels(r.node_name);
           break;
         case EXECUTE_RESULT::LOAD_MODEL_FAILED:
           stat.load_model_failed++;
           if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
           break;
-        case EXECUTE_RESULT::KERNEL_NOT_IMPLEMENTED:
-          stat.not_implemented++;
-          if (!r.node_name.empty()) stat.AddNotImplementedKernels(r.node_name);
-          break;
+        default:
+          abort();
       }
     }
   }
@@ -266,6 +272,6 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> all_implemented_ops = KernelRegistry::Instance().GetAllRegisteredOpNames();
   TestEnv args(tests, all_implemented_ops, stat, planner);
   RunTests(args, p_models, concurrent_session_runs);
-  stat.print(all_implemented_ops, !whitelisted_test_cases.empty(), stdout);
+  stat.print(stdout);
   return 0;
 }

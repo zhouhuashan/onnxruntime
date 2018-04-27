@@ -93,7 +93,7 @@ void __stdcall RunDataTest(
   } catch (...) {
     printf("%s:unknown error\n", task->env->test_case.test_case_name.c_str());
   }
-  OnDataTestFinished(task, EXECUTE_RESULT::FAILED_TO_RUN);
+  OnDataTestFinished(task, EXECUTE_RESULT::WITH_EXCEPTION);
 }
 
 void __stdcall RunTestCase(
