@@ -18,6 +18,7 @@ enum class MLStatus : uint32_t {
   INVALID_PROTOBUF = 7,
   MODEL_LOADED = 8,
   NOT_IMPLEMENTED = 9,
+  INVALID_GRAPH = 10,
 };
 
 inline const char *MLStatusToString(MLStatus status)

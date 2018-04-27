@@ -31,6 +31,7 @@ enum StatusCode {
   INVALID_PROTOBUF = static_cast<unsigned int>(MLStatus::INVALID_PROTOBUF),
   MODEL_LOADED = static_cast<unsigned int>(MLStatus::MODEL_LOADED),
   NOT_IMPLEMENTED = static_cast<unsigned int>(MLStatus::NOT_IMPLEMENTED),
+  INVALID_GRAPH = static_cast<unsigned int>(MLStatus::INVALID_GRAPH),
 };
 
 class Status {
