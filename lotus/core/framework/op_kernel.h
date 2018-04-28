@@ -118,6 +118,19 @@ class OpKernelContext {
 
   ~OpKernelContext(){};
 
+  /** 
+  Return the number of inputs for a variadic argument. 
+  @param arg_num The operator argument number. 
+  @returns Number of inputs the argument has. 
+  */
+  int NumInputs(int arg_num) const {
+    auto& arg_counts = kernel_->Node().InputArgCount();
+
+    LOTUS_ENFORCE(arg_num < arg_counts.size(), "Invalid arg_num of ", arg_num, ". Num args is ", arg_counts.size());
+
+    return arg_counts[arg_num];
+  }
+
   template <typename T>
   const T* Input(int index) const {
     return execution_frame_->GetValue<T>(arg_start_index_ + index);

@@ -145,7 +145,7 @@ static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch) noexce
   tm local_tm;
   tm utc_tm;
 
-#ifdef WIN32
+#ifdef _WIN32
   localtime_s(&local_tm, &system_time_t);
   gmtime_s(&utc_tm, &system_time_t);
 #else
