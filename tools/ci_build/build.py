@@ -13,28 +13,49 @@ logging.basicConfig(format="%(asctime)s %(name)s [%(levelname)s] - %(message)s",
 log = logging.getLogger("Build")
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Lotus CI build driver.")
+    parser = argparse.ArgumentParser(description="Lotus CI build driver.",
+                                     usage='''
+Default behavior is --update --build --test.
+
+The Update phase will update git submodules, and run cmake to generate makefiles.
+The Build phase will build all projects.
+The Test phase will run all unit tests, and optionally the ONNX tests.
+
+Use the individual flags to only run the specified stages.
+                                     ''')
+    # Main arguments
     parser.add_argument("--build_dir", required=True, help="Path to the build directory.")
     parser.add_argument("--config", nargs="+", default=["Debug"],
                         choices=["Debug", "MinSizeRel", "Release", "RelWithDebInfo"],
                         help="Configuration(s) to build.")
+    parser.add_argument("--update", action='store_true', help="Update makefiles.")
+    parser.add_argument("--build", action='store_true', help="Build.")
+    parser.add_argument("--parallel", action='store_true', help="Use parallel build.")
+    parser.add_argument("--test", action='store_true', help="Run unit tests.")
+
+    # enable ONNX tests
+    parser.add_argument("--enable_onnx_tests", action='store_true',
+                        help='''When running the Update phase, enable running ONNX tests in the generated makefiles.
+                        When running the Test phase, run onnx_test_running against available test data directories.''')
+
+    # CUDA related
     parser.add_argument("--cudnn_home", help="Path to CUDNN home.")
+    parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
+
+    # Build options
     parser.add_argument("--cmake_extra_defines", nargs="+",
                         help="Extra definitions to pass to CMake during build system generation. " +
                              "These are just CMake -D options without the leading -D.")
+    parser.add_argument("--x86", action='store_true',
+                        help="Create x86 makefiles. Requires --update and no existing cache CMake setup. Delete CMakeCache.txt if needed"                             )
+
+    # Arguments needed by CI
     parser.add_argument("--cmake_path", default="cmake", help="Path to the CMake program.")
     parser.add_argument("--ctest_path", default="ctest", help="Path to the CTest program.")
-    parser.add_argument("--update", action='store_true', help="Update makefiles.")
-    parser.add_argument("--enable_onnx_tests", action='store_true',
-                        help="When running the Update phase, enable running ONNX tests in the generated makefiles.")
+    parser.add_argument("--skip_submodule_sync", action='store_true', help="Don't do a 'git submodule update'. Makes the Update phase faster.")
+
     parser.add_argument("--install_onnx", action='store_true',
-                        help="Install onnx after building Lotus, for running tests")
-    parser.add_argument("--build", action='store_true', help="Build.")
-    parser.add_argument("--x86", action='store_true', help="Build.")
-    parser.add_argument("--parallel", action='store_true', help="Use parallel build.")
-    parser.add_argument("--test", action='store_true', help="Run unit tests.")
-    parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
-    parser.add_argument("--skip_submodule_sync", action='store_true', help="Don't do a 'git submodule update'.")
+                        help="Install ONNX. This also creates Lotus ONNX test data in the build directory.")
 
     return parser.parse_args()
 
@@ -96,7 +117,7 @@ def build_targets(cmake_path, build_dir, configs, parallel):
         run_subprocess(cmd_args)
 
 
-def install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir, cmake_extra_args):
+def install_onnx(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args):
     "Install ONNX and create test data."
     dep_packages = ['typing_extensions','typing','six','protobuf','setuptools', 'numpy', 'pytest_runner']
     run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org', '--upgrade'] + dep_packages)
@@ -152,23 +173,30 @@ def install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir,
             print(line)
 
     run_subprocess([sys.executable, 'setup.py', 'install'], cwd=onnx_src)
-    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', onnx_test_data_dir])
+    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', lotus_onnx_test_data_dir])
 
+def add_dir_if_exists(dir, dir_list):
+    if (os.path.isdir(dir)):
+        dir_list.append(dir)
 
-def run_tests(ctest_path, build_dir, configs, onnx_test_data_dir):
+def run_tests(ctest_path, build_dir, configs, enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir):
     for config in configs:
         log.info("Running tests for %s configuration", config)
         cwd = get_config_build_dir(build_dir, config)
         run_subprocess([ctest_path, "--build-config", config, "--verbose"],
                        cwd=cwd)
 
-        # If test data dir exists and looks valid, assume we've run with --install_onnx
-        # and run the onnx tests.
-        # TODO: Add additional arg if this isn't a good default behaviour and user should explicitly enable
-        if os.path.isdir(onnx_test_data_dir):
-            node_dir = os.path.join(onnx_test_data_dir, 'node')
-            if (os.path.isdir(node_dir)):
-                run_subprocess([os.path.join(cwd,config,'onnx_test_runner'), node_dir],cwd=cwd)
+    if enable_onnx_tests:
+        test_data_dirs = []
+        # test data created by running with --install_onnx
+        add_dir_if_exists(os.path.join(lotus_onnx_test_data_dir, 'node'), test_data_dirs)
+
+        # test data from the ONNX git submodule
+        add_dir_if_exists(os.path.join(onnx_test_data_dir, 'pytorch-operator'), test_data_dirs)
+        add_dir_if_exists(os.path.join(onnx_test_data_dir, 'pytorch-converted'), test_data_dirs)
+
+        if test_data_dirs:
+            run_subprocess([os.path.join(cwd, config, 'onnx_test_runner')] + test_data_dirs, cwd=cwd)
 
 def main():
     args = parse_arguments()
@@ -189,10 +217,13 @@ def main():
     script_dir = os.path.realpath(os.path.dirname(__file__))
     source_dir = os.path.normpath(os.path.join(script_dir, "..", ".."))
 
-    # directory that ONNX test data is created in if this script is run with --install_onnx
+    # directory from ONNX submodule with ONNX test data
+    onnx_test_data_dir = os.path.join(source_dir, "external", "onnx", "onnx", "backend", "test", "data")
+
+    # directory that Lotus ONNX test data is created in if this script is run with --install_onnx
     # If the directory exists and looks valid we assume ONNX is installed and run tests
     # using that data.
-    onnx_test_data_dir = os.path.join(build_dir, 'test_data')
+    lotus_onnx_test_data_dir = os.path.join(build_dir, 'test_data')
 
     os.makedirs(build_dir, exist_ok=True)
 
@@ -218,10 +249,10 @@ def main():
 
     if (args.install_onnx and sys.platform.startswith('win')):
         #try to install onnx from this source tree
-        install_onnx(build_dir, source_dir, configs, cmake_path, onnx_test_data_dir, cmake_extra_args)
+        install_onnx(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
 
     if (args.test):
-        run_tests(ctest_path, build_dir, configs, onnx_test_data_dir)
+        run_tests(ctest_path, build_dir, configs, args.enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir)
 
     log.info("Build complete")
 
