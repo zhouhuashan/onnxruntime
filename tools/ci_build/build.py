@@ -71,7 +71,7 @@ def run_subprocess(args, cwd=None):
     subprocess.run(args, cwd=cwd, check=True)
 
 def update_submodules(source_dir):
-    run_subprocess("git submodule update --init --recursive", cwd=source_dir)
+    run_subprocess(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
 def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, cmake_extra_args):
     log.info("Generating CMake build tree")
