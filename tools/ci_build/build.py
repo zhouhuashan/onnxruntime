@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import fileinput
 import glob
 import logging
+import multiprocessing
 import os
+import shutil
 import subprocess
 import sys
-import fileinput
-import shutil
 
 logging.basicConfig(format="%(asctime)s %(name)s [%(levelname)s] - %(message)s", level=logging.DEBUG)
 log = logging.getLogger("Build")
@@ -30,7 +31,10 @@ Use the individual flags to only run the specified stages.
                         help="Configuration(s) to build.")
     parser.add_argument("--update", action='store_true', help="Update makefiles.")
     parser.add_argument("--build", action='store_true', help="Build.")
-    parser.add_argument("--parallel", action='store_true', help="Use parallel build.")
+    parser.add_argument("--parallel", action='store_true', help='''Use parallel build.
+    The build setup doesn't get all dependencies right, so --parallel only works if you're just rebuilding Lotus code. 
+    If you've done an update that fetched external dependencies you have to build without --parallel the first time. 
+    Once that's done, run with "--build --parallel --test" to just build in parallel and run tests.''')
     parser.add_argument("--test", action='store_true', help="Run unit tests.")
 
     # enable ONNX tests
@@ -105,10 +109,11 @@ def build_targets(cmake_path, build_dir, configs, parallel):
 
         build_tool_args = []
         if parallel:
+            num_cores = str(multiprocessing.cpu_count())
             if is_windows():
-                build_tool_args += ["/maxcpucount:4"]
+                build_tool_args += ["/maxcpucount:" + num_cores]
             else:
-                build_tool_args += ["-j4"]
+                build_tool_args += ["-j" + num_cores]
 
         if (build_tool_args):
             cmd_args += [ "--" ]
