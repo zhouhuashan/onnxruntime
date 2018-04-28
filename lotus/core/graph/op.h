@@ -51,12 +51,14 @@ class TypeUtils {
 class MsOpRegistry {
  public:
   static Status RegisterMsOps() {
-    RETURN_IF_ERROR(RegisterMsNNOps());
+    // Ms domain ops should be registered here. Example:
+    // RETURN_IF_ERROR(RegisterMsNNOps());
     return Status::OK();
   }
 
  private:
-  static Status RegisterMsNNOps();
+  // Example to register ms domain ops.
+  // static Status RegisterMsNNOps();
 };
 
 }  // namespace LotusIR
