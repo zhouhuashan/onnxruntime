@@ -710,7 +710,7 @@ class InferenceContextImpl : public onnx::InferenceContext {
     }
   }
 
-  size_t getNumInputs() const override {
+  size_t getNumInputs() const noexcept override {
     return node_.InputDefs().size();
   }
 
@@ -726,7 +726,7 @@ class InferenceContextImpl : public onnx::InferenceContext {
     return nullptr;
   }
 
-  size_t getNumOutputs() const override {
+  size_t getNumOutputs() const noexcept override {
     return allOutputTypes_.size();
   }
 
@@ -763,18 +763,28 @@ Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<Typ
 
 // GetTypeAttributeName: returns the name of the attribute that specifies the
 // type of the output if the operator has one. Returns null otherwise.
-const std::string* GetTypeAttributeName(const std::string& op_name) {
+
+#ifdef _MSC_VER
+#pragma warning(push)
+// init of static op_to_type_attribute_map with non-constexpr.
+// GSL_SUPPRESS(i.22) isn't working so this is ridiculously painful
+#pragma warning(disable : 26426)
+#endif
+static const std::string* GetTypeAttributeName(const std::string& op_name) {
   static const std::unordered_map<std::string, std::string> op_to_type_attribute_map{
       {"RandomNormal", "dtype"},
       {"RandomNormalLike", "dtype"},
       {"RandomUniform", "dtype"},
       {"RandomUniformLike", "dtype"},
-      {"ConstantFill", "dtype"},
-  };
+      {"ConstantFill", "dtype"}};
+
   auto find_result = op_to_type_attribute_map.find(op_name);
   if (op_to_type_attribute_map.end() == find_result) return nullptr;
   return &find_result->second;
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 // Implementation of type-inference and type-checking for a single node
 Status Graph::InferAndVerifyTypeMatch(Node& node,
@@ -882,7 +892,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   // Apply ONNX's shape/type inference to node
   std::vector<TypeProto> onnx_inferred_types;
   try {
-    InferOutputTypesAndShapes(node, onnx_inferred_types);
+    LOTUS_RETURN_IF_ERROR(InferOutputTypesAndShapes(node, onnx_inferred_types));
   } catch (const std::exception& ex) {
     return Status(LOTUS, FAIL, ex.what());
   }
@@ -1046,11 +1056,11 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     // Node verification.
     auto& node = *GetNode(nodeIndex);
     CheckerContext ctx;
-    ctx.set_ir_version(static_cast<int>(IrVersion()));
+    ctx.set_ir_version(gsl::narrow_cast<int>(IrVersion()));
     ctx.set_opset_imports(DomainToVersionMap());
     LexicalScopeContext lsc;
     for (auto& kv : output_args) {
-      lsc.output_names.insert(kv.first);
+      auto ignored = lsc.output_names.insert(kv.first);
     }
     NodeProto node_proto;
     node.ToProto(node_proto);

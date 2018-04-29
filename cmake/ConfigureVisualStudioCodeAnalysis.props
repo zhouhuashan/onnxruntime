@@ -4,7 +4,8 @@
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <!-- External libraries are in or below the directory with the sln file. Source is under \lotus so not affected by this -->
-    <CAExcludePath>$(SolutionDir);</CAExcludePath>
+    <!-- External libraries are in or below the directory with the sln file. Source is under \lotus so not affected by this.
+         Also need to exclude things under \external such as onnx, and \cmake such as \external\protobuf. -->
+    <CAExcludePath>$(SolutionDir);$(SolutionDir)..\..\..\external;$(SolutionDir)..\..\..\cmake;</CAExcludePath>
   </PropertyGroup>
 </Project>
