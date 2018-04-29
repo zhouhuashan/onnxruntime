@@ -26,11 +26,13 @@ option(lotus_ENABLE_PYTHON "Enable python buildings" OFF)
 option(lotus_USE_CUDA "Build with CUDA support" OFF)
 option(lotus_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
 option(lotus_USE_OPENBLAS "Use openblas" OFF)
+
 if(CMAKE_BUILD_TYPE MATCHES Debug)
 option(lotus_ENABLE_DEBUG_LOGGING "Enable debug logging (e.g., enable VLOG)" ON)
 else()
 option(lotus_ENABLE_DEBUG_LOGGING "Enable debug logging (e.g., enable VLOG)" OFF)
 endif()
+
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
 set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
@@ -55,18 +57,41 @@ if (lotus_USE_OPENBLAS AND lotus_USE_EIGEN_FOR_BLAS)
 endif()
 
 include(lotusIR_util.cmake)
+
 # External dependencies
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
+
+# zlib
 include(zlib)
+set_target_properties(zlib_copy_headers_to_destination PROPERTIES FOLDER "External")
+set_target_properties(zlib_create_destination_dir PROPERTIES FOLDER "External")
+
+# protobuf
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake)
+set_target_properties(libprotobuf PROPERTIES FOLDER "External/Protobuf")
+set_target_properties(libprotobuf-lite PROPERTIES FOLDER "External/Protobuf")
+set_target_properties(libprotoc PROPERTIES FOLDER "External/Protobuf")
+set_target_properties(protoc PROPERTIES FOLDER "External/Protobuf")
+set_target_properties(js_embed PROPERTIES FOLDER "External/Protobuf")
+
+# gtest and gmock
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/googletest)
+set_target_properties(gmock PROPERTIES FOLDER "External/GTest")
+set_target_properties(gmock_main PROPERTIES FOLDER "External/GTest")
+set_target_properties(gtest PROPERTIES FOLDER "External/GTest")
+set_target_properties(gtest_main PROPERTIES FOLDER "External/GTest")
+
+# eigen
 include(eigen)
 if (lotus_RUN_ONNX_TESTS)
   include(models)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()
+
+# ONNX
 include(onnx.cmake)
+set_target_properties(onnx PROPERTIES FOLDER "External/ONNX")
 add_definitions(-DONNX_ML)
 include(date)
 include(gsl)

@@ -226,17 +226,23 @@ ${onnx_test_runner_src_dir}/testenv.cc
 ${onnx_test_runner_src_dir}/runner.h
 ${onnx_test_runner_src_dir}/runner.cc
 )
+
 if(WIN32)
   set(onnx_test_runner_srcs ${onnx_test_runner_srcs} ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h ${onnx_test_runner_src_dir}/parallel_runner_win.cc)
 else()
   set(onnx_test_runner_srcs ${onnx_test_runner_srcs} )
   set(FS_STDLIB stdc++fs)
 endif()
+
 add_executable(onnx_test_runner ${onnx_test_runner_srcs})
 target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
 add_dependencies(onnx_test_runner lotus_providers lotus_framework lotusIR_graph onnx)
 set(onnx_test_lib ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} lotus_common libprotobuf ${CMAKE_THREAD_LIBS_INIT} )
+
 if(lotus_USE_CUDA)
   list(APPEND onnx_test_lib ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
+
 target_link_libraries(onnx_test_runner ${onnx_test_lib})
+set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
+
