@@ -5,12 +5,12 @@ namespace Lotus {
 namespace Test {
 
 template <typename T>
-void RunTest(const vector<T> &input,
-             const vector<int64_t> &dims,
-             const vector<float> &output,
-             const std::string &norm,
-             bool expect_failure = false,
-             const std::string &expect_error_message = "") {
+static void RunTest(const vector<T> &input,
+                    const vector<int64_t> &dims,
+                    const vector<float> &output,
+                    const std::string &norm,
+                    bool expect_failure = false,
+                    const std::string &expect_error_message = "") {
   OpTester test("Normalizer", LotusIR::kMLDomain);
 
   test.AddAttribute("norm", norm);
@@ -22,11 +22,11 @@ void RunTest(const vector<T> &input,
 }
 
 template <typename T>
-void RunTests(const vector<T> &input,
-              const vector<int64_t> &dims,
-              const vector<float> &max_output,
-              const vector<float> &l1_output,
-              const vector<float> &l2_output) {
+static void RunTests(const vector<T> &input,
+                     const vector<int64_t> &dims,
+                     const vector<float> &max_output,
+                     const vector<float> &l1_output,
+                     const vector<float> &l2_output) {
   RunTest(input, dims, max_output, "MAX");
   RunTest(input, dims, l1_output, "L1");
   RunTest(input, dims, l2_output, "L2");

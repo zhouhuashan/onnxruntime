@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Test {
 
 template <typename TInput, typename TOutput>
-void RunTest(const std::vector<int64_t>& dims, const std::vector<TInput>& input, const std::vector<TOutput>& output) {
+static void RunTest(const std::vector<int64_t>& dims, const std::vector<TInput>& input, const std::vector<TOutput>& output) {
   OpTester test("LabelEncoder", LotusIR::kMLDomain);
 
   static const std::vector<std::string> labels = {"Beer", "Wine", "Tequila"};

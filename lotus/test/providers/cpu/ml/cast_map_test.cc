@@ -6,11 +6,11 @@ namespace Test {
 
 // cast from map<int64_t,TFrom> to Tensor<TCastTo>
 template <typename TFrom, typename TCastTo>
-void RunTest(const std::map<int64_t, TFrom> &input,
-             const vector<TCastTo> &output,
-             const std::string &cast_to,
-             int64_t max_map = -1,
-             bool expect_failure = false) {
+static void RunTest(const std::map<int64_t, TFrom> &input,
+                    const vector<TCastTo> &output,
+                    const std::string &cast_to,
+                    int64_t max_map = -1,
+                    bool expect_failure = false) {
   OpTester test("CastMap", LotusIR::kMLDomain);
 
   test.AddAttribute("cast_to", cast_to);
