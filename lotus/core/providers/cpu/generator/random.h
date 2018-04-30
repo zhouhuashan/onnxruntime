@@ -25,7 +25,8 @@ class RandomNormal final : public OpKernel {
     int64_t dtype;
     LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK());
     dtype_ = static_cast<TensorProto::DataType>(dtype);
-    LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_), "Invalid dtype of ", dtype_);
+    LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+                  "Invalid dtype of ", dtype_);
 
     std::vector<int64_t> shape;
     LOTUS_ENFORCE(op_kernel_info_.GetAttrs<int64_t>("shape", shape).IsOK());
@@ -59,7 +60,8 @@ class RandomNormalLike final : public OpKernel {
     int64_t dtype;
     if (op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
       dtype_ = static_cast<TensorProto::DataType>(dtype);
-      LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_), "Invalid dtype of ", dtype_);
+      LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+                    "Invalid dtype of ", dtype_);
     }
   }
 
@@ -89,7 +91,8 @@ class RandomUniform final : public OpKernel {
     int64_t dtype;
     LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK());
     dtype_ = static_cast<TensorProto::DataType>(dtype);
-    LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_), "Invalid dtype of ", dtype_);
+    LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+                  "Invalid dtype of ", dtype_);
 
     std::vector<int64_t> shape;
     LOTUS_ENFORCE(op_kernel_info_.GetAttrs<int64_t>("shape", shape).IsOK());
@@ -122,7 +125,8 @@ class RandomUniformLike final : public OpKernel {
     int64_t dtype;
     if (op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
       dtype_ = static_cast<TensorProto::DataType>(dtype);
-      LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_), "Invalid dtype of ", dtype_);
+      LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+                    "Invalid dtype of ", dtype_);
     }
   }
 

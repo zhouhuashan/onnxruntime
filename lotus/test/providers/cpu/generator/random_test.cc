@@ -148,13 +148,6 @@ TEST(Random, RandomUniformLikeInferDType) {
   RunRandomUniformLikeTest(infer_dtype);
 }
 
-// there's an assert() call to validate the type when resolving the graph so that will terminate the test before
-// code in the operator that validates dtype is hit. however that won't fire in a release build,
-// so we can only test the dtype error checking if NDEBUG is defined.
-// on linux the bad attribute gets dropped in a release build, so behavior is different. not sure why. doesn't matter.
-// just run this test on windows release builds due to these factors. the operator won't run in all other
-// setups so the test isn't applicable there.
-#if defined(_MSC_VER) && defined(NDEBUG)
 TEST(Random, InvalidDType) {
   float seed = 123.f;
 
@@ -175,7 +168,7 @@ TEST(Random, InvalidDType) {
     test.AddAttribute("shape", dims);
 
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Invalid dtype of 999");
+    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
   }
 
   {
@@ -191,7 +184,7 @@ TEST(Random, InvalidDType) {
     test.AddAttribute("shape", dims);
 
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Invalid dtype of 999");
+    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
   }
 
   {
@@ -207,7 +200,7 @@ TEST(Random, InvalidDType) {
 
     test.AddInput<int32_t>("X", dims, input);
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Invalid dtype of 999");
+    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
   }
 
   {
@@ -223,10 +216,9 @@ TEST(Random, InvalidDType) {
 
     test.AddInput<int32_t>("X", dims, input);
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Invalid dtype of 999");
+    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
   }
 }
-#endif
 
 }  // namespace Test
 }  // namespace Lotus

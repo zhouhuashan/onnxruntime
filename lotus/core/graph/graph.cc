@@ -951,6 +951,12 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
 
       if (AttributeProto_AttributeType::AttributeProto_AttributeType_INT == attr_type) {
         auto elem_type = gsl::narrow_cast<TensorProto_DataType>(find_type_attr->second.i());
+        if (!TensorProto::DataType_IsValid(elem_type)) {
+          return LOTUS_MAKE_STATUS(LOTUS, FAIL,
+                                   "Attribute '", *p_type_attribute_name,
+                                   "' in node (", nodeName, ") has invalid value of ", elem_type);
+        }
+
         TypeProto type_proto;
         type_proto.mutable_tensor_type()->set_elem_type(elem_type);
         set_output_type(DataTypeUtils::ToType(type_proto));
