@@ -11,6 +11,7 @@
 
 #include "test/test_environment.h"
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <gsl/gsl_byte>
 
@@ -301,6 +302,17 @@ struct OpTester {
   bool run_called_ = false;
 #endif
 };
+
+template <typename TException>
+void ExpectThrow(OpTester& test, const std::string& error_msg) {
+  try {
+    test.Run();
+    // should throw and not reach this
+    EXPECT_TRUE(false) << "Expected Run() to throw";
+  } catch (TException ex) {
+    EXPECT_THAT(ex.what(), testing::HasSubstr(error_msg));
+  }
+}
 
 }  // namespace Test
 }  // namespace Lotus

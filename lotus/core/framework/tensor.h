@@ -179,24 +179,26 @@ class Tensor {
   template <typename T>
   T* MutableData() {
     // Type check
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch.");
+    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                  DataTypeImpl::GetType<T>(), "!=", dtype_);
     return reinterpret_cast<T*>(static_cast<char*>(GetRaw()) + byte_offset_);
   }
 
   template <typename T>
   const T* Data() const {
     // Type check
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch.");
+    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                  DataTypeImpl::GetType<T>(), "!=", dtype_);
     return reinterpret_cast<const T*>(static_cast<char*>(GetRaw()) + byte_offset_);
   }
 
   void* MutableDataRaw(MLDataType type) {
-    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
+    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
     return GetRaw();
   }
 
   const void* DataRaw(MLDataType type) const {
-    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.");
+    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
     return GetRaw();
   }
 
