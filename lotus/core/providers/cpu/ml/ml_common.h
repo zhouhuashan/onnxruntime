@@ -6,13 +6,13 @@
 namespace Lotus {
 namespace ML {  // name space for onnx.ml operators
 
-enum OUTPUT_MODE {
+enum class OUTPUT_MODE {
   TOPCLASS,
   TOPCLASS_ANDSCORE,
   ALL_SCORES
 };
 
-enum NODE_MODE {
+enum class NODE_MODE {
   BRANCH_LEQ,
   BRANCH_LT,
   BRANCH_GTE,
@@ -40,7 +40,7 @@ static inline NODE_MODE MakeTreeNodeMode(const std::string& input) {
   }
 }
 
-enum POST_EVAL_TRANSFORM {
+enum class POST_EVAL_TRANSFORM {
   NONE,
   LOGISTIC,
   SOFTMAX,
@@ -62,7 +62,7 @@ static inline POST_EVAL_TRANSFORM MakeTransform(const std::string& input) {
   }
 }
 
-enum AGGREGATE_FUNCTION {
+enum class AGGREGATE_FUNCTION {
   AVERAGE,
   SUM,
   MIN,
@@ -81,7 +81,7 @@ static inline AGGREGATE_FUNCTION MakeAggregateFunction(const std::string& input)
   }
 }
 
-enum CAST_TO {
+enum class CAST_TO {
   TO_FLOAT,
   TO_STRING,
   TO_INT64
@@ -151,7 +151,7 @@ static inline NORMALIZE MakeNormalize(const std::string& input) {
   }
 }
 
-enum SVM_TYPE {
+enum class SVM_TYPE {
   SVM_LINEAR,
   SVM_SVC
 };

@@ -27,7 +27,11 @@ Status CastMap::Compute(OpKernelContext* context) const {
   if (input_type == DataTypeImpl::GetType<std::map<int64_t, float>>()) {
     float_input = true;
   } else if (input_type != DataTypeImpl::GetType<std::map<int64_t, std::string>>()) {
-    LOTUS_THROW("Invalid input type. Expected std::map<int64_t, float> or std::map<int64_t, std::string>", input_type);
+    std::ostringstream err_msg;
+    err_msg << "Invalid input type of value: "
+            << input_type
+            << " Expected std::map<int64_t, float> or std::map<int64_t, std::string>";
+    return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
   }
 
   Status status;
@@ -48,7 +52,9 @@ Status CastMap::Compute(OpKernelContext* context) const {
       break;
     }
     default:
-      LOTUS_THROW("Unexpected CAST_TO value of ", cast_to_);
+      return Status(LOTUS,
+                    INVALID_ARGUMENT,
+                    ("Unexpected CAST_TO value of " + static_cast<std::underlying_type<CAST_TO>::type>(cast_to_)));
   }
 
   return status;

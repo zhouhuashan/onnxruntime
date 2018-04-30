@@ -19,7 +19,7 @@ class TreeEnsembleRegressor final : public OpKernel {
   std::vector<int64_t> nodes_featureids_;
   std::vector<float> nodes_values_;
   std::vector<float> nodes_hitrates_;
-  std::vector<int64_t> nodes_modes_;
+  std::vector<NODE_MODE> nodes_modes_;
   std::vector<int64_t> nodes_truenodeids_;
   std::vector<int64_t> nodes_falsenodeids_;
   std::vector<int64_t> missing_tracks_true_;

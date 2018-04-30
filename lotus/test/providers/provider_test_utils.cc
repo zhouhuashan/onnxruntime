@@ -38,6 +38,7 @@ void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor
   auto* output = output_tensor.Data<float>();
   bool has_abs_err = output_data.absolute_error_.has_value();
   bool has_rel_err = output_data.relative_error_.has_value();
+
   for (int i = 0; i < size; ++i) {
     if (std::isinf(expected[i]))  // Test infinity for equality
       EXPECT_EQ(expected[i], output[i]);
@@ -205,7 +206,10 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
         LOTUS_ENFORCE(output.data_.IsTensor());
         auto& output_tensor = output.data_.Get<Tensor>();
         auto& run_output = mlvalue.Get<Tensor>();
-        LOTUS_ENFORCE(output_tensor.Shape() == run_output.Shape(), "Output shape did not match expected output shape");
+        LOTUS_ENFORCE(output_tensor.Shape() == run_output.Shape(),
+                      "Expected output shape [" + output_tensor.Shape().ToString() +
+                          "] did not match run output shape [" +
+                          run_output.Shape().ToString() + "]");
         auto size = output_tensor.Shape().Size();
 
         // Dispatch on the type

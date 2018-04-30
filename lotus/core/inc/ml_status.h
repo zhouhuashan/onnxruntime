@@ -23,27 +23,27 @@ enum class MLStatus : uint32_t {
 
 inline const char *MLStatusToString(MLStatus status) noexcept {
   switch (status) {
-  case MLStatus::OK:
-    return "SUCCESS";
-  case MLStatus::INVALID_ARGUMENT:
-    return "INVALID_ARGUMENT";
-  case MLStatus::NO_SUCHFILE:
-    return "NO_SUCHFILE";
-  case MLStatus::NO_MODEL:
-    return "NO_MODEL";
-  case MLStatus::ENGINE_ERROR:
-    return "ENGINE_ERROR";
-  case MLStatus::RUNTIME_EXCEPTION:
-    return "RUNTIME_EXCEPTION";
-  case MLStatus::INVALID_PROTOBUF:
-    return "INVALID_PROTOBUF";
-  case MLStatus::MODEL_LOADED:
-    return "MODEL_LOADED";
-  case MLStatus::NOT_IMPLEMENTED:
-    return "NOT_IMPLEMENTED";
-  case MLStatus::INVALID_GRAPH:
-    return "INVALID_GRAPH";
-  default:
-    return "GENERAL ERROR";
+    case MLStatus::OK:
+      return "SUCCESS";
+    case MLStatus::INVALID_ARGUMENT:
+      return "INVALID_ARGUMENT";
+    case MLStatus::NO_SUCHFILE:
+      return "NO_SUCHFILE";
+    case MLStatus::NO_MODEL:
+      return "NO_MODEL";
+    case MLStatus::ENGINE_ERROR:
+      return "ENGINE_ERROR";
+    case MLStatus::RUNTIME_EXCEPTION:
+      return "RUNTIME_EXCEPTION";
+    case MLStatus::INVALID_PROTOBUF:
+      return "INVALID_PROTOBUF";
+    case MLStatus::MODEL_LOADED:
+      return "MODEL_LOADED";
+    case MLStatus::NOT_IMPLEMENTED:
+      return "NOT_IMPLEMENTED";
+    case MLStatus::INVALID_GRAPH:
+      return "INVALID_GRAPH";
+    default:
+      return "GENERAL ERROR";
   }
 }
