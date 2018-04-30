@@ -27,7 +27,7 @@ void TestReduceOp(const std::string &op,
   test.Run();
 }
 
-TEST(MathOpTest, ReductionVariationTest) {
+TEST(ReductionOpTest, ReductionVariationTest) {
   const std::vector<float> &input_data = testcases.input_data;
   const std::vector<int64_t> &input_dims = testcases.input_dims;
   OpAttributesResultMap &opAttributesResultMap = testcases.map_op_attribute_expected;
@@ -50,7 +50,7 @@ TEST(MathOpTest, ReductionVariationTest) {
   }
 }
 
-TEST(MathOpTest, ReduceL1) {
+TEST(ReductionOpTest, ReduceL1) {
   OpTester test("ReduceL1");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddInput<float>("data", {3, 2, 2},
@@ -66,7 +66,7 @@ TEST(MathOpTest, ReduceL1) {
   test.Run();
 }  // namespace Test
 
-TEST(MathOpTest, ReduceL2) {
+TEST(ReductionOpTest, ReduceL2) {
   OpTester test("ReduceL2");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)0);
@@ -83,7 +83,7 @@ TEST(MathOpTest, ReduceL2) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceLogSum) {
+TEST(ReductionOpTest, ReduceLogSum) {
   OpTester test("ReduceLogSum");
   test.AddAttribute("axes", std::vector<int64_t>{1});
   test.AddAttribute("keepdims", (int64_t)1);
@@ -102,7 +102,7 @@ TEST(MathOpTest, ReduceLogSum) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceLogSumExp) {
+TEST(ReductionOpTest, ReduceLogSumExp) {
   OpTester test("ReduceLogSumExp");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
@@ -119,7 +119,7 @@ TEST(MathOpTest, ReduceLogSumExp) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceMax) {
+TEST(ReductionOpTest, ReduceMax) {
   OpTester test("ReduceMax");
   test.AddAttribute("axes", std::vector<int64_t>{1, 2});
   test.AddAttribute("keepdims", (int64_t)1);
@@ -136,7 +136,7 @@ TEST(MathOpTest, ReduceMax) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceMean) {
+TEST(ReductionOpTest, ReduceMean) {
   OpTester test("ReduceMean");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
@@ -153,7 +153,7 @@ TEST(MathOpTest, ReduceMean) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceMin) {
+TEST(ReductionOpTest, ReduceMin) {
   OpTester test("ReduceMin");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
@@ -170,7 +170,7 @@ TEST(MathOpTest, ReduceMin) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceSum) {
+TEST(ReductionOpTest, ReduceSum) {
   OpTester test("ReduceSum");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
@@ -187,7 +187,7 @@ TEST(MathOpTest, ReduceSum) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceSumSquare) {
+TEST(ReductionOpTest, ReduceSumSquare) {
   OpTester test("ReduceSumSquare");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
@@ -204,7 +204,7 @@ TEST(MathOpTest, ReduceSumSquare) {
   test.Run();
 }
 
-TEST(MathOpTest, ReduceProd) {
+TEST(ReductionOpTest, ReduceProd) {
   OpTester test("ReduceProd");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddInput<float>("data", {3, 2, 2},
@@ -220,7 +220,7 @@ TEST(MathOpTest, ReduceProd) {
   test.Run();
 }
 
-TEST(MathOpTest, ArgMax) {
+TEST(ReductionOpTest, ArgMax) {
   OpTester test("ArgMax");
   test.AddAttribute("axis", (int64_t)1);
   test.AddAttribute("keepdims", (int64_t)1);
@@ -240,7 +240,7 @@ TEST(MathOpTest, ArgMax) {
   test.Run();
 }
 
-TEST(MathOpTest, ArgMin) {
+TEST(ReductionOpTest, ArgMin) {
   OpTester test("ArgMin");
   test.AddAttribute("axis", (int64_t)0);
   test.AddAttribute("keepdims", (int64_t)0);
