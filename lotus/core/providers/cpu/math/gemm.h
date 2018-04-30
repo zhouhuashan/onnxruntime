@@ -44,13 +44,21 @@ class Gemm final : public OpKernel {
       K = X->Shape()[1];
     }
 
+    int k_dim;
     if (trans_B_ == CblasTrans) {
       N = W->Shape()[0];
+      k_dim = 1;
     } else {
       N = W->Shape()[1];
+      k_dim = 0;
     }
 
-    LOTUS_ENFORCE(W->Shape().Size(), K * N);
+    if (W->Shape()[k_dim] != K)
+      return Status(LOTUS, INVALID_ARGUMENT,
+                    "GEMM: Dimension mismatch, W: " +
+                        W->Shape().ToString() +
+                        " K: " + std::to_string(K) +
+                        " N:" + std::to_string(N));
 
     if (broadcast_) {
       if (!IsValidBroadcast(B->Shape(), M, N))
