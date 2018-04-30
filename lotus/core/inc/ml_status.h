@@ -21,8 +21,7 @@ enum class MLStatus : uint32_t {
   INVALID_GRAPH = 10,
 };
 
-inline const char *MLStatusToString(MLStatus status)
-{
+inline const char *MLStatusToString(MLStatus status) noexcept {
   switch (status) {
   case MLStatus::OK:
     return "SUCCESS";

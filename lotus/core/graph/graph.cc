@@ -907,7 +907,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
     // correspond to the last formal parameter. (The ONNX schema verification check
     // would have checked that the corresponding formal parameter is variadic.)
 
-    int num_formal_params = gsl::narrow_cast<int>(op.outputs().size());
+    const int num_formal_params = gsl::narrow_cast<int>(op.outputs().size());
     auto operand_index = std::min(i, num_formal_params - 1);
     auto op_formal_parameter = op.outputs().at(operand_index);
 

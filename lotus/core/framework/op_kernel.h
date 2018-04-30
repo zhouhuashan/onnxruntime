@@ -44,11 +44,11 @@ class OpKernelInfo {
   template <typename T>
   Status GetAttrs(const std::string& name, gsl::span<T> values) const;
 
-  template<typename T>
-  uint32_t GetPrimitiveAttrElementCount(const std::string &name) const noexcept;
-  uint32_t GetPrimitiveAttrElementCount(AttributeProto_AttributeType type, const std::string &name) const noexcept;
+  uint32_t GetPrimitiveAttrElementCount(AttributeProto_AttributeType type,
+                                        const std::string& name) const noexcept;
 
-  bool HasPrimitiveAttribute(AttributeProto_AttributeType type, const std::string &name) const noexcept;
+  bool HasPrimitiveAttribute(AttributeProto_AttributeType type,
+                             const std::string& name) const noexcept;
   
   const LotusIR::Node& node() const {
     return node_;
@@ -66,7 +66,8 @@ class OpKernelInfo {
     return execution_provider_;
   }
 
-  Status GetAttributeProto(const std::string& name, const AttributeProto **attribute) const;
+  Status GetAttributeProto(const std::string& name,
+                           const AttributeProto** attribute) const;
 
  private:
   const LotusIR::Node& node_;
@@ -81,8 +82,7 @@ class OpKernel {
  public:
   typedef std::function<void()> DoneCallback;
 
-  explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info)
-  {
+  explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {
   }
 
   const LotusIR::Node& Node() const {
@@ -114,7 +114,9 @@ class OpKernelContext {
  public:
   typedef std::unordered_map<std::string, size_t> ArgMap;
 
-  explicit OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel, const Logging::Logger& logger);
+  explicit OpKernelContext(ExecutionFrame* frame,
+                           const OpKernel* kernel,
+                           const Logging::Logger& logger);
 
   ~OpKernelContext(){};
 
@@ -126,7 +128,8 @@ class OpKernelContext {
   int NumInputs(int arg_num) const {
     auto& arg_counts = kernel_->Node().InputArgCount();
 
-    LOTUS_ENFORCE(arg_num < arg_counts.size(), "Invalid arg_num of ", arg_num, ". Num args is ", arg_counts.size());
+    LOTUS_ENFORCE(arg_num < arg_counts.size(),
+                  "Invalid arg_num of ", arg_num, ". Num args is ", arg_counts.size());
 
     return arg_counts[arg_num];
   }
@@ -204,15 +207,16 @@ class KernelRegistry {
   struct KernelCreateInfo {
     unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
     KernelCreateFn kernel_create_func;
+    Status status;
 
     KernelCreateInfo(unique_ptr<KernelDef> definition,
                      KernelCreateFn create_func)
         : kernel_def(std::move(definition)),
-          kernel_create_func(create_func) {}
+          kernel_create_func(create_func) { }
 
-    KernelCreateInfo(KernelCreateInfo&& other) : kernel_def(std::move(other.kernel_def)),
-                                                 kernel_create_func(other.kernel_create_func) {
-    }
+    KernelCreateInfo(KernelCreateInfo&& other)
+        : kernel_def(std::move(other.kernel_def)),
+          kernel_create_func(other.kernel_create_func) { }
   };
 
   // Check if the node's input/outpuData/attributes are compatible with this
