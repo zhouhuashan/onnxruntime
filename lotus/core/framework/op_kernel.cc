@@ -57,7 +57,8 @@ DEFINE_GET_ATTRS(std::string, strings)
 DEFINE_GET_ATTRS(TensorProto, tensors)
 DEFINE_GET_ATTRS(GraphProto, graphs)
 
-Status OpKernelInfo::GetAttributeProto(const std::string& name, const AttributeProto **attribute) const {
+Status OpKernelInfo::GetAttributeProto(const std::string& name,
+                                       const AttributeProto** attribute) const {
   const LotusIR::NodeAttributes &attributes = node().GetAttributes();
   auto it = attributes.find(name);
   if (it != attributes.end()) {
@@ -67,7 +68,8 @@ Status OpKernelInfo::GetAttributeProto(const std::string& name, const AttributeP
   return Status(LOTUS, FAIL, "No attribute with this name is defined.");
 }
 
-uint32_t OpKernelInfo::GetPrimitiveAttrElementCount(AttributeProto_AttributeType type, const std::string& name) const noexcept {
+uint32_t OpKernelInfo::GetPrimitiveAttrElementCount(AttributeProto_AttributeType type,
+                                                    const std::string& name) const noexcept {
   const LotusIR::NodeAttributes &attributes = node().GetAttributes();
   auto it = attributes.find(name);
   if (it != attributes.end()) {
@@ -99,7 +101,8 @@ uint32_t OpKernelInfo::GetPrimitiveAttrElementCount(AttributeProto_AttributeType
   return 0;
 }
 
-bool OpKernelInfo::HasPrimitiveAttribute(AttributeProto_AttributeType type, const std::string& name) const noexcept {
+bool OpKernelInfo::HasPrimitiveAttribute(AttributeProto_AttributeType type,
+                                         const std::string& name) const noexcept {
   return GetPrimitiveAttrElementCount(type, name) > 0;
 }
 
@@ -112,7 +115,8 @@ std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
   return ret;
 }
 
-bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef& kernel_def) {
+bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
+                                     const KernelDef& kernel_def) {
   const OpSchema& op_schema = *node.Op();
   const size_t len = node.InputArgCount().size();
   if (len > op_schema.inputs().size()) return false;
@@ -158,17 +162,16 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node, const KernelDef&
   return true;
 }
 
-  
 Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
                                 KernelCreateFn kernel_creator) {
-  KernelCreateInfo kernel_info(kernel_builder.Build(), kernel_creator);
-  auto& op_name = kernel_info.kernel_def->OpName();
-  auto& domain = kernel_info.kernel_def->Domain();
-  auto& provider_type = kernel_info.kernel_def->Provider();
+  KernelCreateInfo create_info(kernel_builder.Build(), kernel_creator);
+  auto& op_name = create_info.kernel_def->OpName();
+  auto& domain = create_info.kernel_def->Domain();
+  auto& provider_type = create_info.kernel_def->Provider();
   int start = 0, end = 0;
-  kernel_info.kernel_def->SinceVersion(&start, &end);
+  create_info.kernel_def->SinceVersion(&start, &end);
 
-  // Check no op version conflicts.
+  // Check op version conflicts.
   auto range = kernel_creator_fn_map_.equal_range(op_name);
   for (auto i = range.first; i != range.second; ++i) {
     if (domain == i->second.kernel_def->Domain() &&
@@ -176,18 +179,19 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
       int start1 = 0, end1 = 0;
       i->second.kernel_def->SinceVersion(&start1, &end1);
       if (start <= end1 && end >= start1) {
-        Status status(LOTUS, FAIL,
-                      "Failed to add kernel for " + op_name +
-                          ": Conflicting with a registered kernel with op versions [" +
-                          std::to_string(start1) + "," + std::to_string(end1) + "].");
-        return status;
+        create_info.status =
+          Status(LOTUS, FAIL,
+                 "Failed to add kernel for " + op_name +
+                 ": Conflicting with a registered kernel with op versions [" +
+                 std::to_string(start1) + "," + std::to_string(end1) + "].");
+        return create_info.status;
       }
     }
   }
 
   // Register the kernel.
-  // Ownership of the kernel_info (and KernelDef within it) is transferred to the map.
-  kernel_creator_fn_map_.emplace(op_name, std::move(kernel_info));
+  // Ownership of the KernelDef is transferred to the map.
+  kernel_creator_fn_map_.emplace(op_name, std::move(create_info));
   return Status::OK();
 }
 
@@ -197,6 +201,10 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
                                     /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   for (auto i = range.first; i != range.second; ++i) {
+    // Check if the kernel is ill-formed.
+    if (!i->second.status.IsOK()) {
+      return i->second.status;
+    }
     if (node.Domain() == i->second.kernel_def->Domain() &&
         node.GetExecutionProvider() == i->second.kernel_def->Provider()) {
       int start, end;
@@ -211,9 +219,9 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
     }
   }
 
-  // The node is assigned to an execution provider and no kernel registered for the operator
-  // referred by the node. Create FunctionKernel to delegate the node run to corresponding execution
-  // provider.
+  // The node is assigned to an execution provider and no kernel registered
+  // for the operator referred by the node. Create FunctionKernel to delegate
+  // the node run to corresponding execution provider.
   auto& kernelCreatorInfo = kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second;
   OpKernelInfo kernel_info(node, allocator_info, *kernelCreatorInfo.kernel_def, execution_provider);
   op_kernel->reset(kernelCreatorInfo.kernel_create_func(kernel_info));
@@ -237,7 +245,9 @@ Tensor* OpKernelContext::Output<Tensor>(int index) {
   return nullptr;
 }
 
-OpKernelContext::OpKernelContext(ExecutionFrame* frame, const OpKernel* kernel, const Logging::Logger& logger)
+OpKernelContext::OpKernelContext(ExecutionFrame* frame,
+                                 const OpKernel* kernel,
+                                 const Logging::Logger& logger)
     : execution_frame_(frame),
       kernel_(kernel),
       logger_(&logger) {

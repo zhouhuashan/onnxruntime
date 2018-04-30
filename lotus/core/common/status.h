@@ -46,10 +46,10 @@ class Status {
       : state_((other.state_ == nullptr) ? nullptr : std::make_unique<State>(*other.state_)) {}
 
   void operator=(const Status& other) {
-    if (&other != this) {
-      if (nullptr == other.state_) {
+    if (state_ != other.state_) {
+      if (other.state_ == nullptr) {
         state_.reset();
-      } else if (state_ != other.state_) {
+      } else {
         state_ = std::make_unique<State>(*other.state_);
       }
     }
@@ -83,7 +83,8 @@ class Status {
   static const std::string& EmptyString();
 
   struct State {
-    State(StatusCategory cat0, int code0, const std::string& msg0) : category(cat0), code(code0), msg(msg0) {}
+    State(StatusCategory cat0, int code0, const std::string& msg0)
+        : category(cat0), code(code0), msg(msg0) {}
 
     StatusCategory category = StatusCategory::NONE;
     int code = 0;
