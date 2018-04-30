@@ -118,30 +118,24 @@ ML_API_IMP(OpKernelInfoWrapper::GetAttribute)(
     uint32_t element_byte_size,
     void* value) const noexcept {
   try {
-    if (element_count == 1) {
-      switch (type) {
-        case MLAttributeType::kFloat:
-          return GetAttributeHelper<MLAttributeType::kFloat>(name, element_byte_size, value);
+    switch (type) {
+      case MLAttributeType::kFloat:
+        ML_CHECK_BOOL(element_count == 1);
+        return GetAttributeHelper<MLAttributeType::kFloat>(name, element_byte_size, value);
 
-        case MLAttributeType::kInt:
-          return GetAttributeHelper<MLAttributeType::kInt>(name, element_byte_size, value);
+      case MLAttributeType::kInt:
+        ML_CHECK_BOOL(element_count == 1);
+        return GetAttributeHelper<MLAttributeType::kInt>(name, element_byte_size, value);
 
-        default:
-          ML_CHECK_BOOL(false);
-          break;
-      }
-    } else {
-      switch (type) {
-        case MLAttributeType::kFloatArray:
-          return GetAttributeArrayHelper<MLAttributeType::kFloatArray>(name, element_count, element_byte_size, value);
+      case MLAttributeType::kFloatArray:
+        return GetAttributeArrayHelper<MLAttributeType::kFloatArray>(name, element_count, element_byte_size, value);
 
-        case MLAttributeType::kIntArray:
-          return GetAttributeArrayHelper<MLAttributeType::kIntArray>(name, element_count, element_byte_size, value);
+      case MLAttributeType::kIntArray:
+        return GetAttributeArrayHelper<MLAttributeType::kIntArray>(name, element_count, element_byte_size, value);
 
-        default:
-          ML_CHECK_BOOL(false);
-          break;
-      }
+      default:
+        ML_CHECK_BOOL(false);
+        break;
     }
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
