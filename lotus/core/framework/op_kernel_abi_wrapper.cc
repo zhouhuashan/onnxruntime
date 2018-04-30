@@ -93,7 +93,7 @@ ML_API_IMP(OpKernelInfoWrapper::GetAttributeElementCount)(
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 }
@@ -145,7 +145,7 @@ ML_API_IMP(OpKernelInfoWrapper::GetAttribute)(
     }
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 }
@@ -186,7 +186,7 @@ ML_API_IMP(OpKernelInfoWrapper::GetStringAttributeElementLength)(
 
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 
@@ -207,7 +207,7 @@ ML_API_IMP(OpKernelInfoWrapper::GetStringAttributeElement)(
 
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 
@@ -232,7 +232,7 @@ ML_API_IMP(TensorWrapper::GetDimensionCount)(uint32_t* dimensions) const {
     *dimensions = static_cast<uint32_t>(impl_->Shape().NumDimensions());
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 
@@ -253,7 +253,7 @@ ML_API_IMP(TensorWrapper::GetDimensions)(
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 }
@@ -333,7 +333,7 @@ ML_API_IMP(OpKernelContextWrapper::GetInputEdgeType)(uint32_t input_index, MLEdg
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 }
@@ -345,7 +345,7 @@ ML_API_IMP(OpKernelContextWrapper::GetOutputEdgeType)(uint32_t output_index, MLE
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 }
@@ -362,7 +362,7 @@ ML_API_IMP(OpKernelContextWrapper::GetInputTensor)(uint32_t input_index, const I
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
 }
@@ -380,10 +380,50 @@ ML_API_IMP(OpKernelContextWrapper::GetOutputTensor)(uint32_t output_index, const
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
-  } catch (const std::exception& /*ex*/) {
+  } catch (...) {
     return MLStatus::FAIL;
   }
-}  
+}
+
+ML_API_IMP_(uint32_t, OpKernelContextWrapper::GetInputCount)() const noexcept {
+  return static_cast<uint32_t>(inputTensors_.size());
+}
+
+ML_API_IMP_(uint32_t, OpKernelContextWrapper::GetOutputCount)() const noexcept {
+  return static_cast<uint32_t>(outputTensors_.size());
+}
+
+ML_API_IMP(OpKernelContextWrapper::AllocateTemporaryData)(uint64_t size, void** data) const {
+  try {
+    *data = nullptr;
+    auto& info = impl_->GetAllocatorInfo();
+    auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
+
+    *data = alloc.Alloc(size);
+
+    return MLStatus::OK;
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
+}
+
+ML_API_IMP(OpKernelContextWrapper::FreeTemporaryData)(void* data) const {
+  try {
+    auto& info = impl_->GetAllocatorInfo();
+    auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
+    if (data) {
+      alloc.Free(data);
+    }
+
+    return MLStatus::OK;
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
+}
 
 AbiOpKernel::AbiOpKernel(IMLOpKernelCreateFn create_function, const OpKernelInfo& kernelInfo) : OpKernel(kernelInfo), impl_(create_function()) {
   OpKernelInfoWrapper kernelInfoWrapper(&op_kernel_info_);

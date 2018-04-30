@@ -134,6 +134,12 @@ class IMLOpKernelContext {
 
   ML_API(GetInputTensor)(uint32_t input_index, const IMLOpTensor** tensor) const noexcept = 0;
   ML_API(GetOutputTensor)(uint32_t output_index, const int64_t* dimension_sizes, uint32_t dimensions, IMLOpTensor** tensor) noexcept = 0;
+  
+  ML_API_(uint32_t, GetInputCount)() const noexcept = 0;
+  ML_API_(uint32_t, GetOutputCount)() const noexcept = 0;
+
+  ML_API(AllocateTemporaryData)(uint64_t size, void** data) const = 0;
+  ML_API(FreeTemporaryData)(void* data) const = 0;
 };
 
 class IMLOpKernel {

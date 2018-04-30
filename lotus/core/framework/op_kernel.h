@@ -167,6 +167,10 @@ class OpKernelContext {
     return static_cast<int>(kernel_->Node().OutputDefs().size());
   }
 
+  const AllocatorInfo &GetAllocatorInfo() const {
+    return kernel_->Allocator();
+  }
+
  private:
   ExecutionFrame* execution_frame_ = nullptr;
   const OpKernel* kernel_ = nullptr;
