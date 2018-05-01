@@ -12,32 +12,28 @@ using namespace Lotus::Logging;
 namespace Lotus {
 namespace Test {
 
-// These have to be defined before Run() since Run() tries to instantiate them
-// The Check templates have to be defined before Run() since Run() instantiates them
+// Check functions for tensor types
 
 // The default implementation compares for equality, specialized versions for other types are below
 template <typename T>
-void OpTester::Check(const Data& output_data, const Tensor& output_tensor, size_t size) {
-  auto& expected_tensor = output_data.data_.Get<Tensor>();
+void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
+  auto& expected_tensor = expected_data.data_.Get<Tensor>();
   auto* expected = expected_tensor.Data<T>();
   auto* output = output_tensor.Data<T>();
+  auto size = output_tensor.Shape().Size();
   for (int i = 0; i < size; ++i) {
     EXPECT_EQ(expected[i], output[i]);
   }
 }
 
-template <typename T>
-void OpTester::Check(const Data& output_data, const T& run_output) {
-  EXPECT_EQ(output_data.data_.Get<T>(), run_output);
-}
-
 template <>
-void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor, size_t size) {
-  auto& expected_tensor = output_data.data_.Get<Tensor>();
+void Check<float>(const OpTester::Data& expected_data, const Tensor& output_tensor) {
+  auto& expected_tensor = expected_data.data_.Get<Tensor>();
   auto* expected = expected_tensor.Data<float>();
   auto* output = output_tensor.Data<float>();
-  bool has_abs_err = output_data.absolute_error_.has_value();
-  bool has_rel_err = output_data.relative_error_.has_value();
+  auto size = output_tensor.Shape().Size();
+  bool has_abs_err = expected_data.absolute_error_.has_value();
+  bool has_rel_err = expected_data.relative_error_.has_value();
 
   for (int i = 0; i < size; ++i) {
     if (std::isinf(expected[i]))  // Test infinity for equality
@@ -48,14 +44,66 @@ void OpTester::Check<float>(const Data& output_data, const Tensor& output_tensor
         EXPECT_NEAR(expected[i], output[i], 0.001f);
       } else {
         if (has_abs_err) {
-          EXPECT_NEAR(expected[i], output[i], output_data.absolute_error_.value());
+          EXPECT_NEAR(expected[i], output[i], expected_data.absolute_error_.value());
         }
         if (has_rel_err) {
-          EXPECT_NEAR(expected[i], output[i], output_data.relative_error_.value() * std::abs(expected[i]));
+          EXPECT_NEAR(expected[i], output[i], expected_data.relative_error_.value() * std::abs(expected[i]));
         }
       }
     }
   }
+}
+
+template <typename Type>
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const Tensor& output_tensor) {
+  if (type == DataTypeImpl::GetType<Type>())
+    Check<Type>(expected_data, output_tensor);
+  else
+    LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
+}
+
+template <typename Type, typename Next, typename... Types>
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const Tensor& output_tensor) {
+  if (type == DataTypeImpl::GetType<Type>())
+    Check<Type>(expected_data, output_tensor);
+  else
+    CheckDispatch<Next, Types...>(type, expected_data, output_tensor);
+}
+
+void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
+  LOTUS_ENFORCE(expected_data.data_.Get<Tensor>().Shape() == output_tensor.Shape(),
+                "Expected output shape [" + expected_data.data_.Get<Tensor>().Shape().ToString() +
+                    "] did not match run output shape [" +
+                    output_tensor.Shape().ToString() + "]");
+
+  CheckDispatch<bool, float, double, uint8_t, uint16_t, uint32_t, uint64_t, int16_t, int32_t, int64_t, std::string>(output_tensor.DataType(), expected_data, output_tensor);
+}
+
+// Check for non tensor types
+
+template <typename T>
+void Check(const OpTester::Data& expected_data, const T& run_output) {
+  EXPECT_EQ(expected_data.data_.Get<T>(), run_output);
+}
+
+template <typename Type>
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, MLValue& mlvalue) {
+  if (type == DataTypeImpl::GetType<Type>())
+    Check<Type>(expected_data, mlvalue.Get<Type>());
+  else
+    LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
+}
+
+template <typename Type, typename Next, typename... Types>
+void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, MLValue& mlvalue) {
+  if (type == DataTypeImpl::GetType<Type>())
+    Check<Type>(expected_data, mlvalue.Get<Type>());
+  else
+    CheckDispatch<Next, Types...>(type, expected_data, mlvalue);
+}
+
+void Check(const OpTester::Data& expected_data, MLValue& mlvalue) {
+  CheckDispatch<VectorMapStringToFloat, VectorMapInt64ToFloat>(expected_data.data_.Type(), expected_data, mlvalue);
 }
 
 OpTester::~OpTester() {
@@ -65,24 +113,6 @@ OpTester::~OpTester() {
     __debugbreak();
   }
 #endif
-}
-
-void OpTester::CreateMLValue(IAllocator* alloc,
-                             const std::vector<int64_t>& dims,
-                             MLDataType element_type,
-                             const gsl::byte* p_value,
-                             size_t input_size_bytes,
-                             MLValue* p_mlvalue) {
-  TensorShape shape(dims);
-  auto location = alloc->Info();
-  void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
-  LOTUS_ENFORCE(p_value);
-  memcpy(buffer, p_value, input_size_bytes);
-
-  auto p_tensor = std::make_unique<Tensor>(element_type, shape, buffer, location, alloc);
-  p_mlvalue->Init(p_tensor.release(),
-                  DataTypeImpl::GetType<Tensor>(),
-                  DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 }
 
 void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
@@ -200,58 +230,12 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     // Verify the outputs
     // Todo: support check output with map/sequence/....
     int idx = 0;
-    for (auto& output : output_data_) {
+    for (auto& expected_data : output_data_) {
       MLValue& mlvalue = fetches[idx];
-      if (output.data_.IsTensor()) {
-        LOTUS_ENFORCE(output.data_.IsTensor());
-        auto& output_tensor = output.data_.Get<Tensor>();
-        auto& run_output = mlvalue.Get<Tensor>();
-        LOTUS_ENFORCE(output_tensor.Shape() == run_output.Shape(),
-                      "Expected output shape [" + output_tensor.Shape().ToString() +
-                          "] did not match run output shape [" +
-                          run_output.Shape().ToString() + "]");
-        auto size = output_tensor.Shape().Size();
-
-        // Dispatch on the type
-        auto type = output_tensor.DataType();
-
-        if (type == DataTypeImpl::GetType<float>()) {
-          Check<float>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<bool>()) {
-          Check<bool>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<int64_t>()) {
-          Check<int64_t>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<double>()) {
-          Check<double>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<uint8_t>()) {
-          Check<uint8_t>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<uint16_t>()) {
-          Check<uint16_t>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<uint32_t>()) {
-          Check<uint32_t>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<uint64_t>()) {
-          Check<uint64_t>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<int16_t>()) {
-          Check<int16_t>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<int32_t>()) {
-          Check<int32_t>(output, run_output, size);
-        } else if (type == DataTypeImpl::GetType<std::string>()) {
-          Check<std::string>(output, run_output, size);
-        } else {
-          LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
-        }
-      } else {
-        auto ml_type = output.data_.Type();
-        if (ml_type == DataTypeImpl::GetType<std::vector<std::map<std::string, float>>>()) {
-          auto& run_output = mlvalue.Get<std::vector<std::map<std::string, float>>>();
-          Check<std::vector<std::map<std::string, float>>>(output, run_output);
-        } else if (ml_type == DataTypeImpl::GetType<std::vector<std::map<int64_t, float>>>()) {
-          auto& run_output = mlvalue.Get<std::vector<std::map<int64_t, float>>>();
-          Check<std::vector<std::map<int64_t, float>>>(output, run_output);
-        } else {
-          LOTUS_THROW("OpTester:Check() not implemented for output type of ", ml_type);
-        }
-      }
+      if (expected_data.data_.IsTensor())
+        Check(expected_data, mlvalue.Get<Tensor>());
+      else
+        Check(expected_data, mlvalue);
       ++idx;
     }
   } catch (const std::exception& ex) {
@@ -259,7 +243,7 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     // rethrow as some tests for error handling expect this
     throw;
   }
-}  // namespace Test
+}
 
 }  // namespace Test
 }  // namespace Lotus

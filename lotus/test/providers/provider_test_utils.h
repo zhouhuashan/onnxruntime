@@ -83,6 +83,23 @@ class TestUtils {
   }
 };
 
+// unfortunately std::optional is in C++17 so use a miniversion of it
+template <typename T>
+class optional {
+ public:
+  optional(T v) : has_value_(true), value_(v) {}
+  optional() : has_value_(false) {}
+  bool has_value() const { return has_value_; }
+  const T& value() const {
+    LOTUS_ENFORCE(has_value_);
+    return value_;
+  }
+
+ private:
+  bool has_value_;
+  T value_;
+};
+
 // Function templates to translate C++ types into TensorProto_DataTypes
 template <typename T>
 constexpr TensorProto_DataType TypeToDataType();
@@ -226,24 +243,6 @@ struct OpTester {
 
   void Run(bool expect_failure = false, const std::string& expected_failure_string = "");
 
- private:
-  // unfortunately std::optional is in C++17 so use a miniversion of it
-  template <typename T>
-  class optional {
-   public:
-    optional(T v) : has_value_(true), value_(v) {}
-    optional() : has_value_(false) {}
-    bool has_value() const { return has_value_; }
-    const T& value() const {
-      LOTUS_ENFORCE(has_value_);
-      return value_;
-    }
-
-   private:
-    bool has_value_;
-    T value_;
-  };
-
   struct Data {
     LotusIR::NodeArg def_;
     MLValue data_;
@@ -251,13 +250,7 @@ struct OpTester {
     optional<float> absolute_error_;
   };
 
-  void CreateMLValue(IAllocator* alloc,
-                     const std::vector<int64_t>& dims,
-                     MLDataType element_type,
-                     const gsl::byte* p_value,
-                     size_t input_size_bytes,
-                     MLValue* p_mlvalue);
-
+ private:
   void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
                                const std::vector<LotusIR::NodeArg*>& output_defs,
                                std::unordered_map<std::string, MLValue>& feeds,
@@ -271,27 +264,20 @@ struct OpTester {
     auto& allocator = AllocatorManager::Instance().GetArena(CPU);
     auto size_in_bytes = valuesCount * sizeof(T);
     void* buffer = allocator.Alloc(size_in_bytes);
-    std::unique_ptr<Tensor> ptr = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
-                                                      TensorShape(dims),
-                                                      buffer,
-                                                      allocator.Info(),
-                                                      &allocator);
-    T* data_ptr = ptr->MutableData<T>();
+    auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
+                                        TensorShape(dims),
+                                        buffer,
+                                        allocator.Info(),
+                                        &allocator);
+    auto* data_ptr = p_tensor->template MutableData<T>();
     for (int64_t i = 0; i < valuesCount; i++) {
       data_ptr[i] = values[i];
     }
 
     MLValue value;
-    value.Init(ptr.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+    value.Init(p_tensor.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
     data.push_back({{name, &s_type_proto<T>}, value});
   }
-
-  // Templatize the check function on type so we can compare properly (specializations defined in provider_test_utils.cc)
-  template <typename T>
-  void Check(const Data& output_data, const Tensor& output_tensor, size_t size);
-
-  template <typename T>
-  void Check(const Data& output_data, const T& run_output);
 
   const char* op_;
   const char* domain_;
@@ -299,7 +285,7 @@ struct OpTester {
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;
 #if _DEBUG
-  bool run_called_ = false;
+  bool run_called_{};
 #endif
 };
 
