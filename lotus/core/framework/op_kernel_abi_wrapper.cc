@@ -218,6 +218,11 @@ MLStatus OpKernelInfoWrapper::GetAttributeHelper(
   return ToABIStatus(impl_->GetAttr<typename MLAttributeTypeTraits<T>::Type>(name, static_cast<elementType_t*>(value)));
 }
 
+ML_API_IMP_(const void*, OpKernelInfoWrapper::GetExecutionHandle)() const noexcept {
+  const IExecutionProvider* executionProvider = impl_->GetExecutionProvider();
+  return executionProvider->GetExecutionHandle();
+}
+
 TensorWrapper::TensorWrapper(Tensor* impl) : impl_(impl) {
 }
 
@@ -313,10 +318,6 @@ OpKernelContextWrapper::OpKernelContextWrapper(OpKernelContext* context) : impl_
   // their internal storage.
   inputTensors_.resize(context->InputCount());
   outputTensors_.resize(context->OutputCount());
-}
-
-ML_API_IMP_(void *, OpKernelContextWrapper::GetExecutionHandle)() const noexcept {
-  return nullptr;
 }
 
 ML_API_IMP(OpKernelContextWrapper::GetInputEdgeType)(uint32_t input_index, MLEdgeType* edge_type) const noexcept {

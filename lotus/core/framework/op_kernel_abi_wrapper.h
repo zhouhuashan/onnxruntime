@@ -43,6 +43,8 @@ class OpKernelInfoWrapper : public IMLOpKernelInfo {
       uint32_t attribute_element_length,
       char* attribute_element) const noexcept override;
 
+  ML_API_IMP_(const void*, GetExecutionHandle)() const noexcept override;
+
  private:
   template <MLAttributeType T>
   MLStatus GetAttributeHelper(
@@ -53,7 +55,7 @@ class OpKernelInfoWrapper : public IMLOpKernelInfo {
   const std::string* GetStringAttribute(
     const char* name,
     uint32_t element_index) const;
-  
+
   // Lifetime is managed by the caller and guaranteed to outlive this class
   const OpKernelInfo* impl_ = nullptr;
 };
@@ -76,9 +78,9 @@ class TensorWrapper : public IMLOpTensor {
 
   ML_API_IMP_(MLBool, IsDataHandle)() const noexcept override;
 
-  ML_API_IMP_(void *, GetData)() noexcept override;
+  ML_API_IMP_(void*, GetData)() noexcept override;
 
-  ML_API_IMP_(const void *, GetData)() const noexcept override;
+  ML_API_IMP_(const void*, GetData)() const noexcept override;
 
   const Tensor* GetImpl() const { return nullptr; }
   Tensor* GetImpl() { return nullptr; }
@@ -92,8 +94,6 @@ class OpKernelContextWrapper : public IMLOpKernelContext {
  public:
   OpKernelContextWrapper(OpKernelContext* context);
 
-  ML_API_IMP_(void *, GetExecutionHandle)() const noexcept override;
-
   ML_API_IMP(GetInputEdgeType)(uint32_t input_index, MLEdgeType* edge_type) const noexcept override;
 
   ML_API_IMP(GetOutputEdgeType)(uint32_t output_index, MLEdgeType* edge_type) const noexcept override;
@@ -105,8 +105,8 @@ class OpKernelContextWrapper : public IMLOpKernelContext {
   ML_API_IMP_(uint32_t, GetInputCount)() const noexcept override;
   ML_API_IMP_(uint32_t, GetOutputCount)() const noexcept override;
 
-  ML_API_IMP(AllocateTemporaryData)(uint64_t size, void **data) const override;
-  ML_API_IMP(FreeTemporaryData)(void *data) const override;
+  ML_API_IMP(AllocateTemporaryData)(uint64_t size, void** data) const override;
+  ML_API_IMP(FreeTemporaryData)(void* data) const override;
 
  protected:
   // Lifetime is managed by the caller and guaranteed to outlive this class

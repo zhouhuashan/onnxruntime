@@ -194,6 +194,10 @@ class MLOpKernelInfo {
     return value;
   }
 
+  const void* GetExecutionHandle() const noexcept {
+    return impl_->GetExecutionHandle();
+  }
+
  private:
   const IMLOpKernelInfo* impl_;
 };
@@ -283,10 +287,6 @@ class MLOpKernelContext {
  public:
   MLOpKernelContext(IMLOpKernelContext* impl) : impl_(impl) {}
 
-  void* GetExecutionHandle() const {
-    return impl_->GetExecutionHandle();
-  }
-
   MLEdgeType GetInputEdgeType(uint32_t input_index) const {
     MLEdgeType edge_type;
     ML_CHECK_STATUS(impl_->GetInputEdgeType(input_index, &edge_type));
@@ -324,12 +324,12 @@ class MLOpKernelContext {
   }
 
   MLTemporaryDataUniquePtr AllocateTemporaryData(uint64_t size) const {
-    void *data = nullptr;
+    void* data = nullptr;
     ML_CHECK_STATUS(impl_->AllocateTemporaryData(size, &data));
     return MLTemporaryDataUniquePtr(data, this);
   }
 
-  const IMLOpKernelContext *GetImpl() const { return impl_; }
+  const IMLOpKernelContext* GetImpl() const { return impl_; }
 
  private:
   IMLOpKernelContext* impl_;

@@ -38,6 +38,11 @@ class XPUExecutionProvider : public IExecutionProvider {
     return Status::OK();
   }
 
+  virtual const void* GetExecutionHandle() const noexcept override {
+    // The XPU interface does not return anything interesting.
+    return nullptr;
+  }
+
  private:
   IArenaAllocator* arena_allocator_ = nullptr;
   GraphTransformer* graph_transformer_ = nullptr;

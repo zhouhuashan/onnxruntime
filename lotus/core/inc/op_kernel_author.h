@@ -84,6 +84,11 @@ class IMLOpKernelInfo {
       uint32_t element_index,
       uint32_t attribute_element_length,
       char* attribute_element) const noexcept = 0;
+
+  // Returns a handle whose type varies based on the kernel type.
+  // For D3D operator kernels, this may return an IUnknown supporting QueryInterface to
+  // ID3D12GraphicsCommandList1.
+  ML_API_(const void*, GetExecutionHandle)() const noexcept = 0;
 };
 
 // Tensors methods used by implementations of IMLOpKernel::Compute
@@ -124,11 +129,6 @@ enum class MLEdgeType {
 
 class IMLOpKernelContext {
  public:
-  // Returns a handle whose type varies based on the kernel type.
-  // For D3D kernels, this returns an IUnknown supporting QueryInterface to
-  // ID3D12GraphicsCommandList1.
-  ML_API_(void *, GetExecutionHandle)() const noexcept = 0;
-
   ML_API(GetInputEdgeType)(uint32_t input_index, MLEdgeType* edge_type) const noexcept = 0;
   ML_API(GetOutputEdgeType)(uint32_t output_index, MLEdgeType* edge_type) const noexcept = 0;
 

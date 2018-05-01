@@ -37,6 +37,12 @@ class IExecutionProvider {
   // TODO: Shouldn't tensor copy be implemented in the Tensor class, with it optionally taking
   // a parameter to provide device specific logic?
   virtual Status CopyTensor(const Tensor& src, Tensor& dst) = 0;
+
+  // Returns an opaque handle whose exact type varies based on the provider
+  // and is interpreted accordingly by the corresponding kernel implementation.
+  // For Direct3D operator kernels, this may return an IUnknown supporting
+  // QueryInterface to ID3D12GraphicsCommandList1.
+  virtual const void* GetExecutionHandle() const noexcept = 0;
 };
 
 typedef std::function<unique_ptr<IExecutionProvider>(const ExecutionProviderInfo&)> ProviderCreateFunc;
