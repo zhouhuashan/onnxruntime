@@ -89,20 +89,34 @@ LOTUS_REGISTER_TENSOR_TYPE(double);
 LOTUS_REGISTER_TENSOR_TYPE(uint32_t);
 LOTUS_REGISTER_TENSOR_TYPE(uint64_t);
 
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapStringToString);
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapStringToInt64);
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapStringToFloat);
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapStringToDouble);
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapInt64ToString);
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapInt64ToInt64);
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapInt64ToFloat);
-LOTUS_REGISTER_NON_TENSOR_TYPE(MapInt64ToDouble);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorString);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorFloat);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorInt64);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorDouble);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapStringToFloat);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapInt64ToFloat);
+LOTUS_REGISTER_MAP(MapStringToString, TensorProto_DataType_STRING, TensorProto_DataType_STRING);
+LOTUS_REGISTER_MAP(MapStringToInt64, TensorProto_DataType_STRING, TensorProto_DataType_INT64);
+LOTUS_REGISTER_MAP(MapStringToFloat, TensorProto_DataType_STRING, TensorProto_DataType_FLOAT);
+LOTUS_REGISTER_MAP(MapStringToDouble, TensorProto_DataType_STRING, TensorProto_DataType_DOUBLE);
+LOTUS_REGISTER_MAP(MapInt64ToString, TensorProto_DataType_INT64, TensorProto_DataType_STRING);
+LOTUS_REGISTER_MAP(MapInt64ToInt64, TensorProto_DataType_INT64, TensorProto_DataType_INT64);
+LOTUS_REGISTER_MAP(MapInt64ToFloat, TensorProto_DataType_INT64, TensorProto_DataType_FLOAT);
+LOTUS_REGISTER_MAP(MapInt64ToDouble, TensorProto_DataType_INT64, TensorProto_DataType_DOUBLE);
+LOTUS_REGISTER_SEQ(VectorString, TensorProto_DataType_STRING);
+LOTUS_REGISTER_SEQ(VectorFloat, TensorProto_DataType_FLOAT);
+LOTUS_REGISTER_SEQ(VectorInt64, TensorProto_DataType_INT64);
+LOTUS_REGISTER_SEQ(VectorDouble, TensorProto_DataType_DOUBLE);
+LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapStringToFloat,
+                               type_proto.value_case() == TypeProto::ValueCase::kSequenceType &&
+                                   type_proto.sequence_type().elem_type().value_case() == TypeProto::ValueCase::kMapType &&
+                                   type_proto.sequence_type().elem_type().map_type().key_type() == TensorProto_DataType_STRING &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().value_case() == TypeProto::ValueCase::kTensorType &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().shape().dim_size() == 0 &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().has_elem_type() &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().elem_type() == TensorProto_DataType_FLOAT);
+LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapInt64ToFloat,
+                               type_proto.value_case() == TypeProto::ValueCase::kSequenceType &&
+                                   type_proto.sequence_type().elem_type().value_case() == TypeProto::ValueCase::kMapType &&
+                                   type_proto.sequence_type().elem_type().map_type().key_type() == TensorProto_DataType_INT64 &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().value_case() == TypeProto::ValueCase::kTensorType &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().shape().dim_size() == 0 &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().has_elem_type() &&
+                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().elem_type() == TensorProto_DataType_FLOAT);
 
 MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
   switch (proto.value_case()) {

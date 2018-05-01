@@ -131,10 +131,6 @@ class NonTensorTypeBase : public DataTypeImpl {
   virtual DeleteFunc GetDeleteFunc() const = 0;
 
   virtual CreateFunc GetCreateFunc() const = 0;
-  virtual bool IsCompatible(const TypeProto&) const override {
-    //TODO: Implement this function for DictVectorizerOp and the others
-    return true;
-  }
 
  protected:
   NonTensorTypeBase() = default;
@@ -159,6 +155,8 @@ class NonTensorType : public NonTensorTypeBase {
   virtual DeleteFunc GetDeleteFunc() const override {
     return &Delete<T>;
   }
+
+  virtual bool IsCompatible(const TypeProto& type_proto) const override;
 
  private:
   NonTensorType() = default;
@@ -189,11 +187,32 @@ class NonOnnxType : public DataTypeImpl {
   NonOnnxType() = default;
 };
 
-#define LOTUS_REGISTER_NON_TENSOR_TYPE(TYPE) \
-  template <>                                \
-  MLDataType DataTypeImpl::GetType<TYPE>() { \
-    return NonTensorType<TYPE>::Type();      \
+#define LOTUS_REGISTER_NON_TENSOR_TYPE(TYPE, COMPATIBLE_CONDITION)            \
+  template <>                                                                 \
+  MLDataType DataTypeImpl::GetType<TYPE>() {                                  \
+    return NonTensorType<TYPE>::Type();                                       \
+  }                                                                           \
+  template <>                                                                 \
+  bool NonTensorType<TYPE>::IsCompatible(const TypeProto& type_proto) const { \
+    return COMPATIBLE_CONDITION;                                              \
   }
+
+#define LOTUS_REGISTER_MAP(TYPE, KEY, Value)                                                                                 \
+  LOTUS_REGISTER_NON_TENSOR_TYPE(TYPE,                                                                                       \
+                                 type_proto.value_case() == TypeProto::ValueCase::kMapType &&                                \
+                                     type_proto.map_type().key_type() == KEY &&                                              \
+                                     type_proto.map_type().value_type().value_case() == TypeProto::ValueCase::kTensorType && \
+                                     type_proto.map_type().value_type().tensor_type().shape().dim_size() == 0 &&             \
+                                     type_proto.map_type().value_type().tensor_type().has_elem_type() &&                     \
+                                     type_proto.map_type().value_type().tensor_type().elem_type() == Value);
+
+#define LOTUS_REGISTER_SEQ(TYPE, Value)                                                                                          \
+  LOTUS_REGISTER_NON_TENSOR_TYPE(TYPE,                                                                                           \
+                                 type_proto.value_case() == TypeProto::ValueCase::kSequenceType &&                               \
+                                     type_proto.sequence_type().elem_type().value_case() == TypeProto::ValueCase::kTensorType && \
+                                     type_proto.sequence_type().elem_type().tensor_type().shape().dim_size() == 0 &&             \
+                                     type_proto.sequence_type().elem_type().tensor_type().has_elem_type() &&                     \
+                                     type_proto.sequence_type().elem_type().tensor_type().elem_type() == TensorProto_DataType_STRING);
 
 #define LOTUS_REGISTER_TENSOR_TYPE(ELEM_TYPE)           \
   template <>                                           \
