@@ -18,6 +18,8 @@ typdef const std::string_view& MLConstStringParam;
 typedef const char * MLConstStringParam;
 #endif
 
+class MLOpKernelContext;
+
 // TODO - Consider using this directly in Lotus and merging error handling
 class MLStatusException : public std::exception {
  public:
@@ -263,6 +265,20 @@ class MLOpTensor {
   std::vector<int64_t> dimensions_cache_;
 };
 
+class MLTemporaryDataDeleter {
+ public:
+  MLTemporaryDataDeleter() : context_(nullptr) {}
+  MLTemporaryDataDeleter(const MLOpKernelContext* context)
+      : context_(context) {}
+
+  void operator()(void* p) const;
+
+ private:
+  const MLOpKernelContext* context_;
+};
+
+typedef std::unique_ptr<void, MLTemporaryDataDeleter> MLTemporaryDataUniquePtr;
+
 class MLOpKernelContext {
  public:
   MLOpKernelContext(IMLOpKernelContext* impl) : impl_(impl) {}
@@ -298,10 +314,31 @@ class MLOpKernelContext {
     ML_CHECK_STATUS(impl_->GetOutputTensor(output_index, dimension_sizes.data(), static_cast<uint32_t>(dimension_sizes.size()), &tensor));
     return MLOpTensor(tensor);
   }
+  
+  uint32_t GetInputCount() const noexcept {
+    return impl_->GetInputCount();
+  }
+
+  uint32_t GetOutputCount() const noexcept {
+    return impl_->GetOutputCount();
+  }
+
+  MLTemporaryDataUniquePtr AllocateTemporaryData(uint64_t size) const {
+    void *data = nullptr;
+    ML_CHECK_STATUS(impl_->AllocateTemporaryData(size, &data));
+    return MLTemporaryDataUniquePtr(data, this);
+  }
+
+  const IMLOpKernelContext *GetImpl() const { return impl_; }
 
  private:
   IMLOpKernelContext* impl_;
 };
+
+inline void MLTemporaryDataDeleter::operator()(void* p) const {
+  if (context_)
+    context_->GetImpl()->FreeTemporaryData(p);
+}
 
 // Helper class for operator implementations, templatized by the
 // implementation type. This class converts ABI types to wrappers,

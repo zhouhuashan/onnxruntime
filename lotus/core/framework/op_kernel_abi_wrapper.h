@@ -101,6 +101,12 @@ class OpKernelContextWrapper : public IMLOpKernelContext {
   ML_API_IMP(GetInputTensor)(uint32_t input_index, const IMLOpTensor** tensor) const noexcept override;
 
   ML_API_IMP(GetOutputTensor)(uint32_t output_index, const int64_t* dimension_sizes, uint32_t dimensions, IMLOpTensor** tensor) noexcept override;
+  
+  ML_API_IMP_(uint32_t, GetInputCount)() const noexcept override;
+  ML_API_IMP_(uint32_t, GetOutputCount)() const noexcept override;
+
+  ML_API_IMP(AllocateTemporaryData)(uint64_t size, void **data) const override;
+  ML_API_IMP(FreeTemporaryData)(void *data) const override;
 
  protected:
   // Lifetime is managed by the caller and guaranteed to outlive this class
