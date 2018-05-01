@@ -31,17 +31,17 @@ class TensorShape : private std::vector<int64_t> {
   /**
   Return the dimension specified by <idx>.
   */
-  const int64_t &operator[](size_t idx) const {
+  const int64_t& operator[](size_t idx) const {
     return std::vector<int64_t>::operator[](static_cast<int>(idx));
   }
-  
-  int64_t &operator[](size_t idx) {
+
+  int64_t& operator[](size_t idx) {
     return std::vector<int64_t>::operator[](static_cast<int>(idx));
   }
 
   bool operator==(const TensorShape& other) const noexcept {
-    auto thisVector = static_cast<const std::vector<int64_t> *>(this);
-    auto otherVector = static_cast<const std::vector<int64_t> *>(&other);
+    auto thisVector = static_cast<const std::vector<int64_t>*>(this);
+    auto otherVector = static_cast<const std::vector<int64_t>*>(&other);
     return *thisVector == *otherVector;
   }
 
@@ -66,7 +66,7 @@ class TensorShape : private std::vector<int64_t> {
   const std::vector<int64_t>& GetDims() const { return *this; }
 
   /** 
-  Return the total number of elements.
+  Return the total number of elements. Returns 1 for an empty (rank 0) TensorShape.
   */
   int64_t Size() const;
 
@@ -231,7 +231,7 @@ class Tensor {
             IAllocator* deleter,
             const int64_t offset = 0);
 
-  void* GetRaw() const noexcept{
+  void* GetRaw() const noexcept {
     return p_data_;
   }
 

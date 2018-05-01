@@ -5,7 +5,7 @@ namespace Lotus {
 
 TensorShape::TensorShape() {}
 
-TensorShape::TensorShape(const std::vector<int64_t>& dims) : std::vector<int64_t>(dims){
+TensorShape::TensorShape(const std::vector<int64_t>& dims) : std::vector<int64_t>(dims) {
 }
 
 TensorShape::TensorShape(const int64_t* dimension_sizes, size_t dimension_count) : std::vector<int64_t>(dimension_count) {
@@ -14,13 +14,16 @@ TensorShape::TensorShape(const int64_t* dimension_sizes, size_t dimension_count)
   }
 }
 
-TensorShape::TensorShape(const TensorShape& other) : std::vector<int64_t>(other){
+TensorShape::TensorShape(const TensorShape& other) : std::vector<int64_t>(other) {
 }
 
 TensorShape::TensorShape(const std::vector<int64_t>& dims, size_t start, size_t end) {
   assign(dims.begin() + start, dims.begin() + end);
 }
 
+/**
+Return the total number of elements. Returns 1 for an empty (rank 0) TensorShape.
+*/
 int64_t TensorShape::Size() const {
   size_t arraySize = size();
   int64_t size = SizeHelper(0, arraySize);
@@ -78,6 +81,7 @@ std::string TensorShape::ToString() const {
 }
 
 int64_t TensorShape::SizeHelper(size_t start, size_t end) const {
+  // Must return 1 for an empty sequence
   int64_t size = 1;
   for (size_t i = start; i < end; i++) {
     if ((*this)[i] < 0) return -1;
