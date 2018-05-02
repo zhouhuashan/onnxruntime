@@ -4,6 +4,10 @@
 #include "core/framework/execution_provider.h"
 
 namespace Lotus {
+// Information needed to construct execution providers.
+struct ExecutionProviderInfo {
+  std::string name;
+};
 
 class CPUTransformer : public LotusIR::GraphTransformer {
  public:
@@ -48,6 +52,10 @@ class CPUExecutionProvider : public IExecutionProvider {
     return Common::Status(
         LOTUS, FAIL,
         "CPU execution provider: can not run an op of type `" + node.OpType() + "'.");
+  }
+
+  std::string Type() const override {
+    return LotusIR::kCpuExecutionProvider;
   }
 
   Status CopyTensor(const Tensor& src, Tensor& dst) override {

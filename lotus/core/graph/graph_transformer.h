@@ -76,7 +76,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
 // transformers. Each inference session can further register additional ones.
 class GraphTransformerManager {
  public:
-  GraphTransformerManager(int32_t steps) noexcept : steps_(steps) {
+  GraphTransformerManager(unsigned steps) noexcept : steps_(steps) {
     // TODO: Register default transformers.
   }
 
@@ -95,7 +95,7 @@ class GraphTransformerManager {
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphTransformerManager);
 
   std::vector<std::unique_ptr<GraphTransformer>> transformers_;
-  const int32_t steps_;
+  const unsigned steps_;
 };
 
 }  // namespace LotusIR

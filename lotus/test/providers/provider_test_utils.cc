@@ -187,9 +187,7 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     FillFeedsAndOutputNames(input_defs, output_defs, feeds, output_names);
 
     // Run the model
-    ExecutionProviderInfo epi;
-    ProviderOption po{LotusIR::kCpuExecutionProvider, epi};
-    SessionOptions so(vector<ProviderOption>{po});
+    SessionOptions so;
     so.session_logid = op_;
     so.session_log_verbosity_level = 1;
 

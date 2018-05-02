@@ -3,26 +3,16 @@
 #include "core/common/common.h"
 #include "core/common/status.h"
 #include "core/common/logging/logging.h"
-#include "core/framework/execution_provider.h"
 #include "core/framework/ml_value.h"
 #include "core/platform/types.h"
 
-namespace LotusIR {  // TODO: for testing only; see note below.
-class Model;
-}
+namespace LotusIR {
+class Model;             // forward decl
+class GraphTransformer;  // forward decl
+}  // namespace LotusIR
 
 namespace Lotus {
-/**
- * Use this to configure an execution provider.
-*/
-struct ProviderOption {
-  ProviderOption(const std::string& provider_type0, const ExecutionProviderInfo& provider_info0)
-      : provider_type(provider_type0),
-        provider_info(provider_info0) {
-  }
-  std::string provider_type;
-  ExecutionProviderInfo provider_info;
-};
+class IExecutionProvider;  // forward decl
 
 enum class AllocationPlannerType {
   SIMPLE_SEQUENTIAL_PLANNER,
@@ -33,29 +23,23 @@ enum class AllocationPlannerType {
 * Configuration information for a session.
 */
 struct SessionOptions {
-  // TODO what are the mandatory requirements for session options? and what should be the default
-  // values for the remaining options? Tune this constructor appropriately once we learn more
-  // about the answers to these questions.
-  SessionOptions(const vector<ProviderOption>& ep_options0)
-      : ep_options(ep_options0) {
-  }
   //int num_threads; // not used now until we re-introduce threadpools for async execution
-  std::vector<ProviderOption> ep_options;
   bool enable_sequential_execution = true;  // TODO: should we default to sequential execution?
 
   // TODO: This has been added to facilitate testing only. It is not intended for production usage.
   // TODO: remove this option once we've tested sequential planner completely.
   AllocationPlannerType allocation_planner_type = AllocationPlannerType::SEQUENTIAL_PLANNER;
 
-  string session_logid;                            ///< logger id to use for session output
+  std::string session_logid;                       ///< logger id to use for session output
   unsigned short session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
+
   // enable the memory pattern optimization.
   // The idea is if the input shapes are the same, we could trace the internal memory allocation
   // and generate a memory pattern for future request. So next time we could just do one allocation
   // with a big chunk for all the internal memory allocation.
   bool enable_mem_pattern = true;
-  int max_num_graph_transformation_steps = 5;  // TODO choose a good default here?
-  std::vector<std::unique_ptr<LotusIR::GraphTransformer>> list_graph_transformers;
+
+  unsigned max_num_graph_transformation_steps = 5;  // TODO choose a good default here?
 };
 
 /**
@@ -129,6 +113,20 @@ class InferenceSession {
   ~InferenceSession();
 
   /**
+  * Register an execution provider. If you've one to register, call this before invoking Initialize().
+  * Calling this API is optional.
+  * @return OK if success.
+  */
+  Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider);
+
+  /**
+  * Register a graph transfromer. If you've one to register, call this before invoking Initialize().
+  * Calling this API is optional.
+  * @return OK if success.
+  */
+  Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer);
+
+  /**
   * Load an ONNX model.
   * @param model_uri absolute path of the model file.
   * @return OK if success.
@@ -143,10 +141,9 @@ class InferenceSession {
   Common::Status Load(std::istream& model_istream);
 
   /**
-  * FOR TESTING ONLY. Load an ONNX model
-  * TODO: should we expose Model in this API? This was done for now
-  * to make testing easier.
-  * @param model_uri absolute path of the model file.
+  * Load an ONNX model.
+  * TODO: make a copy of the Model inside the session object (requested by Windows).
+  * @param p_model externally created Model obj.
   * @return OK if success.
   */
   Common::Status Load(std::unique_ptr<LotusIR::Model> p_model);

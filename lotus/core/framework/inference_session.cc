@@ -18,6 +18,8 @@
 #include "core/graph/tensorutils.h"
 #include "core/platform/notification.h"
 #include "core/framework/allocatormgr.h"
+#include "core/graph/graph_transformer.h"
+#include "core/providers/cpu/cpu_execution_provider.h"
 
 namespace Lotus {
 class InferenceSession::Impl {
@@ -30,31 +32,25 @@ class InferenceSession::Impl {
 
     //env_(Env::Default()) {
     //thread_pool_(env_, "Compute", session_options.num_threads) {
-    // QUESTION: what if the user doesn't provide his preferred list of execution
-    // providers? Should we have our own default?
-    auto& provider_mgr = ExecutionProviderMgr::Instance();
-
-    VLOGS(*session_logger_, 1) << "Adding execution providers.";
-    for (auto& info : session_options.ep_options) {
-      auto provider = provider_mgr.GetProvider(info.provider_type, info.provider_info);
-      if (provider == nullptr) {
-        LOGS(*session_logger_, WARNING) << "Execution Provider with name: " << info.provider_type << "Not found.";
-        continue;
-      }
-
-      VLOGS(*session_logger_, 1) << "Adding execution provider with name: " << info.provider_type;
-      session_state_.AddExecutionProvider(info.provider_type, std::move(provider));
-    }
 
     session_state_.SetEnableMemoryPattern(session_options.enable_mem_pattern);
-    // Register graph transformers if the user has provided any
-    // TODO do we need to support overrides of the transformers?
-    // Need const_cast here since we need non-const graph transformer objects from
-    // const SessionOptions to Register(). One option to remove const_cast is to make
-    // session_options_ non-const in the session object.
-    for (auto& elem : const_cast<SessionOptions&>(session_options_).list_graph_transformers) {
-      graph_transformation_mgr_.Register(std::move(elem));
+  }
+
+  Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
+    if (p_exec_provider.get() == nullptr) {
+      return Status(LOTUS, FAIL, "Received nullptr for exec provider");
     }
+    std::string provider_type = p_exec_provider->Type();
+    VLOGS(*session_logger_, 1) << "Adding execution provider of type: " << provider_type;
+    session_state_.AddExecutionProvider(provider_type, std::move(p_exec_provider));
+    return Status::OK();
+  }
+
+  Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
+    if (p_graph_transformer.get() == nullptr) {
+      return Status(LOTUS, FAIL, "Received nullptr for graph transformer");
+    }
+    return graph_transformation_mgr_.Register(std::move(p_graph_transformer));
   }
 
   Common::Status Load(const std::string& model_uri) {
@@ -135,6 +131,14 @@ class InferenceSession::Impl {
     if (is_inited_) {  // already initialized
       LOGS(*session_logger_, INFO) << "Session has already been initialized.";
       return Common::Status::OK();
+    }
+
+    // Register default CPUExecutionProvider if user didn't provide any through the Register() calls
+    if (!session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)) {
+      LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
+      ExecutionProviderInfo epi{"CPUExecutionProvider"};
+      session_state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider,
+                                          std::make_unique<CPUExecutionProvider>(epi));
     }
 
     LotusIR::Graph* graph = model_->MainGraph();
@@ -632,7 +636,7 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  const SessionOptions& session_options_;
+  const SessionOptions session_options_;
 
   LotusIR::GraphTransformerManager graph_transformation_mgr_;
 
@@ -736,6 +740,14 @@ std::pair<Common::Status, const OutputDefList*> InferenceSession::GetOutputs() c
 
 int InferenceSession::GetCurrentNumRuns() {
   return impl_->GetCurrentNumRuns();
+}
+
+Common::Status InferenceSession::RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
+  return impl_->RegisterExecutionProvider(std::move(p_exec_provider));
+}
+
+Common::Status InferenceSession::RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
+  return impl_->RegisterGraphTransformer(std::move(p_graph_transformer));
 }
 
 }  // namespace Lotus

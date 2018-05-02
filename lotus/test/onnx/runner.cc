@@ -263,11 +263,9 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
   if (model_pb.graph().node().size() == 1) {
     node_name = model_pb.graph().node()[0].op_type();
   }
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions* so = new SessionOptions(vector<ProviderOption>{po});
-  so->allocation_planner_type = planner;
-  std::shared_ptr<InferenceSession> session_object = std::make_shared<InferenceSession>(*so);
+  auto p_session_options = std::make_unique<SessionOptions>();
+  p_session_options->allocation_planner_type = planner;
+  auto session_object = std::make_shared<InferenceSession>(*(p_session_options.get()));
   Common::Status status = session_object->Load(info.model_url);
   if (!status.IsOK()) {
     fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());

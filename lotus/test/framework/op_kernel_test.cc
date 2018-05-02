@@ -26,6 +26,10 @@ class XPUExecutionProvider : public IExecutionProvider {
     return *arena_allocator_;
   }
 
+  std::string Type() const override {
+    return LotusIR::kCpuExecutionProvider;
+  }
+
   Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
     UNUSED_PARAMETER(node);
     UNUSED_PARAMETER(context);

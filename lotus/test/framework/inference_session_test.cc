@@ -94,9 +94,7 @@ void RunModel(InferenceSession& session_object,
 }
 
 TEST(InferenceSessionTests, NoTimeout) {
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions so(vector<ProviderOption>{po});
+  SessionOptions so;
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
@@ -135,9 +133,7 @@ static bool Compare(const vector<const LotusIR::NodeArg*>& f_arg, const vector<N
 }
 
 TEST(InferenceSessionTests, ModelMetadata) {
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions so(vector<ProviderOption>{po});
+  SessionOptions so;
 
   so.session_logid = "InferenceSessionTests.ModelMetadata";
   InferenceSession session_object{so, &DefaultLoggingManager()};
@@ -199,9 +195,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
 }
 
 TEST(InferenceSessionTests, CheckRunLogger) {
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions so(vector<ProviderOption>{po});
+  SessionOptions so;
 
   so.session_logid = "CheckRunLogger";
 
@@ -233,10 +227,7 @@ TEST(InferenceSessionTests, CheckRunLogger) {
 }
 
 TEST(InferenceSessionTests, MultipleSessionsNoTimeout) {
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions session_options(vector<ProviderOption>{po});
-  session_options.ep_options.push_back(po);
+  SessionOptions session_options;
 
   session_options.session_logid = "InferenceSessionTests.MultipleSessionsNoTimeout";
   InferenceSession session_object{session_options, &DefaultLoggingManager()};
@@ -260,9 +251,7 @@ TEST(InferenceSessionTests, MultipleSessionsNoTimeout) {
 }
 
 TEST(InferenceSessionTests, PreAllocateOutputVector) {
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions so(vector<ProviderOption>{po});
+  SessionOptions so;
 
   so.session_logid = "InferenceSessionTests.PreAllocateOutputVector";
 
@@ -277,9 +266,7 @@ TEST(InferenceSessionTests, PreAllocateOutputVector) {
 }
 
 TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions so(vector<ProviderOption>{po});
+  SessionOptions so;
 
   so.session_logid = "ConfigureVerbosityLevel";
   so.session_log_verbosity_level = 1;
@@ -324,13 +311,30 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
 }
 
 TEST(InferenceSessionTests, TestWithIstream) {
-  ExecutionProviderInfo epi;
-  ProviderOption po{"CPUExecutionProvider", epi};
-  SessionOptions so(vector<ProviderOption>{po});
+  SessionOptions so;
 
   so.session_logid = "InferenceSessionTests.TestWithIstream";
 
   InferenceSession session_object{so};
+
+  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
+  EXPECT_TRUE(model_file_stream.good());
+  EXPECT_TRUE(session_object.Load(model_file_stream).IsOK());
+  EXPECT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "InferenceSessionTests.TestWithIstream";
+  RunModel(session_object, run_options);
+}
+
+TEST(InferenceSessionTests, TestRegisterExecutionProvider) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.TestWithIstream";
+
+  InferenceSession session_object{so};
+  ExecutionProviderInfo epi;
+  EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi)).IsOK());
 
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   EXPECT_TRUE(model_file_stream.good());

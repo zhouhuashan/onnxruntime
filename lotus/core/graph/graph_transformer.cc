@@ -4,7 +4,7 @@ namespace LotusIR {
 
 Status GraphTransformerManager::ApplyAll(Graph* graph) {
   bool changed = false;
-  for (int step = 0; step < steps_; ++step) {
+  for (unsigned step = 0; step < steps_; ++step) {
     for (auto& transformer : transformers_) {
       bool t_changed = false;
       Status s = transformer->Apply(graph, &t_changed);
