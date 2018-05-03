@@ -230,10 +230,9 @@ template <typename T>
 class Affine final : public OpKernel {
  public:
   Affine(const OpKernelInfo& info) : OpKernel(info) {
-    alpha_ = 1.0f;  // default value; TODO : can be omitted once added to ONNX spec.
-    beta_ = 0.0f;   // default value; TODO : can be omitted once added to ONNX spec.
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("beta", &beta_);
+    // Either model-supplied or default values should be returned for alpha and beta
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
