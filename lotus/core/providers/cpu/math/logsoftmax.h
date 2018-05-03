@@ -17,9 +17,6 @@ class LogSoftmax final : public OpKernel {
     if (status.IsOK()) {
       axis_ = gsl::narrow_cast<int>(axis);
     }
-
-    // if value was provided, make sure it was valid
-    LOTUS_ENFORCE(axis_ >= 0, "Invalid axis provided.");
   }
 
   Status Compute(OpKernelContext* context) const override;

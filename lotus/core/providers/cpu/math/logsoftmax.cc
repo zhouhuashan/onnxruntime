@@ -1,6 +1,7 @@
 #include "core/providers/cpu/math/logsoftmax.h"
 
 #include "core/framework/op_kernel.h"
+#include "core/providers/common.h"
 #include "core/providers/cpu/math/softmax_shared.h"
 #include "core/util/math.h"
 
@@ -13,8 +14,10 @@ Status LogSoftmax<float>::Compute(OpKernelContext* ctx) const {
 
   Tensor* Y = ctx->Output(0, input_shape);
 
-  size_t N = input_shape.SizeToDimension(axis_);
-  size_t D = input_shape.SizeFromDimension(axis_);
+  const int64_t axis = HandleNegativeAxis(axis_, input_shape.NumDimensions());
+
+  size_t N = input_shape.SizeToDimension(axis);
+  size_t D = input_shape.SizeFromDimension(axis);
 
   float* Ydata = Y->MutableData<float>();
 

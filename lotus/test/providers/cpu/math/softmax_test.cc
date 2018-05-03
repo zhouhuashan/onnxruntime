@@ -9,7 +9,9 @@ namespace Test {
 static void RunTest(const std::vector<float> &x_vals,
                     const std::vector<float> &expected_vals,
                     const std::vector<int64_t> &dimensions,
-                    int64_t axis = 1) {
+                    int64_t axis = 1,
+                    bool expect_failure = false,
+                    const std::string &error_msg = "") {
   OpTester test("Softmax");
 
   if (axis != 1) {
@@ -18,7 +20,7 @@ static void RunTest(const std::vector<float> &x_vals,
 
   test.AddInput<float>("X", dimensions, x_vals);
   test.AddOutput<float>("Y", dimensions, expected_vals);
-  test.Run();
+  test.Run(expect_failure, error_msg);
 }
 
 TEST(SoftmaxOperator, Simple) {
@@ -142,17 +144,39 @@ TEST(SoftmaxOperator, ThreeDimsAxis2) {
   RunTest(x_vals_3dims, expected_vals, three_dimensions, /*axis*/ 2);
 }
 
+TEST(SoftmaxOperator, ThreeDimsNegativeAxis) {
+  // x = <see x_vals_3dims>
+  // node = onnx.helper.make_node('Softmax', inputs = ['x'], outputs = ['y'], axis = 2)
+  // y = softmax_2d(x.reshape(12, 5)).reshape(3, 4, 5)
+  // expect(node, inputs = [x], outputs = [y],
+  //       name = 'test_softmax_axis_2')
+
+  std::vector<float> expected_vals = {
+      0.22277209f, 0.20394778f, 0.09983283f, 0.33927578f, 0.13417149f,
+      0.21729809f, 0.47177994f, 0.06399124f, 0.14778666f, 0.099144064f,
+      0.1797734f, 0.10023525f, 0.40512702f, 0.17272712f, 0.14213723f,
+      0.06506401f, 0.3825848f, 0.37533033f, 0.11501635f, 0.062004484f,
+
+      0.13209775f, 0.28059313f, 0.16109712f, 0.2047936f, 0.22141843f,
+      0.1568978f, 0.20539774f, 0.3460294f, 0.0953841f, 0.19629094f,
+      0.045896534f, 0.5836837f, 0.20899355f, 0.07156797f, 0.08985819f,
+      0.15019783f, 0.1266166f, 0.2512731f, 0.30425128f, 0.16766116f,
+
+      0.17869644f, 0.44943509f, 0.11806339f, 0.1417589f, 0.112046175f,
+      0.03968324f, 0.42900288f, 0.059264507f, 0.10435873f, 0.36769062f,
+      0.23619612f, 0.1829779f, 0.37029108f, 0.14383113f, 0.0667037f,
+      0.15740506f, 0.13165872f, 0.31243387f, 0.24108529f, 0.15741715f};
+
+  // -1 is last axis so same as axis == 2
+  RunTest(x_vals_3dims, expected_vals, three_dimensions, /*axis*/ -1);
+}
+
 TEST(SoftmaxOperator, InvalidAxis) {
   std::vector<float> x_vals = {-1.0f, 0.0f, 1.0f};
   std::vector<float> expected_vals = {0.0f, 0.0f, 0.0f};
   std::vector<int64_t> dimensions = {1, 3};
 
-  try {
-    RunTest(x_vals, expected_vals, dimensions, /* invalid axis */ -1);
-    FAIL();  // should throw
-  } catch (const std::exception &ex) {
-    EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid axis provided."));
-  }
+  RunTest(x_vals, expected_vals, dimensions, /* invalid axis */ -10, true, "-10 is not in valid range [-2,1]");
 }
 
 TEST(SoftmaxOperator, TestInputTooLarge) {

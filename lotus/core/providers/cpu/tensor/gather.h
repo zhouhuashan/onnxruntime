@@ -2,6 +2,7 @@
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
+#include "core/providers/common.h"
 
 namespace Lotus {
 template <typename T, typename TInd>
@@ -17,11 +18,7 @@ class Gather final : public OpKernel {
     const Tensor* indices = context->Input<Tensor>(1);
     const TensorShape& indices_shape = indices->Shape();
 
-    const int64_t rank = data_shape.NumDimensions();
-    LOTUS_ENFORCE(axis_ >= -rank && axis_ <= rank - 1, "axis ", axis_,
-                  " is not in valid range [-", rank, ",", rank - 1, "]");
-    // Handle negative axis
-    const int64_t axis = axis_ < 0 ? axis_ + rank : axis_;
+    const int64_t axis = HandleNegativeAxis(axis_, data_shape.NumDimensions());
 
     std::vector<int64_t>
         shape(indices_shape.GetDims().begin(), indices_shape.GetDims().end());

@@ -3,9 +3,14 @@ file(GLOB_RECURSE lotus_providers_srcs
     "${LOTUS_ROOT}/core/providers/cpu/*.cc"
 )
 
-source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_srcs})
+file(GLOB lotus_providers_common_srcs
+    "${LOTUS_ROOT}/core/providers/*.h"
+    "${LOTUS_ROOT}/core/providers/*.cc"
+    )
+    
+source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_common_srcs} ${lotus_providers_srcs})
 
-add_library(lotus_providers_obj OBJECT ${lotus_providers_srcs})
+add_library(lotus_providers_obj OBJECT ${lotus_providers_common_srcs} ${lotus_providers_srcs})
 
 add_dependencies(lotus_providers_obj eigen gsl onnx)
 
