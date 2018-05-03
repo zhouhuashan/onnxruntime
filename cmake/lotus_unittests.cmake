@@ -215,10 +215,9 @@ if (lotus_RUN_ONNX_TESTS)
 endif()
 
 set(onnx_test_runner_src_dir ${LOTUS_ROOT}/test/onnx)
-set(onnx_test_runner_srcs ${onnx_test_runner_src_dir}/TestCaseInfo.h
+set(onnx_test_runner_common_srcs ${onnx_test_runner_src_dir}/TestCaseInfo.h
 ${onnx_test_runner_src_dir}/TestResultStat.cc
 ${onnx_test_runner_src_dir}/TestResultStat.h
-${onnx_test_runner_src_dir}/main.cc
 ${onnx_test_runner_src_dir}/testenv.h
 ${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
 ${onnx_test_runner_src_dir}/IFinishCallback.h
@@ -228,13 +227,18 @@ ${onnx_test_runner_src_dir}/runner.cc
 )
 
 if(WIN32)
-  set(onnx_test_runner_srcs ${onnx_test_runner_srcs} ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h ${onnx_test_runner_src_dir}/parallel_runner_win.cc)
+  set(onnx_test_runner_common_srcs ${onnx_test_runner_common_srcs} ${onnx_test_runner_src_dir}/parallel_runner_win.cc)
+  add_library(win_getopt ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h)
+  set_target_properties(win_getopt PROPERTIES FOLDER "LotusTest")
+  set(GETOPT_LIB win_getopt)
 else()
-  set(onnx_test_runner_srcs ${onnx_test_runner_srcs} )
   set(FS_STDLIB stdc++fs)
 endif()
+add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
+set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
-add_executable(onnx_test_runner ${onnx_test_runner_srcs})
+
+add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
 target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
 add_dependencies(onnx_test_runner lotus_providers lotus_framework lotusIR_graph onnx)
 set(onnx_test_lib ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} lotus_common libprotobuf ${CMAKE_THREAD_LIBS_INIT} )
@@ -243,6 +247,11 @@ if(lotus_USE_CUDA)
   list(APPEND onnx_test_lib ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
-target_link_libraries(onnx_test_runner ${onnx_test_lib})
+target_link_libraries(onnx_test_runner ${onnx_test_lib} onnx_test_runner_common ${GETOPT_LIB})
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
+if(WIN32)
+add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
+target_link_libraries(onnx_test_runner_vstest ${onnx_test_lib} onnx_test_runner_common)
+set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
+endif()

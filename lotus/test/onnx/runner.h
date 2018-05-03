@@ -28,8 +28,10 @@ struct RunContext {
              std::function<void(TestCaseResult& result)> on_finished1);
 };
 void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, std::function<void(TestCaseResult& result)> on_finished);
+std::vector<TestCaseInfo> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases);
+void RunTests(TestEnv& env, int p_models, int concurrent_runs);
 
 #ifdef _WIN32
 extern void ParallelRunTests(TestEnv& env, int p_models, size_t concurrent_runs, std::vector<TestCaseResult>& results);
-extern void ParallelRunData(RunContext* env, size_t concurrent_runs);
+extern void ParallelRunData(std::shared_ptr<RunContext> env, size_t concurrent_runs);
 #endif

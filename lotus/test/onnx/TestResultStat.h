@@ -47,7 +47,7 @@ class TestResultStat {
     failed_test_cases.insert(s);
   }
 
-  void print(FILE* output);
+  std::string ToString();
 
  private:
   std::mutex m_;

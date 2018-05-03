@@ -19,7 +19,7 @@ std::string containerToStr(const T1& input) {
 }
 }  // namespace
 
-void TestResultStat::print(FILE* output) {
+std::string TestResultStat::ToString() {
   std::string not_implemented_kernels_str = containerToStr(this->not_implemented_kernels);
   std::string failed_kernels_str = containerToStr(this->failed_kernels);
   int failed = (int)this->total_test_case_count - this->succeeded - this->skipped - this->not_implemented;
@@ -44,6 +44,5 @@ void TestResultStat::print(FILE* output) {
   oss << "\t\tNot implemented(" << this->not_implemented_kernels.size() << "): " << not_implemented_kernels_str << "\n\t\tFailed:"
       << failed_kernels_str << "\n";
   oss << "Failed Test Cases:" << containerToStr(failed_test_cases) << "\n";
-  std::string res = oss.str();
-  fwrite(res.c_str(), 1, res.size(), output);
+  return oss.str();
 }

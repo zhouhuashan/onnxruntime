@@ -12,12 +12,11 @@ class TestEnv {
  public:
   const std::vector<TestCaseInfo>& tests;
   std::atomic_int next_test_to_run;
-  const std::vector<std::string>& all_implemented_ops;
   TestResultStat& stat;
   const Lotus::AllocationPlannerType planner;
   std::unique_ptr<IFinishCallback> finished;
   Lotus::AllocatorManager& allocatorManager;
-  TestEnv(const std::vector<TestCaseInfo>& tests1, const std::vector<std::string>& all_implemented_ops1, TestResultStat& stat1, Lotus::AllocationPlannerType planner1);
+  TestEnv(const std::vector<TestCaseInfo>& tests1, TestResultStat& stat1, Lotus::AllocationPlannerType planner1);
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TestEnv);

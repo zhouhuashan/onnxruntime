@@ -18,7 +18,7 @@ struct TestCaseTask {
 };
 
 struct DataTask {
-  RunContext* env;
+  std::shared_ptr<RunContext> env;
   const size_t task_id;
 };
 
@@ -28,43 +28,54 @@ void __stdcall RunTestCase(
     _Inout_ PTP_WORK work);
 
 void OnTestCaseFinished(TestCaseTask* task, TestCaseResult& result) {
-  task->results[task->task_id] = result;
-  TestEnv& env = task->env;
-  env.finished->onFinished(0);
-  int next_test = env.next_test_to_run++;
-  if (next_test < env.tests.size()) {
-    TestCaseTask* t = new TestCaseTask{env, next_test, task->concurrent_runs, task->results};
-    PTP_WORK work = CreateThreadpoolWork(RunTestCase, t, nullptr);
-    if (!work) {
-      printf("schedule test task failed\n");
-      env.finished->onFinished(-1);
-      delete task;
-      return;
+  IFinishCallback* finished = task->env.finished.get();
+  int ret = 0;
+  {
+    std::unique_ptr<TestCaseTask> unused(task);
+    task->results[task->task_id] = result;
+    TestEnv& env = task->env;
+    int next_test = env.next_test_to_run++;
+    if (next_test < env.tests.size()) {
+      //schedule the next TestCase
+      std::unique_ptr<TestCaseTask> t(new TestCaseTask{env, next_test, task->concurrent_runs, task->results});
+      PTP_WORK work = CreateThreadpoolWork(RunTestCase, t.get(), nullptr);
+      if (!work) {
+        printf("schedule test task failed\n");
+        ret = -1;
+      } else {
+        SubmitThreadpoolWork(work);
+        t.release();  //ownership transferred to the ThreadpoolWork
+      }
     }
-    SubmitThreadpoolWork(work);
   }
-  delete task;
+  finished->onFinished(ret);
 }
 
 void OnDataTestFinished(DataTask* task, EXECUTE_RESULT result) {
   try {
-    task->env->result.excution_result[task->task_id] = result;
-    task->env->result.node_name = task->env->node_name;
-    size_t next_test = task->env->next_test_to_run++;
-    if (next_test < task->env->test_case.input_pb_files.size()) {
-      DataTask* t = new DataTask{task->env, next_test};
-      PTP_WORK work = CreateThreadpoolWork(RunTestCase, t, nullptr);
-      if (!work) {
-        printf("schedule test task failed\n");
-        abort();
+    std::function<void(TestCaseResult & result)> callback;
+    TestCaseResult ret;
+    {
+      std::unique_ptr<DataTask> unused(task);
+      task->env->result.excution_result[task->task_id] = result;
+      task->env->result.node_name = task->env->node_name;
+      size_t next_test = task->env->next_test_to_run++;
+      if (next_test < task->env->test_case.input_pb_files.size()) {
+        DataTask* t = new DataTask{task->env, next_test};
+        PTP_WORK work = CreateThreadpoolWork(RunTestCase, t, nullptr);
+        if (!work) {
+          printf("schedule test task failed\n");
+          abort();
+        }
+        SubmitThreadpoolWork(work);
       }
-      SubmitThreadpoolWork(work);
+      if (++task->env->finished == task->env->test_case.input_pb_files.size()) {
+        callback = task->env->on_finished;
+        ret = task->env->result;
+      }
     }
-    if (++task->env->finished == task->env->test_case.input_pb_files.size()) {
-      task->env->on_finished(task->env->result);
-      delete task->env;
-    }
-    delete task;
+    if (callback)
+      callback(ret);
   } catch (std::exception& ex) {
     printf("%s:unrecoverable error:%s,exit...\n", task->env->test_case.test_case_name.c_str(), ex.what());
     abort();
@@ -133,7 +144,7 @@ void ParallelRunTests(TestEnv& env, int p_models, size_t current_runs, std::vect
   env.finished->wait();
 }
 
-void ParallelRunData(RunContext* env, size_t concurrent_runs) {
+void ParallelRunData(std::shared_ptr<RunContext> env, size_t concurrent_runs) {
   concurrent_runs = std::min<size_t>(concurrent_runs, env->test_case.input_pb_files.size());
   env->next_test_to_run = concurrent_runs;
   for (size_t i = 0; i != concurrent_runs; ++i) {
