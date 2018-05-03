@@ -91,9 +91,9 @@ Status LinearClassifier<float>::Compute(OpKernelContext* ctx) const {
         } else if (classlabels_strings_.size() == 2) {
           Y->MutableData<std::string>()[i] = classlabels_strings_[0];  //negative label
         } else if (maxweight > 0) {
-          Y->MutableData<int64_t>()[i] = 1;  //positive label
+          Y->MutableData<std::string>()[i] = "1";  //positive label
         } else {
-          Y->MutableData<int64_t>()[i] = 0;  //negative label
+          Y->MutableData<std::string>()[i] = "0";  //negative label
         }
       } else  //no strings
       {

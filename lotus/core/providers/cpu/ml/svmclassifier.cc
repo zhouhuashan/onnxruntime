@@ -211,9 +211,9 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
           Y->MutableData<std::string>()[n] = classlabels_strings_[0];  //negative label
           write_additional_scores = 1;
         } else if (maxweight > 0) {
-          Y->MutableData<int64_t>()[n] = 1;  //positive label
+          Y->MutableData<std::string>()[n] = "1";  //positive label
         } else {
-          Y->MutableData<int64_t>()[n] = 0;  //negative label
+          Y->MutableData<std::string>()[n] = "0";  //negative label
         }
       } else  //no strings
       {
