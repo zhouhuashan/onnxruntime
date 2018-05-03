@@ -1,19 +1,12 @@
 #include "allocation_planner.h"
 #include <list>
 #include <unordered_map>
+#include <algorithm>
 #include "core/common/exceptions.h"
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/session_state.h"
 #include "core/graph/utils.h"
 #include "core/framework/data_types.h"
-
-/*
-TODO: 
-- (Not for milestone 1)
-- handle different types of devices:
-  - identify placement of all tensors and ml-values
-  - insert copies between different devices as required
-*/
 
 namespace Lotus {
 
@@ -25,7 +18,7 @@ class PlannerImpl {
 
   // MLValueInfo: Auxiliary information about an MLValue used only during plan-generation:
   struct MLValueInfo {
-    const LotusIR::NodeArg* p_def_site;  // the unique NodeArg where the MLValue is assigned a value
+    const LotusIR::NodeArg* p_def_site;  // the (unique) NodeArg corresponding to the MLValue
     int usecount = 0;                    // static reference-count
     MLValueIndex reused_buffer_index;    // index of original buffer to reuse
   };
@@ -46,7 +39,7 @@ class PlannerImpl {
   // they became free (more recently freed earlier in the list).
   std::list<FreeBufferInfo> freelist_;
 
-  MLValueIndex index(const MLValueName& name) {
+  MLValueIndex Index(const MLValueName& name) {
     MLValueIndex result;
     auto status = p_session_state_->GetMLValueIdx(name, &result);
     LOTUS_ENFORCE(status.IsOK());
@@ -54,19 +47,23 @@ class PlannerImpl {
   }
 
   int& UseCount(MLValueIndex n) { return ml_value_info_.at(n).usecount; }
-  int& UseCount(const MLValueName& name) { return UseCount(index(name)); }
+  int& UseCount(const MLValueName& name) { return UseCount(Index(name)); }
 
   MLValueIndex& Buffer(MLValueIndex n) { return ml_value_info_.at(n).reused_buffer_index; }
 
-  SequentialExecutionPlan::AllocPlanPerValue& AllocPlan(MLValueIndex n) { return plan_->allocation_plan.at(n); }
+  SequentialExecutionPlan::AllocPlanPerValue& AllocPlan(MLValueIndex n) {
+    return plan_->allocation_plan.at(n);
+  }
+
+  SequentialExecutionPlan::AllocPlanPerValue& AllocPlan(const MLValueName& name) {
+    return AllocPlan(Index(name));
+  }
 
   // Initialize state for a given ml-value at its definition site:
-  void ProcessDef(const LotusIR::NodeArg* p_def_site) {
-    const MLValueName& name = p_def_site->Name();
-    MLValueIndex id = index(name);
+  void ProcessDef(MLValueIndex id, const LotusIR::NodeArg* p_def_site) {
     MLValueInfo& info = ml_value_info_.at(id);
     info.usecount = 0;
-    info.reused_buffer_index = index(name);  // initially, no reuse; the ml-value uses its own buffer
+    info.reused_buffer_index = id;  // initially, no reuse; the ml-value uses its own buffer
     info.p_def_site = p_def_site;
   }
 
@@ -95,7 +92,7 @@ class PlannerImpl {
       if (pair.second == output_arg_num) {
         // we _must_ reuse this input to satisfy aliasing requirement: (e.g., for reshape)
         auto p_input_arg = node.InputDefs()[pair.first];
-        *reusable_input = index(p_input_arg->Name());
+        *reusable_input = Index(p_input_arg->Name());
         return true;
       }
     }
@@ -104,7 +101,7 @@ class PlannerImpl {
     for (auto pair : inplace_map) {
       if (pair.second == output_arg_num) {
         auto p_input_arg = node.InputDefs()[pair.first];
-        auto input_arg_index = index(p_input_arg->Name());
+        auto input_arg_index = Index(p_input_arg->Name());
         auto original = Buffer(input_arg_index);
         if (1 == UseCount(original)) {
           if (SameSize(*p_input_arg, *p_output_arg)) {
@@ -119,9 +116,7 @@ class PlannerImpl {
   }
 
   bool SameShape(const TensorShapeProto& shape1, const TensorShapeProto& shape2) {
-    // TODO: shape-inference does not exist yet; it may be better to have shape inference
-    // return our own TensorShape instead of TensorShapeProto ... and we can use equality
-    // defined in TensorShape.
+    // TODO: This should probably be defined to be the equality operator on TensorShapeProto.
     int rank1 = shape1.dim_size();
     if (shape2.dim_size() != rank1) return false;
     for (int i = 0; i < rank1; i++) {
@@ -157,7 +152,8 @@ class PlannerImpl {
                 const TensorShapeProto& shape2, const DataType& ptype2) {
     return (GetElementSize(ptype1) == GetElementSize(ptype2)) && SameShape(shape1, shape2);
 
-    /* TODO: we can generalize this if the concrete shapes are known for both:
+    /* TODO: we can improve this if the concrete shapes are known for both as below.
+	   Unclear whether this is worthwhile though.
     if (KnownSize(p_shape1) && KnownSize(p_shape2)) {
       // Comparison of statically-known size
       auto size1 = NumElements(p_shape1) * EltSize(ptype1);
@@ -219,8 +215,9 @@ class PlannerImpl {
     // Note: for every ml-value, its definition must appear before all its uses in a topological sort of a valid model
 
     for (auto graph_input : graph.GetInputs()) {
-      ProcessDef(graph_input);
-      UseCount(graph_input->Name())++;  // Models caller's usage post-inference; ensures it will not be reused.
+      MLValueIndex index = Index(graph_input->Name());
+      ProcessDef(index, graph_input);
+      UseCount(index)++;  // Models caller's usage post-inference; ensures it will not be reused.
     }
 
     for (SequentialExecutionPlan::NodeExecutionPlan& step : execution_plan) {
@@ -229,9 +226,30 @@ class PlannerImpl {
         if (node_input->Exists())
           UseCount(node_input->Name())++;
       }
-      for (auto node_output : pnode->OutputDefs())
-        if (node_output->Exists())
-          ProcessDef(node_output);
+      // Identify where each output of this node should be allocated.
+      // This is determined by the opkernel bound to the node.
+      auto* p_kernel = p_session_state_->GetKernel(step.node_index);
+      auto& allocator_info = p_kernel->Allocator();
+      bool not_cpu = (allocator_info.name != CPU);
+      auto& cpu_allocated_args = p_kernel->KernelDef().HostMemory();
+      auto& outputs = pnode->OutputDefs();
+      auto num_outputs = outputs.size();
+      for (int i = 0; i < num_outputs; ++i) {
+        auto* node_output = outputs[i];
+        if (node_output->Exists()) {
+          MLValueIndex index = Index(node_output->Name());
+          ProcessDef(index, node_output);
+          if (not_cpu) {
+            // By default, outputs of this node are allocated on indicated device allocator,
+            // except for outputs marked for allocation in HostMemory:
+            auto search_item = std::make_pair(i, false);  // "false" denotes output-parameter
+            if (std::find(cpu_allocated_args.begin(), cpu_allocated_args.end(), search_item) ==
+                cpu_allocated_args.end()) {
+              AllocPlan(index).location = allocator_info;
+            }
+          }
+        }
+      }
     }
 
     for (auto graph_output : graph.GetOutputs()) {
@@ -247,7 +265,7 @@ class PlannerImpl {
     // An input ml-value's data is owned by the caller (of InferenceSession::Run())
     // It must be allocated by the caller, and will not be reused during inference.
     for (auto graph_input : graph.GetInputs()) {
-      auto input_index = index(graph_input->Name());
+      auto input_index = Index(graph_input->Name());
       SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(input_index);
       thisplan.alloc_kind = AllocKind::kPreExisting;
       thisplan.value_type = GetMLDataType(*graph_input);
@@ -255,7 +273,7 @@ class PlannerImpl {
 
     auto& weights = graph.GetAllInitializedTensors();
     for (auto it = weights.begin(); it != weights.end(); ++it) {
-      auto wt_index = index(it->first);
+      auto wt_index = Index(it->first);
       SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
       thisplan.alloc_kind = AllocKind::kAllocateStatically;
       // Note: thisplan.value_type should already have been setup since every initializer must be an input
@@ -268,7 +286,7 @@ class PlannerImpl {
       int output_arg_num = 0;
       for (auto node_output : pnode->OutputDefs()) {
         if (!node_output->Exists()) continue;
-        auto current = index(node_output->Name());
+        auto current = Index(node_output->Name());
         AllocPlan(current).value_type = GetMLDataType(*node_output);
         MLValueIndex reused;
         if (IsNonTensor(*node_output)) {
@@ -290,7 +308,7 @@ class PlannerImpl {
       for (auto node_input : pnode->InputDefs()) {
         if (node_input->Exists()) {
           auto& sym = node_input->Name();
-          auto original = Buffer(index(sym));
+          auto original = Buffer(Index(sym));
           if (0 == --UseCount(original))
             freelist_.push_front(FreeBufferInfo(original, program_counter));
         }
@@ -299,7 +317,7 @@ class PlannerImpl {
       for (auto node_output : pnode->OutputDefs()) {
         if (node_output->Exists()) {
           auto& sym = node_output->Name();
-          auto original = Buffer(index(sym));
+          auto original = Buffer(Index(sym));
           if (0 == UseCount(original))
             freelist_.push_front(FreeBufferInfo(original, program_counter));
         }
