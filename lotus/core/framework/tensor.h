@@ -143,11 +143,7 @@ class Tensor {
   friend class ExecutionFrame;
 
  public:
-  // Create an empty tensor with float type.
-  // empty tensor is a tensor with 1-d shape (0,), and 0 elements.
-  Tensor();
-  // Create a empty tensor with given type
-  Tensor(MLDataType p_type);
+
   // Create tensor with given type, shape, pre-allocate memory and allocator info.
   Tensor(MLDataType p_type,
          const TensorShape& shape,

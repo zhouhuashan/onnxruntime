@@ -95,25 +95,7 @@ std::ostream& operator<<(std::ostream& out, const TensorShape& shape) {
   return (out << shape.ToString());
 }
 
-Tensor::Tensor()
-    : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
-  Init(DataTypeImpl::GetType<float>(),
-       TensorShape(std::vector<int64_t>(1, 0)),
-       nullptr,
-       AllocatorManager::Instance().GetArena(CPU).Info(),
-       nullptr,
-       0);
-}
 
-Tensor::Tensor(MLDataType p_type)
-    : alloc_info_(AllocatorManager::Instance().GetArena(CPU).Info()) {
-  Init(p_type,
-       TensorShape(std::vector<int64_t>(1, 0)),
-       nullptr,
-       AllocatorManager::Instance().GetArena(CPU).Info(),
-       nullptr,
-       0);
-}
 
 Tensor::Tensor(MLDataType p_type,
                const TensorShape& shape,

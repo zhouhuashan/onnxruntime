@@ -120,10 +120,11 @@ TEST(TensorTest, CPUUInt64TensorOffsetTest) {
 }
 
 TEST(TensorTest, EmptyTensorTest) {
-  Tensor t;
+  auto type = DataTypeImpl::GetType<float>();
+  Tensor t(type, TensorShape({ 1, 0 }), nullptr, AllocatorManager::Instance().GetArena(CPU).Info());
   auto& shape = t.Shape();
   EXPECT_EQ(shape.Size(), 0);
-  EXPECT_EQ(t.DataType(), DataTypeImpl::GetType<float>());
+  EXPECT_EQ(t.DataType(), type);
 
   auto data = t.MutableData<float>();
   EXPECT_TRUE(!data);
