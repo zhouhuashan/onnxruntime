@@ -32,6 +32,11 @@ class RNN : public OpKernel {
       activation_beta_ = vector<float>(num_directions, 0.0F);
     if (activations_.empty())
       activations_ = vector<string>(num_directions, default_activation);
+    else if (activations_.size() == 2 && num_directions == 1) {
+      // ONNX RNN default activations are {"Tanh", "Tanh"}
+      // In this case, take the first default activation.
+      activations_.resize(1);
+    }
 
     LOTUS_ENFORCE(activations_.size() == num_directions);
     for (int direction = 1; direction < num_directions; direction++) {

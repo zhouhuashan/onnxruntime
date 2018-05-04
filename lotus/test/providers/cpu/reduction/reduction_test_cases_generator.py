@@ -1,49 +1,38 @@
 import os
 import numpy as np
-import cntk as C
 
 def TestReduction(op, data, axes, keepdims):
     if op == "ReduceL1":
-        return C.reduce_l1(data, axis = axes, keepdims = keepdims == 1).eval()
+        return np.sum(a=np.abs(data), axis=axes, keepdims=keepdims)
     elif op == "ReduceL2":
-        return C.reduce_l2(data, axis = axes, keepdims = keepdims == 1).eval()
+        return np.sqrt(np.sum(a=np.square(data), axis=axes, keepdims=keepdims))
     elif op == "ReduceLogSum":
-        res = np.sum(np.log(data), axis = axes, keepdims = keepdims == 1)
-        return res
+        return np.sum(np.log(data), axis=axes, keepdims=keepdims)
     elif op == "ReduceLogSumExp":
-        model = C.reduce_log_sum_exp(data, axis = axes)
-        if (keepdims != 1):
-            model = C.squeeze(model, axes = axes)
-        return model.eval()
+        return np.log(np.sum(np.exp(data), axis=axes, keepdims=keepdims))
     elif op == "ReduceMax":
-        res = np.max(data, axis = axes, keepdims = keepdims == 1)
-        return res
+        return np.max(data, axis=axes, keepdims=keepdims)
     elif op == "ReduceMean":
-        res = np.mean(data, axis = axes, keepdims = keepdims)
-        return res
+        return np.mean(data, axis=axes, keepdims=keepdims)
     elif op == "ReduceMin":
-        res = np.min(data, axis = axes, keepdims = keepdims)
-        return res
+        return np.min(data, axis=axes, keepdims=keepdims)
     elif op == "ReduceProd":
-        model = C.reduce_prod(data, axis = axes)
-        if (keepdims != 1):
-            model = C.squeeze(model, axes = axes)
-        return model.eval()
+        return np.prod(data, axis=axes, keepdims=keepdims)
     elif op == "ReduceSum":
-        res = np.sum(data, axis = axes, keepdims = keepdims)
-        return res
+        return np.sum(data, axis=axes, keepdims=keepdims)
     elif op == "ReduceSumSquare":
-        res = np.sum(np.square(data), axis = axes, keepdims = keepdims)
-        return res
+        return np.sum(np.square(data), axis=axes, keepdims=keepdims)
     elif op == "ArgMax":
-        res = np.argmax(data, axis = axes[0])
+        axis = axes[0] if axes else 0
+        res = np.argmax(data, axis)
         if keepdims:
-            res = np.expand_dims(res, axes[0])
+            res = np.expand_dims(res, axis)
         return res
     elif op == "ArgMin":
-        res = np.argmin(data, axis = axes[0])
+        axis = axes[0] if axes else 0
+        res = np.argmin(data, axis)
         if keepdims:
-            res = np.expand_dims(res, axes[0])
+            res = np.expand_dims(res, axis)
         return res
 
 def PrintResult(op, axes, keepdims, res):
@@ -53,7 +42,7 @@ def PrintResult(op, axes, keepdims, res):
     print("      {")
     print (" // axes_")
     print ("{",  end='')
-    print(*axes, sep=", ",  end='')
+    print(*axes, sep=", ",  end='') if axes else print("")
     print ("},")
     print (" // keep_dims_")
     print (keepdims, ",")
@@ -76,7 +65,7 @@ if __name__ == "__main__":
     input_shape = [2,3,2,2,3]
     np.random.seed(0)
     input_data = np.random.uniform(size=input_shape)
-    axes_options = [(2,3), (2, 1, 4), (0, 2, 3), (0,), (2,), (4,)]
+    axes_options = [(2,3), (2, 1, 4), (0, 2, 3), (0,), (2,), (4,), None]
     keepdims_options = [0, 1]
     ops = ["ReduceL1", "ReduceL2", "ReduceLogSum", "ReduceLogSumExp", "ReduceMax", "ReduceMean", 
            "ReduceMin", "ReduceProd", "ReduceSum", "ReduceSumSquare", "ArgMax", "ArgMin"]
@@ -98,10 +87,10 @@ if __name__ == "__main__":
     for config in product(axes_options, keepdims_options, ops):
         axes, keepdims, op = config
         
-        #ArgMax and ArgMin only take single axis
+        #ArgMax and ArgMin only take single axis (default 0)
         skip = False;
         if op == "ArgMax" or op == "ArgMin":
-            skip = len(axes) > 1
+            skip = axes is not None and len(axes) > 1
 
         if not skip:
             res = TestReduction(op, input_data, axes, keepdims)

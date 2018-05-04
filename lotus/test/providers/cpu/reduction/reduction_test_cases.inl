@@ -750,7 +750,7 @@ ReductionTestCases testcases = {
              {2, 2},
              // expected values
              {
-                 2.813812f,
+                 2.813811f,
                  2.480093f,
                  2.342597f,
                  2.047636f,
@@ -788,7 +788,7 @@ ReductionTestCases testcases = {
              {
                  3.527107f,
                  3.445045f,
-                 3.404397f,
+                 3.404396f,
                  3.330581f,
              })},
         {"ReduceMax",
@@ -930,7 +930,7 @@ ReductionTestCases testcases = {
              {2, 1, 1, 2, 1},
              // expected values
              {
-                 2.813812f,
+                 2.813811f,
                  2.480093f,
                  2.342597f,
                  2.047636f,
@@ -968,7 +968,7 @@ ReductionTestCases testcases = {
              {
                  3.527107f,
                  3.445045f,
-                 3.404397f,
+                 3.404396f,
                  3.330581f,
              })},
         {"ReduceMax",
@@ -1092,11 +1092,12 @@ ReductionTestCases testcases = {
              {3, 3},
              // expected values
              {
-                 4.576910f,
+                 4.576911f,
                  4.069392f,
                  4.917688f,
                  3.448687f,
                  4.257011f,
+
                  4.232579f,
                  3.110177f,
                  3.335311f,
@@ -1169,7 +1170,7 @@ ReductionTestCases testcases = {
                  2.659616f,
                  2.522522f,
                  2.554146f,
-                 2.594028f,
+                 2.594027f,
              })},
         {"ReduceMax",
          OpAttributesResult(
@@ -1322,7 +1323,7 @@ ReductionTestCases testcases = {
              {1, 3, 1, 1, 3},
              // expected values
              {
-                 4.576910f,
+                 4.576911f,
                  4.069392f,
                  4.917688f,
                  3.448687f,
@@ -1399,7 +1400,7 @@ ReductionTestCases testcases = {
                  2.659616f,
                  2.522522f,
                  2.554146f,
-                 2.594028f,
+                 2.594027f,
              })},
         {"ReduceMax",
          OpAttributesResult(
@@ -1560,7 +1561,7 @@ ReductionTestCases testcases = {
                  1.082926f,
                  1.135218f,
                  0.951998f,
-                 1.630430f,
+                 1.630429f,
                  1.054079f,
                  1.002108f,
                  0.657821f,
@@ -1570,7 +1571,7 @@ ReductionTestCases testcases = {
                  0.525731f,
                  1.008592f,
                  0.934665f,
-                 0.987033f,
+                 0.987034f,
                  1.031322f,
                  1.631727f,
                  1.052450f,
@@ -1901,7 +1902,6 @@ ReductionTestCases testcases = {
              // expected dims
              {3, 2, 2, 3},
              // expected values
-
              {
                  0.335926f,
                  0.441225f,
@@ -2161,7 +2161,7 @@ ReductionTestCases testcases = {
                  1.082926f,
                  1.135218f,
                  0.951998f,
-                 1.630430f,
+                 1.630429f,
                  1.054079f,
                  1.002108f,
                  0.657821f,
@@ -2171,7 +2171,7 @@ ReductionTestCases testcases = {
                  0.525731f,
                  1.008592f,
                  0.934665f,
-                 0.987033f,
+                 0.987034f,
                  1.031322f,
                  1.631727f,
                  1.052450f,
@@ -2819,7 +2819,7 @@ ReductionTestCases testcases = {
                  1.004458f,
                  0.478146f,
                  1.102505f,
-                 0.522187f,
+                 0.522186f,
                  0.743921f,
                  0.928090f,
                  0.619867f,
@@ -3110,6 +3110,7 @@ ReductionTestCases testcases = {
                  0.335418f,
                  0.341610f,
                  0.442028f,
+
                  0.805280f,
                  0.069517f,
                  0.069630f,
@@ -3124,7 +3125,7 @@ ReductionTestCases testcases = {
                  0.427017f,
                  0.037155f,
                  0.629260f,
-                 0.457254f,
+                 0.457255f,
                  0.075634f,
                  0.056345f,
                  0.065886f,
@@ -3138,7 +3139,7 @@ ReductionTestCases testcases = {
                  0.549968f,
                  0.013279f,
                  0.191955f,
-                 0.172804f,
+                 0.172803f,
              })},
         {"ReduceSum",
          OpAttributesResult(
@@ -3419,7 +3420,7 @@ ReductionTestCases testcases = {
                  1.004458f,
                  0.478146f,
                  1.102505f,
-                 0.522187f,
+                 0.522186f,
                  0.743921f,
                  0.928090f,
                  0.619867f,
@@ -3620,7 +3621,6 @@ ReductionTestCases testcases = {
                  0.299752f,
                  0.756551f,
                  0.270319f,
-
                  0.516149f,
                  0.654863f,
                  0.338580f,
@@ -3725,7 +3725,7 @@ ReductionTestCases testcases = {
                  0.427017f,
                  0.037155f,
                  0.629260f,
-                 0.457254f,
+                 0.457255f,
                  0.075634f,
                  0.056345f,
                  0.065886f,
@@ -3739,7 +3739,7 @@ ReductionTestCases testcases = {
                  0.549968f,
                  0.013279f,
                  0.191955f,
-                 0.172804f,
+                 0.172803f,
              })},
         {"ReduceSum",
          OpAttributesResult(
@@ -3957,7 +3957,7 @@ ReductionTestCases testcases = {
                  1.866766f,
                  1.614432f,
                  2.293023f,
-                 1.704062f,
+                 1.704061f,
                  1.564677f,
                  0.939968f,
                  2.626787f,
@@ -3976,7 +3976,7 @@ ReductionTestCases testcases = {
                  0.964028f,
                  0.925674f,
                  0.703490f,
-                 1.756040f,
+                 1.756039f,
                  1.541209f,
              })},
         {"ReduceL2",
@@ -4413,7 +4413,7 @@ ReductionTestCases testcases = {
                  1.866766f,
                  1.614432f,
                  2.293023f,
-                 1.704062f,
+                 1.704061f,
                  1.564677f,
                  0.939968f,
                  2.626787f,
@@ -4432,7 +4432,7 @@ ReductionTestCases testcases = {
                  0.964028f,
                  0.925674f,
                  0.703490f,
-                 1.756040f,
+                 1.756039f,
                  1.541209f,
              })},
         {"ReduceL2",
@@ -4784,6 +4784,7 @@ ReductionTestCases testcases = {
                  // axes_
                  {4},
                  // keep_dims_
+
                  1,
              },
              // expected dims
@@ -4852,5 +4853,505 @@ ReductionTestCases testcases = {
                  0.000000f,
                  1.000000f,
                  0.000000f,
+             })},
+        {"ReduceL1",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 35.911209f,
+             })},
+        {"ReduceL2",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 4.873291f,
+             })},
+        {"ReduceLogSum",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 -70.075428f,
+             })},
+        {"ReduceLogSumExp",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 4.815600f,
+             })},
+        {"ReduceMax",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 0.988374f,
+             })},
+        {"ReduceMean",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 0.498767f,
+             })},
+        {"ReduceMin",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 0.018790f,
+             })},
+        {"ReduceProd",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 0.000000f,
+             })},
+        {"ReduceSum",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 35.911209f,
+             })},
+        {"ReduceSumSquare",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {},
+             // expected values
+             {
+                 23.748968f,
+             })},
+        {"ArgMax",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {3, 2, 2, 3},
+             // expected values
+             {
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+             })},
+        {"ArgMin",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 0,
+             },
+             // expected dims
+             {3, 2, 2, 3},
+             // expected values
+             {
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+             })},
+        {"ReduceL1",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 35.911209f,
+             })},
+        {"ReduceL2",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 4.873291f,
+             })},
+        {"ReduceLogSum",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 -70.075428f,
+             })},
+        {"ReduceLogSumExp",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 4.815600f,
+             })},
+        {"ReduceMax",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 0.988374f,
+             })},
+        {"ReduceMean",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 0.498767f,
+             })},
+        {"ReduceMin",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 0.018790f,
+             })},
+        {"ReduceProd",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 0.000000f,
+             })},
+        {"ReduceSum",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 35.911209f,
+             })},
+        {"ReduceSumSquare",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 1, 1, 1, 1},
+             // expected values
+             {
+                 23.748968f,
+             })},
+        {"ArgMax",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 3, 2, 2, 3},
+             // expected values
+             {
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+             })},
+        {"ArgMin",
+         OpAttributesResult(
+             // ReductionAttribute
+             {
+                 // axes_
+                 {},
+                 // keep_dims_
+                 1,
+             },
+             // expected dims
+             {1, 3, 2, 2, 3},
+             // expected values
+             {
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 0.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 1.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
+                 0.000000f,
+                 1.000000f,
              })},
     }};

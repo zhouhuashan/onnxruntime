@@ -10,10 +10,10 @@ class ReduceKernel : public OpKernel {
  protected:
   ReduceKernel(const OpKernelInfo& info, bool allow_multi_axes = true) : OpKernel(info) {
     if (allow_multi_axes) {
-      LOTUS_ENFORCE(info.GetAttrs("axes", axes_).IsOK());
+      info.GetAttrs("axes", axes_);
     } else {
-      axes_.resize(1);
-      LOTUS_ENFORCE(info.GetAttr("axis", &axes_[0]).IsOK());
+      axes_.push_back(0);
+      info.GetAttr("axis", &axes_[0]);
     }
     int64_t keepdims = 1;
     if (info.GetAttr("keepdims", &keepdims).IsOK())

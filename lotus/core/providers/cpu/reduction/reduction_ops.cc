@@ -102,6 +102,12 @@ void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
   transposedInputData.resize(input.Shape().Size(), 0);
 
   std::vector<int64_t> axes = axes_;
+  if (axes.empty()) {
+    // This is the default case for non-arg kind reductions. Reduce on all dimensions.
+    for (int i = 0; i < ndim; i++)
+      axes.push_back(i);
+  }
+
   std::sort(axes.begin(), axes.end());
 
   vector<bool> keep_axis(ndim, true);

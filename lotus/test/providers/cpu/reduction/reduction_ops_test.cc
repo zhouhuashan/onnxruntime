@@ -17,10 +17,13 @@ void TestReduceOp(const std::string &op,
 
 {
   OpTester test(op.c_str());
-  if (op.compare("ArgMax") == 0 || op.compare("ArgMin") == 0)
-    test.AddAttribute("axis", axes[0]);
-  else
-    test.AddAttribute("axes", axes);
+  if (!axes.empty())
+  {
+      if (op.compare("ArgMax") == 0 || op.compare("ArgMin") == 0)
+          test.AddAttribute("axis", axes[0]);
+      else
+          test.AddAttribute("axes", axes);
+  }
   test.AddAttribute("keepdims", keepdims);
   test.AddInput<float>("data", input_dims, data);
   test.AddOutput<OutT>("reduced", expected_dims, expected_data);
@@ -36,12 +39,11 @@ TEST(ReductionOpTest, ReductionVariationTest) {
     const ReductionAttribute &attributes = std::get<0>(a.second);
     const std::vector<int64_t> expected_dims = std::get<1>(a.second);
     if (a.first.compare("ArgMax") == 0 || a.first.compare("ArgMin") == 0) {
-      // Disable int64_t test first
-      /*std::vector<int64_t> expected_values;
+      std::vector<int64_t> expected_values;
       for (auto v : std::get<2>(a.second))
         expected_values.push_back(static_cast<int64_t>(v));
       TestReduceOp<int64_t>(a.first, input_dims, input_data, attributes.axes_, attributes.keep_dims_,
-                            expected_dims, expected_values);*/
+                            expected_dims, expected_values);
     } else {
       const std::vector<float> expected_values = std::get<2>(a.second);
       TestReduceOp<float>(a.first, input_dims, input_data, attributes.axes_, attributes.keep_dims_,
