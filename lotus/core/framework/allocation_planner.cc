@@ -180,14 +180,18 @@ class PlannerImpl {
     auto p_required_buffer_shape = p_context_->GetShape(output_arg);
     if (nullptr == p_required_buffer_shape) return false;
     auto required_buffer_type = output_arg.Type();
+    auto& required_allocator_info = AllocPlan(output_arg.Name()).location;
 
     for (auto it = freelist_.begin(); it != freelist_.end(); ++it) {
       auto reusable = it->ml_value;
       auto p_node_arg = ml_value_info_.at(reusable).p_def_site;
+      auto& available_allocator_info = AllocPlan(p_node_arg->Name()).location;
+      if (!(available_allocator_info == required_allocator_info)) continue;
       auto p_available_buffer_shape = p_context_->GetShape(*p_node_arg);
       if (nullptr != p_available_buffer_shape) {
         auto available_buffer_type = p_node_arg->Type();
-        if (SameSize(*p_available_buffer_shape, available_buffer_type, *p_required_buffer_shape, required_buffer_type)) {
+        if (SameSize(*p_available_buffer_shape, available_buffer_type,
+                     *p_required_buffer_shape, required_buffer_type)) {
           *reusable_tensor = reusable;
           freelist_.erase(it);
           return true;
