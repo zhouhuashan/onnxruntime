@@ -10,7 +10,7 @@ static void RunTest(const std::vector<float> &x_vals,
                     const std::vector<float> &expected_vals,
                     const std::vector<int64_t> &dimensions,
                     int64_t axis = 1,
-                    bool expect_failure = false,
+                    OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
                     const std::string &error_msg = "") {
   OpTester tester("LogSoftmax");
 
@@ -21,7 +21,7 @@ static void RunTest(const std::vector<float> &x_vals,
   tester.AddInput("X", dimensions, x_vals);
   tester.AddOutput("Y", dimensions, expected_vals);
 
-  tester.Run(expect_failure, error_msg);
+  tester.Run(expect_result, error_msg);
 }
 
 TEST(LogSoftmaxOperator, Simple) {
@@ -180,7 +180,12 @@ TEST(LogSoftmaxOperator, InvalidAxis) {
   std::vector<float> expected_vals = {0.0f, 0.0f, 0.0f};
   std::vector<int64_t> dimensions = {1, 3};
 
-  RunTest(x_vals, expected_vals, dimensions, /* invalid axis */ -7, true, "-7 is not in valid range [-2,1]");
+  RunTest(x_vals,
+          expected_vals,
+          dimensions,
+          /* invalid axis */ -7,
+          OpTester::ExpectResult::kExpectFailure,
+          "-7 is not in valid range [-2,1]");
 }
 
 }  // namespace Test

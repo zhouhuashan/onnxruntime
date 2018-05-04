@@ -10,7 +10,7 @@ static void RunTest(const std::vector<float> &x_vals,
                     const std::vector<float> &expected_vals,
                     const std::vector<int64_t> &dimensions,
                     int64_t axis = 1,
-                    bool expect_failure = false,
+                    OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
                     const std::string &error_msg = "") {
   OpTester test("Softmax");
 
@@ -20,7 +20,7 @@ static void RunTest(const std::vector<float> &x_vals,
 
   test.AddInput<float>("X", dimensions, x_vals);
   test.AddOutput<float>("Y", dimensions, expected_vals);
-  test.Run(expect_failure, error_msg);
+  test.Run(expect_result, error_msg);
 }
 
 TEST(SoftmaxOperator, Simple) {
@@ -176,7 +176,12 @@ TEST(SoftmaxOperator, InvalidAxis) {
   std::vector<float> expected_vals = {0.0f, 0.0f, 0.0f};
   std::vector<int64_t> dimensions = {1, 3};
 
-  RunTest(x_vals, expected_vals, dimensions, /* invalid axis */ -10, true, "-10 is not in valid range [-2,1]");
+  RunTest(x_vals,
+          expected_vals,
+          dimensions,
+          /* invalid axis */ -10,
+          OpTester::ExpectResult::kExpectFailure,
+          "-10 is not in valid range [-2,1]");
 }
 
 TEST(SoftmaxOperator, TestInputTooLarge) {

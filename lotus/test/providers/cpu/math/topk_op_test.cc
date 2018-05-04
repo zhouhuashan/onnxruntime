@@ -11,7 +11,9 @@ static void RunTest(int64_t k,
                     const std::vector<float> &expected_vals,
                     const std::vector<int64_t> &expected_indices,
                     const std::vector<int64_t> &expected_dimensions,
-                    int64_t axis = 1) {
+                    int64_t axis = 1,
+                    OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
+                    const std::string &expected_err_str = "") {
   OpTester test("TopK");
   test.AddAttribute("k", k);
   if (axis != 1) {
@@ -21,7 +23,7 @@ static void RunTest(int64_t k,
   test.AddInput<float>("X", input_dimensions, input_vals);
   test.AddOutput<float>("Values", expected_dimensions, expected_vals);
   test.AddOutput<int64_t>("Indices", expected_dimensions, expected_indices);
-  test.Run();
+  test.Run(expect_result, expected_err_str);
 }
 
 TEST(TopKOperator, Top1) {
@@ -66,11 +68,15 @@ TEST(TopKOperator, InvalidK) {
   std::vector<float> expected_vals = {0.4f, 0.3f, 0.2f, 0.1f, 0.3f, 0.3f, 0.2f, 0.1f};
   std::vector<int64_t> expected_indices = {3, 1, 2, 0, 1, 2, 3, 0};
   std::vector<int64_t> expected_dimensions = {2, 4};
-  try {
-    RunTest(0, input_vals, input_dimensions, expected_vals, expected_indices, expected_dimensions);
-  } catch (const std::exception &ex) {
-    EXPECT_TRUE(std::string(ex.what()).find("k_temp > 0") != string::npos);
-  }
+  RunTest(0,
+          input_vals,
+          input_dimensions,
+          expected_vals,
+          expected_indices,
+          expected_dimensions,
+          1,
+          OpTester::ExpectResult::kExpectFailure,
+          "k_temp > 0");
 }
 
 }  // namespace Test

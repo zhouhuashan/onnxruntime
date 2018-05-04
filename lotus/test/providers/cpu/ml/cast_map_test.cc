@@ -10,7 +10,7 @@ static void RunTest(const std::map<int64_t, TFrom> &input,
                     const vector<TCastTo> &output,
                     const std::string &cast_to,
                     int64_t max_map = -1,
-                    bool expect_failure = false) {
+                    OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
   OpTester test("CastMap", LotusIR::kMLDomain);
 
   test.AddAttribute("cast_to", cast_to);
@@ -27,7 +27,7 @@ static void RunTest(const std::map<int64_t, TFrom> &input,
   std::vector<int64_t> dims{1, gsl::narrow_cast<int64_t>(output.size())};
   test.AddOutput("Y", dims, output);
 
-  test.Run(expect_failure);
+  test.Run(expect_result);
 }
 
 /*
@@ -101,7 +101,10 @@ Miscellaneous tests
 */
 
 // cast from map<int64_t,TFrom> to Tensor<TCastTo>
-void RunBadAttributeTest(const std::string &cast_to, const std::string &map_form, int64_t max_map = -1) {
+void RunBadAttributeTest(const std::string &cast_to,
+                         const std::string &map_form,
+                         int64_t max_map = -1,
+                         OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
   OpTester test("CastMap", LotusIR::kMLDomain);
 
   test.AddAttribute("cast_to", cast_to);
@@ -116,19 +119,19 @@ void RunBadAttributeTest(const std::string &cast_to, const std::string &map_form
   std::vector<int64_t> dims{1, gsl::narrow_cast<int64_t>(output.size())};
   test.AddOutput<float>("Y", dims, output);
 
-  test.Run();
+  test.Run(expect_result);
 }
 
 // test invalid attributes are detected
 TEST(CastMap, InvalidAttributes) {
   // bad cast_to
-  EXPECT_THROW(RunBadAttributeTest("UNKNOWN", "DENSE"), LotusException);
+  RunBadAttributeTest("UNKNOWN", "DENSE", -1, OpTester::ExpectResult::kExpectFailure);
 
   // bad map_form
-  EXPECT_THROW(RunBadAttributeTest("TO_FLOAT", "UNKNOWN"), LotusException);
+  RunBadAttributeTest("TO_FLOAT", "UNKNOWN", -1, OpTester::ExpectResult::kExpectFailure);
 
   // bad max_map
-  EXPECT_THROW(RunBadAttributeTest("TO_FLOAT", "SPARSE", -2), LotusException);
+  RunBadAttributeTest("TO_FLOAT", "SPARSE", -2, OpTester::ExpectResult::kExpectFailure);
 }
 
 TEST(CastMap, InvalidIndexInMap) {
@@ -136,8 +139,7 @@ TEST(CastMap, InvalidIndexInMap) {
   std::map<int64_t, std::string> map{{-3, "-3"}, {0, "0"}};
   std::vector<float> output{0.0f, 0.0f};
 
-  const bool expect_failure = true;
-  RunTest(map, output, "TO_INT64", -1, expect_failure);
+  RunTest(map, output, "TO_INT64", -1, OpTester::ExpectResult::kExpectFailure);
 }
 
 }  // namespace Test

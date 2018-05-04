@@ -20,7 +20,8 @@ void TestBatchNorm(const InputDataMap& input_data_map,
                    float epsilon,
                    const std::initializer_list<float>& expected_output,
                    const vector<int64_t>& expected_output_shape,
-                   bool expect_failure = false) {
+                   OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
+                   const std::string& err_str = "") {
   OpTester test("BatchNormalization");
   test.AddAttribute("epsilon", epsilon);
   test.AddInput<float>("X", input_shapes_map.at("X"), input_data_map.at("X"));
@@ -29,7 +30,7 @@ void TestBatchNorm(const InputDataMap& input_data_map,
   test.AddInput<float>("mean", input_shapes_map.at("mean"), input_data_map.at("mean"));
   test.AddInput<float>("var", input_shapes_map.at("var"), input_data_map.at("var"));
   test.AddOutput<float>("output", expected_output_shape, expected_output);
-  test.Run(expect_failure);
+  test.Run(expect_result, err_str);
 }
 
 TEST(BatchNormTest, PositiveTestCase) {
@@ -335,11 +336,13 @@ TEST(BatchNormTest, InvalidScaleDim) {
                           1.03375f, 0.707961f, 0.968646f, 0.621757f, 0.973095f, 0.700301f, 0.916723f, 0.807602f, 0.692598f,
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
-  try {
-    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape, true);
-  } catch (const std::exception& ex) {
-    EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input scale"));
-  }
+  TestBatchNorm(input_data_map,
+                input_shapes_map,
+                epsilon,
+                expected_output,
+                expected_output_shape,
+                OpTester::ExpectResult::kExpectFailure,
+                "Invalid input scale");
 }
 
 TEST(BatchNormTest, InvalidBDim) {
@@ -375,11 +378,13 @@ TEST(BatchNormTest, InvalidBDim) {
                           1.03375f, 0.707961f, 0.968646f, 0.621757f, 0.973095f, 0.700301f, 0.916723f, 0.807602f, 0.692598f,
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
-  try {
-    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape, true);
-  } catch (const std::exception& ex) {
-    EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input B"));
-  }
+  TestBatchNorm(input_data_map,
+                input_shapes_map,
+                epsilon,
+                expected_output,
+                expected_output_shape,
+                OpTester::ExpectResult::kExpectFailure,
+                "Invalid input B");
 }
 
 TEST(BatchNormTest, InvalidMeanDim) {
@@ -415,11 +420,13 @@ TEST(BatchNormTest, InvalidMeanDim) {
                           1.03375f, 0.707961f, 0.968646f, 0.621757f, 0.973095f, 0.700301f, 0.916723f, 0.807602f, 0.692598f,
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
-  try {
-    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape, true);
-  } catch (const std::exception& ex) {
-    EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input mean"));
-  }
+  TestBatchNorm(input_data_map,
+                input_shapes_map,
+                epsilon,
+                expected_output,
+                expected_output_shape,
+                OpTester::ExpectResult::kExpectFailure,
+                "Invalid input mean");
 }
 
 TEST(BatchNormTest, InvalidVarDim) {
@@ -455,11 +462,13 @@ TEST(BatchNormTest, InvalidVarDim) {
                           1.03375f, 0.707961f, 0.968646f, 0.621757f, 0.973095f, 0.700301f, 0.916723f, 0.807602f, 0.692598f,
                           0.621972f, 0.707334f, 0.63723f, 0.63062f};
   float epsilon = 1e-05f;
-  try {
-    TestBatchNorm(input_data_map, input_shapes_map, epsilon, expected_output, expected_output_shape, true);
-  } catch (const std::exception& ex) {
-    EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid input var"));
-  }
+  TestBatchNorm(input_data_map,
+                input_shapes_map,
+                epsilon,
+                expected_output,
+                expected_output_shape,
+                OpTester::ExpectResult::kExpectFailure,
+                "Invalid input var");
 }
 }  // namespace Test
 }  // namespace Lotus

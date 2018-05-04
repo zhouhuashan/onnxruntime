@@ -168,7 +168,7 @@ void OpTester::SetOutputRelErr(const char* name, float v) {
   it->relative_error_ = optional<float>(v);
 }
 
-void OpTester::Run(bool expect_failure, const std::string& expected_failure_string) {
+void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string) {
   try {
 #if _DEBUG
     run_called_ = true;
@@ -221,9 +221,16 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     }
 
     status = session_object.Initialize();
-    EXPECT_TRUE(status.IsOK());
     if (!status.IsOK()) {
-      LOGS_DEFAULT(ERROR) << "Initialize failed with error: " << status.ErrorMessage();
+      if (expect_result == ExpectResult::kExpectFailure) {
+        EXPECT_TRUE(!status.IsOK());
+        EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
+      } else {
+        LOGS_DEFAULT(ERROR) << "Initialize failed with status: " << status.ErrorMessage();
+        EXPECT_TRUE(status.IsOK());
+      }
+    }
+    if (!status.IsOK()) {
       return;
     }
 
@@ -232,16 +239,15 @@ void OpTester::Run(bool expect_failure, const std::string& expected_failure_stri
     run_options.run_log_verbosity_level = 1;
     std::vector<MLValue> fetches;
     status = session_object.Run(run_options, feeds, output_names, &fetches);
-    if (expect_failure) {
-      EXPECT_TRUE(!status.IsOK());
-      EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
-    } else {
-      if (!status.IsOK()) {
+    if (!status.IsOK()) {
+      if (expect_result == ExpectResult::kExpectFailure) {
+        EXPECT_TRUE(!status.IsOK());
+        EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
+      } else {
         LOGS_DEFAULT(ERROR) << "Run failed with status: " << status.ErrorMessage();
+        EXPECT_TRUE(status.IsOK());
       }
-      EXPECT_TRUE(status.IsOK());
     }
-
     if (!status.IsOK()) {
       return;
     }

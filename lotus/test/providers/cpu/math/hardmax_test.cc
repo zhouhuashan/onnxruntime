@@ -9,7 +9,9 @@ namespace Test {
 static void RunTest(const std::vector<float> &x_vals,
                     const std::vector<float> &expected_vals,
                     const std::vector<int64_t> &dimensions,
-                    int64_t axis = 1) {
+                    int64_t axis = 1,
+                    OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
+                    const std::string &expected_err_str = "") {
   OpTester test("Hardmax");
 
   if (axis != 1) {
@@ -18,7 +20,7 @@ static void RunTest(const std::vector<float> &x_vals,
 
   test.AddInput<float>("X", dimensions, x_vals);
   test.AddOutput<float>("Y", dimensions, expected_vals);
-  test.Run();
+  test.Run(expect_result, expected_err_str);
 }
 
 TEST(HardmaxOperator, Simple) {
@@ -135,12 +137,12 @@ TEST(HardmaxOperator, InvalidAxis) {
   std::vector<float> expected_vals = {0.0f, 0.0f, 0.0f};
   std::vector<int64_t> dimensions = {1, 3};
 
-  try {
-    RunTest(x_vals, expected_vals, dimensions, /* invalid axis */ -1);
-    FAIL();  // should throw
-  } catch (const std::exception &ex) {
-    EXPECT_THAT(ex.what(), testing::HasSubstr("Invalid axis provided."));
-  }
+  RunTest(x_vals,
+          expected_vals,
+          dimensions,
+          /* invalid axis */ -1,
+          OpTester::ExpectResult::kExpectFailure,
+          "Invalid axis provided.");
 }
 
 }  // namespace Test

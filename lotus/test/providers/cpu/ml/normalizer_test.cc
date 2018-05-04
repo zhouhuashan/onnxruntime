@@ -9,7 +9,7 @@ static void RunTest(const vector<T> &input,
                     const vector<int64_t> &dims,
                     const vector<float> &output,
                     const std::string &norm,
-                    bool expect_failure = false,
+                    OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
                     const std::string &expect_error_message = "") {
   OpTester test("Normalizer", LotusIR::kMLDomain);
 
@@ -18,7 +18,7 @@ static void RunTest(const vector<T> &input,
   test.AddInput("X", dims, input);
   test.AddOutput("Y", dims, output);
 
-  test.Run(expect_failure, expect_error_message);
+  test.Run(expect_result, expect_error_message);
 }
 
 template <typename T>
@@ -172,7 +172,7 @@ TEST(Normalizer, InvalidNorm) {
   std::vector<float> input = {-1.f, 0.f, 1.f};
   std::vector<float> output{-1.0f, 0.f, 1.0f};
 
-  EXPECT_THROW(RunTest(input, dims, output, "InvalidNormValue"), LotusException);
+  RunTest(input, dims, output, "InvalidNormValue", OpTester::ExpectResult::kExpectFailure);
 }
 
 }  // namespace Test

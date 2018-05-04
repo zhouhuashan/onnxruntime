@@ -245,7 +245,11 @@ struct OpTester {
         [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
   }
 
-  void Run(bool expect_failure = false, const std::string& expected_failure_string = "");
+  enum class ExpectResult {
+    kExpectSuccess,
+    kExpectFailure
+  };
+  void Run(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
 
   struct Data {
     LotusIR::NodeArg def_;

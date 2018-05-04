@@ -54,127 +54,181 @@ class InferenceSession::Impl {
   }
 
   Common::Status Load(const std::string& model_uri) {
-    LOGS(*session_logger_, INFO) << "Loading model: " << model_uri;
-    std::lock_guard<std::mutex> l(session_mutex_);
-    if (is_model_loaded_) {  // already loaded
-      LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-      return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+    try {
+      LOGS(*session_logger_, INFO) << "Loading model: " << model_uri;
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (is_model_loaded_) {  // already loaded
+        LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+        return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+      }
+
+      std::shared_ptr<LotusIR::Model> p_tmp_model;
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, &p_tmp_model));
+      model_ = p_tmp_model;
+
+      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+
+      // all steps complete, mark the model as loaded.
+      is_model_loaded_ = true;
+
+      LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
+    } catch (const std::exception& ex) {
+      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+    } catch (...) {
+      LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
+      return Status(LOTUS, RUNTIME_EXCEPTION);
     }
-
-    std::shared_ptr<LotusIR::Model> p_tmp_model;
-    LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, &p_tmp_model));
-    model_ = p_tmp_model;
-
-    LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
-
-    // all steps complete, mark the model as loaded.
-    is_model_loaded_ = true;
-
-    LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
     return Common::Status::OK();
   }
 
   Common::Status Load(std::istream& model_istream) {
-    LOGS(*session_logger_, INFO) << "Loading model using istream";
-    std::lock_guard<std::mutex> l(session_mutex_);
-    if (is_model_loaded_) {  // already loaded
-      LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-      return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+    try {
+      LOGS(*session_logger_, INFO) << "Loading model using istream";
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (is_model_loaded_) {  // already loaded
+        LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+        return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+      }
+
+      ModelProto model_proto;
+      const bool result = model_proto.ParseFromIstream(&model_istream);
+      if (!result) {
+        return Status(LOTUS, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
+      }
+
+      std::shared_ptr<LotusIR::Model> p_tmp_model;
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model));
+      model_ = p_tmp_model;
+
+      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+
+      // all steps complete, mark the model as loaded.
+      is_model_loaded_ = true;
+
+      LOGS(*session_logger_, INFO) << "Model successfully loaded.";
+    } catch (const std::exception& ex) {
+      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+    } catch (...) {
+      LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
+      return Status(LOTUS, RUNTIME_EXCEPTION);
     }
-
-    ModelProto model_proto;
-    const bool result = model_proto.ParseFromIstream(&model_istream);
-    if (!result) {
-      return Status(LOTUS, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
-    }
-
-    std::shared_ptr<LotusIR::Model> p_tmp_model;
-    LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model));
-    model_ = p_tmp_model;
-
-    LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
-
-    // all steps complete, mark the model as loaded.
-    is_model_loaded_ = true;
-
-    LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     return Common::Status::OK();
   }
 
   Common::Status Load(std::unique_ptr<LotusIR::Model> p_model) {
-    LOGS(*session_logger_, INFO) << "Loading model";
-    std::lock_guard<std::mutex> l(session_mutex_);
-    if (is_model_loaded_) {  // already loaded
-      LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-      return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+    try {
+      LOGS(*session_logger_, INFO) << "Loading model";
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (is_model_loaded_) {  // already loaded
+        LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+        return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+      }
+
+      model_ = std::move(p_model);
+
+      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+
+      // all steps complete, mark the model as loaded.
+      is_model_loaded_ = true;
+
+      LOGS(*session_logger_, INFO) << "Model successfully loaded.";
+    } catch (const std::exception& ex) {
+      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+    } catch (...) {
+      LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
+      return Status(LOTUS, RUNTIME_EXCEPTION);
     }
-
-    model_ = std::move(p_model);
-
-    LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
-
-    // all steps complete, mark the model as loaded.
-    is_model_loaded_ = true;
-
-    LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     return Common::Status::OK();
   }
 
   Common::Status Initialize() {
-    LOGS(*session_logger_, INFO) << "Initializing session.";
-    std::lock_guard<std::mutex> l(session_mutex_);
-    if (!is_model_loaded_) {
-      LOGS(*session_logger_, ERROR) << "Model was not loaded";
-      return Common::Status(Common::LOTUS, Common::FAIL, "Model was not loaded.");
+    try {
+      LOGS(*session_logger_, INFO) << "Initializing session.";
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (!is_model_loaded_) {
+        LOGS(*session_logger_, ERROR) << "Model was not loaded";
+        return Common::Status(Common::LOTUS, Common::FAIL, "Model was not loaded.");
+      }
+
+      if (is_inited_) {  // already initialized
+        LOGS(*session_logger_, INFO) << "Session has already been initialized.";
+        return Common::Status::OK();
+      }
+
+      // Register default CPUExecutionProvider if user didn't provide any through the Register() calls
+      if (!session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)) {
+        LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
+        CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
+        session_state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider,
+                                            std::make_unique<CPUExecutionProvider>(epi));
+      }
+
+      LotusIR::Graph* graph = model_->MainGraph();
+      LOTUS_RETURN_IF_ERROR(TransformGraph(graph));
+      LOTUS_RETURN_IF_ERROR(graph->Resolve());
+
+      // at this point the graph should be in a frozen state
+      // hence we set it in the session for use by the executors
+      session_state_.SetGraph(graph);
+
+      // All following initialization steps work on the frozen state of
+      // graph stored inside session_state.
+
+      LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
+      // add other per session initialization stuff here before invoking the executor
+
+      // get execution plan
+      if (session_options_.enable_sequential_execution) {
+        // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
+        // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
+        // Passing a pointer to a private member variable doesn't seem the right thing to do.
+        std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+        // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
+        LOTUS_RETURN_IF_ERROR(AllocationPlanner::CreatePlan(session_options_.allocation_planner_type,
+                                                            session_state_,
+                                                            p_seq_exec_plan.get()));
+
+        session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
+      } else {
+        LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
+      }
+
+      // at this point the graph should be in a frozen state
+      // hence we set it in the session for use by the executors
+      session_state_.SetGraph(graph);
+
+      // All following initialization steps work on the frozen state of
+      // graph stored inside session_state.
+
+      LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
+      // add other per session initialization stuff here before invoking the executor
+
+      // get execution plan
+      if (session_options_.enable_sequential_execution) {
+        // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
+        // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
+        // Passing a pointer to a private member variable doesn't seem the right thing to do.
+        std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+        // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
+        LOTUS_RETURN_IF_ERROR(AllocationPlanner::CreatePlan(session_options_.allocation_planner_type,
+                                                            session_state_,
+                                                            p_seq_exec_plan.get()));
+        session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
+      } else {
+        LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
+      }
+
+      LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
+
+      is_inited_ = true;
+      LOGS(*session_logger_, INFO) << "Session successfully initialized.";
+    } catch (const std::exception& ex) {
+      LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
+      return Status(LOTUS, FAIL, "Exception during initialization: " + std::string(ex.what()));
+    } catch (...) {
+      LOGS(*session_logger_, ERROR) << "Unknown exception in Initialize()";
+      return Status(LOTUS, RUNTIME_EXCEPTION);
     }
-
-    if (is_inited_) {  // already initialized
-      LOGS(*session_logger_, INFO) << "Session has already been initialized.";
-      return Common::Status::OK();
-    }
-
-    // Register default CPUExecutionProvider if user didn't provide any through the Register() calls
-    if (!session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)) {
-      LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
-      CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
-      session_state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider,
-                                          std::make_unique<CPUExecutionProvider>(epi));
-    }
-
-    LotusIR::Graph* graph = model_->MainGraph();
-    LOTUS_RETURN_IF_ERROR(TransformGraph(graph));
-    LOTUS_RETURN_IF_ERROR(graph->Resolve());
-
-    // at this point the graph should be in a frozen state
-    // hence we set it in the session for use by the executors
-    session_state_.SetGraph(graph);
-
-    // All following initialization steps work on the frozen state of
-    // graph stored inside session_state.
-
-    LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
-    // add other per session initialization stuff here before invoking the executor
-
-    // get execution plan
-    if (session_options_.enable_sequential_execution) {
-      // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
-      // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
-      // Passing a pointer to a private member variable doesn't seem the right thing to do.
-      std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
-      // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-      LOTUS_RETURN_IF_ERROR(AllocationPlanner::CreatePlan(session_options_.allocation_planner_type,
-                                                          session_state_,
-                                                          p_seq_exec_plan.get()));
-
-      session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
-    } else {
-      LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
-    }
-
-    LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
-
-    is_inited_ = true;
-    LOGS(*session_logger_, INFO) << "Session successfully initialized.";
     return Status::OK();
   }
 
@@ -259,6 +313,8 @@ class InferenceSession::Impl {
       retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
+    } catch (...) {
+      retval = Status(LOTUS, RUNTIME_EXCEPTION);
     }
 
     --current_num_runs_;

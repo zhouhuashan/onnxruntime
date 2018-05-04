@@ -56,7 +56,7 @@ TEST(GatherOpTest, Gather_invalid_axis) {
                         {10.0f, 10.1f, 10.2f, 10.3f,
                          11.0f, 11.1f, 11.2f, 11.3f,
                          12.0f, 12.1f, 12.2f, 12.3f});
-  test.Run(true, "axis -10 is not in valid range [-3,2]");
+  test.Run(OpTester::ExpectResult::kExpectFailure, "axis -10 is not in valid range [-3,2]");
 }
 
 TEST(GatherOpTest, Gather_axis1) {
