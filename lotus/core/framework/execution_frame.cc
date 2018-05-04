@@ -360,4 +360,22 @@ Status ExecutionFrame::GeneratePatterns(MemoryPatternGroup* out) const {
   return planner_->GeneratePatterns(out);
 }
 
+void ExecutionFrame::InitArenas() {
+  auto& alloc_mgr = AllocatorManager::Instance();
+
+  // always have CPU arena allocator in execution frame
+  std::set<AllocatorInfo> allocators_in_use = {alloc_mgr.GetArena(CPU).Info()};
+
+  // The session may not have execution plan in tests
+  auto p_exec_plan = session_state_.GetExecutionPlan();
+  if (p_exec_plan)
+    for (const auto& alloc_plan : p_exec_plan->allocation_plan)
+      allocators_in_use.insert(alloc_plan.location);
+
+  for (const auto& info : allocators_in_use) {
+    if (info.type == AllocatorType::kArenaAllocator)
+      arenas_.push_back(&alloc_mgr.GetArena(info.name, info.id));
+  }
+}
+
 }  // namespace Lotus

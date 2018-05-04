@@ -28,9 +28,7 @@ class IExecutionProvider {
   // Run the computation of a given node.
   virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;
 
-  // TODO: Do we still need these copy methods?
-  // TODO: Shouldn't tensor copy be implemented in the Tensor class, with it optionally taking
-  // a parameter to provide device specific logic?
+  // Copy tensor between execution providers
   virtual Status CopyTensor(const Tensor& src, Tensor& dst) = 0;
 
   // Returns an opaque handle whose exact type varies based on the provider

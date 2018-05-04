@@ -238,7 +238,8 @@ ML_API_IMP(TensorWrapper::GetDimensionCount)(uint32_t* dimensions) const {
   return MLStatus::OK;
 }
 
-ML_API_IMP(TensorWrapper::GetDimensions)(
+ML_API_IMP(TensorWrapper::GetDimensions)
+(
     int64_t* dimensions,
     uint32_t dimension_count) const noexcept {
   try {
@@ -257,34 +258,29 @@ ML_API_IMP(TensorWrapper::GetDimensions)(
   }
 }
 
-ML_API_IMP_(MLTensorDataType, TensorWrapper::GetTensorDataType)() const noexcept {
+ML_API_IMP_(MLTensorDataType, TensorWrapper::GetTensorDataType)
+() const noexcept {
   const DataTypeImpl* type = impl_->DataType();
 
-  if (type == DataTypeImpl::GetType<int32_t>()){
+  if (type == DataTypeImpl::GetType<int32_t>()) {
     return MLTypeTraits<int32_t>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<float>()){
+  } else if (type == DataTypeImpl::GetType<float>()) {
     return MLTypeTraits<float>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<uint8_t>()){
-    return MLTypeTraits<int32_t>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<uint16_t>()){
+  } else if (type == DataTypeImpl::GetType<int8_t>()) {
+    return MLTypeTraits<int8_t>::TensorType;
+  } else if (type == DataTypeImpl::GetType<uint8_t>()) {
+    return MLTypeTraits<uint8_t>::TensorType;
+  } else if (type == DataTypeImpl::GetType<uint16_t>()) {
     return MLTypeTraits<uint16_t>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<int16_t>()){
+  } else if (type == DataTypeImpl::GetType<int16_t>()) {
     return MLTypeTraits<int16_t>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<int64_t>()){
+  } else if (type == DataTypeImpl::GetType<int64_t>()) {
     return MLTypeTraits<int64_t>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<double>()){
+  } else if (type == DataTypeImpl::GetType<double>()) {
     return MLTypeTraits<double>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<uint32_t>()){
+  } else if (type == DataTypeImpl::GetType<uint32_t>()) {
     return MLTypeTraits<uint32_t>::TensorType;
-  }
-  else if (type == DataTypeImpl::GetType<uint64_t>()){
+  } else if (type == DataTypeImpl::GetType<uint64_t>()) {
     return MLTypeTraits<uint64_t>::TensorType;
   }
 
@@ -294,21 +290,25 @@ ML_API_IMP_(MLTensorDataType, TensorWrapper::GetTensorDataType)() const noexcept
   return MLTensorDataType::kUndefined;
 }
 
-ML_API_IMP_(MLBool, TensorWrapper::IsCPUData)() const noexcept {
+ML_API_IMP_(MLBool, TensorWrapper::IsCPUData)
+() const noexcept {
   // TODO
   return true;
 }
 
-ML_API_IMP_(MLBool, TensorWrapper::IsDataHandle)() const noexcept {
+ML_API_IMP_(MLBool, TensorWrapper::IsDataHandle)
+() const noexcept {
   // TODO
   return false;
 }
 
-ML_API_IMP_(void*, TensorWrapper::GetData)() noexcept {
+ML_API_IMP_(void*, TensorWrapper::GetData)
+() noexcept {
   return impl_->MutableDataRaw();
 }
 
-ML_API_IMP_(const void *, TensorWrapper::GetData)() const noexcept {
+ML_API_IMP_(const void*, TensorWrapper::GetData)
+() const noexcept {
   return impl_->DataRaw();
 }
 
@@ -320,7 +320,8 @@ OpKernelContextWrapper::OpKernelContextWrapper(OpKernelContext* context) : impl_
   outputTensors_.resize(context->OutputCount());
 }
 
-ML_API_IMP(OpKernelContextWrapper::GetInputEdgeType)(uint32_t input_index, MLEdgeType* edge_type) const noexcept {
+ML_API_IMP(OpKernelContextWrapper::GetInputEdgeType)
+(uint32_t input_index, MLEdgeType* edge_type) const noexcept {
   try {
     // TODO - support non-tensors
     input_index;
@@ -332,7 +333,8 @@ ML_API_IMP(OpKernelContextWrapper::GetInputEdgeType)(uint32_t input_index, MLEdg
     return MLStatus::FAIL;
   }
 }
-ML_API_IMP(OpKernelContextWrapper::GetOutputEdgeType)(uint32_t output_index, MLEdgeType* edge_type) const noexcept {
+ML_API_IMP(OpKernelContextWrapper::GetOutputEdgeType)
+(uint32_t output_index, MLEdgeType* edge_type) const noexcept {
   try {
     // TODO - support non-tensors
     output_index;
@@ -345,7 +347,8 @@ ML_API_IMP(OpKernelContextWrapper::GetOutputEdgeType)(uint32_t output_index, MLE
   }
 }
 
-ML_API_IMP(OpKernelContextWrapper::GetInputTensor)(uint32_t input_index, const IMLOpTensor** tensor) const noexcept {
+ML_API_IMP(OpKernelContextWrapper::GetInputTensor)
+(uint32_t input_index, const IMLOpTensor** tensor) const noexcept {
   try {
     if (inputTensors_[input_index].GetImpl() == nullptr) {
       auto inputTensor = impl_->Input<Tensor>(input_index);
@@ -362,7 +365,8 @@ ML_API_IMP(OpKernelContextWrapper::GetInputTensor)(uint32_t input_index, const I
   }
 }
 
-ML_API_IMP(OpKernelContextWrapper::GetOutputTensor)(uint32_t output_index, const int64_t* dimension_sizes, uint32_t dimensions, IMLOpTensor** tensor) noexcept {
+ML_API_IMP(OpKernelContextWrapper::GetOutputTensor)
+(uint32_t output_index, const int64_t* dimension_sizes, uint32_t dimensions, IMLOpTensor** tensor) noexcept {
   try {
     if (outputTensors_[output_index].GetImpl() == nullptr) {
       TensorShape shape(dimension_sizes, dimensions);
@@ -380,15 +384,18 @@ ML_API_IMP(OpKernelContextWrapper::GetOutputTensor)(uint32_t output_index, const
   }
 }
 
-ML_API_IMP_(uint32_t, OpKernelContextWrapper::GetInputCount)() const noexcept {
+ML_API_IMP_(uint32_t, OpKernelContextWrapper::GetInputCount)
+() const noexcept {
   return static_cast<uint32_t>(inputTensors_.size());
 }
 
-ML_API_IMP_(uint32_t, OpKernelContextWrapper::GetOutputCount)() const noexcept {
+ML_API_IMP_(uint32_t, OpKernelContextWrapper::GetOutputCount)
+() const noexcept {
   return static_cast<uint32_t>(outputTensors_.size());
 }
 
-ML_API_IMP(OpKernelContextWrapper::AllocateTemporaryData)(uint64_t size, void** data) const {
+ML_API_IMP(OpKernelContextWrapper::AllocateTemporaryData)
+(uint64_t size, void** data) const {
   try {
     *data = nullptr;
     auto& info = impl_->GetAllocatorInfo();
@@ -404,7 +411,8 @@ ML_API_IMP(OpKernelContextWrapper::AllocateTemporaryData)(uint64_t size, void** 
   }
 }
 
-ML_API_IMP(OpKernelContextWrapper::FreeTemporaryData)(void* data) const {
+ML_API_IMP(OpKernelContextWrapper::FreeTemporaryData)
+(void* data) const {
   try {
     auto& info = impl_->GetAllocatorInfo();
     auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
@@ -436,8 +444,7 @@ Status AbiOpKernel::Compute(OpKernelContext* context) const {
   OpKernelContextWrapper kernelContextWrapper(context);
   MLStatus status = impl_->Compute(&kernelInfoWrapper, &kernelContextWrapper);
 
-  if (status != MLStatus::OK)
-  {
+  if (status != MLStatus::OK) {
     return Status(LOTUS, static_cast<StatusCode>(status));
   }
 

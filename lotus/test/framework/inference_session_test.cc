@@ -333,7 +333,7 @@ TEST(InferenceSessionTests, TestRegisterExecutionProvider) {
   so.session_logid = "InferenceSessionTests.TestWithIstream";
 
   InferenceSession session_object{so};
-  ExecutionProviderInfo epi;
+  CPUExecutionProviderInfo epi;
   EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi)).IsOK());
 
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);

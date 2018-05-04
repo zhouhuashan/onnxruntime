@@ -79,7 +79,7 @@ using NameMLValMap = std::unordered_map<std::string, MLValue>;
 /**
 * @brief This is the main class used to Run a model.
 * Sample simple usage:
-*   ExecutionProviderInfo epi;
+*  CPUExecutionProviderInfo epi;
 *  ProviderOption po{"CPUExecutionProvider", epi};
 *  SessionOptions so(vector<ProviderOption>{po});
 *  InferenceSession session_object{so};

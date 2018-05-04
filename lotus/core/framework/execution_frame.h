@@ -221,13 +221,7 @@ class ExecutionFrame {
     }
   }
 
-  void InitArenas() {
-    // For milestone 1, we only have CPU arena.
-    // If later we want executor to host its own arena
-    // Need to update this part.
-    auto& alloc_mgr = AllocatorManager::Instance();
-    arenas_.push_back(&alloc_mgr.GetArena(CPU));
-  }
+  void InitArenas();
 
   void TraceAllocate(int mlvalue_idx, size_t size);
 

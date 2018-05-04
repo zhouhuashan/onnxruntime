@@ -120,6 +120,9 @@ template <>
 constexpr TensorProto_DataType TypeToDataType<bool>() { return TensorProto_DataType_BOOL; }
 
 template <>
+constexpr TensorProto_DataType TypeToDataType<int8_t>() { return TensorProto_DataType_INT8; }
+
+template <>
 constexpr TensorProto_DataType TypeToDataType<int16_t>() { return TensorProto_DataType_INT16; }
 
 template <>
@@ -185,7 +188,8 @@ const VectorOfMapTypeProto<TKey, TVal> s_vec_map_type_proto;
 // for new output types, add a new specialization for Check<>
 // See current usage for an example, should be self explanatory
 struct OpTester {
-  OpTester(const char* op, const char* domain = LotusIR::kOnnxDomain) : op_(op), domain_(domain) {}
+  OpTester(const std::string& provider, const char* op, const char* domain = LotusIR::kOnnxDomain);
+  OpTester(const char* op, const char* domain = LotusIR::kOnnxDomain) : OpTester(std::string(LotusIR::kCpuExecutionProvider), op, domain) {}
   ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
@@ -197,7 +201,7 @@ struct OpTester {
 
   template <typename T>
   void AddInput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& values) {
-    AddData(input_data_, name, dims, values.data(), values.size());
+    AddData(input_data_, name, dims, values.data(), values.size(), /*on_cpu*/ false);  // workaround to copy input to device
   }
 
   template <typename TKey, typename TVal>
@@ -259,28 +263,12 @@ struct OpTester {
   template <typename T>
   void AddData(std::vector<Data>& data, const char* name,
                const std::vector<int64_t>& dims, const T* values,
-               int64_t valuesCount) {
-    LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
-    auto& allocator = AllocatorManager::Instance().GetArena(CPU);
-    auto size_in_bytes = valuesCount * sizeof(T);
-    void* buffer = allocator.Alloc(size_in_bytes);
-    auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
-                                        TensorShape(dims),
-                                        buffer,
-                                        allocator.Info(),
-                                        &allocator);
-    auto* data_ptr = p_tensor->template MutableData<T>();
-    for (int64_t i = 0; i < valuesCount; i++) {
-      data_ptr[i] = values[i];
-    }
-
-    MLValue value;
-    value.Init(p_tensor.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-    data.push_back({{name, &s_type_proto<T>}, value});
-  }
+               int64_t valuesCount, bool on_cpu = true);
 
   const char* op_;
   const char* domain_;
+  const std::string provider_name_;
+  std::unique_ptr<IExecutionProvider> provider_; // this would be released when passing to inference session
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;

@@ -15,5 +15,5 @@ constexpr const char* kOnnxDomain = "";
 constexpr const char* kMLDomain = "ai.onnx.ml";
 constexpr const char* kMSDomain = "com.microsoft";
 constexpr const char* kCpuExecutionProvider = "CPUExecutionProvider";
-constexpr const char* kCudaExecutionProvider = "CudaExecutionProvider";
+constexpr const char* kCudaExecutionProvider = "CUDAExecutionProvider";
 }  // namespace LotusIR

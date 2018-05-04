@@ -281,6 +281,8 @@ MLDataType DataTypeImpl::ElementTypeFromProto(onnx::TensorProto_DataType type) {
       return DataTypeImpl::GetType<double>();
     case TensorProto_DataType_STRING:
       return DataTypeImpl::GetType<std::string>();
+    case TensorProto_DataType_INT8:
+      return DataTypeImpl::GetType<int8_t>();
     case TensorProto_DataType_UINT8:
       return DataTypeImpl::GetType<uint8_t>();
     case TensorProto_DataType_UINT16:

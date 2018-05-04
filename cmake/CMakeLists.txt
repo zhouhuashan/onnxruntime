@@ -171,7 +171,6 @@ endif()
 if (lotus_USE_CUDA)
     enable_language(CUDA)
     find_package(CUDA 9.1)
-
     include(cub)
     set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
       ${CUDA_curand_LIBRARY} ${CUDA_cupti_LIBRARY} ${CUDA_cusolver_LIBRARY})
@@ -182,8 +181,6 @@ if (lotus_USE_CUDA)
     endif()
     list(APPEND lotus_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
     list(APPEND lotus_EXTERNAL_DEPENDENCIES cub)
-
-    add_definitions(-DUSECUDA)
 endif()
 
 include(lotus_common.cmake)

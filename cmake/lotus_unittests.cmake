@@ -117,6 +117,7 @@ AddTest(
 
 set(lotus_test_framework_libs
     ${lotus_providers_whole_archive} # code smell! see if CPUExecutionProvider should move to framework so this isn't needed.
+    ${lotus_providers_cuda_whole_archive}
     ${lotus_framework_whole_archive}
     lotusIR_graph
     ${onnx_whole_archive}
@@ -138,7 +139,7 @@ if(WIN32)
 endif()
 
 if(lotus_USE_CUDA)
-    list(APPEND lotus_test_framework_src_patterns  ${LOTUS_ROOT}/test/framework/*.cu)  
+    list(APPEND lotus_test_framework_src_patterns  ${LOTUS_ROOT}/test/framework/*.cu)
     list(APPEND lotus_test_framework_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
@@ -175,6 +176,11 @@ if(NOT lotus_USE_CUDA)
     if(len GREATER 0)
         list(REMOVE_ITEM lotus_test_providers_src ${cuda_tests})
     endif()
+else()
+    set_source_files_properties("${LOTUS_ROOT}/test/providers/provider_test_utils.cc"
+        PROPERTIES
+        COMPILE_FLAGS "-DUSE_CUDA"
+        )
 endif()
 
 set (lotus_test_provides_dependencies lotus_providers)

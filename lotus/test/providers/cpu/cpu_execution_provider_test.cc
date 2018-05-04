@@ -4,7 +4,7 @@
 namespace Lotus {
 namespace Test {
 TEST(CPUExecutionProviderTest, MetadataTest) {
-  ExecutionProviderInfo info;
+  CPUExecutionProviderInfo info;
   auto provider = std::make_unique<CPUExecutionProvider>(info);
   EXPECT_TRUE(provider != nullptr);
   EXPECT_EQ(provider->GetTempSpaceAllocator().Info().name, CPU);

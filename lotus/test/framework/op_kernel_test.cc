@@ -67,7 +67,7 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   auto node = graph->AddNode("node1", "op_not_exist", "this is going to call function kernel", inputs, outputs);
   node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
   AllocatorInfo alloc_info("CPU", AllocatorType::kArenaAllocator);
-  ExecutionProviderInfo epi;
+  CPUExecutionProviderInfo epi;
   CPUExecutionProvider exec_provider(epi);
   std::unique_ptr<OpKernel> kernel;
   auto status = KernelRegistry::Instance().CreateKernel(*node, alloc_info, &exec_provider, &kernel);

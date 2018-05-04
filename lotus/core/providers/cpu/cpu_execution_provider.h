@@ -4,8 +4,8 @@
 #include "core/framework/execution_provider.h"
 
 namespace Lotus {
-// Information needed to construct execution providers.
-struct ExecutionProviderInfo {
+// Information needed to construct CPU execution providers.
+struct CPUExecutionProviderInfo {
   std::string name;
 };
 
@@ -33,7 +33,7 @@ class CPUTransformer : public LotusIR::GraphTransformer {
 // Logical device representation.
 class CPUExecutionProvider : public IExecutionProvider {
  public:
-  explicit CPUExecutionProvider(const ExecutionProviderInfo& info)
+  explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info)
       : cpu_transformer_(info.name) {
   }
 

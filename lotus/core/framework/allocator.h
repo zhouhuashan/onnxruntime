@@ -67,12 +67,4 @@ class CPUAllocator : public IDeviceAllocator {
   virtual const AllocatorInfo& Info() const override;
 };
 
-#ifdef USECUDA
-class CUDAAllocator : public IDeviceAllocator {
- public:
-  virtual void* Alloc(size_t size) override;
-  virtual void Free(void* p) override;
-  virtual const AllocatorInfo& Info() const override;
-};
-#endif
 }  // namespace Lotus

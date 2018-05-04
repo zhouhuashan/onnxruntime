@@ -427,7 +427,7 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
     SessionOptions so;
     so.allocation_planner_type = planner;
     auto session_object = std::make_shared<InferenceSession>(so);
-    ExecutionProviderInfo epi;
+    CPUExecutionProviderInfo epi;
     Common::Status status = session_object->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi));
     if (!status.IsOK()) {
       fprintf(stderr, "init session %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());

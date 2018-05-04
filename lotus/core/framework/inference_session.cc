@@ -136,7 +136,7 @@ class InferenceSession::Impl {
     // Register default CPUExecutionProvider if user didn't provide any through the Register() calls
     if (!session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)) {
       LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
-      ExecutionProviderInfo epi{"CPUExecutionProvider"};
+      CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
       session_state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider,
                                           std::make_unique<CPUExecutionProvider>(epi));
     }
@@ -165,6 +165,7 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(AllocationPlanner::CreatePlan(session_options_.allocation_planner_type,
                                                           session_state_,
                                                           p_seq_exec_plan.get()));
+
       session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
     } else {
       LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
