@@ -193,31 +193,6 @@ class InferenceSession::Impl {
         LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
       }
 
-      // at this point the graph should be in a frozen state
-      // hence we set it in the session for use by the executors
-      session_state_.SetGraph(graph);
-
-      // All following initialization steps work on the frozen state of
-      // graph stored inside session_state.
-
-      LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
-      // add other per session initialization stuff here before invoking the executor
-
-      // get execution plan
-      if (session_options_.enable_sequential_execution) {
-        // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
-        // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
-        // Passing a pointer to a private member variable doesn't seem the right thing to do.
-        std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
-        // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-        LOTUS_RETURN_IF_ERROR(AllocationPlanner::CreatePlan(session_options_.allocation_planner_type,
-                                                            session_state_,
-                                                            p_seq_exec_plan.get()));
-        session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
-      } else {
-        LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
-      }
-
       LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
 
       is_inited_ = true;
