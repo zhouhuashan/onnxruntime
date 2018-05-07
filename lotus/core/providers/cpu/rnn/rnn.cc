@@ -126,15 +126,15 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
 
   // RNN outputs are optional
   std::vector<int64_t> Y_dims({seq_length, num_directions, batch_size, hidden_size});
-  Tensor* Y = ctx->Output(0, Y_dims);
+  Tensor* Y = nullptr;
+  int outputIndex = 0;
+  if (output_sequence_ != 0) {
+    Y = ctx->Output(outputIndex, Y_dims);
+    outputIndex++;
+  }
 
-  // TODO: ctx->Output fails if the optional output is not set.
-  //std::vector<int64_t> Y_h_dims({num_directions, batch_size, hidden_size});
-  //Tensor* Y_h = ctx->Output(1, Y_h_dims);
-  Tensor* Y_h = nullptr;
-
-  if (Y == nullptr)  // && Y_h == nullptr)
-    return Status::OK();
+  std::vector<int64_t> Y_h_dims({num_directions, batch_size, hidden_size});
+  Tensor* Y_h = ctx->Output(outputIndex, Y_h_dims);
 
   auto& info = OpKernel::Allocator();
   auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
@@ -161,7 +161,15 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
     auto activation_func = detail::GetFuncByName<float>(activations_[direction], "Tanh");
     bool isReverse = direction_ == "reverse" || direction == 1;
 
-    // X * W[direction]^t
+    if (B != nullptr) {
+      EigenMatrixMapRowMajor<float>(x_matmul_w_buffer_data, seq_length * batch_size, hidden_size).rowwise() =
+          ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size, hidden_size).transpose() +
+          ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size + hidden_size, hidden_size).transpose();
+    } else {
+      Math::Set<float, CPUMathUtil>(seq_length * batch_size * hidden_size, 0, x_matmul_w_buffer_data, &CPUMathUtil::Instance());
+    }
+
+    // X * W[direction]^t + B
     Math::Gemm<float, CPUMathUtil>(
         CblasNoTrans,
         CblasTrans,
@@ -171,14 +179,9 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
         1,
         X.template Data<float>(),
         W.template Data<float>() + direction * hidden_size * input_size,
-        0,
+        1,
         x_matmul_w_buffer_data,
         &CPUMathUtil::Instance());
-
-    // [Wbi, Rbi, WBbi, RBbi] -> [Wbi + Rbi, WBbi + RBbi]
-    auto fusedBias =
-        ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size, hidden_size).transpose() +
-        ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size + hidden_size, hidden_size).transpose();
 
     for (int64_t t = 0; t < seq_length; t++) {
       int64_t time_step = isReverse ? (seq_length - t - 1) : t;
@@ -186,35 +189,37 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
       float* Y_buffer_data_current_frame = Y_buffer_data + Y_frame_offset;
       auto y_frame_mat = EigenMatrixMapRowMajor<float>(Y_buffer_data_current_frame, batch_size, hidden_size);
 
-      const float* h_prev;
-      if (t == 0)
-        h_prev = initial_h->Data<float>();
-      else {
+      const float* h_prev = nullptr;
+      if (t == 0) {
+        if (initial_h != nullptr)
+          h_prev = initial_h->Data<float>();
+      } else {
         if (isReverse)
           h_prev = Y_buffer_data_current_frame + num_directions * Y_frame_size;
         else
           h_prev = Y_buffer_data_current_frame - num_directions * Y_frame_size;
       }
 
-      // H_t_1 * R[direction]^t
-      Math::Gemm<float, CPUMathUtil>(
-          CblasNoTrans,
-          CblasTrans,
-          static_cast<int>(batch_size),
-          static_cast<int>(hidden_size),
-          static_cast<int>(hidden_size),
-          1,
-          h_prev,
-          R.Data<float>() + direction * hidden_size * hidden_size,
-          0,
-          Y_buffer_data_current_frame,
-          &CPUMathUtil::Instance());
+      if (h_prev != nullptr) {
+        // H_t_1 * R[direction]^t
+        Math::Gemm<float, CPUMathUtil>(
+            CblasNoTrans,
+            CblasTrans,
+            static_cast<int>(batch_size),
+            static_cast<int>(hidden_size),
+            static_cast<int>(hidden_size),
+            1,
+            h_prev,
+            R.Data<float>() + direction * hidden_size * hidden_size,
+            0,
+            Y_buffer_data_current_frame,
+            &CPUMathUtil::Instance());
+      } else {
+        Math::Set<float, CPUMathUtil>(batch_size * hidden_size, 0, Y_buffer_data_current_frame, &CPUMathUtil::Instance());
+      }
 
       // X[time_step] * W^t + H_t_1 * R^t
       y_frame_mat += EigenMatrixMapRowMajor<float>(&x_matmul_w_buffer_data[time_step * Y_frame_size], batch_size, hidden_size);
-
-      // + Wbi + Rbi
-      y_frame_mat.rowwise() += fusedBias;
 
       // apply activation
       ApplyActivationToBatchs<float>(sequence_lens, h_prev, Y_buffer_data_current_frame,
@@ -222,10 +227,8 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
                                      activation_alpha_[direction], activation_beta_[direction], clip_, activation_func);
     }  // close sequence loop
 
-    if (Y_h != nullptr) {
-      Assign_Y_h<float>(Y_buffer_data, Y_h, sequence_lens,
-                        num_directions, direction, isReverse, batch_size, seq_length, hidden_size);
-    }
+    Assign_Y_h<float>(Y_buffer_data, Y_h, sequence_lens,
+                      num_directions, direction, isReverse, batch_size, seq_length, hidden_size);
   }
 
   // Now the full sequence is completed. Set missing frames to zero.

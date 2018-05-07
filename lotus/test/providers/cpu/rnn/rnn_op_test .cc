@@ -56,7 +56,7 @@ TEST(RNNTest, RNN_bidirectional_bias_initial_zigged_batch) {
                                       1.31276166F, 2.67531896F,
                                       2.89098835F, 1.15032458F,
 
-                                      // seq 2
+                                      // batch 2
                                       1.30798471F, 0.0777787F,
                                       1.64898741F, 1.30596721F,
                                       1.26110339F, 0.99100447F,
@@ -101,7 +101,7 @@ TEST(RNNTest, RNN_bidirectional_bias_initial_zigged_batch) {
                                        0.12221602F, -0.31430662F, -0.42285997F, -0.62726945F, 0.988343F, 0.9956606F,
                                        0.91737539F, -0.92293501F, 0.78396499F, -0.87013513F, 0.99671143F, 0.9990834F,
                                        0.51060104F, -0.95055139F, -0.12672578F, -0.51847482F, 0.99931973F, 0.99655205F,
-                                       // seq 2
+                                       // batch 2
                                        -0.92063117F, 0.93283325F, -0.93614483F, 0.1513377F, 0.90150106F, 0.74947751F,
                                        0.91569924F, -0.96036619F, 0.89311725F, -0.13006453F, 0.98576784F, 0.98875856F,
                                        -0.28076148F, -0.04275616F, -0.75480938F, -0.84641802F, 0.98438591F, 0.96007115F,
@@ -112,13 +112,10 @@ TEST(RNNTest, RNN_bidirectional_bias_initial_zigged_batch) {
                                             seq_length, num_directions, batch_size, hidden_size);
   test.AddOutput<float>("Y", Y_dims, Y_data);
 
-  // OpKernelContext does not work with optional output.Uncomment this when it does.
-  //std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
-  //std::vector<float> Y_h_data({0.51060104F, -0.95055139F, -0.12672578F,
-  //                             -0.28076148F, -0.04275616F, -0.75480938F,
-  //                             -0.71697658F, 0.99646497F, 0.9980582F,
-  //                             0.1513377F, 0.90150106F, 0.74947751F});
-  //test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+  std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+  std::vector<float> Y_h_data({0.51060104F, -0.95055139F, -0.12672578F, -0.28076148F, -0.04275616F, -0.75480938F,
+                               -0.71697658F, 0.99646497F, 0.9980582F, 0.1513377F, 0.90150106F, 0.74947751F});
+  test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
   test.Run();
 }
@@ -140,7 +137,7 @@ TEST(RNNTest, RNN_bidirectional_zigged_batch) {
                                       1.27096438F, 1.93768239F,
                                       1.31276166F, 2.67531896F,
                                       2.89098835F, 1.15032458F,
-                                      // seq 2
+                                      // batch 2
                                       1.30798471F, 0.0777787F,
                                       1.64898741F, 1.30596721F,
                                       1.26110339F, 0.99100447F,
@@ -182,7 +179,7 @@ TEST(RNNTest, RNN_bidirectional_zigged_batch) {
                                        -0.76437593F, 0.92218089F, 0.46116444F, 0.06449185F, -0.97850645F, 0.90903103F,
                                        0.13221112F, 0.87366635F, 0.50636965F, -0.09428534F, -0.94113714F, 0.76040554F,
                                        -0.85353446F, 0.34633741F, -0.93988168F, 0.76291096F, -0.99102205F, -0.96011895F,
-                                       // seq 2
+                                       // batch 2
                                        -0.69988877F, 0.21788915F, -0.70597935F, 0.0274523F, -0.9431532F, -0.60166585F,
                                        -0.90726709F, 0.93011433F, -0.17109135F, 0.18146965F, -0.96685904F, -0.23413686F,
                                        -0.79737622F, 0.62769204F, 0.30727068F, 0.38049027F, -0.82903779F, -0.41610005F,
@@ -192,6 +189,12 @@ TEST(RNNTest, RNN_bidirectional_zigged_batch) {
   MemoryLayoutTransposeRNNOutputCNTKToLotus(&Y_data_in_batchs[0], &Y_data[0],
                                             seq_length, num_directions, batch_size, hidden_size);
   test.AddOutput<float>("Y", Y_dims, Y_data);
+
+  std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+  std::vector<float> Y_h_data({-0.85353446F, 0.34633741F, -0.93988168F, -0.79737622F, 0.62769204F, 0.30727068F,
+                               0.39222997F, -0.99489242F, 0.86467457F, 0.0274523F, -0.9431532F, -0.60166585F});
+  test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+
   test.Run();
 }
 
@@ -212,7 +215,7 @@ TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
                                       0.42365479F, 0.64589411F,
                                       0.4375872F, 0.89177299F,
                                       0.96366274F, 0.38344151F,
-                                      // seq 2
+                                      // batch 2
                                       0.417021990F, 0.720324516F,
                                       0.0001143748F, 0.302332580F,
                                       0.146755889F, 0.0923385918F,
@@ -251,7 +254,7 @@ TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
                                        0.8218801F, -0.33996487F, -0.7320742F,
                                        0.90398145F, 0.61396617F, -0.70602065F,
                                        0.68629962F, -0.00125255F, 0.4218055F,
-                                       // seq 2
+                                       // batch 2
                                        0.64809889F, -0.19472955F, -0.24271242F,
                                        0.29596764F, 0.08308408F, -0.27175695F,
                                        0.14977546F, -0.01153355F, 0.05169443F,
@@ -261,6 +264,10 @@ TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
   MemoryLayoutTransposeRNNOutputCNTKToLotus(&Y_data_in_batchs[0], &Y_data[0],
                                             seq_length, num_directions, batch_size, hidden_size);
   test.AddOutput<float>("Y", Y_dims, Y_data);
+
+  std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+  std::vector<float> Y_h_data({0.87014002F, 0.09402763F, -0.54269236F, 0.64809889F, -0.19472955F, -0.24271242F});
+  test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
   test.Run();
 }
@@ -282,7 +289,7 @@ TEST(RNNTest, RNN_forward_direction_zigged_batch) {
                                       0.21000224F, 0.65772671F,
                                       0.20081005F, 0.95461535F,
                                       0.93818879F, 0.76034665F,
-                                      // seq 2
+                                      // batch 2
                                       0.34715694F, 0.0032335778F,
                                       0.72840774F, 0.20933059F,
                                       0.01131162F, 0.15063381F,
@@ -322,7 +329,7 @@ TEST(RNNTest, RNN_forward_direction_zigged_batch) {
                                        -0.474286675F, -0.274602413F, -0.461531579F,
                                        -0.412429035F, -0.325635254F, -0.792385221F,
                                        -0.746264696F, -0.0781838298F, -0.751394153F,
-                                       // seq 2
+                                       // batch 2
                                        -0.171904743F, 0.140247226F, -0.140494764F,
                                        -0.497260034F, 0.153767705F, -0.334113181F,
                                        -0.343922496F, -0.181868196F, -0.130254388F,
@@ -332,6 +339,10 @@ TEST(RNNTest, RNN_forward_direction_zigged_batch) {
   MemoryLayoutTransposeRNNOutputCNTKToLotus(&Y_data_in_batchs[0], &Y_data[0],
                                             seq_length, num_directions, batch_size, hidden_size);
   test.AddOutput<float>("Y", Y_dims, Y_data);
+
+  std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+  std::vector<float> Y_h_data({-0.746264696F, -0.0781838298F, -0.751394153F, -0.343922496F, -0.181868196F, -0.130254388F});
+  test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
   test.Run();
 }
@@ -385,23 +396,26 @@ TEST(RNNTest, RNN_bidirectional) {
   test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
 
   std::vector<int64_t> Y_dims = {seq_length, num_directions, batch_size, hidden_size};
-  std::vector<float> Y_data({-0.25082839F, 0.57703555F, -0.84758246F,
-                             0.89708149F, -0.50691134F, 0.10560472F,
-                             -0.57328993F, 0.89210528F, -0.63864726F,
-                             0.85242939F, -0.35763535F, 0.20078957F,
-                             -0.51920897F, 0.83700335F, -0.33934233F,
-                             0.80431187F, -0.51605088F, -0.060805645F,
-                             -0.49105126F, 0.74924558F, -0.54746729F,
-                             0.86223149F, -0.56618357F, -0.29732516F,
-                             -0.74539614F, 0.93210655F, -0.63887376F,
-                             0.83650553F, 0.48680621F, 0.28520593F});
+  std::vector<float> Y_data({-0.25082839F, 0.57703555F, -0.84758246F, 0.89708149F, -0.50691134F, 0.10560472F,
+                             -0.57328993F, 0.89210528F, -0.63864726F, 0.85242939F, -0.35763535F, 0.20078957F,
+                             -0.51920897F, 0.83700335F, -0.33934233F, 0.80431187F, -0.51605088F, -0.060805645F,
+                             -0.49105126F, 0.74924558F, -0.54746729F, 0.86223149F, -0.56618357F, -0.29732516F,
+                             -0.74539614F, 0.93210655F, -0.63887376F, 0.83650553F, 0.48680621F, 0.28520593F});
   test.AddOutput<float>("Y", Y_dims, Y_data);
+
+  std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+  std::vector<float> Y_h_data({-0.74539614F, 0.93210655F, -0.63887376F, 0.89708149F, -0.50691134F, 0.10560472F});
+  test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+
   test.Run();
 }
 
 TEST(RNNTest, RNN_default_attributes_and_forward_direction) {
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
-  auto run_test = [&](OpTester& test) {
+
+  // In case of useDefault, attributes, inputs or outputs are not set.
+  // Otherwise they are set (with values may or may not be the same as ONNX default values).
+  auto run_test = [&](OpTester& test, bool useDefault) {
     std::vector<int64_t> X_dims = {seq_length, batch_size, input_size};
     std::vector<float> X_data({0.061169811F, 0.26296741F,
                                0.80939841F, 0.080034949F,
@@ -421,95 +435,125 @@ TEST(RNNTest, RNN_default_attributes_and_forward_direction) {
                                0.84270394F, 0.94917566F, -0.76469761F});
     test.AddInput<float>("R", R_dims, R_data);
 
-    std::vector<int64_t> B_dims = {num_directions, 2 * hidden_size};
-    std::vector<float> B_data({0.0F, 0.0F, 0.0F,
-                               0.0F, 0.0F, 0.0F});
-    test.AddInput<float>("B", B_dims, B_data);
+    if (!useDefault) {
+      std::vector<int64_t> B_dims = {num_directions, 2 * hidden_size};
+      std::vector<float> B_data({0.0F, 0.0F, 0.0F,
+                                 0.0F, 0.0F, 0.0F});
+      test.AddInput<float>("B", B_dims, B_data);
 
-    std::vector<int64_t> sequence_lens_dims({batch_size});
-    std::vector<int> sequence_lens_data(batch_size, (int)seq_length);
-    test.AddInput<int>("", sequence_lens_dims, sequence_lens_data);
+      std::vector<int64_t> sequence_lens_dims({batch_size});
+      std::vector<int> sequence_lens_data(batch_size, (int)seq_length);
+      test.AddInput<int>("", sequence_lens_dims, sequence_lens_data);
 
-    std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
-    std::vector<float> initial_h_data({0.0F, 0.0F, 0.0F});
-    test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
+      std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
+      std::vector<float> initial_h_data({0.0F, 0.0F, 0.0F});
+      test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
+    }
 
-    std::vector<int64_t> Y_dims = {seq_length, num_directions, batch_size, hidden_size};
-    std::vector<float> Y_data({-0.052289959F, -0.062934637F, -0.21133657F,
-                               -0.48205593F, 0.23896417F, -0.31342113F,
-                               -0.47428668F, -0.27460238F, -0.46153161F,
-                               -0.41242906F, -0.32563525F, -0.79238516F,
-                               -0.74626476F, -0.07818383F, -0.75139415F});
-    test.AddOutput<float>("Y", Y_dims, Y_data);
+    if (!useDefault) {
+      std::vector<int64_t> Y_dims = {seq_length, num_directions, batch_size, hidden_size};
+      std::vector<float> Y_data({-0.052289959F, -0.062934637F, -0.21133657F,
+                                 -0.48205593F, 0.23896417F, -0.31342113F,
+                                 -0.47428668F, -0.27460238F, -0.46153161F,
+                                 -0.41242906F, -0.32563525F, -0.79238516F,
+                                 -0.74626476F, -0.07818383F, -0.75139415F});
+      test.AddOutput<float>("Y", Y_dims, Y_data);
+    }
+
+    std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+    std::vector<float> Y_h_data({-0.74626476F, -0.07818383F, -0.75139415F});
+    test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+
     test.Run();
   };
 
   {
-    OpTester test_default_attributes("RNN");
-    test_default_attributes.AddAttribute("hidden_size", hidden_size);
-    test_default_attributes.AddAttribute("output_sequence", (int64_t)1);
-    run_test(test_default_attributes);
+    OpTester test_use_default("RNN");
+    test_use_default.AddAttribute("hidden_size", hidden_size);
+    run_test(test_use_default, true);
   }
 
   {
-    OpTester test_forward_direction("RNN");
-    test_forward_direction.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
-    test_forward_direction.AddAttribute("direction", "forward");
-    test_forward_direction.AddAttribute("hidden_size", hidden_size);
-    test_forward_direction.AddAttribute("output_sequence", (int64_t)1);
+    OpTester test_do_not_use_default("RNN");
+    test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
+    test_do_not_use_default.AddAttribute("direction", "forward");
+    test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
+    test_do_not_use_default.AddAttribute("output_sequence", (int64_t)1);
 
-    run_test(test_forward_direction);
+    run_test(test_do_not_use_default, false);
   }
 }
 
 TEST(RNNTest, RNN_reverse_direction) {
-  OpTester test("RNN");
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
-  test.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
-  test.AddAttribute("direction", "reverse");
-  test.AddAttribute("hidden_size", hidden_size);
-  test.AddAttribute("output_sequence", (int64_t)1);
+  // In case of useDefault, attributes, inputs or outputs are not set.
+  // Otherwise they are set (with values may or may not be the same as ONNX default values).
+  auto runTest = [&](OpTester& test, bool useDefault) {
+    std::vector<int64_t> X_dims = {seq_length, batch_size, input_size};
+    std::vector<float> X_data({0.54881352F, 0.71518934F,
+                               0.60276335F, 0.54488319F,
+                               0.42365479F, 0.64589411F,
+                               0.4375872F, 0.891773F,
+                               0.96366274F, 0.38344151F});
+    test.AddInput<float>("X", X_dims, X_data);
 
-  std::vector<int64_t> X_dims = {seq_length, batch_size, input_size};
-  std::vector<float> X_data({0.54881352F, 0.71518934F,
-                             0.60276335F, 0.54488319F,
-                             0.42365479F, 0.64589411F,
-                             0.4375872F, 0.891773F,
-                             0.96366274F, 0.38344151F});
-  test.AddInput<float>("X", X_dims, X_data);
+    std::vector<int64_t> W_dims = {num_directions, hidden_size, input_size};
+    std::vector<float> W_data({-0.74535543F, 0.21360011F, 1.0782362F, 0.092641734F, -1.0087538F, -0.97021431F});
+    test.AddInput<float>("W", W_dims, W_data);
 
-  std::vector<int64_t> W_dims = {num_directions, hidden_size, input_size};
-  std::vector<float> W_data({-0.74535543F, 0.21360011F, 1.0782362F, 0.092641734F, -1.0087538F, -0.97021431F});
-  test.AddInput<float>("W", W_dims, W_data);
+    std::vector<int64_t> R_dims = {num_directions, hidden_size, hidden_size};
+    std::vector<float> R_data({-0.7322467F, -0.95795155F, -0.058495734F,
+                               -0.7271859F, -0.29820377F, -0.85114992F,
+                               -0.097570196F, 0.82271612F, 0.1396943F});
+    test.AddInput<float>("R", R_dims, R_data);
 
-  std::vector<int64_t> R_dims = {num_directions, hidden_size, hidden_size};
-  std::vector<float> R_data({-0.7322467F, -0.95795155F, -0.058495734F,
-                             -0.7271859F, -0.29820377F, -0.85114992F,
-                             -0.097570196F, 0.82271612F, 0.1396943F});
-  test.AddInput<float>("R", R_dims, R_data);
+    if (!useDefault) {
+      std::vector<int64_t> B_dims = {num_directions, 2 * hidden_size};
+      std::vector<float> B_data({0.0F, 0.0F, 0.0F,
+                                 0.0F, 0.0F, 0.0F});
+      test.AddInput<float>("B", B_dims, B_data);
 
-  std::vector<int64_t> B_dims = {num_directions, 2 * hidden_size};
-  std::vector<float> B_data({0.0F, 0.0F, 0.0F,
-                             0.0F, 0.0F, 0.0F});
-  test.AddInput<float>("B", B_dims, B_data);
+      std::vector<int64_t> sequence_lens_dims({batch_size});
+      std::vector<int> sequence_lens_data(batch_size, (int)seq_length);
+      test.AddInput<int>("", sequence_lens_dims, sequence_lens_data);
 
-  std::vector<int64_t> sequence_lens_dims({batch_size});
-  std::vector<int> sequence_lens_data(batch_size, (int)seq_length);
-  test.AddInput<int>("", sequence_lens_dims, sequence_lens_data);
+      std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
+      std::vector<float> initial_h_data({0.0F, 0.0F, 0.0F});
+      test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
+    }
 
-  std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
-  std::vector<float> initial_h_data({0.0F, 0.0F, 0.0F});
-  test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
+    std::vector<int64_t> Y_dims = {seq_length, num_directions, batch_size, hidden_size};
+    std::vector<float> Y_data({-0.55397642F, 0.83026606F, -0.51471221F,
+                               -0.55358219F, 0.8341592F, -0.44313878F,
+                               -0.60828412F, 0.78948581F, -0.34582433F,
+                               -0.40591392F, 0.89962566F, -0.61860478F,
+                               -0.56242156F, 0.79118007F, -0.872658F});
+    if (!useDefault) {
+      test.AddOutput<float>("Y", Y_dims, Y_data);
+    }
 
-  std::vector<int64_t> Y_dims = {seq_length, num_directions, batch_size, hidden_size};
-  std::vector<float> Y_data({-0.55397642F, 0.83026606F, -0.51471221F,
-                             -0.55358219F, 0.8341592F, -0.44313878F,
-                             -0.60828412F, 0.78948581F, -0.34582433F,
-                             -0.40591392F, 0.89962566F, -0.61860478F,
-                             -0.56242156F, 0.79118007F, -0.872658F});
-  test.AddOutput<float>("Y", Y_dims, Y_data);
-  test.Run();
+    std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+    std::vector<float> Y_h_data({-0.55397642F, 0.83026606F, -0.51471221F});
+    test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+
+    test.Run();
+  };
+
+  {
+    OpTester test_use_default("RNN");
+    test_use_default.AddAttribute("direction", "reverse");
+    test_use_default.AddAttribute("hidden_size", hidden_size);
+    runTest(test_use_default, true);
+  }
+  {
+    OpTester test_do_not_use_default("RNN");
+    test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
+    test_do_not_use_default.AddAttribute("direction", "reverse");
+    test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
+    test_do_not_use_default.AddAttribute("output_sequence", (int64_t)1);
+    runTest(test_do_not_use_default, false);
+  }
 }
 }  // namespace Test
 }  // namespace Lotus

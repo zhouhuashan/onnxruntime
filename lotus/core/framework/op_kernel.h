@@ -49,7 +49,7 @@ class OpKernelInfo {
 
   bool HasPrimitiveAttribute(AttributeProto_AttributeType type,
                              const std::string& name) const noexcept;
-  
+
   const LotusIR::Node& node() const {
     return node_;
   }
@@ -136,6 +136,9 @@ class OpKernelContext {
 
   template <typename T>
   const T* Input(int index) const {
+    if (index >= kernel_->Node().InputDefs().size())
+      return nullptr;
+
     return execution_frame_->GetValue<T>(arg_start_index_ + index);
   }
 
@@ -146,6 +149,9 @@ class OpKernelContext {
   // Fetch output (non-tensor) with specified index.
   template <typename T>
   T* Output(int index) {
+    if (index >= kernel_->Node().OutputDefs().size())
+      return nullptr;
+
     auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
     MLValueAllocationParameters paramerters;
     return execution_frame_->GetOrCreateMLValue<T>(output_arg_index, paramerters);
@@ -167,7 +173,7 @@ class OpKernelContext {
     return static_cast<int>(kernel_->Node().OutputDefs().size());
   }
 
-  const AllocatorInfo &GetAllocatorInfo() const {
+  const AllocatorInfo& GetAllocatorInfo() const {
     return kernel_->Allocator();
   }
 
@@ -216,11 +222,11 @@ class KernelRegistry {
     KernelCreateInfo(unique_ptr<KernelDef> definition,
                      KernelCreateFn create_func)
         : kernel_def(std::move(definition)),
-          kernel_create_func(create_func) { }
+          kernel_create_func(create_func) {}
 
     KernelCreateInfo(KernelCreateInfo&& other)
         : kernel_def(std::move(other.kernel_def)),
-          kernel_create_func(other.kernel_create_func) { }
+          kernel_create_func(other.kernel_create_func) {}
   };
 
   // Check if the node's input/outpuData/attributes are compatible with this
@@ -245,19 +251,18 @@ class KernelRegistry {
           kernel_def_builder,                                          \
           [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); })
 
-
 #define REGISTER_ABI_KERNEL(kernel_def_builder, ...) \
   REGISTER_ABI_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def_builder, __VA_ARGS__)
 
 #define REGISTER_ABI_KERNEL_UNIQ_HELPER(counter, kernel_def_builder, ...) \
   REGISTER_ABI_KERNEL_UNIQ(counter, kernel_def_builder, __VA_ARGS__)
 
-#define REGISTER_ABI_KERNEL_UNIQ(counter, kernel_def_builder, ...)                                \
-  static Lotus::Common::Status kernel_def_builder_##counter##_status =                            \
-      KernelRegistry::Instance().Register(                                                        \
-          kernel_def_builder,                                                                     \
-          [](const OpKernelInfo& info)                                                            \
-              -> OpKernel* {                                                                      \
+#define REGISTER_ABI_KERNEL_UNIQ(counter, kernel_def_builder, ...)                                  \
+  static Lotus::Common::Status kernel_def_builder_##counter##_status =                              \
+      KernelRegistry::Instance().Register(                                                          \
+          kernel_def_builder,                                                                       \
+          [](const OpKernelInfo& info)                                                              \
+              -> OpKernel* {                                                                        \
             auto create_op_kernel = []() -> IMLOpKernel* { return new MLOpKernel<__VA_ARGS__>(); }; \
             return new AbiOpKernel(create_op_kernel, info);                                         \
           });
