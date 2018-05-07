@@ -14,5 +14,6 @@ ExternalProject_Add(gsl
     PREFIX gsl
     GIT_REPOSITORY ${gsl_URL}
     GIT_TAG ${gsl_TAG}
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${gsl_ROOT_DIR}
+    #https://github.com/Microsoft/GSL/issues/525
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${gsl_ROOT_DIR} -DGSL_TEST=OFF
     )
