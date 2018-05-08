@@ -290,7 +290,7 @@ void OpTester::AddData(std::vector<Data>& data, const char* name,
 
   //TODO: temporary workaround before CUDA graph transform adds copy node
   on_cpu = on_cpu || (provider_name_ == LotusIR::kCpuExecutionProvider);
-  auto& allocator = AllocatorManager::Instance().GetArena(on_cpu ? CPU : CUDA);
+  auto& allocator = AllocatorManager::Instance().GetAllocator(on_cpu ? CPU : CUDA, 0, on_cpu); // use device allocator for CUDA inputs
   auto size_in_bytes = valuesCount * sizeof(T);
   void* buffer = allocator.Alloc(size_in_bytes);
   auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),

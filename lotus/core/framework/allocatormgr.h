@@ -20,6 +20,8 @@ class AllocatorManager {
         */
   ~AllocatorManager();
 
+  IAllocator& GetAllocator(const std::string& name, const int id = 0, bool use_arena = true);
+
   IArenaAllocator& GetArena(const std::string& name, const int id = 0);
 
  private:
@@ -28,7 +30,7 @@ class AllocatorManager {
   AllocatorManager();
   Status InitializeAllocators();
 
-  std::unordered_map<std::string, std::unique_ptr<IArenaAllocator>> arena_map_;
+  std::unordered_map<std::string, std::unique_ptr<IAllocator>> alloc_map_;
   bool owns_instance_;
 };
 

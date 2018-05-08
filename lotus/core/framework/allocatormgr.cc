@@ -24,18 +24,22 @@ static std::string GetAllocatorId(const std::string& name, const int id, const b
   return ss.str();
 }
 
-static Status RegisterBFCArena(std::unordered_map<std::string, std::unique_ptr<IArenaAllocator>>& arena_map,
-                               std::unique_ptr<IDeviceAllocator> allocator, size_t memory_limit) {
+static Status RegisterAllocator(std::unordered_map<std::string, std::unique_ptr<IAllocator>>& alloc_map,
+                                std::unique_ptr<IDeviceAllocator> allocator, size_t memory_limit,
+                                bool use_arena) {
   auto& info = allocator->Info();
-  auto allocator_id = GetAllocatorId(info.name, info.id, true);
-  auto arena_id = GetAllocatorId(info.name, info.id, true);
+  auto alloc_id = GetAllocatorId(info.name, info.id, use_arena);
 
   auto status = Status::OK();
-  if (arena_map.find(arena_id) != arena_map.end())
-    status = Status(LOTUS, StatusCode::FAIL, "arena already exists");
+  if (alloc_map.find(alloc_id) != alloc_map.end())
+    status = Status(LOTUS, StatusCode::FAIL, "Allocator already exists");
   else {
-    arena_map[arena_id] = std::unique_ptr<IArenaAllocator>(
-        std::make_unique<BFCArena>(std::move(allocator), memory_limit));
+    if (use_arena) {
+      alloc_map[alloc_id] = std::unique_ptr<IAllocator>(
+          std::make_unique<BFCArena>(std::move(allocator), memory_limit));
+    } else {
+      alloc_map[alloc_id] = std::move(allocator);
+    }
   }
 
   return status;
@@ -72,12 +76,15 @@ Status AllocatorManager::InitializeAllocators() {
 
   for (const auto& pair : DeviceAllocatorRegistry::Instance().AllRegistrations()) {
     if (status.IsOK()) {
-      auto allocator = std::unique_ptr<IDeviceAllocator>(pair.second.factory());
-      status = RegisterBFCArena(arena_map_, std::move(allocator), pair.second.max_mem);
-      LOGS_DEFAULT(ERROR) << "Failed to create BFCArena for " << pair.first;
+      const auto& name = pair.first;
+      const auto& info = pair.second;
+      for (bool use_arena : std::vector<bool>({true, false})) {
+        status = RegisterAllocator(alloc_map_, std::unique_ptr<IDeviceAllocator>(info.factory()), info.max_mem, use_arena);
+        if (!status.IsOK())
+          LOGS_DEFAULT(ERROR) << "Failed to create " << (use_arena ? "arena" : "") << " for " << name;
+      }
     }
   }
-
   return status;
 }
 
@@ -88,20 +95,24 @@ AllocatorManager::~AllocatorManager() {
   if (owns_instance_)
     s_instance_ = nullptr;
 
-  for (auto& entry : arena_map_) {
+  for (auto& entry : alloc_map_) {
     LOGS_DEFAULT(INFO) << "Freeing arena: " << entry.first;
     entry.second.reset();
   }
 }
 
-IArenaAllocator& AllocatorManager::GetArena(const std::string& name, const int id) {
-  auto arena_id = GetAllocatorId(name, id, true);
+IAllocator& AllocatorManager::GetAllocator(const std::string& name, const int id, bool use_arena) {
+  auto alloc_id = GetAllocatorId(name, id, use_arena);
 
   std::lock_guard<std::mutex> lock(Mutex());
-  auto entry = arena_map_.find(arena_id);
-  LOTUS_ENFORCE(entry != arena_map_.end(), "Arena not found:", arena_id);
+  auto entry = alloc_map_.find(alloc_id);
+  LOTUS_ENFORCE(entry != alloc_map_.end(), "Allocator not found:", alloc_id);
 
   return *(entry->second);
+}
+
+IArenaAllocator& AllocatorManager::GetArena(const std::string& name, const int id) {
+  return *dynamic_cast<IArenaAllocator*>(&GetAllocator(name, id, true));
 }
 
 DeviceAllocatorRegistry& DeviceAllocatorRegistry::Instance() {
