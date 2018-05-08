@@ -1,4 +1,5 @@
 #include "core/providers/cpu/nn/roi_pool.h"
+#include <cmath>
 
 namespace Lotus {
 REGISTER_KERNEL(KernelDefBuilder("MaxRoiPool")

@@ -1,5 +1,5 @@
 #include "core/providers/cpu/ml/binarizer.h"
-
+#include <cmath>
 /**
 https://github.com/onnx/onnx/blob/master/onnx/defs/traditionalml/defs.cc
 

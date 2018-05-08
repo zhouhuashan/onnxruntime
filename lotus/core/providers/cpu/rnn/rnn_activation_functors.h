@@ -1,5 +1,6 @@
 #ifndef RNN_ACTIVATION_FUNCTORS_H_
 #define RNN_ACTIVATION_FUNCTORS_H_
+#include <cmath>
 
 #pragma warning(push)
 

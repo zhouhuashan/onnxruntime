@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <algorithm>
+#include <vector>
 #include "TestResultStat.h"
 
 namespace {

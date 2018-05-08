@@ -6,6 +6,8 @@
 #include <filesystem>
 #endif
 #include <fstream>
+#include <cmath>
+
 using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
