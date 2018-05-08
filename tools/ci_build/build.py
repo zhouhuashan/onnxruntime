@@ -83,6 +83,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, 
     cmake_args = [cmake_path, cmake_dir,
                  "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if enable_onnx_tests else "OFF"),
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
+                 "-DPYTHON_EXECUTABLE=" + sys.executable,
                  "-Dlotus_USE_CUDA=" + ("ON" if use_cuda else "OFF"),
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if use_cuda else "")  
                  ]
@@ -164,7 +165,7 @@ def install_onnx(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_dat
     pb_inc_dir = os.path.join(pb_src_dir, 'src')
     print('Add %s to INCLUDE' % pb_inc_dir)
     os.environ["INCLUDE"] += os.pathsep + pb_inc_dir
-    onnx_src = os.path.join(source_dir, 'external', 'onnx')
+    onnx_src = os.path.join(source_dir, 'cmake', 'external', 'onnx')
 
     # patch onnx source code
     with fileinput.input(os.path.join(onnx_src, 'CMakeLists.txt'), inplace=1) as f:
@@ -245,7 +246,7 @@ def main():
     if (args.update):
         if (not args.skip_submodule_sync):
             update_submodules(source_dir)
-			
+
         generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines,
                             args.enable_onnx_tests, args.use_cuda, cmake_extra_args)
 

@@ -35,6 +35,7 @@ endif()
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
+set(ONNX_ML 1)
 set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
 
 set(PROTOBUF_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/protobuf/src)
@@ -56,7 +57,11 @@ if (lotus_USE_OPENBLAS AND lotus_USE_EIGEN_FOR_BLAS)
   message(FATAL_ERROR "use one of lotus_USE_OPENBLAS, lotus_USE_EIGEN_FOR_BLAS")
 endif()
 
-include(lotusIR_util.cmake)
+
+if(WIN32)
+#Always enable exception handling, even for Windows ARM
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+endif()
 
 # External dependencies
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
@@ -68,7 +73,9 @@ set_target_properties(zlib_copy_headers_to_destination PROPERTIES FOLDER "Extern
 set_target_properties(zlib_create_destination_dir PROPERTIES FOLDER "External")
 
 # protobuf
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake EXCLUDE_FROM_ALL)
+add_library(protobuf::libprotobuf ALIAS libprotobuf)
+add_executable(protobuf::protoc ALIAS protoc)
 set_target_properties(libprotobuf PROPERTIES FOLDER "External/Protobuf")
 set_target_properties(libprotobuf-lite PROPERTIES FOLDER "External/Protobuf")
 set_target_properties(libprotoc PROPERTIES FOLDER "External/Protobuf")
@@ -76,7 +83,7 @@ set_target_properties(protoc PROPERTIES FOLDER "External/Protobuf")
 set_target_properties(js_embed PROPERTIES FOLDER "External/Protobuf")
 
 # gtest and gmock
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/googletest)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/googletest EXCLUDE_FROM_ALL)
 set_target_properties(gmock PROPERTIES FOLDER "External/GTest")
 set_target_properties(gmock_main PROPERTIES FOLDER "External/GTest")
 set_target_properties(gtest PROPERTIES FOLDER "External/GTest")
@@ -90,12 +97,14 @@ if (lotus_RUN_ONNX_TESTS)
 endif()
 
 # ONNX
-include(onnx.cmake)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx EXCLUDE_FROM_ALL)
 set_target_properties(onnx PROPERTIES FOLDER "External/ONNX")
+set_target_properties(onnx_proto PROPERTIES FOLDER "External/ONNX")
 add_definitions(-DONNX_ML)
+add_definitions(-DONNX_NAMESPACE=onnx)
 include(date)
 include(gsl)
-add_definitions(-Donnx=ONNX_NAMESPACE)
+
 
 set(lotus_EXTERNAL_DEPENDENCIES
     eigen
@@ -145,7 +154,7 @@ endif()
 
 include_directories(
     ${LOTUS_ROOT}
-    ${PROJECT_SOURCE_DIR}/../external/onnx
+    ${PROJECT_SOURCE_DIR}/external/onnx
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/external/onnx
     # External dependencies.
