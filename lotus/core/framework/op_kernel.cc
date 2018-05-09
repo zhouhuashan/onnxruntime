@@ -59,7 +59,7 @@ DEFINE_GET_ATTRS(GraphProto, graphs)
 
 Status OpKernelInfo::GetAttributeProto(const std::string& name,
                                        const AttributeProto** attribute) const {
-  const LotusIR::NodeAttributes &attributes = node().GetAttributes();
+  const LotusIR::NodeAttributes& attributes = node().GetAttributes();
   auto it = attributes.find(name);
   if (it != attributes.end()) {
     *attribute = &it->second;
@@ -70,7 +70,7 @@ Status OpKernelInfo::GetAttributeProto(const std::string& name,
 
 uint32_t OpKernelInfo::GetPrimitiveAttrElementCount(AttributeProto_AttributeType type,
                                                     const std::string& name) const noexcept {
-  const LotusIR::NodeAttributes &attributes = node().GetAttributes();
+  const LotusIR::NodeAttributes& attributes = node().GetAttributes();
   auto it = attributes.find(name);
   if (it != attributes.end()) {
     const AttributeProto attr = it->second;
@@ -115,49 +115,73 @@ std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
   return ret;
 }
 
+// Find the type that name is bound to in the given node.
+// "name" can represent either a type parameter or an input/output parameter.
+// Returns null if a match is not found.
+const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::string& name) {
+  const OpSchema& op_schema = *node.Op();
+  // search inputs:
+  const size_t len = node.InputArgCount().size();
+  LOTUS_ENFORCE(len <= op_schema.inputs().size());
+  int actual_index = 0;
+  for (size_t formal_index = 0; formal_index != len; ++formal_index) {
+    auto& param = op_schema.inputs()[formal_index];
+    if ((param.GetTypeStr() == name) || (param.GetName() == name)) {
+      // return type of any corresponding actual parameter, if present
+      for (int i = 0, end = node.InputArgCount()[formal_index]; i < end; ++i) {
+        const LotusIR::NodeArg* arg = node.InputDefs()[actual_index + i];
+        if (!arg->Exists()) continue;  // a missing optional argument
+        return arg->TypeAsProto();
+      }
+    }
+    actual_index += node.InputArgCount()[formal_index];
+  }
+  // search outputs:
+  auto& actual_outputs = node.OutputDefs();
+  auto num_actual_outputs = actual_outputs.size();
+  auto last_formal = op_schema.outputs().size() - 1;
+  for (size_t i = 0; i != num_actual_outputs; ++i) {
+    const LotusIR::NodeArg* arg = actual_outputs[i];
+    if (!arg->Exists()) continue;
+    auto& formal = op_schema.outputs()[std::min(i, last_formal)];
+    if ((formal.GetTypeStr() == name) || (formal.GetName() == name)) {
+      return arg->TypeAsProto();
+    }
+  }
+  return nullptr;
+}
+
+// Check whether the types of inputs/outputs of the given node match the extra
+// type-constraints of the given kernel. This serves two purposes: first, to
+// select the right kernel implementation based on the types of the arguments
+// when we have multiple kernels, e.g., Clip<float> and Clip<int>; second, to
+// accommodate (and check) mapping of ONNX (specification) type to the Lotus
+// implementation type (e.g., if we want to implement ONNX's float16 as a regular
+// float in Lotus). (The second, however, requires a globally uniform mapping.)
+//
+// Note that this is not intended for type-checking the node against the ONNX
+// type specification of the corresponding op, which is done before this check.
+
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
                                      const KernelDef& kernel_def) {
-  const OpSchema& op_schema = *node.Op();
-  const size_t len = node.InputArgCount().size();
-  if (len > op_schema.inputs().size()) return false;
-  int cur = 0;
-  for (size_t input_index = 0; input_index != len; ++input_index) {
-    auto& param = op_schema.inputs()[input_index];
-    LOTUS_ENFORCE(!param.GetTypeStr().empty());
-    //param.type_str_ could be a real type string(e.g. int32), or a symbolic one(e.g. T)
-    //If it's a real type string, we check exact match at there
-    //Otherwise, there should be an entry in the type_constraints_ of this kernel_def
-    //  1. Either with this param name
-    //  2. Or with this type_str_
-    auto& kernel_type_constraints = kernel_def.TypeConstraints();
-    auto allowed_type_list_iter = kernel_type_constraints.find(param.GetTypeStr());
-    if (allowed_type_list_iter == kernel_type_constraints.end()) {
-      allowed_type_list_iter = kernel_type_constraints.find(param.GetName());
+  auto& kernel_type_constraints = kernel_def.TypeConstraints();
+  for (auto& constraint : kernel_type_constraints) {
+    const std::string& name = constraint.first;
+    const std::vector<MLDataType>& allowed_types = constraint.second;
+    const ::onnx::TypeProto* actual_type = FindTypeBinding(node, name);
+
+    // If actual_type is null, this represents a type-constraint on a
+    // missing optional parameter, which can be skipped.
+    // TODO: We should check that names specified in kernel_type_constraints are
+    // valid names (of types or parameters) at the time that kernels are registered.
+
+    if ((nullptr != actual_type) &&
+        !std::any_of(allowed_types.begin(), allowed_types.end(),
+                     [actual_type](const MLDataType& expected_type) {
+                       return expected_type->IsCompatible(*actual_type);
+                     })) {
+      return false;
     }
-    if (allowed_type_list_iter == kernel_type_constraints.end()) {
-      for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
-        const LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
-        if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
-        onnx::DataType real_type = arg->Type();
-        if (*real_type != param.GetTypeStr()) {
-          return false;
-        }
-      }
-    } else {
-      for (int i = 0; i < node.InputArgCount()[input_index]; i++) {
-        const LotusIR::NodeArg* arg = node.InputDefs()[cur + i];
-        if (!arg->Exists()) continue;  //It's an optional arg in the middle of the input list
-        const ::onnx::TypeProto& real_type = arg->ToProto().type();
-        if (!std::any_of(allowed_type_list_iter->second.begin(),
-                         allowed_type_list_iter->second.end(),
-                         [real_type](const MLDataType& expected_type) {
-                           return expected_type->IsCompatible(real_type);
-                         })) {
-          return false;
-        }
-      }
-    }
-    cur += node.InputArgCount()[input_index];
   }
   return true;
 }
@@ -180,10 +204,10 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
       i->second.kernel_def->SinceVersion(&start1, &end1);
       if (start <= end1 && end >= start1) {
         create_info.status =
-          Status(LOTUS, FAIL,
-                 "Failed to add kernel for " + op_name +
-                 ": Conflicting with a registered kernel with op versions [" +
-                 std::to_string(start1) + "," + std::to_string(end1) + "].");
+            Status(LOTUS, FAIL,
+                   "Failed to add kernel for " + op_name +
+                       ": Conflicting with a registered kernel with op versions [" +
+                       std::to_string(start1) + "," + std::to_string(end1) + "].");
         return create_info.status;
       }
     }
