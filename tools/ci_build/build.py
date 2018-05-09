@@ -102,9 +102,9 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, 
 def build_targets(cmake_path, build_dir, configs, parallel):
     for config in configs:
         log.info("Building targets for %s configuration", config)
-        build_dir = get_config_build_dir(build_dir, config)
+        build_dir2 = get_config_build_dir(build_dir, config)
         cmd_args = [cmake_path,
-                       "--build", build_dir,
+                       "--build", build_dir2,
                        "--config", config,
                        ]
 
