@@ -5,7 +5,6 @@
 
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
-#include "test/framework/TestAllocatorManager.h"
 #ifdef USE_CUDA
 #include "core/providers/cuda/cuda_execution_provider.h"
 #include "core/providers/cuda/cuda_common.h"
@@ -257,18 +256,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     for (auto& expected_data : output_data_) {
       MLValue& mlvalue = fetches[idx];
       if (expected_data.data_.IsTensor()) {
-        if (provider_name_ == LotusIR::kCudaExecutionProvider) {
-          //TODO: remove this workaround once CUDATransform adds copy from GPU, assuming float tensor
-          auto& gpu_tensor = mlvalue.Get<Tensor>();
-          auto cpu_arena = Lotus::Test::AllocatorManager::Instance().GetArena(CPU);
-          auto bytes = gpu_tensor.Shape().Size() * gpu_tensor.DataType()->Size();
-          void* p = cpu_arena->Alloc(bytes);
-          Tensor cpu_tensor(gpu_tensor.DataType(), gpu_tensor.Shape(), p, cpu_arena->Info());
-          p_provider->CopyTensor(gpu_tensor, cpu_tensor);
-          Check(expected_data, cpu_tensor);
-          cpu_arena->Free(p);
-        } else
-          Check(expected_data, mlvalue.Get<Tensor>());
+        Check(expected_data, mlvalue.Get<Tensor>());
       } else {
         Check(expected_data, mlvalue);
       }
@@ -280,59 +268,6 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     throw;
   }
 }
-
-template <typename T>
-void OpTester::AddData(std::vector<Data>& data, const char* name,
-                       const std::vector<int64_t>& dims, const T* values,
-                       int64_t valuesCount, bool on_cpu) {
-  LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
-
-  //TODO: temporary workaround before CUDA graph transform adds copy node
-  on_cpu = on_cpu || (provider_name_ == LotusIR::kCpuExecutionProvider);
-  auto allocator = Lotus::Test::AllocatorManager::Instance().GetArena(on_cpu ? CPU : CUDA);
-  auto size_in_bytes = valuesCount * sizeof(T);
-  void* buffer = allocator->Alloc(size_in_bytes);
-  auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
-                                      TensorShape(dims),
-                                      buffer,
-                                      allocator->Info(),
-                                      allocator);
-  auto* data_ptr = p_tensor->template MutableData<T>();
-
-  if (on_cpu) {
-    for (int64_t i = 0; i < valuesCount; i++) {
-      data_ptr[i] = values[i];
-    }
-  } else {
-    Tensor cpu_tensor(DataTypeImpl::GetType<T>(),
-                      TensorShape(dims),
-                      const_cast<T*>(values),
-                      AllocatorInfo("CPU_inplace", kDeviceAllocator));
-    provider_->CopyTensor(cpu_tensor, *p_tensor);
-  }
-
-  MLValue value;
-  value.Init(p_tensor.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-  data.push_back({{name, &s_type_proto<T>}, value});
-}  // namespace Test
-
-#define OPTEST_ADDDATA_TEMPLATE(T)                                                      \
-  template void OpTester::AddData<T>(std::vector<Data> & data, const char* name,        \
-                                     const std::vector<int64_t>& dims, const T* values, \
-                                     int64_t valuesCount, bool on_cpu)
-
-OPTEST_ADDDATA_TEMPLATE(float);
-OPTEST_ADDDATA_TEMPLATE(double);
-OPTEST_ADDDATA_TEMPLATE(int8_t);
-OPTEST_ADDDATA_TEMPLATE(uint8_t);
-OPTEST_ADDDATA_TEMPLATE(int16_t);
-OPTEST_ADDDATA_TEMPLATE(uint16_t);
-OPTEST_ADDDATA_TEMPLATE(int32_t);
-OPTEST_ADDDATA_TEMPLATE(uint32_t);
-OPTEST_ADDDATA_TEMPLATE(int64_t);
-OPTEST_ADDDATA_TEMPLATE(uint64_t);
-OPTEST_ADDDATA_TEMPLATE(bool);
-OPTEST_ADDDATA_TEMPLATE(std::string);
 
 }  // namespace Test
 }  // namespace Lotus

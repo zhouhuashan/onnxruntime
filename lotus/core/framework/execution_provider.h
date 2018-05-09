@@ -27,7 +27,7 @@ class IExecutionProvider {
   virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;
 
   // Copy tensor between execution providers
-  virtual Status CopyTensor(const Tensor& src, Tensor& dst) = 0;
+  virtual Status CopyTensor(const Tensor& src, Tensor& dst) const = 0;
 
   // Returns an opaque handle whose exact type varies based on the provider
   // and is interpreted accordingly by the corresponding kernel implementation.

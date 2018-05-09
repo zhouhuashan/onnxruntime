@@ -36,7 +36,7 @@ class XPUExecutionProvider : public IExecutionProvider {
     return Status::OK();
   }
 
-  Status CopyTensor(const Tensor& src, Tensor& dst) override {
+  Status CopyTensor(const Tensor& src, Tensor& dst) const override {
     UNUSED_PARAMETER(src);
     UNUSED_PARAMETER(dst);
     return Status::OK();

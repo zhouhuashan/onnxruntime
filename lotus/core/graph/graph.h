@@ -218,6 +218,12 @@ class Node {
   // Get the corresponding <NodeProto>.
   void ToProto(NodeProto& proto) const;
 
+  // iterate through all input/output defs
+  void ForEachDef(std::function<void(const LotusIR::NodeArg*, bool is_input)> func) const;
+
+  // Replaces defs
+  void ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements);
+
   // Node definitions. Really a struct but we want to prevent accidental copies.
   class Definitions {
    public:
@@ -387,6 +393,12 @@ class GraphBase {
   // This is smaller than MaxNodeIndex(), since there may be nodes
   // removed during optimization.
   int NumberOfNodes() const noexcept { return num_of_nodes_; }
+
+  // Create NodeArg owned by the graph
+  std::unique_ptr<NodeArg>& CreateOwnedNodeArg(const std::string& name, const TypeProto* p_arg_type) {
+    owned_node_args_.push_back(std::make_unique<NodeArg>(name, p_arg_type));
+    return owned_node_args_.back();
+  }
 
   // Add node to <*this> graph.
   Node* AddNode(const std::string& name,

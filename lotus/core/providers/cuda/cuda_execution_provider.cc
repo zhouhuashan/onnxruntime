@@ -1,5 +1,6 @@
 #include "cuda_common.h"
 #include "cuda_execution_provider.h"
+#include "core/framework/transformer_memcpy.h"
 
 namespace Lotus {
 
@@ -8,17 +9,9 @@ CUDATransformer::CUDATransformer(const std::string& name)
 }
 
 Status CUDATransformer::Apply(LotusIR::Graph* graph, bool* modified) const {
-  for (auto& node : graph->Nodes()) {
-    if (graph->IsSourceNode(node) || graph->IsSinkNode(node))
-      continue;
-
-    if (node.GetExecutionProvider().empty()) {
-      node.SetExecutionProvider(LotusIR::kCudaExecutionProvider);
-      *modified = true;
-    }
-  }
-
-  return Common::Status::OK();
+  TransformerMemcpyImpl util(graph, LotusIR::kCudaExecutionProvider);
+  *modified = util.ModifyGraph();
+  return Status::OK();
 }
 
 CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& info)
@@ -31,7 +24,7 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
     arena_ = CreateArena(cuda_allocator_creator->second);
 }
 
-Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) {
+Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   if (src.Shape().Size() != dst.Shape().Size()) {
     return Status(LOTUS, FAIL, "Tensor size mismatch");
   }

@@ -10,6 +10,7 @@
 #include "core/graph/model.h"
 
 #include "test/test_environment.h"
+#include "test/framework/TestAllocatorManager.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -135,7 +136,7 @@ struct OpTester {
 
   template <typename T>
   void AddInput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& values) {
-    AddData(input_data_, name, dims, values.data(), values.size(), /*on_cpu*/ false);  // workaround to copy input to device
+    AddData(input_data_, name, dims, values.data(), values.size());
   }
 
   template <typename TKey, typename TVal>
@@ -201,7 +202,25 @@ struct OpTester {
   template <typename T>
   void AddData(std::vector<Data>& data, const char* name,
                const std::vector<int64_t>& dims, const T* values,
-               int64_t valuesCount, bool on_cpu = true);
+               int64_t valuesCount) {
+    LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
+    auto allocator = Lotus::Test::AllocatorManager::Instance().GetArena(CPU);
+    auto size_in_bytes = valuesCount * sizeof(T);
+    void* buffer = allocator->Alloc(size_in_bytes);
+    auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
+                                        TensorShape(dims),
+                                        buffer,
+                                        allocator->Info(),
+                                        allocator);
+    auto* data_ptr = p_tensor->template MutableData<T>();
+    for (int64_t i = 0; i < valuesCount; i++) {
+      data_ptr[i] = values[i];
+    }
+
+    MLValue value;
+    value.Init(p_tensor.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+    data.push_back({{name, &s_type_proto<T>}, value});
+  }
 
   const char* op_;
   const char* domain_;

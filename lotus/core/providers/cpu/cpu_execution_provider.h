@@ -61,7 +61,7 @@ class CPUExecutionProvider : public IExecutionProvider {
     return LotusIR::kCpuExecutionProvider;
   }
 
-  Status CopyTensor(const Tensor& src, Tensor& dst) override {
+  Status CopyTensor(const Tensor& src, Tensor& dst) const override {
     LOTUS_ENFORCE(dst.Location().name == CPU);
 
     // Todo: support copy with different devices.
