@@ -84,6 +84,7 @@ class OpKernel {
 
   explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {
   }
+  virtual ~OpKernel() {}
 
   const LotusIR::Node& Node() const {
     return op_kernel_info_.node();

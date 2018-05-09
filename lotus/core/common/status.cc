@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Common {
 Status::Status(StatusCategory category, int code, const std::string& msg) {
   // state_ will be allocated here causing the status to be treated as a failure
-  LOTUS_ENFORCE (code != static_cast<int>(MLStatus::OK));
+  LOTUS_ENFORCE(code != static_cast<int>(MLStatus::OK));
 
   state_ = std::make_unique<State>(category, code, msg);
 }
@@ -57,22 +57,13 @@ std::string Status::ToString() const {
 }
 
 const Status& Status::OK() noexcept {
-  // We use 'new' to avoid static initialization issues
-  //   https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
-  // Suppressing r.11 due to that
-  //   Warning C26409 Avoid calling new and delete explicitly, use std::make_unique<T> instead
-  //   r.11: http://go.microsoft.com/fwlink/?linkid=845485
-  GSL_SUPPRESS(r .11) {
-    static Status* s_ok = new Status();
-    return *s_ok;
-  }
+  static Status s_ok;
+  return s_ok;
 }
 
 const std::string& Status::EmptyString() {
-  GSL_SUPPRESS(r .11) {
-    static std::string* s_empty = new std::string();
-    return *s_empty;
-  }
+  static std::string s_empty;
+  return s_empty;
 }
 }  // namespace Common
 }  // namespace Lotus

@@ -25,27 +25,24 @@ Suppressing r.11 due to that
 
 */
 
-GSL_SUPPRESS(r .11)
 static std::atomic<void *> &DefaultLoggerManagerInstance() noexcept {
   // this atomic is to protect against attempts to log being made after the default LoggingManager is destroyed.
   // Theoretically this can happen if a Logger instance is still alive and calls Log via its internal
   // pointer to the LoggingManager.
   // As the first thing LoggingManager::Log does is check the static DefaultLoggerManagerInstance() is not null,
   // any further damage should be prevented (in theory).
-  static std::atomic<void *> *default_instance = new std::atomic<void *>();
-  return *default_instance;
+  static std::atomic<void *> default_instance;
+  return default_instance;
 }
 
-GSL_SUPPRESS(r .11)
 static std::mutex &DefaultLoggerMutex() noexcept {
-  static std::mutex *mutex = new std::mutex();
-  return *mutex;
+  static std::mutex mutex;
+  return mutex;
 }
 
-GSL_SUPPRESS(r .11)
 std::unique_ptr<Logger> &LoggingManager::GetDefaultLogger() noexcept {
-  static std::unique_ptr<Logger> *default_logger = new std::unique_ptr<Logger>();
-  return *default_logger;
+  static std::unique_ptr<Logger> default_logger;
+  return default_logger;
 }
 
 static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch) noexcept;
