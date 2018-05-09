@@ -31,9 +31,11 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
   MatMulComputeHelper::OffsetToArrays(Y->MutableData<float>(), helper.OutputOffsets(), output_arrays);
 
   // allocate temp memory for offset arrays
-  const float** left_arrays_cuda = (const float**)Base::Allocate(left_arrays.size() * sizeof(const float*));
-  const float** right_arrays_cuda = (const float**)Base::Allocate(right_arrays.size() * sizeof(const float*));
-  float** output_arrays_cuda = (float**)Base::Allocate(output_arrays.size() * sizeof(float*));
+  AllocatorPtr alloc;
+  LOTUS_RETURN_IF_ERROR(ctx->GetTempSpaceAllocator(&alloc));
+  const float** left_arrays_cuda = (const float**)alloc->Alloc(left_arrays.size() * sizeof(const float*));
+  const float** right_arrays_cuda = (const float**)alloc->Alloc(right_arrays.size() * sizeof(const float*));
+  float** output_arrays_cuda = (float**)alloc->Alloc(output_arrays.size() * sizeof(float*));
 
   // note that Lotus MLValue is row major, while cublas is column major,
   // so swap left/right operands
@@ -58,9 +60,9 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
           static_cast<int>(helper.N()),
           static_cast<int>(helper.OutputOffsets().size())));
 
-  Base::Free(left_arrays_cuda);
-  Base::Free(right_arrays_cuda);
-  Base::Free(output_arrays_cuda);
+  alloc->Free(left_arrays_cuda);
+  alloc->Free(right_arrays_cuda);
+  alloc->Free(output_arrays_cuda);
 
   return succeeded ? Status::OK() : Status(SYSTEM, ENGINE_ERROR);
 }

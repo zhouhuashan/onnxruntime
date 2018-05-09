@@ -479,7 +479,10 @@ class InferenceSession::Impl {
     const LotusIR::Graph* p_graph = session_state_.GetGraph();
     LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
-    auto& alloc = AllocatorManager::Instance().GetArena(CPU);
+    //TODO: get allocator based on weights location in allocation plan
+    auto cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+    LOTUS_ENFORCE(cpu_provider);
+    auto alloc = cpu_provider->GetAllocator();
     const LotusIR::InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
     for (const auto& entry : initialized_tensor_set) {
       const std::string& name = entry.first;
@@ -527,10 +530,11 @@ class InferenceSession::Impl {
     for (int i = 0; i < mem_patterns.locations.size(); i++) {
       auto& location = mem_patterns.locations[i];
       LOTUS_ENFORCE(weights_buffers_.find(location) == weights_buffers_.end());
-      auto& alloc = AllocatorManager::Instance().GetArena(location.name, location.id);
-      //use Reserve to reserve a big chunk. This chunk could be unload when session closed.
-      void* buffer = alloc.Reserve(mem_patterns.patterns[i].peak_size());
-      weights_buffers_[location] = BufferUniquePtr(buffer, &alloc);
+      auto alloc = session_state_.GetAllocator(location);
+      if (!alloc)
+        return Status(LOTUS, FAIL, "Allocator for location: " + location.name + " not found.");
+      void* buffer = alloc->Alloc(mem_patterns.patterns[i].peak_size());
+      weights_buffers_[location] = BufferUniquePtr(buffer, alloc);
     }
     //3. create weight tensors based on weights buffer
     for (const auto& entry : initialized_tensor_set) {
@@ -553,7 +557,9 @@ class InferenceSession::Impl {
         //TODO: support load weight on different device
         //Right now GetTensorFromTensorProto only works with cpu buffers
         //Need enhancement later.
-        auto& alloc = AllocatorManager::Instance().GetArena(CPU);
+        auto cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+        LOTUS_ENFORCE(cpu_provider);
+        auto alloc = cpu_provider->GetAllocator();
         LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc));
         MLValue mlvalue;
         mlvalue.Init(p_tensor.release(),
@@ -649,7 +655,7 @@ class InferenceSession::Impl {
     }
 
     auto exec_provider = session_state_.GetExecutionProvider(exec_provider_name);
-    auto& allocator_info = exec_provider->GetTempSpaceAllocator().Info();
+    auto& allocator_info = exec_provider->GetAllocator()->Info();
     Common::Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
     if (!status.IsOK()) {
       LOGS(*session_logger_, ERROR) << "Kernel creation failed for node: "

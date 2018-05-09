@@ -26,9 +26,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return transformer_;
   }
 
-  IArenaAllocator& GetTempSpaceAllocator() override {
-    auto& alloc_mgr = AllocatorManager::Instance();
-    return alloc_mgr.GetArena(CUDA);
+  AllocatorPtr GetAllocator() override {
+    return arena_;
   }
 
   Status Compute(const LotusIR::Node& node, OpKernelContext* /*context*/) const override {
@@ -56,6 +55,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
   CUDATransformer transformer_;
   int device_id_;
   cublasHandle_t cublas_handle_;
+  ArenaPtr arena_;
 };
 
 }  // namespace Lotus

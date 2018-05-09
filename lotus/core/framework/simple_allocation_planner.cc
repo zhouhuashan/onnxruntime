@@ -28,7 +28,9 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
   for (int i = 0; i < num_mlvalues; i++) {
     plan->allocation_plan[i].alloc_kind = AllocKind::kAllocate;
     // TODO: resolve the correct location of the values.
-    plan->allocation_plan[i].location = AllocatorManager::Instance().GetArena(CPU).Info();
+    auto cpu_provider = session_state.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+    LOTUS_ENFORCE(cpu_provider);
+    plan->allocation_plan[i].location = cpu_provider->GetAllocator()->Info();
   }
 
   auto graph = session_state.GetGraph();

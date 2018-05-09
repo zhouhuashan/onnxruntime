@@ -17,72 +17,6 @@
 
 namespace Lotus {
 namespace Test {
-
-void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
-                             const std::vector<LotusIR::NodeArg*>& output_defs,
-                             std::unordered_map<std::string, MLValue>& feeds,
-                             std::vector<std::string>& output_names);
-
-class TestUtils {
-  typedef std::shared_ptr<ExecutionFrame> ExecutionFramePtr;
-
- public:
-  static ExecutionFramePtr CreateSingleNodeCPUExecutionFrame(const SessionState& session_state,
-                                                             std::unordered_map<std::string, MLValue> feeds,
-                                                             const std::vector<std::string> output_names) {
-    static std::vector<MLValue> outputs;
-
-    return std::make_shared<ExecutionFrame>(feeds,
-                                            output_names,
-                                            outputs,
-                                            session_state);
-  }
-
-  template <typename T>
-  static Status PrepareTensor(const int index,
-                              ExecutionFramePtr frame,
-                              const std::vector<int64_t>& dims,
-                              const std::vector<T>* value) {
-    auto status = frame->AllocateTensorWithSelfOwnBuffer(index,
-                                                         DataTypeImpl::GetType<T>(),
-                                                         AllocatorManager::Instance().GetArena(CPU).Info(),
-                                                         TensorShape(dims));
-    if (!status.IsOK())
-      return status;
-
-    if (value) {
-      auto tensor = frame->GetMutableValue<Tensor>(index);
-      LOTUS_ENFORCE(size_t(tensor->Shape().Size()) == value->size(), "Number of input values doesn't match tensor size");
-      T* buffer = tensor->MutableData<T>();
-
-      for (int i = 0; i < value->size(); i++)
-        buffer[i] = (*value)[i];
-    }
-
-    return Status::OK();
-  }
-
-  template <typename T>
-  static Status PrepareIthInput(const LotusIR::Node& node,
-                                const int i,
-                                ExecutionFramePtr frame,
-                                const std::vector<int64_t>& dims,
-                                const std::vector<T>* value = nullptr) {
-    LOTUS_ENFORCE(i >= 0 && i < node.InputDefs().size());
-    return PrepareTensor(i, frame, dims, value);
-  }
-
-  template <typename T>
-  static Status PrepareIthOutput(const LotusIR::Node& node,
-                                 const int i,
-                                 ExecutionFramePtr frame,
-                                 const std::vector<int64_t>& dims,
-                                 const std::vector<T>* value = nullptr) {
-    LOTUS_ENFORCE(i >= 0 && i < node.OutputDefs().size());
-    return PrepareTensor(i + (int)node.InputDefs().size(), frame, dims, value);
-  }
-};
-
 // unfortunately std::optional is in C++17 so use a miniversion of it
 template <typename T>
 class optional {
@@ -272,7 +206,7 @@ struct OpTester {
   const char* op_;
   const char* domain_;
   const std::string provider_name_;
-  std::unique_ptr<IExecutionProvider> provider_; // this would be released when passing to inference session
+  std::unique_ptr<IExecutionProvider> provider_;  // this would be released when passing to inference session
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;

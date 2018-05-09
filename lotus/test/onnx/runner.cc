@@ -44,7 +44,7 @@ std::pair<EXECUTE_RESULT, size_t> is_result_exactly_match(const Tensor& outvalue
   return std::make_pair(EXECUTE_RESULT::SUCCESS, -1);
 }
 
-std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const onnx::TensorProto& expected_value, IArenaAllocator& cpu_allocator) {
+std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const onnx::TensorProto& expected_value, ArenaPtr cpu_allocator) {
   std::unique_ptr<Tensor> expected_tensor;
   LOTUS_ENFORCE(Lotus::Utils::GetTensorFromTensorProto(expected_value, &expected_tensor, cpu_allocator).IsOK());
   switch (expected_value.data_type()) {
@@ -94,7 +94,7 @@ inline bool IsTheSameType(MLDataType left, onnx::TensorProto_DataType right) {
   return DataTypeImpl::ElementTypeFromProto(right) == left;
 }
 
-MLValue ConvertTensorProtoToMLValue(const onnx::TensorProto& input, IAllocator& allocator) {
+MLValue ConvertTensorProtoToMLValue(const onnx::TensorProto& input, AllocatorPtr allocator) {
   std::unique_ptr<Tensor> tensor;
   LOTUS_ENFORCE(Lotus::Utils::GetTensorFromTensorProto(input, &tensor, allocator).IsOK());
   MLValue value;
@@ -106,7 +106,7 @@ MLValue ConvertTensorProtoToMLValue(const onnx::TensorProto& input, IAllocator& 
 
 //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
 // for https://github.com/onnx/onnx/issues/679
-std::unordered_map<std::string, MLValue> ConvertPbsToMLValues(const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, const std::vector<onnx::TensorProto>& input_pbs, IAllocator& allocator) {
+std::unordered_map<std::string, MLValue> ConvertPbsToMLValues(const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, const std::vector<onnx::TensorProto>& input_pbs, AllocatorPtr allocator) {
   std::unordered_map<std::string, MLValue> feeds;
   int len = input_value_info.size();
   bool has_valid_names = true;
@@ -207,8 +207,8 @@ EXECUTE_RESULT StatusCodeToExecuteResult(int input) {
 
 EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vector<onnx::TensorProto>& input_pbs,
                                          const std::vector<onnx::TensorProto>& output_pbs, const char* test_case_name,
-                                         const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, AllocatorManager& allocatorManager) {
-  auto& cpu_allocator = allocatorManager.GetArena(CPU);
+                                         const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, Lotus::Test::AllocatorManager& allocatorManager) {
+  auto cpu_allocator = allocatorManager.GetArena(CPU);
   std::unordered_map<std::string, MLValue> feeds = ConvertPbsToMLValues(input_value_info, input_pbs, cpu_allocator);
   std::vector<MLValue> p_fetches;
   try {
@@ -399,7 +399,7 @@ std::vector<TestCaseInfo> LoadTests(const std::vector<string>& input_paths, cons
 }
 
 RunContext::RunContext(const TestCaseInfo& test_case1, const std::string& node_name1, std::shared_ptr<Lotus::InferenceSession> session1,
-                       const google::protobuf::RepeatedPtrField< ::ONNX_NAMESPACE::ValueInfoProto>& input_info1, Lotus::AllocatorManager& allocatorManager1,
+                       const google::protobuf::RepeatedPtrField< ::ONNX_NAMESPACE::ValueInfoProto>& input_info1, Lotus::Test::AllocatorManager& allocatorManager1,
                        std::function<void(TestCaseResult& result)> on_finished1) : test_case(test_case1), node_name(node_name1), session(session1), input_info(input_info1), allocatorManager(allocatorManager1), on_finished(on_finished1), next_test_to_run(0), finished(0), result{std::vector<EXECUTE_RESULT>(test_case1.input_pb_files.size(), EXECUTE_RESULT::UNKNOWN_ERROR), ""} {
 }
 

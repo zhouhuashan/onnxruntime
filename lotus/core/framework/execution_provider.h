@@ -21,9 +21,7 @@ class IExecutionProvider {
   virtual const LotusIR::GraphTransformer& GetTransformer() const = 0;
 
   // Get IAllocator for <*this> execution provider.
-  // It will be used for allocating tensors (inputs/outputs) or copying tensors
-  // (IN/OUT) for this execution provider.
-  virtual IArenaAllocator& GetTempSpaceAllocator() = 0;
+  virtual AllocatorPtr GetAllocator() = 0;
 
   // Run the computation of a given node.
   virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;

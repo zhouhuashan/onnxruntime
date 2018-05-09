@@ -41,8 +41,6 @@ class CudaKernel : public OpKernel {
 
  protected:
   cublasHandle_t CublasHandle() const;
-  void* Allocate(size_t size) const;
-  void Free(void* p) const;
 
  private:
   CUDAExecutionProvider* provider_;

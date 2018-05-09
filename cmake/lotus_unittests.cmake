@@ -173,6 +173,8 @@ set(lotus_test_providers_libs
 file(GLOB_RECURSE lotus_test_providers_src
     "${LOTUS_ROOT}/test/providers/*.h"
     "${LOTUS_ROOT}/test/providers/*.cc"
+    ${LOTUS_ROOT}/test/framework/TestAllocatorManager.cc
+    ${LOTUS_ROOT}/test/framework/TestAllocatorManager.h
 )
 
 if(NOT lotus_USE_CUDA)
@@ -235,6 +237,8 @@ ${onnx_test_runner_src_dir}/IFinishCallback.h
 ${onnx_test_runner_src_dir}/testenv.cc
 ${onnx_test_runner_src_dir}/runner.h
 ${onnx_test_runner_src_dir}/runner.cc
+${LOTUS_ROOT}/test/framework/TestAllocatorManager.cc
+${LOTUS_ROOT}/test/framework/TestAllocatorManager.h
 )
 
 if(WIN32)

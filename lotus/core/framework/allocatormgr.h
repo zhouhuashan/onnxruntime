@@ -3,44 +3,15 @@
 #include "core/framework/arena.h"
 
 namespace Lotus {
-class AllocatorManager {
- public:
-  // the allocator manager is a global object for entire Process.
-  // all the inference engine in the same Process will use the same allocator manager.
-  static AllocatorManager& Instance();
-
-  /**
-        Create an AllocatorManager instance. This is expected to be called once and remain valid
-        for the duration of execution. It will populate Instance() for convenient access.
-        */
-  static Status Create(std::unique_ptr<AllocatorManager>& allocator_manager);
-
-  /**
-        Destruct th AllocatorManager. Will unset Instance().
-        */
-  ~AllocatorManager();
-
-  IAllocator& GetAllocator(const std::string& name, const int id = 0, bool use_arena = true);
-
-  IArenaAllocator& GetArena(const std::string& name, const int id = 0);
-
- private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(AllocatorManager);
-
-  AllocatorManager();
-  Status InitializeAllocators();
-
-  std::unordered_map<std::string, std::unique_ptr<IAllocator>> alloc_map_;
-  bool owns_instance_;
+struct DeviceAllocatorRegistrationInfo {
+  std::function<std::unique_ptr<IDeviceAllocator>()> factory;
+  size_t max_mem;
 };
+
+ArenaPtr CreateArena(DeviceAllocatorRegistrationInfo info);
 
 class DeviceAllocatorRegistry {
  public:
-  struct DeviceAllocatorRegistrationInfo {
-    std::function<std::unique_ptr<IDeviceAllocator>()> factory;
-    size_t max_mem;
-  };
-
   void RegisterDeviceAllocator(std::string&& name, std::function<std::unique_ptr<IDeviceAllocator>()> factory, size_t max_mem) {
     DeviceAllocatorRegistrationInfo info({factory, max_mem});
     device_allocator_registrations_.insert(std::make_pair(std::move(name), std::move(info)));

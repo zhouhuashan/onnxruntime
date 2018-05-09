@@ -97,11 +97,11 @@ class Conv : public ConvBase {
     const int64_t kernel_dim = C / group_ * kernel_size;
     const int64_t col_buffer_size = kernel_dim * output_image_size;
 
-    auto& info = OpKernel::Allocator();
-    auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
+    AllocatorPtr alloc;
+    LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
 
-    auto col_data = alloc.Alloc(sizeof(T) * col_buffer_size);
-    BufferUniquePtr col_buffer(col_data, BufferDeleter(&alloc));
+    auto col_data = alloc->Alloc(sizeof(T) * col_buffer_size);
+    BufferUniquePtr col_buffer(col_data, BufferDeleter(alloc));
     T* col_buffer_data = static_cast<T*>(col_buffer.get());
 
     const T* Xdata = X->template Data<T>();

@@ -2,6 +2,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/graph/model.h"
+#include "core/providers/cpu/cpu_execution_provider.h"
+#include "test_utils.h"
 #include "gtest/gtest.h"
 
 namespace Lotus {
@@ -19,6 +21,11 @@ std::shared_ptr<LotusIR::Model> DummyGraphWithClip() {
   return model;
 }
 
+std::unique_ptr<IExecutionProvider> CreateCPUExecutionProvider() {
+  CPUExecutionProviderInfo info;
+  return std::make_unique<CPUExecutionProvider>(info);
+}
+
 TEST(ExecutionFrameTest, TensorAllocationTest) {
   LotusIR::Model model("test");
   LotusIR::Graph* graph = model.MainGraph();
@@ -29,12 +36,14 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
   LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
 
-  AllocatorInfo allocator_info("CPUAllocator", Lotus::AllocatorType::kArenaAllocator);
-
+  auto cpu_xp = CreateCPUExecutionProvider();
+  auto xp_typ = cpu_xp->Type();
   SessionState state;
   state.SetGraph(graph);
   state.AddMLValueNameIdx("X", 0);
   state.AddMLValueNameIdx("Y", 1);
+  std::string provider_type = cpu_xp->Type();
+  state.AddExecutionProvider(provider_type, std::move(cpu_xp));
   vector<MLValue> outputs;
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{},
                        std::vector<std::string>{},
@@ -46,7 +55,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   TensorShape shape(std::vector<int64_t>{2, 3});
   auto status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
-                                                      AllocatorManager::Instance().GetArena(CPU).Info(), shape);
+                                                      state.GetExecutionProvider(xp_typ)->GetAllocator()->Info(), shape);
   EXPECT_TRUE(status.IsOK());
 
   auto tensor = frame.GetMutableValue<Tensor>(0);
@@ -79,17 +88,17 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
 
   graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
 
-  auto& cpu_allocator = AllocatorManager::Instance().GetArena(CPU);
+  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
   auto element_type = DataTypeImpl::GetType<float>();
   TensorShape shape({3, 2});
-  void* buffer = cpu_allocator.Alloc(element_type->Size() * shape.Size());
+  void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
   //create fake ml value with owned buffer.
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(
       element_type,
       shape,
       buffer,
-      cpu_allocator.Info(),
-      &cpu_allocator);
+      cpu_allocator->Info(),
+      cpu_allocator);
   MLValue value;
   value.Init(p_tensor.release(),
              DataTypeImpl::GetType<Tensor>(),
@@ -99,6 +108,9 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   state.SetGraph(graph);
   state.AddMLValueNameIdx("X", 0);
   state.AddMLValueNameIdx("Y", 1);
+  auto cpu_xp = CreateCPUExecutionProvider();
+  std::string provider_type = cpu_xp->Type();
+  state.AddExecutionProvider(provider_type, std::move(cpu_xp));
   vector<MLValue> outputs;
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X", value}},
                        std::vector<std::string>{},
@@ -112,115 +124,115 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   EXPECT_EQ(tensor->MutableData<float>(), buffer);
 }
 template <typename T>
-void CreateMLValue(IAllocator* alloc,
-	const std::vector<int64_t>& dims,
-	const std::vector<T>& value,
-	MLValue* p_mlvalue) {
-	TensorShape shape(dims);
-	auto location = alloc->Info();
-	auto element_type = DataTypeImpl::GetType<T>();
-	void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
-	if (value.size() > 0) {
-		memcpy(buffer, &value[0], element_type->Size() * shape.Size());
-	}
+void CreateMLValue(AllocatorPtr alloc,
+                   const std::vector<int64_t>& dims,
+                   const std::vector<T>& value,
+                   MLValue* p_mlvalue) {
+  TensorShape shape(dims);
+  auto location = alloc->Info();
+  auto element_type = DataTypeImpl::GetType<T>();
+  void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
+  if (value.size() > 0) {
+    memcpy(buffer, &value[0], element_type->Size() * shape.Size());
+  }
 
-	std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
-		shape,
-		buffer,
-		location,
-		alloc);
-	p_mlvalue->Init(p_tensor.release(),
-		DataTypeImpl::GetType<Tensor>(),
-		DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
+                                                              shape,
+                                                              buffer,
+                                                              location,
+                                                              alloc);
+  p_mlvalue->Init(p_tensor.release(),
+                  DataTypeImpl::GetType<Tensor>(),
+                  DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 }
 
 TEST(ExecutionFrameTest, MemPatternTest) {
-	LotusIR::Model model("test");
-	LotusIR::Graph* graph = model.MainGraph();
-	TypeProto tensor_float;
-	tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-	LotusIR::NodeArg input_def1("X1", &tensor_float),
-		input_def2("X2", &tensor_float),
-		input_def3("X3", &tensor_float),
-		gemm1_out_def("T1", &tensor_float),
-		gemm2_out_def("T2", &tensor_float),
-		clip_out_def("T3", &tensor_float)
-		;
+  LotusIR::Model model("test");
+  LotusIR::Graph* graph = model.MainGraph();
+  TypeProto tensor_float;
+  tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  LotusIR::NodeArg input_def1("X1", &tensor_float),
+      input_def2("X2", &tensor_float),
+      input_def3("X3", &tensor_float),
+      gemm1_out_def("T1", &tensor_float),
+      gemm2_out_def("T2", &tensor_float),
+      clip_out_def("T3", &tensor_float);
 
-	graph->AddNode("node1", "MatMul", "gemm1", ArgMap{ &input_def1, &input_def2 }, ArgMap{ &gemm1_out_def });
+  graph->AddNode("node1", "MatMul", "gemm1", ArgMap{&input_def1, &input_def2}, ArgMap{&gemm1_out_def});
 
-	graph->AddNode("node2", "MatMul", "gemm2", ArgMap{ &gemm1_out_def, &input_def3 }, ArgMap{ &gemm2_out_def });
+  graph->AddNode("node2", "MatMul", "gemm2", ArgMap{&gemm1_out_def, &input_def3}, ArgMap{&gemm2_out_def});
 
-	graph->AddNode("node3", "Clip", "clip1", ArgMap{ &gemm2_out_def }, ArgMap{ &clip_out_def });
+  graph->AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def});
 
-	auto status = graph->Resolve();
-	EXPECT_TRUE(status.IsOK());
-	//1. prepare input
-	auto& cpu_allocator = AllocatorManager::Instance().GetArena(CPU);
-	MLValue v1, v2, v3;
-	CreateMLValue<float>(&cpu_allocator, 
-		std::vector<int64_t>{1, 2}, 
-		std::vector<float>{1.0f, 1.0f}, &v1);
-	CreateMLValue<float>(&cpu_allocator, 
-		std::vector<int64_t>{2, 2}, 
-		std::vector<float>(4, 1.0f), &v2);
-	CreateMLValue<float>(&cpu_allocator, 
-		std::vector<int64_t>{2, 3}, 
-		std::vector<float>(6, 1.0f), &v3);
+  auto status = graph->Resolve();
+  EXPECT_TRUE(status.IsOK());
+  //1. prepare input
+  auto cpu_xp = CreateCPUExecutionProvider();
+  auto xp_type = cpu_xp->Type();
+  SessionState state;
+  state.SetGraph(graph);
+  state.AddMLValueNameIdx("X1", 0);
+  state.AddMLValueNameIdx("X2", 1);
+  state.AddMLValueNameIdx("X3", 2);
+  state.AddMLValueNameIdx("T1", 3);
+  state.AddMLValueNameIdx("T2", 4);
+  state.AddMLValueNameIdx("T3", 5);
+  state.AddExecutionProvider(xp_type, std::move(cpu_xp));
+  auto cpu_allocator = state.GetExecutionProvider(xp_type)->GetAllocator();
+  MLValue v1, v2, v3;
+  CreateMLValue<float>(cpu_allocator,
+                       std::vector<int64_t>{1, 2},
+                       std::vector<float>{1.0f, 1.0f}, &v1);
+  CreateMLValue<float>(cpu_allocator,
+                       std::vector<int64_t>{2, 2},
+                       std::vector<float>(4, 1.0f), &v2);
+  CreateMLValue<float>(cpu_allocator,
+                       std::vector<int64_t>{2, 3},
+                       std::vector<float>(6, 1.0f), &v3);
 
-	SessionState state;
-	state.SetGraph(graph);
-	state.AddMLValueNameIdx("X1", 0);
-	state.AddMLValueNameIdx("X2", 1);
-	state.AddMLValueNameIdx("X3", 2);
-	state.AddMLValueNameIdx("T1", 3);
-	state.AddMLValueNameIdx("T2", 4);
-	state.AddMLValueNameIdx("T3", 5);
+  std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+  // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
+  status = AllocationPlanner::CreatePlan(AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER,
+                                         state,
+                                         p_seq_exec_plan.get());
+  EXPECT_TRUE(status.IsOK());
 
-	std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
-	// TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-	status = AllocationPlanner::CreatePlan(AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER,
-		state,
-		p_seq_exec_plan.get());
-	EXPECT_TRUE(status.IsOK());
+  state.SetExecutionPlan(std::move(p_seq_exec_plan));
 
-	state.SetExecutionPlan(std::move(p_seq_exec_plan));
+  vector<MLValue> outputs;
+  ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X1", v1}, {"X2", v2}, {"X3", v3}},
+                       std::vector<std::string>{"T3"},
+                       outputs,
+                       state);
 
-	vector<MLValue> outputs;
-	ExecutionFrame frame(std::unordered_map<std::string, MLValue>{ {"X1", v1}, { "X2", v2 }, {"X3", v3}},
-		std::vector<std::string>{"T3"},
-		outputs,
-		state);
+  status = frame.AllocateMLValueTensorSelfOwnBuffer(3,
+                                                    DataTypeImpl::GetType<float>(),
+                                                    cpu_allocator->Info(),
+                                                    TensorShape(std::vector<int64_t>{2, 2}));
+  EXPECT_TRUE(status.IsOK());
 
-	status = frame.AllocateMLValueTensorSelfOwnBuffer(3,
-		DataTypeImpl::GetType<float>(),
-		cpu_allocator.Info(),
-		TensorShape(std::vector<int64_t>{2, 2}));
-	EXPECT_TRUE(status.IsOK());
+  status = frame.AllocateMLValueTensorSelfOwnBuffer(4,
+                                                    DataTypeImpl::GetType<float>(),
+                                                    cpu_allocator->Info(),
+                                                    TensorShape(std::vector<int64_t>{2, 3}));
+  EXPECT_TRUE(status.IsOK());
 
-	status = frame.AllocateMLValueTensorSelfOwnBuffer(4,
-		DataTypeImpl::GetType<float>(),
-		cpu_allocator.Info(),
-		TensorShape(std::vector<int64_t>{2, 3}));
-	EXPECT_TRUE(status.IsOK());
+  status = frame.AllocateMLValueTensorSelfOwnBuffer(5,
+                                                    DataTypeImpl::GetType<float>(),
+                                                    cpu_allocator->Info(),
+                                                    TensorShape(std::vector<int64_t>{2, 3}));
+  EXPECT_TRUE(status.IsOK());
 
-	status = frame.AllocateMLValueTensorSelfOwnBuffer(5,
-		DataTypeImpl::GetType<float>(),
-		cpu_allocator.Info(),
-		TensorShape(std::vector<int64_t>{2, 3}));
-	EXPECT_TRUE(status.IsOK());
+  MemoryPatternGroup pattern;
+  status = frame.GeneratePatterns(&pattern);
+  EXPECT_TRUE(status.IsOK());
 
-	MemoryPatternGroup pattern;
-	status = frame.GeneratePatterns(&pattern);
-	EXPECT_TRUE(status.IsOK());
-
-	EXPECT_EQ(pattern.patterns.size(), pattern.locations.size());
-	EXPECT_EQ(pattern.patterns.size(), 1);
-	auto p = pattern.GetPatterns(cpu_allocator.Info());
-	EXPECT_EQ(p->peak_size(), sizeof(float) * (4 + 6));
-	EXPECT_EQ(p->GetBlock(3)->offset_, 0);
-	EXPECT_EQ(p->GetBlock(4)->offset_, sizeof(float) * 4);
-
+  EXPECT_EQ(pattern.patterns.size(), pattern.locations.size());
+  EXPECT_EQ(pattern.patterns.size(), 1);
+  auto p = pattern.GetPatterns(cpu_allocator->Info());
+  EXPECT_EQ(p->peak_size(), sizeof(float) * (4 + 6));
+  EXPECT_EQ(p->GetBlock(3)->offset_, 0);
+  EXPECT_EQ(p->GetBlock(4)->offset_, sizeof(float) * 4);
 }
 }  // namespace Test
 }  // namespace Lotus

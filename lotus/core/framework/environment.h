@@ -28,7 +28,5 @@ class Environment {
 
   Environment() = default;
   Status Initialize();
-
-  std::unique_ptr<AllocatorManager> allocation_manager_;
 };
 }  // namespace Lotus

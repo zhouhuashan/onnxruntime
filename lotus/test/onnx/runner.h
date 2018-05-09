@@ -4,8 +4,10 @@
 #include "testenv.h"
 
 namespace Lotus {
+namespace Test {
 class AllocatorManager;
 }
+}  // namespace Lotus
 struct TestCaseResult {
   std::vector<EXECUTE_RESULT> excution_result;
   //only valid for single node tests;
@@ -18,13 +20,13 @@ struct RunContext {
   std::string node_name;
   std::shared_ptr<Lotus::InferenceSession> session;
   const google::protobuf::RepeatedPtrField< ::ONNX_NAMESPACE::ValueInfoProto> input_info;
-  Lotus::AllocatorManager& allocatorManager;
+  Lotus::Test::AllocatorManager& allocatorManager;
   std::function<void(TestCaseResult& result)> on_finished;
   std::atomic<size_t> next_test_to_run;
   std::atomic<size_t> finished;
   TestCaseResult result;
   RunContext(const TestCaseInfo& test_case1, const std::string& node_name1, std::shared_ptr<Lotus::InferenceSession> session1,
-             const google::protobuf::RepeatedPtrField< ::ONNX_NAMESPACE::ValueInfoProto>& input_info1, Lotus::AllocatorManager& allocatorManager1,
+             const google::protobuf::RepeatedPtrField< ::ONNX_NAMESPACE::ValueInfoProto>& input_info1, Lotus::Test::AllocatorManager& allocatorManager1,
              std::function<void(TestCaseResult& result)> on_finished1);
 };
 void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, std::function<void(TestCaseResult& result)> on_finished);

@@ -7,8 +7,8 @@
 #include "core/common/status.h"
 
 namespace Lotus {
-#define CPU "CPU"
-#define CUDA "CUDA"
+#define CPU "Cpu"
+#define CUDA "Cuda"
 
 enum AllocatorType {
   kDeviceAllocator = 0,
@@ -66,5 +66,7 @@ class CPUAllocator : public IDeviceAllocator {
   virtual void Free(void* p) override;
   virtual const AllocatorInfo& Info() const override;
 };
+
+using AllocatorPtr = std::shared_ptr<IAllocator>;
 
 }  // namespace Lotus

@@ -37,6 +37,8 @@ class SessionState {
   void AddExecutionProvider(const std::string& provider_id,
                             std::unique_ptr<IExecutionProvider> exec_provider);
   const std::vector<std::unique_ptr<IExecutionProvider>>& GetExecutionProviders() const;
+  // return nullptr if the allocator not found
+  AllocatorPtr GetAllocator(const AllocatorInfo& allocator_info) const;
 
   // MLValueName idx map
   void AddMLValueNameIdx(const std::string& name, int idx);
@@ -101,6 +103,7 @@ class SessionState {
   struct ExecutionProviderSet {
     std::vector<std::unique_ptr<IExecutionProvider>> exec_providers;
     std::unordered_map<std::string, size_t> provider_idx_map;  // for fast lookup
+    std::map<AllocatorInfo, size_t> allocator_idx_map;
   };
 
   ExecutionProviderSet exec_provider_set_;

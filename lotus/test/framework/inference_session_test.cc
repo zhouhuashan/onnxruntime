@@ -18,7 +18,7 @@
 
 #include "test/capturing_sink.h"
 #include "test/test_environment.h"
-
+#include "test_utils.h"
 #include "gtest/gtest.h"
 
 using namespace std;
@@ -32,7 +32,7 @@ static const std::string MODEL_URI = "testdata/mul_1.pb";
 
 // TODO consider moving this function to some utils
 template <typename T>
-void CreateMLValue(IAllocator* alloc,
+void CreateMLValue(AllocatorPtr alloc,
                    const std::vector<int64_t>& dims,
                    const std::vector<T>& value,
                    MLValue* p_mlvalue) {
@@ -61,7 +61,7 @@ void RunModel(InferenceSession& session_object,
   std::vector<int64_t> dims_mul_x = {3, 2};
   std::vector<float> values_mul_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
   MLValue ml_value;
-  CreateMLValue<float>(&AllocatorManager::Instance().GetArena(CPU), dims_mul_x, values_mul_x, &ml_value);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value));
 
@@ -73,7 +73,7 @@ void RunModel(InferenceSession& session_object,
   if (is_preallocate_output_vec) {
     fetches.resize(output_names.size());
     for (auto& elem : fetches) {
-      CreateMLValue<float>(&AllocatorManager::Instance().GetArena(CPU), dims_mul_x, values_mul_x, &elem);
+      CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &elem);
     }
   }
 

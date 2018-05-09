@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "core/framework/allocator.h"
+#include "core/framework/arena.h"
 #include "core/framework/data_types.h"
 #include "core/framework/tensor_shape.h"
 using namespace onnx;
@@ -14,7 +14,7 @@ namespace Lotus {
 class BufferDeleter {
  public:
   BufferDeleter() : alloc_(nullptr) {}
-  BufferDeleter(IAllocator* alloc)
+  BufferDeleter(AllocatorPtr alloc)
       : alloc_(alloc) {}
 
   void operator()(void* p) const {
@@ -31,7 +31,7 @@ class BufferDeleter {
   // A weak_ptr may be a choice to reduce the impact, but that require to
   // change our current allocator mgr to use shared_ptr. Will revisit it
   // later.
-  IAllocator* alloc_;
+  AllocatorPtr alloc_;
 };
 
 typedef std::unique_ptr<void, BufferDeleter> BufferUniquePtr;
@@ -54,7 +54,7 @@ class Tensor {
          const TensorShape& shape,
          BufferNakedPtr p_data,
          const AllocatorInfo& alloc,
-         IAllocator* deleter = nullptr,
+         AllocatorPtr deleter = nullptr,
          const int64_t offset = 0);
 
   virtual ~Tensor();
@@ -129,7 +129,7 @@ class Tensor {
             const TensorShape& shape,
             void* p_raw_data,
             const AllocatorInfo& alloc,
-            IAllocator* deleter,
+            AllocatorPtr deleter,
             const int64_t offset = 0);
 
   void* GetRaw() const noexcept {
@@ -140,7 +140,7 @@ class Tensor {
   // if buffer_deleter_ is null, it means tensor does not own the buffer.
   // otherwise tensor will use the deleter to release the buffer when
   // tensor is released.
-  IAllocator* buffer_deleter_;
+  AllocatorPtr buffer_deleter_;
 
   TensorShape shape_;
   MLDataType dtype_;

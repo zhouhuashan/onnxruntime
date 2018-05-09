@@ -1,5 +1,6 @@
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
+#include "test_utils.h"
 #include "gtest/gtest.h"
 
 namespace Lotus {
@@ -10,10 +11,10 @@ void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
   {
     //not own the buffer
     TensorShape shape(dims);
-    auto& alloc = AllocatorManager::Instance().GetArena(CPU);
-    auto data = alloc.Alloc(sizeof(T) * (shape.Size() + offset));
+    auto alloc = TestCPUExecutionProvider()->GetAllocator();
+    auto data = alloc->Alloc(sizeof(T) * (shape.Size() + offset));
     EXPECT_TRUE(data);
-    Tensor t(DataTypeImpl::GetType<T>(), shape, data, alloc.Info(), nullptr, offset);
+    Tensor t(DataTypeImpl::GetType<T>(), shape, data, alloc->Info(), nullptr, offset);
     auto tensor_shape = t.Shape();
     EXPECT_EQ(shape, tensor_shape);
     EXPECT_EQ(t.DataType(), DataTypeImpl::GetType<T>());
@@ -25,12 +26,12 @@ void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
     EXPECT_TRUE(t_data);
     memset(t_data, 0, sizeof(T) * shape.Size());
     EXPECT_EQ(*(T*)((char*)data + offset), (T)0);
-    alloc.Free(data);
+    alloc->Free(data);
 
     // owned buffer
-    data = alloc.Alloc(sizeof(T) * (shape.Size() + offset));
+    data = alloc->Alloc(sizeof(T) * (shape.Size() + offset));
     EXPECT_TRUE(data);
-    Tensor new_t(DataTypeImpl::GetType<T>(), shape, data, alloc.Info(), &alloc, offset);
+    Tensor new_t(DataTypeImpl::GetType<T>(), shape, data, alloc->Info(), alloc, offset);
 
     tensor_shape = new_t.Shape();
     EXPECT_EQ(shape, tensor_shape);
@@ -121,7 +122,7 @@ TEST(TensorTest, CPUUInt64TensorOffsetTest) {
 
 TEST(TensorTest, EmptyTensorTest) {
   auto type = DataTypeImpl::GetType<float>();
-  Tensor t(type, TensorShape({ 1, 0 }), nullptr, AllocatorManager::Instance().GetArena(CPU).Info());
+  Tensor t(type, TensorShape({1, 0}), nullptr, TestCPUExecutionProvider()->GetAllocator()->Info());
   auto& shape = t.Shape();
   EXPECT_EQ(shape.Size(), 0);
   EXPECT_EQ(t.DataType(), type);
@@ -137,10 +138,10 @@ TEST(TensorTest, EmptyTensorTest) {
 
 TEST(TensorTest, TensorCopyAssignOpTest) {
   TensorShape shape({1, 2, 3});
-  auto& alloc = AllocatorManager::Instance().GetArena(CPU);
-  auto data = alloc.Alloc(sizeof(int) * shape.Size());
+  auto alloc = TestCPUExecutionProvider()->GetAllocator();
+  auto data = alloc->Alloc(sizeof(int) * shape.Size());
   EXPECT_TRUE(data);
-  Tensor t1(DataTypeImpl::GetType<int>(), shape, data, alloc.Info());
+  Tensor t1(DataTypeImpl::GetType<int>(), shape, data, alloc->Info());
   Tensor t2 = t1;
   EXPECT_EQ(t2.DataType(), DataTypeImpl::GetType<int>());
   EXPECT_EQ(t2.Shape(), shape);
@@ -150,7 +151,7 @@ TEST(TensorTest, TensorCopyAssignOpTest) {
   EXPECT_EQ(location.type, AllocatorType::kArenaAllocator);
   auto t_data = t2.Data<int>();
   EXPECT_EQ((void*)t_data, data);
-  alloc.Free(data);
+  alloc->Free(data);
 }
 
 TEST(TensorTest, StringTensorTest) {
@@ -158,9 +159,9 @@ TEST(TensorTest, StringTensorTest) {
   std::string* string_ptr = nullptr;
   {
     TensorShape shape({2, 3});
-    auto& alloc = AllocatorManager::Instance().GetArena(CPU);
-    auto buffer = alloc.Alloc(sizeof(std::string) * (shape.Size()));
-    Tensor t(DataTypeImpl::GetType<std::string>(), shape, buffer, alloc.Info(), &alloc);
+    auto alloc = TestCPUExecutionProvider()->GetAllocator();
+    auto buffer = alloc->Alloc(sizeof(std::string) * (shape.Size()));
+    Tensor t(DataTypeImpl::GetType<std::string>(), shape, buffer, alloc->Info(), alloc);
 
     auto& tensor_shape = t.Shape();
     EXPECT_EQ(shape, tensor_shape);

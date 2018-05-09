@@ -35,15 +35,18 @@ class CPUExecutionProvider : public IExecutionProvider {
  public:
   explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info)
       : cpu_transformer_(info.name) {
+    auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
+    auto cpu_allocator_creator = device_factories.find(CPU);
+    if (cpu_allocator_creator != device_factories.end())
+      arena_ = std::move(CreateArena(cpu_allocator_creator->second ));
   }
 
   const LotusIR::GraphTransformer& GetTransformer() const override {
     return cpu_transformer_;
   }
 
-  IArenaAllocator& GetTempSpaceAllocator() override {
-    auto& alloc_mgr = AllocatorManager::Instance();
-    return alloc_mgr.GetArena(CPU);
+  AllocatorPtr GetAllocator() override {
+    return arena_;
   }
 
   Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
@@ -78,5 +81,6 @@ class CPUExecutionProvider : public IExecutionProvider {
 
  private:
   CPUTransformer cpu_transformer_;
+  ArenaPtr arena_;
 };
 }  // namespace Lotus

@@ -136,12 +136,12 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
   std::vector<int64_t> Y_h_dims({num_directions, batch_size, hidden_size});
   Tensor* Y_h = ctx->Output(outputIndex, Y_h_dims);
 
-  auto& info = OpKernel::Allocator();
-  auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
+  AllocatorPtr alloc;
+  LOTUS_RETURN_IF_ERROR(ctx->GetTempSpaceAllocator(&alloc));
 
   // X * W^t, each direction has shape of [seq_length, batch_size, hidden_size]
-  auto x_matmul_data = alloc.Alloc(sizeof(float) * seq_length * batch_size * hidden_size);
-  BufferUniquePtr x_matmul_buffer(x_matmul_data, BufferDeleter(&alloc));
+  auto x_matmul_data = alloc->Alloc(sizeof(float) * seq_length * batch_size * hidden_size);
+  BufferUniquePtr x_matmul_buffer(x_matmul_data, BufferDeleter(alloc));
   float* x_matmul_w_buffer_data = static_cast<float*>(x_matmul_buffer.get());
 
   float* Y_buffer_data;
@@ -150,8 +150,8 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
   if (Y != nullptr)
     Y_buffer_data = Y->MutableData<float>();
   else {
-    Y_data = alloc.Alloc(sizeof(float) * seq_length * num_directions * batch_size * hidden_size);
-    Y_matmul_buffer = BufferUniquePtr(Y_data, BufferDeleter(&alloc));
+    Y_data = alloc->Alloc(sizeof(float) * seq_length * num_directions * batch_size * hidden_size);
+    Y_matmul_buffer = BufferUniquePtr(Y_data, BufferDeleter(alloc));
     Y_buffer_data = static_cast<float*>(Y_matmul_buffer.get());
   }
 

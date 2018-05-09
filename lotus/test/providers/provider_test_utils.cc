@@ -1,12 +1,11 @@
 #include "gmock/gmock.h"
 #include "test/providers/provider_test_utils.h"
-
 #include <exception>
 #include <memory>
 
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
-
+#include "test/framework/TestAllocatorManager.h"
 #ifdef USE_CUDA
 #include "core/providers/cuda/cuda_execution_provider.h"
 #include "core/providers/cuda/cuda_common.h"
@@ -261,13 +260,13 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
         if (provider_name_ == LotusIR::kCudaExecutionProvider) {
           //TODO: remove this workaround once CUDATransform adds copy from GPU, assuming float tensor
           auto& gpu_tensor = mlvalue.Get<Tensor>();
-          auto& cpu_arena = AllocatorManager::Instance().GetArena(CPU);
+          auto cpu_arena = Lotus::Test::AllocatorManager::Instance().GetArena(CPU);
           auto bytes = gpu_tensor.Shape().Size() * gpu_tensor.DataType()->Size();
-          void* p = cpu_arena.Alloc(bytes);
-          Tensor cpu_tensor(gpu_tensor.DataType(), gpu_tensor.Shape(), p, cpu_arena.Info());
+          void* p = cpu_arena->Alloc(bytes);
+          Tensor cpu_tensor(gpu_tensor.DataType(), gpu_tensor.Shape(), p, cpu_arena->Info());
           p_provider->CopyTensor(gpu_tensor, cpu_tensor);
           Check(expected_data, cpu_tensor);
-          cpu_arena.Free(p);
+          cpu_arena->Free(p);
         } else
           Check(expected_data, mlvalue.Get<Tensor>());
       } else {
@@ -290,14 +289,14 @@ void OpTester::AddData(std::vector<Data>& data, const char* name,
 
   //TODO: temporary workaround before CUDA graph transform adds copy node
   on_cpu = on_cpu || (provider_name_ == LotusIR::kCpuExecutionProvider);
-  auto& allocator = AllocatorManager::Instance().GetAllocator(on_cpu ? CPU : CUDA, 0, on_cpu); // use device allocator for CUDA inputs
+  auto allocator = Lotus::Test::AllocatorManager::Instance().GetArena(on_cpu ? CPU : CUDA);
   auto size_in_bytes = valuesCount * sizeof(T);
-  void* buffer = allocator.Alloc(size_in_bytes);
+  void* buffer = allocator->Alloc(size_in_bytes);
   auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
                                       TensorShape(dims),
                                       buffer,
-                                      allocator.Info(),
-                                      &allocator);
+                                      allocator->Info(),
+                                      allocator);
   auto* data_ptr = p_tensor->template MutableData<T>();
 
   if (on_cpu) {

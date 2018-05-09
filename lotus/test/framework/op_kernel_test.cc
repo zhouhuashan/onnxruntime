@@ -22,8 +22,8 @@ class XPUExecutionProvider : public IExecutionProvider {
     return *graph_transformer_;
   }
 
-  IArenaAllocator& GetTempSpaceAllocator() override {
-    return *arena_allocator_;
+  AllocatorPtr GetAllocator() override {
+    return arena_allocator_;
   }
 
   std::string Type() const override {
@@ -48,7 +48,7 @@ class XPUExecutionProvider : public IExecutionProvider {
   }
 
  private:
-  IArenaAllocator* arena_allocator_ = nullptr;
+  AllocatorPtr arena_allocator_ = nullptr;
   GraphTransformer* graph_transformer_ = nullptr;
 };
 

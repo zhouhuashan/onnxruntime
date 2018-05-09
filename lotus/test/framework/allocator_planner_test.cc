@@ -2,9 +2,16 @@
 #include "core/framework/session_state.h"
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
+#include "core/providers/cpu/cpu_execution_provider.h"
 
 namespace Lotus {
 namespace Test {
+
+std::unique_ptr<IExecutionProvider> CreateExecutionProvider() {
+  CPUExecutionProviderInfo info;
+  return std::make_unique<CPUExecutionProvider>(info);
+}
+
 TEST(AllocationPlannerTest, DummyPlannerTest) {
   LotusIR::Model model("test");
   LotusIR::Graph* graph = model.MainGraph();
@@ -34,12 +41,15 @@ TEST(AllocationPlannerTest, DummyPlannerTest) {
   graph->AddInitializedTensor(tensor);
   graph->Resolve();
 
+  auto cpu_xp = CreateExecutionProvider();
   SessionState state;
   state.SetGraph(graph);
   state.AddMLValueNameIdx("X", 0);
   state.AddMLValueNameIdx("W", 1);
   state.AddMLValueNameIdx("B", 2);
   state.AddMLValueNameIdx("Y", 3);
+  std::string provider_type = cpu_xp->Type();
+  state.AddExecutionProvider(provider_type, std::move(cpu_xp));
 
   SequentialExecutionPlan dummy_plan;
   auto status = SimpleAllocationPlanner::CreatePlan(state, &dummy_plan);

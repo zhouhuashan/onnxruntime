@@ -173,8 +173,11 @@ class OpKernelContext {
     return static_cast<int>(kernel_->Node().OutputDefs().size());
   }
 
-  const AllocatorInfo& GetAllocatorInfo() const {
-    return kernel_->Allocator();
+  Status GetTempSpaceAllocator(AllocatorPtr* output) const {
+    *output = execution_frame_->GetArena(kernel_->Allocator());
+    if (!*output)
+      return Status(LOTUS, FAIL, "TempSpace allocator not found");
+    return Status::OK();
   }
 
  private:

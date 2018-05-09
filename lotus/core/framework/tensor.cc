@@ -7,7 +7,7 @@ Tensor::Tensor(MLDataType p_type,
                const TensorShape& shape,
                BufferNakedPtr p_data,
                const AllocatorInfo& alloc,
-               IAllocator* deleter,
+               AllocatorPtr deleter,
                const int64_t offset)
     : alloc_info_(alloc) {
   Init(p_type, shape, p_data, alloc, deleter, offset);
@@ -17,7 +17,7 @@ void Tensor::Init(MLDataType p_type,
                   const TensorShape& shape,
                   void* p_raw_data,
                   const AllocatorInfo& alloc,
-                  IAllocator* deleter,
+                  AllocatorPtr deleter,
                   const int64_t offset) {
   dtype_ = p_type;
   shape_ = shape;

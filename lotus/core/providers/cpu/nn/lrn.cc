@@ -37,18 +37,18 @@ Status LRN<float>::Compute(OpKernelContext* context) const {
   const float* Xdata = X->template Data<float>();
   float* Ydata = Y->template MutableData<float>();
 
-  auto& info = OpKernel::Allocator();
-  auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
+  AllocatorPtr alloc;
+  LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
 
   const int Xsize = gsl::narrow_cast<int>(X->Shape().Size());
-  auto sdata = alloc.Alloc(sizeof(float) * Xsize);
-  BufferUniquePtr scale_buffer(sdata, BufferDeleter(&alloc));
+  auto sdata = alloc->Alloc(sizeof(float) * Xsize);
+  BufferUniquePtr scale_buffer(sdata, BufferDeleter(alloc));
   float* scale_data = static_cast<float*>(scale_buffer.get());
   Math::Set<float, CPUMathUtil>(Xsize, bias_, scale_data, &CPUMathUtil::Instance());
 
   const size_t padded_square_size = (C + size_ - 1) * H * W;
-  auto psdata = alloc.Alloc(sizeof(float) * padded_square_size);
-  BufferUniquePtr padded_square_buffer(psdata, BufferDeleter(&alloc));
+  auto psdata = alloc->Alloc(sizeof(float) * padded_square_size);
+  BufferUniquePtr padded_square_buffer(psdata, BufferDeleter(alloc));
   float* padded_square_data = static_cast<float*>(padded_square_buffer.get());
   Math::Set<float, CPUMathUtil>(padded_square_size, 0.0f, padded_square_data, &CPUMathUtil::Instance());
 

@@ -25,6 +25,10 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
     : transformer_(info.name), device_id_(info.device_id), cublas_handle_(nullptr) {
   CUDA_CALL_THROW(cudaSetDevice(device_id_));
   CUBLAS_CALL_THROW(cublasCreate(&cublas_handle_));
+  auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
+  auto cuda_allocator_creator = device_factories.find(CUDA);
+  if (cuda_allocator_creator != device_factories.end())
+    arena_ = CreateArena(cuda_allocator_creator->second);
 }
 
 Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) {

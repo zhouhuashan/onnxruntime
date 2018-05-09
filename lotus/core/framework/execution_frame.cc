@@ -12,7 +12,6 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
                                const Lotus::SessionState& session_state)
     : session_state_(session_state), mem_patterns_(nullptr), planner_(nullptr) {
   Init(session_state.GetGraph(), feeds, output_names, fetches);
-  InitArenas();
 
   // If the session enable memory pattern optimization
   // and we have execution plan generated, try to setup
@@ -41,9 +40,8 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
         // all the internal kernel's input/output tensors will be allocated on these buffer.
         for (int i = 0; i < mem_patterns_->locations.size(); i++) {
           LOTUS_ENFORCE(buffers_.find(mem_patterns_->locations[i]) == buffers_.end());
-          ArenaPtr alloc = GetArena(mem_patterns_->locations[i]);
-          //use Reserve to reserve a big chunk. This chunk could be unload when session closed.
-          void* buffer = alloc->Reserve(mem_patterns_->patterns[i].peak_size());
+          AllocatorPtr alloc = GetArena(mem_patterns_->locations[i]);
+          void* buffer = alloc->Alloc(mem_patterns_->patterns[i].peak_size());
           buffers_[mem_patterns_->locations[i]] = BufferUniquePtr(buffer, alloc);
         }
       }
@@ -100,7 +98,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
     }
   }
   //no memory pattern, or the pattern is not correct.
-  void* buffer = alloc->Reserve(size);
+  void* buffer = alloc->Alloc(size);
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
                                                               shape,
                                                               buffer,
@@ -360,22 +358,8 @@ Status ExecutionFrame::GeneratePatterns(MemoryPatternGroup* out) const {
   return planner_->GeneratePatterns(out);
 }
 
-void ExecutionFrame::InitArenas() {
-  auto& alloc_mgr = AllocatorManager::Instance();
-
-  // always have CPU arena allocator in execution frame
-  std::set<AllocatorInfo> allocators_in_use = {alloc_mgr.GetArena(CPU).Info()};
-
-  // The session may not have execution plan in tests
-  auto p_exec_plan = session_state_.GetExecutionPlan();
-  if (p_exec_plan)
-    for (const auto& alloc_plan : p_exec_plan->allocation_plan)
-      allocators_in_use.insert(alloc_plan.location);
-
-  for (const auto& info : allocators_in_use) {
-    if (info.type == AllocatorType::kArenaAllocator)
-      arenas_.push_back(&alloc_mgr.GetArena(info.name, info.id));
-  }
+AllocatorPtr ExecutionFrame::GetArena(const AllocatorInfo& info) {
+  return session_state_.GetAllocator(info);
 }
 
 }  // namespace Lotus

@@ -57,25 +57,6 @@ class ExecutionFrame {
  public:
   typedef MLValue* NodeArgValue;
 
-  // For arena management design, we could have two options:
-  // 1. For each device, arena is global in the entire Process,
-  //    like all the infer session shared the same cpu arena.
-  //    The benefit is it gives us protential to share memory
-  //    between different session/request, but will pay the cost
-  //    for locking in concurrency.
-  // 2. Each executor will host its own arena, after memory planning
-  //    we could allocate more efficient with no locking. But the
-  //    peak working set memory usage will equal to arenas used by
-  //    all concurrent requests. And we might need Arena to have
-  //    different strategy for different graph to address it.
-  // No matter which approach we chose, we definitly need to hold
-  // Arena in execution frame, the question is should arena owned
-  // by execution frame or not. That's why we make this typedef here.
-  // Right now the milestone1 implementation goes with option 1.
-  // So I make it naked ptr here. Once we finished option 2 and got
-  // better result, we can replace this part with something like unique_ptr.
-  typedef IArenaAllocator* ArenaPtr;
-
   ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                  const std::vector<std::string>& output_names,
                  const std::vector<MLValue>& fetches,
@@ -145,13 +126,7 @@ class ExecutionFrame {
     return all_values_[node_values_[index]].GetMutable<T>();
   }
 
-  ArenaPtr GetArena(const AllocatorInfo& info) {
-    for (auto arena : arenas_) {
-      if (arena->Info() == info)
-        return arena;
-    }
-    return nullptr;
-  }
+  AllocatorPtr GetArena(const AllocatorInfo& info);
 
   void ReleaseMLValue(int mlvalue_idx) {
     LOTUS_ENFORCE(mlvalue_idx >= 0 || mlvalue_idx < all_values_.size());
@@ -221,8 +196,6 @@ class ExecutionFrame {
     }
   }
 
-  void InitArenas();
-
   void TraceAllocate(int mlvalue_idx, size_t size);
 
   void TraceFree(int mlvalue_idx);
@@ -243,15 +216,6 @@ class ExecutionFrame {
 
   // i-th kernel is still waiting for pending_counts_[i] inputs.
   std::vector<int> pending_counts_;  // not used currently
-
-  // The arenas used for current execution
-  // Like mentioned in comments above, we could have two approach:
-  // Arena owned by global allocator manager, or arena owned by
-  // Execution frame. Currently we are implment by global arena approach
-  // So here is a list of raw pointer and execution frame don't need
-  // release them. If we switch to another approach later, we should
-  // define ArenaPtr as unique_ptr here.
-  vector<ArenaPtr> arenas_;
 
   std::unordered_map<string, int> value_name_to_index_;
 

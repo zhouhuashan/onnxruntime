@@ -78,11 +78,11 @@ OpKernelInfoWrapper::OpKernelInfoWrapper(const OpKernelInfo* kernelInfo) {
   impl_ = kernelInfo;
 }
 
-ML_API_IMP(OpKernelInfoWrapper::GetAttributeElementCount)(
+ML_API_IMP(OpKernelInfoWrapper::GetAttributeElementCount)
+(
     MLAttributeType type,
     const char* name,
     uint32_t* element_count) const noexcept {
-
   *element_count = 0;
 
   try {
@@ -111,7 +111,8 @@ MLStatus OpKernelInfoWrapper::GetAttributeArrayHelper(
   return MLStatus::OK;
 }
 
-ML_API_IMP(OpKernelInfoWrapper::GetAttribute)(
+ML_API_IMP(OpKernelInfoWrapper::GetAttribute)
+(
     const char* name,
     MLAttributeType type,
     uint32_t element_count,
@@ -164,7 +165,8 @@ const std::string* OpKernelInfoWrapper::GetStringAttribute(
   }
 }
 
-ML_API_IMP(OpKernelInfoWrapper::GetStringAttributeElementLength)(
+ML_API_IMP(OpKernelInfoWrapper::GetStringAttributeElementLength)
+(
     const char* name,
     uint32_t element_index,
     uint32_t* attribute_element_length) const noexcept {
@@ -187,7 +189,8 @@ ML_API_IMP(OpKernelInfoWrapper::GetStringAttributeElementLength)(
   return MLStatus::OK;
 }
 
-ML_API_IMP(OpKernelInfoWrapper::GetStringAttributeElement)(
+ML_API_IMP(OpKernelInfoWrapper::GetStringAttributeElement)
+(
     const char* name,
     uint32_t element_index,
     uint32_t attributeElementSize,
@@ -218,7 +221,8 @@ MLStatus OpKernelInfoWrapper::GetAttributeHelper(
   return ToABIStatus(impl_->GetAttr<typename MLAttributeTypeTraits<T>::Type>(name, static_cast<elementType_t*>(value)));
 }
 
-ML_API_IMP_(const void*, OpKernelInfoWrapper::GetExecutionHandle)() const noexcept {
+ML_API_IMP_(const void*, OpKernelInfoWrapper::GetExecutionHandle)
+() const noexcept {
   const IExecutionProvider* executionProvider = impl_->GetExecutionProvider();
   return executionProvider->GetExecutionHandle();
 }
@@ -226,7 +230,8 @@ ML_API_IMP_(const void*, OpKernelInfoWrapper::GetExecutionHandle)() const noexce
 TensorWrapper::TensorWrapper(Tensor* impl) : impl_(impl) {
 }
 
-ML_API_IMP(TensorWrapper::GetDimensionCount)(uint32_t* dimensions) const {
+ML_API_IMP(TensorWrapper::GetDimensionCount)
+(uint32_t* dimensions) const {
   try {
     *dimensions = static_cast<uint32_t>(impl_->Shape().NumDimensions());
   } catch (const MLStatusException& ex) {
@@ -398,10 +403,10 @@ ML_API_IMP(OpKernelContextWrapper::AllocateTemporaryData)
 (uint64_t size, void** data) const {
   try {
     *data = nullptr;
-    auto& info = impl_->GetAllocatorInfo();
-    auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
+    AllocatorPtr alloc;
+    ML_CHECK_STATUS(ToABIStatus(impl_->GetTempSpaceAllocator(&alloc)));
 
-    *data = alloc.Alloc(size);
+    *data = alloc->Alloc(size);
 
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
@@ -414,10 +419,10 @@ ML_API_IMP(OpKernelContextWrapper::AllocateTemporaryData)
 ML_API_IMP(OpKernelContextWrapper::FreeTemporaryData)
 (void* data) const {
   try {
-    auto& info = impl_->GetAllocatorInfo();
-    auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
+    AllocatorPtr alloc;
+    ML_CHECK_STATUS(ToABIStatus(impl_->GetTempSpaceAllocator(&alloc)));
     if (data) {
-      alloc.Free(data);
+      alloc->Free(data);
     }
 
     return MLStatus::OK;

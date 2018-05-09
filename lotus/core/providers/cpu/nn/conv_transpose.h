@@ -103,10 +103,11 @@ class ConvTranspose : public ConvBase {
     const int64_t input_image_size = H * W;
     const int64_t output_image_size = Y_dims[2] * Y_dims[3];
 
-    auto& info = OpKernel::Allocator();
-    auto& alloc = AllocatorManager::Instance().GetArena(info.name, info.id);
-    auto col_data = alloc.Alloc(sizeof(T) * kernel_dim * H * W);
-    BufferUniquePtr col_buffer(col_data, BufferDeleter(&alloc));
+	AllocatorPtr alloc;
+	LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
+
+    auto col_data = alloc->Alloc(sizeof(T) * kernel_dim * H * W);
+    BufferUniquePtr col_buffer(col_data, BufferDeleter(alloc));
     T* col_buffer_data = static_cast<T*>(col_buffer.get());
 
     const T* Xdata = X->template Data<T>();

@@ -6,7 +6,7 @@
 #include "IFinishCallback.h"
 #include <core/framework/inference_session.h>
 #include <core/common/common.h>
-#include <core/framework/allocatormgr.h>
+#include "test/framework/TestAllocatorManager.h"
 
 class TestEnv {
  public:
@@ -15,7 +15,7 @@ class TestEnv {
   TestResultStat& stat;
   const Lotus::AllocationPlannerType planner;
   std::unique_ptr<IFinishCallback> finished;
-  Lotus::AllocatorManager& allocatorManager;
+  Lotus::Test::AllocatorManager& allocatorManager;
   TestEnv(const std::vector<TestCaseInfo>& tests1, TestResultStat& stat1, Lotus::AllocationPlannerType planner1);
 
  private:

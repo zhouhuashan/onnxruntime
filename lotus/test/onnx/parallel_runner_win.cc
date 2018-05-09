@@ -7,7 +7,7 @@ using std::experimental::filesystem::v1::path;
 extern std::vector<onnx::TensorProto> LoadTensors(const std::vector<path>& pb_files);
 extern EXECUTE_RESULT ExecuteModelWithProtobufs(Lotus::InferenceSession& sess, const std::vector<onnx::TensorProto>& input_pbs,
                                                 const std::vector<onnx::TensorProto>& output_pbs, const char* test_case_name,
-                                                const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, Lotus::AllocatorManager& allocatorManager);
+                                                const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, Lotus::Test::AllocatorManager& allocatorManager);
 
 namespace {
 struct TestCaseTask {

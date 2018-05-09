@@ -20,8 +20,6 @@ Status Environment::Initialize() {
 
     // TODO: Should register microsoft domain kernels here.
 
-    // LotusDeviceManager
-    status = AllocatorManager::Create(allocation_manager_);
   } catch (std::exception& ex) {
     status = Status{LOTUS, StatusCode::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
   } catch (...) {

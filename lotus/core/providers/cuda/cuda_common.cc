@@ -93,12 +93,4 @@ cublasHandle_t CudaKernel::CublasHandle() const {
   return provider_->CublasHandle();
 }
 
-void* CudaKernel::Allocate(size_t size) const {
-  return provider_->GetTempSpaceAllocator().Alloc(size);
-}
-
-void CudaKernel::Free(void* p) const {
-  provider_->GetTempSpaceAllocator().Free(p);
-}
-
 }  // namespace Lotus

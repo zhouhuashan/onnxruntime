@@ -25,12 +25,14 @@ class IArenaAllocator : public IAllocator {
   // allocate host pinned memory?
 };
 
+using ArenaPtr = std::shared_ptr<IArenaAllocator>;
+
 // Dummy Arena which just call underline device allocator directly.
 class DummyArena : public IArenaAllocator {
  public:
-  DummyArena(IDeviceAllocator* resource_allocator)
-      : allocator_(resource_allocator),
-        info_(resource_allocator->Info().name, AllocatorType::kArenaAllocator, resource_allocator->Info().id) {
+  DummyArena(std::unique_ptr<IDeviceAllocator> resource_allocator)
+      : allocator_(std::move(resource_allocator)),
+        info_(allocator_->Info().name, AllocatorType::kArenaAllocator, allocator_->Info().id) {
   }
 
   virtual ~DummyArena() {}
@@ -62,7 +64,7 @@ class DummyArena : public IArenaAllocator {
   }
 
  private:
-  IDeviceAllocator* allocator_;
+  std::unique_ptr<IDeviceAllocator> allocator_;
   AllocatorInfo info_;
 };
 }  // namespace Lotus

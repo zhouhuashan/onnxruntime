@@ -28,23 +28,24 @@ std::vector<int64_t> GetTensorShapeFromTensorShapeProto(const onnx::TensorShapeP
 template <typename T>
 static Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
                                                      const TensorShape& tensor_shape,
-                                                     std::unique_ptr<Tensor>* p_tensor, IAllocator& alloc) {
+                                                     std::unique_ptr<Tensor>* p_tensor,
+                                                     AllocatorPtr alloc) {
   // TODO how should the buffer for this tensor be allocated? for now assuming CPU allocator
   size_t tensor_size = tensor_shape.Size();
   size_t size_to_allocate = sizeof(T) * tensor_size;
-  T* p_data = static_cast<T*>(alloc.Alloc(size_to_allocate));
+  T* p_data = static_cast<T*>(alloc->Alloc(size_to_allocate));
   // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
                              tensor_shape,
                              static_cast<void*>(p_data),
-                             alloc.Info(),
-                             &alloc));
+                             alloc->Info(),
+                             alloc));
 
   return Common::Status::OK();
 }
 
-Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor, IAllocator& allocator) {
+Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor, AllocatorPtr allocator) {
   vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
 
   // Note: We permit an empty tensor_shape_vec, and treat it as a scalar (a tensor of size 1).
