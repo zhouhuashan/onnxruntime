@@ -471,7 +471,7 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
       for (size_t i = 0; i != datasets; ++i) {
         std::vector<onnx::TensorProto> input_pbs = LoadTensors(info.input_pb_files[i]);
         std::vector<onnx::TensorProto> output_pbs = LoadTensors(info.output_pb_files[i]);
-        ret.excution_result[i] = ExecuteModelWithProtobufs(*session_object, input_pbs, output_pbs, info.test_case_name.c_str(), model_pb.graph().input(), env.allocatorManager);
+        ret.excution_result.push_back(ExecuteModelWithProtobufs(*session_object, input_pbs, output_pbs, info.test_case_name.c_str(), model_pb.graph().input(), env.allocatorManager));
       }
       goto end;
     }

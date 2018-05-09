@@ -43,9 +43,10 @@ class PosixEnv : public Env {
     return default_env;
   }
 
-  //TODO: implement this
   virtual int GetNumCpuCores() override {
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    // TODO if you need the number of physical cores you'll need to parse
+    // /proc/cpuinfo and grep for "cpu cores".
+    return std::thread::hardware_concurrency();
   }
 
   void SleepForMicroseconds(int64 micros) override {
