@@ -3,22 +3,25 @@
 /**
 https://github.com/onnx/onnx/blob/master/onnx/defs/traditionalml/defs.cc
 ONNX_OPERATOR_SCHEMA(ArrayFeatureExtractor)
-.SetDomain("ai.onnx.ml")
-.SetDoc(R"DOC(
-Select a subset of the data based on the indices passed.
+    .SetDomain("ai.onnx.ml")
+    .SetDoc(R"DOC(
+    Select a subset of the data X based on the indices provided Y.
 )DOC")
-.Input(0, "X", "Data to be selected", "T1")
-.Input(1, "Y", "The index values to select as a tensor of int64s", "T2")
-.Output(0, "Z", "Selected output data as an array", "T1")
-.TypeConstraint(
-"T1",
-{ "tensor(float)",
-"tensor(double)",
-"tensor(int64)",
-"tensor(int32)",
-"tensor(string)" },
-" allowed types.")
-.TypeConstraint("T2", { "tensor(int64)" }, " Index value types .");
+    .Input(0, "X", "Data to be selected", "T")
+    .Input(
+        1,
+        "Y",
+        "The index values to select as a int64 tensor",
+        "tensor(int64)")
+    .Output(0, "Z", "Selected output data as an array", "T")
+    .TypeConstraint(
+        "T",
+        {"tensor(float)",
+         "tensor(double)",
+         "tensor(int64)",
+         "tensor(int32)",
+         "tensor(string)"},
+        "allowed types.");
 */
 
 namespace Lotus {
@@ -27,8 +30,12 @@ REGISTER_KERNEL(KernelDefBuilder("ArrayFeatureExtractor")
                     .Domain(LotusIR::kMLDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("T2", DataTypeImpl::GetTensorType<int64_t>()),
+                    .TypeConstraint("T", std::vector<MLDataType>{
+                                             DataTypeImpl::GetTensorType<float>(),
+                                             DataTypeImpl::GetTensorType<double>(),
+                                             DataTypeImpl::GetTensorType<int64_t>(),
+                                             DataTypeImpl::GetTensorType<int32_t>(),
+                                             DataTypeImpl::GetTensorType<std::string>()}),
                 ArrayFeatureExtractorOp<float>);
 
 template <typename T>

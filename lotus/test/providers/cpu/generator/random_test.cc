@@ -49,12 +49,12 @@ void RunRandomNormalLike3DFloat(bool infer_dtype = false) {
   if (!infer_dtype)
     test.AddAttribute<int64_t>("dtype", TensorProto::FLOAT);
 
-  test.AddInput<int32_t>("X", dims,
-                         {0, 0, 0,
-                          0, 0, 0,
+  test.AddInput<float>("X", dims,
+                       {0.f, 0.f, 0.f,
+                        0.f, 0.f, 0.f,
 
-                          0, 0, 0,
-                          0, 0, 0});
+                        0.f, 0.f, 0.f,
+                        0.f, 0.f, 0.f});
 
   std::default_random_engine generator{gsl::narrow_cast<uint32_t>(seed)};
   std::normal_distribution<float> distribution{mean, scale};
@@ -65,8 +65,13 @@ void RunRandomNormalLike3DFloat(bool infer_dtype = false) {
 
   test.AddOutput<float>("Y", dims, expected_output);
 
-  test.Run();
+  if (infer_dtype) {
+    // this isn't properly supported yet, so validate it breaks as expected
+    ExpectThrow<LotusException>(test, "Value of attribute 'dtype' not specified in node");
+  } else
+    test.Run();
 }
+
 TEST(Random, RandomNormalLike3DDouble) {
   RunRandomNormalLike3DFloat();
 }
@@ -119,9 +124,9 @@ void RunRandomUniformLikeTest(bool infer_dtype = false) {
   if (!infer_dtype)
     test.AddAttribute<int64_t>("dtype", TensorProto::DOUBLE);
 
-  test.AddInput<int32_t>("X", dims,
-                         {0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 0, 0});
+  test.AddInput<double>("X", dims,
+                        {0., 0., 0., 0., 0., 0.,
+                         0., 0., 0., 0., 0., 0.});
 
   std::default_random_engine generator{gsl::narrow_cast<uint32_t>(seed)};
   std::uniform_real_distribution<double> distribution{low, high};

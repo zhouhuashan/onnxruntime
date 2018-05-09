@@ -29,18 +29,20 @@ REGISTER_KERNEL(KernelDefBuilder("RandomNormalLike")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", std::vector<MLDataType>{
-                                             DataTypeImpl::GetTensorType<float>(),
-                                             DataTypeImpl::GetTensorType<double>()}),
+                    .TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
+                    .TypeConstraint("T2", std::vector<MLDataType>{
+                                              DataTypeImpl::GetTensorType<float>(),
+                                              DataTypeImpl::GetTensorType<double>()}),
                 RandomNormalLike);
 
 REGISTER_KERNEL(KernelDefBuilder("RandomUniformLike")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", std::vector<MLDataType>{
-                                             DataTypeImpl::GetTensorType<float>(),
-                                             DataTypeImpl::GetTensorType<double>()}),
+                    .TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
+                    .TypeConstraint("T2", std::vector<MLDataType>{
+                                              DataTypeImpl::GetTensorType<float>(),
+                                              DataTypeImpl::GetTensorType<double>()}),
                 RandomUniformLike);
 
 template <typename T, typename TDistribution>
