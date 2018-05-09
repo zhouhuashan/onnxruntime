@@ -146,8 +146,6 @@ class IMLOpKernel {
  public:
   ML_API_(void, Release)() noexcept = 0;
 
-  ML_API(Initialize)(const IMLOpKernelInfo* info) noexcept = 0;
-
   // Allocates and computes the outputs of the kernel.  The same IMLOpKernelInfo
   // is provided as to the Initialize method.  Tensors within the input and output
   // arrays have fully packed strides and have NCHW channel ordering.

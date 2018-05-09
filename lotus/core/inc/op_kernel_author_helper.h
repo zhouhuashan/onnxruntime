@@ -11,12 +11,7 @@
 #include <vector>
 #include <memory>
 
-#ifdef __cpp_lib_string_view
-#include <string_view>
-typdef const std::string_view& MLConstStringParam;
-#else
-typedef const char * MLConstStringParam;
-#endif
+typedef const char* MLConstStringParam;
 
 class MLOpKernelContext;
 
@@ -38,14 +33,14 @@ class MLStatusException : public std::exception {
   MLStatus status_;
 };
 
-#define ML_CHECK_STATUS(x)           \
+#define ML_CHECK_STATUS(x)        \
   {                               \
     if ((x) != MLStatus::OK) {    \
       throw MLStatusException(x); \
     }                             \
   }
 
-#define ML_CHECK_BOOL(x)                          \
+#define ML_CHECK_BOOL(x)                       \
   {                                            \
     if ((x) == false) {                        \
       throw MLStatusException(MLStatus::FAIL); \
@@ -122,6 +117,12 @@ struct MLTypeTraits<uint64_t> {
 class MLOpKernelInfo {
  public:
   MLOpKernelInfo(const IMLOpKernelInfo* impl) : impl_(impl) {}
+
+  // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
+  const IMLOpKernelInfo* GetInterface() const noexcept
+  {
+    return impl_;
+  }
 
   uint32_t GetAttributeElementCount(
       MLAttributeType type, MLConstStringParam name) const {
@@ -206,6 +207,23 @@ class MLOpTensor {
  public:
   MLOpTensor(IMLOpTensor* impl) : impl_(impl) {}
 
+  // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
+  const IMLOpTensor* GetInterface() const noexcept
+  {
+    return impl_;
+  }
+
+  IMLOpTensor* GetInterface() noexcept
+  {
+    return impl_;
+  }
+
+  // Need default constructor for usage in STL containers.
+  MLOpTensor() = default;
+  MLOpTensor(const MLOpTensor&) = default;
+  MLOpTensor(MLOpTensor&&) = default;
+  MLOpTensor& operator=(const MLOpTensor&) = default;
+
   uint32_t GetDimensionCount() const {
     uint32_t dimension_count = 0;
 
@@ -235,6 +253,8 @@ class MLOpTensor {
     return impl_->IsDataHandle();
   }
 
+  // Return data as an explicitly typed array, verifying the requested type
+  // is the actual data type in the tensor.
   template <typename T>
   T* GetData() {
     ML_CHECK_BOOL(GetTensorDataType() == MLTypeTraits<T>::TensorType);
@@ -249,6 +269,20 @@ class MLOpTensor {
     ML_CHECK_BOOL(!IsDataHandle());
 
     return static_cast<const T*>(impl_->GetData());
+  }
+
+  // Return as raw bytes, regardless of underlying type, which is useful when
+  // needing to agnostically copy memory.
+  const void* GetByteData() const {
+    ML_CHECK_BOOL(!IsDataHandle());
+
+    return impl_->GetData();
+  }
+
+  void* GetByteData() {
+    ML_CHECK_BOOL(!IsDataHandle());
+
+    return impl_->GetData();
   }
 
   void* GetDataHandle() {
@@ -286,6 +320,21 @@ typedef std::unique_ptr<void, MLTemporaryDataDeleter> MLTemporaryDataUniquePtr;
 class MLOpKernelContext {
  public:
   MLOpKernelContext(IMLOpKernelContext* impl) : impl_(impl) {}
+
+  // Retrieve the underlying ABI compatible interface from the wrapper, for cases of interop
+  // between components or different DLLs where the caller needs to pass the unwrapped class
+  // across a boundary. e.g. Operator implementations may use the helper classes so that
+  // they can use exceptions without checking every return value, but then they need to pass
+  // results onward to a different component which expects the lower level currency.
+  IMLOpKernelContext* GetInterface() noexcept
+  {
+    return impl_;
+  }
+
+  const IMLOpKernelContext* GetInterface() const noexcept
+  {
+    return impl_;
+  }
 
   MLEdgeType GetInputEdgeType(uint32_t input_index) const {
     MLEdgeType edge_type;
@@ -344,9 +393,20 @@ inline void MLTemporaryDataDeleter::operator()(void* p) const {
 // implementation type. This class converts ABI types to wrappers,
 // supports STL / GSL types, and converts exceptions to return values.
 template <class T>
-class MLOpKernel : public IMLOpKernel {
+class MLOpKernel : public IMLOpKernel, public T {
  public:
-  MLOpKernel() {
+  static ML_API_IMP(CreateInstance)(const IMLOpKernelInfo& info, IMLOpKernel** opKernel) noexcept {
+    try {
+      *opKernel = new MLOpKernel(MLOpKernelInfo(&info));
+      return MLStatus::OK;
+    } catch (const MLStatusException& ex) {
+      return ex.GetStatus();
+    } catch (const std::exception& /*ex*/) {
+      return MLStatus::FAIL;
+    }
+  }
+
+  MLOpKernel(const MLOpKernelInfo& info) : T(info) {
   }
 
   virtual ~MLOpKernel() {
@@ -356,22 +416,11 @@ class MLOpKernel : public IMLOpKernel {
     delete this;
   }
 
-  ML_API_IMP(Initialize)(const IMLOpKernelInfo* info) noexcept override {
-    try {
-      _impl = std::make_unique<T>(MLOpKernelInfo(info));
-      return MLStatus::OK;
-    } catch (const MLStatusException& ex) {
-      return ex.GetStatus();
-    } catch (const std::exception& /*ex*/) {
-      return MLStatus::FAIL;
-    }
-  }
-
   ML_API_IMP(Compute)(
       const IMLOpKernelInfo* info,
       IMLOpKernelContext* context) noexcept override {
     try {
-      _impl->Compute(
+      T::Compute(
           MLOpKernelInfo(info),
           MLOpKernelContext(context));
 
@@ -383,6 +432,5 @@ class MLOpKernel : public IMLOpKernel {
     }
   }
 
- protected:
-  std::unique_ptr<T> _impl;
+  using T::Compute;
 };

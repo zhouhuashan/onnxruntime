@@ -190,7 +190,6 @@ class OpKernelContext {
 };
 
 typedef OpKernel* (*KernelCreateFn)(const OpKernelInfo& info);
-typedef IMLOpKernel* (*IMLOpKernelCreateFn)();
 
 class KernelRegistry {
  public:
@@ -253,21 +252,5 @@ class KernelRegistry {
       KernelRegistry::Instance().Register(                             \
           kernel_def_builder,                                          \
           [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); })
-
-#define REGISTER_ABI_KERNEL(kernel_def_builder, ...) \
-  REGISTER_ABI_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def_builder, __VA_ARGS__)
-
-#define REGISTER_ABI_KERNEL_UNIQ_HELPER(counter, kernel_def_builder, ...) \
-  REGISTER_ABI_KERNEL_UNIQ(counter, kernel_def_builder, __VA_ARGS__)
-
-#define REGISTER_ABI_KERNEL_UNIQ(counter, kernel_def_builder, ...)                                  \
-  static Lotus::Common::Status kernel_def_builder_##counter##_status =                              \
-      KernelRegistry::Instance().Register(                                                          \
-          kernel_def_builder,                                                                       \
-          [](const OpKernelInfo& info)                                                              \
-              -> OpKernel* {                                                                        \
-            auto create_op_kernel = []() -> IMLOpKernel* { return new MLOpKernel<__VA_ARGS__>(); }; \
-            return new AbiOpKernel(create_op_kernel, info);                                         \
-          });
 
 }  // namespace Lotus

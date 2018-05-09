@@ -433,9 +433,9 @@ ML_API_IMP(OpKernelContextWrapper::FreeTemporaryData)
   }
 }
 
-AbiOpKernel::AbiOpKernel(IMLOpKernelCreateFn create_function, const OpKernelInfo& kernelInfo) : OpKernel(kernelInfo), impl_(create_function()) {
+AbiOpKernel::AbiOpKernel(IMLOpKernelCreateFn create_function, const OpKernelInfo& kernelInfo) : OpKernel(kernelInfo) {
   OpKernelInfoWrapper kernelInfoWrapper(&op_kernel_info_);
-  ML_CHECK_STATUS(impl_->Initialize(&kernelInfoWrapper));
+  ML_CHECK_STATUS(create_function(kernelInfoWrapper, &impl_));
 }
 
 AbiOpKernel::~AbiOpKernel() {

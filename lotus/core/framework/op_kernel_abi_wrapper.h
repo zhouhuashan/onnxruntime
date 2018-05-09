@@ -9,6 +9,8 @@
 
 namespace Lotus {
 
+typedef MLStatus (*IMLOpKernelCreateFn)(const IMLOpKernelInfo& kernelInfo, IMLOpKernel** opKernel);
+
 class OpKernelInfoWrapper : public IMLOpKernelInfo {
  public:
   OpKernelInfoWrapper(const OpKernelInfo* kernelInfo);

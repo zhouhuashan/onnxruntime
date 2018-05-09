@@ -7,12 +7,16 @@ namespace Lotus {
 
 using namespace Lotus::Common;
 
+std::once_flag schemaRegistrationOnceFlag;
+
 Status Environment::Initialize() {
   auto status = Status::OK();
 
   try {
     // Register Microsoft domain with min/max op_set version as 1/1.
-    onnx::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(LotusIR::kMSDomain, 1, 1);
+    std::call_once(schemaRegistrationOnceFlag, []() {
+      onnx::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(LotusIR::kMSDomain, 1, 1);
+    });
 
     // Register Microsoft domain ops.
     status = LotusIR::MsOpRegistry::RegisterMsOps();
