@@ -33,7 +33,7 @@ function(AddTest)
   if (_UT_DEPENDS)
     add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   endif(_UT_DEPENDS)
-  target_include_directories(${_UT_TARGET} PUBLIC ${googletest_INCLUDE_DIRS} ${lotusIR_graph_header})
+    
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
   
   if (WIN32)
@@ -93,6 +93,7 @@ AddTest(
     TARGET lotus_test_common
     SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
     LIBS ${lotus_test_common_libs}
+    DEPENDS gtest gmock 
 )
 
 set(lotus_test_ir_libs
@@ -113,7 +114,7 @@ AddTest(
     TARGET lotus_test_ir
     SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
     LIBS ${lotus_test_ir_libs}
-    DEPENDS lotusIR_graph
+    DEPENDS lotusIR_graph gtest gmock
 )
 
 set(lotus_test_framework_libs
@@ -154,7 +155,7 @@ AddTest(
     SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
     # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
-    DEPENDS lotus_framework lotus_providers
+    DEPENDS lotus_framework lotus_providers gtest gmock
 )
 
 set(lotus_test_providers_libs
@@ -201,7 +202,7 @@ AddTest(
     TARGET lotus_test_providers
     SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
     LIBS ${lotus_test_providers_libs}
-    DEPENDS ${lotus_test_provides_dependencies}
+    DEPENDS ${lotus_test_provides_dependencies} gtest gmock
 )
 
 #
