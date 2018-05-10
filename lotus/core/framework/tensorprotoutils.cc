@@ -30,11 +30,12 @@ static Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_p
                                                      const TensorShape& tensor_shape,
                                                      std::unique_ptr<Tensor>* p_tensor,
                                                      AllocatorPtr alloc) {
-  // TODO how should the buffer for this tensor be allocated? for now assuming CPU allocator
-  size_t tensor_size = tensor_shape.Size();
-  size_t size_to_allocate = sizeof(T) * tensor_size;
-  T* p_data = static_cast<T*>(alloc->Alloc(size_to_allocate));
-  // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
+  int64_t tensor_size = tensor_shape.Size();
+  if (tensor_size < 0) {
+    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+  }
+  int64_t size_to_allocate = static_cast<int64_t>(sizeof(T)) * tensor_size;
+  T* p_data = static_cast<T*>(alloc->Alloc(gsl::narrow_cast<size_t>(size_to_allocate)));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
                              tensor_shape,

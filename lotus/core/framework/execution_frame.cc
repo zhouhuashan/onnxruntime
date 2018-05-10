@@ -66,7 +66,14 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
     return Status::OK();
   }
   auto alloc = GetArena(location);
-  auto size = element_type->Size() * shape.Size();
+
+  int64_t len = shape.Size();
+  if (len < 0) {
+    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+  }
+  len *= element_type->Size();
+  //safety check for 32 bits systems
+  size_t size = gsl::narrow_cast<size_t>(len);
 
   // if we have pre-calcuated memory pattern, and the mlvalue is not output mlvalue
   // try to alloacted on pre-allocated big chunk.
