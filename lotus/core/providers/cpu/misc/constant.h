@@ -6,14 +6,10 @@
 
 namespace Lotus {
 
-template <typename T>
 struct Constant final : OpKernel {
   Constant(const OpKernelInfo& info) : OpKernel(info) {
-    if (!info.GetAttr("value", &value_).IsOK()) {
-      LOTUS_ENFORCE(false, "Must have valid 'value' attribute");
-    }
+    LOTUS_ENFORCE(info.GetAttr("value", &value_).IsOK(), "Must have valid 'value' attribute");
   }
-
   Status Compute(OpKernelContext* context) const override;
 
  private:
