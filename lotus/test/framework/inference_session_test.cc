@@ -142,7 +142,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
 
   std::shared_ptr<LotusIR::Model> p_model;
   Status st = LotusIR::Model::Load(model_uri, &p_model);
-  EXPECT_TRUE(st.IsOK());
+  ASSERT_TRUE(st.IsOK());
   const LotusIR::Graph* p_graph = p_model->MainGraph();
   EXPECT_TRUE(p_graph != nullptr);
 

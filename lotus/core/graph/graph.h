@@ -395,9 +395,9 @@ class GraphBase {
   int NumberOfNodes() const noexcept { return num_of_nodes_; }
 
   // Create NodeArg owned by the graph
-  std::unique_ptr<NodeArg>& CreateOwnedNodeArg(const std::string& name, const TypeProto* p_arg_type) {
+  NodeArg& CreateOwnedNodeArg(const std::string& name, const TypeProto* p_arg_type) {
     owned_node_args_.push_back(std::make_unique<NodeArg>(name, p_arg_type));
-    return owned_node_args_.back();
+    return *owned_node_args_.back();
   }
 
   // Add node to <*this> graph.

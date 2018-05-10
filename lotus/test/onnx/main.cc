@@ -39,10 +39,16 @@ void usage() {
       "\t-c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.\n"
       "\t-p [PLANNER_TYPE]: PLANNER_TYPE could be 'seq' or 'simple'. Default: 'simple'.\n"
       "\t-h: help\n");
-  exit(-1);
 }
 
 }  // namespace
+
+// Create an object to shutdown the protobuf library at exit
+struct ShutdownProtobufs {
+  ~ShutdownProtobufs() {
+    ::google::protobuf::ShutdownProtobufLibrary();
+  }
+} s_shutdown_protobufs;
 
 int main(int argc, char* argv[]) {
   std::string default_logger_id{"Default"};
@@ -95,6 +101,7 @@ int main(int argc, char* argv[]) {
         case 'h':
         default:
           usage();
+          return -1;
       }
     }
   }
@@ -120,5 +127,6 @@ int main(int argc, char* argv[]) {
   RunTests(args, p_models, concurrent_session_runs);
   std::string res = stat.ToString();
   fwrite(res.c_str(), 1, res.size(), stdout);
+
   return 0;
 }

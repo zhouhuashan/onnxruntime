@@ -1,6 +1,5 @@
 #include "core/framework/environment.h"
 #include "gtest/gtest.h"
-#include "google/protobuf/stubs/common.h"
 #include "test/test_environment.h"
 
 GTEST_API_ int main(int argc, char** argv) {
@@ -15,6 +14,5 @@ GTEST_API_ int main(int argc, char** argv) {
     status = -1;
   }
 
-  ::google::protobuf::ShutdownProtobufLibrary();
   return status;
 }

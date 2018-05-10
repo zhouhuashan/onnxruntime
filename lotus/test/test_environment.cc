@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "gtest/gtest.h"
+#include "google/protobuf/stubs/common.h"
 
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
@@ -60,6 +61,7 @@ TestEnvironment::~TestEnvironment() {
 
   s_default_logging_manager = nullptr;
   logging_manager_ = nullptr;
+  ::google::protobuf::ShutdownProtobufLibrary();
 }
 
 }  // namespace Test

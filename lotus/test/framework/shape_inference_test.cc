@@ -14,19 +14,19 @@ class ShapeInferenceTest : public ::testing::Test {
  protected:
   LotusIR::Model model_;
   int node_count_;
-  std::unordered_map<string, LotusIR::NodeArg*> name_to_arg_;
+  std::unordered_map<string, std::unique_ptr<LotusIR::NodeArg>> name_to_arg_;
 
  public:
   ShapeInferenceTest() : model_("Test"), node_count_(0) {}
 
   void Input(std::string name, Type type) {
-    name_to_arg_[name] = new LotusIR::NodeArg(name, &type.value);
+    name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, &type.value);
   }
 
   LotusIR::NodeArg* Arg(const std::string& name) {
     if (name_to_arg_.count(name) == 0)
-      name_to_arg_[name] = new LotusIR::NodeArg(name, nullptr);
-    return name_to_arg_[name];
+      name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, nullptr);
+    return name_to_arg_[name].get();
   }
 
   LotusIR::Node* Node(std::string op, std::string input, std::string output) {

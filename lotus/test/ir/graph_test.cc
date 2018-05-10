@@ -55,33 +55,33 @@ TEST(GraphTraversalTest, ReverseDFS) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *input_arg = new NodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(input_arg);
-  NodeArg *output_arg = new NodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(output_arg);
+  auto &input_arg = graph.CreateOwnedNodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(&input_arg);
+  auto &output_arg = graph.CreateOwnedNodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(&output_arg);
   graph.AddNode("node_1", "Variable_DFS", "node 1", inputs, outputs);
 
-  NodeArg *input_arg2 = new NodeArg("node_2_in_1", &tensor_int32);
+  auto &input_arg2 = graph.CreateOwnedNodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
-  inputs.push_back(input_arg2);
-  NodeArg *output_arg2 = new NodeArg("node_2_out_1", &tensor_int32);
+  inputs.push_back(&input_arg2);
+  auto &output_arg2 = graph.CreateOwnedNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg2);
+  outputs.push_back(&output_arg2);
   graph.AddNode("node_2", "Variable_DFS", "node 2", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(output_arg);
-  inputs.push_back(output_arg2);
-  NodeArg *output_arg3 = new NodeArg("node_3_out_1", &tensor_int32);
+  inputs.push_back(&output_arg);
+  inputs.push_back(&output_arg2);
+  auto &output_arg3 = graph.CreateOwnedNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg3);
+  outputs.push_back(&output_arg3);
   graph.AddNode("node_3", "Add_DFS", "node 3", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(output_arg3);
-  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_int32);
+  inputs.push_back(&output_arg3);
+  auto &output_arg4 = graph.CreateOwnedNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg4);
+  outputs.push_back(&output_arg4);
   graph.AddNode("node_4", "NoOp_DFS", "node 4", inputs, outputs);
   auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
@@ -143,8 +143,8 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *output_arg = new NodeArg("node_1_out_1", &output_type);
-  outputs.push_back(output_arg);
+  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &output_type);
+  outputs.push_back(&output_arg);
   graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   // Case 1: Adding two nodes with same node name should fail.
@@ -159,7 +159,6 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
   status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: two output args with same name (node_1_out_1).", status.ErrorMessage());
-  //delete output_arg;
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
@@ -174,15 +173,13 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *output_arg = new NodeArg("node_1_out_1", &output_type);
-  outputs.push_back(output_arg);
+  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &output_type);
+  outputs.push_back(&output_arg);
   // Case: Adding node refering to non-existing operator should fail.
   graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
   auto status = graph->Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ(0, status.ErrorMessage().find_first_of("No Schema registered for OpNotExist"));
-
-  //delete output_arg;
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
@@ -223,36 +220,36 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *input_arg = new NodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(input_arg);
-  NodeArg *output_arg = new NodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(output_arg);
+  auto &input_arg = graph.CreateOwnedNodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(&input_arg);
+  auto &output_arg = graph.CreateOwnedNodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(&output_arg);
   expected_node_name_to_input_output_args["node_1"] = {inputs, outputs};
   auto node_1 = graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
-  NodeArg *input_arg2 = new NodeArg("node_2_in_1", &tensor_int32);
+  auto &input_arg2 = graph.CreateOwnedNodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
-  inputs.push_back(input_arg2);
-  NodeArg *output_arg2 = new NodeArg("node_2_out_1", &tensor_int32);
+  inputs.push_back(&input_arg2);
+  auto &output_arg2 = graph.CreateOwnedNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg2);
+  outputs.push_back(&output_arg2);
   expected_node_name_to_input_output_args["node_2"] = {inputs, outputs};
   graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(output_arg);
-  inputs.push_back(output_arg2);
-  NodeArg *output_arg3 = new NodeArg("node_3_out_1", &tensor_int32);
+  inputs.push_back(&output_arg);
+  inputs.push_back(&output_arg2);
+  auto &output_arg3 = graph.CreateOwnedNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg3);
+  outputs.push_back(&output_arg3);
   expected_node_name_to_input_output_args["node_3"] = {inputs, outputs};
   graph.AddNode("node_3", "Add_Fake", "node 3", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(output_arg3);
-  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_int32);
+  inputs.push_back(&output_arg3);
+  auto &output_arg4 = graph.CreateOwnedNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg4);
+  outputs.push_back(&output_arg4);
   expected_node_name_to_input_output_args["node_4"] = {inputs, outputs};
   graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
   auto status = graph.Resolve();
@@ -299,7 +296,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   }
 
   // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
-  NodeTestHelper::MutableDefinitions(*node_1).input_defs[0] = output_arg4;
+  NodeTestHelper::MutableDefinitions(*node_1).input_defs[0] = &output_arg4;
   status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
@@ -316,13 +313,6 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
 
   auto status_2 = graph_2.Resolve();
   EXPECT_TRUE(status_2.IsOK());
-
-  //delete input_arg;
-  //delete output_arg;
-  //delete input_arg2;
-  //delete output_arg2;
-  //delete output_arg3;
-  //delete output_arg4;
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
@@ -358,34 +348,34 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  NodeArg *input_arg = new NodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(input_arg);
-  NodeArg *output_arg = new NodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(output_arg);
+  auto &input_arg = graph->CreateOwnedNodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(&input_arg);
+  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(&output_arg);
   graph->AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(input_arg);
-  NodeArg *output_arg2 = new NodeArg("node_2_out_1", &tensor_int32);
+  inputs.push_back(&input_arg);
+  auto &output_arg2 = graph->CreateOwnedNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg2);
+  outputs.push_back(&output_arg2);
   auto node_2 = graph->AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
-  NodeArg *input_arg3 = new NodeArg("node_3_in_1", &tensor_int32);
+  auto &input_arg3 = graph->CreateOwnedNodeArg("node_3_in_1", &tensor_int32);
   inputs.clear();
-  inputs.push_back(input_arg3);
-  NodeArg *output_arg3 = new NodeArg("node_3_out_1", &tensor_int32);
+  inputs.push_back(&input_arg3);
+  auto &output_arg3 = graph->CreateOwnedNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg3);
+  outputs.push_back(&output_arg3);
   graph->AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(output_arg);
-  inputs.push_back(output_arg2);
-  inputs.push_back(output_arg3);
-  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_int32);
+  inputs.push_back(&output_arg);
+  inputs.push_back(&output_arg2);
+  inputs.push_back(&output_arg3);
+  auto &output_arg4 = graph->CreateOwnedNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
-  outputs.push_back(output_arg4);
+  outputs.push_back(&output_arg4);
   auto node_4 = graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
   EXPECT_NE(node_4, nullptr);
   auto status = graph->Resolve();
@@ -421,13 +411,6 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   EXPECT_FALSE(status.IsOK());
   auto error_msg_contains_type_error = (status.ErrorMessage().find("Type Error") != std::string::npos);
   EXPECT_TRUE(error_msg_contains_type_error);
-
-  //delete input_arg;
-  //delete output_arg;
-  //delete output_arg2;
-  //delete input_arg3;
-  //delete output_arg3;
-  //delete output_arg4;
 }
 
 TEST(TestAddAttribute, AddTensorAttribute) {
@@ -445,8 +428,8 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   output_shape.mutable_dim()->Add()->set_dim_value(1);
   output_shape.mutable_dim()->Add()->set_dim_value(3);
   *(output_type.mutable_tensor_type()->mutable_shape()) = output_shape;
-  NodeArg *output_arg = new NodeArg("node_1_out_1", &output_type);
-  outputs.push_back(output_arg);
+  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &output_type);
+  outputs.push_back(&output_arg);
   auto node_1 = graph->AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
   TensorProto t;
   t.set_data_type(TensorProto_DataType_INT64);
@@ -458,7 +441,6 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   node_1->AddAttribute(kConstantValue, t);
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
-  //delete output_arg;
 }
 
 void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, int64_t attr_value) {
@@ -485,14 +467,13 @@ TEST(TypeInferenceTest, TypeAttribute) {
   std::vector<NodeArg *> outputs;
   Model model("graph_1");
   auto graph = model.MainGraph();
-  NodeArg *output_arg = new NodeArg("node_1_out_1", nullptr);
-  outputs.push_back(output_arg);
+  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", nullptr);
+  outputs.push_back(&output_arg);
   auto node_1 = graph->AddNode("node_1", "RandomNormal", "node 1.", inputs, outputs);
   AddAttribute(node_1, "dtype", TensorProto_DataType_FLOAT);
   AddAttribute(node_1, "shape", {2, 3});
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
-  // delete output_arg;
 }
 
 void CheckTensorEltType(const TypeProto *ptype, TensorProto_DataType elt_type) {
@@ -510,18 +491,17 @@ TEST(TypeInferenceTest, VariadicOutput) {
   int64_tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   Model model("graph_1");
   auto graph = model.MainGraph();
-  NodeArg *X = new NodeArg("X", &int64_tensor_type);
-  inputs.push_back(X);
-  NodeArg *Y = new NodeArg("Y", nullptr);
-  outputs.push_back(Y);
-  NodeArg *Z = new NodeArg("Z", nullptr);
-  outputs.push_back(Z);
+  auto &X = graph->CreateOwnedNodeArg("X", &int64_tensor_type);
+  inputs.push_back(&X);
+  auto &Y = graph->CreateOwnedNodeArg("Y", nullptr);
+  outputs.push_back(&Y);
+  auto &Z = graph->CreateOwnedNodeArg("Z", nullptr);
+  outputs.push_back(&Z);
   graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
-  CheckTensorEltType(Y->TypeAsProto(), TensorProto_DataType_FLOAT);
-  CheckTensorEltType(Z->TypeAsProto(), TensorProto_DataType_FLOAT);
-  // delete output_arg;
+  CheckTensorEltType(Y.TypeAsProto(), TensorProto_DataType_FLOAT);
+  CheckTensorEltType(Z.TypeAsProto(), TensorProto_DataType_FLOAT);
 }
 
 }  // namespace Test

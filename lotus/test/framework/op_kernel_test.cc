@@ -60,10 +60,10 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   TypeProto tensor_int32;
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
-  NodeArg* input_arg = new NodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(input_arg);
-  NodeArg* output_arg = new NodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(output_arg);
+  auto input_arg = std::make_unique<NodeArg>("node_1_in_1", &tensor_int32);
+  inputs.push_back(input_arg.get());
+  auto output_arg = std::make_unique<NodeArg>("node_1_out_1", &tensor_int32);
+  outputs.push_back(output_arg.get());
   auto node = graph->AddNode("node1", "op_not_exist", "this is going to call function kernel", inputs, outputs);
   node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
   AllocatorInfo alloc_info("CPU", AllocatorType::kArenaAllocator);

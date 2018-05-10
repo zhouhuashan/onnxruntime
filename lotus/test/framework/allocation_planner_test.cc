@@ -140,9 +140,9 @@ class PlannerTest : public ::testing::Test {
   std::unique_ptr<Lotus::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
   std::unique_ptr<Lotus::KernelDef> in_place_kernel_;  // a unary kernel with in-place
 
-  std::unordered_map<string, LotusIR::NodeArg*> name_to_arg_;
-  std::vector<UnaryNode*> nodes_;
-  std::vector<OpKernelInfo*> op_kernel_infos_;
+  std::unordered_map<string, std::unique_ptr<LotusIR::NodeArg>> name_to_arg_;
+  std::vector<std::unique_ptr<UnaryNode>> nodes_;
+  std::vector<std::unique_ptr<OpKernelInfo>> op_kernel_infos_;
   std::vector<std::pair<LotusIR::Node*, KernelDef&>> kernel_bindings_;
   SessionState state_;
   AllocatorInfo allocator_info_;
@@ -156,27 +156,20 @@ class PlannerTest : public ::testing::Test {
   }
 
   ~PlannerTest() {
-    for (auto& pair : name_to_arg_)
-      delete pair.second;
-    for (auto p_node : nodes_)
-      delete p_node;
-    for (auto p_op_kernel_info : op_kernel_infos_)
-      delete p_op_kernel_info;
   }
 
   LotusIR::NodeArg* Arg(const std::string& name) {
     auto iter = name_to_arg_.find(name);
-    if (name_to_arg_.end() != iter) return iter->second;
-    auto arg = new LotusIR::NodeArg(name, &float_type_.value);
-    name_to_arg_[name] = arg;
-    return arg;
+    if (name_to_arg_.end() != iter) return iter->second.get();
+    return (name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, &float_type_.value)).get();
   }
 
   LotusIR::Node* AddNode(Lotus::KernelDef& kernel_def, std::string& input, std::string& output) {
-    auto t = new UnaryNode(graph_, kernel_def.OpName(), Arg(input), Arg(output));
-    nodes_.push_back(t);
-    kernel_bindings_.emplace_back(t->p_node, kernel_def);
-    return t->p_node;
+    auto node = std::make_unique<UnaryNode>(graph_, kernel_def.OpName(), Arg(input), Arg(output));
+    auto* p_node = node->p_node;
+    nodes_.push_back(std::move(node));
+    kernel_bindings_.emplace_back(p_node, kernel_def);
+    return p_node;
   }
 
   LotusIR::Node* AddNormalNode(std::string& input, std::string& output) {
@@ -188,9 +181,10 @@ class PlannerTest : public ::testing::Test {
   }
 
   void BindKernel(LotusIR::Node* p_node, Lotus::KernelDef& kernel_def) {
-    auto t = new OpKernelInfo(*p_node, allocator_info_, kernel_def, nullptr);
-    op_kernel_infos_.push_back(t);
-    state_.AddKernel(p_node->Index(), std::make_unique<DummyOpKernel>(*t));
+    auto info = std::make_unique<OpKernelInfo>(*p_node, allocator_info_, kernel_def, nullptr);
+    auto dummy = std::make_unique<DummyOpKernel>(*info);
+    op_kernel_infos_.push_back(std::move(info));
+    state_.AddKernel(p_node->Index(), std::move(dummy));
   }
 
   void SetShape(std::string& name, TensorShapeProto* shape) {

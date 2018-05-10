@@ -79,8 +79,8 @@ class WindowsEnvTime : public EnvTime {
 }  // namespace
 
 EnvTime* EnvTime::Default() {
-  static EnvTime* default_time_env = new WindowsEnvTime;
-  return default_time_env;
+  static WindowsEnvTime default_time_env;
+  return &default_time_env;
 }
 
 }  // namespace Lotus

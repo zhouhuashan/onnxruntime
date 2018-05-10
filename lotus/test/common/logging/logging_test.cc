@@ -36,7 +36,7 @@ class LoggingTestsFixture : public ::testing::Test {
   }
 
   static void TearDownTestCase() {
-    default_logging_manager_.release();
+    default_logging_manager_.reset();
   }
 
   // Objects declared here can be used by all tests in the test case for Foo.

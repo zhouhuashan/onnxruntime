@@ -41,7 +41,7 @@ void TestResolve(LotusIR::Graph* p_graph) {
 TEST(ONNXModelsTest, squeeze_net) {
   // NOTE: this requires the current directory to be where LotusIR_UT.exe is located
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./testdata/squeezenet/model.onnx", &model).IsOK());
+  ASSERT_TRUE(Model::Load("./testdata/squeezenet/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 #ifdef _WIN32
   // wstring version
