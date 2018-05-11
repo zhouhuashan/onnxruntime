@@ -6,9 +6,10 @@
 #include "core/framework/ml_value.h"
 #include "core/platform/types.h"
 
-namespace LotusIR {
-class Model;             // forward decl
-class GraphTransformer;  // forward decl
+namespace LotusIR {  // forward declarations
+class Model;
+class GraphTransformer;
+class NodeArg;
 }  // namespace LotusIR
 
 namespace Lotus {
@@ -62,17 +63,8 @@ struct ModelMetadata {
   std::unordered_map<std::string, std::string> custom_metadata_map;
 };
 
-/**
-* Definition of input/outpus. Use this to get names/types/shapes.
-*/
-struct NodeArgDef {
-  std::string name;
-  std::string data_type;
-  std::vector<int64_t> shape;
-};
-
-using InputDefList = std::vector<NodeArgDef>;
-using OutputDefList = std::vector<NodeArgDef>;
+using InputDefList = std::vector<const LotusIR::NodeArg*>;
+using OutputDefList = std::vector<const LotusIR::NodeArg*>;
 
 using NameMLValMap = std::unordered_map<std::string, MLValue>;
 
@@ -194,6 +186,7 @@ class InferenceSession {
 
   /**
   * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
+  * @note lifetime of the returned pointer is valid as long as the Session object is live.
   */
   std::pair<Common::Status, const ModelMetadata*> GetModelMetadata() const;
 
@@ -201,12 +194,14 @@ class InferenceSession {
   * Get all input definitions of the model. This does not include weights. Use this
   * to get the name/type/shapes of the inputs.
   * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
+  * @note lifetime of the returned pointer is valid as long as the Session object is live.
   */
   std::pair<Common::Status, const InputDefList*> GetInputs() const;
 
   /**
   * Get all output definitions of the model. Use this to get the name/type/shapes of the outputs.
   * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
+  * @note lifetime of the returned pointer is valid as long as the Session object is live.
   */
   std::pair<Common::Status, const OutputDefList*> GetOutputs() const;
 

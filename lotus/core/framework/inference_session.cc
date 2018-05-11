@@ -343,16 +343,6 @@ class InferenceSession::Impl {
     return status;
   }
 
-  static void GetNodeArgDef(const LotusIR::NodeArg& arg, NodeArgDef& nf) {
-    nf.name = arg.Name();
-    nf.data_type = *arg.Type();
-    nf.shape.clear();
-    auto shape = arg.Shape();
-    if (nullptr != shape) {
-      nf.shape = Utils::GetTensorShapeFromTensorShapeProto(*arg.Shape());
-    }
-  }
-
   Common::Status SaveModelMetadata(const LotusIR::Model& model) {
     VLOGS(*session_logger_, 1) << "Saving model metadata";
     const LotusIR::Graph* p_graph = model.MainGraph();
@@ -377,9 +367,7 @@ class InferenceSession::Impl {
       if (weights.count(elem->Name())) {
         continue;
       }
-      NodeArgDef nf;
-      GetNodeArgDef(*elem, nf);
-      input_def_list_.push_back(nf);
+      input_def_list_.push_back(elem);
     }
 
     // save outputs
@@ -389,9 +377,7 @@ class InferenceSession::Impl {
       if (!elem) {
         return Common::Status(Common::LOTUS, Common::FAIL, "Got null output nodearg ptr");
       }
-      NodeArgDef nf;
-      GetNodeArgDef(*elem, nf);
-      output_def_list_.push_back(nf);
+      output_def_list_.push_back(elem);
     }
     VLOGS(*session_logger_, 1) << "Done saving model metadata";
     return Common::Status::OK();

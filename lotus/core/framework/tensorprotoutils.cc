@@ -19,9 +19,10 @@ std::vector<int64_t> GetTensorShapeFromTensorShapeProto(const onnx::TensorShapeP
   const auto& dims = tensor_shape_proto.dim();
   std::vector<int64_t> tensor_shape_vec(dims.size());
   for (int i = 0; i < dims.size(); ++i) {
-    tensor_shape_vec[i] = dims[i].dim_value();
+    tensor_shape_vec[i] = dims[i].has_dim_param()
+                              ? -1 /* symbolic dimensions are represented as -1 in Lotus*/
+                              : dims[i].dim_value();
   }
-
   return tensor_shape_vec;
 }
 

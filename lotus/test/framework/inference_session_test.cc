@@ -26,7 +26,7 @@ using namespace Lotus::Logging;
 
 namespace Lotus {
 namespace Test {
-static bool Compare(const vector<const LotusIR::NodeArg*>& f_arg, const vector<NodeArgDef>& s_arg);
+static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg);
 static const std::string MODEL_URI = "testdata/mul_1.pb";
 //static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx"; // TODO enable this after we've weights?
 
@@ -107,7 +107,7 @@ TEST(InferenceSessionTests, NoTimeout) {
   RunModel(session_object, run_options);
 }
 
-static bool Compare(const vector<const LotusIR::NodeArg*>& f_arg, const vector<NodeArgDef>& s_arg) {
+static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg) {
   if (f_arg.size() != s_arg.size()) {
     cout << "Sizes differ: f_arg size: " << f_arg.size() << " s_arg size: " << s_arg.size() << endl;
     return false;
@@ -115,17 +115,21 @@ static bool Compare(const vector<const LotusIR::NodeArg*>& f_arg, const vector<N
 
   for (auto i = 0; i < f_arg.size(); ++i) {
     const LotusIR::NodeArg* x = f_arg[i];
-    const NodeArgDef& y = s_arg[i];
-    if (nullptr == x->Shape() && y.shape.size() == 0) {
-      continue;
-    } else if (nullptr == x->Shape()) {
+    const LotusIR::NodeArg* y = s_arg[i];
+    if ((x->Shape() == nullptr) ^ (y->Shape() == nullptr)) {
       return false;
-    }
-    vector<int64_t> x_shape = Utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
-    if (x->Name() == y.name && x_shape == y.shape && *x->Type() == y.data_type) {
-      continue;
     } else {
-      return false;
+      if (!x->Shape()) {
+        continue;
+      } else {
+        vector<int64_t> x_shape = Utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
+        vector<int64_t> y_shape = Utils::GetTensorShapeFromTensorShapeProto(*y->Shape());
+        if (x->Name() == y->Name() && x_shape == y_shape && *x->Type() == *y->Type()) {
+          continue;
+        } else {
+          return false;
+        }
+      }
     }
   }
 
@@ -165,7 +169,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
     auto weights = p_graph->GetAllInitializedTensors();
 
     // skip the weights
-    vector<const LotusIR::NodeArg*> inputs_no_weights;
+    InputDefList inputs_no_weights;
     for (auto& elem : inputs) {
       if (weights.find(elem->Name()) != weights.end()) {
         continue;
