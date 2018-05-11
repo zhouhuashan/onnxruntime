@@ -48,7 +48,7 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
 
   // Calculate output dimensions
   for (size_t i = 0; i < dimension_count; i++) {
-    LOTUS_ENFORCE(pads_[i] > 0 && pads_[i + dimension_count] > 0, "Negative padding values are not allowed.");
+    LOTUS_ENFORCE(pads_[i] >= 0 && pads_[i + dimension_count] >= 0, "Negative padding values are not allowed.");
     output_dims[i] += pads_[i] + pads_[i + dimension_count];
   }
   TensorShape output_shape(output_dims);

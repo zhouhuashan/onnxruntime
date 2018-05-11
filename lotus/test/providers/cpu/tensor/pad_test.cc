@@ -14,6 +14,16 @@ TEST(TensorOpTest, Pad_Constant_1D) {
   test.Run();
 }
 
+TEST(TensorOpTest, Pad_Constant_1D_Zero) {
+  OpTester test("Pad");
+
+  test.AddAttribute("pads", std::vector<int64_t>{0, 0});
+  test.AddAttribute("value", 1234.0f);
+  test.AddInput<float>("data", {2}, {1.0f, 2.0f});
+  test.AddOutput<float>("output", {2}, {1.0f, 2.0f});
+  test.Run();
+}
+
 TEST(TensorOpTest, Pad_Constant_2D) {
   OpTester test("Pad");
 
