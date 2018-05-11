@@ -5,6 +5,8 @@ Options:
         -p [PLANNER_TYPE]: PLANNER_TYPE could be 'seq' or 'simple'. Default: 'simple'.
         -h: help
 
+The debug version of this program depends on dbghelp.dll. Please make sure it's in your PATH.
+
 How to run node tests:
 1. Install onnx. Onnx's version must > 1.1.0. Strictly greater than!
 2. execute:
