@@ -20,6 +20,7 @@
 #include "core/framework/allocatormgr.h"
 #include "core/graph/graph_transformer.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
+#include "core/framework/op_kernel_abi_wrapper.h"
 
 namespace Lotus {
 class InferenceSession::Impl {
@@ -27,7 +28,8 @@ class InferenceSession::Impl {
   Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
       : session_options_{session_options},
         graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
-        logging_manager_{logging_manager} {
+        logging_manager_{logging_manager},
+        local_kernel_registry(false) {
     InitLogger(logging_manager);
 
     //env_(Env::Default()) {
@@ -44,6 +46,13 @@ class InferenceSession::Impl {
     VLOGS(*session_logger_, 1) << "Adding execution provider of type: " << provider_type;
     session_state_.AddExecutionProvider(provider_type, std::move(p_exec_provider));
     return Status::OK();
+  }
+
+  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, IMLOpKernelCreateFn kernel_creator) {
+    return local_kernel_registry.Register(kernel_def_builder,
+                                          [kernel_creator](const OpKernelInfo& info) -> OpKernel* {
+                                            return new AbiOpKernel(kernel_creator, info);
+                                          });
   }
 
   Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
@@ -642,12 +651,20 @@ class InferenceSession::Impl {
 
     auto exec_provider = session_state_.GetExecutionProvider(exec_provider_name);
     auto& allocator_info = exec_provider->GetAllocator()->Info();
-    Common::Status status = KernelRegistry::Instance().CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
+    Common::Status status = CreateOpKernelInternal(node, allocator_info, exec_provider, p_op_kernel);
     if (!status.IsOK()) {
       LOGS(*session_logger_, ERROR) << "Kernel creation failed for node: "
                                     << node.Name() << " with error: " << status.ErrorMessage();
     }
     return status;
+  }
+
+  Common::Status CreateOpKernelInternal(const LotusIR::Node& node, const AllocatorInfo& allocator_info, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
+    Common::Status status = local_kernel_registry.CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
+    if (!status.IsOK())
+      return KernelRegistry::Instance().CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
+    else
+      return status;
   }
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {
@@ -706,6 +723,8 @@ class InferenceSession::Impl {
   bool is_inited_ = false;            // GUARDED_BY(session_mutex_)
 
   std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
+
+  KernelRegistry local_kernel_registry;
 };  // namespace Lotus
 
 //
@@ -772,6 +791,10 @@ Common::Status InferenceSession::RegisterExecutionProvider(std::unique_ptr<IExec
 
 Common::Status InferenceSession::RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
   return impl_->RegisterGraphTransformer(std::move(p_graph_transformer));
+}
+
+Common::Status InferenceSession::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, IMLOpKernelCreateFn kernel_creator) {
+  return impl_->RegisterCustomKernel(kernel_def_builder, kernel_creator);
 }
 
 }  // namespace Lotus

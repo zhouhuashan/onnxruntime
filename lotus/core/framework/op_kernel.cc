@@ -243,13 +243,17 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
     }
   }
 
-  // The node is assigned to an execution provider and no kernel registered
-  // for the operator referred by the node. Create FunctionKernel to delegate
-  // the node run to corresponding execution provider.
-  auto& kernelCreatorInfo = kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second;
-  OpKernelInfo kernel_info(node, allocator_info, *kernelCreatorInfo.kernel_def, execution_provider);
-  op_kernel->reset(kernelCreatorInfo.kernel_create_func(kernel_info));
-  return Status::OK();
+  if (create_func_kernel_) {
+	  // The node is assigned to an execution provider and no kernel registered
+	  // for the operator referred by the node. Create FunctionKernel to delegate
+	  // the node run to corresponding execution provider.
+	  auto& kernelCreatorInfo = kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second;
+	  OpKernelInfo kernel_info(node, allocator_info, *kernelCreatorInfo.kernel_def, execution_provider);
+	  op_kernel->reset(kernelCreatorInfo.kernel_create_func(kernel_info));
+	  return Status::OK();
+  }
+  else
+	  return Status(LOTUS, FAIL, "Kernel not found.");
 }
 
 Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {

@@ -30,30 +30,6 @@ static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg);
 static const std::string MODEL_URI = "testdata/mul_1.pb";
 //static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx"; // TODO enable this after we've weights?
 
-// TODO consider moving this function to some utils
-template <typename T>
-void CreateMLValue(AllocatorPtr alloc,
-                   const std::vector<int64_t>& dims,
-                   const std::vector<T>& value,
-                   MLValue* p_mlvalue) {
-  TensorShape shape(dims);
-  auto location = alloc->Info();
-  auto element_type = DataTypeImpl::GetType<T>();
-  void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
-  if (value.size() > 0) {
-    memcpy(buffer, &value[0], element_type->Size() * shape.Size());
-  }
-
-  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
-                                                              shape,
-                                                              buffer,
-                                                              location,
-                                                              alloc);
-  p_mlvalue->Init(p_tensor.release(),
-                  DataTypeImpl::GetType<Tensor>(),
-                  DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-}
-
 void RunModel(InferenceSession& session_object,
               const RunOptions& run_options,
               bool is_preallocate_output_vec = false) {

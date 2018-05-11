@@ -5,6 +5,7 @@
 #include "core/common/logging/logging.h"
 #include "core/framework/ml_value.h"
 #include "core/platform/types.h"
+#include "core/inc/op_kernel_author.h"
 
 namespace LotusIR {  // forward declarations
 class Model;
@@ -14,6 +15,7 @@ class NodeArg;
 
 namespace Lotus {
 class IExecutionProvider;  // forward decl
+class KernelDefBuilder;
 
 enum class AllocationPlannerType {
   SIMPLE_SEQUENTIAL_PLANNER,
@@ -110,6 +112,16 @@ class InferenceSession {
   * @return OK if success.
   */
   Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider);
+
+  /**
+  * Register a kernel definition together with kernel factory method to this session.
+  * If any conflict happened between registered kernel def and built-in kernel def,
+  * registered kernel will have higher priority.
+  * Call this before invoking Initialize().
+  * @return OK if success.
+  */
+  //TODO: Once ABI for kernel registry is ready, update the interface with ABI
+  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, IMLOpKernelCreateFn kernel_creator);
 
   /**
   * Register a graph transfromer. If you've one to register, call this before invoking Initialize().

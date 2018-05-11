@@ -21,7 +21,7 @@ class MLStatusException : public std::exception {
   MLStatusException(const MLStatus& status) : status_(status) {
   }
 
-  MLStatus GetStatus() const noexcept{
+  MLStatus GetStatus() const noexcept {
     return status_;
   }
 
@@ -119,8 +119,7 @@ class MLOpKernelInfo {
   MLOpKernelInfo(const IMLOpKernelInfo* impl) : impl_(impl) {}
 
   // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
-  const IMLOpKernelInfo* GetInterface() const noexcept
-  {
+  const IMLOpKernelInfo* GetInterface() const noexcept {
     return impl_;
   }
 
@@ -208,13 +207,11 @@ class MLOpTensor {
   MLOpTensor(IMLOpTensor* impl) : impl_(impl) {}
 
   // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
-  const IMLOpTensor* GetInterface() const noexcept
-  {
+  const IMLOpTensor* GetInterface() const noexcept {
     return impl_;
   }
 
-  IMLOpTensor* GetInterface() noexcept
-  {
+  IMLOpTensor* GetInterface() noexcept {
     return impl_;
   }
 
@@ -326,13 +323,11 @@ class MLOpKernelContext {
   // across a boundary. e.g. Operator implementations may use the helper classes so that
   // they can use exceptions without checking every return value, but then they need to pass
   // results onward to a different component which expects the lower level currency.
-  IMLOpKernelContext* GetInterface() noexcept
-  {
+  IMLOpKernelContext* GetInterface() noexcept {
     return impl_;
   }
 
-  const IMLOpKernelContext* GetInterface() const noexcept
-  {
+  const IMLOpKernelContext* GetInterface() const noexcept {
     return impl_;
   }
 
@@ -363,7 +358,7 @@ class MLOpKernelContext {
     ML_CHECK_STATUS(impl_->GetOutputTensor(output_index, dimension_sizes.data(), static_cast<uint32_t>(dimension_sizes.size()), &tensor));
     return MLOpTensor(tensor);
   }
-  
+
   uint32_t GetInputCount() const noexcept {
     return impl_->GetInputCount();
   }
@@ -412,11 +407,13 @@ class MLOpKernel : public IMLOpKernel, public T {
   virtual ~MLOpKernel() {
   }
 
-  ML_API_IMP_(void, Release)() noexcept override {
+  ML_API_IMP_(void, Release)
+  () noexcept override {
     delete this;
   }
 
-  ML_API_IMP(Compute)(
+  ML_API_IMP(Compute)
+  (
       const IMLOpKernelInfo* info,
       IMLOpKernelContext* context) noexcept override {
     try {

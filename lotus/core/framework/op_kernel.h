@@ -190,7 +190,7 @@ class OpKernelContext {
   int arg_start_index_ = -1;
 };
 
-typedef OpKernel* (*KernelCreateFn)(const OpKernelInfo& info);
+using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 class KernelRegistry {
  public:
@@ -210,12 +210,13 @@ class KernelRegistry {
                       std::unique_ptr<OpKernel>* op_kernel) const;
 
   static KernelRegistry& Instance() {
-    static KernelRegistry kernel_registry;
+    static KernelRegistry kernel_registry(true);
     return kernel_registry;
   }
 
  private:
-  KernelRegistry() = default;
+  friend class InferenceSession;
+  KernelRegistry(bool create_func_kernel_flag) : create_func_kernel_(create_func_kernel_flag) {}
 
   struct KernelCreateInfo {
     unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
@@ -240,6 +241,8 @@ class KernelRegistry {
 
   // Kernel create function map from op name to kernel creation info.
   std::multimap<std::string, KernelCreateInfo> kernel_creator_fn_map_;
+
+  bool create_func_kernel_;
 };
 
 #define REGISTER_KERNEL(kernel_def_builder, ...) \
