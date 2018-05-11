@@ -101,7 +101,7 @@ set(lotus_test_ir_libs
     ${onnx_whole_archive}
     onnx_proto
     lotus_common
-    libprotobuf
+    protobuf::libprotobuf
     gtest gmock
 )
 
@@ -125,7 +125,7 @@ set(lotus_test_framework_libs
     ${onnx_whole_archive}
     onnx_proto
     lotus_common
-    libprotobuf
+    protobuf::libprotobuf
     gtest gmock
 )
 if(WIN32)
@@ -166,7 +166,7 @@ set(lotus_test_providers_libs
     ${onnx_whole_archive}
     onnx_proto
     lotus_common
-    libprotobuf
+    protobuf::libprotobuf
     gtest gmock
 )
 
@@ -257,7 +257,7 @@ set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
 target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
 add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
-set(onnx_test_lib ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} onnx_proto lotus_common libprotobuf ${CMAKE_THREAD_LIBS_INIT} )
+set(onnx_test_lib ${FS_STDLIB} ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph ${onnx_whole_archive} onnx_proto lotus_common protobuf::libprotobuf ${CMAKE_THREAD_LIBS_INIT} )
 
 if(lotus_USE_CUDA)
   list(APPEND onnx_test_lib ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})

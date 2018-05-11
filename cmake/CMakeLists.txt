@@ -25,12 +25,49 @@ option(lotus_ENABLE_PYTHON "Enable python buildings" OFF)
 option(lotus_USE_CUDA "Build with CUDA support" OFF)
 option(lotus_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
 option(lotus_USE_OPENBLAS "Use openblas" OFF)
+option(lotus_USE_PREBUILT_PB "Use prebuilt protobuf library" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
 set(ONNX_ML 1)
 set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
 
+
+#Here we support three build mode:
+#1. (recommended)lotus_USE_PREBUILT_PB is set (ONNX_CUSTOM_PROTOC_EXECUTABLE should also be set)
+#   We will not build protobuf, will use a prebuilt binary instead. This mode can also support cross-compiling
+#2. lotus_USE_PREBUILT_PB is not set but ONNX_CUSTOM_PROTOC_EXECUTABLE is set
+#   Build Protobuf from source, except protoc.exe. This mode is mainly for cross-compiling
+#3. both lotus_USE_PREBUILT_PB and ONNX_CUSTOM_PROTOC_EXECUTABLE are not set
+#   Compile everything from source code. Slowest option.
+
+if(lotus_USE_PREBUILT_PB)
+  get_filename_component(
+     _PROTOBUF_INSTALL_PREFIX
+     ${ONNX_CUSTOM_PROTOC_EXECUTABLE}
+     DIRECTORY)
+  get_filename_component(
+    _PROTOBUF_INSTALL_PREFIX
+    ${_PROTOBUF_INSTALL_PREFIX}/..
+    REALPATH)
+  include(${_PROTOBUF_INSTALL_PREFIX}/cmake/protobuf-config.cmake)
+else()
+  # use protobuf as a submodule
+  add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake EXCLUDE_FROM_ALL)
+  set_target_properties(libprotobuf PROPERTIES FOLDER "External/Protobuf")
+  set_target_properties(libprotobuf-lite PROPERTIES FOLDER "External/Protobuf")
+  set_target_properties(libprotoc PROPERTIES FOLDER "External/Protobuf")
+  set_target_properties(protoc PROPERTIES FOLDER "External/Protobuf")
+  set_target_properties(js_embed PROPERTIES FOLDER "External/Protobuf")
+  if(NOT EXISTS "${ONNX_CUSTOM_PROTOC_EXECUTABLE}")
+    add_library(protobuf::libprotobuf ALIAS libprotobuf)
+    add_executable(protobuf::protoc ALIAS protoc)
+  endif()
+endif()
+get_target_property(PROTOBUF_INCLUDE_DIRS protobuf::libprotobuf
+    INTERFACE_INCLUDE_DIRECTORIES)
+
+set(googletest_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/googletest/googletest/include ${PROJECT_SOURCE_DIR}/external/googletest/googlemock/include)
 
 if (lotus_USE_CUDA AND "${lotus_CUDNN_HOME}" STREQUAL "")
   message(FATAL_ERROR "lotus_CUDNN_HOME required for lotus_USE_CUDA")
@@ -69,17 +106,6 @@ set(lotus_EXTERNAL_DEPENDENCIES
 include(zlib)
 set_target_properties(zlib_copy_headers_to_destination PROPERTIES FOLDER "External/zlib")
 set_target_properties(zlib_create_destination_dir PROPERTIES FOLDER "External/zlib")
-
-# protobuf
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake EXCLUDE_FROM_ALL)
-add_library(protobuf::libprotobuf ALIAS libprotobuf)
-add_executable(protobuf::protoc ALIAS protoc)
-set_target_properties(libprotobuf PROPERTIES FOLDER "External/Protobuf")
-set_target_properties(libprotobuf-lite PROPERTIES FOLDER "External/Protobuf")
-set_target_properties(libprotoc PROPERTIES FOLDER "External/Protobuf")
-set_target_properties(protoc PROPERTIES FOLDER "External/Protobuf")
-set_target_properties(js_embed PROPERTIES FOLDER "External/Protobuf")
-set(PROTOBUF_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/protobuf/src)
 
 # gtest and gmock
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/googletest EXCLUDE_FROM_ALL)
@@ -145,7 +171,7 @@ include_directories(
     ${gsl_INCLUDE_DIR}
 )
 
-set(lotus_EXTERNAL_LIBRARIES libprotobuf)
+set(lotus_EXTERNAL_LIBRARIES protobuf::libprotobuf)
 
 if (lotus_USE_OPENBLAS)
   add_definitions(-DUSE_OPENBLAS=1)

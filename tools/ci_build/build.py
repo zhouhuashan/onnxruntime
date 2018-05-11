@@ -41,7 +41,7 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--enable_onnx_tests", action='store_true',
                         help='''When running the Update phase, enable running ONNX tests in the generated makefiles.
                         When running the Test phase, run onnx_test_running against available test data directories.''')
-
+    parser.add_argument("--pb_home", help="Path to protobuf installation")
     # CUDA related
     parser.add_argument("--cudnn_home", help="Path to CUDNN home.")
     parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
@@ -77,7 +77,7 @@ def run_subprocess(args, cwd=None):
 def update_submodules(source_dir):
     run_subprocess(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, cmake_extra_args):
+def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, cmake_extra_args):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
@@ -87,7 +87,8 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, 
                  "-Dlotus_USE_CUDA=" + ("ON" if use_cuda else "OFF"),
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if use_cuda else "")  
                  ]
-
+    if pb_home:
+        cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 
     if is_windows():
@@ -247,7 +248,7 @@ def main():
         if (not args.skip_submodule_sync):
             update_submodules(source_dir)
 
-        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, configs, cmake_extra_defines,
+        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, args.pb_home, configs, cmake_extra_defines,
                             args.enable_onnx_tests, args.use_cuda, cmake_extra_args)
 
     if (args.build):
