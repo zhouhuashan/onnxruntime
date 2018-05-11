@@ -42,8 +42,22 @@ Status PRelu<float>::Compute(OpKernelContext* ctx) const {
 
   auto eigenX = EigenMap<float>(X).array();
   auto eigenY = EigenMap<float>(Y);
-  if (slope.Shape().NumDimensions() == 0) {
+  if (slope.Shape().IsScalar()) {
     eigenY = eigenX.cwiseMax(0.0f) + eigenX.cwiseMin(0.0f) * *slope.Data<float>();
+  } else if (slope.Shape().NumDimensions() == 1) {
+    int64_t num_channels = slope.Shape()[0];
+    int64_t input_dims = X.Shape().NumDimensions();
+    LOTUS_ENFORCE(input_dims > 1 && num_channels == X.Shape()[1]);
+    size_t num_images = X.Shape()[0];
+    int64_t image_size = X.Shape().Size() / num_images;
+    int64_t num_pixels = image_size / num_channels;
+    for (size_t image = 0; image < num_images; image++) {
+      for (int64_t channel = 0; channel < num_channels; channel++) {
+        auto segY = eigenY.segment(image * image_size + num_pixels * channel, num_pixels);
+        auto segX = eigenX.segment(image * image_size + num_pixels * channel, num_pixels);
+        segY = segX.cwiseMax(0.0f) + segX.cwiseMin(0.0f) * slope.Data<float>()[channel];
+      }
+    }
   } else {
     LOTUS_ENFORCE(X.Shape() == slope.Shape(), "Inputs must have the same shape if slope is not a scalar");
     eigenY = eigenX.cwiseMax(0.0f) + eigenX.cwiseMin(0.0f) * EigenMap<float>(slope).array();

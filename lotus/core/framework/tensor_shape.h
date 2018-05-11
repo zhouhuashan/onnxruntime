@@ -91,6 +91,11 @@ class TensorShape : private std::vector<int64_t> {
   // start < end.
   int64_t SizeHelper(size_t start, size_t end) const;
 
+  // empty shape or 1D shape (1) is regarded as scalar tensor
+  const bool IsScalar() const {
+    return size() == 0 || (size() == 1 && at(0) == 1);
+  }
+
   static const TensorShape& ReinterpretBaseType(const std::vector<int64_t>& dimensions) {
     static_assert(sizeof(TensorShape) == sizeof(std::vector<int64_t>), "Size of TensorShape prevents safe casting from vector");
     return *static_cast<const TensorShape*>(&dimensions);

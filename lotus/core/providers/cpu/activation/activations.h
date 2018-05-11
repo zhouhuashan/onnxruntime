@@ -48,7 +48,7 @@ DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Selu,
                                          EIGEN_X_VAR(xm);
                                          EIGEN_Y = Attr("gamma") * (xm.cwiseMax(0.0f) + (Attr("alpha") * (xm.array().exp() - 1.0f)).cwiseMin(0.0f));
                                        },
-                                       {{"alpha", 1.6732f}, {"gamma", 1.0507f}})
+                                       {{"alpha", 1.67326319217681884765625f}, {"gamma", 1.05070102214813232421875f}})
 
 DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Sigmoid,
                                        {

@@ -161,6 +161,28 @@ TEST(ActivationOpTest, PRelu_SingleSlope) {
   test.Run();
 }
 
+TEST(ActivationOpTest, PRelu_MultiChannel) {
+  OpTester test("PRelu");
+
+  auto formula = [](float x, float slope) { return x < 0 ? slope * x : x; };
+
+  std::vector<float> inputs{1.0f, 2.0f, -4.0f, 3.0f, 0.0f, 5.0f, -9.0f, 8.0f};
+  std::vector<float> slopes{1.0f, -2.0f};
+  std::vector<float> outputs;
+  const int64_t num_images = 2;
+  const int64_t num_channels = 2;
+  const int64_t num_pixels = 2;
+  for (unsigned i = 0; i < inputs.size(); i++)
+    outputs.push_back(formula(inputs[i], slopes[i / num_pixels % num_channels]));
+
+  std::vector<int64_t> x_dims{num_images, num_channels, num_pixels};
+  std::vector<int64_t> slope_dims{num_channels};
+  test.AddInput<float>("X", x_dims, inputs);
+  test.AddInput<float>("slope", slope_dims, slopes);
+  test.AddOutput<float>("Y", x_dims, outputs);
+  test.Run();
+}
+
 TEST(ActivationOpTest, ParametricSoftplus) {
   static constexpr float alpha = 2.0f;
   static constexpr float beta = 1.5f;
