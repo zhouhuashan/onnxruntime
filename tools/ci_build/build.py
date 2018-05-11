@@ -44,6 +44,7 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--pb_home", help="Path to protobuf installation")
     # CUDA related
     parser.add_argument("--cudnn_home", help="Path to CUDNN home.")
+    parser.add_argument("--cuda_v9_1", help="Path to CUDA 9.1 home.")
     parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
 
     # Build options
@@ -186,6 +187,14 @@ def add_dir_if_exists(dir, dir_list):
     if (os.path.isdir(dir)):
         dir_list.append(dir)
 
+def set_cuda_dir(cuda_home):
+    if (is_windows()):
+        os.environ["CUDA_PATH"] = cuda_home
+        os.environ["CUDA_BIN_PATH"] = cuda_home
+        os.environ["CUDA_PATH_V9_1"] = cuda_home 
+        os.environ["CUDA_TOOLKIT_ROOT_DIR"] = cuda_home
+
+
 def run_tests(ctest_path, build_dir, configs, enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir):
     for config in configs:
         log.info("Running tests for %s configuration", config)
@@ -221,6 +230,7 @@ def main():
     ctest_path = args.ctest_path
     build_dir = args.build_dir
     cudnn_home = args.cudnn_home
+    cuda_v9_1 = args.cuda_v9_1
     script_dir = os.path.realpath(os.path.dirname(__file__))
     source_dir = os.path.normpath(os.path.join(script_dir, "..", ".."))
 
@@ -235,6 +245,9 @@ def main():
     os.makedirs(build_dir, exist_ok=True)
 
     configs = set(args.config)
+
+    if(cuda_v9_1):
+        set_cuda_dir(cuda_v9_1)
 
     log.info("Build started")
 
