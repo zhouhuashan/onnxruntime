@@ -8,6 +8,10 @@
 #include <fstream>
 #include <cmath>
 
+#ifdef USE_CUDA
+#include <core/providers/cuda/cuda_execution_provider.h>
+#endif
+
 using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
@@ -429,13 +433,31 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
     SessionOptions so;
     so.allocation_planner_type = planner;
     auto session_object = std::make_shared<InferenceSession>(so);
+    Common::Status status;
+
+    if (env.provider == LotusIR::kCudaExecutionProvider) {
+#if USE_CUDA
+      CUDAExecutionProviderInfo cuda_epi;
+      cuda_epi.device_id = 0;
+      status = session_object->RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(cuda_epi));
+      if (!status.IsOK()) {
+        fprintf(stderr, "init session %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
+        ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
+        goto end;
+      }
+#else
+      LOTUS_THROW("This executable is not built with CUDA");
+#endif
+    }
+
     CPUExecutionProviderInfo epi;
-    Common::Status status = session_object->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi));
+    status = session_object->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi));
     if (!status.IsOK()) {
       fprintf(stderr, "init session %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
       ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
       goto end;
     }
+
     status = session_object->Load(info.model_url);
     if (!status.IsOK()) {
       fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());

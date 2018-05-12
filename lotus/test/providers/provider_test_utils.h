@@ -225,7 +225,6 @@ struct OpTester {
   const char* op_;
   const char* domain_;
   const std::string provider_name_;
-  std::unique_ptr<IExecutionProvider> provider_;  // this would be released when passing to inference session
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;

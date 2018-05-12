@@ -163,7 +163,26 @@ const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::s
 // type specification of the corresponding op, which is done before this check.
 
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
-                                     const KernelDef& kernel_def) {
+                                     const KernelDef& kernel_def,
+                                     const std::string& exec_provider) {
+  // check if domain matches
+  if (node.Domain() != kernel_def.Domain())
+    return false;
+
+  // check if execution provider matches
+  const auto& node_provider = node.GetExecutionProvider();
+  const auto& expected_provider = (node_provider.empty() ? exec_provider : node_provider);
+  if (expected_provider != kernel_def.Provider())
+    return false;
+
+  // check if version matches
+  int kernel_start_version, kernel_end_version;
+  kernel_def.SinceVersion(&kernel_start_version, &kernel_end_version);
+  int node_version = node.Op()->since_version();
+  if (kernel_start_version > node_version || node_version > kernel_end_version)
+    return false;
+
+  // check if type matches
   auto& kernel_type_constraints = kernel_def.TypeConstraints();
   for (auto& constraint : kernel_type_constraints) {
     const std::string& name = constraint.first;
@@ -229,31 +248,35 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
     if (!i->second.status.IsOK()) {
       return i->second.status;
     }
-    if (node.Domain() == i->second.kernel_def->Domain() &&
-        node.GetExecutionProvider() == i->second.kernel_def->Provider()) {
-      int start, end;
-      i->second.kernel_def->SinceVersion(&start, &end);
-      int version = node.Op()->since_version();
-      if (start <= version && version <= end &&
-          VerifyKernelDef(node, *i->second.kernel_def)) {
-        OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def, execution_provider);
-        op_kernel->reset(i->second.kernel_create_func(kernel_info));
-        return Status::OK();
-      }
+    if (VerifyKernelDef(node, *i->second.kernel_def)) {
+      OpKernelInfo kernel_info(node, allocator_info, *i->second.kernel_def, execution_provider);
+      op_kernel->reset(i->second.kernel_create_func(kernel_info));
+      return Status::OK();
     }
   }
 
   if (create_func_kernel_) {
-	  // The node is assigned to an execution provider and no kernel registered
-	  // for the operator referred by the node. Create FunctionKernel to delegate
-	  // the node run to corresponding execution provider.
-	  auto& kernelCreatorInfo = kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second;
-	  OpKernelInfo kernel_info(node, allocator_info, *kernelCreatorInfo.kernel_def, execution_provider);
-	  op_kernel->reset(kernelCreatorInfo.kernel_create_func(kernel_info));
-	  return Status::OK();
+    // The node is assigned to an execution provider and no kernel registered
+    // for the operator referred by the node. Create FunctionKernel to delegate
+    // the node run to corresponding execution provider.
+    auto& kernelCreatorInfo = kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second;
+    OpKernelInfo kernel_info(node, allocator_info, *kernelCreatorInfo.kernel_def, execution_provider);
+    op_kernel->reset(kernelCreatorInfo.kernel_create_func(kernel_info));
+    return Status::OK();
+  } else
+    return Status(LOTUS, FAIL, "Kernel not found.");
+}
+
+bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node, const std::string& exec_provider) const {
+  auto range = kernel_creator_fn_map_.equal_range(node.OpType());
+  LOTUS_ENFORCE(node.GetExecutionProvider().empty());
+  for (auto i = range.first; i != range.second; ++i) {
+    if (i->second.status.IsOK() &&
+        VerifyKernelDef(node, *i->second.kernel_def, exec_provider)) {
+      return true;
+    }
   }
-  else
-	  return Status(LOTUS, FAIL, "Kernel not found.");
+  return false;
 }
 
 Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {

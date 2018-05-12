@@ -209,6 +209,11 @@ class KernelRegistry {
                       const IExecutionProvider* execution_provider,
                       std::unique_ptr<OpKernel>* op_kernel) const;
 
+  // check if a execution provider can create kernel for a node
+  bool CanExecutionProviderCreateKernel(
+      const LotusIR::Node& node,
+      const std::string& exec_provider) const;
+
   static KernelRegistry& Instance() {
     static KernelRegistry kernel_registry(true);
     return kernel_registry;
@@ -235,9 +240,10 @@ class KernelRegistry {
 
   // Check if the node's input/outpuData/attributes are compatible with this
   // kernel_def, If so, the kernel defined by the kernel_def is used to
-  // execute this node.
+  // execute this node. exec_provider is used to match kernel when node has no provider
   static bool VerifyKernelDef(const LotusIR::Node& node,
-                              const KernelDef& kernel_def);
+                              const KernelDef& kernel_def,
+                              const std::string& exec_provider = "");
 
   // Kernel create function map from op name to kernel creation info.
   std::multimap<std::string, KernelCreateInfo> kernel_creator_fn_map_;

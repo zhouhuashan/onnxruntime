@@ -16,7 +16,8 @@ class TestEnv {
   const Lotus::AllocationPlannerType planner;
   std::unique_ptr<IFinishCallback> finished;
   Lotus::Test::AllocatorManager& allocatorManager;
-  TestEnv(const std::vector<TestCaseInfo>& tests1, TestResultStat& stat1, Lotus::AllocationPlannerType planner1);
+  std::string provider;
+  TestEnv(const std::vector<TestCaseInfo>& tests1, TestResultStat& stat1, Lotus::AllocationPlannerType planner1, const std::string& provider1);
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TestEnv);

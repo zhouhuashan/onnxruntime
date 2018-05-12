@@ -7,7 +7,6 @@
 #include "core/common/logging/sinks/clog_sink.h"
 #ifdef USE_CUDA
 #include "core/providers/cuda/cuda_execution_provider.h"
-#include "core/providers/cuda/cuda_common.h"
 #endif
 
 using namespace Lotus::Logging;
@@ -112,13 +111,6 @@ void Check(const OpTester::Data& expected_data, MLValue& mlvalue) {
 
 OpTester::OpTester(const std::string& provider, const char* op, const char* domain)
     : provider_name_(provider), op_(op), domain_(domain) {
-#ifdef USE_CUDA
-  if (provider_name_ == LotusIR::kCudaExecutionProvider) {
-    CUDAExecutionProviderInfo epi;
-    epi.device_id = 0;
-    provider_ = std::make_unique<CUDAExecutionProvider>(epi);
-  }
-#endif
 }
 
 OpTester::~OpTester() {
@@ -206,10 +198,15 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     so.session_logid = op_;
     so.session_log_verbosity_level = 1;
 
-    IExecutionProvider* p_provider = provider_.release();  // the ownership is taken by session_object, but we kept this for tensor copy during session
     InferenceSession session_object{so};
-    if (p_provider)
-      EXPECT_TRUE(session_object.RegisterExecutionProvider(std::unique_ptr<IExecutionProvider>(p_provider)).IsOK());
+
+    if (provider_name_ == LotusIR::kCudaExecutionProvider) {
+#ifdef USE_CUDA
+      CUDAExecutionProviderInfo epi;
+      epi.device_id = 0;
+      EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(epi)).IsOK());
+#endif
+    }
 
     status = session_object.Load(std::move(p_model));
     EXPECT_TRUE(status.IsOK());

@@ -3,10 +3,17 @@
 namespace Lotus {
 
 bool TransformerMemcpyImpl::ModifyGraph() {
+  bool modified = false;
+
   // find defs that require copy
   for (auto& node : graph_->Nodes()) {
     if (graph_->IsSourceNode(node) || graph_->IsSinkNode(node))
       continue;
+
+    if (node.GetExecutionProvider().empty() && KernelRegistry::Instance().CanExecutionProviderCreateKernel(node, provider_)) {
+      node.SetExecutionProvider(provider_);
+      modified = true;
+    }
 
     ProcessDefs(node);
   }
@@ -44,7 +51,7 @@ bool TransformerMemcpyImpl::ModifyGraph() {
     }
     return true;
   }
-  return false;
+  return modified;
 }
 
 void TransformerMemcpyImpl::ProcessDefs(const LotusIR::Node& node) {
@@ -58,7 +65,7 @@ void TransformerMemcpyImpl::ProcessDefs(const LotusIR::Node& node) {
     });
   } else {
     // TODO: copy between devices? i.e. multiple GPUs
-    LOTUS_ENFORCE(node.GetExecutionProvider() == LotusIR::kCpuExecutionProvider);
+    LOTUS_ENFORCE(node.GetExecutionProvider() == LotusIR::kCpuExecutionProvider || node.GetExecutionProvider().empty());
     node.ForEachDef([this](const LotusIR::NodeArg* arg, bool /*is_input*/) {
       non_provider_defs_.insert(arg);
     });

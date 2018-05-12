@@ -6,6 +6,7 @@
 #include "runner.h"
 #include <core/framework/environment.h>
 #include <core/common/logging/sinks/clog_sink.h>
+#include <core/graph/constants.h>
 #include "vstest_logger.h"
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -35,14 +36,14 @@ TEST_MODULE_CLEANUP(ModuleCleanup) {
 
 TEST_CLASS(ONNX_TEST){
     template <Lotus::AllocationPlannerType planner>
-    void run(){
+    void run(const std::string& provider){
         char buf[1024];
 int p_models = Lotus::Env::Default()->GetNumCpuCores();
 snprintf(buf, sizeof(buf), "running tests with %d cores", p_models);
 Logger::WriteMessage(buf);
 std::vector<TestCaseInfo> tests = LoadTests({"onnx_testdata"}, {});
 TestResultStat stat;
-TestEnv args(tests, stat, planner);
+TestEnv args(tests, stat, planner, provider);
 RunTests(args, p_models, p_models);
 std::string res = stat.ToString();
 Logger::WriteMessage(res.c_str());
@@ -50,10 +51,10 @@ Logger::WriteMessage(res.c_str());
 
 public:
 TEST_METHOD(test_sequential_planner) {
-  run<Lotus::AllocationPlannerType::SEQUENTIAL_PLANNER>();
+  run<Lotus::AllocationPlannerType::SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
 }
 TEST_METHOD(test_simple_sequential_planner) {
-  run<Lotus::AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER>();
+  run<Lotus::AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
 }
 }
 ;
