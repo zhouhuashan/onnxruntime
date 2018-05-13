@@ -484,7 +484,7 @@ class InferenceSession::Impl {
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
 
-      const TensorProto& tensor_proto = entry.second;
+      const TensorProto& tensor_proto = *(entry.second);
       std::unique_ptr<Tensor> p_tensor = nullptr;
       LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc));
       MLValue mlvalue;
@@ -516,7 +516,7 @@ class InferenceSession::Impl {
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
 
-      const TensorProto& tensor_proto = entry.second;
+      const TensorProto& tensor_proto = *(entry.second);
       LOTUS_RETURN_IF_ERROR(Lotus::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
     }
     //2. allocate weight buffer on different locations
@@ -536,7 +536,7 @@ class InferenceSession::Impl {
       const std::string& name = entry.first;
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
-      const TensorProto& tensor_proto = entry.second;
+      const TensorProto& tensor_proto = *(entry.second);
 
       auto& location = execution_plan->allocation_plan[mlvalue_index].location;
       auto it = weights_buffers_.find(location);

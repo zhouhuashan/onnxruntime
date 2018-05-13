@@ -367,59 +367,53 @@ void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& rep
 
 // Constructor: Given a <GraphProto> loaded from model file, construct
 // a <Graph> object and Resolve() it.
-Status Graph::LoadGraph(const GraphProto& graph_proto,
-                        const std::unordered_map<std::string, int>& domain_to_version,
-                        Version ir_version,
-                        std::unique_ptr<Graph>& new_graph) {
-  // create instance. need to call private ctor so can't use make_unique
-  GSL_SUPPRESS(r .11)
-  new_graph.reset(new Graph(nullptr, &graph_proto, domain_to_version, ir_version));
+//Status Graph::LoadGraph(const GraphProto& graph_proto,
+//                        const std::unordered_map<std::string, int>& domain_to_version,
+//                        Version ir_version,
+//                        std::unique_ptr<Graph>& new_graph) {
+//  // create instance. need to call private ctor so can't use make_unique
+//  GSL_SUPPRESS(r .11)
+//  new_graph.reset(new Graph(nullptr, &graph_proto, domain_to_version, ir_version));
+//
+//  // as we just loaded from file we want to fully initialize/Resolve, but not let that change
+//  // the proto sync flag
+//  auto status = new_graph->Resolve(/* no_proto_sync_required */ true);
+//  return status;
+//}
 
-  // as we just loaded from file we want to fully initialize/Resolve, but not let that change
-  // the proto sync flag
-  auto status = new_graph->Resolve(/* no_proto_sync_required */ true);
-  return status;
-}
-
-Graph::Graph(const std::string* name,
-             const GraphProto* graph_proto,
+Graph::Graph(GraphProto* graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version,
              Version ir_version)
+
     : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version, ir_version),
-      graph_proto_{graph_proto != nullptr ? *graph_proto : GraphProto()},
+      graph_proto_{graph_proto},
       graph_type_{Type::Main} {
-  LOTUS_ENFORCE(name != nullptr || graph_proto != nullptr, "Expected either name or graph_proto.");
-
-  if (name != nullptr) {
-    LOTUS_ENFORCE(graph_proto == nullptr, "Expect either name or graph_proto but not both.");
-    graph_proto_.set_name(*name);
-  }
-
+  LOTUS_ENFORCE(graph_proto != nullptr, "Expected either name or graph_proto.");
   ArgNameToTypeMap name_to_type_map;
 
   // these are all empty unless we received a graph_proto as input
   if (graph_proto != nullptr) {
     // Copy initial tensors to a map.
-    for (auto tensor : graph_proto_.initializer()) {
-      name_to_initial_tensor_[tensor.name()] = tensor;
+    for (auto& tensor : graph_proto_->initializer()) {
+      name_to_initial_tensor_[tensor.name()] = &tensor;
     }
 
     // Collect all node arg name, type, shape information in the graph.
     // type/shape information will be assigned to each node arg when going
     // thru all nodes later.
-    for (auto& graph_input : graph_proto_.input()) {
+    for (auto& graph_input : graph_proto_->input()) {
       if (graph_input.has_name() && graph_input.has_type()) {
         name_to_type_map[graph_input.name()] = graph_input.type();
       }
     }
 
-    for (auto& graph_output : graph_proto_.output()) {
+    for (auto& graph_output : graph_proto_->output()) {
       if (graph_output.has_name() && graph_output.has_type()) {
         name_to_type_map[graph_output.name()] = graph_output.type();
       }
     }
 
-    for (auto& node_arg : graph_proto_.value_info()) {
+    for (auto& node_arg : graph_proto_->value_info()) {
       if (node_arg.has_name() && node_arg.has_type()) {
         name_to_type_map[node_arg.name()] = node_arg.type();
       }
@@ -429,7 +423,7 @@ Graph::Graph(const std::string* name,
   // Add nodes.
   AddSourceSinkNodes();
 
-  for (auto node_proto : graph_proto_.node()) {
+  for (auto node_proto : graph_proto_->node()) {
     AddNode(node_proto, name_to_type_map);
   }
 }
@@ -511,7 +505,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
           // This input arg should be fed when running evaluation.
 
           // Add a control edge between <souce> node and this node.
-          AddControlEdge(source_node_index_, node.Index());
+          NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, node.Index()));
           continue;
         }
 
@@ -542,7 +536,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
 
       // This is a starting node.
       // Add a control edge between <souce> node and this node.
-      AddControlEdge(source_node_index_, node.Index());
+	  NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, node.Index()));
     }
   }
 
@@ -554,7 +548,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
     if (inner_nodes.size() <= 0 || inner_nodes.end() == inner_nodes.find(&node)) {
       // This is an ending node.
       // Add a control edge from this node to sink node.
-      AddControlEdge(node.Index(), sink_node_index_);
+      NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(node.Index(), sink_node_index_));
     }
   }
 
@@ -780,15 +774,15 @@ Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<Typ
   return Status::OK();
 }
 
-// For several operators, the output type is specified by an attribute value.
-// The following is an initial type-inference support for handling such operators.
+  // For several operators, the output type is specified by an attribute value.
+  // The following is an initial type-inference support for handling such operators.
 
-// TODO: The following should be formalized and pushed into ONNX, e.g., by
-// providing operator-specific type-inference functions. This is a temporary
-// placeholder until that happens.
+  // TODO: The following should be formalized and pushed into ONNX, e.g., by
+  // providing operator-specific type-inference functions. This is a temporary
+  // placeholder until that happens.
 
-// GetTypeAttributeName: returns the name of the attribute that specifies the
-// type of the output if the operator has one. Returns null otherwise.
+  // GetTypeAttributeName: returns the name of the attribute that specifies the
+  // type of the output if the operator has one. Returns null otherwise.
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -851,12 +845,12 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
           // Infer its type from initializer tensor.
           TypeProto initial_tensor_type;
           initial_tensor_type.mutable_tensor_type()->set_elem_type(
-              initial_tensor_iter->second.data_type());
+              initial_tensor_iter->second->data_type());
           input_def->SetType(DataTypeUtils::ToType(initial_tensor_type));
 
           // Set shape accordingly.
           TensorShapeProto shape;
-          for (auto dim : initial_tensor_iter->second.dims()) {
+          for (auto dim : initial_tensor_iter->second->dims()) {
             shape.add_dim()->set_dim_value(dim);
           }
           input_def->SetShape(shape);
@@ -1190,48 +1184,64 @@ void GraphBase::AddSourceSinkNodes() {
                              "Sink node internally in a graph.", empty_args, empty_args)
                          ->Index();
 
-  AddControlEdge(source_node_index_, sink_node_index_);
+  NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, sink_node_index_));
 }
 
 const std::string& Graph::Name() const noexcept {
-  return graph_proto_.name();
+  return graph_proto_->name();
 }
 
 void Graph::SetName(const std::string& name) {
-  graph_proto_.set_name(name);
+  graph_proto_->set_name(name);
 }
 
 const std::string& Graph::Description() const noexcept {
-  return graph_proto_.doc_string();
+  return graph_proto_->doc_string();
 }
 
 void Graph::SetDescription(const std::string& description) {
-  graph_proto_.set_doc_string(description);
+  graph_proto_->set_doc_string(description);
 }
 
 void Graph::AddInitializedTensor(const TensorProto& tensor) {
-  name_to_initial_tensor_[tensor.name()] = tensor;
+  if (name_to_initial_tensor_.end() != name_to_initial_tensor_.find(tensor.name())) {
+    return;
+  }
+
+  auto tensorAdded = graph_proto_->add_initializer();
+  *(tensorAdded) = tensor;
+  name_to_initial_tensorIndex_[tensor.name()] = graph_proto_->initializer_size() - 1;
+  name_to_initial_tensor_[tensor.name()] = tensorAdded;
+
   SetGraphProtoSyncNeeded();
   SetGraphResolveNeeded();
 }
 
 void Graph::RemoveInitializedTensor(const std::string& tensor_name) {
-  name_to_initial_tensor_.erase(tensor_name);
-  SetGraphProtoSyncNeeded();
-  SetGraphResolveNeeded();
+  auto iter = name_to_initial_tensorIndex_.find(tensor_name);
+  if (name_to_initial_tensorIndex_.end() != iter) {
+    removed_initializer_indexes_.push_back(iter->second);
+    name_to_initial_tensorIndex_.erase(tensor_name);
+    name_to_initial_tensor_.erase(tensor_name);
+    SetGraphProtoSyncNeeded();
+    SetGraphResolveNeeded();
+  }
 }
 
-bool Graph::GetInitializedTensor(const std::string& tensor_name, TensorProto& value) const {
+bool Graph::GetInitializedTensor(const std::string& tensor_name, const TensorProto** value) const {
   auto iter = name_to_initial_tensor_.find(tensor_name);
   if (name_to_initial_tensor_.end() == iter) {
     return false;
   }
-  value = iter->second;
+  *value = iter->second;
   return true;
 }
 
 void Graph::CleanAllInitializedTensors() noexcept {
+  name_to_initial_tensorIndex_.clear();
   name_to_initial_tensor_.clear();
+  removed_initializer_indexes_.clear();
+  graph_proto_->mutable_initializer()->Clear();
 }
 
 const InitializedTensorSet& Graph::GetAllInitializedTensors() const noexcept {
@@ -1381,21 +1391,16 @@ bool GraphBase::AddControlEdge(NodeIndex src_node_index, NodeIndex dst_node_inde
     nodes_[dst_node_index]->MutableRelationships().control_inputs.insert(nodes_[src_node_index]->Name());
   }
 
-  if (!IsSourceNode(src_node_index) && !IsSinkNode(dst_node_index)) {
-    graph_proto_sync_needed_ = true;
-    graph_resolve_needed_ = true;
-  }
-
   return true;
 }
 
 const GraphProto& Graph::ToGraphProto() {
   if (!GraphProtoSyncNeeded()) {
-    return graph_proto_;
+    return *graph_proto_;
   }
 
   // Nodes.
-  graph_proto_.clear_node();
+  graph_proto_->clear_node();
 
   // Nodes must be sorted in Topological Order in the GraphProto per ONNX spec.
   for (auto& node_idx : NodesInTopologicalOrder()) {
@@ -1403,16 +1408,37 @@ const GraphProto& Graph::ToGraphProto() {
       continue;
     }
 
-    const gsl::not_null<NodeProto*> node_proto = graph_proto_.add_node();
+    const gsl::not_null<NodeProto*> node_proto = graph_proto_->add_node();
     const gsl::not_null<Node*> p_node = GetNode(node_idx);
     p_node->ToProto(*node_proto);
   }
 
-  // Initial tensors;
-  graph_proto_.clear_initializer();
-  for (auto item : name_to_initial_tensor_) {
-    const gsl::not_null<TensorProto*> tensor = graph_proto_.add_initializer();
-    *tensor = item.second;
+  if (removed_initializer_indexes_.size() > 0) {
+    // Move initializers.
+    std::sort(removed_initializer_indexes_.begin(), removed_initializer_indexes_.end());
+    int lastInUseInitializerIndex = graph_proto_->initializer_size() - 1;
+    int start = 0, end = static_cast<int>(removed_initializer_indexes_.size()) - 1;
+    int lastRemovedInitializerIndex = removed_initializer_indexes_[end];
+
+    for (; start <= end; start++) {
+      // Find a lastInUseInitializer.
+      while (start <= end && lastInUseInitializerIndex == lastRemovedInitializerIndex) {
+        graph_proto_->mutable_initializer()->RemoveLast();
+        lastInUseInitializerIndex--;
+        end--;
+        if (start <= end) {
+          lastRemovedInitializerIndex = removed_initializer_indexes_[end];
+        }
+      }
+
+      if (start <= end) {
+        // Copy the <lastInUseInitializerIndex> initializer in use to the <start> slot which is removed.
+        *graph_proto_->mutable_initializer(removed_initializer_indexes_[start]) = graph_proto_->initializer(lastInUseInitializerIndex);
+        graph_proto_->mutable_initializer()->RemoveLast();
+        lastInUseInitializerIndex--;
+      }
+    }
+    removed_initializer_indexes_.clear();
   }
 
   // Sync graph inputs/outputs/valueInfo.
@@ -1420,24 +1446,24 @@ const GraphProto& Graph::ToGraphProto() {
 
   GraphProtoSyncNeeded(false);
 
-  return graph_proto_;
+  return *graph_proto_;
 }
 
 void Graph::SyncGraphInputsOutputs() {
-  graph_proto_.clear_input();
-  graph_proto_.clear_output();
-  graph_proto_.clear_value_info();
+  graph_proto_->clear_input();
+  graph_proto_->clear_output();
+  graph_proto_->clear_value_info();
 
   for (const gsl::not_null<const LotusIR::NodeArg*> input_arg : GetInputs()) {
-    *(graph_proto_.mutable_input()->Add()) = input_arg->ToProto();
+    *(graph_proto_->mutable_input()->Add()) = input_arg->ToProto();
   }
 
   for (const gsl::not_null<const LotusIR::NodeArg*> output_arg : GetOutputs()) {
-    *(graph_proto_.mutable_output()->Add()) = output_arg->ToProto();
+    *(graph_proto_->mutable_output()->Add()) = output_arg->ToProto();
   }
 
   for (const gsl::not_null<const LotusIR::NodeArg*> value_info : value_info_) {
-    *(graph_proto_.mutable_value_info()->Add()) = value_info->ToProto();
+    *(graph_proto_->mutable_value_info()->Add()) = value_info->ToProto();
   }
 }
 
@@ -1473,9 +1499,9 @@ Status Graph::SetGraphInputsOutputs() {
   // If it's true, then graph inputs and outputs will keep the same
   // as what are specified in the model, otherwise, graph inputs
   // and outputs will be inferred.
-  const bool loaded_from_model_file = graph_proto_.input_size() != 0 ||
-                                      graph_proto_.output_size() != 0 ||
-                                      graph_proto_.value_info_size() != 0;
+  const bool loaded_from_model_file = graph_proto_->input_size() != 0 ||
+                                      graph_proto_->output_size() != 0 ||
+                                      graph_proto_->value_info_size() != 0;
 
   std::unordered_set<std::string> added_input_names{};
 
@@ -1486,19 +1512,19 @@ Status Graph::SetGraphInputsOutputs() {
     std::unordered_set<std::string> specified_graph_value_info;
     std::unordered_set<std::string> specified_initializers;
 
-    for (auto& graph_input : graph_proto_.input()) {
+    for (auto& graph_input : graph_proto_->input()) {
       specified_graph_inputs.insert(graph_input.name());
     }
 
-    for (auto& graph_output : graph_proto_.output()) {
+    for (auto& graph_output : graph_proto_->output()) {
       specified_graph_outputs.insert(graph_output.name());
     }
 
-    for (auto& graph_value_info : graph_proto_.value_info()) {
+    for (auto& graph_value_info : graph_proto_->value_info()) {
       specified_graph_value_info.insert(graph_value_info.name());
     }
 
-    for (auto& initializer : graph_proto_.initializer()) {
+    for (auto& initializer : graph_proto_->initializer()) {
       specified_initializers.insert(initializer.name());
     }
 

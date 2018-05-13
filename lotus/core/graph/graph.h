@@ -32,7 +32,7 @@ namespace LotusIR {
 typedef size_t NodeIndex;
 typedef int64_t Version;
 typedef ValueInfoProto NodeArgInfo;
-typedef std::unordered_map<std::string, TensorProto> InitializedTensorSet;
+typedef std::unordered_map<std::string, const TensorProto*> InitializedTensorSet;
 typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
 
 class Graph;
@@ -77,9 +77,6 @@ class NodeArg {
   const DataType Type() const noexcept;
   const TypeProto* TypeAsProto() const noexcept;
 
-  void SetType(DataType p_type);
-  void SetType(const TypeProto& type_proto);
-
   // Get node arg shape.
   // Return null pointer if there's no shape specified.
   const TensorShapeProto* Shape() const;
@@ -99,6 +96,11 @@ class NodeArg {
 
  private:
   LOTUS_DISALLOW_COPY_AND_ASSIGN(NodeArg);
+  friend class Graph;
+
+  void SetType(DataType p_type);
+  void SetType(const TypeProto& type_proto);
+
   NodeArg& operator=(NodeArg&& other) = delete;
 
   // Node arg PType.
@@ -663,7 +665,7 @@ class Graph : public GraphBase {
   // Add/Remove/Get initial tensors for some graph inputs.
   void AddInitializedTensor(const TensorProto& tensor_proto);
   void RemoveInitializedTensor(const std::string& tensor_name);
-  bool GetInitializedTensor(const std::string& tensor_name, TensorProto& value) const;
+  bool GetInitializedTensor(const std::string& tensor_name, const TensorProto** value) const;
   const InitializedTensorSet& GetAllInitializedTensors() const noexcept;
   void CleanAllInitializedTensors() noexcept;
 
@@ -680,27 +682,20 @@ class Graph : public GraphBase {
   // All other access should be via the public API.
   friend class Model;
 
-  // Constructor from scratch.
-  // going to construct a ONNX graph. With ONNX graph, strict
-  // type checking will be skipped.
-  Graph(const std::string& name,
+  // Constructor: Given a <GraphProto> loaded from model file, construct
+  // a <Graph> object.
+  Graph(GraphProto* graph_proto,
         const std::unordered_map<std::string, int>& domain_to_version,
-        Version ir_version)
-      : Graph(&name, nullptr, domain_to_version, ir_version) {}
+        Version ir_version);
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object and Resolve() it.
-  static Status LoadGraph(const GraphProto& graph_proto,
+  /*static Status LoadGraph(const GraphProto& graph_proto,
                           const std::unordered_map<std::string, int>& domain_to_version,
                           Version ir_version,
-                          std::unique_ptr<Graph>& new_graph);
+                          std::unique_ptr<Graph>& new_graph);*/
 
   Graph() = delete;
-
-  Graph(const std::string* name,
-        const GraphProto* graph_proto,
-        const std::unordered_map<std::string, int>& domain_to_version,
-        Version ir_version);
 
   enum class Type {
     // A main graph.
@@ -734,12 +729,15 @@ class Graph : public GraphBase {
   // When serializing <*this> Graph to a GraphProto, the nodes and
   // functions in <Graph> will also be fed into <graph_proto_> so that
   // it's consistent with <*this> graph.
-  GraphProto graph_proto_;
+  // This pointer is owned by parent model.
+  GraphProto* graph_proto_;
 
   // The node which refers to <*this> graph (Function).
-  //Node* node_;
+  // Node* node_;
 
+  std::unordered_map<std::string, int> name_to_initial_tensorIndex_;
   InitializedTensorSet name_to_initial_tensor_;
+  std::vector<int> removed_initializer_indexes_;
 
   Type graph_type_ = Type::Main;
 

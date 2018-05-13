@@ -9,14 +9,23 @@ typedef std::unordered_map<std::string, std::string> ModelMetaData;
 
 // A machine learning model representation class.
 // Besides a main <Graph>, it also holds basic information, say,
-// version, domain, model author, license etc.
+// model version, model domain, model author, license etc.
 class Model {
  public:
   const Version kNoVersion = INT64_MAX;
 
+  // Construct model from scratch.
   Model(const std::string& graph_name,
-        bool is_ONNX = false,
+        bool is_onnx_domain_only = false,
         const ModelMetaData& model_metadata = ModelMetaData());
+
+  // NOTE: after calling this contructor, <*this> model will
+  // hold a copy of <model_proto>.
+  Model(const ModelProto& model_proto);
+
+  // NOTE: after calling this constructor, <*this> model will
+  // own the <model_proto>.
+  Model(std::unique_ptr<ModelProto> model_proto);
 
   // Get model's IR version.
   // Return <kNoVersion> if not specified.
@@ -61,7 +70,7 @@ class Model {
   const Graph* MainGraph() const noexcept;
 
   // Get model's serialization proto data.
-  const ModelProto& ToProto();
+  ModelProto ToProto();
 
 #ifdef _WIN32
   static Status Save(Model& model, const std::wstring& file_path);
@@ -83,23 +92,18 @@ class Model {
   static Status Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model);
 
  private:
-  Model(const ModelProto& model_proto);
-
   // Set <domain_to_version_> and <model_proto_> to contain related domains
   // with latest version in OpSchemaRegistry.
-  // if <is_ONNX> is true, then only onnx domain will be contained.
+  // if <is_onnx_domain_only> is true, then only onnx domain will be contained.
   // otherwise, ml domain will also be contained.
-  void AddImportOpSets(bool is_ONNX);
+  void AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map<std::string, int>* domain_to_version);
 
   // Model data.
-  ModelProto model_proto_;
+  std::unique_ptr<ModelProto> model_proto_;
+
   // This is a duplication of <model_proto_.metadata_props()>.
   // It gives better accessibility.
   ModelMetaData model_metadata_;
-
-  // Operator set used by this model.
-  // It contains <domain, version> pairs.
-  std::unordered_map<std::string, int> domain_to_version_;
 
   // Main graph of the model.
   std::unique_ptr<Graph> graph_;
