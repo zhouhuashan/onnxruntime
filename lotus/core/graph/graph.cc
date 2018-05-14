@@ -533,7 +533,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
 
       // This is a starting node.
       // Add a control edge between <souce> node and this node.
-	  NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, node.Index()));
+      NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, node.Index()));
     }
   }
 
@@ -771,15 +771,15 @@ Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<Typ
   return Status::OK();
 }
 
-  // For several operators, the output type is specified by an attribute value.
-  // The following is an initial type-inference support for handling such operators.
+// For several operators, the output type is specified by an attribute value.
+// The following is an initial type-inference support for handling such operators.
 
-  // TODO: The following should be formalized and pushed into ONNX, e.g., by
-  // providing operator-specific type-inference functions. This is a temporary
-  // placeholder until that happens.
+// TODO: The following should be formalized and pushed into ONNX, e.g., by
+// providing operator-specific type-inference functions. This is a temporary
+// placeholder until that happens.
 
-  // GetTypeAttributeName: returns the name of the attribute that specifies the
-  // type of the output if the operator has one. Returns null otherwise.
+// GetTypeAttributeName: returns the name of the attribute that specifies the
+// type of the output if the operator has one. Returns null otherwise.
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -983,41 +983,6 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
                       "Attribute '" + *p_type_attribute_name + "' in node (" + nodeName +
                           ") has wrong type. It should be of int type.");
       }
-    }
-
-    if (type_parameter_to_type_map.empty()) {
-      // Infer the output type from the type of the value of attribute named kConstantValue.
-      // TODO: We should be doing this only for operators where this is appropriate
-      // (e.g., the "Constant" operator).
-
-      auto node_attributes_iter = node.GetAttributes().find(kConstantValue);
-      if (node.GetAttributes().end() == node_attributes_iter) {
-        Status status(LOTUS, FAIL,
-                      "Node (" + nodeName + ") output arg value should be specified via node attribute '" +
-                          kConstantValue + "'.");
-        return status;
-      }
-
-      AttributeProto_AttributeType attr_type;
-      RETURN_IF_ERROR(TypeUtils::GetType(node_attributes_iter->second, attr_type));
-
-      if (AttributeProto_AttributeType::AttributeProto_AttributeType_TENSOR == attr_type) {
-        auto& tensor = node_attributes_iter->second.t();
-        TypeProto type_proto;
-        type_proto.mutable_tensor_type()->set_elem_type(tensor.data_type());
-        set_output_type(DataTypeUtils::ToType(type_proto));
-      } else {
-        GSL_SUPPRESS(bounds .2)  // using attr_type as index to LotusIR::kAttrTypeSTrings should be safe
-        {
-          Status status(LOTUS, FAIL,
-                        std::string("For attribute ") + kConstantValue +
-                            " , only Tensor type is allowed. The attribute type in this model is " +
-                            LotusIR::kAttrTypeStrings[static_cast<int>(attr_type)] + ".");
-          return status;
-        }
-      }
-
-      continue;
     }
 
     // For case that input arg and output arg have different types.
