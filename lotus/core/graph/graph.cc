@@ -353,9 +353,6 @@ void Node::ForEachDef(std::function<void(const LotusIR::NodeArg*, bool is_input)
 };
 
 void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements) {
-  // only modify graph before edge is built
-  LOTUS_ENFORCE(relationships_.input_edges.size() == 0 && relationships_.output_edges.size() == 0);
-
   std::vector<std::vector<NodeArg*>*> all_defs = {&definitions_.input_defs, &definitions_.output_defs};
 
   for (auto pair : replacements)
