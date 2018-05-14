@@ -12,6 +12,9 @@
 #include <core/providers/cuda/cuda_execution_provider.h>
 #endif
 
+#include "FixedCountFinishCallback.h"
+
+
 using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
@@ -255,15 +258,19 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
   });
   std::vector<TestCaseResult> results(env.tests.size());
 #ifdef _WIN32
-  if (p_models > 1) {
+  if (p_models > 1 && stat.total_test_case_count > 1) {
     ParallelRunTests(env, p_models, concurrent_runs, results);
   } else
 #endif
   {
+    //run models one by one
     for (size_t i = 0; i != env.tests.size(); ++i) {
-      RunSingleTestCase(env, i, concurrent_runs, [i, &results](TestCaseResult& result) {
+      FixedCountFinishCallback c(static_cast<int>(env.tests[i].input_pb_files.size()));
+      RunSingleTestCase(env, i, concurrent_runs, [i, &results, &c](TestCaseResult& result) {
         results[i] = result;
+        c.onFinished(0);
       });
+      c.wait();
     }
   }
   for (size_t i = 0; i != env.tests.size(); ++i) {
