@@ -8,7 +8,6 @@ namespace Lotus {
 
 void SessionState::SetGraph(const LotusIR::Graph* graph) {
   p_graph_ = graph;
-  session_kernels_.resize(p_graph_->NumberOfNodes());
   //enable by default
   enable_mem_pattern_ = true;
 }
@@ -29,10 +28,17 @@ const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
   return session_kernels_[node_id].get();
 }
 
+void SessionState::SetKernelVectorSize(size_t size) {
+  if (!session_kernels_.empty()) {
+    return;
+  }
+  session_kernels_.resize(size);
+}
+
 void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel) {
   // assumes vector is already resize()'ed to the number of nodes in the graph
   // and the nodeIds space is dense
-  LOTUS_ENFORCE(p_graph_ && (session_kernels_.size() == p_graph_->NumberOfNodes()));
+  LOTUS_ENFORCE(!session_kernels_.empty() && node_id < session_kernels_.size());
   session_kernels_[node_id] = std::move(p_kernel);
 }
 

@@ -85,9 +85,37 @@ class InferenceSession::Impl {
       return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(LOTUS, RUNTIME_EXCEPTION);
+      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     return Common::Status::OK();
+  }
+
+  Common::Status Load(const ModelProto& model_proto) {
+    try {
+      LOGS(*session_logger_, INFO) << "Loading model using model_proto";
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (is_model_loaded_) {  // already loaded
+        LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+        return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+      }
+
+      std::shared_ptr<LotusIR::Model> p_tmp_model;
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model));
+      model_ = p_tmp_model;
+
+      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+
+      // all steps complete, mark the model as loaded.
+      is_model_loaded_ = true;
+
+      LOGS(*session_logger_, INFO) << "Model successfully loaded.";
+    } catch (const std::exception& ex) {
+      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+    } catch (...) {
+      LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
+      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+    }
+    return Status::OK();
   }
 
   Common::Status Load(std::istream& model_istream) {
@@ -119,7 +147,7 @@ class InferenceSession::Impl {
       return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(LOTUS, RUNTIME_EXCEPTION);
+      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     return Common::Status::OK();
   }
@@ -145,7 +173,7 @@ class InferenceSession::Impl {
       return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(LOTUS, RUNTIME_EXCEPTION);
+      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     return Common::Status::OK();
   }
@@ -172,19 +200,12 @@ class InferenceSession::Impl {
                                             std::make_unique<CPUExecutionProvider>(epi));
       }
 
-      LotusIR::Graph* graph = model_->MainGraph();
-      LOTUS_RETURN_IF_ERROR(TransformGraph(graph));
-      LOTUS_RETURN_IF_ERROR(graph->Resolve());
+      LotusIR::Graph* p_graph = model_->MainGraph();
+      session_state_.SetGraph(p_graph);
 
-      // at this point the graph should be in a frozen state
-      // hence we set it in the session for use by the executors
-      session_state_.SetGraph(graph);
-
-      // All following initialization steps work on the frozen state of
-      // graph stored inside session_state.
-
-      LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping());
-      // add other per session initialization stuff here before invoking the executor
+      LOTUS_RETURN_IF_ERROR(TransformGraph(p_graph));
+      LOTUS_RETURN_IF_ERROR(p_graph->Resolve());
+      LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping(*p_graph));
 
       // get execution plan
       if (session_options_.enable_sequential_execution) {
@@ -202,16 +223,18 @@ class InferenceSession::Impl {
         LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
       }
 
-      LOTUS_RETURN_IF_ERROR(SaveInitializedTensors());
+      LOTUS_RETURN_IF_ERROR(SaveInitializedTensors(*p_graph));
 
+      p_graph->CleanAllInitializedTensors();  // remove weights from the graph now to save memory
       is_inited_ = true;
+
       LOGS(*session_logger_, INFO) << "Session successfully initialized.";
     } catch (const std::exception& ex) {
       LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
       return Status(LOTUS, FAIL, "Exception during initialization: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Initialize()";
-      return Status(LOTUS, RUNTIME_EXCEPTION);
+      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
     }
     return Status::OK();
   }
@@ -298,7 +321,7 @@ class InferenceSession::Impl {
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     } catch (...) {
-      retval = Status(LOTUS, RUNTIME_EXCEPTION);
+      retval = Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Run()");
     }
 
     --current_num_runs_;
@@ -469,16 +492,14 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
-  Common::Status SaveInitializedTensorsWithSeperateBuffer() {
+  Common::Status SaveInitializedTensorsWithSeperateBuffer(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
-    const LotusIR::Graph* p_graph = session_state_.GetGraph();
-    LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
-    //TODO: get allocator based on weights location in allocation plan
+                                                         //TODO: get allocator based on weights location in allocation plan
     auto cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
     LOTUS_ENFORCE(cpu_provider);
     auto alloc = cpu_provider->GetAllocator();
-    const LotusIR::InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
+    const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
     for (const auto& entry : initialized_tensor_set) {
       const std::string& name = entry.first;
       int mlvalue_index;
@@ -500,17 +521,15 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
-  Common::Status SaveInitializedTensorsWithMemPattern() {
+  Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
-    const LotusIR::Graph* p_graph = session_state_.GetGraph();
-    LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
     auto execution_plan = session_state_.GetExecutionPlan();
     LOTUS_ENFORCE(execution_plan);  // execution plan must be ready.
 
     MLValuePatternPlanner planner(session_state_);
     //1. first plan the memory
-    const LotusIR::InitializedTensorSet& initialized_tensor_set = p_graph->GetAllInitializedTensors();
+    const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
     for (const auto& entry : initialized_tensor_set) {
       const std::string& name = entry.first;
       int mlvalue_index;
@@ -582,15 +601,15 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
-  Common::Status SaveInitializedTensors() {
+  Common::Status SaveInitializedTensors(const LotusIR::Graph& graph) {
     auto execution_plan = session_state_.GetExecutionPlan();
     // if we enable the meory pattern and already have the execution plan
     // go with mem pattern approach, which will allocate a big chunk for all
     // the weights.
     if (session_state_.GetEnableMemoryPattern() && execution_plan) {
-      return SaveInitializedTensorsWithMemPattern();
+      return SaveInitializedTensorsWithMemPattern(graph);
     } else {
-      return SaveInitializedTensorsWithSeperateBuffer();
+      return SaveInitializedTensorsWithSeperateBuffer(graph);
     }
   }
 
@@ -599,14 +618,13 @@ class InferenceSession::Impl {
   // - builds the MLValue name->idx mapping and saves it in the session state
   // The reason we're doing 2 operations in the same function is so that we iterate
   // through all the nodes only once.
-  Common::Status SaveKernelsAndMLValueNameIndexMapping() {
+  Common::Status SaveKernelsAndMLValueNameIndexMapping(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving kernels and MLValue mappings.";
-    const LotusIR::Graph* p_graph = session_state_.GetGraph();
-    LOTUS_ENFORCE(p_graph, "Got nullptr for graph from session_state");
     int curr_idx = 0;
-    for (auto& node : p_graph->Nodes()) {
+    session_state_.SetKernelVectorSize(graph.NumberOfNodes());
+    for (auto& node : graph.Nodes()) {
       // ignore source and sink nodes
-      if (p_graph->IsSourceNode(node.Index()) || p_graph->IsSinkNode(node.Index())) {
+      if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {
         continue;
       }
 
@@ -659,7 +677,10 @@ class InferenceSession::Impl {
     return status;
   }
 
-  Common::Status CreateOpKernelInternal(const LotusIR::Node& node, const AllocatorInfo& allocator_info, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
+  Common::Status CreateOpKernelInternal(const LotusIR::Node& node,
+                                        const AllocatorInfo& allocator_info,
+                                        IExecutionProvider* exec_provider,
+                                        std::unique_ptr<OpKernel>* p_op_kernel) {
     Common::Status status = local_kernel_registry.CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
     if (!status.IsOK())
       return KernelRegistry::Instance().CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
@@ -791,6 +812,10 @@ Common::Status InferenceSession::RegisterExecutionProvider(std::unique_ptr<IExec
 
 Common::Status InferenceSession::RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
   return impl_->RegisterGraphTransformer(std::move(p_graph_transformer));
+}
+
+Common::Status InferenceSession::Load(const ModelProto& model_proto) {
+  return impl_->Load(model_proto);
 }
 
 Common::Status InferenceSession::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, IMLOpKernelCreateFn kernel_creator) {

@@ -60,11 +60,11 @@ void RunModel(InferenceSession& session_object,
   // Now run
   Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
   std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
-  EXPECT_TRUE(st.IsOK());
+  ASSERT_TRUE(st.IsOK());
   ASSERT_EQ(1, fetches.size());
   auto& rtensor = fetches.front().Get<Tensor>();
   TensorShape expected_shape(expected_dims_mul_y);
-  EXPECT_EQ(expected_shape, rtensor.Shape());
+  ASSERT_EQ(expected_shape, rtensor.Shape());
   const std::vector<float> found(rtensor.Data<float>(), rtensor.Data<float>() + expected_shape.Size());
   ASSERT_EQ(expected_values_mul_y, found);
 }
@@ -75,8 +75,8 @@ TEST(InferenceSessionTests, NoTimeout) {
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
-  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
-  EXPECT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
   run_options.run_tag = "one session/one tag";
@@ -118,20 +118,20 @@ TEST(InferenceSessionTests, ModelMetadata) {
   so.session_logid = "InferenceSessionTests.ModelMetadata";
   InferenceSession session_object{so, &DefaultLoggingManager()};
   string model_uri = "testdata/squeezenet/model.onnx";
-  EXPECT_TRUE(session_object.Load(model_uri).IsOK());
+  ASSERT_TRUE(session_object.Load(model_uri).IsOK());
 
   std::shared_ptr<LotusIR::Model> p_model;
   Status st = LotusIR::Model::Load(model_uri, &p_model);
   ASSERT_TRUE(st.IsOK());
   const LotusIR::Graph* p_graph = p_model->MainGraph();
-  EXPECT_TRUE(p_graph != nullptr);
+  ASSERT_TRUE(p_graph != nullptr);
 
   // 1. first test the model meta
   {
     auto retval = session_object.GetModelMetadata();
-    EXPECT_TRUE(retval.first.IsOK());
+    ASSERT_TRUE(retval.first.IsOK());
     const ModelMetadata* m = retval.second;
-    EXPECT_TRUE(m->custom_metadata_map == p_model->MetaData() &&
+    ASSERT_TRUE(m->custom_metadata_map == p_model->MetaData() &&
                 m->description == p_model->DocString() &&
                 m->domain == p_model->Domain() &&
                 m->graph_name == p_graph->Name() &&
@@ -158,19 +158,19 @@ TEST(InferenceSessionTests, ModelMetadata) {
     cout << "weights size: " << weights.size()
          << " inputs.size(): " << inputs.size()
          << " from session: " << retval.second->size() << endl;
-    EXPECT_TRUE(retval.first.IsOK());
-    EXPECT_TRUE(Compare(inputs_no_weights, *retval.second));
+    ASSERT_TRUE(retval.first.IsOK());
+    ASSERT_TRUE(Compare(inputs_no_weights, *retval.second));
   }
 
   // 3. test outputs
   {
     auto retval = session_object.GetOutputs();
-    EXPECT_TRUE(retval.first.IsOK());
+    ASSERT_TRUE(retval.first.IsOK());
 
     auto& outputs = p_graph->GetOutputs();
     retval = session_object.GetOutputs();
-    EXPECT_TRUE(retval.first.IsOK());
-    EXPECT_TRUE(Compare(outputs, *retval.second));
+    ASSERT_TRUE(retval.first.IsOK());
+    ASSERT_TRUE(Compare(outputs, *retval.second));
   }
 }
 
@@ -187,8 +187,8 @@ TEST(InferenceSessionTests, CheckRunLogger) {
       std::unique_ptr<ISink>(capturing_sink), Logging::Severity::kVERBOSE, false, LoggingManager::InstanceType::Temporal);
 
   InferenceSession session_object{so, logging_manager.get()};
-  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
-  EXPECT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
   run_options.run_tag = "RunTag";
@@ -202,7 +202,7 @@ TEST(InferenceSessionTests, CheckRunLogger) {
       (std::find_if(msgs.begin(), msgs.end(),
                     [&run_options](std::string msg) { return msg.find(run_options.run_tag) != string::npos; }) != msgs.end());
 
-  EXPECT_TRUE(have_log_entry_with_run_tag);
+  ASSERT_TRUE(have_log_entry_with_run_tag);
 #endif
 }
 
@@ -211,8 +211,8 @@ TEST(InferenceSessionTests, MultipleSessionsNoTimeout) {
 
   session_options.session_logid = "InferenceSessionTests.MultipleSessionsNoTimeout";
   InferenceSession session_object{session_options, &DefaultLoggingManager()};
-  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
-  EXPECT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
 
   std::thread thread1{[&session_object]() {
     RunOptions run_options;
@@ -236,8 +236,8 @@ TEST(InferenceSessionTests, PreAllocateOutputVector) {
   so.session_logid = "InferenceSessionTests.PreAllocateOutputVector";
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
-  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
-  EXPECT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
   run_options.run_tag = "InferenceSessionTests.PreAllocateOutputVector";
@@ -262,8 +262,8 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
       LoggingManager::InstanceType::Temporal);
 
   InferenceSession session_object{so, logging_manager.get()};
-  EXPECT_TRUE(session_object.Load(MODEL_URI).IsOK());
-  EXPECT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
   run_options.run_tag = "ConfigureVerbosityLevel";
@@ -279,14 +279,14 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
                     [&run_options](std::string msg) { return msg.find("Adding input argument with name") != string::npos; }) !=
        msgs.end());
 
-  EXPECT_TRUE(have_log_entry_with_vlog_session_msg);
+  ASSERT_TRUE(have_log_entry_with_vlog_session_msg);
 
   bool have_log_entry_with_vlog_run_msg =
       (std::find_if(msgs.begin(), msgs.end(),
                     [&run_options](std::string msg) { return msg.find("Size of execution plan vector") != string::npos; }) !=
        msgs.end());
 
-  EXPECT_TRUE(have_log_entry_with_vlog_run_msg);
+  ASSERT_TRUE(have_log_entry_with_vlog_run_msg);
 #endif
 }
 
@@ -298,9 +298,9 @@ TEST(InferenceSessionTests, TestWithIstream) {
   InferenceSession session_object{so};
 
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
-  EXPECT_TRUE(model_file_stream.good());
-  EXPECT_TRUE(session_object.Load(model_file_stream).IsOK());
-  EXPECT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(model_file_stream.good());
+  ASSERT_TRUE(session_object.Load(model_file_stream).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
   run_options.run_tag = "InferenceSessionTests.TestWithIstream";
@@ -314,15 +314,55 @@ TEST(InferenceSessionTests, TestRegisterExecutionProvider) {
 
   InferenceSession session_object{so};
   CPUExecutionProviderInfo epi;
-  EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi)).IsOK());
+  ASSERT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi)).IsOK());
 
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
-  EXPECT_TRUE(model_file_stream.good());
-  EXPECT_TRUE(session_object.Load(model_file_stream).IsOK());
-  EXPECT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(model_file_stream.good());
+  ASSERT_TRUE(session_object.Load(model_file_stream).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
   run_options.run_tag = "InferenceSessionTests.TestWithIstream";
+  RunModel(session_object, run_options);
+}
+
+TEST(InferenceSessionTests, TestModelProtoInterface) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.TestModelProtoInterface";
+
+  InferenceSession session_object{so};
+  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
+  ASSERT_TRUE(model_file_stream.good());
+
+  ModelProto model_proto;
+  ASSERT_TRUE(model_proto.ParseFromIstream(&model_file_stream));
+  ASSERT_TRUE(session_object.Load(model_proto).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "InferenceSessionTests.TestModelProtoInterface";
+  RunModel(session_object, run_options);
+}
+
+TEST(InferenceSessionTests, TestModelProtoInterfaceMultipleLoadFailure) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.TestModelProtoInterfaceMultipleLoadFailure";
+
+  InferenceSession session_object{so};
+  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
+  ASSERT_TRUE(model_file_stream.good());
+
+  ModelProto model_proto;
+  ASSERT_TRUE(model_proto.ParseFromIstream(&model_file_stream));
+  ASSERT_TRUE(session_object.Load(model_proto).IsOK());
+  ASSERT_FALSE(session_object.Load(model_proto).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "InferenceSessionTests.TestModelProtoInterfaceMultipleLoadFailure";
   RunModel(session_object, run_options);
 }
 
