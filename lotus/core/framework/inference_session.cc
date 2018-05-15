@@ -229,6 +229,9 @@ class InferenceSession::Impl {
       is_inited_ = true;
 
       LOGS(*session_logger_, INFO) << "Session successfully initialized.";
+    } catch (const NotImplementedException& ex) {
+      LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
+      return Status(LOTUS, NOT_IMPLEMENTED, "Exception during initialization: " + std::string(ex.what()));
     } catch (const std::exception& ex) {
       LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
       return Status(LOTUS, FAIL, "Exception during initialization: " + std::string(ex.what()));
