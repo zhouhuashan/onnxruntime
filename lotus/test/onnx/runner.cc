@@ -7,6 +7,7 @@
 #endif
 #include <fstream>
 #include <cmath>
+#include <core/common/logging/logging.h>
 
 #ifdef USE_CUDA
 #include <core/providers/cuda/cuda_execution_provider.h>
@@ -220,14 +221,14 @@ EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vect
   try {
     Common::Status status = sess.Run(feeds, &p_fetches);
     if (!status.IsOK()) {
-      fprintf(stderr, "%s:%s\n", test_case_name, status.ErrorMessage().c_str());
+      LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name, status.ErrorMessage().c_str());
       return StatusCodeToExecuteResult(status.Code());
     }
   } catch (std::exception& ex) {
-    fprintf(stderr, "%s:%s\n", test_case_name, ex.what());
+    LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name, ex.what());
     return EXECUTE_RESULT::WITH_EXCEPTION;
   } catch (...) {
-    fprintf(stderr, "%s:got unknown error\n", test_case_name);
+    LOGF_DEFAULT(ERROR, "%s:got unknown error\n", test_case_name);
     return EXECUTE_RESULT::WITH_EXCEPTION;
   }
 
@@ -235,18 +236,18 @@ EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vect
     const Tensor& outvalue = p_fetches.at(i).Get<Tensor>();
     const onnx::TensorProto& expected_value = output_pbs.at(i);
     if (!IsTheSameType(outvalue.DataType(), expected_value.data_type())) {
-      fprintf(stderr, "%s:type mismatch\n", test_case_name);
+      LOGF_DEFAULT(ERROR, "%s:type mismatch\n", test_case_name);
       return EXECUTE_RESULT::TYPE_MISMATCH;
     }
     //TODO: support comparisons other than float/bool/int32/...
     auto ret = compare(outvalue, expected_value, cpu_allocator);
     EXECUTE_RESULT compare_result = ret.first;
     if (compare_result == EXECUTE_RESULT::RESULT_DIFFERS)
-      fprintf(stderr, "%s: the %zd-th value of the %zd-th output differs\n", test_case_name, ret.second, i);
+      LOGF_DEFAULT(ERROR, "%s: the %zd-th value of the %zd-th output differs\n", test_case_name, ret.second, i);
     if (compare_result != EXECUTE_RESULT::SUCCESS)
       return compare_result;
   }
-  printf("test %s succeeded\n", test_case_name);
+  LOGF_DEFAULT(ERROR, "test %s succeeded\n", test_case_name);
   return EXECUTE_RESULT::SUCCESS;
 }
 
@@ -422,12 +423,12 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
     {
       std::ifstream input(info.model_url, std::ios::in | std::ios::binary);
       if (!input) {
-        fprintf(stderr, "open file failed");
+        LOGF_DEFAULT(ERROR, "open file failed");
         ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::LOAD_MODEL_FAILED), ""};
         goto end;
       }
       if (!model_pb.ParseFromIstream(&input)) {
-        fprintf(stderr, "parse file failed");
+        LOGF_DEFAULT(ERROR, "parse file failed");
         ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::LOAD_MODEL_FAILED), ""};
         goto end;
       }
@@ -447,7 +448,7 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
       cuda_epi.device_id = 0;
       status = session_object->RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(cuda_epi));
       if (!status.IsOK()) {
-        fprintf(stderr, "init session %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
+        LOGF_DEFAULT(ERROR, "init session %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
         ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
         goto end;
       }
@@ -459,34 +460,34 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
     CPUExecutionProviderInfo epi;
     status = session_object->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi));
     if (!status.IsOK()) {
-      fprintf(stderr, "init session %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
+      LOGF_DEFAULT(ERROR, "init session %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
       ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
       goto end;
     }
 
     status = session_object->Load(info.model_url);
     if (!status.IsOK()) {
-      fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
+      LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
       ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
       goto end;
     }
     try {
       status = session_object->Initialize();
       if (!status.IsOK()) {
-        fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
+        LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info.test_case_name.c_str(), status.ErrorMessage().c_str());
         ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
         goto end;
       }
     } catch (Lotus::NotImplementedException& ex) {
-      fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), ex.what());
+      LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info.test_case_name.c_str(), ex.what());
       ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::NOT_SUPPORT), node_name};
       goto end;
     } catch (std::exception& ex) {
-      fprintf(stderr, "load model %s failed:%s\n", info.test_case_name.c_str(), ex.what());
+      LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info.test_case_name.c_str(), ex.what());
       ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::LOAD_MODEL_FAILED), node_name};
       goto end;
     }
-    fprintf(stderr, "testing %s\n", info.test_case_name.c_str());
+    LOGF_DEFAULT(INFO, "testing %s\n", info.test_case_name.c_str());
 #ifdef _WIN32
     if (concurrent_runs > 1) {
       ParallelRunData(std::make_shared<RunContext>(info, node_name, session_object, model_pb.graph().input(), env.allocatorManager, on_finished), concurrent_runs);

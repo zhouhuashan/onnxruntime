@@ -126,7 +126,7 @@ if (lotus_RUN_ONNX_TESTS)
 endif()
 
 if (WIN32)
-    add_definitions(-DPLATFORM_WINDOWS)
+    add_definitions(-DPLATFORM_WINDOWS -DNOGDI -DNOMINMAX -D_USE_MATH_DEFINES)
     # parallel build
     # These compiler opitions cannot be forwarded to NVCC, so cannot use add_compiler_options
     string(APPEND CMAKE_CXX_FLAGS " /MP")

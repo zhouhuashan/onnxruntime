@@ -40,7 +40,7 @@ void OnTestCaseFinished(TestCaseTask* task, TestCaseResult& result) {
       std::unique_ptr<TestCaseTask> t(new TestCaseTask{env, next_test, task->concurrent_runs, task->results});
       PTP_WORK work = CreateThreadpoolWork(RunTestCase, t.get(), nullptr);
       if (!work) {
-        printf("schedule test task failed\n");
+        LOGF_DEFAULT(ERROR, "schedule test task failed\n");
         ret = -1;
       } else {
         SubmitThreadpoolWork(work);
@@ -64,7 +64,7 @@ void OnDataTestFinished(DataTask* task, EXECUTE_RESULT result) {
         DataTask* t = new DataTask{task->env, next_test};
         PTP_WORK work = CreateThreadpoolWork(RunTestCase, t, nullptr);
         if (!work) {
-          printf("schedule test task failed\n");
+          LOGF_DEFAULT(ERROR, "schedule test task failed\n");
           abort();
         }
         SubmitThreadpoolWork(work);
@@ -77,10 +77,10 @@ void OnDataTestFinished(DataTask* task, EXECUTE_RESULT result) {
     if (callback)
       callback(ret);
   } catch (std::exception& ex) {
-    printf("%s:unrecoverable error:%s,exit...\n", task->env->test_case.test_case_name.c_str(), ex.what());
+    LOGF_DEFAULT(ERROR, "%s:unrecoverable error:%s,exit...\n", task->env->test_case.test_case_name.c_str(), ex.what());
     abort();
   } catch (...) {
-    printf("%s:unrecoverable error,exit...\n", task->env->test_case.test_case_name.c_str());
+    LOGF_DEFAULT(ERROR, "%s:unrecoverable error,exit...\n", task->env->test_case.test_case_name.c_str());
     abort();
   }
 }
@@ -100,9 +100,9 @@ void __stdcall RunDataTest(
     OnDataTestFinished(task, ExecuteModelWithProtobufs(*task->env->session, input_pbs, output_pbs, test_case.test_case_name.c_str(), task->env->input_info, task->env->allocatorManager));
     return;
   } catch (std::exception& ex) {
-    printf("%s:%s", task->env->test_case.test_case_name.c_str(), ex.what());
+    LOGF_DEFAULT(ERROR, "%s:%s", task->env->test_case.test_case_name.c_str(), ex.what());
   } catch (...) {
-    printf("%s:unknown error\n", task->env->test_case.test_case_name.c_str());
+    LOGF_DEFAULT(ERROR, "%s:unknown error\n", task->env->test_case.test_case_name.c_str());
   }
   OnDataTestFinished(task, EXECUTE_RESULT::WITH_EXCEPTION);
 }
@@ -120,16 +120,16 @@ void __stdcall RunTestCase(
     });
     return;
   } catch (std::exception& ex) {
-    printf(ex.what());
+    LOGF_DEFAULT(ERROR, ex.what());
   } catch (...) {
-    printf("unknown error\n");
+    LOGF_DEFAULT(ERROR, "unknown error\n");
   }
   TestCaseResult ret{std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::UNKNOWN_ERROR), ""};
   OnTestCaseFinished(task, ret);
 }
 }  // namespace
 void ParallelRunTests(TestEnv& env, int p_models, size_t current_runs, std::vector<TestCaseResult>& results) {
-  printf("Running tests in parallel with %d threads\n", p_models);
+  LOGF_DEFAULT(ERROR, "Running tests in parallel with %d threads\n", p_models);
   p_models = (int)std::min<size_t>(p_models, env.tests.size());
   env.next_test_to_run = p_models;
   for (int i = 0; i != p_models; ++i) {
