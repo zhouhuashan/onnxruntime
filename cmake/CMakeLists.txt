@@ -133,6 +133,7 @@ if (WIN32)
     string(APPEND CMAKE_CXX_FLAGS 
       " /wd4503" # Decorated name length exceeded.
       " /wd4127" # conditional expression is constant. 
+      " /wd4146" # unary minus operator applied to unsigned type. Needed for Protobuf
     )
     if (lotus_ENABLE_STATIC_ANALYSIS)
         string(APPEND CMAKE_CXX_FLAGS 
