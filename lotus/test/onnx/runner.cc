@@ -14,7 +14,6 @@
 
 #include "FixedCountFinishCallback.h"
 
-
 using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
@@ -264,14 +263,14 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
 #endif
   {
     //run models one by one
+    FixedCountFinishCallback c((int)env.tests.size());
     for (size_t i = 0; i != env.tests.size(); ++i) {
-      FixedCountFinishCallback c(static_cast<int>(env.tests[i].input_pb_files.size()));
       RunSingleTestCase(env, i, concurrent_runs, [i, &results, &c](TestCaseResult& result) {
         results[i] = result;
         c.onFinished(0);
       });
-      c.wait();
     }
+    c.wait();
   }
   for (size_t i = 0; i != env.tests.size(); ++i) {
     const TestCaseResult& r = results[i];
