@@ -25,11 +25,9 @@ class OpKernelWrapper;
 class OpKernelInfo {
  public:
   explicit OpKernelInfo(const LotusIR::Node& node,
-                        const AllocatorInfo& allocator_info,
                         const KernelDef& kernel_def,
                         const IExecutionProvider* execution_provider)
       : node_(node),
-        allocator_info_(allocator_info),
         kernel_def_(kernel_def),
         execution_provider_(execution_provider) {}
 
@@ -54,8 +52,8 @@ class OpKernelInfo {
     return node_;
   }
 
-  const AllocatorInfo& GetAllocatorInfo() const {
-    return allocator_info_;
+  const AllocatorInfo& GetAllocatorInfo(MemType mem_type) const {
+    return execution_provider_->GetAllocatorMap().at(mem_type)->Info();
   }
 
   const KernelDef& GetKernelDef() const {
@@ -71,7 +69,6 @@ class OpKernelInfo {
 
  private:
   const LotusIR::Node& node_;
-  const AllocatorInfo& allocator_info_;
   const KernelDef& kernel_def_;
   // For non cpu/cuda case, this pointer should be set so that function kernel
   // will delegate kernel compute call to <execution_provider> compute call.
@@ -103,8 +100,8 @@ class OpKernel {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
-  const AllocatorInfo& Allocator() const {
-    return op_kernel_info_.GetAllocatorInfo();
+  const AllocatorInfo& Allocator(MemType mem_type) const {
+    return op_kernel_info_.GetAllocatorInfo(mem_type);
   }
 
  protected:
@@ -175,7 +172,7 @@ class OpKernelContext {
   }
 
   Status GetTempSpaceAllocator(AllocatorPtr* output) const {
-    *output = execution_frame_->GetArena(kernel_->Allocator());
+    *output = execution_frame_->GetAllocator(kernel_->Allocator(kMemTypeDefault));
     if (!*output)
       return Status(LOTUS, FAIL, "TempSpace allocator not found");
     return Status::OK();
@@ -205,14 +202,13 @@ class KernelRegistry {
   // itself.
   // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
   Status CreateKernel(const LotusIR::Node& node,
-                      const AllocatorInfo& allocator_info,
                       const IExecutionProvider* execution_provider,
                       std::unique_ptr<OpKernel>* op_kernel) const;
 
   // check if a execution provider can create kernel for a node
   bool CanExecutionProviderCreateKernel(
       const LotusIR::Node& node,
-      const std::string& exec_provider) const;
+      LotusIR::ProviderType exec_provider) const;
 
   static KernelRegistry& Instance() {
     static KernelRegistry kernel_registry(true);
@@ -243,7 +239,7 @@ class KernelRegistry {
   // execute this node. exec_provider is used to match kernel when node has no provider
   static bool VerifyKernelDef(const LotusIR::Node& node,
                               const KernelDef& kernel_def,
-                              const std::string& exec_provider = "");
+                              LotusIR::ProviderType exec_provider = "");
 
   // Kernel create function map from op name to kernel creation info.
   std::multimap<std::string, KernelCreateInfo> kernel_creator_fn_map_;

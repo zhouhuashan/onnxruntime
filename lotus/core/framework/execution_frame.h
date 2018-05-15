@@ -126,7 +126,7 @@ class ExecutionFrame {
     return all_values_[node_values_[index]].GetMutable<T>();
   }
 
-  AllocatorPtr GetArena(const AllocatorInfo& info);
+  AllocatorPtr GetAllocator(const AllocatorInfo& info);
 
   void ReleaseMLValue(int mlvalue_idx) {
     LOTUS_ENFORCE(mlvalue_idx >= 0 || mlvalue_idx < all_values_.size());

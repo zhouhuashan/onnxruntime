@@ -11,6 +11,8 @@ namespace Lotus {
 class OpKernelContext;
 
 // Logical device representation.
+typedef std::map<MemType, AllocatorPtr> AllocatorMap;
+
 class IExecutionProvider {
  public:
   virtual ~IExecutionProvider() {}
@@ -20,8 +22,15 @@ class IExecutionProvider {
   // functions must be registered in kernelRegistry_.
   virtual const LotusIR::GraphTransformer& GetTransformer() const = 0;
 
-  // Get IAllocator for <*this> execution provider.
-  virtual AllocatorPtr GetAllocator() = 0;
+  // Get all IAllocators for <*this> execution provider.
+  const AllocatorMap& GetAllocatorMap() const {
+    return allocators_;
+  }
+
+  // Get allocator with specified MemType
+  virtual AllocatorPtr GetAllocator(MemType mem_type = kMemTypeDefault) const {
+    return allocators_.at(mem_type);
+  }
 
   // Run the computation of a given node.
   virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;
@@ -39,5 +48,8 @@ class IExecutionProvider {
   // the SetExecutionProvider API.
   // Example valid return values are: kCpuExecutionProvider, kCudaExecutionProvider
   virtual std::string Type() const = 0;
+
+ protected:
+  AllocatorMap allocators_;
 };
 }  // namespace Lotus

@@ -40,7 +40,7 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
         // all the internal kernel's input/output tensors will be allocated on these buffer.
         for (int i = 0; i < mem_patterns_->locations.size(); i++) {
           LOTUS_ENFORCE(buffers_.find(mem_patterns_->locations[i]) == buffers_.end());
-          AllocatorPtr alloc = GetArena(mem_patterns_->locations[i]);
+          AllocatorPtr alloc = GetAllocator(mem_patterns_->locations[i]);
           void* buffer = alloc->Alloc(mem_patterns_->patterns[i].peak_size());
           buffers_[mem_patterns_->locations[i]] = BufferUniquePtr(buffer, alloc);
         }
@@ -65,7 +65,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
   if (p_mlvalue->IsAllocated()) {
     return Status::OK();
   }
-  auto alloc = GetArena(location);
+  auto alloc = GetAllocator(location);
 
   int64_t len = shape.Size();
   if (len < 0) {
@@ -365,7 +365,7 @@ Status ExecutionFrame::GeneratePatterns(MemoryPatternGroup* out) const {
   return planner_->GeneratePatterns(out);
 }
 
-AllocatorPtr ExecutionFrame::GetArena(const AllocatorInfo& info) {
+AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
   return session_state_.GetAllocator(info);
 }
 

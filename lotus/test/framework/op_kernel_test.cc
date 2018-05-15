@@ -22,10 +22,6 @@ class XPUExecutionProvider : public IExecutionProvider {
     return *graph_transformer_;
   }
 
-  AllocatorPtr GetAllocator() override {
-    return arena_allocator_;
-  }
-
   std::string Type() const override {
     return LotusIR::kCpuExecutionProvider;
   }
@@ -48,7 +44,6 @@ class XPUExecutionProvider : public IExecutionProvider {
   }
 
  private:
-  AllocatorPtr arena_allocator_ = nullptr;
   GraphTransformer* graph_transformer_ = nullptr;
 };
 
@@ -70,7 +65,7 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   CPUExecutionProviderInfo epi;
   CPUExecutionProvider exec_provider(epi);
   std::unique_ptr<OpKernel> kernel;
-  auto status = KernelRegistry::Instance().CreateKernel(*node, alloc_info, &exec_provider, &kernel);
+  auto status = KernelRegistry::Instance().CreateKernel(*node, &exec_provider, &kernel);
   ASSERT_TRUE(status.IsOK());
   ASSERT_EQ(typeid(FunctionKernel).name(), typeid(*kernel).name());
 
@@ -78,7 +73,7 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   AllocatorInfo alloc_info_2("XPU", AllocatorType::kArenaAllocator);
   XPUExecutionProvider exec_provider_2;
   std::unique_ptr<OpKernel> kernel_2;
-  auto status_2 = KernelRegistry::Instance().CreateKernel(*node, alloc_info_2, &exec_provider_2, &kernel_2);
+  auto status_2 = KernelRegistry::Instance().CreateKernel(*node, &exec_provider_2, &kernel_2);
   ASSERT_EQ(typeid(FunctionKernel).name(), typeid(*kernel_2).name());
   ASSERT_TRUE(status_2.IsOK());
   OpKernelContext* op_kernel_context = nullptr;

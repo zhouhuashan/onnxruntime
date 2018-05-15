@@ -13,7 +13,7 @@ class AllocatorManager {
   */
   ~AllocatorManager();
 
-  ArenaPtr GetArena(const std::string& name, const int id = 0);
+  AllocatorPtr GetAllocator(const std::string& name, const int id = 0, bool arena = true);
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(AllocatorManager);
@@ -21,7 +21,7 @@ class AllocatorManager {
   AllocatorManager();
   Status InitializeAllocators();
 
-  std::unordered_map<std::string, ArenaPtr> arena_map_;
+  std::unordered_map<std::string, AllocatorPtr> map_;
   bool owns_instance_;
 };
 }  // namespace Test

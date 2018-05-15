@@ -149,7 +149,7 @@ const std::string& Node::GetExecutionProvider() const noexcept {
   return execution_provider_;
 }
 
-void Node::SetExecutionProvider(const std::string& execution_provider) {
+void Node::SetExecutionProvider(LotusIR::ProviderType execution_provider) {
   execution_provider_ = execution_provider;
 }
 

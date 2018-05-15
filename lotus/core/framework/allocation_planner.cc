@@ -233,9 +233,8 @@ class PlannerImpl {
       // Identify where each output of this node should be allocated.
       // This is determined by the opkernel bound to the node.
       auto* p_kernel = p_session_state_->GetKernel(step.node_index);
-      auto& allocator_info = p_kernel->Allocator();
-      bool not_cpu = (allocator_info.name != CPU);
-      auto& cpu_allocated_args = p_kernel->KernelDef().HostMemory();
+      auto& default_allocator_info = p_kernel->Allocator(kMemTypeDefault);
+      auto& mem_type_allocated_args = p_kernel->KernelDef().MemoryType();
       auto& outputs = pnode->OutputDefs();
       auto num_outputs = outputs.size();
       for (int i = 0; i < num_outputs; ++i) {
@@ -243,13 +242,14 @@ class PlannerImpl {
         if (node_output->Exists()) {
           MLValueIndex index = Index(node_output->Name());
           ProcessDef(index, node_output);
-          if (not_cpu) {
-            // By default, outputs of this node are allocated on indicated device allocator,
-            // except for outputs marked for allocation in HostMemory:
-            auto search_item = std::make_pair(i, false);  // "false" denotes output-parameter
-            if (std::find(cpu_allocated_args.begin(), cpu_allocated_args.end(), search_item) ==
-                cpu_allocated_args.end()) {
-              AllocPlan(index).location = allocator_info;
+          if (default_allocator_info.name != CPU) {
+            // By default, outputs of this node are allocated on the default device allocator,
+            // except for outputs marked for allocation in MemoryType:
+            auto memory_type_iter = mem_type_allocated_args.find(i);
+            if (memory_type_iter == mem_type_allocated_args.end()) {
+              AllocPlan(index).location = default_allocator_info;
+            } else {
+              AllocPlan(index).location = p_kernel->Allocator(memory_type_iter->second);
             }
           }
         }

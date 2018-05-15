@@ -25,22 +25,6 @@ ONNX_OPERATOR_SCHEMA(MemcpyToHost)
 Internal copy node
 )DOC");
 
-REGISTER_KERNEL(KernelDefBuilder("MemcpyFromHost")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .HostMemory(0, true)
-                    .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
-                Memcpy);
-
-REGISTER_KERNEL(KernelDefBuilder("MemcpyToHost")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .HostMemory(0, false)
-                    .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
-                Memcpy);
-
 Memcpy::Memcpy(const OpKernelInfo& info)
     : OpKernel(info) {
   provider_ = info.GetExecutionProvider();

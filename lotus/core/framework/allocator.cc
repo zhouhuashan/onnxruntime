@@ -6,7 +6,7 @@
 namespace Lotus {
 REGISTER_DEVICE_ALLOCATOR(
     Cpu,
-    [] { return std::make_unique<CPUAllocator>(); },
+    [](int) { return std::make_unique<CPUAllocator>(); },
     std::numeric_limits<size_t>::max())  //TODO: set correct cpu memory limit?
 
 void* CPUAllocator::Alloc(size_t size) {

@@ -9,10 +9,13 @@ namespace Lotus {
 
 using namespace Lotus::Common;
 
-ArenaPtr CreateArena(DeviceAllocatorRegistrationInfo info) {
-  auto device_allocator = std::unique_ptr<IDeviceAllocator>(info.factory());
-  return std::shared_ptr<IArenaAllocator>(
-      std::make_unique<BFCArena>(std::move(device_allocator), info.max_mem));
+AllocatorPtr CreateAllocator(DeviceAllocatorRegistrationInfo info, int device_id) {
+  auto device_allocator = std::unique_ptr<IDeviceAllocator>(info.factory(device_id));
+  if (device_allocator->AllowsArena())
+    return std::shared_ptr<IArenaAllocator>(
+        std::make_unique<BFCArena>(std::move(device_allocator), info.max_mem));
+  else
+    return device_allocator;
 }
 
 DeviceAllocatorRegistry& DeviceAllocatorRegistry::Instance() {

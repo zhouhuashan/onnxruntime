@@ -46,13 +46,16 @@ void SessionState::AddExecutionProvider(const std::string& provider_id,
                                         std::unique_ptr<IExecutionProvider> p_exec_provider) {
   exec_provider_set_.provider_idx_map.insert(
       {provider_id, exec_provider_set_.exec_providers.size()});
-  auto allocator = p_exec_provider->GetAllocator();
-  if (exec_provider_set_.allocator_idx_map.find(allocator->Info()) !=
-      exec_provider_set_.allocator_idx_map.end()) {
-    LOGS_DEFAULT(WARNING) << "Execution Provider's allocator with info:" << allocator->Info().name << ", id: " << allocator->Info().id << ", type:" << allocator->Info().type << " already register in session state";
-  } else {
-    exec_provider_set_.allocator_idx_map.insert(
-        {allocator->Info(), exec_provider_set_.exec_providers.size()});
+  const auto& allocator_map = p_exec_provider->GetAllocatorMap();
+  for (const auto& pair : allocator_map) {
+    auto allocator = pair.second;
+    if (exec_provider_set_.allocator_idx_map.find(allocator->Info()) !=
+        exec_provider_set_.allocator_idx_map.end()) {
+      LOGS_DEFAULT(WARNING) << "Execution Provider's allocator with info:" << allocator->Info().name << ", id: " << allocator->Info().id << ", type:" << allocator->Info().type << " already register in session state";
+    } else {
+      exec_provider_set_.allocator_idx_map.insert(
+          {allocator->Info(), exec_provider_set_.exec_providers.size()});
+    }
   }
   exec_provider_set_.exec_providers.push_back(std::move(p_exec_provider));
 }
@@ -74,7 +77,7 @@ AllocatorPtr SessionState::GetAllocator(const AllocatorInfo& allocator_info) con
   }
 
   LOTUS_ENFORCE(it->second < exec_provider_set_.exec_providers.size());
-  return exec_provider_set_.exec_providers[it->second]->GetAllocator();
+  return exec_provider_set_.exec_providers[it->second]->GetAllocator(allocator_info.mem_type);
 }
 
 const std::vector<std::unique_ptr<IExecutionProvider>>& SessionState::GetExecutionProviders() const {

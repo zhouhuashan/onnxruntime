@@ -297,14 +297,15 @@ ML_API_IMP_(MLTensorDataType, TensorWrapper::GetTensorDataType)
 
 ML_API_IMP_(MLBool, TensorWrapper::IsCPUData)
 () const noexcept {
-  // TODO
-  return true;
+  // tells DML whether this tensor is in CPU memory
+  return impl_->Location().name == CPU || impl_->Location().mem_type == kMemTypeCPU;
 }
 
 ML_API_IMP_(MLBool, TensorWrapper::IsDataHandle)
 () const noexcept {
-  // TODO
-  return false;
+  // tells DML whether this tensor is in DML device memory
+  // TODO: change to Location().name == DML once DML provider is in
+  return !IsCPUData();
 }
 
 ML_API_IMP_(void*, TensorWrapper::GetData)

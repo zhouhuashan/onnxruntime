@@ -6,7 +6,7 @@ BFCArena::BFCArena(std::unique_ptr<IDeviceAllocator> resource_allocator,
     : device_allocator_(std::move(resource_allocator)),
       free_chunks_list_(kInvalidChunkHandle),
       next_allocation_id_(1),
-      info_(device_allocator_->Info().name, AllocatorType::kArenaAllocator, device_allocator_->Info().id) {
+      info_(device_allocator_->Info().name, AllocatorType::kArenaAllocator, device_allocator_->Info().id, device_allocator_->Info().mem_type) {
   curr_region_allocation_bytes_ = RoundedBytes(std::min(total_memory, size_t{1048576}));
 
   // Allocate the requested amount of memory.
@@ -32,13 +32,12 @@ BFCArena::BFCArena(std::unique_ptr<IDeviceAllocator> resource_allocator,
 }
 
 BFCArena::~BFCArena() {
-
   for (const auto& region : region_manager_.regions()) {
     device_allocator_->Free(region.ptr());
   }
 
   for (const auto& reserve_chunk : reserved_chunks_) {
-      device_allocator_->Free(reserve_chunk.first);
+    device_allocator_->Free(reserve_chunk.first);
   }
 
   for (BinNum b = 0; b < kNumBins; b++) {

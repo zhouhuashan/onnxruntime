@@ -204,7 +204,7 @@ struct OpTester {
                const std::vector<int64_t>& dims, const T* values,
                int64_t valuesCount) {
     LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
-    auto allocator = Lotus::Test::AllocatorManager::Instance().GetArena(CPU);
+    auto allocator = Lotus::Test::AllocatorManager::Instance().GetAllocator(CPU);
     auto size_in_bytes = valuesCount * sizeof(T);
     void* buffer = allocator->Alloc(size_in_bytes);
     auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),

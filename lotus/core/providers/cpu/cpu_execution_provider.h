@@ -38,15 +38,11 @@ class CPUExecutionProvider : public IExecutionProvider {
     auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
     auto cpu_allocator_creator = device_factories.find(CPU);
     if (cpu_allocator_creator != device_factories.end())
-      arena_ = std::move(CreateArena(cpu_allocator_creator->second ));
+      allocators_.insert(std::make_pair(kMemTypeDefault, CreateAllocator(cpu_allocator_creator->second)));
   }
 
   const LotusIR::GraphTransformer& GetTransformer() const override {
     return cpu_transformer_;
-  }
-
-  AllocatorPtr GetAllocator() override {
-    return arena_;
   }
 
   Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
@@ -81,6 +77,5 @@ class CPUExecutionProvider : public IExecutionProvider {
 
  private:
   CPUTransformer cpu_transformer_;
-  ArenaPtr arena_;
 };
 }  // namespace Lotus

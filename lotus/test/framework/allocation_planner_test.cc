@@ -8,6 +8,7 @@
 #include "core/framework/op_kernel.h"
 #include "test/framework/model_builder_utils.h"
 #include "core/framework/allocation_planner.h"
+#include "core/providers/cpu/cpu_execution_provider.h"
 
 namespace Lotus {
 namespace Test {
@@ -145,14 +146,16 @@ class PlannerTest : public ::testing::Test {
   std::vector<std::unique_ptr<OpKernelInfo>> op_kernel_infos_;
   std::vector<std::pair<LotusIR::Node*, KernelDef&>> kernel_bindings_;
   SessionState state_;
-  AllocatorInfo allocator_info_;
+  std::unique_ptr<IExecutionProvider> provider_;
   ShapeMap shape_map_;
 
  public:
-  PlannerTest() : model_("test"), allocator_info_("CPUAllocator", AllocatorType::kArenaAllocator) {
+  PlannerTest() : model_("test") {
     graph_ = model_.MainGraph();
     std_kernel_ = KernelDefBuilder("Transpose").Build();
     in_place_kernel_ = KernelDefBuilder("Clip").MayInplace(0, 0).Build();
+    CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
+    provider_ = std::make_unique<CPUExecutionProvider>(epi);
   }
 
   ~PlannerTest() {
@@ -181,7 +184,7 @@ class PlannerTest : public ::testing::Test {
   }
 
   void BindKernel(LotusIR::Node* p_node, Lotus::KernelDef& kernel_def) {
-    auto info = std::make_unique<OpKernelInfo>(*p_node, allocator_info_, kernel_def, nullptr);
+    auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, provider_.get());
     auto dummy = std::make_unique<DummyOpKernel>(*info);
     op_kernel_infos_.push_back(std::move(info));
     state_.AddKernel(p_node->Index(), std::move(dummy));

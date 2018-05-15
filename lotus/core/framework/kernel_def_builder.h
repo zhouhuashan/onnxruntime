@@ -7,10 +7,9 @@
 #include "core/framework/data_types.h"
 
 namespace Lotus {
-// Execution provider class name is registered as a provider type.
-typedef std::string ProviderType;
-
 class KernelDefBuilder;
+
+typedef std::map<int, MemType> MemTypeMap;
 
 class KernelDef {
  public:
@@ -27,7 +26,7 @@ class KernelDef {
     *end = op_since_version_end_;
   }
 
-  const ProviderType& Provider() const {
+  LotusIR::ProviderType Provider() const {
     return provider_type_;
   }
 
@@ -43,8 +42,8 @@ class KernelDef {
     return alias_map_;
   }
 
-  const std::vector<std::pair<int, bool>>& HostMemory() const {
-    return host_memory_args_;
+  const MemTypeMap& MemoryType() const {
+    return memory_type_args_;
   }
 
  private:
@@ -63,7 +62,7 @@ class KernelDef {
   std::string op_domain_ = LotusIR::kOnnxDomain;
 
   // The type of the execution provider.
-  ProviderType provider_type_;
+  std::string provider_type_;
 
   // The supported data types for inputs/outputs.
   // Key is input/output name defined in op schema, Value are supported types.
@@ -75,8 +74,8 @@ class KernelDef {
   // An element <i, j> means that output j is an alias of input i.
   std::vector<std::pair<int, int>> alias_map_;
 
-  // The inputs/outputs of this kernel that are in host memory.
-  std::vector<std::pair<int, bool>> host_memory_args_;
+  // The memory types of inputs/outputs of this kernel
+  MemTypeMap memory_type_args_;
 };
 
 class KernelDefBuilder {
@@ -122,7 +121,7 @@ class KernelDefBuilder {
   }
 
   // The execution provider type of the kernel.
-  KernelDefBuilder& Provider(const ProviderType& provider_type) {
+  KernelDefBuilder& Provider(LotusIR::ProviderType provider_type) {
     kernel_def_->provider_type_ = provider_type;
     return *this;
   }
@@ -172,10 +171,11 @@ class KernelDefBuilder {
     return *this;
   }
 
-  // Specify that this kernel requires/provides an input/output arg
-  // in host memory (instead of the default, device memory).
-  KernelDefBuilder& HostMemory(int index, bool is_input) {
-    kernel_def_->host_memory_args_.push_back({index, is_input});
+  // Specify that this kernel provides an output arg
+  // in certain memory type (instead of the default, device memory).
+  template <MemType T>
+  KernelDefBuilder& MemoryType(int index) {
+    kernel_def_->memory_type_args_.insert(std::make_pair(index, T));
     return *this;
   }
 

@@ -34,6 +34,7 @@ typedef int64_t Version;
 typedef ValueInfoProto NodeArgInfo;
 typedef std::unordered_map<std::string, const TensorProto*> InitializedTensorSet;
 typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
+typedef const std::string& ProviderType;
 
 class Graph;
 class GraphBase;
@@ -214,8 +215,8 @@ class Node {
   // Executor will decide which device that this node will run against
   // and set it properly.
   // TODO: may change the return value type to be an ENUM.
-  const std::string& GetExecutionProvider() const noexcept;
-  void SetExecutionProvider(const std::string& execution_provider);
+  ProviderType GetExecutionProvider() const noexcept;
+  void SetExecutionProvider(ProviderType execution_provider);
 
   // Get the corresponding <NodeProto>.
   void ToProto(NodeProto& proto) const;

@@ -51,7 +51,7 @@ std::pair<EXECUTE_RESULT, size_t> is_result_exactly_match(const Tensor& outvalue
   return std::make_pair(EXECUTE_RESULT::SUCCESS, -1);
 }
 
-std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const onnx::TensorProto& expected_value, ArenaPtr cpu_allocator) {
+std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const onnx::TensorProto& expected_value, AllocatorPtr cpu_allocator) {
   std::unique_ptr<Tensor> expected_tensor;
   LOTUS_ENFORCE(Lotus::Utils::GetTensorFromTensorProto(expected_value, &expected_tensor, cpu_allocator).IsOK());
   switch (expected_value.data_type()) {
@@ -215,7 +215,7 @@ EXECUTE_RESULT StatusCodeToExecuteResult(int input) {
 EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vector<onnx::TensorProto>& input_pbs,
                                          const std::vector<onnx::TensorProto>& output_pbs, const char* test_case_name,
                                          const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto>& input_value_info, Lotus::Test::AllocatorManager& allocatorManager) {
-  auto cpu_allocator = allocatorManager.GetArena(CPU);
+  auto cpu_allocator = allocatorManager.GetAllocator(CPU);
   std::unordered_map<std::string, MLValue> feeds = ConvertPbsToMLValues(input_value_info, input_pbs, cpu_allocator);
   std::vector<MLValue> p_fetches;
   try {

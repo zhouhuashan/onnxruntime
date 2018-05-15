@@ -662,7 +662,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernel(const LotusIR::Node& node, std::unique_ptr<OpKernel>* p_op_kernel) {
-    const std::string& exec_provider_name = node.GetExecutionProvider();
+    LotusIR::ProviderType exec_provider_name = node.GetExecutionProvider();
     if (exec_provider_name.empty() || !session_state_.GetExecutionProvider(exec_provider_name)) {
       std::ostringstream error_msg;
       error_msg << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";
@@ -671,8 +671,7 @@ class InferenceSession::Impl {
     }
 
     auto exec_provider = session_state_.GetExecutionProvider(exec_provider_name);
-    auto& allocator_info = exec_provider->GetAllocator()->Info();
-    Common::Status status = CreateOpKernelInternal(node, allocator_info, exec_provider, p_op_kernel);
+    Common::Status status = CreateOpKernelInternal(node, exec_provider, p_op_kernel);
     if (!status.IsOK()) {
       LOGS(*session_logger_, ERROR) << "Kernel creation failed for node: "
                                     << node.Name() << " with error: " << status.ErrorMessage();
@@ -680,13 +679,10 @@ class InferenceSession::Impl {
     return status;
   }
 
-  Common::Status CreateOpKernelInternal(const LotusIR::Node& node,
-                                        const AllocatorInfo& allocator_info,
-                                        IExecutionProvider* exec_provider,
-                                        std::unique_ptr<OpKernel>* p_op_kernel) {
-    Common::Status status = local_kernel_registry.CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
+  Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
+    Common::Status status = local_kernel_registry.CreateKernel(node, exec_provider, p_op_kernel);
     if (!status.IsOK())
-      return KernelRegistry::Instance().CreateKernel(node, allocator_info, exec_provider, p_op_kernel);
+      return KernelRegistry::Instance().CreateKernel(node, exec_provider, p_op_kernel);
     else
       return status;
   }

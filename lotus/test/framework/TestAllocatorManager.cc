@@ -13,17 +13,20 @@ static std::string GetAllocatorId(const std::string& name, const int id, const b
   return ss.str();
 }
 
-static Status RegisterArena(std::unordered_map<std::string, ArenaPtr>& arena_map,
-                            std::unique_ptr<IDeviceAllocator> allocator, size_t /*memory_limit*/) {
+static Status RegisterAllocator(std::unordered_map<std::string, AllocatorPtr>& map,
+                                std::unique_ptr<IDeviceAllocator> allocator, size_t /*memory_limit*/,
+                                bool use_arena) {
   auto& info = allocator->Info();
-  auto allocator_id = GetAllocatorId(info.name, info.id, true);
-  auto arena_id = GetAllocatorId(info.name, info.id, true);
+  auto allocator_id = GetAllocatorId(info.name, info.id, use_arena);
 
   auto status = Status::OK();
-  if (arena_map.find(arena_id) != arena_map.end())
-    status = Status(Common::LOTUS, StatusCode::FAIL, "arena already exists");
+  if (map.find(allocator_id) != map.end())
+    status = Status(Common::LOTUS, StatusCode::FAIL, "allocator already exists");
   else {
-    arena_map[arena_id] = std::make_shared<DummyArena>(std::move(allocator));
+    if (use_arena)
+      map[allocator_id] = std::make_shared<DummyArena>(std::move(allocator));
+    else
+      map[allocator_id] = std::move(allocator);
   }
 
   return status;
@@ -43,8 +46,8 @@ Status AllocatorManager::InitializeAllocators() {
 
   for (const auto& pair : DeviceAllocatorRegistry::Instance().AllRegistrations()) {
     if (status.IsOK()) {
-      auto allocator = std::unique_ptr<IDeviceAllocator>(pair.second.factory());
-      status = RegisterArena(arena_map_, std::move(allocator), pair.second.max_mem);
+      auto allocator = std::unique_ptr<IDeviceAllocator>(pair.second.factory(0));
+      status = RegisterAllocator(map_, std::move(allocator), pair.second.max_mem, allocator->AllowsArena());
     }
   }
   return status;
@@ -53,10 +56,10 @@ Status AllocatorManager::InitializeAllocators() {
 AllocatorManager::~AllocatorManager() {
 }
 
-ArenaPtr AllocatorManager::GetArena(const std::string& name, const int id) {
-  auto arena_id = GetAllocatorId(name, id, true);
-  auto entry = arena_map_.find(arena_id);
-  LOTUS_ENFORCE(entry != arena_map_.end(), "Arena not found:", arena_id);
+AllocatorPtr AllocatorManager::GetAllocator(const std::string& name, const int id, bool arena) {
+  auto allocator_id = GetAllocatorId(name, id, arena);
+  auto entry = map_.find(allocator_id);
+  LOTUS_ENFORCE(entry != map_.end(), "Allocator not found:", allocator_id);
   return entry->second;
 }
 }  // namespace Test
