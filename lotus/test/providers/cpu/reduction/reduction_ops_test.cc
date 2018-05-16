@@ -17,12 +17,11 @@ void TestReduceOp(const std::string &op,
 
 {
   OpTester test(op.c_str());
-  if (!axes.empty())
-  {
-      if (op.compare("ArgMax") == 0 || op.compare("ArgMin") == 0)
-          test.AddAttribute("axis", axes[0]);
-      else
-          test.AddAttribute("axes", axes);
+  if (!axes.empty()) {
+    if (op.compare("ArgMax") == 0 || op.compare("ArgMin") == 0)
+      test.AddAttribute("axis", axes[0]);
+    else
+      test.AddAttribute("axes", axes);
   }
   test.AddAttribute("keepdims", keepdims);
   test.AddInput<float>("data", input_dims, data);
@@ -98,9 +97,9 @@ TEST(ReductionOpTest, ReduceLogSum) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 1, 2},
-                        {1.09861231f, 2.07944155f,
-                         3.55534792f, 3.87120104f,
-                         4.59511995f, 4.7874918f});
+                        {1.38629436f, 1.79175949f,
+                         2.48490667f, 2.6390574f,
+                         2.99573231f, 3.09104252f});
   test.Run();
 }
 

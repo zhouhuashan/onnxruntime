@@ -7,7 +7,7 @@ def TestReduction(op, data, axes, keepdims):
     elif op == "ReduceL2":
         return np.sqrt(np.sum(a=np.square(data), axis=axes, keepdims=keepdims))
     elif op == "ReduceLogSum":
-        return np.sum(np.log(data), axis=axes, keepdims=keepdims)
+        return np.log(np.sum(data, axis=axes, keepdims=keepdims))
     elif op == "ReduceLogSumExp":
         return np.log(np.sum(np.exp(data), axis=axes, keepdims=keepdims))
     elif op == "ReduceMax":

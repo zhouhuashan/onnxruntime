@@ -276,11 +276,11 @@ Status ReduceLogSum<float>::Compute(OpKernelContext* ctx) const {
   float* output_data = reduced->MutableData<float>();
 
   for (int j = 0; j < block_size; ++j) {
-    float log_sum = 0;
+    float sum = 0;
     for (int i = 0; i < blocks; ++i) {
-      log_sum += std::log(transposedInputData[i * block_size + j]);
+      sum += transposedInputData[i * block_size + j];
     }
-    *(output_data++) = log_sum;
+    *(output_data++) = std::log(sum);
   }
   return Status::OK();
 }
