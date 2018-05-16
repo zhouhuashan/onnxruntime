@@ -1110,7 +1110,15 @@ void Graph::CleanAllInitializedTensors() noexcept {
   name_to_initial_tensorIndex_.clear();
   name_to_initial_tensor_.clear();
   removed_initializer_indexes_.clear();
+
+  // Clearing RepeatedPtrFields does not free objects' memory. The memory is retained
+  // and can be reused. Need to explicitly release the cleared objects and free the
+  // memory.
   graph_proto_->mutable_initializer()->Clear();
+  int num_cleared = graph_proto_->initializer().ClearedCount();
+  for (int i = 0; i < num_cleared; i++) {
+    delete graph_proto_->mutable_initializer()->ReleaseCleared();
+  }
 }
 
 const InitializedTensorSet& Graph::GetAllInitializedTensors() const noexcept {
