@@ -283,7 +283,10 @@ target_link_libraries(onnx_test_runner ${onnx_test_lib} onnx_test_runner_common 
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(WIN32)
+#Maybe "CMAKE_SYSTEM_PROCESSOR" is better
+if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")
 add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
 target_link_libraries(onnx_test_runner_vstest ${onnx_test_lib} onnx_test_runner_common)
 set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
+endif()
 endif()
