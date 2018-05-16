@@ -81,7 +81,7 @@ Status RandomNormalLike::Compute(OpKernelContext* ctx) const {
 
   auto dtype = dtype_ != TensorProto_DataType_UNDEFINED ? dtype_ : InferDataType(X);
 
-  if (dtype_ == TensorProto_DataType_UNDEFINED)
+  if (dtype == TensorProto_DataType_UNDEFINED)
     return LOTUS_MAKE_STATUS(LOTUS, FAIL,
                              "Could not infer data type from input tensor with data type ",
                              X.DataType());
@@ -100,7 +100,7 @@ Status RandomUniformLike::Compute(OpKernelContext* ctx) const {
 
   auto dtype = dtype_ != TensorProto_DataType_UNDEFINED ? dtype_ : InferDataType(X);
 
-  if (dtype_ == TensorProto_DataType_UNDEFINED)
+  if (dtype == TensorProto_DataType_UNDEFINED)
     return LOTUS_MAKE_STATUS(LOTUS, FAIL,
                              "Could not infer data type from input tensor with data type ",
                              X.DataType());

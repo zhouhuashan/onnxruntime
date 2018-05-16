@@ -137,9 +137,9 @@ TEST(CastMap, InvalidAttributes) {
 TEST(CastMap, InvalidIndexInMap) {
   // negative index values in map aren't allowed
   std::map<int64_t, std::string> map{{-3, "-3"}, {0, "0"}};
-  std::vector<float> output{0.0f, 0.0f};
+  std::vector<int64_t> output{0, 0};
 
-  RunTest(map, output, "TO_INT64", -1, OpTester::ExpectResult::kExpectFailure);
+  RunTest(map, output, "TO_INT64", 5, OpTester::ExpectResult::kExpectFailure);
 }
 
 }  // namespace Test

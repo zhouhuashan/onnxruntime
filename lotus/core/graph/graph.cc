@@ -771,38 +771,6 @@ Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<Typ
   return Status::OK();
 }
 
-// For several operators, the output type is specified by an attribute value.
-// The following is an initial type-inference support for handling such operators.
-
-// TODO: The following should be formalized and pushed into ONNX, e.g., by
-// providing operator-specific type-inference functions. This is a temporary
-// placeholder until that happens.
-
-// GetTypeAttributeName: returns the name of the attribute that specifies the
-// type of the output if the operator has one. Returns null otherwise.
-
-#ifdef _MSC_VER
-#pragma warning(push)
-// init of static op_to_type_attribute_map with non-constexpr.
-// GSL_SUPPRESS(i.22) isn't working so this is ridiculously painful
-#pragma warning(disable : 26426)
-#endif
-static const std::string* GetTypeAttributeName(const std::string& op_name) {
-  static const std::unordered_map<std::string, std::string> op_to_type_attribute_map{
-      {"RandomNormal", "dtype"},
-      {"RandomNormalLike", "dtype"},
-      {"RandomUniform", "dtype"},
-      {"RandomUniformLike", "dtype"},
-      {"ConstantFill", "dtype"}};
-
-  auto find_result = op_to_type_attribute_map.find(op_name);
-  if (op_to_type_attribute_map.end() == find_result) return nullptr;
-  return &find_result->second;
-}
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 // Implementation of type-inference and type-checking for a single node
 Status Graph::InferAndVerifyTypeMatch(Node& node,
                                       const OpSchema& op,
@@ -929,111 +897,50 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
     auto op_formal_parameter = op.outputs().at(operand_index);
 
     const TypeProto& onnx_inferred_type = onnx_inferred_types[i++];
-
-    // Need to combine type/shape information from ONNX inference as well as inference below:
-    // set_output_type combines these information and updates output_def's type accordingly.
-    const auto set_output_type = [&](DataType inferred_type) {
-      // const TypeProto& type_proto = DataTypeUtils::ToType(inferred_type)
-      // For now, we take the shape from ONNX inference and the type inferred here.
-      // We could potentially double-check both inferred types are same.
-      output_def->SetType(inferred_type);
-      if (onnx_inferred_type.has_tensor_type()) {
-        auto tensor_type = onnx_inferred_type.tensor_type();
-        if (tensor_type.has_shape()) {
-          output_def->SetShape(tensor_type.shape());
-        }
-      }
-    };
+    DataType existing_type = output_def->Type();
+    DataType inferred_type = nullptr;
 
     // Infer output arg type if it is constrained to be of the same type as some input:
     // For example, the output of "Abs" is of the same type as its input.
     auto input_types_iter = type_parameter_to_type_map.find(op_formal_parameter.GetTypeStr());
     if (type_parameter_to_type_map.end() != input_types_iter) {
-      set_output_type(input_types_iter->second);
-      continue;
+      inferred_type = input_types_iter->second;
+    } else if (1 == op_formal_parameter.GetTypes().size()) {
+      // Infer output arg type if operator definition specifies unique output type:
+      inferred_type = *(op_formal_parameter.GetTypes().begin());
+    } else if (FullyDefinedType(onnx_inferred_type)) {
+      // Use output type inferred by ONNX inference
+      inferred_type = DataTypeUtils::ToType(onnx_inferred_type);
+    } else if (existing_type != nullptr) {
+      inferred_type = existing_type;
+    } else {
+      // This should not happen: indicates incompleteness in ONNX inference.
+      Status status(LOTUS, FAIL,
+                    "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type inference failed");
+      return status;
     }
 
-    // Infer output arg type if it is specified by an attribute value.
-    // For example, the output of "RandomNormal" is specified by attribute "dtype".
-    const std::string* p_type_attribute_name = GetTypeAttributeName(node.OpType());
-    if (nullptr != p_type_attribute_name) {
-      auto find_type_attr = node.GetAttributes().find(*p_type_attribute_name);
-      if (node.GetAttributes().end() == find_type_attr) {
-        return Status(LOTUS, FAIL,
-                      "Value of attribute '" + *p_type_attribute_name + "' not specified in node (" +
-                          nodeName + ").");
-      }
-      AttributeProto_AttributeType attr_type;
-      RETURN_IF_ERROR(TypeUtils::GetType(find_type_attr->second, attr_type));
+    if ((existing_type != inferred_type) && (existing_type != nullptr)) {
+      // A type exists for this output but does not match the inferred type.
+      return Status(LOTUS, FAIL,
+                    "Type Error: Type (" + *existing_type + ") of output arg (" +
+                        output_def->Name() + ") of node (" + nodeName +
+                        ") does not match expected type (" + *inferred_type + ").");
+    }
 
-      if (AttributeProto_AttributeType::AttributeProto_AttributeType_INT == attr_type) {
-        auto elem_type = gsl::narrow_cast<TensorProto_DataType>(find_type_attr->second.i());
-        if (!TensorProto::DataType_IsValid(elem_type)) {
-          return LOTUS_MAKE_STATUS(LOTUS, FAIL,
-                                   "Attribute '", *p_type_attribute_name,
-                                   "' in node (", nodeName, ") has invalid value of ", elem_type);
-        }
+    output_def->SetType(inferred_type);
 
-        TypeProto type_proto;
-        type_proto.mutable_tensor_type()->set_elem_type(elem_type);
-        set_output_type(DataTypeUtils::ToType(type_proto));
-        continue;
-      } else {
-        return Status(LOTUS, FAIL,
-                      "Attribute '" + *p_type_attribute_name + "' in node (" + nodeName +
-                          ") has wrong type. It should be of int type.");
+    // Update output-shape if it was inferred:
+    if (onnx_inferred_type.has_tensor_type()) {
+      auto& tensor_type = onnx_inferred_type.tensor_type();
+      if (tensor_type.has_shape()) {
+        output_def->SetShape(tensor_type.shape());
       }
     }
-
-    // For case that input arg and output arg have different types.
-    if (output_def->ToProto().has_type()) {
-      // The output arg has already had type information.
-      // Check whether it matches operator definition.
-      auto iter = op_formal_parameter.GetTypes().find(output_def->Type());
-      if (op_formal_parameter.GetTypes().end() == iter) {
-        std::ostringstream err_msg;
-        err_msg << "Node (" << nodeName << ") output arg ("
-                << output_def->Name() << ") type (" << *output_def->Type()
-                << ") does not match operator (" << op.Name() << ") definition. ";
-        err_msg << "Operator definition has the following types: ";
-        for (const gsl::not_null<DataType> e : op_formal_parameter.GetTypes()) {
-          err_msg << *e << " ";
-        }
-        return Status(LOTUS, FAIL, err_msg.str());
-      }
-      continue;
-    }
-
-    // Output arg has no type information.
-    if (1 == op_formal_parameter.GetTypes().size()) {
-      // Infer output arg type as the only one type defined
-      // in operator definition.
-      set_output_type(*(op_formal_parameter.GetTypes().begin()));
-      continue;
-    }
-
-    // Check if ONNX inference produced the output type:
-    if (FullyDefinedType(onnx_inferred_type)) {
-      output_def->SetType(onnx_inferred_type);
-      if (onnx_inferred_type.has_tensor_type()) {
-        auto& tensor_type = onnx_inferred_type.tensor_type();
-        if (tensor_type.has_shape()) {
-          output_def->SetShape(tensor_type.shape());
-        }
-        continue;
-      }
-    }
-
-    // Output arg has no type information, and there're
-    // multiple allowed types defined in operator definition.
-    // Type inference fails in this case.
-    Status status(LOTUS, FAIL,
-                  "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type inference failed");
-    return status;
   }
 
   return Status::OK();
-}
+}  // namespace LotusIR
 
 Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
                                    const std::unordered_map<std::string, Node*>& output_args) {

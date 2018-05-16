@@ -65,11 +65,7 @@ void RunRandomNormalLike3DFloat(bool infer_dtype = false) {
 
   test.AddOutput<float>("Y", dims, expected_output);
 
-  if (infer_dtype) {
-    // this isn't properly supported yet, so validate it breaks as expected
-    ExpectThrow<LotusException>(test, "Value of attribute 'dtype' not specified in node");
-  } else
-    test.Run();
+  test.Run();
 }
 
 TEST(Random, RandomNormalLike3DDouble) {
@@ -137,11 +133,7 @@ void RunRandomUniformLikeTest(bool infer_dtype = false) {
 
   test.AddOutput<double>("Y", dims, expected_output);
 
-  if (infer_dtype) {
-    // this isn't properly supported yet, so validate it breaks as expected
-    ExpectThrow<LotusException>(test, "Value of attribute 'dtype' not specified in node");
-  } else
-    test.Run();
+  test.Run();
 }
 
 TEST(Random, RandomUniformLike2DDouble) {
@@ -173,7 +165,7 @@ TEST(Random, InvalidDType) {
     test.AddAttribute("shape", dims);
 
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
   }
 
   {
@@ -189,7 +181,7 @@ TEST(Random, InvalidDType) {
     test.AddAttribute("shape", dims);
 
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
   }
 
   {
@@ -205,7 +197,7 @@ TEST(Random, InvalidDType) {
 
     test.AddInput<int32_t>("X", dims, input);
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
   }
 
   {
@@ -221,7 +213,7 @@ TEST(Random, InvalidDType) {
 
     test.AddInput<int32_t>("X", dims, input);
     test.AddOutput<double>("Y", dims, expected_output);
-    ExpectThrow<LotusException>(test, "Attribute 'dtype' in node (node1) has invalid value of 999");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
   }
 }
 
