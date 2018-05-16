@@ -26,11 +26,38 @@ option(lotus_USE_CUDA "Build with CUDA support" OFF)
 option(lotus_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
 option(lotus_USE_OPENBLAS "Use openblas" OFF)
 option(lotus_USE_PREBUILT_PB "Use prebuilt protobuf library" OFF)
+option(lotus_MSVC_STATIC_RUNTIME "Compile for the static CRT" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
-set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
 set(ONNX_ML 1)
-set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
+
+if (MSVC)
+  if (lotus_MSVC_STATIC_RUNTIME)
+    # set all of our submodules to static runtime
+    set(ONNX_USE_MSVC_STATIC_RUNTIME ON)
+    set(protobuf_MSVC_STATIC_RUNTIME ON)
+    set(gtest_force_shared_crt OFF)
+
+    # In case we are building static libraries, link also the runtime library statically
+    # so that MSVCR*.DLL is not required at runtime.
+    # https://msdn.microsoft.com/en-us/library/2kzt1wy3.aspx
+    # This is achieved by replacing msvc option /MD with /MT and /MDd with /MTd
+    # http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_build_my_MSVC_application_with_a_static_runtime.3F  
+    foreach(flag_var
+        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO
+        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+        CMAKE_C_FLAGS_MINSIZEREL CMAKE__FLAGS_RELWITHDEBINFO)
+      if(${flag_var} MATCHES "/MD")
+        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+      endif(${flag_var} MATCHES "/MD")
+    endforeach(flag_var)
+  else()
+    set(ONNX_USE_MSVC_STATIC_RUNTIME OFF)
+    set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
+    set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
+  endif()
+endif()
 
 
 #Here we support three build mode:
