@@ -45,13 +45,6 @@ void usage() {
 
 }  // namespace
 
-// Create an object to shutdown the protobuf library at exit
-struct ShutdownProtobufs {
-  ~ShutdownProtobufs() {
-    ::google::protobuf::ShutdownProtobufLibrary();
-  }
-} s_shutdown_protobufs;
-
 int main(int argc, char* argv[]) {
   std::string default_logger_id{"Default"};
   Logging::LoggingManager default_logging_manager{std::unique_ptr<Logging::ISink>{new Logging::CLogSink{}},

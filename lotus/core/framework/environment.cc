@@ -33,4 +33,8 @@ Status Environment::Initialize() {
   return status;
 }
 
+Environment::~Environment() {
+  ::google::protobuf::ShutdownProtobufLibrary();
+}
+
 }  // namespace Lotus

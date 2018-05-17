@@ -57,11 +57,12 @@ TestEnvironment::~TestEnvironment() {
   // release environment followed by logging manager so any log output from runtime environment shutdown
   // using the default logger will succeed.
   runtime_environment_ = nullptr;
+#else
+  ::google::protobuf::ShutdownProtobufLibrary();
 #endif
 
   s_default_logging_manager = nullptr;
   logging_manager_ = nullptr;
-  ::google::protobuf::ShutdownProtobufLibrary();
 }
 
 }  // namespace Test

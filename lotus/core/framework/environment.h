@@ -21,7 +21,7 @@ class Environment {
     return status;
   }
 
-  ~Environment() = default;
+  ~Environment();
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Environment);
