@@ -1,0 +1,1 @@
+cmd /c start /wait vcredist_x64.exe /install /quiet /norestart

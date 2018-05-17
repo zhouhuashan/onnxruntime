@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestMap>
+  <Providers>
+    <Provider Type="VSODrop">
+      <Properties>
+        <Add Name="CloudTest.ProviderCustomName" Value="[MyVSODrop]" />
+        <Add Name="DropURL" Value="https://aiinfra.artifacts.visualstudio.com/DefaultCollection/_apis/drop/drops/Lotus/testdata/onnx/model/2"/>
+      </Properties>
+    </Provider>
+    <Provider Type="VSODrop">
+      <Properties>
+        <Add Name="CloudTest.ProviderCustomName" Value="[MyVCRT]" />
+        <Add Name="DropURL" Value="https://aiinfra.artifacts.visualstudio.com/DefaultCollection/_apis/drop/drops/vcrt/14.14.26405.2"/>
+      </Properties>
+    </Provider>
+  </Providers>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\bvlc_alexnet.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\bvlc_googlenet.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\bvlc_reference_caffenet.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\bvlc_reference_rcnn_ilsvrc13.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\densenet121.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\inception_v1.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\inception_v2.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\resnet50.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\shufflenet.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\squeezenet.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\vgg19.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\zfnet.xml" IsActive="true"/>
+</TestMap>
