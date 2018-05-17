@@ -37,6 +37,7 @@ void usage() {
       "Options:\n"
       "\t-j [models]: Specifies the number of models to run simultaneously.\n"
       "\t-c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.\n"
+      "\t-n [test_case_name]: Specifies a single test case to run.\n"
       "\t-p [PLANNER_TYPE]: PLANNER_TYPE could be 'seq' or 'simple'. Default: 'simple'.\n"
       "\t-e [EXECUTION_PROVIDER]: EXECUTION_PROVIDER could be 'cpu' or 'cuda'. Default: 'cpu'.\n"
       "\t-h: help\n");
@@ -77,6 +78,13 @@ int main(int argc, char* argv[]) {
         case 'c':
           concurrent_session_runs = (int)strtol(optarg, NULL, 10);
           if (concurrent_session_runs <= 0) {
+            usage();
+            return -1;
+          }
+          break;
+        case 'j':
+          p_models = (int)strtol(optarg, NULL, 10);
+          if (p_models <= 0) {
             usage();
             return -1;
           }
