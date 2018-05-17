@@ -253,9 +253,9 @@ def main():
 
     cmake_extra_args = None
     if (args.x86):
-        cmake_extra_args = ['-G', 'Visual Studio 15 2017']
+        cmake_extra_args = ['-A','x86','-G', 'Visual Studio 15 2017']
     else:
-        cmake_extra_args = ['-T', 'host=x64', '-G', 'Visual Studio 15 2017 Win64']
+        cmake_extra_args = ['-A','x64','-T', 'host=x64', '-G', 'Visual Studio 15 2017']
 
     if (args.update):
         if (not args.skip_submodule_sync):
