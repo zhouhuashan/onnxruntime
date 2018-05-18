@@ -8,6 +8,7 @@ project(Lotus C CXX)
 set(CMAKE_CXX_STANDARD 14)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Enable CTest
 enable_testing()
@@ -30,6 +31,7 @@ option(lotus_MSVC_STATIC_RUNTIME "Compile for the static CRT" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
+include(lotus_cmake_utils.cmake)
 
 if (MSVC)
   if (lotus_MSVC_STATIC_RUNTIME)
