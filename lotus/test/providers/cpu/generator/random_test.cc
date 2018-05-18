@@ -165,7 +165,7 @@ TEST(Random, InvalidDType) {
     test.AddAttribute("shape", dims);
 
     test.AddOutput<double>("Y", dims, expected_output);
-    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Attribute dtype does not specify a valid type.");
   }
 
   {
@@ -181,7 +181,7 @@ TEST(Random, InvalidDType) {
     test.AddAttribute("shape", dims);
 
     test.AddOutput<double>("Y", dims, expected_output);
-    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Attribute dtype does not specify a valid type.");
   }
 
   {
@@ -197,7 +197,7 @@ TEST(Random, InvalidDType) {
 
     test.AddInput<int32_t>("X", dims, input);
     test.AddOutput<double>("Y", dims, expected_output);
-    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Attribute dtype does not specify a valid type.");
   }
 
   {
@@ -213,7 +213,7 @@ TEST(Random, InvalidDType) {
 
     test.AddInput<int32_t>("X", dims, input);
     test.AddOutput<double>("Y", dims, expected_output);
-    test.Run(OpTester::ExpectResult::kExpectFailure, "Invalid dtype");
+    test.Run(OpTester::ExpectResult::kExpectFailure, "Attribute dtype does not specify a valid type.");
   }
 }
 
