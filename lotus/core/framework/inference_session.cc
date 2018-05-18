@@ -498,15 +498,21 @@ class InferenceSession::Impl {
   Common::Status SaveInitializedTensorsWithSeperateBuffer(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
-                                                         //TODO: get allocator based on weights location in allocation plan
-    auto cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
-    LOTUS_ENFORCE(cpu_provider);
-    auto alloc = cpu_provider->GetAllocator();
+
+    auto* p_execution_plan = session_state_.GetExecutionPlan();
+    LOTUS_ENFORCE(p_execution_plan);  // execution plan must be ready.
+
     const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
     for (const auto& entry : initialized_tensor_set) {
       const std::string& name = entry.first;
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
+
+      auto& location = p_execution_plan->allocation_plan[mlvalue_index].location;
+      auto alloc = session_state_.GetAllocator(location);
+      if (!alloc) {
+        return Status(LOTUS, FAIL, "Failed to get allocator for location: " + location.ToString());
+      }
 
       const TensorProto& tensor_proto = *(entry.second);
       std::unique_ptr<Tensor> p_tensor = nullptr;
@@ -527,6 +533,7 @@ class InferenceSession::Impl {
   Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
+
     auto execution_plan = session_state_.GetExecutionPlan();
     LOTUS_ENFORCE(execution_plan);  // execution plan must be ready.
 
@@ -549,7 +556,7 @@ class InferenceSession::Impl {
       LOTUS_ENFORCE(weights_buffers_.find(location) == weights_buffers_.end());
       auto alloc = session_state_.GetAllocator(location);
       if (!alloc)
-        return Status(LOTUS, FAIL, "Allocator for location: " + location.name + " not found.");
+        return Status(LOTUS, FAIL, "Failed to get allocator for location: " + location.ToString());
       void* buffer = alloc->Alloc(mem_patterns.patterns[i].peak_size());
       weights_buffers_[location] = BufferUniquePtr(buffer, alloc);
     }
@@ -571,13 +578,12 @@ class InferenceSession::Impl {
       // if block is not found, means this mlvalue is not traced
       // fall back to allocate seperate buffer.
       if (!block) {
-        //TODO: support load weight on different device
-        //Right now GetTensorFromTensorProto only works with cpu buffers
-        //Need enhancement later.
-        auto cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
-        LOTUS_ENFORCE(cpu_provider);
-        auto alloc = cpu_provider->GetAllocator();
-        LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc));
+        auto& alloc_info = execution_plan->allocation_plan[mlvalue_index].location;
+        auto alloc_ptr = session_state_.GetAllocator(alloc_info);
+        if (!alloc_ptr) {
+          return Status(LOTUS, FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
+        }
+        LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr));
         MLValue mlvalue;
         mlvalue.Init(p_tensor.release(),
                      DataTypeImpl::GetType<Tensor>(),

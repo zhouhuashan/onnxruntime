@@ -352,6 +352,22 @@ void Node::ForEachDef(std::function<void(const LotusIR::NodeArg*, bool is_input)
   }
 };
 
+void Node::ForEachInputDef(std::function<void(const LotusIR::NodeArg*)> func) const {
+  for (const gsl::not_null<const LotusIR::NodeArg*> arg : InputDefs()) {
+    if (!arg->Exists())
+      continue;
+    func(&*arg);
+  }
+};
+
+void Node::ForEachOutputDef(std::function<void(const LotusIR::NodeArg*)> func) const {
+  for (const gsl::not_null<const LotusIR::NodeArg*> arg : OutputDefs()) {
+    if (!arg->Exists())
+      continue;
+    func(&*arg);
+  }
+};
+
 void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements) {
   std::vector<std::vector<NodeArg*>*> all_defs = {&definitions_.input_defs, &definitions_.output_defs};
 

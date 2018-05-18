@@ -170,6 +170,7 @@ class PlannerTest : public ::testing::Test {
   LotusIR::Node* AddNode(Lotus::KernelDef& kernel_def, std::string& input, std::string& output) {
     auto node = std::make_unique<UnaryNode>(graph_, kernel_def.OpName(), Arg(input), Arg(output));
     auto* p_node = node->p_node;
+    p_node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
     nodes_.push_back(std::move(node));
     kernel_bindings_.emplace_back(p_node, kernel_def);
     return p_node;
@@ -215,6 +216,9 @@ class PlannerTest : public ::testing::Test {
     for (auto& binding : kernel_bindings_) {
       BindKernel(binding.first, binding.second);
     }
+
+    state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider, std::make_unique<CPUExecutionProvider>(
+                                                                    CPUExecutionProviderInfo()));
 
     SequentialPlannerTestContext test_context(&shape_map_);
     auto status = SequentialPlanner::CreatePlan(state_, test_context, &plan_);

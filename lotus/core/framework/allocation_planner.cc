@@ -261,6 +261,31 @@ class PlannerImpl {
     }
   }
 
+  void GeneratePlanForWeights(const LotusIR::Graph& graph) {
+    auto& weights = graph.GetAllInitializedTensors();
+    for (auto& node : graph.Nodes()) {
+      node.ForEachInputDef([this, &weights, &node](const LotusIR::NodeArg* def) {
+        auto& def_name = def->Name();
+        if (!weights.count(def_name)) {
+          return;
+        }
+        auto wt_index = this->Index(def_name);
+        SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
+        // TODO(Task 591) the 2 calls to GetExecutionProvider look weird. Consider changing the node method
+        // to ProviderType.
+        auto* p_provider = this->p_session_state_->GetExecutionProvider(node.GetExecutionProvider());
+        LOTUS_ENFORCE(p_provider);
+
+        thisplan.alloc_kind = AllocKind::kAllocateStatically;
+
+        thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();  // default
+        if (p_provider->GetAllocatorMap().count(kMemTypeCPU)) {
+          thisplan.location = p_provider->GetAllocator(kMemTypeCPU)->Info();
+        }
+      });
+    }
+  }
+
   void ComputeReusePlan(const LotusIR::Graph& graph,
                         std::vector<SequentialExecutionPlan::NodeExecutionPlan>& execution_plan) {
     // Identify allocation/deallocation plan for every ml-value
@@ -275,13 +300,7 @@ class PlannerImpl {
       thisplan.value_type = GetMLDataType(*graph_input);
     }
 
-    auto& weights = graph.GetAllInitializedTensors();
-    for (auto it = weights.begin(); it != weights.end(); ++it) {
-      auto wt_index = Index(it->first);
-      SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
-      thisplan.alloc_kind = AllocKind::kAllocateStatically;
-      // Note: thisplan.value_type should already have been setup since every initializer must be an input
-    }
+    GeneratePlanForWeights(graph);
 
     for (int program_counter = 0; program_counter < execution_plan.size(); ++program_counter) {
       SequentialExecutionPlan::NodeExecutionPlan step = execution_plan[program_counter];
@@ -399,7 +418,8 @@ class PlannerImpl {
   }
 };
 
-Status SequentialPlanner::CreatePlan(const SessionState& session_state, const ISequentialPlannerContext& context,
+Status SequentialPlanner::CreatePlan(const SessionState& session_state,
+                                     const ISequentialPlannerContext& context,
                                      SequentialExecutionPlan* plan) {
   PlannerImpl planner;
   return planner.CreatePlan(session_state, context, plan);

@@ -47,7 +47,9 @@ static Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_p
   return Common::Status::OK();
 }
 
-Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor, AllocatorPtr allocator) {
+Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
+                                        std::unique_ptr<Tensor>* p_tensor,
+                                        AllocatorPtr allocator) {
   vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
 
   // Note: We permit an empty tensor_shape_vec, and treat it as a scalar (a tensor of size 1).

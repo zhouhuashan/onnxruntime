@@ -11,13 +11,13 @@ namespace Lotus {
 #define CUDA "Cuda"
 #define CUDA_PINNED "CudaPinned"
 
-enum AllocatorType {
+enum AllocatorType {  // TODO use enum class
   kDeviceAllocator = 0,
   kArenaAllocator = 1
 };
 
 // memory types for allocator, exec provider specific types should be extended in each provider
-enum MemType : int {
+enum MemType : int {    // TODO use enum class
   kMemTypeCPU = -1,     // CPU accessible memory managed by non-CPU execution provider
   kMemTypeDefault = 0,  // the default allocator for execution provider
 };
@@ -50,6 +50,16 @@ struct AllocatorInfo {
       return id < other.id;
     else
       return name < other.name;
+  }
+
+  inline std::string ToString() const {
+    std::ostringstream ostr;
+    ostr << "AllocatorInfo: "
+         << " name: " << name
+         << " id: " << id
+         << " mem_type: " << mem_type
+         << " type: " << type;
+    return ostr.str();
   }
 };
 

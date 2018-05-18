@@ -224,6 +224,12 @@ class Node {
   // iterate through all input/output defs
   void ForEachDef(std::function<void(const LotusIR::NodeArg*, bool is_input)> func) const;
 
+  // iterate through all input defs
+  void ForEachInputDef(std::function<void(const LotusIR::NodeArg*)> func) const;
+
+  // iterate through all output defs
+  void ForEachOutputDef(std::function<void(const LotusIR::NodeArg*)> func) const;
+
   // Replaces defs
   void ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements);
 
