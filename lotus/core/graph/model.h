@@ -83,6 +83,8 @@ class Model {
 
   static Status Save(Model& model, int fd);
 
+  static Status Load(std::istream& model_istream, ModelProto* p_model_proto);
+
   static Status Load(const std::string& file_path, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry = nullptr);
 
   static Status Load(int fd, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry = nullptr);

@@ -172,6 +172,20 @@ void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map
   }
 }
 
+Status Model::Load(std::istream& model_istream, ModelProto* p_model_proto) {
+  if (!model_istream.good()) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Invalid istream object.");
+  }
+  if (!p_model_proto) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Null model_proto ptr.");
+  }
+  const bool result = p_model_proto->ParseFromIstream(&model_istream);
+  if (!result) {
+    return Status(LOTUS, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
+  }
+  return Status::OK();
+}
+
 Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> model, const LotusOpSchemaRegistry* local_registry) {
   // we expect a graph to be present
   if (!model_proto.has_graph()) {

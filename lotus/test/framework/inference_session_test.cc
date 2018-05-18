@@ -333,10 +333,8 @@ TEST(InferenceSessionTests, TestModelProtoInterface) {
 
   InferenceSession session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
-  ASSERT_TRUE(model_file_stream.good());
-
   ModelProto model_proto;
-  ASSERT_TRUE(model_proto.ParseFromIstream(&model_file_stream));
+  ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, &model_proto).IsOK());
   ASSERT_TRUE(session_object.Load(model_proto).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -352,10 +350,8 @@ TEST(InferenceSessionTests, TestModelProtoInterfaceMultipleLoadFailure) {
 
   InferenceSession session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
-  ASSERT_TRUE(model_file_stream.good());
-
   ModelProto model_proto;
-  ASSERT_TRUE(model_proto.ParseFromIstream(&model_file_stream));
+  ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, &model_proto).IsOK());
   ASSERT_TRUE(session_object.Load(model_proto).IsOK());
   ASSERT_FALSE(session_object.Load(model_proto).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
