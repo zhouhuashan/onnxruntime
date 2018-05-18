@@ -40,6 +40,7 @@ class Graph;
 class GraphBase;
 class Node;
 class OpSignature;
+class LotusOpSchemaRegistry;
 
 namespace Test {
 struct NodeTestHelper;
@@ -693,7 +694,8 @@ class Graph : public GraphBase {
   // a <Graph> object.
   Graph(GraphProto* graph_proto,
         const std::unordered_map<std::string, int>& domain_to_version,
-        Version ir_version);
+        Version ir_version,
+        const LotusOpSchemaRegistry* local_registry = nullptr);
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object and Resolve() it.
@@ -750,5 +752,7 @@ class Graph : public GraphBase {
 
   // Graph value_info.
   std::vector<const NodeArg*> value_info_;
+
+  const LotusOpSchemaRegistry* local_registry_;
 };
 }  // namespace LotusIR

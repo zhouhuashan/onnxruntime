@@ -10,6 +10,7 @@
 #include "core/graph/utils.h"
 #include "core/common/logging/logging.h"
 #include "onnx/checker.h"
+#include "core/graph/schema_registry.h"
 
 using namespace onnx::Utils;
 using namespace onnx::checker;
@@ -396,11 +397,13 @@ void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& rep
 
 Graph::Graph(GraphProto* graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version,
-             Version ir_version)
+             Version ir_version,
+             const LotusOpSchemaRegistry* local_registry)
 
     : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version, ir_version),
       graph_proto_{graph_proto},
-      graph_type_{Type::Main} {
+      graph_type_{Type::Main},
+      local_registry_(local_registry) {
   LOTUS_ENFORCE(graph_proto != nullptr, "Expected either name or graph_proto.");
   ArgNameToTypeMap name_to_type_map;
 
@@ -958,6 +961,56 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   return Status::OK();
 }  // namespace LotusIR
 
+#define enforce_non_empty_field(proto, field) \
+  do {                                        \
+    if (proto.field().empty()) {              \
+      fail_check(                             \
+          "Field '",                          \
+          #field,                             \
+          "' of ",                            \
+          #proto,                             \
+          " is required to be non-empty.");   \
+    }                                         \
+  } while (0)
+
+static void check_node(
+    const NodeProto& node,
+    const CheckerContext& ctx,
+    const LexicalScopeContext& lex_ctx,
+    const LotusOpSchemaRegistry* registry) {
+  enforce_non_empty_field(node, op_type);
+
+  if (node.input().empty() && node.output().empty()) {
+    fail_check(
+        "NodeProto (name: ",
+        node.name(),
+        ", type: ",
+        node.op_type(),
+        ") has zero input and zero output.");
+  }
+
+  // Resolve domain for node
+  const auto& opset_imports = ctx.get_opset_imports();
+  auto dit = opset_imports.find(node.domain());
+  if (dit == opset_imports.end()) {
+    fail_check("No opset import for domain '" + node.domain() + "'");
+  }
+  auto domain_version = dit->second;
+
+  for (const auto& attr : node.attribute()) {
+    check_attribute(attr, ctx, lex_ctx);
+  }
+
+  const auto* schema =
+      registry->Schema(node.op_type(), domain_version, node.domain());
+  if (!schema) {
+    fail_check(
+        "No Schema registered for " + node.op_type() +
+        " with domain_version of " + ONNX_NAMESPACE::to_string(domain_version));
+  }
+  schema->Verify(node);
+}
+
 Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
                                    const std::unordered_map<std::string, Node*>& output_args) {
   for (auto nodeIndex : nodes_in_topological_order) {
@@ -975,17 +1028,30 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     }
     NodeProto node_proto;
     node.ToProto(node_proto);
-    try {
-      checker::check_node(node_proto, ctx, lsc);
-    } catch (const std::exception& ex) {
-      return Status(LOTUS, FAIL, ex.what());
-    }
-
     auto& node_name = node.Name();
     auto& domain = node.Domain();
-
     auto maxInclusiveVersion = DomainToVersionMap().find(domain)->second;
-    node.op_ = OpSchemaRegistry::Schema(node.OpType(), maxInclusiveVersion, node.Domain());
+
+    // check node from local schema first
+    if (local_registry_) {
+      try {
+        check_node(node_proto, ctx, lsc, local_registry_);
+        node.op_ = local_registry_->Schema(node.OpType(), maxInclusiveVersion, node.Domain());
+      } catch (const std::exception& ex) {
+        LOGS_DEFAULT(WARNING) << "verify node from local registry failed: " << ex.what() << std::endl
+                              << "Will try to search from build in schema." << std::endl;
+      }
+    }
+
+    if (!node.op_) {
+      try {
+        checker::check_node(node_proto, ctx, lsc);
+      } catch (const std::exception& ex) {
+        return Status(LOTUS, FAIL, ex.what());
+      }
+      node.op_ = OpSchemaRegistry::Schema(node.OpType(), maxInclusiveVersion, node.Domain());
+    }
+
     RETURN_IF_ERROR(node.UpdateInputArgCount());
 
     // currently an Op is required by ValidateVersion, so we use gsl::not_null.

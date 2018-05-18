@@ -13,6 +13,10 @@ class GraphTransformer;
 class NodeArg;
 }  // namespace LotusIR
 
+namespace onnx {
+class OpSchema;
+}
+
 namespace Lotus {
 class IExecutionProvider;  // forward decl
 class KernelDefBuilder;
@@ -122,6 +126,16 @@ class InferenceSession {
     */
   //TODO: Once ABI for kernel registry is ready, update the interface with ABI
   Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, IMLOpKernelCreateFn kernel_creator);
+
+  /**
+  * Register a onnx opset to this session.
+  * If any conflict happened between registered schema and built-in schema,
+  * registered schema will have higher priority.
+  * Call this before invoking Load().
+  * @return OK if success.
+  */
+  //TODO: Once ABI for schema registry is ready, update the interface with ABI
+  Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version);
 
   /**
     * Register a graph transfromer. If you've one to register, call this before invoking Initialize().

@@ -21,6 +21,7 @@
 #include "core/graph/graph_transformer.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
+#include "core/graph/schema_registry.h"
 
 namespace Lotus {
 class InferenceSession::Impl {
@@ -55,11 +56,23 @@ class InferenceSession::Impl {
                                           });
   }
 
+  Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version) {
+    //todo: handle domain version
+    LOTUS_RETURN_IF_ERROR(local_schema_registry.AddDomainToVersion(domain, version));
+    for (int i = 0; i < schemas.size(); i++)
+      LOTUS_RETURN_IF_ERROR(local_schema_registry.RegisterOpSchema(schemas[i]));
+    return Status::OK();
+  }
+
   Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
     if (p_graph_transformer.get() == nullptr) {
       return Status(LOTUS, FAIL, "Received nullptr for graph transformer");
     }
     return graph_transformation_mgr_.Register(std::move(p_graph_transformer));
+  }
+
+  bool HaslocalSchema() const {
+    return !local_schema_registry.get_all_schemas().empty();
   }
 
   Common::Status Load(const std::string& model_uri) {
@@ -72,7 +85,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, &p_tmp_model));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, &p_tmp_model, HaslocalSchema() ? &local_schema_registry : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -100,7 +113,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model, HaslocalSchema() ? &local_schema_registry : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -134,7 +147,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model, HaslocalSchema() ? &local_schema_registry : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -751,6 +764,7 @@ class InferenceSession::Impl {
   std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
 
   KernelRegistry local_kernel_registry;
+  LotusIR::LotusOpSchemaRegistry local_schema_registry;
 };  // namespace Lotus
 
 //
@@ -825,6 +839,10 @@ Common::Status InferenceSession::Load(const ModelProto& model_proto) {
 
 Common::Status InferenceSession::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, IMLOpKernelCreateFn kernel_creator) {
   return impl_->RegisterCustomKernel(kernel_def_builder, kernel_creator);
+}
+
+Common::Status InferenceSession::RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version) {
+  return impl_->RegisterCustomOpSet(schemas, domain, version);
 }
 
 }  // namespace Lotus
