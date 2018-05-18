@@ -60,7 +60,7 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   auto output_arg = std::make_unique<NodeArg>("node_1_out_1", &tensor_int32);
   outputs.push_back(output_arg.get());
   auto node = graph->AddNode("node1", "op_not_exist", "this is going to call function kernel", inputs, outputs);
-  node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
   AllocatorInfo alloc_info("CPU", AllocatorType::kArenaAllocator);
   CPUExecutionProviderInfo epi;
   CPUExecutionProvider exec_provider(epi);
@@ -69,7 +69,7 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   ASSERT_TRUE(status.IsOK());
   ASSERT_EQ(typeid(FunctionKernel).name(), typeid(*kernel).name());
 
-  node->SetExecutionProvider("XPUExecutionProvider");
+  node->SetExecutionProviderType("XPUExecutionProvider");
   AllocatorInfo alloc_info_2("XPU", AllocatorType::kArenaAllocator);
   XPUExecutionProvider exec_provider_2;
   std::unique_ptr<OpKernel> kernel_2;

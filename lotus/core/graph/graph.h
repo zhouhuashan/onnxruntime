@@ -215,8 +215,8 @@ class Node {
   // Executor will decide which device that this node will run against
   // and set it properly.
   // TODO: may change the return value type to be an ENUM.
-  ProviderType GetExecutionProvider() const noexcept;
-  void SetExecutionProvider(ProviderType execution_provider);
+  ProviderType GetExecutionProviderType() const noexcept;
+  void SetExecutionProviderType(ProviderType execution_provider_type);
 
   // Get the corresponding <NodeProto>.
   void ToProto(NodeProto& proto) const;
@@ -343,7 +343,7 @@ class Node {
   Relationships relationships_;
 
   // Device.
-  std::string execution_provider_;
+  std::string execution_provider_type_;
 
   // Map from attribute name to attribute.
   // This allows attribute adding and removing.

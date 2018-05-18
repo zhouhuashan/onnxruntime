@@ -170,7 +170,7 @@ class PlannerTest : public ::testing::Test {
   LotusIR::Node* AddNode(Lotus::KernelDef& kernel_def, std::string& input, std::string& output) {
     auto node = std::make_unique<UnaryNode>(graph_, kernel_def.OpName(), Arg(input), Arg(output));
     auto* p_node = node->p_node;
-    p_node->SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+    p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
     nodes_.push_back(std::move(node));
     kernel_bindings_.emplace_back(p_node, kernel_def);
     return p_node;

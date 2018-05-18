@@ -170,7 +170,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
     return false;
 
   // check if execution provider matches
-  const auto& node_provider = node.GetExecutionProvider();
+  const auto& node_provider = node.GetExecutionProviderType();
   const auto& expected_provider = (node_provider.empty() ? exec_provider : node_provider);
   if (expected_provider != kernel_def.Provider())
     return false;
@@ -268,7 +268,7 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
 
 bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node, LotusIR::ProviderType exec_provider) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
-  LOTUS_ENFORCE(node.GetExecutionProvider().empty());
+  LOTUS_ENFORCE(node.GetExecutionProviderType().empty());
   for (auto i = range.first; i != range.second; ++i) {
     if (i->second.status.IsOK() &&
         VerifyKernelDef(node, *i->second.kernel_def, exec_provider)) {

@@ -273,7 +273,7 @@ class PlannerImpl {
         SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
         // TODO(Task 591) the 2 calls to GetExecutionProvider look weird. Consider changing the node method
         // to ProviderType.
-        auto* p_provider = this->p_session_state_->GetExecutionProvider(node.GetExecutionProvider());
+        auto* p_provider = this->p_session_state_->GetExecutionProvider(node.GetExecutionProviderType());
         LOTUS_ENFORCE(p_provider);
 
         thisplan.alloc_kind = AllocKind::kAllocateStatically;

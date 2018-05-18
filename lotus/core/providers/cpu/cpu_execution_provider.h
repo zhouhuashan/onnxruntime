@@ -20,8 +20,8 @@ class CPUTransformer : public LotusIR::GraphTransformer {
       if (graph->IsSourceNode(node) || graph->IsSinkNode(node))
         continue;
 
-      if (node.GetExecutionProvider().empty()) {
-        node.SetExecutionProvider(LotusIR::kCpuExecutionProvider);
+      if (node.GetExecutionProviderType().empty()) {
+        node.SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
         *modified = true;
       }
     }

@@ -668,7 +668,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernel(const LotusIR::Node& node, std::unique_ptr<OpKernel>* p_op_kernel) {
-    LotusIR::ProviderType exec_provider_name = node.GetExecutionProvider();
+    LotusIR::ProviderType exec_provider_name = node.GetExecutionProviderType();
     if (exec_provider_name.empty() || !session_state_.GetExecutionProvider(exec_provider_name)) {
       std::ostringstream error_msg;
       error_msg << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";

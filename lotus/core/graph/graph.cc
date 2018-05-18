@@ -145,12 +145,12 @@ const OpSchema* Node::Op() const noexcept {
   return op_;
 }
 
-const std::string& Node::GetExecutionProvider() const noexcept {
-  return execution_provider_;
+const std::string& Node::GetExecutionProviderType() const noexcept {
+  return execution_provider_type_;
 }
 
-void Node::SetExecutionProvider(LotusIR::ProviderType execution_provider) {
-  execution_provider_ = execution_provider;
+void Node::SetExecutionProviderType(LotusIR::ProviderType execution_provider_type) {
+  execution_provider_type_ = execution_provider_type;
 }
 
 void Node::ToProto(NodeProto& proto) const {

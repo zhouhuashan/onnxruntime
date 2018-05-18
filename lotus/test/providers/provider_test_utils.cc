@@ -184,7 +184,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     for (auto& add_attribute_fn : add_attribute_funcs_)
       add_attribute_fn(node);
 
-    node.SetExecutionProvider(provider_name_);
+    node.SetExecutionProviderType(provider_name_);
     Status status = graph->Resolve();
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
 

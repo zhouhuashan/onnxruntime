@@ -10,8 +10,8 @@ bool TransformerMemcpyImpl::ModifyGraph() {
     if (graph_->IsSourceNode(node) || graph_->IsSinkNode(node))
       continue;
 
-    if (node.GetExecutionProvider().empty() && KernelRegistry::Instance().CanExecutionProviderCreateKernel(node, provider_)) {
-      node.SetExecutionProvider(provider_);
+    if (node.GetExecutionProviderType().empty() && KernelRegistry::Instance().CanExecutionProviderCreateKernel(node, provider_)) {
+      node.SetExecutionProviderType(provider_);
       modified = true;
     }
 
@@ -55,7 +55,7 @@ bool TransformerMemcpyImpl::ModifyGraph() {
 }
 
 void TransformerMemcpyImpl::ProcessDefs(const LotusIR::Node& node) {
-  if (node.GetExecutionProvider() == provider_) {
+  if (node.GetExecutionProviderType() == provider_) {
     provider_nodes_.insert(&node);
     node.ForEachDef([this](const LotusIR::NodeArg* arg, bool is_input) {
       if (is_input)
@@ -65,7 +65,7 @@ void TransformerMemcpyImpl::ProcessDefs(const LotusIR::Node& node) {
     });
   } else {
     // TODO: copy between devices? i.e. multiple GPUs
-    LOTUS_ENFORCE(node.GetExecutionProvider() == LotusIR::kCpuExecutionProvider || node.GetExecutionProvider().empty());
+    LOTUS_ENFORCE(node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider || node.GetExecutionProviderType().empty());
     node.ForEachDef([this](const LotusIR::NodeArg* arg, bool /*is_input*/) {
       non_provider_defs_.insert(arg);
     });
@@ -98,7 +98,7 @@ void TransformerMemcpyImpl::AddCopyNode(const ConstPointerContainer<std::vector<
       auto new_node = graph_->AddNode(str, op_name, "Copy from/to host memory",
                                       std::vector<LotusIR::NodeArg*>{src_arg},
                                       std::vector<LotusIR::NodeArg*>{dst_arg});
-      new_node->SetExecutionProvider(provider_);
+      new_node->SetExecutionProviderType(provider_);
       replacements_.insert(std::make_pair(writable_arg, new_arg));
     }
   }
