@@ -43,13 +43,13 @@ class PosixEnv : public Env {
     return default_env;
   }
 
-  virtual int GetNumCpuCores() override {
+  virtual int GetNumCpuCores() const override {
     // TODO if you need the number of physical cores you'll need to parse
     // /proc/cpuinfo and grep for "cpu cores".
     return std::thread::hardware_concurrency();
   }
 
-  void SleepForMicroseconds(int64 micros) override {
+  void SleepForMicroseconds(int64 micros) const override {
     while (micros > 0) {
       timespec sleep_time;
       sleep_time.tv_sec = 0;
@@ -71,7 +71,7 @@ class PosixEnv : public Env {
   }
 
   Thread* StartThread(const ThreadOptions& thread_options, const std::string& name,
-                      std::function<void()> fn) override {
+                      std::function<void()> fn) const override {
     return new StdThread(thread_options, name, fn);
   }
 
@@ -84,8 +84,8 @@ class PosixEnv : public Env {
 #if defined(PLATFORM_POSIX) || defined(__ANDROID__)
 // REGISTER_FILE_SYSTEM("", PosixFileSystem);
 // REGISTER_FILE_SYSTEM("file", LocalPosixFileSystem);
-Env* Env::Default() {
-  return &PosixEnv::Instance();
+const Env& Env::Default() {
+  return PosixEnv::Instance();
 }
 #endif
 

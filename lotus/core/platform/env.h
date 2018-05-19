@@ -40,7 +40,6 @@ struct ThreadOptions;
 /// multiple threads without any external synchronization.
 class Env {
  public:
-  Env();
   virtual ~Env() = default;
 
   /// \brief Returns a default environment suitable for the current operating
@@ -51,18 +50,18 @@ class Env {
   ///
   /// The result of Default() belongs to this library and must never be deleted.
   // TODO(Task:153) Lotus::Env::Default() should return const reference
-  static Env* Default();
+  static const Env& Default();
 
-  virtual int GetNumCpuCores() = 0;
+  virtual int GetNumCpuCores() const = 0;
 
   /// \brief Returns the number of micro-seconds since the Unix epoch.
-  virtual uint64 NowMicros() { return env_time_->NowMicros(); }
+  virtual uint64 NowMicros() const { return env_time_->NowMicros(); }
 
   /// \brief Returns the number of seconds since the Unix epoch.
-  virtual uint64 NowSeconds() { return env_time_->NowSeconds(); }
+  virtual uint64 NowSeconds() const { return env_time_->NowSeconds(); }
 
   /// Sleeps/delays the thread for the prescribed number of micro-seconds.
-  virtual void SleepForMicroseconds(int64 micros) = 0;
+  virtual void SleepForMicroseconds(int64 micros) const = 0;
 
   /// \brief Returns a new thread that is running fn() and is identified
   /// (for debugging/performance-analysis) by "name".
@@ -71,9 +70,12 @@ class Env {
   /// (the deletion will block until fn() stops running).
   virtual Thread* StartThread(const ThreadOptions& thread_options,
                               const std::string& name,
-                              std::function<void()> fn) = 0;
+                              std::function<void()> fn) const = 0;
 
   // TODO add filesystem related functions
+
+protected:
+  Env();
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Env);

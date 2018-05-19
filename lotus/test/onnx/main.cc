@@ -62,8 +62,8 @@ int main(int argc, char* argv[]) {
   std::string provider = kCpuExecutionProvider;
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
-  int concurrent_session_runs = Env::Default()->GetNumCpuCores();
-  int p_models = Env::Default()->GetNumCpuCores();
+  int concurrent_session_runs = Env::Default().GetNumCpuCores();
+  int p_models = Env::Default().GetNumCpuCores();
   {
     int ch;
     while ((ch = getopt(argc, argv, "c:hj:m:n:p:e:")) != -1) {

@@ -25,7 +25,8 @@ limitations under the License.
 namespace Lotus {
 namespace thread {
 
-struct EigenEnvironment {
+class EigenEnvironment {
+ public:
   typedef Thread EnvThread;
 
   struct TaskImpl {
@@ -38,16 +39,12 @@ struct EigenEnvironment {
     std::unique_ptr<TaskImpl> f;
   };
 
-  Env* const env_;
-  const ThreadOptions thread_options_;
-  const std::string name_;
-
-  EigenEnvironment(Env* env, const ThreadOptions& thread_options,
+  EigenEnvironment(const Env& env, const ThreadOptions& thread_options,
                    const std::string& name)
       : env_(env), thread_options_(thread_options), name_(name) {}
 
   EnvThread* CreateThread(std::function<void()> f) {
-    return env_->StartThread(thread_options_, name_, [=]() {
+    return env_.StartThread(thread_options_, name_, [=]() {
       // TODO
       // Set the processor flag to flush denormals to zero.
       // port::ScopedFlushDenormal flush;
@@ -85,24 +82,29 @@ struct EigenEnvironment {
       t.f->f();
     }
   }
+
+ private:
+  const Env& env_;
+  const ThreadOptions thread_options_;
+  const std::string name_;
 };
 
 struct ThreadPool::Impl : Eigen::ThreadPoolTempl<EigenEnvironment> {
-  Impl(Env* env, const ThreadOptions& thread_options, const std::string& name,
+  Impl(const Env& env, const ThreadOptions& thread_options, const std::string& name,
        int num_threads, bool low_latency_hint)
       : Eigen::ThreadPoolTempl<EigenEnvironment>(
             num_threads, low_latency_hint,
             EigenEnvironment(env, thread_options, name)) {}
 };
 
-ThreadPool::ThreadPool(Env* env, const std::string& name, int num_threads)
+ThreadPool::ThreadPool(const Env& env, const std::string& name, int num_threads)
     : ThreadPool(env, ThreadOptions(), name, num_threads, true) {}
 
-ThreadPool::ThreadPool(Env* env, const ThreadOptions& thread_options,
+ThreadPool::ThreadPool(const Env& env, const ThreadOptions& thread_options,
                        const std::string& name, int num_threads)
     : ThreadPool(env, thread_options, name, num_threads, true) {}
 
-ThreadPool::ThreadPool(Env* env, const ThreadOptions& thread_options,
+ThreadPool::ThreadPool(const Env& env, const ThreadOptions& thread_options,
                        const std::string& name, int num_threads,
                        bool low_latency_hint) {
   LOTUS_ENFORCE(num_threads >= 1);

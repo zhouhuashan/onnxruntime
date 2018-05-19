@@ -43,14 +43,14 @@ class StdThread : public Thread {
 
 class WindowsEnv : public Env {
  public:
-  void SleepForMicroseconds(int64 micros) override { Sleep(static_cast<DWORD>(micros) / 1000); }
+  void SleepForMicroseconds(int64 micros) const override { Sleep(static_cast<DWORD>(micros) / 1000); }
 
   Thread* StartThread(const ThreadOptions& thread_options, const std::string& name,
-                      std::function<void()> fn) override {
+                      std::function<void()> fn) const override {
     return new StdThread(thread_options, name, fn);
   }
 
-  virtual int GetNumCpuCores() override {
+  virtual int GetNumCpuCores() const override {
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer[256];
     DWORD returnLength = sizeof(buffer);
     if (GetLogicalProcessorInformation(buffer, &returnLength) == FALSE) {
@@ -101,8 +101,8 @@ class WindowsEnv : public Env {
 }  // namespace
 
 #if defined(PLATFORM_WINDOWS)
-Env* Env::Default() {
-  return &WindowsEnv::Instance();
+const Env& Env::Default() {
+  return WindowsEnv::Instance();
 }
 #endif
 

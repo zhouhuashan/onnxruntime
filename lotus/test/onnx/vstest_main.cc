@@ -59,11 +59,12 @@ static void run(const std::string& provider) {
 
 TEST_CLASS(ONNX_TEST){
   public :
-  TEST_METHOD(test_sequential_planner){
-     run<Lotus::AllocationPlannerType::SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
-  }
+      TEST_METHOD(test_sequential_planner){
+          run<Lotus::AllocationPlannerType::SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
+}
 
-  TEST_METHOD(test_simple_sequential_planner) {
-     run<Lotus::AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
-  }
-};
+TEST_METHOD(test_simple_sequential_planner) {
+  run<Lotus::AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
+}
+}
+;
