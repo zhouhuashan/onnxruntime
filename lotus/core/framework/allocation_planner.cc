@@ -279,6 +279,10 @@ class PlannerImpl {
         thisplan.alloc_kind = AllocKind::kAllocateStatically;
 
         thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();  // default
+        if (p_provider->Type() != LotusIR::kCpuExecutionProvider) {
+          thisplan.location =
+              this->p_session_state_->GetExecutionProvider(LotusIR::kCpuExecutionProvider)->GetAllocator()->Info();
+        }
         if (p_provider->GetAllocatorMap().count(kMemTypeCPU)) {
           thisplan.location = p_provider->GetAllocator(kMemTypeCPU)->Info();
         }
