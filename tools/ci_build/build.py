@@ -61,7 +61,7 @@ Use the individual flags to only run the specified stages.
 
     parser.add_argument("--install_onnx", action='store_true',
                         help="Install ONNX. This also creates Lotus ONNX test data in the build directory.")
-
+    parser.add_argument("--use_jemalloc", action='store_true', help="use jemalloc")
     return parser.parse_args()
 
 def is_windows():
@@ -78,7 +78,7 @@ def run_subprocess(args, cwd=None):
 def update_submodules(source_dir):
     run_subprocess(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, cmake_extra_args):
+def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, use_jemalloc, cmake_extra_args):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
@@ -86,7 +86,8 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, 
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
                  "-DPYTHON_EXECUTABLE=" + sys.executable,
                  "-Dlotus_USE_CUDA=" + ("ON" if use_cuda else "OFF"),
-                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if use_cuda else "")  
+                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if use_cuda else ""),  
+                 "-Dlotus_USE_JEMALLOC=" + ("ON" if use_jemalloc else "OFF")
                  ]
     if pb_home:
         cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
@@ -235,7 +236,6 @@ def main():
     cuda_home = args.cuda_home
     script_dir = os.path.realpath(os.path.dirname(__file__))
     source_dir = os.path.normpath(os.path.join(script_dir, "..", ".."))
-
     # directory from ONNX submodule with ONNX test data
     onnx_test_data_dir = os.path.join(source_dir, "external", "onnx", "onnx", "backend", "test", "data")
 
@@ -264,7 +264,7 @@ def main():
             update_submodules(source_dir)
 
         generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, args.pb_home, configs, cmake_extra_defines,
-                            args.enable_onnx_tests, args.use_cuda, cmake_extra_args)
+                            args.enable_onnx_tests, args.use_cuda, args.use_jemalloc, cmake_extra_args)
 
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel)

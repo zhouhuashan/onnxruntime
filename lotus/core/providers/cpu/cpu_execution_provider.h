@@ -37,8 +37,16 @@ class CPUExecutionProvider : public IExecutionProvider {
       : cpu_transformer_(info.name) {
     auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
     auto cpu_allocator_creator = device_factories.find(CPU);
-    if (cpu_allocator_creator != device_factories.end())
+    if (cpu_allocator_creator != device_factories.end()) {
+#ifdef USE_JEMALLOC
+      //JEMalloc already has memory pool, so just use device allocator.
+      allocators_.insert(std::make_pair(kMemTypeDefault,
+                                        std::shared_ptr<IArenaAllocator>(
+                                            std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0))))));
+#else
       allocators_.insert(std::make_pair(kMemTypeDefault, CreateAllocator(cpu_allocator_creator->second)));
+#endif
+    }
   }
 
   const LotusIR::GraphTransformer& GetTransformer() const override {
