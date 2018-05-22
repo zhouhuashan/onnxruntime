@@ -58,7 +58,7 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
     if (end < 0)
       end += input_dimensions[axis];
     output_dims[axis] = clamp(end, int64_t{0}, input_dimensions[axis]) - starts[axis];
-    if (output_dims[axis] <= 0)
+    if (output_dims[axis] < 0)
       return Status(LOTUS, INVALID_ARGUMENT, "'starts' and 'ends' values resulted in a negative dimension");
   }
 

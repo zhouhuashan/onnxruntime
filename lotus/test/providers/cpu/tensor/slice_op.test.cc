@@ -16,6 +16,18 @@ TEST(TensorOpTest, Slice1D) {
   test.Run();
 }
 
+TEST(TensorOpTest, Slice2D_OutOfBounds) {
+  OpTester test("Slice");
+
+  test.AddAttribute("axes", std::vector<int64_t>{0, 1});
+  test.AddAttribute("starts", std::vector<int64_t>{0, 1000});
+  test.AddAttribute("ends", std::vector<int64_t>{10, 1000});
+
+  test.AddInput<float>("data", {2, 3}, {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f});
+  test.AddOutput<float>("output", {2, 0}, {});
+  test.Run();
+}
+
 TEST(TensorOpTest, Slice2D_OneAxis) {
   OpTester test("Slice");
 
