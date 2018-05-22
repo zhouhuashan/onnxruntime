@@ -281,6 +281,8 @@ def main():
         cmake_extra_args = ['-A','x64','-T', 'host=x64', '-G', 'Visual Studio 15 2017']
 
     if (args.update):
+        if args.enable_pybind:
+            install_pybind_deps()
         if (not args.skip_submodule_sync):
             update_submodules(source_dir)
 
