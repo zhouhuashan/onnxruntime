@@ -6,6 +6,7 @@ import glob
 import logging
 import multiprocessing
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -47,6 +48,9 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--cuda_home", help="Path to CUDA home.")
     parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
 
+    # Python bindings
+    parser.add_argument("--enable_pybind", action='store_true', help="Enable Python Bindings.")
+
     # Build options
     parser.add_argument("--cmake_extra_defines", nargs="+",
                         help="Extra definitions to pass to CMake during build system generation. " +
@@ -67,6 +71,9 @@ Use the individual flags to only run the specified stages.
 def is_windows():
     return sys.platform.startswith("win")
 
+def is_ubuntu_1604():
+    return platform.linux_distribution()[0] == 'Ubuntu' and platform.linux_distribution()[1] == '16.04'
+
 def get_config_build_dir(build_dir, config):
     # build directory per configuration
     return os.path.join(build_dir, config)
@@ -78,16 +85,26 @@ def run_subprocess(args, cwd=None):
 def update_submodules(source_dir):
     run_subprocess(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, configs, cmake_extra_defines, enable_onnx_tests, use_cuda, use_jemalloc, cmake_extra_args):
+def install_pybind_deps():
+    # On Ubuntu 16.04, we need to install python3-dev package for PythonLib. On Windows, it is already installed by python installer.
+    if is_ubuntu_1604():
+      run_subprocess(['add-apt-repository', 'ppa:deadsnakes/ppa'])
+      run_subprocess(['apt-get', 'update'])
+      run_subprocess(['apt-get', 'install', '-y', 'python3-dev'])
+    dep_packages = ['setuptools', 'numpy']
+    run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org'] + dep_packages)
+
+def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, configs, cmake_extra_defines, args, cmake_extra_args):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
     cmake_args = [cmake_path, cmake_dir,
-                 "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if enable_onnx_tests else "OFF"),
+                 "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if args.enable_onnx_tests else "OFF"),
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
                  "-DPYTHON_EXECUTABLE=" + sys.executable,
-                 "-Dlotus_USE_CUDA=" + ("ON" if use_cuda else "OFF"),
-                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if use_cuda else ""),  
-                 "-Dlotus_USE_JEMALLOC=" + ("ON" if use_jemalloc else "OFF")
+                 "-Dlotus_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
+                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),  
+                 "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
+                 "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF")
                  ]
     if pb_home:
         cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
@@ -198,12 +215,16 @@ def set_cuda_dir(cuda_home):
         os.environ["PATH"] += os.pathsep + cuda_bin_path
 
 
-def run_tests(ctest_path, build_dir, configs, enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir):
+def run_tests(ctest_path, build_dir, configs, enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir, enable_python_tests):
     for config in configs:
         log.info("Running tests for %s configuration", config)
         cwd = get_config_build_dir(build_dir, config)
         run_subprocess([ctest_path, "--build-config", config, "--verbose"],
                        cwd=cwd)
+        if enable_python_tests:
+            if is_windows():
+                cwd = os.path.join(cwd, config)
+            run_subprocess([sys.executable, 'lotus_test_python.py'], cwd=cwd)
 
     if enable_onnx_tests:
         test_data_dirs = []
@@ -264,17 +285,17 @@ def main():
             update_submodules(source_dir)
 
         generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, args.pb_home, configs, cmake_extra_defines,
-                            args.enable_onnx_tests, args.use_cuda, args.use_jemalloc, cmake_extra_args)
+                            args, cmake_extra_args)
 
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel)
 
-    if (args.install_onnx and sys.platform.startswith('win')):
+    if (args.install_onnx and is_windows()):
         #try to install onnx from this source tree
         install_onnx(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
 
     if (args.test):
-        run_tests(ctest_path, build_dir, configs, args.enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir)
+        run_tests(ctest_path, build_dir, configs, args.enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir, args.enable_pybind)
 
     log.info("Build complete")
 
