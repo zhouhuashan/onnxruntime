@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 #include "core/providers/cpu/tensor/cast_op.h"
+#include "core/providers/cpu/tensor/crop.h"
 
 namespace Lotus {
 namespace Test {
@@ -84,6 +85,57 @@ TEST(TensorOpTest, Cast) {
 
   const std::initializer_list<int64_t> int64_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   TestCastOp(input, int64_t_output, shape, TensorProto::INT64);
+}
+
+TEST(TensorOpTest, CropBorderOnly) {
+  const int N = 2, C = 1, H = 3, W = 4;
+  std::vector<float> X = {1.0f, 2.0f, 3.0f, 4.0f,
+                          2.0f, 3.0f, 4.0f, 5.0f,
+                          3.0f, 4.0f, 5.0f, 6.0f,
+
+                          4.0f, 5.0f, 6.0f, 7.0f,
+                          5.0f, 6.0f, 7.0f, 8.0f,
+                          6.0f, 7.0f, 8.0f, 9.0f};
+
+  const std::vector<int64_t> border{0, 1, 2, 1};
+  std::vector<float> output = {
+      2.0f, 3.0f,
+
+      5.0f, 6.0f};
+
+  OpTester test("Crop");
+  test.AddAttribute("border", border);
+  test.AddInput<float>("input", {N, C, H, W}, X);
+  test.AddOutput<float>("output", {N, C, (H - border[2] - border[0]), (W - border[3] - border[1])}, output);
+  test.Run();
+}
+
+TEST(TensorOpTest, CropBorderAndScale) {
+  const int N = 2, C = 1, H = 3, W = 4;
+  std::vector<float> X = {1.0f, 2.0f, 3.0f, 4.0f,
+                          2.0f, 3.0f, 4.0f, 5.0f,
+                          3.0f, 4.0f, 5.0f, 6.0f,
+
+                          4.0f, 5.0f, 6.0f, 7.0f,
+                          5.0f, 6.0f, 7.0f, 8.0f,
+                          6.0f, 7.0f, 8.0f, 9.0f};
+
+  const std::vector<int64_t> border = {0, 0, 0, 0};
+  const std::vector<int64_t> scale = {2, 2};
+
+  std::vector<float> output = {
+      1.0f, 2.0f,
+      2.0f, 3.0f,
+
+      4.0f, 5.0f,
+      5.0f, 6.0f};
+
+  OpTester test("Crop");
+  test.AddAttribute("border", border);
+  test.AddAttribute("scale", scale);
+  test.AddInput<float>("input", {N, C, H, W}, X);
+  test.AddOutput<float>("output", {N, C, scale[0], scale[1]}, output);
+  test.Run();
 }
 
 }  // namespace Test
