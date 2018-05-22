@@ -30,7 +30,10 @@ template <typename T>
 class BatchNorm final : public OpKernel {
  public:
   BatchNorm(const OpKernelInfo& op_kernel_info) : OpKernel(op_kernel_info) {
-    LOTUS_ENFORCE(op_kernel_info.GetAttr<float>("epsilon", &epsilon_).IsOK());
+    float tmp_eplison;
+    if (op_kernel_info.GetAttr<float>("epsilon", &tmp_eplison).IsOK()) {
+      epsilon_ = tmp_eplison;
+    }
 
     // keeping the below for reference. we don't need these for inference.
     //LOTUS_ENFORCE(op_kernel_info.GetAttr<int64_t>("is_test", &is_test_).IsOK());
@@ -47,7 +50,7 @@ class BatchNorm final : public OpKernel {
   Status Compute(OpKernelContext* p_op_kernel_context) const override;
 
  private:
-  float epsilon_;
+  float epsilon_ = 1e-5f;
   int64_t is_test_;  // ignored in this implementation since we're doing inferencing only.
   float momentum_;   // ignored in this implementation since we're doing inferencing only.
   int64_t spatial_;  // ignored in this implementation since we're doing inferencing only.
