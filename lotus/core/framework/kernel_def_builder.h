@@ -89,19 +89,13 @@ class KernelDefBuilder {
   }
 
   KernelDefBuilder& Domain(const std::string& domain) {
-    LOTUS_ENFORCE(kernel_def_->op_since_version_start_ == 1 && kernel_def_->op_since_version_end_ == INT_MAX,
-                  "SinceVersion() should not be called before Domain()");
     kernel_def_->op_domain_ = domain;
     return *this;
   }
 
   // This kernel supports operator definition since <since_version> (to latest).
   KernelDefBuilder& SinceVersion(int since_version) {
-    int version_start = domain_version_map_.at(kernel_def_->op_domain_).first;
-    int version_end = domain_version_map_.at(kernel_def_->op_domain_).second;
-    LOTUS_ENFORCE(since_version >= version_start && since_version <= version_end);
     kernel_def_->op_since_version_start_ = since_version;
-    kernel_def_->op_since_version_end_ = version_end;
     return *this;
   }
 
@@ -111,11 +105,7 @@ class KernelDefBuilder {
   // Key: domain. Value: <lowest version, highest version> pair.
   // std::unordered_map<std::string, std::pair<int, int>> map_;
   KernelDefBuilder& SinceVersion(int since_version_start, int since_version_end) {
-    int version_start = domain_version_map_.at(kernel_def_->op_domain_).first;
-    int version_end = domain_version_map_.at(kernel_def_->op_domain_).second;
-    LOTUS_ENFORCE(since_version_start >= version_start && since_version_start <= version_end);
     kernel_def_->op_since_version_start_ = since_version_start;
-    LOTUS_ENFORCE(since_version_end >= version_start && since_version_end <= version_end);
     kernel_def_->op_since_version_end_ = since_version_end;
     return *this;
   }
@@ -181,6 +171,13 @@ class KernelDefBuilder {
 
   // Return the kernel definition, passing ownership of the KernelDef to the caller
   unique_ptr<KernelDef> Build() {
+    int domain_version_start = domain_version_map_.at(kernel_def_->op_domain_).first;
+    int domain_version_end = domain_version_map_.at(kernel_def_->op_domain_).second;
+    if (kernel_def_->op_since_version_end_ == INT_MAX) {
+      kernel_def_->op_since_version_end_ = domain_version_end;
+    }
+    LOTUS_ENFORCE(kernel_def_->op_since_version_start_ >= domain_version_start && kernel_def_->op_since_version_end_ <= domain_version_end);
+
     return std::move(kernel_def_);
   }
 
