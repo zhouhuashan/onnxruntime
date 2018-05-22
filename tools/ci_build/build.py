@@ -255,7 +255,7 @@ def main():
 
     cmake_extra_args = None
     if (args.x86):
-        cmake_extra_args = ['-A','x86','-G', 'Visual Studio 15 2017']
+        cmake_extra_args = ['-A','Win32','-G', 'Visual Studio 15 2017']
     else:
         cmake_extra_args = ['-A','x64','-T', 'host=x64', '-G', 'Visual Studio 15 2017']
 
