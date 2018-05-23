@@ -51,6 +51,11 @@ void OnTestCaseFinished(TestCaseTask* task, TestCaseResult& result) {
   finished->onFinished(ret);
 }
 
+void __stdcall RunDataTest(
+    _Inout_ PTP_CALLBACK_INSTANCE,
+    _Inout_opt_ PVOID context,
+    _Inout_ PTP_WORK work);
+
 void OnDataTestFinished(DataTask* task, EXECUTE_RESULT result) {
   try {
     std::function<void(TestCaseResult & result)> callback;
@@ -60,9 +65,10 @@ void OnDataTestFinished(DataTask* task, EXECUTE_RESULT result) {
       task->env->result.excution_result[task->task_id] = result;
       task->env->result.node_name = task->env->node_name;
       size_t next_test = task->env->next_test_to_run++;
+      //If there are more test data to run, schedule it
       if (next_test < task->env->test_case.input_pb_files.size()) {
         DataTask* t = new DataTask{task->env, next_test};
-        PTP_WORK work = CreateThreadpoolWork(RunTestCase, t, nullptr);
+        PTP_WORK work = CreateThreadpoolWork(RunDataTest, t, nullptr);
         if (!work) {
           LOGF_DEFAULT(ERROR, "schedule test task failed\n");
           abort();
@@ -70,12 +76,14 @@ void OnDataTestFinished(DataTask* task, EXECUTE_RESULT result) {
         SubmitThreadpoolWork(work);
       }
       if (++task->env->finished == task->env->test_case.input_pb_files.size()) {
+        //For each test case, only one DataTask can reach here
+        //copy things out because we want to free DataTask before calling the callback
         callback = task->env->on_finished;
         ret = task->env->result;
       }
     }
     if (callback)
-      callback(ret);
+      callback(ret);  //InferenceSession has been closed before reaching here
   } catch (std::exception& ex) {
     LOGF_DEFAULT(ERROR, "%s:unrecoverable error:%s,exit...\n", task->env->test_case.test_case_name.c_str(), ex.what());
     abort();

@@ -39,8 +39,8 @@ TEST_MODULE_CLEANUP(ModuleCleanup) {
 template <Lotus::AllocationPlannerType planner>
 static void run(const std::string& provider) {
   char buf[1024];
-  //int p_models = Lotus::Env::Default()->GetNumCpuCores();
-  //snprintf(buf, sizeof(buf), "running tests with %d cores", p_models);
+  int p_models = Lotus::Env::Default().GetNumCpuCores();
+  snprintf(buf, sizeof(buf), "running tests with %d cores", p_models);
   Logger::WriteMessage(buf);
   //Current working directory is the one who contains 'onnx_test_runner_vstest.dll'
   //We want debug build and release build share the same test data files, so it should
@@ -48,7 +48,7 @@ static void run(const std::string& provider) {
   std::vector<TestCaseInfo> tests = LoadTests({"..\\onnx_testdata"}, {});
   TestResultStat stat;
   TestEnv args(tests, stat, planner, provider);
-  RunTests(args, 1, 1);
+  RunTests(args, p_models, p_models);
   std::string res = stat.ToString();
   Logger::WriteMessage(res.c_str());
   size_t failed = stat.total_test_case_count - stat.succeeded - stat.skipped - stat.not_implemented;
