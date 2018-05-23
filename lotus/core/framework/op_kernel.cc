@@ -284,7 +284,10 @@ Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
   auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
   MLValueAllocationParameters parameters;
   parameters.tensor_shape = shape;
-  return execution_frame_->GetOrCreateMLValue<Tensor>(output_arg_index, parameters);
+  Tensor* ret;
+  Status status = execution_frame_->GetOrCreateMLValue<Tensor>(output_arg_index, parameters, ret);
+  LOTUS_ENFORCE(status.IsOK());
+  return ret;
 }
 
 // Fetching output tensor without shape is not allowed.

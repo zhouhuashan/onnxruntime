@@ -152,7 +152,9 @@ class OpKernelContext {
 
     auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
     MLValueAllocationParameters paramerters;
-    return execution_frame_->GetOrCreateMLValue<T>(output_arg_index, paramerters);
+    T* ret;
+    LOTUS_ENFORCE(execution_frame_->GetOrCreateMLValue<T>(output_arg_index, paramerters, ret).IsOK());
+    return ret;
   }
 
   // In the case that memory allocation has not been done for an output tensor,

@@ -40,11 +40,13 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
       continue;
 
     for (gsl::not_null<const LotusIR::NodeArg*> input_def : node.InputDefs()) {
-      FillType(*input_def, session_state, plan);
+      if (!input_def->Exists()) continue;
+      LOTUS_RETURN_IF_ERROR(FillType(*input_def, session_state, plan));
     }
 
     for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
-      FillType(*output_def, session_state, plan);
+      if (!output_def->Exists()) continue;
+      LOTUS_RETURN_IF_ERROR(FillType(*output_def, session_state, plan));
     }
   }
 

@@ -325,7 +325,6 @@ void BFCArena::SplitChunk(BFCArena::ChunkHandle h, size_t num_bytes) {
 
 void BFCArena::Free(void* p) {
   if (p == nullptr) {
-    LOGS_DEFAULT(WARNING) << "tried to deallocate nullptr";
     return;
   }
   std::lock_guard<std::mutex> lock(lock_);

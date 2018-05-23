@@ -72,6 +72,7 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
   TensorShape output_shape(output_dims);
   auto& output_tensor = *ctx->Output(0, output_shape);
   auto* output = output_tensor.MutableData<float>();
+  if (output == nullptr) return Status::OK();
   auto* output_end = output + output_shape.Size();
   auto* input = input_tensor.Data<float>();
 

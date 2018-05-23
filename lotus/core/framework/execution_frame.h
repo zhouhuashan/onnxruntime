@@ -172,17 +172,19 @@ class ExecutionFrame {
 
   // This method is not thread safe!
   template <typename T>
-  T* GetOrCreateMLValue(int index, const MLValueAllocationParameters& parameters) {
-    LOTUS_ENFORCE(index >= 0 && index < node_values_.size(),
-                  "Try to access with invalid node value index: ", index);
+  Status GetOrCreateMLValue(int index, const MLValueAllocationParameters& parameters, T*& value) {
+    if (index < 0 || index >= node_values_.size()) {
+      return Status(LOTUS, INVALID_ARGUMENT,
+                    "Try to access with invalid node value index: " + std::to_string(index));
+    }
     auto p_mlvalue = &all_values_.at(node_values_[index]);
 
     if (p_mlvalue->IsAllocated()) {
       // The ml has already been allocated.
       // Now only tensor need to be check.
-      T* value = p_mlvalue->GetMutable<T>();
+      value = p_mlvalue->GetMutable<T>();
       VerifyShape<T>(value, p_mlvalue, parameters);  // TODO find a better way to do this
-      return value;
+      return Status::OK();
     } else {
       // It's not allocated, then allocate it with given shape and return.
       // TODO: at this point, we should already know the location and dtype
@@ -190,9 +192,9 @@ class ExecutionFrame {
       // don't have it. So here hack to default as CPU and float.
 
       // perform allocation based on the allocation plan
-      Status s = AllocateAsPerAllocationPlan(node_values_[index], parameters);
-      LOTUS_ENFORCE(s.IsOK());
-      return p_mlvalue->template GetMutable<T>();
+      LOTUS_RETURN_IF_ERROR(AllocateAsPerAllocationPlan(node_values_[index], parameters));
+      value = p_mlvalue->template GetMutable<T>();
+      return Status::OK();
     }
   }
 

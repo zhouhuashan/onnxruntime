@@ -77,6 +77,7 @@ class Tensor {
   // Returns the location of the tensor's memory
   const AllocatorInfo& Location() const { return alloc_info_; }
 
+  // May return nullptr if tensor size is zero
   template <typename T>
   T* MutableData() {
     // Type check
@@ -85,6 +86,7 @@ class Tensor {
     return reinterpret_cast<T*>(static_cast<char*>(GetRaw()) + byte_offset_);
   }
 
+  // May return nullptr if tensor size is zero
   template <typename T>
   const T* Data() const {
     // Type check

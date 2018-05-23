@@ -105,7 +105,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
     }
   }
   //no memory pattern, or the pattern is not correct.
-  void* buffer = alloc->Alloc(size);
+  void* buffer = size == 0 ? nullptr : alloc->Alloc(size);
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
                                                               shape,
                                                               buffer,
@@ -219,6 +219,9 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
   // plan later. This is a hack for now.
   auto alloc_info = per_alloc_plan.location;
   auto ml_type = per_alloc_plan.value_type;
+  if (ml_type == nullptr)
+    return Status(LOTUS, INVALID_ARGUMENT,
+                  "Tried to allocate without valid type information, mlvalue index=" + std::to_string(mlvalue_index));
   if (!ml_type->IsTensorType()) {
     return AllocateTraditionalMLValue(&all_values_[mlvalue_index],
                                       static_cast<const NonTensorTypeBase*>(ml_type),

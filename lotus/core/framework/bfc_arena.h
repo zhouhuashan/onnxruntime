@@ -78,8 +78,12 @@ class BFCArena : public IArenaAllocator {
 
   virtual ~BFCArena() override;
 
+  //If size is 0, then this function returns either NULL,
+  //or a unique pointer value that can later be successfully
+  //passed to free(). Whatever, do not dereference that pointer
   virtual void* Alloc(size_t size) override;
 
+  //If p is NULL, no operation is performed.
   virtual void Free(void* p) override;
 
   virtual void* Reserve(size_t size) override;
@@ -401,14 +405,11 @@ class BFCArena : public IArenaAllocator {
     _BitScanReverse64(&index, n);
 #else
     auto high = static_cast<unsigned long>(n >> 32);
-    if (_BitScanReverse(&index, high) > 0)
-    {
-        index += 32;
-    }
-    else
-    {
-        auto low = static_cast<unsigned long>((n << 32) >> 32);
-        _BitScanReverse(&index, low);
+    if (_BitScanReverse(&index, high) > 0) {
+      index += 32;
+    } else {
+      auto low = static_cast<unsigned long>((n << 32) >> 32);
+      _BitScanReverse(&index, low);
     }
 #endif
     return index;
