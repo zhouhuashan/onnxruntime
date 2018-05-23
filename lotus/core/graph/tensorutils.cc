@@ -8,7 +8,13 @@ namespace Utils {
 Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
                                  /*out*/ std::string* p_data,
                                  int64_t expected_size) {
-  if (onnx::TensorProto_DataType_STRING != tensor.data_type() || nullptr == p_data) {
+  if (nullptr == p_data) {
+    if (tensor.string_data_size() == 0)
+      return Status::OK();
+    else
+      return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
+  }
+  if (onnx::TensorProto_DataType_STRING != tensor.data_type()) {
     return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
   }
 
@@ -27,7 +33,14 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
 Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
                                  /*out*/ bool* p_data,
                                  int64_t expected_size) {
-  if (onnx::TensorProto_DataType_BOOL != tensor.data_type() || nullptr == p_data) {
+  if (nullptr == p_data) {
+    size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.int32_data_size();
+    if (size == 0)
+      return Status::OK();
+    else
+      return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
+  }
+  if (onnx::TensorProto_DataType_BOOL != tensor.data_type()) {
     return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);
   }
 

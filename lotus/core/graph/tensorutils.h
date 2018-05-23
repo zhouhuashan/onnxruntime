@@ -16,6 +16,13 @@ class TensorUtils {
  public:
 #define DEFINE_UNPACK_TENSOR(T, Type, field_name, field_size)                                             \
   static Status UnpackTensor(const onnx::TensorProto& tensor, /*out*/ T* p_data, int64_t expected_size) { \
+    if (nullptr == p_data) {                                                                              \
+      size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.field_size();               \
+      if (size == 0)                                                                                      \
+        return Status::OK();                                                                              \
+      else                                                                                                \
+        return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);                               \
+    }                                                                                                     \
     if (nullptr == p_data || Type != tensor.data_type()) {                                                \
       return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);                                 \
     }                                                                                                     \
