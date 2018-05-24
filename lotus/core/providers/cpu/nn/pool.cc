@@ -102,7 +102,11 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
             for (int64_t h = hstart; h < hend; ++h) {
               PoolType::Process(Xdata[h], Yh, pool_context_);
             }
-            PoolType::Finalize(hend - hstart, Yh, pool_context_);
+            if (count_include_pad_) {
+              PoolType::Finalize(kernel_shape[0], Yh, pool_context_);
+            } else {
+              PoolType::Finalize(hend - hstart, Yh, pool_context_);
+            }
             Ydata[ph] = Yh;
           }
           // Do offset.
@@ -130,7 +134,11 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
                   PoolType::Process(Xdata[input_index], Yh, pool_context_);
                 }
               }
-              PoolType::Finalize((hend - hstart) * (wend - wstart), Yh, pool_context_);
+              if (count_include_pad_) {
+                PoolType::Finalize(kernel_shape[0] * kernel_shape[1], Yh, pool_context_);
+              } else {
+                PoolType::Finalize((hend - hstart) * (wend - wstart), Yh, pool_context_);
+              }
               Ydata[pool_index] = Yh;
             }
           }
@@ -166,8 +174,12 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
                     }
                   }
                 }
-                PoolType::Finalize(
-                    (hend - hstart) * (wend - wstart) * (dend - dstart), Yh, pool_context_);
+                if (count_include_pad_) {
+                  PoolType::Finalize(kernel_shape[0] * kernel_shape[1] * kernel_shape[2], Yh, pool_context_);
+                } else {
+                  PoolType::Finalize(
+                      (hend - hstart) * (wend - wstart) * (dend - dstart), Yh, pool_context_);
+                }
                 Ydata[pool_index] = Yh;
               }
             }

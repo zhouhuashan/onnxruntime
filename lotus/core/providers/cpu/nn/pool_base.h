@@ -24,6 +24,12 @@ class PoolBase : public OpKernel {
 
       info.GetAttrs<int64_t>("strides", strides_);
 
+      if (op_name == "AveragePool") {
+        int64_t temp;
+        info.GetAttr<int64_t>("count_include_pad", &temp);
+        count_include_pad_ = (temp != 0);
+      }
+
       //default values
       if (pads_.empty()) {
         pads_.resize(kernel_shape_.size() * 2, 0);
@@ -110,7 +116,8 @@ class PoolBase : public OpKernel {
   }
 
  protected:
-  bool global_pooling_;
+  bool global_pooling_{};
+  bool count_include_pad_{};
   std::vector<int64_t> kernel_shape_;
   std::vector<int64_t> pads_;
   std::vector<int64_t> strides_;

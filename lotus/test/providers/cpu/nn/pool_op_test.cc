@@ -244,6 +244,30 @@ TEST(PoolTest, AveragePool) {
   test.Run();
 }
 
+TEST(PoolTest, AveragePool_IncludePadPixel) {
+  OpTester test("AveragePool");
+
+  test.AddAttribute("auto_pad", "");
+  test.AddAttribute("strides", std::vector<int64_t>{1, 1});
+  test.AddAttribute("pads", vector<int64_t>{1, 1, 1, 1});
+  test.AddAttribute("kernel_shape", vector<int64_t>{2, 2});
+  test.AddAttribute("count_include_pad", (int64_t)1);
+  std::vector<float> x_vals = {0.3337f, 0.8794f, 0.3375f,
+                               0.6666f, 0.4426f, 0.6474f,
+                               0.7675f, 0.8823f, 0.8852f};
+
+  std::vector<int64_t> x_dims = {1, 1, 3, 3};
+  std::vector<int64_t> expected_dims = {1, 1, 4, 4};
+  std::vector<float> expected_vals = {0.0834f, 0.3033f, 0.3042f, 0.0844f,
+                                      0.2501f, 0.5806f, 0.5767f, 0.2462f,
+                                      0.3585f, 0.6897f, 0.7144f, 0.3832f,
+                                      0.1919f, 0.4124f, 0.4419f, 0.2213f};
+
+  test.AddInput<float>("X", x_dims, x_vals);
+  test.AddOutput<float>("Y", expected_dims, expected_vals);
+  test.Run();
+}
+
 TEST(PoolTest, GlobalAveragePool) {
   OpTester test("GlobalAveragePool");
 
