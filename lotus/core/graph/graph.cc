@@ -1105,7 +1105,11 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
   RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
   RETURN_IF_ERROR(SetGraphInputsOutputs());
-  CleanInitializers();
+
+  // don't remove initializers not defined in inputs, to accommondate for non-standard model
+  // TODO: change onnx spec to remove the requirement to have initializer being in inputs
+  //CleanInitializers();
+
   GraphResolveNeeded(false);
 
   // if we are resolving immediately after loading from a GraphProto, we don't need to
