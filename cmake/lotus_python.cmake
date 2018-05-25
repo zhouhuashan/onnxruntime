@@ -61,16 +61,19 @@ else()
   endif()
 endif()
 
-file(GLOB_RECURSE lotus_python_srcs
+file(GLOB lotus_python_srcs
     "${LOTUS_ROOT}/python/*.py"
 )
-file(GLOB_RECURSE lotus_python_test_srcs
+file(GLOB lotus_python_test_srcs
     "${LOTUS_ROOT}/test/python/*.py"
+)
+file(GLOB lotus_python_tools_srcs
+    "${LOTUS_ROOT}/python/tools/*.py"
 )
 
 add_custom_command(
   TARGET lotus_pybind11_state POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/tools
   COMMAND ${CMAKE_COMMAND} -E copy
       ${LOTUS_ROOT}/__init__.py
       $<TARGET_FILE_DIR:lotus_test_ir>/lotus/
@@ -80,6 +83,9 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy
       ${lotus_python_srcs}
       $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${lotus_python_tools_srcs}
+      $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/tools/
   COMMAND ${CMAKE_COMMAND} -E copy
       $<TARGET_FILE:lotus_pybind11_state>
       $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/ )

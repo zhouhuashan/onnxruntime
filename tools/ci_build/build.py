@@ -50,6 +50,7 @@ Use the individual flags to only run the specified stages.
 
     # Python bindings
     parser.add_argument("--enable_pybind", action='store_true', help="Enable Python Bindings.")
+    parser.add_argument("--build_wheel", action='store_true', help="Build Python Wheel. ")
 
     # Build options
     parser.add_argument("--cmake_extra_defines", nargs="+",
@@ -91,7 +92,7 @@ def install_pybind_deps():
       run_subprocess(['add-apt-repository', 'ppa:deadsnakes/ppa'])
       run_subprocess(['apt-get', 'update'])
       run_subprocess(['apt-get', 'install', '-y', 'python3-dev'])
-    dep_packages = ['setuptools', 'numpy']
+    dep_packages = ['setuptools', 'wheel', 'numpy']
     run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org'] + dep_packages)
 
 def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, configs, cmake_extra_defines, args, cmake_extra_args):
@@ -238,6 +239,13 @@ def run_tests(ctest_path, build_dir, configs, enable_onnx_tests, lotus_onnx_test
         if test_data_dirs:
             run_subprocess([os.path.join(cwd, config, 'onnx_test_runner')] + test_data_dirs, cwd=cwd)
 
+def build_python_wheel(source_dir, build_dir, configs):
+    for config in configs:
+        cwd = get_config_build_dir(build_dir, config)
+        if is_windows():
+            cwd = os.path.join(cwd, config)
+        run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel'], cwd=cwd)
+
 def main():
     args = parse_arguments()
 
@@ -250,6 +258,9 @@ def main():
         args.update = True
         args.build = True
         args.test = True
+
+    if args.build_wheel:
+        args.enable_pybind = True
 
     ctest_path = args.ctest_path
     build_dir = args.build_dir
@@ -269,7 +280,7 @@ def main():
 
     configs = set(args.config)
 
-    if(cuda_home):
+    if (cuda_home):
         set_cuda_dir(cuda_home)
 
     log.info("Build started")
@@ -298,6 +309,9 @@ def main():
 
     if (args.test):
         run_tests(ctest_path, build_dir, configs, args.enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir, args.enable_pybind)
+
+    if args.build_wheel:
+        build_python_wheel(source_dir, build_dir, configs)
 
     log.info("Build complete")
 
