@@ -9,7 +9,6 @@ TEST(MathOpTest, GemmNoTrans) {
 
   test.AddAttribute("transA", (int64_t)0);
   test.AddAttribute("transB", (int64_t)0);
-  test.AddAttribute("broadcast", (int64_t)0);
   test.AddAttribute("alpha", 1.0f);
   test.AddAttribute("beta", 1.0f);
 
@@ -29,7 +28,6 @@ TEST(MathOpTest, GemmBroadcast) {
 
   test.AddAttribute("transA", (int64_t)0);
   test.AddAttribute("transB", (int64_t)0);
-  test.AddAttribute("broadcast", (int64_t)1);
   test.AddAttribute("alpha", 1.0f);
   test.AddAttribute("beta", 1.0f);
 
@@ -49,7 +47,6 @@ TEST(MathOpTest, GemmTrans) {
 
   test.AddAttribute("transA", (int64_t)1);
   test.AddAttribute("transB", (int64_t)1);
-  test.AddAttribute("broadcast", (int64_t)1);
   test.AddAttribute("alpha", 1.0f);
   test.AddAttribute("beta", 1.0f);
 
@@ -71,7 +68,6 @@ TEST(MathOpTest, GemmAlphaBeta) {
 
   test.AddAttribute("transA", (int64_t)0);
   test.AddAttribute("transB", (int64_t)0);
-  test.AddAttribute("broadcast", (int64_t)1);
   test.AddAttribute("alpha", 0.5f);
   test.AddAttribute("beta", 2.0f);
 
@@ -91,7 +87,6 @@ TEST(MathOpTest, GemmNaN) {
 
   test.AddAttribute("transA", (int64_t)0);
   test.AddAttribute("transB", (int64_t)0);
-  test.AddAttribute("broadcast", (int64_t)0);
   test.AddAttribute("alpha", 1.0f);
   test.AddAttribute("beta", 0.0f);
 
@@ -111,7 +106,6 @@ TEST(MathOpTest, GemmScalarBroadcast) {
 
   test.AddAttribute("transA", (int64_t)0);
   test.AddAttribute("transB", (int64_t)0);
-  test.AddAttribute("broadcast", (int64_t)1);
   test.AddAttribute("alpha", 1.0f);
   test.AddAttribute("beta", 1.0f);
 
@@ -131,7 +125,6 @@ TEST(MathOpTest, Gemm2DBroadcast) {
 
   test.AddAttribute("transA", (int64_t)0);
   test.AddAttribute("transB", (int64_t)0);
-  test.AddAttribute("broadcast", (int64_t)1);
   test.AddAttribute("alpha", 1.0f);
   test.AddAttribute("beta", 1.0f);
 
@@ -151,7 +144,6 @@ TEST(MathOpTest, GemmFalseBroadcast) {
 
   test.AddAttribute("transA", (int64_t)0);
   test.AddAttribute("transB", (int64_t)0);
-  test.AddAttribute("broadcast", (int64_t)1);
   test.AddAttribute("alpha", 1.0f);
   test.AddAttribute("beta", 1.0f);
 

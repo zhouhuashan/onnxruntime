@@ -38,7 +38,7 @@ void MemoryLayoutTransposeRNNOutputCNTKToLotus(const T* X_data_cntk, T* X_data_o
   }
 }
 
-TEST(RNNTest, RNN_bidirectional_bias_initial_zigged_batch) {
+TEST(RNNTest, DISABLED_RNN_bidirectional_bias_initial_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 2, input_size = 2, hidden_size = 3, seq_length = 5;
 
@@ -120,7 +120,7 @@ TEST(RNNTest, RNN_bidirectional_bias_initial_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, RNN_bidirectional_zigged_batch) {
+TEST(RNNTest, DISABLED_RNN_bidirectional_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 2, input_size = 2, hidden_size = 3, seq_length = 5;
 
@@ -198,7 +198,7 @@ TEST(RNNTest, RNN_bidirectional_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
+TEST(RNNTest, DISABLED_RNN_reverse_direction_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, seq_length = 5;
 
@@ -272,7 +272,7 @@ TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, RNN_forward_direction_zigged_batch) {
+TEST(RNNTest, DISABLED_RNN_forward_direction_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, seq_length = 5;
 
@@ -347,7 +347,7 @@ TEST(RNNTest, RNN_forward_direction_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, RNN_bidirectional) {
+TEST(RNNTest, DISABLED_RNN_bidirectional) {
   OpTester test("RNN");
   int64_t num_directions = 2, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
@@ -410,7 +410,7 @@ TEST(RNNTest, RNN_bidirectional) {
   test.Run();
 }
 
-TEST(RNNTest, RNN_default_attributes_and_forward_direction) {
+TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
   // In case of useDefault, attributes, inputs or outputs are not set.
@@ -484,7 +484,7 @@ TEST(RNNTest, RNN_default_attributes_and_forward_direction) {
   }
 }
 
-TEST(RNNTest, RNN_reverse_direction) {
+TEST(RNNTest, DISABLED_RNN_reverse_direction) {
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
   // In case of useDefault, attributes, inputs or outputs are not set.

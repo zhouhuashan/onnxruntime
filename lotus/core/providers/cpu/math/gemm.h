@@ -21,7 +21,6 @@ class Gemm final : public OpKernel {
     LOTUS_ENFORCE(info.GetAttr<int64_t>("transB", &temp).IsOK());
     trans_B_ = temp == 0 ? CblasNoTrans : CblasTrans;
 
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("broadcast", &broadcast_).IsOK());
     LOTUS_ENFORCE(info.GetAttr<float>("alpha", &alpha_).IsOK());
     LOTUS_ENFORCE(info.GetAttr<float>("beta", &beta_).IsOK());
   }
@@ -60,13 +59,8 @@ class Gemm final : public OpKernel {
                         " K: " + std::to_string(K) +
                         " N:" + std::to_string(N));
 
-    if (broadcast_) {
-      if (!IsValidBroadcast(B->Shape(), M, N))
-        return Status(LOTUS, INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
-    } else {
-      LOTUS_ENFORCE(B->Shape().NumDimensions() == 2);
-      LOTUS_ENFORCE(B->Shape()[0] == M && B->Shape()[1] == N);
-    }
+    if (!IsValidBroadcast(B->Shape(), M, N))
+      return Status(LOTUS, INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
 
     LOTUS_ENFORCE(M > 0 && N > 0 && K > 0);
     auto Y = context->Output(0, TensorShape(std::vector<int64_t>{M, N}));
@@ -81,41 +75,40 @@ class Gemm final : public OpKernel {
           N);
       output_mat.setZero();
 
-      if (broadcast_) {
-        auto& b_shape = B->Shape();
-        // if B is (1,) or (1, 1), add the scalar
-        if (b_shape.Size() == 1) {
-          output_mat.array() += *(B->template Data<T_B>());
+      auto& b_shape = B->Shape();
+      // if B is (), (1,) or (1, 1), add the scalar
+      if (b_shape.Size() == 1) {
+        output_mat.array() += *(B->template Data<T_B>());
+      }
+      // B is (N,)
+      else if (b_shape.NumDimensions() == 1) {
+        auto bias_vec = ConstEigenVectorMap<T_B>(
+            B->template Data<T_B>(),
+            N);
+        output_mat.rowwise() += bias_vec.transpose();
+      } else if (b_shape.NumDimensions() == 2) {
+        // B is (M, 1)
+        if (b_shape[1] == 1) {
+          auto bias_vec = ConstEigenVectorMap<T_B>(
+              B->template Data<T_B>(),
+              M);
+          output_mat.colwise() += bias_vec;
         }
-        // B is (N,)
-        else if (b_shape.NumDimensions() == 1) {
+        // B is (1, N)
+        else if (b_shape[0] == 1) {
           auto bias_vec = ConstEigenVectorMap<T_B>(
               B->template Data<T_B>(),
               N);
           output_mat.rowwise() += bias_vec.transpose();
-        } else if (b_shape.NumDimensions() == 2) {
-          // B is (M, 1)
-          if (b_shape[1] == 1) {
-            auto bias_vec = ConstEigenVectorMap<T_B>(
-                B->template Data<T_B>(),
-                M);
-            output_mat.colwise() += bias_vec;
-          }
-          // B is (M, N), no broadcast needed.
-          else {
-            auto bias_mat = ConstEigenMatrixMapRowMajor<T_B>(
-                B->template Data<T_B>(),
-                M,
-                N);
-            output_mat += bias_mat;
-          }
         }
-      } else {
-        auto bias_mat = ConstEigenMatrixMapRowMajor<T_B>(
-            B->template Data<T_B>(),
-            M,
-            N);
-        output_mat += bias_mat;
+        // B is (M, N), no broadcast needed.
+        else {
+          auto bias_mat = ConstEigenMatrixMapRowMajor<T_B>(
+              B->template Data<T_B>(),
+              M,
+              N);
+          output_mat += bias_mat;
+        }
       }
     }
 
@@ -140,13 +133,14 @@ class Gemm final : public OpKernel {
   bool IsValidBroadcast(const TensorShape& shape, int64_t M, int64_t N) const {
     if (shape.NumDimensions() != 1 && shape.NumDimensions() != 2)
       return false;
-    // shape is (1,) or (1, 1)
+    // shape is (1,) or (1, 1), or (,)
     if (shape.Size() == 1)
       return true;
-    // shape is (N,) or (M, 1)
+    // shape is (N,) or (1, N) or (M, 1)
     // or (M, N), in last case no broadcast needed, but don't fail it
     if ((shape.NumDimensions() == 1 && shape[0] == N) ||
-        (shape.NumDimensions() == 2 && shape[0] == M && (shape[1] == 1 || shape[1] == N)))
+        (shape.NumDimensions() == 2 && shape[0] == M && (shape[1] == 1 || shape[1] == N)) ||
+        (shape.NumDimensions() == 2 && shape[0] == 1 && shape[1] == N))
       return true;
     else
       return false;
@@ -154,7 +148,6 @@ class Gemm final : public OpKernel {
 
   CBLAS_TRANSPOSE trans_A_;
   CBLAS_TRANSPOSE trans_B_;
-  int64_t broadcast_;
   float alpha_;
   float beta_;
 };

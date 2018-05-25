@@ -22,7 +22,7 @@ TEST(MathOpTest, Add) {
   test.Run();
 }
 
-TEST(MathOpTest, Add_Broadcast_Axis) {
+TEST(MathOpTest, DISABLED_Add_Broadcast_Axis) {
   OpTester test("Add");
 
   test.AddAttribute("axis", int64_t{0});
@@ -44,7 +44,7 @@ TEST(MathOpTest, Add_Broadcast_Axis) {
   test.Run();
 }
 
-TEST(MathOpTest, Add_Broadcast) {
+TEST(MathOpTest, DISABLED_Add_Broadcast) {
   OpTester test("Add");
 
   test.AddAttribute("broadcast", int64_t{1});
@@ -199,7 +199,7 @@ TEST(MathOpTest, Pow) {
   test.Run();
 }
 
-TEST(MathOpTest, Pow_Broadcast_Scalar) {
+TEST(MathOpTest, DISABLED_Pow_Broadcast_Scalar) {
   OpTester test("Pow");
 
   test.AddAttribute("broadcast", int64_t{1});
@@ -328,7 +328,7 @@ TEST(MathOpTest, Xor) {
   test.Run();
 }
 
-TEST(MathOpTest, Xor_bcast3v2d) {
+TEST(MathOpTest, DISABLED_Xor_bcast3v2d) {
   OpTester test("Xor");
   test.AddAttribute("broadcast", int64_t{1});
 
