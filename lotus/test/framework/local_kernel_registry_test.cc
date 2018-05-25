@@ -55,6 +55,55 @@ class FooKernel {
   }
 };
 
+template <typename T>
+class OptionalOpKernel {
+ public:
+  OptionalOpKernel(const MLOpKernelInfo& /*info*/) {}
+
+  MLStatus Compute(const MLOpKernelInfo& /*info*/, const MLOpKernelContext& context) const {
+    const auto X = context.GetInputTensor(0);
+    const auto W = context.GetInputTensor(1);
+
+    auto X_Data = X.GetData<T>();
+    auto& shape = X.GetDimensions();
+    auto Y = context.GetOutputTensor(0, shape);
+    auto Y_Data = Y.GetData<T>();
+    size_t size = 1;
+    for (size_t i = 0; i < shape.size(); i++) {
+      size *= shape[i];
+    }
+
+    for (size_t i = 0; i < size; i++) {
+      Y_Data[i] = X_Data[i];
+    }
+
+    auto Y2 = context.GetOutputTensor(1, shape);
+    // Y2 is used or not
+    if (!Y2.IsUnused()) {
+      auto Y2_Data = Y2.GetData<T>();
+      for (size_t i = 0; i < size; i++) {
+        Y2_Data[i] = X_Data[i];
+      }
+    }
+
+    //W is used or not
+    if (!W.IsUnused()) {
+      auto W_Data = W.GetData<T>();
+      for (size_t i = 0; i < size; i++) {
+        Y_Data[i] += W_Data[i];
+      }
+      if (!Y2.IsUnused()) {
+        auto Y2_Data = Y2.GetData<T>();
+        for (size_t i = 0; i < size; i++) {
+          Y2_Data[i] += W_Data[i];
+        }
+      }
+    }
+
+    return MLStatus::OK;
+  }
+};
+
 onnx::OpSchema GetFooSchema() {
   onnx::OpSchema schema("Foo", "unknown", 0);
   schema.Input(0,
@@ -76,6 +125,28 @@ onnx::OpSchema GetFooSchema() {
   return schema;
 }
 
+onnx::OpSchema GetOptionalOpSchema() {
+  onnx::OpSchema schema("OptionalOp", "unknown", 0);
+  schema.Input(0,
+               "X",
+               "First operand, should share the type with the second operand.",
+               "T");
+  schema.Input(
+      1,
+      "W",
+      "Second operand. If provided, add it to the output",
+      "T",
+      OpSchema::Optional);
+  schema.Output(0, "Y", "Result, has same dimensions and type as A", "T");
+  schema.Output(1, "Y2", "Result, has same dimensions and type as A", "T", OpSchema::Optional);
+  schema.TypeConstraint(
+      "T",
+      OpSchema::high_precision_numeric_types(),
+      "Constrain input and output types to high-precision numeric tensors.");
+  schema.SinceVersion(6);
+  return schema;
+}
+
 //For test purpose, we register this Foo kernel to Mul op.
 //Once the custom schema is ready, should update this.
 KernelDefBuilder FooKernelDef(const char* schema_name) {
@@ -87,12 +158,26 @@ KernelDefBuilder FooKernelDef(const char* schema_name) {
   return def;
 }
 
+KernelDefBuilder OptionalKernelDef() {
+  KernelDefBuilder def("OptionalOp");
+  def.Domain(LotusIR::kOnnxDomain)
+      .SinceVersion(6)
+      .Provider(LotusIR::kCpuExecutionProvider)
+      .TypeConstraint("T", DataTypeImpl::GetTensorType<float>());
+  return def;
+}
+
 MLStatus CreateFooKernel(const IMLOpKernelInfo& kernelInfo, IMLOpKernel** opKernel) {
   return MLOpKernel<FooKernel<float> >::CreateInstance(kernelInfo, opKernel);
 }
 
+MLStatus CreateOptionalOpKernel(const IMLOpKernelInfo& kernelInfo, IMLOpKernel** opKernel) {
+  return MLOpKernel<OptionalOpKernel<float> >::CreateInstance(kernelInfo, opKernel);
+}
+
 static const std::string MUL_MODEL_URI = "testdata/mul_1.pb";
 static const std::string FOO_MODEL_URI = "testdata/foo_1.pb";
+static const std::string OPTIONAL_MODEL1_URI = "testdata/optional_1.pb";
 
 void RunSession(InferenceSession& session_object,
                 RunOptions& run_options,
@@ -180,6 +265,39 @@ TEST(CustomKernelTests, CustomKernelWithCustomSchema) {
   std::vector<int64_t> expected_dims_y = {3, 2};
   // now the expected value should be Add's result.
   std::vector<float> expected_values_y = {2.0f, 4.0f, 6.0f, 8.0f, 10.0f, 12.0f};
+
+  // Now run
+  RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);
+}
+
+TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.NoTimeout";
+
+  InferenceSession session_object{so, &DefaultLoggingManager()};
+  //reigster optional schema
+  auto optional_schema = GetOptionalOpSchema();
+  std::vector<OpSchema> schemas = {optional_schema};
+  EXPECT_TRUE(session_object.RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
+  auto def = OptionalKernelDef();
+  //Register a foo kernel which is doing Add, but bind to Mul.
+  EXPECT_TRUE(session_object.RegisterCustomKernel(def, CreateOptionalOpKernel).IsOK());
+
+  EXPECT_TRUE(session_object.Load(OPTIONAL_MODEL1_URI).IsOK());
+  EXPECT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "one session/one tag";
+
+  // prepare inputs
+  std::vector<int64_t> dims_x = {3, 2};
+  std::vector<float> values_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+
+  // prepare expected inputs and outputs
+  std::vector<int64_t> expected_dims_y = {3, 2};
+  // now the expected value should be equal result.
+  std::vector<float> expected_values_y = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
 
   // Now run
   RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);

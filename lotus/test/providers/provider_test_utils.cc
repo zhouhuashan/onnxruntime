@@ -128,11 +128,13 @@ void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& inp
                                        std::vector<std::string>& output_names) {
   (input_defs);
   for (auto& elem : output_defs) {
-    output_names.push_back(elem->Name());
+    if (!elem->Name().empty())
+      output_names.push_back(elem->Name());
   }
 
   for (auto& input : input_data_) {
-    feeds[input.def_.Name()] = input.data_;
+    if (!input.def_.Name().empty())
+      feeds[input.def_.Name()] = input.data_;
   }
 }
 
@@ -186,20 +188,19 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
 
     node.SetExecutionProviderType(provider_name_);
     Status status = graph->Resolve();
-	//LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
-	if (!status.IsOK()) {
-		if (expect_result == ExpectResult::kExpectFailure) {
-			EXPECT_TRUE(!status.IsOK());
-			EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
-		}
-		else {
-			LOGS_DEFAULT(ERROR) << "Initialize failed with status: " << status.ErrorMessage();
-			EXPECT_TRUE(status.IsOK());
-		}
-	}
-	if (!status.IsOK()) {
-		return;
-	}
+    //LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
+    if (!status.IsOK()) {
+      if (expect_result == ExpectResult::kExpectFailure) {
+        EXPECT_TRUE(!status.IsOK());
+        EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
+      } else {
+        LOGS_DEFAULT(ERROR) << "Initialize failed with status: " << status.ErrorMessage();
+        EXPECT_TRUE(status.IsOK());
+      }
+    }
+    if (!status.IsOK()) {
+      return;
+    }
 
     // Hookup the inputs and outputs
     std::unordered_map<std::string, MLValue> feeds;

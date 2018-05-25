@@ -109,21 +109,24 @@ class ExecutionFrame {
     return node_offsets_[index];
   }
 
+  // Return nullptr if index map to an value that is an unused optional input/output
   template <typename T>
   const T* GetValue(int index) const {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-    return &all_values_[node_values_[index]].Get<T>();
+    return node_values_[index] >= 0 ? &all_values_[node_values_[index]].Get<T>() : nullptr;
   }
 
+  // Return nullptr if index map to an value that is an unused optional input/output
   MLDataType GetType(int index) const {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-    return all_values_[node_values_[index]].Type();
+    return node_values_[index] >= 0 ? all_values_[node_values_[index]].Type() : nullptr;
   }
 
+  // Return nullptr if index map to an value that is an unused optional input/output
   template <typename T>
   T* GetMutableValue(int index) {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
-    return all_values_[node_values_[index]].GetMutable<T>();
+    return node_values_[index] >= 0 ? all_values_[node_values_[index]].GetMutable<T>() : nullptr;
   }
 
   AllocatorPtr GetAllocator(const AllocatorInfo& info);
@@ -171,12 +174,19 @@ class ExecutionFrame {
                                                    const TensorShape& shape);
 
   // This method is not thread safe!
+  // Return S_OK and nullptr if index map to an value that is an unused optional input/output
   template <typename T>
   Status GetOrCreateMLValue(int index, const MLValueAllocationParameters& parameters, T*& value) {
     if (index < 0 || index >= node_values_.size()) {
       return Status(LOTUS, INVALID_ARGUMENT,
                     "Try to access with invalid node value index: " + std::to_string(index));
     }
+
+    if (node_values_[index] < 0) {
+      value = nullptr;
+      return Status::OK();
+    }
+
     auto p_mlvalue = &all_values_.at(node_values_[index]);
 
     if (p_mlvalue->IsAllocated()) {

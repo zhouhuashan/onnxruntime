@@ -377,7 +377,8 @@ ML_API_IMP(OpKernelContextWrapper::GetOutputTensor)
     if (outputTensors_[output_index].GetImpl() == nullptr) {
       TensorShape shape(dimension_sizes, dimensions);
       auto outputTensor = impl_->Output(output_index, shape);
-      const_cast<OpKernelContextWrapper*>(this)->outputTensors_[output_index] = outputTensor;
+      if (outputTensor)
+        const_cast<OpKernelContextWrapper*>(this)->outputTensors_[output_index] = outputTensor;
     }
 
     *tensor = &outputTensors_[output_index];

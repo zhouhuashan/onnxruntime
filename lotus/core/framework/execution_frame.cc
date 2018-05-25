@@ -61,6 +61,9 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
                                                                 const MLDataType element_type,
                                                                 const AllocatorInfo& location,
                                                                 const TensorShape& shape) {
+  if (mlvalue_index < 0)
+    return Status(LOTUS, FAIL, "Trying to allocate memory for unused optional inputs/outputs");
+
   auto p_mlvalue = &all_values_[mlvalue_index];
   if (p_mlvalue->IsAllocated()) {
     return Status::OK();
@@ -181,14 +184,18 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBuffer(const int offset,
                                                            const AllocatorInfo& location,
                                                            const TensorShape& shape) {
   LOTUS_ENFORCE(offset >= 0 && offset < node_values_.size());
+  if (node_values_[offset] < 0)
+    return Status(LOTUS, FAIL, "Trying to allocate memory for unused optional inputs/outputs");
   auto value = &all_values_[node_values_[offset]];
   return AllocateTensorWithPreAllocateBufferHelper(value, pBuffer, element_type, location, shape);
 }
 
 void ExecutionFrame::Release(const int offset) {
   LOTUS_ENFORCE(offset >= 0 && offset < node_offsets_.size());
-  all_values_[node_values_[offset]] = MLValue();
-  TraceFree(node_values_[offset]);
+  if (node_values_[offset] >= 0 && node_values_[offset] < all_values_.size()) {
+    all_values_[node_values_[offset]] = MLValue();
+    TraceFree(node_values_[offset]);
+  }
 }
 
 Common::Status AllocateTraditionalMLValue(MLValue* p_mlvalue,
@@ -331,10 +338,16 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
 void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
   LOTUS_ENFORCE(arg);
   auto& name = arg->Name();
-  int index;
-  Common::Status status = session_state_.GetMLValueIdx(name, &index);
-  LOTUS_ENFORCE(status.IsOK());
-  node_values_.push_back(index);
+  //if the arg's name is empty, it is an not needed optional input/output
+  //set index to -1
+  if (name.empty()) {
+    node_values_.push_back(-1);
+  } else {
+    int index;
+    Common::Status status = session_state_.GetMLValueIdx(name, &index);
+    LOTUS_ENFORCE(status.IsOK());
+    node_values_.push_back(index);
+  }
 }
 
 void ExecutionFrame::TraceFree(int mlvalue_idx) {

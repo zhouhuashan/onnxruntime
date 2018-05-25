@@ -294,6 +294,10 @@ class MLOpTensor {
     return impl_->GetData();
   }
 
+  bool IsUnused() const noexcept {
+	  return impl_->IsUnused();
+  }
+
  private:
   IMLOpTensor* impl_;
 

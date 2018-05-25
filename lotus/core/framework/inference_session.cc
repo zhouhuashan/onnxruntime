@@ -663,7 +663,8 @@ class InferenceSession::Impl {
         }
         VLOGS(*session_logger_, 1)
             << "Adding input argument with name: " << input_def->Name() << " to MLValueIndex with index: " << curr_idx;
-        session_state_.AddMLValueNameIdx(input_def->Name(), curr_idx++);
+        if (!input_def->Name().empty())
+          session_state_.AddMLValueNameIdx(input_def->Name(), curr_idx++);
       }
 
       for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
@@ -672,7 +673,8 @@ class InferenceSession::Impl {
         }
         VLOGS(*session_logger_, 1)
             << "Adding output argument with name: " << output_def->Name() << " to MLValueIndex with index: " << curr_idx;
-        session_state_.AddMLValueNameIdx(output_def->Name(), curr_idx++);
+        if (!output_def->Name().empty())
+          session_state_.AddMLValueNameIdx(output_def->Name(), curr_idx++);
       }
     }
 

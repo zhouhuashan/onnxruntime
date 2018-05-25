@@ -94,8 +94,13 @@ class TensorWrapper : public IMLOpTensor {
   ML_API_IMP_(const void*, GetData)
   () const noexcept override;
 
-  const Tensor* GetImpl() const { return nullptr; }
-  Tensor* GetImpl() { return nullptr; }
+  ML_API_(MLBool, IsUnused)
+	  () const noexcept override {
+	  return impl_ == nullptr;
+  }
+
+  const Tensor* GetImpl() const { return impl_; }
+  Tensor* GetImpl() { return impl_; }
 
  private:
   // Lifetime is managed by the caller and guaranteed to outlive this class

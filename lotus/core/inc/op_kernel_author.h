@@ -129,6 +129,10 @@ class IMLOpTensor {
   () noexcept = 0;
   ML_API_(const void*, GetData)
   () const noexcept = 0;
+
+  // Whether this tensor is an unused optional input/output tensors
+  ML_API_(MLBool, IsUnused)
+	  () const noexcept = 0;
 };
 
 enum class MLEdgeType {
