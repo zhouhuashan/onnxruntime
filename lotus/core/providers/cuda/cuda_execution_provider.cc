@@ -46,6 +46,11 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
   }
 }
 
+Common::Status CUDAExecutionProvider::Sync() {
+  bool status = CUDA_CALL(cudaDeviceSynchronize());
+  return status ? Status::OK() : Status(LOTUS, FAIL, "Sync failed.");
+}
+
 Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   if (src.Shape().Size() != dst.Shape().Size()) {
     return Status(LOTUS, FAIL, "Tensor size mismatch");

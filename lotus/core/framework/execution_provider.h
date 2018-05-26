@@ -49,6 +49,15 @@ class IExecutionProvider {
   // Example valid return values are: kCpuExecutionProvider, kCudaExecutionProvider
   virtual std::string Type() const = 0;
 
+  /**
+  * Blocks until the device has completed all preceding requested tasks.
+  * Currently this is primarily used by the IOBinding object to ensure that all inputs have been
+  * copied to the device before execution begins.
+  */
+  virtual Status Sync() {
+    return Status::OK();
+  };
+
  protected:
   AllocatorMap allocators_;
 };

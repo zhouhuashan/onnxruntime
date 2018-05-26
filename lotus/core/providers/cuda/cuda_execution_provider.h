@@ -36,6 +36,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return LotusIR::kCudaExecutionProvider;
   }
 
+  Common::Status Sync() override;
+
   Status CopyTensor(const Tensor& src, Tensor& dst) const override;
 
   virtual const void* GetExecutionHandle() const noexcept override {

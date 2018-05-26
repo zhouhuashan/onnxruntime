@@ -20,6 +20,7 @@ class OpSchema;
 namespace Lotus {
 class IExecutionProvider;  // forward decl
 class KernelDefBuilder;
+class IOBinding;
 
 enum class AllocationPlannerType {
   SIMPLE_SEQUENTIAL_PLANNER,
@@ -204,6 +205,16 @@ class InferenceSession {
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches);
+
+  /**
+  * Creates a new binding object for binding inputs and outputs.
+  * @param provider_type specifies the location where the inputs need to be potentially copied. See IOBinding class
+  * for more info.
+  */
+  Common::Status NewIOBinding(const std::string& provider_type, std::unique_ptr<IOBinding>* io_binding);
+
+  Common::Status Run(const RunOptions& run_options, IOBinding& io_binding);
+  Common::Status Run(IOBinding& io_binding);
 
   /**
     * TEST ONLY: This API exists to facilitate testing only since today the ONNX model

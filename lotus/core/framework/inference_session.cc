@@ -22,6 +22,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
 #include "core/graph/schema_registry.h"
+#include "core/framework/IOBinding.h"
 
 namespace Lotus {
 class InferenceSession::Impl {
@@ -296,11 +297,12 @@ class InferenceSession::Impl {
     return Run(run_options, feeds, output_names, p_fetches);
   }
 
-  Common::Status Run(const RunOptions& run_options,
+  Common::Status Run(const RunOptions& run_options0,
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches) {
     Common::Status retval;
+    const RunOptions run_options(run_options0);
     try {
       {
         std::lock_guard<std::mutex> l(session_mutex_);
@@ -381,6 +383,26 @@ class InferenceSession::Impl {
     }
 
     return std::make_pair(Common::Status::OK(), &output_def_list_);
+  }
+
+  Common::Status NewIOBinding(LotusIR::ProviderType provider_type, std::unique_ptr<IOBinding>* io_binding) {
+    IExecutionProvider* p_exec_provider = session_state_.GetExecutionProvider(provider_type);
+    if (!p_exec_provider) {
+      return Status(LOTUS, FAIL, "You did not register this execution provider before.");
+    }
+    *io_binding = std::unique_ptr<IOBinding>(new IOBinding(p_exec_provider, session_logger_));  // private constructor, can't use make_unique
+    return Status::OK();
+  }
+
+  Common::Status Run(const RunOptions& run_options, IOBinding& io_binding) {
+    // TODO should Run() call io_binding.SynchronizeInputs() or should it let the callers do it?
+    // io_binding.SynchronizeInputs();
+    return Run(run_options, io_binding.feeds_, io_binding.output_names_, &io_binding.outputs_);
+  }
+
+  Common::Status Run(IOBinding& io_binding) {
+    RunOptions run_options;
+    return Run(run_options, io_binding);
   }
 
  private:
@@ -847,4 +869,15 @@ Common::Status InferenceSession::RegisterCustomOpSet(std::vector<OpSchema>& sche
   return impl_->RegisterCustomOpSet(schemas, domain, version);
 }
 
+Common::Status InferenceSession::NewIOBinding(LotusIR::ProviderType provider_type, std::unique_ptr<IOBinding>* io_binding) {
+  return impl_->NewIOBinding(provider_type, io_binding);
+}
+
+Common::Status InferenceSession::Run(const RunOptions& run_options, IOBinding& io_binding) {
+  return impl_->Run(run_options, io_binding);
+}
+
+Common::Status InferenceSession::Run(IOBinding& io_binding) {
+  return impl_->Run(io_binding);
+}
 }  // namespace Lotus
