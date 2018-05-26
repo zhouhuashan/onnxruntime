@@ -25,7 +25,7 @@ class PoolBase : public OpKernel {
       info.GetAttrs<int64_t>("strides", strides_);
 
       if (op_name == "AveragePool") {
-        int64_t temp;
+        int64_t temp = 0;
         info.GetAttr<int64_t>("count_include_pad", &temp);
         count_include_pad_ = (temp != 0);
       }
