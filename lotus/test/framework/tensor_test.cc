@@ -1,51 +1,52 @@
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
 #include "test_utils.h"
+
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#include <sstream>
 
 namespace Lotus {
 namespace Test {
 template <typename T>
 void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
-  //add scope to explicitly delete tensor
-  {
-    //not own the buffer
-    TensorShape shape(dims);
+  //not own the buffer
+  TensorShape shape(dims);
     auto alloc = TestCPUExecutionProvider()->GetAllocator();
     auto data = alloc->Alloc(sizeof(T) * (shape.Size() + offset));
-    EXPECT_TRUE(data);
+  EXPECT_TRUE(data);
     Tensor t(DataTypeImpl::GetType<T>(), shape, data, alloc->Info(), nullptr, offset);
-    auto tensor_shape = t.Shape();
-    EXPECT_EQ(shape, tensor_shape);
-    EXPECT_EQ(t.DataType(), DataTypeImpl::GetType<T>());
-    auto& location = t.Location();
-    EXPECT_EQ(location.name, CPU);
-    EXPECT_EQ(location.id, 0);
+  auto tensor_shape = t.Shape();
+  EXPECT_EQ(shape, tensor_shape);
+  EXPECT_EQ(t.DataType(), DataTypeImpl::GetType<T>());
+  auto& location = t.Location();
+  EXPECT_EQ(location.name, CPU);
+  EXPECT_EQ(location.id, 0);
 
-    auto t_data = t.MutableData<T>();
-    EXPECT_TRUE(t_data);
-    memset(t_data, 0, sizeof(T) * shape.Size());
-    EXPECT_EQ(*(T*)((char*)data + offset), (T)0);
+  auto t_data = t.MutableData<T>();
+  EXPECT_TRUE(t_data);
+  memset(t_data, 0, sizeof(T) * shape.Size());
+  EXPECT_EQ(*(T*)((char*)data + offset), (T)0);
     alloc->Free(data);
 
-    // owned buffer
+  // owned buffer
     data = alloc->Alloc(sizeof(T) * (shape.Size() + offset));
-    EXPECT_TRUE(data);
+  EXPECT_TRUE(data);
     Tensor new_t(DataTypeImpl::GetType<T>(), shape, data, alloc->Info(), alloc, offset);
 
-    tensor_shape = new_t.Shape();
-    EXPECT_EQ(shape, tensor_shape);
-    EXPECT_EQ(new_t.DataType(), DataTypeImpl::GetType<T>());
-    auto& new_location = new_t.Location();
-    EXPECT_EQ(new_location.name, CPU);
-    EXPECT_EQ(new_location.id, 0);
+  tensor_shape = new_t.Shape();
+  EXPECT_EQ(shape, tensor_shape);
+  EXPECT_EQ(new_t.DataType(), DataTypeImpl::GetType<T>());
+  auto& new_location = new_t.Location();
+  EXPECT_EQ(new_location.name, CPU);
+  EXPECT_EQ(new_location.id, 0);
 
-    auto new_data = new_t.MutableData<T>();
-    EXPECT_TRUE(new_data);
-    memset(new_data, 0, sizeof(T) * shape.Size());
-    EXPECT_EQ(*(T*)((char*)new_data + offset), (T)0);
-    //no free op as the tensor own the buffer
-  }
+  auto new_data = new_t.MutableData<T>();
+  EXPECT_TRUE(new_data);
+  memset(new_data, 0, sizeof(T) * shape.Size());
+  EXPECT_EQ(*(T*)((char*)new_data + offset), (T)0);
+  //no free op as the tensor own the buffer
 }
 
 TEST(TensorTest, CPUFloatTensorTest) {
@@ -189,5 +190,24 @@ TEST(TensorTest, StringTensorTest) {
   EXPECT_EQ((string_ptr + 1)->size(), 0);
 #endif
 }
+
+TEST(TensorTest, ConvertToString) {
+  TensorShape shape({2, 3, 4});
+
+  EXPECT_EQ(shape.ToString(), "{2,3,4}");
+
+  std::stringstream ss;
+  ss << shape;
+  EXPECT_EQ(ss.str(), "{2,3,4}");
+}
+
+TEST(TensorTest, Int64PtrConstructor) {
+  int64_t dimensions[] = {2, 3, 4};
+  TensorShape shape(dimensions, 2);  // just use first 2
+  EXPECT_EQ(shape.Size(), 6);
+  EXPECT_EQ(shape.NumDimensions(), 2);
+  EXPECT_THAT(shape.GetDims(), testing::ElementsAre(2, 3));
+}
+
 }  // namespace Test
 }  // namespace Lotus

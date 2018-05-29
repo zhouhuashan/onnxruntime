@@ -13,6 +13,17 @@
     <TargetFrameworkVersion>Framework45</TargetFrameworkVersion>
   </RunConfiguration>
   
+  <!-- see https://github.com/csoltenborn/GoogleTestAdapter/blob/master/GoogleTestAdapter/TestAdapter/GoogleTestAdapterSettings.xsd for possible values -->
+  <GoogleTestAdapterSettings>
+    <SolutionSettings>
+      <Settings>
+        <TestDiscoveryTimeoutInSeconds>60</TestDiscoveryTimeoutInSeconds>
+      </Settings>
+    </SolutionSettings>
+    <ProjectSettings>
+    </ProjectSettings>
+  </GoogleTestAdapterSettings>  
+  
   <!-- Configurations for data collectors -->
   <DataCollectionRunSettings>
     <DataCollectors>
@@ -23,6 +34,12 @@
               <Include>
                 <Function>^Lotus.*</Function> <!-- all code in the Lotus namespace -->
               </Include>
+              <Exclude>
+                <Function>^Lotus\:\:Test.*</Function> <!-- exclude all code in the Lotus::Test* namespaces -->
+                <Function>^LotusIR\:\:Test.*</Function> <!-- exclude all code in the LotusIR::Test* namespaces -->
+                <Function>^Lotus\:\:MakeString&lt;.*</Function> <!-- Lotus::MakeString<types...> -->
+                <Function>^Lotus\:\:MakeStringInternal&lt;.*</Function> <!-- Lotus::MakeString<types...> -->
+              </Exclude>
             </Functions>
             <!--
             <ModulePaths>
@@ -42,14 +59,4 @@
       
     </DataCollectors>
   </DataCollectionRunSettings>
-  
-  <!-- Adapter Specific sections -->
-  
-  <!-- MSTest adapter -->
-  <MSTest>
-    <MapInconclusiveToFailed>false</MapInconclusiveToFailed>
-    <CaptureTraceOutput>true</CaptureTraceOutput>
-    <DeleteDeploymentDirectoryAfterTestRunIsComplete>False</DeleteDeploymentDirectoryAfterTestRunIsComplete>
-    <DeploymentEnabled>False</DeploymentEnabled>
-  </MSTest>
 </RunSettings>

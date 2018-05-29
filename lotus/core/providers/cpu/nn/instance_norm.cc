@@ -9,7 +9,7 @@ REGISTER_KERNEL(KernelDefBuilder("InstanceNormalization")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 InstanceNorm<float>);
 
-Status ValidateInputs(const Tensor* input, const Tensor* scale, const Tensor* B) {
+static Status ValidateInputs(const Tensor* input, const Tensor* scale, const Tensor* B) {
   if (input->Shape().NumDimensions() < 3) {
     std::ostringstream ostr;
     ostr << "Invalid input data: number of dimensions is less than 3: " << input->Shape().NumDimensions();

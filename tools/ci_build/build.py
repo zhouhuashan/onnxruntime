@@ -57,7 +57,7 @@ Use the individual flags to only run the specified stages.
                         help="Extra definitions to pass to CMake during build system generation. " +
                              "These are just CMake -D options without the leading -D.")
     parser.add_argument("--x86", action='store_true',
-                        help="Create x86 makefiles. Requires --update and no existing cache CMake setup. Delete CMakeCache.txt if needed"                             )
+                        help="Create x86 makefiles. Requires --update and no existing cache CMake setup. Delete CMakeCache.txt if needed")
 
     # Arguments needed by CI
     parser.add_argument("--cmake_path", default="cmake", help="Path to the CMake program.")
@@ -216,18 +216,22 @@ def set_cuda_dir(cuda_home):
         os.environ["PATH"] += os.pathsep + cuda_bin_path
 
 
-def run_tests(ctest_path, build_dir, configs, enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir, enable_python_tests):
+def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests):
     for config in configs:
         log.info("Running tests for %s configuration", config)
         cwd = get_config_build_dir(build_dir, config)
         run_subprocess([ctest_path, "--build-config", config, "--verbose"],
                        cwd=cwd)
+					   
         if enable_python_tests:
             if is_windows():
                 cwd = os.path.join(cwd, config)
             run_subprocess([sys.executable, 'lotus_test_python.py'], cwd=cwd)
 
-    if enable_onnx_tests:
+
+def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir):
+
+    for config in configs:
         test_data_dirs = []
         # test data created by running with --install_onnx
         add_dir_if_exists(os.path.join(lotus_onnx_test_data_dir, 'node'), test_data_dirs)
@@ -237,6 +241,7 @@ def run_tests(ctest_path, build_dir, configs, enable_onnx_tests, lotus_onnx_test
         add_dir_if_exists(os.path.join(onnx_test_data_dir, 'pytorch-converted'), test_data_dirs)
 
         if test_data_dirs:
+            cwd = get_config_build_dir(build_dir, config)
             run_subprocess([os.path.join(cwd, config, 'onnx_test_runner')] + test_data_dirs, cwd=cwd)
 
 def build_python_wheel(source_dir, build_dir, configs):
@@ -308,7 +313,12 @@ def main():
         install_onnx(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
 
     if (args.test):
-        run_tests(ctest_path, build_dir, configs, args.enable_onnx_tests, lotus_onnx_test_data_dir, onnx_test_data_dir, args.enable_pybind)
+        run_lotus_tests(ctest_path, build_dir, configs, args.enable_pybind)
+
+    # run the onnx tests if requested explicitly.
+    # it could be done implicitly by user installing onnx but currently the tests fail so that doesn't work for CI
+    if (args.enable_onnx_tests): # or args.install_onnx):
+        run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir)
 
     if args.build_wheel:
         build_python_wheel(source_dir, build_dir, configs)

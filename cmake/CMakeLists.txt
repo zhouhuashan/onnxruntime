@@ -113,7 +113,13 @@ if (lotus_USE_OPENBLAS AND lotus_USE_EIGEN_FOR_BLAS)
   message(FATAL_ERROR "use one of lotus_USE_OPENBLAS, lotus_USE_EIGEN_FOR_BLAS")
 endif()
 
-
+# if ON put all the unit tests in a single project so that code coverage is more comprehensive.
+# defaulting to that and most likely removing option to have separate unit test projects in the near future.
+set(SingleUnitTestProject ON)
+if (lotus_SPLIT_UNIT_TEST_PROJECTS)
+    set(SingleUnitTestProject OFF)
+endif()
+    
 if(WIN32)
   #Always enable exception handling, even for Windows ARM
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")

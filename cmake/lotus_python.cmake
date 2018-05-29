@@ -71,21 +71,28 @@ file(GLOB lotus_python_tools_srcs
     "${LOTUS_ROOT}/python/tools/*.py"
 )
 
+# adjust based on what target/s lotus_unittests.cmake created
+if (SingleUnitTestProject)
+  set(test_data_target lotus_test_all)
+else()
+  set(test_data_target lotus_test_ir)
+endif()
+
 add_custom_command(
   TARGET lotus_pybind11_state POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/tools
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/tools
   COMMAND ${CMAKE_COMMAND} -E copy
       ${LOTUS_ROOT}/__init__.py
-      $<TARGET_FILE_DIR:lotus_test_ir>/lotus/
+      $<TARGET_FILE_DIR:${test_data_target}>/lotus/
   COMMAND ${CMAKE_COMMAND} -E copy
       ${lotus_python_test_srcs}
-      $<TARGET_FILE_DIR:lotus_test_ir>
+      $<TARGET_FILE_DIR:${test_data_target}>
   COMMAND ${CMAKE_COMMAND} -E copy
       ${lotus_python_srcs}
-      $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/
+      $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/
   COMMAND ${CMAKE_COMMAND} -E copy
       ${lotus_python_tools_srcs}
-      $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/tools/
+      $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/tools/
   COMMAND ${CMAKE_COMMAND} -E copy
       $<TARGET_FILE:lotus_pybind11_state>
-      $<TARGET_FILE_DIR:lotus_test_ir>/lotus/python/ )
+      $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/ )

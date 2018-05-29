@@ -28,11 +28,13 @@ class LoggingTestsFixture : public ::testing::Test {
   static void SetUpTestCase() {
     // logger uses kWARNING so we can test filtering of kVERBOSE output,
     // and filters user data so that can also be tested
-    const bool filter_user_data = true;
+    const bool filter_user_data = false;
 
+#if !defined(SKIP_DEFAULT_LOGGER_TESTS)
     default_logging_manager_ = std::make_unique<LoggingManager>(
-        std::unique_ptr<ISink>{new CLogSink{}}, Severity::kWARNING, filter_user_data,
-        InstanceType::Default, &default_logger_id, /*default_max_vlog_level*/ 5);
+        std::unique_ptr<ISink>{new CLogSink {}}, Severity::kWARNING, filter_user_data,
+        InstanceType::Default, &default_logger_id, /*default_max_vlog_level*/ -1);
+#endif
   }
 
   static void TearDownTestCase() {
@@ -103,9 +105,9 @@ TEST_F(LoggingTestsFixture, TestDefaultFiltering) {
   LOGF_USER(*logger, ERROR, "Filtered %s", "user data");
 
   LOGS_DEFAULT(WARNING) << "Warning";  // not filtered
-  LOGS_USER_DEFAULT(ERROR) << "Filtered user data";
+  LOGS_USER_DEFAULT(ERROR) << "Default logger doesn't filter user data";
   LOGF_DEFAULT(VERBOSE, "Filtered by severity");
-  LOGF_USER_DEFAULT(WARNING, "Filtered user data");
+  LOGF_USER_DEFAULT(WARNING, "Default logger doesn't filter user data");
 }
 
 /// <summary>
@@ -185,9 +187,9 @@ TEST_F(LoggingTestsFixture, TestConditionalMacros) {
 
   // macros to test LoggingTestsFixture::default_logging_manager_
   LOGS_DEFAULT_IF(logger == nullptr, INFO) << "Null logger";                    // false
-  LOGS_USER_DEFAULT_IF(logger != nullptr, INFO) << "Valid logger";              // true but user data filtered
+  LOGS_USER_DEFAULT_IF(logger != nullptr, INFO) << "Valid logger";              // true
   LOGF_DEFAULT_IF(logger == nullptr, INFO, "Logger is %p", logger.get());       // false
-  LOGF_USER_DEFAULT_IF(logger != nullptr, INFO, "Logger is %p", logger.get());  // true but user data filtered
+  LOGF_USER_DEFAULT_IF(logger != nullptr, INFO, "Logger is %p", logger.get());  // true
 }
 
 /// <summary>
@@ -215,18 +217,17 @@ TEST_F(LoggingTestsFixture, TestVLog) {
   auto logger = manager.CreateLogger(logid, Severity::kVERBOSE, filter_user_data, max_vlog_level);
 
   // test local logger
-  VLOGS(*logger, max_vlog_level) << "Stream";          // logged
-  VLOGF(*logger, max_vlog_level + 1, "Printf %d", 1);  // ignored due to level
-
+  VLOGS(*logger, max_vlog_level) << "Stream";              // logged
+  VLOGF(*logger, max_vlog_level + 1, "Printf %d", 1);      // ignored due to level
   VLOGS_USER(*logger, max_vlog_level + 1) << "User data";  // ignored due to level
   VLOGF_USER(*logger, 0, "User Id %d", 1);                 // logged
 
-  // test default logger
-  VLOGS_DEFAULT(0) << "Stream";       // logged
-  VLOGF_DEFAULT(10, "Printf %d", 1);  // ignored due to level
-
-  VLOGS_USER_DEFAULT(0) << "User data";    // ignored as USER data
-  VLOGF_USER_DEFAULT(0, "User Id %d", 1);  // ignored as USER data
+  // test default logger - just using macros to check they compile as we can't
+  // automatically validate the output
+  VLOGS_DEFAULT(0) << "Stream";            // ignored due to level
+  VLOGF_DEFAULT(10, "Printf %d", 1);       // ignored due to level
+  VLOGS_USER_DEFAULT(0) << "User data";    // ignored due to level
+  VLOGF_USER_DEFAULT(0, "User Id %d", 1);  // ignored due to level
 
 #ifdef _DEBUG
   // test we can globally disable

@@ -21,7 +21,7 @@ function(AddTest)
   if (_UT_DEPENDS)
     add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   endif(_UT_DEPENDS)
-    
+
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
   
   if (WIN32)
@@ -61,15 +61,6 @@ file(GLOB lotus_test_utils_src
     "${LOTUS_ROOT}/test/*.cc"
 )
 
-# tests from lowest level library up.
-# the order of libraries should be maintained, with higher libraries being added first in the list
-
-set(lotus_test_common_libs
-    lotus_common
-    gtest
-    gmock
-)
-
 file(GLOB lotus_test_common_src
     "${LOTUS_ROOT}/test/common/*.cc"
     "${LOTUS_ROOT}/test/common/*.h"
@@ -77,48 +68,11 @@ file(GLOB lotus_test_common_src
     "${LOTUS_ROOT}/test/common/logging/*.h"
 )
 
-AddTest(
-    TARGET lotus_test_common
-    SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
-    LIBS ${lotus_test_common_libs}
-    DEPENDS gtest gmock 
-)
-
-set(lotus_test_ir_libs
-    lotusIR_graph
-    ${onnx_whole_archive}
-    onnx_proto
-    lotus_common
-    protobuf::libprotobuf
-    gtest gmock
-)
-
 file(GLOB lotus_test_ir_src
     "${LOTUS_ROOT}/test/ir/*.cc"
     "${LOTUS_ROOT}/test/ir/*.h"
 )
 
-AddTest(
-    TARGET lotus_test_ir
-    SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
-    LIBS ${lotus_test_ir_libs}
-    DEPENDS lotusIR_graph gtest gmock
-)
-
-set(lotus_test_framework_libs
-    ${lotus_providers_whole_archive} # code smell! see if CPUExecutionProvider should move to framework so this isn't needed.
-    ${lotus_providers_cuda_whole_archive}
-    ${lotus_framework_whole_archive}
-    lotusIR_graph
-    ${onnx_whole_archive}
-    onnx_proto
-    lotus_common
-    protobuf::libprotobuf
-    gtest gmock
-)
-if(WIN32)
-set(lotus_test_framework_libs ${lotus_test_framework_libs} Advapi32)
-endif()
 set(lotus_test_framework_src_patterns
     "${LOTUS_ROOT}/test/framework/*.cc"
     "${LOTUS_ROOT}/test/platform/*.cc"
@@ -132,31 +86,11 @@ if(WIN32)
 endif()
 
 if(lotus_USE_CUDA)
-    list(APPEND lotus_test_framework_src_patterns  ${LOTUS_ROOT}/test/framework/*.cu)
+    list(APPEND lotus_test_framework_src_patterns  ${LOTUS_ROOT}/test/framework/*.cu)  
     list(APPEND lotus_test_framework_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
 file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
-
-AddTest(
-    TARGET lotus_test_framework
-    SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
-    LIBS ${lotus_test_framework_libs}
-    # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
-    DEPENDS lotus_framework lotus_providers gtest gmock
-)
-
-set(lotus_test_providers_libs
-    ${lotus_providers_whole_archive}
-    ${lotus_providers_cuda_whole_archive}
-    ${lotus_framework_whole_archive}
-    lotusIR_graph
-    ${onnx_whole_archive}
-    onnx_proto
-    lotus_common
-    protobuf::libprotobuf
-    gtest gmock
-)
 
 
 file(GLOB_RECURSE lotus_test_providers_src
@@ -179,29 +113,127 @@ else()
         )
 endif()
 
-set (lotus_test_provides_dependencies lotus_providers)
+
+# tests from lowest level library up.
+# the order of libraries should be maintained, with higher libraries being added first in the list
+
+set(lotus_test_common_libs
+    lotus_common
+    gtest
+    gmock
+)
+
+set(lotus_test_ir_libs
+    lotusIR_graph
+    ${onnx_whole_archive}
+    onnx_proto
+    lotus_common
+    protobuf::libprotobuf
+    gtest gmock
+)
+
+set(lotus_test_framework_libs
+    ${lotus_providers_whole_archive} # code smell! see if CPUExecutionProvider should move to framework so this isn't needed.
+    ${lotus_providers_cuda_whole_archive}
+    ${lotus_framework_whole_archive}
+    lotusIR_graph
+    ${onnx_whole_archive}
+    onnx_proto
+    lotus_common
+    protobuf::libprotobuf
+    gtest gmock
+)
+
+if(WIN32)
+    list(APPEND lotus_test_framework_libs Advapi32)
+endif()
+    
+set(lotus_test_providers_libs
+    ${lotus_providers_whole_archive}
+    ${lotus_providers_cuda_whole_archive}
+    ${lotus_framework_whole_archive}
+    lotusIR_graph
+    ${onnx_whole_archive}
+    onnx_proto
+    lotus_common
+    protobuf::libprotobuf
+    gtest gmock
+)
+
+set (lotus_test_providers_dependencies lotus_providers)
 
 if(lotus_USE_CUDA)
-    list(APPEND lotus_test_provides_dependencies lotus_providers_cuda)
+    list(APPEND lotus_test_providers_dependencies lotus_providers_cuda)
     list(APPEND lotus_test_providers_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
+
+    
+if (SingleUnitTestProject)
+
+set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
+
+# we can only have one 'main', so remove them all and add back the providers test_main as it sets 
+# up everything we need for all tests
+file(GLOB_RECURSE test_mains "${LOTUS_ROOT}/test/*/test_main.cc")  
+list(REMOVE_ITEM all_tests ${test_mains})
+list(APPEND all_tests "${LOTUS_ROOT}/test/providers/test_main.cc")
+
+AddTest(
+    TARGET lotus_test_all
+    SOURCES ${all_tests}
+    LIBS ${lotus_test_providers_libs}
+    DEPENDS ${lotus_test_providers_dependencies}
+)
+
+# the default logger tests conflict with the need to have an overall default logger
+# so skip in this type of 
+target_compile_definitions(lotus_test_all PUBLIC -DSKIP_DEFAULT_LOGGER_TESTS)
+
+set(test_data_target lotus_test_all)
+
+else()
+
+AddTest(
+    TARGET lotus_test_common
+    SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
+    LIBS ${lotus_test_common_libs}
+)
+
+AddTest(
+    TARGET lotus_test_ir
+    SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
+    LIBS ${lotus_test_ir_libs}
+    DEPENDS lotusIR_graph
+)
+
+AddTest(
+    TARGET lotus_test_framework
+    SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
+    LIBS ${lotus_test_framework_libs}
+    # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
+    DEPENDS lotus_framework lotus_providers
+)
 
 AddTest(
     TARGET lotus_test_providers
     SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
     LIBS ${lotus_test_providers_libs}
-    DEPENDS ${lotus_test_provides_dependencies} gtest gmock
+    DEPENDS ${lotus_test_providers_dependencies}
 )
+
+set(test_data_target lotus_test_ir)
+
+endif()  # SingleUnitTestProject
 
 #
 # LotusIR_graph test data
 #
 set(TEST_DATA_SRC ${LOTUS_ROOT}/test/testdata)
-set(TEST_DATA_DES $<TARGET_FILE_DIR:lotus_test_ir>/testdata)
+set(TEST_DATA_DES $<TARGET_FILE_DIR:${test_data_target}>/testdata)
 
 # Copy test data from source to destination.
 add_custom_command(
-    TARGET lotus_test_ir POST_BUILD
+    TARGET ${test_data_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${TEST_DATA_SRC}
             ${TEST_DATA_DES})
@@ -209,25 +241,25 @@ add_custom_command(
 # Copy large onnx models to test dir
 if (lotus_RUN_ONNX_TESTS)
   add_custom_command(
-      TARGET lotus_test_ir POST_BUILD
+      TARGET ${test_data_target} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory
               ${CMAKE_CURRENT_BINARY_DIR}/models/models/onnx
-              $<TARGET_FILE_DIR:lotus_test_ir>/models
-      DEPENDS lotus_test_ir)
+              $<TARGET_FILE_DIR:${test_data_target}>/models
+      DEPENDS ${test_data_target})
 endif()
 
 set(onnx_test_runner_src_dir ${LOTUS_ROOT}/test/onnx)
 set(onnx_test_runner_common_srcs ${onnx_test_runner_src_dir}/TestCaseInfo.h
-${onnx_test_runner_src_dir}/TestResultStat.cc
-${onnx_test_runner_src_dir}/TestResultStat.h
-${onnx_test_runner_src_dir}/testenv.h
-${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
-${onnx_test_runner_src_dir}/IFinishCallback.h
-${onnx_test_runner_src_dir}/testenv.cc
-${onnx_test_runner_src_dir}/runner.h
-${onnx_test_runner_src_dir}/runner.cc
-${LOTUS_ROOT}/test/framework/TestAllocatorManager.cc
-${LOTUS_ROOT}/test/framework/TestAllocatorManager.h
+    ${onnx_test_runner_src_dir}/TestResultStat.cc
+    ${onnx_test_runner_src_dir}/TestResultStat.h
+    ${onnx_test_runner_src_dir}/testenv.h
+    ${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
+    ${onnx_test_runner_src_dir}/IFinishCallback.h
+    ${onnx_test_runner_src_dir}/testenv.cc
+    ${onnx_test_runner_src_dir}/runner.h
+    ${onnx_test_runner_src_dir}/runner.cc
+    ${LOTUS_ROOT}/test/framework/TestAllocatorManager.cc
+    ${LOTUS_ROOT}/test/framework/TestAllocatorManager.h
 )
 
 if(WIN32)
@@ -238,14 +270,12 @@ if(WIN32)
 else()
   set(FS_STDLIB stdc++fs)
 endif()
+
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
+add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
-
-add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
-target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
-add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
-set(onnx_test_lib
+set(onnx_test_libs 
     ${FS_STDLIB}
     ${lotus_providers_whole_archive}
     ${lotus_providers_cuda_whole_archive}
@@ -263,18 +293,20 @@ if(lotus_USE_CUDA)
     PROPERTIES
     COMPILE_FLAGS "-DUSE_CUDA"
   )
-  list(APPEND onnx_test_lib lotus_providers_cuda)
-  list(APPEND onnx_test_lib ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+  list(APPEND onnx_test_libs lotus_providers_cuda)
+  list(APPEND onnx_test_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
-target_link_libraries(onnx_test_runner ${onnx_test_lib} onnx_test_runner_common ${GETOPT_LIB})
+add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
+target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
+target_link_libraries(onnx_test_runner ${onnx_test_libs} onnx_test_runner_common ${GETOPT_LIB})
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(WIN32)
-#Maybe "CMAKE_SYSTEM_PROCESSOR" is better
-if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")
-add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
-target_link_libraries(onnx_test_runner_vstest ${onnx_test_lib} onnx_test_runner_common)
-set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
-endif()
+  #Maybe "CMAKE_SYSTEM_PROCESSOR" is better
+  if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")
+    add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
+    target_link_libraries(onnx_test_runner_vstest ${onnx_test_libs} onnx_test_runner_common)
+    set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
+  endif()
 endif()
