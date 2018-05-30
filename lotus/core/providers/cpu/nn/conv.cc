@@ -1,4 +1,4 @@
-#include "core/providers/cpu/nn/conv.h"
+#include "core/providers/cpu/nn/conv_impl.h"
 
 namespace Lotus {
 REGISTER_KERNEL(KernelDefBuilder("Conv")

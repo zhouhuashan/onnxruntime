@@ -20,6 +20,11 @@ set_target_properties(lotus_providers_obj PROPERTIES FOLDER "Lotus")
 add_library(lotus_providers $<TARGET_OBJECTS:lotus_providers_obj>)
 target_link_libraries(lotus_providers PUBLIC lotus_framework lotus_common PRIVATE ${lotus_EXTERNAL_LIBRARIES})
 set_target_properties(lotus_providers PROPERTIES FOLDER "Lotus")
+
+if (lotus_USE_MLAS AND WIN32)
+  include_directories(${PROJECT_SOURCE_DIR}/../../mlas/inc)
+endif()
+
 if (lotus_USE_CUDA)
     file(GLOB_RECURSE lotus_providers_cuda_srcs
         "${LOTUS_ROOT}/core/providers/cuda/*.h"

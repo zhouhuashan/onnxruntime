@@ -25,6 +25,7 @@ option(lotus_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
 option(lotus_ENABLE_PYTHON "Enable python buildings" OFF)
 option(lotus_USE_CUDA "Build with CUDA support" OFF)
 option(lotus_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
+option(lotus_USE_MLAS "Use optimized blas library for GEMM and 2D Convolution" OFF)
 option(lotus_USE_OPENBLAS "Use openblas" OFF)
 option(lotus_USE_PREBUILT_PB "Use prebuilt protobuf library" OFF)
 option(lotus_USE_JEMALLOC "Use jecmalloc" OFF)
@@ -112,6 +113,10 @@ if (lotus_USE_EIGEN_FOR_BLAS)
 add_definitions(-DLOTUS_USE_EIGEN_FOR_BLAS)
 endif()
 
+if (lotus_USE_MLAS AND WIN32)
+  add_definitions(-DUSE_MLAS)
+endif()
+
 if (lotus_USE_OPENBLAS AND "${lotus_OPENBLAS_HOME}" STREQUAL "")
   message(FATAL_ERROR "lotus_OPENBLAS_HOME required for lotus_USE_OPENBLAS")
 endif()
@@ -124,9 +129,9 @@ endif()
 # defaulting to that and most likely removing option to have separate unit test projects in the near future.
 set(SingleUnitTestProject ON)
 if (lotus_SPLIT_UNIT_TEST_PROJECTS)
-    set(SingleUnitTestProject OFF)
+  set(SingleUnitTestProject OFF)
 endif()
-    
+
 if(WIN32)
   #Always enable exception handling, even for Windows ARM
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")

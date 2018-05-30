@@ -50,6 +50,10 @@
 #include <Windows.h>
 #endif  // _MSC_VER
 
+#if defined(USE_MLAS)
+#include <mlas.h>
+#endif
+
 namespace Lotus {
 namespace Math {
 
@@ -94,6 +98,11 @@ void Gemm<float, CPUMathUtil>(
     float* C,
     CPUMathUtil* /*provider*/,
     MLDataType /*math_type*/) {
+#if defined(USE_MLAS)
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, N);
+#else
   auto C_mat = EigenMatrixMap<float>(C, N, M);
   if (beta == 0) {
     C_mat.setZero();
@@ -132,6 +141,7 @@ void Gemm<float, CPUMathUtil>(
     default:
       LOTUS_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
   }
+#endif
 }
 
 template <>
@@ -150,6 +160,9 @@ void GemmEx<float, CPUMathUtil>(
     float* C,
     const int ldc,
     CPUMathUtil*) {
+#if defined(USE_MLAS)
+  MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+#else
   using OuterStride = Eigen::OuterStride<Eigen::Dynamic>;
   using StridedMap = Eigen::Map<Eigen::MatrixXf, 0, OuterStride>;
   using ConstStridedMap = Eigen::Map<const Eigen::MatrixXf, 0, OuterStride>;
@@ -195,6 +208,7 @@ void GemmEx<float, CPUMathUtil>(
     default:
       LOTUS_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
   }
+#endif
 }
 
 template <>
