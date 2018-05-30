@@ -1,4 +1,5 @@
 #include "core/providers/cpu/tensor/pad.h"
+#include "core/providers/cpu/tensor/utils.h"
 
 namespace Lotus {
 
@@ -46,66 +47,59 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
 
   LOTUS_ENFORCE(dimension_count * 2 == pads_.size(), "'pads' attribute has wrong number of values");
 
-  // Calculate output dimensions
+  std::vector<int64_t> input_starts;
+  std::vector<int64_t> input_extents;
+
+  // Calculate output dimensions, and handle any negative padding
   for (size_t i = 0; i < dimension_count; i++) {
-    LOTUS_ENFORCE(pads_[i] >= 0 && pads_[i + dimension_count] >= 0, "Negative padding values are not allowed.");
-    output_dims[i] += pads_[i] + pads_[i + dimension_count];
+    input_starts.push_back(slices_[i]);
+    input_extents.push_back(output_dims[i] + slices_[i] + slices_[i + dimension_count]);
+    output_dims[i] += pads_[i] + pads_[i + dimension_count] + slices_[i] + slices_[i + dimension_count];
   }
   TensorShape output_shape(output_dims);
 
-  const auto *input = input_tensor.Data<float>();
+  SliceIterator<float> input(input_tensor, input_starts, input_extents);
   auto &output_tensor = *ctx->Output(0, output_shape);
   auto *output = output_tensor.MutableData<float>();
 
-  // The innerPitches is the pitch of the next inner axis. Aka the amount to move by one of the next inner axis.
-  // For the innermost axis it's always 1, the next outer is the innermost axis size, etc.
-  std::vector<int64_t> inner_pitches(dimension_count, 0);
-  inner_pitches.back() = 1;
-  for (size_t i = dimension_count - 1; i-- > 0;) {
-    inner_pitches[i] = inner_pitches[i + 1] * output_dims[i + 1];
-  }
+  TensorPitches output_pitches(output_tensor);
+  size_t alignSkip = 0;  // Amount to skip to align to where the next input tensor data needs to be written
 
-  // Initial skip, sum up the begin padding on each axis (except the innermost)
-  for (size_t i = 0; i < dimension_count - 1; i++)
-    output += pads_[i] * inner_pitches[i];
+  // Initial skip, sum up the begin padding on each axis
+  for (size_t i = 0; i < dimension_count; i++)
+    alignSkip += pads_[i] * output_pitches[i];
 
-  std::vector<int64_t> axis_index(dimension_count - 1, 0);  // There is no index for innermost axis since it's a special case
-  bool running = true;
+  size_t inner_axis = dimension_count - 1;
+  TensorAxisCounters input_counters(input_tensor);
 
   switch (mode_) {
     case Mode::Constant:
       // Loop over the output tensor, writing out padding between the blocks of copied data
       // On loop entry, 'pad' is already set to the first continuous block of padding, and
       // after every pass through the inner loop it gets set to the next continuous pad size.
-      while (running) {
-        size_t axis = dimension_count - 1;  // Start in the innermost axis
-        output += pads_[axis];              // Skip over pre padding
+      while (input_counters) {
+        output += alignSkip;
+        {
+          float *axisStart = output;
+          output = input.CopyInnermostAxis(output);
 
-        // Copy the input data over
-        size_t size = input_tensor.Shape()[axis];
-        for (size_t i = 0; i < size; i++)
-          *output++ = *input++;
-
-        // Write out padding
-        PadAxisConstant(output - size - pads_[axis], value_, pads_[axis]);
-        PadAxisConstant(output, value_, pads_[axis + dimension_count]);
-        output += pads_[axis + dimension_count];
-
-        if (axis == 0)  // If this is a 1D tensor, we're done
-          break;
-
+          int64_t prePad = pads_[inner_axis];
+          int64_t postPad = pads_[inner_axis + dimension_count];
+          PadAxisConstant(axisStart - prePad, value_, prePad);
+          PadAxisConstant(output, value_, postPad);
+          output += postPad;
+          alignSkip = prePad;
+        }
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
-        while (++axis_index[--axis] == input_tensor.Shape()[axis]) {
-          axis_index[axis] = 0;
-          ptrdiff_t inner_pitch = inner_pitches[axis];
-          float *outputStart = output - inner_pitch * input_tensor.Shape()[axis];
-          PadAxisConstant(outputStart - pads_[axis] * inner_pitch, value_, pads_[axis] * inner_pitch);
-          PadAxisConstant(output, value_, pads_[axis + dimension_count] * inner_pitch);
-          output += inner_pitch * pads_[axis + dimension_count];
-          if (axis == 0) {
-            running = false;
-            break;
-          }
+        while (input_counters.Increment()) {
+          ptrdiff_t inner_pitch = output_pitches[input_counters.Axis()];
+          float *axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
+          int64_t prePad = pads_[input_counters.Axis()];
+          int64_t postPad = pads_[input_counters.Axis() + dimension_count];
+          PadAxisConstant(axisStart - prePad * inner_pitch, value_, prePad * inner_pitch);
+          PadAxisConstant(output, value_, postPad * inner_pitch);
+          output += inner_pitch * postPad;
+          alignSkip += inner_pitch * prePad;
         }
       }
       break;
@@ -114,34 +108,29 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
       // Loop over the output tensor, writing out padding between the blocks of copied data
       // On loop entry, 'pad' is already set to the first continuous block of padding, and
       // after every pass through the inner loop it gets set to the next continuous pad size.
-      while (running) {
-        size_t axis = dimension_count - 1;  // Start in the innermost axis
-        output += pads_[axis];              // Skip over pre padding
+      while (input_counters) {
+        output += alignSkip;
+        {
+          float *axisStart = output;
+          output = input.CopyInnermostAxis(output);
 
-        // Copy the input data over
-        size_t size = input_tensor.Shape()[axis];
-        for (size_t i = 0; i < size; i++)
-          *output++ = *input++;
-
-        PadInnermostAxis(output - size - pads_[axis], output - size, 0 /* inputDelta */, pads_[axis]);
-        PadInnermostAxis(output, output - 1, 0 /* inputDelta */, pads_[axis + dimension_count]);
-        output += pads_[axis + dimension_count];
-
-        if (axis == 0)  // If this is a 1D tensor, we're done
-          break;
-
+          int64_t prePad = pads_[inner_axis];
+          int64_t postPad = pads_[inner_axis + dimension_count];
+          PadAxisConstant(axisStart - prePad, *axisStart, prePad);
+          PadAxisConstant(output, *(output - 1), postPad);
+          output += postPad;
+          alignSkip = prePad;
+        }
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
-        while (++axis_index[--axis] == input_tensor.Shape()[axis]) {
-          ptrdiff_t inner_pitch = inner_pitches[axis];
-          float *outputStart = output - inner_pitch * input_tensor.Shape()[axis];
-          PadAxis(outputStart - pads_[axis] * inner_pitch, outputStart, 1, -inner_pitch, inner_pitch, pads_[axis]);
-          PadAxis(output, output - inner_pitch, 1, -inner_pitch, inner_pitch, pads_[axis + dimension_count]);
-          output += inner_pitch * pads_[axis + dimension_count];
-          axis_index[axis] = 0;
-          if (axis == 0) {
-            running = false;
-            break;
-          }
+        while (input_counters.Increment()) {
+          ptrdiff_t inner_pitch = output_pitches[input_counters.Axis()];
+          float *axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
+          int64_t prePad = pads_[input_counters.Axis()];
+          int64_t postPad = pads_[input_counters.Axis() + dimension_count];
+          PadAxis(axisStart - prePad * inner_pitch, axisStart, 1, -inner_pitch, inner_pitch, prePad);
+          PadAxis(output, output - inner_pitch, 1, -inner_pitch, inner_pitch, postPad);
+          output += inner_pitch * postPad;
+          alignSkip += inner_pitch * prePad;
         }
       }
       break;
@@ -150,34 +139,29 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
       // Loop over the output tensor, writing out padding between the blocks of copied data
       // On loop entry, 'pad' is already set to the first continuous block of padding, and
       // after every pass through the inner loop it gets set to the next continuous pad size.
-      while (running) {
-        size_t axis = dimension_count - 1;  // Start in the innermost axis
-        output += pads_[axis];              // Skip over pre padding
+      while (input_counters) {
+        output += alignSkip;
+        {
+          float *axisStart = output;
+          output = input.CopyInnermostAxis(output);
 
-        // Copy the input data over
-        size_t size = input_tensor.Shape()[axis];
-        for (size_t i = 0; i < size; i++)
-          *output++ = *input++;
-
-        PadInnermostAxis(output - size - pads_[axis], output - size + pads_[axis], -1 /* inputDelta */, pads_[axis]);
-        PadInnermostAxis(output, output - pads_[axis + dimension_count], -1 /* inputDelta */, pads_[axis + dimension_count]);
-        output += pads_[axis + dimension_count];
-
-        if (axis == 0)  // If this is a 1D tensor, we're done
-          break;
-
+          int64_t prePad = pads_[inner_axis];
+          int64_t postPad = pads_[inner_axis + dimension_count];
+          PadInnermostAxis(axisStart - prePad, axisStart + prePad, -1 /* inputDelta */, prePad);
+          PadInnermostAxis(output, output - 2, -1 /* inputDelta */, postPad);
+          output += postPad;
+          alignSkip = prePad;
+        }
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
-        while (++axis_index[--axis] == input_tensor.Shape()[axis]) {
-          ptrdiff_t inner_pitch = inner_pitches[axis];
-          float *outputStart = output - inner_pitch * input_tensor.Shape()[axis];
-          PadAxis(outputStart - pads_[axis] * inner_pitch, outputStart + pads_[axis] * inner_pitch, 1, -inner_pitch * 2, inner_pitch, pads_[axis]);
-          PadAxis(output, output - pads_[axis + dimension_count] * inner_pitch, 1, -inner_pitch * 2, inner_pitch, pads_[axis + dimension_count]);
-          output += inner_pitch * pads_[axis + dimension_count];
-          axis_index[axis] = 0;
-          if (axis == 0) {
-            running = false;
-            break;
-          }
+        while (input_counters.Increment()) {
+          ptrdiff_t inner_pitch = output_pitches[input_counters.Axis()];
+          float *axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
+          int64_t prePad = pads_[input_counters.Axis()];
+          int64_t postPad = pads_[input_counters.Axis() + dimension_count];
+          PadAxis(axisStart - prePad * inner_pitch, axisStart + prePad * inner_pitch, 1, -inner_pitch * 2, inner_pitch, prePad);
+          PadAxis(output, output - 2 * inner_pitch, 1, -inner_pitch * 2, inner_pitch, postPad);
+          output += inner_pitch * postPad;
+          alignSkip += inner_pitch * prePad;
         }
       }
       break;
@@ -185,5 +169,4 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
 
   return Status::OK();
 }
-
 };  // namespace Lotus

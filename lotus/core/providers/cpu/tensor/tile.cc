@@ -1,4 +1,5 @@
 #include "core/providers/cpu/tensor/tile.h"
+#include "core/providers/cpu/tensor/utils.h"
 
 namespace Lotus {
 
@@ -8,61 +9,6 @@ REGISTER_KERNEL(KernelDefBuilder("Tile")
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Tile<float>);
-
-struct TensorPitches : std::vector<int64_t> {
-  TensorPitches(const Tensor &tensor)
-      : std::vector<int64_t>(tensor.Shape().NumDimensions(), 0) {
-    size_t dimension_count = tensor.Shape().NumDimensions();
-    auto &dims = tensor.Shape().GetDims();
-
-    // The pitches is the size of the next inner axis. Aka the amount to move by one of the next inner axis.
-    // For a tensor with shape(2,3,4,5) the values would be: (3*4*5, 4*5, 5, 1)
-    // Note that the outermost '2' is never used, as you never need to move by the entire size of the outermost axis
-
-    back() = 1;  // The innermost axis is 1 (single values)
-    for (size_t i = dimension_count - 1; i-- > 0;) {
-      operator[](i) = operator[](i + 1) * dims[i + 1];
-    }
-  }
-};
-
-// This class is to iterate through the axes of an arbitrarily shaped tensor
-// For example, a tensor with shape (2,3,4) will be iterated in this order:
-// (0,0,x) (0,1,x) (0,2,x) (1,0,x) (1,1,x) (1,2,x)
-// Note: The innermost axis is not iterated over since it's always special cased
-struct TensorAxisCounters {
-  TensorAxisCounters(const Tensor &tensor) : tensor_(tensor) {
-    dimension_count_ = tensor_.Shape().NumDimensions();
-    indices_.resize(dimension_count_ - 1, 0);
-    axis_ = dimension_count_ - 1;
-  }
-
-  // Returns true if there was a carry to the next axis
-  bool Increment() {
-    if (axis_ == 0) {
-      running_ = false;
-      return false;
-    }
-
-    if (++indices_[--axis_] != tensor_.Shape()[axis_]) {
-      axis_ = dimension_count_ - 1;
-      return false;
-    }
-
-    indices_[axis_] = 0;  // Reset the counter for this axis
-    return true;          // There was a carry
-  }
-
-  size_t Axis() const { return axis_; }
-  operator bool() const { return running_; }
-
- private:
-  const Tensor &tensor_;
-  size_t dimension_count_;
-  bool running_{true};
-  size_t axis_;
-  std::vector<int64_t> indices_;  // There is no index for innermost axis since it's a special case
-};
 
 template <>
 Status Tile<float>::Compute(OpKernelContext *ctx) const {

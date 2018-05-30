@@ -204,6 +204,6 @@ Memory_LeakCheck::~Memory_LeakCheck() {
 
   HeapDestroy(heap);
   HeapDestroy(g_heap);
-  g_heap = nullptr;  // Any allocations after this point
+  g_heap = nullptr;  // Any allocations after this point will fail
 }
 #endif
