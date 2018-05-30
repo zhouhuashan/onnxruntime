@@ -34,6 +34,34 @@ auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape(
 template <typename T>
 auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.Data<T>(), t.Shape().Size()); }
 
+bool SupportedBroadcast(const TensorShape& slope_shape, const TensorShape& input_shape, size_t& num_images) {
+  // currently only supports slope being in channel only, and regard any leading dims as num_images beyond slope_shape
+  // TODO: change the PReLU implementation to support generic numpy broadcast per ONNX 1.2.1 spec
+  size_t input_dims = input_shape.NumDimensions();
+  size_t slope_dims = slope_shape.NumDimensions();
+  size_t padded_dims = input_dims - slope_dims;
+  if (input_dims < slope_dims) return false;
+
+  // only support single non-broadcast (dim > 1) channel as for legacy PReLU usage
+  int channel_idx = -1;
+  for (int idx = (int)slope_dims - 1; idx >= 0; --idx) {
+    if (slope_shape[idx] > 1) {
+      // channel need to match between input_shape and slope_shape
+      if (input_shape[padded_dims + idx] != slope_shape[idx])
+        return false;
+      // only support single channel
+      if (channel_idx != -1) return false;
+      channel_idx = idx;
+    }
+  }
+
+  num_images = 1;
+  for (size_t idx = 0; idx < padded_dims + channel_idx; idx++) {
+    num_images *= input_shape[idx];
+  }
+  return true;
+}
+
 template <>
 Status PRelu<float>::Compute(OpKernelContext* ctx) const {
   auto& X = *ctx->Input<Tensor>(0);
@@ -44,11 +72,10 @@ Status PRelu<float>::Compute(OpKernelContext* ctx) const {
   auto eigenY = EigenMap<float>(Y);
   if (slope.Shape().IsScalar()) {
     eigenY = eigenX.cwiseMax(0.0f) + eigenX.cwiseMin(0.0f) * *slope.Data<float>();
-  } else if (slope.Shape().NumDimensions() == 1) {
-    int64_t num_channels = slope.Shape()[0];
-    int64_t input_dims = X.Shape().NumDimensions();
-    LOTUS_ENFORCE(input_dims > 1 && num_channels == X.Shape()[1]);
-    size_t num_images = X.Shape()[0];
+  } else if (slope.Shape().Size() != X.Shape().Size()) {
+    size_t num_images;
+    LOTUS_ENFORCE(SupportedBroadcast(slope.Shape(), X.Shape(), num_images));
+    int64_t num_channels = slope.Shape().Size();
     int64_t image_size = X.Shape().Size() / num_images;
     int64_t num_pixels = image_size / num_channels;
     for (size_t image = 0; image < num_images; image++) {

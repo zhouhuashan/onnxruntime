@@ -176,7 +176,7 @@ TEST(ActivationOpTest, PRelu_MultiChannel) {
     outputs.push_back(formula(inputs[i], slopes[i / num_pixels % num_channels]));
 
   std::vector<int64_t> x_dims{num_images, num_channels, num_pixels};
-  std::vector<int64_t> slope_dims{num_channels};
+  std::vector<int64_t> slope_dims{num_channels, 1};
   test.AddInput<float>("X", x_dims, inputs);
   test.AddInput<float>("slope", slope_dims, slopes);
   test.AddOutput<float>("Y", x_dims, outputs);
