@@ -88,26 +88,35 @@ class PlannerImpl {
     if (nullptr == p_opkernel) return false;
     const KernelDef& kernel_def = p_opkernel->KernelDef();
     const std::vector<std::pair<int, int>>& alias_map = kernel_def.Alias();
+    auto& input_args = node.InputDefs();
     for (auto pair : alias_map) {
       if (pair.second == output_arg_num) {
         // we _must_ reuse this input to satisfy aliasing requirement: (e.g., for reshape)
-        auto p_input_arg = node.InputDefs()[pair.first];
-        *reusable_input = Index(p_input_arg->Name());
-        return true;
+        if ((0 <= pair.first) && (pair.first < input_args.size())) {
+          auto p_input_arg = input_args[pair.first];
+          if (p_input_arg->Exists()) {
+            *reusable_input = Index(p_input_arg->Name());
+            return true;
+          }
+        }
       }
     }
 
     const std::vector<std::pair<int, int>>& inplace_map = kernel_def.MayInplace();
     for (auto pair : inplace_map) {
       if (pair.second == output_arg_num) {
-        auto p_input_arg = node.InputDefs()[pair.first];
-        auto input_arg_index = Index(p_input_arg->Name());
-        auto original = Buffer(input_arg_index);
-        if (1 == UseCount(original)) {
-          if (SameSize(*p_input_arg, *p_output_arg)) {
-            // we can reuse this input since it is its last use and permitted for in-place update
-            *reusable_input = input_arg_index;  // or original; both should be okay
-            return true;
+        if ((0 <= pair.first) && (pair.first < input_args.size())) {
+          auto p_input_arg = input_args[pair.first];
+          if (p_input_arg->Exists()) {
+            auto input_arg_index = Index(p_input_arg->Name());
+            auto original = Buffer(input_arg_index);
+            if (1 == UseCount(original)) {
+              if (SameSize(*p_input_arg, *p_output_arg)) {
+                // we can reuse this input since it is its last use and permitted for in-place update
+                *reusable_input = input_arg_index;  // or original; both should be okay
+                return true;
+              }
+            }
           }
         }
       }

@@ -464,13 +464,15 @@ Status GraphBase::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, 
 
     // Verify node outputs' name should be unique.
     for (const gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
-      auto& output_arg_name = output_def->Name();
-      auto result = output_args.insert({output_arg_name, &node});
-      if (!result.second) {
-        // Two outputs with same name, so that insertion fails.
-        Status status(LOTUS, FAIL,
-                      "Error: two output args with same name (" + output_arg_name + ").");
-        return status;
+      if (output_def->Exists()) {
+        auto& output_arg_name = output_def->Name();
+        auto result = output_args.insert({output_arg_name, &node});
+        if (!result.second) {
+          // Two outputs with same name, so that insertion fails.
+          Status status(LOTUS, FAIL,
+                        "Error: two output args with same name (" + output_arg_name + ").");
+          return status;
+        }
       }
     }
   }
@@ -1541,7 +1543,8 @@ Status Graph::SetGraphInputsOutputs() {
     std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
     for (const auto& node : Nodes()) {
       for (gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
-        output_name_to_node_arg.insert({output_def->Name(), output_def});
+        if (output_def->Exists())
+          output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
     }
 
