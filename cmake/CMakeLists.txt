@@ -60,6 +60,13 @@ if (MSVC)
     set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
     set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
   endif()
+else()
+  # Enable OpenMP for Non-Windows only. WinML team disallows use of OpenMP.
+  find_package(OpenMP)
+  if (OPENMP_FOUND)
+      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  endif()
 endif()
 
 

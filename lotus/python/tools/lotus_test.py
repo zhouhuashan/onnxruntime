@@ -26,5 +26,5 @@ def main():
     print('latency: {} ms'.format(((end - start)*1000)/iters))
     return 0
 
-if __name__ == "__main":
+if __name__ == "__main__":
     sys.exit(main())
