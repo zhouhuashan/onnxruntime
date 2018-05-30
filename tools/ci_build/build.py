@@ -95,9 +95,12 @@ def install_pybind_deps():
     dep_packages = ['setuptools', 'wheel', 'numpy']
     run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org'] + dep_packages)
 
-def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, configs, cmake_extra_defines, args, cmake_extra_args):
+def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home, pb_home, configs, cmake_extra_defines, args, cmake_extra_args):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
+    nvml_stub_path = ""
+    if args.use_cuda and not is_windows():
+        nvml_stub_path = cuda_home + "/lib64/stubs"
     cmake_args = [cmake_path, cmake_dir,
                  "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if args.enable_onnx_tests else "OFF"),
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
@@ -105,7 +108,8 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, pb_home, 
                  "-Dlotus_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),  
                  "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
-                 "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF")
+                 "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
+                 "-DCMAKE_LIBRARY_PATH=" + nvml_stub_path
                  ]
     if pb_home:
         cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
@@ -302,7 +306,7 @@ def main():
         if (not args.skip_submodule_sync):
             update_submodules(source_dir)
 
-        generate_build_tree(cmake_path, source_dir, build_dir, cudnn_home, args.pb_home, configs, cmake_extra_defines,
+        generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home, args.pb_home, configs, cmake_extra_defines,
                             args, cmake_extra_args)
 
     if (args.build):

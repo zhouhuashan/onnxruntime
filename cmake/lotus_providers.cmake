@@ -50,6 +50,8 @@ if (lotus_USE_CUDA)
             COMPILE_FLAGS "/Yccuda_pch.h"
         )
     endif()
+    set(CUDA_INCLUDE "${CUDA_TOOLKIT_ROOT_DIR}/include")
+    include_directories(${CUDA_INCLUDE})
 endif()
 
 
