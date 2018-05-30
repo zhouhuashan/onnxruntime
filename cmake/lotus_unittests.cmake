@@ -169,60 +169,63 @@ endif()
 
     
 if (SingleUnitTestProject)
+    set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
 
-set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
+    # we can only have one 'main', so remove them all and add back the providers test_main as it sets 
+    # up everything we need for all tests
+    file(GLOB_RECURSE test_mains "${LOTUS_ROOT}/test/*/test_main.cc")  
+    list(REMOVE_ITEM all_tests ${test_mains})
+    list(APPEND all_tests "${LOTUS_ROOT}/test/providers/test_main.cc")
 
-# we can only have one 'main', so remove them all and add back the providers test_main as it sets 
-# up everything we need for all tests
-file(GLOB_RECURSE test_mains "${LOTUS_ROOT}/test/*/test_main.cc")  
-list(REMOVE_ITEM all_tests ${test_mains})
-list(APPEND all_tests "${LOTUS_ROOT}/test/providers/test_main.cc")
+    # this is only added to lotus_test_framework_libs above, but we use lotus_test_providers_libs for the lotus_test_all target.
+    # for now, add it here. better is probably to have lotus_test_providers_libs use the full lotus_test_framework_libs
+    # list given it's built on top of that library and needs all the same dependencies.
+    if(WIN32)
+        list(APPEND lotus_test_providers_libs Advapi32)
+    endif()
 
-AddTest(
-    TARGET lotus_test_all
-    SOURCES ${all_tests}
-    LIBS ${lotus_test_providers_libs}
-    DEPENDS ${lotus_test_providers_dependencies}
-)
+    AddTest(
+        TARGET lotus_test_all
+        SOURCES ${all_tests}
+        LIBS ${lotus_test_providers_libs}
+        DEPENDS ${lotus_test_providers_dependencies}
+    )
 
-# the default logger tests conflict with the need to have an overall default logger
-# so skip in this type of 
-target_compile_definitions(lotus_test_all PUBLIC -DSKIP_DEFAULT_LOGGER_TESTS)
+    # the default logger tests conflict with the need to have an overall default logger
+    # so skip in this type of 
+    target_compile_definitions(lotus_test_all PUBLIC -DSKIP_DEFAULT_LOGGER_TESTS)
 
-set(test_data_target lotus_test_all)
-
+    set(test_data_target lotus_test_all)
 else()
+    AddTest(
+        TARGET lotus_test_common
+        SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
+        LIBS ${lotus_test_common_libs}
+    )
 
-AddTest(
-    TARGET lotus_test_common
-    SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
-    LIBS ${lotus_test_common_libs}
-)
+    AddTest(
+        TARGET lotus_test_ir
+        SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
+        LIBS ${lotus_test_ir_libs}
+        DEPENDS lotusIR_graph
+    )
 
-AddTest(
-    TARGET lotus_test_ir
-    SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
-    LIBS ${lotus_test_ir_libs}
-    DEPENDS lotusIR_graph
-)
+    AddTest(
+        TARGET lotus_test_framework
+        SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
+        LIBS ${lotus_test_framework_libs}
+        # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
+        DEPENDS lotus_framework lotus_providers
+    )
 
-AddTest(
-    TARGET lotus_test_framework
-    SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
-    LIBS ${lotus_test_framework_libs}
-    # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
-    DEPENDS lotus_framework lotus_providers
-)
+    AddTest(
+        TARGET lotus_test_providers
+        SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
+        LIBS ${lotus_test_providers_libs}
+        DEPENDS ${lotus_test_providers_dependencies}
+    )
 
-AddTest(
-    TARGET lotus_test_providers
-    SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
-    LIBS ${lotus_test_providers_libs}
-    DEPENDS ${lotus_test_providers_dependencies}
-)
-
-set(test_data_target lotus_test_ir)
-
+    set(test_data_target lotus_test_ir)
 endif()  # SingleUnitTestProject
 
 #
