@@ -126,15 +126,10 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
 
   // RNN outputs are optional
   std::vector<int64_t> Y_dims({seq_length, num_directions, batch_size, hidden_size});
-  Tensor* Y = nullptr;
-  int outputIndex = 0;
-  if (output_sequence_ != 0) {
-    Y = ctx->Output(outputIndex, Y_dims);
-    outputIndex++;
-  }
+  Tensor* Y = ctx->Output(0, Y_dims);
 
   std::vector<int64_t> Y_h_dims({num_directions, batch_size, hidden_size});
-  Tensor* Y_h = ctx->Output(outputIndex, Y_h_dims);
+  Tensor* Y_h = ctx->Output(1, Y_h_dims);
 
   AllocatorPtr alloc;
   LOTUS_RETURN_IF_ERROR(ctx->GetTempSpaceAllocator(&alloc));
@@ -227,8 +222,9 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
                                      activation_alpha_[direction], activation_beta_[direction], clip_, activation_func);
     }  // close sequence loop
 
-    Assign_Y_h<float>(Y_buffer_data, Y_h, sequence_lens,
-                      num_directions, direction, isReverse, batch_size, seq_length, hidden_size);
+    if (Y_h)
+      Assign_Y_h<float>(Y_buffer_data, Y_h, sequence_lens,
+                        num_directions, direction, isReverse, batch_size, seq_length, hidden_size);
   }
 
   // Now the full sequence is completed. Set missing frames to zero.

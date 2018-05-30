@@ -1,4 +1,4 @@
-#include "core/providers/cpu/misc/constant.h"
+#include "core/providers/cpu/generator/constant.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 

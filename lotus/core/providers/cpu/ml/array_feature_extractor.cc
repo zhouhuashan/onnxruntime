@@ -64,12 +64,12 @@ Common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) con
 
   // validate Y
   if (num_indices == 0) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Invalid Y argument: len_indices = 0");
+    return Status(LOTUS, INVALID_ARGUMENT, "Invalid Y argument: num_indices = 0");
   }
 
   if (num_indices - 1 >= stride) {
     std::ostringstream err_msg;
-    err_msg << "Invalid Y argument: len_indices - 1 (" << num_indices - 1 << ") >= stride (" << stride << ")";
+    err_msg << "Invalid Y argument: num_indices - 1 (" << num_indices - 1 << ") >= stride (" << stride << ")";
     return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
   }
 

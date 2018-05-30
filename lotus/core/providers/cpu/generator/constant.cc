@@ -1,4 +1,4 @@
-#include "core/providers/cpu/misc/constant.h"
+#include "core/providers/cpu/generator/constant.h"
 #include "core/framework/tensorprotoutils.h"
 #include "core/graph/tensorutils.h"
 

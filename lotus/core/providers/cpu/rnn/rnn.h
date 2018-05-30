@@ -20,7 +20,6 @@ class RNN : public OpKernel {
     info.GetAttr("clip", &clip_);
     info.GetAttr("direction", &direction_);
     LOTUS_ENFORCE(info.GetAttr("hidden_size", &hidden_size_).IsOK());
-    info.GetAttr("output_sequence", &output_sequence_);
 
     LOTUS_ENFORCE(allowed_directions.find(direction_) != allowed_directions.end());
     int num_directions = direction_ == "bidirectional" ? 2 : 1;
@@ -42,7 +41,6 @@ class RNN : public OpKernel {
     for (int direction = 1; direction < num_directions; direction++) {
       LOTUS_ENFORCE(allowed_activations.find(activations_[direction]) != allowed_activations.end());
     }
-    LOTUS_ENFORCE(output_sequence_ == 0 || output_sequence_ == 1);
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -65,9 +63,6 @@ class RNN : public OpKernel {
 
   // required
   int64_t hidden_size_;
-
-  // optional
-  int64_t output_sequence_ = 0;
 
   // const std::string default_activation = "Tanh";
 };

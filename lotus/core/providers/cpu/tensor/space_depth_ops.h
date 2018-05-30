@@ -7,11 +7,12 @@ namespace Lotus {
 class SpaceDepthBase : public OpKernel {
  public:
   SpaceDepthBase(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("blocksize", &blocksize_);
+      LOTUS_ENFORCE(info.GetAttr("blocksize", &blocksize_).IsOK(), 
+          "Attribute blocksize is not set.");
   }
 
  protected:
-  int64_t blocksize_ = 1;
+  int64_t blocksize_;
 };
 
 template <typename T>

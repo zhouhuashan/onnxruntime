@@ -38,14 +38,13 @@ void MemoryLayoutTransposeRNNOutputCNTKToLotus(const T* X_data_cntk, T* X_data_o
   }
 }
 
-TEST(RNNTest, DISABLED_RNN_bidirectional_bias_initial_zigged_batch) {
+TEST(RNNTest, RNN_bidirectional_bias_initial_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 2, input_size = 2, hidden_size = 3, seq_length = 5;
 
   test.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
   test.AddAttribute("direction", "bidirectional");
   test.AddAttribute("hidden_size", hidden_size);
-  test.AddAttribute("output_sequence", (int64_t)1);
 
   int batch_size = 2;
 
@@ -120,14 +119,13 @@ TEST(RNNTest, DISABLED_RNN_bidirectional_bias_initial_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, DISABLED_RNN_bidirectional_zigged_batch) {
+TEST(RNNTest, RNN_bidirectional_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 2, input_size = 2, hidden_size = 3, seq_length = 5;
 
   test.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
   test.AddAttribute("direction", "bidirectional");
   test.AddAttribute("hidden_size", hidden_size);
-  test.AddAttribute("output_sequence", (int64_t)1);
 
   int batch_size = 2;
 
@@ -198,14 +196,13 @@ TEST(RNNTest, DISABLED_RNN_bidirectional_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, DISABLED_RNN_reverse_direction_zigged_batch) {
+TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, seq_length = 5;
 
   test.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
   test.AddAttribute("direction", "reverse");
   test.AddAttribute("hidden_size", hidden_size);
-  test.AddAttribute("output_sequence", (int64_t)1);
 
   int batch_size = 2;
 
@@ -272,14 +269,13 @@ TEST(RNNTest, DISABLED_RNN_reverse_direction_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, DISABLED_RNN_forward_direction_zigged_batch) {
+TEST(RNNTest, RNN_forward_direction_zigged_batch) {
   OpTester test("RNN");
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, seq_length = 5;
 
   test.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
   test.AddAttribute("direction", "forward");
   test.AddAttribute("hidden_size", hidden_size);
-  test.AddAttribute("output_sequence", (int64_t)1);
 
   int batch_size = 2;
 
@@ -347,14 +343,13 @@ TEST(RNNTest, DISABLED_RNN_forward_direction_zigged_batch) {
   test.Run();
 }
 
-TEST(RNNTest, DISABLED_RNN_bidirectional) {
+TEST(RNNTest, RNN_bidirectional) {
   OpTester test("RNN");
   int64_t num_directions = 2, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
   test.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
   test.AddAttribute("direction", "bidirectional");
   test.AddAttribute("hidden_size", hidden_size);
-  test.AddAttribute("output_sequence", (int64_t)1);
 
   std::vector<int64_t> X_dims = {seq_length, batch_size, input_size};
   std::vector<float> X_data({0.54881352F, 0.71518934F,
@@ -410,12 +405,23 @@ TEST(RNNTest, DISABLED_RNN_bidirectional) {
   test.Run();
 }
 
+typedef enum {
+  RNNOutputY,
+  RNNOutputY_h,
+  RNNOutputBoth
+} RNNOutputOption;
+
+// TODO: code disabled due to optional output failure at
+// return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+// in session_state.cc (line 115)
+// Scott is adding test API to handle this case (PR is active).
+// Will bring this test case after Scott's PR.
 TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
   // In case of useDefault, attributes, inputs or outputs are not set.
   // Otherwise they are set (with values may or may not be the same as ONNX default values).
-  auto run_test = [&](OpTester& test, bool useDefault) {
+  auto run_test = [&](OpTester& test, bool useDefault, RNNOutputOption outputOption) {
     std::vector<int64_t> X_dims = {seq_length, batch_size, input_size};
     std::vector<float> X_data({0.061169811F, 0.26296741F,
                                0.80939841F, 0.080034949F,
@@ -435,7 +441,7 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
                                0.84270394F, 0.94917566F, -0.76469761F});
     test.AddInput<float>("R", R_dims, R_data);
 
-    if (!useDefault) {
+    if (useDefault) {
       std::vector<int64_t> B_dims = {num_directions, 2 * hidden_size};
       std::vector<float> B_data({0.0F, 0.0F, 0.0F,
                                  0.0F, 0.0F, 0.0F});
@@ -450,7 +456,7 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
       test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
     }
 
-    if (!useDefault) {
+    if (outputOption == RNNOutputY || outputOption == RNNOutputBoth) {
       std::vector<int64_t> Y_dims = {seq_length, num_directions, batch_size, hidden_size};
       std::vector<float> Y_data({-0.052289959F, -0.062934637F, -0.21133657F,
                                  -0.48205593F, 0.23896417F, -0.31342113F,
@@ -460,9 +466,11 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
       test.AddOutput<float>("Y", Y_dims, Y_data);
     }
 
-    std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
-    std::vector<float> Y_h_data({-0.74626476F, -0.07818383F, -0.75139415F});
-    test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+    if (outputOption == RNNOutputY_h || outputOption == RNNOutputBoth) {
+      std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+      std::vector<float> Y_h_data({-0.74626476F, -0.07818383F, -0.75139415F});
+      test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+    }
 
     test.Run();
   };
@@ -470,7 +478,19 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
   {
     OpTester test_use_default("RNN");
     test_use_default.AddAttribute("hidden_size", hidden_size);
-    run_test(test_use_default, true);
+    run_test(test_use_default, true, RNNOutputY);
+  }
+
+  {
+    OpTester test_use_default("RNN");
+    test_use_default.AddAttribute("hidden_size", hidden_size);
+    run_test(test_use_default, true, RNNOutputY_h);
+  }
+
+  {
+    OpTester test_use_default("RNN");
+    test_use_default.AddAttribute("hidden_size", hidden_size);
+    run_test(test_use_default, true, RNNOutputBoth);
   }
 
   {
@@ -478,9 +498,23 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
     test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
     test_do_not_use_default.AddAttribute("direction", "forward");
     test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
-    test_do_not_use_default.AddAttribute("output_sequence", (int64_t)1);
 
-    run_test(test_do_not_use_default, false);
+    run_test(test_do_not_use_default, false, RNNOutputY);
+  }
+  {
+    OpTester test_do_not_use_default("RNN");
+    test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
+    test_do_not_use_default.AddAttribute("direction", "forward");
+    test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
+    run_test(test_do_not_use_default, false, RNNOutputY_h);
+  }
+
+  {
+    OpTester test_do_not_use_default("RNN");
+    test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
+    test_do_not_use_default.AddAttribute("direction", "forward");
+    test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
+    run_test(test_do_not_use_default, false, RNNOutputBoth);
   }
 }
 
@@ -489,7 +523,7 @@ TEST(RNNTest, DISABLED_RNN_reverse_direction) {
 
   // In case of useDefault, attributes, inputs or outputs are not set.
   // Otherwise they are set (with values may or may not be the same as ONNX default values).
-  auto runTest = [&](OpTester& test, bool useDefault) {
+  auto runTest = [&](OpTester& test, bool useDefault, RNNOutputOption outputOption) {
     std::vector<int64_t> X_dims = {seq_length, batch_size, input_size};
     std::vector<float> X_data({0.54881352F, 0.71518934F,
                                0.60276335F, 0.54488319F,
@@ -529,30 +563,64 @@ TEST(RNNTest, DISABLED_RNN_reverse_direction) {
                                -0.60828412F, 0.78948581F, -0.34582433F,
                                -0.40591392F, 0.89962566F, -0.61860478F,
                                -0.56242156F, 0.79118007F, -0.872658F});
-    if (!useDefault) {
+    if (outputOption == RNNOutputY || outputOption == RNNOutputBoth) {
       test.AddOutput<float>("Y", Y_dims, Y_data);
+    } else {
+      test.AddOutput<float>("", Y_dims, Y_data);
     }
 
     std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
     std::vector<float> Y_h_data({-0.55397642F, 0.83026606F, -0.51471221F});
-    test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+    if (outputOption == RNNOutputY_h || outputOption == RNNOutputBoth) {
+      test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+    } else {
+      test.AddOutput<float>("", Y_h_dims, Y_h_data);
+    }
 
     test.Run();
   };
+
+  // TODO: bring in these tests
+  {
+    OpTester test_use_default("RNN");
+    test_use_default.AddAttribute("direction", "reverse");
+    test_use_default.AddAttribute("hidden_size", hidden_size);
+    runTest(test_use_default, true, RNNOutputY);
+  }
+  {
+    OpTester test_use_default("RNN");
+    test_use_default.AddAttribute("direction", "reverse");
+    test_use_default.AddAttribute("hidden_size", hidden_size);
+    runTest(test_use_default, true, RNNOutputY_h);
+  }
 
   {
     OpTester test_use_default("RNN");
     test_use_default.AddAttribute("direction", "reverse");
     test_use_default.AddAttribute("hidden_size", hidden_size);
-    runTest(test_use_default, true);
+    runTest(test_use_default, true, RNNOutputBoth);
+  }
+
+  {
+    OpTester test_do_not_use_default("RNN");
+    test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
+    test_do_not_use_default.AddAttribute("direction", "reverse");
+    test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
+    runTest(test_do_not_use_default, false, RNNOutputY);
   }
   {
     OpTester test_do_not_use_default("RNN");
     test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
     test_do_not_use_default.AddAttribute("direction", "reverse");
     test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
-    test_do_not_use_default.AddAttribute("output_sequence", (int64_t)1);
-    runTest(test_do_not_use_default, false);
+    runTest(test_do_not_use_default, false, RNNOutputY_h);
+  }
+  {
+    OpTester test_do_not_use_default("RNN");
+    test_do_not_use_default.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
+    test_do_not_use_default.AddAttribute("direction", "reverse");
+    test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
+    runTest(test_do_not_use_default, false, RNNOutputBoth);
   }
 }
 }  // namespace Test

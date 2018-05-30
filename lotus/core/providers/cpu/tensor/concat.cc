@@ -1,4 +1,4 @@
-#include "core/providers/cpu/misc/concat.h"
+#include "core/providers/cpu/tensor/concat.h"
 
 namespace Lotus {
 
