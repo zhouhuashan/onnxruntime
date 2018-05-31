@@ -100,6 +100,11 @@ class BFCArena : public IArenaAllocator {
     return info_;
   }
 
+  virtual FencePtr CreateFence(const SessionState* session_state) override {
+    // arena always rely on its device allocator to create fence
+    return device_allocator_->CreateFence(session_state);
+  }
+
   void GetStats(AllocatorStats* stats);
 
   size_t RequestedSize(const void* ptr);

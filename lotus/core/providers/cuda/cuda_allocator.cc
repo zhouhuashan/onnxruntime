@@ -1,6 +1,8 @@
 #include "cuda_common.h"
 #include "cuda_allocator.h"
 #include "core/framework/allocatormgr.h"
+#include "core/framework/session_state.h"
+#include "cuda_fence.h"
 
 namespace Lotus {
 
@@ -15,6 +17,10 @@ REGISTER_DEVICE_ALLOCATOR_WITH_MEM_TYPE(
     [](int) { return std::make_unique<CUDAPinnedAllocator>(); },
     std::numeric_limits<size_t>::max(),  //TODO: set correct cpu memory limit?
     kMemTypeCPU)
+
+static CUDAExecutionProvider* GetCUDAExecutionProvider(const SessionState* session_state) {
+  return dynamic_cast<CUDAExecutionProvider*>(session_state->GetExecutionProvider(LotusIR::kCudaExecutionProvider));
+}
 
 void CUDAAllocator::CheckDevice() const {
 #ifdef _DEBUG
@@ -45,6 +51,10 @@ const AllocatorInfo& CUDAAllocator::Info() const {
   return cudaAllocatorInfo;
 }
 
+FencePtr CUDAAllocator::CreateFence(const SessionState* session_state) {
+  return std::make_shared<CUDAFence>(GetCUDAExecutionProvider(session_state));
+}
+
 void* CUDAPinnedAllocator::Alloc(size_t size) {
   void* p = nullptr;
   if (size > 0) {
@@ -60,6 +70,10 @@ void CUDAPinnedAllocator::Free(void* p) {
 const AllocatorInfo& CUDAPinnedAllocator::Info() const {
   static AllocatorInfo cudaAllocatorInfo(CUDA_PINNED, AllocatorType::kDeviceAllocator, 0, kMemTypeCPU);
   return cudaAllocatorInfo;
+}
+
+FencePtr CUDAPinnedAllocator::CreateFence(const SessionState* session_state) {
+  return std::make_shared<CUDAFence>(GetCUDAExecutionProvider(session_state));
 }
 
 }  // namespace Lotus

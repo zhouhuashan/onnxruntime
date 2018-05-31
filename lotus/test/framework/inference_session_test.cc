@@ -132,7 +132,7 @@ void RunModelWithBinding(InferenceSession& session_object,
     auto& rtensor = outputs.front().Get<Tensor>();
     auto element_type = rtensor.DataType();
     auto& shape = rtensor.Shape();
-    auto& cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+    auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
     void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
     LOTUS_ENFORCE(buffer);
     std::unique_ptr<Tensor> cpu_tensor = std::make_unique<Tensor>(element_type,
@@ -140,7 +140,7 @@ void RunModelWithBinding(InferenceSession& session_object,
                                                                   buffer,
                                                                   cpu_allocator->Info(),
                                                                   cpu_allocator);
-    Status st = TestCudaExecutionProvider()->CopyTensor(rtensor, *cpu_tensor.get());
+    st = TestCudaExecutionProvider()->CopyTensor(rtensor, *cpu_tensor.get());
     ASSERT_TRUE(st.IsOK());
     MLValue ml_value;
     ml_value.Init(cpu_tensor.release(),
@@ -227,7 +227,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
     auto& rtensor = outputs.front().Get<Tensor>();
     auto element_type = rtensor.DataType();
     auto& shape = rtensor.Shape();
-    auto& cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+    auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
     void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
     LOTUS_ENFORCE(buffer);
     std::unique_ptr<Tensor> cpu_tensor = std::make_unique<Tensor>(element_type,
@@ -235,7 +235,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
                                                                   buffer,
                                                                   cpu_allocator->Info(),
                                                                   cpu_allocator);
-    Status st = TestCudaExecutionProvider()->CopyTensor(rtensor, *cpu_tensor.get());
+    st = TestCudaExecutionProvider()->CopyTensor(rtensor, *cpu_tensor.get());
     ASSERT_TRUE(st.IsOK());
     MLValue ml_value;
     ml_value.Init(cpu_tensor.release(),

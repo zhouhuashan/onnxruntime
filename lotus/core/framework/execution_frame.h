@@ -68,7 +68,8 @@ class ExecutionFrame {
   Status AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
                                             const MLDataType element_type,
                                             const AllocatorInfo& location,
-                                            const TensorShape& shape);
+                                            const TensorShape& shape,
+                                            bool create_fence = false);
 
   Status AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
                                                 int mlvalue_index_reuse,
@@ -85,7 +86,8 @@ class ExecutionFrame {
   Status AllocateTensorWithSelfOwnBuffer(const int index,
                                          const MLDataType element_type,
                                          const AllocatorInfo& location,
-                                         const TensorShape& shape);
+                                         const TensorShape& shape,
+                                         bool create_fence = false);
 
   // Create tensor at index mlvalue, with pre-allocate buffer
   // This tensor does not own the buffer.
@@ -114,6 +116,11 @@ class ExecutionFrame {
   const T* GetValue(int index) const {
     LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
     return node_values_[index] >= 0 ? &all_values_[node_values_[index]].Get<T>() : nullptr;
+  }
+
+  Fence_t GetFence(int index) const {
+    LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+    return node_values_[index] >= 0 ? all_values_[node_values_[index]].Fence() : nullptr;
   }
 
   // Return nullptr if index map to an value that is an unused optional input/output
@@ -158,7 +165,8 @@ class ExecutionFrame {
   Status AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_index,
                                                   const MLDataType element_type,
                                                   const AllocatorInfo& location,
-                                                  const TensorShape& shape);
+                                                  const TensorShape& shape,
+                                                  bool create_fence);
 
   void Init(const LotusIR::Graph* graph,
             const std::unordered_map<string, MLValue>& feeds,

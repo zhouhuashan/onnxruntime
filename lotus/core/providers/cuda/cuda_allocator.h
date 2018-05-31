@@ -10,6 +10,7 @@ class CUDAAllocator : public IDeviceAllocator {
   virtual void* Alloc(size_t size) override;
   virtual void Free(void* p) override;
   virtual const AllocatorInfo& Info() const override;
+  virtual FencePtr CreateFence(const SessionState* session_state) override;
 
  private:
   void CheckDevice() const;
@@ -23,9 +24,7 @@ class CUDAPinnedAllocator : public IDeviceAllocator {
   virtual void* Alloc(size_t size) override;
   virtual void Free(void* p) override;
   virtual const AllocatorInfo& Info() const override;
-  virtual bool AllowsArena() const override {
-    return false;  // to test non-arena allocator
-  }
+  virtual FencePtr CreateFence(const SessionState* session_state) override;
 };
 
 }  // namespace Lotus

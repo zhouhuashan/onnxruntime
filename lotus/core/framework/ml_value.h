@@ -34,16 +34,29 @@ class MLValue {
     return static_cast<T*>(data_.get());
   }
 
-  bool IsTensor() const{
+  bool IsTensor() const {
     return DataTypeImpl::GetType<Tensor>() == type_;
   }
 
   MLDataType Type() const {
-	  return type_;
+    return type_;
+  }
+
+  Fence_t Fence() const {
+    return fence_.get();
+  }
+
+  void SetFence(FencePtr fence) {
+    fence_ = fence;
+  }
+
+  void ShareFenceWith(MLValue& v) {
+    fence_ = v.fence_;
   }
 
  private:
   std::shared_ptr<void> data_;
   MLDataType type_;
+  FencePtr fence_;
 };
 }  // namespace Lotus

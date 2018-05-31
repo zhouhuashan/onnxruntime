@@ -1,11 +1,11 @@
 #include "cuda_common.h"
-#include "..\..\common\common.h"
+#include "../../common/common.h"
 
 namespace Lotus {
 
 template <typename ERRTYPE>
 const char* CudaErrString(ERRTYPE x) {
-  LOTUS_NOT_IMPLEMENTED;
+  LOTUS_NOT_IMPLEMENTED();
 }
 
 #define CASE_ENUM_TO_STR(x) \
@@ -50,23 +50,24 @@ bool CudaCall(ERRTYPE retCode, const char* exprString, const char* libName, ERRT
 #ifdef _WIN32
       auto del = [](char* p) { free(p); };
       std::unique_ptr<char, decltype(del)> hostname_ptr(nullptr, del);
-      char* hostname = nullptr;
       size_t hostname_len = 0;
+      char* hostname = nullptr;
       if (-1 == _dupenv_s(&hostname, &hostname_len, "COMPUTERNAME"))
         hostname = "?";
       else
         hostname_ptr.reset(hostname);
 #else
+      char hostname[HOST_NAME_MAX];
       if (gethostname(hostname, HOST_NAME_MAX) != 0)
-        strcpy_s(hostname, HOST_NAME_MAX, "?");
+        strcpy(hostname, "?");
 #endif
       int currentCudaDevice;
       cudaGetDevice(&currentCudaDevice);
       static char str[1024];
-      sprintf_s(str, 1024, "%s failure %d: %s ; GPU=%d ; hostname=%s ; expr=%s; %s",
-                libName, (int)retCode, CudaErrString(retCode), currentCudaDevice,
-                hostname ? hostname : "?",
-                exprString, msg);
+      snprintf(str, 1024, "%s failure %d: %s ; GPU=%d ; hostname=%s ; expr=%s; %s",
+               libName, (int)retCode, CudaErrString(retCode), currentCudaDevice,
+               hostname ? hostname : "?",
+               exprString, msg);
       if (THRW) {
         LOTUS_THROW(str);
       } else {

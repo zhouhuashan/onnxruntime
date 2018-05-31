@@ -2,6 +2,7 @@
 #include "cuda_execution_provider.h"
 #include "core/framework/transformer_memcpy.h"
 #include "core/framework/memcpy.h"
+#include "cuda_fence.h"
 
 namespace Lotus {
 
@@ -9,6 +10,7 @@ REGISTER_KERNEL(KernelDefBuilder("MemcpyFromHost")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCudaExecutionProvider)
+                    .ExecQueueId(kCudaStreamCopyIn)
                     .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
                 Memcpy);
 
@@ -17,6 +19,7 @@ REGISTER_KERNEL(KernelDefBuilder("MemcpyToHost")
                     .SinceVersion(1)
                     .Provider(LotusIR::kCudaExecutionProvider)
                     .MemoryType<kMemTypeCPU>(0)
+                    .ExecQueueId(kCudaStreamCopyOut)
                     .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
                 Memcpy);
 
@@ -34,6 +37,11 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
     : transformer_(info.name), device_id_(info.device_id), cublas_handle_(nullptr) {
   CUDA_CALL_THROW(cudaSetDevice(device_id_));
   CUBLAS_CALL_THROW(cublasCreate(&cublas_handle_));
+  // create streams, default is nullptr
+  streams_[kCudaStreamDefault] = nullptr;
+  CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyIn], cudaStreamNonBlocking));
+  CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyOut], cudaStreamNonBlocking));
+
   auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
 
   typedef std::pair<std::string, MemType> AllocCreateInfo;
@@ -44,6 +52,12 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
     if (iter != device_factories.end())
       allocators_.insert(std::make_pair(pair.second, CreateAllocator(iter->second, device_id_)));
   }
+}
+
+CUDAExecutionProvider::~CUDAExecutionProvider() {
+  CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyIn]));
+  CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyOut]));
+  CUBLAS_CALL_THROW(cublasDestroy(cublas_handle_));
 }
 
 Common::Status CUDAExecutionProvider::Sync() {
@@ -61,23 +75,26 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   }
 
   size_t bytes = src.DataType()->Size() * src.Shape().Size();
-  bool succeeded = false;
+
+  const float* src_data = src.Data<float>();
+  float* dst_data = dst.MutableData<float>();
+
+  bool succeeded = true;
   if (dst.Location().name != CUDA) {
-    /*
-    // TODO: add timestamp/event for dst for async copy
+    // copying from CUDA device
     if (dst.Location().name == CUDA_PINNED) {
-      succeeded = CUDA_CALL(cudaMemcpyAsync(dst.MutableData<float>(), src.Data<float>(), bytes, cudaMemcpyDeviceToHost));
-    } else */
-    succeeded = CUDA_CALL(cudaMemcpy(dst.MutableData<float>(), src.Data<float>(), bytes, cudaMemcpyDeviceToHost));
+      succeeded = CUDA_CALL(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyDeviceToHost, streams_[kCudaStreamCopyOut]));
+    } else
+      succeeded = CUDA_CALL(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToHost));
   } else if (src.Location().name != CUDA) {
-    if (src.Location().name == CUDA_PINNED)
-      // NOTE: when doing async copy from CPU to GPU, following CUDA calls on the same stream would wait
-      // until the copy is finished on GPU
-      succeeded = CUDA_CALL(cudaMemcpyAsync(dst.MutableData<float>(), src.Data<float>(), bytes, cudaMemcpyHostToDevice));
-    else
-      succeeded = CUDA_CALL(cudaMemcpy(dst.MutableData<float>(), src.Data<float>(), bytes, cudaMemcpyHostToDevice));
+    // copying to CUDA device, the default stream would sync on this fence when using dst as input tensor in kernel
+    if (src.Location().name == CUDA_PINNED) {
+      succeeded = CUDA_CALL(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyHostToDevice, streams_[kCudaStreamCopyIn]));
+    } else
+      succeeded = CUDA_CALL(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyHostToDevice));
   } else {
-    succeeded = CUDA_CALL(cudaMemcpy(dst.MutableData<float>(), src.Data<float>(), bytes, cudaMemcpyDeviceToDevice));
+    // copying between device, use default stream for now
+    succeeded = CUDA_CALL(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToDevice));
   }
 
   return succeeded ? Status::OK() : Status(LOTUS, FAIL);

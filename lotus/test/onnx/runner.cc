@@ -234,6 +234,9 @@ EXECUTE_RESULT ExecuteModelWithProtobufs(InferenceSession& sess, const std::vect
 
   for (size_t i = 0; i != output_pbs.size(); ++i) {
     const Tensor& outvalue = p_fetches.at(i).Get<Tensor>();
+    if (p_fetches.at(i).Fence())
+      p_fetches.at(i).Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, 0);
+
     const onnx::TensorProto& expected_value = output_pbs.at(i);
     if (!IsTheSameType(outvalue.DataType(), expected_value.data_type())) {
       LOGF_DEFAULT(ERROR, "%s:type mismatch\n", test_case_name);

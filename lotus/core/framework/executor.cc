@@ -60,12 +60,41 @@ class SequentialExecutor : public Executor {
       OpKernelContext op_kernel_context(&root_frame_, p_op_kernel, run_logger_);
       // TODO: log kernel outputs?
 
+      // sync before compute
+      int queue_id = p_op_kernel->KernelDef().ExecQueueId();
+      for (int input_index = 0; input_index < op_kernel_context.InputCount(); ++input_index) {
+        Fence_t fence = op_kernel_context.InputFence(input_index);
+        if (fence) {
+          fence->BeforeUsingAsInput(p_op_kernel->Node().GetExecutionProviderType(), queue_id);
+        }
+      }
+      for (int output_index = 0; output_index < op_kernel_context.OutputCount(); ++output_index) {
+        Fence_t fence = op_kernel_context.OutputFence(output_index);
+        if (fence) {
+          fence->BeforeUsingAsOutput(p_op_kernel->Node().GetExecutionProviderType(), queue_id);
+        }
+      }
+
       // call compute on the kernel
       // TODO Today the kernels don't return any status code.
       // They throw exceptions instead. We should change the compute
       // method to return a status code.
       VLOGS(run_logger_, 1) << "Computing kernel: " << p_op_kernel->Node().Name();
       LOTUS_RETURN_IF_ERROR(p_op_kernel->Compute(&op_kernel_context));
+
+      // sync after compute for outputs
+      for (int input_index = 0; input_index < op_kernel_context.InputCount(); ++input_index) {
+        Fence_t fence = op_kernel_context.InputFence(input_index);
+        if (fence) {
+          fence->AfterUsedAsInput(queue_id);
+        }
+      }
+      for (int output_index = 0; output_index < op_kernel_context.OutputCount(); ++output_index) {
+        Fence_t fence = op_kernel_context.OutputFence(output_index);
+        if (fence) {
+          fence->AfterUsedAsOutput(queue_id);
+        }
+      }
 
       // free ml-values corresponding to this node
       VLOGS(run_logger_, 1) << "Releasing node ML values after computing kernel: " << p_op_kernel->Node().Name();

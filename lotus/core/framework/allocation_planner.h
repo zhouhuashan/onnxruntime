@@ -58,12 +58,16 @@ struct SequentialExecutionPlan {
     // reused_buffer is valid only if alloc_kind == kReuse. It indicates
     // which MLValue's buffer must be reused for this MLValue.
     MLValueIndex reused_buffer;
+    // if the value is used in async kernel, a fence object would be created
+    // note the fence object would be shared between MLValues reusing the same buffer
+    bool create_fence;
 
    public:
     AllocPlanPerValue() : alloc_kind(AllocKind::kAllocate),
                           value_type(nullptr),
                           location(CPU, kArenaAllocator),
-                          reused_buffer(0) {}
+                          reused_buffer(0),
+                          create_fence(false) {}
   };
 
   // The following vector is indexed by MLValueIndex

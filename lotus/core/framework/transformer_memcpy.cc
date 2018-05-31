@@ -5,9 +5,19 @@ namespace Lotus {
 bool TransformerMemcpyImpl::ModifyGraph() {
   bool modified = false;
 
-  // find defs that require copy
+  // find unassigned constant nodes, and only make them provider constant node when outputs are provider node defs
+  std::set<LotusIR::Node*> constant_nodes;
   for (auto& node : graph_->Nodes()) {
     if (graph_->IsSourceNode(node) || graph_->IsSinkNode(node))
+      continue;
+
+    if (node.GetExecutionProviderType().empty() && node.OpType() == "Constant")
+      constant_nodes.insert(&node);
+  }
+
+  // find defs that require copy
+  for (auto& node : graph_->Nodes()) {
+    if (graph_->IsSourceNode(node) || graph_->IsSinkNode(node) || node.OpType() == "Constant")
       continue;
 
     if (node.GetExecutionProviderType().empty() && KernelRegistry::Instance().CanExecutionProviderCreateKernel(node, provider_)) {
@@ -16,6 +26,16 @@ bool TransformerMemcpyImpl::ModifyGraph() {
     }
 
     ProcessDefs(node);
+  }
+
+  // set constants node to provider_ when used by provider nodes
+  // note that no copy is needed for constant node
+  for (auto c : constant_nodes) {
+    auto const_out_def = c->OutputDefs()[0];
+    if (std::find(provider_input_defs_.begin(), provider_input_defs_.end(), const_out_def) != provider_input_defs_.end()) {
+      c->SetExecutionProviderType(provider_);
+      modified = true;
+    }
   }
 
   // HACKHACK: here assume graph input/output to be in CPU

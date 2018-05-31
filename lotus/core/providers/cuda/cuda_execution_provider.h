@@ -8,7 +8,14 @@ namespace Lotus {
 // Information needed to construct CUDA execution providers.
 struct CUDAExecutionProviderInfo {
   std::string name;
-  int device_id;
+  int device_id = 0;
+};
+
+enum CUDAStreamType : int {
+  kCudaStreamDefault = 0,
+  kCudaStreamCopyIn,
+  kCudaStreamCopyOut,
+  kTotalCudaStreams,
 };
 
 class CUDATransformer : public LotusIR::GraphTransformer {
@@ -21,6 +28,7 @@ class CUDATransformer : public LotusIR::GraphTransformer {
 class CUDAExecutionProvider : public IExecutionProvider {
  public:
   explicit CUDAExecutionProvider(const CUDAExecutionProviderInfo& info);
+  virtual ~CUDAExecutionProvider();
 
   const LotusIR::GraphTransformer& GetTransformer() const override {
     return transformer_;
@@ -49,10 +57,16 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return cublas_handle_;
   }
 
+  cudaStream_t GetStream(int queue_id) const {
+    LOTUS_ENFORCE(queue_id >= 0 && queue_id < kTotalCudaStreams);
+    return streams_[queue_id];
+  }
+
  private:
   CUDATransformer transformer_;
   int device_id_;
   cublasHandle_t cublas_handle_;
+  cudaStream_t streams_[kTotalCudaStreams];
 };
 
 }  // namespace Lotus

@@ -266,6 +266,9 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     int idx = 0;
     for (auto& expected_data : output_data_) {
       MLValue& mlvalue = fetches[idx];
+      if (mlvalue.Fence())
+        mlvalue.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, 0);
+
       if (expected_data.data_.IsTensor()) {
         Check(expected_data, mlvalue.Get<Tensor>());
       } else {

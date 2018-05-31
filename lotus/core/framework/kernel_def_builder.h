@@ -46,6 +46,10 @@ class KernelDef {
     return memory_type_args_;
   }
 
+  const int ExecQueueId() const {
+    return exec_queue_id_;
+  }
+
  private:
   friend class KernelDefBuilder;
 
@@ -76,6 +80,9 @@ class KernelDef {
 
   // The memory types of inputs/outputs of this kernel
   MemTypeMap memory_type_args_;
+
+  // execution command queue id, 0 for default queue in execution provider
+  int exec_queue_id_ = 0;
 };
 
 class KernelDefBuilder {
@@ -141,10 +148,10 @@ class KernelDefBuilder {
     return *this;
   }
 
-  // allowing output j to reuse memory of input i
-  KernelDefBuilder& MayInplace(int i, int j) {
+  // allowing output[output_index] to reuse memory of input[input_index]
+  KernelDefBuilder& MayInplace(int input_index, int output_index) {
     // TODO: validate inputs.
-    kernel_def_->inplace_map_.push_back({i, j});
+    kernel_def_->inplace_map_.push_back({input_index, output_index});
     return *this;
   }
 
@@ -156,16 +163,22 @@ class KernelDefBuilder {
     return *this;
   }
 
-  KernelDefBuilder& Alias(int i, int j) {
-    kernel_def_->alias_map_.push_back({i, j});
+  KernelDefBuilder& Alias(int input_index, int output_index) {
+    kernel_def_->alias_map_.push_back({input_index, output_index});
     return *this;
   }
 
   // Specify that this kernel provides an output arg
   // in certain memory type (instead of the default, device memory).
   template <MemType T>
-  KernelDefBuilder& MemoryType(int index) {
-    kernel_def_->memory_type_args_.insert(std::make_pair(index, T));
+  KernelDefBuilder& MemoryType(int output_index) {
+    kernel_def_->memory_type_args_.insert(std::make_pair(output_index, T));
+    return *this;
+  }
+
+  // Specify that this kernel runs on which execution queue in the provider
+  KernelDefBuilder& ExecQueueId(int queue_id) {
+    kernel_def_->exec_queue_id_ = queue_id;
     return *this;
   }
 

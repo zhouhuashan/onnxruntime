@@ -10,6 +10,7 @@ ONNX_OPERATOR_SCHEMA(MemcpyFromHost)
         "T",
         OpSchema::all_tensor_types(),
         "Constrain to any tensor type. If the dtype attribute is not provided this must be a valid output type.")
+    .TypeAndShapeInferenceFunction(propagateShapeAndTypeFromFirstInput)
     .SetDoc(R"DOC(
 Internal copy node
 )DOC");
@@ -21,6 +22,7 @@ ONNX_OPERATOR_SCHEMA(MemcpyToHost)
         "T",
         OpSchema::all_tensor_types(),
         "Constrain to any tensor type. If the dtype attribute is not provided this must be a valid output type.")
+    .TypeAndShapeInferenceFunction(propagateShapeAndTypeFromFirstInput)
     .SetDoc(R"DOC(
 Internal copy node
 )DOC");

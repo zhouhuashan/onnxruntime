@@ -181,6 +181,20 @@ class OpKernelContext {
     return Status::OK();
   }
 
+  Fence_t InputFence(int index) const {
+    if (index >= InputCount())
+      return nullptr;
+
+    return execution_frame_->GetFence(arg_start_index_ + index);
+  }
+
+  Fence_t OutputFence(int index) const {
+    if (index >= OutputCount())
+      return nullptr;
+
+    return execution_frame_->GetFence(arg_start_index_ + InputCount() + index);
+  }
+
  private:
   ExecutionFrame* execution_frame_ = nullptr;
   const OpKernel* kernel_ = nullptr;

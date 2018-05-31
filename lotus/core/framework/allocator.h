@@ -5,11 +5,15 @@
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
 #include "core/common/status.h"
+#include "core/framework/fence.h"
 
 namespace Lotus {
 #define CPU "Cpu"
 #define CUDA "Cuda"
 #define CUDA_PINNED "CudaPinned"
+
+// forward declaration
+class SessionState;
 
 enum AllocatorType {  // TODO use enum class
   kDeviceAllocator = 0,
@@ -69,6 +73,9 @@ class IAllocator {
   virtual void* Alloc(size_t size) = 0;
   virtual void Free(void* p) = 0;
   virtual const AllocatorInfo& Info() const = 0;
+
+  // optional CreateFence interface, as provider like DML has its own fence
+  virtual FencePtr CreateFence(const SessionState*) { return nullptr; }
 };
 
 // The resource allocator on a physical device.

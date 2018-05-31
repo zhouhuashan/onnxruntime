@@ -86,7 +86,7 @@ if(WIN32)
 endif()
 
 if(lotus_USE_CUDA)
-    list(APPEND lotus_test_framework_src_patterns  ${LOTUS_ROOT}/test/framework/*.cu)  
+    list(APPEND lotus_test_framework_src_patterns  ${LOTUS_ROOT}/test/framework/cuda/*)
     list(APPEND lotus_test_framework_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 

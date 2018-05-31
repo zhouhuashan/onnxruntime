@@ -1,11 +1,9 @@
 #include "core/framework/allocatormgr.h"
-#include "test_utils.h"
+#include "../test_utils.h"
 #include "gtest/gtest.h"
+#include "cuda_runtime.h"
 
 namespace Lotus {
-namespace {
-
-}
 namespace Test {
 TEST(AllocatorTest, CUDAAllocatorTest) {
   int cuda_device_id = 0;
@@ -32,7 +30,7 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
   EXPECT_EQ(pinned_allocator->Info().name, CUDA_PINNED);
   EXPECT_EQ(pinned_allocator->Info().id, 0);
   EXPECT_EQ(pinned_allocator->Info().mem_type, kMemTypeCPU);
-  EXPECT_EQ(pinned_allocator->Info().type, AllocatorType::kDeviceAllocator);
+  EXPECT_EQ(pinned_allocator->Info().type, AllocatorType::kArenaAllocator);
 
   //test pinned allocation
   auto pinned_addr = pinned_allocator->Alloc(size);
