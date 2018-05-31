@@ -99,8 +99,8 @@ void Gemm<float, CPUMathUtil>(
     CPUMathUtil* /*provider*/,
     MLDataType /*math_type*/) {
 #if defined(USE_MLAS)
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
+  int lda = (int)((TransA == CblasNoTrans) ? K : M);
+  int ldb = (int)((TransB == CblasNoTrans) ? N : K);
   MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, N);
 #else
   auto C_mat = EigenMatrixMap<float>(C, N, M);

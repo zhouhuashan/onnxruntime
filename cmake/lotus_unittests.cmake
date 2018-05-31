@@ -162,11 +162,16 @@ set(lotus_test_providers_libs
 
 set (lotus_test_providers_dependencies lotus_providers)
 
+if (lotus_USE_MLAS AND WIN32)
+  if (CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+    list(APPEND lotus_test_providers_libs mlas)
+  endif()
+endif()
+
 if(lotus_USE_CUDA)
     list(APPEND lotus_test_providers_dependencies lotus_providers_cuda)
     list(APPEND lotus_test_providers_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
-
     
 if (SingleUnitTestProject)
     set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
@@ -290,6 +295,12 @@ set(onnx_test_libs
     protobuf::libprotobuf
     ${CMAKE_THREAD_LIBS_INIT}
 )
+
+if (lotus_USE_MLAS AND WIN32)
+  if (CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+    list(APPEND onnx_test_libs mlas)
+  endif()
+endif()
 
 if(lotus_USE_CUDA)
   set_source_files_properties("${LOTUS_ROOT}/test/onnx/runner.cc" "${LOTUS_ROOT}/test/framework/inference_session_test.cc"
