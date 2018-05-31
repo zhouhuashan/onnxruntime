@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <sstream>
+#include <unordered_set>
 
 #include "core/common/logging/logging.h"
 #include "core/framework/executor.h"
@@ -267,8 +268,25 @@ class InferenceSession::Impl {
     return Run(run_options, feeds, output_names, p_fetches);
   }
 
-  static Common::Status ValidateOutputs(const std::vector<std::string>& output_names,
-                                        const std::vector<MLValue>* p_fetches) {
+  Common::Status ValidateInputs(const NameMLValMap& feeds) {
+    bool valid = true;
+    std::ostringstream invalid_names;
+    for (const auto& pair : feeds) {
+      if (model_input_names_.find(pair.first) == model_input_names_.end()) {
+        valid = false;
+        invalid_names << " " << pair.first;
+      }
+    }
+
+    if (valid) {
+      return Common::Status::OK();
+    } else {
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid Feed Input Names:" + invalid_names.str());
+    }
+  }
+
+  Common::Status ValidateOutputs(const std::vector<std::string>& output_names,
+                                 const std::vector<MLValue>* p_fetches) {
     if (!p_fetches) {
       return Common::Status(Common::LOTUS, Common::FAIL, "Output vector pointer is NULL");
     }
@@ -279,6 +297,12 @@ class InferenceSession::Impl {
       ostr << "Output vector incorrectly sized: output_names.size(): " << output_names.size()
            << "p_fetches->size(): " << p_fetches->size();
       return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+    }
+
+    for (const auto& name : output_names) {
+      if (model_output_names_.find(name) == model_output_names_.end()) {
+        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid Fetch Output Name: " + name);
+      }
     }
 
     // TODO add more validation here like checking shape of the allocated buffers
@@ -311,6 +335,8 @@ class InferenceSession::Impl {
           return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
         }
       }
+
+      LOTUS_RETURN_IF_ERROR(ValidateInputs(feeds));
 
       // if the output vector is non-empty, ensure that its the same size as the output_names
       LOTUS_RETURN_IF_ERROR(ValidateOutputs(output_names, p_fetches));
@@ -438,6 +464,7 @@ class InferenceSession::Impl {
         continue;
       }
       input_def_list_.push_back(elem);
+      model_input_names_.insert(elem->Name());
     }
 
     // save outputs
@@ -448,6 +475,7 @@ class InferenceSession::Impl {
         return Common::Status(Common::LOTUS, Common::FAIL, "Got null output nodearg ptr");
       }
       output_def_list_.push_back(elem);
+      model_output_names_.insert(elem->Name());
     }
     VLOGS(*session_logger_, 1) << "Done saving model metadata";
     return Common::Status::OK();
@@ -769,6 +797,10 @@ class InferenceSession::Impl {
   ModelMetadata model_metadata_;
   InputDefList input_def_list_;
   OutputDefList output_def_list_;
+
+  // names of model inputs and outputs used for quick validation.
+  std::unordered_set<std::string> model_input_names_;
+  std::unordered_set<std::string> model_output_names_;
 
   // Environment for this session
   // not used now; we'll need it when we introduce threadpool

@@ -223,7 +223,9 @@ Status Model::Save(Model& model, const std::wstring& file_path) {
 
 Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry) {
   int fd;
-  RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
+  if (!FileOpenRd(file_path, &fd).IsOK()) {
+    return Status(LOTUS, NO_MODEL, "Failed to open: " + file_path);
+  }
   auto status = Load(fd, p_model, local_registry);
   RETURN_IF_ERROR(FileClose(fd));
   return status;
