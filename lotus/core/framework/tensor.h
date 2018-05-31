@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "gsl/span"
+
 #include "core/framework/arena.h"
 #include "core/framework/data_types.h"
 #include "core/framework/tensor_shape.h"
@@ -11,6 +13,7 @@ using namespace onnx;
 
 namespace Lotus {
 
+// TODO: Do we need this class or is IAllocator::MakeUniquePtr sufficient/better
 class BufferDeleter {
  public:
   BufferDeleter() : alloc_(nullptr) {}
@@ -88,11 +91,29 @@ class Tensor {
 
   // May return nullptr if tensor size is zero
   template <typename T>
+  gsl::span<T> MutableDataAsSpan() {
+    // Type check
+    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                  DataTypeImpl::GetType<T>(), "!=", dtype_);
+    T* data = reinterpret_cast<T*>(static_cast<char*>(GetRaw()) + byte_offset_);
+    return gsl::make_span(data, shape_.Size());
+  }
+
+  template <typename T>
   const T* Data() const {
     // Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
                   DataTypeImpl::GetType<T>(), "!=", dtype_);
     return reinterpret_cast<const T*>(static_cast<char*>(GetRaw()) + byte_offset_);
+  }
+
+  template <typename T>
+  gsl::span<const T> DataAsSpan() const {
+    // Type check
+    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                  DataTypeImpl::GetType<T>(), "!=", dtype_);
+    const T* data = reinterpret_cast<const T*>(static_cast<char*>(GetRaw()) + byte_offset_);
+    return gsl::make_span(data, shape_.Size());
   }
 
   void* MutableDataRaw(MLDataType type) {

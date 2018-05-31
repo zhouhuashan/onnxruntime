@@ -42,7 +42,7 @@ class PlannerImpl {
   MLValueIndex Index(const MLValueName& name) {
     MLValueIndex result;
     auto status = p_session_state_->GetMLValueIdx(name, &result);
-    LOTUS_ENFORCE(status.IsOK());
+    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     return result;
   }
 

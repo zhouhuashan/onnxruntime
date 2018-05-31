@@ -1,5 +1,6 @@
 #include "core/providers/cpu/rnn/rnn.h"
 #include "core/providers/cpu/rnn/rnn_activation_functors.h"
+#include "core/providers/cpu/rnn/rnn_helpers.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
@@ -21,9 +22,9 @@ T Clip(const T& x, T clip) {
 }
 
 template <typename T>
-void ApplyActivationToBatchs(const Tensor* sequence_lens, const T* h_prev, T* Y_buffer_data_current_frame,
-                             int64_t time_step, int64_t batch_size, int64_t hidden_size,
-                             T alpha, T beta, T clip, std::function<T(T, T, T)> activation_func) {
+void ApplyActivationToBatches(const Tensor* sequence_lens, const T* h_prev, T* Y_buffer_data_current_frame,
+                              int64_t time_step, int64_t batch_size, int64_t hidden_size,
+                              T alpha, T beta, T clip, std::function<T(T, T, T)> activation_func) {
   for (int batch = 0; batch < batch_size; batch++) {
     bool valid = true;
     if (nullptr != sequence_lens) {
@@ -85,6 +86,8 @@ using EigenMatrixMapRowMajor = Eigen::Map<
 
 template <>
 Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
+  using namespace Rnn::detail;
+
   // inputs
   const Tensor& X = *ctx->Input<Tensor>(0);
   const Tensor& W = *ctx->Input<Tensor>(1);
@@ -98,44 +101,22 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
   int64_t num_directions = direction_ == "bidirectional" ? 2 : 1;
   int64_t seq_length = X.Shape()[0];
   int64_t batch_size = X.Shape()[1];
-  int64_t hidden_size = W.Shape()[1];
   int64_t input_size = X.Shape()[2];
 
-  if (X.Shape().NumDimensions() != 3 || X.Shape()[0] != seq_length || X.Shape()[1] == batch_size && X.Shape()[2] != input_size)
-    return Status(LOTUS, StatusCode::INVALID_ARGUMENT, "Input X has invalid dimentions");
-  if (W.Shape().NumDimensions() != 3 || W.Shape()[0] != num_directions || W.Shape()[1] != hidden_size || W.Shape()[2] != input_size)
-    return Status(LOTUS, StatusCode::INVALID_ARGUMENT, "Input W has invalid dimentions");
-  if (R.Shape().NumDimensions() != 3 || R.Shape()[0] != num_directions || R.Shape()[1] != hidden_size || R.Shape()[2] != hidden_size)
-    return Status(LOTUS, StatusCode::INVALID_ARGUMENT, "Input R has invalid dimentions");
-  if (B != nullptr && (B->Shape().NumDimensions() != 2 || B->Shape()[0] != num_directions || B->Shape()[1] != 2 * hidden_size))
-    return Status(LOTUS, StatusCode::INVALID_ARGUMENT, "Input B has invalid dimentions");
-  if (sequence_lens != nullptr &&
-      (1 != sequence_lens->Shape().NumDimensions() ||
-       batch_size != sequence_lens->Shape()[0] ||
-       std::any_of(
-           sequence_lens->Data<int>(),
-           sequence_lens->Data<int>() + sequence_lens->Shape().Size(),
-           [seq_length](int len) { return len <= 0 || len > seq_length; })))
-    return Status(LOTUS, StatusCode::INVALID_ARGUMENT, "Input sequence_lens has invalid dimentions");
-  if (initial_h != nullptr &&
-      (initial_h->Shape().NumDimensions() != 3 ||
-       initial_h->Shape()[0] != num_directions ||
-       initial_h->Shape()[1] != batch_size ||
-       initial_h->Shape()[2] != hidden_size))
-    return Status(LOTUS, StatusCode::INVALID_ARGUMENT, "Input initial_h has invalid dimentions");
+  Rnn::detail::ValidateCommonRnnInputs(X, W, R, B, 1, sequence_lens, initial_h, num_directions, hidden_size_);
 
   // RNN outputs are optional
-  std::vector<int64_t> Y_dims({seq_length, num_directions, batch_size, hidden_size});
+  std::vector<int64_t> Y_dims({seq_length, num_directions, batch_size, hidden_size_});
   Tensor* Y = ctx->Output(0, Y_dims);
 
-  std::vector<int64_t> Y_h_dims({num_directions, batch_size, hidden_size});
+  std::vector<int64_t> Y_h_dims({num_directions, batch_size, hidden_size_});
   Tensor* Y_h = ctx->Output(1, Y_h_dims);
 
   AllocatorPtr alloc;
   LOTUS_RETURN_IF_ERROR(ctx->GetTempSpaceAllocator(&alloc));
 
   // X * W^t, each direction has shape of [seq_length, batch_size, hidden_size]
-  auto x_matmul_data = alloc->Alloc(sizeof(float) * seq_length * batch_size * hidden_size);
+  auto x_matmul_data = alloc->Alloc(sizeof(float) * seq_length * batch_size * hidden_size_);
   BufferUniquePtr x_matmul_buffer(x_matmul_data, BufferDeleter(alloc));
   float* x_matmul_w_buffer_data = static_cast<float*>(x_matmul_buffer.get());
 
@@ -145,23 +126,23 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
   if (Y != nullptr)
     Y_buffer_data = Y->MutableData<float>();
   else {
-    Y_data = alloc->Alloc(sizeof(float) * seq_length * num_directions * batch_size * hidden_size);
+    Y_data = alloc->Alloc(sizeof(float) * seq_length * num_directions * batch_size * hidden_size_);
     Y_matmul_buffer = BufferUniquePtr(Y_data, BufferDeleter(alloc));
     Y_buffer_data = static_cast<float*>(Y_matmul_buffer.get());
   }
 
-  int64_t Y_frame_size = batch_size * hidden_size;
+  int64_t Y_frame_size = batch_size * hidden_size_;
 
   for (int direction = 0; direction < num_directions; direction++) {
-    auto activation_func = detail::GetFuncByName<float>(activations_[direction], "Tanh");
+    auto activation_func = GetFuncByName<float>(activations_[direction], "Tanh");
     bool isReverse = direction_ == "reverse" || direction == 1;
 
     if (B != nullptr) {
-      EigenMatrixMapRowMajor<float>(x_matmul_w_buffer_data, seq_length * batch_size, hidden_size).rowwise() =
-          ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size, hidden_size).transpose() +
-          ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size + hidden_size, hidden_size).transpose();
+      EigenMatrixMapRowMajor<float>(x_matmul_w_buffer_data, seq_length * batch_size, hidden_size_).rowwise() =
+          ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size_, hidden_size_).transpose() +
+          ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size_ + hidden_size_, hidden_size_).transpose();
     } else {
-      Math::Set<float, CPUMathUtil>(seq_length * batch_size * hidden_size, 0, x_matmul_w_buffer_data, &CPUMathUtil::Instance());
+      Math::Set<float, CPUMathUtil>(seq_length * batch_size * hidden_size_, 0, x_matmul_w_buffer_data, &CPUMathUtil::Instance());
     }
 
     // X * W[direction]^t + B
@@ -169,11 +150,11 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
         CblasNoTrans,
         CblasTrans,
         static_cast<int>(seq_length * batch_size),
-        static_cast<int>(hidden_size),
+        static_cast<int>(hidden_size_),
         static_cast<int>(input_size),
         1,
         X.template Data<float>(),
-        W.template Data<float>() + direction * hidden_size * input_size,
+        W.template Data<float>() + direction * hidden_size_ * input_size,
         1,
         x_matmul_w_buffer_data,
         &CPUMathUtil::Instance());
@@ -182,7 +163,7 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
       int64_t time_step = isReverse ? (seq_length - t - 1) : t;
       int64_t Y_frame_offset = (time_step * num_directions + direction) * Y_frame_size;
       float* Y_buffer_data_current_frame = Y_buffer_data + Y_frame_offset;
-      auto y_frame_mat = EigenMatrixMapRowMajor<float>(Y_buffer_data_current_frame, batch_size, hidden_size);
+      auto y_frame_mat = EigenMatrixMapRowMajor<float>(Y_buffer_data_current_frame, batch_size, hidden_size_);
 
       const float* h_prev = nullptr;
       if (t == 0) {
@@ -201,36 +182,36 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
             CblasNoTrans,
             CblasTrans,
             static_cast<int>(batch_size),
-            static_cast<int>(hidden_size),
-            static_cast<int>(hidden_size),
+            static_cast<int>(hidden_size_),
+            static_cast<int>(hidden_size_),
             1,
             h_prev,
-            R.Data<float>() + direction * hidden_size * hidden_size,
+            R.Data<float>() + direction * hidden_size_ * hidden_size_,
             0,
             Y_buffer_data_current_frame,
             &CPUMathUtil::Instance());
       } else {
-        Math::Set<float, CPUMathUtil>(batch_size * hidden_size, 0, Y_buffer_data_current_frame, &CPUMathUtil::Instance());
+        Math::Set<float, CPUMathUtil>(batch_size * hidden_size_, 0, Y_buffer_data_current_frame, &CPUMathUtil::Instance());
       }
 
       // X[time_step] * W^t + H_t_1 * R^t
-      y_frame_mat += EigenMatrixMapRowMajor<float>(&x_matmul_w_buffer_data[time_step * Y_frame_size], batch_size, hidden_size);
+      y_frame_mat += EigenMatrixMapRowMajor<float>(&x_matmul_w_buffer_data[time_step * Y_frame_size], batch_size, hidden_size_);
 
       // apply activation
-      ApplyActivationToBatchs<float>(sequence_lens, h_prev, Y_buffer_data_current_frame,
-                                     time_step, batch_size, hidden_size,
-                                     activation_alpha_[direction], activation_beta_[direction], clip_, activation_func);
+      ApplyActivationToBatches<float>(sequence_lens, h_prev, Y_buffer_data_current_frame,
+                                      time_step, batch_size, hidden_size_,
+                                      activation_alpha_[direction], activation_beta_[direction], clip_, activation_func);
     }  // close sequence loop
 
     if (Y_h)
       Assign_Y_h<float>(Y_buffer_data, Y_h, sequence_lens,
-                        num_directions, direction, isReverse, batch_size, seq_length, hidden_size);
+                      num_directions, direction, isReverse, batch_size, seq_length, hidden_size_);
   }
 
   // Now the full sequence is completed. Set missing frames to zero.
   if (nullptr != sequence_lens) {
     ClearMissingFrames(Y_buffer_data, sequence_lens,
-                       num_directions, batch_size, seq_length, hidden_size);
+                       num_directions, batch_size, seq_length, hidden_size_);
   }
 
   return Status::OK();

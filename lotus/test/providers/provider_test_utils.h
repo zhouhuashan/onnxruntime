@@ -150,6 +150,12 @@ struct OpTester {
   }
 
   template <typename T>
+  void AddMissingOptionalInput() {
+    std::string name;  // empty == input doesn't exist
+    input_data_.push_back({{name, &s_type_proto<T>}, {}});
+  }
+
+  template <typename T>
   void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::initializer_list<T>& expected_values) {
     AddData(output_data_, name, dims, expected_values.begin(), expected_values.size());
   }
@@ -157,6 +163,12 @@ struct OpTester {
   template <typename T>
   void AddOutput(const char* name, const std::vector<int64_t>& dims, const std::vector<T>& expected_values) {
     AddData(output_data_, name, dims, expected_values.data(), expected_values.size());
+  }
+
+  template <typename T>
+  void AddMissingOptionalOutput() {
+    std::string name;  // empty == input doesn't exist
+    output_data_.push_back({{name, &s_type_proto<T>}, {}});
   }
 
   // Add non tensor output
@@ -202,24 +214,31 @@ struct OpTester {
   template <typename T>
   void AddData(std::vector<Data>& data, const char* name,
                const std::vector<int64_t>& dims, const T* values,
-               int64_t valuesCount) {
-    LOTUS_ENFORCE(TensorShape(dims).Size() == valuesCount, "Number of input values doesn't match tensor size");
-    auto allocator = Lotus::Test::AllocatorManager::Instance().GetAllocator(CPU);
-    auto size_in_bytes = valuesCount * sizeof(T);
-    void* buffer = allocator->Alloc(size_in_bytes);
-    auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
-                                        TensorShape(dims),
-                                        buffer,
-                                        allocator->Info(),
-                                        allocator);
-    auto* data_ptr = p_tensor->template MutableData<T>();
-    for (int64_t i = 0; i < valuesCount; i++) {
-      data_ptr[i] = values[i];
-    }
+               int64_t values_count) {
+    try {
+      TensorShape shape{dims};
+      LOTUS_ENFORCE(shape.Size() == values_count, values_count, " input values doesn't match tensor size of ", shape.Size());
 
-    MLValue value;
-    value.Init(p_tensor.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-    data.push_back({{name, &s_type_proto<T>}, value});
+      auto allocator = Lotus::Test::AllocatorManager::Instance().GetAllocator(CPU);
+      auto size_in_bytes = values_count * sizeof(T);
+      void* buffer = allocator->Alloc(size_in_bytes);
+      auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
+                                          shape,
+                                          buffer,
+                                          allocator->Info(),
+                                          allocator);
+      auto* data_ptr = p_tensor->template MutableData<T>();
+      for (int64_t i = 0; i < values_count; i++) {
+        data_ptr[i] = values[i];
+      }
+
+      MLValue value;
+      value.Init(p_tensor.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+      data.push_back({{name, &s_type_proto<T>}, value});
+    } catch (const std::exception& ex) {
+      std::cerr << "AddData for '" << name << "' threw: " << ex.what();
+      throw;
+    }
   }
 
   const char* op_;

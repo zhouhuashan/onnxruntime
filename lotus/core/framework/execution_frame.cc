@@ -309,7 +309,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   for (auto it = feeds.begin(); it != feeds.end(); it++) {
     int mlvalue_idx;
     Common::Status status = session_state_.GetMLValueIdx(it->first, &mlvalue_idx);
-    LOTUS_ENFORCE(status.IsOK());
+    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     // we are sharing the underline tensor/object for MLValue
     all_values_[mlvalue_idx] = it->second;
   }
@@ -319,7 +319,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   for (const auto& oname : output_names) {
     int mlvalue_idx;
     Common::Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
-    LOTUS_ENFORCE(status.IsOK());
+    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     output_indices_.push_back(mlvalue_idx);
   }
 
@@ -333,7 +333,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
     for (const auto& oname : output_names) {
       int mlvalue_idx;
       Common::Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
-      LOTUS_ENFORCE(status.IsOK());
+      LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
       all_values_[mlvalue_idx] = fetches.at(idx++);
       output_indices_.push_back(mlvalue_idx);
     }
@@ -364,7 +364,7 @@ void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
   } else {
     int index;
     Common::Status status = session_state_.GetMLValueIdx(name, &index);
-    LOTUS_ENFORCE(status.IsOK());
+    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     node_values_.push_back(index);
   }
 }

@@ -127,13 +127,13 @@ void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& inp
                                        std::unordered_map<std::string, MLValue>& feeds,
                                        std::vector<std::string>& output_names) {
   (input_defs);
-  for (auto& elem : output_defs) {
-    if (!elem->Name().empty())
-      output_names.push_back(elem->Name());
+  for (auto& output : output_defs) {
+    if (output->Exists())
+      output_names.push_back(output->Name());
   }
 
   for (auto& input : input_data_) {
-    if (!input.def_.Name().empty())
+    if (input.def_.Exists())
       feeds[input.def_.Name()] = input.data_;
   }
 }
@@ -268,13 +268,19 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
       MLValue& mlvalue = fetches[idx];
       if (mlvalue.Fence())
         mlvalue.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, 0);
+		
+      if (expected_data.def_.Exists()) {  // optional outputs won't exist
+        if (expected_data.data_.IsTensor()) {
+          Check(expected_data, mlvalue.Get<Tensor>());
+        } else {
+          Check(expected_data, mlvalue);
+        }
+        ++idx;
 
-      if (expected_data.data_.IsTensor()) {
-        Check(expected_data, mlvalue.Get<Tensor>());
-      } else {
-        Check(expected_data, mlvalue);
+        // skip missing trailing optional outputs
+        if (idx == fetches.size())
+          break;
       }
-      ++idx;
     }
   } catch (const std::exception& ex) {
     std::cerr << ex.what();

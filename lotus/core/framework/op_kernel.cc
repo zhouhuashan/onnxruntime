@@ -288,7 +288,7 @@ Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
   parameters.tensor_shape = shape;
   Tensor* ret;
   Status status = execution_frame_->GetOrCreateMLValue<Tensor>(output_arg_index, parameters, ret);
-  LOTUS_ENFORCE(status.IsOK());
+  LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
   return ret;
 }
 

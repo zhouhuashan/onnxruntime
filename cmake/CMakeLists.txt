@@ -110,7 +110,7 @@ if (lotus_USE_CUDA AND "${lotus_CUDNN_HOME}" STREQUAL "")
 endif()
 
 if (lotus_USE_EIGEN_FOR_BLAS)
-add_definitions(-DLOTUS_USE_EIGEN_FOR_BLAS)
+  add_definitions(-DLOTUS_USE_EIGEN_FOR_BLAS)
 endif()
 
 if (lotus_USE_MLAS AND WIN32)
@@ -144,11 +144,16 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
 
 include(date)
+
 include(gsl)
+# bounds checking behavior. 
+# throw instead of calling terminate if there's a bounds checking violation. 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGSL_THROW_ON_CONTRACT_VIOLATION")
+# no bounds checking in release build so no perf cost
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DGSL_UNENFORCED_ON_CONTRACT_VIOLATION")
+    
 include(eigen)
-set(lotus_EXTERNAL_DEPENDENCIES
-    eigen
-)
+set(lotus_EXTERNAL_DEPENDENCIES eigen)
 
 # zlib
 include(zlib)

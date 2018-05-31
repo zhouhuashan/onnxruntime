@@ -1,5 +1,5 @@
-#ifndef RNN_ACTIVATION_FUNCTORS_H_
-#define RNN_ACTIVATION_FUNCTORS_H_
+#pragma once
+
 #include <cmath>
 
 #pragma warning(push)
@@ -7,6 +7,7 @@
 #pragma warning(disable : 4100)
 
 namespace Lotus {
+namespace Rnn {
 namespace detail {
 
 template <typename T>
@@ -92,6 +93,5 @@ std::function<T(T, T, T)> GetFuncByName(const std::string& name, const std::stri
 }
 
 }  // namespace detail
+}  // namespace Rnn
 }  // namespace Lotus
-
-#endif  // RNN_ACTIVATION_FUNCTORS_H_
