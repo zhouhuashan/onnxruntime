@@ -279,6 +279,8 @@ bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node,
 }
 
 Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
+  if (index >= kernel_->Node().OutputDefs().size())
+    return nullptr;
   // In this case, it's assumed that the tensor hasn't been allocated yet,
   // so that it's calling ExecutionFrame to create a tensor in the given position with given shape.
   auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
