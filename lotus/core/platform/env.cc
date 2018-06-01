@@ -17,8 +17,8 @@ limitations under the License.
 
 namespace Lotus {
 
-Env::Env() {}
+Env::Env() = default;
 
-Thread::~Thread() {}
+Thread::~Thread() = default;
 
 }  // namespace Lotus

@@ -49,7 +49,7 @@ A sink can do further filter as needed.
 namespace Lotus {
 namespace Logging {
 
-typedef std::chrono::time_point<std::chrono::system_clock> Timestamp;
+using Timestamp = std::chrono::time_point<std::chrono::system_clock>;
 
 #ifdef _DEBUG
 static bool vlog_enabled = true;  // Set directly based on your needs.
@@ -100,7 +100,7 @@ class LoggingManager final {
                                 Requires a severity of kVERBOSE for VLOG messages to be logged.
   */
   LoggingManager(std::unique_ptr<ISink> sink, Severity default_min_severity, bool default_filter_user_data,
-                 const InstanceType instance_type,
+                 InstanceType instance_type,
                  const std::string *default_logger_id = nullptr,
                  int default_max_vlog_level = -1);
 
@@ -211,7 +211,7 @@ class Logger {
   /**
   Return the maximum VLOG level allowed.
   */
-  const int VLOGMaxLevel() const noexcept {
+  int VLOGMaxLevel() const noexcept {
     return max_vlog_level_;
   }
 

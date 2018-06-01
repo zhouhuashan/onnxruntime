@@ -20,7 +20,7 @@ class GraphNodes {
   class NodeIterator;
 
   // construct a wrapper of the nodes that provides iteration services
-  GraphNodes(TNodesContainer& nodes) noexcept : nodes_(nodes) {}
+  explicit GraphNodes(TNodesContainer& nodes) noexcept : nodes_(nodes) {}
 
   using ConstNodeIterator = NodeIterator<TNodesContainer::const_iterator>;
   using MutableNodeIterator = NodeIterator<TNodesContainer::iterator>;

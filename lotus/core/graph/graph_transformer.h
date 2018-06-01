@@ -76,7 +76,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
 // transformers. Each inference session can further register additional ones.
 class GraphTransformerManager {
  public:
-  GraphTransformerManager(unsigned steps) noexcept : steps_(steps) {
+  explicit GraphTransformerManager(unsigned steps) noexcept : steps_(steps) {
     // TODO: Register default transformers.
   }
 

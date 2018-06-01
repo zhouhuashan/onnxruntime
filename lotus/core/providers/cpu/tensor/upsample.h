@@ -24,8 +24,8 @@ class Upsample : public OpKernel {
   Status Compute(OpKernelContext* context) const;
 
  protected:
-  const string UpsampleModeNN = "nearest";
-  const string UpsampleModeLinear = "linear";
+  static const string UpsampleModeNN;
+  static const string UpsampleModeLinear;
 
   enum class UpsampleMode {
     NN = 0,      // nearest neighbour

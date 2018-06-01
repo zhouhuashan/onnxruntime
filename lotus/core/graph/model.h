@@ -15,18 +15,18 @@ class Model {
   const Version kNoVersion = INT64_MAX;
 
   // Construct model from scratch.
-  Model(const std::string& graph_name,
+  explicit Model(const std::string& graph_name,
         bool is_onnx_domain_only = false,
         const ModelMetaData& model_metadata = ModelMetaData(),
         const LotusOpSchemaRegistry* local_registry = nullptr);
 
   // NOTE: after calling this contructor, <*this> model will
   // hold a copy of <model_proto>.
-  Model(const ModelProto& model_proto, const LotusOpSchemaRegistry* local_registry = nullptr);
+  explicit Model(const ModelProto& model_proto, const LotusOpSchemaRegistry* local_registry = nullptr);
 
   // NOTE: after calling this constructor, <*this> model will
   // own the <model_proto>.
-  Model(std::unique_ptr<ModelProto> model_proto, const LotusOpSchemaRegistry* local_registry = nullptr);
+  explicit Model(std::unique_ptr<ModelProto> model_proto, const LotusOpSchemaRegistry* local_registry = nullptr);
 
   // Get model's IR version.
   // Return <kNoVersion> if not specified.

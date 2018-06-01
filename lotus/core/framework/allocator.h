@@ -75,13 +75,13 @@ using IAllocatorUniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
 
 class IAllocator {
  public:
-  virtual ~IAllocator() {}
+  virtual ~IAllocator() = default;
   virtual void* Alloc(size_t size) = 0;
   virtual void Free(void* p) = 0;
   virtual const AllocatorInfo& Info() const = 0;
 
   // optional CreateFence interface, as provider like DML has its own fence
-  virtual FencePtr CreateFence(const SessionState*) { return nullptr; }
+  virtual FencePtr CreateFence(const SessionState* /*unused*/) { return nullptr; }
   
   /// Create a std::unique_ptr that is allocated and freed by the provided IAllocator.
   /// @param allocator The allocator.
@@ -111,18 +111,18 @@ class IAllocator {
 // This allocator will directly allocate resource from system call
 class IDeviceAllocator : public IAllocator {
  public:
-  virtual ~IDeviceAllocator() {}
-  virtual void* Alloc(size_t size) = 0;
-  virtual void Free(void* p) = 0;
-  virtual const AllocatorInfo& Info() const = 0;
+  ~IDeviceAllocator() override = default;
+  void* Alloc(size_t size) override = 0;
+  void Free(void* p) override = 0;
+  const AllocatorInfo& Info() const override = 0;
   virtual bool AllowsArena() const { return true; }
 };
 
 class CPUAllocator : public IDeviceAllocator {
  public:
-  virtual void* Alloc(size_t size) override;
-  virtual void Free(void* p) override;
-  virtual const AllocatorInfo& Info() const override;
+  void* Alloc(size_t size) override;
+  void Free(void* p) override;
+  const AllocatorInfo& Info() const override;
 };
 
 using AllocatorPtr = std::shared_ptr<IAllocator>;

@@ -294,9 +294,8 @@ Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
 
 // Fetching output tensor without shape is not allowed.
 template <>
-Tensor* OpKernelContext::Output<Tensor>(int index) {
+Tensor* OpKernelContext::Output<Tensor>(int /*unused*/) {
   LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
-  (index);
   return nullptr;
 }
 

@@ -4,10 +4,10 @@
 
 namespace Lotus {
 struct MemoryBlock {
-  size_t offset_;
-  size_t size_;
+  size_t offset_{0};
+  size_t size_{0};
 
-  MemoryBlock() : offset_(0), size_(0) {}
+  MemoryBlock()  {}
   MemoryBlock(size_t offset, size_t size) : offset_(offset), size_(size) {}
 };
 
@@ -15,7 +15,7 @@ class MemoryPattern {
   friend class MemPatternPlanner;
 
  public:
-  MemoryPattern() : peak_size_(0) {}
+  MemoryPattern()  {}
 
   size_t peak_size() const {
     return peak_size_;
@@ -36,7 +36,7 @@ class MemoryPattern {
 
  private:
   std::unordered_map<int, MemoryBlock> patterns_;
-  size_t peak_size_;
+  size_t peak_size_{0};
 };
 
 struct MemoryPatternGroup {

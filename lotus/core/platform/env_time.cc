@@ -16,6 +16,6 @@ limitations under the License.
 
 namespace Lotus {
 
-EnvTime::EnvTime() {}
+EnvTime::EnvTime() = default;
 
 }  // namespace Lotus

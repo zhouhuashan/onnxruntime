@@ -1,6 +1,11 @@
 #include "core/providers/cpu/tensor/upsample.h"
 
 namespace Lotus {
+template <typename T>
+const string Upsample<T>::UpsampleModeNN = "nearest";
+template <typename T>
+const string Upsample<T>::UpsampleModeLinear = "linear";
+
 REGISTER_KERNEL(KernelDefBuilder("Upsample")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(7)

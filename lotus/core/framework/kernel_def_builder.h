@@ -46,7 +46,7 @@ class KernelDef {
     return memory_type_args_;
   }
 
-  const int ExecQueueId() const {
+  int ExecQueueId() const {
     return exec_queue_id_;
   }
 
@@ -151,7 +151,7 @@ class KernelDefBuilder {
   // allowing output[output_index] to reuse memory of input[input_index]
   KernelDefBuilder& MayInplace(int input_index, int output_index) {
     // TODO: validate inputs.
-    kernel_def_->inplace_map_.push_back({input_index, output_index});
+    kernel_def_->inplace_map_.emplace_back(input_index, output_index);
     return *this;
   }
 
@@ -164,7 +164,7 @@ class KernelDefBuilder {
   }
 
   KernelDefBuilder& Alias(int input_index, int output_index) {
-    kernel_def_->alias_map_.push_back({input_index, output_index});
+    kernel_def_->alias_map_.emplace_back(input_index, output_index);
     return *this;
   }
 

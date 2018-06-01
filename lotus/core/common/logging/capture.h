@@ -72,7 +72,7 @@ class Capture {
     return severity_;
   }
 
-  const char SeverityPrefix() const noexcept {
+  char SeverityPrefix() const noexcept {
     // Carefully setup so severity_ is a valid index
     GSL_SUPPRESS(bounds .2) {
       return Logging::SEVERITY_PREFIX[static_cast<int>(severity_)];
@@ -83,7 +83,7 @@ class Capture {
     return category_;
   }
 
-  const Logging::DataType DataType() const noexcept {
+  Logging::DataType DataType() const noexcept {
     return data_type_;
   }
 

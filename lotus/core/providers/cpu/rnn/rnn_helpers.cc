@@ -566,7 +566,6 @@ void gru_reset_gate_composed(const float *ps1, float *ps2, float *pd, const int 
                              std::function<float(float, float, float)> func,
                              const float alpha, const float beta) {
   for (int i = 0; i < c; i++) {
-    const auto max = ps2[i] > 0 ? ps2[i] : 0.0f;
     pd[i] = ps1[i] * func(ps2[i], alpha, beta);
   }
 }

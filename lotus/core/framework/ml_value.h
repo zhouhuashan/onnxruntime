@@ -10,7 +10,7 @@
 namespace Lotus {
 class MLValue {
  public:
-  MLValue() : data_(nullptr), type_(nullptr) {}
+  MLValue() : data_(nullptr) {}
   virtual ~MLValue() = default;
 
   void Init(void* pData, MLDataType type, DeleteFunc deleter) {
@@ -56,7 +56,7 @@ class MLValue {
 
  private:
   std::shared_ptr<void> data_;
-  MLDataType type_;
+  MLDataType type_{nullptr};
   FencePtr fence_;
 };
 }  // namespace Lotus

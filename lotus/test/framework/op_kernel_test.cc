@@ -67,14 +67,16 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   std::unique_ptr<OpKernel> kernel;
   auto status = KernelRegistry::Instance().CreateKernel(*node, &exec_provider, &kernel);
   ASSERT_TRUE(status.IsOK());
-  ASSERT_EQ(typeid(FunctionKernel).name(), typeid(*kernel).name());
+  const auto& k = *kernel;
+  ASSERT_EQ(typeid(FunctionKernel).name(), typeid(k).name());
 
   node->SetExecutionProviderType("XPUExecutionProvider");
   AllocatorInfo alloc_info_2("XPU", AllocatorType::kArenaAllocator);
   XPUExecutionProvider exec_provider_2;
   std::unique_ptr<OpKernel> kernel_2;
   auto status_2 = KernelRegistry::Instance().CreateKernel(*node, &exec_provider_2, &kernel_2);
-  ASSERT_EQ(typeid(FunctionKernel).name(), typeid(*kernel_2).name());
+  const auto& k2 = *kernel_2;
+  ASSERT_EQ(typeid(FunctionKernel).name(), typeid(k2).name());
   ASSERT_TRUE(status_2.IsOK());
   OpKernelContext* op_kernel_context = nullptr;
   auto status_3 = kernel_2->Compute(op_kernel_context);

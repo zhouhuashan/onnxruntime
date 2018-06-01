@@ -17,7 +17,9 @@ limitations under the License.
 
 // NonBlockingThreadPool.h(281): warning C4389: '==': signed/unsigned mismatch
 // NonBlockingThreadPool.h(252): warning C4267: '-=': conversion from 'size_t' to 'unsigned int', possible loss of data
+#ifdef _WIN32
 #pragma warning(disable : 4389 4267)
+#endif
 #include "core/common/logging/logging.h"
 #include "core/platform/context.h"
 #include "unsupported/Eigen/CXX11/ThreadPool"

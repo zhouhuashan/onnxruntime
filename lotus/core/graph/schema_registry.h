@@ -17,7 +17,7 @@ using Domain_To_Version_Map = std::unordered_map<std::string, std::pair<int, int
 // If later onnx design changed, we don't need it any more.
 class LotusOpSchemaRegistry final {
  public:
-  LotusOpSchemaRegistry() {}
+  LotusOpSchemaRegistry() = default;
   // Add customized domain to min/max version.
   // Onnx partners are able to use onnx operator schema api to
   // register customized op in their own domain.

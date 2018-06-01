@@ -17,7 +17,7 @@ Fence usage:
 */
 class IFence {
  public:
-  virtual ~IFence() {}
+  virtual ~IFence() = default;
 
   // Called by executor before MLValue is used as input in a compute kernel in provider_type and exec queue_id
   // This should wait in the specified provider's exec queue for previous write to MLValue to finish
@@ -35,7 +35,7 @@ class IFence {
   // This should update the write fence of the MLValue
   virtual void AfterUsedAsOutput(int queue_id) = 0;
 };
-typedef IFence* Fence_t;
-typedef std::shared_ptr<IFence> FencePtr;
+using Fence_t = IFence *;
+using FencePtr = std::shared_ptr<IFence>;
 
 }  // namespace Lotus

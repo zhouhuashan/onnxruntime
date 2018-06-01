@@ -265,7 +265,7 @@ class PlannerImpl {
       }
       // if sync is needed, mark allocation plan as create_fence=true
       if (p_kernel->KernelDef().ExecQueueId() != 0) {
-        pnode->ForEachDef([this, pnode](const LotusIR::NodeArg* arg, bool /*is_input*/) {
+        pnode->ForEachDef([this](const LotusIR::NodeArg* arg, bool /*is_input*/) {
           MLValueIndex index = Index(arg->Name());
           AllocPlan(index).create_fence = true;
         });

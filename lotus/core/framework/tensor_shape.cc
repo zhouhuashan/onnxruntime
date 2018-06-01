@@ -52,7 +52,7 @@ int64_t TensorShape::SizeFromDimension(size_t dimension) const {
 }
 
 TensorShape TensorShape::Slice(size_t dimstart, size_t dimend) const {
-  LOTUS_ENFORCE(dimstart >= 0 && dimstart <= dimend && dimend <= size(),
+  LOTUS_ENFORCE(dimstart <= dimend && dimend <= size(),
                 "Invalid tensor shape slice argument.");
   return TensorShape(*this, dimstart, dimend);
 }

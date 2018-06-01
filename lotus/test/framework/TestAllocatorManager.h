@@ -22,7 +22,6 @@ class AllocatorManager {
   Status InitializeAllocators();
 
   std::unordered_map<std::string, AllocatorPtr> map_;
-  bool owns_instance_;
 };
 }  // namespace Test
 }  // namespace Lotus

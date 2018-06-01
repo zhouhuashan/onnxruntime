@@ -7,7 +7,7 @@ class SessionSessionState;
 
 class MLValuePatternPlanner {
  public:
-  MLValuePatternPlanner(const SessionState& session_state);
+  explicit MLValuePatternPlanner(const SessionState& session_state);
 
   Status TraceAllocation(int ml_value_idx, size_t size) {
     auto location = execution_planner_->allocation_plan[ml_value_idx].location;

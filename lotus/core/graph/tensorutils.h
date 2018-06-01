@@ -58,7 +58,7 @@ class TensorUtils {
   GSL_SUPPRESS(type .4)  // allow use of C-style cast for this special case
   static inline bool IsLittleEndianOrder() noexcept {
     static int n = 1;
-    return (*(char*)&n == 1);
+    return (*reinterpret_cast<char*>(&n) == 1);
   }
 
   template <typename T>

@@ -55,25 +55,24 @@ inline void VerifyShape<VectorMapInt64ToFloat>(const VectorMapInt64ToFloat* valu
 
 class ExecutionFrame {
  public:
-  typedef MLValue* NodeArgValue;
+  using NodeArgValue = MLValue *;
 
   ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                  const std::vector<std::string>& output_names,
                  const std::vector<MLValue>& fetches,
                  const SessionState& session_state);
 
-  ~ExecutionFrame() {
-  }
+  ~ExecutionFrame() = default;
 
   Status AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
-                                            const MLDataType element_type,
+                                            MLDataType element_type,
                                             const AllocatorInfo& location,
                                             const TensorShape& shape,
                                             bool create_fence = false);
 
   Status AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
                                                 int mlvalue_index_reuse,
-                                                const MLDataType element_type,
+                                                MLDataType element_type,
                                                 const AllocatorInfo& location,
                                                 const TensorShape& shape);
 
@@ -83,8 +82,8 @@ class ExecutionFrame {
   // Create tensor at index mlvalue, and allocate buffer for it.
   // This tensor will own this buffer.
   // This method is not thread safe!
-  Status AllocateTensorWithSelfOwnBuffer(const int index,
-                                         const MLDataType element_type,
+  Status AllocateTensorWithSelfOwnBuffer(int index,
+                                         MLDataType element_type,
                                          const AllocatorInfo& location,
                                          const TensorShape& shape,
                                          bool create_fence = false);
@@ -94,9 +93,9 @@ class ExecutionFrame {
   // The executor / planner need to be careful about the
   // lifetime of the buffer. Tensor itself won't manage it.
   // This method is not thread safe!
-  Status AllocateTensorWithPreAllocateBuffer(const int offset,
+  Status AllocateTensorWithPreAllocateBuffer(int offset,
                                              void* pBuffer,
-                                             const MLDataType element_type,
+                                             MLDataType element_type,
                                              const AllocatorInfo& location,
                                              const TensorShape& shape);
 
@@ -107,7 +106,7 @@ class ExecutionFrame {
 
   // Index to the first argument of the given node.
   int GetFirstArgIndex(LotusIR::NodeIndex index) {
-    LOTUS_ENFORCE(index >= 0 && index < node_offsets_.size());
+    LOTUS_ENFORCE(index < node_offsets_.size());
     return node_offsets_[index];
   }
 
@@ -157,13 +156,13 @@ class ExecutionFrame {
  private:
   friend class OpKernelContext;
   // This method is not thread safe!
-  void Release(const int offset);
+  void Release(int offset);
 
   Common::Status AllocateAsPerAllocationPlan(int mlvalue_index,
                                              const MLValueAllocationParameters& parameters);
 
   Status AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_index,
-                                                  const MLDataType element_type,
+                                                  MLDataType element_type,
                                                   const AllocatorInfo& location,
                                                   const TensorShape& shape,
                                                   bool create_fence);
@@ -177,7 +176,7 @@ class ExecutionFrame {
 
   Status AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlvalue,
                                                    void* pBuffer,
-                                                   const MLDataType element_type,
+                                                   MLDataType element_type,
                                                    const AllocatorInfo& location,
                                                    const TensorShape& shape);
 

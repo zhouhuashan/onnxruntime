@@ -77,11 +77,11 @@ class OpKernelInfo {
 
 class OpKernel {
  public:
-  typedef std::function<void()> DoneCallback;
+  using DoneCallback = std::function<void ()>;
 
   explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {
   }
-  virtual ~OpKernel() {}
+  virtual ~OpKernel() = default;
 
   const LotusIR::Node& Node() const {
     return op_kernel_info_.node();
@@ -116,7 +116,7 @@ class OpKernelContext {
                            const OpKernel* kernel,
                            const Logging::Logger& logger);
 
-  ~OpKernelContext(){};
+  ~OpKernelContext()= default;;
 
   /** 
   Return the number of inputs for a variadic argument. 
@@ -234,7 +234,7 @@ class KernelRegistry {
 
  private:
   friend class InferenceSession;
-  KernelRegistry(bool create_func_kernel_flag) : create_func_kernel_(create_func_kernel_flag) {}
+  explicit KernelRegistry(bool create_func_kernel_flag) : create_func_kernel_(create_func_kernel_flag) {}
 
   struct KernelCreateInfo {
     unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.

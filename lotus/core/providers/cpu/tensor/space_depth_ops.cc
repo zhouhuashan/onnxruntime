@@ -48,7 +48,7 @@ Status SpaceToDepth<float>::Compute(OpKernelContext* context) const {
   std::vector<int64_t> output_dims({batch, output_depth, output_height, output_width});
   Tensor& output = *context->Output(0, output_dims);
 
-  std::array<int64_t, IntermediateTensorRank> permutation{0, 3, 5, 1, 2, 4};
+  std::array<int64_t, IntermediateTensorRank> permutation{{0, 3, 5, 1, 2, 4}};
   EigenTensorMap(output.MutableData<float>(), batch, blocksize_, blocksize_,
                  input_depth, input_height / blocksize_, input_width / blocksize_) =
       EigenTensorMap(const_cast<float*>(input.Data<float>()), batch,
@@ -77,7 +77,7 @@ Status DepthToSpace<float>::Compute(OpKernelContext* context) const {
   std::vector<int64_t> output_dims({batch, output_depth, output_height, output_width});
   Tensor& output = *context->Output(0, output_dims);
 
-  std::array<int64_t, IntermediateTensorRank> permutation{0, 3, 4, 1, 5, 2};
+  std::array<int64_t, IntermediateTensorRank> permutation{{0, 3, 4, 1, 5, 2}};
   EigenTensorMap(output.MutableData<float>(), batch, input_depth / blocksize_ / blocksize_,
                  input_height, blocksize_, input_width, blocksize_) =
       EigenTensorMap(const_cast<float*>(input.Data<float>()), batch,

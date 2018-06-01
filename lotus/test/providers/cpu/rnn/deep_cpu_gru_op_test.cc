@@ -195,7 +195,6 @@ TEST(GRUTest, BidirectionalDefaultActivationsSimpleWeightsNoBiasTwoRows) {
 class DeepCpuGruOpTestContext {
  public:
   DeepCpuGruOpTestContext(std::string direction,
-                          const float clip,
                           const std::vector<std::string>& activations,
                           const bool use_bias = true,
                           const std::vector<float>& alpha = {},
@@ -219,7 +218,6 @@ class DeepCpuGruOpTestContext {
   const bool use_bias_;
   const std::string direction_;
   int num_directions_;
-  const float clip_;
   const std::vector<std::string> activation_func_names_;
   const std::vector<float> alphas_;
   const std::vector<float> betas_;
@@ -229,7 +227,6 @@ class DeepCpuGruOpTestContext {
 };  // namespace Test
 
 DeepCpuGruOpTestContext::DeepCpuGruOpTestContext(const std::string direction,
-                                                 const float clip,
                                                  const std::vector<std::string>& activations,
                                                  const bool use_bias,
                                                  const std::vector<float>& alpha,
@@ -239,7 +236,6 @@ DeepCpuGruOpTestContext::DeepCpuGruOpTestContext(const std::string direction,
     : input_size_(input_size),
       hidden_dim_(large_hidden ? 32 : 2),
       direction_(direction),
-      clip_(clip),
       activation_func_names_(activations),
       use_bias_(use_bias),
       alphas_(alpha),
@@ -383,9 +379,8 @@ void DeepCpuGruOpTestContext::RunTest(const std::vector<float>& X,
 TEST(GRUTest, LotusRT_TestGRUOpForwardBasic) {
   const std::string direction = "forward";
   const std::vector<std::string> activations = {"sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations);
+  DeepCpuGruOpTestContext ctx(direction, activations);
 
   const int batch = 1;
   const int seq_length = 2;
@@ -402,9 +397,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardBasic) {
 TEST(GRUTest, LotusRT_TestGRUOpBackwardBasic) {
   const std::string direction = "reverse";
   const std::vector<std::string> activations = {"sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations);
+  DeepCpuGruOpTestContext ctx(direction, activations);
 
   const int batch_size = 1;
   const int seq_length = 2;
@@ -422,9 +416,8 @@ TEST(GRUTest, LotusRT_TestGRUOpBackwardBasic) {
 TEST(GRUTest, LotusRT_TestGRUOpBidirectionalBasic) {
   const std::string direction = "bidirectional";
   const std::vector<std::string> activations = {"sigmoid", "tanh", "sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations);
+  DeepCpuGruOpTestContext ctx(direction, activations);
 
   const int batch_size = 1;
   const int seq_length = 2;
@@ -446,9 +439,8 @@ TEST(GRUTest, LotusRT_TestGRUOpBidirectionalBasic) {
 TEST(GRUTest, LotusRT_TestGRUOpForwardActivation) {
   const std::string direction = "forward";
   const std::vector<std::string> activations = {"tanh", "sigmoid"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations);
+  DeepCpuGruOpTestContext ctx(direction, activations);
 
   const int batch_size = 1;
   const int seq_length = 2;
@@ -466,9 +458,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardActivation) {
 TEST(GRUTest, LotusRT_TestGRUOpForwardInitialHiddenState) {
   const std::string direction = "forward";
   const std::vector<std::string> activations = {"sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations);
+  DeepCpuGruOpTestContext ctx(direction, activations);
 
   const int batch_size = 1;
   const int seq_length = 2;
@@ -486,9 +477,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardInitialHiddenState) {
 TEST(GRUTest, LotusRT_TestGRUOpForwardBatch) {
   const std::string direction = "forward";
   const std::vector<std::string> activations = {"sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations);
+  DeepCpuGruOpTestContext ctx(direction, activations);
 
   const int batch_size = 2;
   const int seq_length = 2;
@@ -514,9 +504,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardBatch) {
 TEST(GRUTest, LotusRT_TestGRUOpGrowBatchSequenceLength) {
   const std::string direction = "forward";
   const std::vector<std::string> activations = {"sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations);
+  DeepCpuGruOpTestContext ctx(direction, activations);
 
   const int batch_size = 1;
   const int seq_length = 2;
@@ -555,9 +544,8 @@ TEST(GRUTest, LotusRT_TestGRUOpGrowBatchSequenceLength) {
 TEST(GRUTest, LotusRT_TestGRUOpSingleBatchMultipleHiddenThreads) {
   const std::string direction = "forward";
   const std::vector<std::string> activations = {"sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations, true, {}, {}, /*large_hidden*/ true);
+  DeepCpuGruOpTestContext ctx(direction, activations, true, {}, {}, /*large_hidden*/ true);
 
   const int batch_size = 1;
   const int seq_length = 1;
@@ -586,9 +574,8 @@ TEST(GRUTest, LotusRT_TestGRUOpSingleBatchMultipleHiddenThreads) {
 TEST(GRUTest, LotusRT_TestGRUPositiveActivationClipping) {
   const std::string direction = "forward";
   const std::vector<std::string> activations = {"sigmoid", "tanh"};
-  const float clip = 999.0;
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations, true, {}, {}, /*large_hidden*/ true);
+  DeepCpuGruOpTestContext ctx(direction, activations, true, {}, {}, /*large_hidden*/ true);
 
   const int batch_size = 2;
   const int seq_length = 1;
@@ -618,7 +605,6 @@ TEST(GRUTest, LotusRT_TestGRUPositiveActivationAlphaBeta) {
   const std::vector<std::string> activations = {"LeakyRelu", "Tanh", "Sigmoid", "ScaledTanh"};
   const std::vector<float> alpha = {0.5f, 2.0f};
   const std::vector<float> beta = {2.0f};
-  const float clip = 999.0;
 
   const int input_size = 2;  //  4;
   const int batch_size = 1;
@@ -652,7 +638,7 @@ TEST(GRUTest, LotusRT_TestGRUPositiveActivationAlphaBeta) {
 
   std::vector<float> expected_Y_h(expected_Y);
 
-  DeepCpuGruOpTestContext ctx(direction, clip, activations, true, alpha, beta, /*large_hidden*/ true, input_size);
+  DeepCpuGruOpTestContext ctx(direction, activations, true, alpha, beta, /*large_hidden*/ true, input_size);
   ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 

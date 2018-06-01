@@ -18,6 +18,7 @@
 
 #include "gsl/pointers"
 
+//TODO(chasun): do not use unnamed namespaces in header files
 namespace {
 using namespace ::Lotus::Common;
 #ifdef _WIN32

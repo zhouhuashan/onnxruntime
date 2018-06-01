@@ -85,7 +85,7 @@ protected:
 /// Represents a thread used to run a Lotus function.
 class Thread {
  public:
-  Thread() noexcept {}
+  Thread() noexcept = default;
 
   /// Blocks until the thread of control stops running.
   virtual ~Thread();

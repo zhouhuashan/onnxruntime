@@ -36,7 +36,7 @@ enum StatusCode {
 
 class Status {
  public:
-  Status() noexcept {}
+  Status() noexcept = default;
 
   Status(StatusCategory category, int code, const std::string& msg);
 
@@ -45,7 +45,7 @@ class Status {
   Status(const Status& other)
       : state_((other.state_ == nullptr) ? nullptr : std::make_unique<State>(*other.state_)) {}
 
-  void operator=(const Status& other) {
+  Status& operator=(const Status& other) {
     if (state_ != other.state_) {
       if (other.state_ == nullptr) {
         state_.reset();
@@ -53,6 +53,7 @@ class Status {
         state_ = std::make_unique<State>(*other.state_);
       }
     }
+    return *this;
   }
 
   Status(Status&& other) = default;

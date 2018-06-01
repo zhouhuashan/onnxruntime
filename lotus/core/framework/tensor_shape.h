@@ -3,7 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include <string.h>
+#include <cstring>
 
 namespace Lotus {
 
@@ -44,7 +44,7 @@ class TensorShape : private std::vector<int64_t> {
     return !(*this == other);
   }
 
-  const size_t NumDimensions() const {
+  size_t NumDimensions() const {
     return size();
   }
 
@@ -92,7 +92,7 @@ class TensorShape : private std::vector<int64_t> {
   int64_t SizeHelper(size_t start, size_t end) const;
 
   // empty shape or 1D shape (1) is regarded as scalar tensor
-  const bool IsScalar() const {
+  bool IsScalar() const {
     return size() == 0 || (size() == 1 && at(0) == 1);
   }
 

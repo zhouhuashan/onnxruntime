@@ -20,7 +20,11 @@ void TestResolve(LotusIR::Graph* p_graph) {
   auto& value_info_before = p_graph->GetValueInfo();
 
   // Touch the graph to force Resolve() to recompute.
+#ifdef _WIN32
   NodeTestHelper::MutableDefinitions(*p_graph->GetNode(0)).input_arg_count;
+#else
+  NodeTestHelper::MutableDefinitions(*p_graph->GetNode(0));
+#endif
   EXPECT_TRUE(p_graph->Resolve().IsOK());
 
   const std::vector<LotusIR::NodeIndex>* nodes_after;

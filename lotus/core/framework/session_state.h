@@ -19,7 +19,7 @@ class SessionState {
  public:
   SessionState() = default;
 
-  SessionState(int num_nodes) : session_kernels_(num_nodes) {
+  explicit SessionState(int num_nodes) : session_kernels_(num_nodes) {
     // TODO Dummy constructor for now to add a basic test.
   }
 

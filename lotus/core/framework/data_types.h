@@ -29,9 +29,9 @@ using VectorMapInt64ToFloat = std::vector<MapInt64ToFloat>;
 class DataTypeImpl;
 class TensorTypeBase;
 // DataTypeImpl pointer as unique DataTypeImpl identifier.
-typedef const DataTypeImpl* MLDataType;
-typedef std::function<void(void*)> DeleteFunc;
-typedef std::function<void*(void)> CreateFunc;
+using MLDataType = const DataTypeImpl *;
+using DeleteFunc = std::function<void (void *)>;
+using CreateFunc = std::function<void *()>;
 
 template <typename T>
 static void Delete(void* p) {
@@ -40,7 +40,7 @@ static void Delete(void* p) {
 
 class DataTypeImpl {
  public:
-  virtual ~DataTypeImpl() {}
+  virtual ~DataTypeImpl() = default;
 
   // TODO: this API will be used to check type in runtime really
   // matches type defined in a model.
@@ -50,7 +50,7 @@ class DataTypeImpl {
   // 3) After sub-class having the implementation of this function in-place, we should either
   // change the return value from true to false here or make this function as a pure virtual function.
   virtual bool IsCompatible(const TypeProto& type_proto) const = 0;
-  virtual const size_t Size() const = 0;
+  virtual size_t Size() const = 0;
 
   virtual DeleteFunc GetDeleteFunc() const = 0;
 
@@ -77,7 +77,7 @@ class DataTypeImpl {
   static const std::vector<MLDataType>& AllTensorTypes();
 };
 
-std::ostream& operator<<(std::ostream& out, const MLDataType data_type);
+std::ostream& operator<<(std::ostream& out, MLDataType data_type);
 
 class TensorTypeBase : public DataTypeImpl {
  public:
@@ -86,23 +86,23 @@ class TensorTypeBase : public DataTypeImpl {
     return &tensor_base;
   }
 
-  virtual bool IsTensorType() const override {
+  bool IsTensorType() const override {
     return true;
   }
 
-  virtual const TensorTypeBase* AsTensorType() const override {
+  const TensorTypeBase* AsTensorType() const override {
     return this;
   }
 
-  virtual const size_t Size() const;
+  size_t Size() const override;
 
-  virtual DeleteFunc GetDeleteFunc() const;
+  DeleteFunc GetDeleteFunc() const override;
 
   virtual MLDataType GetElementType() const {
     // should never reach here.
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
-  virtual bool IsCompatible(const TypeProto&) const override {
+  bool IsCompatible(const TypeProto& /*type_proto*/) const override {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
@@ -117,10 +117,10 @@ struct TensorType : public TensorTypeBase {
     return &tensor_type;
   }
 
-  virtual MLDataType GetElementType() const {
+  MLDataType GetElementType() const override {
     return DataTypeImpl::GetType<elemT>();
   }
-  virtual bool IsCompatible(const TypeProto& type_proto) const override;
+  bool IsCompatible(const TypeProto& type_proto) const override;
 
  private:
   TensorType() = default;
@@ -128,9 +128,9 @@ struct TensorType : public TensorTypeBase {
 
 class NonTensorTypeBase : public DataTypeImpl {
  public:
-  virtual const size_t Size() const = 0;
+  size_t Size() const override = 0;
 
-  virtual DeleteFunc GetDeleteFunc() const = 0;
+  DeleteFunc GetDeleteFunc() const override = 0;
 
   virtual CreateFunc GetCreateFunc() const = 0;
 
@@ -146,19 +146,19 @@ class NonTensorType : public NonTensorTypeBase {
     return &non_tensor_type;
   }
 
-  CreateFunc GetCreateFunc() const {
+  CreateFunc GetCreateFunc() const override{
     return []() { return new T(); };
   }
 
-  virtual const size_t Size() const override {
+  size_t Size() const override {
     return sizeof(T);
   }
 
-  virtual DeleteFunc GetDeleteFunc() const override {
+  DeleteFunc GetDeleteFunc() const override {
     return &Delete<T>;
   }
 
-  virtual bool IsCompatible(const TypeProto& type_proto) const override;
+  bool IsCompatible(const TypeProto& type_proto) const override;
 
  private:
   NonTensorType() = default;
@@ -167,7 +167,7 @@ class NonTensorType : public NonTensorTypeBase {
 template <typename T>
 class NonOnnxType : public DataTypeImpl {
  public:
-  virtual bool IsCompatible(const TypeProto& type_proto) const {
+  bool IsCompatible(const TypeProto& type_proto) const override{
     UNUSED_PARAMETER(type_proto);
     return false;
   }
@@ -177,11 +177,11 @@ class NonOnnxType : public DataTypeImpl {
     return &non_tensor_type;
   }
 
-  virtual const size_t Size() const override {
+  size_t Size() const override {
     return sizeof(T);
   }
 
-  virtual DeleteFunc GetDeleteFunc() const override {
+  DeleteFunc GetDeleteFunc() const override {
     return &Delete<T>;
   }
 

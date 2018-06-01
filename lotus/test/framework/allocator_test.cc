@@ -45,7 +45,7 @@ class TestAllocator : public IAllocator {
     delete p_sizet;
   }
 
-  virtual const AllocatorInfo& Info() const {
+  virtual const AllocatorInfo& Info() const override {
     static AllocatorInfo info("test", kDeviceAllocator, 0);
     return info;
   }

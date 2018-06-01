@@ -146,13 +146,13 @@ struct OpTester {
     value.Init(ptr.release(),
                DataTypeImpl::GetType<std::map<TKey, TVal>>(),
                DataTypeImpl::GetType<std::map<TKey, TVal>>()->GetDeleteFunc());
-    input_data_.push_back({{name, &s_map_type_proto<TKey, TVal>}, value});
+    input_data_.push_back({{name, &s_map_type_proto<TKey, TVal>}, value, optional<float>(), optional<float>()});
   }
 
   template <typename T>
   void AddMissingOptionalInput() {
     std::string name;  // empty == input doesn't exist
-    input_data_.push_back({{name, &s_type_proto<T>}, {}});
+    input_data_.push_back({{name, &s_type_proto<T>}, {}, optional<float>(), optional<float>()});
   }
 
   template <typename T>
@@ -168,7 +168,7 @@ struct OpTester {
   template <typename T>
   void AddMissingOptionalOutput() {
     std::string name;  // empty == input doesn't exist
-    output_data_.push_back({{name, &s_type_proto<T>}, {}});
+    output_data_.push_back({{name, &s_type_proto<T>}, {}, optional<float>(), optional<float>()});
   }
 
   // Add non tensor output
@@ -179,7 +179,7 @@ struct OpTester {
     ml_value.Init(ptr.release(),
                   DataTypeImpl::GetType<std::vector<std::map<TKey, TVal>>>(),
                   DataTypeImpl::GetType<std::vector<std::map<TKey, TVal>>>()->GetDeleteFunc());
-    output_data_.push_back({{name, &s_vec_map_type_proto<TKey, TVal>}, ml_value});
+    output_data_.push_back({{name, &s_vec_map_type_proto<TKey, TVal>}, ml_value, optional<float>(), optional<float>()});
   }
 
   void SetOutputAbsErr(const char* name, float v);
@@ -189,7 +189,7 @@ struct OpTester {
   void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
     add_attribute_funcs_.emplace_back(
-        [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
+        [ name = std::move(name), value = std::move(value) ](LotusIR::Node & node) { node.AddAttribute(name, value); });
   }
 
   enum class ExpectResult {
@@ -234,7 +234,7 @@ struct OpTester {
 
       MLValue value;
       value.Init(p_tensor.release(), DataTypeImpl::GetType<Tensor>(), DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-      data.push_back({{name, &s_type_proto<T>}, value});
+      data.push_back({{name, &s_type_proto<T>}, value, optional<float>(), optional<float>()});
     } catch (const std::exception& ex) {
       std::cerr << "AddData for '" << name << "' threw: " << ex.what();
       throw;

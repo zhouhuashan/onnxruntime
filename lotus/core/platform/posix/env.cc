@@ -43,7 +43,7 @@ class PosixEnv : public Env {
     return default_env;
   }
 
-  virtual int GetNumCpuCores() const override {
+  int GetNumCpuCores() const override {
     // TODO if you need the number of physical cores you'll need to parse
     // /proc/cpuinfo and grep for "cpu cores".
     return std::thread::hardware_concurrency();

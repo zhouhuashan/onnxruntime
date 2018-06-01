@@ -59,6 +59,8 @@ inline void ComputeSizeAndPad(
           *pad_tail = 0;
           *out_size = (in_size - 1) * stride + kernel + adj;
           break;
+        default:
+          throw NotImplementedException("pad type not supported");
       }
     } else {
       *out_size =
@@ -103,8 +105,8 @@ class ConvTranspose : public ConvBase {
     const int64_t input_image_size = H * W;
     const int64_t output_image_size = Y_dims[2] * Y_dims[3];
 
-	AllocatorPtr alloc;
-	LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
+    AllocatorPtr alloc;
+    LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
 
     auto col_data = alloc->Alloc(sizeof(T) * kernel_dim * H * W);
     BufferUniquePtr col_buffer(col_data, BufferDeleter(alloc));

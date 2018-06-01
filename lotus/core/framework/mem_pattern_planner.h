@@ -9,11 +9,11 @@ namespace Lotus {
 // future request if they have the same input shape.
 class MemPatternPlanner {
  public:
-  MemPatternPlanner() : buffer_size(0) {}
+  MemPatternPlanner()  {}
 
   void TraceAllocation(int ml_value_idx, size_t size) {
     if (size == 0) {
-      allocs_.push_back(MLValueAllocationBlock(ml_value_idx, MemoryBlock(0, 0)));
+      allocs_.emplace_back(ml_value_idx, MemoryBlock(0, 0));
       return;
     }
 
@@ -27,18 +27,20 @@ class MemPatternPlanner {
 
     std::list<int>::iterator best_fit_it = blocks_.end();
     for (auto it = blocks_.begin(); it != blocks_.end(); it++) {
-      auto gap = allocs_[*it].block_.offset_ - current;
-      if (gap >= 0 && gap >= size && (gap - size) < waste_bytes) {
-        best_fit_it = it;
-        waste_bytes = gap - size;
-        best_offset = current;
+      if (allocs_[*it].block_.offset_ >= current) {
+        auto gap = allocs_[*it].block_.offset_ - current;
+        if (gap >= size && (gap - size) < waste_bytes) {
+          best_fit_it = it;
+          waste_bytes = gap - size;
+          best_offset = current;
+        }
       }
       current = allocs_[*it].block_.offset_ + allocs_[*it].block_.size_;
     }
 
-    allocs_.push_back(MLValueAllocationBlock(ml_value_idx, MemoryBlock(best_offset, size)));
+    allocs_.emplace_back(ml_value_idx, MemoryBlock(best_offset, size));
     buffer_size = std::max(buffer_size, best_offset + size);
-    blocks_.insert(best_fit_it, ((int)allocs_.size() - 1));
+    blocks_.insert(best_fit_it, (static_cast<int>(allocs_.size()) - 1));
   }
 
   void TraceFree(int ml_value_index) {
@@ -54,8 +56,8 @@ class MemPatternPlanner {
     if (!out)
       return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT);
     out->peak_size_ = buffer_size;
-    for (int i = 0; i < allocs_.size(); i++) {
-      out->patterns_[allocs_[i].index_] = allocs_[i].block_;
+    for (auto & alloc : allocs_) {
+      out->patterns_[alloc.index_] = alloc.block_;
     }
 
     return Status::OK();
@@ -63,17 +65,17 @@ class MemPatternPlanner {
 
  private:
   struct MLValueAllocationBlock {
-    int index_;
+    int index_{-1};
     MemoryBlock block_;
 
-    MLValueAllocationBlock() : index_(-1), block_() {}
+    MLValueAllocationBlock()  {}
     MLValueAllocationBlock(int index, MemoryBlock block) : index_(index), block_(block) {}
   };
 
   std::vector<MLValueAllocationBlock> allocs_;
   // blocks_ the list of currently allocated memory blocks, sorted in order of their offset
   std::list<int> blocks_;
-  size_t buffer_size;
+  size_t buffer_size{0};
 };
 
 }  // namespace Lotus

@@ -622,7 +622,7 @@ class LstmOpContext2x1x2x2 {
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardPeepHole) {
   ///////////////Attributes////////////////////////
-  const int seq_len = 2, batch_size = 1, input_dim = 2, hidden_dim = 2;
+  const int seq_len = 2, batch_size = 1;
 
   std::vector<float> input = {-0.455351f, -0.276391f, -0.185934f, -0.269585f};
   std::vector<float> Y_data = {-0.0251062475f, 0.0561261699f, -0.03277518f, 0.05935364f};
@@ -637,7 +637,7 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardPeepHole) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMBidirectionalBasic) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   std::vector<float> X_data = {-0.455351f, -0.276391f,
                                -0.185934f, -0.269585f};
@@ -655,7 +655,7 @@ TEST(LSTMTest, LotusRT_TestLSTMBidirectionalBasic) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardNoBiasUsePeepholes) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   bool use_bias = false;
   bool use_peepholes = true;
@@ -673,7 +673,7 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardNoBiasUsePeepholes) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardInputForget) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   bool use_bias = true;
   bool use_peepholes = true;
@@ -693,7 +693,7 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardInputForget) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardClip) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   bool use_bias = true;
   bool use_peepholes = true;
@@ -712,7 +712,7 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardClip) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMBackward) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   std::vector<float> X_data = {-0.455351f, -0.276391f, -0.185934f, -0.269585f};
 
@@ -726,7 +726,7 @@ TEST(LSTMTest, LotusRT_TestLSTMBackward) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardHiddenState) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   bool use_bias = true;
   bool use_peepholes = false;
@@ -745,7 +745,7 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardHiddenState) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardCellState) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   bool use_bias = true;
   bool use_peepholes = false;
@@ -765,7 +765,7 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardCellState) {
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMActivation) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2, batch_size = 1;
+  const int seq_len = 2, batch_size = 1;
 
   std::vector<std::string> activations = {"tanh", "sigmoid", "tanh"};
 
@@ -790,7 +790,7 @@ TEST(LSTMTest, LotusRT_TestLSTMActivation) {
 // The reallocation doesn't apply any more so this mainly tests larger batches with non-default activations.
 TEST(LSTMTest, LotusRT_TestLSTMBatchReallocation) {
   ///////////////Attributes////////////////////////
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2;
+  const int seq_len = 2;
   int batch_size = 1;
   bool use_bias = true;
   bool use_peepholes = false;
@@ -849,7 +849,7 @@ TEST(LSTMTest, LotusRT_TestLSTMBatchReallocation) {
 // Most of these aren't relevant anymore as we don't re-use buffers given Compute is stateless.
 // It does test a batch > 1 with bidirectional output and custom activations though.
 TEST(LSTMTest, LotusRT_TestLSTMOutputWrite) {
-  const int seq_len = 2, input_dim = 2, hidden_dim = 2;
+  const int seq_len = 2;
   int batch_size = 1;
   std::vector<std::string> activations = {"tanh", "sigmoid", "tanh", "tanh", "sigmoid", "tanh"};
 

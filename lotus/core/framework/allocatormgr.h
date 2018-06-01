@@ -4,7 +4,7 @@
 
 namespace Lotus {
 
-typedef std::function<std::unique_ptr<IDeviceAllocator>(int)> DeviceAllocatorFactory;
+using DeviceAllocatorFactory = std::function<std::unique_ptr<IDeviceAllocator> (int)>;
 
 struct DeviceAllocatorRegistrationInfo {
   MemType mem_type;

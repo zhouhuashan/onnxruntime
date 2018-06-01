@@ -15,7 +15,7 @@ Status::Status(StatusCategory category, int code)
 }
 
 bool Status::IsOK() const noexcept {
-  return (state_ == NULL);
+  return (state_ == nullptr);
 }
 
 StatusCategory Status::Category() const noexcept {

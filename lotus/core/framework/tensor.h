@@ -38,7 +38,7 @@ class BufferDeleter {
 };
 
 typedef std::unique_ptr<void, BufferDeleter> BufferUniquePtr;
-typedef void* BufferNakedPtr;
+using BufferNakedPtr = void *;
 
 /*
 We want to keep tensor as simple as possible, it is just a placeholder 
@@ -58,7 +58,7 @@ class Tensor {
          BufferNakedPtr p_data,
          const AllocatorInfo& alloc,
          AllocatorPtr deleter = nullptr,
-         const int64_t offset = 0);
+         int64_t offset = 0);
 
   virtual ~Tensor();
 
@@ -153,7 +153,7 @@ class Tensor {
             void* p_raw_data,
             const AllocatorInfo& alloc,
             AllocatorPtr deleter,
-            const int64_t offset = 0);
+            int64_t offset = 0);
 
   void* GetRaw() const noexcept {
     return p_data_;

@@ -8,7 +8,7 @@
 #include <cstdint>
 #include "ml_status.h"
 
-typedef uint8_t MLBool;
+using MLBool = uint8_t;
 
 // TODO - calling convention for former case
 #if defined(__GNUC__)
@@ -185,4 +185,4 @@ class IMLOpKernel {
   (const IMLOpKernelInfo* info, IMLOpKernelContext* context) noexcept = 0;
 };
 
-typedef MLStatus (*IMLOpKernelCreateFn)(const IMLOpKernelInfo& kernelInfo, IMLOpKernel** opKernel);
+using IMLOpKernelCreateFn = MLStatus (*)(const IMLOpKernelInfo &, IMLOpKernel **);

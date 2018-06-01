@@ -26,13 +26,12 @@ static std::string default_logger_id{"TestFixtureDefaultLogger"};
 class LoggingTestsFixture : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
-    // logger uses kWARNING so we can test filtering of kVERBOSE output,
-    // and filters user data so that can also be tested
-    const bool filter_user_data = false;
-
+  // logger uses kWARNING so we can test filtering of kVERBOSE output,
+  // and filters user data so that can also be tested
 #if !defined(SKIP_DEFAULT_LOGGER_TESTS)
+    const bool filter_user_data = false;
     default_logging_manager_ = std::make_unique<LoggingManager>(
-        std::unique_ptr<ISink>{new CLogSink {}}, Severity::kWARNING, filter_user_data,
+        std::unique_ptr<ISink>{new CLogSink{}}, Severity::kWARNING, filter_user_data,
         InstanceType::Default, &default_logger_id, /*default_max_vlog_level*/ -1);
 #endif
   }
@@ -54,7 +53,6 @@ TEST_F(LoggingTestsFixture, TestWhereMacro) {
   const std::string logid{"TestWhereMacro"};
   const std::string message{"Testing the WHERE macro."};
   const Severity min_log_level = Severity::kVERBOSE;
-  const Severity log_level = Severity::kERROR;
 
   const std::string file = __FILE__;
   const std::string function = __FUNCTION__;
@@ -115,7 +113,6 @@ TEST_F(LoggingTestsFixture, TestDefaultFiltering) {
 /// </summary>
 TEST_F(LoggingTestsFixture, TestLoggerFiltering) {
   const std::string logid{"TestLoggerFiltering"};
-  const Severity default_min_log_level = Severity::kWARNING;
   const bool default_filter_user_data = true;
   const int default_max_vlog_level = -1;
 

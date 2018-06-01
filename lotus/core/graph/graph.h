@@ -26,15 +26,15 @@ using namespace onnx;
 // converting to std::string, but requires conversion to std::map<std::string, foo, std::less<>>
 // instead of std::unordered_map<std::string, foo, [std::less<foo>]>.
 
-typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
+using NodeAttributes = std::unordered_map<std::string, AttributeProto>;
 
 namespace LotusIR {
-typedef size_t NodeIndex;
-typedef int64_t Version;
-typedef ValueInfoProto NodeArgInfo;
-typedef std::unordered_map<std::string, const TensorProto*> InitializedTensorSet;
-typedef std::unordered_map<std::string, TypeProto> ArgNameToTypeMap;
-typedef const std::string& ProviderType;
+using NodeIndex = size_t;
+using Version = int64_t;
+using NodeArgInfo = ValueInfoProto;
+using InitializedTensorSet = std::unordered_map<std::string, const TensorProto*>;
+using ArgNameToTypeMap = std::unordered_map<std::string, TypeProto>;
+using ProviderType = const std::string&;
 
 class Graph;
 class GraphBase;
@@ -76,7 +76,7 @@ class NodeArg {
   const std::string& Name() const noexcept;
 
   // Get node arg type.
-  const DataType Type() const noexcept;
+  DataType Type() const noexcept;
   const TypeProto* TypeAsProto() const noexcept;
 
   // Get node arg shape.
@@ -237,7 +237,7 @@ class Node {
   // Node definitions. Really a struct but we want to prevent accidental copies.
   class Definitions {
    public:
-    Definitions() noexcept {}
+    Definitions() noexcept = default;
 
     // Node inputs' definition.
     std::vector<NodeArg*> input_defs;
@@ -258,7 +258,7 @@ class Node {
 
   class Relationships {
    public:
-    Relationships() noexcept {}
+    Relationships() noexcept {};
 
     // Node input edges.
     std::set<EdgeEnd*> input_edges;

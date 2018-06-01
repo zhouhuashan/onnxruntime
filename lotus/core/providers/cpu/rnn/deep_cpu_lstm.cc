@@ -809,10 +809,8 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
   gsl::span<T> batched_input_one_step;
   gsl::span<T> batched_hidden_state_one_step = batched_hidden0_;
   gsl::span<T> batched_internal_state_prev_one_step = batched_internal_memory_prev_;
-  gsl::span<T> batched_internal_state_curr_one_step = batched_internal_memory_cur_;
   gsl::span<T> batched_internal_state_clipped_one_step = batched_internal_memory_clipped_;
 
-  const int input_step_length = batch_size_ * input_size_;
   int output_step_length = batch_size_ * hidden_size_;
 
   // The bidirectional LSTM wrapper wraps this LSTM class and produces bi-directional output

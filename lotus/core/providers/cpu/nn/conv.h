@@ -43,7 +43,7 @@ inline void ComputeSizeAndPad(
         *out_dim = (in_dim - dkernel) / stride + 1;
         break;
       case AutoPadType::SAME_UPPER:
-      case AutoPadType::SAME_LOWER:
+      case AutoPadType::SAME_LOWER: {
         LOTUS_ENFORCE(dilation == 1, "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER.");
         int64_t legacy_target_size = (in_dim + stride - 1) / stride;
         int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
@@ -55,8 +55,9 @@ inline void ComputeSizeAndPad(
         } else {
           *pad_head = pad_needed / 2;
         }
-
-        break;
+      } break;
+      default:
+        throw NotImplementedException("pad type not supported");
     }
   }
 }
@@ -75,13 +76,13 @@ class Conv : public ConvBase {
     for (int dim = 0; dim < input_shape.NumDimensions(); ++dim) {
       int64_t dim_size = 0;
       ComputeSizeAndPad(input_shape[dim],
-							strides_[dim],
-							kernel_shape_[dim],
-							dilations_[dim],
-							auto_pad_,
-							&pads->at(dim),
-							&pads->at(input_shape.NumDimensions() + dim),
-							&dim_size);
+                        strides_[dim],
+                        kernel_shape_[dim],
+                        dilations_[dim],
+                        auto_pad_,
+                        &pads->at(dim),
+                        &pads->at(input_shape.NumDimensions() + dim),
+                        &dim_size);
       output_shape->push_back(dim_size);
     }
   }

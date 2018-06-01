@@ -15,7 +15,7 @@ typedef std::map<MemType, AllocatorPtr> AllocatorMap;
 
 class IExecutionProvider {
  public:
-  virtual ~IExecutionProvider() {}
+  virtual ~IExecutionProvider() = default;
 
   // Graph to graph transformation. The resulting graph may contain custom
   // operators introduced by this execution provider. Newly formed custom

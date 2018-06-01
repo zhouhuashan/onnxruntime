@@ -327,10 +327,9 @@ OpKernelContextWrapper::OpKernelContextWrapper(OpKernelContext* context) : impl_
 }
 
 ML_API_IMP(OpKernelContextWrapper::GetInputEdgeType)
-(uint32_t input_index, MLEdgeType* edge_type) const noexcept {
+(uint32_t, MLEdgeType* edge_type) const noexcept {
   try {
     // TODO - support non-tensors
-    input_index;
     *edge_type = MLEdgeType::kTensor;
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
@@ -340,10 +339,9 @@ ML_API_IMP(OpKernelContextWrapper::GetInputEdgeType)
   }
 }
 ML_API_IMP(OpKernelContextWrapper::GetOutputEdgeType)
-(uint32_t output_index, MLEdgeType* edge_type) const noexcept {
+(uint32_t, MLEdgeType* edge_type) const noexcept {
   try {
     // TODO - support non-tensors
-    output_index;
     *edge_type = MLEdgeType::kTensor;
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {

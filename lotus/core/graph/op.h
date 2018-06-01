@@ -10,8 +10,8 @@ using namespace onnx;
 using namespace Lotus::Common;
 
 namespace LotusIR {
-typedef AttributeProto_AttributeType AttrType;
-typedef std::unordered_map<std::string, AttributeProto> NodeAttributes;
+using AttrType = AttributeProto_AttributeType;
+using NodeAttributes = std::unordered_map<std::string, AttributeProto>;
 
 // This string array should exactly match the AttrType defined above.
 /*

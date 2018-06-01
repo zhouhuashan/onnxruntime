@@ -52,7 +52,11 @@ using Common::Status;
 using Common::StatusCategory;
 using Common::StatusCode;
 
+#ifdef _WIN32
 #define UNUSED_PARAMETER(x) (x)
+#else
+#define UNUSED_PARAMETER(x)
+#endif
 
 std::vector<std::string> GetStackTrace();
 

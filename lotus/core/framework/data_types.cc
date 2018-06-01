@@ -8,7 +8,7 @@ MLDataType DataTypeImpl::GetType<Tensor>() {
   return TensorTypeBase::Type();
 }
 
-const size_t TensorTypeBase::Size() const {
+size_t TensorTypeBase::Size() const {
   return sizeof(Tensor);
 }
 
@@ -247,6 +247,8 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
               LOTUS_THROW("Sequence with value type: ", val_elem_type, " is not supported");
           }
         }
+        default:
+          throw Lotus::NotImplementedException("type is not supported");
       }
     }
     default:

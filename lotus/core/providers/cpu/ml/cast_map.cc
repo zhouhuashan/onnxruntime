@@ -54,7 +54,7 @@ Status CastMap::Compute(OpKernelContext* context) const {
     default:
       return Status(LOTUS,
                     INVALID_ARGUMENT,
-                    ("Unexpected CAST_TO value of " + static_cast<std::underlying_type<CAST_TO>::type>(cast_to_)));
+                    ("Unexpected CAST_TO value of " + std::to_string(static_cast<std::underlying_type<CAST_TO>::type>(cast_to_))));
   }
 
   return status;

@@ -46,7 +46,6 @@ BFCArena::~BFCArena() {
 }
 
 BFCArena::Chunk* BFCArena::ChunkFromHandle(ChunkHandle h) {
-  LOTUS_ENFORCE(h >= 0);
   LOTUS_ENFORCE(h < static_cast<int>(chunks_.size()));
   return &(chunks_[h]);
 }

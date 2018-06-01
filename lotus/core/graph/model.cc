@@ -8,6 +8,8 @@
 #pragma warning(pop)
 #endif
 #include <google/protobuf/io/zero_copy_stream_impl.h>
+
+#include <memory>
 #include "core/graph/model.h"
 #include "core/graph/utils.h"
 #include "core/graph/schema_registry.h"
@@ -16,7 +18,7 @@
 
 namespace LotusIR {
 Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const ModelMetaData& model_metadata, const LotusOpSchemaRegistry* local_registry) {
-  model_proto_.reset(new ModelProto);
+  model_proto_ = std::make_unique<ModelProto>();
   model_proto_->set_ir_version(onnx::Version::IR_VERSION);
   model_proto_->mutable_graph()->set_name(graph_name);
   model_metadata_ = model_metadata;
@@ -36,7 +38,7 @@ Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const Mode
 }
 
 Model::Model(const ModelProto& model_proto, const LotusOpSchemaRegistry* local_registry)
-    : Model(std::unique_ptr<ModelProto>(new ModelProto(model_proto)), local_registry) {
+    : Model(std::make_unique<ModelProto>(model_proto), local_registry) {
 }
 
 Model::Model(std::unique_ptr<ModelProto> model_proto, const LotusOpSchemaRegistry* local_registry) {

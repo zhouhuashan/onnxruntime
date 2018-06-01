@@ -41,7 +41,7 @@ const std::string& NodeArg::Name() const noexcept {
   return node_arg_info_.name();
 }
 
-const DataType NodeArg::Type() const noexcept {
+DataType NodeArg::Type() const noexcept {
   return type_;
 }
 
@@ -312,7 +312,7 @@ Status Node::UpdateInputArgCount() {
     size_t m = 0;
     auto arg_count_left = total_arg_count;
 
-    if (0 < op.inputs().size()) {
+    if (!op.inputs().empty()) {
       for (; m < op.inputs().size() - 1; ++m) {
         if (arg_count_left > 0) {
           input_arg_count.push_back(1);
@@ -374,9 +374,9 @@ void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& rep
 
   for (auto pair : replacements)
     for (auto defs : all_defs)
-      for (size_t i = 0, end = defs->size(); i < end; ++i)
-        if (defs->at(i) == pair.first)
-          defs->at(i) = pair.second;
+      for (auto & def : *defs)
+        if (def == pair.first)
+          def = pair.second;
 }
 
 // Constructor: Given a <GraphProto> loaded from model file, construct
@@ -563,7 +563,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
       continue;
     }
 
-    if (inner_nodes.size() <= 0 || inner_nodes.end() == inner_nodes.find(&node)) {
+    if (inner_nodes.empty() || inner_nodes.end() == inner_nodes.find(&node)) {
       // This is an ending node.
       // Add a control edge from this node to sink node.
       NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(node.Index(), sink_node_index_));
@@ -612,7 +612,7 @@ void GraphBase::ReverseDFSFrom(const std::vector<const Node*>& from,
 
     if (enter) enter(&n);
 
-    if (leave) stack.push_back(WorkEntry(&n, true));
+    if (leave) stack.emplace_back(&n, true);
 
     if (comp) {
       std::vector<const Node*> sorted_nodes;
@@ -623,14 +623,14 @@ void GraphBase::ReverseDFSFrom(const std::vector<const Node*>& from,
       for (gsl::not_null<const LotusIR::Node*> in : sorted_nodes) {
         const NodeIndex idx = in->Index();
         if (!visited[idx]) {
-          stack.push_back(WorkEntry(in, false));
+          stack.emplace_back(in, false);
         }
       }
     } else {
       for (auto iter = n.InputNodesBegin(); iter != n.InputNodesEnd(); ++iter) {
         const NodeIndex idx = (*iter)->Index();
         if (!visited[idx]) {
-          stack.push_back(WorkEntry(GetNode(idx), false));
+          stack.emplace_back(GetNode(idx), false);
         }
       }
     }
@@ -1381,7 +1381,7 @@ const GraphProto& Graph::ToGraphProto() {
     p_node->ToProto(*node_proto);
   }
 
-  if (removed_initializer_indexes_.size() > 0) {
+  if (!removed_initializer_indexes_.empty()) {
     // Move initializers.
     std::sort(removed_initializer_indexes_.begin(), removed_initializer_indexes_.end());
     int lastInUseInitializerIndex = graph_proto_->initializer_size() - 1;
@@ -1506,7 +1506,7 @@ Status Graph::SetGraphInputsOutputs() {
       }
     }
 
-    if (specified_graph_outputs.size() != 0) {
+    if (!specified_graph_outputs.empty()) {
       return Status(LOTUS, FAIL, "Some graph outputs which don't exist in the graph.");
     }
 

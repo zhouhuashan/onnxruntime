@@ -14,8 +14,8 @@ namespace Lotus {
 // (that is, at inference time), there is no need to refer to names, and only
 // the integer index is used (e.g., to index into appropriate vectors in
 // the ExecutionFrame).
-typedef int MLValueIndex;
-typedef std::string MLValueName;
+using MLValueIndex = int;
+using MLValueName = std::string;
 
 // The ML-Values fall into the following categories with respect to their
 // memory management:
@@ -52,22 +52,20 @@ struct SequentialExecutionPlan {
   // AllocPlanPerValue: (a simplified form of AllocationPlanPerValue above)
   // Captures information required to allocate/reuse buffer for a ml-value
   struct AllocPlanPerValue {
-    AllocKind alloc_kind;
-    MLDataType value_type;
+    AllocKind alloc_kind{AllocKind::kAllocate};
+    MLDataType value_type{nullptr};
     AllocatorInfo location;
     // reused_buffer is valid only if alloc_kind == kReuse. It indicates
     // which MLValue's buffer must be reused for this MLValue.
-    MLValueIndex reused_buffer;
+    MLValueIndex reused_buffer{0};
     // if the value is used in async kernel, a fence object would be created
     // note the fence object would be shared between MLValues reusing the same buffer
-    bool create_fence;
+    bool create_fence{false};
 
    public:
-    AllocPlanPerValue() : alloc_kind(AllocKind::kAllocate),
-                          value_type(nullptr),
-                          location(CPU, kArenaAllocator),
-                          reused_buffer(0),
-                          create_fence(false) {}
+    AllocPlanPerValue() : 
+                          location(CPU, kArenaAllocator)
+                          {}
   };
 
   // The following vector is indexed by MLValueIndex
@@ -87,7 +85,7 @@ struct SequentialExecutionPlan {
     int free_from_index;
     int free_to_index;
 
-    NodeExecutionPlan(LotusIR::NodeIndex index) : node_index(index), free_from_index(1), free_to_index(0) {}
+    explicit NodeExecutionPlan(LotusIR::NodeIndex index) : node_index(index), free_from_index(1), free_to_index(0) {}
   };
 
   // Execution_plan: represents the nodes in the sequential order to be executed
@@ -106,7 +104,7 @@ class ISequentialPlannerContext {
 
 class SequentialPlannerContext : public ISequentialPlannerContext {
  public:
-  virtual const TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
+  const TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
     return arg.Shape();
   }
 };

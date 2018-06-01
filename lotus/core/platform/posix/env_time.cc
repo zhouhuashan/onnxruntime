@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <sys/time.h>
-#include <time.h>
+#include <ctime>
 
 #include "core/platform/env_time.h"
 
@@ -24,7 +24,7 @@ namespace {
 
 class PosixEnvTime : public EnvTime {
  public:
-  PosixEnvTime() {}
+  PosixEnvTime() = default;
 
   uint64 NowMicros() override {
     struct timeval tv;

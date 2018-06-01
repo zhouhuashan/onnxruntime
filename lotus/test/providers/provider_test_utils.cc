@@ -122,11 +122,10 @@ OpTester::~OpTester() {
 #endif
 }
 
-void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
+void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>&,
                                        const std::vector<LotusIR::NodeArg*>& output_defs,
                                        std::unordered_map<std::string, MLValue>& feeds,
                                        std::vector<std::string>& output_names) {
-  (input_defs);
   for (auto& output : output_defs) {
     if (output->Exists())
       output_names.push_back(output->Name());
@@ -268,7 +267,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
       MLValue& mlvalue = fetches[idx];
       if (mlvalue.Fence())
         mlvalue.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, 0);
-		
+
       if (expected_data.def_.Exists()) {  // optional outputs won't exist
         if (expected_data.data_.IsTensor()) {
           Check(expected_data, mlvalue.Get<Tensor>());

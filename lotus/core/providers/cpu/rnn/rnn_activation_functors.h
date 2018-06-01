@@ -2,10 +2,11 @@
 
 #include <cmath>
 
+#ifdef _WIN32
 #pragma warning(push)
 
 #pragma warning(disable : 4100)
-
+#endif
 namespace Lotus {
 namespace Rnn {
 namespace detail {
@@ -69,7 +70,9 @@ inline T Softplus(T x, T alpha = 0, T beta = 0) {
   return log(1 + exp(x));
 }
 
+#ifdef _WIN32
 #pragma warning(pop)
+#endif
 
 template <typename T>
 std::function<T(T, T, T)> GetFuncByName(const std::string& name, const std::string& default_name) {
