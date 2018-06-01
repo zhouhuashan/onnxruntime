@@ -53,6 +53,9 @@ class TensorUtils {
   static Status UnpackTensor(const onnx::TensorProto& tensor,
                              /*out*/ bool* p_data,
                              int64_t expected_size);
+  static Status UnpackTensor(const onnx::TensorProto& tensor,
+                             /*out*/ uint16_t* p_data,
+                             int64_t expected_size);
 
  private:
   GSL_SUPPRESS(type .4)  // allow use of C-style cast for this special case

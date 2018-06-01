@@ -287,6 +287,8 @@ ML_API_IMP_(MLTensorDataType, TensorWrapper::GetTensorDataType)
     return MLTypeTraits<uint32_t>::TensorType;
   } else if (type == DataTypeImpl::GetType<uint64_t>()) {
     return MLTypeTraits<uint64_t>::TensorType;
+  } else if (type == DataTypeImpl::GetType<MLFloat16>()) {
+    return MLTypeTraits<MLFloat16>::TensorType;
   }
 
   // TODO: String and bool tensors.  Lotus bool tensors are not fixed width.

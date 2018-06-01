@@ -53,6 +53,10 @@ enum class MLTensorDataType {
   kComplex128 = 15
 };
 
+union MLFloat16 {
+	uint16_t val;
+};
+
 class IMLOpKernelInfo {
  public:
   // Gets the count of elements in an attribute

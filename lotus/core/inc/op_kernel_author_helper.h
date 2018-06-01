@@ -108,6 +108,11 @@ struct MLTypeTraits<uint64_t> {
   static const MLTensorDataType TensorType = MLTensorDataType::kUInt64;
 };
 
+template <>
+struct MLTypeTraits<MLFloat16> {
+	static const MLTensorDataType TensorType = MLTensorDataType::kFloat16;
+};
+
 //
 // Wrappers for ABI objects consumed by kernels.
 // These wrappers provide typesafe methods which use STL types and convert
