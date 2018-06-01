@@ -22,6 +22,49 @@ class IExecutionProvider;  // forward decl
 class KernelDefBuilder;
 class IOBinding;
 
+class OpKernelInfo;
+class OpKernel;
+
+// TODO - Move KernelCreateFn somewhere common to avoid the duplicate function.
+using CustomKernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
+
+class CustomRegistry {
+public:
+  CustomRegistry(bool create_func_kernel);
+
+  ~CustomRegistry();
+
+  /**
+    * Register a kernel definition together with kernel factory method to this session.
+    * If any conflict happened between registered kernel def and built-in kernel def,
+    * registered kernel will have higher priority.
+    * Call this before invoking Initialize().
+    * @return OK if success.
+    */
+  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, CustomKernelCreateFn kernel_creator);
+
+  /**
+  * Register a onnx opset to this session.
+  * If any conflict happened between registered schema and built-in schema,
+  * registered schema will have higher priority.
+  * Call this before invoking Load().
+  * @return OK if success.
+  */
+  Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version);
+  
+  class Impl;
+
+  Impl *GetImpl() {
+    return impl_.get();
+  }
+
+private:
+  CustomRegistry() = delete;
+
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
+  std::unique_ptr<Impl> impl_;
+};
+
 enum class AllocationPlannerType {
   SIMPLE_SEQUENTIAL_PLANNER,
   SEQUENTIAL_PLANNER,
@@ -95,6 +138,7 @@ using NameMLValMap = std::unordered_map<std::string, MLValue>;
   *  Common::Status status = session_object.Run(run_options, feeds, output_names, &fetches);
   *  process the output here...
   */
+
 class InferenceSession {
  public:
   /**
@@ -109,6 +153,7 @@ class InferenceSession {
     */
   explicit InferenceSession(const SessionOptions& session_options,
                             Logging::LoggingManager* logging_manager = nullptr);
+ 
   ~InferenceSession();
 
   /**
@@ -119,31 +164,19 @@ class InferenceSession {
   Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider);
 
   /**
-    * Register a kernel definition together with kernel factory method to this session.
-    * If any conflict happened between registered kernel def and built-in kernel def,
-    * registered kernel will have higher priority.
-    * Call this before invoking Initialize().
-    * @return OK if success.
-    */
-  //TODO: Once ABI for kernel registry is ready, update the interface with ABI
-  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, IMLOpKernelCreateFn kernel_creator);
-
-  /**
-  * Register a onnx opset to this session.
-  * If any conflict happened between registered schema and built-in schema,
-  * registered schema will have higher priority.
-  * Call this before invoking Load().
-  * @return OK if success.
-  */
-  //TODO: Once ABI for schema registry is ready, update the interface with ABI
-  Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version);
-
-  /**
-    * Register a graph transfromer. If you've one to register, call this before invoking Initialize().
+    * Register a graph transformer. If you've one to register, call this before invoking Initialize().
     * Calling this API is optional.
     * @return OK if success.
     */
   Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer);
+
+  /**
+    * Register a custom registry for operator schema and kernels.  If you've one to register, 
+    * call this before invoking Initialize().
+    * Calling this API is optional.
+    * @return OK if success.
+    */
+  Common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry);
 
   /**
     * Load an ONNX model.

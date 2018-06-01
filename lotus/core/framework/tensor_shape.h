@@ -44,7 +44,7 @@ class TensorShape : private std::vector<int64_t> {
     return !(*this == other);
   }
 
-  size_t NumDimensions() const {
+  const size_t NumDimensions() const noexcept {
     return size();
   }
 

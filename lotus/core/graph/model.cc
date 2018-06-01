@@ -17,7 +17,7 @@
 #include "gsl/gsl_util"
 
 namespace LotusIR {
-Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const ModelMetaData& model_metadata, const LotusOpSchemaRegistry* local_registry) {
+Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const ModelMetaData& model_metadata, const ILotusOpSchemaCollection* local_registry) {
   model_proto_ = std::make_unique<ModelProto>();
   model_proto_->set_ir_version(onnx::Version::IR_VERSION);
   model_proto_->mutable_graph()->set_name(graph_name);
@@ -37,11 +37,11 @@ Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const Mode
   graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), local_registry));
 }
 
-Model::Model(const ModelProto& model_proto, const LotusOpSchemaRegistry* local_registry)
+Model::Model(const ModelProto& model_proto, const ILotusOpSchemaCollection* local_registry)
     : Model(std::make_unique<ModelProto>(model_proto), local_registry) {
 }
 
-Model::Model(std::unique_ptr<ModelProto> model_proto, const LotusOpSchemaRegistry* local_registry) {
+Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaCollection* local_registry) {
   assert(nullptr != model_proto);
   model_proto_.reset(model_proto.release());
   for (auto& prop : model_proto_->metadata_props()) {
@@ -131,9 +131,9 @@ ModelProto Model::ToProto() {
   return *model_proto_;
 }
 
-void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map<std::string, int>* domain_to_version, const LotusOpSchemaRegistry* local_registry) {
+void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map<std::string, int>* domain_to_version, const ILotusOpSchemaCollection* local_registry) {
   auto& domain_to_version_range_map = OpSchemaRegistry::DomainToVersionRange::Instance().Map();
-  auto local_domain_to_version_map = local_registry ? &local_registry->DomainVersionMap() : nullptr;
+  Domain_To_Version_Map local_domain_to_version_map = local_registry ? local_registry->DomainToVersionMap() : Domain_To_Version_Map();
   for (auto& domainToVersionRange : domain_to_version_range_map) {
     if (is_onnx_domain_only && domainToVersionRange.first.compare(kOnnxDomain) != 0) {
       // Constructing an onnx-domain-only model.
@@ -143,9 +143,9 @@ void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map
 
     int max = domainToVersionRange.second.second;
     //merge with local domain versions
-    if (local_domain_to_version_map) {
-      auto it = local_domain_to_version_map->find(domainToVersionRange.first);
-      if (it != local_domain_to_version_map->end())
+    if (local_registry) {
+      auto it = local_domain_to_version_map.find(domainToVersionRange.first);
+      if (it != local_domain_to_version_map.end())
         max = std::max(it->second.second, max);
     }
 
@@ -156,8 +156,8 @@ void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map
   }
 
   //merge the local domain versions
-  if (local_domain_to_version_map) {
-    for (auto& local_domain : *local_domain_to_version_map) {
+  if (local_registry) {
+    for (auto& local_domain : local_domain_to_version_map) {
       if (is_onnx_domain_only && local_domain.first.compare(kOnnxDomain) != 0) {
         // Constructing an onnx-domain-only model.
         // Only ops in ONNX domain should be used.
@@ -188,7 +188,7 @@ Status Model::Load(std::istream& model_istream, ModelProto* p_model_proto) {
   return Status::OK();
 }
 
-Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> model, const LotusOpSchemaRegistry* local_registry) {
+Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> model, const ILotusOpSchemaCollection* local_registry) {
   // we expect a graph to be present
   if (!model_proto.has_graph()) {
     return Status(LOTUS, INVALID_ARGUMENT, "No graph was found in the protobuf.");
@@ -205,7 +205,7 @@ Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<
 }
 
 #ifdef _WIN32
-Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>* p_model, const LotusOpSchemaRegistry* local_registry) {
+Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>* p_model, const ILotusOpSchemaCollection* local_registry) {
   int fd;
   RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
   auto status = Load(fd, p_model, local_registry);
@@ -223,7 +223,7 @@ Status Model::Save(Model& model, const std::wstring& file_path) {
 
 #endif
 
-Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry) {
+Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry) {
   int fd;
   if (!FileOpenRd(file_path, &fd).IsOK()) {
     return Status(LOTUS, NO_MODEL, "Failed to open: " + file_path);
@@ -233,7 +233,7 @@ Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<M
   return status;
 }
 
-Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry) {
+Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry) {
   std::unique_ptr<ModelProto> modelProto(new ModelProto);
   bool result = modelProto->ParseFromArray(p_bytes, count);
   if (!result) {
@@ -259,7 +259,7 @@ using ::google::protobuf::io::CodedInputStream;
 using ::google::protobuf::io::FileInputStream;
 using ::google::protobuf::io::ZeroCopyInputStream;
 
-Status Model::Load(int fd, gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry) {
+Status Model::Load(int fd, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry) {
   if (fd < 0) {
     return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> less than 0.");
   }

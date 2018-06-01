@@ -398,7 +398,7 @@ void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& rep
 Graph::Graph(GraphProto* graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version,
              Version ir_version,
-             const LotusOpSchemaRegistry* local_registry)
+             const ILotusOpSchemaCollection* local_registry)
 
     : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version, ir_version),
       graph_proto_{graph_proto},
@@ -982,7 +982,7 @@ static void check_node(
     const NodeProto& node,
     const CheckerContext& ctx,
     const LexicalScopeContext& lex_ctx,
-    const LotusOpSchemaRegistry* registry) {
+    const ILotusOpSchemaCollection* registry) {
   enforce_non_empty_field(node, op_type);
 
   if (node.input().empty() && node.output().empty()) {

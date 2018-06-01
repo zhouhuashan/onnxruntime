@@ -75,7 +75,7 @@ class Tensor {
   MLDataType DataType() const { return dtype_; }
 
   // Returns the shape of the tensor.
-  const TensorShape& Shape() const { return shape_; }
+  const TensorShape& Shape() const noexcept { return shape_; }
 
   // Returns the location of the tensor's memory
   const AllocatorInfo& Location() const { return alloc_info_; }

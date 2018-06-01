@@ -8,6 +8,7 @@
 #include "core/common/logging/logging.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/op_kernel.h"
+#include "core/framework/op_kernel_abi_wrapper.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
@@ -221,7 +222,7 @@ class MulFP16Kernel {
  public:
   MulFP16Kernel(const MLOpKernelInfo& /*info*/) {}
 
-  MLStatus Compute(const MLOpKernelInfo& /*info*/, const MLOpKernelContext& context) const {
+  MLStatus Compute(const MLOpKernelContext& context) const {
     const auto X = context.GetInputTensor(0);
     const auto W = context.GetInputTensor(1);
 
@@ -229,7 +230,7 @@ class MulFP16Kernel {
     auto W_Data = W.GetData<MLFloat16>();
 
     auto& shape = X.GetDimensions();
-    auto Y = context.GetOutputTensor(0, shape);
+    auto Y = context.GetDynamicOutputTensor(0, shape);
     auto Y_Data = Y.GetData<MLFloat16>();
 
     size_t size = 1;
@@ -256,8 +257,14 @@ KernelDefBuilder MulFP16KernelDef() {
   return def;
 }
 
-MLStatus CreateMulFP16Kernel(const IMLOpKernelInfo& kernelInfo, IMLOpKernel** opKernel) {
-  return MLOpKernel<MulFP16Kernel>::CreateInstance(kernelInfo, opKernel);
+MLStatus CreateABIMulFP16Kernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel** op_kernel) {
+  return MLOpKernel<MulFP16Kernel>::CreateInstance(kernel_info, op_kernel);
+}
+
+// Creates a kernel implementing the built-in OpKernel type.  This wraps
+// the ABI kernel as an implementation detail.
+OpKernel* CreateMulFP16Kernel(const OpKernelInfo& kernel_info) {
+  return new Lotus::AbiOpKernel(CreateABIMulFP16Kernel, kernel_info);
 }
 
 onnx::OpSchema GetMulFP16Schema() {
@@ -317,15 +324,18 @@ TEST(Float16_Tests, Mul_16_Test) {
   SessionOptions so;
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
-
+  
+  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
   InferenceSession session_object{so, &DefaultLoggingManager()};
+  EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
   auto mulfp16_schema = GetMulFP16Schema();
   std::vector<OpSchema> schemas = { mulfp16_schema };
-  EXPECT_TRUE(session_object.RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
+
+  EXPECT_TRUE(registry->RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
 
   auto def = MulFP16KernelDef();
   //Register a foo kernel which is doing Add, but bind to Mul.
-  EXPECT_TRUE(session_object.RegisterCustomKernel(def, CreateMulFP16Kernel).IsOK());
+  EXPECT_TRUE(registry->RegisterCustomKernel(def, CreateMulFP16Kernel).IsOK());
 
   EXPECT_TRUE(session_object.Load(MUL_MODEL_URI).IsOK());
   EXPECT_TRUE(session_object.Initialize().IsOK());

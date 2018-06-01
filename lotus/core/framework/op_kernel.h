@@ -8,6 +8,7 @@
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
+#include "core/framework/op_node_proto_helper.h"
 #include "core/graph/constants.h"
 #include "core/graph/graph.h"
 #include "onnx/defs/schema.h"
@@ -22,35 +23,17 @@ class OpKernelWrapper;
 // A very light-weight class, which works as an aggregated
 // view of all data needed for constructing a Kernel instance.
 // NOTE: it does not own/hold any objects.
-class OpKernelInfo {
+class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext>{
  public:
   explicit OpKernelInfo(const LotusIR::Node& node,
                         const KernelDef& kernel_def,
                         const IExecutionProvider* execution_provider)
-      : node_(node),
+      : OpNodeProtoHelper(&proto_helper_context_),
+        proto_helper_context_(node),
+        node_(node),
         kernel_def_(kernel_def),
         execution_provider_(execution_provider) {}
 
-  //Get a single attribute
-  template <typename T>
-  Status GetAttr(const std::string& name, T* value) const;
-
-  //Get repeated attributes
-  template <typename T>
-  Status GetAttrs(const std::string& name, std::vector<T>& values) const;
-
-  template <typename T>
-  Status GetAttrs(const std::string& name, gsl::span<T> values) const;
-
-  uint32_t GetPrimitiveAttrElementCount(AttributeProto_AttributeType type,
-                                        const std::string& name) const noexcept;
-
-  bool HasPrimitiveAttribute(AttributeProto_AttributeType type,
-                             const std::string& name) const noexcept;
-
-  const LotusIR::Node& node() const {
-    return node_;
-  }
 
   const AllocatorInfo& GetAllocatorInfo(MemType mem_type) const {
     return execution_provider_->GetAllocatorMap().at(mem_type)->Info();
@@ -60,19 +43,21 @@ class OpKernelInfo {
     return kernel_def_;
   }
 
-  const IExecutionProvider* GetExecutionProvider() const {
+  const IExecutionProvider* GetExecutionProvider() const noexcept{
     return execution_provider_;
   }
-
-  Status GetAttributeProto(const std::string& name,
-                           const AttributeProto** attribute) const;
-
+  
+  const LotusIR::Node& node() const noexcept {
+    return node_;
+  }
+  
  private:
   const LotusIR::Node& node_;
   const KernelDef& kernel_def_;
   // For non cpu/cuda case, this pointer should be set so that function kernel
   // will delegate kernel compute call to <execution_provider> compute call.
   const Lotus::IExecutionProvider* execution_provider_;
+  ProtoHelperNodeContext proto_helper_context_;
 };
 
 class OpKernel {
@@ -144,17 +129,26 @@ class OpKernelContext {
     return execution_frame_->GetType(arg_start_index_ + index);
   }
 
+  MLDataType OutputType(int index) const {
+    auto output_arg_index = GetOutputArgIndex(index);
+    return execution_frame_->GetType(output_arg_index);
+  }
+
   // Fetch output (non-tensor) with specified index.
   template <typename T>
   T* Output(int index) {
     if (index >= kernel_->Node().OutputDefs().size())
       return nullptr;
 
-    auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
-    MLValueAllocationParameters paramerters;
+    auto output_arg_index = GetOutputArgIndex(index);
+    MLValueAllocationParameters parameters;
     T* ret;
-    LOTUS_ENFORCE(execution_frame_->GetOrCreateMLValue<T>(output_arg_index, paramerters, ret).IsOK());
+    LOTUS_ENFORCE(execution_frame_->GetOrCreateMLValue<T>(output_arg_index, parameters, ret).IsOK());
     return ret;
+  }
+
+  int GetOutputArgIndex(int index) const {
+    return arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
   }
 
   // In the case that memory allocation has not been done for an output tensor,
@@ -204,6 +198,14 @@ class OpKernelContext {
   int arg_start_index_ = -1;
 };
 
+// Fetching output tensor without shape is not allowed.
+template <>
+inline Tensor* OpKernelContext::Output<Tensor>(int index) {
+  LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
+  (index);
+  return nullptr;
+}
+
 using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 class KernelRegistry {
@@ -232,9 +234,11 @@ class KernelRegistry {
     return kernel_registry;
   }
 
- private:
+ protected:
+  KernelRegistry(bool create_func_kernel_flag) : create_func_kernel_(create_func_kernel_flag) {}
+
+private:  
   friend class InferenceSession;
-  explicit KernelRegistry(bool create_func_kernel_flag) : create_func_kernel_(create_func_kernel_flag) {}
 
   struct KernelCreateInfo {
     unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.

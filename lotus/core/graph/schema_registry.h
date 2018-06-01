@@ -13,9 +13,23 @@ using OpName_Domain_Version_Schema_Map = std::unordered_map<
 
 using Domain_To_Version_Map = std::unordered_map<std::string, std::pair<int, int>>;
 
+class ILotusOpSchemaCollection {
+public:
+  virtual Domain_To_Version_Map DomainToVersionMap() const = 0;
+
+  virtual const ONNX_NAMESPACE::OpSchema* Schema(
+      const std::string& key,
+      const std::string& domain = kOnnxDomain) const = 0;
+
+  virtual const ONNX_NAMESPACE::OpSchema* Schema(
+      const std::string& key,
+      const int maxInclusiveVersion,
+      const std::string& domain = kOnnxDomain) const = 0;
+};
+
 // OpSchemaRegistry is singlton in onnx, so we have to duplicate it in Lotus
 // If later onnx design changed, we don't need it any more.
-class LotusOpSchemaRegistry final {
+class LotusOpSchemaRegistry {
  public:
   LotusOpSchemaRegistry() = default;
   // Add customized domain to min/max version.

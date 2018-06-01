@@ -18,15 +18,15 @@ class Model {
   explicit Model(const std::string& graph_name,
         bool is_onnx_domain_only = false,
         const ModelMetaData& model_metadata = ModelMetaData(),
-        const LotusOpSchemaRegistry* local_registry = nullptr);
+        const ILotusOpSchemaCollection* local_registry = nullptr);
 
   // NOTE: after calling this contructor, <*this> model will
   // hold a copy of <model_proto>.
-  explicit Model(const ModelProto& model_proto, const LotusOpSchemaRegistry* local_registry = nullptr);
+  explicit Model(const ModelProto& model_proto, const ILotusOpSchemaCollection* local_registry = nullptr);
 
   // NOTE: after calling this constructor, <*this> model will
   // own the <model_proto>.
-  explicit Model(std::unique_ptr<ModelProto> model_proto, const LotusOpSchemaRegistry* local_registry = nullptr);
+  explicit Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaCollection* local_registry = nullptr);
 
   // Get model's IR version.
   // Return <kNoVersion> if not specified.
@@ -77,7 +77,7 @@ class Model {
   static Status Save(Model& model, const std::wstring& file_path);
 
   // TODO(Task:132) Use of shared_ptr<X>* in Load/Save methods is confusing.
-  static Status Load(const std::wstring& file_path, /*out*/ std::shared_ptr<Model>* p_model, const LotusOpSchemaRegistry* local_registry = nullptr);
+  static Status Load(const std::wstring& file_path, /*out*/ std::shared_ptr<Model>* p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 #endif
   static Status Save(Model& model, const std::string& file_path);
 
@@ -85,21 +85,21 @@ class Model {
 
   static Status Load(std::istream& model_istream, ModelProto* p_model_proto);
 
-  static Status Load(const std::string& file_path, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry = nullptr);
+  static Status Load(const std::string& file_path, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
-  static Status Load(int fd, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry = nullptr);
+  static Status Load(int fd, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
   // 'int' rather than 'size_t' because of a protobuf design choice; let callers handle type checks
-  static Status LoadFromBytes(int count, void* pBytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry = nullptr);
+  static Status LoadFromBytes(int count, void* pBytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
-  static Status Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model, const LotusOpSchemaRegistry* local_registry = nullptr);
+  static Status Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
  private:
   // Set <domain_to_version_> and <model_proto_> to contain related domains
   // with latest version in OpSchemaRegistry.
   // if <is_onnx_domain_only> is true, then only onnx domain will be contained.
   // otherwise, ml domain will also be contained.
-  void AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map<std::string, int>* domain_to_version, const LotusOpSchemaRegistry* local_registry);
+  void AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map<std::string, int>* domain_to_version, const ILotusOpSchemaCollection* local_registry);
 
   // Model data.
   std::unique_ptr<ModelProto> model_proto_;
