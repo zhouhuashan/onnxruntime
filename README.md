@@ -92,6 +92,9 @@ cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYP
 where OPENBLAS_HOME would be something like:
 `d:\share\openblas`
 
+For Linux (e.g. Ubuntu 16.04), install libopenblas-dev package
+sudo apt-get install libopenblas-dev
+
 ## AVX, AVX2, OpenMP
 To pass in additional compiler flags, for example to build with SIMD instructions, you can pass in CXX_FLAGS from the cmake command line, for example to build eigen with avx2 support and openmp, you can call cmake like:
 ```

@@ -67,6 +67,7 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--install_onnx", action='store_true',
                         help="Install ONNX. This also creates Lotus ONNX test data in the build directory.")
     parser.add_argument("--use_jemalloc", action='store_true', help="use jemalloc")
+    parser.add_argument("--use_openblas", action='store_true', help="Build with OpenBLAS.")
     return parser.parse_args()
 
 def is_windows():
@@ -86,12 +87,19 @@ def run_subprocess(args, cwd=None):
 def update_submodules(source_dir):
     run_subprocess(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
-def install_pybind_deps():
-    # On Ubuntu 16.04, we need to install python3-dev package for PythonLib. On Windows, it is already installed by python installer.
-    if is_ubuntu_1604():
-      run_subprocess(['add-apt-repository', 'ppa:deadsnakes/ppa'])
-      run_subprocess(['apt-get', 'update'])
-      run_subprocess(['apt-get', 'install', '-y', 'python3-dev'])
+def install_ubuntu_deps(args):
+    try:
+        run_subprocess(['add-apt-repository', 'ppa:deadsnakes/ppa'])
+        run_subprocess(['apt-get', 'update'])
+        if args.enable_pybind:
+            run_subprocess(['apt-get', 'install', '-y', 'python3-dev'])
+        if args.use_openblas:
+            run_subprocess(['apt-get', 'install', '-y', 'libopenblas-dev'])
+    except Exception as e:
+        log.error("Could not install ubuntu dependency packages {}".format(str(e)))
+        sys.exit(-1)
+
+def install_python_deps():
     dep_packages = ['setuptools', 'wheel', 'numpy']
     run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org'] + dep_packages)
 
@@ -109,6 +117,8 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),  
                  "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
+                 "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
+                 "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
                  "-DCMAKE_LIBRARY_PATH=" + nvml_stub_path
                  ]
     if pb_home:
@@ -301,8 +311,10 @@ def main():
         cmake_extra_args = ['-A','x64','-T', 'host=x64', '-G', 'Visual Studio 15 2017']
 
     if (args.update):
+        if is_ubuntu_1604():
+            install_ubuntu_deps(args)
         if args.enable_pybind:
-            install_pybind_deps()
+            install_python_deps()
         if (not args.skip_submodule_sync):
             update_submodules(source_dir)
 

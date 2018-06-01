@@ -305,9 +305,9 @@ template <>
 void Gemm<float, CPUMathUtil>(
     const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB,
-    const int M,
-    const int N,
-    const int K,
+    const int64_t M,
+    const int64_t N,
+    const int64_t K,
     const float alpha,
     const float* A,
     const float* B,

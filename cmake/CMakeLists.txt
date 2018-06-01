@@ -117,7 +117,8 @@ if (lotus_USE_MLAS AND WIN32)
   add_definitions(-DUSE_MLAS)
 endif()
 
-if (lotus_USE_OPENBLAS AND "${lotus_OPENBLAS_HOME}" STREQUAL "")
+if (lotus_USE_OPENBLAS AND "${lotus_OPENBLAS_HOME}" STREQUAL "" AND WIN32)
+  # On linux we assume blas is installed via 'apt-get install libopenblas-dev'
   message(FATAL_ERROR "lotus_OPENBLAS_HOME required for lotus_USE_OPENBLAS")
 endif()
 
@@ -152,6 +153,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DGSL_UNENFORCED_ON_CONT
     
 include(eigen)
 set(lotus_EXTERNAL_DEPENDENCIES eigen)
+set(lotus_EXTERNAL_LIBRARIES protobuf::libprotobuf)
 
 # zlib
 include(zlib)
@@ -233,15 +235,13 @@ include_directories(
     ${gsl_INCLUDE_DIR}
 )
 
-set(lotus_EXTERNAL_LIBRARIES protobuf::libprotobuf)
-
 if (lotus_USE_OPENBLAS)
   add_definitions(-DUSE_OPENBLAS=1)
   if (WIN32)
     include_directories(${lotus_OPENBLAS_HOME})
     list(APPEND lotus_EXTERNAL_LIBRARIES ${lotus_OPENBLAS_HOME}/lib/libopenblas.lib)
   else()
-    # on linux we assume blas is installed via 'apt install libopenblas-dev'
+    # on linux we assume blas is installed via 'apt-get install libopenblas-dev'
     list(APPEND lotus_EXTERNAL_LIBRARIES openblas)
   endif()
 endif()
