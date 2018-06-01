@@ -114,9 +114,7 @@ if (lotus_USE_EIGEN_FOR_BLAS)
 endif()
 
 if (lotus_USE_MLAS AND WIN32)
-  if (CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-    add_definitions(-DUSE_MLAS)
-  endif()
+  add_definitions(-DUSE_MLAS)
 endif()
 
 if (lotus_USE_OPENBLAS AND "${lotus_OPENBLAS_HOME}" STREQUAL "")
