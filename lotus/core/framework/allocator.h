@@ -68,6 +68,15 @@ struct AllocatorInfo {
          << " type: " << type;
     return ostr.str();
   }
+
+  std::string GetProviderType() const {
+    if (name == CPU)
+      return LotusIR::kCpuExecutionProvider;
+    else if (name == CUDA || name == CUDA_PINNED)
+      return LotusIR::kCudaExecutionProvider;
+    else
+      LOTUS_NOT_IMPLEMENTED();
+  }
 };
 
 template <typename T>
@@ -82,7 +91,7 @@ class IAllocator {
 
   // optional CreateFence interface, as provider like DML has its own fence
   virtual FencePtr CreateFence(const SessionState* /*unused*/) { return nullptr; }
-  
+
   /// Create a std::unique_ptr that is allocated and freed by the provided IAllocator.
   /// @param allocator The allocator.
   /// @param size The exact size to allocate if T is void, otherwise the number of elements to allocate.

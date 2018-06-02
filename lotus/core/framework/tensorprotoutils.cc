@@ -30,48 +30,62 @@ template <typename T>
 Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
                                               const TensorShape& tensor_shape,
                                               std::unique_ptr<Tensor>* p_tensor,
-                                              AllocatorPtr alloc) {
+                                              AllocatorPtr alloc,
+                                              void* preallocated,
+                                              size_t preallocated_size) {
   int64_t tensor_size = tensor_shape.Size();
   if (tensor_size < 0) {
     return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
-  int64_t size_to_allocate = static_cast<int64_t>(sizeof(T)) * tensor_size;
-  T* p_data = static_cast<T*>(alloc->Alloc(gsl::narrow_cast<size_t>(size_to_allocate)));
+  size_t size_to_allocate = sizeof(T) * gsl::narrow_cast<size_t>(tensor_size);
+
+  if (preallocated && preallocated_size != size_to_allocate)
+    return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
+
+  T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
                              tensor_shape,
                              static_cast<void*>(p_data),
                              alloc->Info(),
-                             alloc));
+                             preallocated ? nullptr : alloc));  // no deleter for preallocated
 
   return Common::Status::OK();
 }
 
 template <>
 Common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tensor_proto,
-                                                        const TensorShape& tensor_shape,
-                                                        std::unique_ptr<Tensor>* p_tensor,
-                                                        AllocatorPtr alloc) {
+                                                         const TensorShape& tensor_shape,
+                                                         std::unique_ptr<Tensor>* p_tensor,
+                                                         AllocatorPtr alloc,
+                                                         void* preallocated,
+                                                         size_t preallocated_size) {
   int64_t tensor_size = tensor_shape.Size();
   if (tensor_size < 0) {
     return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
   static_assert(sizeof(MLFloat16) == sizeof(uint16_t), "MLFloat16 must has 16 bit size");
-  int64_t size_to_allocate = static_cast<int64_t>(sizeof(MLFloat16)) * tensor_size;
-  uint16_t* p_data = static_cast<uint16_t*>(alloc->Alloc(gsl::narrow_cast<size_t>(size_to_allocate)));
+  size_t size_to_allocate = sizeof(MLFloat16) * gsl::narrow_cast<size_t>(tensor_size);
+
+  if (preallocated && preallocated_size != size_to_allocate)
+    return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
+
+  uint16_t* p_data = static_cast<uint16_t*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   p_tensor->reset(new Tensor(DataTypeImpl::GetType<MLFloat16>(),
                              tensor_shape,
                              static_cast<void*>(p_data),
                              alloc->Info(),
-                             alloc));
+                             preallocated ? nullptr : alloc));  // no deleter for preallocated
 
   return Common::Status::OK();
 }
 
 Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
                                         std::unique_ptr<Tensor>* p_tensor,
-                                        AllocatorPtr allocator) {
+                                        AllocatorPtr allocator,
+                                        void* preallocated,
+                                        size_t preallocated_size) {
   vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
 
   // Note: We permit an empty tensor_shape_vec, and treat it as a scalar (a tensor of size 1).
@@ -80,102 +94,19 @@ Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
 
   switch (tensor_proto.data_type()) {
     case onnx::TensorProto_DataType::TensorProto_DataType_FLOAT:
-      return GetTensorByTypeFromTensorProto<float>(tensor_proto, tensor_shape, p_tensor, allocator);
+      return GetTensorByTypeFromTensorProto<float>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_DOUBLE:
-      return GetTensorByTypeFromTensorProto<double>(tensor_proto, tensor_shape, p_tensor, allocator);
+      return GetTensorByTypeFromTensorProto<double>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_BOOL:
-      return GetTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, p_tensor, allocator);
+      return GetTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_INT32:
-      return GetTensorByTypeFromTensorProto<int32_t>(tensor_proto, tensor_shape, p_tensor, allocator);
+      return GetTensorByTypeFromTensorProto<int32_t>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_INT64:
-      return GetTensorByTypeFromTensorProto<int64_t>(tensor_proto, tensor_shape, p_tensor, allocator);
+      return GetTensorByTypeFromTensorProto<int64_t>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_STRING:
-      return GetTensorByTypeFromTensorProto<std::string>(tensor_proto, tensor_shape, p_tensor, allocator);
+      return GetTensorByTypeFromTensorProto<std::string>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_FLOAT16:
-      return GetTensorByTypeFromTensorProto<MLFloat16>(tensor_proto, tensor_shape, p_tensor, allocator);
-    default: {
-      std::ostringstream ostr;
-      ostr << "Initialized tensor with unexpected type: " << tensor_proto.data_type();
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, ostr.str());
-    }
-  }
-}
-
-template <typename T>
-Common::Status LoadTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
-                                               const TensorShape& tensor_shape,
-                                               size_t tensor_size,
-                                               size_t block_size,
-                                               std::unique_ptr<Tensor>* p_tensor,
-                                               void* buffer,
-                                               const AllocatorInfo& location) {
-  T* p_data = static_cast<T*>(buffer);
-  size_t data_size = sizeof(T) * tensor_shape.Size();
-  if (block_size != data_size)
-    return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
-  // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
-  p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
-                             tensor_shape,
-                             static_cast<void*>(p_data),
-                             location));
-
-  return Common::Status::OK();
-}
-
-template <>
-Common::Status LoadTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tensor_proto,
-                                                         const TensorShape& tensor_shape,
-                                                         size_t tensor_size,
-                                                         size_t block_size,
-                                                         std::unique_ptr<Tensor>* p_tensor,
-                                                         void* buffer,
-                                                         const AllocatorInfo& location) {
-  static_assert(sizeof(MLFloat16) == sizeof(uint16_t), "Float_16 must has 16 bit size");
-  uint16_t* p_data = static_cast<uint16_t*>(buffer);
-  size_t data_size = sizeof(uint16_t) * tensor_shape.Size();
-  if (block_size != data_size)
-    return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
-  // std::move(BufferUniquePtr(buffer, BufferDeleter(alloc))),
-  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
-  p_tensor->reset(new Tensor(DataTypeImpl::GetType<MLFloat16>(),
-                             tensor_shape,
-                             static_cast<void*>(p_data),
-                             location));
-
-  return Common::Status::OK();
-}
-
-Common::Status GetTensorFromTensorProtoWithMemoryPattern(
-    const onnx::TensorProto& tensor_proto,
-    const AllocatorInfo& location,
-    void* buffer_base,
-    std::unique_ptr<Tensor>* p_tensor,
-    const MemoryBlock& block) {
-  vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
-  if (tensor_shape_vec.empty()) {
-    std::ostringstream ostr;
-    ostr << "Shape is empty for tensor_proto name: " << tensor_proto.name();
-    return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
-  }
-
-  TensorShape tensor_shape{tensor_shape_vec};
-  size_t tensor_size = tensor_shape.Size();
-  void* buffer = static_cast<void*>(static_cast<char*>(buffer_base) + block.offset_);
-
-  switch (tensor_proto.data_type()) {
-    case onnx::TensorProto_DataType::TensorProto_DataType_FLOAT:
-      return LoadTensorByTypeFromTensorProto<float>(tensor_proto, tensor_shape, tensor_size, block.size_, p_tensor, buffer, location);
-    case onnx::TensorProto_DataType::TensorProto_DataType_BOOL:
-      return LoadTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, tensor_size, block.size_, p_tensor, buffer, location);
-    case onnx::TensorProto_DataType::TensorProto_DataType_INT32:
-      return LoadTensorByTypeFromTensorProto<int32_t>(tensor_proto, tensor_shape, tensor_size, block.size_, p_tensor, buffer, location);
-    case onnx::TensorProto_DataType::TensorProto_DataType_INT64:
-      return LoadTensorByTypeFromTensorProto<int64_t>(tensor_proto, tensor_shape, tensor_size, block.size_, p_tensor, buffer, location);
-    case onnx::TensorProto_DataType::TensorProto_DataType_STRING:
-      return LoadTensorByTypeFromTensorProto<std::string>(tensor_proto, tensor_shape, tensor_size, block.size_, p_tensor, buffer, location);
-    case onnx::TensorProto_DataType::TensorProto_DataType_FLOAT16:
-      return LoadTensorByTypeFromTensorProto<MLFloat16>(tensor_proto, tensor_shape, tensor_size, block.size_, p_tensor, buffer, location);
+      return GetTensorByTypeFromTensorProto<MLFloat16>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     default: {
       std::ostringstream ostr;
       ostr << "Initialized tensor with unexpected type: " << tensor_proto.data_type();

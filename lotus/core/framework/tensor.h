@@ -38,7 +38,7 @@ class BufferDeleter {
 };
 
 typedef std::unique_ptr<void, BufferDeleter> BufferUniquePtr;
-using BufferNakedPtr = void *;
+using BufferNakedPtr = void*;
 
 /*
 We want to keep tensor as simple as possible, it is just a placeholder 
@@ -144,6 +144,10 @@ class Tensor {
                   "Tensor size (" + std::to_string(shape_.Size()) +
                       ") != new size (" + std::to_string(new_shape.Size()) + ")");
     shape_ = new_shape;
+  }
+
+  const size_t Size() const noexcept {
+    return shape_.Size() * dtype_->Size();
   }
 
   // More API methods.

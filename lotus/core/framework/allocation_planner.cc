@@ -287,21 +287,12 @@ class PlannerImpl {
         }
         auto wt_index = this->Index(def_name);
         SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
-        // TODO(Task 591) the 2 calls to GetExecutionProvider look weird. Consider changing the node method
-        // to ProviderType.
         auto* p_provider = this->p_session_state_->GetExecutionProvider(node.GetExecutionProviderType());
         LOTUS_ENFORCE(p_provider);
 
         thisplan.alloc_kind = AllocKind::kAllocateStatically;
 
         thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();  // default
-        if (p_provider->Type() != LotusIR::kCpuExecutionProvider) {
-          thisplan.location =
-              this->p_session_state_->GetExecutionProvider(LotusIR::kCpuExecutionProvider)->GetAllocator()->Info();
-        }
-        if (p_provider->GetAllocatorMap().count(kMemTypeCPU)) {
-          thisplan.location = p_provider->GetAllocator(kMemTypeCPU)->Info();
-        }
       });
     }
   }

@@ -28,7 +28,7 @@
 namespace Lotus {
 
 class CustomRegistry::Impl : public KernelRegistry, public LotusIR::LotusOpSchemaRegistry {
-public:
+ public:
   Impl(bool create_func_kernel) : KernelRegistry(create_func_kernel) {
   }
 
@@ -91,8 +91,7 @@ class CustomRegistryManager : public LotusIR::ILotusOpSchemaCollection {
         // Otherwise, merge the existing range in the map.
         if (iter == domain_version_map.end()) {
           domain_version_map.insert(local_domain);
-        }
-        else {
+        } else {
           // TODO - how should the minimum be treated?  Same issue in Model::AddImportOpSets.
           iter->second.second = std::max(iter->second.second, local_domain.second.second);
         }
@@ -138,7 +137,7 @@ class InferenceSession::Impl {
   Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
       : session_options_{session_options},
         graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
-        logging_manager_{logging_manager}{
+        logging_manager_{logging_manager} {
     InitLogger(logging_manager);
 
     //env_(Env::Default()) {
@@ -658,6 +657,43 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
+  Common::Status DeserializeTensorProto(const AllocatorInfo& alloc_info, const TensorProto& tensor_proto, MLValue& mlvalue, void* preallocated, size_t preallocated_size) {
+    std::unique_ptr<Tensor> p_tensor;
+    auto alloc_ptr = session_state_.GetAllocator(alloc_info);
+    if (!alloc_ptr) {
+      return Status(LOTUS, FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
+    }
+
+    if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPU) {
+      // deserilize directly to CPU tensor
+      LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr, preallocated, preallocated_size));
+    } else {
+      // deserialize to CPU first for non-CPU allocator, then alloc and copy
+      AllocatorPtr deserialize_alloc_ptr;
+      std::unique_ptr<Tensor> p_deserialize_tensor;
+      deserialize_alloc_ptr = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)->GetAllocator();
+      LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor, deserialize_alloc_ptr));
+
+      if (preallocated && preallocated_size != p_deserialize_tensor->Size())
+        return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
+
+      IExecutionProvider* provider = session_state_.GetExecutionProvider(alloc_info.GetProviderType());
+      LOTUS_ENFORCE(provider != nullptr);
+      p_tensor.reset(new Tensor(p_deserialize_tensor->DataType(),
+                                p_deserialize_tensor->Shape(),
+                                preallocated ? preallocated : static_cast<void*>(alloc_ptr->Alloc(p_deserialize_tensor->Size())),
+                                alloc_info,
+                                preallocated ? nullptr : alloc_ptr));  // no deleter for preallocated
+      LOTUS_RETURN_IF_ERROR(provider->CopyTensor(*p_deserialize_tensor, *p_tensor));
+    }
+
+    mlvalue.Init(p_tensor.release(),
+                 DataTypeImpl::GetType<Tensor>(),
+                 DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+    return Common::Status::OK();
+  }
+
   Common::Status SaveInitializedTensorsWithSeperateBuffer(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
     LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
@@ -672,19 +708,8 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
 
       auto& location = p_execution_plan->allocation_plan[mlvalue_index].location;
-      auto alloc = session_state_.GetAllocator(location);
-      if (!alloc) {
-        return Status(LOTUS, FAIL, "Failed to get allocator for location: " + location.ToString());
-      }
-
-      const TensorProto& tensor_proto = *(entry.second);
-      std::unique_ptr<Tensor> p_tensor = nullptr;
-      LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc));
       MLValue mlvalue;
-      mlvalue.Init(p_tensor.release(),
-                   DataTypeImpl::GetType<Tensor>(),
-                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-
+      DeserializeTensorProto(location, *(entry.second), mlvalue, nullptr, 0);
       session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
       VLOGS(*session_logger_, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
     }
@@ -735,35 +760,16 @@ class InferenceSession::Impl {
       if (it == weights_buffers_.end())
         return Status(LOTUS, FAIL, "Weight buffer not found");
 
-      std::unique_ptr<Tensor> p_tensor = nullptr;
       auto pattern = mem_patterns.GetPatterns(location);
       auto block = pattern->GetBlock(mlvalue_index);
+      MLValue mlvalue;
       // if block is not found, means this mlvalue is not traced
       // fall back to allocate seperate buffer.
       if (!block) {
-        auto& alloc_info = execution_plan->allocation_plan[mlvalue_index].location;
-        auto alloc_ptr = session_state_.GetAllocator(alloc_info);
-        if (!alloc_ptr) {
-          return Status(LOTUS, FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
-        }
-        LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr));
-        MLValue mlvalue;
-        mlvalue.Init(p_tensor.release(),
-                     DataTypeImpl::GetType<Tensor>(),
-                     DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+        DeserializeTensorProto(location, tensor_proto, mlvalue, nullptr, 0);
       } else {
-        LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProtoWithMemoryPattern(
-            tensor_proto,
-            location,
-            it->second.get(),
-            &p_tensor,
-            *block));
+        DeserializeTensorProto(location, tensor_proto, mlvalue, (uint8_t*)it->second.get() + block->offset_, block->size_);
       }
-
-      MLValue mlvalue;
-      mlvalue.Init(p_tensor.release(),
-                   DataTypeImpl::GetType<Tensor>(),
-                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
       session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
       VLOGS(*session_logger_, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
@@ -923,7 +929,6 @@ class InferenceSession::Impl {
 
   CustomRegistryManager custom_registry_manager_;
 };  // namespace Lotus
-
 
 //
 // CustomRegistry

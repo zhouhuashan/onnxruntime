@@ -60,7 +60,7 @@ void SessionState::AddExecutionProvider(const std::string& provider_id,
   exec_provider_set_.exec_providers.push_back(std::move(p_exec_provider));
 }
 
-IExecutionProvider* SessionState::GetExecutionProvider(const std::string& provider_id) const {
+IExecutionProvider* SessionState::GetExecutionProvider(LotusIR::ProviderType provider_id) const {
   auto it = exec_provider_set_.provider_idx_map.find(provider_id);
   if (it == exec_provider_set_.provider_idx_map.end()) {
     return nullptr;
