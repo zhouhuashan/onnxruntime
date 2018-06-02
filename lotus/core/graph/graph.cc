@@ -1128,9 +1128,7 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
   RETURN_IF_ERROR(SetGraphInputsOutputs());
 
-  // don't remove initializers not defined in inputs, to accommondate for non-standard model
-  // TODO: change onnx spec to remove the requirement to have initializer being in inputs
-  //CleanInitializers();
+  CleanUnusedInitializers();
 
   GraphResolveNeeded(false);
 
@@ -1455,20 +1453,22 @@ void Graph::SyncGraphInputsOutputs() {
   }
 }
 
-void Graph::CleanInitializers() {
-  std::vector<std::string> wrong_names;
-  const auto& inputs = GetInputs();
+void Graph::CleanUnusedInitializers() {
+  std::vector<std::string> unused_names;
+  std::set<const NodeArg*> input_args;
+  for (const auto& node : Nodes())
+    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { input_args.insert(def); });
 
   for (const auto& pv : name_to_initial_tensor_) {
     const std::string& s = pv.first;
-    if (std::none_of(inputs.begin(), inputs.end(),
+    if (std::none_of(input_args.begin(), input_args.end(),
                      [&s](const gsl::not_null<const NodeArg*> input) noexcept->bool { return s == input->Name(); })) {
-      wrong_names.push_back(s);
+      unused_names.push_back(s);
     }
   }
 
-  for (const std::string& s : wrong_names) {
-    LOGF_DEFAULT(WARNING, "%s exists in this graph's initializers but it is not in its input list", s.c_str());
+  for (const std::string& s : unused_names) {
+    LOGF_DEFAULT(WARNING, "%s exists in this graph's initializers but it is not used by any node", s.c_str());
     name_to_initial_tensor_.erase(s);
   }
 }

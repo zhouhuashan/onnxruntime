@@ -731,8 +731,8 @@ class Graph : public GraphBase {
   // Sync graph inputs/outputs when serializing to proto.
   void SyncGraphInputsOutputs();
 
-  //Verify if all the initializers are valid inputs
-  void CleanInitializers();
+  // Clear all unused initializers
+  void CleanUnusedInitializers();
 
   // GraphProto to store name, version, initializer.
   // When serializing <*this> Graph to a GraphProto, the nodes and
