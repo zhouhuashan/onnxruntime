@@ -27,7 +27,7 @@ void CUDAAllocator::CheckDevice() const {
   // check device to match at debug build
   // if it's expected to change, call cudaSetDevice instead of the check
   int current_device;
-  CUDA_CALL(cudaGetDevice(&current_device));
+  CUDA_CALL_THROW(cudaGetDevice(&current_device));
   LOTUS_ENFORCE(current_device == device_id_);
 #endif
 }
@@ -36,14 +36,14 @@ void* CUDAAllocator::Alloc(size_t size) {
   CheckDevice();
   void* p = nullptr;
   if (size > 0) {
-    CUDA_CALL(cudaMalloc((void**)&p, size));
+    CUDA_CALL_THROW(cudaMalloc((void**)&p, size));
   }
   return p;
 }
 
 void CUDAAllocator::Free(void* p) {
   CheckDevice();
-  CUDA_CALL(cudaFree(p));
+  CUDA_CALL_THROW(cudaFree(p));
 }
 
 const AllocatorInfo& CUDAAllocator::Info() const {
@@ -58,13 +58,13 @@ FencePtr CUDAAllocator::CreateFence(const SessionState* session_state) {
 void* CUDAPinnedAllocator::Alloc(size_t size) {
   void* p = nullptr;
   if (size > 0) {
-    CUDA_CALL(cudaMallocHost((void**)&p, size));
+    CUDA_CALL_THROW(cudaMallocHost((void**)&p, size));
   }
   return p;
 }
 
 void CUDAPinnedAllocator::Free(void* p) {
-  CUDA_CALL(cudaFreeHost(p));
+  CUDA_CALL_THROW(cudaFreeHost(p));
 }
 
 const AllocatorInfo& CUDAPinnedAllocator::Info() const {

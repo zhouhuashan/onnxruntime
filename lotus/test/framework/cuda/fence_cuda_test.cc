@@ -29,7 +29,7 @@ namespace Test {
 
 typedef std::vector<LotusIR::NodeArg*> ArgMap;
 
-TEST(CudaFenceTests, PartOnCPU) {
+TEST(CUDAFenceTests, PartOnCPU) {
   LotusIR::Model model("test");
   LotusIR::Graph* graph = model.MainGraph();
   TypeProto tensor_float;

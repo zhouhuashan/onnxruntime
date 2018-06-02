@@ -1,3 +1,5 @@
+// disable some warnings from protobuf to pass Windows build
+#pragma warning(disable : 4244)
 
 #include <fstream>
 #include <iostream>
@@ -374,7 +376,7 @@ void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& rep
 
   for (auto pair : replacements)
     for (auto defs : all_defs)
-      for (auto & def : *defs)
+      for (auto& def : *defs)
         if (def == pair.first)
           def = pair.second;
 }
@@ -409,6 +411,24 @@ Graph::Graph(GraphProto* graph_proto,
 
   // these are all empty unless we received a graph_proto as input
   if (graph_proto != nullptr) {
+    // Copy constant nodes _value to name_to_initial_tensor_
+    for (auto& node : graph_proto_->node()) {
+      if (node.op_type() == "Constant") {
+        TensorProto* tensor = graph_proto_->add_initializer();
+        *tensor = node.attribute(0).t();
+        *(tensor->mutable_name()) = node.output(0);
+      }
+    }
+
+    // remove constant nodes
+    auto graph_mutable_nodes = graph_proto_->mutable_node();
+    graph_mutable_nodes->erase(
+        std::remove_if(graph_mutable_nodes->begin(), graph_mutable_nodes->end(),
+                       [](NodeProto& p) {
+                         return (p.op_type() == "Constant");
+                       }),
+        graph_mutable_nodes->end());
+
     // Copy initial tensors to a map.
     for (auto& tensor : graph_proto_->initializer()) {
       name_to_initial_tensor_[tensor.name()] = &tensor;
