@@ -47,7 +47,8 @@ Status AllocatorManager::InitializeAllocators() {
   for (const auto& pair : DeviceAllocatorRegistry::Instance().AllRegistrations()) {
     if (status.IsOK()) {
       auto allocator = std::unique_ptr<IDeviceAllocator>(pair.second.factory(0));
-      status = RegisterAllocator(map_, std::move(allocator), pair.second.max_mem, allocator->AllowsArena());
+      bool use_arena = allocator->AllowsArena();
+      status = RegisterAllocator(map_, std::move(allocator), pair.second.max_mem, use_arena);
     }
   }
   return status;
