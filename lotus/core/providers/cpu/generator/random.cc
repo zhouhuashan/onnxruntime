@@ -1,10 +1,34 @@
+/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+// NOTE: License applies to the multinomial implementation only.
+
 #include "core/providers/cpu/generator/random.h"
+
+// build\windows\debug\external\eigen3\unsupported\eigen\cxx11\src/Tensor/Tensor.h(76):
+// warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+#ifdef _WIN32
+#pragma warning(disable : 4554)
+#endif
 
 #include <algorithm>
 #include <chrono>
 #include <random>
-
+#include "core/util/math_cpuonly.h"
+#include "external/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "gsl/span"
+
 namespace Lotus {
 
 REGISTER_KERNEL(KernelDefBuilder("RandomNormal")
@@ -44,6 +68,17 @@ REGISTER_KERNEL(KernelDefBuilder("RandomUniformLike")
                                               DataTypeImpl::GetTensorType<float>(),
                                               DataTypeImpl::GetTensorType<double>()}),
                 RandomUniformLike);
+
+// https://github.com/onnx/onnx/blob/master/docs/Operators.md#multinomial
+REGISTER_KERNEL(KernelDefBuilder("Multinomial")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
+                    .TypeConstraint("T2", std::vector<MLDataType>{
+                                              DataTypeImpl::GetTensorType<int32_t>(),
+                                              DataTypeImpl::GetTensorType<int64_t>()}),
+                Multinomial);
 
 template <typename T, typename TDistribution>
 void GenerateData(std::default_random_engine generator, TDistribution distribution, Tensor& tensor);
@@ -105,6 +140,124 @@ Status RandomUniformLike::Compute(OpKernelContext* ctx) const {
                              "Could not infer data type from input tensor with data type ",
                              X.DataType());
   status = RandomUniformCompute(low_, high_, generator_, dtype, *Y);
+
+  return status;
+}
+
+// Rank-2 tensor (matrix) of scalar type T.
+template <typename T, typename IndexType = int64_t>
+using Matrix = Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor, IndexType>>;
+
+template <typename T, typename IndexType = int64_t>
+using ConstMatrix = Eigen::TensorMap<Eigen::Tensor<const T, 2, Eigen::RowMajor, IndexType>>;
+
+template <typename T, typename IndexType = int64_t>
+using EigenVector = Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor, IndexType>>;
+
+template <typename OutputType>
+static Status MultinomialCompute(OpKernelContext* ctx,
+                                 const Tensor& X,
+                                 const int64_t batch_size,
+                                 const int64_t num_classes,
+                                 const int64_t num_samples,
+                                 std::default_random_engine generator,
+                                 Tensor& Y) {
+  // implementation copied from Tensorflow with some changes such as using the std::uniform_real_distribution
+  // instead of the Philox RNG.
+  Eigen::array<int64_t, 2> X_dims = {{batch_size, num_classes}};
+  ConstMatrix<float> logits = ConstMatrix<float>(X.Data<float>(), X_dims);
+
+  Eigen::array<int64_t, 2> Y_dims = {{batch_size, num_samples}};
+  Matrix<OutputType> output = Matrix<OutputType>(Y.MutableData<OutputType>(), Y_dims);
+
+  // TODO (perf optimization) - the idea behind making this a lambda is so that we can parallelize across batches.
+  // When we do that this lamdba will act as one task given to a thread
+  auto DoWork = [ctx, num_samples, num_classes, &generator, &Y, &X, &logits, &output](int64 start_row,
+                                                                                      int64 limit_row) {
+    std::default_random_engine generator_copy = generator;
+    // BEGIN create temporary tensor
+    AllocatorPtr alloc;
+    ctx->GetTempSpaceAllocator(&alloc);
+    auto cdf_data = static_cast<double*>(alloc->Alloc(sizeof(double) * num_classes));
+    BufferUniquePtr cdf_buffer(cdf_data, BufferDeleter(alloc));
+    Eigen::array<int64_t, 1> cdf_dims = {{num_classes}};
+    auto cdf = EigenVector<double>(cdf_data, cdf_dims);
+    // END create temporary tensor
+
+    std::uniform_real_distribution<double> dist(0.0, 1.0);  // TODO: should this be initialized per batch?
+    for (int64 b = start_row; b < limit_row; ++b) {
+      const float* logits_row = &(logits(b, 0));
+      // Takes an along-class maximum (for numerical stability).
+      float maxx = std::numeric_limits<float>::lowest();
+      for (int64 j = 0; j < num_classes; ++j) {
+        if (Eigen::numext::isfinite(logits_row[j])) {
+          maxx = std::max(maxx, logits_row[j]);
+        }
+      }
+      const double max_logit = static_cast<double>(maxx);
+
+      // Precompute cumulative probability distribution across classes.
+      // Note: This isn't normalized.
+      cdf = (logits.chip<0>(b).cast<double>() - max_logit).exp();
+      double running_total = 0;
+      for (int64 j = 0; j < num_classes; ++j) {
+        if (Eigen::numext::isfinite(logits_row[j])) {
+          running_total += cdf(j);
+        }
+        cdf(j) = running_total;
+      }
+      // Generate each sample.
+      const double* cdf_begin = cdf.data();
+      const double* cdf_end = cdf.data() + num_classes;
+      for (int64 j = 0; j < num_samples; ++j) {
+        const double to_find = dist(generator_copy) * running_total;
+        auto found_iter = std::upper_bound(cdf_begin, cdf_end, to_find);
+        output(b, j) = static_cast<OutputType>(std::distance(cdf_begin, found_iter));
+      }
+    }
+  };
+  DoWork(0, batch_size);
+  return Status::OK();
+}
+
+Status Multinomial::Compute(OpKernelContext* ctx) const {
+  const Tensor& X = *ctx->Input<Tensor>(0);
+  auto& X_dims = X.Shape().GetDims();
+
+  if (X_dims.empty()) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Empty dimensions for input tensor");
+  }
+
+  const auto batch_size = X_dims[0];
+  const auto num_classes = X_dims[1];
+
+  // validate inputs
+  if (batch_size < 1) {
+    return Status(LOTUS, INVALID_ARGUMENT, "batch_size is < 1");
+  }
+  if (num_classes < 1) {
+    return Status(LOTUS, INVALID_ARGUMENT, "num_classes is < 1");
+  }
+  if (num_samples_ < 1) {
+    return Status(LOTUS, INVALID_ARGUMENT, "num_samples is < 1");
+  }
+
+  std::vector<int64_t> Y_dims{batch_size, num_samples_};
+  Tensor* Y = ctx->Output(0, Y_dims);
+
+  Status status = Status::OK();
+  switch (output_dtype_) {
+    case TensorProto::INT32: {
+      status = MultinomialCompute<int32_t>(ctx, X, batch_size, num_classes, num_samples_, generator_, *Y);
+      break;
+    }
+    case TensorProto::INT64: {
+      status = MultinomialCompute<int64_t>(ctx, X, batch_size, num_classes, num_samples_, generator_, *Y);
+      break;
+    }
+    default:
+      status = Status(LOTUS, FAIL, "Invalid data type of " + output_dtype_);
+  }
 
   return status;
 }

@@ -2,7 +2,6 @@
 #include "test/providers/provider_test_utils.h"
 #include <exception>
 #include <memory>
-
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
 #ifdef USE_CUDA
@@ -23,6 +22,7 @@ void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
   auto* expected = expected_tensor.Data<T>();
   auto* output = output_tensor.Data<T>();
   auto size = output_tensor.Shape().Size();
+
   for (int i = 0; i < size; ++i) {
     EXPECT_EQ(expected[i], output[i]);
   }

@@ -139,4 +139,33 @@ class RandomUniformLike final : public OpKernel {
   TensorProto::DataType dtype_ = TensorProto::DataType::TensorProto_DataType_UNDEFINED;  //optional and may be inferred
 };
 
+class Multinomial final : public OpKernel {
+ public:
+  Multinomial(const OpKernelInfo& info) : OpKernel(info) {
+    LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("sample_size", &num_samples_).IsOK());
+
+    float seed = 0.f;
+    if (!op_kernel_info_.GetAttr<float>("seed", &seed).IsOK()) {
+      seed = gsl::narrow_cast<float>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    }
+
+    generator_ = std::default_random_engine{gsl::narrow_cast<uint32_t>(seed)};
+
+    int64_t output_dtype_tmp;
+    if (!op_kernel_info_.GetAttr<int64_t>("dtype", &output_dtype_tmp).IsOK()) {
+      output_dtype_ = TensorProto_DataType_INT32;  // default is INT32 as per spec
+    } else {
+      output_dtype_ = static_cast<TensorProto::DataType>(output_dtype_tmp);
+    }
+    LOTUS_ENFORCE(TensorProto::DataType_IsValid(output_dtype_) && output_dtype_ != TensorProto::UNDEFINED,
+                  "Invalid dtype of ", output_dtype_);
+  }
+
+  Status Compute(OpKernelContext* ctx) const override;
+
+ private:
+  int64_t num_samples_;
+  std::default_random_engine generator_;
+  TensorProto::DataType output_dtype_;
+};
 }  // namespace Lotus
