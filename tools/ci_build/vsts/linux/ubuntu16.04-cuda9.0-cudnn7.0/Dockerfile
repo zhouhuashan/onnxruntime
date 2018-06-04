@@ -23,6 +23,8 @@ RUN DEBIAN_FRONTEND=noninteractive && \
         curl \
         autoconf \
         sudo \
+        python3-dev \
+        libopenblas-dev \
         # OpenBLAS
         gfortran \
         && \
@@ -32,9 +34,9 @@ WORKDIR /root
 
 # Install CMake
 RUN cd /usr/local/src && \ 
-    wget https://cmake.org/files/v3.10/cmake-3.10.2.tar.gz && \
-    tar xvf cmake-3.10.2.tar.gz && \
-    cd cmake-3.10.2 && \
+    wget https://cmake.org/files/v3.11/cmake-3.11.1.tar.gz && \
+    tar xvf cmake-3.11.1.tar.gz && \
+    cd cmake-3.11.1 && \
     ./bootstrap && \
     make && \
     make install && \
@@ -49,16 +51,6 @@ RUN _CUDNN_VERSION=$(echo $CUDNN_VERSION | cut -d. -f1-2) && \
     mkdir -p /usr/local/cudnn-$_CUDNN_VERSION/cuda/lib64 && \
     ln -s /etc/alternatives/libcudnn_so /usr/local/cudnn-$_CUDNN_VERSION/cuda/lib64/libcudnn.so && \
     ln -s /usr/local/cudnn{-$_CUDNN_VERSION,}
-
-ARG OPENBLAS_VERSION=0.2.18
-RUN wget -q -O - https://github.com/xianyi/OpenBLAS/archive/v${OPENBLAS_VERSION}.tar.gz | tar -xzf - && \
-    cd OpenBLAS-${OPENBLAS_VERSION} && \
-    make -j 2 MAKE_NB_JOBS=0 USE_OPENMP=1 | tee make.log && \
-    grep -qF 'OpenBLAS build complete. (BLAS CBLAS LAPACK LAPACKE)' make.log && \
-    grep -qF 'Use OpenMP in the multithreading.' make.log && \
-    make PREFIX=/usr/local/openblas install && \
-    cd .. && \
-    rm -rf OpenBLAS-${OPENBLAS_VERSION}
 
 ENV LD_LIBRARY_PATH /usr/local/openblas/lib:$LD_LIBRARY_PATH
 

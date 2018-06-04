@@ -119,7 +119,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
                  "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
-                 "-DCMAKE_LIBRARY_PATH=" + nvml_stub_path
+                 "-DCUDA_CUDA_LIBRARY=" + nvml_stub_path
                  ]
     if pb_home:
         cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
