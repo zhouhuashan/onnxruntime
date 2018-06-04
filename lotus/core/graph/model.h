@@ -74,25 +74,25 @@ class Model {
   ModelProto ToProto();
 
 #ifdef _WIN32
-  static Status Save(Model& model, const std::wstring& file_path);
+  static Lotus::Common::Status Save(Model& model, const std::wstring& file_path);
 
   // TODO(Task:132) Use of shared_ptr<X>* in Load/Save methods is confusing.
-  static Status Load(const std::wstring& file_path, /*out*/ std::shared_ptr<Model>* p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(const std::wstring& file_path, /*out*/ std::shared_ptr<Model>* p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 #endif
-  static Status Save(Model& model, const std::string& file_path);
+  static Lotus::Common::Status Save(Model& model, const std::string& file_path);
 
-  static Status Save(Model& model, int fd);
+  static Lotus::Common::Status Save(Model& model, int fd);
 
-  static Status Load(std::istream& model_istream, ModelProto* p_model_proto);
+  static Lotus::Common::Status Load(std::istream& model_istream, ModelProto* p_model_proto);
 
-  static Status Load(const std::string& file_path, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(const std::string& file_path, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
-  static Status Load(int fd, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(int fd, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
   // 'int' rather than 'size_t' because of a protobuf design choice; let callers handle type checks
-  static Status LoadFromBytes(int count, void* pBytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status LoadFromBytes(int count, void* pBytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
-  static Status Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
 
  private:
   // Set <domain_to_version_> and <model_proto_> to contain related domains

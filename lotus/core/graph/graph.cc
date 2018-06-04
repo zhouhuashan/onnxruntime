@@ -1,5 +1,7 @@
+#ifdef _WIN32
 // disable some warnings from protobuf to pass Windows build
 #pragma warning(disable : 4244)
+#endif
 
 #include <fstream>
 #include <iostream>
@@ -884,9 +886,12 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
       DataType input_type = input_def->Type();
       auto& permitted_types = op_formal_parameter.GetTypes();
       if (0 == permitted_types.count(input_type)) {
+		std::string null_pointer("(null)");
+		if(input_type == nullptr) input_type = &null_pointer;
         // Type error in input model/graph.
-        Status status(LOTUS, FAIL,
-                      "Type Error: Type of input parameter (" + input_def->Name() +
+
+		Status status(LOTUS, INVALID_GRAPH,
+                      "Type Error: Type '" + *input_type + "' of input parameter (" + input_def->Name() +
                           ") of operator (" + op.Name() + ") in node (" + nodeName + ") is invalid.");
         return status;
       }

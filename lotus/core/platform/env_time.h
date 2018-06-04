@@ -15,8 +15,27 @@ limitations under the License.
 #pragma once
 
 #include "core/platform/types.h"
+#include <ctime>
+#include <cstdint>
 
 namespace Lotus {
+
+#ifdef _WIN32
+using TIME_SPEC = int64_t ;
+#else
+using TIME_SPEC = timespec ;
+#endif
+
+//Get a time stamp counter
+//If the function succeeds, return true. If the function fails, return false
+bool GetMonotonicTimeCounter(TIME_SPEC* value);
+
+void SetTimeSpecToZero(TIME_SPEC* value);
+void AccumulateTimeSpec(TIME_SPEC* base, TIME_SPEC* start, TIME_SPEC* end);
+
+//Return the interval in seconds.
+//If the function fails, the return value is zero
+double TimeSpecToSeconds(TIME_SPEC* value);
 
 /// \brief An interface used by the Lotus implementation to
 /// access timer related operations.

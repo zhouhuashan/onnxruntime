@@ -1,4 +1,6 @@
 #include "tensorprotoutils.h"
+
+#include <memory>
 #include "core/graph/tensorutils.h"
 #include "tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
@@ -44,11 +46,11 @@ Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
 
   T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
-  p_tensor->reset(new Tensor(DataTypeImpl::GetType<T>(),
+  *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
                              tensor_shape,
                              static_cast<void*>(p_data),
                              alloc->Info(),
-                             preallocated ? nullptr : alloc));  // no deleter for preallocated
+                             preallocated ? nullptr : alloc);  // no deleter for preallocated
 
   return Common::Status::OK();
 }
@@ -72,11 +74,11 @@ Common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
 
   uint16_t* p_data = static_cast<uint16_t*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
-  p_tensor->reset(new Tensor(DataTypeImpl::GetType<MLFloat16>(),
+  *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<MLFloat16>(),
                              tensor_shape,
                              static_cast<void*>(p_data),
                              alloc->Info(),
-                             preallocated ? nullptr : alloc));  // no deleter for preallocated
+                             preallocated ? nullptr : alloc);  // no deleter for preallocated
 
   return Common::Status::OK();
 }

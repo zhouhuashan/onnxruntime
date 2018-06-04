@@ -45,7 +45,7 @@ class LotusOpSchemaRegistry {
       it->second.second = std::min(max_version, it->second.second);
     } else
       domain_version_map_[domain] = std::make_pair(max_version, max_version);
-    return Status::OK();
+    return Lotus::Common::Status::OK();
   }
 
   const Domain_To_Version_Map& DomainVersionMap() const {
@@ -103,7 +103,7 @@ class LotusOpSchemaRegistry {
       return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
     }
     map_[op_name][op_domain].emplace(std::make_pair(ver, op_schema));
-    return Status::OK();
+    return Lotus::Common::Status::OK();
   }
 
   // Return the latest schema for an operator in specified domain.

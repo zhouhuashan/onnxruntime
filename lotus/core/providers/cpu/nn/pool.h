@@ -9,8 +9,8 @@ class AveragePool;
 class MaxPool;
 
 struct PoolProcessContext {
-  int64_t p_;
-  PoolProcessContext() : p_(2) {}
+  int64_t p_{2};
+  PoolProcessContext()  {}
 };
 
 template <typename T, typename PoolType>
@@ -23,7 +23,7 @@ class Pool final : public PoolBase {
     }
   }
 
-  ~Pool() = default;
+  ~Pool() override = default;
 
   Status Compute(OpKernelContext* context) const override;
 

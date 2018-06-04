@@ -16,6 +16,9 @@
 #include "gsl/pointers"
 #include "gsl/gsl_util"
 
+using namespace Lotus;
+using namespace Lotus::Common;
+
 namespace LotusIR {
 Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const ModelMetaData& model_metadata, const ILotusOpSchemaCollection* local_registry) {
   model_proto_ = std::make_unique<ModelProto>();

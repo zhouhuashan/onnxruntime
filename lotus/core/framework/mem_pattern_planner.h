@@ -9,7 +9,7 @@ namespace Lotus {
 // future request if they have the same input shape.
 class MemPatternPlanner {
  public:
-  MemPatternPlanner()  {}
+  MemPatternPlanner()  = default;
 
   void TraceAllocation(int ml_value_idx, size_t size) {
     if (size == 0) {
@@ -68,7 +68,7 @@ class MemPatternPlanner {
     int index_{-1};
     MemoryBlock block_;
 
-    MLValueAllocationBlock()  {}
+    MLValueAllocationBlock()  = default;
     MLValueAllocationBlock(int index, MemoryBlock block) : index_(index), block_(block) {}
   };
 

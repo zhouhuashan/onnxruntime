@@ -7,7 +7,7 @@ struct MemoryBlock {
   size_t offset_{0};
   size_t size_{0};
 
-  MemoryBlock()  {}
+  MemoryBlock()  = default;
   MemoryBlock(size_t offset, size_t size) : offset_(offset), size_(size) {}
 };
 
@@ -15,7 +15,7 @@ class MemoryPattern {
   friend class MemPatternPlanner;
 
  public:
-  MemoryPattern()  {}
+  MemoryPattern()  = default;
 
   size_t peak_size() const {
     return peak_size_;

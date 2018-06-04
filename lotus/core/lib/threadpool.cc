@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "core/lib/threadpool.h"
 
+#include <memory>
+
 // NonBlockingThreadPool.h(281): warning C4389: '==': signed/unsigned mismatch
 // NonBlockingThreadPool.h(252): warning C4267: '-=': conversion from 'size_t' to 'unsigned int', possible loss of data
 #ifdef _WIN32
@@ -29,7 +31,7 @@ namespace thread {
 
 class EigenEnvironment {
  public:
-  typedef Thread EnvThread;
+  using EnvThread = Thread;
 
   struct TaskImpl {
     std::function<void()> f;
@@ -67,10 +69,7 @@ class EigenEnvironment {
     //                              id);
     // }
 
-    GSL_SUPPRESS(r .11)  // using 'new' with aggregate initialization of TaskImpl
-    {
-      return Task{std::unique_ptr<TaskImpl>(new TaskImpl{std::move(f), Context(ContextKind::kThread), id})};
-    }
+    return Task{std::make_unique<TaskImpl>(TaskImpl{std::move(f), Context(ContextKind::kThread), id})};
   }
 
   void ExecuteTask(const Task& t) {
@@ -113,7 +112,7 @@ ThreadPool::ThreadPool(const Env& env, const ThreadOptions& thread_options,
   impl_ = std::make_unique<ThreadPool::Impl>(env, thread_options, "lotus_" + name, num_threads, low_latency_hint);
 }
 
-ThreadPool::~ThreadPool() {}
+ThreadPool::~ThreadPool() = default;
 
 void ThreadPool::Schedule(std::function<void()> fn) {
   LOTUS_ENFORCE(fn != nullptr);

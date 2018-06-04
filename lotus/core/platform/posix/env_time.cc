@@ -15,7 +15,7 @@ limitations under the License.
 
 #include <sys/time.h>
 #include <ctime>
-
+#include <cstring>
 #include "core/platform/env_time.h"
 
 namespace Lotus {
@@ -41,5 +41,43 @@ EnvTime* EnvTime::Default() {
   return default_env_time;
 }
 #endif
+
+bool GetMonotonicTimeCounter(TIME_SPEC* value) {
+  return clock_gettime(CLOCK_MONOTONIC,value) == 0;
+}
+
+
+void SetTimeSpecToZero(TIME_SPEC* value) {
+  memset(value,0,sizeof(TIME_SPEC));
+}
+
+void AccumulateTimeSpec(TIME_SPEC* base, TIME_SPEC* y, TIME_SPEC* x) {
+  /* Perform the carry for the later subtraction by updating y. */
+  if (x->tv_nsec < y->tv_nsec) {
+    int nsec = (y->tv_nsec - x->tv_nsec) / 1000000000 + 1;
+    y->tv_nsec -= 1000000000 * nsec;
+    y->tv_sec += nsec;
+  }
+  if (x->tv_nsec - y->tv_nsec > 1000000000) {
+    int nsec = (x->tv_nsec - y->tv_nsec) / 1000000000;
+    y->tv_nsec += 1000000000 * nsec;
+    y->tv_sec -= nsec;
+  }
+
+  /* Compute the time remaining to wait.
+     tv_nsec is certainly positive. */
+  base->tv_sec += x->tv_sec - y->tv_sec;
+  base->tv_nsec += x->tv_nsec - y->tv_nsec;
+  if(base->tv_nsec >= 1000000000){
+    base->tv_nsec -= 1000000000;
+    ++base->tv_sec;  
+  }
+}
+
+//Return the interval in seconds.
+//If the function fails, the return value is zero
+double TimeSpecToSeconds(TIME_SPEC* value) {
+  return value->tv_sec + value->tv_nsec/(double)1000000000;
+}
 
 }  // namespace Lotus

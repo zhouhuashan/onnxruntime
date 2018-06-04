@@ -78,7 +78,7 @@ class CPUExecutionProvider : public IExecutionProvider {
     return Status::OK();
   }
 
-  virtual const void* GetExecutionHandle() const noexcept override {
+  const void* GetExecutionHandle() const noexcept override {
     // The CPU interface does not return anything interesting.
     return nullptr;
   }

@@ -76,31 +76,31 @@ class BFCArena : public IArenaAllocator {
  public:
   BFCArena(std::unique_ptr<IDeviceAllocator> resource_allocator, size_t total_memory);
 
-  virtual ~BFCArena() override;
+  ~BFCArena() override;
 
   //If size is 0, then this function returns either NULL,
   //or a unique pointer value that can later be successfully
   //passed to free(). Whatever, do not dereference that pointer
-  virtual void* Alloc(size_t size) override;
+  void* Alloc(size_t size) override;
 
   //If p is NULL, no operation is performed.
-  virtual void Free(void* p) override;
+  void Free(void* p) override;
 
-  virtual void* Reserve(size_t size) override;
+  void* Reserve(size_t size) override;
 
-  virtual size_t Used() const override {
+  size_t Used() const override {
     return stats_.bytes_in_use;
   }
 
-  virtual size_t Max() const override {
+  size_t Max() const override {
     return memory_limit_;
   }
 
-  virtual const AllocatorInfo& Info() const override {
+  const AllocatorInfo& Info() const override {
     return info_;
   }
 
-  virtual FencePtr CreateFence(const SessionState* session_state) override {
+  FencePtr CreateFence(const SessionState* session_state) override {
     // arena always rely on its device allocator to create fence
     return device_allocator_->CreateFence(session_state);
   }
@@ -117,10 +117,10 @@ class BFCArena : public IArenaAllocator {
 
   // A ChunkHandle is an index into the chunks_ vector in BFCAllocator
   // kInvalidChunkHandle means an invalid chunk
-  typedef size_t ChunkHandle;
+  using ChunkHandle = size_t;
   static const size_t kInvalidChunkHandle = static_cast<size_t>(-1);
 
-  typedef int BinNum;
+  using BinNum = int;
   static const int kInvalidBinNum = -1;
   static const int kNumBins = 21;
 
@@ -230,7 +230,7 @@ class BFCArena : public IArenaAllocator {
       }
     }
 
-    AllocationRegion() {}
+    AllocationRegion() = default;
 
     ~AllocationRegion() { delete[] handles_; }
 
@@ -286,8 +286,8 @@ class BFCArena : public IArenaAllocator {
   // This class is thread-compatible.
   class RegionManager {
    public:
-    RegionManager() {}
-    ~RegionManager() {}
+    RegionManager() = default;
+    ~RegionManager() = default;
 
     void AddAllocationRegion(void* ptr, size_t memory_size) {
       // Insert sorted by end_ptr

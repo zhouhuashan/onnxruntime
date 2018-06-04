@@ -146,7 +146,7 @@ class Tensor {
     shape_ = new_shape;
   }
 
-  const size_t Size() const noexcept {
+  size_t Size() const noexcept {
     return shape_.Size() * dtype_->Size();
   }
 

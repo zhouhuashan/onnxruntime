@@ -1,4 +1,6 @@
 #include "core/graph/graph_transformer.h"
+using namespace Lotus;
+using namespace Lotus::Common;
 
 namespace LotusIR {
 

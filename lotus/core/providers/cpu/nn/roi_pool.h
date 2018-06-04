@@ -23,9 +23,9 @@ class RoiPool : public OpKernel {
     LOTUS_ENFORCE(spatial_scale_ > 0);
   }
 
-  virtual ~RoiPool() = default;
+  ~RoiPool() override = default;
 
-  Status Compute(OpKernelContext* context) const;
+  Status Compute(OpKernelContext* context) const override;
 
  protected:
   int64_t pooled_height_, pooled_width_;

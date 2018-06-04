@@ -278,13 +278,13 @@ public:
 
 // Inference function to compute the output types. This should be used in cases where
 // MLSchemaDefinition cannot express an operator's type mapping declaratively.
-typedef ML_CALLBACK_API(MLTypeInferenceFunction)(void* registration_context, IMLTypeInferenceContext* inference_context);
+using MLTypeInferenceFunction = MLStatus (*)(void *, IMLTypeInferenceContext *);
 
 // Inference function to compute sizes of output tensors.
 // All input tensors provided to the shape inference callback will have well defined sizes. 
 // If upstream operators cannot determine their output shape before computation, then this
 // will be called only after their computation.
-typedef ML_CALLBACK_API(MLShapeInferenceFunction)(void* registration_context, IMLShapeInferenceContext* inference_context);
+using MLShapeInferenceFunction = MLStatus (*)(void *, IMLShapeInferenceContext *);
 
 struct MLAttribute {
   const char* name;
@@ -381,7 +381,7 @@ struct MLOpKernelDefinition {
 };
 
 // TODO - Make this store a context value or allow interfaces to be registered
-typedef ML_CALLBACK_API(IMLOpKernelCreateFn)(const IMLOpKernelInfo& kernel_info, IMLOpKernel** op_kernel);
+using IMLOpKernelCreateFn = MLStatus (*)(const IMLOpKernelInfo &, IMLOpKernel **);
 
 enum class MLOpKernelOptions {
   kNone = 0,

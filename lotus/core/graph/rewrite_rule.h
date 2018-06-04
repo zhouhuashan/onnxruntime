@@ -39,7 +39,7 @@ class GraphEditor {
   }
 
   // Resolve <graph_> after each editing.
-  Status Resolve() {
+  Lotus::Common::Status Resolve() {
     return graph_->Resolve();
   }
 
@@ -78,7 +78,7 @@ class RewriteRule {
   // The transformation happens in-place. The return-value of node may be different
   // from the input-value due to rewriting.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual Status Apply(GraphEditor graph_editor, Node* node, bool* modified) = 0;
+  virtual Lotus::Common::Status Apply(GraphEditor graph_editor, Node* node, bool* modified) = 0;
 
 private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RewriteRule);

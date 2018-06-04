@@ -50,7 +50,7 @@ class ConvBase : public OpKernel {
 #endif
   }
 
-  virtual ~ConvBase() {}
+  ~ConvBase() override {}
 
  protected:
   AutoPadType auto_pad_;

@@ -18,8 +18,7 @@
 
 #include "gsl/pointers"
 
-//TODO(chasun): do not use unnamed namespaces in header files
-namespace {
+namespace Lotus{
 using namespace ::Lotus::Common;
 #ifdef _WIN32
 inline Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) {
@@ -75,4 +74,4 @@ inline Status FileClose(int fd) {
   }
   return Status::OK();
 }
-}  // namespace
+}  // namespace Lotus

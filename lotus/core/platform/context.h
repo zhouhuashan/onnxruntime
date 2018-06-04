@@ -29,7 +29,7 @@ enum class ContextKind {
 // all relevant context.
 class Context {
  public:
-  Context() noexcept {}
+  Context() noexcept = default;
   Context(const ContextKind) noexcept {}
 };
 

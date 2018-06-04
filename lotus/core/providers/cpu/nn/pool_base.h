@@ -42,7 +42,7 @@ class PoolBase : public OpKernel {
     }
   }
 
-  virtual ~PoolBase() = default;
+  ~PoolBase() override = default;
 
   std::vector<int64_t> SetOutputSize(const TensorShape& input_shape,
                                      int64_t output_channel,
