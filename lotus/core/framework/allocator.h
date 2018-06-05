@@ -68,15 +68,6 @@ struct AllocatorInfo {
          << " type: " << type;
     return ostr.str();
   }
-
-  std::string GetProviderType() const {
-    if (name == CPU)
-      return LotusIR::kCpuExecutionProvider;
-    else if (name == CUDA || name == CUDA_PINNED)
-      return LotusIR::kCudaExecutionProvider;
-    else
-      LOTUS_NOT_IMPLEMENTED();
-  }
 };
 
 template <typename T>

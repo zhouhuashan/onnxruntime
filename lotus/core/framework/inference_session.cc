@@ -677,7 +677,7 @@ class InferenceSession::Impl {
       if (preallocated && preallocated_size != p_deserialize_tensor->Size())
         return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
-      IExecutionProvider* provider = session_state_.GetExecutionProvider(alloc_info.GetProviderType());
+      IExecutionProvider* provider = session_state_.GetExecutionProvider(alloc_info);
       LOTUS_ENFORCE(provider != nullptr);
       p_tensor.reset(new Tensor(p_deserialize_tensor->DataType(),
                                 p_deserialize_tensor->Shape(),

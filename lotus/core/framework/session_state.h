@@ -35,6 +35,9 @@ class SessionState {
 
   // exec providers
   IExecutionProvider* GetExecutionProvider(const std::string& provider_id) const;
+
+  IExecutionProvider* GetExecutionProvider(const AllocatorInfo& allocator_info) const;
+
   void AddExecutionProvider(const std::string& provider_id,
                             std::unique_ptr<IExecutionProvider> exec_provider);
   const std::vector<std::unique_ptr<IExecutionProvider>>& GetExecutionProviders() const;

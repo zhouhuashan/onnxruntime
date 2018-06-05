@@ -70,14 +70,23 @@ IExecutionProvider* SessionState::GetExecutionProvider(LotusIR::ProviderType pro
   return exec_provider_set_.exec_providers[it->second].get();
 }
 
-AllocatorPtr SessionState::GetAllocator(const AllocatorInfo& allocator_info) const {
+IExecutionProvider* SessionState::GetExecutionProvider(const AllocatorInfo& allocator_info) const {
   auto it = exec_provider_set_.allocator_idx_map.find(allocator_info);
   if (it == exec_provider_set_.allocator_idx_map.end()) {
     return nullptr;
   }
 
   LOTUS_ENFORCE(it->second < exec_provider_set_.exec_providers.size());
-  return exec_provider_set_.exec_providers[it->second]->GetAllocator(allocator_info.mem_type);
+  return exec_provider_set_.exec_providers[it->second].get();
+}
+
+AllocatorPtr SessionState::GetAllocator(const AllocatorInfo& allocator_info) const {
+  auto exec_provider = GetExecutionProvider(allocator_info);
+  if (exec_provider == nullptr) {
+    return nullptr;
+  }
+
+  return exec_provider->GetAllocator(allocator_info.mem_type);
 }
 
 const std::vector<std::unique_ptr<IExecutionProvider>>& SessionState::GetExecutionProviders() const {
