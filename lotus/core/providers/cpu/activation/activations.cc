@@ -27,7 +27,7 @@ REGISTER_UNARY_ELEMENTWISE_KERNEL_ALIAS(Softplus, ParametricSoftplus, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(Softsign, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(Tanh, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu, 1);
-REGISTER_UNARY_ELEMENTWISE_KERNEL(PRelu, 6);
+REGISTER_UNARY_ELEMENTWISE_KERNEL(PRelu, 7);
 
 template <typename T>
 auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }

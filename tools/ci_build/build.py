@@ -236,7 +236,7 @@ def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests):
         cwd = get_config_build_dir(build_dir, config)
         run_subprocess([ctest_path, "--build-config", config, "--verbose"],
                        cwd=cwd)
-					   
+
         if enable_python_tests:
             if is_windows():
                 cwd = os.path.join(cwd, config)
@@ -309,6 +309,9 @@ def main():
         cmake_extra_args = ['-A','Win32','-G', 'Visual Studio 15 2017']
     else:
         cmake_extra_args = ['-A','x64','-T', 'host=x64', '-G', 'Visual Studio 15 2017']
+
+    #Add python to PATH. Please remove this after https://github.com/onnx/onnx/issues/1080 is fixed (@chasun)
+    os.environ["PATH"] += os.pathsep + os.path.dirname(sys.executable)
 
     if (args.update):
         if is_ubuntu_1604():
