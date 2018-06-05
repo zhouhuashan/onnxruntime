@@ -75,6 +75,9 @@ constexpr TensorProto_DataType TypeToDataType<uint64_t>() { return TensorProto_D
 template <>
 constexpr TensorProto_DataType TypeToDataType<std::string>() { return TensorProto_DataType_STRING; }
 
+template <>
+constexpr TensorProto_DataType TypeToDataType<MLFloat16>() { return TensorProto_DataType_FLOAT16; }
+
 template <typename T>
 struct TTypeProto : TypeProto {
   TTypeProto() {

@@ -85,6 +85,41 @@ TEST(TensorOpTest, Cast) {
 
   const std::initializer_list<int64_t> int64_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   TestCastOp(input, int64_t_output, shape, TensorProto::INT64);
+
+  const std::initializer_list<MLFloat16> float16_output{
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(0.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(2.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(3.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(4.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(5.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(6.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(7.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(8.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(9.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(10.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(11.0f).x)};
+  TestCastOp(input, float16_output, shape, TensorProto::FLOAT16);
+}
+
+TEST(TensorOpTest, Float16Cast) {
+  const std::initializer_list<MLFloat16> input = {
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(0.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(2.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(3.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(4.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(5.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(6.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(7.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(8.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(9.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(10.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(11.0f).x)};
+  const std::vector<int64_t> shape{3, 2, 2};
+
+  const std::initializer_list<float> float_output = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
+  TestCastOp(input, float_output, shape, TensorProto::FLOAT);
 }
 
 TEST(TensorOpTest, CropBorderOnly) {

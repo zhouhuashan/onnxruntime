@@ -108,26 +108,20 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
                                 KernelCreateFn kernel_creator) {
   KernelCreateInfo create_info(kernel_builder.Build(), kernel_creator);
   auto& op_name = create_info.kernel_def->OpName();
-  auto& domain = create_info.kernel_def->Domain();
-  auto& provider_type = create_info.kernel_def->Provider();
-  int start = 0, end = 0;
-  create_info.kernel_def->SinceVersion(&start, &end);
 
   // Check op version conflicts.
   auto range = kernel_creator_fn_map_.equal_range(op_name);
   for (auto i = range.first; i != range.second; ++i) {
-    if (domain == i->second.kernel_def->Domain() &&
-        provider_type == i->second.kernel_def->Provider()) {
-      int start1 = 0, end1 = 0;
-      i->second.kernel_def->SinceVersion(&start1, &end1);
-      if (start <= end1 && end >= start1) {
-        create_info.status =
-            Status(LOTUS, FAIL,
-                   "Failed to add kernel for " + op_name +
-                       ": Conflicting with a registered kernel with op versions [" +
-                       std::to_string(start1) + "," + std::to_string(end1) + "].");
-        return create_info.status;
-      }
+    if (i->second.kernel_def &&
+        i->second.status.IsOK() &&
+        i->second.kernel_def->IsConflict(*create_info.kernel_def)) {
+      create_info.status =
+          Status(LOTUS, FAIL,
+                 "Failed to add kernel for " + op_name +
+                     ": Conflicting with a registered kernel with op versions.");
+      // Becuase currently we still using static registration, keep the invalid entry in the map now
+      kernel_creator_fn_map_.emplace(op_name, std::move(create_info));
+      return create_info.status;
     }
   }
 

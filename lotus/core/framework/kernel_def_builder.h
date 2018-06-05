@@ -50,6 +50,43 @@ class KernelDef {
     return exec_queue_id_;
   }
 
+  bool IsConflict(const KernelDef& other) const {
+    if (op_name_ != other.OpName() || provider_type_ != other.Provider())
+      return false;
+    int start = 0, end = 0;
+    other.SinceVersion(&start, &end);
+    if (op_since_version_start_ > end || op_since_version_end_ < start)
+      return false;
+    //check types
+    auto other_types = other.TypeConstraints();
+    for (auto it : type_constraints_) {
+      if (other_types.count(it.first)) {
+        for (auto type : it.second) {
+          if (std::find(other_types[it.first].begin(), other_types[it.first].end(), type) != other_types[it.first].end())
+            return true;
+        }
+      }
+    }
+    //check in-place
+    for (auto& it : inplace_map_) {
+      if (std::find(other.MayInplace().begin(), other.MayInplace().end(), it) != other.MayInplace().end())
+        return true;
+    }
+    //check alias
+    for (auto& it : alias_map_) {
+      if (std::find(other.Alias().begin(), other.Alias().end(), it) != other.Alias().end())
+        return true;
+    }
+    //check memory type
+    auto other_mem_types = other.MemoryType();
+    for (auto it : memory_type_args_) {
+      if (other_mem_types.count(it.first) && other_mem_types[it.first] == it.second)
+        return true;
+    }
+
+    return false;
+  }
+
  private:
   friend class KernelDefBuilder;
 

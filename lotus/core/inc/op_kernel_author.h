@@ -60,7 +60,20 @@ enum class MLTensorDataType {
 
 union MLFloat16 {
 	uint16_t val;
+
+	MLFloat16(uint16_t x) : val(x) {}
+	MLFloat16() : val(0) {}
 };
+
+inline bool operator==(const MLFloat16& left, const MLFloat16& right)
+{
+	return left.val == right.val;
+}
+
+inline bool operator!=(const MLFloat16& left, const MLFloat16& right)
+{
+	return left.val != right.val;
+}
 
 struct MLMapType {
   MLTensorDataType data_type;

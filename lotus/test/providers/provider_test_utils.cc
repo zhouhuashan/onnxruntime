@@ -79,7 +79,7 @@ void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
                     "] did not match run output shape [" +
                     output_tensor.Shape().ToString() + "]");
 
-  CheckDispatch<bool, float, double, uint8_t, uint16_t, uint32_t, uint64_t, int16_t, int32_t, int64_t, std::string>(output_tensor.DataType(), expected_data, output_tensor);
+  CheckDispatch<bool, float, double, uint8_t, uint16_t, uint32_t, uint64_t, int16_t, int32_t, int64_t, std::string, MLFloat16>(output_tensor.DataType(), expected_data, output_tensor);
 }
 
 // Check for non tensor types
