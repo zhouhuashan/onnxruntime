@@ -29,7 +29,7 @@ class OpKernel;
 using CustomKernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 class CustomRegistry {
-public:
+ public:
   CustomRegistry(bool create_func_kernel);
 
   ~CustomRegistry();
@@ -51,14 +51,14 @@ public:
   * @return OK if success.
   */
   Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version);
-  
+
   class Impl;
 
-  Impl *GetImpl() {
+  Impl* GetImpl() {
     return impl_.get();
   }
 
-private:
+ private:
   CustomRegistry() = delete;
 
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
@@ -153,7 +153,7 @@ class InferenceSession {
     */
   explicit InferenceSession(const SessionOptions& session_options,
                             Logging::LoggingManager* logging_manager = nullptr);
- 
+
   ~InferenceSession();
 
   /**

@@ -706,7 +706,7 @@ class InferenceSession::Impl {
       const std::string& name = entry.first;
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
-
+      VLOGS(*session_logger_, 1) << "About to add weight with name: " << name << " and index: " << mlvalue_index;
       auto& location = p_execution_plan->allocation_plan[mlvalue_index].location;
       MLValue mlvalue;
       DeserializeTensorProto(location, *(entry.second), mlvalue, nullptr, 0);

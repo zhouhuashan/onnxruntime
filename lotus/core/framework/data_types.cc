@@ -82,6 +82,11 @@ bool TensorType<MLFloat16>::IsCompatible(const TypeProto& type_proto) const {
   return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_FLOAT16;
 }
 
+static bool IsTensorTypeScalar(const onnx::TypeProto_Tensor& tensor_type_proto) {
+  int sz = tensor_type_proto.shape().dim_size();
+  return sz == 0 || sz == 1;
+}
+
 LOTUS_REGISTER_TENSOR_TYPE(int32_t);
 LOTUS_REGISTER_TENSOR_TYPE(float);
 LOTUS_REGISTER_TENSOR_TYPE(bool);
@@ -113,7 +118,7 @@ LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapStringToFloat,
                                    type_proto.sequence_type().elem_type().value_case() == TypeProto::ValueCase::kMapType &&
                                    type_proto.sequence_type().elem_type().map_type().key_type() == TensorProto_DataType_STRING &&
                                    type_proto.sequence_type().elem_type().map_type().value_type().value_case() == TypeProto::ValueCase::kTensorType &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().shape().dim_size() == 0 &&
+                                   IsTensorTypeScalar(type_proto.sequence_type().elem_type().map_type().value_type().tensor_type()) &&
                                    type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().has_elem_type() &&
                                    type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().elem_type() == TensorProto_DataType_FLOAT);
 LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapInt64ToFloat,
@@ -121,7 +126,7 @@ LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapInt64ToFloat,
                                    type_proto.sequence_type().elem_type().value_case() == TypeProto::ValueCase::kMapType &&
                                    type_proto.sequence_type().elem_type().map_type().key_type() == TensorProto_DataType_INT64 &&
                                    type_proto.sequence_type().elem_type().map_type().value_type().value_case() == TypeProto::ValueCase::kTensorType &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().shape().dim_size() == 0 &&
+                                   IsTensorTypeScalar(type_proto.sequence_type().elem_type().map_type().value_type().tensor_type()) &&
                                    type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().has_elem_type() &&
                                    type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().elem_type() == TensorProto_DataType_FLOAT);
 
@@ -164,7 +169,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
       auto keytype = maptype.key_type();
       auto value_type = maptype.value_type();
       if (value_type.value_case() != TypeProto::ValueCase::kTensorType ||
-          value_type.tensor_type().shape().dim_size() != 0) {
+          !IsTensorTypeScalar(value_type.tensor_type())) {
         LOTUS_NOT_IMPLEMENTED("Nested map/sequence type is not supported");
       }
 
@@ -221,7 +226,7 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
           auto keytype = maptype.key_type();
           auto& value_type = maptype.value_type();
           if (value_type.value_case() != TypeProto::ValueCase::kTensorType ||
-              value_type.tensor_type().shape().dim_size() != 0) {
+              !IsTensorTypeScalar(value_type.tensor_type())) {
             LOTUS_THROW("Nested map/sequence type is not supported");
           }
 

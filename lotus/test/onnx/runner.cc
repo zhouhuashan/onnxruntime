@@ -474,6 +474,7 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
       ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
       goto end;
     }
+    LOGS_DEFAULT(INFO) << "successfully loaded model: " << info.model_url;
     try {
       status = session_object->Initialize();
       if (!status.IsOK()) {
@@ -481,6 +482,7 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
         ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), StatusCodeToExecuteResult(status.Code())), node_name};
         goto end;
       }
+      LOGS_DEFAULT(INFO) << "successfully initialized model: " << info.model_url;
     } catch (Lotus::NotImplementedException& ex) {
       LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info.test_case_name.c_str(), ex.what());
       ret = {std::vector<EXECUTE_RESULT>(info.input_pb_files.size(), EXECUTE_RESULT::NOT_SUPPORT), node_name};
