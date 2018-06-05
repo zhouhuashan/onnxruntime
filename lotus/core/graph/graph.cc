@@ -1082,7 +1082,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
       node.op_ = OpSchemaRegistry::Schema(node.OpType(), maxInclusiveVersion, node.Domain());
     }
 
-    RETURN_IF_ERROR(node.UpdateInputArgCount());
+    LOTUS_RETURN_IF_ERROR(node.UpdateInputArgCount());
 
     // currently an Op is required by ValidateVersion, so we use gsl::not_null.
     // This may change in the future to allow a null Op
@@ -1111,7 +1111,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
       }
     }
 
-    NO_CHANGE_ON_SYNC_FLAG(RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op, output_args)));
+    NO_CHANGE_ON_SYNC_FLAG(LOTUS_RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op, output_args)));
   }
 
   return Status::OK();
@@ -1127,11 +1127,11 @@ Status Graph::Resolve(bool no_proto_sync_required) {
 
   std::unordered_map<std::string, Node*> output_args;
   std::unordered_map<std::string, NodeIndex> node_name_to_index;
-  RETURN_IF_ERROR(VerifyNoDuplicateName(output_args, node_name_to_index));
-  RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
-  RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
-  RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
-  RETURN_IF_ERROR(SetGraphInputsOutputs());
+  LOTUS_RETURN_IF_ERROR(VerifyNoDuplicateName(output_args, node_name_to_index));
+  LOTUS_RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
+  LOTUS_RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
+  LOTUS_RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
+  LOTUS_RETURN_IF_ERROR(SetGraphInputsOutputs());
 
   CleanUnusedInitializers();
 

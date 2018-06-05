@@ -202,7 +202,7 @@ Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<
   model->reset(new Model(model_proto, local_registry));
 
   if ((*model)->MainGraph() != nullptr) {
-    RETURN_IF_ERROR((*model)->MainGraph()->Resolve(true));
+    LOTUS_RETURN_IF_ERROR((*model)->MainGraph()->Resolve(true));
   }
   return Status::OK();
 }
@@ -210,17 +210,17 @@ Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<
 #ifdef _WIN32
 Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>* p_model, const ILotusOpSchemaCollection* local_registry) {
   int fd;
-  RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
+  LOTUS_RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
   auto status = Load(fd, p_model, local_registry);
-  RETURN_IF_ERROR(FileClose(fd));
+  LOTUS_RETURN_IF_ERROR(FileClose(fd));
   return status;
 }
 
 Status Model::Save(Model& model, const std::wstring& file_path) {
   int fd;
-  RETURN_IF_ERROR(FileOpenWr(file_path, &fd));
+  LOTUS_RETURN_IF_ERROR(FileOpenWr(file_path, &fd));
   auto status = Save(model, fd);
-  RETURN_IF_ERROR(FileClose(fd));
+  LOTUS_RETURN_IF_ERROR(FileClose(fd));
   return status;
 }
 
@@ -232,7 +232,7 @@ Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<M
     return Status(LOTUS, NO_MODEL, "Failed to open: " + file_path);
   }
   auto status = Load(fd, p_model, local_registry);
-  RETURN_IF_ERROR(FileClose(fd));
+  LOTUS_RETURN_IF_ERROR(FileClose(fd));
   return status;
 }
 
@@ -245,16 +245,16 @@ Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ gsl::not_null<std:
 
   (*p_model).reset(new Model(std::move(modelProto), local_registry));
   if ((*p_model)->MainGraph() != nullptr) {
-    RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve(true));
+    LOTUS_RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve(true));
   }
   return Status::OK();
 }
 
 Status Model::Save(Model& model, const std::string& file_path) {
   int fd;
-  RETURN_IF_ERROR(FileOpenWr(file_path, &fd));
+  LOTUS_RETURN_IF_ERROR(FileOpenWr(file_path, &fd));
   auto status = Save(model, fd);
-  RETURN_IF_ERROR(FileClose(fd));
+  LOTUS_RETURN_IF_ERROR(FileClose(fd));
   return status;
 }
 
@@ -284,7 +284,7 @@ Status Model::Load(int fd, gsl::not_null<std::shared_ptr<Model>*> p_model, const
 
   (*p_model).reset(new Model(std::move(model_proto), local_registry));
   if ((*p_model)->MainGraph() != nullptr) {
-    RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve(true));
+    LOTUS_RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve(true));
   }
   return Status::OK();
 }
@@ -294,7 +294,7 @@ Status Model::Save(Model& model, int p_fd) {
     return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> is less than 0.");
   }
 
-  RETURN_IF_ERROR(model.MainGraph()->Resolve());
+  LOTUS_RETURN_IF_ERROR(model.MainGraph()->Resolve());
   auto model_proto = model.ToProto();
   const bool result = model_proto.SerializeToFileDescriptor(p_fd);
   if (result) {

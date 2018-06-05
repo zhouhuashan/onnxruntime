@@ -52,7 +52,7 @@ class MsOpRegistry {
  public:
   static Status RegisterMsOps() {
     // Ms domain ops should be registered here. Example:
-    // RETURN_IF_ERROR(RegisterMsNNOps());
+    // LOTUS_RETURN_IF_ERROR(RegisterMsNNOps());
     return Status::OK();
   }
 

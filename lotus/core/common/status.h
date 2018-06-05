@@ -7,12 +7,6 @@
 namespace Lotus {
 namespace Common {
 
-#define RETURN_IF_ERROR(expr)              \
-  do {                                     \
-    auto _status = (expr);                 \
-    if ((!_status.IsOK())) return _status; \
-  } while (0)
-
 enum StatusCategory {
   NONE = 0,
   SYSTEM = 1,
