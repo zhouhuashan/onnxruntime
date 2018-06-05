@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include "core/common/status.h"
 #include "core/framework/arena.h"
 #include "core/framework/tensor.h"
 #include "core/graph/graph.h"
@@ -36,7 +37,7 @@ class IExecutionProvider {
   virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;
 
   // Copy tensor between execution providers
-  virtual Status CopyTensor(const Tensor& src, Tensor& dst) const = 0;
+  virtual Common::Status CopyTensor(const Tensor& src, Tensor& dst) const = 0;
 
   // Returns an opaque handle whose exact type varies based on the provider
   // and is interpreted accordingly by the corresponding kernel implementation.
@@ -54,7 +55,7 @@ class IExecutionProvider {
   * Currently this is primarily used by the IOBinding object to ensure that all inputs have been
   * copied to the device before execution begins.
   */
-  virtual Status Sync() {
+  virtual Common::Status Sync() {
     return Status::OK();
   };
 
