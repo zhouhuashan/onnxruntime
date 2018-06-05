@@ -342,7 +342,10 @@ const std::vector<MLDataType>& DataTypeImpl::AllTensorTypes() {
 // cost should be fine. alternative would be to add a static string field to DataTypeImpl
 // that we set in the register macro to the type name, and output that instead.
 std::ostream& operator<<(std::ostream& out, const MLDataType data_type) {
-  return out << typeid(*data_type).name();
+  if (data_type == nullptr)
+    return out << "(null)";
+  else
+    return out << typeid(*data_type).name();
 }
 
 }  // namespace Lotus
