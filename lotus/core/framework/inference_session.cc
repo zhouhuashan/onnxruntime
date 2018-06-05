@@ -745,7 +745,7 @@ class InferenceSession::Impl {
       auto alloc = session_state_.GetAllocator(location);
       if (!alloc)
         return Status(LOTUS, FAIL, "Failed to get allocator for location: " + location.ToString());
-      void* buffer = alloc->Alloc(mem_patterns.patterns[i].peak_size());
+      void* buffer = mem_patterns.patterns[i].peak_size() > 0 ? alloc->Alloc(mem_patterns.patterns[i].peak_size()) : nullptr;
       weights_buffers_[location] = BufferUniquePtr(buffer, alloc);
     }
     //3. create weight tensors based on weights buffer
