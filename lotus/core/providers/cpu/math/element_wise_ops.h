@@ -6,50 +6,37 @@
 
 namespace Lotus {
 
-class BroadcastAxisKernel : public OpKernel {
- protected:
-  BroadcastAxisKernel(const OpKernelInfo& info) : OpKernel(info) {
-    int64_t broadcast;
-    broadcast_ = info.GetAttr("broadcast", &broadcast).IsOK() && broadcast == 1;
-    info.GetAttr("axis", &axis_).IsOK();
-    LOTUS_ENFORCE(axis_ == -1 || axis_ != -1 && broadcast_, "If 'axis' attribute is specified, then 'broadcast' attribute should be set to one.");
-  }
-
-  bool broadcast_;
-  int64_t axis_{-1};  // -1 means 'no axis specified'
-};
-
 template <typename T>
-class Add final : public BroadcastAxisKernel {
+class Add final : public OpKernel {
  public:
-  Add(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Add(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Sub final : public BroadcastAxisKernel {
+class Sub final : public OpKernel {
  public:
-  Sub(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Sub(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Mul final : public BroadcastAxisKernel {
+class Mul final : public OpKernel {
  public:
-  Mul(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Mul(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Div final : public BroadcastAxisKernel {
+class Div final : public OpKernel {
  public:
-  Div(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Div(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -110,27 +97,27 @@ class Sqrt final : public OpKernel {
 };
 
 template <typename T>
-class Pow final : public BroadcastAxisKernel {
+class Pow final : public OpKernel {
  public:
-  Pow(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Pow(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Exp final : public BroadcastAxisKernel {
+class Exp final : public OpKernel {
  public:
-  Exp(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Exp(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Log final : public BroadcastAxisKernel {
+class Log final : public OpKernel {
  public:
-  Log(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Log(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -164,54 +151,54 @@ class Max final : public OpKernel {
 };
 
 template <typename T>
-class And final : public BroadcastAxisKernel {
+class And final : public OpKernel {
  public:
-  And(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  And(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Or final : public BroadcastAxisKernel {
+class Or final : public OpKernel {
  public:
-  Or(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Or(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Xor final : public BroadcastAxisKernel {
+class Xor final : public OpKernel {
  public:
-  Xor(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Xor(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Equal final : public BroadcastAxisKernel {
+class Equal final : public OpKernel {
  public:
-  Equal(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Equal(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Less final : public BroadcastAxisKernel {
+class Less final : public OpKernel {
  public:
-  Less(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Less(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Greater final : public BroadcastAxisKernel {
+class Greater final : public OpKernel {
  public:
-  Greater(const OpKernelInfo& info) : BroadcastAxisKernel(info) {
+  Greater(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;

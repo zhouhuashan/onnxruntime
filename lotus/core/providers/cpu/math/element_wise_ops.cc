@@ -180,157 +180,283 @@ auto MakeEigenArrayMap(Tensor& t) { return EigenVectorArrayMap<T>(t.MutableData<
 template <typename T>
 auto MakeEigenArrayMap(const Tensor& t) { return ConstEigenVectorArrayMap<T>(t.Data<T>(), t.Shape().Size()); }
 
-// Finds the axis inside 'shape' that matches 'find' starting from the end
-// For example if shape = {2, 3, 4, 5, 6} and find = {4, 5} it returns 2
-// If shape = {4, 5, 2, 4, 5} and find = {4, 5} it would return 3
-int FindShapeSubsetAxis(const TensorShape& shape, const TensorShape& find) {
-  int findCount = int(find.NumDimensions());
+struct BroadcastIterator {
+  size_t AdvanceBy(size_t delta) {
+    size_t index = index_;
 
-  for (int i = int(shape.NumDimensions()) - findCount; i >= 0; i--) {
-    int j = 0;
-    for (; j < findCount; j++) {
-      if (shape[i + j] != find[j])
-        break;
-    }
-
-    if (j == findCount)
-      return i;
-  }
-
-  LOTUS_THROW("Tensors have no common shape subset");
-}
-
-// Validate that 'find' matches 'shape' at location 'axis'
-void VerifyShapeSubsetAxis(const TensorShape& shape, const TensorShape& find, int axis) {
-  LOTUS_ENFORCE(axis >= 0 && axis < int(shape.NumDimensions()), "Axis attribute out of range");
-  int dimensions = int(find.NumDimensions());
-  for (int i = 0; i < dimensions; i++) {
-    if (shape[int(axis) + i] != find[i])
-      LOTUS_THROW("Axis attribute doesn't refer to a valid subset");
-  }
-}
-
-template <typename T, typename Op>
-void Loop(const Tensor& input1, const Tensor& input2, Tensor& output, Op op) {
-  auto* input1_data = input1.Data<T>();
-  auto* input2_data = input2.Data<T>();
-  auto* output_data = output.MutableData<std::result_of_t<Op(T, T)>>();
-  auto outputSize = output.Shape().Size();
-
-  for (auto i = 0; i < outputSize; i++)
-    output_data[i] = op(input1_data[i], input2_data[i]);
-}
-
-template <typename T, typename Op>
-void ScalarLoop(const Tensor& input1, T value, Tensor& output, Op op) {
-  auto* input1_data = input1.Data<T>();
-  auto* output_data = output.MutableData<std::result_of_t<Op(T, T)>>();
-  auto outputSize = output.Shape().Size();
-
-  for (auto i = 0; i < outputSize; i++)
-    output_data[i] = op(input1_data[i], value);
-}
-
-template <typename T, typename Op>
-void Broadcast(const Tensor& input1, const Tensor& input2, Tensor& output, int axis, Op op) {
-  // If the axis_ attribute exists, use and verify it, otherwise look for the matching suffix
-  if (axis == -1)
-    axis = FindShapeSubsetAxis(input1.Shape(), input2.Shape());
-  else
-    VerifyShapeSubsetAxis(input1.Shape(), input2.Shape(), axis);
-
-  // If the input tensor has dimensions like [2][3][4][5][6] and the second input has dimensions like [3][4]
-  // Then we want to access the second as though the first one and last two indices are ignored, like this: [x][3][4][x][x] ('x' means value has no effect)
-  // Since we're iterating sequentially through both tensors, we can do this by incrementing the index into
-  // the second tensor every '5*6' elements (thus ignoring the last two dimensions),
-  // and resetting the index every '3*4*5*6' elements (thus ignoring the first dimension)
-
-  axis += int(input2.Shape().NumDimensions());  // Since we start from the last dimension, make axis based on the last index vs first
-  int64_t incrementPitch = 1;
-  for (int i = int(input1.Shape().NumDimensions()); --i >= axis;)
-    incrementPitch *= input1.Shape()[i];
-
-  int64_t resetPitch = input2.Shape().Size();
-
-  auto* input1_data = input1.Data<T>();
-  auto* input2_data = input2.Data<T>();
-  auto* output_data = output.MutableData<std::result_of_t<Op(T, T)>>();
-  auto outputSize = output.Shape().Size();
-
-  // Do the operation
-  int input2_index = 0;
-  int incrementCount = 0;
-  for (int i = 0; i < outputSize; i++) {
-    *output_data++ = op(*input1_data++, input2_data[input2_index]);
-
-    if (++incrementCount == incrementPitch) {
-      incrementCount = 0;
-      if (++input2_index == resetPitch) {
-        input2_index = 0;
+    index_ += deltas_[0] * delta;
+    counters_[0] += delta;
+    if (counters_[0] == counts_[0]) {
+      counters_[0] = 0;
+      for (size_t counterIndex = 1; counterIndex < counters_.size(); counterIndex++) {
+        index_ += deltas_[counterIndex];
+        if (++counters_[counterIndex] != counts_[counterIndex])
+          break;
+        counters_[counterIndex] = 0;
       }
     }
+    return index;
   }
+
+  void Init(int64_t axis, int64_t largest) {
+    deltas_.push_back(axis > 1);
+    counts_.push_back(largest);
+    count_ *= axis;
+  }
+
+  void Append(int64_t axis, int64_t largest) {
+    // If we're greater than 1, it doesn't matter what the other tensor does
+    if (axis > 1) {
+      if (deltas_.back() <= 0)  // Were we broadcasting
+        StopBroadcasting();
+    } else {
+      // We must be 1, any other value is an error
+      LOTUS_ENFORCE(axis == 1, "Tensor shapes can't broadcast with each other");
+      if (deltas_.back() > 0)
+        StartBroadcasting();
+    }
+
+    counts_.back() *= largest;  // Just increase the last count
+    count_ *= axis;
+  }
+
+  void StopBroadcasting() {
+    deltas_.push_back(count_);
+    counts_.push_back(1);
+  }
+
+  void StartBroadcasting() {
+    deltas_.push_back(-count_);
+    counts_.push_back(1);
+  }
+
+  std::vector<int64_t> counters_;
+  std::vector<int64_t> deltas_;
+  std::vector<int64_t> counts_;
+  size_t count_{1};  // Running total count of entries in tensor, used while building up the entries
+
+ private:
+  size_t index_{};
+};
+
+struct Broadcaster {
+  Broadcaster(const std::vector<int64_t>& shape1, const std::vector<int64_t>& shape2) {
+    size_t dimension_count_max = std::max(shape1.size(), shape2.size());
+    size_t dimension_count_min = std::min(shape1.size(), shape2.size());
+    output_shape_.resize(dimension_count_max);
+
+    auto iter1 = shape1.end();
+    auto iter2 = shape2.end();
+    auto output_shape = output_shape_.end();
+
+    // Scalars are a special case, as it's always a broadcast
+    size_t index = 0;
+    if (dimension_count_min == 0) {
+      if (shape1.size() == 0)  // Shape1 is a scalar
+      {
+        if (shape2.size() == 0)  // Two scalars?
+        {
+          iterator1_.Init(1, 1);
+          iterator2_.Init(1, 1);
+        } else {
+          auto axis = *--iter2;
+          iterator1_.Init(1, axis);
+          iterator2_.Init(axis, axis);
+          *--output_shape = axis;
+        }
+      } else {  // Shape2 is a scalar
+        auto axis = *--iter1;
+        iterator1_.Init(axis, axis);
+        iterator2_.Init(1, axis);
+        *--output_shape = axis;
+      }
+      index++;  // Manually increment since we processed one axis
+    }
+
+    for (; index < dimension_count_min; index++) {
+      auto axis1 = *--iter1;
+      auto axis2 = *--iter2;
+
+      if (axis1 == 1 && axis2 == 1 && index + 1 < dimension_count_min)  // Nothing to do in this case
+        continue;
+
+      auto largest = std::max(axis1, axis2);
+      iterator1_.Init(axis1, largest);
+      iterator2_.Init(axis2, largest);
+      *--output_shape = largest;
+      index++;  // Manually increment since we processed one axis
+      break;
+    }
+
+    for (; index < dimension_count_min; index++) {
+      auto axis1 = *--iter1;
+      auto axis2 = *--iter2;
+
+      if (axis1 == 1 && axis2 == 1)  // Nothing to do in this case
+        continue;
+
+      auto largest = std::max(axis1, axis2);
+      iterator1_.Append(axis1, largest);
+      iterator2_.Append(axis2, largest);
+      *--output_shape = largest;
+    }
+
+    // If one shape is bigger than another we need to broadcast the smaller onto the bigger from this point on
+    for (; index < dimension_count_max; index++) {
+      if (dimension_count_max == shape2.size()) {
+        auto axis = *--iter2;
+        iterator1_.Append(1, axis);
+        iterator2_.Append(axis, axis);
+        *--output_shape = axis;
+      } else {
+        auto axis = *--iter1;
+        iterator1_.Append(axis, axis);
+        iterator2_.Append(1, axis);
+        *--output_shape = axis;
+      }
+    }
+
+    // Allocate the counters
+    iterator1_.counters_.resize(iterator1_.counts_.size(), 0);
+    iterator2_.counters_.resize(iterator2_.counts_.size(), 0);
+  }
+
+  size_t GetSpanSize() const { return std::min(iterator1_.counts_.front(), iterator2_.counts_.front()); }
+
+  BroadcastIterator iterator1_, iterator2_;
+  std::vector<int64_t> output_shape_;
+};
+
+template <typename T, typename TOutput = T>
+struct TBroadcaster {
+  TBroadcaster(OpKernelContext& context)
+      : input_tensor0_(*context.Input<Tensor>(0)),
+        input_tensor1_(*context.Input<Tensor>(1)),
+        output_tensor_(*context.Output(0, TensorShape(broadcaster_.output_shape_))) {
+  }
+
+  operator bool() const { return output_ != output_end_; }
+
+  bool IsInput0Scalar() const { return broadcaster_.iterator1_.deltas_.front() == 0; }
+  bool IsInput1Scalar() const { return broadcaster_.iterator2_.deltas_.front() == 0; }
+
+  T NextScalar0() { return *Next0(); }
+  T NextScalar1() { return *Next1(); }
+
+  gsl::span<const T> NextSpan0() { return gsl::span<const T>(Next0(), span_size_); }
+  gsl::span<const T> NextSpan1() { return gsl::span<const T>(Next1(), span_size_); }
+  gsl::span<TOutput> NextSpanOutput() { return gsl::span<TOutput>(NextOutput(), span_size_); }
+
+  ConstEigenVectorMap<T> NextEigen0() { return ConstEigenVectorMap<T>(Next0(), span_size_); }
+  ConstEigenVectorMap<T> NextEigen1() { return ConstEigenVectorMap<T>(Next1(), span_size_); }
+  EigenVectorMap<TOutput> NextEigenOutput() { return EigenVectorMap<TOutput>(NextOutput(), span_size_); }
+
+ private:
+  const T* Next0() { return input0_ + broadcaster_.iterator1_.AdvanceBy(span_size_); }
+  const T* Next1() { return input1_ + broadcaster_.iterator2_.AdvanceBy(span_size_); }
+
+  TOutput* NextOutput() {
+    TOutput* output = output_;
+    output_ += span_size_;
+    return output;
+  }
+
+  const Tensor& input_tensor0_;
+  const Tensor& input_tensor1_;
+  Broadcaster broadcaster_{input_tensor0_.Shape().GetDims(), input_tensor1_.Shape().GetDims()};
+  size_t span_size_{broadcaster_.GetSpanSize()};
+
+  Tensor& output_tensor_;
+
+  const T* input0_{input_tensor0_.Data<T>()};
+  const T* input1_{input_tensor1_.Data<T>()};
+  TOutput* output_{output_tensor_.MutableData<TOutput>()};
+  const TOutput* output_end_{output_ + output_tensor_.Shape().Size()};
+};
+
+template <typename T, typename TOutput, typename Op>
+void Loop(gsl::span<const T> input1, gsl::span<const T> input2, gsl::span<TOutput> output, Op op) {
+  for (auto i = 0; i < output.size(); i++)
+    output[i] = op(input1[i], input2[i]);
+}
+
+template <typename T, typename TOutput, typename Op>
+void Loop(T scalar1, gsl::span<const T> input2, gsl::span<TOutput> output, Op op) {
+  for (auto i = 0; i < output.size(); i++)
+    output[i] = op(scalar1, input2[i]);
+}
+
+template <typename T, typename TOutput, typename Op>
+void Loop(gsl::span<const T> input1, T scalar2, gsl::span<TOutput> output, Op op) {
+  for (auto i = 0; i < output.size(); i++)
+    output[i] = op(input1[i], scalar2);
 }
 
 template <>
-Status Add<float>::Compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->Input<Tensor>(0);
-  auto& B = *ctx->Input<Tensor>(1);
-  auto& C = *ctx->Output(0, A.Shape());
+Status Add<float>::Compute(OpKernelContext* context) const {
+  TBroadcaster<float> bc(*context);
 
-  if (broadcast_)
-    Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a + b; });
-  else {
-    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
-    EigenMap<float>(C) = EigenMap<float>(A) + EigenMap<float>(B);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextScalar0() + bc.NextEigen1().array();
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().array() + bc.NextScalar1();
+  } else {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0() + bc.NextEigen1();
+  }
+  return Status::OK();
+}
+
+template <>
+Status Sub<float>::Compute(OpKernelContext* context) const {
+  TBroadcaster<float> bc(*context);
+
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextScalar0() - bc.NextEigen1().array();
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().array() - bc.NextScalar1();
+  } else {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0() - bc.NextEigen1();
   }
 
   return Status::OK();
 }
 
 template <>
-Status Sub<float>::Compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->Input<Tensor>(0);
-  auto& B = *ctx->Input<Tensor>(1);
-  auto& C = *ctx->Output(0, A.Shape());
+Status Mul<float>::Compute(OpKernelContext* context) const {
+  TBroadcaster<float> bc(*context);
 
-  if (broadcast_)
-    Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a - b; });
-  else {
-    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
-    EigenMap<float>(C) = EigenMap<float>(A) - EigenMap<float>(B);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextScalar0() * bc.NextEigen1().array();
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().array() * bc.NextScalar1();
+  } else {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().cwiseProduct(bc.NextEigen1());
   }
-
   return Status::OK();
 }
 
 template <>
-Status Mul<float>::Compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->Input<Tensor>(0);
-  auto& B = *ctx->Input<Tensor>(1);
-  auto& C = *ctx->Output(0, A.Shape());
+Status Div<float>::Compute(OpKernelContext* context) const {
+  TBroadcaster<float> bc(*context);
 
-  if (broadcast_)
-    Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a * b; });
-  else {
-    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
-    EigenMap<float>(C) = EigenMap<float>(A).cwiseProduct(EigenMap<float>(B));
-  }
-
-  return Status::OK();
-}
-
-template <>
-Status Div<float>::Compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->Input<Tensor>(0);
-  auto& B = *ctx->Input<Tensor>(1);
-  auto& C = *ctx->Output(0, A.Shape());
-
-  if (broadcast_)
-    Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return a / b; });
-  else {
-    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
-    EigenMap<float>(C) = EigenMap<float>(A).cwiseQuotient(EigenMap<float>(B));
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextScalar0() / bc.NextEigen1().array();
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().array() / bc.NextScalar1();
+  } else {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().cwiseQuotient(bc.NextEigen1());
   }
 
   return Status::OK();
@@ -397,20 +523,20 @@ Status Sqrt<float>::Compute(OpKernelContext* ctx) const {
 }
 
 template <>
-Status Pow<float>::Compute(OpKernelContext* ctx) const {
-  auto& A = *ctx->Input<Tensor>(0);
-  auto& B = *ctx->Input<Tensor>(1);
-  auto& C = *ctx->Output(0, A.Shape());
+Status Pow<float>::Compute(OpKernelContext* context) const {
+  TBroadcaster<float> bc(*context);
 
-  if (broadcast_) {
-    if (B.Shape().NumDimensions() == 0) {
-      LOTUS_ENFORCE(axis_ == -1, "When broadcasting by a scalar, axis cannot be set");
-      EigenMap<float>(C) = EigenMap<float>(A).array().pow(*B.Data<float>());
-    } else
-      Broadcast<float>(A, B, C, int(axis_), [](float a, float b) { return pow(a, b); });
+  if (bc.IsInput0Scalar()) {
+    while (bc) {
+      float scalar = bc.NextScalar0();
+      bc.NextEigenOutput() = EigenVectorMap<float>(&scalar, 1).array().pow(bc.NextEigen1().array());
+    }
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().array().pow(bc.NextScalar1());
   } else {
-    LOTUS_ENFORCE(A.Shape() == B.Shape(), "Inputs must have the same shape");
-    EigenMap<float>(C) = EigenMap<float>(A).array().pow(EigenMap<float>(B).array());
+    while (bc)
+      bc.NextEigenOutput() = bc.NextEigen0().array().pow(bc.NextEigen1().array());
   }
 
   return Status::OK();
@@ -497,52 +623,112 @@ Status Max<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-template <typename TInput, typename Op>
-Status BooleanOp(OpKernelContext* ctx, bool broadcast, int64_t axis, Op op) {
-  auto& A = *ctx->Input<Tensor>(0);
-  auto& B = *ctx->Input<Tensor>(1);
-  auto& C = *ctx->Output(0, A.Shape());
+template <>
+Status And<bool>::Compute(OpKernelContext* context) const {
+  auto op = [](bool a, bool b) { return a && b; };
 
-  if (broadcast) {
-    if (B.Shape().NumDimensions() == 0) {
-      LOTUS_ENFORCE(axis == -1, "When broadcasting by a scalar, axis cannot be set");
-      ScalarLoop<TInput>(A, *B.Data<TInput>(), C, op);
-    } else
-      Broadcast<TInput>(A, B, C, int(axis), op);
+  TBroadcaster<bool> bc(*context);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
   } else {
-    Loop<TInput>(A, B, C, op);
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
   }
   return Status::OK();
 }
 
 template <>
-Status And<bool>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return a && b; });
+Status Or<bool>::Compute(OpKernelContext* context) const {
+  auto op = [](bool a, bool b) { return a || b; };
+
+  TBroadcaster<bool> bc(*context);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
+  } else {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  }
+  return Status::OK();
 }
 
 template <>
-Status Or<bool>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return a || b; });
+Status Xor<bool>::Compute(OpKernelContext* context) const {
+  auto op = [](bool a, bool b) { return (a ^ b) != 0; };
+
+  TBroadcaster<bool> bc(*context);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
+  } else {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  }
+  return Status::OK();
 }
 
 template <>
-Status Xor<bool>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<bool>(ctx, broadcast_, axis_, [](bool a, bool b) { return (a ^ b) != 0; });
+Status Equal<int32_t>::Compute(OpKernelContext* context) const {
+  auto op = [](auto a, auto b) { return a == b; };
+
+  TBroadcaster<int32_t, bool> bc(*context);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
+  } else {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  }
+  return Status::OK();
 }
 
 template <>
-Status Equal<int32_t>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<int32_t>(ctx, broadcast_, axis_, [](auto a, auto b) { return a == b; });
+Status Less<float>::Compute(OpKernelContext* context) const {
+  auto op = [](auto a, auto b) { return a < b; };
+
+  TBroadcaster<float, bool> bc(*context);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
+  } else {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  }
+  return Status::OK();
 }
 
 template <>
-Status Less<float>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<float>(ctx, broadcast_, axis_, [](auto a, auto b) { return a < b; });
-}
+Status Greater<float>::Compute(OpKernelContext* context) const {
+  auto op = [](auto a, auto b) { return a > b; };
 
-template <>
-Status Greater<float>::Compute(OpKernelContext* ctx) const {
-  return BooleanOp<float>(ctx, broadcast_, axis_, [](auto a, auto b) { return a > b; });
+  TBroadcaster<float, bool> bc(*context);
+  if (bc.IsInput0Scalar()) {
+    while (bc)
+      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  } else if (bc.IsInput1Scalar()) {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
+  } else {
+    while (bc)
+      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+  }
+  return Status::OK();
 }
 
 template <>

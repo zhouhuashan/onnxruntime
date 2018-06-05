@@ -22,18 +22,15 @@ TEST(MathOpTest, Add) {
   test.Run();
 }
 
-TEST(MathOpTest, DISABLED_Add_Broadcast_Axis) {
+TEST(MathOpTest, Add_Broadcast_Axis) {
   OpTester test("Add");
-
-  test.AddAttribute("axis", int64_t{0});
-  test.AddAttribute("broadcast", int64_t{1});
 
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("A", dims,
                        {1.0f, 2.0f, 3.0f,
                         4.0f, 5.0f, 6.0f,
                         7.0f, 8.0f, 9.0f});
-  test.AddInput<float>("B", {3},
+  test.AddInput<float>("B", {3, 1},
                        {3.0f,
                         2.0f,
                         1.0f});
@@ -44,17 +41,51 @@ TEST(MathOpTest, DISABLED_Add_Broadcast_Axis) {
   test.Run();
 }
 
-TEST(MathOpTest, DISABLED_Add_Broadcast) {
+TEST(MathOpTest, Add_Broadcast_0x0) {
   OpTester test("Add");
 
-  test.AddAttribute("broadcast", int64_t{1});
+  test.AddInput<float>("A", {}, {10.0f});
+  test.AddInput<float>("B", {}, {2.0f});
+  test.AddOutput<float>("C", {}, {12.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Add_Broadcast_0x1) {
+  OpTester test("Add");
+
+  test.AddInput<float>("A", {}, {10.0f});
+  test.AddInput<float>("B", {1}, {2.0f});
+  test.AddOutput<float>("C", {1}, {12.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Add_Broadcast_1x0) {
+  OpTester test("Add");
+
+  test.AddInput<float>("A", {1}, {10.0f});
+  test.AddInput<float>("B", {}, {2.0f});
+  test.AddOutput<float>("C", {1}, {12.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Add_Broadcast_1x1) {
+  OpTester test("Add");
+
+  test.AddInput<float>("A", {1}, {10.0f});
+  test.AddInput<float>("B", {1}, {2.0f});
+  test.AddOutput<float>("C", {1}, {12.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Add_Broadcast) {
+  OpTester test("Add");
 
   std::vector<int64_t> dims{3, 2};
   test.AddInput<float>("A", dims,
                        {1.0f, 2.0f,
                         3.0f, 4.0f,
                         5.0f, 6.0f});
-  test.AddInput<float>("B", {3},
+  test.AddInput<float>("B", {3, 1},
                        {1.0f,
                         2.0f,
                         3.0f});
@@ -80,6 +111,21 @@ TEST(MathOpTest, Sub) {
                         {2.0f, -2.4f, -433.3f,
                          0.0f, -2.0f, -164.0f,
                          0.0f, 0.0f, -20'000.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Sub_Broadcast_Scalar) {
+  OpTester test("Sub");
+  std::vector<int64_t> dims{3, 3};
+  test.AddInput<float>("A", dims,
+                       {1.0f, 2.0f, -1.0f,
+                        0.0f, 1.5f, -100.0f,
+                        -5.4f, 9.3f, -10'000.0f});
+  test.AddInput<float>("B", {}, {5.0f});
+  test.AddOutput<float>("C", dims,
+                        {-4.0f, -3.0f, -6.0f,
+                         -5.0f, -3.5f, -105.0f,
+                         -10.4f, 4.3f, -10'005.0f});
   test.Run();
 }
 
@@ -199,10 +245,8 @@ TEST(MathOpTest, Pow) {
   test.Run();
 }
 
-TEST(MathOpTest, DISABLED_Pow_Broadcast_Scalar) {
+TEST(MathOpTest, Pow_Broadcast_Scalar) {
   OpTester test("Pow");
-
-  test.AddAttribute("broadcast", int64_t{1});
 
   std::vector<int64_t> dims{3};
   test.AddInput<float>("X", dims, {1.0f, 2.0f, 3.0f});
@@ -328,9 +372,8 @@ TEST(MathOpTest, Xor) {
   test.Run();
 }
 
-TEST(MathOpTest, DISABLED_Xor_bcast3v2d) {
+TEST(MathOpTest, Xor_bcast3v2d) {
   OpTester test("Xor");
-  test.AddAttribute("broadcast", int64_t{1});
 
   test.AddInput<bool>("A", {2, 3, 4},
                       {false, true, false, true,
