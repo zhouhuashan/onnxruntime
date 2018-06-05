@@ -404,10 +404,16 @@ class GraphBase {
   // removed during optimization.
   int NumberOfNodes() const noexcept { return num_of_nodes_; }
 
-  // Create NodeArg owned by the graph
-  NodeArg& CreateOwnedNodeArg(const std::string& name, const TypeProto* p_arg_type) {
+  // Get NodeArg by name, or create NodeArg owned by the graph if not found
+  NodeArg& GetOrCreateNodeArg(const std::string& name, const TypeProto* p_arg_type) {
+    auto iter = node_args_.find(name);
+    if (iter != node_args_.end())
+      return *(iter->second);
+
     owned_node_args_.push_back(std::make_unique<NodeArg>(name, p_arg_type));
-    return *owned_node_args_.back();
+    NodeArg* new_arg = owned_node_args_.back().get();
+    node_args_.insert(std::make_pair(name, new_arg));
+    return *new_arg;
   }
 
   // Add node to <*this> graph.
@@ -420,15 +426,15 @@ class GraphBase {
                 const std::string& domain = "");
 
   /**
-  Copy node and add to graph.
-  @param other Node to copy
-  @param returns Pointer to node that was created and inserted.
-  */
+    Copy node and add to graph.
+    @param other Node to copy
+    @param returns Pointer to node that was created and inserted.
+    */
   Node* AddNode(const Node& other);
 
   /**
-  Remove node and free it.
-  */
+    Remove node and free it.
+    */
   bool RemoveNode(NodeIndex node_index);
 
   // Convenience method for adding a constant op
@@ -579,7 +585,16 @@ class GraphBase {
   // Returns the inferred shape+type for every output of the node in
   // output parameter inferredShapes.
   Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
-                                   /*out*/ std::vector<TypeProto>& inferred_shapes);
+                                                  /*out*/ std::vector<TypeProto>& inferred_shapes);
+
+  // find node arg by name
+  const NodeArg* FindNodeArg(const std::string& name) const {
+    auto iter = node_args_.find(name);
+    if (iter != node_args_.end())
+      return iter->second;
+    else
+      return nullptr;
+  }
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_
@@ -588,9 +603,9 @@ class GraphBase {
   gsl::not_null<Node*> AllocateNode();
 
   /**
-  Release the node. 
-  @returns false if node_index was invalid.
-  */
+    Release the node.
+    @returns false if node_index was invalid.
+    */
   bool ReleaseNode(NodeIndex node_index);
 
   Node* NodeAtIndexImpl(NodeIndex node_index) const {
@@ -716,14 +731,14 @@ class Graph : public GraphBase {
   Lotus::Common::Status Resolve(bool no_proto_sync_required);
 
   Lotus::Common::Status InferAndVerifyTypeMatch(Node& node,
-                                 const OpSchema& op,
-                                 const std::unordered_map<std::string, Node*>& output_args);
+                                                const OpSchema& op,
+                                                const std::unordered_map<std::string, Node*>& output_args);
 
   // Given nodes in topological order, infer and set type information
   // across <*this> graph if needed, and verify type/attribute
   // information match between node and op.
   Lotus::Common::Status VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
-                              const std::unordered_map<std::string, Node*>& output_args);
+                                             const std::unordered_map<std::string, Node*>& output_args);
 
   // Set graph inputs/outputs when resolving a graph..
   Lotus::Common::Status SetGraphInputsOutputs();

@@ -834,6 +834,15 @@ class InferenceSession::Impl {
       }
     }
 
+    // allocate MLValue for graph outputs when coming from initializers
+    for (const auto& output : graph.GetOutputs()) {
+      int unused_var = -1;
+      if (session_state_.GetMLValueIdx(output->Name(), &unused_var).IsOK()) {
+        continue;
+      }
+      session_state_.AddMLValueNameIdx(output->Name(), curr_idx++);
+    }
+
     LOGS(*session_logger_, INFO) << "Done saving kernels and MLValue mappings.";
     return Status::OK();
   }

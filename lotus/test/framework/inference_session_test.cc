@@ -575,14 +575,14 @@ TEST(InferenceSessionTests, DISABLED_TestBindCuda) {
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
 
   std::vector<LotusIR::NodeArg*> input_defs;
-  auto& input_arg_a = p_graph->CreateOwnedNodeArg("A", &tensor_float);
+  auto& input_arg_a = p_graph->GetOrCreateNodeArg("A", &tensor_float);
   input_defs.push_back(&input_arg_a);
 
-  auto& input_arg_b = p_graph->CreateOwnedNodeArg("B", &tensor_float);
+  auto& input_arg_b = p_graph->GetOrCreateNodeArg("B", &tensor_float);
   input_defs.push_back(&input_arg_b);
 
   std::vector<LotusIR::NodeArg*> output_defs;
-  auto& output_arg = p_graph->CreateOwnedNodeArg("Y", &tensor_float);
+  auto& output_arg = p_graph->GetOrCreateNodeArg("Y", &tensor_float);
   output_defs.push_back(&output_arg);
 
   // Create a simple model

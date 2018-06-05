@@ -55,16 +55,16 @@ TEST(GraphTraversalTest, ReverseDFS) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg = graph.CreateOwnedNodeArg("node_1_in_1", &tensor_int32);
+  auto &input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   inputs.push_back(&input_arg);
-  auto &output_arg = graph.CreateOwnedNodeArg("node_1_out_1", &tensor_int32);
+  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   outputs.push_back(&output_arg);
   graph.AddNode("node_1", "Variable_DFS", "node 1", inputs, outputs);
 
-  auto &input_arg2 = graph.CreateOwnedNodeArg("node_2_in_1", &tensor_int32);
+  auto &input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
   inputs.push_back(&input_arg2);
-  auto &output_arg2 = graph.CreateOwnedNodeArg("node_2_out_1", &tensor_int32);
+  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg2);
   graph.AddNode("node_2", "Variable_DFS", "node 2", inputs, outputs);
@@ -72,14 +72,14 @@ TEST(GraphTraversalTest, ReverseDFS) {
   inputs.clear();
   inputs.push_back(&output_arg);
   inputs.push_back(&output_arg2);
-  auto &output_arg3 = graph.CreateOwnedNodeArg("node_3_out_1", &tensor_int32);
+  auto &output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg3);
   graph.AddNode("node_3", "Add_DFS", "node 3", inputs, outputs);
 
   inputs.clear();
   inputs.push_back(&output_arg3);
-  auto &output_arg4 = graph.CreateOwnedNodeArg("node_4_out_1", &tensor_int32);
+  auto &output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg4);
   graph.AddNode("node_4", "NoOp_DFS", "node 4", inputs, outputs);
@@ -143,7 +143,7 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &output_type);
+  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
   graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
@@ -173,7 +173,7 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &output_type);
+  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
   // Case: Adding node refering to non-existing operator should fail.
   graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
@@ -220,17 +220,17 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg = graph.CreateOwnedNodeArg("node_1_in_1", &tensor_int32);
+  auto &input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   inputs.push_back(&input_arg);
-  auto &output_arg = graph.CreateOwnedNodeArg("node_1_out_1", &tensor_int32);
+  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   outputs.push_back(&output_arg);
   expected_node_name_to_input_output_args["node_1"] = {inputs, outputs};
   auto node_1 = graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
-  auto &input_arg2 = graph.CreateOwnedNodeArg("node_2_in_1", &tensor_int32);
+  auto &input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
   inputs.push_back(&input_arg2);
-  auto &output_arg2 = graph.CreateOwnedNodeArg("node_2_out_1", &tensor_int32);
+  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg2);
   expected_node_name_to_input_output_args["node_2"] = {inputs, outputs};
@@ -239,7 +239,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   inputs.clear();
   inputs.push_back(&output_arg);
   inputs.push_back(&output_arg2);
-  auto &output_arg3 = graph.CreateOwnedNodeArg("node_3_out_1", &tensor_int32);
+  auto &output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg3);
   expected_node_name_to_input_output_args["node_3"] = {inputs, outputs};
@@ -247,7 +247,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
 
   inputs.clear();
   inputs.push_back(&output_arg3);
-  auto &output_arg4 = graph.CreateOwnedNodeArg("node_4_out_1", &tensor_int32);
+  auto &output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg4);
   expected_node_name_to_input_output_args["node_4"] = {inputs, outputs};
@@ -349,23 +349,23 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg = graph->CreateOwnedNodeArg("node_1_in_1", &tensor_int32);
+  auto &input_arg = graph->GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   inputs.push_back(&input_arg);
-  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &tensor_int32);
+  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   outputs.push_back(&output_arg);
   graph->AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
   inputs.clear();
   inputs.push_back(&input_arg);
-  auto &output_arg2 = graph->CreateOwnedNodeArg("node_2_out_1", &tensor_int32);
+  auto &output_arg2 = graph->GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg2);
   graph->AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
-  auto &input_arg3 = graph->CreateOwnedNodeArg("node_3_in_1", &tensor_int32);
+  auto &input_arg3 = graph->GetOrCreateNodeArg("node_3_in_1", &tensor_int32);
   inputs.clear();
   inputs.push_back(&input_arg3);
-  auto &output_arg3 = graph->CreateOwnedNodeArg("node_3_out_1", &tensor_int32);
+  auto &output_arg3 = graph->GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg3);
   graph->AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
@@ -374,7 +374,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   inputs.push_back(&output_arg);
   inputs.push_back(&output_arg2);
   inputs.push_back(&output_arg3);
-  auto &output_arg4 = graph->CreateOwnedNodeArg("node_4_out_1", &tensor_int32);
+  auto &output_arg4 = graph->GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg4);
   auto node_4 = graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
@@ -420,7 +420,7 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   output_shape.mutable_dim()->Add()->set_dim_value(1);
   output_shape.mutable_dim()->Add()->set_dim_value(3);
   *(output_type.mutable_tensor_type()->mutable_shape()) = output_shape;
-  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", &output_type);
+  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
   auto node_1 = graph->AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
   TensorProto t;
@@ -459,7 +459,7 @@ TEST(TypeInferenceTest, TypeAttribute) {
   std::vector<NodeArg *> outputs;
   Model model("graph_1");
   auto graph = model.MainGraph();
-  auto &output_arg = graph->CreateOwnedNodeArg("node_1_out_1", nullptr);
+  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", nullptr);
   outputs.push_back(&output_arg);
   auto node_1 = graph->AddNode("node_1", "RandomNormal", "node 1.", inputs, outputs);
   AddAttribute(node_1, "dtype", TensorProto_DataType_FLOAT);
@@ -483,11 +483,11 @@ TEST(TypeInferenceTest, VariadicOutput) {
   int64_tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   Model model("graph_1");
   auto graph = model.MainGraph();
-  auto &X = graph->CreateOwnedNodeArg("X", &int64_tensor_type);
+  auto &X = graph->GetOrCreateNodeArg("X", &int64_tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph->CreateOwnedNodeArg("Y", nullptr);
+  auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &Z = graph->CreateOwnedNodeArg("Z", nullptr);
+  auto &Z = graph->GetOrCreateNodeArg("Z", nullptr);
   outputs.push_back(&Z);
   graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
   auto status = graph->Resolve();

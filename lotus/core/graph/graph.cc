@@ -447,7 +447,10 @@ Graph::Graph(GraphProto* graph_proto,
 
     for (auto& graph_output : graph_proto_->output()) {
       if (graph_output.has_name() && graph_output.has_type()) {
-        name_to_type_map[graph_output.name()] = graph_output.type();
+        auto& name = graph_output.name();
+        name_to_type_map[name] = graph_output.type();
+        // always create NodeArg for graph output, in case it's from initializer
+        GetOrCreateNodeArg(name, &graph_output.type());
       }
     }
 
@@ -1466,8 +1469,11 @@ void Graph::CleanUnusedInitializers() {
 
   for (const auto& pv : name_to_initial_tensor_) {
     const std::string& s = pv.first;
-    if (std::none_of(input_args.begin(), input_args.end(),
-                     [&s](const gsl::not_null<const NodeArg*> input) noexcept->bool { return s == input->Name(); })) {
+    bool used_as_input = std::any_of(input_args.begin(), input_args.end(),
+                                     [&s](const gsl::not_null<const NodeArg*> input) noexcept->bool { return s == input->Name(); });
+    bool used_as_output = std::any_of(GetOutputs().begin(), GetOutputs().end(),
+                                      [&s](const gsl::not_null<const NodeArg*> output) noexcept->bool { return s == output->Name(); });
+    if (!used_as_input && !used_as_output) {
       unused_names.push_back(s);
     }
   }
@@ -1510,7 +1516,16 @@ Status Graph::SetGraphInputsOutputs() {
     }
 
     for (auto& graph_output : graph_proto_->output()) {
-      specified_graph_outputs.insert(graph_output.name());
+      if (name_to_initial_tensor_.find(graph_output.name()) == name_to_initial_tensor_.end()) {
+        // only check graph outputs not using initializers
+        specified_graph_outputs.insert(graph_output.name());
+      } else {
+        // add graph output node args for initializer to graph_outputs_ directly
+        const NodeArg* out_arg = FindNodeArg(graph_output.name());
+        if (nullptr == out_arg)
+          LOTUS_THROW("Initializer used as output, but not in NodeArg.");
+        graph_outputs.push_back(out_arg);
+      }
     }
 
     for (auto& graph_value_info : graph_proto_->value_info()) {
@@ -1532,7 +1547,7 @@ Status Graph::SetGraphInputsOutputs() {
     }
 
     if (!specified_graph_outputs.empty()) {
-      return Status(LOTUS, FAIL, "Some graph outputs which don't exist in the graph.");
+      return Status(LOTUS, FAIL, "Some graph outputs do not exist in the graph.");
     }
 
     for (const auto& node : Nodes()) {

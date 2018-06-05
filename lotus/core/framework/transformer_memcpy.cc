@@ -106,7 +106,7 @@ void TransformerMemcpyImpl::AddCopyNode(const ConstPointerContainer<std::vector<
       char str[32];
       snprintf(str, 32, "MemcpyDef_%d", id);
 
-      auto* new_arg = &graph_->CreateOwnedNodeArg(str, writable_arg->TypeAsProto());
+      auto* new_arg = &graph_->GetOrCreateNodeArg(str, writable_arg->TypeAsProto());
       auto* src_arg = is_input ? writable_arg : new_arg;
       auto* dst_arg = is_input ? new_arg : writable_arg;
 
