@@ -6,6 +6,8 @@
 #include "gtest/gtest.h"
 #include "test/ir/node_helper.h"
 
+using namespace Lotus;
+
 namespace LotusIR {
 namespace Test {
 // Tests that Resolve() properly clears the state of topological sorted nodes,
@@ -50,7 +52,7 @@ TEST(ONNXModelsTest, squeeze_net) {
 #ifdef _WIN32
   // wstring version
   std::shared_ptr<Model> model2;
-  EXPECT_TRUE(Model::Load(L"./testdata/squeezenet/model.onnx", &model2).IsOK());
+  ASSERT_TRUE(Model::Load(L"./testdata/squeezenet/model.onnx", &model2).IsOK());
   TestResolve(model2->MainGraph());
 #endif
 }
@@ -60,9 +62,9 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
   using ::google::protobuf::io::CodedInputStream;
   using ::google::protobuf::io::FileInputStream;
   using ::google::protobuf::io::ZeroCopyInputStream;
-
   int fd;
-  FileOpenRd("./models/bvlc_alexnet/model.pb", &fd);
+  FileOpenRd("../models/test_bvlc_alexnet/model.onnx", &fd);
+  ASSERT_TRUE(fd>0);
   std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
   std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
   // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
@@ -75,7 +77,7 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
   FileClose(fd);
 
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/bvlc_alexnet/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_bvlc_alexnet/model.onnx", &model).IsOK());
 
   // Check the graph input/output/value_info should have the same size as specified in the model file.
   EXPECT_EQ(model_proto.graph().value_info_size(), model->MainGraph()->GetValueInfo().size());
@@ -86,49 +88,49 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
 
 TEST(ONNXModelsTest, densenet121) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/densenet121/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_densenet121/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 
 TEST(ONNXModelsTest, inception_v1) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/inception_v1/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_inception_v1/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 
 TEST(ONNXModelsTest, inception_v2) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/inception_v2/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_inception_v2/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 
 TEST(ONNXModelsTest, resnet50) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/resnet50/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_resnet50/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 
 TEST(ONNXModelsTest, shufflenet) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/shufflenet/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_shufflenet/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 
 TEST(ONNXModelsTest, squeezenet) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/squeezenet/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_squeezenet/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 
-TEST(ONNXModelsTest, vgg16) {
+TEST(ONNXModelsTest, zfnet) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/vgg16/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_zfnet/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 
 TEST(ONNXModelsTest, vgg19) {
   std::shared_ptr<Model> model;
-  EXPECT_TRUE(Model::Load("./models/vgg19/model.pb", &model).IsOK());
+  ASSERT_TRUE(Model::Load("../models/test_vgg19/model.onnx", &model).IsOK());
   TestResolve(model->MainGraph());
 }
 #endif

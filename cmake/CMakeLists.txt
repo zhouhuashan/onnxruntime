@@ -176,7 +176,6 @@ add_definitions(-DONNX_NAMESPACE=onnx)
 
 
 if (lotus_RUN_ONNX_TESTS)
-  include(models)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()
 

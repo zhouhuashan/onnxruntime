@@ -1,14 +1,10 @@
 find_package(Threads)
-  
+
 function(AddTest)
   cmake_parse_arguments(_UT "" "TARGET" "LIBS;SOURCES;DEPENDS" ${ARGN})
 
   list(REMOVE_DUPLICATES _UT_LIBS)
   list(REMOVE_DUPLICATES _UT_SOURCES)
-  
-  if (lotus_RUN_ONNX_TESTS)
-    list(APPEND _UT_DEPENDS models)
-  endif()
   
   if (_UT_DEPENDS)
     list(REMOVE_DUPLICATES _UT_DEPENDS)
@@ -243,16 +239,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${TEST_DATA_SRC}
             ${TEST_DATA_DES})
-
-# Copy large onnx models to test dir
-if (lotus_RUN_ONNX_TESTS)
-  add_custom_command(
-      TARGET ${test_data_target} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_directory
-              ${CMAKE_CURRENT_BINARY_DIR}/models/models/onnx
-              $<TARGET_FILE_DIR:${test_data_target}>/models
-      DEPENDS ${test_data_target})
-endif()
 
 set(onnx_test_runner_src_dir ${LOTUS_ROOT}/test/onnx)
 set(onnx_test_runner_common_srcs ${onnx_test_runner_src_dir}/TestCaseInfo.h
