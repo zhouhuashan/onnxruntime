@@ -7,7 +7,8 @@ REGISTER_KERNEL(KernelDefBuilder("Reshape")
                     .SinceVersion(5)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .Alias(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
+                    .TypeConstraint("shape", DataTypeImpl::GetTensorType<int64_t>()),
                 Reshape<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("Reshape")
