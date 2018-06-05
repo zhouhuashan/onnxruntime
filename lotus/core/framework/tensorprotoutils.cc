@@ -47,10 +47,46 @@ Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
   T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
-                             tensor_shape,
-                             static_cast<void*>(p_data),
-                             alloc->Info(),
-                             preallocated ? nullptr : alloc);  // no deleter for preallocated
+                                       tensor_shape,
+                                       static_cast<void*>(p_data),
+                                       alloc->Info(),
+                                       preallocated ? nullptr : alloc);  // no deleter for preallocated
+
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status GetTensorByTypeFromTensorProto<std::string>(const TensorProto& tensor_proto,
+                                                           const TensorShape& tensor_shape,
+                                                           std::unique_ptr<Tensor>* p_tensor,
+                                                           AllocatorPtr alloc,
+                                                           void* preallocated,
+                                                           size_t preallocated_size) {
+  int64_t tensor_size = tensor_shape.Size();
+  if (tensor_size < 0) {
+    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+  }
+  size_t size_to_allocate = sizeof(std::string) * gsl::narrow_cast<size_t>(tensor_size);
+
+  if (preallocated && preallocated_size != size_to_allocate)
+    return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
+
+  std::string* p_data = static_cast<std::string*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
+  *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<std::string>(),
+                                       tensor_shape,
+                                       static_cast<void*>(p_data),
+                                       alloc->Info(),
+                                       preallocated ? nullptr : alloc);  // no deleter for preallocated
+
+  /*
+  In the case of string tensors, the strings need to be constructed in the pre-allocated memory (placement
+  new) before calling Unpack (which copies the strings from the proto). Placement new happens inside the
+  Tensor's constructor. Hence the order of invocation of Tensor construction and Unpack needs to be reversed
+  in comparison to other types. This has the disadvantage of alloc/deallocing a Tensor if Unpack fails;
+  however restricting it to string types only alleviates this concern for other types at least. Hence the template
+  specialization for string.
+  */
+  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
 
   return Common::Status::OK();
 }
@@ -75,10 +111,10 @@ Common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
   uint16_t* p_data = static_cast<uint16_t*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<MLFloat16>(),
-                             tensor_shape,
-                             static_cast<void*>(p_data),
-                             alloc->Info(),
-                             preallocated ? nullptr : alloc);  // no deleter for preallocated
+                                       tensor_shape,
+                                       static_cast<void*>(p_data),
+                                       alloc->Info(),
+                                       preallocated ? nullptr : alloc);  // no deleter for preallocated
 
   return Common::Status::OK();
 }
