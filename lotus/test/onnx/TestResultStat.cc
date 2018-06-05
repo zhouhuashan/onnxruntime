@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <cstdio>
 #include <sstream>
 #include <algorithm>
 #include <vector>
@@ -23,7 +23,7 @@ std::string containerToStr(const T1& input) {
 std::string TestResultStat::ToString() {
   std::string not_implemented_kernels_str = containerToStr(this->not_implemented_kernels);
   std::string failed_kernels_str = containerToStr(this->failed_kernels);
-  int failed = (int)this->total_test_case_count - this->succeeded - this->skipped - this->not_implemented;
+  int failed = static_cast<int>(this->total_test_case_count) - this->succeeded - this->skipped - this->not_implemented;
   int other_reason_failed = failed - this->load_model_failed - this->result_differs - this->throwed_exception - this->invalid_graph;
   std::ostringstream oss;
   oss << "result: \n"

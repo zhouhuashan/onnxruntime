@@ -36,7 +36,6 @@ TEST_MODULE_CLEANUP(ModuleCleanup) {
   Logger::WriteMessage("Cleanup Lotus finished");
 }
 
-template <Lotus::AllocationPlannerType planner>
 static void run(const std::string& provider) {
   char buf[1024];
   int p_models = Lotus::Env::Default().GetNumCpuCores();
@@ -45,12 +44,17 @@ static void run(const std::string& provider) {
   //Current working directory is the one who contains 'onnx_test_runner_vstest.dll'
   //We want debug build and release build share the same test data files, so it should
   //be one level up.
-  std::vector<TestCaseInfo> tests = LoadTests({"..\\onnx_testdata"}, {});
+  Lotus::AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
+  std::vector<ITestCase*> tests = LoadTests({ "..\\models" }, {}, cpu_allocator);  
   TestResultStat stat;
-  TestEnv args(tests, stat, planner, provider);
+  SessionFactory sf(provider);
+  TestEnv args(tests, stat, sf);
   RunTests(args, p_models, p_models);
   std::string res = stat.ToString();
   Logger::WriteMessage(res.c_str());
+  for (ITestCase* l : tests) {
+	  delete l;
+  }
   size_t failed = stat.total_test_case_count - stat.succeeded - stat.skipped - stat.not_implemented;
   if (failed != 0) {
     Assert::Fail(L"test failed");
@@ -60,11 +64,6 @@ static void run(const std::string& provider) {
 TEST_CLASS(ONNX_TEST){
   public :
       TEST_METHOD(test_sequential_planner){
-          run<Lotus::AllocationPlannerType::SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
-}
-
-TEST_METHOD(test_simple_sequential_planner) {
-  run<Lotus::AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER>(LotusIR::kCpuExecutionProvider);
-}
-}
-;
+          run(LotusIR::kCpuExecutionProvider);
+      }
+};

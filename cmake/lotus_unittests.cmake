@@ -241,17 +241,20 @@ add_custom_command(
             ${TEST_DATA_DES})
 
 set(onnx_test_runner_src_dir ${LOTUS_ROOT}/test/onnx)
-set(onnx_test_runner_common_srcs ${onnx_test_runner_src_dir}/TestCaseInfo.h
-    ${onnx_test_runner_src_dir}/TestResultStat.cc
-    ${onnx_test_runner_src_dir}/TestResultStat.h
-    ${onnx_test_runner_src_dir}/testenv.h
-    ${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
-    ${onnx_test_runner_src_dir}/IFinishCallback.h
-    ${onnx_test_runner_src_dir}/testenv.cc
-    ${onnx_test_runner_src_dir}/runner.h
-    ${onnx_test_runner_src_dir}/runner.cc
-    ${LOTUS_ROOT}/test/framework/TestAllocatorManager.cc
-    ${LOTUS_ROOT}/test/framework/TestAllocatorManager.h
+set(onnx_test_runner_common_srcs
+${onnx_test_runner_src_dir}/TestResultStat.cc
+${onnx_test_runner_src_dir}/TestResultStat.h
+${onnx_test_runner_src_dir}/testenv.h
+${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
+${onnx_test_runner_src_dir}/TestCaseResult.cc
+${onnx_test_runner_src_dir}/TestCaseResult.h
+${onnx_test_runner_src_dir}/CompareMLValue.h
+${onnx_test_runner_src_dir}/CompareMLValue.cc
+${onnx_test_runner_src_dir}/testenv.cc
+${onnx_test_runner_src_dir}/runner.h
+${onnx_test_runner_src_dir}/runner.cc
+${onnx_test_runner_src_dir}/TestCase.cc
+${onnx_test_runner_src_dir}/TestCase.h
 )
 
 if(WIN32)

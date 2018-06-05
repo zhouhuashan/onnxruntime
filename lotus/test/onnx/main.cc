@@ -21,7 +21,6 @@
 #include <getopt.h>
 #endif
 
-#include "TestCaseInfo.h"
 #include "TestResultStat.h"
 #include "testenv.h"
 #include "runner.h"
@@ -38,7 +37,6 @@ void usage() {
       "\t-j [models]: Specifies the number of models to run simultaneously.\n"
       "\t-c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.\n"
       "\t-n [test_case_name]: Specifies a single test case to run.\n"
-      "\t-p [PLANNER_TYPE]: PLANNER_TYPE could be 'seq' or 'simple'. Default: 'simple'.\n"
       "\t-e [EXECUTION_PROVIDER]: EXECUTION_PROVIDER could be 'cpu' or 'cuda'. Default: 'cpu'.\n"
       "\t-h: help\n");
 }
@@ -58,7 +56,6 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Error creating environment: %s \n", status.ErrorMessage().c_str());
     return -1;
   }
-  AllocationPlannerType planner = AllocationPlannerType::SEQUENTIAL_PLANNER;
   std::string provider = kCpuExecutionProvider;
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
@@ -66,17 +63,17 @@ int main(int argc, char* argv[]) {
   int p_models = Env::Default().GetNumCpuCores();
   {
     int ch;
-    while ((ch = getopt(argc, argv, "c:hj:m:n:p:e:")) != -1) {
+    while ((ch = getopt(argc, argv, "c:hj:m:n:e:")) != -1) {
       switch (ch) {
         case 'c':
-          concurrent_session_runs = (int)strtol(optarg, NULL, 10);
+          concurrent_session_runs = static_cast<int>(strtol(optarg, nullptr, 10));
           if (concurrent_session_runs <= 0) {
             usage();
             return -1;
           }
           break;
         case 'j':
-          p_models = (int)strtol(optarg, NULL, 10);
+          p_models = static_cast<int>(strtol(optarg, nullptr, 10));
           if (p_models <= 0) {
             usage();
             return -1;
@@ -88,17 +85,7 @@ int main(int argc, char* argv[]) {
         case 'n':
           //run only some whitelisted tests
           //TODO: parse name str to an array
-          whitelisted_test_cases.push_back(optarg);
-          break;
-        case 'p':
-          if (!strcmp(optarg, "simple")) {
-            planner = AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER;
-          } else if (!strcmp(optarg, "seq")) {
-            planner = AllocationPlannerType::SEQUENTIAL_PLANNER;
-          } else {
-            usage();
-            return -1;
-          }
+          whitelisted_test_cases.emplace_back(optarg);
           break;
         case 'e':
           if (!strcmp(optarg, "cpu")) {
@@ -132,14 +119,18 @@ int main(int argc, char* argv[]) {
       fprintf(stderr, "input dir %s is not a valid directoy", argv[i]);
       return -1;
     }
-    data_dirs.push_back(argv[i]);
+    data_dirs.emplace_back(argv[i]);
   }
-  std::vector<TestCaseInfo> tests = LoadTests(data_dirs, whitelisted_test_cases);
+  AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
+  std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
   TestResultStat stat;
-  TestEnv args(tests, stat, planner, provider);
+  SessionFactory sf(provider);
+  TestEnv args(tests, stat, sf);
   RunTests(args, p_models, concurrent_session_runs);
   std::string res = stat.ToString();
   fwrite(res.c_str(), 1, res.size(), stdout);
-
+  for (ITestCase* l : tests) {
+    delete l;
+  }
   return 0;
 }

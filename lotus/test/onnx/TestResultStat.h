@@ -6,19 +6,6 @@
 #include <atomic>
 #include <mutex>
 
-//result of a single test run: 1 model with 1 test dataset
-enum class EXECUTE_RESULT {
-  SUCCESS = 0,
-  UNKNOWN_ERROR = -1,
-  WITH_EXCEPTION = -2,
-  RESULT_DIFFERS = -3,
-  SHAPE_MISMATCH = -4,
-  TYPE_MISMATCH = -5,
-  NOT_SUPPORT = -6,
-  LOAD_MODEL_FAILED = -7,
-  INVALID_GRAPH = -8
-};
-
 class TestResultStat {
  public:
   size_t total_test_case_count = 0;
