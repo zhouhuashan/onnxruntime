@@ -12,9 +12,9 @@
 class ITestCase {
  public:
   //must be called before calling the other functions
-  virtual Lotus::Common::Status SetRootDir(const std::experimental::filesystem::v1::path& path) = 0;
+  virtual Lotus::Common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) = 0;
   virtual Lotus::Common::Status LoadDataPair(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds, std::vector<Lotus::MLValue>& output_values) = 0;
-  virtual const std::string& GetModelUrl() const = 0;
+  virtual const std::experimental::filesystem::v1::path& GetModelUrl() const = 0;
   virtual const std::string& GetTestCaseName() const = 0;
   virtual const std::string& GetNodeName() const = 0;
   //The number of input/output pairs
@@ -33,7 +33,7 @@ class ITestCase {
 class OnnxTestCase : public ITestCase {
  private:
   std::string test_case_name;
-  std::string model_url;
+  std::experimental::filesystem::v1::path model_url;
   Lotus::AllocatorPtr allocator_;
   std::vector<onnx::ValueInfoProto> input_value_info_;
   Lotus::Common::Status FromTensorProto(const onnx::TensorProto& input, std::unique_ptr<Lotus::MLValue>& value);
@@ -52,9 +52,9 @@ class OnnxTestCase : public ITestCase {
   const std::string& GetNodeName() const override {
     return node_name;
   }
-  Lotus::Common::Status SetRootDir(const std::experimental::filesystem::v1::path& path) override;
+  Lotus::Common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) override;
 
-  const std::string& GetModelUrl() const override {
+  const std::experimental::filesystem::v1::path& GetModelUrl() const override {
     return model_url;
   }
   const std::string& GetTestCaseName() const override {

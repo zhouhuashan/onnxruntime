@@ -16,7 +16,7 @@ class SessionFactory {
  public:
   SessionFactory(const std::string& provider1) : provider(provider1) {}
   //Create an initialized session from a given model url
-  Lotus::Common::Status create(std::shared_ptr<Lotus::InferenceSession>& sess, const std::string& model_url, const std::string& logid) const;
+  Lotus::Common::Status create(std::shared_ptr<Lotus::InferenceSession>& sess, const std::experimental::filesystem::v1::path& model_url, const std::string& logid) const;
 };
 
 class TestEnv {

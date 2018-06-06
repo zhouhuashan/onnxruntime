@@ -61,8 +61,9 @@ Lotus::Common::Status loadModelFile(const std::string& model_url, onnx::ModelPro
   return Status::OK();
 }
 
-Lotus::Common::Status OnnxTestCase::SetRootDir(const std::experimental::filesystem::v1::path& test_case_dir) {
-  model_url = (test_case_dir / "model.onnx").string();
+Lotus::Common::Status OnnxTestCase::SetModelPath(const path& m) {
+  model_url = m;
+  path test_case_dir = m.parent_path();
   for (directory_iterator test_data_set(test_case_dir), end2; test_data_set != end2; ++test_data_set) {
     if (!is_directory(*test_data_set)) {
       continue;
@@ -71,7 +72,7 @@ Lotus::Common::Status OnnxTestCase::SetRootDir(const std::experimental::filesyst
   }
   //parse model
   onnx::ModelProto model_pb;
-  LOTUS_RETURN_IF_ERROR(loadModelFile(model_url, model_pb));
+  LOTUS_RETURN_IF_ERROR(loadModelFile(m.string(), model_pb));
   const onnx::GraphProto& graph = model_pb.graph();
   if (graph.node().size() == 1) {
     node_name = graph.node()[0].op_type();

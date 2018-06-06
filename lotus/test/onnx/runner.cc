@@ -127,20 +127,31 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
 
 std::vector<ITestCase*> LoadTests(const std::vector<string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, Lotus::AllocatorPtr allocator) {
   std::vector<ITestCase*> tests;
-  for (const path& test_data_root_path : input_paths) {
-    path node_data_root_path = test_data_root_path;
+  std::vector<path> paths;
+  for (const std::string& s : input_paths) {
+    paths.push_back(s);
+  }
+  const path ext_onnx(".onnx");
+  while (!paths.empty()) {
+    path node_data_root_path = paths.back();
+    paths.pop_back();
     for (directory_iterator test_case_dir(node_data_root_path), end; test_case_dir != end; ++test_case_dir) {
-      if (!is_directory(*test_case_dir)) {
+      if (is_directory(*test_case_dir)) {
+        paths.push_back(test_case_dir->path());
         continue;
       }
-      std::string test_dir_name = test_case_dir->path().filename().string();
-      if (test_dir_name.compare(0, 5, "test_")) continue;
-      std::string test_case_name = test_dir_name.substr(5);
+
+      std::string filename = test_case_dir->path().filename().string();
+      if (!test_case_dir->path().has_extension()) continue;
+      if (test_case_dir->path().extension() != ext_onnx) continue;
+      std::string test_case_name = test_case_dir->path().parent_path().filename().string();
+      if (test_case_name.compare(0, 5, "test_") == 0) test_case_name = test_case_name.substr(5);
       if (!whitelisted_test_cases.empty() && std::find(whitelisted_test_cases.begin(), whitelisted_test_cases.end(), test_case_name) == whitelisted_test_cases.end()) {
         continue;
       }
+
       OnnxTestCase* l = new OnnxTestCase(allocator, test_case_name);
-      auto status = l->SetRootDir(test_case_dir->path());
+      auto status = l->SetModelPath(test_case_dir->path());
       if (!status.IsOK()) {
         std::string s = test_case_dir->path().string();
         LOGF_DEFAULT(ERROR, "load data from %s failed:%s\n", s.c_str(), status.ErrorMessage().c_str());
