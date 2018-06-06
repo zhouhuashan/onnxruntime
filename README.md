@@ -101,13 +101,35 @@ To pass in additional compiler flags, for example to build with SIMD instruction
 cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
 ```
 ## CUDA
-To build Lotus with CUDA support, download CUDA9.1 and CUDNN6 from NVidia and CMake 3.11 For VisualStudio 2017, it also need VC compiler v14.11, instead of default v14.13.
+To build Lotus with CUDA support, download CUDA9.0 and CUDNN7 from NVidia and CMake 3.11 For VisualStudio 2017, it also need VC compiler v14.11, instead of default v14.13.
 Once installed you can call cmake for Lotus as follows:
 ```
-python %~dp0\tools\ci_build\build.py --build_dir %~dp0\build\Windows --use_cuda --cudnn_home %CUDNN_HOME% %* 
+python %~dp0\tools\ci_build\build.py --build_dir %~dp0\build\Windows --use_cuda --cudnn_home %CUDNN_HOME% --cuda_home %CUDA_HOME% %* 
 
 you may have to specify your root CUDA installation directory via -DCUDA_TOOLKIT_ROOT_DIR
 ```
-where CUDNN_HOME may look something like `d:\local\cudnn-8.0-windows10-x64-v6.0\cuda`
+where CUDNN_HOME may look something like `d:\local\cudnn-9.0-windows10-x64-v7.0.5\cuda`
 and
-CUDA_TOOLKIT_ROOT_DIR is something like `c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0`
+CUDA_TOOLKIT_ROOT_DIR is something like `c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0`
+
+# Build with Docker (CPU)
+Register a docker account at `https://www.docker.com/`
+
+Download Docker for Windows: `https://store.docker.com/editions/community/docker-ce-desktop-windows`
+
+Install Docker for Windows. Share local drive to Docker, open Docker Settings->Shared Drives, share the disk drive to docker. This is used to mount the local code to docker instance.
+
+Run powershell command to build docker
+
+```
+cd .\Lotus\tools\ci_build\vsts\linux\ubuntu16.04
+docker login
+docker build -t lotus-ubuntu16.04 .
+docker run -it --rm --name lotus-cpu -v [LocalPath]/Git/Lotus:/home/lotusdev/Lotus lotus-ubuntu16.04 /bin/bash
+source /usr/local/miniconda3/bin/activate lotus-py35
+python /home/lotusdev/Lotus/tools/ci_build/build.py --build_dir /home/lotusdev/Lotus/build --config Debug --skip_submodule_sync --enable_pybind
+```
+Run command below if the conda environment `lotus-py35` does not exist
+```
+/usr/local/miniconda3/bin/conda env create --file /home/lotusdev/Lotus/tools/ci_build/vsts/linux/Conda/conda-linux-lotus-py35-environment.yml --name lotus-py35 --quiet --force
+```
