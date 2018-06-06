@@ -170,6 +170,10 @@ Common::Status TraceTensorAllocFromTensorProto(int mlvalue_index, const onnx::Te
       size = GetTensorSize<float>(tensor_shape);
       break;
     }
+    case onnx::TensorProto_DataType::TensorProto_DataType_DOUBLE: {
+      size = GetTensorSize<double>(tensor_shape);
+      break;
+    }
     case onnx::TensorProto_DataType::TensorProto_DataType_BOOL: {
       size = GetTensorSize<bool>(tensor_shape);
       break;
