@@ -277,13 +277,14 @@ struct Broadcaster {
       auto axis1 = *--iter1;
       auto axis2 = *--iter2;
 
-      if (axis1 == 1 && axis2 == 1 && index + 1 < dimension_count_min)  // Nothing to do in this case
+      auto largest = std::max(axis1, axis2);
+      *--output_shape = largest;
+
+      if (largest == 1 && index + 1 < dimension_count_min)  // Nothing to do in this case
         continue;
 
-      auto largest = std::max(axis1, axis2);
       iterator1_.Init(axis1, largest);
       iterator2_.Init(axis2, largest);
-      *--output_shape = largest;
       index++;  // Manually increment since we processed one axis
       break;
     }
@@ -292,13 +293,14 @@ struct Broadcaster {
       auto axis1 = *--iter1;
       auto axis2 = *--iter2;
 
-      if (axis1 == 1 && axis2 == 1)  // Nothing to do in this case
+      auto largest = std::max(axis1, axis2);
+      *--output_shape = largest;
+
+      if (largest == 1)  // Nothing to do in this case
         continue;
 
-      auto largest = std::max(axis1, axis2);
       iterator1_.Append(axis1, largest);
       iterator2_.Append(axis2, largest);
-      *--output_shape = largest;
     }
 
     // If one shape is bigger than another we need to broadcast the smaller onto the bigger from this point on
