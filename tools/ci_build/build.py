@@ -90,11 +90,6 @@ def update_submodules(source_dir):
 def install_ubuntu_deps(args):
     try:
         run_subprocess(['add-apt-repository', 'ppa:deadsnakes/ppa'])
-        run_subprocess(['apt-get', 'update'])
-        if args.enable_pybind:
-            run_subprocess(['apt-get', 'install', '-y', 'python3-dev'])
-        if args.use_openblas:
-            run_subprocess(['apt-get', 'install', '-y', 'libopenblas-dev'])
     except Exception as e:
         log.error("Could not install ubuntu dependency packages {}".format(str(e)))
         sys.exit(-1)
@@ -316,7 +311,7 @@ def main():
     if (args.update):
         if is_ubuntu_1604():
             install_ubuntu_deps(args)
-        if args.enable_pybind:
+        if (args.enable_pybind and is_windows()):
             install_python_deps()
         if (not args.skip_submodule_sync):
             update_submodules(source_dir)
