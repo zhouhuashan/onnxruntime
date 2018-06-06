@@ -186,7 +186,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, &p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -214,7 +214,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -248,7 +248,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, &p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));

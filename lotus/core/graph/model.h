@@ -16,11 +16,11 @@ class Model {
 
   // Construct model from scratch.
   explicit Model(const std::string& graph_name,
-        bool is_onnx_domain_only = false,
-        const ModelMetaData& model_metadata = ModelMetaData(),
-        const ILotusOpSchemaCollection* local_registry = nullptr);
+                 bool is_onnx_domain_only = false,
+                 const ModelMetaData& model_metadata = ModelMetaData(),
+                 const ILotusOpSchemaCollection* local_registry = nullptr);
 
-  // NOTE: after calling this contructor, <*this> model will
+  // NOTE: after calling this constructor, <*this> model will
   // hold a copy of <model_proto>.
   explicit Model(const ModelProto& model_proto, const ILotusOpSchemaCollection* local_registry = nullptr);
 
@@ -77,7 +77,8 @@ class Model {
   static Lotus::Common::Status Save(Model& model, const std::wstring& file_path);
 
   // TODO(Task:132) Use of shared_ptr<X>* in Load/Save methods is confusing.
-  static Lotus::Common::Status Load(const std::wstring& file_path, /*out*/ std::shared_ptr<Model>* p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(const std::wstring& file_path, /*out*/ std::shared_ptr<Model>& p_model,
+                                    const ILotusOpSchemaCollection* local_registry = nullptr);
 #endif
   static Lotus::Common::Status Save(Model& model, const std::string& file_path);
 
@@ -85,21 +86,28 @@ class Model {
 
   static Lotus::Common::Status Load(std::istream& model_istream, ModelProto* p_model_proto);
 
-  static Lotus::Common::Status Load(const std::string& file_path, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(const std::string& file_path,
+                                    /*out*/ std::shared_ptr<Model>& p_model,
+                                    const ILotusOpSchemaCollection* local_registry = nullptr);
 
-  static Lotus::Common::Status Load(int fd, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(int fd, /*out*/ std::shared_ptr<Model>& p_model,
+                                    const ILotusOpSchemaCollection* local_registry = nullptr);
 
   // 'int' rather than 'size_t' because of a protobuf design choice; let callers handle type checks
-  static Lotus::Common::Status LoadFromBytes(int count, void* pBytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status LoadFromBytes(int count, void* pBytes, /*out*/ std::shared_ptr<Model>& p_model,
+                                             const ILotusOpSchemaCollection* local_registry = nullptr);
 
-  static Lotus::Common::Status Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry = nullptr);
+  static Lotus::Common::Status Load(const ModelProto& model_proto, /*out*/ std::shared_ptr<Model>& p_model,
+                                    const ILotusOpSchemaCollection* local_registry = nullptr);
 
  private:
   // Set <domain_to_version_> and <model_proto_> to contain related domains
   // with latest version in OpSchemaRegistry.
   // if <is_onnx_domain_only> is true, then only onnx domain will be contained.
   // otherwise, ml domain will also be contained.
-  void AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map<std::string, int>* domain_to_version, const ILotusOpSchemaCollection* local_registry);
+  void AddImportOpSets(bool is_onnx_domain_only,
+                       /*out*/ gsl::not_null<std::unordered_map<std::string, int>*> domain_to_version,
+                       const ILotusOpSchemaCollection* local_registry);
 
   // Model data.
   std::unique_ptr<ModelProto> model_proto_;

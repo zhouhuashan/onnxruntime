@@ -377,7 +377,7 @@ void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& rep
   std::vector<std::vector<NodeArg*>*> all_defs = {&definitions_.input_defs, &definitions_.output_defs};
 
   for (auto pair : replacements)
-    for (auto defs : all_defs)
+    for (const gsl::not_null<std::vector<LotusIR::NodeArg*>*> defs : all_defs)
       for (auto& def : *defs)
         if (def == pair.first)
           def = pair.second;
@@ -398,6 +398,7 @@ void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& rep
 //  auto status = new_graph->Resolve(/* no_proto_sync_required */ true);
 //  return status;
 //}
+using google::protobuf::RepeatedPtrField;
 
 Graph::Graph(GraphProto* graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version,
@@ -416,14 +417,14 @@ Graph::Graph(GraphProto* graph_proto,
     // Copy constant nodes _value to name_to_initial_tensor_
     for (auto& node : graph_proto_->node()) {
       if (node.op_type() == "Constant") {
-        TensorProto* tensor = graph_proto_->add_initializer();
+        const gsl::not_null<TensorProto*> tensor = graph_proto_->add_initializer();
         *tensor = node.attribute(0).t();
         *(tensor->mutable_name()) = node.output(0);
       }
     }
 
     // remove constant nodes
-    auto graph_mutable_nodes = graph_proto_->mutable_node();
+    const gsl::not_null<RepeatedPtrField<NodeProto>*> graph_mutable_nodes = graph_proto_->mutable_node();
     graph_mutable_nodes->erase(
         std::remove_if(graph_mutable_nodes->begin(), graph_mutable_nodes->end(),
                        [](NodeProto& p) {
@@ -818,6 +819,7 @@ Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<Typ
 }
 
 // Implementation of type-inference and type-checking for a single node
+GSL_SUPPRESS(f .23)  // spurious warning about inferred_type never being checked for null
 Status Graph::InferAndVerifyTypeMatch(Node& node,
                                       const OpSchema& op,
                                       const std::unordered_map<std::string, Node*>& output_args) {
@@ -1010,7 +1012,7 @@ static void check_node(
     const NodeProto& node,
     const CheckerContext& ctx,
     const LexicalScopeContext& lex_ctx,
-    const ILotusOpSchemaCollection* registry) {
+    const ILotusOpSchemaCollection& registry) {
   enforce_non_empty_field(node, op_type);
 
   if (node.input().empty() && node.output().empty()) {
@@ -1035,7 +1037,7 @@ static void check_node(
   }
 
   const auto* schema =
-      registry->Schema(node.op_type(), domain_version, node.domain());
+      registry.Schema(node.op_type(), domain_version, node.domain());
   if (!schema) {
     fail_check(
         "No Schema registered for " + node.op_type() +
@@ -1068,7 +1070,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     // check node from local schema first
     if (local_registry_) {
       try {
-        check_node(node_proto, ctx, lsc, local_registry_);
+        check_node(node_proto, ctx, lsc, *local_registry_);
         node.op_ = local_registry_->Schema(node.OpType(), maxInclusiveVersion, node.Domain());
       } catch (const std::exception& ex) {
         LOGS_DEFAULT(WARNING) << "verify node from local registry failed: " << ex.what() << std::endl
@@ -1194,7 +1196,7 @@ void Graph::AddInitializedTensor(const TensorProto& tensor) {
     return;
   }
 
-  auto tensorAdded = graph_proto_->add_initializer();
+  const gsl::not_null<TensorProto*> tensorAdded = graph_proto_->add_initializer();
   *(tensorAdded) = tensor;
   name_to_initial_tensorIndex_[tensor.name()] = graph_proto_->initializer_size() - 1;
   name_to_initial_tensor_[tensor.name()] = tensorAdded;
@@ -1214,7 +1216,7 @@ void Graph::RemoveInitializedTensor(const std::string& tensor_name) {
   }
 }
 
-bool Graph::GetInitializedTensor(const std::string& tensor_name, const TensorProto** value) const {
+bool Graph::GetInitializedTensor(const std::string& tensor_name, gsl::not_null<const TensorProto**> value) const {
   auto iter = name_to_initial_tensor_.find(tensor_name);
   if (name_to_initial_tensor_.end() == iter) {
     return false;
@@ -1232,7 +1234,7 @@ void Graph::CleanAllInitializedTensors() noexcept {
   // and can be reused. Need to explicitly release the cleared objects and free the
   // memory.
   graph_proto_->mutable_initializer()->Clear();
-  int num_cleared = graph_proto_->initializer().ClearedCount();
+  const int num_cleared = graph_proto_->initializer().ClearedCount();
   for (int i = 0; i < num_cleared; i++) {
     delete graph_proto_->mutable_initializer()->ReleaseCleared();
   }
@@ -1411,7 +1413,7 @@ const GraphProto& Graph::ToGraphProto() {
     // Move initializers.
     std::sort(removed_initializer_indexes_.begin(), removed_initializer_indexes_.end());
     int lastInUseInitializerIndex = graph_proto_->initializer_size() - 1;
-    int start = 0, end = static_cast<int>(removed_initializer_indexes_.size()) - 1;
+    int start = 0, end = gsl::narrow_cast<int>(removed_initializer_indexes_.size()) - 1;
     int lastRemovedInitializerIndex = removed_initializer_indexes_[end];
 
     for (; start <= end; start++) {
@@ -1465,7 +1467,7 @@ void Graph::CleanUnusedInitializers() {
   std::vector<std::string> unused_names;
   std::set<const NodeArg*> input_args;
   for (const auto& node : Nodes())
-    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { input_args.insert(def); });
+    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { auto ignored = input_args.insert(def); });
 
   for (const auto& pv : name_to_initial_tensor_) {
     const std::string& s = pv.first;

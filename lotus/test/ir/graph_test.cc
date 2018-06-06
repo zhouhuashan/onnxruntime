@@ -257,7 +257,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
 
   EXPECT_TRUE(Model::Save(model, "graph_1.pb").IsOK());
   std::shared_ptr<Model> model2;
-  EXPECT_TRUE(Model::Load("graph_1.pb", &model2).IsOK());
+  EXPECT_TRUE(Model::Load("graph_1.pb", model2).IsOK());
 
   auto model_proto = model.ToProto();
   auto model_proto2 = model2->ToProto();
@@ -393,7 +393,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
 
   EXPECT_TRUE(Model::Save(model, "model_x.pb").IsOK());
   std::shared_ptr<Model> loaded_model;
-  EXPECT_TRUE(Model::Load("model_x.pb", &loaded_model).IsOK());
+  EXPECT_TRUE(Model::Load("model_x.pb", loaded_model).IsOK());
   EXPECT_EQ(2, loaded_model->MainGraph()->GetInputs().size());
 
   auto &graph_proto = graph->ToGraphProto();

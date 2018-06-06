@@ -62,7 +62,7 @@ class Status {
 
   StatusCategory Category() const noexcept;
 
-  const std::string& ErrorMessage() const;
+  const std::string& ErrorMessage() const noexcept;
 
   std::string ToString() const;
 
@@ -77,7 +77,7 @@ class Status {
   static const Status& OK() noexcept;
 
  private:
-  static const std::string& EmptyString();
+  static const std::string& EmptyString() noexcept;
 
   struct State {
     State(StatusCategory cat0, int code0, const std::string& msg0)

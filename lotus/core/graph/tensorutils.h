@@ -17,7 +17,7 @@ class TensorUtils {
 #define DEFINE_UNPACK_TENSOR(T, Type, field_name, field_size)                                             \
   static Status UnpackTensor(const onnx::TensorProto& tensor, /*out*/ T* p_data, int64_t expected_size) { \
     if (nullptr == p_data) {                                                                              \
-      size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.field_size();               \
+      const size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.field_size();         \
       if (size == 0)                                                                                      \
         return Status::OK();                                                                              \
       else                                                                                                \
@@ -58,7 +58,7 @@ class TensorUtils {
                              int64_t expected_size);
 
  private:
-  GSL_SUPPRESS(type .4)  // allow use of C-style cast for this special case
+  GSL_SUPPRESS(type .1)  // allow use of reinterpret_cast for this special case
   static inline bool IsLittleEndianOrder() noexcept {
     static int n = 1;
     return (*reinterpret_cast<char*>(&n) == 1);

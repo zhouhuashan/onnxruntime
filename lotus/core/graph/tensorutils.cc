@@ -34,7 +34,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
                                  /*out*/ bool* p_data,
                                  int64_t expected_size) {
   if (nullptr == p_data) {
-    size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.int32_data_size();
+    const size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.int32_data_size();
     if (size == 0)
       return Status::OK();
     else
@@ -67,7 +67,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
                                  /*out*/ uint16_t* p_data,
                                  int64_t expected_size) {
   if (nullptr == p_data) {
-    size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.int32_data_size();
+    const size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.int32_data_size();
     if (size == 0)
       return Status::OK();
     else
@@ -90,8 +90,10 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
     return Status(StatusCategory::LOTUS, StatusCode::FAIL,
                   "UnpackTensor: the pre-allocate size does not match the size in proto");
 
+  const auto data = gsl::make_span(p_data, expected_size);
   for (int i = 0; i < expected_size; i++)
-    *(p_data + i) = static_cast<uint16_t>(tensor.int32_data()[i]);
+    data[i] = gsl::narrow_cast<uint16_t>(tensor.int32_data()[i]);
+
   return Status::OK();
 }
 }  // namespace Utils

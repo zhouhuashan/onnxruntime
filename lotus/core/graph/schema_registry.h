@@ -14,20 +14,20 @@ using OpName_Domain_Version_Schema_Map = std::unordered_map<
 using Domain_To_Version_Map = std::unordered_map<std::string, std::pair<int, int>>;
 
 class ILotusOpSchemaCollection {
-public:
+ public:
   virtual Domain_To_Version_Map DomainToVersionMap() const = 0;
 
   virtual const ONNX_NAMESPACE::OpSchema* Schema(
       const std::string& key,
-      const std::string& domain = kOnnxDomain) const = 0;
+      const std::string& domain) const = 0;
 
   virtual const ONNX_NAMESPACE::OpSchema* Schema(
       const std::string& key,
       const int maxInclusiveVersion,
-      const std::string& domain = kOnnxDomain) const = 0;
+      const std::string& domain) const = 0;
 };
 
-// OpSchemaRegistry is singlton in onnx, so we have to duplicate it in Lotus
+// OpSchemaRegistry is a singleton in onnx, so we have to duplicate it in Lotus
 // If later onnx design changed, we don't need it any more.
 class LotusOpSchemaRegistry {
  public:
@@ -48,7 +48,7 @@ class LotusOpSchemaRegistry {
     return Lotus::Common::Status::OK();
   }
 
-  const Domain_To_Version_Map& DomainVersionMap() const {
+  const Domain_To_Version_Map& DomainVersionMap() const noexcept {
     return domain_version_map_;
   }
 
@@ -102,9 +102,17 @@ class LotusOpSchemaRegistry {
           << "in onnx/defs/schema.h)." << std::endl;
       return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
     }
-    map_[op_name][op_domain].emplace(std::make_pair(ver, op_schema));
+
+    auto ignored = map_[op_name][op_domain].emplace(std::make_pair(ver, op_schema));
     return Lotus::Common::Status::OK();
   }
+
+// conversion of kOnnxDomain to std::string creates unnamed temporary.  Suppress C26444 (es.84) the hard way.
+// GSL_SUPPRESS(es.84) doesn't work as the default arg temporary isn't in a scope the suppress attribute handles.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 26444)
+#endif
 
   // Return the latest schema for an operator in specified domain.
   // Domain with default value ONNX_DOMAIN means ONNX.
@@ -144,7 +152,7 @@ class LotusOpSchemaRegistry {
       if (s_it->second.end() == pos || pos->first > maxInclusiveVersion) {
         // All versions are less than specified version, or,
         // The <pos> version is greater than specified version.
-        pos--;
+        --pos;
         return &(pos->second);
       }
       // Schema with exact version as specified one exists.
@@ -153,6 +161,10 @@ class LotusOpSchemaRegistry {
       return nullptr;
     }
   }
+
+#ifdef _MSC_VER
+#pragma warning(pop)  // C26444
+#endif
 
  private:
   std::mutex mutex_;

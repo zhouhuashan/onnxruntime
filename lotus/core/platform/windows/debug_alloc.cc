@@ -15,6 +15,16 @@ constexpr int c_callstack_limit = 16;  // Maximum depth of callstack in leak tra
 #pragma warning(disable : 4073)  // initializers put in library initialization area (this is intentional)
 #pragma init_seg(lib)
 
+// as this is a debug only checker that does some very low level things and isn't used in the released code
+// ignore a bunch of C++ Core Guidelines code analysis warnings
+#pragma warning(disable : 26409)  // r.11 Don't use 'new' explicitly.
+#pragma warning(disable : 26426)  // i.22 Static local variables use non-constexpr initializer.
+#pragma warning(disable : 26481)  // bounds.1 Don't use pointer arithmetic.
+#pragma warning(disable : 26482)  // bounds.2 Only index into arrays using constant expressions.
+#pragma warning(disable : 26485)  // bounds.3 No array to pointer decay.
+#pragma warning(disable : 26490)  // type.1 Don't use reinterpret_cast
+#pragma warning(disable : 26493)  // type.4 Don't use C-style casts
+
 #include <windows.h>
 #include <sstream>
 #include <iostream>
@@ -81,6 +91,12 @@ unsigned g_cumulativeAllocationCount{};
 unsigned g_allocationCount{};
 uint64_t g_cumulativeAllocationBytes{};
 
+// Disable C6386: Buffer overrun for just this section.
+// 'p' is considered a 0 byte array as it's a void*, so the write to 'p'
+// in DebugHeapAlloc and DebugHeapReAlloc trigger spurious warnings.
+#pragma warning(push)
+#pragma warning(disable : 6386)
+
 void *DebugHeapAlloc(size_t size, unsigned framesToSkip) {
 #if (VALIDATE_HEAP_EVERY_ALLOC)
   if (HeapValidate(g_heap, 0, nullptr) == 0)
@@ -95,7 +111,7 @@ void *DebugHeapAlloc(size_t size, unsigned framesToSkip) {
 
   g_allocationCount++;
   new (p) MemoryBlock(framesToSkip + 1);
-  return reinterpret_cast<BYTE *>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
+  return static_cast<BYTE *>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
 }
 
 void *DebugHeapReAlloc(void *p, size_t size) {
@@ -104,14 +120,16 @@ void *DebugHeapReAlloc(void *p, size_t size) {
 
   g_cumulativeAllocationCount++;
   g_cumulativeAllocationBytes += size;
-  p = reinterpret_cast<BYTE *>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
+  p = static_cast<BYTE *>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
   p = HeapReAlloc(g_heap, 0, p, size + sizeof(MemoryBlock));
   if (!p)
     throw std::bad_alloc();
 
-  new (p) MemoryBlock;                                       // Redo the callstack
-  return reinterpret_cast<BYTE *>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
+  new (p) MemoryBlock;                                  // Redo the callstack
+  return static_cast<BYTE *>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
 }
+
+#pragma warning(pop)  // buffer overrun
 
 void DebugHeapFree(void *p) noexcept {
 #if (VALIDATE_HEAP_EVERY_ALLOC)
@@ -123,13 +141,17 @@ void DebugHeapFree(void *p) noexcept {
     return;
 
   g_allocationCount--;
-  p = reinterpret_cast<BYTE *>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
+  p = static_cast<BYTE *>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
   HeapFree(g_heap, 0, p);
 }
 
 static struct Memory_LeakCheck {
   Memory_LeakCheck() noexcept;
   ~Memory_LeakCheck();
+  Memory_LeakCheck(const Memory_LeakCheck &) = delete;
+  Memory_LeakCheck &operator=(const Memory_LeakCheck &) = delete;
+  Memory_LeakCheck(Memory_LeakCheck &&) = delete;
+  Memory_LeakCheck &operator=(Memory_LeakCheck &&) = delete;
 } g_memory_leak_check;
 
 Memory_LeakCheck::Memory_LeakCheck() noexcept {
@@ -151,8 +173,8 @@ Memory_LeakCheck::~Memory_LeakCheck() {
     if ((entry.wFlags & PROCESS_HEAP_ENTRY_BUSY) == 0)
       continue;
 
-    const MemoryBlock &block = *reinterpret_cast<const MemoryBlock *>(entry.lpData);
-    const BYTE *pBlock = reinterpret_cast<const BYTE *>(entry.lpData) + sizeof(MemoryBlock);
+    const MemoryBlock &block = *static_cast<const MemoryBlock *>(entry.lpData);
+    const BYTE *pBlock = static_cast<const BYTE *>(entry.lpData) + sizeof(MemoryBlock);
 
     std::ostringstream string;
     string << entry.cbData - sizeof(MemoryBlock) << " bytes at location " << std::hex << UINT_PTR(pBlock) << std::dec << "\n";

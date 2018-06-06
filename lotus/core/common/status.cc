@@ -26,7 +26,7 @@ int Status::Code() const noexcept {
   return IsOK() ? static_cast<int>(StatusCode::OK) : state_->code;
 }
 
-const std::string& Status::ErrorMessage() const {
+const std::string& Status::ErrorMessage() const noexcept {
   return IsOK() ? EmptyString() : state_->msg;
 }
 
@@ -56,14 +56,26 @@ std::string Status::ToString() const {
   return result;
 }
 
+// GSL_SUPRESS(i.22) is broken. Ignore the warnings for the static local variables that are trivial
+// and should not have any destruction order issues via pragmas instead.
+// https://developercommunity.visualstudio.com/content/problem/249706/gslsuppress-does-not-work-for-i22-c-core-guideline.html
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 26426)
+#endif
 const Status& Status::OK() noexcept {
   static Status s_ok;
   return s_ok;
 }
 
-const std::string& Status::EmptyString() {
+const std::string& Status::EmptyString() noexcept {
   static std::string s_empty;
   return s_empty;
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 }  // namespace Common
 }  // namespace Lotus

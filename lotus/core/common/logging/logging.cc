@@ -35,6 +35,14 @@ static std::atomic<void *> &DefaultLoggerManagerInstance() noexcept {
   return default_instance;
 }
 
+// GSL_SUPRESS(i.22) is broken. Ignore the warnings for the static local variables that are trivial
+// and should not have any destruction order issues via pragmas instead.
+// https://developercommunity.visualstudio.com/content/problem/249706/gslsuppress-does-not-work-for-i22-c-core-guideline.html
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 26426)
+#endif
+
 static std::mutex &DefaultLoggerMutex() noexcept {
   static std::mutex mutex;
   return mutex;
@@ -44,6 +52,10 @@ std::unique_ptr<Logger> &LoggingManager::GetDefaultLogger() noexcept {
   static std::unique_ptr<Logger> default_logger;
   return default_logger;
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 static minutes InitLocaltimeOffset(const time_point<system_clock> &epoch) noexcept;
 

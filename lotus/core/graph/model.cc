@@ -58,11 +58,13 @@ Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaCollec
     AddImportOpSets(false, &domain_to_version, local_registry);
   } else {
     for (auto& opSet : model_proto_->opset_import()) {
-      domain_to_version[opSet.domain()] = static_cast<int>(opSet.version());
+      domain_to_version[opSet.domain()] = gsl::narrow_cast<int>(opSet.version());
     }
   }
 
   if (model_proto_->has_graph()) {
+    // create instance. need to call private ctor so can't use make_unique
+    GSL_SUPPRESS(r .11)
     graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), local_registry));
   }
 }
@@ -134,7 +136,9 @@ ModelProto Model::ToProto() {
   return *model_proto_;
 }
 
-void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map<std::string, int>* domain_to_version, const ILotusOpSchemaCollection* local_registry) {
+void Model::AddImportOpSets(bool is_onnx_domain_only,
+                            /*out*/ gsl::not_null<std::unordered_map<std::string, int>*> domain_to_version,
+                            const ILotusOpSchemaCollection* local_registry) {
   auto& domain_to_version_range_map = OpSchemaRegistry::DomainToVersionRange::Instance().Map();
   Domain_To_Version_Map local_domain_to_version_map = local_registry ? local_registry->DomainToVersionMap() : Domain_To_Version_Map();
   for (auto& domainToVersionRange : domain_to_version_range_map) {
@@ -152,7 +156,7 @@ void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map
         max = std::max(it->second.second, max);
     }
 
-    domain_to_version->insert({domainToVersionRange.first, max});
+    auto ignored = domain_to_version->insert({domainToVersionRange.first, max});
     const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
     opset_id_proto->set_domain(domainToVersionRange.first);
     opset_id_proto->set_version(domainToVersionRange.second.second);
@@ -168,7 +172,7 @@ void Model::AddImportOpSets(bool is_onnx_domain_only, /*out*/ std::unordered_map
       }
 
       if (domain_to_version_range_map.end() != domain_to_version_range_map.find(local_domain.first)) {
-        domain_to_version->insert({local_domain.first, local_domain.second.second});
+        auto ignored = domain_to_version->insert({local_domain.first, local_domain.second.second});
         const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
         opset_id_proto->set_domain(local_domain.first);
         opset_id_proto->set_version(local_domain.second.second);
@@ -191,7 +195,7 @@ Status Model::Load(std::istream& model_istream, ModelProto* p_model_proto) {
   return Status::OK();
 }
 
-Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<Model>*> model, const ILotusOpSchemaCollection* local_registry) {
+Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model, const ILotusOpSchemaCollection* local_registry) {
   // we expect a graph to be present
   if (!model_proto.has_graph()) {
     return Status(LOTUS, INVALID_ARGUMENT, "No graph was found in the protobuf.");
@@ -199,16 +203,18 @@ Status Model::Load(const ModelProto& model_proto, gsl::not_null<std::shared_ptr<
 
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
-  model->reset(new Model(model_proto, local_registry));
+  model.reset(new Model(model_proto, local_registry));
 
-  if ((*model)->MainGraph() != nullptr) {
-    LOTUS_RETURN_IF_ERROR((*model)->MainGraph()->Resolve(true));
+  if (model->MainGraph() != nullptr) {
+    LOTUS_RETURN_IF_ERROR(model->MainGraph()->Resolve(true));
   }
   return Status::OK();
 }
 
 #ifdef _WIN32
-Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>* p_model, const ILotusOpSchemaCollection* local_registry) {
+GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the internal call to Load
+GSL_SUPPRESS(r .35)
+Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
   int fd;
   LOTUS_RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
   auto status = Load(fd, p_model, local_registry);
@@ -226,7 +232,9 @@ Status Model::Save(Model& model, const std::wstring& file_path) {
 
 #endif
 
-Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry) {
+GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the internal call to Load
+GSL_SUPPRESS(r .35)
+Status Model::Load(const std::string& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
   int fd;
   if (!FileOpenRd(file_path, &fd).IsOK()) {
     return Status(LOTUS, NO_MODEL, "Failed to open: " + file_path);
@@ -236,16 +244,16 @@ Status Model::Load(const std::string& file_path, gsl::not_null<std::shared_ptr<M
   return status;
 }
 
-Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry) {
-  std::unique_ptr<ModelProto> modelProto(new ModelProto);
-  bool result = modelProto->ParseFromArray(p_bytes, count);
+Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
+  std::unique_ptr<ModelProto> modelProto = std::make_unique<ModelProto>();
+  const bool result = modelProto->ParseFromArray(p_bytes, count);
   if (!result) {
     return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
   }
 
-  (*p_model).reset(new Model(std::move(modelProto), local_registry));
-  if ((*p_model)->MainGraph() != nullptr) {
-    LOTUS_RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve(true));
+  p_model = std::make_shared<Model>(std::move(modelProto), local_registry);
+  if (p_model->MainGraph() != nullptr) {
+    LOTUS_RETURN_IF_ERROR(p_model->MainGraph()->Resolve(true));
   }
   return Status::OK();
 }
@@ -262,7 +270,7 @@ using ::google::protobuf::io::CodedInputStream;
 using ::google::protobuf::io::FileInputStream;
 using ::google::protobuf::io::ZeroCopyInputStream;
 
-Status Model::Load(int fd, gsl::not_null<std::shared_ptr<Model>*> p_model, const ILotusOpSchemaCollection* local_registry) {
+Status Model::Load(int fd, std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
   if (fd < 0) {
     return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> less than 0.");
   }
@@ -273,7 +281,7 @@ Status Model::Load(int fd, gsl::not_null<std::shared_ptr<Model>*> p_model, const
   // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
   coded_input->SetTotalBytesLimit(INT_MAX, INT_MAX);
 
-  std::unique_ptr<ModelProto> model_proto(new ModelProto);
+  std::unique_ptr<ModelProto> model_proto = std::make_unique<ModelProto>();
   const bool result = model_proto->ParseFromCodedStream(coded_input.get());
   coded_input.reset();
   raw_input.reset();
@@ -282,9 +290,9 @@ Status Model::Load(int fd, gsl::not_null<std::shared_ptr<Model>*> p_model, const
     return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
   }
 
-  (*p_model).reset(new Model(std::move(model_proto), local_registry));
-  if ((*p_model)->MainGraph() != nullptr) {
-    LOTUS_RETURN_IF_ERROR((*p_model)->MainGraph()->Resolve(true));
+  p_model = std::make_shared<Model>(std::move(model_proto), local_registry);
+  if (p_model->MainGraph() != nullptr) {
+    LOTUS_RETURN_IF_ERROR(p_model->MainGraph()->Resolve(true));
   }
   return Status::OK();
 }
