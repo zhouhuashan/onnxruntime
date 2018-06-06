@@ -317,3 +317,13 @@ if(WIN32)
     set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
   endif()
 endif()
+
+add_test(NAME onnx_test_pytorch_converted
+    COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-converted)
+add_test(NAME onnx_test_pytorch_operator
+    COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-operator)
+if(lotus_RUN_ONNX_TESTS)
+  add_test(NAME onnx_model_tests
+    COMMAND onnx_test_runner ${PROJECT_BINARY_DIR}/models
+	CONFIGURATIONS Release RelWithDebInfo)
+endif()
