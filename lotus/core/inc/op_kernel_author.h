@@ -17,19 +17,29 @@
 #define ML_API_IMP(name) MLStatus name
 #define ML_API_(returnType, name) virtual returnType name
 #define ML_API_IMP_(returnType, name) returnType name
-#define ML_CALLBACK_API(name) MLStatus (*name)
+#define ML_CALLBACK_API(name) MLStatus(*name)
 #else
 #define ML_API(name) virtual MLStatus __stdcall name
 #define ML_API_IMP(name) MLStatus __stdcall name
 #define ML_API_(returnType, name) virtual returnType __stdcall name
 #define ML_API_IMP_(returnType, name) returnType __stdcall name
-#define ML_CALLBACK_API(name) MLStatus (*name)
+#define ML_CALLBACK_API(name) MLStatus(*name)
 #endif
+
+#define ML_DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE)                                                                         \
+  static_assert(sizeof(ENUMTYPE) == sizeof(uint32_t), "Incompatible enumeration size");                                  \
+  inline constexpr ENUMTYPE operator|(ENUMTYPE a, ENUMTYPE b) throw() { return ENUMTYPE(((uint32_t)a) | ((uint32_t)b)); } \
+  inline ENUMTYPE& operator|=(ENUMTYPE& a, ENUMTYPE b) throw() { return (ENUMTYPE&)(((uint32_t&)a) |= ((uint32_t)b)); }   \
+  inline constexpr ENUMTYPE operator&(ENUMTYPE a, ENUMTYPE b) throw() { return ENUMTYPE(((uint32_t)a) & ((uint32_t)b)); } \
+  inline ENUMTYPE& operator&=(ENUMTYPE& a, ENUMTYPE b) throw() { return (ENUMTYPE&)(((uint32_t&)a) &= ((uint32_t)b)); }   \
+  inline constexpr ENUMTYPE operator~(ENUMTYPE a) throw() { return ENUMTYPE(~((uint32_t)a)); }                           \
+  inline constexpr ENUMTYPE operator^(ENUMTYPE a, ENUMTYPE b) throw() { return ENUMTYPE(((uint32_t)a) ^ ((uint32_t)b)); } \
+  inline ENUMTYPE& operator^=(ENUMTYPE& a, ENUMTYPE b) throw() { return (ENUMTYPE&)(((uint32_t&)a) ^= ((uint32_t)b)); }
 
 static_assert(sizeof(bool) == 1, "Unsupported size for bool");
 
 // Attribute types with numeric values matching the ONNX specification
-enum class MLAttributeType {
+enum class MLAttributeType : uint32_t {
   kUndefined = 0,
   kFloat = 2,
   kInt = 3,
@@ -39,7 +49,7 @@ enum class MLAttributeType {
   kStringArray = 9
 };
 
-enum class MLTensorDataType {
+enum class MLTensorDataType : uint32_t {
   kUndefined = 0,
   kFloat = 1,
   kUInt8 = 2,
@@ -80,7 +90,7 @@ struct MLMapType {
   MLTensorDataType value_type;
 };
 
-enum class MLEdgeClass {
+enum class MLEdgeClass : uint32_t {
   kUndefined = 0,
   kTensor = 1,
   kMap = 2,
@@ -89,7 +99,7 @@ enum class MLEdgeClass {
 };
 
 // Edge information used by schema during inferencing and provided to operator
-// kernel factory methods. 
+// kernel factory methods.
 struct MLEdgeType {
   MLEdgeClass edge_class;
 
@@ -103,46 +113,45 @@ struct MLEdgeType {
 
 // Operator information used by kernel creation methods and inferencing functions
 class IMLOperatorAttributes {
-public:
-  // Gets the count of elements in an attribute.  May be used to determine if an 
+ public:
+  // Gets the count of elements in an attribute.  May be used to determine if an
   // attribute of any type exists.
   ML_API(GetAttributeElementCount)(
-    MLAttributeType type,
-    const char* name,
-    uint32_t* element_count) const noexcept = 0;
+      MLAttributeType type,
+      const char* name,
+      uint32_t* element_count) const noexcept = 0;
 
   // Gets the array of values in a numeric attribute
   ML_API(GetAttribute)(
-    const char* name,
-    MLAttributeType type,
-    uint32_t element_count,
-    uint32_t element_byte_size,
-    void* value) const noexcept = 0;
+      const char* name,
+      MLAttributeType type,
+      uint32_t element_count,
+      uint32_t element_byte_size,
+      void* value) const noexcept = 0;
 
   // Gets the length of an element within a UTF-8 string attribute,
   // including null termination
   ML_API(GetStringAttributeElementLength)(
-    const char* name,
-    uint32_t element_index,
-    uint32_t* attribute_element_length) const noexcept = 0;
+      const char* name,
+      uint32_t element_index,
+      uint32_t* attribute_element_length) const noexcept = 0;
 
   // Gets the contents of an element within a UTF-8 string attribute.  The size
   // includes null termination.
   ML_API(GetStringAttributeElement)(
-    const char* name,
-    uint32_t element_index,
-    uint32_t attribute_element_length,
-    char* attribute_element) const noexcept = 0;
+      const char* name,
+      uint32_t element_index,
+      uint32_t attribute_element_length,
+      char* attribute_element) const noexcept = 0;
 };
 
-// Shape information used by kernel implementations 
-class IMLOpKernelTensorShapeInfo
-{
-public:
+// Shape information used by kernel implementations
+class IMLOpKernelTensorShapeInfo {
+ public:
   ML_API(GetInputTensorDimensionCount)(uint32_t input_index, uint32_t* dimension_count) const noexcept = 0;
   ML_API(GetInputTensorShape)(uint32_t input_index, uint32_t dimension_count, int64_t* dimensions) const noexcept = 0;
 
-  // HasOutputShapeInfo returns false if and only if the kernel was registered with 
+  // HasOutputShapeInfo returns false if and only if the kernel was registered with
   // kProducesDynamicOutputTensorSize. Otherise, shape inference functions are required
   // to have been provided by the kernel registration.
   ML_API_(bool, HasOutputShapeInfo)() const noexcept = 0;
@@ -152,7 +161,7 @@ public:
 
 // Operator information provided to operator kernel factory methods.
 class IMLOpKernelInfo : public IMLOperatorAttributes {
-public:
+ public:
   ML_API_(uint32_t, GetInputCount)() const noexcept = 0;
   ML_API_(uint32_t, GetOutputCount)() const noexcept = 0;
 
@@ -163,7 +172,7 @@ public:
   // MLOpKernelOptions::kAllowDynamicInputTensorSizes.  If this flag is specified and upstream
   // shapes are known when the kernel is created, HasTensorShapeInfo still returns false.
   ML_API_(bool, HasTensorShapeInfo)() const noexcept = 0;
-  ML_API(GetTensorShapeInfo) (const IMLOpKernelTensorShapeInfo** shapeInfo) const noexcept = 0;
+  ML_API(GetTensorShapeInfo)(const IMLOpKernelTensorShapeInfo** shapeInfo) const noexcept = 0;
 
   // Returns a handle whose type varies based on the kernel type.
   ML_API_(const void*, GetExecutionHandle)() const noexcept = 0;
@@ -171,12 +180,12 @@ public:
 
 // Tensors methods used by implementations of IMLOpKernel::Compute
 class IMLOpTensor {
-public:
+ public:
   ML_API_(uint32_t, GetDimensionCount)() const noexcept = 0;
 
   ML_API(GetDimensions)(
-    int64_t* dimensions,
-    uint32_t dimension_count) const noexcept = 0;
+      int64_t* dimensions,
+      uint32_t dimension_count) const noexcept = 0;
 
   ML_API_(MLTensorDataType, GetTensorDataType)() const noexcept = 0;
 
@@ -191,11 +200,11 @@ public:
   // by GetData().
   ML_API_(bool, IsDataHandle)() const noexcept = 0;
 
-  // Returns a pointer whose type varies  based on the kernel type. 
+  // Returns a pointer whose type varies  based on the kernel type.
   ML_API_(void*, GetData)() noexcept = 0;
   ML_API_(const void*, GetData)() const noexcept = 0;
 
-    // Whether this tensor is an unused optional input/output tensors
+  // Whether this tensor is an unused optional input/output tensors
   ML_API_(bool, IsUnused)() const noexcept = 0;
 
   // TODO - Methods to access strings stored within tensors
@@ -203,20 +212,21 @@ public:
 
 // Context used by IMLOpKernel::Compute
 class IMLOpKernelContext {
-public:
+ public:
   ML_API(GetInputTensor)(uint32_t input_index, const IMLOpTensor** tensor) const noexcept = 0;
+
+  // If the kernel is registered without a shape inference method, then the overload of
+  // GetOutputTensor consuming the tensor's shape must be called.
   ML_API(GetOutputTensor)(uint32_t output_index, IMLOpTensor** tensor) noexcept = 0;
 
-  // If the kernel is registered using MLOpKernelOptions::kProducesDynamicOutputTensorSize,
-  // then method should be used to get an output tensor while providing its size.
-  ML_API(GetDynamicOutputTensor)(
-    uint32_t output_index,
-    const int64_t* dimension_sizes,
-    uint32_t dimensions,
-    IMLOpTensor** tensor) noexcept = 0;
+  ML_API(GetOutputTensor)(
+      uint32_t output_index,
+      const int64_t* dimension_sizes,
+      uint32_t dimensions,
+      IMLOpTensor** tensor) noexcept = 0;
 
   // TODO - methods to query maps and sequences
-  
+
   // Allocate and free intermediate resources.  The allocation will automatically
   // be maintained as necessary until after the IMLOpKernel::Compute returns and
   // any GPU work scheduled during that routine completes.
@@ -228,7 +238,7 @@ public:
 };
 
 class IMLOpKernel {
-public:
+ public:
   ML_API_(void, Release)() noexcept = 0;
 
   // Computes the outputs of the kernel.  This may be called multiple times
@@ -237,7 +247,7 @@ public:
   ML_API(Compute)(IMLOpKernelContext* context) noexcept = 0;
 };
 
-enum class MLFormalParameterOptions {
+enum class MLFormalParameterOptions : uint32_t {
   kSingle = 0,
   kOptional = 1,
   kVariadic = 2,
@@ -245,7 +255,7 @@ enum class MLFormalParameterOptions {
 
 enum class MLFormalParameterTypeFormat {
   // The type is defined using MLEdgeType
-  kEdgeType = 0, 
+  kEdgeType = 0,
 
   // The type is a string which is part of the operator definition and described in its schema
   kLabel = 1,
@@ -267,13 +277,12 @@ struct MLTypeConstraint {
   uint32_t allowed_type_count;
 };
 
-
 class IMLShapeInferenceContext : public IMLOperatorAttributes {
-public:
+ public:
   ML_API_(uint32_t, GetInputCount)() const noexcept = 0;
   ML_API_(uint32_t, GetOutputCount)() const noexcept = 0;
 
-  ML_API(GetInputEdgeType) (uint32_t input_index, MLEdgeType* edge_type) const noexcept = 0;
+  ML_API(GetInputEdgeType)(uint32_t input_index, MLEdgeType* edge_type) const noexcept = 0;
   ML_API(GetInputTensorDimensionCount)(uint32_t input_index, uint32_t* dimension_count) const noexcept = 0;
   ML_API(GetInputTensorShape)(uint32_t input_index, uint32_t dimension_count, int64_t* dimensions) const noexcept = 0;
 
@@ -281,7 +290,7 @@ public:
 };
 
 class IMLTypeInferenceContext : public IMLOperatorAttributes {
-public:
+ public:
   ML_API_(uint32_t, GetInputCount)() const noexcept = 0;
   ML_API_(uint32_t, GetOutputCount)() const noexcept = 0;
 
@@ -294,7 +303,7 @@ public:
 using MLTypeInferenceFunction = MLStatus (*)(void *, IMLTypeInferenceContext *);
 
 // Inference function to compute sizes of output tensors.
-// All input tensors provided to the shape inference callback will have well defined sizes. 
+// All input tensors provided to the shape inference callback will have well defined sizes.
 // If upstream operators cannot determine their output shape before computation, then this
 // will be called only after their computation.
 using MLShapeInferenceFunction = MLStatus (*)(void *, IMLShapeInferenceContext *);
@@ -311,7 +320,7 @@ struct MLAttributeNameValue {
   MLAttributeType type;
   uint32_t value_count;
 
-  union{
+  union {
     const int64_t* ints;
     const char* const* strings;
     const float* floats;
@@ -321,7 +330,7 @@ struct MLAttributeNameValue {
 // Definitions of operators which are independent of kernel implementations
 struct MLSchemaDefinition {
   const char* name;
-  
+
   // The operator set version at which this operator was introduced with most recent change
   // For example, ONNX 1.2 exposes up to version 7 of the operator set for the ONNX domain.
   int operator_set_since_version;
@@ -338,7 +347,7 @@ struct MLSchemaDefinition {
   // The provided context is passed to the function
   MLTypeInferenceFunction type_inference_function;
   void* type_inference_function_context;
-  
+
   const MLAttribute* attributes;
   uint32_t attribute_count;
 
@@ -368,7 +377,7 @@ struct MLOpKernelDefinition {
   const char* name;
 
   // The operator version at which this kernel becomes valid.  The maximum valid
-  // version of the kernel is inferred based on registrations of schema for operator 
+  // version of the kernel is inferred based on registrations of schema for operator
   // sets containing breaking changes.
   int operator_set_since_version;
 
@@ -378,60 +387,53 @@ struct MLOpKernelDefinition {
   MLTypeConstraint* type_constraints;
   uint32_t type_constraint_count;
 
-  // Default attributes, used for automatically setting missing values.  
+  // Default attributes, used for automatically setting missing values.
   // Default attributes provided in schema registrations must be consistent.
-  // Only the defaults provided in kernel registrations are used to automatically 
+  // Only the defaults provided in kernel registrations are used to automatically
   // set missing values.
   const MLAttributeNameValue* default_attributes;
   uint32_t default_attribute_count;
 
   // Optional shape inference function, used for validation and memory planning.
   // This may be the same function as provided to MLSchemaDefinition.
-  // It must be provided unless MLOpKernelOptions:kProducesDynamicOutputTensorSize
-  // is specified. The provided context is passed to the function.
-  MLShapeInferenceFunction* shape_inference_function;
+  // If this is provided, IMLOpKernelContext::GetOutputTensor may be called
+  // while not providing the output tensor shape.  The provided context is 
+  // passed to shape_inference_function.
+  MLShapeInferenceFunction shape_inference_function;
   void* shape_inference_function_context;
 };
 
 // TODO - Make this store a context value or allow interfaces to be registered
 using IMLOpKernelCreateFn = MLStatus (*)(const IMLOpKernelInfo &, IMLOpKernel **);
 
-enum class MLOpKernelOptions {
+enum class MLOpKernelOptions : uint32_t {
   kNone = 0,
 
-  // Whether the shapes of input tensors are allowed to vary across invocations 
-  // of an operator kernel.  If this is not set, kernel instances may query input 
-  // tensor shapes during creation, and front-load initialization work which depends 
-  // on those shapes.  Setting this may improve performance in some cases by enabling  
+  // Whether the shapes of input tensors are allowed to vary across invocations
+  // of an operator kernel instance.  If this is not set, kernel instances may query input
+  // tensor shapes during creation, and front-load initialization work which depends
+  // on those shapes.  Setting this may improve performance in some cases by enabling
   // a kernel instance to be re-used with different input sizes, but caches accumulated
   // by kernels during computation must be managed in a thread-safe fashion.
-  //
-  // TODO - Consider removing this and always behaving as if its not set.
-  kAllowDynamicInputTensorSizes = 1,
-
-  // This should be set only for kernels which produce an output size which varies according
-  // to data stored within input edges.  Setting this unnecessarily has performance consequences
-  // for overall model execution.
-  //
-  // TODO - Consider removing this and making it a limitation of which kernels may be
-  // authored by the ABI
-  kProducesDynamicOutputTensorSize = 2,
+  kAllowDynamicInputShapes = 1,
 };
+
+ML_DEFINE_ENUM_FLAG_OPERATORS(MLOpKernelOptions)
 
 // Operator and kernel registrations. Registrations may be overridden by subsequent registrations
 // of the same operator.
 class IMLOperatorRegistry {
-public:
+ public:
   // The operator set registration must provide schema for all operators that have changed since
   // the specified baseline version.
   ML_API(RegisterOpSetFromSchema)(
-    const MLOperatorSetId* opSetId,
-    int baseline_version,
-    const MLSchemaDefinition* const* schema,
-    uint32_t schema_count) const noexcept = 0;
+      const MLOperatorSetId* opSetId,
+      int baseline_version,
+      const MLSchemaDefinition* const* schema,
+      uint32_t schema_count) const noexcept = 0;
 
   ML_API(RegisterOpKernel)(
-    const MLOpKernelDefinition* op_kernel,
-    MLOpKernelOptions options,
-    IMLOpKernelCreateFn op_kernel_factory) const noexcept = 0;
+      const MLOpKernelDefinition* op_kernel,
+      MLOpKernelOptions options,
+      IMLOpKernelCreateFn op_kernel_factory) const noexcept = 0;
 };

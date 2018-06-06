@@ -19,6 +19,8 @@ enum class MLStatus : uint32_t {
   MODEL_LOADED = 8,
   NOT_IMPLEMENTED = 9,
   INVALID_GRAPH = 10,
+  SHAPE_INFERENCE_NOT_REGISTERED = 11,
+  REQUIREMENT_NOT_REGISTERED = 12
 };
 
 inline const char *MLStatusToString(MLStatus status) noexcept {
@@ -43,6 +45,10 @@ inline const char *MLStatusToString(MLStatus status) noexcept {
       return "NOT_IMPLEMENTED";
     case MLStatus::INVALID_GRAPH:
       return "INVALID_GRAPH";
+    case MLStatus::SHAPE_INFERENCE_NOT_REGISTERED:
+      return "SHAPE_INFERENCE_NOT_REGISTERED";
+    case MLStatus::REQUIREMENT_NOT_REGISTERED:
+      return "REQUIREMENT_NOT_REGISTERED";
     default:
       return "GENERAL ERROR";
   }

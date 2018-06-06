@@ -34,6 +34,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext>{
         kernel_def_(kernel_def),
         execution_provider_(execution_provider) {}
 
+  OpKernelInfo(const OpKernelInfo& other) : OpKernelInfo(other.node_, other.kernel_def_, other.execution_provider_){}
 
   const AllocatorInfo& GetAllocatorInfo(MemType mem_type) const {
     return execution_provider_->GetAllocatorMap().at(mem_type)->Info();
@@ -52,6 +53,9 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext>{
   }
   
  private:
+   LOTUS_DISALLOW_MOVE(OpKernelInfo);
+   LOTUS_DISALLOW_ASSIGN(OpKernelInfo);
+
   const LotusIR::Node& node_;
   const KernelDef& kernel_def_;
   // For non cpu/cuda case, this pointer should be set so that function kernel

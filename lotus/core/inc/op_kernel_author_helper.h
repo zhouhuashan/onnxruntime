@@ -43,6 +43,7 @@ class MLStatusException : public std::exception {
     }                             \
   }
 
+// TODO - consume error code to be returned upon failure
 #define ML_CHECK_BOOL(x)                       \
   {                                            \
     if ((x) == false) {                        \
@@ -120,7 +121,7 @@ struct MLTypeTraits<uint64_t> {
 
 template <>
 struct MLTypeTraits<MLFloat16> {
-	static const MLTensorDataType TensorType = MLTensorDataType::kFloat16;
+  static const MLTensorDataType TensorType = MLTensorDataType::kFloat16;
 };
 
 //
@@ -129,8 +130,7 @@ struct MLTypeTraits<MLFloat16> {
 // return values to exceptions.
 //
 
-class MLOpKernelTensorShapeInfo
-{
+class MLOpKernelTensorShapeInfo {
  public:
   MLOpKernelTensorShapeInfo(const IMLOpKernelTensorShapeInfo* impl) : impl_(impl) {}
 
@@ -175,8 +175,8 @@ class MLOpKernelTensorShapeInfo
 };
 
 class MLOperatorAttributes {
-public:
-  MLOperatorAttributes(const IMLOperatorAttributes* impl) : impl_(impl){
+ public:
+  MLOperatorAttributes(const IMLOperatorAttributes* impl) : impl_(impl) {
   }
 
   uint32_t GetAttributeElementCount(
@@ -250,7 +250,7 @@ public:
     return value;
   }
 
-private:
+ private:
   const IMLOperatorAttributes* impl_;
 };
 
@@ -282,14 +282,14 @@ class MLOpKernelInfo : public MLOperatorAttributes {
     return ret;
   }
 
-  MLEdgeType GetOutputEdgeType(uint32_t output_index) const  {
+  MLEdgeType GetOutputEdgeType(uint32_t output_index) const {
     MLEdgeType ret = {};
     ML_CHECK_STATUS(impl_->GetOutputEdgeType(output_index, &ret));
 
     return ret;
   }
 
-  bool HasTensorShapeInfo() const noexcept  {
+  bool HasTensorShapeInfo() const noexcept {
     return impl_->HasTensorShapeInfo();
   }
 
@@ -504,11 +504,7 @@ class MLOpKernelContext {
   // across a boundary. e.g. Operator implementations may use the helper classes so that
   // they can use exceptions without checking every return value, but then they need to pass
   // results onward to a different component which expects the lower level currency.
-  IMLOpKernelContext* GetInterface() noexcept {
-    return impl_;
-  }
-
-  const IMLOpKernelContext* GetInterface() const noexcept {
+  IMLOpKernelContext* GetInterface() const noexcept {
     return impl_;
   }
 
@@ -517,16 +513,16 @@ class MLOpKernelContext {
     ML_CHECK_STATUS(impl_->GetInputTensor(input_index, &tensor));
     return const_cast<IMLOpTensor*>(tensor);
   }
-  
+
   MLOpTensor GetOutputTensor(uint32_t output_index) const {
     IMLOpTensor* tensor = nullptr;
     ML_CHECK_STATUS(impl_->GetOutputTensor(output_index, &tensor));
     return const_cast<IMLOpTensor*>(tensor);
   }
 
-  MLOpTensor GetDynamicOutputTensor(uint32_t output_index, const std::vector<int64_t> dimension_sizes) const {
+  MLOpTensor GetOutputTensor(uint32_t output_index, const std::vector<int64_t> dimension_sizes) const {
     IMLOpTensor* tensor = nullptr;
-    ML_CHECK_STATUS(impl_->GetDynamicOutputTensor(output_index, dimension_sizes.data(), static_cast<uint32_t>(dimension_sizes.size()), &tensor));
+    ML_CHECK_STATUS(impl_->GetOutputTensor(output_index, dimension_sizes.data(), static_cast<uint32_t>(dimension_sizes.size()), &tensor));
     return MLOpTensor(tensor);
   }
 
@@ -540,7 +536,7 @@ class MLOpKernelContext {
     return impl_->GetExecutionHandle();
   }
 
-private:
+ private:
   IMLOpKernelContext* impl_ = nullptr;
 };
 

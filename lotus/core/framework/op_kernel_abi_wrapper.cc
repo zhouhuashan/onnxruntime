@@ -14,9 +14,12 @@
 #pragma warning(disable : 4100)
 
 // Disable formatting, which is incorrect for ML_API macros
-// _clang-format off
+// clang-format off
 
 namespace Lotus {
+
+template <class T>
+bool InputTensorShapesDefined(const OpNodeProtoHelper<T>& node_info);
 
 inline MLStatus ToABIStatus(StatusCode statusCode) {
   return static_cast<MLStatus>(statusCode);
@@ -71,8 +74,12 @@ struct MLAttributeArrayTypeTraits<MLAttributeType::kStringArray> {
   static const AttributeProto_AttributeType ProtoType = AttributeProto_AttributeType_STRINGS;
 };
 
-#define ML_ATTR_TO_PROTO_CASE(x) case MLAttributeType::x: return MLAttributeTypeTraits<MLAttributeType::x>::ProtoType;
-#define ML_ATTR_VEC_TO_PROTO_CASE(x) case MLAttributeType::x: return MLAttributeArrayTypeTraits<MLAttributeType::x>::ProtoType;
+#define ML_ATTR_TO_PROTO_CASE(x) \
+  case MLAttributeType::x:       \
+    return MLAttributeTypeTraits<MLAttributeType::x>::ProtoType;
+#define ML_ATTR_VEC_TO_PROTO_CASE(x) \
+  case MLAttributeType::x:           \
+    return MLAttributeArrayTypeTraits<MLAttributeType::x>::ProtoType;
 
 AttributeProto_AttributeType ToProto(MLAttributeType type) {
   switch (type) {
@@ -89,7 +96,10 @@ AttributeProto_AttributeType ToProto(MLAttributeType type) {
   }
 }
 
-#define ML_TENSOR_TYPE_CASE(x) if (type == DataTypeImpl::GetType<x>()) { return MLTypeTraits<x>::TensorType; }
+#define ML_TENSOR_TYPE_CASE(x)              \
+  if (type == DataTypeImpl::GetType<x>()) { \
+    return MLTypeTraits<x>::TensorType;     \
+  }
 
 ::MLTensorDataType ToMLTensorDataType(Lotus::MLDataType type) {
   if (type == DataTypeImpl::GetType<std::string>())
@@ -113,7 +123,10 @@ AttributeProto_AttributeType ToProto(MLAttributeType type) {
 }
 
 #undef ML_TENSOR_TYPE_CASE
-#define ML_TENSOR_TYPE_CASE(x) if (type == MLTypeTraits<x>::TensorType) { return DataTypeImpl::GetTensorType<x>(); }
+#define ML_TENSOR_TYPE_CASE(x)               \
+  if (type == MLTypeTraits<x>::TensorType) { \
+    return DataTypeImpl::GetTensorType<x>(); \
+  }
 
 Lotus::MLDataType ToTensorDataType(::MLTensorDataType type) {
   if (type == MLTensorDataType::kString)
@@ -193,9 +206,9 @@ Lotus::MLDataType ToTensorDataType(::MLTensorDataType type) {
   MLEdgeType ret = {};
 
   ML_CHECK_BOOL(type->value_case() == TypeProto::kTensorType ||
-                type->value_case() == TypeProto::VALUE_NOT_SET);  
+                type->value_case() == TypeProto::VALUE_NOT_SET);
 
-  if (type->value_case() == TypeProto::kTensorType) {    
+  if (type->value_case() == TypeProto::kTensorType) {
     ret.edge_class = MLEdgeClass::kTensor;
     const TypeProto_Tensor tensor_type = type->tensor_type();
     if (tensor_type.has_elem_type()) {
@@ -265,13 +278,27 @@ std::string ToTypeString(MLEdgeType type) {
   }
 }
 
-OpKernelInfoWrapper::OpKernelInfoWrapper(const OpKernelInfo* kernel_info) : impl_(kernel_info), OpNodeInfoWrapper(kernel_info) {
+OpKernelInfoWrapper::OpKernelInfoWrapper(
+    const OpKernelInfo* kernel_info,
+    const EdgeShapes* input_shape_overrides,
+    const EdgeShapes* inferred_output_shapes,
+    bool allow_input_shape_query,
+    bool allow_output_shape_query) : impl_(kernel_info),
+                                     inferred_output_shapes_(inferred_output_shapes),
+                                     allow_input_shape_query_(allow_input_shape_query),
+                                     allow_output_shape_query_(allow_output_shape_query),
+                                     OpNodeInfoWrapper(kernel_info, input_shape_overrides) {
+  assert(allow_input_shape_query || !allow_output_shape_query);
+
+  // The input may be exposed using non-overridden sizes.  Exposing output shapes requires
+  // those shapes be provided here.
+  assert(!allow_output_shape_query || (inferred_output_shapes != nullptr));
 }
 
 // Prevents the templatized class name being parsed as multiple arguments to a macro
-#define NODEINFO_WRAPPER_CLASS OpNodeInfoWrapper<Base_t, NodeInfoImpl_t>
+#define NODEINFO_WRAPPER_CLASS OpNodeInfoWrapper<NodeInfoImpl_t, Base1_t, Base2_t>
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetAttributeElementCount)(
     MLAttributeType type,
     const char* name,
@@ -291,9 +318,9 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetAttributeElementCount)(
   }
 }
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 template <MLAttributeType T>
-MLStatus OpNodeInfoWrapper<Base_t, NodeInfoImpl_t>::GetAttributeArrayHelper(
+MLStatus NODEINFO_WRAPPER_CLASS::GetAttributeArrayHelper(
     const char* name,
     uint32_t element_count,
     uint32_t element_byte_size,
@@ -305,7 +332,7 @@ MLStatus OpNodeInfoWrapper<Base_t, NodeInfoImpl_t>::GetAttributeArrayHelper(
   return MLStatus::OK;
 }
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetAttribute)(
     const char* name,
     MLAttributeType type,
@@ -339,8 +366,8 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetAttribute)(
   }
 }
 
-template<class Base_t, class NodeInfoImpl_t>
-const std::string* OpNodeInfoWrapper<Base_t, NodeInfoImpl_t>::GetStringAttribute(
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
+const std::string* NODEINFO_WRAPPER_CLASS::GetStringAttribute(
     const char* name,
     uint32_t element_index) const {
   // Get the proto attribute
@@ -359,7 +386,7 @@ const std::string* OpNodeInfoWrapper<Base_t, NodeInfoImpl_t>::GetStringAttribute
   }
 }
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetStringAttributeElementLength)(
     const char* name,
     uint32_t element_index,
@@ -383,7 +410,7 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetStringAttributeElementLength)(
   return MLStatus::OK;
 }
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetStringAttributeElement)(
     const char* name,
     uint32_t element_index,
@@ -405,9 +432,9 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetStringAttributeElement)(
   return MLStatus::OK;
 }
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 template <MLAttributeType T>
-MLStatus OpNodeInfoWrapper<Base_t, NodeInfoImpl_t>::GetAttributeHelper(
+MLStatus NODEINFO_WRAPPER_CLASS::GetAttributeHelper(
     const char* name,
     uint32_t element_byte_size,
     void* value) const {
@@ -416,8 +443,8 @@ MLStatus OpNodeInfoWrapper<Base_t, NodeInfoImpl_t>::GetAttributeHelper(
   return ToABIStatus(impl_->template GetAttr<elementType_t>(name, static_cast<elementType_t*>(value)));
 }
 
-template<class Base_t, class NodeInfoImpl_t>
-ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputEdgeType) (uint32_t input_index, MLEdgeType* edge_type) const noexcept {
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
+ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputEdgeType)(uint32_t input_index, MLEdgeType* edge_type) const noexcept {
   try {
     const TypeProto* type = impl_->GetInputType(input_index);
     ML_CHECK_BOOL(type != nullptr);
@@ -425,7 +452,7 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputEdgeType) (uint32_t input_index, MLEd
 
     assert(edge_type->edge_class != MLEdgeClass::kUndefined);
     assert((edge_type->edge_class != MLEdgeClass::kTensor && edge_type->edge_class != MLEdgeClass::kTensorSequence) ||
-                  edge_type->tensor_data_type != MLTensorDataType::kUndefined);
+           edge_type->tensor_data_type != MLTensorDataType::kUndefined);
 
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
@@ -435,8 +462,8 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputEdgeType) (uint32_t input_index, MLEd
   }
 }
 
-template<class Base_t, class NodeInfoImpl_t>
-ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetOutputEdgeType) (uint32_t output_index, MLEdgeType* edge_type) const noexcept {
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
+ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetOutputEdgeType)(uint32_t output_index, MLEdgeType* edge_type) const noexcept {
   try {
     const TypeProto* type = impl_->GetOutputType(output_index);
     ML_CHECK_BOOL(type != nullptr);
@@ -450,14 +477,132 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetOutputEdgeType) (uint32_t output_index, ML
   }
 }
 
-ML_API_IMP_(bool, OpKernelInfoWrapper::HasTensorShapeInfo)() const noexcept {
-  return false;
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
+ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputTensorShape)(uint32_t input_index, uint32_t dimension_count, int64_t* dimensions) const noexcept {
+  try {
+    if (input_index >= GetInputCount()) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
+    // Input shapes are determined either from the override or from the underlying proto
+    if (input_shapes_override_) {
+      if (input_shapes_override_->GetShape(input_index).size() != dimension_count) {
+        return MLStatus::INVALID_ARGUMENT;
+      }
+
+      for (uint32_t i = 0; i < dimension_count; ++i) {
+        dimensions[i] = input_shapes_override_->GetShape(input_index)[i];
+      }
+    } else {
+      const auto* inputType = impl_->GetInputType(input_index);
+      LOTUS_ENFORCE(inputType->has_tensor_type());
+      for (uint32_t i = 0; i < dimension_count; ++i) {
+        
+        // Shape inference is only done when all dimensions of all inputs have known values,
+        // so the input tensors will always have shapes at this point.
+        assert(inputType->tensor_type().shape().dim(i).has_dim_value());
+        dimensions[i] = inputType->tensor_type().shape().dim(i).dim_value();
+      }
+    }
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
+
+  return MLStatus::OK;
 }
 
-ML_API_IMP(OpKernelInfoWrapper::GetTensorShapeInfo) (const IMLOpKernelTensorShapeInfo** shapeInfo) const noexcept {
-  if (!HasTensorShapeInfo()) {
-      *shapeInfo = nullptr;
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
+ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputTensorDimensionCount)(uint32_t input_index, uint32_t* dimension_count) const noexcept {
+  try {
+    if (input_index >= GetInputCount()) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+    
+    // Input shapes are determined either from the override or from the underlying proto
+    if (input_shapes_override_) {
+      *dimension_count = gsl::narrow_cast<uint32_t>(input_shapes_override_->GetShape(input_index).size());
+    } else {
+      const auto* inputType = impl_->GetInputType(input_index);
+      LOTUS_ENFORCE(inputType->has_tensor_type());
+      
+      // Shape inference is only done when all dimensions of all inputs have known values,
+      // so the input tensors will always have shapes at this point.
+      assert(inputType->tensor_type().has_shape());
+
+      *dimension_count = inputType->tensor_type().shape().dim_size();
+    }
+
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
+
+  return MLStatus::OK;
+}
+
+ML_API_IMP(OpKernelInfoWrapper::GetOutputTensorShape)(uint32_t output_index, uint32_t dimension_count, int64_t* dimensions) const noexcept {
+  try {
+    if (!HasOutputShapeInfo()) {
       return MLStatus::FAIL;
+    }
+
+    if (output_index >= GetOutputCount()) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
+    if (inferred_output_shapes_->GetShape(output_index).size() != dimension_count) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
+    for (uint32_t i = 0; i < dimension_count; ++i) {
+      dimensions[i] = inferred_output_shapes_->GetShape(output_index)[i];
+    }
+
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
+
+  return MLStatus::OK;
+}
+
+ML_API_IMP(OpKernelInfoWrapper::GetOutputTensorDimensionCount)(uint32_t output_index, uint32_t* dimension_count) const noexcept {
+  try {
+    if (!HasOutputShapeInfo()) {
+      return MLStatus::FAIL;
+    }
+
+    if (output_index >= GetOutputCount()) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
+    if (inferred_output_shapes_->GetShape(output_index).size() == 0) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
+    *dimension_count = gsl::narrow_cast<uint32_t>(inferred_output_shapes_->GetShape(output_index).size());
+
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
+
+  return MLStatus::OK;
+}
+
+ML_API_IMP_(bool, OpKernelInfoWrapper::HasTensorShapeInfo)() const noexcept {
+  return allow_input_shape_query_;
+}
+
+ML_API_IMP(OpKernelInfoWrapper::GetTensorShapeInfo)(const IMLOpKernelTensorShapeInfo** shapeInfo) const noexcept {
+  if (!HasTensorShapeInfo()) {
+    *shapeInfo = nullptr;
+    return MLStatus::REQUIREMENT_NOT_REGISTERED;
   }
 
   *shapeInfo = this;
@@ -469,43 +614,24 @@ ML_API_IMP_(const void*, OpKernelInfoWrapper::GetExecutionHandle)() const noexce
   return executionProvider->GetExecutionHandle();
 }
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 ML_API_IMP_(uint32_t, NODEINFO_WRAPPER_CLASS::GetInputCount)() const noexcept {
   return impl_->GetInputCount();
 }
 
-template<class Base_t, class NodeInfoImpl_t>
+template <class NodeInfoImpl_t, class Base1_t, class Base2_t>
 ML_API_IMP_(uint32_t, NODEINFO_WRAPPER_CLASS::GetOutputCount)() const noexcept {
   return impl_->GetOutputCount();
 }
 
-ML_API_IMP(OpKernelInfoWrapper::GetInputTensorDimensionCount)(uint32_t input_index, uint32_t* dimension_count) const noexcept {
-  // TODO
-  return MLStatus::NOT_IMPLEMENTED;
-}
-
-ML_API_IMP(OpKernelInfoWrapper::GetInputTensorShape)(uint32_t input_index, uint32_t dimension_count, int64_t* dimensions) const noexcept {
-  // TODO
-  return MLStatus::NOT_IMPLEMENTED;
-}
-
 ML_API_IMP_(bool, OpKernelInfoWrapper::HasOutputShapeInfo)() const noexcept {
-  // TODO
-  return false;
-}
-
-ML_API_IMP(OpKernelInfoWrapper::GetOutputTensorDimensionCount)(uint32_t output_index, uint32_t* dimension_count) const noexcept {
-  return MLStatus::NOT_IMPLEMENTED;
-}
-
-ML_API_IMP(OpKernelInfoWrapper::GetOutputTensorShape)(uint32_t output_index, uint32_t dimension_count, int64_t* dimensions) const noexcept {
-  return MLStatus::NOT_IMPLEMENTED;
+  return allow_output_shape_query_;
 }
 
 TensorWrapper::TensorWrapper(Tensor* impl) : impl_(impl) {
 }
 
-ML_API_IMP_(uint32_t, TensorWrapper::GetDimensionCount)() const noexcept{
+ML_API_IMP_(uint32_t, TensorWrapper::GetDimensionCount)() const noexcept {
   return gsl::narrow_cast<uint32_t>(impl_->Shape().NumDimensions());
 }
 
@@ -555,24 +681,29 @@ ML_API_IMP_(const void*, TensorWrapper::GetData)() const noexcept {
   return impl_->DataRaw();
 }
 
-OpKernelContextWrapper::OpKernelContextWrapper(OpKernelContext* context, const IExecutionProvider* provider) : impl_(context), provider_(provider) {
+OpKernelContextWrapper::OpKernelContextWrapper(
+    OpKernelContext* context,
+    const IExecutionProvider* provider,
+    const EdgeShapes* output_shapes) : impl_(context), provider_(provider), output_shapes_(output_shapes) {
   // Pre-size tensor arrays.  Member methods return pointers to these which
   // are stored in these arrays, which would become stale if the vectors reallocate
   // their internal storage.
-  inputTensors_.resize(context->InputCount());
-  outputTensors_.resize(context->OutputCount());
+  input_tensors_.resize(context->InputCount());
+  output_tensors_.resize(context->OutputCount());
 }
 
 ML_API_IMP(OpKernelContextWrapper::GetInputTensor)(uint32_t input_index, const IMLOpTensor** tensor) const noexcept {
   *tensor = nullptr;
 
   try {
-    if (inputTensors_[input_index].GetInterface() == nullptr) {
+    ML_CHECK_BOOL(input_index < input_tensors_.size());
+
+    if (input_tensors_[input_index].GetInterface() == nullptr) {
       auto inputTensor = impl_->Input<Tensor>(input_index);
-      const_cast<OpKernelContextWrapper*>(this)->inputTensors_[input_index] = const_cast<Tensor*>(inputTensor);
+      const_cast<OpKernelContextWrapper*>(this)->input_tensors_[input_index] = const_cast<Tensor*>(inputTensor);
     }
 
-    *tensor = &inputTensors_[input_index];
+    *tensor = &input_tensors_[input_index];
 
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
@@ -585,22 +716,46 @@ ML_API_IMP(OpKernelContextWrapper::GetInputTensor)(uint32_t input_index, const I
 ML_API_IMP(OpKernelContextWrapper::GetOutputTensor)(uint32_t output_index, IMLOpTensor** tensor) noexcept {
   *tensor = nullptr;
 
-  // TODO implement this for shaped kernels
-  return MLStatus::NOT_IMPLEMENTED;
+  try {
+    ML_CHECK_BOOL(output_index < output_tensors_.size());
+
+    // GetOutputTensor must be called unless a kernel provides shape inferencing,
+    // in which case output_shapes_ will be valid here.
+    if (!output_shapes_ || output_shapes_->GetShape(output_index).empty()) {
+      return MLStatus::SHAPE_INFERENCE_NOT_REGISTERED;
+    }
+
+    uint32_t dimension_count = gsl::narrow_cast<uint32_t>( output_shapes_->GetShape(output_index).size());
+    return GetOutputTensor(output_index, output_shapes_->GetShape(output_index).data(), dimension_count, tensor);
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
 }
 
-ML_API_IMP(OpKernelContextWrapper::GetDynamicOutputTensor)(uint32_t output_index, const int64_t* dimension_sizes, uint32_t dimensions, IMLOpTensor** tensor) noexcept {
+ML_API_IMP(OpKernelContextWrapper::GetOutputTensor)(uint32_t output_index, const int64_t* dimension_sizes, uint32_t dimensions, IMLOpTensor** tensor) noexcept {
   *tensor = nullptr;
 
   try {
-    if (outputTensors_[output_index].GetInterface() == nullptr) {
+    ML_CHECK_BOOL(output_index < output_tensors_.size());
+
+    // Verify that the provided shape matches the shape determined using the kernel's shape inference function.
+    if (output_tensors_[output_index].GetInterface() == nullptr) {
+      if (output_shapes_) {
+        if ((output_shapes_->GetShape(output_index).size() != dimensions ||
+             memcmp(dimension_sizes,  output_shapes_->GetShape(output_index).data(), dimensions * sizeof(*dimension_sizes)))) {
+          return MLStatus::INVALID_ARGUMENT;
+        }
+      }
+
       TensorShape shape(dimension_sizes, dimensions);
       auto outputTensor = impl_->Output(output_index, shape);
       if (outputTensor)
-        const_cast<OpKernelContextWrapper*>(this)->outputTensors_[output_index] = outputTensor;
+        const_cast<OpKernelContextWrapper*>(this)->output_tensors_[output_index] = outputTensor;
     }
 
-    *tensor = &outputTensors_[output_index];
+    *tensor = &output_tensors_[output_index];
 
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
@@ -646,9 +801,39 @@ ML_API_IMP_(const void*, OpKernelContextWrapper::GetExecutionHandle)() const noe
   return provider_;
 }
 
-AbiOpKernel::AbiOpKernel(IMLOpKernelCreateFn create_function, const OpKernelInfo& kernel_info) : OpKernel(kernel_info) {
-  OpKernelInfoWrapper kernelInfoWrapper(&op_kernel_info_);
-  ML_CHECK_STATUS(create_function(kernelInfoWrapper, &impl_));
+AbiOpKernel::AbiOpKernel(
+    IMLOpKernelCreateFn create_function,
+    const OpKernelInfo& kernel_info,
+    bool requires_input_shapes_at_creation,
+    bool requires_output_shapes_at_creation,
+    MLShapeInferenceFunction shape_inference_function,
+    void* shape_inference_function_context) : OpKernel(kernel_info),
+                                              requires_input_shapes_at_creation_(requires_input_shapes_at_creation),
+                                              requires_output_shapes_at_creation_(requires_output_shapes_at_creation),
+                                              shape_inference_function_(shape_inference_function),
+                                              shape_inference_function_context_(shape_inference_function_context) {
+  assert(requires_input_shapes_at_creation || !requires_output_shapes_at_creation);
+
+  // If input sizes are either available or not required at creation, no need to delay kernel creation
+  if (!requires_input_shapes_at_creation_ || InputTensorShapesDefined()) {
+    // If the output size is not dynamic, infer it using the kernel.  Then if the output size was predicted
+    // by schema, verify consistency.  The result of inference is stored in inferred_output_shapes_.
+    if (requires_output_shapes_at_creation_) {
+      InferAndVerifyOutputSizes(nullptr, inferred_output_shapes_);
+    }
+
+    // Create the kernel while allowing input shape and output shape queries according to options
+    OpKernelInfoWrapper kernelInfoWrapper(
+        &kernel_info,
+        nullptr,
+        requires_output_shapes_at_creation_ ? &inferred_output_shapes_ : nullptr,
+        requires_input_shapes_at_creation_,
+        requires_output_shapes_at_creation_);
+
+    ML_CHECK_STATUS(create_function(kernelInfoWrapper, &impl_));
+  } else {
+    create_function_ = create_function;
+  }
 }
 
 AbiOpKernel::~AbiOpKernel() {
@@ -658,8 +843,71 @@ AbiOpKernel::~AbiOpKernel() {
 }
 
 Status AbiOpKernel::Compute(OpKernelContext* context) const {
-  OpKernelInfoWrapper kernelInfoWrapper(&op_kernel_info_);
-  OpKernelContextWrapper kernelContextWrapper(context, op_kernel_info_.GetExecutionProvider());
+  auto infer_shapes_and_create_kernel = [&](const EdgeShapes& input_shapes, EdgeShapes& output_shapes, IMLOpKernel** kernel) {
+    // If the output size is not dynamic, infer it using the kernel. The result of inference is stored in inferred_output_shapes_.
+    if (requires_output_shapes_at_creation_) {
+      InferAndVerifyOutputSizes(&input_shapes, output_shapes);
+    }
+
+    OpKernelInfoWrapper kernelInfoWrapper(
+        &op_kernel_info_,
+        &input_shapes,
+        requires_input_shapes_at_creation_ ? &output_shapes : nullptr,
+        requires_input_shapes_at_creation_,
+        requires_output_shapes_at_creation_);
+
+    ML_CHECK_STATUS(create_function_(kernelInfoWrapper, kernel));
+  };
+
+  // This method uses member variables although it is logically const.
+  AbiOpKernel* pThis = const_cast<AbiOpKernel*>(this);
+
+  // The kernel creation may have been delayed because input shapes were required but not inferred by schema.
+  if (RequiresLazyInitialization()) {
+    std::lock_guard<std::mutex> lock(pThis->mutex_);
+
+    if (RequiresLazyInitialization()) {
+      pThis->input_shapes_of_kernel_inference_ = GetInputShapes(context);
+      infer_shapes_and_create_kernel(pThis->input_shapes_of_kernel_inference_, pThis->inferred_output_shapes_, &pThis->impl_);
+      pThis->SetLazyInitialized();
+    }
+  } else if (input_shapes_of_kernel_inference_.EdgeCount() > 0) {
+    EdgeShapes local_input_shapes= GetInputShapes(context);
+
+    // In the edge case that the input size is changing across invocations and the kernel requires
+    // its input size at construction, use a local instance of the kernel.
+    if (local_input_shapes != input_shapes_of_kernel_inference_) {
+      IMLOpKernel* kernel = nullptr;
+      EdgeShapes local_inferred_output_shapes;
+      try {
+        infer_shapes_and_create_kernel(local_input_shapes, local_inferred_output_shapes, &kernel);
+
+        OpKernelContextWrapper kernelContextWrapper(
+            context,
+            op_kernel_info_.GetExecutionProvider(),
+            requires_output_shapes_at_creation_ ? &local_inferred_output_shapes : nullptr);
+
+        MLStatus status = kernel->Compute(&kernelContextWrapper);
+        kernel->Release();
+        kernel = nullptr;
+        ML_CHECK_STATUS(status);
+      } catch (...) {
+        if (kernel) {
+          kernel->Release();
+        }
+
+        throw;
+      }
+
+      return Status();
+    }
+  }
+
+  OpKernelContextWrapper kernelContextWrapper(
+      context,
+      op_kernel_info_.GetExecutionProvider(),
+      requires_output_shapes_at_creation_ ? &inferred_output_shapes_ : nullptr);
+
   MLStatus status = impl_->Compute(&kernelContextWrapper);
 
   if (status != MLStatus::OK) {
@@ -667,6 +915,60 @@ Status AbiOpKernel::Compute(OpKernelContext* context) const {
   }
 
   return Status();
+}
+
+bool AbiOpKernel::InputTensorShapesDefined() const {
+  ProtoHelperNodeContext proto_context(Node());
+  OpNodeProtoHelper<ProtoHelperNodeContext> info(&proto_context);
+
+  return Lotus::InputTensorShapesDefined(info);
+}
+
+EdgeShapes AbiOpKernel::GetInputShapes(OpKernelContext* context) const {
+  EdgeShapes ret(context->InputCount());
+
+  for (int i = 0; i < ret.EdgeCount(); ++i) {    
+    if (context->InputType(i)->IsTensorType()) {
+      // The tensor is null if unused
+      const Tensor* tensor = context->Input<Tensor>(i);
+      if (tensor) {
+        ret.GetMutableShape(i) = tensor->Shape().GetDims();
+      }
+    }
+  }
+
+  return ret;
+}
+
+void AbiOpKernel::InferAndVerifyOutputSizes(const EdgeShapes* input_shapes, EdgeShapes& output_shapes) const {
+  ProtoHelperNodeContext proto_context(Node());
+  OpNodeProtoHelper<ProtoHelperNodeContext> info(&proto_context);
+  MLKernelInferenceContext inference_context(&info, input_shapes, output_shapes);
+  output_shapes.Reset(info.GetOutputCount());
+
+  ML_CHECK_STATUS(shape_inference_function_(shape_inference_function_context_, &inference_context));
+
+  // TODO - How should "unused" tensors be handled?
+  for (size_t output_index = 0; output_index < output_shapes.EdgeCount(); ++output_index) {
+    const TypeProto* output_proto = info.GetOutputType(output_index);
+    if (output_proto->value_case() != TypeProto::kTensorType) {
+      ML_CHECK_BOOL(output_shapes.GetShape(output_index).empty());
+      continue;
+    }
+
+    const auto& tensor_type = output_proto->tensor_type();
+
+    if (tensor_type.has_shape()) {
+      const auto& shape = tensor_type.shape();
+      ML_CHECK_BOOL(shape.dim_size() == output_shapes.GetShape(output_index).size());
+
+      for (uint32_t output_dim = 0; output_dim < output_shapes.GetShape(output_index).size(); ++output_dim) {
+        if (shape.dim(output_dim).has_dim_value()) {
+          ML_CHECK_BOOL(shape.dim(output_dim).dim_value() == output_shapes.GetShape(output_index)[output_dim]);
+        }
+      }
+    }
+  }
 }
 
 AbiCustomRegistry::AbiCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry) : custom_registry_(custom_registry) {
@@ -690,7 +992,7 @@ OpSchema::FormalParameterOption AbiCustomRegistry::ConvertFormalParameterOption(
 
 // Convert edge types from the ABI types to ONNX strings
 std::string AbiCustomRegistry::ConvertFormalParameterType(const MLFormalParameter& formal_parameter) {
-  ML_CHECK_BOOL(formal_parameter.type_format == MLFormalParameterTypeFormat::kLabel || 
+  ML_CHECK_BOOL(formal_parameter.type_format == MLFormalParameterTypeFormat::kLabel ||
                 formal_parameter.type_format == MLFormalParameterTypeFormat::kEdgeType);
 
   if (formal_parameter.type_format == MLFormalParameterTypeFormat::kLabel) {
@@ -828,7 +1130,7 @@ OpSchema AbiCustomRegistry::ConvertOpSchema(const char* domain, const MLSchemaDe
   if (shape_inference_func || type_inference_func) {
     schema.TypeAndShapeInferenceFunction([=](InferenceContext& ctx) {
       OpNodeProtoHelper<InferenceContext> node_info(&ctx);
-      MLInferenceContext abi_context(&node_info, &ctx);
+      MLSchemaInferenceContext abi_context(&node_info, &ctx);
 
       // Do type inference
       if (type_inference_func) {
@@ -836,7 +1138,7 @@ OpSchema AbiCustomRegistry::ConvertOpSchema(const char* domain, const MLSchemaDe
       }
 
       // Do shape inference if all input tensor shapes are known
-      if (shape_inference_func && InputTensorShapesDefined(abi_context)) {
+      if (shape_inference_func && InputTensorShapesDefined(node_info)) {
         (*shape_inference_func)(abi_schema.shape_inference_function_context, &abi_context);
       }
     });
@@ -844,21 +1146,24 @@ OpSchema AbiCustomRegistry::ConvertOpSchema(const char* domain, const MLSchemaDe
 
   return schema;
 }
-  
-// Static method querying whether tensor shapes are defined, during wrappers 
+
+// Static method querying whether tensor shapes are defined, during wrappers
 // of shape inference callbacks.
-bool AbiCustomRegistry::InputTensorShapesDefined(MLInferenceContext& abi_context) {
-  MLShapeInferenceContext context_wrapper(&abi_context);
-  uint32_t input_count = context_wrapper.GetInputCount();
+template <class T>
+bool InputTensorShapesDefined(const OpNodeProtoHelper<T>& node_info) {
+  uint32_t input_count = node_info.GetInputCount();
 
+  // TODO - How should "unused" tensors be handled?
   for (uint32_t input_index = 0; input_index < input_count; ++input_index) {
-    MLEdgeType edge_type = context_wrapper.GetInputEdgeType(input_index);
+    if (node_info.GetInputType(input_index)->value_case() == TypeProto::kTensorType) {
+      if (!node_info.GetInputType(input_index)->tensor_type().has_shape()) {
+        return false;
+      }
 
-    if (edge_type.edge_class == MLEdgeClass::kTensor) {
-      uint32_t input_dim_count = context_wrapper.GetInputTensorDimensionCount(input_index);
+      const auto& shape = node_info.GetInputType(input_index)->tensor_type().shape();
 
-      for (uint32_t input_dim = 0; input_dim < input_dim_count; ++input_dim) {
-        if (!abi_context.GetContext()->getInputType(input_dim)->tensor_type().shape().dim(input_dim).has_dim_value()) {
+      for (int input_dim = 0; input_dim < shape.dim_size(); ++input_dim) {
+        if (!shape.dim(input_dim).has_dim_value()) {
           return false;
         }
       }
@@ -900,6 +1205,21 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
     MLOpKernelOptions options,
     IMLOpKernelCreateFn op_kernel_factory) const noexcept {
   try {
+    // Verify that invalid flags are not passed
+    if ((options & ~MLOpKernelOptions::kAllowDynamicInputShapes) !=
+        MLOpKernelOptions::kNone) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
+    // Translate flags
+    bool requires_input_shapes_at_creation = (options & MLOpKernelOptions::kAllowDynamicInputShapes) == MLOpKernelOptions::kNone;
+    bool requires_output_shapes_at_creation = !!op_kernel->shape_inference_function;
+
+    // Verify allowed combinations of flags are used
+    if (!requires_input_shapes_at_creation && requires_output_shapes_at_creation) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
     // Set the name, domain, version, and provider
     KernelDefBuilder builder(op_kernel->name);
     builder.Domain(op_kernel->domain)
@@ -923,9 +1243,25 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
       builder.TypeConstraint(op_kernel->type_constraints[i].type_label, types);
     }
 
+    auto inference_function = op_kernel->shape_inference_function;
+    auto inference_function_ctx = op_kernel->shape_inference_function_context;
+
     // TODO - handle default attributes, shape inference, and options
     custom_registry_->RegisterCustomKernel(builder,
-                                           [op_kernel_factory](const OpKernelInfo& info) -> OpKernel* { return new Lotus::AbiOpKernel(op_kernel_factory, info); });
+                                           [op_kernel_factory,
+                                            options,
+                                            requires_input_shapes_at_creation,
+                                            requires_output_shapes_at_creation,
+                                            inference_function,
+                                            inference_function_ctx](const OpKernelInfo& info) -> OpKernel* {
+                                             return new Lotus::AbiOpKernel(
+                                                 op_kernel_factory,
+                                                 info,
+                                                 requires_input_shapes_at_creation,
+                                                 requires_output_shapes_at_creation,
+                                                 inference_function,
+                                                 inference_function_ctx);
+                                           });
 
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {
@@ -935,42 +1271,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
   }
 }
 
-ML_API_IMP(MLInferenceContext::GetInputTensorDimensionCount)(uint32_t input_index, uint32_t* dimension_count) const noexcept{
-  try {
-    LOTUS_ENFORCE(context_->getInputType(input_index)->has_tensor_type());
-    *dimension_count = context_->getInputType(input_index)->tensor_type().shape().dim_size();
-  } catch (const MLStatusException& ex) {
-    return ex.GetStatus();
-  } catch (...) {
-    return MLStatus::FAIL;
-  }
-
-  return MLStatus::OK;
-}
-
-ML_API_IMP(MLInferenceContext::GetInputTensorShape)(uint32_t input_index, uint32_t dimension_count, int64_t* dimensions) const noexcept{
-  try {
-    LOTUS_ENFORCE(context_->getInputType(input_index)->has_tensor_type());
-    ML_CHECK_BOOL(static_cast<size_t>(dimension_count) == context_->getInputType(input_index)->tensor_type().shape().dim_size());
-
-    for (uint32_t i = 0; i < dimension_count; ++i) {
-      // Shape inference is only done when all dimensions of all inputs have known values.
-      // This avoids potentially dangerous changes in behavior to external inference functions 
-      // based on implementation details of upstream nodes
-      assert(context_->getInputType(input_index)->tensor_type().shape().dim(i).has_dim_value());
-      dimensions[i] = context_->getInputType(input_index)->tensor_type().shape().dim(i).dim_value();
-    }
-
-  } catch (const MLStatusException& ex) {
-    return ex.GetStatus();
-  } catch (...) {
-    return MLStatus::FAIL;
-  }
-
-  return MLStatus::OK;
-}
-
-ML_API_IMP(MLInferenceContext::SetOutputTensorShape)(uint32_t output_index, uint32_t dimension_count, const int64_t* dimensions) noexcept{
+ML_API_IMP(MLSchemaInferenceContext::SetOutputTensorShape)(uint32_t output_index, uint32_t dimension_count, const int64_t* dimensions) noexcept {
   try {
     MLEdgeType edge_type;
     ML_CHECK_STATUS(GetOutputEdgeType(output_index, &edge_type));
@@ -992,10 +1293,26 @@ ML_API_IMP(MLInferenceContext::SetOutputTensorShape)(uint32_t output_index, uint
   return MLStatus::OK;
 }
 
-ML_API_IMP(MLInferenceContext::SetOutputEdgeType)(uint32_t output_index, const MLEdgeType* edge_type) const noexcept{
+ML_API_IMP(MLSchemaInferenceContext::SetOutputEdgeType)(uint32_t output_index, const MLEdgeType* edge_type) const noexcept {
   try {
     std::string type_str = ToTypeString(*edge_type);
     context_->getOutputType(output_index)->CopyFrom(Utils::DataTypeUtils::ToTypeProto(&type_str));
+  } catch (const MLStatusException& ex) {
+    return ex.GetStatus();
+  } catch (...) {
+    return MLStatus::FAIL;
+  }
+
+  return MLStatus::OK;
+}
+
+ML_API_IMP(MLKernelInferenceContext::SetOutputTensorShape)(uint32_t output_index, uint32_t dimension_count, const int64_t* dimensions) noexcept {
+  try {
+    if (output_index >= inferred_output_shapes_.EdgeCount()) {
+      return MLStatus::INVALID_ARGUMENT;
+    }
+
+    inferred_output_shapes_.GetMutableShape(output_index).assign(dimensions, dimensions + dimension_count);
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
   } catch (...) {

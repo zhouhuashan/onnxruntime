@@ -53,9 +53,24 @@ class FooKernel {
     if (VerifyAttributes) {
       VerifyTestAttributes(info);
     }
+    
+    VerifyShapeInfo(info);
+  }
+  
+  void VerifyShapeInfo(const MLOpKernelInfo& info) {
+    if (!Truncate) {
+      const IMLOpKernelTensorShapeInfo *shape_info;
+      ASSERT_EQ(info.GetInterface()->HasTensorShapeInfo(), false);
+      ASSERT_EQ(info.GetInterface()->GetTensorShapeInfo(&shape_info), MLStatus::REQUIREMENT_NOT_REGISTERED);
+    }
+    else {
+      const IMLOpKernelTensorShapeInfo *shape_info;
+      ASSERT_EQ(info.GetInterface()->HasTensorShapeInfo(), true);
+      ASSERT_EQ(info.GetInterface()->GetTensorShapeInfo(&shape_info), MLStatus::OK);
+    }
   }
 
-  MLStatus Compute(const MLOpKernelContext& context) const {
+  void Compute(const MLOpKernelContext& context) const {
     const auto X = context.GetInputTensor(0);
     const auto W = context.GetInputTensor(1);
 
@@ -68,8 +83,15 @@ class FooKernel {
     if (Truncate){
       shape[0] -= 1;
     }
-
-    auto Y = context.GetDynamicOutputTensor(0, shape);
+    if (!Truncate) {
+      IMLOpTensor *tensor;
+      ASSERT_EQ(context.GetInterface()->GetOutputTensor(0, &tensor), MLStatus::SHAPE_INFERENCE_NOT_REGISTERED);
+    }
+    else {
+      IMLOpTensor *tensor;
+      ASSERT_EQ(context.GetInterface()->GetOutputTensor(0, &tensor), MLStatus::OK);
+    }
+    auto Y = context.GetOutputTensor(0, shape);
     auto Y_Data = Y.GetData<T>();
 
     size_t size = 1;
@@ -80,8 +102,6 @@ class FooKernel {
     for (size_t i = 0; i < size; i++) {
       Y_Data[i] = X_Data[i] + W_Data[i];
     }
-
-    return MLStatus::OK;
   }
 };
 
@@ -90,13 +110,13 @@ class OptionalOpKernel {
  public:
   OptionalOpKernel(const MLOpKernelInfo& /*info*/) {}
 
-  MLStatus Compute(const MLOpKernelContext& context) const {
+  void Compute(const MLOpKernelContext& context) const {
     const auto X = context.GetInputTensor(0);
     const auto W = context.GetInputTensor(1);
 
     auto X_Data = X.GetData<T>();
     auto& shape = X.GetDimensions();
-    auto Y = context.GetDynamicOutputTensor(0, shape);
+    auto Y = context.GetOutputTensor(0, shape);
     auto Y_Data = Y.GetData<T>();
     size_t size = 1;
     for (size_t i = 0; i < shape.size(); i++) {
@@ -107,7 +127,7 @@ class OptionalOpKernel {
       Y_Data[i] = X_Data[i];
     }
 
-    auto Y2 = context.GetDynamicOutputTensor(1, shape);
+    auto Y2 = context.GetOutputTensor(1, shape);
     // Y2 is used or not
     if (!Y2.IsUnused()) {
       auto Y2_Data = Y2.GetData<T>();
@@ -129,8 +149,6 @@ class OptionalOpKernel {
         }
       }
     }
-
-    return MLStatus::OK;
   }
 };
 
@@ -216,14 +234,16 @@ MLStatus CreateTruncatedABIFooKernel(const IMLOpKernelInfo& kernel_info, IMLOpKe
 // Creates a Foo kernel implementing the built-in OpKernel type.  This wraps
 // the ABI kernel as an implementation detail.
 OpKernel* CreateFooKernel(const OpKernelInfo& kernel_info) {
-  return new Lotus::AbiOpKernel(CreateABIFooKernel, kernel_info);
+  return new Lotus::AbiOpKernel(CreateABIFooKernel, kernel_info, false, false, nullptr, nullptr);
 }
 
 OpKernel* CreateOptionalOpKernel(const OpKernelInfo& kernel_info) {
-  return new Lotus::AbiOpKernel(CreateABIOptionalKernel, kernel_info);
+  return new Lotus::AbiOpKernel(CreateABIOptionalKernel, kernel_info, false, false, nullptr, nullptr);
 }
 static const std::string MUL_MODEL_URI = "testdata/mul_1.pb";
 static const std::string FOO_MODEL_URI = "testdata/foo_1.pb";
+static const std::string FOO_TRUNCATE_MODEL_URI = "testdata/foo_2.pb";
+
 static const std::string OPTIONAL_MODEL1_URI = "testdata/optional_1.pb";
 
 void RunSession(InferenceSession& session_object,
@@ -316,7 +336,7 @@ TEST(CustomKernelTests, CustomABIKernelWithBuildInSchema) {
     1 
   };
 
-  EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&def, MLOpKernelOptions::kNone, CreateABIFooKernel));
+  EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&def, MLOpKernelOptions::kAllowDynamicInputShapes, CreateABIFooKernel));
 
   EXPECT_TRUE(session_object.Load(MUL_MODEL_URI).IsOK());
   EXPECT_TRUE(session_object.Initialize().IsOK());
@@ -524,17 +544,23 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
       1,
       LotusIR::kCpuExecutionProvider,
       &kernel_constraint,
-      1 
+      1,
+      nullptr,
+      0,
+      def.shape_inference_function,
+      def.shape_inference_function_context      
     };
 
     if (!truncate_output) {
-      EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&kernel_def, MLOpKernelOptions::kNone, CreateABIFooKernel<true>));
+      MLOpKernelOptions options = MLOpKernelOptions::kAllowDynamicInputShapes;
+      EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&kernel_def, options, CreateABIFooKernel<true>));
     }
     else {
-      EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&kernel_def, MLOpKernelOptions::kNone, CreateTruncatedABIFooKernel));
+      MLOpKernelOptions options = MLOpKernelOptions::kNone;
+      EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&kernel_def, options, CreateTruncatedABIFooKernel));
     }
 
-    EXPECT_TRUE(session_object.Load(FOO_MODEL_URI).IsOK());
+    EXPECT_TRUE(session_object.Load(truncate_output ? FOO_TRUNCATE_MODEL_URI : FOO_MODEL_URI).IsOK());
     EXPECT_TRUE(session_object.Initialize().IsOK());
 
     RunOptions run_options;

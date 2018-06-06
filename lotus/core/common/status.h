@@ -26,6 +26,8 @@ enum StatusCode {
   MODEL_LOADED = static_cast<unsigned int>(MLStatus::MODEL_LOADED),
   NOT_IMPLEMENTED = static_cast<unsigned int>(MLStatus::NOT_IMPLEMENTED),
   INVALID_GRAPH = static_cast<unsigned int>(MLStatus::INVALID_GRAPH),
+  SHAPE_INFERENCE_NOT_REGISTERED = static_cast<unsigned int>(MLStatus::SHAPE_INFERENCE_NOT_REGISTERED),
+  REQUIREMENT_NOT_REGISTERED = static_cast<unsigned int>(MLStatus::REQUIREMENT_NOT_REGISTERED),
 };
 
 class Status {

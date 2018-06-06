@@ -161,4 +161,6 @@ inline string MakeString(const char* p_str) {
   return string(p_str);
 }
 
+struct null_type {};
+
 }  // namespace Lotus

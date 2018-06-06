@@ -41,7 +41,7 @@ class MulFP16Kernel {
     auto W_Data = W.GetData<MLFloat16>();
 
     auto& shape = X.GetDimensions();
-    auto Y = context.GetDynamicOutputTensor(0, shape);
+    auto Y = context.GetOutputTensor(0, shape);
     auto Y_Data = Y.GetData<MLFloat16>();
 
     size_t size = 1;
@@ -78,7 +78,7 @@ MLStatus CreateABIMulFP16Kernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel*
 // Creates a kernel implementing the built-in OpKernel type.  This wraps
 // the ABI kernel as an implementation detail.
 OpKernel* CreateMulFP16Kernel(const OpKernelInfo& kernel_info) {
-  return new Lotus::AbiOpKernel(CreateABIMulFP16Kernel, kernel_info);
+  return new Lotus::AbiOpKernel(CreateABIMulFP16Kernel, kernel_info, false, false, nullptr, nullptr);
 }
 
 onnx::OpSchema GetMulFP16Schema() {

@@ -62,7 +62,8 @@ public:
   }
 
 protected:
-  const Impl_t* impl_;
+  OpNodeProtoHelper() = delete;
+  const Impl_t* impl_ = nullptr;
 };
 
 // The methods on the following class are called by OpNodeProtoHelper, implementing 
