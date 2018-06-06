@@ -34,6 +34,11 @@ class TestResultStat {
     failed_test_cases.insert(s);
   }
 
+  std::unordered_set<std::string> GetFailedTest() {
+    std::lock_guard<std::mutex> l(m_);
+    return failed_test_cases;
+  }
+
   std::string ToString();
 
  private:
