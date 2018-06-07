@@ -23,7 +23,7 @@ class OpKernelWrapper;
 // A very light-weight class, which works as an aggregated
 // view of all data needed for constructing a Kernel instance.
 // NOTE: it does not own/hold any objects.
-class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext>{
+class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
  public:
   explicit OpKernelInfo(const LotusIR::Node& node,
                         const KernelDef& kernel_def,
@@ -34,7 +34,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext>{
         kernel_def_(kernel_def),
         execution_provider_(execution_provider) {}
 
-  OpKernelInfo(const OpKernelInfo& other) : OpKernelInfo(other.node_, other.kernel_def_, other.execution_provider_){}
+  OpKernelInfo(const OpKernelInfo& other) : OpKernelInfo(other.node_, other.kernel_def_, other.execution_provider_) {}
 
   const AllocatorInfo& GetAllocatorInfo(MemType mem_type) const {
     return execution_provider_->GetAllocatorMap().at(mem_type)->Info();
@@ -44,17 +44,17 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext>{
     return kernel_def_;
   }
 
-  const IExecutionProvider* GetExecutionProvider() const noexcept{
+  const IExecutionProvider* GetExecutionProvider() const noexcept {
     return execution_provider_;
   }
-  
+
   const LotusIR::Node& node() const noexcept {
     return node_;
   }
-  
+
  private:
-   LOTUS_DISALLOW_MOVE(OpKernelInfo);
-   LOTUS_DISALLOW_ASSIGN(OpKernelInfo);
+  LOTUS_DISALLOW_MOVE(OpKernelInfo);
+  LOTUS_DISALLOW_ASSIGN(OpKernelInfo);
 
   const LotusIR::Node& node_;
   const KernelDef& kernel_def_;
@@ -66,7 +66,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext>{
 
 class OpKernel {
  public:
-  using DoneCallback = std::function<void ()>;
+  using DoneCallback = std::function<void()>;
 
   explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {
   }
@@ -105,7 +105,8 @@ class OpKernelContext {
                            const OpKernel* kernel,
                            const Logging::Logger& logger);
 
-  ~OpKernelContext()= default;;
+  ~OpKernelContext() = default;
+  ;
 
   /** 
   Return the number of inputs for a variadic argument. 
@@ -241,7 +242,7 @@ class KernelRegistry {
  protected:
   KernelRegistry(bool create_func_kernel_flag) : create_func_kernel_(create_func_kernel_flag) {}
 
-private:  
+ private:
   friend class InferenceSession;
 
   struct KernelCreateInfo {
@@ -264,6 +265,7 @@ private:
   // execute this node. exec_provider is used to match kernel when node has no provider
   static bool VerifyKernelDef(const LotusIR::Node& node,
                               const KernelDef& kernel_def,
+                              std::string& error_str,
                               LotusIR::ProviderType exec_provider = "");
 
   // Kernel create function map from op name to kernel creation info.

@@ -47,6 +47,39 @@ class XPUExecutionProvider : public IExecutionProvider {
   GraphTransformer* graph_transformer_ = nullptr;
 };
 
+class FunctionKernelExecutionProvider : public IExecutionProvider {
+ public:
+  FunctionKernelExecutionProvider() = default;
+
+  const LotusIR::GraphTransformer& GetTransformer() const override {
+    return *graph_transformer_;
+  }
+
+  std::string Type() const override {
+    return "FunctionKernelExecutionProvider";
+  }
+
+  Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
+    UNUSED_PARAMETER(node);
+    UNUSED_PARAMETER(context);
+    return Status::OK();
+  }
+
+  Status CopyTensor(const Tensor& src, Tensor& dst) const override {
+    UNUSED_PARAMETER(src);
+    UNUSED_PARAMETER(dst);
+    return Status::OK();
+  }
+
+  virtual const void* GetExecutionHandle() const noexcept override {
+    // The XPU interface does not return anything interesting.
+    return nullptr;
+  }
+
+ private:
+  GraphTransformer* graph_transformer_ = nullptr;
+};
+
 TEST(OpKernelTest, CreateFunctionKernelTest) {
   LotusIR::Model model("test", true);
   auto graph = model.MainGraph();
@@ -60,19 +93,18 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   auto output_arg = std::make_unique<NodeArg>("node_1_out_1", &tensor_int32);
   outputs.push_back(output_arg.get());
   auto node = graph->AddNode("node1", "op_not_exist", "this is going to call function kernel", inputs, outputs);
-  node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
+  node->SetExecutionProviderType("FunctionKernelExecutionProvider");
   AllocatorInfo alloc_info("CPU", AllocatorType::kArenaAllocator);
-  CPUExecutionProviderInfo epi;
-  CPUExecutionProvider exec_provider(epi);
+  FunctionKernelExecutionProvider exec_provider;
   std::unique_ptr<OpKernel> kernel;
   auto status = KernelRegistry::Instance().CreateKernel(*node, &exec_provider, &kernel);
   ASSERT_TRUE(status.IsOK());
   const auto& k = *kernel;
   ASSERT_EQ(typeid(FunctionKernel).name(), typeid(k).name());
 
-  node->SetExecutionProviderType("XPUExecutionProvider");
+  node->SetExecutionProviderType("FunctionKernelExecutionProvider");
   AllocatorInfo alloc_info_2("XPU", AllocatorType::kArenaAllocator);
-  XPUExecutionProvider exec_provider_2;
+  FunctionKernelExecutionProvider exec_provider_2;
   std::unique_ptr<OpKernel> kernel_2;
   auto status_2 = KernelRegistry::Instance().CreateKernel(*node, &exec_provider_2, &kernel_2);
   const auto& k2 = *kernel_2;

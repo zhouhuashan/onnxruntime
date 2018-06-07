@@ -3,6 +3,8 @@
 #include "core/framework/session_state.h"
 #include "core/graph/op.h"
 #include "op_kernel_abi_wrapper.h"
+#include "core/common/logging/logging.h"
+
 namespace Lotus {
 
 std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
@@ -43,7 +45,9 @@ const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::s
     const LotusIR::NodeArg* arg = actual_outputs[i];
     if (!arg->Exists()) continue;
     auto& formal = op_schema.outputs()[std::min(i, last_formal)];
-    if ((formal.GetTypeStr() == name) || (formal.GetName() == name)) {
+    auto formal_typestr = formal.GetTypeStr();  // for easier debugging
+    auto formal_name = formal.GetName();        // for easier debugging
+    if ((formal_typestr == name) || (formal_name == name)) {
       return arg->TypeAsProto();
     }
   }
@@ -63,23 +67,46 @@ const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::s
 
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
                                      const KernelDef& kernel_def,
+                                     std::string& error_str,
                                      LotusIR::ProviderType exec_provider) {
   // check if domain matches
-  if (node.Domain() != kernel_def.Domain())
+  if (node.Domain() != kernel_def.Domain()) {
+    std::ostringstream ostr;
+    ostr << "Op: " << node.OpType()
+         << " Domain mistmatch: "
+         << " Expected: " << kernel_def.Domain()
+         << " Actual: " << node.Domain();
+    error_str = ostr.str();
     return false;
+  }
 
   // check if execution provider matches
   const auto& node_provider = node.GetExecutionProviderType();
   const auto& expected_provider = (node_provider.empty() ? exec_provider : node_provider);
-  if (expected_provider != kernel_def.Provider())
+  if (expected_provider != kernel_def.Provider()) {
+    std::ostringstream ostr;
+    ostr << "Op: " << node.OpType()
+         << " Execution provider mismatch."
+         << " Expected: " << expected_provider
+         << " Acutal: " << kernel_def.Provider();
+    error_str = ostr.str();
     return false;
+  }
 
   // check if version matches
   int kernel_start_version, kernel_end_version;
   kernel_def.SinceVersion(&kernel_start_version, &kernel_end_version);
   int node_version = node.Op()->since_version();
-  if (kernel_start_version > node_version || node_version > kernel_end_version)
+  if (kernel_start_version > node_version || node_version > kernel_end_version) {
+    std::ostringstream ostr;
+    ostr << "Op: " << node.OpType()
+         << " Version mismatch."
+         << " node_version: " << node_version
+         << " kernel start version: " << kernel_start_version
+         << " kernel_end_version: " << kernel_end_version;
+    error_str = ostr.str();
     return false;
+  }
 
   // check if type matches
   auto& kernel_type_constraints = kernel_def.TypeConstraints();
@@ -92,11 +119,14 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
     // missing optional parameter, which can be skipped.
     // TODO: We should check that names specified in kernel_type_constraints are
     // valid names (of types or parameters) at the time that kernels are registered.
-
     if ((nullptr != actual_type) &&
         !std::any_of(allowed_types.begin(), allowed_types.end(),
-                     [actual_type](const MLDataType& expected_type) {
-                       return expected_type->IsCompatible(*actual_type);
+                     [actual_type, &node, &error_str](const MLDataType& expected_type) {
+                       bool rc = expected_type->IsCompatible(*actual_type);  // for easier debugging
+                       if (!rc) {
+                         error_str = "Op: " + node.OpType() + " Incompatible types.";
+                       }
+                       return rc;
                      })) {
       return false;
     }
@@ -131,21 +161,50 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
   return Status::OK();
 }
 
+static std::string ToString(const std::vector<std::string>& error_strs) {
+  std::ostringstream ostr;
+  std::for_each(std::begin(error_strs), std::end(error_strs),
+                [&ostr](const std::string& str) { ostr << str << " "; });
+  return ostr.str();
+}
+
 Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
                                     const IExecutionProvider* execution_provider,
                                     /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
+  std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     // Check if the kernel is ill-formed.
     if (!i->second.status.IsOK()) {
+      LOGS_DEFAULT(ERROR) << "Failed to create kernel for op: " << node.OpType()
+                          << " since it was illformed during registration";
       return i->second.status;
     }
-    if (VerifyKernelDef(node, *i->second.kernel_def)) {
+    std::string error_str;
+    if (VerifyKernelDef(node, *i->second.kernel_def, error_str)) {
       OpKernelInfo kernel_info(node, *i->second.kernel_def, execution_provider);
       op_kernel->reset(i->second.kernel_create_func(kernel_info));
       return Status::OK();
+    } else {
+      error_strs.push_back(error_str);
     }
   }
+
+  /*
+  In the case of CPU execution provider there is no value in creating a function kernel since the
+  CPU exec provider is going to simply return a fail status any way. This is hardly helpful for debugging issues where
+  a kernel cannot be found due to user errors for e.g if the node was created incorrectly by the user.
+  */
+  if (execution_provider->Type() == LotusIR::kCpuExecutionProvider) {
+    std::ostringstream ostr;
+    ostr << "Failed to find/create kernel for op: " << node.OpType()
+         << " Encountered following errors: " << ToString(error_strs);
+    return Status(LOTUS, FAIL, ostr.str());
+  }
+
+  LOGS_DEFAULT(INFO) << "Creating function kernel for op: " << node.OpType()
+                     << " since we couldn't find/create kernel"
+                     << " Encountered following errors: " << ToString(error_strs);
 
   if (create_func_kernel_) {
     // The node is assigned to an execution provider and no kernel registered
@@ -162,12 +221,22 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
 bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node, LotusIR::ProviderType exec_provider) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   LOTUS_ENFORCE(node.GetExecutionProviderType().empty());
+  std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
-    if (i->second.status.IsOK() &&
-        VerifyKernelDef(node, *i->second.kernel_def, exec_provider)) {
+    if (!i->second.status.IsOK()) {
+      LOGS_DEFAULT(ERROR) << "Failed to create kernel for op: " << node.OpType()
+                          << " since it was illformed during registration";
+      continue;
+    }
+    std::string error_str;
+    if (VerifyKernelDef(node, *i->second.kernel_def, error_str, exec_provider)) {
       return true;
+    } else {
+      error_strs.push_back(error_str);
     }
   }
+  LOGS_DEFAULT(ERROR) << "Creating function kernel since we failed to find/create kernel for op: " << node.OpType()
+                      << " Encountered following errors: " << ToString(error_strs);
   return false;
 }
 
