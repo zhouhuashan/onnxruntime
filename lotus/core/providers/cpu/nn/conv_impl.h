@@ -31,7 +31,7 @@ namespace Lotus {
 template <typename T>
 Status Conv<T>::Compute(OpKernelContext* context) const {
   size_t num_inputs = OpKernel::Node().InputDefs().size();
-  bool Is2DKernel = kernel_shape_.size() == 2;
+
   const Tensor* X = context->Input<Tensor>(0);
   const Tensor* W = context->Input<Tensor>(1);
   const Tensor* B = num_inputs == 3 ? context->Input<Tensor>(2) : nullptr;
@@ -39,17 +39,31 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   const int64_t C = X->Shape()[1];
   const int64_t M = W->Shape()[0];
 
-  vector<int64_t> pads(pads_);  // copy pads since it can be modified by InferOutputShape
+  vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
+  bool Is2DKernel = kernel_shape.size() == 2;
+  vector<int64_t> pads(pads_);
+  if (pads.empty()) {
+    pads.resize(kernel_shape.size() * 2, 0);
+  }
+  vector<int64_t> dilations(dilations_);
+  if (dilations.empty()) {
+    dilations.resize(kernel_shape.size(), 1);
+  }
+  vector<int64_t> strides(strides_);
+  if (strides.empty()) {
+    strides.resize(kernel_shape.size(), 1);
+  }
+
   vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
-  InferOutputShape(input_shape, &pads, &Y_dims);
+  InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims);
   Tensor* Y = context->Output(0, TensorShape(Y_dims));
   TensorShape output_shape = Y->Shape().Slice(2);
 
   const int64_t input_image_size = input_shape.Size();
   const int64_t output_image_size = output_shape.Size();
-  const int64_t kernel_size = TensorShape(kernel_shape_).Size();
+  const int64_t kernel_size = TensorShape(kernel_shape).Size();
   const int64_t X_offset = C / group_ * input_image_size;
   const int64_t Y_offset = Y->Shape().Size() / Y->Shape()[0] / group_;
   const int64_t W_offset = W->Shape().Size() / group_;
@@ -79,16 +93,16 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
             C / group_,
             input_shape[0],
             input_shape[1],
-            kernel_shape_[0],
-            kernel_shape_[1],
-            dilations_[0],
-            dilations_[1],
+            kernel_shape[0],
+            kernel_shape[1],
+            dilations[0],
+            dilations[1],
             pads[0],
             pads[1],
             pads[2],
             pads[3],
-            strides_[0],
-            strides_[1],
+            strides[0],
+            strides[1],
             col_buffer_data,
             &CPUMathUtil::Instance());
       } else {
@@ -98,11 +112,11 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
             col_buffer_shape.data(),
             C * input_image_size,
             col_buffer_size,
-            kernel_shape_.data(),
-            strides_.data(),
-            dilations_.data(),
+            kernel_shape.data(),
+            strides.data(),
+            dilations.data(),
             pads.data(),
-            static_cast<int>(kernel_shape_.size()),
+            static_cast<int>(kernel_shape.size()),
             col_buffer_data,
             &CPUMathUtil::Instance());
       }
@@ -138,7 +152,6 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
 template <>
 Status Conv<float>::Compute(OpKernelContext* context) const {
   size_t num_inputs = OpKernel::Node().InputDefs().size();
-  bool Is2DKernel = kernel_shape_.size() == 2;
   const Tensor* X = context->Input<Tensor>(0);
   const Tensor* W = context->Input<Tensor>(1);
   const Tensor* B = num_inputs == 3 ? context->Input<Tensor>(2) : nullptr;
@@ -146,7 +159,21 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   const int64_t C = X->Shape()[1];
   const int64_t M = W->Shape()[0];
 
-  vector<int64_t> pads(pads_);  // copy pads since it can be modified by InferOutputShape
+  vector<int64_t> kernel_shape = ComputeKernelShape(F->Shape());
+  bool Is2DKernel = kernel_shape.size() == 2;
+  vector<int64_t> pads(pads_);
+  if (pads.empty()) {
+    pads.resize(kernel_shape.size() * 2, 0);
+  }
+  vector<int64_t> dilations(dilations_);
+  if (dilations.empty()) {
+    dilations.resize(kernel_shape.size(), 1);
+  }
+  vector<int64_t> strides(strides_);
+  if (strides.empty()) {
+    strides.resize(kernel_shape.size(), 1);
+  }
+
   vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
@@ -156,7 +183,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
 
   const int64_t input_image_size = input_shape.Size();
   const int64_t output_image_size = output_shape.Size();
-  const int64_t kernel_size = TensorShape(kernel_shape_).Size();
+  const int64_t kernel_size = TensorShape(kernel_shape).Size();
   const int64_t X_offset = C / group_ * input_image_size;
   const int64_t Y_offset = Y->Shape().Size() / Y->Shape()[0] / group_;
   const int64_t W_offset = W->Shape().Size() / group_;
@@ -183,16 +210,16 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
         C / group_,
         input_shape[0],
         input_shape[1],
-        kernel_shape_[0],
-        kernel_shape_[1],
-        dilations_[0],
-        dilations_[1],
+        kernel_shape[0],
+        kernel_shape[1],
+        dilations[0],
+        dilations[1],
         pads[0],
         pads[1],
         pads[2],
         pads[3],
-        strides_[0],
-        strides_[1],
+        strides[0],
+        strides[1],
         M / group_,
         &WorkingBufferSize);
   } else {
@@ -219,11 +246,11 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
             col_buffer_shape.data(),
             C * input_image_size,
             col_buffer_size,
-            kernel_shape_.data(),
-            strides_.data(),
-            dilations_.data(),
+            kernel_shape.data(),
+            strides.data(),
+            dilations.data(),
             pads.data(),
-            static_cast<int>(kernel_shape_.size()),
+            static_cast<int>(kernel_shape.size()),
             col_buffer_data,
             &CPUMathUtil::Instance());
         Math::Gemm<float, CPUMathUtil>(

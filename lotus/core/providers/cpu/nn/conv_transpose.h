@@ -76,10 +76,6 @@ class ConvTranspose : public ConvBase {
     // output_shape and output_padding are both optional
     info.GetAttrs<int64_t>("output_shape", output_shape_);
     info.GetAttrs<int64_t>("output_padding", output_padding_);
-
-    if (output_padding_.empty()) {
-      output_padding_.resize(kernel_shape_.size(), 0);
-    }
   }
 
   Status Compute(OpKernelContext* context) const override {
@@ -89,19 +85,40 @@ class ConvTranspose : public ConvBase {
     const Tensor* B = num_inputs == 3 ? context->Input<Tensor>(2) : nullptr;
 
     const TensorShape& input_shape = X->Shape();
+    if (input_shape.NumDimensions() != 4)
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input must be 4-dimensional");
     const int64_t N = input_shape[0];
     const int64_t M = input_shape[1];
     const int64_t H = input_shape[2];
     const int64_t W = input_shape[3];
     const int64_t C = F->Shape()[1];
 
+    vector<int64_t> kernel_shape = ComputeKernelShape(F->Shape());
+
+    vector<int64_t> output_padding(output_padding_);
+    if (output_padding.empty()) {
+      output_padding.resize(kernel_shape.size(), 0);
+    }
+    vector<int64_t> pads(pads_);
+    if (pads.empty()) {
+      pads.resize(kernel_shape.size() * 2, 0);
+    }
+    vector<int64_t> dilations(dilations_);
+    if (dilations.empty()) {
+      dilations.resize(kernel_shape.size(), 1);
+    }
+    vector<int64_t> strides(strides_);
+    if (strides.empty()) {
+      strides.resize(kernel_shape.size(), 1);
+    }
+
     vector<int64_t> Y_dims;
-    vector<int64_t> pads(pads_);  // copy pads since it can be modified by ComputePadsAndOutputShape
-    ComputePadsAndOutputShape(input_shape, C, &pads, &Y_dims);
+
+    ComputePadsAndOutputShape(input_shape, C, kernel_shape, strides, output_padding, &pads, &Y_dims);
     TensorShape Yshape(Y_dims);
     Tensor* Y = context->Output(0, Yshape);
 
-    const int64_t kernel_dim = C * kernel_shape_[0] * kernel_shape_[1];
+    const int64_t kernel_dim = C * kernel_shape[0] * kernel_shape[1];
     const int64_t input_image_size = H * W;
     const int64_t output_image_size = Y_dims[2] * Y_dims[3];
 
@@ -137,16 +154,16 @@ class ConvTranspose : public ConvBase {
           C,
           Y_dims[2],
           Y_dims[3],
-          kernel_shape_[0],
-          kernel_shape_[1],
+          kernel_shape[0],
+          kernel_shape[1],
           1,
           1,
           pads[0],
           pads[1],
           pads[2],
           pads[3],
-          strides_[0],
-          strides_[1],
+          strides[0],
+          strides[1],
           Ydata,
           &CPUMathUtil::Instance());
 
@@ -169,6 +186,9 @@ class ConvTranspose : public ConvBase {
 
   void ComputePadsAndOutputShape(const TensorShape input_shape,
                                  const int64_t output_channel,
+                                 const vector<int64_t>& kernel_shape,
+                                 const vector<int64_t>& strides,
+                                 const vector<int64_t>& output_padding,
                                  vector<int64_t>* pads,
                                  vector<int64_t>* output_shape) const {
     const int64_t N = input_shape[0];
@@ -186,9 +206,9 @@ class ConvTranspose : public ConvBase {
 
     ComputeSizeAndPad(
         H,
-        strides_[0],
-        kernel_shape_[0],
-        output_padding_[0],
+        strides[0],
+        kernel_shape[0],
+        output_padding[0],
         auto_pad_,
         &pads->at(0),
         &pads->at(2),
@@ -196,9 +216,9 @@ class ConvTranspose : public ConvBase {
 
     ComputeSizeAndPad(
         W,
-        strides_[1],
-        kernel_shape_[1],
-        output_padding_[1],
+        strides[1],
+        kernel_shape[1],
+        output_padding[1],
         auto_pad_,
         &pads->at(1),
         &pads->at(3),

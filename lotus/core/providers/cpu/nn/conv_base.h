@@ -15,7 +15,7 @@ class ConvBase : public OpKernel {
     auto status = info.GetAttr<std::string>("auto_pad", &auto_pad);
     auto_pad_ = status.IsOK() ? StringToAutoPadType(auto_pad) : AutoPadType::NOTSET;
 
-    LOTUS_ENFORCE(info.GetAttrs<int64_t>("kernel_shape", kernel_shape_).IsOK());
+    kernel_shape_specified_ = info.GetAttrs<int64_t>("kernel_shape", kernel_shape_).IsOK();
 
     status = info.GetAttrs<int64_t>("strides", strides_);
     if (!status.IsOK()) {
@@ -53,12 +53,25 @@ class ConvBase : public OpKernel {
   ~ConvBase() override {}
 
  protected:
+  vector<int64_t> ComputeKernelShape(const TensorShape& weight_shape) const {
+    if (kernel_shape_specified_)
+      return kernel_shape_;
+    else {
+      auto& weight_dims = weight_shape.GetDims();
+      vector<int64_t> result(weight_dims.begin() + 2, weight_dims.end());
+      return result;
+    }
+  }
+
   AutoPadType auto_pad_;
   int64_t group_;
-  vector<int64_t> kernel_shape_;
+  bool kernel_shape_specified_;
   vector<int64_t> strides_;
   vector<int64_t> pads_;
   vector<int64_t> dilations_;
+
+ private:
+  vector<int64_t> kernel_shape_;  // must use ComputeKernelShape(...), instead of kernel_shape_
 };
 
 }  // namespace Lotus

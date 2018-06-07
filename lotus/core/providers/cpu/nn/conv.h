@@ -72,13 +72,18 @@ class Conv : public ConvBase {
   Status Compute(OpKernelContext* context) const override;
 
  private:
-  void InferOutputShape(const TensorShape input_shape, vector<int64_t>* pads, vector<int64_t>* output_shape) const {
+  void InferOutputShape(const TensorShape& input_shape,
+                        const vector<int64_t>& kernel_shape,
+                        const vector<int64_t>& strides,
+                        const vector<int64_t>& dilations,
+                        vector<int64_t>* pads,
+                        vector<int64_t>* output_shape) const {
     for (int dim = 0; dim < input_shape.NumDimensions(); ++dim) {
       int64_t dim_size = 0;
       ComputeSizeAndPad(input_shape[dim],
-                        strides_[dim],
-                        kernel_shape_[dim],
-                        dilations_[dim],
+                        strides[dim],
+                        kernel_shape[dim],
+                        dilations[dim],
                         auto_pad_,
                         &pads->at(dim),
                         &pads->at(input_shape.NumDimensions() + dim),
