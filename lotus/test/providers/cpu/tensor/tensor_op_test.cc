@@ -23,6 +23,14 @@ TEST(TensorOpTest, Identity) {
   test.Run();
 }
 
+TEST(TensorOpTest, IdentityString) {
+  OpTester test("Identity");
+  std::vector<std::string> X{"this", "is", "a", "test", "for", "identity"};
+  test.AddInput<std::string>("input", {2, 3}, X);
+  test.AddOutput<std::string>("output", {2, 3}, X);
+  test.Run();
+}
+
 TEST(TensorOpTest, ShapeTest2D) {
   OpTester test("Shape");
 
