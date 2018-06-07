@@ -380,7 +380,14 @@ class InferenceSession::Impl {
     if (valid) {
       return Common::Status::OK();
     } else {
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid Feed Input Names:" + invalid_names.str());
+      std::ostringstream ostr;
+      std::for_each(std::begin(model_input_names_), std::end(model_input_names_), [&ostr](const std::string& elem) {
+        ostr << elem << " ";
+      });
+      return Common::Status(Common::LOTUS,
+                            Common::INVALID_ARGUMENT,
+                            "Invalid Feed Input Names:" + invalid_names.str() +
+                                " Valid input names are: " + ostr.str());
     }
   }
 
@@ -398,10 +405,24 @@ class InferenceSession::Impl {
       return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
     }
 
+    bool valid = true;
+    std::ostringstream invalid_names;
     for (const auto& name : output_names) {
       if (model_output_names_.find(name) == model_output_names_.end()) {
-        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid Fetch Output Name: " + name);
+        valid = false;
+        invalid_names << " " << name;
       }
+    }
+
+    if (!valid) {
+      std::ostringstream ostr;
+      std::for_each(std::begin(model_output_names_), std::end(model_output_names_), [&ostr](const std::string& elem) {
+        ostr << elem << " ";
+      });
+      return Common::Status(Common::LOTUS,
+                            Common::INVALID_ARGUMENT,
+                            "Invalid Output Names:" + invalid_names.str() +
+                                " Valid output names are: " + ostr.str());
     }
 
     // TODO add more validation here like checking shape of the allocated buffers

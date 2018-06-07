@@ -124,6 +124,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
                      [actual_type, &node, &error_str](const MLDataType& expected_type) {
                        bool rc = expected_type->IsCompatible(*actual_type);  // for easier debugging
                        if (!rc) {
+                         // TODO print type information as well
                          error_str = "Op: " + node.OpType() + " Incompatible types.";
                        }
                        return rc;
