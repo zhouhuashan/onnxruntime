@@ -368,6 +368,10 @@ class InferenceSession::Impl {
   }
 
   Common::Status ValidateInputs(const NameMLValMap& feeds) {
+    if (model_input_names_.size() != feeds.size()) {
+      return Common::Status(Common::LOTUS, Common::FAIL, "The number of feeds is not same as the number of the model input");
+    }
+
     bool valid = true;
     std::ostringstream invalid_names;
     for (const auto& pair : feeds) {
