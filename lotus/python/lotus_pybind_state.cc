@@ -25,6 +25,55 @@ namespace py = pybind11;
 using namespace Lotus;
 using namespace Lotus::Logging;
 
+int LotusToNumpyType(const MLDataType& lotus_type) {
+  static std::map<MLDataType, int> type_map{
+      {DataTypeImpl::GetType<bool>(), NPY_BOOL},
+      {DataTypeImpl::GetType<float>(), NPY_FLOAT},
+      {DataTypeImpl::GetType<double>(), NPY_DOUBLE},
+      {DataTypeImpl::GetType<int32_t>(), NPY_INT},
+      {DataTypeImpl::GetType<int8_t>(), NPY_INT8},
+      {DataTypeImpl::GetType<uint8_t>(), NPY_UINT8},
+      {DataTypeImpl::GetType<int16_t>(), NPY_INT16},
+      {DataTypeImpl::GetType<uint16_t>(), NPY_UINT16},
+      {DataTypeImpl::GetType<int64_t>(), NPY_LONGLONG},
+      {DataTypeImpl::GetType<uint64_t>(), NPY_ULONGLONG},
+      {DataTypeImpl::GetType<std::string>(), NPY_STRING},
+  };
+
+  const auto it = type_map.find(lotus_type);
+  if (it == type_map.end()) {
+    throw std::runtime_error("No corresponding Numpy type for MLDataType.");
+  } else {
+    return it->second;
+  }
+}
+
+const MLDataType& NumpyToLotusType(int numpy_type) {
+  static std::map<int, MLDataType> type_map{
+      {NPY_BOOL, DataTypeImpl::GetType<bool>()},
+      {NPY_FLOAT, DataTypeImpl::GetType<float>()},
+      {NPY_DOUBLE, DataTypeImpl::GetType<double>()},
+      {NPY_INT, DataTypeImpl::GetType<int32_t>()},
+      {NPY_INT8, DataTypeImpl::GetType<int8_t>()},
+      {NPY_UINT8, DataTypeImpl::GetType<uint8_t>()},
+      {NPY_INT16, DataTypeImpl::GetType<int16_t>()},
+      {NPY_UINT16, DataTypeImpl::GetType<uint16_t>()},
+      {NPY_LONG,
+       sizeof(long) == sizeof(int) ? DataTypeImpl::GetType<int32_t>()
+                                   : DataTypeImpl::GetType<int64_t>()},
+      {NPY_LONGLONG, DataTypeImpl::GetType<int64_t>()},
+      {NPY_ULONGLONG, DataTypeImpl::GetType<uint64_t>()},
+      {NPY_STRING, DataTypeImpl::GetType<std::string>()}};
+
+  const auto it = type_map.find(numpy_type);
+  if (it == type_map.end()) {
+    throw std::runtime_error("Numpy_type " + std::to_string(numpy_type) +
+                             " can't be converted to MLDataType");
+  } else {
+    return it->second;
+  }
+}
+
 static AllocatorPtr& GetAllocator() {
   static AllocatorPtr alloc = std::make_shared<CPUAllocator>();
   return alloc;
@@ -35,15 +84,12 @@ static const SessionOptions& GetDefaultCPUSessionOptions() {
   return so;
 }
 
-template <typename T>
-void CreateMLValue(AllocatorPtr alloc,
-                   PyArrayObject* pyObject, MLValue* p_mlvalue) {
+void CreateTensorMLValue(AllocatorPtr alloc,
+                         PyArrayObject* pyObject, MLValue* p_mlvalue) {
   PyArrayObject* darray = PyArray_GETCONTIGUOUS(pyObject);
   bool dref = false;
   try {
     const auto npy_type = PyArray_TYPE(darray);
-    // TODO: add more types support
-    LOTUS_ENFORCE(npy_type == NPY_FLOAT, "TODO: Need support more types.");
 
     // numpy requires long int as its dims.
     int ndim = PyArray_NDIM(darray);
@@ -54,7 +100,7 @@ void CreateMLValue(AllocatorPtr alloc,
     }
 
     TensorShape shape(dims);
-    auto element_type = DataTypeImpl::GetType<T>();
+    auto element_type = NumpyToLotusType(npy_type);
     void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
     memcpy(buffer, static_cast<void*>(PyArray_DATA(darray)), element_type->Size() * shape.Size());
 
@@ -149,7 +195,7 @@ void addObjectMethods(py::module& m) {
         for (auto _ : feed) {
           MLValue ml_value;
           PyArrayObject* arr = reinterpret_cast<PyArrayObject*>(_.second.ptr());
-          CreateMLValue<float>(GetAllocator(), arr, &ml_value);
+          CreateTensorMLValue(GetAllocator(), arr, &ml_value);
           feeds.insert(std::make_pair(_.first, ml_value));
         }
 
@@ -166,19 +212,20 @@ void addObjectMethods(py::module& m) {
         rfetch.reserve(fetcher.size());
 
         for (auto _ : fetcher) {
-          auto& rtensor = _.Get<Tensor>();
+          const Tensor& rtensor = _.Get<Tensor>();
           std::vector<npy_intp> npy_dims;
-          auto shape = rtensor.Shape();
+          const TensorShape& shape = rtensor.Shape();
 
           for (size_t n = 0; n < shape.NumDimensions(); ++n) {
             npy_dims.push_back(shape[n]);
           }
 
-          auto obj = py::reinterpret_steal<py::object>(PyArray_SimpleNew(
-              shape.NumDimensions(), npy_dims.data(), NPY_FLOAT));
+          MLDataType dtype = rtensor.DataType();
+          py::object obj = py::reinterpret_steal<py::object>(PyArray_SimpleNew(
+              shape.NumDimensions(), npy_dims.data(), LotusToNumpyType(dtype)));
           void* outPtr = static_cast<void*>(
               PyArray_DATA(reinterpret_cast<PyArrayObject*>(obj.ptr())));
-          memcpy(outPtr, rtensor.Data<float>(), sizeof(float) * shape.Size());
+          memcpy(outPtr, rtensor.DataRaw(dtype), dtype->Size() * shape.Size());
           rfetch.push_back(obj);
         }
         return rfetch;

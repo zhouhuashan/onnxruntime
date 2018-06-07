@@ -28,6 +28,11 @@ class InferenceSession:
     return self._outputs_meta
 
   def run(self, output_names, input_feed) :
+    num_required_inputs = len(self._inputs_meta)
+    num_inputs = len(input_feed)
+    if num_inputs != num_required_inputs:
+        raise ValueError("Model requires {} inputs. Input Feed contains {}".format(num_required_inputs,
+                                                                                   num_inputs))
     if not output_names:
       output_names = [ output.name for output in self._outputs_meta ]
     return self._runtime.run(output_names, input_feed)
