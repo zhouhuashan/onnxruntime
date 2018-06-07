@@ -7,6 +7,11 @@
 #include <core/framework/inference_session.h>
 #include "test/framework/TestAllocatorManager.h"
 
+#include <experimental/filesystem>
+#ifdef _MSC_VER
+#include <filesystem>
+#endif
+
 class ITestCase;
 
 class SessionFactory {
