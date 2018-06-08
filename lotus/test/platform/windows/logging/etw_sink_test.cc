@@ -8,6 +8,9 @@
 
 #include "test/common/logging/helpers.h"
 
+namespace Lotus {
+namespace Test {
+
 using namespace Lotus::Logging;
 
 /// <summary>
@@ -52,4 +55,6 @@ TEST(LoggingTests, TestEtwSinkCtor) {
   LOGS(*logger, WARNING) << "Two sinks aren't better than one";
 }
 
+}  // namespace Test
+}  // namespace Lotus
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

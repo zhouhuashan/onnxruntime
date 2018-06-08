@@ -171,10 +171,13 @@ set_target_properties(gtest_main PROPERTIES FOLDER "External/GTest")
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx EXCLUDE_FROM_ALL)
 set_target_properties(onnx PROPERTIES FOLDER "External/ONNX")
 set_target_properties(onnx_proto PROPERTIES FOLDER "External/ONNX")
+# fix a warning in onnx code we can't do anything about
+if (MSVC)
+    target_compile_options(onnx_proto PRIVATE /wd4146) # unary minus operator applied to unsigned type
+endif()
+
 add_definitions(-DONNX_ML)
 add_definitions(-DONNX_NAMESPACE=onnx)
-
-
 if (lotus_RUN_ONNX_TESTS)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()

@@ -16,13 +16,6 @@ As LoggingManager can be a static, we need to wrap the default instance and mute
 to ensure they're initialized before use in LoggingManager::LoggingManager. If we don't, and
 a static LoggingManager is created at startup, the file scope statics here may not have been
 initialized.
-
-We use 'new' to avoid static initialization issues
-  https://isocpp.org/wiki/faq/ctors#static-init-order-on-first-use
-Suppressing r.11 due to that
-   Warning C26409 Avoid calling new and delete explicitly, use std::make_unique<T> instead
-   r.11: http://go.microsoft.com/fwlink/?linkid=845485
-
 */
 
 static std::atomic<void *> &DefaultLoggerManagerInstance() noexcept {

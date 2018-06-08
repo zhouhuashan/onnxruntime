@@ -1471,10 +1471,15 @@ void Graph::CleanUnusedInitializers() {
 
   for (const auto& pv : name_to_initial_tensor_) {
     const std::string& s = pv.first;
-    bool used_as_input = std::any_of(input_args.begin(), input_args.end(),
-                                     [&s](const gsl::not_null<const NodeArg*> input) noexcept->bool { return s == input->Name(); });
-    bool used_as_output = std::any_of(GetOutputs().begin(), GetOutputs().end(),
-                                      [&s](const gsl::not_null<const NodeArg*> output) noexcept->bool { return s == output->Name(); });
+    const bool used_as_input = std::any_of(input_args.begin(), input_args.end(),
+                                           [&s](const gsl::not_null<const NodeArg*> input) noexcept {
+                                             return s == input->Name();
+                                           });
+    const bool used_as_output = std::any_of(GetOutputs().begin(), GetOutputs().end(),
+                                            [&s](const gsl::not_null<const NodeArg*> output) noexcept {
+                                              return s == output->Name();
+                                            });
+
     if (!used_as_input && !used_as_output) {
       unused_names.push_back(s);
     }
