@@ -411,12 +411,7 @@ typedef enum {
   RNNOutputBoth
 } RNNOutputOption;
 
-// TODO: code disabled due to optional output failure at
-// return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
-// in session_state.cc (line 115)
-// Scott is adding test API to handle this case (PR is active).
-// Will bring this test case after Scott's PR.
-TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
+TEST(RNNTest, RNN_default_attributes_and_forward_direction) {
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
   // In case of useDefault, attributes, inputs or outputs are not set.
@@ -449,11 +444,15 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
 
       std::vector<int64_t> sequence_lens_dims({batch_size});
       std::vector<int> sequence_lens_data(batch_size, (int)seq_length);
-      test.AddInput<int>("", sequence_lens_dims, sequence_lens_data);
+      test.AddInput<int>("sequence_lens", sequence_lens_dims, sequence_lens_data);
 
       std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
       std::vector<float> initial_h_data({0.0F, 0.0F, 0.0F});
       test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
+    } else {
+      test.AddMissingOptionalInput<float>();
+      test.AddMissingOptionalInput<int>();
+      test.AddMissingOptionalInput<float>();
     }
 
     if (outputOption == RNNOutputY || outputOption == RNNOutputBoth) {
@@ -464,12 +463,16 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
                                  -0.41242906F, -0.32563525F, -0.79238516F,
                                  -0.74626476F, -0.07818383F, -0.75139415F});
       test.AddOutput<float>("Y", Y_dims, Y_data);
+    } else {
+      test.AddMissingOptionalOutput<float>();
     }
 
     if (outputOption == RNNOutputY_h || outputOption == RNNOutputBoth) {
       std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
       std::vector<float> Y_h_data({-0.74626476F, -0.07818383F, -0.75139415F});
       test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+    } else {
+      test.AddMissingOptionalOutput<float>();
     }
 
     test.Run();
@@ -518,7 +521,7 @@ TEST(RNNTest, DISABLED_RNN_default_attributes_and_forward_direction) {
   }
 }
 
-TEST(RNNTest, DISABLED_RNN_reverse_direction) {
+TEST(RNNTest, RNN_reverse_direction) {
   int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 1, seq_length = 5;
 
   // In case of useDefault, attributes, inputs or outputs are not set.
@@ -550,11 +553,15 @@ TEST(RNNTest, DISABLED_RNN_reverse_direction) {
 
       std::vector<int64_t> sequence_lens_dims({batch_size});
       std::vector<int> sequence_lens_data(batch_size, (int)seq_length);
-      test.AddInput<int>("", sequence_lens_dims, sequence_lens_data);
+      test.AddInput<int>("sequence_lens", sequence_lens_dims, sequence_lens_data);
 
       std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
       std::vector<float> initial_h_data({0.0F, 0.0F, 0.0F});
       test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
+    } else {
+      test.AddMissingOptionalInput<float>();
+      test.AddMissingOptionalInput<int>();
+      test.AddMissingOptionalInput<float>();
     }
 
     std::vector<int64_t> Y_dims = {seq_length, num_directions, batch_size, hidden_size};
@@ -566,7 +573,7 @@ TEST(RNNTest, DISABLED_RNN_reverse_direction) {
     if (outputOption == RNNOutputY || outputOption == RNNOutputBoth) {
       test.AddOutput<float>("Y", Y_dims, Y_data);
     } else {
-      test.AddOutput<float>("", Y_dims, Y_data);
+      test.AddMissingOptionalOutput<float>();
     }
 
     std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
@@ -574,7 +581,7 @@ TEST(RNNTest, DISABLED_RNN_reverse_direction) {
     if (outputOption == RNNOutputY_h || outputOption == RNNOutputBoth) {
       test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
     } else {
-      test.AddOutput<float>("", Y_h_dims, Y_h_data);
+      test.AddMissingOptionalOutput<float>();
     }
 
     test.Run();

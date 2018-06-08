@@ -5,7 +5,7 @@
 #include "core/framework/op_kernel.h"
 
 namespace Lotus {
-template <typename T, typename T_1>
+template <typename T>
 class RNN : public OpKernel {
   const set<string> allowed_activations{"Relu", "Tanh", "Sigmoid", "Affine", "LeakyRelu", "ThresholdedRelu", "ScaledTanh", "HardSigmoid", "Elu", "Softsign", "Softplus"};
   const string default_activation = "Tanh";

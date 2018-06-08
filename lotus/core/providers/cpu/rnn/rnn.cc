@@ -11,7 +11,15 @@ REGISTER_KERNEL(KernelDefBuilder("RNN")
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("T1", DataTypeImpl::GetTensorType<int>()),
-                RNN<float, int>);
+                RNN<float>);
+
+// #define DUMP_MATRIXES to provide lots of diagnostic output
+#define DUMP_MATRIXES
+#if defined(DUMP_MATRIXES)
+#define DumpMatrix(...) Lotus::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#else
+#define DumpMatrix(...) ((void)0)
+#endif
 
 template <typename T>
 T Clip(const T& x, T clip) {
@@ -85,7 +93,7 @@ using EigenMatrixMapRowMajor = Eigen::Map<
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
 
 template <>
-Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
+Status RNN<float>::Compute(OpKernelContext* ctx) const {
   using namespace Rnn::detail;
 
   // inputs
@@ -205,7 +213,7 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
 
     if (Y_h)
       Assign_Y_h<float>(Y_buffer_data, Y_h, sequence_lens,
-                      num_directions, direction, isReverse, batch_size, seq_length, hidden_size_);
+                        num_directions, direction, isReverse, batch_size, seq_length, hidden_size_);
   }
 
   // Now the full sequence is completed. Set missing frames to zero.
@@ -213,6 +221,8 @@ Status RNN<float, int>::Compute(OpKernelContext* ctx) const {
     ClearMissingFrames(Y_buffer_data, sequence_lens,
                        num_directions, batch_size, seq_length, hidden_size_);
   }
+
+  DumpMatrix("Y", Y_buffer_data, (int)(seq_length * num_directions * batch_size), (int)hidden_size_);
 
   return Status::OK();
 }
