@@ -709,7 +709,18 @@ class InferenceSession::Impl {
                                 preallocated ? preallocated : static_cast<void*>(alloc_ptr->Alloc(p_deserialize_tensor->Size())),
                                 alloc_info,
                                 preallocated ? nullptr : alloc_ptr));  // no deleter for preallocated
-      LOTUS_RETURN_IF_ERROR(provider->CopyTensor(*p_deserialize_tensor, *p_tensor));
+      Status copy_status = provider->CopyTensor(*p_deserialize_tensor, *p_tensor);
+      if (!copy_status.IsOK()) {
+        if (copy_status.ErrorMessage().empty()) {
+          // The windows execution provider does not return any error message today for CopyTensor since it is
+          // not implemented yet. That's the reason we're adding our own error message so that we can debug better.
+          return Status(copy_status.Category(),
+                        copy_status.Code(),
+                        "Failed to copy tensor to execution provider: " + provider->Type());
+        } else {
+          return copy_status;
+        }
+      }
     }
 
     mlvalue.Init(p_tensor.release(),
@@ -734,7 +745,7 @@ class InferenceSession::Impl {
       VLOGS(*session_logger_, 1) << "About to add weight with name: " << name << " and index: " << mlvalue_index;
       auto& location = p_execution_plan->allocation_plan[mlvalue_index].location;
       MLValue mlvalue;
-      DeserializeTensorProto(location, *(entry.second), mlvalue, nullptr, 0);
+      LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(location, *(entry.second), mlvalue, nullptr, 0));
       session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
       VLOGS(*session_logger_, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
     }
@@ -791,9 +802,9 @@ class InferenceSession::Impl {
       // if block is not found, means this mlvalue is not traced
       // fall back to allocate seperate buffer.
       if (!block) {
-        DeserializeTensorProto(location, tensor_proto, mlvalue, nullptr, 0);
+        LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(location, tensor_proto, mlvalue, nullptr, 0));
       } else {
-        DeserializeTensorProto(location, tensor_proto, mlvalue, (uint8_t*)it->second.get() + block->offset_, block->size_);
+        LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(location, tensor_proto, mlvalue, (uint8_t*)it->second.get() + block->offset_, block->size_));
       }
 
       session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
