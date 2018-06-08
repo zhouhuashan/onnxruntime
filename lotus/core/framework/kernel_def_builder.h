@@ -59,32 +59,45 @@ class KernelDef {
       return false;
     //check types
     auto other_types = other.TypeConstraints();
+    bool type_conflict = false;
     for (auto it : type_constraints_) {
       if (other_types.count(it.first)) {
         for (auto type : it.second) {
           if (std::find(other_types[it.first].begin(), other_types[it.first].end(), type) != other_types[it.first].end())
-            return true;
+            type_conflict = true;
         }
       }
     }
+    if (!type_conflict)
+      return false;
+    //if has type conflict, check if any other field has different
+    //for example, we register two kernel with float type, but one is inplace, another is not.
     //check in-place
+    if (inplace_map_.empty() && !other.MayInplace().empty())
+      return false;
     for (auto& it : inplace_map_) {
-      if (std::find(other.MayInplace().begin(), other.MayInplace().end(), it) != other.MayInplace().end())
-        return true;
+      if (std::find(other.MayInplace().begin(), other.MayInplace().end(), it) == other.MayInplace().end())
+        return false;
     }
+
     //check alias
     for (auto& it : alias_map_) {
-      if (std::find(other.Alias().begin(), other.Alias().end(), it) != other.Alias().end())
-        return true;
+      if (std::find(other.Alias().begin(), other.Alias().end(), it) == other.Alias().end())
+        return false;
     }
+    if (alias_map_.empty() && !other.Alias().empty())
+      return false;
+
     //check memory type
     auto other_mem_types = other.MemoryType();
     for (auto it : memory_type_args_) {
       if (other_mem_types.count(it.first) && other_mem_types[it.first] == it.second)
-        return true;
+        return false;
     }
+    if (memory_type_args_.empty() && !other.MemoryType().empty())
+      return false;
 
-    return false;
+    return true;
   }
 
  private:
