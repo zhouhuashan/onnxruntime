@@ -101,7 +101,7 @@ AttributeProto_AttributeType ToProto(MLAttributeType type) {
     return MLTypeTraits<x>::TensorType;     \
   }
 
-::MLTensorDataType ToMLTensorDataType(Lotus::MLDataType type) {
+MLTensorDataType ToMLTensorDataType(Lotus::MLDataType type) {
   if (type == DataTypeImpl::GetType<std::string>())
     return MLTensorDataType::kString;
 
@@ -128,7 +128,7 @@ AttributeProto_AttributeType ToProto(MLAttributeType type) {
     return DataTypeImpl::GetTensorType<x>(); \
   }
 
-Lotus::MLDataType ToTensorDataType(::MLTensorDataType type) {
+Lotus::MLDataType ToTensorDataType(MLTensorDataType type) {
   if (type == MLTensorDataType::kString)
     return DataTypeImpl::GetTensorType<std::string>();
 
@@ -150,7 +150,7 @@ Lotus::MLDataType ToTensorDataType(::MLTensorDataType type) {
   ML_CHECK_STATUS(MLStatus::NOT_IMPLEMENTED);
 }
 
-::MLTensorDataType ToMLTensorDataType(TensorProto_DataType type) {
+MLTensorDataType ToMLTensorDataType(TensorProto_DataType type) {
   switch (type) {
     case TensorProto_DataType_FLOAT:
       return MLTensorDataType::kFloat;
@@ -201,7 +201,7 @@ Lotus::MLDataType ToTensorDataType(::MLTensorDataType type) {
       ML_CHECK_STATUS(MLStatus::NOT_IMPLEMENTED);
   }
 }
-::MLEdgeType ToMLEdgeType(const TypeProto* type) {
+MLEdgeType ToMLEdgeType(const TypeProto* type) {
   // Initialized to undefined class and data type
   MLEdgeType ret = {};
 

@@ -7,6 +7,8 @@
 
 #include <cstdint>
 
+namespace Lotus {
+
 enum class MLStatus : uint32_t {
   OK = 0,
   FAIL = 1,
@@ -53,3 +55,5 @@ inline const char *MLStatusToString(MLStatus status) noexcept {
       return "GENERAL ERROR";
   }
 }
+
+} // namespace Lotus
