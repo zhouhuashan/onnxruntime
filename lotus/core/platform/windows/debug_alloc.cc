@@ -53,21 +53,25 @@ struct SymbolHelper {
     SymInitialize(GetCurrentProcess(), nullptr, true);
   }
 
-  void Lookup(std::ostream &string, const ULONG_PTR address) {
+  void Lookup(std::string &string, const ULONG_PTR address) {
+    char buffer[2048];
     Symbol symbol;
     if (SymFromAddr(GetCurrentProcess(), address, 0, &symbol) == false) {
-      string << "0x" << std::hex << address << "(Unknown symbol)";
+      _snprintf_s(buffer, _TRUNCATE, "0x%08IX (Unknown symbol)", address);
+      string.append(buffer);
       return;
     }
 
     Line line;
     DWORD displacement;
     if (SymGetLineFromAddr(GetCurrentProcess(), address, &displacement, &line) == false) {
-      string << "(unknown file & line number): " << symbol.Name;
+      _snprintf_s(buffer, _TRUNCATE, "(unknown file & line number): %s", symbol.Name);
+      string.append(buffer);
       return;
     }
 
-    string << line.FileName << '(' << line.LineNumber << "): " << symbol.Name;
+    _snprintf_s(buffer, _TRUNCATE, "%s(%d): %s", line.FileName, line.LineNumber, symbol.Name);
+    string.append(buffer);
   }
 
   struct Symbol : SYMBOL_INFO {
@@ -176,12 +180,14 @@ Memory_LeakCheck::~Memory_LeakCheck() {
     const MemoryBlock &block = *static_cast<const MemoryBlock *>(entry.lpData);
     const BYTE *pBlock = static_cast<const BYTE *>(entry.lpData) + sizeof(MemoryBlock);
 
-    std::ostringstream string;
-    string << entry.cbData - sizeof(MemoryBlock) << " bytes at location " << std::hex << UINT_PTR(pBlock) << std::dec << "\n";
+    std::string string;
+    char buffer[1024];
+    _snprintf_s(buffer, _TRUNCATE, "%IX bytes at location 0x%08IX\n", entry.cbData - sizeof(MemoryBlock), UINT_PTR(pBlock));
+    string.append(buffer);
     for (auto &p : block.m_pTraces) {
       if (!p) break;
       symbols.Lookup(string, reinterpret_cast<ULONG_PTR>(p));
-      string << '\n';
+      string.push_back('\n');
     }
 
     // Google test has memory leaks that they haven't fixed. One such issue is tracked here: https://github.com/google/googletest/issues/692
@@ -192,16 +198,16 @@ Memory_LeakCheck::~Memory_LeakCheck() {
     // In gtest-port.cc in Mutex::~Mutex() there is this comment:
     //     "Static mutexes are leaked intentionally. It is not thread-safe to try to clean them up."
     // Which explains this leak inside of: void Mutex::ThreadSafeLazyInit()
-    //	   critical_section_ = new CRITICAL_SECTION;
-    if (string.str().find("testing::internal::Mutex::ThreadSafeLazyInit") == std::string::npos &&
-        string.str().find("testing::internal::ThreadLocalRegistryImpl::GetThreadLocalsMapLocked") == std::string::npos &&
-        string.str().find("testing::internal::ThreadLocalRegistryImpl::GetValueOnCurrentThread") == std::string::npos) {
+    //     critical_section_ = new CRITICAL_SECTION;
+    if (string.find("testing::internal::Mutex::ThreadSafeLazyInit") == std::string::npos &&
+        string.find("testing::internal::ThreadLocalRegistryImpl::GetThreadLocalsMapLocked") == std::string::npos &&
+        string.find("testing::internal::ThreadLocalRegistryImpl::GetValueOnCurrentThread") == std::string::npos) {
       if (leaked_bytes == 0)
         OutputDebugStringA("\n-----Starting Heap Trace-----\n\n");
 
       leak_count++;
       leaked_bytes += entry.cbData - sizeof(MemoryBlock);
-      OutputDebugStringA(string.str().c_str());
+      OutputDebugStringA(string.c_str());
       OutputDebugStringA("\n");
     }
   }
@@ -209,20 +215,25 @@ Memory_LeakCheck::~Memory_LeakCheck() {
   if (leaked_bytes) {
     OutputDebugStringA("-----Ending Heap Trace-----\n\n");
 
-    std::ostringstream string;
-    string << leaked_bytes << " bytes of memory leaked in " << leak_count << " allocations";
+    std::string string;
+    char buffer[1024];
+    _snprintf_s(buffer, _TRUNCATE, "%d bytes of memory leaked in %d allocations", leaked_bytes, leak_count);
+    string.append(buffer);
 
     // Check if we're running on the build machine, if so just exit(-1)
     size_t requiredSize;
     if (getenv_s(&requiredSize, nullptr, 0, "AGENT_BUILDDIRECTORY") == 0 && requiredSize > 0) {
-      std::cout << "\n----- MEMORY LEAKS: " << string.str() << "\n";
+      std::cout << "\n----- MEMORY LEAKS: " << string.c_str() << "\n";
       exit(-1);
     }
 
     // Otherwise we're running on a dev system, show a message box to get their attention
-    MessageBoxA(nullptr, string.str().c_str(), "Warning", MB_OK | MB_ICONWARNING);
-  } else
+    if (IsDebuggerPresent()) {
+      MessageBoxA(nullptr, string.c_str(), "Warning", MB_OK | MB_ICONWARNING);
+    }
+  } else {
     OutputDebugStringA("\n----- No memory leaks detected -----\n\n");
+  }
 
   HeapDestroy(heap);
   HeapDestroy(g_heap);
