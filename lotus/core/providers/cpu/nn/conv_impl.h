@@ -159,7 +159,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   const int64_t C = X->Shape()[1];
   const int64_t M = W->Shape()[0];
 
-  vector<int64_t> kernel_shape = ComputeKernelShape(F->Shape());
+  vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
   bool Is2DKernel = kernel_shape.size() == 2;
   vector<int64_t> pads(pads_);
   if (pads.empty()) {
@@ -177,7 +177,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
-  InferOutputShape(input_shape, &pads, &Y_dims);
+  InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims);
   Tensor* Y = context->Output(0, TensorShape(Y_dims));
   TensorShape output_shape = Y->Shape().Slice(2);
 
