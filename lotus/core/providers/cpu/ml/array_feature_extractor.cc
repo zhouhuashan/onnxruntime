@@ -26,17 +26,19 @@ ONNX_OPERATOR_SCHEMA(ArrayFeatureExtractor)
 
 namespace Lotus {
 namespace ML {
-REGISTER_KERNEL(KernelDefBuilder("ArrayFeatureExtractor")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", std::vector<MLDataType>{
-                                             DataTypeImpl::GetTensorType<float>(),
-                                             DataTypeImpl::GetTensorType<double>(),
-                                             DataTypeImpl::GetTensorType<int64_t>(),
-                                             DataTypeImpl::GetTensorType<int32_t>(),
-                                             DataTypeImpl::GetTensorType<std::string>()}),
-                ArrayFeatureExtractorOp<float>);
+#define REG_ARRAYFEATUREEXTRACTOR(X_TYPE)                                          \
+  REGISTER_KERNEL(KernelDefBuilder("ArrayFeatureExtractor")                        \
+                      .Domain(LotusIR::kMLDomain)                                  \
+                      .SinceVersion(1)                                             \
+                      .Provider(LotusIR::kCpuExecutionProvider)                    \
+                      .TypeConstraint("T", DataTypeImpl::GetTensorType<X_TYPE>()), \
+                  ArrayFeatureExtractorOp<X_TYPE>);
+
+REG_ARRAYFEATUREEXTRACTOR(float);
+REG_ARRAYFEATUREEXTRACTOR(double);
+REG_ARRAYFEATUREEXTRACTOR(int32_t);
+REG_ARRAYFEATUREEXTRACTOR(int64_t);
+REG_ARRAYFEATUREEXTRACTOR(std::string);
 
 template <typename T>
 ArrayFeatureExtractorOp<T>::ArrayFeatureExtractorOp(const OpKernelInfo& info)
