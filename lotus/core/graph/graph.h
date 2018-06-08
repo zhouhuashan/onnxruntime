@@ -416,6 +416,9 @@ class GraphBase {
     return *new_arg;
   }
 
+  // find node arg by name
+  const NodeArg* FindNodeArg(const std::string& name) const;
+
   // Add node to <*this> graph.
   Node* AddNode(const std::string& name,
                 const std::string& op_type,
@@ -436,12 +439,6 @@ class GraphBase {
     Remove node and free it.
     */
   bool RemoveNode(NodeIndex node_index);
-
-  // Convenience method for adding a constant op
-  Node* AddConstantNode(const std::string& name,
-                        const std::string& description,
-                        const std::vector<NodeArg*>& output_args,
-                        const TensorProto& tensor_proto);
 
   // Add control edge into <*this> graph.
   // The <dst_node_index> node does not consume any data output by
@@ -586,15 +583,6 @@ class GraphBase {
   // output parameter inferredShapes.
   Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
                                                   /*out*/ std::vector<TypeProto>& inferred_shapes);
-
-  // find node arg by name
-  const NodeArg* FindNodeArg(const std::string& name) const {
-    auto iter = node_args_.find(name);
-    if (iter != node_args_.end())
-      return iter->second;
-    else
-      return nullptr;
-  }
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_

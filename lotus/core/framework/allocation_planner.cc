@@ -134,6 +134,7 @@ class PlannerImpl {
   }
 
   void Reuse(MLValueIndex reused, MLValueIndex reused_for) {
+    LOTUS_ENFORCE(reused != reused_for);
     // find original buffer underlying ml-value we want to reuse:
     MLValueIndex original = Buffer(reused);
     // record that the new buffer will reuse that original buffer
@@ -297,6 +298,14 @@ class PlannerImpl {
       MLValueIndex index = Index(graph_input->Name());
       ProcessDef(index, graph_input);
       UseCount(index)++;  // Models caller's usage post-inference; ensures it will not be reused.
+    }
+
+    // All initializers should be treated as input
+    for (auto pair : graph.GetAllInitializedTensors()) {
+      const auto& initializer_name = pair.first;
+      MLValueIndex index = Index(initializer_name);
+      ProcessDef(index, graph.FindNodeArg(pair.first));
+      UseCount(initializer_name)++;
     }
 
     for (SequentialExecutionPlan::NodeExecutionPlan& step : execution_plan) {

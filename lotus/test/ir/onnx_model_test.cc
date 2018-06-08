@@ -64,7 +64,7 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
   using ::google::protobuf::io::ZeroCopyInputStream;
   int fd;
   FileOpenRd("../models/test_bvlc_alexnet/model.onnx", &fd);
-  ASSERT_TRUE(fd>0);
+  ASSERT_TRUE(fd > 0);
   std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
   std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
   // Allows protobuf library versions < 3.2.0 to parse messages greater than 64MB.
@@ -81,7 +81,7 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
 
   // Check the graph input/output/value_info should have the same size as specified in the model file.
   EXPECT_EQ(model_proto.graph().value_info_size(), model->MainGraph()->GetValueInfo().size());
-  EXPECT_EQ(model_proto.graph().input_size(), model->MainGraph()->GetInputs().size());
+  EXPECT_EQ(model_proto.graph().input_size(), model->MainGraph()->GetInputs().size() + model->MainGraph()->GetAllInitializedTensors().size());
   EXPECT_EQ(model_proto.graph().output_size(), model->MainGraph()->GetOutputs().size());
   TestResolve(model->MainGraph());
 }

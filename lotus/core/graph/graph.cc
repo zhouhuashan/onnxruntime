@@ -416,7 +416,7 @@ Graph::Graph(GraphProto* graph_proto,
   if (graph_proto != nullptr) {
     // Copy constant nodes _value to name_to_initial_tensor_
     for (auto& node : graph_proto_->node()) {
-      if (node.op_type() == "Constant") {
+      if (node.op_type() == kConstant) {
         const gsl::not_null<TensorProto*> tensor = graph_proto_->add_initializer();
         *tensor = node.attribute(0).t();
         *(tensor->mutable_name()) = node.output(0);
@@ -428,7 +428,7 @@ Graph::Graph(GraphProto* graph_proto,
     graph_mutable_nodes->erase(
         std::remove_if(graph_mutable_nodes->begin(), graph_mutable_nodes->end(),
                        [](NodeProto& p) {
-                         return (p.op_type() == "Constant");
+                         return (p.op_type() == kConstant);
                        }),
         graph_mutable_nodes->end());
 
@@ -1340,6 +1340,16 @@ Node* GraphBase::AddNode(const NodeProto& node_proto,
   return node;
 }
 
+const NodeArg* GraphBase::FindNodeArg(const std::string& name) const {
+  auto iter = node_args_.find(name);
+  if (iter != node_args_.end())
+    return iter->second;
+  else {
+    LOGS_DEFAULT(WARNING) << "Cannot find NodArg for " << name;
+    return nullptr;
+  }
+}
+
 Node* GraphBase::AddNode(const std::string& name,
                          const std::string& op_type,
                          const std::string& description,
@@ -1361,15 +1371,6 @@ Node* GraphBase::AddNode(const std::string& name,
 
 bool GraphBase::RemoveNode(NodeIndex p_index) {
   return ReleaseNode(p_index);
-}
-
-Node* GraphBase::AddConstantNode(const std::string& name,
-                                 const std::string& description,
-                                 const std::vector<NodeArg*>& output_args,
-                                 const TensorProto& tensor) {
-  const gsl::not_null<Node*> node = AddNode(name, kConstant, description, std::vector<NodeArg*>{}, output_args);
-  node->AddAttribute(kConstantValue, tensor);
-  return node;
 }
 
 bool GraphBase::AddControlEdge(NodeIndex src_node_index, NodeIndex dst_node_index) {
@@ -1518,21 +1519,8 @@ Status Graph::SetGraphInputsOutputs() {
     std::unordered_set<std::string> specified_graph_value_info;
     std::unordered_set<std::string> specified_initializers;
 
-    for (auto& graph_input : graph_proto_->input()) {
-      specified_graph_inputs.insert(graph_input.name());
-    }
-
     for (auto& graph_output : graph_proto_->output()) {
-      if (name_to_initial_tensor_.find(graph_output.name()) == name_to_initial_tensor_.end()) {
-        // only check graph outputs not using initializers
-        specified_graph_outputs.insert(graph_output.name());
-      } else {
-        // add graph output node args for initializer to graph_outputs_ directly
-        const NodeArg* out_arg = FindNodeArg(graph_output.name());
-        if (nullptr == out_arg)
-          LOTUS_THROW("Initializer used as output, but not in NodeArg.");
-        graph_outputs.push_back(out_arg);
-      }
+      specified_graph_outputs.insert(graph_output.name());
     }
 
     for (auto& graph_value_info : graph_proto_->value_info()) {
@@ -1541,6 +1529,12 @@ Status Graph::SetGraphInputsOutputs() {
 
     for (auto& initializer : graph_proto_->initializer()) {
       specified_initializers.insert(initializer.name());
+    }
+
+    // only add non-initializer to inputs
+    for (auto& graph_input : graph_proto_->input()) {
+      if (specified_initializers.find(graph_input.name()) == specified_initializers.end())
+        specified_graph_inputs.insert(graph_input.name());
     }
 
     std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
@@ -1552,9 +1546,20 @@ Status Graph::SetGraphInputsOutputs() {
         output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
     }
+    // for any outputs using initializer, add to graph_outputs
+    if (specified_graph_outputs.size() > 0) {
+      for (const auto& name : specified_initializers) {
+        if (specified_graph_outputs.erase(name) >= 1) {
+          graph_outputs.push_back(FindNodeArg(name));
+        }
+      }
+    }
 
     if (!specified_graph_outputs.empty()) {
-      return Status(LOTUS, FAIL, "Some graph outputs do not exist in the graph.");
+      std::string missing_list;
+      for (auto& name : specified_graph_outputs)
+        missing_list += name + " ";
+      return Status(LOTUS, FAIL, "Some graph outputs do not exist in the graph. (" + missing_list + ")");
     }
 
     for (const auto& node : Nodes()) {
@@ -1578,7 +1583,7 @@ Status Graph::SetGraphInputsOutputs() {
             specified_initializers.end() == specified_initializers.find(input_arg->Name())) {
           // The node input is not specified as graph input,
           // and it's not fed by another node neither.
-          return Status(LOTUS, FAIL, "Node input (" + input_arg->Name() + ") should be a graph input.");
+          return Status(LOTUS, FAIL, "Node input (" + input_arg->Name() + ") should be a graph input or initializer.");
         }
 
         if (specified_graph_value_info.erase(input_arg->Name()) >= 1) {
@@ -1611,9 +1616,11 @@ Status Graph::SetGraphInputsOutputs() {
         if (output_name_to_node_arg.end() == output_arg_iter) {
           // This input arg should be fed when running evaluation.
           // it should be a graph input.
-          if (added_input_names.end() == added_input_names.find(input_arg->Name())) {
+          const std::string& name = input_arg->Name();
+          if (added_input_names.end() == added_input_names.find(name)) {
             // This graph input has not been added into <graph_inputs_>.
-            graph_inputs.push_back(input_arg);
+            if (name_to_initial_tensor_.find(name) == name_to_initial_tensor_.end())
+              graph_inputs.push_back(input_arg);
             added_input_names.insert(input_arg->Name());
           }
         } else if (graph_output_args.erase(output_arg_iter->first) >= 1) {

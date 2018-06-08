@@ -236,8 +236,8 @@ bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node,
       error_strs.push_back(error_str);
     }
   }
-  LOGS_DEFAULT(ERROR) << "Creating function kernel since we failed to find/create kernel for op: " << node.OpType()
-                      << " Encountered following errors: " << ToString(error_strs);
+  LOGS_DEFAULT(INFO) << node.OpType() << " kernel is not supported in " << exec_provider
+                     << " Encountered following errors: " << ToString(error_strs);
   return false;
 }
 

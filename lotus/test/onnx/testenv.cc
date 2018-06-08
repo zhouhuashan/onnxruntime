@@ -26,7 +26,7 @@ Lotus::Common::Status SessionFactory::create(std::shared_ptr<Lotus::InferenceSes
 #if USE_CUDA
     Lotus::CUDAExecutionProviderInfo cuda_epi;
     cuda_epi.device_id = 0;
-    status = session_object->RegisterExecutionProvider(std::make_unique<Lotus::CUDAExecutionProvider>(cuda_epi));
+    status = sess->RegisterExecutionProvider(std::make_unique<Lotus::CUDAExecutionProvider>(cuda_epi));
     LOTUS_RETURN_IF_ERROR(status);
 #else
     LOTUS_THROW("This executable is not built with CUDA");

@@ -288,7 +288,7 @@ if (lotus_USE_MLAS AND WIN32)
 endif()
 
 if(lotus_USE_CUDA)
-  set_source_files_properties("${LOTUS_ROOT}/test/onnx/runner.cc" "${LOTUS_ROOT}/test/framework/inference_session_test.cc"
+  set_source_files_properties("${LOTUS_ROOT}/test/onnx/testenv.cc" "${LOTUS_ROOT}/test/framework/inference_session_test.cc"
     PROPERTIES
     COMPILE_FLAGS "-DUSE_CUDA"
   )
