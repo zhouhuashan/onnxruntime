@@ -49,6 +49,7 @@ class SessionState {
   Common::Status GetMLValueIdx(const std::string& name, int* idx) const;
   size_t GetNumMLValues() const;
   int GetMaxMLValueIdx() const;
+  const std::unordered_map<std::string, int>& GetMLValueIdxMap() const;
 
   // initialized tensors
   /**

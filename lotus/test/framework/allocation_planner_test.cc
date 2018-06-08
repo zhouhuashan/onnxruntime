@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <sstream>
 #include "core/framework/session_state.h"
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
@@ -375,6 +376,34 @@ TEST_F(PlannerTest, InPlaceSizeMismatchTest) {
   CheckFreed(0, {});
   CheckFreed(1, {});
   CheckFreed(2, {X3});
+}
+
+// Test operator<< to output details of an allocation & execution plan.
+TEST_F(PlannerTest, PlanOutputTest) {
+  // tensor variables:
+  std::string X1("X1"), X2("X2"), X3("X3"), X4("X4");
+
+  // graph structure:
+  AddNormalNode(X1, X2);   // no in-place operator; X1: input; X2: temporary
+  AddInplaceNode(X2, X3);  // may-in-place operator; X3: temporary
+  AddNormalNode(X3, X4);   // no in-place operator; X4: output
+
+  // simulate shape-inference results:
+  Shape shape1{"M", "N"};
+  auto shape = &shape1.value;
+  SetShape({{X1, shape}, {X2, shape}, {X3, shape}, {X4, shape}});
+
+  CreatePlan();
+
+  try {
+    std::ostringstream output;
+    output << std::make_pair(&plan_, &state_);
+    auto output_size = output.str().size();
+    // Currently, we don't check details of the output, as it may change over time.
+    EXPECT_GT(output_size, 0);
+  } catch (const std::exception& ex) {
+    EXPECT_TRUE(false) << "Exception in producing output: " << ex.what();
+  }
 }
 
 }  // namespace Test

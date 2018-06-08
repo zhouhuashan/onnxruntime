@@ -10,6 +10,72 @@
 
 namespace Lotus {
 
+std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind) {
+  switch (alloc_kind) {
+    case AllocKind::kAllocate:
+      out << "Allocate";
+      break;
+    case AllocKind::kAllocateStatically:
+      out << "AllocateStatically";
+      break;
+    case AllocKind::kPreExisting:
+      out << "PreExisting";
+      break;
+    case AllocKind::kReuse:
+      out << "Reuse";
+      break;
+  }
+  return out;
+}
+
+// Output details of an execution plan:
+std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionPlan*, const SessionState*> planinfo) {
+  const SequentialExecutionPlan& plan = *planinfo.first;
+  const SessionState& session_state = *planinfo.second;
+  const LotusIR::Graph& graph = *session_state.GetGraph();
+  std::unordered_map<int, string> index_to_name;
+
+  out << "Allocation Plan:\n";
+  for (auto& name_index : session_state.GetMLValueIdxMap()) {
+    auto index = name_index.second;
+    index_to_name[index] = name_index.first;
+    out << "(" << index << ") " << name_index.first << " : ";
+    if (0 <= index && index < plan.allocation_plan.size()) {
+      auto& elt_plan = plan.allocation_plan[index];
+      out << elt_plan.alloc_kind;
+      if (elt_plan.alloc_kind == AllocKind::kReuse) out << " " << elt_plan.reused_buffer;
+      auto& loc = elt_plan.location;
+      out << ", " << loc.ToString();
+      if (elt_plan.create_fence) out << ", use fence";
+      out << std::endl;
+    } else {
+      out << "Index out-of-range!" << std::endl;
+    }
+  }
+
+  out << "\nExecution Plan:\n";
+  for (int i = 0; i < plan.execution_plan.size(); ++i) {
+    auto& step = plan.execution_plan[i];
+    auto& node = *graph.GetNode(step.node_index);
+    out << "[" << i << "] ";
+    out << node.OpType() << " (" << node.Name() << ")" << std::endl;
+    if (step.free_from_index <= step.free_to_index) {
+      out << "Free ml-values: ";
+      std::string sep = "";
+      for (int j = step.free_from_index; j <= step.free_to_index; ++j) {
+        auto freed_value_index = plan.to_be_freed[j];
+        auto name_iter = index_to_name.find(freed_value_index);
+        auto name = (name_iter == index_to_name.end()) ? "INVALID INDEX" : name_iter->second;
+        out << sep << "(" << freed_value_index << ") " << name;
+        sep = ", ";
+      }
+      out << std::endl;
+    }
+  }
+
+  return out;
+}
+
 class PlannerImpl {
  private:
   const SessionState* p_session_state_;

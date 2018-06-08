@@ -40,6 +40,8 @@ enum class AllocKind {
   kAllocateStatically = 3,
 };
 
+std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind);
+
 class SessionState;
 
 // SequentialExecutionPlan: This is the data that is produced by a static
@@ -63,9 +65,7 @@ struct SequentialExecutionPlan {
     bool create_fence{false};
 
    public:
-    AllocPlanPerValue() : 
-                          location(CPU, kArenaAllocator)
-                          {}
+    AllocPlanPerValue() : location(CPU, kArenaAllocator) {}
   };
 
   // The following vector is indexed by MLValueIndex
@@ -94,6 +94,9 @@ struct SequentialExecutionPlan {
   // to_be_freed: vector elements represent indices of ml-values to be freed (as described above)
   std::vector<MLValueIndex> to_be_freed;
 };
+
+// Output details of an execution plan:
+std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionPlan*, const SessionState*> planinfo);
 
 // ISequentialPlannerContext abstracts how the planner accesses information (such as inferred shape)
 // to do the planning.
