@@ -1,4 +1,5 @@
 #include "CompareMLValue.h"
+#include "core/inc/op_kernel_author.h"
 #include <cmath>
 
 using namespace Lotus;
@@ -56,6 +57,8 @@ std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const Tensor& 
     return is_result_exactly_match<int64_t>(outvalue, expected_tensor);
   } else if (p1 == DataTypeImpl::GetType<bool>()) {
     return is_result_exactly_match<bool>(outvalue, expected_tensor);
+  } else if (p1 == DataTypeImpl::GetType<MLFloat16>()) {
+    return is_result_exactly_match<MLFloat16>(outvalue, expected_tensor);
   } else {
     return std::make_pair(EXECUTE_RESULT::NOT_SUPPORT, 0);
   }
