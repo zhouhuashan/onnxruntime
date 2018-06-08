@@ -12,7 +12,6 @@ esac
 done
 
 PYTHON_VERSION="py35"
-
 source /usr/local/miniconda3/bin/activate lotus-$PYTHON_VERSION
 if [ $? -ne 0 ]; then
     /usr/local/miniconda3/bin/conda env create \
@@ -39,5 +38,3 @@ else
 fi
 
 source /usr/local/miniconda3/bin/deactivate lotus-$PYTHON_VERSION
-
-exit $?

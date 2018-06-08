@@ -1,5 +1,5 @@
 
-set -e -o
+set -e -o -x
 
 SCRIPT_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 SOURCE_ROOT=$SCRIPT_DIR/../../../../
@@ -19,6 +19,8 @@ x) BUILD_EXTR_PAR=${OPTARG};;
 esac
 done
 
+EXIT_CODE=1
+
 echo "bc=$BUILD_CONFIG bo=$BUILD_OS bd=$BUILD_DEVICE bdir=$BUILD_DIR bex=$BUILD_EXTR_PAR"
 
 IMAGE=$BUILD_OS
@@ -30,7 +32,7 @@ cd $SCRIPT_DIR/$IMAGE
 
 docker build -t lotus-$IMAGE .
 
-set -x
+set +e
 
 if [ $BUILD_DEVICE = "cpu" ]; then
     docker run -h $HOSTNAME \
@@ -51,5 +53,9 @@ else
         /bin/bash $SCRIPT_DIR/run_build.sh \
         -c $BUILD_CONFIG -d $BUILD_DEVICE -x "$BUILD_EXTR_PAR" &
 fi
+wait -n
 
-exit $?
+EXIT_CODE=$?
+
+set -e
+exit $EXIT_CODE
