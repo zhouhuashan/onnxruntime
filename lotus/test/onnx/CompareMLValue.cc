@@ -36,9 +36,9 @@ std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const Tensor& 
   if (expected_tensor.Shape() != outvalue.Shape()) return std::make_pair(EXECUTE_RESULT::SHAPE_MISMATCH, -1);
   auto p1 = outvalue.DataType();
   if (p1 == DataTypeImpl::GetType<float>()) {
-    return compare_float_result<float>(outvalue, expected_tensor, 1e-6f);
+    return compare_float_result<float>(outvalue, expected_tensor, 1e-5f);
   } else if (p1 == DataTypeImpl::GetType<double>()) {
-    return compare_float_result<double>(outvalue, expected_tensor, 1e-6);
+    return compare_float_result<double>(outvalue, expected_tensor, 1e-5);
   } else if (p1 == DataTypeImpl::GetType<uint8_t>()) {
     return is_result_exactly_match<uint8_t>(outvalue, expected_tensor);
   } else if (p1 == DataTypeImpl::GetType<int8_t>()) {

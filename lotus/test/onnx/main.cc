@@ -140,8 +140,8 @@ int main(int argc, char* argv[]) {
   "operator_add_broadcast", "operator_add_size1_broadcast", "operator_add_size1_right_broadcast",
   "operator_add_size1_singleton_broadcast", "operator_addconstant", "operator_addmm", "operator_lstm", "operator_mm",
   "operator_non_float_params", "operator_rnn", "operator_rnn_single_layer", "PReLU_1d", "PReLU_1d_multiparam",
-  "PReLU_2d", "PReLU_2d_multiparam", "PReLU_3d", "PReLU_3d_multiparam", "reduce_l1_default_axes_keepdims_random",
-  "reduce_mean_default_axes_keepdims_example", "reduce_sum_default_axes_keepdims_random", "resnet50", "rnn_seq_length",
+  "PReLU_2d", "PReLU_2d_multiparam", "PReLU_3d", "PReLU_3d_multiparam",
+  "resnet50", "rnn_seq_length",
   "shufflenet", "sin", "sin_example", "tan", "tan_example", "upsample_nearest", "vgg19", "zfnet"};
   for (const std::string s : stat.GetFailedTest()) {
     if (broken_tests.find(s) == broken_tests.end()) return -1;
