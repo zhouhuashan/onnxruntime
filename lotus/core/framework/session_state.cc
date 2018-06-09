@@ -8,8 +8,6 @@ namespace Lotus {
 
 void SessionState::SetGraph(const LotusIR::Graph* graph) {
   p_graph_ = graph;
-  //enable by default
-  enable_mem_pattern_ = true;
 }
 
 const LotusIR::Graph* SessionState::GetGraph() const {

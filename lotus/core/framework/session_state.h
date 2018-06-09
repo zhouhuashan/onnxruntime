@@ -122,7 +122,7 @@ class SessionState {
   const Logging::Logger* logger_;
 
   // switch for enable memory pattern optimization or not.
-  bool enable_mem_pattern_;
+  bool enable_mem_pattern_ = true;
   // lock for the mem_patterns_
   mutable std::mutex mem_patterns_lock_;
   // cache for the generated mem_patterns. key is cauclated based on input shapes.
