@@ -13,7 +13,7 @@
 
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
-
+namespace Lotus {
 using MLConstStringParam = const char*;
 
 class MLOpKernelContext;
@@ -586,3 +586,5 @@ class MLOpKernel : public IMLOpKernel, public T {
 
   using T::Compute;
 };
+
+} // namespace Lotus

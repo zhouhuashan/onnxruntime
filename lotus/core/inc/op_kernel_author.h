@@ -11,6 +11,8 @@
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
 
+namespace Lotus {
+
 // TODO - calling convention
 #if defined(__GNUC__)
 #define ML_API(name) virtual MLStatus name
@@ -437,3 +439,5 @@ class IMLOperatorRegistry {
       MLOpKernelOptions options,
       IMLOpKernelCreateFn op_kernel_factory) const noexcept = 0;
 };
+
+} // namespace Lotus
