@@ -77,7 +77,7 @@ set(lotus_test_framework_src_patterns
 
 if(WIN32)
     list(APPEND lotus_test_framework_src_patterns
-         "${LOTUS_ROOT}/test/platform/windows/logging/*.h"
+         "${LOTUS_ROOT}/test/platform/windows/*.cc"
          "${LOTUS_ROOT}/test/platform/windows/logging/*.cc" )
 endif()
 
