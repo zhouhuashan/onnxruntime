@@ -151,10 +151,10 @@ class PlannerImpl {
   // Find if there exists some input tensor that we can use in-place for output_arg
   bool FindReusableInput(const LotusIR::Node& node, int output_arg_num, MLValueIndex* reusable_input) {
     auto p_output_arg = node.OutputDefs()[output_arg_num];
-    auto p_opkernel = p_session_state_->GetKernel(node.Index());
-    if (nullptr == p_opkernel) return false;
-    const KernelDef& kernel_def = p_opkernel->KernelDef();
-    const std::vector<std::pair<int, int>>& alias_map = kernel_def.Alias();
+    auto p_opkernelDef = p_session_state_->GetKernelDef(node.Index());
+
+    if (nullptr == p_opkernelDef) return false;
+    const std::vector<std::pair<int, int>>& alias_map = p_opkernelDef->Alias();
     auto& input_args = node.InputDefs();
     for (auto pair : alias_map) {
       if (pair.second == output_arg_num) {
@@ -169,7 +169,7 @@ class PlannerImpl {
       }
     }
 
-    const std::vector<std::pair<int, int>>& inplace_map = kernel_def.MayInplace();
+    const std::vector<std::pair<int, int>>& inplace_map = p_opkernelDef->MayInplace();
     for (auto pair : inplace_map) {
       if (pair.second == output_arg_num) {
         if ((0 <= pair.first) && (pair.first < input_args.size())) {
@@ -316,9 +316,10 @@ class PlannerImpl {
       }
       // Identify where each output of this node should be allocated.
       // This is determined by the opkernel bound to the node.
-      auto* p_kernel = p_session_state_->GetKernel(step.node_index);
-      auto& default_allocator_info = p_kernel->Allocator(kMemTypeDefault);
-      auto& mem_type_allocated_args = p_kernel->KernelDef().MemoryType();
+      auto p_kernelDef = p_session_state_->GetKernelDef(step.node_index);
+      LOTUS_ENFORCE(nullptr != p_kernelDef);
+      auto& default_allocator_info = p_session_state_->GetAllocatorInfo(step.node_index, kMemTypeDefault);
+      auto& mem_type_allocated_args = p_kernelDef->MemoryType();
       auto& outputs = pnode->OutputDefs();
       auto num_outputs = outputs.size();
       for (int i = 0; i < num_outputs; ++i) {
@@ -333,13 +334,13 @@ class PlannerImpl {
             if (memory_type_iter == mem_type_allocated_args.end()) {
               AllocPlan(index).location = default_allocator_info;
             } else {
-              AllocPlan(index).location = p_kernel->Allocator(memory_type_iter->second);
+              AllocPlan(index).location = p_session_state_->GetAllocatorInfo(step.node_index, memory_type_iter->second);
             }
           }
         }
       }
       // if sync is needed, mark allocation plan as create_fence=true
-      if (p_kernel->KernelDef().ExecQueueId() != 0) {
+      if (p_kernelDef->ExecQueueId() != 0) {
         pnode->ForEachDef([this](const LotusIR::NodeArg* arg, bool /*is_input*/) {
           MLValueIndex index = Index(arg->Name());
           AllocPlan(index).create_fence = true;

@@ -26,6 +26,38 @@ const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
   return session_kernels_[node_id].get();
 }
 
+const KernelDef* SessionState::GetKernelDef(LotusIR::NodeIndex node_id) const {
+  auto node = p_graph_->GetNode(node_id);
+  LOTUS_ENFORCE(nullptr != node);
+
+  const KernelRegistry::KernelCreateInfo* kernel_create_info = nullptr;
+  if (custom_registry_manager_.SearchKernelRegistry(*node, &kernel_create_info).IsOK()) {
+	  return kernel_create_info->kernel_def.get();
+  }
+
+  if (KernelRegistry::Instance().SearchKernelRegistry(*node, &kernel_create_info).IsOK()) {
+    return kernel_create_info->kernel_def.get();
+  }
+  return nullptr;
+}
+
+const AllocatorInfo& SessionState::GetAllocatorInfo(LotusIR::NodeIndex node_id, MemType mem_type) const {
+  auto node = p_graph_->GetNode(node_id);
+  LOTUS_ENFORCE(nullptr != node);
+  auto iter = exec_provider_set_.provider_idx_map.find(node->GetExecutionProviderType());
+  LOTUS_ENFORCE(exec_provider_set_.provider_idx_map.end() != iter);
+  auto allocator = exec_provider_set_.exec_providers[iter->second]->GetAllocatorMap().at(mem_type);
+  LOTUS_ENFORCE(nullptr != allocator);
+  return allocator->Info();
+}
+
+const CustomRegistryManager& SessionState::GetCustomRegistryManager() const{
+	return custom_registry_manager_;
+}
+CustomRegistryManager& SessionState::GetCustomRegistryManager() {
+	return custom_registry_manager_;
+}
+
 void SessionState::SetKernelVectorSize(size_t size) {
   if (!session_kernels_.empty()) {
     return;

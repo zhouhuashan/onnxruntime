@@ -3,12 +3,15 @@
 //  Copyright (c) Microsoft Corporation. All rights reserved.
 //
 //-----------------------------------------------------------------------------
-#include "core/framework/op_kernel.h"
-#include "core/framework/execution_frame.h"
-#include "op_kernel_abi_wrapper.h"
-#include "core/inc/op_kernel_author_helper.h"
+
 #include <limits>
 #include <assert.h>
+
+#include "core/framework/customregistry.h"
+#include "core/framework/execution_frame.h"
+#include "core/framework/op_kernel_abi_wrapper.h"
+#include "core/framework/op_kernel.h"
+#include "core/inc/op_kernel_author_helper.h"
 
 // Unreference parameter warning.  TODO - disable once complete
 #pragma warning(disable : 4100)

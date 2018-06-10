@@ -215,6 +215,21 @@ using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 class KernelRegistry {
  public:
+  struct KernelCreateInfo {
+    unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
+    KernelCreateFn kernel_create_func;
+    Status status;
+
+    KernelCreateInfo(unique_ptr<KernelDef> definition,
+                     KernelCreateFn create_func)
+        : kernel_def(std::move(definition)),
+          kernel_create_func(create_func) {}
+
+    KernelCreateInfo(KernelCreateInfo&& other)
+        : kernel_def(std::move(other.kernel_def)),
+          kernel_create_func(other.kernel_create_func) {}
+  };
+
   // Register a kernel with kernel definition and function to create the kernel.
   Status Register(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
@@ -228,6 +243,9 @@ class KernelRegistry {
   Status CreateKernel(const LotusIR::Node& node,
                       const IExecutionProvider* execution_provider,
                       std::unique_ptr<OpKernel>* op_kernel) const;
+
+  Status SearchKernelRegistry(const LotusIR::Node& node,
+                              /*out*/ const KernelCreateInfo** kernel_create_info) const;
 
   // check if a execution provider can create kernel for a node
   bool CanExecutionProviderCreateKernel(
@@ -244,21 +262,6 @@ class KernelRegistry {
 
  private:
   friend class InferenceSession;
-
-  struct KernelCreateInfo {
-    unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
-    KernelCreateFn kernel_create_func;
-    Status status;
-
-    KernelCreateInfo(unique_ptr<KernelDef> definition,
-                     KernelCreateFn create_func)
-        : kernel_def(std::move(definition)),
-          kernel_create_func(create_func) {}
-
-    KernelCreateInfo(KernelCreateInfo&& other)
-        : kernel_def(std::move(other.kernel_def)),
-          kernel_create_func(other.kernel_create_func) {}
-  };
 
   // Check if the node's input/outpuData/attributes are compatible with this
   // kernel_def, If so, the kernel defined by the kernel_def is used to

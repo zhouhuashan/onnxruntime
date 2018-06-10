@@ -5,132 +5,24 @@
 #include <unordered_set>
 
 #include "core/common/logging/logging.h"
+#include "core/framework/allocatormgr.h"
+#include "core/framework/customregistry.h"
 #include "core/framework/executor.h"
+#include "core/framework/execution_frame.h"
+#include "core/framework/IOBinding.h"
 #include "core/framework/kernel_def_builder.h"
-#include "core/framework/op_kernel.h"
+#include "core/framework/op_kernel_abi_wrapper.h"
 #include "core/framework/session_state.h"
+#include "core/framework/tensorprotoutils.h"
 #include "core/graph/graph.h"
 #include "core/graph/graph_transformer.h"
 #include "core/graph/model.h"
-//#include "core/platform/env.h"
-//#include "core/lib/threadpool.h"
-#include "core/framework/execution_frame.h"
-#include "core/framework/tensorprotoutils.h"
 #include "core/graph/tensorutils.h"
 #include "core/platform/notification.h"
-#include "core/framework/allocatormgr.h"
-#include "core/graph/graph_transformer.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
-#include "core/framework/op_kernel_abi_wrapper.h"
-#include "core/graph/schema_registry.h"
-#include "core/framework/IOBinding.h"
+
 
 namespace Lotus {
-
-class CustomRegistry::Impl : public KernelRegistry, public LotusIR::LotusOpSchemaRegistry {
- public:
-  Impl(bool create_func_kernel) : KernelRegistry(create_func_kernel) {
-  }
-
-  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator) {
-    return Register(kernel_def_builder, kernel_creator);
-  }
-
-  Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version) {
-    //todo: handle domain version
-    LOTUS_RETURN_IF_ERROR(AddDomainToVersion(domain, version));
-    for (int i = 0; i < schemas.size(); i++)
-      LOTUS_RETURN_IF_ERROR(RegisterOpSchema(schemas[i]));
-    return Status::OK();
-  }
-};
-
-class CustomRegistryManager : public LotusIR::ILotusOpSchemaCollection {
- public:
-  void RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry) {
-    custom_registries.push_front(custom_registry);
-  }
-
-  Status CreateKernel(const LotusIR::Node& node,
-                      const IExecutionProvider* execution_provider,
-                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
-    if (custom_registries.empty()) {
-      return Status(LOTUS, FAIL, "Kernel not found.");
-    }
-
-    Status status;
-    for (auto& registry : custom_registries) {
-      status = registry.get()->GetImpl()->CreateKernel(node, execution_provider, op_kernel);
-      if (status.IsOK()) {
-        return status;
-      }
-    }
-
-    return status;
-  }
-
-  bool HasSchema() const {
-    for (auto& registry : custom_registries) {
-      if (!registry.get()->GetImpl()->get_all_schemas().empty()) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  LotusIR::Domain_To_Version_Map DomainToVersionMap() const override {
-    LotusIR::Domain_To_Version_Map domain_version_map;
-
-    // Build the map using each of the registries
-    for (auto& registry : custom_registries) {
-      for (auto& local_domain : registry.get()->GetImpl()->DomainVersionMap()) {
-        auto iter = domain_version_map.find(local_domain.first);
-
-        // If the map doesn't yet contain this domain, insert it with this registry's value.
-        // Otherwise, merge the existing range in the map.
-        if (iter == domain_version_map.end()) {
-          domain_version_map.insert(local_domain);
-        } else {
-          // TODO - how should the minimum be treated?  Same issue in Model::AddImportOpSets.
-          iter->second.second = std::max(iter->second.second, local_domain.second.second);
-        }
-      }
-    }
-
-    return domain_version_map;
-  }
-
-  const ONNX_NAMESPACE::OpSchema* Schema(
-      const std::string& key,
-      const std::string& domain = LotusIR::kOnnxDomain) const override {
-    for (auto& registry : custom_registries) {
-      auto schema = registry.get()->GetImpl()->Schema(key, domain);
-      if (schema != nullptr) {
-        return schema;
-      }
-    }
-
-    return nullptr;
-  }
-
-  const ONNX_NAMESPACE::OpSchema* Schema(
-      const std::string& key,
-      const int maxInclusiveVersion,
-      const std::string& domain = LotusIR::kOnnxDomain) const override {
-    for (auto& registry : custom_registries) {
-      auto schema = registry.get()->GetImpl()->Schema(key, maxInclusiveVersion, domain);
-      if (schema != nullptr) {
-        return schema;
-      }
-    }
-
-    return nullptr;
-  }
-
- private:
-  std::list<std::shared_ptr<CustomRegistry>> custom_registries;
-};
 
 class InferenceSession::Impl {
  public:
@@ -168,12 +60,12 @@ class InferenceSession::Impl {
       return Status(LOTUS, FAIL, "Received nullptr for custom registry");
     }
 
-    custom_registry_manager_.RegisterCustomRegistry(custom_registry);
+    session_state_.GetCustomRegistryManager().RegisterCustomRegistry(custom_registry);
     return Status::OK();
   }
 
   bool HaslocalSchema() const {
-    return custom_registry_manager_.HasSchema();
+    return session_state_.GetCustomRegistryManager().HasSchema();
   }
 
   Common::Status Load(const std::string& model_uri) {
@@ -186,7 +78,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, p_tmp_model, HaslocalSchema() ? &session_state_.GetCustomRegistryManager() : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -214,7 +106,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &session_state_.GetCustomRegistryManager() : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -248,7 +140,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_registry_manager_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &session_state_.GetCustomRegistryManager() : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -902,7 +794,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
-    Common::Status status = custom_registry_manager_.CreateKernel(node, exec_provider, p_op_kernel);
+    Common::Status status = session_state_.GetCustomRegistryManager().CreateKernel(node, exec_provider, p_op_kernel);
 
     if (status.IsOK()) {
       return status;
@@ -971,26 +863,7 @@ class InferenceSession::Impl {
   bool is_inited_ = false;            // GUARDED_BY(session_mutex_)
 
   std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
-
-  CustomRegistryManager custom_registry_manager_;
 };  // namespace Lotus
-
-//
-// CustomRegistry
-//
-CustomRegistry::CustomRegistry(bool create_func_kernel)
-    : impl_(std::make_unique<Impl>(create_func_kernel)) {
-}
-
-CustomRegistry::~CustomRegistry() = default;
-
-Common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, CustomKernelCreateFn kernel_creator) {
-  return impl_->RegisterCustomKernel(kernel_def_builder, kernel_creator);
-}
-
-Common::Status CustomRegistry::RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version) {
-  return impl_->RegisterCustomOpSet(schemas, domain, version);
-}
 
 //
 // InferenceSession

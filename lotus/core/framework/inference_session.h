@@ -4,8 +4,9 @@
 #include "core/common/status.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/ml_value.h"
-#include "core/platform/types.h"
+#include "core/graph/schema_registry.h"
 #include "core/inc/op_kernel_author.h"
+#include "core/platform/types.h"
 
 namespace LotusIR {  // forward declarations
 class Model;
@@ -24,46 +25,7 @@ class IOBinding;
 
 class OpKernelInfo;
 class OpKernel;
-
-// TODO - Move KernelCreateFn somewhere common to avoid the duplicate function.
-using CustomKernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
-
-class CustomRegistry {
- public:
-  CustomRegistry(bool create_func_kernel);
-
-  ~CustomRegistry();
-
-  /**
-    * Register a kernel definition together with kernel factory method to this session.
-    * If any conflict happened between registered kernel def and built-in kernel def,
-    * registered kernel will have higher priority.
-    * Call this before invoking Initialize().
-    * @return OK if success.
-    */
-  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, CustomKernelCreateFn kernel_creator);
-
-  /**
-  * Register a onnx opset to this session.
-  * If any conflict happened between registered schema and built-in schema,
-  * registered schema will have higher priority.
-  * Call this before invoking Load().
-  * @return OK if success.
-  */
-  Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version);
-
-  class Impl;
-
-  Impl* GetImpl() {
-    return impl_.get();
-  }
-
- private:
-  CustomRegistry() = delete;
-
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
-  std::unique_ptr<Impl> impl_;
-};
+class CustomRegistry;
 
 enum class AllocationPlannerType {
   SIMPLE_SEQUENTIAL_PLANNER,

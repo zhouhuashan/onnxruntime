@@ -172,51 +172,58 @@ static std::string ToString(const std::vector<std::string>& error_strs) {
 Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
                                     const IExecutionProvider* execution_provider,
                                     /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
+  const KernelCreateInfo* kernel_create_info = nullptr;
+  LOTUS_RETURN_IF_ERROR(SearchKernelRegistry(node, &kernel_create_info));
+  
+  OpKernelInfo kernel_info(node, *kernel_create_info->kernel_def, execution_provider);
+  op_kernel->reset(kernel_create_info->kernel_create_func(kernel_info));
+  return Status::OK();
+}
+
+Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
+                                            /*out*/ const KernelCreateInfo** kernel_create_info) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     // Check if the kernel is ill-formed.
     if (!i->second.status.IsOK()) {
-      LOGS_DEFAULT(ERROR) << "Failed to create kernel for op: " << node.OpType()
+      LOGS_DEFAULT(ERROR) << "Failed to search kernel def for op: " << node.OpType()
                           << " since it was illformed during registration";
       return i->second.status;
     }
     std::string error_str;
     if (VerifyKernelDef(node, *i->second.kernel_def, error_str)) {
-      OpKernelInfo kernel_info(node, *i->second.kernel_def, execution_provider);
-      op_kernel->reset(i->second.kernel_create_func(kernel_info));
+      *kernel_create_info = &i->second;
       return Status::OK();
     } else {
       error_strs.push_back(error_str);
     }
   }
 
-  /*
-  In the case of CPU execution provider there is no value in creating a function kernel since the
-  CPU exec provider is going to simply return a fail status any way. This is hardly helpful for debugging issues where
-  a kernel cannot be found due to user errors for e.g if the node was created incorrectly by the user.
-  */
-  if (execution_provider->Type() == LotusIR::kCpuExecutionProvider) {
+  //In the case of CPU execution provider there is no value in creating a function kernel since the
+  //CPU exec provider is going to simply return a fail status any way. This is hardly helpful for debugging issues where
+  //a kernel cannot be found due to user errors for e.g if the node was created incorrectly by the user.
+  if (node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider) {
     std::ostringstream ostr;
-    ostr << "Failed to find/create kernel for op: " << node.OpType()
+    ostr << "Failed to find kernel def for op: " << node.OpType()
+         << " on CPU execution provider"
          << " Encountered following errors: " << ToString(error_strs);
     return Status(LOTUS, FAIL, ostr.str());
   }
 
-  LOGS_DEFAULT(INFO) << "Creating function kernel for op: " << node.OpType()
-                     << " since we couldn't find/create kernel"
+  LOGS_DEFAULT(INFO) << "Finding function kernel def for op: " << node.OpType()
+                     << " since we couldn't find kernel def"
                      << " Encountered following errors: " << ToString(error_strs);
 
   if (create_func_kernel_) {
     // The node is assigned to an execution provider and no kernel registered
     // for the operator referred by the node. Create FunctionKernel to delegate
     // the node run to corresponding execution provider.
-    auto& kernelCreatorInfo = kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second;
-    OpKernelInfo kernel_info(node, *kernelCreatorInfo.kernel_def, execution_provider);
-    op_kernel->reset(kernelCreatorInfo.kernel_create_func(kernel_info));
+    *kernel_create_info = &(kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second);
     return Status::OK();
-  } else
-    return Status(LOTUS, FAIL, "Kernel not found.");
+  } else {
+    return Status(LOTUS, FAIL, "KernelDef not found.");
+  }
 }
 
 bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node, LotusIR::ProviderType exec_provider) const {

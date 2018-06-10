@@ -7,10 +7,11 @@
 
 #include "core/common/logging/logging.h"
 #include "core/framework/allocation_planner.h"
+#include "core/framework/customregistry.h"
 #include "core/framework/execution_provider.h"
+#include "core/framework/mem_pattern.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
-#include "core/framework/mem_pattern.h"
 
 namespace Lotus {
 // SessionState should be modified by the inference session class only.
@@ -29,12 +30,16 @@ class SessionState {
 
   // kernels
   void SetKernelVectorSize(size_t size);
+  // Get kernel for specified node.
+  // It should called right before graph execution only.
   const OpKernel* GetKernel(LotusIR::NodeIndex node_id) const;
+  const KernelDef* GetKernelDef(LotusIR::NodeIndex node_id) const;
+  const AllocatorInfo& GetAllocatorInfo(LotusIR::NodeIndex node_id, MemType mem_type) const;
   void AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel);
   const std::vector<unique_ptr<OpKernel>>& GetKernelVector() const;
 
   // exec providers
-  IExecutionProvider* GetExecutionProvider(const std::string& provider_id) const;
+  IExecutionProvider* GetExecutionProvider(LotusIR::ProviderType provider_id) const;
 
   IExecutionProvider* GetExecutionProvider(const AllocatorInfo& allocator_info) const;
 
@@ -99,6 +104,9 @@ class SessionState {
   */
   bool GetEnableMemoryPattern() const;
 
+  const CustomRegistryManager& GetCustomRegistryManager() const;
+  CustomRegistryManager& GetCustomRegistryManager();
+
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
@@ -128,6 +136,7 @@ class SessionState {
   // cache for the generated mem_patterns. key is cauclated based on input shapes.
   std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
+  CustomRegistryManager custom_registry_manager_;
   // TODO add more
 };
 }  // namespace Lotus
