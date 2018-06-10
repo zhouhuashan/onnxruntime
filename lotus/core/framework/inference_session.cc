@@ -21,7 +21,6 @@
 #include "core/platform/notification.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 
-
 namespace Lotus {
 
 class InferenceSession::Impl {
@@ -198,8 +197,8 @@ class InferenceSession::Impl {
         return Common::Status::OK();
       }
 
-      // Register default CPUExecutionProvider if user didn't provide any through the Register() calls
       if (!session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)) {
+        // Register default CPUExecutionProvider if user didn't provide it through the Register() calls
         LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
         CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
         session_state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider,
@@ -211,7 +210,7 @@ class InferenceSession::Impl {
 
       LOTUS_RETURN_IF_ERROR(TransformGraph(p_graph));
       LOTUS_RETURN_IF_ERROR(p_graph->Resolve());
-      LOTUS_RETURN_IF_ERROR(SaveKernelsAndMLValueNameIndexMapping(*p_graph));
+      LOTUS_RETURN_IF_ERROR(SaveMLValueNameIndexMapping(*p_graph));
 
       // get execution plan
       if (session_options_.enable_sequential_execution) {
@@ -230,8 +229,10 @@ class InferenceSession::Impl {
       }
 
       LOTUS_RETURN_IF_ERROR(SaveInitializedTensors(*p_graph));
-
       p_graph->CleanAllInitializedTensors();  // remove weights from the graph now to save memory
+
+      LOTUS_RETURN_IF_ERROR(SaveKernels(*p_graph));
+
       is_inited_ = true;
 
       LOGS(*session_logger_, INFO) << "Session successfully initialized.";
@@ -720,13 +721,49 @@ class InferenceSession::Impl {
   }
 
   // This function does the following:
-  // - constructs the kernels and saves them in the session state
   // - builds the MLValue name->idx mapping and saves it in the session state
-  // The reason we're doing 2 operations in the same function is so that we iterate
-  // through all the nodes only once.
-  Common::Status SaveKernelsAndMLValueNameIndexMapping(const LotusIR::Graph& graph) {
-    LOGS(*session_logger_, INFO) << "Saving kernels and MLValue mappings.";
+  Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph) {
+    LOGS(*session_logger_, INFO) << "Saving MLValue mappings.";
     int curr_idx = 0;
+    for (auto& node : graph.Nodes()) {
+      // ignore source and sink nodes
+      if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {
+        continue;
+      }
+
+      // build the MLValue->index map
+      for (gsl::not_null<const LotusIR::NodeArg*> input_def : node.InputDefs()) {
+        VLOGS(*session_logger_, 1)
+            << "Adding input argument with name: " << input_def->Name() << " to MLValueIndex with index: " << curr_idx;
+        if (input_def->Exists()) {
+          session_state_.AddMLValueNameIdx(input_def->Name(), curr_idx++);
+        }
+      }
+
+      for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
+        VLOGS(*session_logger_, 1)
+            << "Adding output argument with name: " << output_def->Name() << " to MLValueIndex with index: " << curr_idx;
+        if (output_def->Exists()) {
+          session_state_.AddMLValueNameIdx(output_def->Name(), curr_idx++);
+        }
+      }
+    }
+
+    // allocate MLValue for graph outputs when coming from initializers
+    for (const auto& output : graph.GetOutputs()) {
+      if (output->Exists()) {
+        session_state_.AddMLValueNameIdx(output->Name(), curr_idx++);
+      }
+    }
+
+    LOGS(*session_logger_, INFO) << "Done saving MLValue mappings.";
+    return Status::OK();
+  }
+
+  // This function does the following:
+  // - constructs the kernels and saves them in the session state
+  Common::Status SaveKernels(const LotusIR::Graph& graph) {
+    LOGS(*session_logger_, INFO) << "Saving kernels.";
     session_state_.SetKernelVectorSize(graph.NumberOfNodes());
     for (auto& node : graph.Nodes()) {
       // ignore source and sink nodes
@@ -738,40 +775,9 @@ class InferenceSession::Impl {
       std::unique_ptr<OpKernel> p_op_kernel;
       LOTUS_RETURN_IF_ERROR(CreateOpKernel(node, &p_op_kernel));
       session_state_.AddKernel(node.Index(), std::move(p_op_kernel));
-
-      // build the MLValue->index map
-      int unused_var = -1;
-      for (gsl::not_null<const LotusIR::NodeArg*> input_def : node.InputDefs()) {
-        if (session_state_.GetMLValueIdx(input_def->Name(), &unused_var).IsOK()) {
-          continue;
-        }
-        VLOGS(*session_logger_, 1)
-            << "Adding input argument with name: " << input_def->Name() << " to MLValueIndex with index: " << curr_idx;
-        if (!input_def->Name().empty())
-          session_state_.AddMLValueNameIdx(input_def->Name(), curr_idx++);
-      }
-
-      for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
-        if (session_state_.GetMLValueIdx(output_def->Name(), &unused_var).IsOK()) {
-          continue;
-        }
-        VLOGS(*session_logger_, 1)
-            << "Adding output argument with name: " << output_def->Name() << " to MLValueIndex with index: " << curr_idx;
-        if (!output_def->Name().empty())
-          session_state_.AddMLValueNameIdx(output_def->Name(), curr_idx++);
-      }
     }
 
-    // allocate MLValue for graph outputs when coming from initializers
-    for (const auto& output : graph.GetOutputs()) {
-      int unused_var = -1;
-      if (session_state_.GetMLValueIdx(output->Name(), &unused_var).IsOK()) {
-        continue;
-      }
-      session_state_.AddMLValueNameIdx(output->Name(), curr_idx++);
-    }
-
-    LOGS(*session_logger_, INFO) << "Done saving kernels and MLValue mappings.";
+    LOGS(*session_logger_, INFO) << "Done saving kernels.";
     return Status::OK();
   }
 
