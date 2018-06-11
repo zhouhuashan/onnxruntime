@@ -189,7 +189,7 @@ const Logging::Logger& SessionState::Logger() const {
   return *logger;
 }
 
-int64_t CalculateMemoryPatternsKey(const std::vector<TensorShape>& shapes) {
+static int64_t CalculateMemoryPatternsKey(const std::vector<TensorShape>& shapes) {
   int64_t key = 0;
   for (auto& shape : shapes) {
     for (auto dim : shape.GetDims())
@@ -208,14 +208,16 @@ const MemoryPatternGroup* SessionState::GetMemoryPatternGroup(const std::vector<
     return it->second.get();
 }
 
-Status SessionState::SetMemoryPatternGroup(const std::vector<TensorShape>& input_shape, std::unique_ptr<MemoryPatternGroup> mem_patterns) {
-  std::lock_guard<std::mutex> lock(mem_patterns_lock_);
+Status SessionState::UpdateMemoryPatternGroupCache(const std::vector<TensorShape>& input_shape,
+                                                   std::unique_ptr<MemoryPatternGroup> mem_patterns) const {
   int64_t key = CalculateMemoryPatternsKey(input_shape);
+
+  std::lock_guard<std::mutex> lock(mem_patterns_lock_);
   auto it = mem_patterns_.find(key);
-  if (it != mem_patterns_.end()) {
-    return Status::OK();
+  if (it == mem_patterns_.end()) {
+    mem_patterns_[key] = std::move(mem_patterns);
   }
-  mem_patterns_[key] = std::move(mem_patterns);
+
   return Status::OK();
 }
 

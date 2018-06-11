@@ -107,7 +107,7 @@ class SequentialExecutor : public Executor {
     if (root_frame_.HasPlan()) {
       std::vector<TensorShape> input_shapes;
       bool all_tensors = true;
-      for (auto it = feeds.begin(); it != feeds.end(); it++) {
+      for (auto it = feeds.begin(), end = feeds.end(); it != end; it++) {
         if (!(it->second.IsTensor())) {
           all_tensors = false;
           break;
@@ -119,7 +119,7 @@ class SequentialExecutor : public Executor {
       if (all_tensors) {
         auto mem_patterns = std::make_unique<MemoryPatternGroup>();
         LOTUS_RETURN_IF_ERROR(root_frame_.GeneratePatterns(mem_patterns.get()));
-        const_cast<SessionState&>(session_state_).SetMemoryPatternGroup(input_shapes, std::move(mem_patterns));
+        LOTUS_RETURN_IF_ERROR(session_state_.UpdateMemoryPatternGroupCache(input_shapes, std::move(mem_patterns)));
       }
     }
 

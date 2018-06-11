@@ -90,9 +90,11 @@ class SessionState {
   const MemoryPatternGroup* GetMemoryPatternGroup(const std::vector<TensorShape>& input_shapes) const;
 
   /**
-  Set generated memory pattern with a given input shapes
+  Set generated memory pattern with a given input shapes. 
+  Const as it's an internal cache update only.
   */
-  Status SetMemoryPatternGroup(const std::vector<TensorShape>& input_shape, std::unique_ptr<MemoryPatternGroup> mem_patterns);
+  Status UpdateMemoryPatternGroupCache(const std::vector<TensorShape>& input_shape,
+                                       std::unique_ptr<MemoryPatternGroup> mem_patterns) const;
 
   /**
   Set enable memory pattern flag
@@ -133,8 +135,8 @@ class SessionState {
   bool enable_mem_pattern_ = true;
   // lock for the mem_patterns_
   mutable std::mutex mem_patterns_lock_;
-  // cache for the generated mem_patterns. key is cauclated based on input shapes.
-  std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
+  // cache for the generated mem_patterns. key is calculated based on input shapes.
+  mutable std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
   CustomRegistryManager custom_registry_manager_;
   // TODO add more

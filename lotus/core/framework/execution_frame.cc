@@ -20,7 +20,7 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
       session_state.GetExecutionPlan()) {
     std::vector<TensorShape> input_shapes;
     bool all_tensors = true;
-    for (auto it = feeds.begin(); it != feeds.end(); it++) {
+    for (auto it = feeds.begin(), end = feeds.end(); it != end; it++) {
       if (!(it->second.IsTensor())) {
         all_tensors = false;
         break;
@@ -104,12 +104,10 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
         // if the block is not correct, log messsage then fall back to default behavior
         if (it != buffers_.end() && block->size_ == size) {
           void* buffer = it->second.get();
-          AllocateTensorWithPreAllocateBufferHelper(p_mlvalue,
-                                                    static_cast<void*>(static_cast<char*>(buffer) + block->offset_),
-                                                    element_type,
-                                                    location,
-                                                    shape);
-          return Status::OK();
+          auto status = AllocateTensorWithPreAllocateBufferHelper(
+              p_mlvalue, static_cast<void*>(static_cast<char*>(buffer) + block->offset_),
+              element_type, location, shape);
+          return status;
         } else if (block->size_ != size) {
           LOGS_DEFAULT(WARNING) << "For mlvalue with index: " << mlvalue_index << ", block in memory pattern size is: "
                                 << block->size_ << " but the actually size is: " << size << ", fall back to default allocation behavior";
@@ -145,7 +143,10 @@ void ExecutionFrame::TraceAllocate(int mlvalue_idx, size_t size) {
   // don't trace the output tensors.
   if (planner_ &&
       std::find(output_indices_.begin(), output_indices_.end(), mlvalue_idx) == output_indices_.end()) {
-    planner_->TraceAllocation(mlvalue_idx, size);
+    auto status = planner_->TraceAllocation(mlvalue_idx, size);
+    if (!status.IsOK())
+      LOGS(session_state_.Logger(), WARNING) << "TraceAllocation for mlvalue_idx=" << mlvalue_idx << " size=" << size
+                                             << " failed: " << status.ErrorMessage();
   }
 }
 
@@ -306,7 +307,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   }
 
   // 3. handle feed in values
-  for (auto it = feeds.begin(); it != feeds.end(); it++) {
+  for (auto it = feeds.begin(), end = feeds.end(); it != end; it++) {
     int mlvalue_idx;
     Common::Status status = session_state_.GetMLValueIdx(it->first, &mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
@@ -384,8 +385,13 @@ void ExecutionFrame::TraceFree(int mlvalue_idx) {
       // tensors
       auto ml_data_type = static_cast<const TensorTypeBase*>(ml_type)->GetElementType();
       // don't trace string tensors
-      if (ml_data_type != DataTypeImpl::GetType<std::string>())
-        planner_->TraceFree(mlvalue_idx);
+      if (ml_data_type != DataTypeImpl::GetType<std::string>()) {
+        auto status = planner_->TraceFree(mlvalue_idx);
+        if (!status.IsOK()) {
+          LOGS(session_state_.Logger(), WARNING) << "TraceFree for mlvalue_idx=" << mlvalue_idx
+                                                 << " failed: " << status.ErrorMessage();
+        }
+      }
     }
   }
 }

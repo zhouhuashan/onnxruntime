@@ -54,7 +54,7 @@ struct SymbolHelper {
   }
 
   void Lookup(std::string &string, const ULONG_PTR address) {
-    char buffer[2048];
+    char buffer[2048] = {0};
     Symbol symbol;
     if (SymFromAddr(GetCurrentProcess(), address, 0, &symbol) == false) {
       _snprintf_s(buffer, _TRUNCATE, "0x%08IX (Unknown symbol)", address);
@@ -80,7 +80,7 @@ struct SymbolHelper {
       MaxNameLen = _countof(buffer);
     }
 
-    char buffer[1024];
+    char buffer[1024] = {0};
   };
 
   struct Line : IMAGEHLP_LINE {

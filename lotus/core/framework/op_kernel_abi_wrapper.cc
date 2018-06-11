@@ -1250,7 +1250,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
     auto inference_function_ctx = op_kernel->shape_inference_function_context;
 
     // TODO - handle default attributes, shape inference, and options
-    custom_registry_->RegisterCustomKernel(builder,
+    auto status = custom_registry_->RegisterCustomKernel(builder,
                                            [op_kernel_factory,
                                             options,
                                             requires_input_shapes_at_creation,
@@ -1266,7 +1266,8 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
                                                  inference_function_ctx);
                                            });
 
-    return MLStatus::OK;
+    LOGS_DEFAULT(ERROR) << "Error registering custom kernel: " << status.ErrorMessage();
+    return status.IsOK() ? MLStatus::OK : MLStatus::FAIL;
   } catch (const MLStatusException& ex) {
     return ex.GetStatus();
   } catch (...) {

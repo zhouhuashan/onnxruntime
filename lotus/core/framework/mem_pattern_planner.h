@@ -9,7 +9,7 @@ namespace Lotus {
 // future request if they have the same input shape.
 class MemPatternPlanner {
  public:
-  MemPatternPlanner()  = default;
+  MemPatternPlanner() = default;
 
   void TraceAllocation(int ml_value_idx, size_t size) {
     if (size == 0) {
@@ -56,7 +56,7 @@ class MemPatternPlanner {
     if (!out)
       return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT);
     out->peak_size_ = buffer_size;
-    for (auto & alloc : allocs_) {
+    for (auto& alloc : allocs_) {
       out->patterns_[alloc.index_] = alloc.block_;
     }
 
@@ -68,7 +68,7 @@ class MemPatternPlanner {
     int index_{-1};
     MemoryBlock block_;
 
-    MLValueAllocationBlock()  = default;
+    MLValueAllocationBlock() = default;
     MLValueAllocationBlock(int index, MemoryBlock block) : index_(index), block_(block) {}
   };
 

@@ -52,7 +52,7 @@ Status SimpleAllocationPlanner::CreatePlan(const SessionState& session_state,
 
   auto& weights = graph->GetAllInitializedTensors();
   int index = 0;
-  for (auto it = weights.begin(); it != weights.end(); it++) {
+  for (auto it = weights.begin(), end = weights.end(); it != end; it++) {
     LOTUS_RETURN_IF_ERROR(session_state.GetMLValueIdx(it->first, &index));
     plan->allocation_plan[index].alloc_kind = AllocKind::kAllocateStatically;
   }
