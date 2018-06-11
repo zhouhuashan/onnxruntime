@@ -692,7 +692,9 @@ Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_or
     }
 
     const Node* node = GetNode(current);
-    LOTUS_ENFORCE(node != nullptr, "Invalid null entry in current graph.");
+    if (!node) {
+      continue;
+    }
 
     if (node->InputNodesBegin() == node->InputNodesEnd()) {
       // no children

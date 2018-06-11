@@ -725,6 +725,7 @@ class InferenceSession::Impl {
   Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving MLValue mappings.";
     int curr_idx = 0;
+
     for (auto& node : graph.Nodes()) {
       // ignore source and sink nodes
       if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {
@@ -764,7 +765,7 @@ class InferenceSession::Impl {
   // - constructs the kernels and saves them in the session state
   Common::Status SaveKernels(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving kernels.";
-    session_state_.SetKernelVectorSize(graph.NumberOfNodes());
+    session_state_.SetKernelVectorSize(graph.MaxNodeIndex());
     for (auto& node : graph.Nodes()) {
       // ignore source and sink nodes
       if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {

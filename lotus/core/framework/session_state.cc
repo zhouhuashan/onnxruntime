@@ -66,8 +66,7 @@ void SessionState::SetKernelVectorSize(size_t size) {
 }
 
 void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel) {
-  // assumes vector is already resize()'ed to the number of nodes in the graph
-  // and the nodeIds space is dense
+  // assumes vector is already resize()'ed to the maximum node index in the graph
   LOTUS_ENFORCE(!session_kernels_.empty() && node_id < session_kernels_.size());
   session_kernels_[node_id] = std::move(p_kernel);
 }
