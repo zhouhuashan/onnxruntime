@@ -260,6 +260,14 @@ class Node {
    public:
     Relationships() noexcept {};
 
+    void Clear() noexcept {
+      input_edges.clear();
+      output_edges.clear();
+      input_nodes.clear();
+      output_nodes.clear();
+      control_inputs.clear();
+    }
+
     // Node input edges.
     std::set<EdgeEnd*> input_edges;
     // Node output edges.
@@ -617,10 +625,12 @@ class GraphBase {
   // or some elements may be merged, etc.
   int num_of_nodes_ = 0;
 
+ protected:
   // default to impossible value and not 0
   NodeIndex source_node_index_ = std::numeric_limits<NodeIndex>::max();
   NodeIndex sink_node_index_ = std::numeric_limits<NodeIndex>::max();
 
+ private:
   // A flag indicates whether <*this> graph needs to be resolved.
   bool graph_resolve_needed_ = false;
 

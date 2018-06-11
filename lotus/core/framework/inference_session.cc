@@ -20,6 +20,7 @@
 #include "core/graph/tensorutils.h"
 #include "core/platform/notification.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
+#include "core/framework/insert_cast_transformer.h"
 
 namespace Lotus {
 
@@ -28,7 +29,8 @@ class InferenceSession::Impl {
   Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
       : session_options_{session_options},
         graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
-        logging_manager_{logging_manager} {
+        logging_manager_{logging_manager},
+        insert_cast_transformer_("CastFloat16Transformer") {
     InitLogger(logging_manager);
 
     //env_(Env::Default()) {
@@ -572,6 +574,14 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(ep->GetTransformer().Apply(graph, &modified));
     }
 
+    for (auto registry : session_state_.GetCustomRegistryManager().GetAllKernelRegistries()) {
+      insert_cast_transformer_.AddKernelRegistry(registry);
+    }
+
+    insert_cast_transformer_.AddKernelRegistry(&KernelRegistry::Instance());
+
+    LOTUS_RETURN_IF_ERROR(insert_cast_transformer_.Apply(graph, &modified));
+
     return Common::Status::OK();
   }
 
@@ -870,6 +880,7 @@ class InferenceSession::Impl {
   bool is_inited_ = false;            // GUARDED_BY(session_mutex_)
 
   std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
+  InsertCastTransformer insert_cast_transformer_;
 };  // namespace Lotus
 
 //

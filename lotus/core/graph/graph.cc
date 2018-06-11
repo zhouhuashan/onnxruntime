@@ -1131,6 +1131,13 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   if (!GraphResolveNeeded()) {
     return Status::OK();
   }
+  //clear the previous relationship, as we need resolve it
+  for (auto& node : Nodes()) {
+    node.MutableRelationships().Clear();
+  }
+  //add control edge for source and sink
+  //otherwise, if the graph only contain initializers, CheckIsAcyclic will fail as the graph is not connected.
+  NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, sink_node_index_));
 
   std::unordered_map<std::string, Node*> output_args;
   std::unordered_map<std::string, NodeIndex> node_name_to_index;

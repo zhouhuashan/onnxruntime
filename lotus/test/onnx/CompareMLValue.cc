@@ -1,6 +1,9 @@
 #include "CompareMLValue.h"
 #include "core/inc/op_kernel_author.h"
 #include <cmath>
+#include "core/inc/op_kernel_author.h"
+#include "core/util/math_cpuonly.h"
+#include "Eigen/src/Core/arch/CUDA/Half.h"
 
 using namespace Lotus;
 
@@ -26,6 +29,21 @@ std::pair<EXECUTE_RESULT, size_t> is_result_exactly_match(const Tensor& outvalue
   const T* real_output = outvalue.Data<T>();
   for (size_t di = 0; di != size1; ++di) {
     if (expected_output[di] != real_output[di]) {
+      return std::make_pair(EXECUTE_RESULT::RESULT_DIFFERS, di);
+    }
+  }
+  return std::make_pair(EXECUTE_RESULT::SUCCESS, -1);
+}
+
+std::pair<EXECUTE_RESULT, size_t> compare_float16_result(const Tensor& outvalue, const Tensor& expected_value, const float abs_error) {
+  const size_t size1 = expected_value.Shape().Size();
+  const MLFloat16* expected_output = expected_value.Data<MLFloat16>();
+  const MLFloat16* real_output = outvalue.Data<MLFloat16>();
+  for (size_t di = 0; di != size1; ++di) {
+    float expected = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(expected_output[di].val));
+    float real = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(real_output[di].val));
+    const double diff = fabs(expected - real);
+    if (diff > abs_error) {
       return std::make_pair(EXECUTE_RESULT::RESULT_DIFFERS, di);
     }
   }
@@ -58,7 +76,7 @@ std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const Tensor& 
   } else if (p1 == DataTypeImpl::GetType<bool>()) {
     return is_result_exactly_match<bool>(outvalue, expected_tensor);
   } else if (p1 == DataTypeImpl::GetType<MLFloat16>()) {
-    return is_result_exactly_match<MLFloat16>(outvalue, expected_tensor);
+    return compare_float16_result(outvalue, expected_tensor, 1e-4f);
   } else {
     return std::make_pair(EXECUTE_RESULT::NOT_SUPPORT, 0);
   }

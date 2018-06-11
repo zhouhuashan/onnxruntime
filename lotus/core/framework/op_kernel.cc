@@ -228,7 +228,6 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
 
 bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node, LotusIR::ProviderType exec_provider) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
-  LOTUS_ENFORCE(node.GetExecutionProviderType().empty());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     if (!i->second.status.IsOK()) {

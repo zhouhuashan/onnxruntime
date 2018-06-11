@@ -14,7 +14,7 @@ namespace Lotus {
 
 class IdentityOp final : public OpKernel {
  public:
-  IdentityOp(const OpKernelInfo& info) : OpKernel(info) {
+  IdentityOp(const OpKernelInfo& info) : OpKernel(info), is_dropout_(info.node().OpType() == "Dropout") {
   }
 
   Status Compute(OpKernelContext* context) const override {
@@ -37,8 +37,15 @@ class IdentityOp final : public OpKernel {
       }
     }
 
+    if (is_dropout_) {
+      context->Output(1, TensorShape(std::vector<int64_t>()));
+    }
+
     return Status::OK();
   }
+
+ private:
+  bool is_dropout_;
 };
 
 }  //namespace Lotus

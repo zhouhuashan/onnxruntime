@@ -36,7 +36,6 @@ class SessionState {
   const KernelDef* GetKernelDef(LotusIR::NodeIndex node_id) const;
   const AllocatorInfo& GetAllocatorInfo(LotusIR::NodeIndex node_id, MemType mem_type) const;
   void AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel);
-  const std::vector<unique_ptr<OpKernel>>& GetKernelVector() const;
 
   // exec providers
   IExecutionProvider* GetExecutionProvider(LotusIR::ProviderType provider_id) const;
@@ -112,7 +111,7 @@ class SessionState {
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
-  std::vector<unique_ptr<OpKernel>> session_kernels_;
+  std::unordered_map<LotusIR::NodeIndex, std::unique_ptr<OpKernel> > session_kernels_;
   const LotusIR::Graph* p_graph_ = nullptr;  // owned by the Model inside an InferenceSession
 
   struct ExecutionProviderSet {

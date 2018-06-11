@@ -14,16 +14,12 @@ const LotusIR::Graph* SessionState::GetGraph() const {
   return p_graph_;
 }
 
-const std::vector<unique_ptr<OpKernel>>& SessionState::GetKernelVector() const {
-  return session_kernels_;
-}
-
 const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
-  if (node_id >= session_kernels_.size()) {
+  if (session_kernels_.count(node_id) == 0) {
     return nullptr;
   }
 
-  return session_kernels_[node_id].get();
+  return session_kernels_.find(node_id)->second.get();
 }
 
 const KernelDef* SessionState::GetKernelDef(LotusIR::NodeIndex node_id) const {
@@ -32,7 +28,7 @@ const KernelDef* SessionState::GetKernelDef(LotusIR::NodeIndex node_id) const {
 
   const KernelRegistry::KernelCreateInfo* kernel_create_info = nullptr;
   if (custom_registry_manager_.SearchKernelRegistry(*node, &kernel_create_info).IsOK()) {
-	  return kernel_create_info->kernel_def.get();
+    return kernel_create_info->kernel_def.get();
   }
 
   if (KernelRegistry::Instance().SearchKernelRegistry(*node, &kernel_create_info).IsOK()) {
@@ -51,23 +47,19 @@ const AllocatorInfo& SessionState::GetAllocatorInfo(LotusIR::NodeIndex node_id, 
   return allocator->Info();
 }
 
-const CustomRegistryManager& SessionState::GetCustomRegistryManager() const{
-	return custom_registry_manager_;
+const CustomRegistryManager& SessionState::GetCustomRegistryManager() const {
+  return custom_registry_manager_;
 }
 CustomRegistryManager& SessionState::GetCustomRegistryManager() {
-	return custom_registry_manager_;
+  return custom_registry_manager_;
 }
 
 void SessionState::SetKernelVectorSize(size_t size) {
-  if (!session_kernels_.empty()) {
-    return;
-  }
-  session_kernels_.resize(size);
+  UNUSED_PARAMETER(size);
 }
 
 void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel) {
-  // assumes vector is already resize()'ed to the maximum node index in the graph
-  LOTUS_ENFORCE(!session_kernels_.empty() && node_id < session_kernels_.size());
+  // assumes vector is already resize()'ed to the number of nodes in the graph
   session_kernels_[node_id] = std::move(p_kernel);
 }
 

@@ -63,6 +63,14 @@ class CustomRegistryManager : public LotusIR::ILotusOpSchemaCollection {
       const int maxInclusiveVersion,
       const std::string& domain = LotusIR::kOnnxDomain) const override;
 
+  std::vector<const KernelRegistry*> GetAllKernelRegistries() {
+    std::vector<const KernelRegistry*> result;
+    for (auto& registry : custom_registries) {
+      result.push_back(registry.get());
+    }
+    return result;
+  }
+
  private:
   std::list<std::shared_ptr<CustomRegistry>> custom_registries;
 };
