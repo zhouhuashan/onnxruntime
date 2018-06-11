@@ -89,16 +89,19 @@ std::vector<std::string> CaptureStackTrace::Trace() const {
 
   std::vector<std::string> stacktrace;
 
-  // hide CaptureStackTrace::Trace and GetStackTrace so the output starts with the 'real' location
-  const int frames_to_skip = 2;
-
   PVOID frames[kCallstackLimit];
   const auto f = gsl::make_span(frames);
-  const auto num_frames = CaptureStackBackTrace(2, kCallstackLimit, f.data(), nullptr);
+  const auto num_frames = CaptureStackBackTrace(0, kCallstackLimit, f.data(), nullptr);
 
   stacktrace.reserve(num_frames);
 
-  for (uint16_t i = 0; i < num_frames; ++i) {
+  // hide CaptureStackTrace::Trace and GetStackTrace so the output starts with the 'real' location
+  const int frames_to_skip = 2;
+
+  // we generally want to skip the first two frames, but if something weird is going on (e.g. code coverage is
+  // running) and we only have 1 or 2 frames, output them so there's at least something that may be meaningful
+  const uint16_t start_frame = num_frames > frames_to_skip ? frames_to_skip : 0;
+  for (uint16_t i = start_frame; i < num_frames; ++i) {
     stacktrace.push_back(Lookup(f[i]));
   }
 
