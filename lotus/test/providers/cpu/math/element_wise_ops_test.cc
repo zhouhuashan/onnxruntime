@@ -465,5 +465,48 @@ TEST(MathOpTest, Affine) {
   test.Run();
 }
 
+template <float (&op)(float value)>
+void TrigTest(OpTester &test, std::initializer_list<float> input) {
+  std::vector<int64_t> dims{static_cast<int64_t>(input.size())};
+
+  std::vector<float> output;
+  for (auto v : input)
+    output.push_back(op(v));
+
+  test.AddInput<float>("X", dims, input);
+  test.AddOutput<float>("Y", dims, output);
+  test.Run();
+}
+
+TEST(MathOpTest, Sin) {
+  OpTester test("Sin");
+  TrigTest<std::sin>(test, {1.1f, -1.1f, 2.2f, -2.2f});
+}
+
+TEST(MathOpTest, Cos) {
+  OpTester test("Cos");
+  TrigTest<std::cos>(test, {1.1f, -1.1f, 2.2f, -2.2f});
+}
+
+TEST(MathOpTest, Tan) {
+  OpTester test("Tan");
+  TrigTest<std::tan>(test, {-100.0f, -50.0f, 0.0f, 50.0f, 100.0f});
+}
+
+TEST(MathOpTest, Asin) {
+  OpTester test("Asin");
+  TrigTest<std::asin>(test, {-1.0f, -0.5f, 0.0f, 0.5f, 1.0f});
+}
+
+TEST(MathOpTest, Acos) {
+  OpTester test("Acos");
+  TrigTest<std::acos>(test, {-1.0f, -0.5f, 0.0f, 0.5f, 1.0f});
+}
+
+TEST(MathOpTest, Atan) {
+  OpTester test("Atan");
+  TrigTest<std::atan>(test, {-10.0f, -5.0f, 0.0f, 5.0f, 10.0f});
+}
+
 }  // namespace Test
 }  // namespace Lotus

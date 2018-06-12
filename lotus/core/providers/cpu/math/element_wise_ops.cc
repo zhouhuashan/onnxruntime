@@ -770,4 +770,130 @@ Status Affine<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
+template <typename T>
+class Sin final : public OpKernel {
+ public:
+  Sin(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    auto& X = *context->Input<Tensor>(0);
+    auto& Y = *context->Output(0, X.Shape());
+    MakeEigenArrayMap<float>(Y) = MakeEigenArrayMap<float>(X).sin();
+    return Status::OK();
+  }
+};
+
+REGISTER_KERNEL(KernelDefBuilder("Sin")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Sin<float>);
+
+template <typename T>
+class Cos final : public OpKernel {
+ public:
+  Cos(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    auto& X = *context->Input<Tensor>(0);
+    auto& Y = *context->Output(0, X.Shape());
+    MakeEigenArrayMap<float>(Y) = MakeEigenArrayMap<float>(X).cos();
+    return Status::OK();
+  }
+};
+
+REGISTER_KERNEL(KernelDefBuilder("Cos")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Cos<float>);
+
+template <typename T>
+class Tan final : public OpKernel {
+ public:
+  Tan(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    auto& X = *context->Input<Tensor>(0);
+    auto& Y = *context->Output(0, X.Shape());
+    MakeEigenArrayMap<float>(Y) = MakeEigenArrayMap<float>(X).tan();
+    return Status::OK();
+  }
+};
+
+REGISTER_KERNEL(KernelDefBuilder("Tan")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Tan<float>);
+
+template <typename T>
+class Asin final : public OpKernel {
+ public:
+  Asin(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    auto& X = *context->Input<Tensor>(0);
+    auto& Y = *context->Output(0, X.Shape());
+    MakeEigenArrayMap<float>(Y) = MakeEigenArrayMap<float>(X).asin();
+    return Status::OK();
+  }
+};
+
+REGISTER_KERNEL(KernelDefBuilder("Asin")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Asin<float>);
+
+template <typename T>
+class Acos final : public OpKernel {
+ public:
+  Acos(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    auto& X = *context->Input<Tensor>(0);
+    auto& Y = *context->Output(0, X.Shape());
+    MakeEigenArrayMap<float>(Y) = MakeEigenArrayMap<float>(X).acos();
+    return Status::OK();
+  }
+};
+
+REGISTER_KERNEL(KernelDefBuilder("Acos")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Acos<float>);
+
+template <typename T>
+class Atan final : public OpKernel {
+ public:
+  Atan(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    auto& X = *context->Input<Tensor>(0);
+    auto& Y = *context->Output(0, X.Shape());
+    MakeEigenArrayMap<float>(Y) = MakeEigenArrayMap<float>(X).atan();
+    return Status::OK();
+  }
+};
+
+REGISTER_KERNEL(KernelDefBuilder("Atan")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                Atan<float>);
+
 }  // namespace Lotus
