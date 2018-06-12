@@ -2,6 +2,7 @@
 #include <list>
 #include <unordered_map>
 #include <algorithm>
+#include <sstream>
 #include "core/common/exceptions.h"
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/session_state.h"
@@ -153,7 +154,10 @@ class PlannerImpl {
     auto p_output_arg = node.OutputDefs()[output_arg_num];
     auto p_opkernelDef = p_session_state_->GetKernelDef(node.Index());
 
-    if (nullptr == p_opkernelDef) return false;
+    // Note: We expect a KernelDef to be available at this point. If it is not available, the
+    // planner would have returned an error status earlier on.
+    LOTUS_ENFORCE(nullptr != p_opkernelDef);
+
     const std::vector<std::pair<int, int>>& alias_map = p_opkernelDef->Alias();
     auto& input_args = node.InputDefs();
     for (auto pair : alias_map) {
@@ -290,8 +294,8 @@ class PlannerImpl {
     plan_->allocation_plan.resize(num_ml_values);
   }
 
-  void ComputeUseCounts(const LotusIR::Graph& graph,
-                        std::vector<SequentialExecutionPlan::NodeExecutionPlan>& execution_plan) {
+  Status ComputeUseCounts(const LotusIR::Graph& graph,
+                          std::vector<SequentialExecutionPlan::NodeExecutionPlan>& execution_plan) {
     // Note: for every ml-value, its definition must appear before all its uses in a topological sort of a valid model
 
     for (auto graph_input : graph.GetInputs()) {
@@ -317,7 +321,12 @@ class PlannerImpl {
       // Identify where each output of this node should be allocated.
       // This is determined by the opkernel bound to the node.
       auto p_kernelDef = p_session_state_->GetKernelDef(step.node_index);
-      LOTUS_ENFORCE(nullptr != p_kernelDef);
+      if (nullptr == p_kernelDef) {
+        std::ostringstream errormsg;
+        errormsg << "No suitable kernel definition found for op " << pnode->OpType();
+        if (!pnode->Name().empty()) errormsg << " (node " << pnode->Name() << ")";
+        return LOTUS_MAKE_STATUS(LOTUS, FAIL, errormsg.str());
+      }
       auto& default_allocator_info = p_session_state_->GetAllocatorInfo(step.node_index, kMemTypeDefault);
       auto& mem_type_allocated_args = p_kernelDef->MemoryType();
       auto& outputs = pnode->OutputDefs();
@@ -351,6 +360,8 @@ class PlannerImpl {
     for (auto graph_output : graph.GetOutputs()) {
       UseCount(graph_output->Name())++;  // Models caller's usage post-inference; ensures it will not be reused.
     }
+
+    return Status::OK();
   }
 
   void GeneratePlanForWeights(const LotusIR::Graph& graph) {
@@ -493,7 +504,7 @@ class PlannerImpl {
     }
 
     // compute usecounts for all ml-values
-    ComputeUseCounts(*p_graph, plan_->execution_plan);
+    LOTUS_RETURN_IF_ERROR(ComputeUseCounts(*p_graph, plan_->execution_plan));
 
     // determine sharing/reuse among ml-values
     ComputeReusePlan(*p_graph, plan_->execution_plan);
