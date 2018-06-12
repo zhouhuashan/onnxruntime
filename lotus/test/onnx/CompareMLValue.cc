@@ -76,7 +76,7 @@ std::pair<EXECUTE_RESULT, size_t> compare(const Tensor& outvalue, const Tensor& 
   } else if (p1 == DataTypeImpl::GetType<bool>()) {
     return is_result_exactly_match<bool>(outvalue, expected_tensor);
   } else if (p1 == DataTypeImpl::GetType<MLFloat16>()) {
-    return compare_float16_result(outvalue, expected_tensor, 1e-4f);
+    return compare_float16_result(outvalue, expected_tensor, 1e-3f);
   } else {
     return std::make_pair(EXECUTE_RESULT::NOT_SUPPORT, 0);
   }
