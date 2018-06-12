@@ -58,6 +58,8 @@ class IOBinding {
   const std::vector<std::string>& GetOutputNames() const;
   std::vector<MLValue>& GetOutputs();
 
+  const std::unordered_map<std::string, MLValue>& GetInputs() const;
+
  private:
   friend InferenceSession;
 

@@ -64,4 +64,8 @@ const std::vector<std::string>& IOBinding::GetOutputNames() const {
 std::vector<MLValue>& IOBinding::GetOutputs() {
   return outputs_;
 }
+
+const std::unordered_map<std::string, MLValue>& IOBinding::GetInputs() const {
+  return feeds_;
+}
 }  // namespace Lotus
