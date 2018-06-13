@@ -232,7 +232,7 @@ class Node {
   void ForEachOutputDef(std::function<void(const LotusIR::NodeArg*)> func) const;
 
   // Replaces defs
-  void ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements);
+  void ReplaceDefs(const std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements);
 
   // Node definitions. Really a struct but we want to prevent accidental copies.
   class Definitions {
@@ -426,6 +426,12 @@ class GraphBase {
 
   // find node arg by name
   const NodeArg* FindNodeArg(const std::string& name) const;
+
+  // create a unique name for NodeArg
+  std::string GenerateNodeArgName(const std::string& base_name);
+
+  // create a unique name for Node
+  std::string GenerateNodeName(const std::string& base_name);
 
   // Add node to <*this> graph.
   Node* AddNode(const std::string& name,
@@ -659,6 +665,8 @@ class GraphBase {
 
   // Model IR version.
   Version ir_version_;
+
+  int name_generator_ = 0;
 };
 
 // A graph representation class.

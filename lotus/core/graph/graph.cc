@@ -373,7 +373,7 @@ void Node::ForEachOutputDef(std::function<void(const LotusIR::NodeArg*)> func) c
   }
 };
 
-void Node::ReplaceDefs(const std::map<LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements) {
+void Node::ReplaceDefs(const std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements) {
   std::vector<std::vector<NodeArg*>*> all_defs = {&definitions_.input_defs, &definitions_.output_defs};
 
   for (auto pair : replacements)
@@ -1357,6 +1357,28 @@ const NodeArg* GraphBase::FindNodeArg(const std::string& name) const {
     LOGS_DEFAULT(WARNING) << "Cannot find NodArg for " << name;
     return nullptr;
   }
+}
+
+std::string GraphBase::GenerateNodeArgName(const std::string& base_name) {
+  std::string new_name;
+  do {
+    std::ostringstream str;
+    str << base_name << "_" << name_generator_++;
+    new_name = str.str();
+  } while (node_args_.find(new_name) != node_args_.end());
+  return new_name;
+}
+
+std::string GraphBase::GenerateNodeName(const std::string& base_name) {
+  std::string new_name;
+  do {
+    std::ostringstream str;
+    str << base_name << "_" << name_generator_++;
+    new_name = str.str();
+  } while (std::find_if(nodes_.cbegin(), nodes_.cend(), [&new_name](const std::unique_ptr<Node>& n) {
+             return n->Name() == new_name;
+           }) != nodes_.end());
+  return new_name;
 }
 
 Node* GraphBase::AddNode(const std::string& name,

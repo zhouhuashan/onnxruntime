@@ -43,6 +43,15 @@ def GenSimple():
     data_y = y.eval(data_x)
     Save('test_simple', y, data_x, data_y)
 
+def GenSharedWeights():
+    x = C.input_variable((1,3,))
+    y = C.layers.Embedding(2)(x)
+    y = y + y.parameters[0]
+    data_x = np.random.rand(*x.shape).astype(np.float32)
+    data_y = y.eval(data_x)
+    Save('test_shared_weights', y, data_x, data_y)
+
 if __name__=='__main__':
     np.random.seed(0)
     GenSimple()
+    GenSharedWeights()

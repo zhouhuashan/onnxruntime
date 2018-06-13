@@ -68,7 +68,7 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
       continue;
 
     auto& inputs = node->InputDefs();
-    std::map<LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
+    std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
     bool casted = false;
     for (auto input : inputs) {
       if (NeedInsertCast(node, input)) {
@@ -118,7 +118,7 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
   }
   //Resolve it to build the edges.
   LOTUS_RETURN_IF_ERROR(graph->Resolve());
-  std::map<LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
+  std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
   std::vector<LotusIR::NodeIndex> removed_nodes;
   for (int i = 0; i < graph->NumberOfNodes(); i++) {
     auto node = graph->GetNode(i);
