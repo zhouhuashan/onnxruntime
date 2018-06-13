@@ -21,43 +21,6 @@ using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
 using namespace Lotus;
 
-EXECUTE_RESULT DataRunner::ExecuteSingleData(const std::unordered_map<std::string, Lotus::MLValue>& feeds, const std::vector<Lotus::MLValue>& output_values) {
-  std::vector<MLValue> p_fetches;
-  TIME_SPEC start_time, end_time;
-  GetMonotonicTimeCounter(&start_time);
-  Common::Status status = session->Run(feeds, &p_fetches);
-  if (!status.IsOK()) {
-    LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name_.c_str(), status.ErrorMessage().c_str());
-    return StatusCodeToExecuteResult(status.Code());
-  }
-  GetMonotonicTimeCounter(&end_time);
-  AccumulateTimeSpec(&spent_time_, &start_time, &end_time);
-
-  for (size_t i = 0; i != output_values.size(); ++i) {
-    const MLValue& o = p_fetches.at(i);
-    //TODO: why queue id is zero?
-    if (o.Fence())
-      o.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, 0);
-    const MLValue& e = output_values.at(i);
-    std::pair<EXECUTE_RESULT, size_t> ret = compareMLValue(o, e);
-    EXECUTE_RESULT compare_result = ret.first;
-    switch (compare_result) {
-      case EXECUTE_RESULT::RESULT_DIFFERS:
-        LOGF_DEFAULT(ERROR, "%s: the %zd-th value of the %zd-th output differs\n", test_case_name_.c_str(), ret.second, i);
-        break;
-      case EXECUTE_RESULT::SHAPE_MISMATCH:
-        LOGF_DEFAULT(ERROR, "%s: shape mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
-        break;
-      case EXECUTE_RESULT::TYPE_MISMATCH:
-        LOGF_DEFAULT(ERROR, "%s: type mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
-    }
-    if (compare_result != EXECUTE_RESULT::SUCCESS)
-      return compare_result;
-  }
-  LOGF_DEFAULT(ERROR, "test %s succeeded\n", test_case_name_.c_str());
-  return EXECUTE_RESULT::SUCCESS;
-}
-
 void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
   TestResultStat& stat = env.stat;
   stat.total_test_case_count = std::accumulate(env.tests.begin(), env.tests.end(), static_cast<size_t>(0), [](size_t v, const ITestCase* info) {
@@ -194,14 +157,61 @@ void DataRunner::RunTask(size_t task_id) {
 void DataRunner::RunTaskImpl(size_t task_id) {
   std::unordered_map<std::string, Lotus::MLValue> feeds;
   std::vector<Lotus::MLValue> output_values;
-  auto status = c_->LoadDataPair(task_id, feeds, output_values);
+  Common::Status status = c_->LoadInputData(task_id, feeds);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
     return;
   }
-  EXECUTE_RESULT r = ExecuteSingleData(feeds, output_values);
-  SetResult(task_id, r);
+  std::vector<MLValue> p_fetches;
+  TIME_SPEC start_time, end_time;
+  GetMonotonicTimeCounter(&start_time);
+  status = session->Run(feeds, &p_fetches);
+  if (!status.IsOK()) {
+    LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name_.c_str(), status.ErrorMessage().c_str());
+    SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
+    return;
+  }
+  GetMonotonicTimeCounter(&end_time);
+  AccumulateTimeSpec(&spent_time_, &start_time, &end_time);
+  //TODO: if there are no output value files, just skip the validation
+  status = c_->LoadOutputData(task_id, output_values);
+  if (!status.IsOK()) {
+    LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
+    SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
+    return;
+  }
+  //TODO: make it configurable
+  const double abs_error = 1e-3;
+  for (size_t i = 0; i != output_values.size(); ++i) {
+    const MLValue& o = p_fetches.at(i);
+    //this is the default value for provider sync.Currently only one execution queue for CPU.
+    int queue_id = 0;
+    if (o.Fence())
+      o.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, queue_id);
+    const MLValue& e = output_values.at(i);
+    std::pair<EXECUTE_RESULT, size_t> ret = CompareMLValue(o, e, abs_error);
+    EXECUTE_RESULT compare_result = ret.first;
+    switch (compare_result) {
+      case EXECUTE_RESULT::RESULT_DIFFERS:
+        LOGF_DEFAULT(ERROR, "%s: the %zd-th value of the %zd-th output differs\n", test_case_name_.c_str(), ret.second, i);
+        break;
+      case EXECUTE_RESULT::SHAPE_MISMATCH:
+        LOGF_DEFAULT(ERROR, "%s: shape mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
+        break;
+      case EXECUTE_RESULT::TYPE_MISMATCH:
+        LOGF_DEFAULT(ERROR, "%s: type mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
+      default:
+        //nothing to do
+        break;
+    }
+    if (compare_result != EXECUTE_RESULT::SUCCESS) {
+      SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
+      return;
+    }
+  }
+  LOGF_DEFAULT(INFO, "test %s succeeded\n", test_case_name_.c_str());
+  SetResult(task_id, EXECUTE_RESULT::SUCCESS);
 }
 
 void SeqTestRunner::Start(size_t) {

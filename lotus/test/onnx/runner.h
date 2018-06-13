@@ -27,7 +27,6 @@ class DataRunner {
   void RunTask(size_t task_id);
   virtual void Start(size_t concurrent_runs) = 0;
 
-  EXECUTE_RESULT ExecuteSingleData(const std::unordered_map<std::string, Lotus::MLValue>& inputs, const std::vector<Lotus::MLValue>& expected_outputs);
   void finish(std::shared_ptr<TestCaseResult> res) {
     CALL_BACK callback = on_finished;
     res->SetSpentTime(spent_time_);

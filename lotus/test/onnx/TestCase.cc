@@ -2,6 +2,8 @@
 #include "core/framework/tensorprotoutils.h"
 #include <fstream>
 #include <memory>
+#include "tml.pb.h"
+
 using namespace std::experimental::filesystem::v1;
 
 using namespace Lotus;
@@ -110,12 +112,11 @@ static std::vector<onnx::TensorProto> LoadTensors(const std::vector<path>& pb_fi
   return input_pbs;
 }
 
-Lotus::Common::Status OnnxTestCase::LoadDataPair(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds, std::vector<Lotus::MLValue>& output_values) {
+Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds) {
   if (id >= test_data_dirs.size())
     return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "out of bound");
 
   std::vector<path> input_pb_files;
-  std::vector<path> output_pb_files;
   const path pb(".pb");
 
   for (directory_iterator pb_file(test_data_dirs[id]), end3; pb_file != end3; ++pb_file) {
@@ -125,17 +126,79 @@ Lotus::Common::Status OnnxTestCase::LoadDataPair(size_t id, std::unordered_map<s
     std::string filename = f.filename().string();
     if (!filename.compare(0, 6, "input_")) {
       input_pb_files.push_back(f);
-    } else if (!filename.compare(0, 7, "output_")) {
-      output_pb_files.push_back(f);
     }
   }
   SortTensorFileNames(input_pb_files);
-  SortTensorFileNames(output_pb_files);
 
   std::vector<onnx::TensorProto> input_pbs = LoadTensors(input_pb_files);
-  std::vector<onnx::TensorProto> output_pbs = LoadTensors(output_pb_files);
-  LOTUS_RETURN_IF_ERROR(FromTensorProto(output_pbs, output_values));
   LOTUS_RETURN_IF_ERROR(ConvertInput(input_pbs, feeds));
+  return Status::OK();
+}
+
+Lotus::Common::Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<Lotus::MLValue>& output_values) {
+  std::vector<onnx::TensorProto> input_pbs;
+  const path pb(".pb");
+  const path tpb(".tpb");
+  for (const path& f : files) {
+    std::ifstream input(f, std::ios::in | std::ios::binary);
+    if (!input) {
+      return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "open file failed");
+    }
+    if (f.extension() == pb) {
+      onnx::TensorProto tensor;
+      if (!tensor.ParseFromIstream(&input)) {
+        return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "parse file failed");
+      }
+      std::unique_ptr<Lotus::MLValue> value;
+      LOTUS_RETURN_IF_ERROR(FromTensorProto(tensor, value));
+      output_values.emplace_back(*value.get());
+    } else if (f.extension() == tpb) {
+      Lotus::proto::TraditionalMLData data;
+      if (!data.ParseFromIstream(&input)) {
+        return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "parse file failed");
+      }
+      if (data.has_vector_map_int64_to_float()) {
+        std::unique_ptr<VectorMapInt64ToFloat> vec = std::make_unique<VectorMapInt64ToFloat>();
+        for (const Lotus::proto::MapInt64ToFloat& i : data.vector_map_int64_to_float().v()) {
+          MapInt64ToFloat new_value;
+          for (const auto& j : i.v()) {
+            new_value[j.first] = j.second;
+          }
+          vec->push_back(new_value);
+        }
+        std::unique_ptr<Lotus::MLValue> value;
+        value = std::make_unique<Lotus::MLValue>();
+        value->Init(vec.release(),
+                    DataTypeImpl::GetType<VectorMapInt64ToFloat>(),
+                    DataTypeImpl::GetType<VectorMapInt64ToFloat>()->GetDeleteFunc());
+        output_values.emplace_back(*value.get());
+      } else {
+        return Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file type");
+      }
+    } else {
+      return Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file type");
+    }
+  }
+  return Status::OK();
+}
+Lotus::Common::Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) {
+  if (id >= test_data_dirs.size())
+    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs.size());
+
+  std::vector<path> output_pb_files;
+  const path pb(".pb");
+  const path tpb(".tpb");
+  for (directory_iterator pb_file(test_data_dirs[id]), end3; pb_file != end3; ++pb_file) {
+    path f = *pb_file;
+    if (!is_regular_file(f)) continue;
+    if (f.extension() != pb && f.extension() != tpb) continue;
+    std::string filename = f.filename().string();
+    if (!filename.compare(0, 7, "output_")) {
+      output_pb_files.push_back(f);
+    }
+  }
+  SortTensorFileNames(output_pb_files);
+  LOTUS_RETURN_IF_ERROR(FromPbFiles(output_pb_files, output_values));
   return Status::OK();
 }
 

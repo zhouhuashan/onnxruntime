@@ -255,6 +255,7 @@ ${onnx_test_runner_src_dir}/runner.h
 ${onnx_test_runner_src_dir}/runner.cc
 ${onnx_test_runner_src_dir}/TestCase.cc
 ${onnx_test_runner_src_dir}/TestCase.h
+${LOTUS_ROOT}/test/proto/tml.proto
 )
 
 if(WIN32)
@@ -269,6 +270,8 @@ endif()
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
 add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
+
+protobuf_generate(APPEND_PATH TARGET onnx_test_runner_common)
 
 set(onnx_test_libs 
     ${FS_STDLIB}
@@ -310,9 +313,13 @@ target_link_libraries(onnx_test_runner ${onnx_test_libs} onnx_test_runner_common
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(WIN32)
+  set(DISABLED_WARNINGS_FOR_PROTOBUF "/wd4125" "/wd4456" "/wd4505")
+  target_compile_options(onnx_test_runner_common PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
+  target_compile_options(onnx_test_runner PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
   #Maybe "CMAKE_SYSTEM_PROCESSOR" is better
   if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")
     add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
+    target_compile_options(onnx_test_runner_vstest PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
     target_link_libraries(onnx_test_runner_vstest ${onnx_test_libs} onnx_test_runner_common)
     set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
   endif()

@@ -99,6 +99,7 @@ else()
   set_target_properties(js_embed PROPERTIES FOLDER "External/Protobuf")
   add_library(protobuf::libprotobuf ALIAS libprotobuf)
   add_executable(protobuf::protoc ALIAS protoc)
+  include(protobuf_function.cmake)
 endif()
 get_target_property(PROTOBUF_INCLUDE_DIRS protobuf::libprotobuf
     INTERFACE_INCLUDE_DIRECTORIES)

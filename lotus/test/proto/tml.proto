@@ -1,0 +1,52 @@
+syntax = "proto3";
+package Lotus.proto;
+
+//must sync with data_types.h
+//MapStringToString
+//MapStringToInt64
+//MapStringToFloat
+//MapStringToDouble
+//MapInt64ToString
+//MapInt64ToInt64
+//MapInt64ToFloat
+//MapInt64ToDouble
+//VectorString
+//VectorFloat
+//VectorInt64
+//VectorDouble
+//VectorMapStringToFloat
+//VectorMapInt64ToFloat
+
+message MapStringToString {
+  map<string, string> v = 1;
+}
+
+message MapStringToDouble {
+  map<string, double> v = 1;
+}
+
+message MapStringToFloat {
+  map<string, float> v = 1;
+}
+
+message MapInt64ToFloat {
+  map<int64, float> v = 1;
+}
+
+message VectorMapStringToFloat {
+  repeated MapStringToFloat v = 1;
+}
+
+message VectorMapInt64ToFloat {
+  repeated MapInt64ToFloat v = 1;
+}
+
+message TraditionalMLData {
+  oneof values{
+    MapStringToString map_string_to_string = 1;
+	MapStringToDouble map_string_to_double = 2;
+	MapStringToFloat map_string_to_float = 3;
+	VectorMapStringToFloat vector_map_string_to_float = 4;
+	VectorMapInt64ToFloat vector_map_int64_to_float = 5;
+  }
+}
