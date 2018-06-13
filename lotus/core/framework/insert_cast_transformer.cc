@@ -120,21 +120,18 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
   LOTUS_RETURN_IF_ERROR(graph->Resolve());
   std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
   std::vector<LotusIR::NodeIndex> removed_nodes;
-  for (int i = 0; i < graph->NumberOfNodes(); i++) {
-    auto node = graph->GetNode(i);
-    if (!node)
-      return Status(LOTUS, INVALID_ARGUMENT);
-    if (graph->IsSinkNode(*node) || graph->IsSourceNode(*node))
+  for (auto& node : graph->Nodes()) {
+    if (graph->IsSinkNode(node) || graph->IsSourceNode(node))
       continue;
-    if (node->OpType() == "Cast") {
+    if (node.OpType() == "Cast") {
       // if cast's next node is also cast and next cast's output type equal to cast's input type
       // remove those two cast.
-      auto src_type = node->InputDefs()[0]->Type();
-      auto dst_type = node->OutputDefs()[0]->Type();
-      auto input = node->InputDefs()[0];
+      auto src_type = node.InputDefs()[0]->Type();
+      auto dst_type = node.OutputDefs()[0]->Type();
+      auto input = node.InputDefs()[0];
       int child_removed = 0;
       int num_child = 0;
-      for (auto it = node->OutputNodesBegin(); it != node->OutputNodesEnd(); it++) {
+      for (auto it = node.OutputNodesBegin(); it != node.OutputNodesEnd(); it++) {
         if ((*it)->OpType() == "Cast") {
           auto src_type1 = (*it)->InputDefs()[0]->Type();
           auto dst_type1 = (*it)->OutputDefs()[0]->Type();
@@ -152,7 +149,7 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
         num_child++;
       }
       if (child_removed == num_child)
-        removed_nodes.push_back(node->Index());
+        removed_nodes.push_back(node.Index());
     }
   }
 
