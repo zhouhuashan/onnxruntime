@@ -39,37 +39,88 @@ void upsampleNearest2x(
   }
 }
 
-void upsampleNearest(
-    int64_t batch_size,
-    int64_t num_channels,
-    int64_t input_height,
-    int64_t input_width,
-    float height_scale,
-    float width_scale,
-    const float* Xdata,
-    float* Ydata) {
-  // Specialized implementation for fast 2x upsampling
-  if (width_scale == 2.0 && height_scale == 2.0) {
-    upsampleNearest2x(
-        batch_size, num_channels, input_height, input_width, Xdata, Ydata);
+template <typename T>
+Status upsampleNearest(const T* input,
+                       T* output,
+                       const TensorShape& input_shape,
+                       const TensorShape& output_shape,
+                       const vector<float>& scales) {
+  if (!input || !output)
+    return Status(LOTUS, FAIL, "Upsample: input/output value is nullptr");
+  if (input_shape.NumDimensions() != output_shape.NumDimensions())
+    return Status(LOTUS, FAIL, "Upsample: input/output value's dimension mismatch");
+  auto n_dim = input_shape.NumDimensions();
+  for (size_t i = 0, size = output_shape.Size(); i < size; i++) {
+    size_t old_idx = 0;
+    size_t cur_idx = i;
+
+    int64_t base = 1;
+    for (int64_t j = static_cast<int64_t>(n_dim - 1); j >= 0; j--) {
+      auto tmp = cur_idx % output_shape[j];
+      old_idx += (std::min(static_cast<int64_t>(tmp / scales[j]), input_shape[j] - 1)) * base;
+      base *= input_shape[j];
+      cur_idx /= output_shape[j];
+    }
+
+    output[i] = input[old_idx];
   }
+  return Status::OK();
+}
 
-  int64_t output_width = static_cast<int64_t>(input_width * width_scale);
-  int64_t output_height = static_cast<int64_t>(input_height * height_scale);
-
-  for (int64_t n = 0; n < batch_size; ++n) {
-    for (int64_t c = 0; c < num_channels; ++c) {
-      for (int64_t y = 0; y < output_height; ++y) {
-        const int64_t in_y = std::min(static_cast<int64_t>(y / height_scale), input_height - 1);
-        for (int64_t x = 0; x < output_width; ++x) {
-          const int64_t in_x = std::min(static_cast<int64_t>(x / width_scale), input_width - 1);
-          Ydata[output_width * y + x] = Xdata[input_width * in_y + in_x];
-        }
+//This is a generic upsample in linear mode for N-D tensor.
+//But what's the correct behavior for linear mode is not clear right now.
+//this function is not enabled yet.
+template <typename T>
+Status upsampleLiner(const T* input,
+                     T* output,
+                     const TensorShape& input_shape,
+                     const TensorShape& output_shape,
+                     const vector<float>& scales) {
+  if (!input || !output)
+    return Status(LOTUS, FAIL, "Upsample: input/output value is nullptr");
+  if (input_shape.NumDimensions() != output_shape.NumDimensions())
+    return Status(LOTUS, FAIL, "Upsample: input/output value's dimension mismatch");
+  auto n_dim = input_shape.NumDimensions();
+  for (size_t i = 0, size = output_shape.Size(); i < size; i++) {
+    std::vector<int64> val1, val2;
+    std::vector<float> d1, d2;
+    size_t cur_idx = i;
+    //val1, vla2, d1, d2 are in reverse order
+    for (int64_t j = static_cast<int64_t>(n_dim - 1); j >= 0; j--) {
+      T v = std::min((cur_idx % output_shape[j]) / scales[j], static_cast<float>(input_shape[j] - 1));
+      auto v1 = std::min(static_cast<int64_t>(v), input_shape[j] - 1);
+      auto v2 = std::min(v1 + 1, input_shape[j] - 1);
+      if (v1 == v2) {
+        d1.push_back(0.5f);
+        d2.push_back(0.5f);
+      } else {
+        d1.push_back(std::abs(v - v1));
+        d2.push_back(std::abs(v - v2));
       }
-      Xdata += input_height * input_width;
-      Ydata += output_width * output_height;
+      val1.push_back(v1);
+      val2.push_back(v2);
+      cur_idx /= output_shape[j];
+    }
+
+    output[i] = 0;
+    int64_t step = static_cast<int64_t>(1 << n_dim) - 1;
+    while (step >= 0) {
+      auto cur = step;
+      float w = 1.0f;
+      size_t old_idx = 0;
+      size_t base = 1;
+      for (int64_t j = static_cast<int64_t>(n_dim - 1); j >= 0; j--) {
+        int64_t reverse_idx = static_cast<int64_t>(n_dim - 1) - j;
+        w *= (cur % 2) ? d1[reverse_idx] : d2[reverse_idx];
+        old_idx += ((cur % 2) ? val2[reverse_idx] : val1[reverse_idx]) * base;
+        base *= input_shape[j];
+        cur >>= 1;
+      }
+      output[i] += input[old_idx] * w;
+      step--;
     }
   }
+  return Status::OK();
 }
 
 void upsampleBilinear(
@@ -130,28 +181,35 @@ template <>
 Status Upsample<float>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const std::vector<int64_t>& dims = X->Shape().GetDims();
-  if (dims.size() != 4) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Upsample only support 2D inputs");
+  if (dims.size() != scales_.size()) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Upsample: input tensor's dimension does not match the scales.");
   }
 
   const int64_t batch_size = dims[0], num_channels = dims[1];
   const int64_t input_height = dims[2], input_width = dims[3];
 
-  std::vector<int64_t> Y_dims({batch_size, num_channels,
-                               (int64_t)(input_height * scales_[0]), (int64_t)(input_width * scales_[1])});
+  std::vector<int64_t> Y_dims;
+  for (auto i = 0; i < dims.size(); i++) {
+    Y_dims.push_back(static_cast<int64_t>(scales_[i] * dims[i]));
+  }
   Tensor* Y = context->Output(0, Y_dims);
 
   switch (mode_) {
     case UpsampleMode::NN:
-      upsampleNearest(batch_size, num_channels, input_height, input_width,
-                      scales_[0], scales_[1], X->Data<float>(), Y->MutableData<float>());
-      break;
-    case UpsampleMode::LINEAR:
+      return upsampleNearest<float>(X->Data<float>(), Y->MutableData<float>(), X->Shape(), Y->Shape(), scales_);
+    case UpsampleMode::LINEAR: {
+      //What's the correct behavior of linear mode is not clear right now,
+      //Only support bilinear with 4D tensor to keep consistent with previous behavior
+      if (dims.size() != 4)
+        return Status(LOTUS, FAIL, "Upsample: liner mode upsample only support 4-D tensor with NCHW layout");
       upsampleBilinear(batch_size, num_channels, input_height, input_width,
-                       scales_[0], scales_[1], X->Data<float>(), Y->MutableData<float>());
+                       scales_[2], scales_[3], X->Data<float>(), Y->MutableData<float>());
+      return Status::OK();
+      //return upsampleLiner<float>(X->Data<float>(), Y->MutableData<float>(), X->Shape(), Y->Shape(), scales_);
+    }
+    default:
+      return Status(LOTUS, FAIL, "Upsample: unexpected mode");
   }
-
-  return Status::OK();
 }
 
 }  // namespace Lotus

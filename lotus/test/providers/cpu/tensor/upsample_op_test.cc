@@ -8,7 +8,7 @@ namespace Test {
 TEST(UpsampleOpTest, UpsampleOpNearestTest) {
   OpTester test("Upsample");
 
-  std::vector<float> scales{2.0f, 3.0f};
+  std::vector<float> scales{1.0f, 1.0f, 2.0f, 3.0f};
   test.AddAttribute("mode", "nearest");
   test.AddAttribute("scales", scales);
 
@@ -32,14 +32,14 @@ TEST(UpsampleOpTest, UpsampleOpNearestTest) {
       7.0f, 7.0f, 7.0f, 9.0f, 9.0f, 9.0f,
       7.0f, 7.0f, 7.0f, 9.0f, 9.0f, 9.0f};
 
-  test.AddOutput<float>("Y", {N, C, (int64_t)(H * scales[0]), (int64_t)(W * scales[1])}, Y);
+  test.AddOutput<float>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
   test.Run();
 }
 
 TEST(UpsampleOpTest, UpsampleOpNearest2XTest) {
   OpTester test("Upsample");
 
-  std::vector<float> scales{2.0f, 2.0f};
+  std::vector<float> scales{1.0f, 1.0f, 2.0f, 2.0f};
   test.AddAttribute("mode", "nearest");
   test.AddAttribute("scales", scales);
 
@@ -63,14 +63,14 @@ TEST(UpsampleOpTest, UpsampleOpNearest2XTest) {
       7.0f, 7.0f, 9.0f, 9.0f,
       7.0f, 7.0f, 9.0f, 9.0f};
 
-  test.AddOutput<float>("Y", {N, C, (int64_t)(H * scales[0]), (int64_t)(W * scales[1])}, Y);
+  test.AddOutput<float>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
   test.Run();
 }
 
 TEST(UpsampleOpTest, UpsampleOpBilinearTest) {
   OpTester test("Upsample");
 
-  std::vector<float> scales{2.0f, 4.0f};
+  std::vector<float> scales{1.0f, 1.0f, 2.0f, 4.0f};
   test.AddAttribute("mode", "linear");
   test.AddAttribute("scales", scales);
 
@@ -94,7 +94,7 @@ TEST(UpsampleOpTest, UpsampleOpBilinearTest) {
       7.0f, 7.5f, 8.0f, 8.5f, 9.0f, 9.0f, 9.0f, 9.0f,
       7.0f, 7.5f, 8.0f, 8.5f, 9.0f, 9.0f, 9.0f, 9.0f};
 
-  test.AddOutput<float>("Y", {N, C, (int64_t)(H * scales[0]), (int64_t)(W * scales[1])}, Y);
+  test.AddOutput<float>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
   test.Run();
 }
 }  // namespace Test

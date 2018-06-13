@@ -9,11 +9,11 @@ class Upsample : public OpKernel {
  public:
   Upsample(OpKernelInfo info) : OpKernel(info) {
     string mode;
-    info.GetAttr<string>("mode", &mode);
+    if (!info.GetAttr<string>("mode", &mode).IsOK())
+      mode = Upsample<float>::UpsampleModeNN;
     mode_ = StringToUpsampleMode(mode);
 
     LOTUS_ENFORCE(info.GetAttrs<float>("scales", scales_).IsOK());
-    LOTUS_ENFORCE(scales_.size() == 2, "Upsample only support 2D inputs");
     for (auto& scale : scales_) {
       LOTUS_ENFORCE(scale >= 1, "Scale value should be greater than or equal to 1.");
     }
