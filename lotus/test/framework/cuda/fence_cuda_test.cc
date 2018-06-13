@@ -57,6 +57,11 @@ TEST(CUDAFenceTests, PartOnCPU) {
   p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
   p_node = graph->AddNode("node3", "Add", "Add operator", ArgMap{&y_def, &z_def}, ArgMap{&out_def});
   p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
+
+  // add and then delete a node to test node iteration against nullptr
+  p_node = graph->AddNode("node_to_delete", "Add", "Add operator", ArgMap{&y_def, &z_def}, ArgMap{&out_def});
+  graph->RemoveNode(p_node->Index());
+
   EXPECT_TRUE(graph->Resolve().IsOK());
 
   auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
@@ -94,7 +99,7 @@ TEST(CUDAFenceTests, PartOnCPU) {
   session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},
               std::vector<std::string>{"Out"},
               &outputs);
-
+  EXPECT_TRUE(1 == outputs.size());
   const Tensor& output = outputs[0].Get<Tensor>();
   EXPECT_EQ(output.Shape(), shape);
   EXPECT_EQ(output.DataType(), DataTypeImpl::GetType<float>());

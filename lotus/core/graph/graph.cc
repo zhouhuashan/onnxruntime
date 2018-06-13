@@ -1376,7 +1376,7 @@ std::string GraphBase::GenerateNodeName(const std::string& base_name) {
     str << base_name << "_" << name_generator_++;
     new_name = str.str();
   } while (std::find_if(nodes_.cbegin(), nodes_.cend(), [&new_name](const std::unique_ptr<Node>& n) {
-             return n->Name() == new_name;
+             return (n != nullptr) && (n->Name() == new_name);
            }) != nodes_.end());
   return new_name;
 }
