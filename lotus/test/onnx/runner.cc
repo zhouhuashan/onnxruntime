@@ -41,8 +41,16 @@ EXECUTE_RESULT DataRunner::ExecuteSingleData(const std::unordered_map<std::strin
     const MLValue& e = output_values.at(i);
     std::pair<EXECUTE_RESULT, size_t> ret = compareMLValue(o, e);
     EXECUTE_RESULT compare_result = ret.first;
-    if (compare_result == EXECUTE_RESULT::RESULT_DIFFERS)
-      LOGF_DEFAULT(ERROR, "%s: the %zd-th value of the %zd-th output differs\n", test_case_name_.c_str(), ret.second, i);
+    switch (compare_result) {
+      case EXECUTE_RESULT::RESULT_DIFFERS:
+        LOGF_DEFAULT(ERROR, "%s: the %zd-th value of the %zd-th output differs\n", test_case_name_.c_str(), ret.second, i);
+        break;
+      case EXECUTE_RESULT::SHAPE_MISMATCH:
+        LOGF_DEFAULT(ERROR, "%s: shape mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
+        break;
+      case EXECUTE_RESULT::TYPE_MISMATCH:
+        LOGF_DEFAULT(ERROR, "%s: type mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
+    }
     if (compare_result != EXECUTE_RESULT::SUCCESS)
       return compare_result;
   }
