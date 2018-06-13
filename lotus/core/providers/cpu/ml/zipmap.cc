@@ -50,6 +50,12 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   std::vector<int64_t> output_dims{1, N};
 
   if (using_strings_) {
+    if (stride != static_cast<int64>(classlabels_strings_.size())) {
+      return Status(LOTUS,
+                    INVALID_ARGUMENT,
+                    "Input stride[" + std::to_string(stride) +
+                        "] != number of classlabels[" + std::to_string(classlabels_strings_.size()) + "]");
+    }
     auto* y_data = context->Output<std::vector<std::map<std::string, float>>>(0);
     //auto* y_data = Y->MutableData<std::vector<std::map<std::string, float>>>();
     y_data->resize(N);
@@ -63,6 +69,12 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
       (*y_data)[n] = map1;
     }
   } else {
+    if (stride != static_cast<int64>(classlabels_int64s_.size())) {
+      return Status(LOTUS,
+                    INVALID_ARGUMENT,
+                    "Input stride[" + std::to_string(stride) +
+                        "] != number of classlabels[" + std::to_string(classlabels_int64s_.size()) + "]");
+    }
     auto* y_data = context->Output<std::vector<std::map<std::int64_t, float>>>(0);
     //auto* y_data = Y->MutableData<std::vector<std::map<int64_t, float>>>();
     y_data->resize(N);

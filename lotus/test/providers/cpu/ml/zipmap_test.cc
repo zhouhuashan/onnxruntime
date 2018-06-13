@@ -3,13 +3,14 @@
 
 namespace Lotus {
 namespace Test {
-
 template <typename T>
-void TestHelper(const std::vector<T>& classes, const std::string& type) {
+void TestHelper(const std::vector<T>& classes,
+                const std::string& type,
+                const vector<int64_t>& input_dims,
+                OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
   OpTester test("ZipMap", LotusIR::kMLDomain);
 
   std::vector<float> input{1.f, 0.f, 3.f, 44.f, 23.f, 11.3f};
-  vector<int64_t> dims{2, 3};
 
   if (type == "string") {
     test.AddAttribute("classlabels_strings", classes);
@@ -21,26 +22,45 @@ void TestHelper(const std::vector<T>& classes, const std::string& type) {
 
   // prepare expected output
   std::vector<std::map<T, float>> expected_output;
-  for (int64_t i = 0; i < dims[0]; ++i) {
-    std::map<T, float> var_map;
-    for (size_t j = 0; j < classes.size(); ++j) {
-      var_map.emplace(classes[j], input[i * 3 + j]);
+  if (expect_result == OpTester::ExpectResult::kExpectSuccess) {
+    for (int64_t i = 0; i < input_dims[0]; ++i) {
+      std::map<T, float> var_map;
+      for (size_t j = 0; j < classes.size(); ++j) {
+        var_map.emplace(classes[j], input[i * 3 + j]);
+      }
+      expected_output.push_back(var_map);
     }
-    expected_output.push_back(var_map);
   }
 
-  test.AddInput<float>("X", dims, input);
+  test.AddInput<float>("X", input_dims, input);
   test.AddOutput<T, float>("Z", expected_output);
-  test.Run();
+  test.Run(expect_result);
 }
 
+// Positive test cases
 TEST(MLOpTest, ZipMapOpStringFloat) {
-  TestHelper<string>({"class1", "class2", "class3"}, "string");
+  TestHelper<string>({"class1", "class2", "class3"}, "string", {2, 3});
 }
 
 TEST(MLOpTest, ZipMapOpInt64Float) {
-  TestHelper<int64_t>({10, 20, 30}, "int64_t");
+  TestHelper<int64_t>({10, 20, 30}, "int64_t", {2, 3});
 }
 
+// Negative test cases
+TEST(MLOpTest, ZipMapOpStringFloatStrideMoreThanNumLabels) {
+  TestHelper<string>({"class1", "class2", "class3"}, "string", {1, 6}, OpTester::ExpectResult::kExpectFailure);
+}
+
+TEST(MLOpTest, ZipMapOpStringFloatStrideLessThanNumLabels) {
+  TestHelper<string>({"class1", "class2", "class3"}, "string", {3, 2}, OpTester::ExpectResult::kExpectFailure);
+}
+
+TEST(MLOpTest, ZipMapOpInt64FloatStrideMoreThanNumLabels) {
+  TestHelper<int64_t>({10, 20, 30}, "int64_t", {1, 6}, OpTester::ExpectResult::kExpectFailure);
+}
+
+TEST(MLOpTest, ZipMapOpInt64FloatStrideLessThanNumLabels) {
+  TestHelper<int64_t>({10, 20, 30}, "int64_t", {3, 2}, OpTester::ExpectResult::kExpectFailure);
+}
 }  // namespace Test
 }  // namespace Lotus
