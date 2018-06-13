@@ -24,7 +24,7 @@ Status Concat<float>::Compute(OpKernelContext* ctx) const {
     for (int axis_index = 0; axis_index < dimension_count; axis_index++) {
       if (axis_index == axis_)
         continue;
-      LOTUS_ENFORCE(data_n.Shape()[axis_index] == inputs_0.Shape()[axis_index], "Non concat axis dimensions must match");
+      LOTUS_ENFORCE(data_n.Shape()[axis_index] == inputs_0.Shape()[axis_index], "Non concat axis dimensions must match: Axis ", axis_index, " has mismatched dimensions of ", data_n.Shape()[axis_index], " and ", inputs_0.Shape()[axis_index]);
     }
   }
 

@@ -132,16 +132,12 @@ int main(int argc, char* argv[]) {
   for (ITestCase* l : tests) {
     delete l;
   }
-  std::unordered_set<std::string> broken_tests{"bvlc_alexnet", "bvlc_googlenet", "bvlc_reference_caffenet", "bvlc_reference_rcnn_ilsvrc13", "cast_DOUBLE_to_FLOAT",
-                                               "cast_DOUBLE_to_FLOAT16", "cast_FLOAT16_to_DOUBLE", "convtranspose", "convtranspose_1d", "convtranspose_3d",
-                                               "convtranspose_output_shape", "convtranspose_pad", "convtranspose_pads", "densenet121",
-                                               "inception_v1", "inception_v2", "Linear", "lrn", "lrn_default", "not_2d", "not_3d", "not_4d",
-                                               "operator_add_broadcast", "operator_add_size1_broadcast", "operator_add_size1_right_broadcast",
-                                               "operator_add_size1_singleton_broadcast", "operator_addconstant", "operator_addmm", "operator_lstm", "operator_mm",
-                                               "operator_non_float_params", "operator_rnn", "operator_rnn_single_layer", "PReLU_1d", "PReLU_1d_multiparam",
-                                               "PReLU_2d", "PReLU_2d_multiparam", "PReLU_3d", "PReLU_3d_multiparam",
-                                               "resnet50", "rnn_seq_length",
-                                               "shufflenet", "upsample_nearest", "vgg19", "zfnet"};
+  std::unordered_set<std::string> broken_tests{"cast_DOUBLE_to_FLOAT","cast_DOUBLE_to_FLOAT16","convtranspose_1d",
+	  "convtranspose_3d","GLU","GLU_dim","Linear","not_2d","not_3d","not_4d","operator_add_broadcast",
+	  "operator_add_size1_broadcast","operator_add_size1_right_broadcast","operator_add_size1_singleton_broadcast",
+	  "operator_addconstant","operator_addmm","operator_basic","operator_lstm","operator_mm","operator_non_float_params",
+	  "operator_params","operator_pow","operator_rnn","operator_rnn_single_layer","PoissonNLLLLoss_no_reduce","PReLU_1d",
+	  "PReLU_1d_multiparam","PReLU_2d","PReLU_2d_multiparam","PReLU_3d","PReLU_3d_multiparam","Softsign"};
   for (const std::string s : stat.GetFailedTest()) {
     if (broken_tests.find(s) == broken_tests.end()) return -1;
   }
