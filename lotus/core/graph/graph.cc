@@ -1261,13 +1261,14 @@ const std::vector<const NodeArg*>& Graph::GetValueInfo() const noexcept {
 static void AddNodeArgs(const std::vector<NodeArg*>& input_args,
                         std::unordered_map<std::string, NodeArg*>& node_arg_map) {
   for (const gsl::not_null<NodeArg*> input_arg : input_args) {
+    if (!input_arg->Exists()) continue;
     auto& key = input_arg->Name();
     auto existing_entry = node_arg_map.find(key);
 
     NodeArg* node_arg = existing_entry == node_arg_map.end() ? nullptr : existing_entry->second;
 
     if (node_arg == nullptr) {
-      node_arg_map[key] = node_arg;
+      node_arg_map[key] = input_arg;
     } else {
       // check that if an existing entry was found, it was for the same instance
       LOTUS_ENFORCE(node_arg == input_arg,
