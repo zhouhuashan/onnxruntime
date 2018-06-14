@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{DC8450C5-1964-4AAE-A45D-050C3B43832B}</ProjectGuid>
+    <RootNamespace>lotus_exec</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <LotusRTBuildRoot Condition="'$(LotusRTBuildRoot)' == ''">$(SolutionDir)\..\..\..\</LotusRTBuildRoot>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>
+      </SDLCheck>
+      <AdditionalIncludeDirectories>$(LotusRTBuildRoot)\build\Windows\Debug;$(LotusRTBuildRoot)\lotus;$(LotusRTBuildRoot)\cmake\external\onnx;$(LotusRTBuildRoot)\build\Windows\Debug\external\onnx;$(LotusRTBuildRoot)\cmake\external\protobuf\src;$(LotusRTBuildRoot)\build\Windows\Debug\external\eigen3;$(LotusRTBuildRoot)\build\Windows\Debug\external\date\include;$(LotusRTBuildRoot)\build\Windows\Debug\gsl\src\gsl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0A00;_MBCS;WIN64;WIN32_LEAN_AND_MEAN;NOGDI;LOTUS_USE_EIGEN_FOR_BLAS;ONNX_ML;ONNX_NAMESPACE=onnx;NOMINMAX;_WIN32_WINNT=0x0A00;_MBCS;WIN64;WIN32_LEAN_AND_MEAN;NOGDI;_USE_MATH_DEFINES;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>-WHOLEARCHIVE:$(LotusRTBuildRoot)\build\Windows\Debug\Debug\lotus_providers.lib;-WHOLEARCHIVE:$(LotusRTBuildRoot)\build\Windows\Debug\Debug\lotus_framework.lib;-WHOLEARCHIVE:$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\external\onnx\Debug\onnx.lib;wsock32.lib;ws2_32.lib;shlwapi.lib;dxgi.lib;d3d12.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <AdditionalIncludeDirectories>$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo;$(LotusRTBuildRoot)\lotus;$(LotusRTBuildRoot)\cmake\external\onnx;$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\external\onnx;$(LotusRTBuildRoot)\cmake\external\protobuf\src;$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\external\eigen3;$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\external\date\include;$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\gsl\src\gsl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;_WIN32_WINNT=0x0A00;_MBCS;WIN64;WIN32_LEAN_AND_MEAN;NOGDI;GSL_THROW_ON_CONTRACT_VIOLATION;NDEBUG;LOTUS_USE_EIGEN_FOR_BLAS;ONNX_ML;ONNX_NAMESPACE=onnx;PLATFORM_WINDOWS;NOGDI;NOMINMAX;_USE_MATH_DEFINES;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>-WHOLEARCHIVE:$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\RelWithDebInfo\lotus_providers.lib;-WHOLEARCHIVE:$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\RelWithDebInfo\lotus_framework.lib;-WHOLEARCHIVE:$(LotusRTBuildRoot)\build\Windows\RelWithDebInfo\external\onnx\Release\onnx.lib;wsock32.lib;ws2_32.lib;shlwapi.lib;dxgi.lib;d3d12.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="CmdParser.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="Runtime.h" />
+    <ClInclude Include="TestDataReader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ProjectReference Include="..\..\build\Windows\RelWithDebInfo\lotus_framework.vcxproj">
+      <Project>{4a93a173-7f37-3d87-9d2d-68cf0c454539}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ProjectReference Include="..\..\build\Windows\Debug\lotus_framework.vcxproj">
+      <Project>{4a93a173-7f37-3d87-9d2d-68cf0c454539}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
