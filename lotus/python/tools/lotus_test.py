@@ -39,12 +39,14 @@ def main():
 
     feeds = {}
     for input_meta in sess.get_inputs():
+        # replace any symbolic dimensions (value is None) with 1
+        shape = [dim if dim else 1 for dim in input_meta.shape]
         if input_meta.type in float_dict:
-            feeds[input_meta.name] = np.random.rand(*input_meta.shape).astype(float_dict[input_meta.type])
+            feeds[input_meta.name] = np.random.rand(*shape).astype(float_dict[input_meta.type])
         elif input_meta.type in integer_dict:
-            feeds[input_meta.name] = np.random.uniform(high=1000, size=tuple(input_meta.shape).astype(integer_dict[input_meta.type]))
+            feeds[input_meta.name] = np.random.uniform(high=1000, size=tuple(shape).astype(integer_dict[input_meta.type]))
         elif input_meta.type == 'tensor(bool)':
-            feeds[input_meta.name] = np.random.randint(2, size=tuple(input_meta.shape)).astype('bool')
+            feeds[input_meta.name] = np.random.randint(2, size=tuple(shape)).astype('bool')
         else:
             print("unsupported input type {} for input {}".format(input_meta.type, input_meta.name))
             sys.exit(-1)
