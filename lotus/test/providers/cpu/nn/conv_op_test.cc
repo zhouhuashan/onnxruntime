@@ -26,7 +26,9 @@ void TestConvOp(const ConvOpAttributes& attributes,
   test.AddAttribute("dilations", attributes.dilations);
   test.AddAttribute("group", attributes.group);
   test.AddAttribute("kernel_shape", attributes.kernel_shape);
-  test.AddAttribute("pads", attributes.pads);
+  if (!attributes.pads.empty()) {
+    test.AddAttribute("pads", attributes.pads);
+  }
   test.AddAttribute("strides", attributes.strides);
 
   LOTUS_ENFORCE(inputs.size() <= 3, "Our name array is only setup to handle 3 inputs");
@@ -256,6 +258,60 @@ TEST(ConvTest, Conv2D_Bias_2) {
   auto expected_vals = {-0.3419531583786011f, -0.6116723418235779f, -0.39677709341049194f, -0.7316848039627075f,
                         -0.5647197365760803f, 0.02788025140762329f, -0.30450713634490967f, -0.6786775588989258f};
   TestConvOp(attrs, {X, W, B}, {X_shape, W_shape, B_shape}, expected_vals, Y_shape);
+}
+
+TEST(ConvTest, Conv2D_AutoPad1) {
+  ConvOpAttributes attrs = {
+      "SAME_UPPER",           // auto_pad
+      vector<int64_t>{1, 1},  // dilations
+      1,                      // group
+      vector<int64_t>{3, 3},  // kernel_shape
+      {},                     // pads
+      vector<int64_t>{1, 1}   // strides
+  };
+  vector<float> X = vector<float>(25, 1.0f);
+  vector<int64_t> X_shape = {1, 1, 5, 5};
+  vector<float> W = {0.0f, 1.0f, 2.0f,
+                     3.0f, 4.0f, 5.0f,
+                     6.0f, 7.0f, 8.0f};
+
+  vector<int64_t> W_shape = {1, 1, 3, 3};
+  vector<int64_t> Y_shape = {1, 1, 5, 5};
+  auto expected_vals = {24.0f, 33.0f, 33.0f, 33.0f, 20.0f,
+                        27.0f, 36.0f, 36.0f, 36.0f, 21.0f,
+                        27.0f, 36.0f, 36.0f, 36.0f, 21.0f,
+                        27.0f, 36.0f, 36.0f, 36.0f, 21.0f,
+                        12.0f, 15.0f, 15.0f, 15.0f, 8.0f};
+  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
+}
+
+TEST(ConvTest, Conv2D_AutoPad2) {
+  ConvOpAttributes attrs = {
+      "SAME_LOWER",           // auto_pad
+      vector<int64_t>{1, 1},  // dilations
+      1,                      // group
+      vector<int64_t>{3, 3},  // kernel_shape
+      {},                     // pads
+      vector<int64_t>{1, 1}   // strides
+  };
+  vector<float> X = {1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+                     1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+                     1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+                     1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+                     1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
+  vector<int64_t> X_shape = {1, 1, 5, 5};
+  vector<float> W = {0.0f, 1.0f, 2.0f,
+                     3.0f, 4.0f, 5.0f,
+                     6.0f, 7.0f, 8.0f};
+
+  vector<int64_t> W_shape = {1, 1, 3, 3};
+  vector<int64_t> Y_shape = {1, 1, 5, 5};
+  auto expected_vals = {11.0f, 22.0f, 11.0f, 22.0f, 11.0f,
+                        12.0f, 24.0f, 12.0f, 24.0f, 12.0f,
+                        12.0f, 24.0f, 12.0f, 24.0f, 12.0f,
+                        12.0f, 24.0f, 12.0f, 24.0f, 12.0f,
+                        5.0f, 10.0f, 5.0f, 10.0f, 5.0f};
+  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
 }
 
 // Conv10

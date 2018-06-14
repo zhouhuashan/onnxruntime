@@ -47,7 +47,6 @@ inline void ComputeSizeAndPad(
         LOTUS_ENFORCE(dilation == 1, "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER.");
         int64_t legacy_target_size = (in_dim + stride - 1) / stride;
         int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
-        *pad_tail = pad_needed - *pad_head;
         *out_dim = (in_dim + pad_needed - dkernel) / stride + 1;
 
         if (pad_type == AutoPadType::SAME_UPPER) {
@@ -55,6 +54,7 @@ inline void ComputeSizeAndPad(
         } else {
           *pad_head = pad_needed / 2;
         }
+        *pad_tail = pad_needed - *pad_head;
       } break;
       default:
         throw NotImplementedException("pad type not supported");
