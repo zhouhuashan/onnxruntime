@@ -70,7 +70,10 @@ else()
   endif()
 endif()
 
-
+if(WIN32)
+  #Always enable exception handling, even for Windows ARM
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+endif()
 #Here we support three build mode:
 #1. (recommended)lotus_USE_PREBUILT_PB is set (ONNX_CUSTOM_PROTOC_EXECUTABLE should also be set)
 #   We will not build protobuf, will use a prebuilt binary instead. This mode can also support cross-compiling
@@ -134,10 +137,7 @@ if (lotus_SPLIT_UNIT_TEST_PROJECTS)
   set(SingleUnitTestProject OFF)
 endif()
 
-if(WIN32)
-  #Always enable exception handling, even for Windows ARM
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-endif()
+
 
 # External dependencies
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)

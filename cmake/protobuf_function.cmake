@@ -1,6 +1,11 @@
 function(protobuf_generate)
   include(CMakeParseArguments)
-
+  if(EXISTS "${ONNX_CUSTOM_PROTOC_EXECUTABLE}")
+    set(LOTUS_PROTOC_EXECUTABLE ${ONNX_CUSTOM_PROTOC_EXECUTABLE})
+  else()
+    set(LOTUS_PROTOC_EXECUTABLE $<TARGET_FILE:protobuf::protoc>)
+    set(LOTUS_PROTOC_DEPS protobuf::protoc)
+  endif()
   set(_options APPEND_PATH)
   set(_singleargs LANGUAGE OUT_VAR EXPORT_MACRO)
   if(COMMAND target_sources)
@@ -89,9 +94,9 @@ function(protobuf_generate)
 
     add_custom_command(
       OUTPUT ${_generated_srcs}
-      COMMAND  protobuf::protoc
+      COMMAND  ${LOTUS_PROTOC_EXECUTABLE}
       ARGS --${protobuf_generate_LANGUAGE}_out ${_dll_export_decl}${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${_abs_file}
-      DEPENDS ${ABS_FIL} protobuf::protoc
+      DEPENDS ${ABS_FIL} ${LOTUS_PROTOC_DEPS}
       COMMENT "Running ${protobuf_generate_LANGUAGE} protocol buffer compiler on ${_proto}"
       VERBATIM )
   endforeach()
