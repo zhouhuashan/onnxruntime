@@ -2,6 +2,31 @@
 
 namespace Lotus {
 
+/*
+
+Overview: The transformer transforms the input graph as follows:
+
+(1) For every initializer W that is referenced by both provider and non-provider nodes, 
+we create a duplicate initializer W2 and change all provider nodes to reference this
+duplicate copy.
+
+(2) For every ml-value X that is computed by a provider node and referenced by a
+non-provider node, we introduce a new ml-value X2. We replace all references to X
+in provider nodes by X2, and introduce a copy from X2 to X. (All graph outputs
+are considered as non-provider references here.)
+
+(3 For every ml-value X that is computed by a non-provider node and referenced by
+a provider node, we introduce a new ml-value X2. We replace all references to X in
+provider nodes by X2, and introduce a copy from X to X2. (All graph inputs are
+considered to be non-provider here.)
+
+Note that every ml-value is computed at a unique point (either provider or non-provider),
+but it may be referenced and used at multiple points (by both provider and non-provider).
+
+This transformer does not currently optimize copies between, e.g., two different GPU devices, etc.
+
+*/
+
 bool TransformerMemcpyImpl::ModifyGraph() {
   bool modified = false;
 
@@ -25,37 +50,27 @@ bool TransformerMemcpyImpl::ModifyGraph() {
   // we need to avoid copy weights to GPU for every eval (a policy for execution provider?)
   // besides, for input data, we should allow GPU copy to happen in parallel with computation
   auto& graph_inputs = graph_->GetInputs();
-  non_provider_defs_.insert(graph_inputs.cbegin(), graph_inputs.cend());
+  non_provider_output_defs_.insert(graph_inputs.cbegin(), graph_inputs.cend());
 
   auto& graph_outputs = graph_->GetOutputs();
-  non_provider_defs_.insert(graph_outputs.cbegin(), graph_outputs.cend());
+  non_provider_input_defs_.insert(graph_outputs.cbegin(), graph_outputs.cend());
 
-  // find the defs that are both input and output for provider nodes
-  // and only handle the case where non_provider_defs_ does not share items
-  // with provider_inout_defs (produced and consumed by provider)
-  // TODO: support that case once we have a model test for it
-  bool unsupported = false;
-  std::for_each(
-      non_provider_defs_.begin(),
-      non_provider_defs_.end(),
-      [this, &unsupported](const LotusIR::NodeArg* def) {
-        if (provider_input_defs_.find(def) != provider_input_defs_.end() &&
-            provider_output_defs_.find(def) != provider_output_defs_.end())
-          unsupported = true;
-      });
+  for (auto arg : non_provider_output_defs_)
+    if (provider_input_defs_.count(arg)) {
+      AddCopyNode(arg, true);
+      modified = true;
+    }
 
-  if (unsupported) {
-    LOGS_DEFAULT(ERROR) << "TransformerMemCpyImpl: Unsupported graph";
-  } else if (non_provider_defs_.size()) {
-    for (auto p_node : provider_nodes_) {
-      AddCopyNode(p_node->InputDefs(), true);
-      AddCopyNode(p_node->OutputDefs(), false);
+  for (auto arg : provider_output_defs_)
+    if (non_provider_input_defs_.count(arg)) {
+      AddCopyNode(arg, false);
+      modified = true;
     }
-    for (auto p_node : provider_nodes_) {
-      p_node->ReplaceDefs(replacements_);
-    }
-    return true;
+
+  for (auto p_node : provider_nodes_) {
+    p_node->ReplaceDefs(replacements_);
   }
+
   return modified;
 }
 
@@ -71,53 +86,46 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node) {
   } else {
     // TODO: copy between devices? i.e. multiple GPUs
     LOTUS_ENFORCE(node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider || node.GetExecutionProviderType().empty());
-    node.ForEachDef([this](const LotusIR::NodeArg* arg, bool /*is_input*/) {
-      non_provider_defs_.insert(arg);
+    node.ForEachDef([this](const LotusIR::NodeArg* arg, bool is_input) {
+      if (is_input)
+        non_provider_input_defs_.insert(arg);
+      else
+        non_provider_output_defs_.insert(arg);
     });
   }
 }
 
-void TransformerMemcpyImpl::AddCopyNode(const ConstPointerContainer<std::vector<LotusIR::NodeArg*>>& args, bool is_input) {
-  for (const gsl::not_null<const LotusIR::NodeArg*> arg : args) {
-    if (!arg->Exists())
-      continue;
+void TransformerMemcpyImpl::AddCopyNode(const LotusIR::NodeArg* arg, bool is_input) {
+  // TODO: eliminate the const-cast.
+  // The current graph API seems to only allow us to get a "const NodeArg*", but
+  // then we need to pass in a "NodeArg*" when we create a new node.
+  auto original_arg = const_cast<LotusIR::NodeArg*>(arg);
 
-    if (non_provider_defs_.find(&*arg) != non_provider_defs_.end() &&
-        replacements_.find(arg) == replacements_.end()) {
-      auto writable_arg = const_cast<LotusIR::NodeArg*>(&*arg);
+  // create unique name for new def
+  std::string new_def_name = graph_->GenerateNodeArgName(original_arg->Name() + "_" + provider_);
 
-      // create unique name for new def
-      std::string new_def_name = graph_->GenerateNodeArgName("MemcpyDef");
+  auto* new_arg = &graph_->GetOrCreateNodeArg(new_def_name, original_arg->TypeAsProto());
+  auto* src_arg = is_input ? original_arg : new_arg;
+  auto* dst_arg = is_input ? new_arg : original_arg;
 
-      auto* new_arg = &graph_->GetOrCreateNodeArg(new_def_name, writable_arg->TypeAsProto());
-      auto* src_arg = is_input ? writable_arg : new_arg;
-      auto* dst_arg = is_input ? new_arg : writable_arg;
+  // create unique name for copy node
+  std::string new_node_name = graph_->GenerateNodeName("Memcpy");
 
-      // create unique name for copy node
-      std::string new_node_name = graph_->GenerateNodeName("Memcpy");
+  const auto op_name = is_input ? "MemcpyFromHost" : "MemcpyToHost";
+  auto new_node = graph_->AddNode(new_node_name, op_name, "Copy from/to host memory",
+                                  std::vector<LotusIR::NodeArg*>{src_arg},
+                                  std::vector<LotusIR::NodeArg*>{dst_arg});
+  new_node->SetExecutionProviderType(provider_);
 
-      // only add node in this loop, editing happens outside of args iteration here
-      const auto op_name = is_input ? "MemcpyFromHost" : "MemcpyToHost";
-      auto new_node = graph_->AddNode(new_node_name, op_name, "Copy from/to host memory",
-                                      std::vector<LotusIR::NodeArg*>{src_arg},
-                                      std::vector<LotusIR::NodeArg*>{dst_arg});
-      new_node->SetExecutionProviderType(provider_);
-      replacements_.insert(std::make_pair(writable_arg, new_arg));
-    }
-  }
+  // only add copy-node here; renaming references happens later
+  replacements_.insert(std::make_pair(original_arg, new_arg));
 }
 
 static const LotusIR::NodeArg* FindNodeArg(std::set<const LotusIR::NodeArg*> def_set, const std::string& name) {
-  auto iter = std::find_if(
-      def_set.begin(),
-      def_set.end(),
-      [name](const LotusIR::NodeArg* def) {
-        return def->Name() == name;
-      });
-  if (iter != def_set.end())
-    return *iter;
-  else
-    return nullptr;
+  for (auto* def : def_set)
+    if (def->Name() == name)
+      return def;
+  return nullptr;
 }
 
 // We duplicate any initializer that is used by both provider nodes and non-provider nodes
@@ -128,7 +136,7 @@ void TransformerMemcpyImpl::ProcessInitializers() {
   for (const auto& pair : graph_->GetAllInitializedTensors()) {
     const auto& name = pair.first;
     const LotusIR::NodeArg* provider_def = FindNodeArg(provider_input_defs_, name);
-    const LotusIR::NodeArg* non_provider_def = FindNodeArg(non_provider_defs_, name);
+    const LotusIR::NodeArg* non_provider_def = FindNodeArg(non_provider_input_defs_, name);
     if (provider_def != nullptr && non_provider_def != nullptr) {
       std::string new_def_name = graph_->GenerateNodeArgName(name);
       auto& new_def = graph_->GetOrCreateNodeArg(new_def_name, provider_def->TypeAsProto());

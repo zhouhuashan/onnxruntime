@@ -16,14 +16,15 @@ class TransformerMemcpyImpl {
 
  private:
   void ProcessDefs(LotusIR::Node& node);
-  void AddCopyNode(const ConstPointerContainer<std::vector<LotusIR::NodeArg*>>& args, bool is_input);
+  void AddCopyNode(const LotusIR::NodeArg* arg, bool is_input);
   void ProcessInitializers();
 
  private:
   std::set<LotusIR::Node*> provider_nodes_;
-  std::set<const LotusIR::NodeArg*> non_provider_defs_;     // all input/output defs of non-provider nodes
-  std::set<const LotusIR::NodeArg*> provider_input_defs_;   // all input defs of provider nodes
-  std::set<const LotusIR::NodeArg*> provider_output_defs_;  // all output defs of provider nodes
+  std::set<const LotusIR::NodeArg*> non_provider_input_defs_;   // all input defs of non-provider nodes
+  std::set<const LotusIR::NodeArg*> non_provider_output_defs_;  // all output defs of non-provider nodes
+  std::set<const LotusIR::NodeArg*> provider_input_defs_;       // all input defs of provider nodes
+  std::set<const LotusIR::NodeArg*> provider_output_defs_;      // all output defs of provider nodes
   std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacements_;
   LotusIR::Graph* graph_;
   std::string provider_;
