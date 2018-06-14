@@ -12,8 +12,8 @@ template <typename T>
 class MeanVarianceNormalization final : public OpKernel {
  public:
   MeanVarianceNormalization(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr<int64_t>("across_channels", &across_channels_);
-    info.GetAttr<int64_t>("normalize_variance", &normalize_variance_);
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("across_channels", &across_channels_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("normalize_variance", &normalize_variance_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override {

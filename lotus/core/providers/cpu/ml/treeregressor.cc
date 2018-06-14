@@ -25,7 +25,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKe
   info.GetAttrs<int64_t>("target_nodeids", target_nodeids_);
   info.GetAttrs<int64_t>("target_ids", target_ids_);
   info.GetAttrs<float>("target_weights", target_weights_);
-  info.GetAttr<int64_t>("n_targets", &n_targets_);
+  LOTUS_ENFORCE(info.GetAttr<int64_t>("n_targets", &n_targets_).IsOK());
   info.GetAttrs<float>("base_values", base_values_);
 
   //update nodeids to start at 0

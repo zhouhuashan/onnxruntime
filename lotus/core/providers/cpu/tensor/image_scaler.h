@@ -10,8 +10,8 @@ template <typename T>
 class ImageScaler final : public OpKernel {
  public:
   ImageScaler(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr<float>("scale", &scale_);
-    info.GetAttrs<float>("bias", bias_);
+    LOTUS_ENFORCE(info.GetAttr<float>("scale", &scale_).IsOK());
+    LOTUS_ENFORCE(info.GetAttrs<float>("bias", bias_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override {
