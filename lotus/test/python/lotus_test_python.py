@@ -86,6 +86,27 @@ class TestInferenceSession(unittest.TestCase):
         res = sess.run([output_name], {a_name: a, b_name: b})
         np.testing.assert_equal(output_expected, res[0])
 
+    def testStringInput(self):
+        sess = lotus.InferenceSession("testdata/identity_string.pb")
+        x = np.array(['this', 'is', 'identity', 'test'], dtype=np.bytes_).reshape((2,2))
+
+        x_name = sess.get_inputs()[0].name
+        self.assertEqual(x_name, "input:0")
+        x_shape = sess.get_inputs()[0].shape
+        self.assertEqual(x_shape, [2, 2])
+        x_type = sess.get_inputs()[0].type
+        self.assertEqual(x_type, 'tensor(string)')
+
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "output:0")
+        output_shape = sess.get_outputs()[0].shape
+        self.assertEqual(output_shape, [2, 2])
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, 'tensor(string)')
+
+        res = sess.run([output_name], {x_name: x})
+        np.testing.assert_equal(x, res[0])
+
     def testConvAutoPad(self):
         sess = lotus.InferenceSession("testdata/conv_autopad.pb")
         x = np.array(25 * [1.0], dtype=np.float32).reshape((1,1,5,5))

@@ -37,7 +37,7 @@ int LotusToNumpyType(const MLDataType& lotus_type) {
       {DataTypeImpl::GetType<uint16_t>(), NPY_UINT16},
       {DataTypeImpl::GetType<int64_t>(), NPY_LONGLONG},
       {DataTypeImpl::GetType<uint64_t>(), NPY_ULONGLONG},
-      {DataTypeImpl::GetType<std::string>(), NPY_STRING},
+      {DataTypeImpl::GetType<std::string>(), NPY_OBJECT},
   };
 
   const auto it = type_map.find(lotus_type);
@@ -65,6 +65,10 @@ const MLDataType& NumpyToLotusType(int numpy_type) {
       {NPY_ULONGLONG, DataTypeImpl::GetType<uint64_t>()},
       {NPY_STRING, DataTypeImpl::GetType<std::string>()}};
 
+  if (numpy_type == NPY_UNICODE) {
+    throw std::runtime_error("numpy.unicode not yet supported. please use np.bytes_ instead.");
+  }
+
   const auto it = type_map.find(numpy_type);
   if (it == type_map.end()) {
     throw std::runtime_error("Numpy_type " + std::to_string(numpy_type) +
@@ -89,7 +93,7 @@ void CreateTensorMLValue(AllocatorPtr alloc,
   PyArrayObject* darray = PyArray_GETCONTIGUOUS(pyObject);
   bool dref = false;
   try {
-    const auto npy_type = PyArray_TYPE(darray);
+    const int npy_type = PyArray_TYPE(darray);
 
     // numpy requires long int as its dims.
     int ndim = PyArray_NDIM(darray);
@@ -102,12 +106,26 @@ void CreateTensorMLValue(AllocatorPtr alloc,
     TensorShape shape(dims);
     auto element_type = NumpyToLotusType(npy_type);
     void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
-    memcpy(buffer, static_cast<void*>(PyArray_DATA(darray)), element_type->Size() * shape.Size());
+
+    if (npy_type != NPY_STRING) {
+      memcpy(buffer, static_cast<void*>(PyArray_DATA(darray)), element_type->Size() * shape.Size());
+    }
 
     std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
                                                                 shape,
                                                                 static_cast<void*>(buffer),
                                                                 alloc->Info(), alloc);
+
+    if (npy_type == NPY_STRING) {
+      // Copy string data which needs to be done after Tensor is allocated.
+      std::string* dst = static_cast<std::string*>(buffer);
+      auto string_size = PyArray_ITEMSIZE(darray);
+      char* src = static_cast<char*>(PyArray_DATA(darray));
+      for (int i = 0; i < shape.Size(); i++, src += string_size) {
+        dst[i] = std::string(src, string_size).c_str();
+      }
+    }
+
     p_mlvalue->Init(p_tensor.release(),
                     DataTypeImpl::GetType<Tensor>(),
                     DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
@@ -119,6 +137,8 @@ void CreateTensorMLValue(AllocatorPtr alloc,
 
     // allocator should be able to gc the memory created by it.
     // ...
+
+    throw;
   }
 
   if (!dref) {
@@ -212,6 +232,9 @@ void addObjectMethods(py::module& m) {
         rfetch.reserve(fetcher.size());
 
         for (auto _ : fetcher) {
+          if (!_.IsTensor()) {
+            throw std::runtime_error("Output is non-tensor type which is not yet supported.");
+          }
           const Tensor& rtensor = _.Get<Tensor>();
           std::vector<npy_intp> npy_dims;
           const TensorShape& shape = rtensor.Shape();
@@ -221,11 +244,30 @@ void addObjectMethods(py::module& m) {
           }
 
           MLDataType dtype = rtensor.DataType();
+          const int numpy_type = LotusToNumpyType(dtype);
           py::object obj = py::reinterpret_steal<py::object>(PyArray_SimpleNew(
-              shape.NumDimensions(), npy_dims.data(), LotusToNumpyType(dtype)));
+              shape.NumDimensions(), npy_dims.data(), numpy_type));
+
           void* outPtr = static_cast<void*>(
               PyArray_DATA(reinterpret_cast<PyArrayObject*>(obj.ptr())));
-          memcpy(outPtr, rtensor.DataRaw(dtype), dtype->Size() * shape.Size());
+
+          if (numpy_type != NPY_OBJECT) {
+            memcpy(outPtr, rtensor.DataRaw(dtype), dtype->Size() * shape.Size());
+          } else {
+            // Handle string type
+            PyObject** outObj = static_cast<PyObject**>(outPtr);
+            auto* src = rtensor.template Data<std::string>();
+
+            for (int i = 0; i < rtensor.Shape().Size(); i++, src++) {
+              outObj[i] = PyBytes_FromStringAndSize(src->data(), src->size());
+              if (outObj[i] == nullptr) {
+                for (int j = 0; j < i; ++j) {
+                  Py_DECREF(outObj[j]);
+                }
+                throw std::runtime_error("Failed to allocate string for ndarray of strings.");
+              }
+            }
+          }
           rfetch.push_back(obj);
         }
         return rfetch;
