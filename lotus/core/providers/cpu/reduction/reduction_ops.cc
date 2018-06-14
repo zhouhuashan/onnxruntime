@@ -237,13 +237,9 @@ Status ReduceL1<float>::Compute(OpKernelContext* ctx) const {
 
   float* output_data = reduced->MutableData<float>();
 
-  for (int j = 0; j < block_size; ++j) {
-    float abs_sum = 0;
-    for (int i = 0; i < blocks; ++i) {
-      abs_sum += std::abs(transposedInputData[i * block_size + j]);
-    }
-    *(output_data++) = abs_sum;
-  }
+  EigenVectorMap<float> out_vec(output_data, block_size);
+  out_vec = ConstEigenMatrixMap<float>(&transposedInputData[0], block_size, blocks).cwiseAbs().rowwise().sum();
+
   return Status::OK();
 }
 
@@ -256,13 +252,9 @@ Status ReduceL2<float>::Compute(OpKernelContext* ctx) const {
 
   float* output_data = reduced->MutableData<float>();
 
-  for (int j = 0; j < block_size; ++j) {
-    float square_sum = 0;
-    for (int i = 0; i < blocks; ++i) {
-      square_sum += std::pow(transposedInputData[i * block_size + j], 2);
-    }
-    *(output_data++) = std::sqrt(square_sum);
-  }
+  EigenVectorMap<float> out_vec(output_data, block_size);
+  out_vec = ConstEigenMatrixMap<float>(&transposedInputData[0], block_size, blocks).rowwise().norm();
+
   return Status::OK();
 }
 
@@ -275,13 +267,13 @@ Status ReduceLogSum<float>::Compute(OpKernelContext* ctx) const {
 
   float* output_data = reduced->MutableData<float>();
 
+  EigenVectorMap<float> out_vec(output_data, block_size);
+  out_vec = ConstEigenMatrixMap<float>(&transposedInputData[0], block_size, blocks).rowwise().sum();
   for (int j = 0; j < block_size; ++j) {
-    float sum = 0;
-    for (int i = 0; i < blocks; ++i) {
-      sum += transposedInputData[i * block_size + j];
-    }
-    *(output_data++) = std::log(sum);
+    *(output_data) = std::log(*(output_data));
+    ++output_data;
   }
+
   return Status::OK();
 }
 
@@ -392,13 +384,9 @@ Status ReduceSumSquare<float>::Compute(OpKernelContext* ctx) const {
 
   float* output_data = reduced->MutableData<float>();
 
-  for (int j = 0; j < block_size; ++j) {
-    float square_sum = 0;
-    for (int i = 0; i < blocks; ++i) {
-      square_sum += std::pow(transposedInputData[i * block_size + j], 2);
-    }
-    *(output_data++) = square_sum;
-  }
+  EigenVectorMap<float> out_vec(output_data, block_size);
+  out_vec = ConstEigenMatrixMap<float>(&transposedInputData[0], block_size, blocks).rowwise().squaredNorm();
+
   return Status::OK();
 }
 
@@ -411,18 +399,13 @@ Status ArgMax<float>::Compute(OpKernelContext* ctx) const {
 
   int64_t* output_data = reduced->MutableData<int64_t>();
 
-  for (int j = 0; j < block_size; ++j) {
-    float v_max = transposedInputData[j];
-    int i_max = 0;
-    for (int i = 1; i < blocks; ++i) {
-      float v = transposedInputData[i * block_size + j];
-      if (v > v_max) {
-        i_max = i;
-        v_max = v;
-      }
-    }
-    *(output_data++) = static_cast<int64_t>(i_max);
+  Eigen::MatrixXf::Index maxIndex;
+  auto matrixData = ConstEigenMatrixMap<float>(&transposedInputData[0], block_size, blocks);
+  for (int i = 0; i < block_size; ++i) {
+    matrixData.row(i).maxCoeff(&maxIndex);
+    *(output_data++) = maxIndex;
   }
+
   return Status::OK();
 }
 
@@ -435,18 +418,13 @@ Status ArgMin<float>::Compute(OpKernelContext* ctx) const {
 
   int64_t* output_data = reduced->MutableData<int64_t>();
 
-  for (int j = 0; j < block_size; ++j) {
-    float v_min = transposedInputData[j];
-    int i_min = 0;
-    for (int i = 1; i < blocks; ++i) {
-      float v = transposedInputData[i * block_size + j];
-      if (v < v_min) {
-        i_min = i;
-        v_min = v;
-      }
-    }
-    *(output_data++) = static_cast<int64_t>(i_min);
+  Eigen::MatrixXf::Index minIndex;
+  auto matrixData = ConstEigenMatrixMap<float>(&transposedInputData[0], block_size, blocks);
+  for (int i = 0; i < block_size; ++i) {
+    matrixData.row(i).minCoeff(&minIndex);
+    *(output_data++) = minIndex;
   }
+
   return Status::OK();
 }
 
