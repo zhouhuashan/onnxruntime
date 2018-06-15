@@ -781,7 +781,6 @@ class InferenceSession::Impl {
       if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {
         continue;
       }
-
       // construct and save the kernels
       std::unique_ptr<OpKernel> p_op_kernel;
       LOTUS_RETURN_IF_ERROR(CreateOpKernel(node, &p_op_kernel));
@@ -811,13 +810,13 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
-    Common::Status status = session_state_.GetCustomRegistryManager().CreateKernel(node, exec_provider, p_op_kernel);
+    Common::Status status = session_state_.GetCustomRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
 
     if (status.IsOK()) {
       return status;
     }
 
-    return KernelRegistry::Instance().CreateKernel(node, exec_provider, p_op_kernel);
+    return KernelRegistry::Instance().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
   }
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {

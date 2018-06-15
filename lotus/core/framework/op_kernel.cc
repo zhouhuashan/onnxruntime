@@ -171,11 +171,12 @@ static std::string ToString(const std::vector<std::string>& error_strs) {
 
 Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
                                     const IExecutionProvider* execution_provider,
+                                    const SessionState& session_state,
                                     /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
   const KernelCreateInfo* kernel_create_info = nullptr;
   LOTUS_RETURN_IF_ERROR(SearchKernelRegistry(node, &kernel_create_info));
-  
-  OpKernelInfo kernel_info(node, *kernel_create_info->kernel_def, execution_provider);
+
+  OpKernelInfo kernel_info(node, *kernel_create_info->kernel_def, execution_provider, session_state);
   op_kernel->reset(kernel_create_info->kernel_create_func(kernel_info));
   return Status::OK();
 }

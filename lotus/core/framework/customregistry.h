@@ -6,8 +6,6 @@
 #include "core/graph/schema_registry.h"
 
 namespace Lotus {
-// TODO - Move KernelCreateFn somewhere common to avoid the duplicate function.
-using CustomKernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegistry {
  public:
@@ -22,7 +20,7 @@ class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegis
     * Call this before invoking Initialize().
     * @return OK if success.
     */
-  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, CustomKernelCreateFn kernel_creator);
+  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
   /**
   * Register a onnx opset to this session.
@@ -45,6 +43,7 @@ class CustomRegistryManager : public LotusIR::ILotusOpSchemaCollection {
 
   Status CreateKernel(const LotusIR::Node& node,
                       const IExecutionProvider* execution_provider,
+                      const SessionState& session_state,
                       /*out*/ std::unique_ptr<OpKernel>* op_kernel) const;
 
   Status SearchKernelRegistry(const LotusIR::Node& node,

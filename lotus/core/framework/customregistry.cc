@@ -3,7 +3,7 @@
 namespace Lotus {
 
 CustomRegistry::CustomRegistry(bool create_func_kernel) : KernelRegistry(create_func_kernel) {}
-Common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, CustomKernelCreateFn kernel_creator) {
+Common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator) {
   return Register(kernel_def_builder, kernel_creator);
 }
 
@@ -21,6 +21,7 @@ void CustomRegistryManager::RegisterCustomRegistry(std::shared_ptr<CustomRegistr
 
 Status CustomRegistryManager::CreateKernel(const LotusIR::Node& node,
                                            const IExecutionProvider* execution_provider,
+                                           const SessionState& session_state,
                                            /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
   if (custom_registries.empty()) {
     return Status(LOTUS, FAIL, "Kernel not found.");
@@ -28,7 +29,7 @@ Status CustomRegistryManager::CreateKernel(const LotusIR::Node& node,
 
   Status status;
   for (auto& registry : custom_registries) {
-    status = registry->CreateKernel(node, execution_provider, op_kernel);
+    status = registry->CreateKernel(node, execution_provider, session_state, op_kernel);
     if (status.IsOK()) {
       return status;
     }
