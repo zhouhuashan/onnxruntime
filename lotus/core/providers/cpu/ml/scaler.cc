@@ -36,6 +36,30 @@ REGISTER_KERNEL(KernelDefBuilder("Scaler")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 ScalerOp<float>);
 
+REGISTER_KERNEL(KernelDefBuilder("Scaler")
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .MayInplace(0, 0)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<double>()),
+                ScalerOp<double>);
+
+REGISTER_KERNEL(KernelDefBuilder("Scaler")
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .MayInplace(0, 0)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()),
+                ScalerOp<int64_t>);
+
+REGISTER_KERNEL(KernelDefBuilder("Scaler")
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .MayInplace(0, 0)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+                ScalerOp<int32_t>);
+
 template <typename T>
 ScalerOp<T>::ScalerOp(const OpKernelInfo& info) : OpKernel(info) {
   op_kernel_info_.GetAttrs<float>("scale", scale_);    // optional
