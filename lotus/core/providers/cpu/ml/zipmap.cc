@@ -44,6 +44,14 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   const vector<int64_t> x_dims = x_shape.GetDims();
+
+  if (x_dims.size() == 0)
+  {
+    return Status(LOTUS,
+                  INVALID_ARGUMENT,
+                  "Zipmap does not support empty dim count");
+  }
+
   int64_t batchSize = x_dims.size() > 1 ? x_dims[0] : 1;
   int64_t featuresPerBatch = x_dims[x_dims.size() - 1];
 
