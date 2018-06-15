@@ -44,47 +44,60 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   const vector<int64_t> x_dims = x_shape.GetDims();
-  int64_t N = x_shape.GetDims()[0];
-  int64_t stride = x_dims.size() > 1 ? x_dims[1] : 1;
+  int64_t batchSize = x_dims.size() > 1 ? x_dims[0] : 1;
+  int64_t featuresPerBatch = x_dims[x_dims.size() - 1];
+
+  if (x_dims.size() > 2)
+  {
+    for (size_t dim = 1; dim < x_dims.size() - 1; dim++)
+    {
+      if (x_dims[dim] != 1)
+      {
+        return Status(LOTUS,
+                      INVALID_ARGUMENT,
+                      "Zipmap only supports inputs with 1 or 2 dims that are not size of 1.");
+      }
+    }
+  }
+
   const float* x_data = X.Data<float>();
-  std::vector<int64_t> output_dims{1, N};
 
   if (using_strings_) {
-    if (stride != static_cast<int64>(classlabels_strings_.size())) {
+    if (featuresPerBatch != static_cast<int64>(classlabels_strings_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
-                    "Input stride[" + std::to_string(stride) +
+                    "Input featuresPerBatch[" + std::to_string(featuresPerBatch) +
                         "] != number of classlabels[" + std::to_string(classlabels_strings_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::string, float>>>(0);
     //auto* y_data = Y->MutableData<std::vector<std::map<std::string, float>>>();
-    y_data->resize(N);
+    y_data->resize(batchSize);
     int64_t current_weight_0 = 0;
-    for (int n = 0; n < N; n++) {
+    for (int n = 0; n < batchSize; n++) {
       std::map<std::string, float> map1;
-      for (int j = 0; j < stride; j++) {
+      for (int j = 0; j < featuresPerBatch; j++) {
         map1[classlabels_strings_[j]] = x_data[current_weight_0 + j];
       }
-      current_weight_0 += stride;
+      current_weight_0 += featuresPerBatch;
       (*y_data)[n] = map1;
     }
   } else {
-    if (stride != static_cast<int64>(classlabels_int64s_.size())) {
+    if (featuresPerBatch != static_cast<int64>(classlabels_int64s_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
-                    "Input stride[" + std::to_string(stride) +
+                    "Input featuresPerBatch[" + std::to_string(featuresPerBatch) +
                         "] != number of classlabels[" + std::to_string(classlabels_int64s_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::int64_t, float>>>(0);
     //auto* y_data = Y->MutableData<std::vector<std::map<int64_t, float>>>();
-    y_data->resize(N);
+    y_data->resize(batchSize);
     int64_t current_weight_0 = 0;
-    for (int n = 0; n < N; n++) {
+    for (int n = 0; n < batchSize; n++) {
       std::map<int64_t, float> map2;
-      for (int j = 0; j < stride; j++) {
+      for (int j = 0; j < featuresPerBatch; j++) {
         map2[classlabels_int64s_[j]] = x_data[current_weight_0 + j];
       }
-      current_weight_0 += stride;
+      current_weight_0 += featuresPerBatch;
       (*y_data)[n] = map2;
     }
   }
