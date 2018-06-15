@@ -133,6 +133,43 @@ class TestInferenceSession(unittest.TestCase):
                                       [12., 15., 15., 15.,  8.]]]], dtype=np.float32)
         np.testing.assert_allclose(output_expected, res[0])
 
+    def testZipMapStringFloat(self):
+        sess = lotus.InferenceSession("testdata/zipmap_stringfloat.pb")
+        x = np.array([1.0, 0.0, 3.0, 44.0, 23.0, 11.0], dtype=np.float32).reshape((2,3))
+
+        x_name = sess.get_inputs()[0].name
+        self.assertEqual(x_name, "X")
+        x_type = sess.get_inputs()[0].type
+        self.assertEqual(x_type, 'tensor(float)')
+
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "Z")
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, 'seq(map(string,tensor(float)))')
+
+        output_expected = [{'class2': 0.0, 'class1': 1.0, 'class3': 3.0},
+                           {'class2': 23.0, 'class1': 44.0, 'class3': 11.0}]
+        res = sess.run([output_name], {x_name: x})
+        self.assertEqual(output_expected, res[0])
+
+    def testZipMapInt64Float(self):
+        sess = lotus.InferenceSession("testdata/zipmap_int64float.pb")
+        x = np.array([1.0, 0.0, 3.0, 44.0, 23.0, 11.0], dtype=np.float32).reshape((2,3))
+
+        x_name = sess.get_inputs()[0].name
+        self.assertEqual(x_name, "X")
+        x_type = sess.get_inputs()[0].type
+        self.assertEqual(x_type, 'tensor(float)')
+
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "Z")
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, 'seq(map(int64,tensor(float)))')
+
+        output_expected = [{10: 1.0, 20: 0.0, 30: 3.0}, {10: 44.0, 20: 23.0, 30: 11.0}]
+        res = sess.run([output_name], {x_name: x})
+        self.assertEqual(output_expected, res[0])
+
     def testRaiseWrongNumInputs(self):
         with self.assertRaises(ValueError) as context:
             sess = lotus.InferenceSession("testdata/logicaland.pb")
