@@ -20,10 +20,12 @@ void TestHelper(const std::vector<T>& classes,
     LOTUS_THROW("Invalid type: ", type);
   }
 
+  size_t batchSize = (input_dims.size() > 1) input_dims[0] : 1;
+
   // prepare expected output
   std::vector<std::map<T, float>> expected_output;
   if (expect_result == OpTester::ExpectResult::kExpectSuccess) {
-    for (int64_t i = 0; i < input_dims[0]; ++i) {
+    for (int64_t i = 0; i < batchSize; ++i) {
       std::map<T, float> var_map;
       for (size_t j = 0; j < classes.size(); ++j) {
         var_map.emplace(classes[j], input[i * 3 + j]);
@@ -44,6 +46,10 @@ TEST(MLOpTest, ZipMapOpStringFloat) {
 
 TEST(MLOpTest, ZipMapOpInt64Float) {
   TestHelper<int64_t>({10, 20, 30}, "int64_t", {2, 3});
+}
+
+TEST(MLOpTest, ZipMapOpInt64Float) {
+  TestHelper<int64_t>({10, 20, 30}, "int64_t", {3});
 }
 
 // Negative test cases
