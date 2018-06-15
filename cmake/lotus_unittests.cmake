@@ -47,7 +47,6 @@ endfunction(AddTest)
 
 add_whole_archive_flag(lotus_framework lotus_framework_whole_archive)
 add_whole_archive_flag(lotus_providers lotus_providers_whole_archive)
-add_whole_archive_flag(onnx onnx_whole_archive)
 if(lotus_USE_CUDA)
   add_whole_archive_flag(lotus_providers_cuda lotus_providers_cuda_whole_archive)
 endif()
@@ -121,7 +120,7 @@ set(lotus_test_common_libs
 
 set(lotus_test_ir_libs
     lotusIR_graph
-    ${onnx_whole_archive}
+    onnx
     onnx_proto
     lotus_common
     protobuf::libprotobuf
@@ -133,7 +132,7 @@ set(lotus_test_framework_libs
     ${lotus_providers_cuda_whole_archive}
     ${lotus_framework_whole_archive}
     lotusIR_graph
-    ${onnx_whole_archive}
+    onnx
     onnx_proto
     lotus_common
     protobuf::libprotobuf
@@ -149,7 +148,7 @@ set(lotus_test_providers_libs
     ${lotus_providers_cuda_whole_archive}
     ${lotus_framework_whole_archive}
     lotusIR_graph
-    ${onnx_whole_archive}
+    onnx
     onnx_proto
     lotus_common
     protobuf::libprotobuf
@@ -279,7 +278,7 @@ set(onnx_test_libs
     ${lotus_providers_cuda_whole_archive}
     ${lotus_framework_whole_archive}
     lotusIR_graph
-    ${onnx_whole_archive}
+    onnx
     onnx_proto
     lotus_common
     protobuf::libprotobuf
