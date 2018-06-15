@@ -45,15 +45,15 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const TensorShape& x_shape = X.Shape();
   const vector<int64_t> x_dims = x_shape.GetDims();
 
-  if (x_dims.size() == 0)
+  if (x_dims.empty())
   {
     return Status(LOTUS,
                   INVALID_ARGUMENT,
                   "Zipmap does not support empty dim count");
   }
 
-  int64_t batchSize = x_dims.size() > 1 ? x_dims[0] : 1;
-  int64_t featuresPerBatch = x_dims[x_dims.size() - 1];
+  int64_t batch_size = x_dims.size() > 1 ? x_dims[0] : 1;
+  int64_t features_per_Batch = x_dims[x_dims.size() - 1];
 
   if (x_dims.size() > 2)
   {
@@ -71,41 +71,41 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const float* x_data = X.Data<float>();
 
   if (using_strings_) {
-    if (featuresPerBatch != static_cast<int64>(classlabels_strings_.size())) {
+    if (features_per_Batch != static_cast<int64>(classlabels_strings_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
-                    "Input featuresPerBatch[" + std::to_string(featuresPerBatch) +
+                    "Input features_per_Batch[" + std::to_string(features_per_Batch) +
                         "] != number of classlabels[" + std::to_string(classlabels_strings_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::string, float>>>(0);
     //auto* y_data = Y->MutableData<std::vector<std::map<std::string, float>>>();
-    y_data->resize(batchSize);
+    y_data->resize(batch_size);
     int64_t current_weight_0 = 0;
-    for (int n = 0; n < batchSize; n++) {
+    for (int n = 0; n < batch_size; n++) {
       std::map<std::string, float> map1;
-      for (int j = 0; j < featuresPerBatch; j++) {
+      for (int j = 0; j < features_per_Batch; j++) {
         map1[classlabels_strings_[j]] = x_data[current_weight_0 + j];
       }
-      current_weight_0 += featuresPerBatch;
+      current_weight_0 += features_per_Batch;
       (*y_data)[n] = map1;
     }
   } else {
-    if (featuresPerBatch != static_cast<int64>(classlabels_int64s_.size())) {
+    if (features_per_Batch != static_cast<int64>(classlabels_int64s_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
-                    "Input featuresPerBatch[" + std::to_string(featuresPerBatch) +
+                    "Input features_per_Batch[" + std::to_string(features_per_Batch) +
                         "] != number of classlabels[" + std::to_string(classlabels_int64s_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::int64_t, float>>>(0);
     //auto* y_data = Y->MutableData<std::vector<std::map<int64_t, float>>>();
-    y_data->resize(batchSize);
+    y_data->resize(batch_size);
     int64_t current_weight_0 = 0;
-    for (int n = 0; n < batchSize; n++) {
+    for (int n = 0; n < batch_size; n++) {
       std::map<int64_t, float> map2;
-      for (int j = 0; j < featuresPerBatch; j++) {
+      for (int j = 0; j < features_per_Batch; j++) {
         map2[classlabels_int64s_[j]] = x_data[current_weight_0 + j];
       }
-      current_weight_0 += featuresPerBatch;
+      current_weight_0 += features_per_Batch;
       (*y_data)[n] = map2;
     }
   }
