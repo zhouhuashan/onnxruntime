@@ -33,22 +33,26 @@ const LotusIR::Node& OpKernelInfo::node() const noexcept {
   return node_;
 }
 
-bool OpKernelInfo::TryGetConstantInput(const std::string& input_arg_name, const Tensor** constant_input_value) const {
-	int input_arg_index = -1;
-	if (!session_state_.GetMLValueIdx(input_arg_name, &input_arg_index).IsOK()) {
-		return false;
-	}
+bool OpKernelInfo::TryGetConstantInput(int input_index, const Tensor** constant_input_value) const {
+  if (input_index < 0 || input_index >= node_.InputDefs().size()) {
+    return false;
+  }
+  auto& input_arg_name = node_.InputDefs()[input_index]->Name();
+  int input_arg_index = -1;
+  if (!session_state_.GetMLValueIdx(input_arg_name, &input_arg_index).IsOK()) {
+    return false;
+  }
 
-	auto& initializers = session_state_.GetInitializedTensors();
-	auto iter = initializers.find(input_arg_index);
-	if (initializers.end() == iter) {
-		return false;
-	}
-	if (!iter->second.IsTensor()) {
-		// Only constant Tensor input is support right now, since we're using initializers to store the data.
-		return false;
-	}
-	*constant_input_value = &iter->second.Get<Tensor>();
-	return true;
+  auto& initializers = session_state_.GetInitializedTensors();
+  auto iter = initializers.find(input_arg_index);
+  if (initializers.end() == iter) {
+    return false;
+  }
+  if (!iter->second.IsTensor()) {
+    // Only constant Tensor input is support right now, since we're using initializers to store the data.
+    return false;
+  }
+  *constant_input_value = &iter->second.Get<Tensor>();
+  return true;
 }
 }  // namespace Lotus

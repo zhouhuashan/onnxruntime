@@ -31,7 +31,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
 
   const LotusIR::Node& node() const noexcept;
 
-  bool TryGetConstantInput(const std::string& input_arg_name, const Tensor** constant_input_value) const;
+  bool TryGetConstantInput(int input_index, const Tensor** constant_input_value) const;
 
  private:
   LOTUS_DISALLOW_MOVE(OpKernelInfo);
