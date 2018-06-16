@@ -20,12 +20,12 @@ void TestHelper(const std::vector<T>& classes,
     LOTUS_THROW("Invalid type: ", type);
   }
 
-  size_t batchSize = (input_dims.size() > 1) input_dims[0] : 1;
+  int64_t batch_size = (input_dims.size() > 1) ? input_dims[0] : 1;
 
   // prepare expected output
   std::vector<std::map<T, float>> expected_output;
   if (expect_result == OpTester::ExpectResult::kExpectSuccess) {
-    for (int64_t i = 0; i < batchSize; ++i) {
+    for (int64_t i = 0; i < batch_size; ++i) {
       std::map<T, float> var_map;
       for (size_t j = 0; j < classes.size(); ++j) {
         var_map.emplace(classes[j], input[i * 3 + j]);
