@@ -48,7 +48,7 @@ TEST(MLOpTest, ZipMapOpInt64Float) {
   TestHelper<int64_t>({10, 20, 30}, "int64_t", {2, 3});
 }
 
-TEST(MLOpTest, ZipMapOpInt64Float) {
+TEST(MLOpTest, ZipMapOpInt64Float1D) {
   TestHelper<int64_t>({10, 20, 30}, "int64_t", {3});
 }
 
