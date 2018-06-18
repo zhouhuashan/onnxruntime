@@ -53,28 +53,25 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   }
 
   int64_t batch_size = x_dims.size() > 1 ? x_dims[0] : 1;
-  int64_t features_per_Batch = x_dims[x_dims.size() - 1];
+  int64_t features_per_batch = x_dims[x_dims.size() - 1];
 
+  // Treat ND inputs as 2D. First dim being batchsize and the rest being packed down into 1D. This is matching Softmax
+  // which is commonly before zipmap.
   if (x_dims.size() > 2)
   {
     for (size_t dim = 1; dim < x_dims.size() - 1; dim++)
     {
-      if (x_dims[dim] != 1)
-      {
-        return Status(LOTUS,
-                      INVALID_ARGUMENT,
-                      "Zipmap only supports inputs with 1 or 2 dims that are not size of 1.");
-      }
+      features_per_batch *= x_dims[dim];
     }
   }
 
   const float* x_data = X.Data<float>();
 
   if (using_strings_) {
-    if (features_per_Batch != static_cast<int64>(classlabels_strings_.size())) {
+    if (features_per_batch != static_cast<int64>(classlabels_strings_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
-                    "Input features_per_Batch[" + std::to_string(features_per_Batch) +
+                    "Input features_per_batch[" + std::to_string(features_per_batch) +
                         "] != number of classlabels[" + std::to_string(classlabels_strings_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::string, float>>>(0);
@@ -83,17 +80,17 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
     int64_t current_weight_0 = 0;
     for (int n = 0; n < batch_size; n++) {
       std::map<std::string, float> map1;
-      for (int j = 0; j < features_per_Batch; j++) {
+      for (int j = 0; j < features_per_batch; j++) {
         map1[classlabels_strings_[j]] = x_data[current_weight_0 + j];
       }
-      current_weight_0 += features_per_Batch;
+      current_weight_0 += features_per_batch;
       (*y_data)[n] = map1;
     }
   } else {
-    if (features_per_Batch != static_cast<int64>(classlabels_int64s_.size())) {
+    if (features_per_batch != static_cast<int64>(classlabels_int64s_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
-                    "Input features_per_Batch[" + std::to_string(features_per_Batch) +
+                    "Input features_per_batch[" + std::to_string(features_per_batch) +
                         "] != number of classlabels[" + std::to_string(classlabels_int64s_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::int64_t, float>>>(0);
@@ -102,10 +99,10 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
     int64_t current_weight_0 = 0;
     for (int n = 0; n < batch_size; n++) {
       std::map<int64_t, float> map2;
-      for (int j = 0; j < features_per_Batch; j++) {
+      for (int j = 0; j < features_per_batch; j++) {
         map2[classlabels_int64s_[j]] = x_data[current_weight_0 + j];
       }
-      current_weight_0 += features_per_Batch;
+      current_weight_0 += features_per_batch;
       (*y_data)[n] = map2;
     }
   }
