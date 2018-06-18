@@ -49,7 +49,7 @@ TEST(MLOpTest, ZipMapOpInt64Float) {
 }
 
 TEST(MLOpTest, ZipMapOpInt64Float1D) {
-  TestHelper<int64_t>({10, 20, 30}, "int64_t", {3});
+  TestHelper<int64_t>({10, 20, 30, 40, 50, 60}, "int64_t", {6});
 }
 
 // Negative test cases
