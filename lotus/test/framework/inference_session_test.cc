@@ -498,7 +498,7 @@ static void TestBindHelper(const std::string& log_str, ProviderType provider_typ
   SessionOptions so;
 
   so.session_logid = "InferenceSessionTests." + log_str;
-  so.session_log_verbosity_level = 1;
+  so.session_log_verbosity_level = 0;  // change to 1 for detailed logging
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
   if (provider_type == kCudaExecutionProvider) {
@@ -516,7 +516,8 @@ static void TestBindHelper(const std::string& log_str, ProviderType provider_typ
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
-  run_options.run_log_verbosity_level = 1;
+  run_options.run_log_verbosity_level = 0;  // change to 1 for detailed logging
+
   run_options.run_tag = so.session_logid;
   RunModelWithBindingMatMul(session_object, run_options, provider_type, preallocate_output);
 }

@@ -247,7 +247,8 @@ void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, 
       ret = std::make_shared<TestCaseResult>(data_count, EXECUTE_RESULT::LOAD_MODEL_FAILED, node_name);
       goto end;
     }
-    LOGF_DEFAULT(INFO, "testing %s\n", info->GetTestCaseName().c_str());
+    std::string test_case_name = info->GetTestCaseName();
+    LOGF_DEFAULT(INFO, "testing %s\n", test_case_name.c_str());
 #ifdef _WIN32
     if (concurrent_runs > 1 && data_count > 1) {
       r = new PTestRunner(session_object, info, on_finished);

@@ -126,6 +126,75 @@ class SequentialExecutor : public Executor {
     return Common::Status::OK();
   }
 
+  Common::Status AllocateHelper(LotusIR::ProviderType provider_type,
+                                const MLValue& fetched_mlvalue,
+                                MLValue& output_mlvalue) {
+    auto* p_provider = session_state_.GetExecutionProvider(provider_type);
+    LOTUS_ENFORCE(p_provider);
+    auto allocator = p_provider->GetAllocator();
+    LOTUS_ENFORCE(allocator != nullptr);
+    auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
+    void* buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
+    LOTUS_ENFORCE(buffer);
+    std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(fetched_tensor.DataType(),
+                                                                fetched_tensor.Shape(),
+                                                                buffer,
+                                                                allocator->Info(),
+                                                                allocator);
+    output_mlvalue.Init(p_tensor.release(),
+                        DataTypeImpl::GetType<Tensor>(),
+                        DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+    return Status::OK();
+  }
+
+  // copies outputs across devices only if required
+  Common::Status CopyOutputsAcrossDevices(const MLValue& fetched_mlvalue,
+                                          size_t idx,
+                                          std::vector<MLValue>& fetches) {
+    if (!fetched_mlvalue.IsTensor()) {
+      fetches[idx] = fetched_mlvalue;
+      return Status::OK();
+    }
+
+    auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
+    auto fetched_provider_type = session_state_.GetExecutionProvider(fetched_tensor.Location())->Type();
+
+    auto& output_mlvalue = fetches[idx];
+    if (!output_mlvalue.IsAllocated()) {
+      if (fetched_provider_type != LotusIR::kCpuExecutionProvider) {
+        LOTUS_RETURN_IF_ERROR(AllocateHelper(LotusIR::kCpuExecutionProvider,
+                                             fetched_mlvalue,
+                                             output_mlvalue));
+      } else {
+        fetches[idx] = fetched_mlvalue;
+        return Status::OK();
+      }
+    }
+
+    Tensor* p_output_tensor = output_mlvalue.GetMutable<Tensor>();
+    auto& output_tensor_loc = p_output_tensor->Location();
+    auto* p_output_provider = session_state_.GetExecutionProvider(output_tensor_loc);
+    if (!p_output_provider && output_tensor_loc.name == CPU) {
+      // handle the case if user created the tensor using a CPU allocator different from the
+      // one registered in the CPUExecutionProvider
+      p_output_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+    }
+    LOTUS_ENFORCE(p_output_provider);
+    auto output_provider_type = p_output_provider->Type();
+
+    if (output_provider_type == fetched_provider_type) {
+      fetches[idx] = fetched_mlvalue;
+      return Status::OK();
+    }
+
+    auto* p_fetched_provider = session_state_.GetExecutionProvider(fetched_tensor.Location());
+    LOTUS_ENFORCE(p_fetched_provider);
+    LOTUS_RETURN_IF_ERROR(p_fetched_provider->CopyTensor(fetched_tensor, *p_output_tensor));
+
+    return Status::OK();
+  }
+
   Common::Status FetchOutput(const std::vector<std::string>& output_names,
                              std::vector<MLValue>* p_fetches) {
     LOTUS_ENFORCE(p_fetches);  // this should've been checked before already.
@@ -144,9 +213,9 @@ class SequentialExecutor : public Executor {
       VLOGS(run_logger_, 1) << "Attempting to fetch output with name: " << oname;
       int mlvalue_index;
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(oname, &mlvalue_index));
-      const MLValue& output_mlvalue = root_frame_.GetMLValue(mlvalue_index);
+      const MLValue& fetched_mlvalue = root_frame_.GetMLValue(mlvalue_index);
       VLOGS(run_logger_, 1) << "Copying fetched MLValue to output vector";
-      (*p_fetches)[idx++] = output_mlvalue;
+      LOTUS_RETURN_IF_ERROR(CopyOutputsAcrossDevices(fetched_mlvalue, idx++, *p_fetches));
     }
 
     VLOGS(run_logger_, 1) << "Done with execution.";

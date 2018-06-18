@@ -340,6 +340,70 @@ class InferenceSession::Impl {
     return Run(run_options, feeds, output_names, p_fetches);
   }
 
+  // copies inputs across devices only if required
+  Common::Status CopyInputsAcrossDevices(const NameMLValMap& orig_feeds,
+                                         NameMLValMap& new_feeds) {
+    const LotusIR::Graph* p_graph = session_state_.GetGraph();
+    LOTUS_ENFORCE(p_graph);
+    auto& weights_map = p_graph->GetAllInitializedTensors();
+    for (auto& node : p_graph->Nodes()) {  // TODO this loop runs for every Run(). can we avoid it? if so, how?
+      for (auto* arg : node.InputDefs()) {
+        if (!arg->Exists() ||
+            arg->Name().empty() ||
+            !orig_feeds.count(arg->Name()) ||
+            weights_map.count(arg->Name())) {
+          continue;
+        }
+
+        auto& input_name = arg->Name();
+        auto& node_provider_type = node.GetExecutionProviderType();
+        auto& mlvalue = orig_feeds.at(input_name);
+        if (!mlvalue.IsTensor()) {
+          // copying not supported for non-tensor types
+          new_feeds[input_name] = mlvalue;
+          continue;
+        }
+        auto& input_tensor = mlvalue.Get<Tensor>();
+        auto& input_tensor_loc = input_tensor.Location();
+        auto* p_input_provider = session_state_.GetExecutionProvider(input_tensor_loc);
+        if (!p_input_provider && input_tensor_loc.name == CPU) {
+          // handle the case if user created the tensor using a CPU allocator different from the
+          // one registered in the CPUExecutionProvider
+          p_input_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+        }
+        LOTUS_ENFORCE(p_input_provider);
+
+        auto input_provider_type = p_input_provider->Type();
+        if (input_provider_type == node_provider_type) {
+          new_feeds[input_name] = mlvalue;
+          continue;
+        }
+
+        auto* node_provider = session_state_.GetExecutionProvider(node_provider_type);
+        LOTUS_ENFORCE(node_provider);
+        auto allocator = node_provider->GetAllocator();
+        MLValue new_mlvalue;
+        void* buffer = allocator->Alloc(input_tensor.DataType()->Size() * input_tensor.Shape().Size());
+        LOTUS_ENFORCE(buffer);
+        std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(input_tensor.DataType(),
+                                                                    input_tensor.Shape(),
+                                                                    buffer,
+                                                                    allocator->Info(),
+                                                                    allocator);
+
+        auto* node_exec_provider = session_state_.GetExecutionProvider(node_provider_type);
+        LOTUS_ENFORCE(node_exec_provider);
+        LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *p_tensor.get()));
+        new_mlvalue.Init(p_tensor.release(),
+                         DataTypeImpl::GetType<Tensor>(),
+                         DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+        new_feeds[input_name] = new_mlvalue;
+      };
+    }
+
+    return Status::OK();
+  }
+
   Common::Status Run(const RunOptions& run_options0,
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
@@ -373,14 +437,17 @@ class InferenceSession::Impl {
       unique_ptr<Logging::Logger> owned_run_logger;
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
+      NameMLValMap copied_feeds;
+      LOTUS_RETURN_IF_ERROR(CopyInputsAcrossDevices(feeds, copied_feeds));
+
       std::unique_ptr<Executor> p_exec;
       if (session_options_.enable_sequential_execution) {
-        p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names, *p_fetches, run_logger);
+        p_exec = Executor::NewSequentialExecutor(session_state_, copied_feeds, output_names, *p_fetches, run_logger);
       } else {
         LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
       }
 
-      retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
+      retval = p_exec->Execute(run_options, copied_feeds, output_names, p_fetches);
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     } catch (...) {
