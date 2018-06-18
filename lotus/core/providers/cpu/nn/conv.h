@@ -49,7 +49,7 @@ inline void ComputeSizeAndPad(
         int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
         *out_dim = (in_dim + pad_needed - dkernel) / stride + 1;
 
-        if (pad_type == AutoPadType::SAME_UPPER) {
+        if (pad_type == AutoPadType::SAME_LOWER) {
           *pad_head = (pad_needed + 1) / 2;
         } else {
           *pad_head = pad_needed / 2;
