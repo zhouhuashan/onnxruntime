@@ -96,6 +96,9 @@ TEST(TransformerTest, MemcpyTransformerTest) {
   status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
 
+  // Expect: copy of I3 from cpu to gpu
+  ExpectCopy(&i3_def, "MemcpyFromHost", node2, 1);
+
   // Expect: copy of O1 from cpu to gpu
   ExpectCopy(node1, "MemcpyFromHost", node2, 0);
 
@@ -103,6 +106,9 @@ TEST(TransformerTest, MemcpyTransformerTest) {
   ExpectCopy(node2, "MemcpyToHost", node3, 0);
   ExpectSame(node2, node4, 0);
   ExpectSame(node2, node4, 1);
+
+  // Expect: copy O4 from gpu to cpu
+  ExpectCopy(node4, "MemcpyToHost", &o4_def);
 }
 
 }  // namespace Test
