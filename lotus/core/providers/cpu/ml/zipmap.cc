@@ -55,14 +55,10 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   int64_t batch_size = x_dims.size() > 1 ? x_dims[0] : 1;
   int64_t features_per_batch = x_dims[x_dims.size() - 1];
 
-  // Treat ND inputs as 2D. First dim being batchsize and the rest being packed down into 1D. This is matching Softmax
-  // which is commonly before zipmap.
-  if (x_dims.size() > 2)
-  {
-    for (size_t dim = 1; dim < x_dims.size() - 1; dim++)
-    {
-      features_per_batch *= x_dims[dim];
-    }
+  if (x_dims.size() > 2) {
+      return Status(LOTUS,
+                    INVALID_ARGUMENT,
+                    "Zipmap only supports 1D or 2D input tensors");
   }
 
   const float* x_data = X.Data<float>();
