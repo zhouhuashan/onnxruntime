@@ -34,12 +34,12 @@ struct TensorAxisCounters {
 
   // Returns true if there was a carry to the next axis
   bool Increment() {
-    if (axis_ == 0) {
+    if (axis_-- == 0) {
       running_ = false;
       return false;
     }
 
-    if (++indices_[--axis_] != tensor_.Shape()[axis_]) {
+    if (++indices_[axis_] != tensor_.Shape()[axis_]) {
       axis_ = indices_.size();
       return false;
     }
@@ -96,7 +96,7 @@ struct SliceIterator {
   void AdvanceOverInnerExtent() {
     size_t axis = skips_.size() - 1;
     input_ += skips_[axis];
-    while (axis && ++indices_[--axis] == extents_[axis]) {
+    while (axis-- && ++indices_[axis] == extents_[axis]) {
       indices_[axis] = 0;
       input_ += skips_[axis];
     }
