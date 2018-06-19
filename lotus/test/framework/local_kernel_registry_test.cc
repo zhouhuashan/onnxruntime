@@ -168,7 +168,7 @@ onnx::OpSchema GetFooSchema() {
   schema.Output(0, "C", "Result, has same dimensions and type as A", "T");
   schema.TypeConstraint(
       "T",
-      OpSchema::high_precision_numeric_types(),
+      OpSchema::numeric_types_for_math_reduction(),
       "Constrain input and output types to high-precision numeric tensors.");
   schema.SinceVersion(6);
   return schema;
@@ -190,7 +190,7 @@ onnx::OpSchema GetOptionalOpSchema() {
   schema.Output(1, "Y2", "Result, has same dimensions and type as A", "T", OpSchema::Optional);
   schema.TypeConstraint(
       "T",
-      OpSchema::high_precision_numeric_types(),
+      OpSchema::numeric_types_for_math_reduction(),
       "Constrain input and output types to high-precision numeric tensors.");
   schema.SinceVersion(6);
   return schema;
