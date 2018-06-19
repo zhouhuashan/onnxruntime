@@ -63,16 +63,16 @@ const MLDataType& NumpyToLotusTensorType(int numpy_type) {
                                    : DataTypeImpl::GetType<int64_t>()},
       {NPY_LONGLONG, DataTypeImpl::GetType<int64_t>()},
       {NPY_ULONGLONG, DataTypeImpl::GetType<uint64_t>()},
-      {NPY_STRING, DataTypeImpl::GetType<std::string>()}};
+      {NPY_UNICODE, DataTypeImpl::GetType<std::string>()}};
 
-  if (numpy_type == NPY_UNICODE) {
-    throw std::runtime_error("numpy.unicode not yet supported. please use np.bytes_ instead.");
+  if (numpy_type == NPY_STRING) {
+    throw std::runtime_error("Please use np.unicode for strings.");
   }
 
   const auto it = type_map.find(numpy_type);
   if (it == type_map.end()) {
     throw std::runtime_error("Numpy_type " + std::to_string(numpy_type) +
-                             " can't be converted to MLDataType");
+                             " can't be converted to MLDataType.");
   } else {
     return it->second;
   }
@@ -107,7 +107,7 @@ void CreateTensorMLValue(AllocatorPtr alloc,
     auto element_type = NumpyToLotusTensorType(npy_type);
     void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
 
-    if (npy_type != NPY_STRING) {
+    if (npy_type != NPY_UNICODE) {
       memcpy(buffer, static_cast<void*>(PyArray_DATA(darray)), element_type->Size() * shape.Size());
     }
 
@@ -116,13 +116,15 @@ void CreateTensorMLValue(AllocatorPtr alloc,
                                                                 static_cast<void*>(buffer),
                                                                 alloc->Info(), alloc);
 
-    if (npy_type == NPY_STRING) {
+    if (npy_type == NPY_UNICODE) {
       // Copy string data which needs to be done after Tensor is allocated.
       std::string* dst = static_cast<std::string*>(buffer);
-      auto string_size = PyArray_ITEMSIZE(darray);
+      auto item_size = PyArray_ITEMSIZE(darray);
+      auto num_chars = item_size / PyUnicode_4BYTE_KIND;
       char* src = static_cast<char*>(PyArray_DATA(darray));
-      for (int i = 0; i < shape.Size(); i++, src += string_size) {
-        dst[i] = std::string(src, string_size).c_str();
+      for (int i = 0; i < shape.Size(); i++, src += item_size) {
+        // Python unicode strings are assumed to be USC-4. Lotus strings are stored as UTF-8.
+        dst[i] = PyUnicode_AsUTF8(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, src, num_chars));
       }
     }
 
@@ -205,18 +207,11 @@ void AddTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
   if (numpy_type != NPY_OBJECT) {
     memcpy(outPtr, rtensor.DataRaw(dtype), dtype->Size() * shape.Size());
   } else {
-    // Handle string type
-    PyObject** outObj = static_cast<PyObject**>(outPtr);
-    auto* src = rtensor.template Data<std::string>();
-
+    // Handle string type.
+    py::object* outObj = static_cast<py::object*>(outPtr);
+    const std::string* src = rtensor.template Data<std::string>();
     for (int i = 0; i < rtensor.Shape().Size(); i++, src++) {
-      outObj[i] = PyBytes_FromStringAndSize(src->data(), src->size());
-      if (outObj[i] == nullptr) {
-        for (int j = 0; j < i; ++j) {
-          Py_DECREF(outObj[j]);
-        }
-        throw std::runtime_error("Failed to allocate string for ndarray of strings.");
-      }
+      outObj[i] = py::cast(*src);
     }
   }
   pyobjs.push_back(obj);
