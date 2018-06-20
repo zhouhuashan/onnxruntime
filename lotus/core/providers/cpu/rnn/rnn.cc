@@ -7,7 +7,7 @@
 namespace Lotus {
 REGISTER_KERNEL(KernelDefBuilder("RNN")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
+                    .SinceVersion(7)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("T1", DataTypeImpl::GetTensorType<int>()),

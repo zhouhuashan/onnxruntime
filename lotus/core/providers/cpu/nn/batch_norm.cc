@@ -4,9 +4,9 @@ namespace Lotus {
 // spec: https://github.com/onnx/onnx/blob/master/docs/Operators.md#BatchNormalization
 REGISTER_KERNEL(KernelDefBuilder("BatchNormalization")
                     .Domain(LotusIR::kOnnxDomain)
-                    // This operator is used if you are using version 6 of the default ONNX operator
+                    // This operator is used if you are using version 7 of the default ONNX operator
                     // set until the next BC-breaking change to this operator
-                    .SinceVersion(6)
+                    .SinceVersion(7)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("X", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("scale", DataTypeImpl::GetTensorType<float>())

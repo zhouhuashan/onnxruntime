@@ -4,7 +4,7 @@ namespace Lotus {
 //copying reshape kernel
 REGISTER_KERNEL(KernelDefBuilder("Dropout")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
+                    .SinceVersion(7)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
                 IdentityOp);
