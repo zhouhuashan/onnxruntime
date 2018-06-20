@@ -77,7 +77,7 @@ TEST(MathOpTest, Add_Broadcast_1x1) {
   test.Run();
 }
 
-TEST(MathOpTest, Add_Broadcast) {
+TEST(MathOpTest, Add_Broadcast_3x2_3x1) {
   OpTester test("Add");
 
   std::vector<int64_t> dims{3, 2};
@@ -93,6 +93,45 @@ TEST(MathOpTest, Add_Broadcast) {
                         {2.0f, 3.0f,
                          5.0f, 6.0f,
                          8.0f, 9.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Add_Broadcast_2x1x4_1x3x1) {
+  OpTester test("Add");
+
+  test.AddInput<float>("A", {2, 1, 4},
+                       {101.0f, 102.0f, 103.0f, 104.0f,
+                        201.0f, 202.0f, 203.0f, 204.0f});
+  test.AddInput<float>("B", {1, 3, 1},
+                       {010.0f, 020.0f, 030.0f});
+  test.AddOutput<float>("C", {2, 3, 4},
+                        {111.0f, 112.0f, 113.0f, 114.0f,
+                         121.0f, 122.0f, 123.0f, 124.0f,
+                         131.0f, 132.0f, 133.0f, 134.0f,
+
+                         211.0f, 212.0f, 213.0f, 214.0f,
+                         221.0f, 222.0f, 223.0f, 224.0f,
+                         231.0f, 232.0f, 233.0f, 234.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Add_Broadcast_2x1x1_3x4) {
+  OpTester test("Add");
+
+  test.AddInput<float>("A", {2, 1, 1},
+                       {100.0f, 200.0f});
+  test.AddInput<float>("B", {3, 4},
+                       {011.0f, 012.0f, 013.0f, 014.0f,
+                        021.0f, 022.0f, 023.0f, 024.0f,
+                        031.0f, 032.0f, 033.0f, 034.0f});
+  test.AddOutput<float>("C", {2, 3, 4},
+                        {111.0f, 112.0f, 113.0f, 114.0f,
+                         121.0f, 122.0f, 123.0f, 124.0f,
+                         131.0f, 132.0f, 133.0f, 134.0f,
+
+                         211.0f, 212.0f, 213.0f, 214.0f,
+                         221.0f, 222.0f, 223.0f, 224.0f,
+                         231.0f, 232.0f, 233.0f, 234.0f});
   test.Run();
 }
 
