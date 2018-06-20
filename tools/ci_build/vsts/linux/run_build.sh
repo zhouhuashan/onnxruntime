@@ -27,6 +27,7 @@ if [ $BUILD_DEVICE = "gpu" ]; then
         --config $BUILD_CONFIG \
         --skip_submodule_sync \
         --enable_pybind \
+        --parallel \
         --use_cuda \
         --cuda_home /usr/local/cuda \
         --cudnn_home /usr/local/cudnn-7.0/cuda $BUILD_EXTR_PAR
@@ -34,7 +35,8 @@ else
     python $SCRIPT_DIR/../../build.py --build_dir /home/lotusdev \
         --config $BUILD_CONFIG \
         --skip_submodule_sync \
-        --enable_pybind $BUILD_EXTR_PAR
+        --enable_pybind \
+        --parallel $BUILD_EXTR_PAR
 fi
 
 source /usr/local/miniconda3/bin/deactivate lotus-$PYTHON_VERSION

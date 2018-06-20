@@ -129,7 +129,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
 
         run_subprocess(cmake_args  + ["-DCMAKE_BUILD_TYPE={}".format(config)], cwd=config_build_dir)
 
-def build_targets(cmake_path, build_dir, configs, parallel):
+def build_targets(cmake_path, build_dir, configs, parallel, GPU_BUILD):
     for config in configs:
         log.info("Building targets for %s configuration", config)
         build_dir2 = get_config_build_dir(build_dir, config)
@@ -143,7 +143,7 @@ def build_targets(cmake_path, build_dir, configs, parallel):
             num_cores = str(multiprocessing.cpu_count())
             if is_windows():
                 build_tool_args += ["/maxcpucount:" + num_cores]
-            else:
+            elif not GPU_BUILD:
                 build_tool_args += ["-j" + num_cores]
 
         if (build_tool_args):
@@ -294,8 +294,10 @@ def main():
 
     configs = set(args.config)
 
+    GPU_BUILD = False
     if (cuda_home):
         set_cuda_dir(cuda_home)
+        GPU_BUILD = True
 
     log.info("Build started")
 
@@ -320,7 +322,7 @@ def main():
                             args, cmake_extra_args)
 
     if (args.build):
-        build_targets(cmake_path, build_dir, configs, args.parallel)
+        build_targets(cmake_path, build_dir, configs, args.parallel, GPU_BUILD)
 
     if (args.install_onnx and is_windows()):
         #try to install onnx from this source tree
