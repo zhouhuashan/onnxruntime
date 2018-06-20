@@ -823,8 +823,7 @@ Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<Typ
 // Implementation of type-inference and type-checking for a single node
 GSL_SUPPRESS(f .23)  // spurious warning about inferred_type never being checked for null
 Status Graph::InferAndVerifyTypeMatch(Node& node,
-                                      const OpSchema& op,
-                                      const std::unordered_map<std::string, Node*>& output_args) {
+                                      const OpSchema& op) {
   auto& nodeName = node.Name();
 
   // <k> index used to navigate node->InputDefs().
@@ -842,51 +841,13 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
     for (int j = 0; j < arg_count; ++j, ++k) {
       auto& input_def = node.MutableDefinitions().input_defs[k];
       if (!input_def->Exists()) continue;
-
-      // Determine the type of the actual input parameter:
-
-      // Check if the actual input parameter is the output of some preceding node:
-      auto output_args_iter = output_args.find(input_def->Name());
-      if (output_args.end() == output_args_iter) {
-        // An input parmeter that is not the output of a preceding node
-        // should be a graph input (either fed by callers or in initializers).
-        // The ONNX spec requires every initializer to be included in the graph input,
-        // and that every graph input's type should be specified.
-        //
-        // TODO: We relax this requirement here and this requires some rethinking.
-        auto initial_tensor_iter = name_to_initial_tensor_.find(input_def->Name());
-        if (name_to_initial_tensor_.end() != initial_tensor_iter) {
-          // This input is fed with default value by initializer.
-          // Infer its type from initializer tensor.
-          TypeProto initial_tensor_type;
-          initial_tensor_type.mutable_tensor_type()->set_elem_type(
-              initial_tensor_iter->second->data_type());
-          input_def->SetType(DataTypeUtils::ToType(initial_tensor_type));
-
-          // Set shape accordingly.
-          TensorShapeProto shape;
-          for (auto dim : initial_tensor_iter->second->dims()) {
-            shape.add_dim()->set_dim_value(dim);
-          }
-          input_def->SetShape(shape);
-        } else if (!input_def->ToProto().has_type()) {
-          // This input is fed by callers and its type has to be specified.
-
-          Status status(LOTUS, FAIL,
-                        "Node (" + nodeName + ") input arg (" +
-                            input_def->Name() + ") does not have type information.");
-          return status;
-        }
-      } else {
-        // The type of this input should have been set during type-inference of the
-        // node that outputs this NodeArg
-        if (input_def->Type() == nullptr) {
-          // Logic error: This should not happen.
-          Status status(LOTUS, FAIL,
-                        "Node (" + nodeName + ") input arg (" +
-                            input_def->Name() + ") does not have type information set by parent node.");
-          return status;
-        }
+      if (input_def->Type() == nullptr) {
+        // Logic error: This should not happen if we properly checked that every use has
+        // a corresponding def, for which type-inference already produced a valid type
+        Status status(LOTUS, FAIL,
+                      "Node (" + nodeName + ") input arg (" +
+                          input_def->Name() + ") does not have type information set by parent node.");
+        return status;
       }
 
       // Verify that the actual parameter's type is one of permitted types of the formal parameter
@@ -1048,8 +1009,65 @@ static void check_node(
   schema->Verify(node);
 }
 
+// Apply type-inference and type-checking to all inputs and initializers:
+Lotus::Common::Status Graph::TypeCheckInputsAndInitializers() {
+  // Check that the type of every input is specified:
+  for (auto* graph_input : GetInputs()) {
+    if (nullptr == graph_input->Type()) {
+      Status status(LOTUS, FAIL, "Model input (" + graph_input->Name() + ") does not have type information.");
+      return status;
+    }
+  }
+
+  // Note: The ONNX spec requires every initializer to be included in the graph input,
+  // but Lotus relaxes this requirement for various reasons.
+
+  // Infer/check type and shape for all initializers from their values
+  for (auto& initializer_pair : name_to_initial_tensor_) {
+    const std::string& name = initializer_pair.first;
+    auto* node_arg = FindNodeArg(name);
+    // If node_arg is null, we ignore this as a potentially unused initializer here
+    if (nullptr != node_arg) {
+      const TensorProto* tensor_proto = initializer_pair.second;
+      TypeProto tensor_type;
+      tensor_type.mutable_tensor_type()->set_elem_type(tensor_proto->data_type());
+      auto inferred_type = DataTypeUtils::ToType(tensor_type);
+      auto existing_type = node_arg->Type();
+      if (nullptr == existing_type)
+        node_arg->SetType(inferred_type);
+      else if (inferred_type != existing_type) {
+        return Status(LOTUS, FAIL,
+                      "Type Error: Value of initializer " + name + " does not match its type.");
+      }
+
+      // Set shape accordingly.
+      TensorShapeProto inferred_shape;
+      for (auto dim : tensor_proto->dims()) {
+        inferred_shape.add_dim()->set_dim_value(dim);
+      }
+      const TensorShapeProto* p_existing_shape = node_arg->Shape();
+      if (nullptr == p_existing_shape)
+        node_arg->SetShape(inferred_shape);
+      else {
+        if (p_existing_shape->dim_size() != tensor_proto->dims_size())
+          return Status(LOTUS, FAIL,
+                        "Type Error: Shape of initializer " + name + " does not match its type.");
+        for (int i = 0; i < p_existing_shape->dim_size(); ++i) {
+          auto& d = p_existing_shape->dim(i);
+          if (d.has_dim_value() && (d.dim_value() != tensor_proto->dims(i)))
+            return Status(LOTUS, FAIL,
+                          "Type Error: Shape of initializer " + initializer_pair.first + " does not match its type.");
+        }
+      }
+    }
+  }
+  return Status::OK();
+}
+
 Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
                                    const std::unordered_map<std::string, Node*>& output_args) {
+  LOTUS_RETURN_IF_ERROR(TypeCheckInputsAndInitializers());
+
   for (auto nodeIndex : nodes_in_topological_order) {
     if (IsSourceNode(nodeIndex) || IsSinkNode(nodeIndex)) {
       continue;
@@ -1118,7 +1136,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
       }
     }
 
-    NO_CHANGE_ON_SYNC_FLAG(LOTUS_RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op, output_args)));
+    NO_CHANGE_ON_SYNC_FLAG(LOTUS_RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op)));
   }
 
   return Status::OK();
@@ -1351,6 +1369,16 @@ Node* GraphBase::AddNode(const NodeProto& node_proto,
 }
 
 const NodeArg* GraphBase::FindNodeArg(const std::string& name) const {
+  auto iter = node_args_.find(name);
+  if (iter != node_args_.end())
+    return iter->second;
+  else {
+    LOGS_DEFAULT(WARNING) << "Cannot find NodArg for " << name;
+    return nullptr;
+  }
+}
+
+NodeArg* GraphBase::FindNodeArg(const std::string& name) {
   auto iter = node_args_.find(name);
   if (iter != node_args_.end())
     return iter->second;

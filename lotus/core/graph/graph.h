@@ -426,6 +426,7 @@ class GraphBase {
 
   // find node arg by name
   const NodeArg* FindNodeArg(const std::string& name) const;
+  NodeArg* FindNodeArg(const std::string& name);
 
   // create a unique name for NodeArg
   std::string GenerateNodeArgName(const std::string& base_name);
@@ -737,8 +738,10 @@ class Graph : public GraphBase {
   Lotus::Common::Status Resolve(bool no_proto_sync_required);
 
   Lotus::Common::Status InferAndVerifyTypeMatch(Node& node,
-                                                const OpSchema& op,
-                                                const std::unordered_map<std::string, Node*>& output_args);
+                                                const OpSchema& op);
+
+  // Apply type-inference and type-checking to all inputs and initializers:
+  Lotus::Common::Status TypeCheckInputsAndInitializers();
 
   // Given nodes in topological order, infer and set type information
   // across <*this> graph if needed, and verify type/attribute

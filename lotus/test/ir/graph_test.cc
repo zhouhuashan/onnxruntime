@@ -479,11 +479,11 @@ void CheckTensorEltType(const TypeProto *ptype, TensorProto_DataType elt_type) {
 TEST(TypeInferenceTest, VariadicOutput) {
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
-  TypeProto int64_tensor_type;
-  int64_tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  TypeProto tensor_type;
+  tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   Model model("graph_1");
   auto graph = model.MainGraph();
-  auto &X = graph->GetOrCreateNodeArg("X", &int64_tensor_type);
+  auto &X = graph->GetOrCreateNodeArg("X", &tensor_type);
   inputs.push_back(&X);
   auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
@@ -494,6 +494,67 @@ TEST(TypeInferenceTest, VariadicOutput) {
   EXPECT_TRUE(status.IsOK());
   CheckTensorEltType(Y.TypeAsProto(), TensorProto_DataType_FLOAT);
   CheckTensorEltType(Z.TypeAsProto(), TensorProto_DataType_FLOAT);
+}
+
+// Test that Graph::Resolve checks initializer value matches the type specified in graph:
+TEST(TypeInferenceTest, InitializerType) {
+  Model model("graph_1");
+  auto graph = model.MainGraph();
+
+  onnx::TensorProto weight;
+  weight.set_data_type(TensorProto_DataType_INT32);
+  weight.add_dims(1);
+  weight.add_int32_data(1);
+  weight.set_name("W");
+  graph->AddInitializedTensor(weight);
+
+  std::vector<NodeArg *> inputs;
+  std::vector<NodeArg *> outputs;
+  TypeProto tensor_type;
+  tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  auto &X = graph->GetOrCreateNodeArg("W", &tensor_type);
+  inputs.push_back(&X);
+  auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
+  outputs.push_back(&Y);
+  auto &Z = graph->GetOrCreateNodeArg("Z", nullptr);
+  outputs.push_back(&Z);
+  graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
+
+  auto status = graph->Resolve();
+  EXPECT_FALSE(status.IsOK());
+  bool type_error_found = status.ErrorMessage().find("Type Error") != std::string::npos;
+  EXPECT_TRUE(type_error_found);
+}
+
+// Test that Graph::Resolve checks initializer value matches the shape specified in graph:
+TEST(TypeInferenceTest, InitializerShape) {
+  Model model("graph_1");
+  auto graph = model.MainGraph();
+
+  onnx::TensorProto weight;
+  weight.set_data_type(TensorProto_DataType_FLOAT);
+  weight.add_dims(1);
+  weight.add_float_data(1.0f);
+  weight.set_name("W");
+  graph->AddInitializedTensor(weight);
+
+  std::vector<NodeArg *> inputs;
+  std::vector<NodeArg *> outputs;
+  TypeProto tensor_type;
+  tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  tensor_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
+  auto &X = graph->GetOrCreateNodeArg("W", &tensor_type);
+  inputs.push_back(&X);
+  auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
+  outputs.push_back(&Y);
+  auto &Z = graph->GetOrCreateNodeArg("Z", nullptr);
+  outputs.push_back(&Z);
+  graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
+
+  auto status = graph->Resolve();
+  EXPECT_FALSE(status.IsOK());
+  bool type_error_found = status.ErrorMessage().find("Type Error") != std::string::npos;
+  EXPECT_TRUE(type_error_found);
 }
 
 }  // namespace Test
