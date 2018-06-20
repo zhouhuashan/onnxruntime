@@ -270,7 +270,7 @@ add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
 add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
-protobuf_generate(APPEND_PATH TARGET onnx_test_runner_common)
+lotus_protobuf_generate(APPEND_PATH TARGET onnx_test_runner_common)
 
 set(onnx_test_libs 
     ${FS_STDLIB}
@@ -308,7 +308,7 @@ endif()
 
 add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
 target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
-target_link_libraries(onnx_test_runner ${onnx_test_libs} onnx_test_runner_common ${GETOPT_LIB})
+target_link_libraries(onnx_test_runner PRIVATE onnx_test_runner_common ${GETOPT_LIB} ${onnx_test_libs})
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(WIN32)

@@ -92,6 +92,7 @@ if(lotus_USE_PREBUILT_PB)
     ${_PROTOBUF_INSTALL_PREFIX}/..
     REALPATH)
   include(${_PROTOBUF_INSTALL_PREFIX}/cmake/protobuf-config.cmake)
+  include(protobuf_function.cmake)
 else()
   # use protobuf as a submodule
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake EXCLUDE_FROM_ALL)
