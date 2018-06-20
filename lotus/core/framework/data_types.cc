@@ -19,7 +19,7 @@ DeleteFunc TensorTypeBase::GetDeleteFunc() const {
 
 template <>
 bool TensorType<float>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_FLOAT;
+  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_FLOAT;
 }
 
 template <>

@@ -8,8 +8,23 @@ REGISTER_KERNEL(KernelDefBuilder("SVMClassifier")
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(), DataTypeImpl::GetTensorType<std::string>()}),
+                    .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(),
+                                           DataTypeImpl::GetTensorType<std::string>()}),
                 SVMClassifier<float>);
+
+#define ADD_IN_TYPE_SVM_CLASSIFIER_OP(in_type)                                             \
+  REGISTER_KERNEL(KernelDefBuilder("SVMClassifier")                                        \
+                      .Domain(LotusIR::kMLDomain)                                          \
+                      .SinceVersion(1)                                                     \
+                      .Provider(LotusIR::kCpuExecutionProvider)                            \
+                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())        \
+                      .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(),       \
+                                             DataTypeImpl::GetTensorType<std::string>()}), \
+                  SVMClassifier<in_type>);
+
+ADD_IN_TYPE_SVM_CLASSIFIER_OP(double);
+ADD_IN_TYPE_SVM_CLASSIFIER_OP(int64_t);
+ADD_IN_TYPE_SVM_CLASSIFIER_OP(int32_t);
 
 template <typename T>
 SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info) : OpKernel(info), SVMCommon<T>(info) {
