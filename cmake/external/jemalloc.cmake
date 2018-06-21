@@ -1,6 +1,6 @@
 include (ExternalProject)
 
-set(JEMALLOC_URL https://github.com/jemalloc/jemalloc/releases/download/5.1.0/jemalloc-5.1.0.tar.bz2)
+set(JEMALLOC_URL https://github.com/jemalloc/jemalloc/releases/download/4.1.1/jemalloc-4.1.1.tar.bz2)
 set(JEMALLOC_BUILD ${CMAKE_CURRENT_BINARY_DIR}/jemalloc/src/jemalloc)
 set(JEMALLOC_INSTALL ${CMAKE_CURRENT_BINARY_DIR}/jemalloc/install)
 

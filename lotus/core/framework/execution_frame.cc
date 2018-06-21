@@ -93,8 +93,8 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
 
   // if we have pre-calcuated memory pattern, and the mlvalue is not output mlvalue
   // try to alloacted on pre-allocated big chunk.
-  if (mem_patterns_ &&
-      std::find(output_indices_.begin(), output_indices_.end(), mlvalue_index) == output_indices_.end()) {
+  const auto& per_alloc_plan = GetAllocationPlan(mlvalue_index);
+  if (mem_patterns_ && per_alloc_plan.alloc_kind != AllocKind::kAllocateOutput) {
     auto pattern = mem_patterns_->GetPatterns(location);
     if (pattern) {
       auto block = pattern->GetBlock(mlvalue_index);
@@ -141,8 +141,8 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
 
 void ExecutionFrame::TraceAllocate(int mlvalue_idx, size_t size) {
   // don't trace the output tensors.
-  if (planner_ &&
-      std::find(output_indices_.begin(), output_indices_.end(), mlvalue_idx) == output_indices_.end()) {
+  auto& allocation_plan = GetAllocationPlan(mlvalue_idx);
+  if (planner_ && allocation_plan.alloc_kind != AllocKind::kAllocateOutput) {
     auto status = planner_->TraceAllocation(mlvalue_idx, size);
     if (!status.IsOK())
       LOGS(session_state_.Logger(), WARNING) << "TraceAllocation for mlvalue_idx=" << mlvalue_idx << " size=" << size
@@ -259,6 +259,9 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
 
   AllocKind alloc_kind = per_alloc_plan.alloc_kind;
   switch (alloc_kind) {
+    // Right now for kAllocate and kAllocateOutput we are using same approach.
+    // In the future we may want to have different way to handle it.
+    case AllocKind::kAllocateOutput:
     case AllocKind::kAllocate: {
       LOTUS_RETURN_IF_ERROR(AllocateMLValueTensorSelfOwnBuffer(mlvalue_index,
                                                                ml_data_type,
@@ -408,6 +411,13 @@ Status ExecutionFrame::GeneratePatterns(MemoryPatternGroup* out) const {
 
 AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
   return session_state_.GetAllocator(info);
+}
+
+const SequentialExecutionPlan::AllocPlanPerValue& ExecutionFrame::GetAllocationPlan(int mlvalue_idx){
+	const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
+	const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
+	LOTUS_ENFORCE(mlvalue_idx >= 0 && mlvalue_idx < alloc_plan.size());
+	return alloc_plan[mlvalue_idx];
 }
 
 }  // namespace Lotus

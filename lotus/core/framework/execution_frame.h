@@ -219,6 +219,8 @@ class ExecutionFrame {
 
   void TraceFree(int mlvalue_idx);
 
+  const SequentialExecutionPlan::AllocPlanPerValue& GetAllocationPlan(int mlvalue_idx);
+
   std::mutex mutex_;
   Status status_;
 

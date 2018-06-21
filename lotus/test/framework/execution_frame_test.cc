@@ -35,6 +35,9 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
   LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
+  
+  Status status = graph->Resolve();
+  EXPECT_TRUE(status.IsOK());
 
   auto cpu_xp = CreateCPUExecutionProvider();
   auto xp_typ = cpu_xp->Type();
@@ -44,6 +47,15 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   state.AddMLValueNameIdx("Y", 1);
   std::string provider_type = cpu_xp->Type();
   state.AddExecutionProvider(provider_type, std::move(cpu_xp));
+  node->SetExecutionProviderType(provider_type);
+  std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+  // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
+  status = AllocationPlanner::CreatePlan(AllocationPlannerType::SEQUENTIAL_PLANNER,
+	  state,
+	  p_seq_exec_plan.get());
+  EXPECT_TRUE(status.IsOK());
+  state.SetExecutionPlan(std::move(p_seq_exec_plan));
+
   vector<MLValue> outputs;
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{},
                        std::vector<std::string>{},
@@ -54,7 +66,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   EXPECT_EQ(start_index, 0);
 
   TensorShape shape(std::vector<int64_t>{2, 3});
-  auto status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
+  status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
                                                       state.GetExecutionProvider(xp_typ)->GetAllocator()->Info(), shape);
   EXPECT_TRUE(status.IsOK());
 
@@ -125,6 +137,8 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
 }
 
 TEST(ExecutionFrameTest, MemPatternTest) {
+  auto cpu_xp = CreateCPUExecutionProvider();
+  auto xp_type = cpu_xp->Type();
   LotusIR::Model model("test");
   LotusIR::Graph* graph = model.MainGraph();
   TypeProto tensor_float;
@@ -136,17 +150,15 @@ TEST(ExecutionFrameTest, MemPatternTest) {
       gemm2_out_def("T2", &tensor_float),
       clip_out_def("T3", &tensor_float);
 
-  graph->AddNode("node1", "MatMul", "gemm1", ArgMap{&input_def1, &input_def2}, ArgMap{&gemm1_out_def});
+  graph->AddNode("node1", "MatMul", "gemm1", ArgMap{&input_def1, &input_def2}, ArgMap{&gemm1_out_def})->SetExecutionProviderType(xp_type);
 
-  graph->AddNode("node2", "MatMul", "gemm2", ArgMap{&gemm1_out_def, &input_def3}, ArgMap{&gemm2_out_def});
+  graph->AddNode("node2", "MatMul", "gemm2", ArgMap{&gemm1_out_def, &input_def3}, ArgMap{&gemm2_out_def})->SetExecutionProviderType(xp_type);
 
-  graph->AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def});
+  graph->AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def})->SetExecutionProviderType(xp_type);
 
   auto status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
   //1. prepare input
-  auto cpu_xp = CreateCPUExecutionProvider();
-  auto xp_type = cpu_xp->Type();
   SessionState state;
   state.SetGraph(graph);
   state.AddMLValueNameIdx("X1", 0);
@@ -170,7 +182,7 @@ TEST(ExecutionFrameTest, MemPatternTest) {
 
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
   // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-  status = AllocationPlanner::CreatePlan(AllocationPlannerType::SIMPLE_SEQUENTIAL_PLANNER,
+  status = AllocationPlanner::CreatePlan(AllocationPlannerType::SEQUENTIAL_PLANNER,
                                          state,
                                          p_seq_exec_plan.get());
   EXPECT_TRUE(status.IsOK());

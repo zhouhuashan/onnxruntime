@@ -25,6 +25,9 @@ std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind) {
     case AllocKind::kReuse:
       out << "Reuse";
       break;
+    case AllocKind::kAllocateOutput:
+      out << "AllocateOutput";
+      break;
   }
   return out;
 }
@@ -403,6 +406,8 @@ class PlannerImpl {
     for (int program_counter = 0; program_counter < execution_plan.size(); ++program_counter) {
       SequentialExecutionPlan::NodeExecutionPlan step = execution_plan[program_counter];
       auto pnode = graph.GetNode(step.node_index);
+      // graph outputs
+      auto& graph_outputs = graph.GetOutputs();
       // determine allocation for outputs of pnode
       int output_arg_num = 0;
       for (auto node_output : pnode->OutputDefs()) {
@@ -410,7 +415,10 @@ class PlannerImpl {
         auto current = Index(node_output->Name());
         AllocPlan(current).value_type = GetMLDataType(*node_output);
         MLValueIndex reused;
-        if (IsNonTensor(*node_output)) {
+        if (std::find(graph_outputs.begin(), graph_outputs.end(), node_output) != graph_outputs.end()) {
+          // node_output is graph's output, so we can't reuse intermedia buffer
+          AllocPlan(current).alloc_kind = AllocKind::kAllocateOutput;
+        } else if (IsNonTensor(*node_output)) {
           // we do not try sharing-optimization for non-tensors
           AllocPlan(current).alloc_kind = AllocKind::kAllocate;
         } else if (FindReusableInput(*pnode, output_arg_num, &reused)) {

@@ -239,7 +239,7 @@ if (lotus_USE_JEMALLOC)
   endif()
   include(jemalloc)
   add_definitions(-DUSE_JEMALLOC=1) 
-  list(APPEND lotus_EXTERNAL_LIBRARIES JEMALLOC_STATIC_LIBRARIES)
+  list(APPEND lotus_EXTERNAL_LIBRARIES ${JEMALLOC_STATIC_LIBRARIES})
   list(APPEND lotus_EXTERNAL_DEPENDENCIES jemalloc)
 endif()
 

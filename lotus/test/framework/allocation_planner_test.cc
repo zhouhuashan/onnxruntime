@@ -253,7 +253,7 @@ class PlannerTest : public ::testing::Test {
 
 TEST_F(PlannerTest, ChainTest) {
   // tensor variables:
-  std::string W("W"), X("X"), B("B"), Y("Y");
+  std::string W("W"), X("X"), B("B"), Y("Y"), Z("Z");
 
   // graph structure:
 
@@ -267,11 +267,12 @@ TEST_F(PlannerTest, ChainTest) {
   AddNormalNode(W, X);
   AddNormalNode(X, B);
   AddNormalNode(B, Y);
+  AddNormalNode(Y, Z);
 
   // simulate shape-inference results:
   Shape shape1{50, 100};
   auto shape = &shape1.value;
-  SetShape({{X, shape}, {B, shape}, {Y, shape}});
+  SetShape({{X, shape}, {B, shape}, {Y, shape}, {Z, shape}});
 
   CreatePlan();
 
@@ -281,11 +282,12 @@ TEST_F(PlannerTest, ChainTest) {
   CheckAllocKind(X, AllocKind::kAllocate);
   CheckAllocKind(B, AllocKind::kAllocate);
   CheckAllocKind(Y, AllocKind::kReuse);
+  CheckAllocKind(Z, AllocKind::kAllocateOutput);
 
-  // Note: Y (which reuses X) is treated as graph output and should not be freed
   CheckFreed(0, {});
   CheckFreed(1, {});
   CheckFreed(2, {"B"});
+  CheckFreed(3, {"X"});
 }
 
 /* InputOutputTest: Test that:
@@ -308,8 +310,8 @@ TEST_F(PlannerTest, InputOutputTest) {
   // X1: kPreExisting, X2: kPreExisting, Y1: kAllocate, Y2: kAllocate
   CheckAllocKind(X1, AllocKind::kPreExisting);
   CheckAllocKind(X2, AllocKind::kPreExisting);
-  CheckAllocKind(Y1, AllocKind::kAllocate);
-  CheckAllocKind(Y2, AllocKind::kAllocate);
+  CheckAllocKind(Y1, AllocKind::kAllocateOutput);
+  CheckAllocKind(Y2, AllocKind::kAllocateOutput);
 
   // Nothing should be freed (since they are either inputs or outputs)
   CheckFreed(0, {});
@@ -338,7 +340,7 @@ TEST_F(PlannerTest, InPlaceTest) {
   CheckAllocKind(X1, AllocKind::kPreExisting);
   CheckAllocKind(X2, AllocKind::kAllocate);
   CheckAllocKind(X3, AllocKind::kReuse);
-  CheckAllocKind(X4, AllocKind::kAllocate);
+  CheckAllocKind(X4, AllocKind::kAllocateOutput);
 
   // check each ml-value is freed at appropriate step
   CheckFreed(0, {});
@@ -350,19 +352,20 @@ TEST_F(PlannerTest, InPlaceTest) {
 // Also tests reuse of disjoint lifetime tensors.
 TEST_F(PlannerTest, InPlaceSizeMismatchTest) {
   // tensor variables:
-  std::string X1("X1"), X2("X2"), X3("X3"), X4("X4");
+  std::string X1("X1"), X2("X2"), X3("X3"), X4("X4"), X5("X5");
 
   // graph structure:
   AddNormalNode(X1, X2);   // no in-place operator; X1: input; X2: temporary
   AddInplaceNode(X2, X3);  // may-in-place operator; X3: temporary
-  AddNormalNode(X3, X4);   // no in-place operator; X4: output
+  AddNormalNode(X3, X4);   // no in-place operator; X4: temporary
+  AddInplaceNode(X4, X5);  // may-in-place operator; X5 output
 
   // simulate shape-inference results:
   Shape shape1w{"M", "N"};
   auto shape1 = &shape1w.value;
   Shape shape2w{"M", "K"};
   auto shape2 = &shape2w.value;
-  SetShape({{X1, shape1}, {X2, shape1}, {X3, shape2}, {X4, shape1}});
+  SetShape({{X1, shape1}, {X2, shape1}, {X3, shape2}, {X4, shape1}, {X5, shape1}});
 
   CreatePlan();
 
@@ -371,11 +374,13 @@ TEST_F(PlannerTest, InPlaceSizeMismatchTest) {
   CheckAllocKind(X2, AllocKind::kAllocate);
   CheckAllocKind(X3, AllocKind::kAllocate);
   CheckAllocKind(X4, AllocKind::kReuse);
+  CheckAllocKind(X5, AllocKind::kAllocateOutput);
 
   // check each ml-value is freed at appropriate step
   CheckFreed(0, {});
   CheckFreed(1, {});
   CheckFreed(2, {X3});
+  CheckFreed(3, {X2});
 }
 
 // Test operator<< to output details of an allocation & execution plan.
