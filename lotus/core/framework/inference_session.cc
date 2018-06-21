@@ -404,7 +404,14 @@ class InferenceSession::Impl {
         auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
         auto* node_exec_provider = session_state_.GetExecutionProvider(node_provider_type);
         LOTUS_ENFORCE(node_exec_provider);
-        LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *new_tensor));
+
+        // our CPU exec provider doesn't support copy from GPU->CPU
+        if (node_provider_type != LotusIR::kCpuExecutionProvider) {
+          LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *new_tensor));
+        } else {
+          LOTUS_RETURN_IF_ERROR(p_input_provider->CopyTensor(input_tensor, *new_tensor));
+        }
+
         new_feeds[input_name] = new_mlvalue;
       };
     }
@@ -578,7 +585,12 @@ class InferenceSession::Impl {
         continue;
       }
 
-      LOTUS_RETURN_IF_ERROR(p_fetched_provider->CopyTensor(fetched_tensor, *p_output_tensor));
+      // our CPU exec provider doesn't support copy from GPU->CPU
+      if (fetched_provider_type != LotusIR::kCpuExecutionProvider) {
+        LOTUS_RETURN_IF_ERROR(p_fetched_provider->CopyTensor(fetched_tensor, *p_output_tensor));
+      } else {
+        LOTUS_RETURN_IF_ERROR(p_output_provider->CopyTensor(fetched_tensor, *p_output_tensor));
+      }
     }
     return Status::OK();
   }

@@ -118,7 +118,7 @@ void RunModel(InferenceSession& session_object,
 
 void RunModelWithBindingMatMul(InferenceSession& session_object,
                                const RunOptions& run_options,
-                               ProviderType run_provider_type,
+                               ProviderType bind_provider_type,
                                bool is_preallocate_output_vec = false,
                                ProviderType allocation_provider = kCpuExecutionProvider) {
   // prepare inputs
@@ -138,7 +138,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
   CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x_B, values_mul_x, &input_ml_value_B);
 
   unique_ptr<IOBinding> io_binding;
-  Status st = session_object.NewIOBinding(run_provider_type, &io_binding);
+  Status st = session_object.NewIOBinding(bind_provider_type, &io_binding);
   ASSERT_TRUE(st.IsOK());
   io_binding->BindInput("A", input_ml_value_A);
   io_binding->BindInput("B", input_ml_value_B);
@@ -577,6 +577,7 @@ TEST(InferenceSessionTests, TestModelProtoInterfaceMultipleLoadFailure) {
 }
 
 static void TestBindHelper(const std::string& log_str,
+                           ProviderType bind_provider_type,
                            ProviderType run_provider_type,
                            bool preallocate_output,
                            ProviderType allocation_provider = kCpuExecutionProvider) {
@@ -586,6 +587,15 @@ static void TestBindHelper(const std::string& log_str,
   so.session_log_verbosity_level = 1;  // change to 1 for detailed logging
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
+
+  if (bind_provider_type == kCudaExecutionProvider) {
+#ifdef USE_CUDA
+    CUDAExecutionProviderInfo epi;
+    epi.device_id = 0;
+    EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(epi)).IsOK());
+#endif
+  }
+
   if (run_provider_type == kCudaExecutionProvider) {
 #ifdef USE_CUDA
     CUDAExecutionProviderInfo epi;
@@ -603,11 +613,18 @@ static void TestBindHelper(const std::string& log_str,
   RunOptions run_options;
   run_options.run_log_verbosity_level = so.session_log_verbosity_level;
   run_options.run_tag = so.session_logid;
-  RunModelWithBindingMatMul(session_object, run_options, run_provider_type, preallocate_output, allocation_provider);
+  RunModelWithBindingMatMul(session_object,
+                            run_options,
+                            bind_provider_type,
+                            preallocate_output,
+                            allocation_provider);
 }
 
 TEST(InferenceSessionTests, TestBindCpu) {
-  TestBindHelper("TestBindCpu", kCpuExecutionProvider, false /* don't preallocate output */);
+  TestBindHelper("TestBindCpu",
+                 kCpuExecutionProvider,
+                 kCpuExecutionProvider,
+                 false /* don't preallocate output */);
 }
 
 TEST(InferenceSessionTests, TestIOBindingReuse) {
@@ -645,16 +662,36 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
 #ifdef USE_CUDA
 
 TEST(InferenceSessionTests, TestBindCuda) {
-  TestBindHelper("TestBindCuda", kCudaExecutionProvider, false /* don't preallocate output */);
+  TestBindHelper("TestBindCuda",
+                 kCudaExecutionProvider,
+                 kCudaExecutionProvider,
+                 false /* don't preallocate output */);
 }
 
 TEST(InferenceSessionTests, TestBindCudaPreallocateOutputOnCuda) {
-  TestBindHelper("TestBindCudaPreallocateOutputOnCuda", kCudaExecutionProvider, true /* preallocate output on GPU */, kCudaExecutionProvider);
+  TestBindHelper("TestBindCudaPreallocateOutputOnCuda",
+                 kCudaExecutionProvider,
+                 kCudaExecutionProvider,
+                 true /* preallocate output on GPU */,
+                 kCudaExecutionProvider);
 }
 
 TEST(InferenceSessionTests, TestBindCudaPreallocateOutputOnCpu) {
-  TestBindHelper("TestBindCudaPreallocateOutputOnCpu", kCudaExecutionProvider, true /* preallocate output on CPU */, kCpuExecutionProvider);
+  TestBindHelper("TestBindCudaPreallocateOutputOnCpu",
+                 kCudaExecutionProvider,
+                 kCudaExecutionProvider,
+                 true /* preallocate output on CPU */,
+                 kCpuExecutionProvider);
 }
+
+TEST(InferenceSessionTests, TestBindCudaPreallocateOutputOnCpu2) {
+  TestBindHelper("TestBindCudaPreallocateOutputOnCpu2",
+                 kCudaExecutionProvider,
+                 kCpuExecutionProvider,
+                 true /* preallocate output on CPU */,
+                 kCpuExecutionProvider);
+}
+
 #endif
 }  // namespace Test
 }  // namespace Lotus
