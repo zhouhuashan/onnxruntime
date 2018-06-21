@@ -529,6 +529,38 @@ TEST(InferenceSessionTests, TestBindCpu) {
   TestBindHelper("TestBindCpu", kCpuExecutionProvider, false /* don't preallocate output */);
 }
 
+TEST(InferenceSessionTests, TestIOBindingReuse) {
+  SessionOptions so;
+  InferenceSession session_object(so);
+  CPUExecutionProviderInfo epi;
+  session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi));
+  unique_ptr<IOBinding> io_binding;
+  Status st = session_object.NewIOBinding(kCpuExecutionProvider, &io_binding);
+  ASSERT_TRUE(st.IsOK());
+
+  MLValue ml_value1;
+  vector<float> v1{2.};
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), {1}, v1, &ml_value1);
+  io_binding->BindOutput("foo", ml_value1);
+  ASSERT_TRUE(io_binding->GetOutputs().size() == 1);
+  auto span = io_binding->GetOutputs()[0].Get<Tensor>().DataAsSpan<float>();
+  ASSERT_TRUE(static_cast<size_t>(span.size()) == v1.size());
+  for (int i = 0; i < v1.size(); ++i) {
+    ASSERT_TRUE(v1[i] == span[i]);
+  }
+
+  MLValue ml_value2;
+  vector<float> v2{3.};
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), {1}, v2, &ml_value2);
+  io_binding->BindOutput("foo", ml_value2);
+  ASSERT_TRUE(io_binding->GetOutputs().size() == 1);
+  span = io_binding->GetOutputs()[0].Get<Tensor>().DataAsSpan<float>();
+  ASSERT_TRUE(static_cast<size_t>(span.size()) == v2.size());
+  for (int i = 0; i < v2.size(); ++i) {
+    ASSERT_TRUE(v2[i] == span[i]);
+  }
+}
+
 #ifdef USE_CUDA
 
 TEST(InferenceSessionTests, TestBindCuda) {

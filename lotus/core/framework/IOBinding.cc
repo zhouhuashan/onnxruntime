@@ -51,7 +51,22 @@ Common::Status IOBinding::SynchronizeInputs() {
   return p_exec_provider_->Sync();
 }
 
+static std::pair<bool, size_t> Contains(const std::vector<std::string>& output_names, const std::string& oname) {
+  auto it = std::find(std::begin(output_names), std::end(output_names), oname);
+  if (it == std::end(output_names)) {
+    return {false, 0};
+  } else {
+    return {true, it - std::begin(output_names)};
+  }
+}
+
 Common::Status IOBinding::BindOutput(const std::string& name, const MLValue& ml_value) {
+  auto rc = Contains(output_names_, name);
+  if (rc.first) {
+    outputs_[rc.second] = ml_value;
+    return Status::OK();
+  }
+
   output_names_.push_back(name);
   outputs_.push_back(ml_value);
   return Status::OK();
