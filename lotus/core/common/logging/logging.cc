@@ -1,8 +1,16 @@
 #include <exception>
+#include <ctime>
 
 #include "core/common/exceptions.h"
 #include "core/common/logging/isink.h"
 #include "core/common/logging/logging.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#include <sys/syscall.h>
+#endif
 
 namespace Lotus {
 namespace Logging {
@@ -181,5 +189,25 @@ std::exception LoggingManager::LogFatalAndCreateException(const char *category,
 
   return LotusException(location, exception_msg);
 }
+
+unsigned int GetThreadId() {
+#ifdef _WIN32
+  return (unsigned int)GetCurrentThreadId();
+#else
+  return (unsigned int)syscall(SYS_gettid);
+#endif
+}
+
+//
+// Get current process id
+//
+unsigned int GetProcessId() {
+#ifdef _WIN32
+  return (unsigned int)GetCurrentProcessId();
+#else
+  return (unsigned int)syscall(SYS_getpid);
+#endif
+}
+
 }  // namespace Logging
 }  // namespace Lotus

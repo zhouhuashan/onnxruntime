@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "core/common/logging/logging.h"
+#include "core/common/profiler.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/customregistry.h"
 #include "core/framework/execution_provider.h"
@@ -84,6 +85,17 @@ class SessionState {
   const Logging::Logger& Logger() const;
 
   /**
+  Set the profiler for this session.
+  */
+  void SetProfiler(Profiling::Profiler& profiler);
+
+  /**
+  Get the profiler for this session. It needs to be enabled via the InferenceSession to perform
+  profiling actions.
+  */
+  Profiling::Profiler& Profiler() const;
+
+  /**
   Get cached memory pattern based on input shapes
   */
   const MemoryPatternGroup* GetMemoryPatternGroup(const std::vector<TensorShape>& input_shapes) const;
@@ -111,7 +123,7 @@ class SessionState {
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
-  std::unordered_map<LotusIR::NodeIndex, std::unique_ptr<OpKernel> > session_kernels_;
+  std::unordered_map<LotusIR::NodeIndex, std::unique_ptr<OpKernel>> session_kernels_;
   const LotusIR::Graph* p_graph_ = nullptr;  // owned by the Model inside an InferenceSession
 
   struct ExecutionProviderSet {
@@ -129,6 +141,7 @@ class SessionState {
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
 
   const Logging::Logger* logger_;
+  Profiling::Profiler* profiler_;
 
   // switch for enable memory pattern optimization or not.
   bool enable_mem_pattern_ = true;

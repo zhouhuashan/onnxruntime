@@ -37,6 +37,7 @@ class SequentialExecutor : public Executor {
                          const NameMLValMap& feeds,
                          const std::vector<std::string>& output_names,
                          std::vector<MLValue>* p_fetches) override {
+    auto tp = session_state_.Profiler().StartTime();
     UNUSED_PARAMETER(run_options);
     UNUSED_PARAMETER(feeds);
 
@@ -55,11 +56,14 @@ class SequentialExecutor : public Executor {
                     "Got nullptr from GetKernel for node: " +
                         session_state_.GetGraph()->GetNode(node_index)->Name());
 
+
+      const std::string& node_name = p_op_kernel->Node().Name();
       // construct OpKernelContext
       // TODO: log kernel inputs?
       OpKernelContext op_kernel_context(&root_frame_, p_op_kernel, run_logger_);
       // TODO: log kernel outputs?
 
+      auto sync_time_begin = session_state_.Profiler().StartTime();
       // sync before compute
       int queue_id = p_op_kernel->KernelDef().ExecQueueId();
       for (int input_index = 0; input_index < op_kernel_context.InputCount(); ++input_index) {
@@ -74,14 +78,19 @@ class SequentialExecutor : public Executor {
           fence->BeforeUsingAsOutput(p_op_kernel->Node().GetExecutionProviderType(), queue_id);
         }
       }
+      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_fence_before", sync_time_begin);
 
       // call compute on the kernel
       // TODO Today the kernels don't return any status code.
       // They throw exceptions instead. We should change the compute
       // method to return a status code.
       VLOGS(run_logger_, 1) << "Computing kernel: " << p_op_kernel->Node().Name();
-      LOTUS_RETURN_IF_ERROR(p_op_kernel->Compute(&op_kernel_context));
 
+      auto kernel_begin_time = session_state_.Profiler().StartTime();
+      LOTUS_RETURN_IF_ERROR(p_op_kernel->Compute(&op_kernel_context));
+      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_kernel_time", kernel_begin_time);
+
+      sync_time_begin = session_state_.Profiler().StartTime();
       // sync after compute for outputs
       for (int input_index = 0; input_index < op_kernel_context.InputCount(); ++input_index) {
         Fence_t fence = op_kernel_context.InputFence(input_index);
@@ -95,6 +104,7 @@ class SequentialExecutor : public Executor {
           fence->AfterUsedAsOutput(queue_id);
         }
       }
+      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_fence_after", sync_time_begin);
 
       // free ml-values corresponding to this node
       VLOGS(run_logger_, 1) << "Releasing node ML values after computing kernel: " << p_op_kernel->Node().Name();
@@ -122,7 +132,7 @@ class SequentialExecutor : public Executor {
         LOTUS_RETURN_IF_ERROR(session_state_.UpdateMemoryPatternGroupCache(input_shapes, std::move(mem_patterns)));
       }
     }
-
+    session_state_.Profiler().EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "Excutor::Execute", tp);
     return Common::Status::OK();
   }
 

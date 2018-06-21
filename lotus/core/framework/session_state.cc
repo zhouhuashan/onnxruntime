@@ -181,6 +181,14 @@ const Logging::Logger& SessionState::Logger() const {
   return *logger;
 }
 
+void SessionState::SetProfiler(Profiling::Profiler& profiler) {
+  profiler_ = &profiler;
+}
+
+Lotus::Profiling::Profiler& SessionState::Profiler() const {
+  return *profiler_;
+}
+
 static int64_t CalculateMemoryPatternsKey(const std::vector<TensorShape>& shapes) {
   int64_t key = 0;
   for (auto& shape : shapes) {

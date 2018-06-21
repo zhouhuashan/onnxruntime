@@ -31,6 +31,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
 
 #include "core/common/code_location.h"
 #include "core/common/exceptions.h"
@@ -41,16 +42,18 @@ namespace Lotus {
 template <typename Key, typename Value>
 using LotusMap = std::unordered_map<Key, Value>;
 
+using TimePoint = std::chrono::high_resolution_clock::time_point;
+
 // Using statements for common classes that we refer to in lotus very often.
 // TODO(Task:137) Remove 'using' statements from header files
+using Common::Status;
+using Common::StatusCategory;
+using Common::StatusCode;
+using std::make_unique;
 using std::set;
 using std::string;
 using std::unique_ptr;
 using std::vector;
-using std::make_unique;
-using Common::Status;
-using Common::StatusCategory;
-using Common::StatusCode;
 
 #ifdef _WIN32
 #define UNUSED_PARAMETER(x) (x)
@@ -159,6 +162,27 @@ inline string MakeString(const string& str) {
 }
 inline string MakeString(const char* p_str) {
   return string(p_str);
+}
+
+inline long long TimeDiffMicroSeconds(TimePoint start_time) {
+  auto end_time = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+}
+
+inline std::string GetCurrentTimeString() {
+  auto now = std::chrono::system_clock::now();
+  auto in_time_t = std::chrono::system_clock::to_time_t(now);
+  std::tm local_tm;
+
+#ifdef _WIN32
+  localtime_s(&local_tm, &in_time_t);
+#else
+  localtime_r(&in_time_t, &local_tm);
+#endif
+
+  char time_str[32];
+  strftime(time_str, sizeof(time_str), "%Y-%m-%d_%H-%M-%S", &local_tm);
+  return std::string(time_str);
 }
 
 struct null_type {};

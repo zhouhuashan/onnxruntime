@@ -252,5 +252,15 @@ inline Timestamp LoggingManager::GetTimestamp() const noexcept {
   return time_point_cast<system_clock::duration>(epochs.system + (high_res_now - epochs.high_res) + epochs.localtime_offset_from_utc);
 }
 
+/**
+Return the current thread id.
+*/
+unsigned int GetThreadId();
+
+/**
+Return the current process id.
+*/
+unsigned int GetProcessId();
+
 }  // namespace Logging
 }  // namespace Lotus

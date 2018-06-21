@@ -37,6 +37,11 @@ class InferenceSession::Impl {
     //thread_pool_(env_, "Compute", session_options.num_threads) {
 
     session_state_.SetEnableMemoryPattern(session_options.enable_mem_pattern);
+    session_state_.SetProfiler(session_profiler_);
+    if (session_options.enable_profiling)
+    {
+      StartProfiling(session_options.profile_file_prefix);
+    }
   }
 
   Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
@@ -70,6 +75,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status Load(const std::string& model_uri) {
+    auto tp = session_profiler_.StartTime();
     try {
       LOGS(*session_logger_, INFO) << "Loading model: " << model_uri;
       std::lock_guard<std::mutex> l(session_mutex_);
@@ -94,10 +100,12 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
+    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_uri", tp);
     return Common::Status::OK();
   }
 
   Common::Status Load(const ModelProto& model_proto) {
+    auto tp = session_profiler_.StartTime();
     try {
       LOGS(*session_logger_, INFO) << "Loading model using model_proto";
       std::lock_guard<std::mutex> l(session_mutex_);
@@ -122,10 +130,12 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
+    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_proto", tp);
     return Status::OK();
   }
 
   Common::Status Load(std::istream& model_istream) {
+    auto tp = session_profiler_.StartTime();
     try {
       LOGS(*session_logger_, INFO) << "Loading model using istream";
       std::lock_guard<std::mutex> l(session_mutex_);
@@ -156,10 +166,12 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
+    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_istream", tp);
     return Common::Status::OK();
   }
 
   Common::Status Load(std::unique_ptr<LotusIR::Model> p_model) {
+    auto tp = session_profiler_.StartTime();
     try {
       LOGS(*session_logger_, INFO) << "Loading model";
       std::lock_guard<std::mutex> l(session_mutex_);
@@ -182,10 +194,12 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
+    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_p_model", tp);
     return Common::Status::OK();
   }
 
   Common::Status Initialize() {
+    auto tp = session_profiler_.StartTime();
     try {
       LOGS(*session_logger_, INFO) << "Initializing session.";
       std::lock_guard<std::mutex> l(session_mutex_);
@@ -248,6 +262,7 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Initialize()";
       return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
     }
+    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "session_initialization", tp);
     return Status::OK();
   }
 
@@ -572,6 +587,7 @@ class InferenceSession::Impl {
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches) {
+    auto tp = session_profiler_.StartTime();
     Common::Status retval;
     const RunOptions run_options(run_options0);
     try {
@@ -625,6 +641,7 @@ class InferenceSession::Impl {
     }
 
     --current_num_runs_;
+    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_run", tp);
     return retval;
   }
 
@@ -685,6 +702,21 @@ class InferenceSession::Impl {
   Common::Status Run(IOBinding& io_binding) {
     RunOptions run_options;
     return Run(run_options, io_binding);
+  }
+
+  void StartProfiling(const std::string& file_prefix) {
+    std::stringstream ss;
+    ss << file_prefix << "_" <<GetCurrentTimeString() << ".json"; 
+    session_profiler_.StartProfiling(session_logger_, ss.str());
+  }
+
+  std::string EndProfiling() {
+    if (is_model_loaded_) {
+      return session_profiler_.WriteProfileData();
+    } else {
+      LOGS(*session_logger_, ERROR) << "Could not write a profile because no model was loaded.";
+      return std::string();
+    }
   }
 
  private:
@@ -1079,6 +1111,9 @@ class InferenceSession::Impl {
   /// convenience pointer to logger. should always be the same as session_state_.Logger();
   const Logging::Logger* session_logger_;
 
+  // Profiler for this session.
+  Profiling::Profiler session_profiler_;
+
   // The model served by this inference session instance.
   // Currently this has to be a shared ptr because the Model::Load method
   // returns a shared_ptr only. Ideally factory functions should always return
@@ -1175,6 +1210,14 @@ std::pair<Common::Status, const OutputDefList*> InferenceSession::GetOutputs() c
 
 int InferenceSession::GetCurrentNumRuns() {
   return impl_->GetCurrentNumRuns();
+}
+
+void InferenceSession::StartProfiling(const std::string& file_prefix) {
+  impl_->StartProfiling(file_prefix);
+}
+
+std::string InferenceSession::EndProfiling() {
+  return impl_->EndProfiling();
 }
 
 Common::Status InferenceSession::RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {

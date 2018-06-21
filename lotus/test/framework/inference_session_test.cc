@@ -4,8 +4,10 @@
 #include <functional>
 #include <iterator>
 #include <thread>
+#include <fstream>
 
 #include "core/common/logging/logging.h"
+#include "core/common/profiler.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
@@ -337,6 +339,85 @@ TEST(InferenceSessionTests, CheckRunLogger) {
 
   ASSERT_TRUE(have_log_entry_with_run_tag);
 #endif
+}
+
+TEST(InferenceSessionTests, CheckRunProfilerWithSessionOptions) {
+  SessionOptions so;
+
+  so.session_logid = "CheckRunProfiler";
+  so.enable_profiling;
+  so.profile_file_prefix = "lotus_profile_test";
+
+  InferenceSession session_object(so);
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "RunTag";
+
+  RunModel(session_object, run_options);
+  std::string profile_file = session_object.EndProfiling();
+
+  std::ifstream profile(profile_file);
+  std::string line;
+
+  std::vector<std::string> tags = {"pid", "dur", "ts", "ph", "X", "name", "args"};
+  int count = 0;
+  while (std::getline(profile, line)) {
+    if (count == 0) {
+      ASSERT_TRUE(line.find("[") != string::npos);
+    } else if (count <= 7) {
+      for (auto& s : tags) {
+        ASSERT_TRUE(line.find(s) != string::npos);
+      }
+    } else {
+      ASSERT_TRUE(line.find("]") != string::npos);
+    }
+
+    if (count == 1) {
+      ASSERT_TRUE(line.find("model_loading_uri") != string::npos);
+    }
+    count++;
+  }
+}
+
+TEST(InferenceSessionTests, CheckRunProfilerWithStartProfile) {
+  SessionOptions so;
+
+  so.session_logid = "CheckRunProfiler";
+
+  InferenceSession session_object(so);
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "RunTag";
+
+  session_object.StartProfiling("lotus_profile_custom");
+  RunModel(session_object, run_options);
+  std::string profile_file = session_object.EndProfiling();
+
+  std::ifstream profile(profile_file);
+  std::string line;
+
+  std::vector<std::string> tags = {"pid", "dur", "ts", "ph", "X", "name", "args"};
+  int count = 0;
+  while (std::getline(profile, line)) {
+    if (count == 0) {
+      ASSERT_TRUE(line.find("[") != string::npos);
+    } else if (count <= 5) {
+      for (auto& s : tags) {
+        ASSERT_TRUE(line.find(s) != string::npos);
+      }
+    } else {
+      ASSERT_TRUE(line.find("]") != string::npos);
+    }
+
+    if (count == 1) {
+      ASSERT_TRUE(line.find("mul_1_fence_before") != string::npos);
+    }
+    count++;
+  }
 }
 
 TEST(InferenceSessionTests, MultipleSessionsNoTimeout) {

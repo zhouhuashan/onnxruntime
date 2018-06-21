@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/common/common.h"
+#include "core/common/profiler.h"
 #include "core/common/status.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/ml_value.h"
@@ -38,6 +39,12 @@ enum class AllocationPlannerType {
 struct SessionOptions {
   //int num_threads; // not used now until we re-introduce threadpools for async execution
   bool enable_sequential_execution = true;  // TODO: should we default to sequential execution?
+
+  // enable profiling for this session. 
+  bool enable_profiling = false;
+
+  // the prefix of the profile file. The current time will be appended to the file name. 
+  std::string profile_file_prefix = "lotus_profile_";
 
   // TODO: This has been added to facilitate testing only. It is not intended for production usage.
   // TODO: remove this option once we've tested sequential planner completely.
@@ -248,6 +255,19 @@ class InferenceSession {
     * Get current num threads running Run.
     */
   int GetCurrentNumRuns();
+
+  /**
+    * Start profiling on this inference session. This simply turns on profiling events to be 
+    * recorded. A corresponding EndProfiling has to follow to write profiling data to a file.
+    *@param file_prefix is the prefix of the profile file. It can include a directory path. 
+    */
+  void StartProfiling(const std::string& file_prefix);
+
+  /**
+    * Write captured profile events in chromium format.
+    @return the name of the profile file.
+    */
+  std::string EndProfiling();
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
