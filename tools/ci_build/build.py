@@ -152,8 +152,37 @@ def build_targets(cmake_path, build_dir, configs, parallel, GPU_BUILD):
 
         run_subprocess(cmd_args)
 
+def install_onnx_linux(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args):
+    "Install ONNX and create test data."
+    #dep_packages = ['typing_extensions','typing','six','protobuf','setuptools', 'numpy', 'pytest_runner']
+    #TODO: replace it with conda install
+    #run_subprocess([sys.executable, '-m', 'pip', 'install', '--upgrade'] + dep_packages)
+    pb_config = None
+    pb_src_dir = os.path.join(source_dir, 'cmake', 'external', 'protobuf')
+    if 'Release' in configs:
+        pb_config = 'Release'
+        release_build_dir = get_config_build_dir(build_dir, pb_config)
+    elif 'RelWithDebInfo' in configs:
+        pb_config = 'RelWithDebInfo'
+        release_build_dir = get_config_build_dir(build_dir, pb_config)
+    else:
+        # make a protobuf release build
+        pb_config = 'Release'
+        release_build_dir = get_config_build_dir(build_dir, pb_config)
+        pb_build_dir = os.path.join(release_build_dir, 'external', 'protobuf','cmake')
+        os.makedirs(pb_build_dir, exist_ok=True)
+        run_subprocess([cmake_path, os.path.join(pb_src_dir, 'cmake'), '-Dprotobuf_BUILD_TESTS=OFF','-DCMAKE_POSITION_INDEPENDENT_CODE=ON'] + cmake_extra_args,
+                    cwd=pb_build_dir)
+    pb_build_path = os.path.join(release_build_dir, 'external', 'protobuf','cmake')
+    install_dir = os.path.join(release_build_dir, 'install')
+    run_subprocess(['make','install','DESTDIR=%s' % install_dir], cwd=pb_build_path)
+    os.environ["PATH"] = os.path.join(install_dir, 'usr/local/bin') + os.pathsep + os.environ["PATH"]
+    onnx_src = os.path.join(source_dir, 'cmake', 'external', 'onnx')
+    run_subprocess([sys.executable, 'setup.py', 'install','--user'], cwd=onnx_src)
+    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', lotus_onnx_test_data_dir])
 
-def install_onnx(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args):
+
+def install_onnx_win(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args):
     "Install ONNX and create test data."
     dep_packages = ['typing_extensions','typing','six','protobuf','setuptools', 'numpy', 'pytest_runner']
     run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org', '--upgrade'] + dep_packages)
@@ -244,14 +273,13 @@ def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_
         test_data_dirs = []
         # test data created by running with --install_onnx
         add_dir_if_exists(os.path.join(lotus_onnx_test_data_dir, 'node'), test_data_dirs)
-
-        # test data from the ONNX git submodule
-        add_dir_if_exists(os.path.join(onnx_test_data_dir, 'pytorch-operator'), test_data_dirs)
-        add_dir_if_exists(os.path.join(onnx_test_data_dir, 'pytorch-converted'), test_data_dirs)
-
+        cwd = get_config_build_dir(build_dir, config)
+        if is_windows():
+           exe = os.path.join(cwd, config, 'onnx_test_runner')
+        else:
+           exe = os.path.join(cwd, 'onnx_test_runner')
         if test_data_dirs:
-            cwd = get_config_build_dir(build_dir, config)
-            run_subprocess([os.path.join(cwd, config, 'onnx_test_runner')] + test_data_dirs, cwd=cwd)
+            run_subprocess([exe] + test_data_dirs, cwd=cwd)
 
 def build_python_wheel(source_dir, build_dir, configs):
     for config in configs:
@@ -301,10 +329,11 @@ def main():
 
     log.info("Build started")
 
-    cmake_extra_args = None
-    if (args.x86):
+    cmake_extra_args = []
+    if(is_windows()):
+      if (args.x86):
         cmake_extra_args = ['-A','Win32','-G', 'Visual Studio 15 2017']
-    else:
+      else:
         cmake_extra_args = ['-A','x64','-T', 'host=x64', '-G', 'Visual Studio 15 2017']
 
     #Add python to PATH. Please remove this after https://github.com/onnx/onnx/issues/1080 is fixed (@chasun)
@@ -324,16 +353,20 @@ def main():
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel, GPU_BUILD)
 
-    if (args.install_onnx and is_windows()):
+    if (args.install_onnx):
         #try to install onnx from this source tree
-        install_onnx(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
+        if(is_windows()):
+          install_onnx_win(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
+        else:
+          install_onnx_linux(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
+
 
     if (args.test):
         run_lotus_tests(ctest_path, build_dir, configs, args.enable_pybind)
 
     # run the onnx tests if requested explicitly.
     # it could be done implicitly by user installing onnx but currently the tests fail so that doesn't work for CI
-    if (args.enable_onnx_tests): # or args.install_onnx):
+    if (args.enable_onnx_tests or args.install_onnx):
         run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir)
 
     if args.build_wheel:

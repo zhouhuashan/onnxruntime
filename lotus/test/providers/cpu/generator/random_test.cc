@@ -256,7 +256,6 @@ TEST(Random, MultinomialDefaultDType) {
 
   const int64_t num_samples = 10;
   const int batch_size = 2;
-  const int num_classes = 3;
   const float seed = 1618.f;
 
   const std::vector<int64_t> input_dims{2, 3};

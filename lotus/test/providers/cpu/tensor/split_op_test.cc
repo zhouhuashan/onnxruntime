@@ -23,7 +23,9 @@ void RunTest(int64_t axis, const std::vector<int64_t> split_sizes, const ShapeAn
   for (auto &output : outputs) {
     auto &shape = output.first;
     auto &data = output.second;
-    test.AddOutput<float>("output" + i++, shape, data);
+    std::ostringstream oss;
+    oss<<"output"<<i++;
+    test.AddOutput<float>(oss.str().c_str(), shape, data);
   }
 
   test.Run(expect_failure ? ExpectResult::kExpectFailure : ExpectResult::kExpectSuccess, err_msg);

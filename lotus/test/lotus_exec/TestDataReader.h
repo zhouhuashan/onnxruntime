@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cmath>
 
 inline std::string wstr2str(const std::wstring& wstr) {
   std::string str = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(wstr);

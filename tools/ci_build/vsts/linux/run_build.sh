@@ -24,7 +24,7 @@ fi
 
 if [ $BUILD_DEVICE = "gpu" ]; then
     python $SCRIPT_DIR/../../build.py --build_dir /home/lotusdev \
-        --config $BUILD_CONFIG \
+        --config $BUILD_CONFIG --install_onnx \
         --skip_submodule_sync \
         --enable_pybind \
         --parallel \
@@ -33,7 +33,7 @@ if [ $BUILD_DEVICE = "gpu" ]; then
         --cudnn_home /usr/local/cudnn-7.0/cuda $BUILD_EXTR_PAR
 else
     python $SCRIPT_DIR/../../build.py --build_dir /home/lotusdev \
-        --config $BUILD_CONFIG \
+        --config $BUILD_CONFIG --install_onnx \
         --skip_submodule_sync \
         --enable_pybind \
         --parallel $BUILD_EXTR_PAR

@@ -66,7 +66,7 @@ bool CudaCall(ERRTYPE retCode, const char* exprString, const char* libName, ERRT
       static char str[1024];
       snprintf(str, 1024, "%s failure %d: %s ; GPU=%d ; hostname=%s ; expr=%s; %s",
                libName, (int)retCode, CudaErrString(retCode), currentCudaDevice,
-               hostname ? hostname : "?",
+               hostname,
                exprString, msg);
       if (THRW) {
         LOTUS_THROW(str);

@@ -256,7 +256,7 @@ Status Multinomial::Compute(OpKernelContext* ctx) const {
       break;
     }
     default:
-      status = Status(LOTUS, FAIL, "Invalid data type of " + output_dtype_);
+      status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Invalid data type of " , output_dtype_);
   }
 
   return status;

@@ -45,15 +45,17 @@ TEST(TransformerTest, InsertCastGPUTest) {
     EXPECT_EQ((*it)->OpType(), "Cast");
   }
   for (auto it = node2->InputNodesBegin(); it != node2->InputNodesEnd(); it++) {
-    if (!graph->IsSourceNode((*it)->Index()))
+    if (!graph->IsSourceNode((*it)->Index())){
       EXPECT_EQ((*it)->OpType(), "Cast");
+    }
   }
   for (auto it = node2->OutputNodesBegin(); it != node2->OutputNodesEnd(); it++) {
     EXPECT_EQ((*it)->OpType(), "Cast");
   }
   for (auto it = node3->InputNodesBegin(); it != node3->InputNodesEnd(); it++) {
-    if (!graph->IsSourceNode((*it)->Index()))
+    if (!graph->IsSourceNode((*it)->Index())){
       EXPECT_EQ((*it)->OpType(), "Cast");
+    }
   }
   for (auto it = node3->OutputNodesBegin(); it != node3->OutputNodesEnd(); it++) {
     EXPECT_EQ((*it)->OpType(), "Cast");
@@ -101,8 +103,9 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
     EXPECT_NE((*it)->OpType(), "Cast");
   }
   for (auto it = node3->InputNodesBegin(); it != node3->InputNodesEnd(); it++) {
-    if (!graph->IsSourceNode((*it)->Index()))
+    if (!graph->IsSourceNode((*it)->Index())){
       EXPECT_NE((*it)->OpType(), "Cast");
+    }
   }
   for (auto it = node3->OutputNodesBegin(); it != node3->OutputNodesEnd(); it++) {
     EXPECT_EQ((*it)->OpType(), "Cast");

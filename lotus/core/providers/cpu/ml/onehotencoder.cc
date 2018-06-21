@@ -35,28 +35,28 @@ REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
                     .Domain(LotusIR::kMLDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<int64_t>()}),
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()),
                 OneHotEncoderOp<int64_t>);
 
 REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
                     .Domain(LotusIR::kMLDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<float>()}),
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 OneHotEncoderOp<float>);
 
 REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
                     .Domain(LotusIR::kMLDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<double>()}),
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<double>()),
                 OneHotEncoderOp<double>);
 
 REGISTER_KERNEL(KernelDefBuilder("OneHotEncoder")
                     .Domain(LotusIR::kMLDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<std::string>()}),
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<std::string>()),
                 OneHotEncoderOp<std::string>);
 
 /*
