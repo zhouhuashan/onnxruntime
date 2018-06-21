@@ -20,6 +20,8 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
   MatMulComputeHelper helper(left_X->Shape(), right_X->Shape());
 
   Tensor* Y = ctx->Output(0, helper.OutputShape());
+  LOTUS_ENFORCE(Y->Location().name == CUDA, "Output should be allocated on CUDA");
+
   const float alpha = 1.0f;
   const float beta = 0.0f;
 

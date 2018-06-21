@@ -46,15 +46,6 @@ bool TransformerMemcpyImpl::ModifyGraph() {
   // for initializers shared by different providers, create dups
   ProcessInitializers();
 
-  // HACKHACK: here assume graph input/output to be in CPU
-  // we need to avoid copy weights to GPU for every eval (a policy for execution provider?)
-  // besides, for input data, we should allow GPU copy to happen in parallel with computation
-  auto& graph_inputs = graph_->GetInputs();
-  non_provider_output_defs_.insert(graph_inputs.cbegin(), graph_inputs.cend());
-
-  auto& graph_outputs = graph_->GetOutputs();
-  non_provider_input_defs_.insert(graph_outputs.cbegin(), graph_outputs.cend());
-
   for (auto arg : non_provider_output_defs_)
     if (provider_input_defs_.count(arg)) {
       AddCopyNode(arg, true);

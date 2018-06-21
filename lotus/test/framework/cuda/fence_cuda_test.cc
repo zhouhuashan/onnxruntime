@@ -93,7 +93,7 @@ TEST(CUDAFenceTests, PartOnCPU) {
   size_t num_copy_nodes = 0;
   for (auto& p : graph->Nodes())
     num_copy_nodes += (p.OpType().substr(0, 6) == "Memcpy");
-  EXPECT_TRUE(2 == num_copy_nodes);
+  EXPECT_TRUE(1 == num_copy_nodes);
 
   vector<MLValue> outputs;
   session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},

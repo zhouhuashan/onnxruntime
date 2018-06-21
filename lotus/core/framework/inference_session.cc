@@ -340,6 +340,234 @@ class InferenceSession::Impl {
     return Run(run_options, feeds, output_names, p_fetches);
   }
 
+  // copies inputs across devices only if required
+  Common::Status CopyInputsAcrossDevices(const NameMLValMap& orig_feeds,
+                                         NameMLValMap& new_feeds) {
+    const LotusIR::Graph* p_graph = session_state_.GetGraph();
+    LOTUS_ENFORCE(p_graph);
+    int count_feeds = 0;
+    auto& weights_map = p_graph->GetAllInitializedTensors();
+    for (auto& node : p_graph->Nodes()) {  // TODO optimize this
+      if (count_feeds == orig_feeds.size()) {
+        break;
+      }
+      for (auto* arg : node.InputDefs()) {
+        if (!arg->Exists() ||
+            arg->Name().empty() ||
+            !orig_feeds.count(arg->Name()) ||
+            weights_map.count(arg->Name())) {
+          continue;
+        }
+
+        ++count_feeds;
+        auto& input_name = arg->Name();
+        auto& node_provider_type = node.GetExecutionProviderType();
+        auto& mlvalue = orig_feeds.at(input_name);
+        if (!mlvalue.IsTensor()) {
+          // copying not supported for non-tensor types
+          new_feeds[input_name] = mlvalue;
+          continue;
+        }
+        auto& input_tensor = mlvalue.Get<Tensor>();
+        auto& input_tensor_loc = input_tensor.Location();
+        auto* p_input_provider = session_state_.GetExecutionProvider(input_tensor_loc);
+        if (!p_input_provider) {
+          p_input_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+        }
+        LOTUS_ENFORCE(p_input_provider);
+
+        auto input_provider_type = p_input_provider->Type();
+        if (input_provider_type == node_provider_type) {
+          new_feeds[input_name] = mlvalue;
+          continue;
+        }
+
+        auto* node_provider = session_state_.GetExecutionProvider(node_provider_type);
+        LOTUS_ENFORCE(node_provider);
+        MLValue new_mlvalue;
+        LOTUS_RETURN_IF_ERROR(AllocateHelper(node_provider_type, mlvalue, new_mlvalue));
+        auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
+        auto* node_exec_provider = session_state_.GetExecutionProvider(node_provider_type);
+        LOTUS_ENFORCE(node_exec_provider);
+        LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *new_tensor));
+        new_feeds[input_name] = new_mlvalue;
+      };
+    }
+    LOTUS_ENFORCE(orig_feeds.size() == new_feeds.size());
+    return Status::OK();
+  }
+
+  static std::pair<bool, size_t> Contains(const std::vector<std::string>& output_names, const std::string& name) {
+    auto it = std::find(std::begin(output_names), std::end(output_names), name);
+    if (it == output_names.end()) {
+      return {false, 0};
+    }
+    return {true, it - output_names.begin()};
+  }
+
+  // ensures pre-allocated outputs match the node providers
+  Common::Status MatchOutputsWithProviders(const std::vector<std::string>& output_names,
+                                           std::vector<MLValue>& fetches,
+                                           std::vector<MLValue>& new_fetches) {
+    if (fetches.empty()) {
+      fetches.resize(output_names.size());
+    }
+    new_fetches.resize(output_names.size());
+
+    std::set<std::string> seen_outputs;
+    const LotusIR::Graph* p_graph = session_state_.GetGraph();
+    LOTUS_ENFORCE(p_graph);
+    std::pair<bool, size_t> found;
+    for (auto& node : p_graph->Nodes()) {  // TODO optimize this
+      if (seen_outputs.size() == fetches.size()) {
+        break;
+      }
+      for (auto* arg : node.OutputDefs()) {
+        if (!arg->Exists() ||
+            arg->Name().empty() ||
+            !(found = Contains(output_names, arg->Name())).first) {
+          continue;
+        }
+
+        seen_outputs.insert(arg->Name());
+        size_t idx = found.second;
+        MLValue orig_mlvalue = fetches[idx];
+        if (orig_mlvalue.IsAllocated()) {
+          if (!orig_mlvalue.IsTensor()) {
+            new_fetches[idx] = fetches[idx];
+            continue;
+          }
+
+          auto& node_provider_type = node.GetExecutionProviderType();
+          auto& orig_tensor = orig_mlvalue.Get<Tensor>();
+          auto& orig_tensor_loc = orig_tensor.Location();
+          auto* tensor_provider = session_state_.GetExecutionProvider(orig_tensor_loc);
+          if (!tensor_provider) {
+            tensor_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+          }
+          auto tensor_provider_type = tensor_provider->Type();
+          if (node_provider_type == tensor_provider_type) {
+            new_fetches[idx] = fetches[idx];
+            continue;
+          } else {
+            // leave the new_fetches[idx] as it is since it'll get allocated on the appropriate provider by the
+            // op kernel context when requested
+            continue;
+          }
+        } else {
+          new_fetches[idx] = fetches[idx];
+          continue;
+        }
+      }
+    }
+
+    // if we've already seen all the outputs requested just return
+    if (seen_outputs.size() == output_names.size()) {
+      return Status::OK();
+    }
+
+    // handle the case when a constant is an output but has been folded into a weight
+    // and hence it doesn't show up in any of the OutputDefs before
+    // assume that the weight has already been placed in the appropriate device before
+    auto& defs = p_graph->GetOutputs();
+    for (auto& one_def : defs) {
+      if (!one_def->Exists() ||
+          one_def->Name().empty() ||
+          seen_outputs.count(one_def->Name()) ||
+          !(found = Contains(output_names, one_def->Name())).first) {
+        continue;
+      }
+
+      auto& def_name = one_def->Name();
+      size_t idx = found.second;
+      int mlvalue_idx;
+      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(def_name, &mlvalue_idx));
+      auto& weights = session_state_.GetInitializedTensors();
+      if (!weights.count(mlvalue_idx)) {
+        LOGS(*session_logger_, INFO) << "Output with name " << def_name << " is not a weight.";
+        continue;
+      }
+      seen_outputs.insert(def_name);
+      auto weight = session_state_.GetInitializedTensors().at(mlvalue_idx);
+      new_fetches[idx] = weight;
+    }
+
+    LOTUS_ENFORCE(seen_outputs.size() == output_names.size());  // make sure we've seen all outputs
+    return Status::OK();
+  }
+
+  Common::Status AllocateHelper(LotusIR::ProviderType provider_type,
+                                const MLValue& fetched_mlvalue,
+                                MLValue& output_mlvalue) {
+    auto* p_provider = session_state_.GetExecutionProvider(provider_type);
+    LOTUS_ENFORCE(p_provider);
+    auto allocator = p_provider->GetAllocator();
+    LOTUS_ENFORCE(allocator != nullptr);
+    auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
+    void* buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
+    LOTUS_ENFORCE(buffer);
+    std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(fetched_tensor.DataType(),
+                                                                fetched_tensor.Shape(),
+                                                                buffer,
+                                                                allocator->Info(),
+                                                                allocator);
+    output_mlvalue.Init(p_tensor.release(),
+                        DataTypeImpl::GetType<Tensor>(),
+                        DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+    return Status::OK();
+  }
+
+  // copies outputs across devices only if required
+  Common::Status CopyOutputsAcrossDevices(std::vector<MLValue>& fetches,
+                                          std::vector<MLValue>& user_fetches) {
+    for (size_t idx = 0, end = fetches.size(); idx < end; ++idx) {
+      auto& fetched_mlvalue = fetches[idx];
+      if (!fetched_mlvalue.IsTensor()) {
+        user_fetches[idx] = fetched_mlvalue;
+        continue;
+      }
+
+      auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
+      auto& fetched_tensor_location = fetched_tensor.Location();
+      auto* p_fetched_provider = session_state_.GetExecutionProvider(fetched_tensor_location);
+      if (!p_fetched_provider) {
+        p_fetched_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+      }
+      LOTUS_ENFORCE(p_fetched_provider);
+      auto fetched_provider_type = p_fetched_provider->Type();
+
+      auto& output_mlvalue = user_fetches[idx];
+      if (!output_mlvalue.IsAllocated()) {
+        if (fetched_provider_type != LotusIR::kCpuExecutionProvider) {
+          LOTUS_RETURN_IF_ERROR(AllocateHelper(LotusIR::kCpuExecutionProvider,
+                                               fetched_mlvalue,
+                                               output_mlvalue));
+        } else {
+          user_fetches[idx] = fetched_mlvalue;
+          continue;
+        }
+      }
+
+      Tensor* p_output_tensor = output_mlvalue.GetMutable<Tensor>();
+      auto& output_tensor_loc = p_output_tensor->Location();
+      auto* p_output_provider = session_state_.GetExecutionProvider(output_tensor_loc);
+      if (!p_output_provider) {
+        p_output_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+      }
+      LOTUS_ENFORCE(p_output_provider);
+      auto output_provider_type = p_output_provider->Type();
+
+      if (output_provider_type == fetched_provider_type) {
+        user_fetches[idx] = fetched_mlvalue;
+        continue;
+      }
+
+      LOTUS_RETURN_IF_ERROR(p_fetched_provider->CopyTensor(fetched_tensor, *p_output_tensor));
+    }
+    return Status::OK();
+  }
+
   Common::Status Run(const RunOptions& run_options0,
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
@@ -373,14 +601,23 @@ class InferenceSession::Impl {
       unique_ptr<Logging::Logger> owned_run_logger;
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
+      NameMLValMap copied_feeds;
+      LOTUS_RETURN_IF_ERROR(CopyInputsAcrossDevices(feeds, copied_feeds));
+
+      std::vector<MLValue> new_fetches;
+      LOTUS_RETURN_IF_ERROR(MatchOutputsWithProviders(output_names, *p_fetches, new_fetches));
+
       std::unique_ptr<Executor> p_exec;
       if (session_options_.enable_sequential_execution) {
-        p_exec = Executor::NewSequentialExecutor(session_state_, feeds, output_names, *p_fetches, run_logger);
+        p_exec = Executor::NewSequentialExecutor(session_state_, copied_feeds, output_names, new_fetches, run_logger);
       } else {
         LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
       }
 
-      retval = p_exec->Execute(run_options, feeds, output_names, p_fetches);
+      retval = p_exec->Execute(run_options, copied_feeds, output_names, &new_fetches);
+      if (retval.IsOK()) {
+        retval = CopyOutputsAcrossDevices(new_fetches, *p_fetches);
+      }
     } catch (const std::exception& e) {
       retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
     } catch (...) {

@@ -116,8 +116,9 @@ void RunModel(InferenceSession& session_object,
 
 void RunModelWithBindingMatMul(InferenceSession& session_object,
                                const RunOptions& run_options,
-                               ProviderType provider_type,
-                               bool is_preallocate_output_vec = false) {
+                               ProviderType run_provider_type,
+                               bool is_preallocate_output_vec = false,
+                               ProviderType allocation_provider = kCpuExecutionProvider) {
   // prepare inputs
   std::vector<float> values_mul_x = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   /*
@@ -135,7 +136,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
   CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x_B, values_mul_x, &input_ml_value_B);
 
   unique_ptr<IOBinding> io_binding;
-  Status st = session_object.NewIOBinding(provider_type, &io_binding);
+  Status st = session_object.NewIOBinding(run_provider_type, &io_binding);
   ASSERT_TRUE(st.IsOK());
   io_binding->BindInput("A", input_ml_value_A);
   io_binding->BindInput("B", input_ml_value_B);
@@ -144,9 +145,9 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
   std::vector<int64_t> expected_output_dims = {3, 3};
   MLValue output_ml_value;
   if (is_preallocate_output_vec) {
-    if (provider_type == kCpuExecutionProvider) {
+    if (allocation_provider == kCpuExecutionProvider) {
       AllocateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), expected_output_dims, &output_ml_value);
-    } else if (provider_type == kCudaExecutionProvider) {
+    } else if (allocation_provider == kCudaExecutionProvider) {
 #ifdef USE_CUDA
       AllocateMLValue<float>(TestCudaExecutionProvider()->GetAllocator(), expected_output_dims, &output_ml_value);
 #endif
@@ -167,7 +168,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
   ASSERT_TRUE(st.IsOK());
 
   if (is_preallocate_output_vec &&
-      provider_type == kCudaExecutionProvider) {
+      allocation_provider == kCudaExecutionProvider) {
 #ifdef USE_CUDA
     // in this case we need to copy the tensor from cuda to cpu
     vector<MLValue>& outputs = io_binding->GetOutputs();
@@ -192,7 +193,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
     VerifyOutputs({ml_value}, expected_output_dims, expected_values_mul_y);
 #endif
   } else {
-    if (provider_type == kCudaExecutionProvider) {
+    if (allocation_provider == kCudaExecutionProvider) {
 #ifdef USE_CUDA
       TestCudaExecutionProvider()->Sync();
 #endif
@@ -494,14 +495,17 @@ TEST(InferenceSessionTests, TestModelProtoInterfaceMultipleLoadFailure) {
   RunModel(session_object, run_options);
 }
 
-static void TestBindHelper(const std::string& log_str, ProviderType provider_type, bool preallocate_output) {
+static void TestBindHelper(const std::string& log_str,
+                           ProviderType run_provider_type,
+                           bool preallocate_output,
+                           ProviderType allocation_provider = kCpuExecutionProvider) {
   SessionOptions so;
 
   so.session_logid = "InferenceSessionTests." + log_str;
-  so.session_log_verbosity_level = 1;
+  so.session_log_verbosity_level = 1;  // change to 1 for detailed logging
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
-  if (provider_type == kCudaExecutionProvider) {
+  if (run_provider_type == kCudaExecutionProvider) {
 #ifdef USE_CUDA
     CUDAExecutionProviderInfo epi;
     epi.device_id = 0;
@@ -510,15 +514,15 @@ static void TestBindHelper(const std::string& log_str, ProviderType provider_typ
   }
 
   std::unique_ptr<Model> p_model;
-  CreateMatMulModel(p_model, provider_type);
+  CreateMatMulModel(p_model, run_provider_type);
 
   ASSERT_TRUE(session_object.Load(std::move(p_model)).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
-  run_options.run_log_verbosity_level = 1;
+  run_options.run_log_verbosity_level = so.session_log_verbosity_level;
   run_options.run_tag = so.session_logid;
-  RunModelWithBindingMatMul(session_object, run_options, provider_type, preallocate_output);
+  RunModelWithBindingMatMul(session_object, run_options, run_provider_type, preallocate_output, allocation_provider);
 }
 
 TEST(InferenceSessionTests, TestBindCpu) {
@@ -532,7 +536,11 @@ TEST(InferenceSessionTests, TestBindCuda) {
 }
 
 TEST(InferenceSessionTests, TestBindCudaPreallocateOutputOnCuda) {
-  TestBindHelper("TestBindCudaPreallocateOutputOnCuda", kCudaExecutionProvider, true /* preallocate output */);
+  TestBindHelper("TestBindCudaPreallocateOutputOnCuda", kCudaExecutionProvider, true /* preallocate output on GPU */, kCudaExecutionProvider);
+}
+
+TEST(InferenceSessionTests, TestBindCudaPreallocateOutputOnCpu) {
+  TestBindHelper("TestBindCudaPreallocateOutputOnCpu", kCudaExecutionProvider, true /* preallocate output on CPU */, kCpuExecutionProvider);
 }
 #endif
 }  // namespace Test

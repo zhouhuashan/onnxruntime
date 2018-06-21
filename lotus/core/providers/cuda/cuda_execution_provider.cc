@@ -71,7 +71,7 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   }
 
   if (src.Location().name != CUDA && dst.Location().name != CUDA) {
-    return Status(LOTUS, FAIL, "Unsupported tensor location");
+    return Status(LOTUS, FAIL, "Unsupported tensor location: src_location is: " + src.Location().name + " and dst_location is: " + dst.Location().name);
   }
 
   size_t bytes = src.DataType()->Size() * src.Shape().Size();
