@@ -71,9 +71,12 @@ class Env {
   virtual Thread* StartThread(const ThreadOptions& thread_options,
                               const std::string& name,
                               std::function<void()> fn) const = 0;
-
+  /// File size must less than 4GB.
+  /// No support for non-regular files(e.g. socket, pipe)
+  virtual Common::Status ReadFileAsString(const char* fname, std::string* out) const = 0;
+  virtual Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const = 0;
   // TODO add filesystem related functions
-
+  
 protected:
   Env();
 

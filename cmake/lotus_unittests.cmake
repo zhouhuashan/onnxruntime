@@ -313,7 +313,7 @@ set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(WIN32)
   set(DISABLED_WARNINGS_FOR_PROTOBUF "/wd4125" "/wd4456" "/wd4505")
-  target_compile_options(onnx_test_runner_common PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
+  target_compile_options(onnx_test_runner_common PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF} -D_CRT_SECURE_NO_WARNINGS)
   target_compile_options(onnx_test_runner PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
   #Maybe "CMAKE_SYSTEM_PROCESSOR" is better
   if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")

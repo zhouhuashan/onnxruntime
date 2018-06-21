@@ -74,7 +74,12 @@ class PosixEnv : public Env {
                       std::function<void()> fn) const override {
     return new StdThread(thread_options, name, fn);
   }
-
+  Common::Status ReadFileAsString(const char* fname, std::string* out) const override{
+    return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "Not implemented");
+  }
+  Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override{
+    return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "Not implemented");
+  }
  private:
   PosixEnv() = default;
 };

@@ -1,6 +1,8 @@
 #include "TestCase.h"
+#include "core/platform/env.h"
 #include "core/framework/tensorprotoutils.h"
 #include <fstream>
+#include <google/protobuf/util/delimited_message_util.h>
 #include <memory>
 #include "tml.pb.h"
 
@@ -116,6 +118,26 @@ Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<
   if (id >= test_data_dirs.size())
     return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "out of bound");
 
+  path inputs_pb = test_data_dirs[id] / "inputs.pb";
+  if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
+    std::string content;
+    LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(inputs_pb.c_str(), &content));
+    std::vector<onnx::TensorProto> input_pbs;
+    google::protobuf::io::CodedInputStream coded_input((const uint8_t*)content.data(), (int)content.size());
+    bool clean_eof = false;
+    onnx::TensorProto tensor;
+    while (google::protobuf::util::ParseDelimitedFromCodedStream(&tensor, &coded_input, &clean_eof)) {
+      input_pbs.push_back(tensor);
+      tensor.Clear();
+    }
+
+    if (!clean_eof) {
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "parse input file '", inputs_pb.string(), "' failed, clean_eof==false");
+    }
+    LOTUS_RETURN_IF_ERROR(ConvertInput(input_pbs, feeds));
+    return Status::OK();
+  }
+
   std::vector<path> input_pb_files;
   const path pb(".pb");
 
@@ -171,6 +193,21 @@ Lotus::Common::Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, 
         value->Init(vec.release(),
                     DataTypeImpl::GetType<VectorMapInt64ToFloat>(),
                     DataTypeImpl::GetType<VectorMapInt64ToFloat>()->GetDeleteFunc());
+        output_values.emplace_back(*value.get());
+      } else if (data.has_vector_map_string_to_float()) {
+        std::unique_ptr<VectorMapStringToFloat> vec = std::make_unique<VectorMapStringToFloat>();
+        for (const Lotus::proto::MapStringToFloat& i : data.vector_map_string_to_float().v()) {
+          MapStringToFloat new_value;
+          for (const auto& j : i.v()) {
+            new_value[j.first] = j.second;
+          }
+          vec->push_back(new_value);
+        }
+        std::unique_ptr<Lotus::MLValue> value;
+        value = std::make_unique<Lotus::MLValue>();
+        value->Init(vec.release(),
+                    DataTypeImpl::GetType<VectorMapStringToFloat>(),
+                    DataTypeImpl::GetType<VectorMapStringToFloat>()->GetDeleteFunc());
         output_values.emplace_back(*value.get());
       } else {
         return Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file type");

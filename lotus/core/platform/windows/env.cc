@@ -79,6 +79,55 @@ class WindowsEnv : public Env {
     return default_env;
   }
 
+  virtual Common::Status ReadFileAsString(const char* fname, std::string* out) const {
+    size_t flen = strlen(fname);
+    if (flen >= std::numeric_limits<int>::max()) {
+      return LOTUS_MAKE_STATUS(Common::LOTUS, Common::INVALID_ARGUMENT, "input path too long");
+    }
+    int len = MultiByteToWideChar(CP_ACP, 0, fname, (int)(flen + 1), nullptr, 0);
+    if (len <= 0) {
+      return LOTUS_MAKE_STATUS(Common::LOTUS, Common::FAIL, "MultiByteToWideChar error");
+    }
+    std::wstring wStreamName((size_t)(len - 1), L'\0');
+    MultiByteToWideChar(CP_ACP, 0, fname, (int)flen, (LPWSTR)wStreamName.data(), len);
+    return ReadFileAsString(wStreamName.c_str(), out);
+  }
+
+  virtual Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const {
+    if (!out) {
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "'out' cannot be NULL");
+    }
+    char errbuf[512];
+    HANDLE hFile = CreateFileW(fname, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+      int err = GetLastError();
+      _snprintf_s(errbuf, _TRUNCATE, "%s:%d open file %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
+      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+    }
+    LARGE_INTEGER filesize;
+    if (!GetFileSizeEx(hFile, &filesize)) {
+      int err = GetLastError();
+      _snprintf_s(errbuf, _TRUNCATE, "%s:%d GetFileSizeEx %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
+      CloseHandle(hFile);
+      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+    }
+    out->resize(filesize.QuadPart, '\0');
+    if (filesize.QuadPart > std::numeric_limits<DWORD>::max()) {
+      _snprintf_s(errbuf, _TRUNCATE, "%s:%d READ file %ls fail, file size too long", __FILE__, (int)__LINE__, fname);
+      CloseHandle(hFile);
+      //we can support that with a while loop
+      return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, errbuf);
+    }
+    if (!ReadFile(hFile, (void*)out->data(), (DWORD)filesize.QuadPart, nullptr, nullptr)) {
+      int err = GetLastError();
+      _snprintf_s(errbuf, _TRUNCATE, "%s:%d ReadFileEx %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
+      CloseHandle(hFile);
+      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+    }
+    CloseHandle(hFile);
+    return Common::Status::OK();
+  }
+
  private:
   WindowsEnv()
       : GetSystemTimePreciseAsFileTime_(nullptr) {
