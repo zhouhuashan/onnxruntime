@@ -7,6 +7,8 @@ from __future__ import unicode_literals
 import numpy as np
 import unittest
 import lotus
+import sys
+from lotus.python._pybind_state import lotus_ostream_redirect
 
 class TestInferenceSession(unittest.TestCase):
 
@@ -200,5 +202,53 @@ class TestInferenceSession(unittest.TestCase):
 
         self.assertTrue('Model requires 2 inputs' in str(context.exception))
 
+    def testModelMeta(self):
+        sess = lotus.InferenceSession('testdata/squeezenet/model.onnx')
+        modelmeta = sess.get_modelmeta()
+        self.assertEqual('onnx-caffe2', modelmeta.producer_name)
+        self.assertEqual('squeezenet_old', modelmeta.graph_name)
+        self.assertEqual('', modelmeta.domain)
+        self.assertEqual('', modelmeta.description)
+
+    def testConfigureSessionVerbosityLevel(self):
+        so = lotus.SessionOptions()
+        so.session_log_verbosity_level = 1
+
+        # use lotus_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
+        with lotus_ostream_redirect(stdout=True, stderr=True):
+          sess = lotus.InferenceSession("testdata/matmul_1.pb", sess_options=so)
+          output = sys.stderr.getvalue()
+          self.assertTrue('[I:Lotus:InferenceSession, inference_session' in output)
+
+    def testConfigureRunVerbosityLevel(self):
+        ro = lotus.RunOptions()
+        ro.run_log_verbosity_level = 1
+        ro.run_tag = "testtag123"
+
+        # use lotus_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
+        with lotus_ostream_redirect(stdout=True, stderr=True):
+            sess = lotus.InferenceSession("testdata/mul_1.pb")
+            x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+            sess.run([], {'X': x}, run_options=ro)
+            output = sys.stderr.getvalue()
+            self.assertTrue('[I:Lotus:testtag123,' in output)
+
+    def testProfilerWithSessionOptions(self):
+        so = lotus.SessionOptions()
+        so.enable_profiling = True
+        sess = lotus.InferenceSession("testdata/mul_1.pb", sess_options=so)
+        x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+        sess.run([], {'X': x})
+        profile_file = sess.end_profiling()
+
+        tags = ['pid', 'dur', 'ts', 'ph', 'X', 'name', 'args']
+        with open(profile_file) as f:
+            lines = f.readlines()
+            self.assertTrue('[' in lines[0])
+            for i in range(1, 8):
+                for tag in tags:
+                    self.assertTrue(tag in lines[i])
+            self.assertTrue(']' in lines[8])
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(module=__name__, buffer=True)

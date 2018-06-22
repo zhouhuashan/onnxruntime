@@ -1,3 +1,4 @@
+#include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -7,6 +8,7 @@
 
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
+#include "core/common/logging/sinks/cerr_sink.h"
 #include "core/framework/allocatormgr.h"
 #include <core/framework/environment.h>
 #include "core/framework/inference_session.h"
@@ -227,7 +229,7 @@ class SessionObjectInitializer {
 
   operator Arg2() {
     static std::string default_logger_id{"Default"};
-    static LoggingManager default_logging_manager{std::unique_ptr<ISink>{new CLogSink{}},
+    static LoggingManager default_logging_manager{std::unique_ptr<ISink>{new CErrSink{}},
                                                   Severity::kWARNING, false, LoggingManager::InstanceType::Default,
                                                   &default_logger_id};
     return &default_logging_manager;
@@ -243,6 +245,31 @@ void addGlobalMethods(py::module& m) {
 }
 
 void addObjectMethods(py::module& m) {
+  // allow unit tests to redirect std::cout and std::cerr to sys.stdout and sys.stderr
+  py::add_ostream_redirect(m, "lotus_ostream_redirect");
+  py::class_<SessionOptions>(m, "SessionOptions")
+      .def(py::init())
+      .def_readwrite("enable_sequential_execution", &SessionOptions::enable_sequential_execution)
+      .def_readwrite("enable_profiling", &SessionOptions::enable_profiling)
+      .def_readwrite("profile_file_prefix", &SessionOptions::profile_file_prefix)
+      .def_readwrite("session_logid", &SessionOptions::session_logid)
+      .def_readwrite("session_log_verbosity_level", &SessionOptions::session_log_verbosity_level)
+      .def_readwrite("enable_mem_pattern", &SessionOptions::enable_mem_pattern)
+      .def_readwrite("max_num_graph_transformation_steps", &SessionOptions::max_num_graph_transformation_steps);
+
+  py::class_<RunOptions>(m, "RunOptions")
+      .def(py::init())
+      .def_readwrite("run_log_verbosity_level", &RunOptions::run_log_verbosity_level)
+      .def_readwrite("run_tag", &RunOptions::run_tag);
+
+  py::class_<ModelMetadata>(m, "ModelMetadata")
+      .def_readwrite("producer_name", &ModelMetadata::producer_name)
+      .def_readwrite("graph_name", &ModelMetadata::graph_name)
+      .def_readwrite("domain", &ModelMetadata::domain)
+      .def_readwrite("description", &ModelMetadata::description)
+      .def_readwrite("version", &ModelMetadata::version)
+      .def_readwrite("custom_metadata_map", &ModelMetadata::custom_metadata_map);
+
   py::class_<LotusIR::NodeArg>(m, "NodeArg")
       .def_property_readonly("name", &LotusIR::NodeArg::Name)
       .def_property_readonly("type", [](const LotusIR::NodeArg& na) -> std::string {
@@ -269,6 +296,7 @@ void addObjectMethods(py::module& m) {
   py::class_<SessionObjectInitializer>(m, "SessionObjectInitializer");
   py::class_<InferenceSession>(m, "InferenceSession")
       .def(py::init<SessionObjectInitializer, SessionObjectInitializer>())
+      .def(py::init<SessionOptions, SessionObjectInitializer>())
       .def("load_model", [](InferenceSession* sess, const std::string& path) {
         auto status = sess->Load(path);
 
@@ -281,7 +309,7 @@ void addObjectMethods(py::module& m) {
           throw std::runtime_error(status.ToString().c_str());
         }
       })
-      .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds) -> std::vector<py::object> {
+      .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
           MLValue ml_value;
@@ -293,10 +321,14 @@ void addObjectMethods(py::module& m) {
         }
 
         std::vector<MLValue> fetches;
-        // TODO: expose run_options and session options to python
-        RunOptions run_options;
+        Common::Status status;
 
-        Common::Status status = sess->Run(run_options, feeds, output_names, &fetches);
+        if (run_options != nullptr) {
+          status = sess->Run(*run_options, feeds, output_names, &fetches);
+        } else {
+          status = sess->Run(feeds, output_names, &fetches);
+        }
+
         if (!status.IsOK()) {
           throw std::runtime_error(status.ToString().c_str());
         }
@@ -312,6 +344,9 @@ void addObjectMethods(py::module& m) {
         }
         return rfetch;
       })
+      .def("end_profiling", [](InferenceSession* sess) -> std::string {
+        return sess->EndProfiling();
+      })
       .def_property_readonly("inputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
         auto res = sess->GetInputs();
         if (!res.first.IsOK()) {
@@ -322,6 +357,14 @@ void addObjectMethods(py::module& m) {
       })
       .def_property_readonly("outputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
         auto res = sess->GetOutputs();
+        if (!res.first.IsOK()) {
+          throw std::runtime_error(res.first.ToString().c_str());
+        } else {
+          return *(res.second);
+        }
+      })
+      .def_property_readonly("model_meta", [](const InferenceSession* sess) -> const Lotus::ModelMetadata& {
+        auto res = sess->GetModelMetadata();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
         } else {

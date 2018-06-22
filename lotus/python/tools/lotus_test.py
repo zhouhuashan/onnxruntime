@@ -27,6 +27,7 @@ def main():
     parser.add_argument('model_path', help='model path')
     parser.add_argument('num_iters', nargs='?', type=int, default=1000, help='model run iterations. default=1000')
     parser.add_argument('--debug', action='store_true', help='pause execution to allow attaching a debugger.')
+    parser.add_argument('--profile', action='store_true', help='enable chrome timeline trace profiling.')
     args = parser.parse_args()
     iters = args.num_iters
 
@@ -35,7 +36,14 @@ def main():
         print("Press key to continue.")
         sys.stdin.read(1)
 
-    sess = lotus.InferenceSession(args.model_path)
+    sess_options = None
+    if args.profile:
+        sess_options = lotus.SessionOptions()
+        sess_options.enable_profiling = True
+        sess_options.profile_file_prefix = os.path.basename(args.model_path)
+
+    sess = lotus.InferenceSession(args.model_path, sess_options)
+    meta = sess.get_modelmeta()
 
     feeds = {}
     for input_meta in sess.get_inputs():
@@ -44,7 +52,7 @@ def main():
         if input_meta.type in float_dict:
             feeds[input_meta.name] = np.random.rand(*shape).astype(float_dict[input_meta.type])
         elif input_meta.type in integer_dict:
-            feeds[input_meta.name] = np.random.uniform(high=1000, size=tuple(shape).astype(integer_dict[input_meta.type]))
+            feeds[input_meta.name] = np.random.uniform(high=1000, size=tuple(shape)).astype(integer_dict[input_meta.type])
         elif input_meta.type == 'tensor(bool)':
             feeds[input_meta.name] = np.random.randint(2, size=tuple(shape)).astype('bool')
         else:
@@ -56,7 +64,15 @@ def main():
         sess.run([], feeds) # fetch all outputs
     end = timer()
 
-    print('latency: {} ms'.format(((end - start)*1000)/iters))
+    print("model: {}".format(meta.graph_name))
+    print("version: {}".format(meta.version))
+    print("iterations: {}".format(iters))
+    print("avg latency: {} ms".format(((end - start)*1000)/iters))
+
+    if args.profile:
+        trace_file = sess.end_profiling()
+        print("trace file written to: {}".format(trace_file))
+
     return 0
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ else:
 
 setup(
     name='lotus',
-    version='0.1.1',
+    version='0.1.2',
     description='Lotus Runtime Python bindings',
     long_description="Python bindings for Lotus Runtime.",
     author='Lotus team',
