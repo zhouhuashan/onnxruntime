@@ -38,14 +38,28 @@ TEST_MODULE_CLEANUP(ModuleCleanup) {
 
 static void run(const std::string& provider) {
   char buf[1024];
+  size_t requiredSize;
+  getenv_s(&requiredSize, NULL, 0, "CloudTestJobName");
+  Assert::AreNotEqual((size_t)0, requiredSize);
+  std::string cloudTestJobName(requiredSize, '\0');
+  getenv_s(&requiredSize, (char*)cloudTestJobName.data(), requiredSize, "CloudTestJobName");
   int p_models = Lotus::Env::Default().GetNumCpuCores();
-  snprintf(buf, sizeof(buf), "running tests with %d cores", p_models);
+  snprintf(buf, sizeof(buf), "running test %s with %d cores", cloudTestJobName.c_str(), p_models);
   Logger::WriteMessage(buf);
+  size_t pos1 = cloudTestJobName.find('.', 0);
+  Assert::AreNotEqual(std::string::npos, requiredSize);
+  ++pos1;
+  size_t pos2 = cloudTestJobName.find('.', pos1);
+  Assert::AreNotEqual(std::string::npos, requiredSize);
+  std::string modelName = cloudTestJobName.substr(pos1, pos2 - pos1);
+  snprintf(buf, sizeof(buf), "model %s", modelName.c_str());
+  Logger::WriteMessage(buf);
+  //CloudTestJobName
   //Current working directory is the one who contains 'onnx_test_runner_vstest.dll'
   //We want debug build and release build share the same test data files, so it should
   //be one level up.
   Lotus::AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
-  std::vector<ITestCase*> tests = LoadTests({ "..\\models" }, {}, cpu_allocator);  
+  std::vector<ITestCase*> tests = LoadTests({"..\\models"}, {modelName}, cpu_allocator);
   TestResultStat stat;
   SessionFactory sf(provider);
   TestEnv args(tests, stat, sf);
@@ -53,7 +67,7 @@ static void run(const std::string& provider) {
   std::string res = stat.ToString();
   Logger::WriteMessage(res.c_str());
   for (ITestCase* l : tests) {
-	  delete l;
+    delete l;
   }
   size_t failed = stat.total_test_case_count - stat.succeeded - stat.skipped - stat.not_implemented;
   if (failed != 0) {
@@ -63,7 +77,7 @@ static void run(const std::string& provider) {
 
 TEST_CLASS(ONNX_TEST){
   public :
-      TEST_METHOD(test_sequential_planner){
-          run(LotusIR::kCpuExecutionProvider);
-      }
+  TEST_METHOD(test_sequential_planner){
+    run(LotusIR::kCpuExecutionProvider);
+  }
 };
