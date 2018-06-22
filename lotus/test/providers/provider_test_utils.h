@@ -126,8 +126,7 @@ const VectorOfMapTypeProto<TKey, TVal> s_vec_map_type_proto;
 // for new output types, add a new specialization for Check<>
 // See current usage for an example, should be self explanatory
 struct OpTester {
-  OpTester(const std::string& provider, const char* op, const char* domain = LotusIR::kOnnxDomain);
-  OpTester(const char* op, const char* domain = LotusIR::kOnnxDomain) : OpTester(std::string(LotusIR::kCpuExecutionProvider), op, domain) {}
+  OpTester(const char* op, const char* domain = LotusIR::kOnnxDomain) : op_(op), domain_(domain) {}
   ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
@@ -192,14 +191,16 @@ struct OpTester {
   void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
     add_attribute_funcs_.emplace_back(
-        [ name = std::move(name), value = std::move(value) ](LotusIR::Node & node) { node.AddAttribute(name, value); });
+        [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
   }
 
   enum class ExpectResult {
     kExpectSuccess,
     kExpectFailure
   };
-  void Run(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
+
+  void Run(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "", LotusIR::ProviderType provider_type = LotusIR::kCpuExecutionProvider);
+  void RunOnCpuAndCuda(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
 
   struct Data {
     LotusIR::NodeArg def_;
@@ -246,7 +247,6 @@ struct OpTester {
 
   const char* op_;
   const char* domain_;
-  const std::string provider_name_;
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;

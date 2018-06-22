@@ -4,6 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
+#include "gemm_helper.h"
 
 namespace Lotus {
 
@@ -29,40 +30,14 @@ class Gemm final : public OpKernel {
     const auto X = context->Input<Tensor>(0);
     const auto W = context->Input<Tensor>(1);
     const auto B = context->Input<Tensor>(2);
-    //dimension check
-    LOTUS_ENFORCE(X->Shape().NumDimensions() == 2);
-    LOTUS_ENFORCE(W->Shape().NumDimensions() == 2);
-    // batch size
-    int64_t M, K, N;
+    GemmHelper helper(X->Shape(), trans_A_ != CblasNoTrans, W->Shape(), trans_B_ != CblasNoTrans, B->Shape());
 
-    if (trans_A_ == CblasTrans) {
-      M = X->Shape()[1];
-      K = X->Shape()[0];
-    } else {
-      M = X->Shape()[0];
-      K = X->Shape()[1];
-    }
+    if (!helper.State().IsOK())
+      return helper.State();
 
-    int k_dim;
-    if (trans_B_ == CblasTrans) {
-      N = W->Shape()[0];
-      k_dim = 1;
-    } else {
-      N = W->Shape()[1];
-      k_dim = 0;
-    }
-
-    if (W->Shape()[k_dim] != K)
-      return Status(LOTUS, INVALID_ARGUMENT,
-                    "GEMM: Dimension mismatch, W: " +
-                        W->Shape().ToString() +
-                        " K: " + std::to_string(K) +
-                        " N:" + std::to_string(N));
-
-    if (!IsValidBroadcast(B->Shape(), M, N))
-      return Status(LOTUS, INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
-
-    LOTUS_ENFORCE(M > 0 && N > 0 && K > 0);
+    int64_t M = helper.M();
+    int64_t N = helper.N();
+    int64_t K = helper.K();
     auto Y = context->Output(0, TensorShape(std::vector<int64_t>{M, N}));
 
     //bias
@@ -130,22 +105,6 @@ class Gemm final : public OpKernel {
   }
 
  private:
-  bool IsValidBroadcast(const TensorShape& shape, int64_t M, int64_t N) const {
-    if (shape.NumDimensions() != 1 && shape.NumDimensions() != 2)
-      return false;
-    // shape is (1,) or (1, 1), or (,)
-    if (shape.Size() == 1)
-      return true;
-    // shape is (N,) or (1, N) or (M, 1)
-    // or (M, N), in last case no broadcast needed, but don't fail it
-    if ((shape.NumDimensions() == 1 && shape[0] == N) ||
-        (shape.NumDimensions() == 2 && shape[0] == M && (shape[1] == 1 || shape[1] == N)) ||
-        (shape.NumDimensions() == 2 && shape[0] == 1 && shape[1] == N))
-      return true;
-    else
-      return false;
-  }
-
   CBLAS_TRANSPOSE trans_A_;
   CBLAS_TRANSPOSE trans_B_;
   float alpha_;

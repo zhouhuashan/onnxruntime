@@ -28,21 +28,27 @@ else()
 endif()
 
 if (lotus_USE_CUDA)
-    file(GLOB_RECURSE lotus_providers_cuda_srcs
+    file(GLOB_RECURSE lotus_providers_cuda_cc_srcs
         "${LOTUS_ROOT}/core/providers/cuda/*.h"
-        "${LOTUS_ROOT}/core/providers/cuda/*.cu"
         "${LOTUS_ROOT}/core/providers/cuda/*.cc"
     )
-    source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_cuda_srcs})
-    add_library(lotus_providers_cuda_obj OBJECT ${lotus_providers_cuda_srcs})
-    set_target_properties(lotus_providers_cuda_obj PROPERTIES LINKER_LANGUAGE CUDA)
-    set_target_properties(lotus_providers_cuda_obj PROPERTIES FOLDER "Lotus")
+    file(GLOB_RECURSE lotus_providers_cuda_cu_srcs
+        "${LOTUS_ROOT}/core/providers/cuda/*.cu"
+    )
+    file(GLOB_RECURSE lotus_providers_cuda_srcs
+        ${lotus_providers_cuda_cc_srcs}
+        ${lotus_providers_cuda_cu_srcs}
+    )
 
-    add_library(lotus_providers_cuda $<TARGET_OBJECTS:lotus_providers_cuda_obj>)
+    source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_cuda_srcs})
+    add_library(lotus_providers_cuda STATIC ${lotus_providers_cuda_srcs})
+    set_target_properties(lotus_providers_cuda PROPERTIES LINKER_LANGUAGE CUDA)
+    set_target_properties(lotus_providers_cuda PROPERTIES FOLDER "Lotus")
     target_link_libraries(lotus_providers_cuda PUBLIC lotus_framework lotus_common PRIVATE ${lotus_EXTERNAL_LIBRARIES})
     set_target_properties(lotus_providers_cuda PROPERTIES FOLDER "Lotus")
     if (WIN32)
-        foreach(src_file ${lotus_providers_cuda_srcs})
+        # *.cu cannot use PCH
+        foreach(src_file ${lotus_providers_cuda_cc_srcs})
             set_source_files_properties(${src_file}
                 PROPERTIES
                 COMPILE_FLAGS "/Yucuda_pch.h /FIcuda_pch.h")

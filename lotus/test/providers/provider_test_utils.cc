@@ -109,10 +109,6 @@ void Check(const OpTester::Data& expected_data, MLValue& mlvalue) {
   CheckDispatch<VectorMapStringToFloat, VectorMapInt64ToFloat>(expected_data.data_.Type(), expected_data, mlvalue);
 }
 
-OpTester::OpTester(const std::string& provider, const char* op, const char* domain)
-    : provider_name_(provider), op_(op), domain_(domain) {
-}
-
 OpTester::~OpTester() {
 #if _DEBUG
   if (!run_called_) {
@@ -159,7 +155,7 @@ void OpTester::SetOutputRelErr(const char* name, float v) {
   it->relative_error_ = optional<float>(v);
 }
 
-void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string) {
+void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string, LotusIR::ProviderType provider_type) {
   try {
 #if _DEBUG
     run_called_ = true;
@@ -185,7 +181,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     for (auto& add_attribute_fn : add_attribute_funcs_)
       add_attribute_fn(node);
 
-    node.SetExecutionProviderType(provider_name_);
+    node.SetExecutionProviderType(provider_type);
     Status status = graph->Resolve();
     //LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     if (!status.IsOK()) {
@@ -213,7 +209,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
 
     InferenceSession session_object{so};
 
-    if (provider_name_ == LotusIR::kCudaExecutionProvider) {
+    if (provider_type == LotusIR::kCudaExecutionProvider) {
 #ifdef USE_CUDA
       CUDAExecutionProviderInfo epi;
       epi.device_id = 0;
@@ -286,6 +282,13 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     // rethrow as some tests for error handling expect this
     throw;
   }
+}
+
+void OpTester::RunOnCpuAndCuda(ExpectResult expect_result, const std::string& expected_failure_string) {
+  Run(expect_result, expected_failure_string, LotusIR::kCpuExecutionProvider);
+#ifdef USE_CUDA
+  Run(expect_result, expected_failure_string, LotusIR::kCudaExecutionProvider);
+#endif
 }
 
 }  // namespace Test

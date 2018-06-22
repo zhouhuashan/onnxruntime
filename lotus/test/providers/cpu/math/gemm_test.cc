@@ -20,7 +20,7 @@ TEST(MathOpTest, GemmNoTrans) {
   test.AddOutput<float>("Y", {2, 3},
                         {11.0f, 11.0f, 11.0f,
                          -9.0f, -9.0f, -9.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, GemmBroadcast) {
@@ -39,7 +39,7 @@ TEST(MathOpTest, GemmBroadcast) {
   test.AddOutput<float>("Y", {2, 3},
                         {11.0f, 12.0f, 13.0f,
                          -9.0f, -8.0f, -7.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, GemmTrans) {
@@ -60,7 +60,7 @@ TEST(MathOpTest, GemmTrans) {
   test.AddOutput<float>("Y", {2, 3},
                         {11.0f, 11.0f, 11.0f,
                          -9.0f, -9.0f, -9.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, GemmAlphaBeta) {
@@ -79,7 +79,7 @@ TEST(MathOpTest, GemmAlphaBeta) {
   test.AddOutput<float>("Y", {2, 3},
                         {7.0f, 7.0f, 7.0f,
                          -3.0f, -3.0f, -3.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, GemmNaN) {
@@ -98,7 +98,7 @@ TEST(MathOpTest, GemmNaN) {
   test.AddOutput<float>("Y", {2, 3},
                         {10.0f, 10.0f, 10.0f,
                          -10.0f, -10.0f, -10.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, GemmScalarBroadcast) {
@@ -117,7 +117,7 @@ TEST(MathOpTest, GemmScalarBroadcast) {
   test.AddOutput<float>("Y", {2, 3},
                         {11.0f, 11.0f, 11.0f,
                          -9.0f, -9.0f, -9.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, Gemm2DBroadcast) {
@@ -136,7 +136,7 @@ TEST(MathOpTest, Gemm2DBroadcast) {
   test.AddOutput<float>("Y", {2, 3},
                         {11.0f, 11.0f, 11.0f,
                          -8.0f, -8.0f, -8.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, GemmFalseBroadcast) {
@@ -155,7 +155,7 @@ TEST(MathOpTest, GemmFalseBroadcast) {
   test.AddOutput<float>("Y", {2, 3},
                         {11.0f, 11.0f, 11.0f,
                          -8.0f, -8.0f, -8.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 }  // namespace Test

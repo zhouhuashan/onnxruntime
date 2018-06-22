@@ -2,6 +2,7 @@
 #include "cuda_pch.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
+#include "cuda_utils.h"
 
 namespace Lotus {
 
@@ -62,11 +63,19 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return streams_[queue_id];
   }
 
+  const float* GetConstOnes(size_t count) {
+    if (!constant_ones_)
+      constant_ones_.reset(Cuda::CreateConstantOnesF());
+
+    return constant_ones_->GetBuffer(count);
+  }
+
  private:
   CUDATransformer transformer_;
   int device_id_;
   cublasHandle_t cublas_handle_;
   cudaStream_t streams_[kTotalCudaStreams];
+  std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
 };
 
 }  // namespace Lotus
