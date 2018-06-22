@@ -132,11 +132,11 @@ int main(int argc, char* argv[]) {
   for (ITestCase* l : tests) {
     delete l;
   }
-  std::unordered_set<std::string> broken_tests{"cast_DOUBLE_to_FLOAT","cast_DOUBLE_to_FLOAT16","convtranspose_1d",
+  std::unordered_set<std::string> broken_tests{"cast_DOUBLE_to_FLOAT","cast_DOUBLE_to_FLOAT16",
       "AvgPool1d", "AvgPool1d_stride", "AvgPool2d", "AvgPool2d_stride", "AvgPool3d", "AvgPool3d_stride",
       "AvgPool3d_stride1_pad0_gpu_input", "BatchNorm1d_3d_input_eval", "BatchNorm2d_eval", "BatchNorm2d_momentum_eval",
       "BatchNorm3d_eval", "BatchNorm3d_momentum_eval",
-      "convtranspose_3d","GLU","GLU_dim","Linear","not_2d","not_3d","not_4d","operator_add_broadcast",
+      "GLU","GLU_dim","Linear","not_2d","not_3d","not_4d","operator_add_broadcast",
       "operator_add_size1_broadcast","operator_add_size1_right_broadcast","operator_add_size1_singleton_broadcast",
       "operator_addconstant","operator_addmm","operator_basic","operator_lstm","operator_mm","operator_non_float_params",
       "operator_params","operator_pow","operator_rnn","operator_rnn_single_layer","PoissonNLLLLoss_no_reduce","PReLU_1d",
