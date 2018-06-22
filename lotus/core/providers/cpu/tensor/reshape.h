@@ -47,12 +47,14 @@ class Reshape final : public OpKernel {
     if (unknown_dim != -1) {
       // calculate unknown dimension
       LOTUS_ENFORCE((X_shape.Size() % size) == 0,
-                    "The input tensor cannot be reshaped to the requested shape");
+                    "The input tensor cannot be reshaped to the requested shape. Input shape:", X_shape,
+                    " Output shape:", shape);
       shape[unknown_dim] = X_shape.Size() / size;
     } else {
       // check if the output shape is valid.
       LOTUS_ENFORCE(gsl::narrow_cast<int64_t>(X_shape.Size()) == size,
-                    "The input tensor cannot be reshaped to the requested shape");
+                    "The input tensor cannot be reshaped to the requested shape. Input shape:", X_shape,
+                    " Output shape:", shape);
     }
 
     Tensor* Y = context->Output(0, TensorShape(shape));
