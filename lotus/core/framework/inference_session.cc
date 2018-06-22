@@ -234,11 +234,7 @@ class InferenceSession::Impl {
         // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
         // Passing a pointer to a private member variable doesn't seem the right thing to do.
         std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
-        // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-        LOTUS_RETURN_IF_ERROR(AllocationPlanner::CreatePlan(session_options_.allocation_planner_type,
-                                                            session_state_,
-                                                            p_seq_exec_plan.get()));
-
+        LOTUS_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(session_state_, p_seq_exec_plan.get()));
         session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
       } else {
         LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");

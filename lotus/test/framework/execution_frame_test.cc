@@ -50,9 +50,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   node->SetExecutionProviderType(provider_type);
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
   // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-  status = AllocationPlanner::CreatePlan(AllocationPlannerType::SEQUENTIAL_PLANNER,
-	  state,
-	  p_seq_exec_plan.get());
+  status = AllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
   EXPECT_TRUE(status.IsOK());
   state.SetExecutionPlan(std::move(p_seq_exec_plan));
 
@@ -182,9 +180,7 @@ TEST(ExecutionFrameTest, MemPatternTest) {
 
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
   // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-  status = AllocationPlanner::CreatePlan(AllocationPlannerType::SEQUENTIAL_PLANNER,
-                                         state,
-                                         p_seq_exec_plan.get());
+  status = AllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
   EXPECT_TRUE(status.IsOK());
 
   state.SetExecutionPlan(std::move(p_seq_exec_plan));

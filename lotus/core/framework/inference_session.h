@@ -28,11 +28,6 @@ class OpKernelInfo;
 class OpKernel;
 class CustomRegistry;
 
-enum class AllocationPlannerType {
-  SIMPLE_SEQUENTIAL_PLANNER,
-  SEQUENTIAL_PLANNER,
-};
-
 /**
   * Configuration information for a session.
   */
@@ -45,10 +40,6 @@ struct SessionOptions {
 
   // the prefix of the profile file. The current time will be appended to the file name. 
   std::string profile_file_prefix = "lotus_profile_";
-
-  // TODO: This has been added to facilitate testing only. It is not intended for production usage.
-  // TODO: remove this option once we've tested sequential planner completely.
-  AllocationPlannerType allocation_planner_type = AllocationPlannerType::SEQUENTIAL_PLANNER;
 
   std::string session_logid;                       ///< logger id to use for session output
   unsigned short session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc

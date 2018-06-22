@@ -143,8 +143,7 @@ class SimpleAllocationPlanner {
 
 class AllocationPlanner {
  public:
-  static Status CreatePlan(AllocationPlannerType allocation_planner_type,
-                           const SessionState& session_state,
+  static Status CreatePlan(const SessionState& session_state,
                            SequentialExecutionPlan* plan);
 };
 
