@@ -45,7 +45,7 @@ if (lotus_USE_CUDA)
     set_target_properties(lotus_providers_cuda PROPERTIES LINKER_LANGUAGE CUDA)
     set_target_properties(lotus_providers_cuda PROPERTIES FOLDER "Lotus")
     target_link_libraries(lotus_providers_cuda PUBLIC lotus_framework lotus_common PRIVATE ${lotus_EXTERNAL_LIBRARIES})
-    set_target_properties(lotus_providers_cuda PROPERTIES FOLDER "Lotus")
+    set_property(TARGET lotus_providers_cuda PROPERTY CUDA_STANDARD 14)
     if (WIN32)
         # *.cu cannot use PCH
         foreach(src_file ${lotus_providers_cuda_cc_srcs})

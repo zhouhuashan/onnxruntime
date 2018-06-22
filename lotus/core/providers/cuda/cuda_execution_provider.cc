@@ -10,6 +10,7 @@ REGISTER_KERNEL(KernelDefBuilder("MemcpyFromHost")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCudaExecutionProvider)
+                    .InputMemoryType<kMemTypeCPUInput>(0)
                     .ExecQueueId(kCudaStreamCopyIn)
                     .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
                 Memcpy);
@@ -18,7 +19,7 @@ REGISTER_KERNEL(KernelDefBuilder("MemcpyToHost")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCudaExecutionProvider)
-                    .MemoryType<kMemTypeCPU>(0)
+                    .OutputMemoryType<kMemTypeCPUOutput>(0)
                     .ExecQueueId(kCudaStreamCopyOut)
                     .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
                 Memcpy);
@@ -46,7 +47,7 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
 
   typedef std::pair<std::string, MemType> AllocCreateInfo;
   std::vector<AllocCreateInfo> all_info({{CUDA, kMemTypeDefault},
-                                         {CUDA_PINNED, kMemTypeCPU}});
+                                         {CUDA_PINNED, kMemTypeCPUOutput}});
   for (auto pair : all_info) {
     auto iter = device_factories.find(pair.first);
     if (iter != device_factories.end())
@@ -76,8 +77,8 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
 
   size_t bytes = src.DataType()->Size() * src.Shape().Size();
 
-  const float* src_data = src.Data<float>();
-  float* dst_data = dst.MutableData<float>();
+  const void* src_data = src.DataRaw();
+  void* dst_data = dst.MutableDataRaw();
 
   bool succeeded = true;
   if (dst.Location().name != CUDA) {

@@ -68,12 +68,31 @@ bool TransformerMemcpyImpl::ModifyGraph() {
 void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node) {
   if (node.GetExecutionProviderType() == provider_) {
     provider_nodes_.insert(&node);
-    node.ForEachDef([this](const LotusIR::NodeArg* arg, bool is_input) {
-      if (is_input)
-        provider_input_defs_.insert(arg);
-      else
-        provider_output_defs_.insert(arg);
-    });
+    // note KernelCreateInfo might be nullptr for custom kernel
+    const KernelRegistry::KernelCreateInfo* kci = nullptr;
+    KernelRegistry::Instance().SearchKernelRegistry(node, &kci);
+    const auto* input_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
+    const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
+    LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(
+                      node.InputDefs(),
+                      [this, &input_mem_types](const LotusIR::NodeArg& arg, int index) {
+                        if (input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index))
+                          non_provider_input_defs_.insert(&arg);
+                        else
+                          provider_input_defs_.insert(&arg);
+                        return Status::OK();
+                      })
+                      .IsOK());
+    LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(
+                      node.OutputDefs(),
+                      [this, &output_mem_types](const LotusIR::NodeArg& arg, int index) {
+                        if (output_mem_types && MemTypeOnCpuExplicitly(*output_mem_types, index))
+                          non_provider_output_defs_.insert(&arg);
+                        else
+                          provider_output_defs_.insert(&arg);
+                        return Status::OK();
+                      })
+                      .IsOK());
   } else {
     // TODO: copy between devices? i.e. multiple GPUs
     LOTUS_ENFORCE(node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider || node.GetExecutionProviderType().empty());

@@ -3,30 +3,10 @@
 #include "core/common/status.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
+#include "cuda_call.h"
 #include "cuda_execution_provider.h"
 
 namespace Lotus {
-
-// -----------------------------------------------------------------------
-// Error handling
-// -----------------------------------------------------------------------
-
-template <typename ERRTYPE, bool THRW>
-bool CudaCall(ERRTYPE retCode, const char* exprString, const char* libName, ERRTYPE successCode, const char* msg = "");
-
-#define CUDA_CALL(expr) (CudaCall<cudaError, false>((expr), #expr, "CUDA", cudaSuccess))
-#define CUBLAS_CALL(expr) (CudaCall<cublasStatus_t, false>((expr), #expr, "CUBLAS", CUBLAS_STATUS_SUCCESS))
-#define CUSPARSE_CALL(expr) (CudaCall<cusparseStatus_t, false>((expr), #expr, "CUSPARSE", CUSPARSE_STATUS_SUCCESS))
-#define CURAND_CALL(expr) (CudaCall<curandStatus_t, false>((expr), #expr, "CURAND", CURAND_STATUS_SUCCESS))
-#define CUDNN_CALL(expr) (CudaCall<cudnnStatus_t, false>((expr), #expr, "CUDNN", CUDNN_STATUS_SUCCESS))
-#define CUDNN_CALL2(expr, m) (CudaCall<cudnnStatus_t, false>((expr), #expr, "CUDNN", CUDNN_STATUS_SUCCESS, m))
-
-#define CUDA_CALL_THROW(expr) (CudaCall<cudaError, true>((expr), #expr, "CUDA", cudaSuccess))
-#define CUBLAS_CALL_THROW(expr) (CudaCall<cublasStatus_t, true>((expr), #expr, "CUBLAS", CUBLAS_STATUS_SUCCESS))
-#define CUSPARSE_CALL_THROW(expr) (CudaCall<cusparseStatus_t, true>((expr), #expr, "CUSPARSE", CUSPARSE_STATUS_SUCCESS))
-#define CURAND_CALL_THROW(expr) (CudaCall<curandStatus_t, true>((expr), #expr, "CURAND", CURAND_STATUS_SUCCESS))
-#define CUDNN_CALL_THROW(expr) (CudaCall<cudnnStatus_t, true>((expr), #expr, "CUDNN", CUDNN_STATUS_SUCCESS))
-#define CUDNN_CALL_THROW2(expr, m) (CudaCall<cudnnStatus_t, true>((expr), #expr, "CUDNN", CUDNN_STATUS_SUCCESS, m))
 
 #define CUDA_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDA_CALL(expr) ? Status::OK() : Status(LOTUS, FAIL))
 #define CUBLAS_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUBLAS_CALL(expr) ? Status::OK() : Status(LOTUS, FAIL))
@@ -47,7 +27,25 @@ class CudaKernel : public OpKernel {
   }
 
  protected:
-  cublasHandle_t CublasHandle() const;
+  cublasHandle_t CublasHandle() const {
+    return provider_->CublasHandle();
+  }
+
+  template <typename T>
+  inline Status CopySmallVectorToGPU(IAllocatorUniquePtr<T>& gpu_vector, std::vector<T> cpu_vector) const {
+    auto alloc = provider_->GetAllocator();
+    size_t bytes = cpu_vector.size() * sizeof(T);
+
+    // CUDA inlines cudaMemcpyHostToDevice for size < 64KB, so cudaMemcpy is not blocking GPU
+    // Bigger size would synchronize GPU and cpu execution
+    if (bytes >= 64 * 1024)
+      LOGS_DEFAULT(WARNING) << "CopySmallVectorToGPU exceeded cudaMemcpyHostToDevice limit and may synchronize CPU/GPU execution";
+
+    gpu_vector = IAllocator::MakeUniquePtr<T>(alloc, bytes);
+    CUDA_RETURN_IF_ERROR(cudaMemcpy(gpu_vector.get(), cpu_vector.data(), bytes, cudaMemcpyHostToDevice));
+    return Status::OK();
+  }
+
   CUDAExecutionProvider* provider_;
 };
 

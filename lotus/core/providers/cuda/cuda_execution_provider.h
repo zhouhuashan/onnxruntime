@@ -65,7 +65,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   const float* GetConstOnes(size_t count) {
     if (!constant_ones_)
-      constant_ones_.reset(Cuda::CreateConstantOnesF());
+      constant_ones_ = Cuda::CreateConstantOnesF();
 
     return constant_ones_->GetBuffer(count);
   }

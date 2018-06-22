@@ -23,8 +23,8 @@ class TransformerMemcpyImpl {
   std::set<LotusIR::Node*> provider_nodes_;
   std::set<const LotusIR::NodeArg*> non_provider_input_defs_;   // all input defs of non-provider nodes
   std::set<const LotusIR::NodeArg*> non_provider_output_defs_;  // all output defs of non-provider nodes
-  std::set<const LotusIR::NodeArg*> provider_input_defs_;       // all input defs of provider nodes
-  std::set<const LotusIR::NodeArg*> provider_output_defs_;      // all output defs of provider nodes
+  std::set<const LotusIR::NodeArg*> provider_input_defs_;       // all input defs of provider nodes that should be in provider allocator
+  std::set<const LotusIR::NodeArg*> provider_output_defs_;      // all output defs of provider nodes that should be in provider allocator
   std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacements_;
   LotusIR::Graph* graph_;
   std::string provider_;

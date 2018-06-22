@@ -162,6 +162,19 @@ class Node {
   // Get node description.
   const std::string& Description() const noexcept;
 
+  // Iterate through Input/OutputDefs() with index, note the loop early terminates with error
+  static Lotus::Common::Status ForEachWithIndex(
+      const ConstPointerContainer<std::vector<NodeArg*>>& nodeArgVec,
+      std::function<Lotus::Common::Status(const NodeArg& arg, int index)> func) {
+    for (int index = 0; index < nodeArgVec.size(); ++index) {
+      auto arg = nodeArgVec[index];
+      if (!arg->Exists())
+        continue;
+      LOTUS_RETURN_IF_ERROR(func(*arg, index));
+    }
+    return Lotus::Common::Status::OK();
+  }
+
   // read only access. requires special wrapper to apply const to the NodeArg
   const ConstPointerContainer<std::vector<NodeArg*>> InputDefs() const noexcept {
     return ConstPointerContainer<std::vector<NodeArg*>>(definitions_.input_defs);

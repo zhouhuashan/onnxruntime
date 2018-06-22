@@ -1,7 +1,17 @@
-#include "cuda_common.h"
-#include "../../common/common.h"
+#include "cuda_call.h"
+#include "core/common/common.h"
+#include "core/common/status.h"
+#include "core/common/logging/logging.h"
+
+#ifdef _WIN32
+#else  // POSIX
+#include <unistd.h>
+#include <string.h>
+#endif
 
 namespace Lotus {
+
+using namespace Common;
 
 template <typename ERRTYPE>
 const char* CudaErrString(ERRTYPE x) {
@@ -89,9 +99,5 @@ template bool CudaCall<cudaError, false>(cudaError retCode, const char* exprStri
 template bool CudaCall<cudaError, true>(cudaError retCode, const char* exprString, const char* libName, cudaError successCode, const char* msg);
 template bool CudaCall<cublasStatus_t, false>(cublasStatus_t retCode, const char* exprString, const char* libName, cublasStatus_t successCode, const char* msg);
 template bool CudaCall<cublasStatus_t, true>(cublasStatus_t retCode, const char* exprString, const char* libName, cublasStatus_t successCode, const char* msg);
-
-cublasHandle_t CudaKernel::CublasHandle() const {
-  return provider_->CublasHandle();
-}
 
 }  // namespace Lotus

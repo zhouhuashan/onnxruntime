@@ -11,6 +11,12 @@ class KernelDefBuilder;
 
 typedef std::map<int, MemType> MemTypeMap;
 
+// note that input/output might be on CPU implicitly when the node is from CPU execution provider
+inline bool MemTypeOnCpuExplicitly(const MemTypeMap& mem_type_map, int index) {
+  auto iter = mem_type_map.find(index);
+  return iter != mem_type_map.end() && (iter->second == kMemTypeCPUInput || iter->second == kMemTypeCPUOutput);
+}
+
 class KernelDef {
  public:
   const std::string& OpName() const {
@@ -42,8 +48,12 @@ class KernelDef {
     return alias_map_;
   }
 
-  const MemTypeMap& MemoryType() const {
-    return memory_type_args_;
+  const MemTypeMap& InputMemoryType() const {
+    return input_memory_type_args_;
+  }
+
+  const MemTypeMap& OutputMemoryType() const {
+    return output_memory_type_args_;
   }
 
   int ExecQueueId() const {
@@ -89,12 +99,20 @@ class KernelDef {
       return false;
 
     //check memory type
-    auto other_mem_types = other.MemoryType();
-    for (auto it : memory_type_args_) {
-      if (other_mem_types.count(it.first) && other_mem_types[it.first] == it.second)
+    auto other_input_mem_types = other.InputMemoryType();
+    for (auto it : input_memory_type_args_) {
+      if (other_input_mem_types.count(it.first) && other_input_mem_types[it.first] == it.second)
         return false;
     }
-    if (memory_type_args_.empty() && !other.MemoryType().empty())
+    if (input_memory_type_args_.empty() && !other.InputMemoryType().empty())
+      return false;
+
+    auto other_output_mem_types = other.OutputMemoryType();
+    for (auto it : output_memory_type_args_) {
+      if (other_output_mem_types.count(it.first) && other_output_mem_types[it.first] == it.second)
+        return false;
+    }
+    if (output_memory_type_args_.empty() && !other.OutputMemoryType().empty())
       return false;
 
     return true;
@@ -129,7 +147,8 @@ class KernelDef {
   std::vector<std::pair<int, int>> alias_map_;
 
   // The memory types of inputs/outputs of this kernel
-  MemTypeMap memory_type_args_;
+  MemTypeMap input_memory_type_args_;
+  MemTypeMap output_memory_type_args_;
 
   // execution command queue id, 0 for default queue in execution provider
   int exec_queue_id_ = 0;
@@ -218,11 +237,19 @@ class KernelDefBuilder {
     return *this;
   }
 
+  // Specify that this kernel requires an input arg
+  // in certain memory type (instead of the default, device memory).
+  template <MemType T>
+  KernelDefBuilder& InputMemoryType(int input_index) {
+    kernel_def_->input_memory_type_args_.insert(std::make_pair(input_index, T));
+    return *this;
+  }
+
   // Specify that this kernel provides an output arg
   // in certain memory type (instead of the default, device memory).
   template <MemType T>
-  KernelDefBuilder& MemoryType(int output_index) {
-    kernel_def_->memory_type_args_.insert(std::make_pair(output_index, T));
+  KernelDefBuilder& OutputMemoryType(int output_index) {
+    kernel_def_->output_memory_type_args_.insert(std::make_pair(output_index, T));
     return *this;
   }
 

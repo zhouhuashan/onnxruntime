@@ -10,7 +10,7 @@ TEST(TensorOpTest, Tile1D) {
   test.AddInput<float>("input", {3}, {1.0f, 2.0f, 3.0f});
   test.AddInput<int64_t>("repeats", {1}, {3});
   test.AddOutput<float>("output", {9}, {1.0f, 2.0f, 3.0f, 1.0f, 2.0f, 3.0f, 1.0f, 2.0f, 3.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Tile2D_1Axis) {
@@ -26,7 +26,7 @@ TEST(TensorOpTest, Tile2D_1Axis) {
                          11.0f, 12.0f,
                          21.0f, 22.0f});
 
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Tile2D_2Axes) {
@@ -42,7 +42,7 @@ TEST(TensorOpTest, Tile2D_2Axes) {
                          11.0f, 12.0f, 11.0f, 12.0f,
                          21.0f, 22.0f, 21.0f, 22.0f});
 
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Tile3D) {
@@ -58,7 +58,7 @@ TEST(TensorOpTest, Tile3D) {
 
                          211.0f, 212.0f, 213.0f,
                          211.0f, 212.0f, 213.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 }  // namespace Test

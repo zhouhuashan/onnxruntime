@@ -16,7 +16,7 @@ REGISTER_DEVICE_ALLOCATOR_WITH_MEM_TYPE(
     CudaPinned,
     [](int) { return std::make_unique<CUDAPinnedAllocator>(); },
     std::numeric_limits<size_t>::max(),  //TODO: set correct cpu memory limit?
-    kMemTypeCPU)
+    kMemTypeCPUOutput)
 
 static CUDAExecutionProvider* GetCUDAExecutionProvider(const SessionState* session_state) {
   return dynamic_cast<CUDAExecutionProvider*>(session_state->GetExecutionProvider(LotusIR::kCudaExecutionProvider));
@@ -68,7 +68,7 @@ void CUDAPinnedAllocator::Free(void* p) {
 }
 
 const AllocatorInfo& CUDAPinnedAllocator::Info() const {
-  static AllocatorInfo cudaAllocatorInfo(CUDA_PINNED, AllocatorType::kDeviceAllocator, 0, kMemTypeCPU);
+  static AllocatorInfo cudaAllocatorInfo(CUDA_PINNED, AllocatorType::kDeviceAllocator, 0, kMemTypeCPUOutput);
   return cudaAllocatorInfo;
 }
 

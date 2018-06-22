@@ -669,7 +669,9 @@ ML_API_IMP_(MLTensorDataType, TensorWrapper::GetTensorDataType)() const noexcept
 
 ML_API_IMP_(bool, TensorWrapper::IsCPUData)() const noexcept {
   // tells DML whether this tensor is in CPU memory
-  return impl_->Location().name == CPU || impl_->Location().mem_type == kMemTypeCPU;
+  return impl_->Location().name == CPU ||
+      impl_->Location().mem_type == kMemTypeCPUInput ||
+      impl_->Location().mem_type == kMemTypeCPUOutput;
 }
 
 ML_API_IMP_(bool, TensorWrapper::IsDataHandle)() const noexcept {

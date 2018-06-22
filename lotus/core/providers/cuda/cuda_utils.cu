@@ -26,8 +26,8 @@ class ConstantBufferImpl : public IConstantBuffer<T> {
   T val_;
 };
 
-IConstantBuffer<float>* CreateConstantOnesF() {
-  return new ConstantBufferImpl<float>(1.0f);
+std::unique_ptr<IConstantBuffer<float>> CreateConstantOnesF() {
+  return std::make_unique<ConstantBufferImpl<float>>(1.0f);
 }
 
 }  // namespace Cuda

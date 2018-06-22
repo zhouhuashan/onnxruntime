@@ -29,7 +29,7 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
 
   EXPECT_EQ(pinned_allocator->Info().name, CUDA_PINNED);
   EXPECT_EQ(pinned_allocator->Info().id, 0);
-  EXPECT_EQ(pinned_allocator->Info().mem_type, kMemTypeCPU);
+  EXPECT_EQ(pinned_allocator->Info().mem_type, kMemTypeCPUOutput);
   EXPECT_EQ(pinned_allocator->Info().type, AllocatorType::kArenaAllocator);
 
   //test pinned allocation

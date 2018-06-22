@@ -29,6 +29,28 @@ namespace Test {
 
 typedef std::vector<LotusIR::NodeArg*> ArgMap;
 
+size_t CountCopyNodes(const LotusIR::Graph* graph) {
+  size_t num_copy_nodes = 0;
+  for (auto& p : graph->Nodes())
+    num_copy_nodes += (p.OpType().substr(0, 6) == "Memcpy");
+  return num_copy_nodes;
+}
+
+#define CREATE_INITIALIZER_FUNC(T, PROTO_DATATYPE, PROTO_ADD_DATA)                                                                                      \
+  LotusIR::NodeArg& CreateInitializer(LotusIR::Graph* graph, const std::string& name, const std::vector<int64_t>& shape, const std::vector<T>& value) { \
+    onnx::TensorProto tensor_proto;                                                                                                                     \
+    for (auto dim : shape) tensor_proto.add_dims(dim);                                                                                                  \
+    tensor_proto.set_data_type(PROTO_DATATYPE);                                                                                                         \
+    for (auto v : value) tensor_proto.PROTO_ADD_DATA(v);                                                                                                \
+    tensor_proto.set_name(name);                                                                                                                        \
+    graph->AddInitializedTensor(tensor_proto);                                                                                                          \
+    TypeProto type_proto;                                                                                                                               \
+    type_proto.mutable_tensor_type()->set_elem_type(PROTO_DATATYPE);                                                                                    \
+    return graph->GetOrCreateNodeArg(name, &type_proto);                                                                                                \
+  }
+
+CREATE_INITIALIZER_FUNC(float, TensorProto_DataType_FLOAT, add_float_data)
+CREATE_INITIALIZER_FUNC(int64_t, TensorProto_DataType_INT64, add_int64_data)
 TEST(CUDAFenceTests, PartOnCPU) {
   std::unique_ptr<LotusIR::Model> model = std::make_unique<LotusIR::Model>("test");
   LotusIR::Graph* graph = model->MainGraph();
@@ -39,17 +61,7 @@ TEST(CUDAFenceTests, PartOnCPU) {
   LotusIR::NodeArg z_def("Z", &tensor_float);
   LotusIR::NodeArg out_def("Out", &tensor_float);
 
-  onnx::TensorProto weight;
-  weight.add_dims(2);
-  weight.add_dims(2);
-  weight.set_data_type(TensorProto_DataType_FLOAT);
-  weight.add_float_data(-1);
-  weight.add_float_data(2);
-  weight.add_float_data(3);
-  weight.add_float_data(-4);
-  weight.set_name("W");
-  graph->AddInitializedTensor(weight);
-  auto& w_def = graph->GetOrCreateNodeArg("W", &tensor_float);
+  auto& w_def = CreateInitializer(graph, "W", std::vector<int64_t>({2, 2}), std::vector<float>({-1, 2, 3, -4}));
 
   auto p_node = graph->AddNode("node1", "MatMul", "MatMul operator", ArgMap{&w_def, &x1_def}, ArgMap{&y_def});
   p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
@@ -89,11 +101,7 @@ TEST(CUDAFenceTests, PartOnCPU) {
   CUDAExecutionProviderInfo xp_info;
   session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
   EXPECT_TRUE(session.Initialize().IsOK());
-
-  size_t num_copy_nodes = 0;
-  for (auto& p : graph->Nodes())
-    num_copy_nodes += (p.OpType().substr(0, 6) == "Memcpy");
-  EXPECT_TRUE(1 == num_copy_nodes);
+  EXPECT_TRUE(1 == CountCopyNodes(graph));
 
   vector<MLValue> outputs;
   session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},
@@ -106,6 +114,126 @@ TEST(CUDAFenceTests, PartOnCPU) {
 
   float expected_output[4] = {13.0f, -18.0f, -27.0f, 40.0f};
   for (int i = 0; i < 4; ++i) {
+    EXPECT_EQ(output.Data<float>()[i], expected_output[i]);
+  }
+}
+
+TEST(CUDAFenceTests, TileWithInitializer) {
+  std::unique_ptr<LotusIR::Model> model = std::make_unique<LotusIR::Model>("test");
+  LotusIR::Graph* graph = model->MainGraph();
+  TypeProto tensor_float;
+  tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  LotusIR::NodeArg x1_def("X1", &tensor_float);
+  LotusIR::NodeArg y_def("Y", &tensor_float);
+  auto& tile_repeat_def = CreateInitializer(graph, "tile_repeat", std::vector<int64_t>({2}), std::vector<int64_t>({1, 2}));
+
+  auto p_node = graph->AddNode("node1", "Tile", "Tile operator", ArgMap{&x1_def, &tile_repeat_def}, ArgMap{&y_def});
+  p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  EXPECT_TRUE(graph->Resolve().IsOK());
+
+  EXPECT_TRUE(0 == CountCopyNodes(graph));
+
+  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+  auto element_type = DataTypeImpl::GetType<float>();
+  TensorShape shape({2, 2});
+  float data[4] = {-1, 2, 3, -4};
+  void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
+  memcpy(buffer, data, sizeof(data));
+
+  //create fake ml value with owned buffer.
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(
+      element_type,
+      shape,
+      buffer,
+      cpu_allocator->Info(),
+      cpu_allocator);
+  MLValue value;
+  value.Init(p_tensor.release(),
+             DataTypeImpl::GetType<Tensor>(),
+             DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+  SessionOptions so;
+  InferenceSession session(so);
+  session.Load(std::move(model));
+  CUDAExecutionProviderInfo xp_info;
+  session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
+  EXPECT_TRUE(session.Initialize().IsOK());
+
+  vector<MLValue> outputs;
+  session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},
+              std::vector<std::string>{"Y"},
+              &outputs);
+  EXPECT_TRUE(1 == outputs.size());
+  const Tensor& output = outputs[0].Get<Tensor>();
+  EXPECT_EQ(output.Shape(), TensorShape({2, 4}));
+  EXPECT_EQ(output.DataType(), DataTypeImpl::GetType<float>());
+
+  float expected_output[8] = {-1, 2, -1, 2, 3, -4, 3, -4};
+  for (int i = 0; i < 8; ++i) {
+    EXPECT_EQ(output.Data<float>()[i], expected_output[i]);
+  }
+}
+
+TEST(CUDAFenceTests, TileWithComputedInput) {
+  std::unique_ptr<LotusIR::Model> model = std::make_unique<LotusIR::Model>("test");
+  LotusIR::Graph* graph = model->MainGraph();
+  TypeProto tensor_float;
+  tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+  TypeProto tensor_int64;
+  tensor_int64.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
+  LotusIR::NodeArg x1_def("X1", &tensor_float);
+  LotusIR::NodeArg y_def("Y", &tensor_float);
+  LotusIR::NodeArg s_def("S", &tensor_int64);
+  LotusIR::NodeArg out_def("Out", &tensor_float);
+  auto& w_def = CreateInitializer(graph, "W", std::vector<int64_t>({2, 2}), std::vector<float>({-1, 2, 3, -4}));
+
+  auto p_node = graph->AddNode("node1", "MatMul", "MatMul operator", ArgMap{&x1_def, &w_def}, ArgMap{&y_def});
+  p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  p_node = graph->AddNode("node2", "Shape", "Shape operator", ArgMap{&y_def}, ArgMap{&s_def});
+  p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
+  p_node = graph->AddNode("node3", "Tile", "Tile operator", ArgMap{&y_def, &s_def}, ArgMap{&out_def});
+  p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  EXPECT_TRUE(graph->Resolve().IsOK());
+
+  EXPECT_TRUE(0 == CountCopyNodes(graph));
+
+  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+  auto element_type = DataTypeImpl::GetType<float>();
+  TensorShape shape({2, 2});
+  float data[4] = {-1, 2, 3, -4};
+  void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
+  memcpy(buffer, data, sizeof(data));
+
+  //create fake ml value with owned buffer.
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(
+      element_type,
+      shape,
+      buffer,
+      cpu_allocator->Info(),
+      cpu_allocator);
+  MLValue value;
+  value.Init(p_tensor.release(),
+             DataTypeImpl::GetType<Tensor>(),
+             DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+  SessionOptions so;
+  InferenceSession session(so);
+  session.Load(std::move(model));
+  CUDAExecutionProviderInfo xp_info;
+  session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
+  EXPECT_TRUE(session.Initialize().IsOK());
+
+  vector<MLValue> outputs;
+  session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},
+              std::vector<std::string>{"Out"},
+              &outputs);
+  EXPECT_TRUE(1 == outputs.size());
+  const Tensor& output = outputs[0].Get<Tensor>();
+  EXPECT_EQ(output.Shape(), TensorShape({4, 4}));
+  EXPECT_EQ(output.DataType(), DataTypeImpl::GetType<float>());
+
+  float expected_output[16] = {7, -10, 7, -10, -15, 22, -15, 22, 7, -10, 7, -10, -15, 22, -15, 22};
+  for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(output.Data<float>()[i], expected_output[i]);
   }
 }

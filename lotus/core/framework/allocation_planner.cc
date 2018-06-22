@@ -331,7 +331,7 @@ class PlannerImpl {
         return LOTUS_MAKE_STATUS(LOTUS, FAIL, errormsg.str());
       }
       auto& default_allocator_info = p_session_state_->GetAllocatorInfo(step.node_index, kMemTypeDefault);
-      auto& mem_type_allocated_args = p_kernelDef->MemoryType();
+      auto& mem_type_allocated_args = p_kernelDef->OutputMemoryType();
       auto& outputs = pnode->OutputDefs();
       auto num_outputs = outputs.size();
       for (int i = 0; i < num_outputs; ++i) {
@@ -370,20 +370,28 @@ class PlannerImpl {
   void GeneratePlanForWeights(const LotusIR::Graph& graph) {
     auto& weights = graph.GetAllInitializedTensors();
     for (auto& node : graph.Nodes()) {
-      node.ForEachInputDef([this, &weights, &node](const LotusIR::NodeArg* def) {
-        auto& def_name = def->Name();
-        if (!weights.count(def_name)) {
-          return;
-        }
-        auto wt_index = this->Index(def_name);
-        SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
-        auto* p_provider = this->p_session_state_->GetExecutionProvider(node.GetExecutionProviderType());
-        LOTUS_ENFORCE(p_provider);
+      LotusIR::Node::ForEachWithIndex(
+          node.InputDefs(),
+          [this, &node, &weights](const LotusIR::NodeArg& def, int index) {
+            auto& def_name = def.Name();
+            if (!weights.count(def_name))
+              return Status::OK();
 
-        thisplan.alloc_kind = AllocKind::kAllocateStatically;
+            auto wt_index = Index(def_name);
+            SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
+            auto* p_provider = p_session_state_->GetExecutionProvider(node.GetExecutionProviderType());
+            LOTUS_ENFORCE(p_provider);
 
-        thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();  // default
-      });
+            thisplan.alloc_kind = AllocKind::kAllocateStatically;
+            auto p_opkernelDef = p_session_state_->GetKernelDef(node.Index());
+            if (MemTypeOnCpuExplicitly(p_opkernelDef->InputMemoryType(), index))
+              // weights are not output from any node, so it's OK to put its location on CPU provider
+              thisplan.location = p_session_state_->GetExecutionProvider(LotusIR::kCpuExecutionProvider)->GetAllocator()->Info();
+            else
+              thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();
+
+            return Status::OK();
+          });
     }
   }
 

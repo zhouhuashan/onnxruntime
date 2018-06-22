@@ -24,9 +24,11 @@ enum AllocatorType {  // TODO use enum class
 };
 
 // memory types for allocator, exec provider specific types should be extended in each provider
-enum MemType : int {    // TODO use enum class
-  kMemTypeCPU = -1,     // CPU accessible memory managed by non-CPU execution provider
-  kMemTypeDefault = 0,  // the default allocator for execution provider
+enum MemType : int {                // TODO use enum class
+  kMemTypeCPUInput = -2,            // Any CPU memory used by non-CPU execution provider
+  kMemTypeCPUOutput = -1,           // CPU accessible memory outputted by non-CPU execution provider, i.e. CUDA_PINNED
+  kMemTypeCPU = kMemTypeCPUOutput,  // keep the enum before WinML picks up kMemTypeCPUOutput. Should not be used inside Lotus
+  kMemTypeDefault = 0,              // the default allocator for execution provider
 };
 
 struct AllocatorInfo {
@@ -90,8 +92,8 @@ class IAllocator {
   template <typename T>
   static IAllocatorUniquePtr<T> MakeUniquePtr(std::shared_ptr<IAllocator> allocator, size_t size) {
     // for now limit to fundamental types. we could support others, but to do so either we or the caller
-    // needs to call the dtor for the objects
-    static_assert(std::is_fundamental<T>::value, "Fundamental type required as no destructors are called.");
+    // needs to call the dtor for the objects, for buffers allocated on device we don't have destructor
+    //static_assert(std::is_fundamental<T>::value, "Fundamental type required as no destructors are called.");
 
     size_t alloc_size = size;
 

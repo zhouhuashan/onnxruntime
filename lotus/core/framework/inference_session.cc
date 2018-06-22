@@ -38,8 +38,7 @@ class InferenceSession::Impl {
 
     session_state_.SetEnableMemoryPattern(session_options.enable_mem_pattern);
     session_state_.SetProfiler(session_profiler_);
-    if (session_options.enable_profiling)
-    {
+    if (session_options.enable_profiling) {
       StartProfiling(session_options.profile_file_prefix);
     }
   }
@@ -362,54 +361,64 @@ class InferenceSession::Impl {
       if (count_feeds == orig_feeds.size()) {
         break;
       }
-      for (auto* arg : node.InputDefs()) {
-        if (!arg->Exists() ||
-            arg->Name().empty() ||
-            !orig_feeds.count(arg->Name()) ||
-            weights_map.count(arg->Name())) {
-          continue;
-        }
 
-        ++count_feeds;
-        auto& input_name = arg->Name();
-        auto& node_provider_type = node.GetExecutionProviderType();
-        auto& mlvalue = orig_feeds.at(input_name);
-        if (!mlvalue.IsTensor()) {
-          // copying not supported for non-tensor types
-          new_feeds[input_name] = mlvalue;
-          continue;
-        }
-        auto& input_tensor = mlvalue.Get<Tensor>();
-        auto& input_tensor_loc = input_tensor.Location();
-        auto* p_input_provider = session_state_.GetExecutionProvider(input_tensor_loc);
-        if (!p_input_provider) {
-          p_input_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
-        }
-        LOTUS_ENFORCE(p_input_provider);
+      // note that KernelCreateInfo may not exist for custom kernel
+      const KernelRegistry::KernelCreateInfo* kci = nullptr;
+      KernelRegistry::Instance().SearchKernelRegistry(node, &kci);
+      const auto* input_mem_types = (kci != nullptr) ? &kci->kernel_def->InputMemoryType() : nullptr;
+      LOTUS_RETURN_IF_ERROR(
+          LotusIR::Node::ForEachWithIndex(
+              node.InputDefs(),
+              [this, &orig_feeds, &new_feeds, &weights_map, &count_feeds, &node, &input_mem_types](const LotusIR::NodeArg& arg, int index) {
+                if (arg.Name().empty() ||
+                    !orig_feeds.count(arg.Name()) ||
+                    weights_map.count(arg.Name())) {
+                  return Status::OK();
+                }
 
-        auto input_provider_type = p_input_provider->Type();
-        if (input_provider_type == node_provider_type) {
-          new_feeds[input_name] = mlvalue;
-          continue;
-        }
+                ++count_feeds;
+                auto& input_name = arg.Name();
+                // node may declare input_mem_type to be on CPU explicitly
+                bool input_on_cpu = input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index);
+                auto& required_provider_type = input_on_cpu ? LotusIR::kCpuExecutionProvider : node.GetExecutionProviderType();
+                auto& mlvalue = orig_feeds.at(input_name);
+                if (!mlvalue.IsTensor()) {
+                  // copying not supported for non-tensor types
+                  new_feeds[input_name] = mlvalue;
+                  return Status::OK();
+                }
+                auto& input_tensor = mlvalue.Get<Tensor>();
+                auto& input_tensor_loc = input_tensor.Location();
+                auto* p_input_provider = session_state_.GetExecutionProvider(input_tensor_loc);
+                if (!p_input_provider) {
+                  p_input_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+                }
+                LOTUS_ENFORCE(p_input_provider);
 
-        auto* node_provider = session_state_.GetExecutionProvider(node_provider_type);
-        LOTUS_ENFORCE(node_provider);
-        MLValue new_mlvalue;
-        LOTUS_RETURN_IF_ERROR(AllocateHelper(node_provider_type, mlvalue, new_mlvalue));
-        auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
-        auto* node_exec_provider = session_state_.GetExecutionProvider(node_provider_type);
-        LOTUS_ENFORCE(node_exec_provider);
+                auto input_provider_type = p_input_provider->Type();
+                if (input_provider_type == required_provider_type) {
+                  new_feeds[input_name] = mlvalue;
+                  return Status::OK();
+                }
 
-        // our CPU exec provider doesn't support copy from GPU->CPU
-        if (node_provider_type != LotusIR::kCpuExecutionProvider) {
-          LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *new_tensor));
-        } else {
-          LOTUS_RETURN_IF_ERROR(p_input_provider->CopyTensor(input_tensor, *new_tensor));
-        }
+                auto* node_provider = session_state_.GetExecutionProvider(required_provider_type);
+                LOTUS_ENFORCE(node_provider);
+                MLValue new_mlvalue;
+                LOTUS_RETURN_IF_ERROR(AllocateHelper(required_provider_type, mlvalue, new_mlvalue));
+                auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
+                auto* node_exec_provider = session_state_.GetExecutionProvider(required_provider_type);
+                LOTUS_ENFORCE(node_exec_provider);
 
-        new_feeds[input_name] = new_mlvalue;
-      };
+                // our CPU exec provider doesn't support copy from GPU->CPU
+                if (required_provider_type != LotusIR::kCpuExecutionProvider) {
+                  LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *new_tensor));
+                } else {
+                  LOTUS_RETURN_IF_ERROR(p_input_provider->CopyTensor(input_tensor, *new_tensor));
+                }
+
+                new_feeds[input_name] = new_mlvalue;
+                return Status::OK();
+              }));
     }
     LOTUS_ENFORCE(orig_feeds.size() == new_feeds.size());
     return Status::OK();
@@ -714,7 +723,7 @@ class InferenceSession::Impl {
 
   void StartProfiling(const std::string& file_prefix) {
     std::stringstream ss;
-    ss << file_prefix << "_" <<GetCurrentTimeString() << ".json"; 
+    ss << file_prefix << "_" << GetCurrentTimeString() << ".json";
     session_profiler_.StartProfiling(session_logger_, ss.str());
   }
 
@@ -869,7 +878,7 @@ class InferenceSession::Impl {
       return Status(LOTUS, FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
     }
 
-    if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPU) {
+    if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPUOutput) {
       // deserilize directly to CPU tensor
       LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr, preallocated, preallocated_size));
     } else {
