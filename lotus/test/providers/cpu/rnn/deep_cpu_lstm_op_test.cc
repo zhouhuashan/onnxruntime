@@ -334,6 +334,34 @@ TEST(LSTMTest, MixedSequenceLengthsReverse) {
   SimpleWeightsNoBiasTwoRows("reverse", Y_data, Y_h_data, Y_c_data, &seq_lengths);
 }
 
+// test path in LSTM model where batch_parallel_ is false and there are multiple steps (seq_length > 1)
+TEST(LSTMTest, BatchParallelFalseSeqLengthGreaterThanOne) {
+  int64_t seq_length = 2;
+  int batch_size = 1;
+  int64_t input_size = 1;
+  int64_t hidden_size = 2;
+
+  int num_directions = 1;
+
+  std::vector<float> X_data{1.f, 2.f};
+
+  std::vector<float> W_data{
+      0.1f, 0.2f, 0.3f, 0.4f,
+      1.f, 2.f, 3.f, 4.f};
+
+  std::vector<float> R_data(num_directions * 4 * hidden_size * hidden_size, 0.1f);
+
+  std::vector<float> Y_data{
+      0.27546653f, 0.29941525f,
+      0.50903179f, 0.57476457f};
+
+  std::vector<float> Y_c_data{
+      1.02721067f, 1.15254318f};
+
+  RunLstmTest(X_data, W_data, R_data, Y_data, {}, Y_c_data,
+              input_size, batch_size, hidden_size, seq_length);
+}
+
 // make sure GateComputations works correctly if batch_parallel_ is true due to large batch size
 static void LargeBatchWithClip(const std::vector<float>& Y_h_data, float clip = 9999.0) {
   int64_t seq_length = 2;

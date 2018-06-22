@@ -267,7 +267,7 @@ class UniDirectionalLstm {
 
   IAllocatorUniquePtr<T> weights_ifoc_ptr, recurrent_weights_ifoc_ptr_, output_ifoc_ptr_;
   IAllocatorUniquePtr<T> hidden0_ptr_, batched_hidden0_ptr_;
-  gsl::span<T> weights_ifoc_, recurrent_weights_ifoc_, output_ifog_;
+  gsl::span<T> weights_ifoc_, recurrent_weights_ifoc_, output_ifoc_;
   gsl::span<T> hidden0_, batched_hidden0_;
 
   IAllocatorUniquePtr<T> internal_memory_prev_ptr_, batched_internal_memory_prev_ptr_;
@@ -608,7 +608,6 @@ void UniDirectionalLstm<T>::AllocateBuffers() {
 
   // allocate and fill with 0's.
   const bool fill = true;
-  output_ifog_ = Allocate(allocator_, hidden_size_ * 4 * batch_size_ * seq_length_, output_ifoc_ptr_, fill);
   hidden0_ = Allocate(allocator_, hidden_size_, hidden0_ptr_, fill);
   internal_memory_prev_ = Allocate(allocator_, hidden_size_, internal_memory_prev_ptr_, fill);
   internal_memory_cur_ = Allocate(allocator_, hidden_size_, internal_memory_cur_ptr_, fill);
@@ -620,6 +619,8 @@ void UniDirectionalLstm<T>::AllocateBuffers() {
                                           batched_internal_memory_cur_ptr_, fill);
   batched_internal_memory_clipped_ = Allocate(allocator_, batch_size_ * hidden_size_,
                                               batched_internal_memory_clipped_ptr_, fill);
+
+  output_ifoc_ = Allocate(allocator_, hidden_size_ * 4 * batch_size_ * seq_length_, output_ifoc_ptr_, fill);
 
   if (use_bias_) {
     bias_WRi_ = Allocate(allocator_, hidden_size_, bias_WRi_ptr_);
@@ -666,6 +667,15 @@ void UniDirectionalLstm<T>::LoadAllWeights(const gsl::span<const T>& input_weigh
   LoadWeightsWithTranspose(input_weights, weights_ifoc_, hidden_size_, input_size_);
   LoadWeightsWithTranspose(recurrent_weights, recurrent_weights_ifoc_, hidden_size_, hidden_size_);
 
+  /* version that does not transpose recurrent weights in case needed for testing 
+  auto recurrent_size = hidden_size_ * hidden_size_;
+  // i, o, f, c -> i, f, o, c
+  std::copy(recurrent_weights.cbegin() + recurrent_size * 0, recurrent_weights.cbegin() + recurrent_size * 0, recurrent_weights_ifoc_.begin() + recurrent_size * 0);  // i
+  std::copy(recurrent_weights.cbegin() + recurrent_size * 2, recurrent_weights.cbegin() + recurrent_size * 3, recurrent_weights_ifoc_.begin() + recurrent_size * 1);  // f
+  std::copy(recurrent_weights.cbegin() + recurrent_size * 1, recurrent_weights.cbegin() + recurrent_size * 2, recurrent_weights_ifoc_.begin() + recurrent_size * 2);  // o
+  std::copy(recurrent_weights.cbegin() + recurrent_size * 3, recurrent_weights.cbegin() + recurrent_size * 4, recurrent_weights_ifoc_.begin() + recurrent_size * 3);  // c
+  */
+
   /*
   DumpMatrix("W", input_weights.data(), 4, hidden_size_ * input_size_);
   int i = 0;
@@ -697,12 +707,12 @@ void UniDirectionalLstm<T>::LoadWeightsWithTranspose(const gsl::span<const T>& i
   const int i_in = 0;
   const int o_in = 1;
   const int f_in = 2;
-  const int g_in = 3;
+  const int c_in = 3;
 
   const int i_out = 0;
   const int f_out = 1;
   const int o_out = 2;
-  const int g_out = 3;
+  const int c_out = 3;
 
   const int weight_size = dim0_size * dim1_size;
   const int fused_offset = 4 * dim0_size;
@@ -716,7 +726,7 @@ void UniDirectionalLstm<T>::LoadWeightsWithTranspose(const gsl::span<const T>& i
     copy_weight_with_transpose(row, i_out, i_in);
     copy_weight_with_transpose(row, f_out, f_in);
     copy_weight_with_transpose(row, o_out, o_in);
-    copy_weight_with_transpose(row, g_out, g_in);
+    copy_weight_with_transpose(row, c_out, c_in);
   }
 }
 
@@ -854,7 +864,7 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
   if (total_rows % input_num_threads_ != 0)
     fused_input_rows++;
 
-  // apply the weights to all the inputs and save to output_IFOG
+  // apply the weights to all the inputs and save to output_IFOC
   auto input_gemm = [&](int row) {
     //handling boundaries
     int local_fused_input_rows = fused_input_rows;
@@ -863,13 +873,13 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
 
     set_mkl_num_threads_local(input_mkl_num_threads_);
 
-    // compute Xt*(W[ifco]^T)
+    // compute Xt*(W[ifoc]^T)
     ComputeGemm(local_fused_input_rows, hidden_size_x4, input_size_, alpha,
                 inputs.cbegin() + row * input_size_, inputs.cend(),  // Xt
                 input_size_,
-                weights_ifoc_.cbegin(), weights_ifoc_.cend(),  // W[ifco]^T
+                weights_ifoc_.cbegin(), weights_ifoc_.cend(),  // W[ifoc]^T
                 hidden_size_x4, beta,
-                output_ifog_.begin() + row * hidden_size_x4, output_ifog_.end(),
+                output_ifoc_.begin() + row * hidden_size_x4, output_ifoc_.end(),
                 hidden_size_x4);
 
     set_mkl_num_threads_local(0);
@@ -878,7 +888,7 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
   ExecuteLambdaInParallel("Applying weights to inputs", input_gemm, total_rows, fused_input_rows,
                           ttp_, logger_);
 
-  DumpMatrix("Xt*(W[ifco]^T)", output_ifog_.data(), total_rows, hidden_size_x4);
+  DumpMatrix("Xt*(W[ifoc]^T)", output_ifoc_.data(), total_rows, hidden_size_x4);
 
   int fused_hidden_rows = batch_size_ / hidden_num_threads_;
   if (batch_size_ % hidden_num_threads_ != 0)
@@ -905,29 +915,32 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
       // these are all batch * hidden_size_ and get updated in-place when running GateComputations so non-const iters
       span_T_iter c_prev = batched_internal_state_prev_one_step.begin() + row * hidden_size_;
       span_T_iter c_prev_clipped = batched_internal_state_clipped_one_step.begin() + row * hidden_size_;
+
+      // hidden state can be provided as input for first step, so need to special case that.
+      // after the first step this will switch to the output from the previous step
       span_T_const_iter previous_state = batched_hidden_state_one_step.cbegin() + row * hidden_size_;
 
       // run through steps sequentially
       for (int step = 0; step < max_sequence_length; step++) {
         const std::string row_str = " [row=" + std::to_string(row) + ",seqno=" + std::to_string(step) + "]";
 
-        span_T_iter step_out_IFOG = output_ifog_.begin() + (step * batch_size_ + row) * hidden_size_x4;
+        span_T_iter step_out_IFOC = output_ifoc_.begin() + (step * batch_size_ + row) * hidden_size_x4;
 
         set_mkl_num_threads_local(hidden_mkl_num_threads_);
 
-        // calculate Xt*(W[ifco]^T) + Ht-t*R[ifco]
+        // calculate Xt*(W[ifoc]^T) + Ht-t*R[ifoc]
         ComputeGemm(local_fused_hidden_rows, hidden_size_x4, hidden_size_, alpha,
                     previous_state, previous_state_end,  // Ht-1
                     hidden_size_,
-                    recurrent_weights_ifoc_.cbegin(), recurrent_weights_ifoc_.cend(),  // R[ifco]
+                    recurrent_weights_ifoc_.cbegin(), recurrent_weights_ifoc_.cend(),  // R[ifoc]
                     hidden_size_x4, beta,
-                    step_out_IFOG, output_ifog_.end(),  // input contains Xt*(W[ifco]^T)
+                    step_out_IFOC, output_ifoc_.end(),  // input contains Xt*(W[ifoc]^T)
                     hidden_size_x4);
 
         set_mkl_num_threads_local(0);
 
-        DumpMatrix("Xt*(W[ifco]^T) + Ht-t*R[ifco]" + row_str,
-                   &*step_out_IFOG, local_fused_hidden_rows, hidden_size_x4);
+        DumpMatrix("Xt*(W[ifoc]^T) + Ht-t*R[ifoc]" + row_str,
+                   &*step_out_IFOC, local_fused_hidden_rows, hidden_size_x4);
 
         span_T_iter batched_output, batched_output_end;
         if (output_sequence) {
@@ -939,8 +952,8 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
           batched_output_end = final_hidden_state.end();
         }
 
-        span_T_iter step_out_IFOG_end = step_out_IFOG + local_fused_hidden_rows * hidden_size_x4;
-        GateComputations(step_out_IFOG, step_out_IFOG_end,
+        span_T_iter step_out_IFOC_end = step_out_IFOC + local_fused_hidden_rows * hidden_size_x4;
+        GateComputations(step_out_IFOC, step_out_IFOC_end,
                          c_prev, C_prev_end,
                          c_prev_clipped, C_prev_clipped_end,
                          batched_output, batched_output_end,
@@ -966,6 +979,7 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
         }
 
         previous_state = batched_output + row * hidden_size_;
+        previous_state_end = batched_output_end;
       }
     };
 
@@ -976,6 +990,8 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
     span_T_iter c_prev = batched_internal_state_prev_one_step.begin();
     span_T_iter c_prev_clipped = batched_internal_state_clipped_one_step.begin();
 
+    // hidden state can be provided as input for first step, so need to special case that.
+    // after the first step this will switch to the output from the previous step
     span_T_const_iter previous_state = batched_hidden_state_one_step.cbegin();
 
     //run through steps sequentially
@@ -984,7 +1000,7 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
 
       DumpMatrix("previous_state" + seqno_str, &*previous_state, batch_size_, hidden_size_);
 
-      span_T_iter step_out_IFOG = output_ifog_.begin() + (step * batch_size_) * hidden_size_x4;
+      span_T_iter step_out_IFOC = output_ifoc_.begin() + (step * batch_size_) * hidden_size_x4;
 
       set_mkl_num_threads_local(hidden_mkl_num_threads_);
 
@@ -1001,11 +1017,11 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
                     hidden_size_,
                     recurrent_weights_ifoc_.cbegin() + start_col, recurrent_weights_ifoc_.cend(),  // R[ifoc]
                     hidden_size_x4, beta,
-                    step_out_IFOG + start_col, output_ifog_.end(),  // input contains Xt*(W[ifoc]^T)
+                    step_out_IFOC + start_col, output_ifoc_.end(),  // input contains Xt*(W[ifoc]^T)
                     hidden_size_x4);
       };
 
-      ExecuteLambdaInParallel("Calculating Xt*(W[ifco]^T) + Ht-1*R[ifco])" + seqno_str,
+      ExecuteLambdaInParallel("Calculating Xt*(W[ifoc]^T) + Ht-1*R[ifoc])" + seqno_str,
                               hidden_gemm_compute, hidden_num_threads_, 1, ttp_, logger_);
 
       set_mkl_num_threads_local(0);
@@ -1020,8 +1036,8 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
         batched_output_end = final_hidden_state.end();
       }
 
-      span_T_iter step_out_IFOG_end = step_out_IFOG + batch_size_ * hidden_size_x4;
-      GateComputations(step_out_IFOG, step_out_IFOG_end,
+      span_T_iter step_out_IFOC_end = step_out_IFOC + batch_size_ * hidden_size_x4;
+      GateComputations(step_out_IFOC, step_out_IFOC_end,
                        c_prev, C_prev_end,
                        c_prev_clipped, C_prev_clipped_end,
                        batched_output, batched_output_end,
@@ -1047,6 +1063,7 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
       }
 
       previous_state = batched_output;
+      previous_state_end = batched_output_end;
     }
   }
 
@@ -1105,7 +1122,7 @@ void UniDirectionalLstm<T>::GateComputations(span_T_iter& out, span_T_iter& out_
     float* pCprev_hidden_size = SafeRawPointer<T>(C_prev + b * hidden_size_, C_prev_end, hidden_size_);
 #endif
 
-    DumpMatrix("C_prev" + row_str, pCprev_hidden_size, 1, hidden_size_);
+    // DumpMatrix("C_prev" + row_str, pCprev_hidden_size, 1, hidden_size_);
 
     // Input Gate
     if (use_peepholes_) {
@@ -1116,7 +1133,7 @@ void UniDirectionalLstm<T>::GateComputations(span_T_iter& out, span_T_iter& out_
     const float* pBi = use_bias_ ? SafeRawConstPointer<T>(bias_WRi_, 0, hidden_size_) : nullptr;
     clip_with_bias_ptr_(clip_, pBi, pi, hidden_size_);  // post: pi has input to f() to calculate i
     activation_f_.func(pi, hidden_size_, activation_f_.alpha, activation_f_.beta);
-    DumpMatrix("i" + row_str, pi, 1, hidden_size_);
+    // DumpMatrix("i" + row_str, pi, 1, hidden_size_);
 
     // Forget Gate
     if (input_forget_) {
@@ -1133,23 +1150,23 @@ void UniDirectionalLstm<T>::GateComputations(span_T_iter& out, span_T_iter& out_
       activation_f_.func(pf, hidden_size_, activation_f_.alpha, activation_f_.beta);
     }
 
-    DumpMatrix("f" + row_str, pf, 1, hidden_size_);
+    // DumpMatrix("f" + row_str, pf, 1, hidden_size_);
 
-    // Block G Gate
+    // Block Gate
     const float* pBc = use_bias_ ? SafeRawConstPointer<T>(bias_WRc_, 0, hidden_size_) : nullptr;
     clip_with_bias_ptr_(clip_, pBc, pc, hidden_size_);
     activation_g_.func(pc, hidden_size_, activation_g_.alpha, activation_g_.beta);
 
-    DumpMatrix("c" + row_str, pc, 1, hidden_size_);
+    // DumpMatrix("c" + row_str, pc, 1, hidden_size_);
 
     // C_current. use previous C value as input, and update in-place
     float* pC_cur = pCprev_hidden_size;
 #ifdef LOTUSRT_BROKEN_VERSION
     deepcpu::merge_lstm_gates_to_memory(pCprev_hidden_size + b * hidden_size_, pi, pf, pc, pCprev_hidden_size + b * hidden_size_, hidden_size_);
-    DumpMatrix("C", pCprev_hidden_size + b * hidden_size_, 1, hidden_size_);
+    // DumpMatrix("C", pCprev_hidden_size + b * hidden_size_, 1, hidden_size_);
 #else
     deepcpu::merge_lstm_gates_to_memory(pCprev_hidden_size, pi, pf, pc, pC_cur, hidden_size_);
-    DumpMatrix("C", pC_cur, 1, hidden_size_);
+    // DumpMatrix("C", pC_cur, 1, hidden_size_);
 #endif
 
     // Output Gate
@@ -1161,7 +1178,7 @@ void UniDirectionalLstm<T>::GateComputations(span_T_iter& out, span_T_iter& out_
     const float* pBo = use_bias_ ? SafeRawConstPointer<T>(bias_WRo_, 0, hidden_size_) : nullptr;
     clip_with_bias_ptr_(clip_, pBo, po, hidden_size_);
     activation_f_.func(po, hidden_size_, activation_f_.alpha, activation_f_.beta);
-    DumpMatrix("o" + row_str, po, 1, hidden_size_);
+    // DumpMatrix("o" + row_str, po, 1, hidden_size_);
 
     // calculate 'Ht'
     float* pH = SafeRawPointer<T>(batched_output + row * hidden_size_ + b * hidden_size_,
@@ -1179,7 +1196,7 @@ void UniDirectionalLstm<T>::GateComputations(span_T_iter& out, span_T_iter& out_
 
     activation_h_.func(pC_cur, pC_prev_clipped, po, pH, hidden_size_, activation_h_.alpha, activation_h_.beta);
 
-    DumpMatrix("H" + row_str, pH, 1, hidden_size_);
+    // DumpMatrix("H" + row_str, pH, 1, hidden_size_);
   }
 
   auto num_rows = local_fused_hidden_rows - row;

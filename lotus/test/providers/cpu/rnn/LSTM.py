@@ -11,7 +11,7 @@ from typing import Any, Tuple
 #from . import expect
 
 DebugOutput = True
-np.set_printoptions(suppress=True)
+np.set_printoptions(suppress=True) #, precision=16, floatmode='maxprec')
 
 def print_with_shape(name, a, force_output=False):
     if (force_output or DebugOutput):
@@ -151,12 +151,6 @@ class OneDirectionLSTM:
         self.input_forget = input_forget
         self.clip = clip
 
-    # def g(self, x):  # type: (np.ndarray) -> np.ndarray
-    #     return np.tanh(x)
-    #
-    # def h(self, x):  # type: (np.ndarray) -> np.ndarray
-    #     return np.tanh(x)
-
     def execute(self):  # type: () -> Tuple[np.ndarray, np.ndarray]
 
         [p_i, p_o, p_f] = np.split(self.P, 3)
@@ -257,7 +251,7 @@ class LSTM:  # Base):
         hidden_size = 3
         number_of_gates = 4
 
-        # sequential values from 1 to 32
+        # sequentialvalues from 1 to 32
         input = np.array(range(1,seq_length * batch_size + 1, 1)).astype(np.float32).reshape(seq_length, batch_size, input_size)
 
         W = np.array([0.1, 0.2, 0.3, 0.4,
@@ -271,6 +265,30 @@ class LSTM:  # Base):
 
         Y, Y_h, Y_c = lstm.run()
         print_results(Y, Y_h, Y_c)
+
+    @staticmethod
+    def BatchParallelFalseSeqLengthGreaterThanOne():
+        print(LSTM.BatchParallelFalseSeqLengthGreaterThanOne.__name__)
+
+        seq_length = 2
+        batch_size = 1
+        input_size = 1
+        hidden_size = 2
+        number_of_gates = 4
+
+        input = np.array([1, 2]).astype(np.float32).reshape(seq_length, batch_size, input_size)
+
+        W = np.array([0.1, 0.2, 0.3, 0.4,
+                      1, 2, 3, 4]).astype(np.float32).reshape(1, number_of_gates * hidden_size, input_size)
+
+        weight_scale = 0.1
+        R = weight_scale * np.ones((1, number_of_gates * hidden_size, hidden_size)).astype(np.float32)
+
+        lstm = LSTM_Helper(X=input, W=W, R=R)
+
+        Y, Y_h, Y_c = lstm.run()
+        print_results(Y, Y_h, Y_c)
+
 
     @staticmethod
     def export_initial_bias():  # type: () -> None
@@ -301,7 +319,7 @@ class LSTM:  # Base):
         B = np.concatenate((W_B, R_B), 1)
 
         lstm = LSTM_Helper(X=input, W=W, R=R, B=B)
-        Y, Y_h, Y_c = lstm.step()
+        Y, Y_h, Y_c = lstm.run()
         print_results(Y, Y_h, Y_c)
         # expect(node, inputs=[input, W, R, B], outputs=[Y_h.astype(np.float32)], name='test_lstm_with_initial_bias')
 
@@ -332,7 +350,7 @@ class LSTM:  # Base):
         P = weight_scale * np.ones((1, number_of_peepholes * hidden_size)).astype(np.float32)
 
         lstm = LSTM_Helper(X=input, W=W, R=R, B=B, P=P, initial_c=init_c, initial_h=init_h)
-        Y, Y_h, Y_c = lstm.step()
+        Y, Y_h, Y_c = lstm.run()
         print_results(Y, Y_h, Y_c)
         # expect(node, inputs=[input, W, R, B, seq_lens, init_h, init_c, P], outputs=[Y_h.astype(np.float32)],
         #        name='test_lstm_with_peepholes')
@@ -579,6 +597,7 @@ LSTM.SimpleWeightsNoBiasTwoRows('reverse')
 LSTM.SimpleWeightsNoBiasTwoRows('bidirectional')
 LSTM.LargeBatchWithClip(99999.0)  # too large to affect output
 LSTM.LargeBatchWithClip(4.0)
+LSTM.BatchParallelFalseSeqLengthGreaterThanOne()
 LotusUnitTests.LotusRT_TestLSTMBidirectionalBasic()
 LotusUnitTests.LotusRT_TestLSTMForwardNoBiasUsePeepholes()
 LotusUnitTests.LotusRT_TestLSTMForwardInputForget()
