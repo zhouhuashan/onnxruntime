@@ -581,6 +581,7 @@ class GraphBase {
       const std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
   Lotus::Common::Status VerifyNoDuplicateName(
+      /*in*/ const std::unordered_set<std::string>& inputs_and_initializers,
       /*out*/ std::unordered_map<std::string, Node*>& output_args,
       /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
@@ -742,6 +743,10 @@ class Graph : public GraphBase {
 
   // Apply type-inference and type-checking to all inputs and initializers:
   Lotus::Common::Status TypeCheckInputsAndInitializers();
+
+  // Compute set of input and initializer names and checking for duplicate names
+  Lotus::Common::Status VerifyInputAndInitializerNames(
+      /*OUT*/ std::unordered_set<std::string>& inputs_and_initializers);
 
   // Given nodes in topological order, infer and set type information
   // across <*this> graph if needed, and verify type/attribute

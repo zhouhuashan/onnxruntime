@@ -470,10 +470,13 @@ Graph::Graph(GraphProto* graph_proto,
   }
 }
 
-Status GraphBase::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, Node*>& output_args,
+Status GraphBase::VerifyNoDuplicateName(/*in*/ const std::unordered_set<std::string>& inputs_and_initializers,
+                                        /*out*/ std::unordered_map<std::string, Node*>& output_args,
                                         /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
   output_args.clear();
   node_name_to_index.clear();
+  // inputs_and_initializers: this is passed in as a parameter, since functions don't have initializers
+  // but graphs have them.
 
   for (auto& node : Nodes()) {
     // Verify node name should be unique.
@@ -492,11 +495,16 @@ Status GraphBase::VerifyNoDuplicateName(/*out*/ std::unordered_map<std::string, 
     for (const gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
       if (output_def->Exists()) {
         auto& output_arg_name = output_def->Name();
+        if (inputs_and_initializers.count(output_arg_name)) {
+          Status status(LOTUS, FAIL,
+                        "Error: Duplicate definition of name (" + output_arg_name + ").");
+          return status;
+        }
         auto result = output_args.insert({output_arg_name, &node});
         if (!result.second) {
           // Two outputs with same name, so that insertion fails.
           Status status(LOTUS, FAIL,
-                        "Error: two output args with same name (" + output_arg_name + ").");
+                        "Error: Duplicate definition of name (" + output_arg_name + ").");
           return status;
         }
       }
@@ -1145,6 +1153,24 @@ Status Graph::Resolve() {
   return Resolve(false);
 }
 
+Status Graph::VerifyInputAndInitializerNames(/*OUT*/ std::unordered_set<std::string>& inputs_and_initializers) {
+  for (auto* input : GetInputs()) {
+    auto result = inputs_and_initializers.insert(input->Name());
+    if (!result.second) {
+      Status status(LOTUS, FAIL,
+                    "Error: Duplicate definition-site for (" + input->Name() + ").");
+      return status;
+    }
+  }
+  for (auto& initializer_pair : name_to_initial_tensor_) {
+    auto result = inputs_and_initializers.insert(initializer_pair.first);
+    // Initializers are expected to be included in inputs (according to ONNX spec).
+    // Lotus relaxes this constraint. No duplicate-name check here.
+    (result);
+  }
+  return Status::OK();
+}
+
 Status Graph::Resolve(bool no_proto_sync_required) {
   if (!GraphResolveNeeded()) {
     return Status::OK();
@@ -1158,8 +1184,10 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, sink_node_index_));
 
   std::unordered_map<std::string, Node*> output_args;
+  std::unordered_set<std::string> inputs_and_initializers;
   std::unordered_map<std::string, NodeIndex> node_name_to_index;
-  LOTUS_RETURN_IF_ERROR(VerifyNoDuplicateName(output_args, node_name_to_index));
+  LOTUS_RETURN_IF_ERROR(VerifyInputAndInitializerNames(inputs_and_initializers));
+  LOTUS_RETURN_IF_ERROR(VerifyNoDuplicateName(inputs_and_initializers, output_args, node_name_to_index));
   LOTUS_RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
   LOTUS_RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
   LOTUS_RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
