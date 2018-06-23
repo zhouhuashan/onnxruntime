@@ -4,19 +4,22 @@
 
 #pragma once
 
-#include "core/framework/inference_session.h"
+#include "TestDataReader.h"
+
+#include <algorithm>
+#include <codecvt>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "core/common/logging/sinks/clog_sink.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/data_types.h"
+#include "core/framework/inference_session.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
-
-#include <iostream>
-#include <vector>
-#include <memory>
-#include <codecvt>
-#include <string>
-#include <map>
-#include "TestDataReader.h"
 
 #if !defined(_MSC_VER)
 #include <sys/stat.h>
@@ -25,70 +28,41 @@
 #define ERROR_BAD_FORMAT 11L
 
 #define O_BINARY 0x0000
-
-typedef signed long INT64;
 #endif
 
 class WinMLRuntime {
  public:
-  static Lotus::Logging::LoggingManager& GetDefaultLogM() {
-    using namespace Lotus;
-    std::string default_logger_id{"Default"};
-
-    static Logging::LoggingManager default_logging_manager{std::unique_ptr<Logging::ISink>{new Lotus::Logging::CLogSink{}},
-                                                           Logging::Severity::kWARNING, false,
-                                                           Logging::LoggingManager::InstanceType::Default,
-                                                           &default_logger_id};
-
-    return default_logging_manager;
-  }
-
   WinMLRuntime() {
     using namespace Lotus;
     using namespace Lotus::Logging;
-    static LoggingManager* s_default_logging_manager = &GetDefaultLogM();
+    static LoggingManager& s_default_logging_manager = DefaultLoggingManager();
     SessionOptions so;
-    so.session_logid = "InferenceSessionTests.NoTimeout";
+    so.session_logid = "WinMLRuntime";
 
-    pRuntime = new Lotus::InferenceSession(so, s_default_logging_manager);
+    inference_session_ = std::make_unique<Lotus::InferenceSession>(so, &s_default_logging_manager);
   }
 
-  ~WinMLRuntime() {
-    if (pRuntime) {
-      delete (pRuntime);
-      pRuntime = nullptr;
-    }
+  Lotus::Common::Status LoadModel(const std::wstring& model_path) {
+    Lotus::Common::Status result = inference_session_->Load(wstr2str(model_path));
+    if (result.IsOK())
+      result = inference_session_->Initialize();
+
+    return result;
   }
 
-  int LoadModel(std::wstring modelPath, std::string& error) {
-    Lotus::Common::Status result = pRuntime->Load(wstr2str(modelPath));
-    if (!result.IsOK()) {
-      error = result.ErrorMessage();
-      return result.Code();
-    }
-
-    result = pRuntime->Initialize();
-    if (!result.IsOK()) {
-      error = result.ErrorMessage();
-      return result.Code();
-    }
-
-    return 0;
-  }
-
-  void FillInBatchSize(std::vector<int64_t>& shape, int inputSize, int featSize) {
-    if ((inputSize % featSize != 0) && (featSize != -1))
+  void FillInBatchSize(std::vector<int64_t>& shape, int input_size, int feature_size) {
+    if ((input_size % feature_size != 0) && (feature_size != -1))
       throw std::runtime_error("Input count is not a multiple of dimension.");
 
-    int batchSize = featSize == -1 ? 1 : inputSize / featSize;
-    shape.insert(shape.begin(), batchSize);
+    int batch_size = feature_size == -1 ? 1 : input_size / feature_size;
+    shape.insert(shape.begin(), batch_size);
   }
 
-  int ReadTensorStrings(Lotus::AllocatorPtr alloc, Lotus::MLValue* p_mlvalue,
-                        TestDataReader& inputsReader, int featSize, std::vector<int64_t> dims, bool variableBatchSize) {
+  Lotus::MLValue ReadTensorStrings(Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
+                                   int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
     using namespace Lotus;
 
-    auto vec = inputsReader.GetSampleStrings(featSize, variableBatchSize);
+    auto vec = inputs_reader.GetSampleStrings(feature_size, variable_batch_size);
 
     std::vector<std::string> vec2;
     for (int i = 0; i < vec.size(); i++) {
@@ -96,8 +70,8 @@ class WinMLRuntime {
       vec2.push_back(str);
     }
 
-    if (variableBatchSize)
-      FillInBatchSize(dims, gsl::narrow_cast<int>(vec.size()), featSize);
+    if (variable_batch_size)
+      FillInBatchSize(dims, gsl::narrow_cast<int>(vec.size()), feature_size);
 
     TensorShape shape(dims);
     auto element_type = DataTypeImpl::GetType<std::string>();
@@ -113,25 +87,29 @@ class WinMLRuntime {
       p[i] = std::string(vec[i].begin(), vec[i].end());
     }
 
-    p_mlvalue->Init(p_tensor.release(),
-                    DataTypeImpl::GetType<Tensor>(),
-                    DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-    return 0;
+    Lotus::MLValue result;
+    result.Init(p_tensor.release(),
+                DataTypeImpl::GetType<Tensor>(),
+                DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+
+    return result;
   }
 
   template <typename T>
-  int ReadTensor(Lotus::AllocatorPtr alloc, Lotus::MLValue* p_mlvalue,
-                 TestDataReader& inputsReader, int featSize, std::vector<int64_t> dims, bool variableBatchSize) {
+  Lotus::MLValue ReadTensor(Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
+                            int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
     using namespace Lotus;
 
-    auto vec = inputsReader.GetSample<T>(featSize, variableBatchSize);
-    if (variableBatchSize)
-      FillInBatchSize(dims, gsl::narrow_cast<int>(vec.size()), featSize);
+    auto vec = inputs_reader.GetSample<T>(feature_size, variable_batch_size);
+
+    if (variable_batch_size)
+      FillInBatchSize(dims, gsl::narrow_cast<int>(vec.size()), feature_size);
 
     Lotus::TensorShape shape(dims);
     auto location = alloc->Info();
     auto element_type = Lotus::DataTypeImpl::GetType<T>();
     void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
+
     if (vec.size() > 0) {
       memcpy(buffer, &vec[0], element_type->Size() * shape.Size());
     }
@@ -142,52 +120,52 @@ class WinMLRuntime {
                                                                        location,
                                                                        alloc);
 
-    p_mlvalue->Init(p_tensor.release(),
-                    Lotus::DataTypeImpl::GetType<Lotus::Tensor>(),
-                    Lotus::DataTypeImpl::GetType<Lotus::Tensor>()->GetDeleteFunc());
+    Lotus::MLValue result;
+    result.Init(p_tensor.release(),
+                Lotus::DataTypeImpl::GetType<Lotus::Tensor>(),
+                Lotus::DataTypeImpl::GetType<Lotus::Tensor>()->GetDeleteFunc());
 
-    return 0;
+    return result;
   }
 
   template <typename V>
-  int ReadTensorForMap(Lotus::AllocatorPtr alloc,
-                       Lotus::MLValue* /*p_mlvalue*/, TestDataReader& inputsReader) {
-    auto vec = inputsReader.GetSample<V>(-1);
+  Lotus::MLValue ReadTensorForMapStringToScalar(Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader) {
+    auto vec = inputs_reader.GetSample<V>(-1);
 
-    /*
-        Lotus::Tensor *tensor = new Lotus::Tensor();
-        tensor->Resize(1);
-        auto* data = tensor->mutable_data<std::map<std::string, V>>();
-        for (int i = 0; i < vec.size(); i++)
-        {
-            std::string s = std::to_string(i + 1);
-            (*data)[s] = vec[i];
-        }
+    auto data = std::make_unique<std::map<std::string, V>>();
+    for (int i = 0; i < vec.size(); i++) {
+      // keys start at "1" so convert index to string key based on that
+      data->insert({std::to_string(i + 1), vec[i]});
+    }
 
-        */
-    return 0;
+    Lotus::MLValue result;
+    result.Init(data.release(),
+                Lotus::DataTypeImpl::GetType<std::map<std::string, V>>(),
+                Lotus::DataTypeImpl::GetType<std::map<std::string, V>>()->GetDeleteFunc());
+
+    return result;
   }
 
-  int Run(TestDataReader& inputsReader) {
+  int Run(TestDataReader& inputs_reader) {
     using namespace Lotus;
     int hr = 0;
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 
     // Create CPU input tensors
     Lotus::NameMLValMap feed;
-    inputsReader.BufferNextSample();
-    if (inputsReader.Eof())
+    inputs_reader.BufferNextSample();
+    if (inputs_reader.Eof())
       return 0;
 
-    bool variableBatchSize = false;
-    auto inputs_pairs = pRuntime->GetInputs();
+    bool variable_batch_size = false;
+    auto inputs_pairs = inference_session_->GetInputs();
     if (!inputs_pairs.first.IsOK()) {
       auto error = inputs_pairs.first.ErrorMessage();
       return inputs_pairs.first.Code();
     }
 
     auto& inputs = *(inputs_pairs.second);
-    for (size_t index = 0; index < inputs.size(); index++) {
+    for (size_t index = 0, end = inputs.size(); index < end; ++index) {
       MLValue mlvalue;
       const LotusIR::NodeArg& input = *(inputs[index]);
       const TensorShapeProto* input_shape = input.Shape();
@@ -197,29 +175,29 @@ class WinMLRuntime {
       auto type = input.Type();
 
       std::vector<int64_t> shape;
-      int featSize = -1;
+      int feature_size = -1;
 
-      //Previous graph input was variable length that consumed entire input line so fetch new input line.
-      if (variableBatchSize)
-        inputsReader.BufferNextSample();
+      //Previous graph input was variable length that consumed entire input line_ so fetch new input line_.
+      if (variable_batch_size)
+        inputs_reader.BufferNextSample();
 
       //This graph input may or may not be variable length.
       //REVIEW mzs: this can cause issues if we had variable-input followed by fixed input followed by variable-input where
-      //fixed-input consumed all of the input line. *Ideally each graph input should be on its own line*.
-      variableBatchSize = false;
+      //fixed-input consumed all of the input line_. *Ideally each graph input should be on its own line_*.
+      variable_batch_size = false;
 
       //If the shape is not available then read everything into the input tensor.
-      //featSize = -1 indicates this condition.
+      //feature_size = -1 indicates this condition.
       if (input_shape) {
-        featSize = 0;
+        feature_size = 0;
         auto dims = input_shape->dim();
         for (auto dim : dims) {
           if (dim.has_dim_param())
-            variableBatchSize = true;
+            variable_batch_size = true;
           else {
             auto dim_value = dim.dim_value();
             shape.push_back(dim_value);
-            featSize = gsl::narrow_cast<int>(featSize ? featSize * dim_value : dim_value);
+            feature_size = gsl::narrow_cast<int>(feature_size ? feature_size * dim_value : dim_value);
           }
         }
       }
@@ -227,22 +205,36 @@ class WinMLRuntime {
       //REVIEW mzs: Here an assumption is made that all the input columns are for the map.
       //The supported map types in Lotus seen so far are <string, string> or <string, int64>.
       if (*type == "map(string,tensor(int64))") {
-        ReadTensorForMap<int64_t>(TestCPUExecutionProvider()->GetAllocator(), &mlvalue, inputsReader);
-        feed.insert(std::make_pair(input.Name(), mlvalue));
+        // check if really map(string, int64), which is all we currently support
+        bool is_map_value_scalar = input.TypeAsProto()->map_type().value_type().tensor_type().shape().dim_size() == 0;
+
+        if (is_map_value_scalar) {
+          mlvalue = ReadTensorForMapStringToScalar<int64_t>(TestCPUExecutionProvider().GetAllocator(), inputs_reader);
+          feed.insert(std::make_pair(input.Name(), mlvalue));
+        } else {
+          throw std::runtime_error("Unsupported input type: " + std::string(*type));
+        }
       } else if (*type == "map(string,tensor(float))" || *type == "map(string,tensor(double))") {
-        ReadTensorForMap<float>(TestCPUExecutionProvider()->GetAllocator(), &mlvalue, inputsReader);
-        feed.insert({input.Name(), mlvalue});
+        // check if really map(string, float) or map(string, double), which is all we currently support
+        bool is_map_value_scalar = input.TypeAsProto()->map_type().value_type().tensor_type().shape().dim_size() == 0;
+
+        if (is_map_value_scalar) {
+          mlvalue = ReadTensorForMapStringToScalar<float>(TestCPUExecutionProvider().GetAllocator(), inputs_reader);
+          feed.insert({input.Name(), mlvalue});
+        } else {
+          throw std::runtime_error("Unsupported input type: " + std::string(*type));
+        }
       } else {
         if (*type == "tensor(double)" || *type == "tensor(float)") {
           // If double is used in the following statement, following error occurs.
           // Tensor type mismatch, caller expects elements to be float while tensor contains double Error from operator
-          ReadTensor<float>(TestCPUExecutionProvider()->GetAllocator(), &mlvalue, inputsReader, featSize, shape, variableBatchSize);
+          mlvalue = ReadTensor<float>(TestCPUExecutionProvider().GetAllocator(), inputs_reader, feature_size, shape, variable_batch_size);
         } else if (*type == "tensor(int64)")
-          ReadTensor<int64_t>(TestCPUExecutionProvider()->GetAllocator(), &mlvalue, inputsReader, featSize, shape, variableBatchSize);
+          mlvalue = ReadTensor<int64_t>(TestCPUExecutionProvider().GetAllocator(), inputs_reader, feature_size, shape, variable_batch_size);
         else if (*type == "tensor(string)")
-          ReadTensorStrings(TestCPUExecutionProvider()->GetAllocator(), &mlvalue, inputsReader, featSize, shape, variableBatchSize);
+          mlvalue = ReadTensorStrings(TestCPUExecutionProvider().GetAllocator(), inputs_reader, feature_size, shape, variable_batch_size);
         else
-          throw std::runtime_error("Unsupported input type in LotusRT_exec" + std::string(*type));
+          throw std::runtime_error("Unsupported input type: " + std::string(*type));
 
         feed.insert(std::make_pair(input.Name(), mlvalue));
       }
@@ -250,20 +242,21 @@ class WinMLRuntime {
 
     // Create output feed
     std::vector<std::string> output_names;
-    for (auto const& outp : *(pRuntime->GetOutputs().second)) {
+    for (auto const& outp : *(inference_session_->GetOutputs().second)) {
       output_names.push_back(outp->Name());
     }
 
     std::string separator = "";
     // Invoke the net
     std::vector<Lotus::MLValue> outputMLValue;
-    Lotus::Common::Status result = pRuntime->Run(feed, &outputMLValue);
+    Lotus::Common::Status result = inference_session_->Run(feed, &outputMLValue);
     if (result.IsOK()) {
-      auto outputMeta = pRuntime->GetOutputs().second;
+      auto outputMeta = inference_session_->GetOutputs().second;
       // Peel the data off the CPU
       for (unsigned int i = 0; i < output_names.size(); i++) {
         Lotus::MLValue& output = outputMLValue[i];
         const Lotus::Tensor* ctensor = nullptr;
+
         if (output.IsTensor()) {
           ctensor = &output.Get<Tensor>();
           //REVIEW mzs: Map output types are not tested because I couldn't find any tests for that.
@@ -328,12 +321,25 @@ class WinMLRuntime {
     return hr;
   }
 
- protected:
-  Lotus::InferenceSession* pRuntime;
+ private:
+  std::unique_ptr<Lotus::InferenceSession> inference_session_;
 
-  static Lotus::IExecutionProvider* TestCPUExecutionProvider() {
+  static Lotus::Logging::LoggingManager& DefaultLoggingManager() {
+    using namespace Lotus;
+    std::string default_logger_id{"Default"};
+
+    static Logging::LoggingManager default_logging_manager{
+        std::unique_ptr<Logging::ISink>{new Lotus::Logging::CLogSink{}},
+        Logging::Severity::kWARNING, false,
+        Logging::LoggingManager::InstanceType::Default,
+        &default_logger_id};
+
+    return default_logging_manager;
+  }
+
+  static Lotus::IExecutionProvider& TestCPUExecutionProvider() {
     static Lotus::CPUExecutionProviderInfo info;
     static Lotus::CPUExecutionProvider cpu_provider(info);
-    return &cpu_provider;
+    return cpu_provider;
   }
 };

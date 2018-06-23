@@ -1,13 +1,15 @@
 #include <iostream>
+
+#include "CmdParser.h"
 #include "Model.h"
 
 void print_cmd_option() {
   std::cerr << "lotusrt_exec.exe -m model_file [-t testdata]" << std::endl;
 }
 
-int main(int argc, char* args[]) {
+int main(int argc, const char* args[]) {
   CmdParser parser(argc, args);
-  std::string* modelfile = parser.GetCommandArg((char*)"-m");
+  const std::string* modelfile = parser.GetCommandArg("-m");
   if (!modelfile) {
     std::cerr << "WinML model file is required." << std::endl;
     print_cmd_option();
@@ -18,7 +20,7 @@ int main(int argc, char* args[]) {
 
   if (model.GetStatus() == ExecutionStatus::OK) {
     std::cerr << "Done loading model: " << modelfile->c_str() << std::endl;
-    std::string* testfile = parser.GetCommandArg((char*)"-t");
+    const std::string* testfile = parser.GetCommandArg("-t");
     if (testfile) {
       model.Execute(*testfile);
     }

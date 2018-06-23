@@ -3,110 +3,108 @@
 */
 
 #pragma once
-#include <iostream>
+
+#include <cassert>
+#include <cmath>
 #include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
 #include <vector>
 #include <cmath>
 
-inline std::string wstr2str(const std::wstring& wstr) {
+std::string wstr2str(const std::wstring& wstr) {
   std::string str = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(wstr);
   return str;
 }
 
 class TestDataReader {
-  std::wstring line;
-  std::wifstream readerStream;
-  std::wstringstream* rowStream = nullptr;
-
  public:
-  TestDataReader(){};
-  virtual ~TestDataReader() {
-    if (rowStream) {
-      delete (rowStream);
-      rowStream = nullptr;
-    }
-  };
+  static std::unique_ptr<TestDataReader> OpenReader(std::wstring data_file);
 
   void BufferNextSample();
   bool Eof();
+
   template <typename T>
-  std::vector<T> GetSample(int smapleCount, bool variableBatchSize = false);
-  std::vector<std::wstring> GetSampleStrings(int sampleCount, bool variableBatchSize = false);
-  static TestDataReader* OpenReader(std::wstring dataFile);
+  std::vector<T> GetSample(int sample_count, bool variable_batch_size = false);
+
+  std::vector<std::wstring> GetSampleStrings(int sample_count, bool variable_batch_size = false);
+
+ private:
+  std::wstring line_;
+  std::wifstream reader_stream_;
+  std::unique_ptr<std::wstringstream> row_stream_;
 };
 
 bool TestDataReader::Eof() {
-  return readerStream.eof();
+  return reader_stream_.eof();
 }
 
 void TestDataReader::BufferNextSample() {
-  if (rowStream) {
-    delete (rowStream);
-    rowStream = nullptr;
-  }
+  if (Eof())
+    return;
+
+  std::getline(reader_stream_, line_);
 
   if (Eof())
     return;
 
-  std::getline(readerStream, line);
-
-  if (Eof())
-    return;
-
-  rowStream = new std::wstringstream(line);
+  row_stream_ = std::make_unique<std::wstringstream>(line_);
   std::wstring feature;
-  std::getline(*rowStream, feature, L',');  //Skip the Label which is actually.
+  std::getline(*row_stream_, feature, L',');  //Skip the Label which is actually.
 }
 
 template <typename T>
-std::vector<T> TestDataReader::GetSample(int sampleCount, bool variableBatchSize) {
-  assert(sampleCount == -1 || sampleCount > 0);
+std::vector<T> TestDataReader::GetSample(int sample_count, bool variable_batch_size) {
+  assert(sample_count == -1 || sample_count > 0);
 
   std::wstring feature;
   std::vector<T> result;
 
   int s = 0;
-  while ((s++ < sampleCount || sampleCount == -1 || variableBatchSize) && std::getline(*rowStream, feature, L','))  // -1 means read all data in the sample
+  while ((s++ < sample_count || sample_count == -1 || variable_batch_size) &&
+         std::getline(*row_stream_, feature, L','))  // -1 means read all data in the sample
   {
-    T featureValue;
-    std::wstringstream featureConvert(feature);
-    featureConvert >> featureValue;
-    if (featureConvert.fail()) {
-      featureValue = (T)NAN;
+    T feature_value;
+    std::wstringstream feature_convert(feature);
+    feature_convert >> feature_value;
+    if (feature_convert.fail()) {
+      feature_value = (T)NAN;
     }
 
-    result.push_back(featureValue);
+    result.push_back(feature_value);
   }
 
-  if (line.length() > 0 && line.back() == L',')
+  if (line_.length() > 0 && line_.back() == L',')
     result.push_back((T)NAN);
 
-  if (sampleCount != -1 && !variableBatchSize) {
+  if (sample_count != -1 && !variable_batch_size) {
     //Remove the last NAN inserted if it is not part of this feature.
-    if (result.size() == sampleCount + 1)
+    if (result.size() == sample_count + 1)
       result.pop_back();
 
-    if (result.size() != sampleCount)
+    if (result.size() != sample_count)
       throw std::runtime_error("Not enough features in sample.");
   }
 
-  if (variableBatchSize && (result.size() % sampleCount != 0) && (sampleCount != -1))
+  if (variable_batch_size && (result.size() % sample_count != 0) && (sample_count != -1))
     throw std::runtime_error("Input count is not a multiple of dimension.");
 
   return result;
 }
 
-std::vector<std::wstring> TestDataReader::GetSampleStrings(int sampleCount, bool variableBatchSize) {
+std::vector<std::wstring> TestDataReader::GetSampleStrings(int sample_count, bool variable_batch_size) {
   std::wstring feature;
   std::vector<std::wstring> result;
 
   int s = 0;
-  while (s < sampleCount || sampleCount == -1 || variableBatchSize)  // -1 means read all data in the sample
+  while (s < sample_count || sample_count == -1 || variable_batch_size)  // -1 means read all data in the sample
   {
-    if (std::getline(*rowStream, feature, L','))
+    if (std::getline(*row_stream_, feature, L','))
       result.push_back(feature);
     else {
-      if (sampleCount == -1 || variableBatchSize)
+      if (sample_count == -1 || variable_batch_size)
         break;
 
       throw std::runtime_error("Not enough features in sample.");
@@ -114,22 +112,21 @@ std::vector<std::wstring> TestDataReader::GetSampleStrings(int sampleCount, bool
     s++;
   }
 
-  if (line.length() > 0 && line.back() == L',')
+  if (line_.length() > 0 && line_.back() == L',')
     result.push_back(L"");
 
-  if (variableBatchSize && (result.size() % sampleCount != 0) && (sampleCount != -1))
+  if (variable_batch_size && (result.size() % sample_count != 0) && (sample_count != -1))
     throw std::runtime_error("Input count is not a multiple of dimension.");
 
   return result;
 }
 
-TestDataReader* TestDataReader::OpenReader(std::wstring dataFile) {
-  auto* reader = new TestDataReader();
+std::unique_ptr<TestDataReader> TestDataReader::OpenReader(std::wstring dataFile) {
+  auto reader = std::make_unique<TestDataReader>();
 
-  reader->readerStream.open(wstr2str(dataFile));
-  if (!reader->readerStream) {
-    delete (reader);
-    return nullptr;
+  reader->reader_stream_.open(wstr2str(dataFile));
+  if (!reader->reader_stream_) {
+    reader = nullptr;
   }
 
   return reader;

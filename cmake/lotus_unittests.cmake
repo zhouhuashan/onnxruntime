@@ -319,11 +319,15 @@ if(WIN32)
 endif()
 
 set(lotus_exec_src_dir ${LOTUS_ROOT}/test/lotus_exec)
-add_executable(lotus_exec ${lotus_exec_src_dir}/main.cc)
-target_include_directories(lotus_exec PUBLIC)
+file(GLOB lotus_exec_src
+    "${lotus_exec_src_dir}/*.cc"
+    "${lotus_exec_src_dir}/*.h"
+)
+add_executable(lotus_exec ${lotus_exec_src})
+# we need to force these dependencies to build first. just using target_link_libraries isn't sufficient
+add_dependencies(lotus_exec lotus_providers lotus_framework lotusIR_graph onnx)
 target_link_libraries(lotus_exec ${onnx_test_libs} ${GETOPT_LIB})
 set_target_properties(lotus_exec PROPERTIES FOLDER "LotusTest")
-add_dependencies(lotus_exec lotus_providers lotus_framework lotusIR_graph onnx)
 
 add_test(NAME onnx_test_pytorch_converted
     COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-converted)

@@ -3,26 +3,29 @@
 //
 
 #pragma once
+
+#include <string>
 #include <map>
 
 class CmdParser {
  public:
-  CmdParser(int argc, char* argsv[]) {
+  CmdParser(int argc, const char* argsv[]) {
     if (argc > 2) {
       for (int i = 1; i < argc; i += 2) {
-        cmdMap[argsv[i]] = argsv[i + 1];
+        cmd_map_.insert({argsv[i], argsv[i + 1]});
       }
     }
   }
-  ~CmdParser() {
-  }
-  std::string* GetCommandArg(char* option) {
-    if (cmdMap.count(option)) {
-      return &cmdMap[option];
+
+  const std::string* GetCommandArg(const std::string& option) const {
+    auto value = cmd_map_.find(option);
+    if (value != cmd_map_.cend()) {
+      return &value->second;
     }
-    return NULL;
+
+    return nullptr;
   }
 
  private:
-  std::map<std::string, std::string> cmdMap;
+  std::map<const std::string, const std::string> cmd_map_;
 };
