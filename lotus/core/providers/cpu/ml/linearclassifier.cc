@@ -15,6 +15,14 @@ REGISTER_KERNEL(KernelDefBuilder("LinearClassifier")
                     .TypeConstraint("T2", linearClassifierOutputConstraints),
                 LinearClassifier<float>);
 
+REGISTER_KERNEL(KernelDefBuilder("LinearClassifier")
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>())
+                    .TypeConstraint("T2", linearClassifierOutputConstraints),
+                LinearClassifier<int64_t>);
+
 template <typename T>
 LinearClassifier<T>::LinearClassifier(const OpKernelInfo& info) : OpKernel(info) {
   info.GetAttr<int64_t>("multi_class", &multi_class_);
@@ -32,8 +40,8 @@ LinearClassifier<T>::LinearClassifier(const OpKernelInfo& info) : OpKernel(info)
   post_transform_ = MakeTransform(tmp);
 }
 
-template <>
-Status LinearClassifier<float>::Compute(OpKernelContext* ctx) const {
+template <typename T>
+Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
     return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT,
@@ -54,7 +62,7 @@ Status LinearClassifier<float>::Compute(OpKernelContext* ctx) const {
   Tensor* Z = ctx->Output(1, TensorShape(dims));
 
   int64_t zindex = 0;
-  const auto* x_data = X->Data<float>();
+  const auto* x_data = X->Data<T>();
 
   size_t class_count = static_cast<size_t>(class_count_);
   std::vector<float> scores;

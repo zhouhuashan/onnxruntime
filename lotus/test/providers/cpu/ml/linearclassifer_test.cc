@@ -115,5 +115,30 @@ TEST(MLOpTest, LinearClassifierBinaryWithLabels) {
   test.Run();
 }
 
+TEST(MLOpTest, LinearClassifierMulticlassInt64Input) {
+  OpTester test("LinearClassifier", LotusIR::kMLDomain);
+
+  std::vector<float> coefficients = {-0.22562418f, 0.34188559f, 0.68346153f, -0.68051993f, -0.1975279f, 0.03748541f};
+  std::vector<int64_t> classes = {1, 2, 3};
+  int64_t multi_class = 0;
+  std::vector<int64_t> X = {1, 0, 3, 44, 23, 11};
+
+  //three estimates, for 3 points each, so 9 predictions
+  std::vector<float> predictions = {-4.14164229f, 1.1092185f, -0.06021539f, 10.45007543f, -27.46673545f, 1.19408663f, -5.3446321487426758f, 8.6596536636352539f, -3.9934897422790527};
+  std::vector<float> intercepts = {-3.91601811f, 0.42575697f, 0.13731251f};
+  std::vector<int64_t> predicted_class = {2, 1, 2};
+
+  test.AddAttribute("coefficients", coefficients);
+  test.AddAttribute("intercepts", intercepts);
+  test.AddAttribute("classlabels_ints", classes);
+  test.AddAttribute("multi_class", multi_class);
+
+  test.AddInput<int64_t>("X", {3, 2}, X);
+  test.AddOutput<int64_t>("Y", {3}, predicted_class);
+  test.AddOutput<float>("Z", {3, 3}, predictions);
+
+  test.Run();
+}
+
 }  // namespace Test
 }  // namespace Lotus
