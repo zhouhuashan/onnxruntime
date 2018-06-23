@@ -56,6 +56,11 @@ class KernelDef {
     return output_memory_type_args_;
   }
 
+  // legacy interface for winml, should not be used in Lotus
+  const MemTypeMap& MemoryType() const {
+    return output_memory_type_args_;
+  }
+
   int ExecQueueId() const {
     return exec_queue_id_;
   }
@@ -249,6 +254,13 @@ class KernelDefBuilder {
   // in certain memory type (instead of the default, device memory).
   template <MemType T>
   KernelDefBuilder& OutputMemoryType(int output_index) {
+    kernel_def_->output_memory_type_args_.insert(std::make_pair(output_index, T));
+    return *this;
+  }
+
+  // legacy interface for winml, should not be used in Lotus
+  template <MemType T>
+  KernelDefBuilder& MemoryType(int output_index) {
     kernel_def_->output_memory_type_args_.insert(std::make_pair(output_index, T));
     return *this;
   }
