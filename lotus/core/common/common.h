@@ -169,6 +169,10 @@ inline long long TimeDiffMicroSeconds(TimePoint start_time) {
   return std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
 }
 
+inline long long TimeDiffMicroSeconds(TimePoint start_time, TimePoint end_time) {
+  return std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+}
+
 inline std::string GetCurrentTimeString() {
   auto now = std::chrono::system_clock::now();
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
