@@ -34,12 +34,7 @@ bool TransformerMemcpyImpl::ModifyGraph() {
   for (auto& node : graph_->Nodes()) {
     if (graph_->IsSourceNode(node) || graph_->IsSinkNode(node))
       continue;
-
-    if (node.GetExecutionProviderType().empty() && KernelRegistry::Instance().CanExecutionProviderCreateKernel(node, provider_)) {
-      node.SetExecutionProviderType(provider_);
-      modified = true;
-    }
-
+    //don't need to do node placement here now, Lotus will do it according to registred kernels.
     ProcessDefs(node);
   }
 

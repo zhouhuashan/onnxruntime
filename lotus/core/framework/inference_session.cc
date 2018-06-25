@@ -21,6 +21,7 @@
 #include "core/platform/notification.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/insert_cast_transformer.h"
+#include "core/framework/node_placement.h"
 
 namespace Lotus {
 
@@ -852,8 +853,25 @@ class InferenceSession::Impl {
     // first apply the default/system/basic transformations
     LOTUS_RETURN_IF_ERROR(graph_transformation_mgr_.ApplyAll(graph));
 
-    // now apply the transformations from the execution providers
+    auto& providers = session_state_.GetExecutionProviders();
+    // the order of provider types represent the user preference.
+    std::vector<std::string> provider_preference;
+    for (auto& p : providers) {
+      provider_preference.push_back(p->Type());
+    }
+    std::vector<const KernelRegistry*> registries;
+    auto custom_registries = session_state_.GetCustomRegistryManager().GetAllKernelRegistries();
+    //The order of registeries represent the priority, put the custom register with higher priority
+    registries.assign(custom_registries.begin(),
+                      custom_registries.end());
+    registries.push_back(&KernelRegistry::Instance());
+
+    //do node placement based on registered kernels
     bool modified = false;
+    GraphPlacementPlanner placement_planner("GraphPlacementPlanner", registries, provider_preference);
+    LOTUS_RETURN_IF_ERROR(placement_planner.Apply(graph, &modified));
+
+    // now apply the transformations from the execution providers
     for (auto& ep : session_state_.GetExecutionProviders()) {
       // TODO: log which execution provider is transforming the graph and
       // whether modified is true/false.

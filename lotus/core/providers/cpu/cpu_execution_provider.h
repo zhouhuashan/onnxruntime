@@ -15,17 +15,8 @@ class CPUTransformer : public LotusIR::GraphTransformer {
       : LotusIR::GraphTransformer(name, "Transformer for CPU execution provider") {
   }
 
-  Status Apply(LotusIR::Graph* graph, bool* modified) const override {
-    for (auto& node : graph->Nodes()) {
-      if (graph->IsSourceNode(node) || graph->IsSinkNode(node))
-        continue;
-
-      if (node.GetExecutionProviderType().empty()) {
-        node.SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
-        *modified = true;
-      }
-    }
-
+  Status Apply(LotusIR::Graph* /*graph*/, bool* /*modified*/) const override {
+    //TODO: any fusing needed on cpu
     return Common::Status::OK();
   }
 };
