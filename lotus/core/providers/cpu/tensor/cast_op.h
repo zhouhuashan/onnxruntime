@@ -9,22 +9,29 @@ namespace Lotus {
 template <typename SrcType,
           typename DstType>
 inline void CastData(const Tensor* in, Tensor* out, const TensorShape& shape) {
+  auto out_data = out->MutableData<DstType>();
+  auto in_data = in->Data<SrcType>();
+
   for (int64_t i = 0; i < shape.Size(); ++i) {
-    out->MutableData<DstType>()[i] = static_cast<DstType>(in->Data<SrcType>()[i]);
+    out_data[i] = static_cast<DstType>(in_data[i]);
   }
 }
 
 template <>
 inline void CastData<float, MLFloat16>(const Tensor* in, Tensor* out, const TensorShape& shape) {
+  auto out_data = out->MutableData<MLFloat16>();
+  auto in_data = in->Data<float>();
   for (int64_t i = 0; i < shape.Size(); ++i) {
-    out->MutableData<MLFloat16>()[i] = MLFloat16(Eigen::half_impl::float_to_half_rtne(in->Data<float>()[i]).x);
+    out_data[i] = MLFloat16(Eigen::half_impl::float_to_half_rtne(in_data[i]).x);
   }
 }
 
 template <>
 inline void CastData<MLFloat16, float>(const Tensor* in, Tensor* out, const TensorShape& shape) {
+  auto out_data = out->MutableData<float>();
+  auto in_data = in->Data<MLFloat16>();
   for (int64_t i = 0; i < shape.Size(); ++i) {
-    out->MutableData<float>()[i] = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(in->Data<MLFloat16>()[i].val));
+    out_data[i] = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(in_data[i].val));
   }
 }
 
