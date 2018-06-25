@@ -246,6 +246,7 @@ class WinMLRuntime {
       output_names.push_back(outp->Name());
     }
 
+    std::cout.precision(12);
     std::string separator = "";
     // Invoke the net
     std::vector<Lotus::MLValue> outputMLValue;
