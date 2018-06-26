@@ -32,6 +32,12 @@ REGISTER_KERNEL(KernelDefBuilder("DictVectorizer")
                                               DataTypeImpl::GetType<std::map<int64_t, double> >(),
                                               DataTypeImpl::GetType<std::map<std::string, double> >(),
                                               DataTypeImpl::GetType<std::map<std::string, float> >(),
+                                          })
+                    .TypeConstraint("T2", std::vector<MLDataType>{
+                                              DataTypeImpl::GetTensorType<int64_t>(),
+                                              DataTypeImpl::GetTensorType<float>(), 
+                                              DataTypeImpl::GetTensorType<double>(),
+                                              DataTypeImpl::GetTensorType<std::string>()
                                           }),
                 DictVectorizerOp);
 }  // namespace ML
