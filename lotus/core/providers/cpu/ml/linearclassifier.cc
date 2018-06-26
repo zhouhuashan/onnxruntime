@@ -19,9 +19,25 @@ REGISTER_KERNEL(KernelDefBuilder("LinearClassifier")
                     .Domain(LotusIR::kMLDomain)
                     .SinceVersion(1)
                     .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<double>())
+                    .TypeConstraint("T2", linearClassifierOutputConstraints),
+                LinearClassifier<double>);
+
+REGISTER_KERNEL(KernelDefBuilder("LinearClassifier")
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>())
                     .TypeConstraint("T2", linearClassifierOutputConstraints),
                 LinearClassifier<int64_t>);
+
+REGISTER_KERNEL(KernelDefBuilder("LinearClassifier")
+                    .Domain(LotusIR::kMLDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>())
+                    .TypeConstraint("T2", linearClassifierOutputConstraints),
+                LinearClassifier<int32_t>);
 
 template <typename T>
 LinearClassifier<T>::LinearClassifier(const OpKernelInfo& info) : OpKernel(info) {
