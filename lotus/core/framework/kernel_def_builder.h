@@ -9,10 +9,10 @@
 namespace Lotus {
 class KernelDefBuilder;
 
-typedef std::map<int, MemType> MemTypeMap;
+typedef std::map<size_t, MemType> MemTypeMap;
 
 // note that input/output might be on CPU implicitly when the node is from CPU execution provider
-inline bool MemTypeOnCpuExplicitly(const MemTypeMap& mem_type_map, int index) {
+inline bool MemTypeOnCpuExplicitly(const MemTypeMap& mem_type_map, size_t index) {
   auto iter = mem_type_map.find(index);
   return iter != mem_type_map.end() && (iter->second == kMemTypeCPUInput || iter->second == kMemTypeCPUOutput);
 }

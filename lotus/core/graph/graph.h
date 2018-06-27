@@ -165,8 +165,8 @@ class Node {
   // Iterate through Input/OutputDefs() with index, note the loop early terminates with error
   static Lotus::Common::Status ForEachWithIndex(
       const ConstPointerContainer<std::vector<NodeArg*>>& nodeArgVec,
-      std::function<Lotus::Common::Status(const NodeArg& arg, int index)> func) {
-    for (int index = 0; index < nodeArgVec.size(); ++index) {
+      std::function<Lotus::Common::Status(const NodeArg& arg, size_t index)> func) {
+    for (size_t index = 0; index < nodeArgVec.size(); ++index) {
       auto arg = nodeArgVec[index];
       if (!arg->Exists())
         continue;

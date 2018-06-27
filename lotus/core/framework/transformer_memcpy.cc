@@ -70,7 +70,7 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node) {
     const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(
                       node.InputDefs(),
-                      [this, &input_mem_types](const LotusIR::NodeArg& arg, int index) {
+                      [this, &input_mem_types](const LotusIR::NodeArg& arg, size_t index) {
                         if (input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index))
                           non_provider_input_defs_.insert(&arg);
                         else
@@ -80,7 +80,7 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node) {
                       .IsOK());
     LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(
                       node.OutputDefs(),
-                      [this, &output_mem_types](const LotusIR::NodeArg& arg, int index) {
+                      [this, &output_mem_types](const LotusIR::NodeArg& arg, size_t index) {
                         if (output_mem_types && MemTypeOnCpuExplicitly(*output_mem_types, index))
                           non_provider_output_defs_.insert(&arg);
                         else

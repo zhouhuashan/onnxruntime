@@ -372,7 +372,7 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(
           LotusIR::Node::ForEachWithIndex(
               node.InputDefs(),
-              [this, &orig_feeds, &new_feeds, &weights_map, &count_feeds, &node, &input_mem_types](const LotusIR::NodeArg& arg, int index) {
+              [this, &orig_feeds, &new_feeds, &weights_map, &count_feeds, &node, &input_mem_types](const LotusIR::NodeArg& arg, size_t index) {
                 if (arg.Name().empty() ||
                     !orig_feeds.count(arg.Name()) ||
                     weights_map.count(arg.Name())) {

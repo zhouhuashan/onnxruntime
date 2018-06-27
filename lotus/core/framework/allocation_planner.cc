@@ -372,7 +372,7 @@ class PlannerImpl {
     for (auto& node : graph.Nodes()) {
       LotusIR::Node::ForEachWithIndex(
           node.InputDefs(),
-          [this, &node, &weights](const LotusIR::NodeArg& def, int index) {
+          [this, &node, &weights](const LotusIR::NodeArg& def, size_t index) {
             auto& def_name = def.Name();
             if (!weights.count(def_name))
               return Status::OK();

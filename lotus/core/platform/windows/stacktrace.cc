@@ -63,9 +63,9 @@ class SymbolHelper {
     char buffer[1024];
   };
 
-  struct Line : IMAGEHLP_LINE {
+  struct Line : IMAGEHLP_LINE64 {
     Line() noexcept {
-      SizeOfStruct = sizeof(IMAGEHLP_LINE);
+      SizeOfStruct = sizeof(IMAGEHLP_LINE64);
     }
   };
 
@@ -125,7 +125,7 @@ std::string CaptureStackTrace::Lookup(void* address_in) const {
     {
       SymbolHelper::Line line;
       DWORD displacement;
-      if (SymGetLineFromAddr(process_, address, &displacement, &line) == false) {
+      if (SymGetLineFromAddr64(process_, address, &displacement, &line) == false) {
         result << "???: " << symbol.Name;
       } else {
         result << line.FileName << '(' << line.LineNumber << "): " << symbol.Name;

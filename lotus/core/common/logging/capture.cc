@@ -32,7 +32,7 @@ void Capture::ProcessPrintf(msvc_printf_check const char *format, va_list args) 
   if (nbrcharacters <= 0) {
     stream_ << "\n\tERROR LOG MSG NOTIFICATION: Failure to successfully parse the message";
     stream_ << '"' << format << '"' << std::endl;
-  } else if (gsl::narrow_cast<uint32_t>(nbrcharacters) > message.size()) {
+  } else if (nbrcharacters > message.size()) {
     stream_ << message.data() << kTruncatedWarningText;
   } else {
     stream_ << message.data();
