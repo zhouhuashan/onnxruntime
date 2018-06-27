@@ -55,7 +55,7 @@ inline void VerifyShape<VectorMapInt64ToFloat>(const VectorMapInt64ToFloat* valu
 
 class ExecutionFrame {
  public:
-  using NodeArgValue = MLValue *;
+  using NodeArgValue = MLValue*;
 
   ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                  const std::vector<std::string>& output_names,
@@ -204,11 +204,7 @@ class ExecutionFrame {
       return Status::OK();
     } else {
       // It's not allocated, then allocate it with given shape and return.
-      // TODO: at this point, we should already know the location and dtype
-      // for the tensor, the graph should be able to tell us. But now graph
-      // don't have it. So here hack to default as CPU and float.
-
-      // perform allocation based on the allocation plan
+      // Perform allocation based on the allocation plan
       LOTUS_RETURN_IF_ERROR(AllocateAsPerAllocationPlan(node_values_[index], parameters));
       value = p_mlvalue->template GetMutable<T>();
       return Status::OK();

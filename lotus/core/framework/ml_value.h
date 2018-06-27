@@ -18,7 +18,7 @@ class MLValue {
     type_ = type;
   }
 
-  bool IsAllocated() {
+  bool IsAllocated() const {
     return data_ && type_;
   }
 

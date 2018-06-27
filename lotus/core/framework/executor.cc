@@ -56,7 +56,6 @@ class SequentialExecutor : public Executor {
                     "Got nullptr from GetKernel for node: " +
                         session_state_.GetGraph()->GetNode(node_index)->Name());
 
-
       const std::string& node_name = p_op_kernel->Node().Name();
       // construct OpKernelContext
       // TODO: log kernel inputs?
@@ -81,9 +80,6 @@ class SequentialExecutor : public Executor {
       session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_fence_before", sync_time_begin);
 
       // call compute on the kernel
-      // TODO Today the kernels don't return any status code.
-      // They throw exceptions instead. We should change the compute
-      // method to return a status code.
       VLOGS(run_logger_, 1) << "Computing kernel: " << p_op_kernel->Node().Name();
 
       auto kernel_begin_time = session_state_.Profiler().StartTime();

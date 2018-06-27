@@ -307,6 +307,8 @@ class InferenceSession::Impl {
       return Common::Status(Common::LOTUS, Common::FAIL, "Output vector pointer is NULL");
     }
 
+    // TODO check for emptiness of the output_names vector; can't do it now or else all winml tests will fail.
+
     if (!p_fetches->empty() &&
         (output_names.size() != p_fetches->size())) {
       std::ostringstream ostr;
@@ -622,7 +624,6 @@ class InferenceSession::Impl {
       // if the output vector is non-empty, ensure that its the same size as the output_names
       LOTUS_RETURN_IF_ERROR(ValidateOutputs(output_names, p_fetches));
 
-      // TODO add instrumentation to measure the time taken for this Run
       if (!run_options.run_tag.empty()) {
         LOGS(*session_logger_, INFO) << "Running with tag: " << run_options.run_tag;
       }
@@ -1079,7 +1080,6 @@ class InferenceSession::Impl {
   // - constructs the kernels and saves them in the session state
   Common::Status SaveKernels(const LotusIR::Graph& graph) {
     LOGS(*session_logger_, INFO) << "Saving kernels.";
-    session_state_.SetKernelVectorSize(graph.MaxNodeIndex());
     for (auto& node : graph.Nodes()) {
       // ignore source and sink nodes
       if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {

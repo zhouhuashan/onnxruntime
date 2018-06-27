@@ -35,7 +35,7 @@ class TestOpKernel : public OpKernel {
 TEST(SessionStateTest, AddGetKernelTest) {
   using google::protobuf::util::MessageDifferencer;
 
-  SessionState s{10};  // dummy
+  SessionState s;
 
   LotusIR::Model model("graph_1");
   auto graph = model.MainGraph();
@@ -49,8 +49,7 @@ TEST(SessionStateTest, AddGetKernelTest) {
   LotusIR::Node* p_node = graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   KernelDef kernel_def;
-  SessionState session_state;
-  OpKernelInfo p_info(*p_node, kernel_def, nullptr, session_state);
+  OpKernelInfo p_info(*p_node, kernel_def, nullptr, s);
   unique_ptr<TestOpKernel> p_kernel;
   p_kernel.reset(new TestOpKernel(p_info));
   size_t orig_num_outputs = p_kernel->Node().OutputDefs().size();

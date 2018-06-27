@@ -21,16 +21,11 @@ class SessionState {
  public:
   SessionState() = default;
 
-  explicit SessionState(int num_nodes) : session_kernels_(num_nodes) {
-    // TODO Dummy constructor for now to add a basic test.
-  }
-
   // graph
   void SetGraph(const LotusIR::Graph* graph);
   const LotusIR::Graph* GetGraph() const;
 
   // kernels
-  void SetKernelVectorSize(size_t size);
   // Get kernel for specified node.
   // It should called right before graph execution only.
   const OpKernel* GetKernel(LotusIR::NodeIndex node_id) const;
@@ -151,6 +146,5 @@ class SessionState {
   mutable std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
   CustomRegistryManager custom_registry_manager_;
-  // TODO add more
 };
 }  // namespace Lotus

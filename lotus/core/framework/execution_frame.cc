@@ -241,8 +241,6 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
   LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < alloc_plan.size());
   const auto& per_alloc_plan = alloc_plan[mlvalue_index];
 
-  // TODO: both alloc_info and ml_data_type will be supplied by the allocation
-  // plan later. This is a hack for now.
   auto alloc_info = per_alloc_plan.location;
   auto ml_type = per_alloc_plan.value_type;
   if (ml_type == nullptr)
@@ -413,11 +411,11 @@ AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
   return session_state_.GetAllocator(info);
 }
 
-const SequentialExecutionPlan::AllocPlanPerValue& ExecutionFrame::GetAllocationPlan(int mlvalue_idx){
-	const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
-	const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
-	LOTUS_ENFORCE(mlvalue_idx >= 0 && mlvalue_idx < alloc_plan.size());
-	return alloc_plan[mlvalue_idx];
+const SequentialExecutionPlan::AllocPlanPerValue& ExecutionFrame::GetAllocationPlan(int mlvalue_idx) {
+  const SequentialExecutionPlan* p_seq_exec_plan = session_state_.GetExecutionPlan();
+  const auto& alloc_plan = p_seq_exec_plan->allocation_plan;
+  LOTUS_ENFORCE(mlvalue_idx >= 0 && mlvalue_idx < alloc_plan.size());
+  return alloc_plan[mlvalue_idx];
 }
 
 }  // namespace Lotus

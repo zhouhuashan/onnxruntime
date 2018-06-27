@@ -35,10 +35,10 @@ struct SessionOptions {
   //int num_threads; // not used now until we re-introduce threadpools for async execution
   bool enable_sequential_execution = true;  // TODO: should we default to sequential execution?
 
-  // enable profiling for this session. 
+  // enable profiling for this session.
   bool enable_profiling = false;
 
-  // the prefix of the profile file. The current time will be appended to the file name. 
+  // the prefix of the profile file. The current time will be appended to the file name.
   std::string profile_file_prefix = "lotus_profile_";
 
   std::string session_logid;                       ///< logger id to use for session output
@@ -118,7 +118,9 @@ class InferenceSession {
 
   /**
     * Register an execution provider. If you've one to register, call this before invoking Initialize().
-    * Calling this API is optional.
+    * The order of invocation indicates the preference order as well. In other words call this method on your
+    * most preferred execution provider first followed by the less preferred ones.
+    * Calling this API is optional in which case Lotus will use its internal CPU execution provider.
     * @return OK if success.
     */
   Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider);
@@ -133,6 +135,8 @@ class InferenceSession {
   /**
     * Register a custom registry for operator schema and kernels.  If you've one to register, 
     * call this before invoking Initialize().
+    * The order of invocation indicates the preference order as well. In other words call this method on your
+    * most preferred registry first followed by the less preferred ones.
     * Calling this API is optional.
     * @return OK if success.
     */
@@ -161,7 +165,6 @@ class InferenceSession {
 
   /**
     * Load an ONNX model.
-    * TODO: make a copy of the Model inside the session object (requested by Windows).
     * @param p_model externally created Model obj.
     * @return OK if success.
     */

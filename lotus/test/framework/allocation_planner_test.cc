@@ -213,7 +213,6 @@ class PlannerTest : public ::testing::Test {
       state_.AddMLValueNameIdx(pair.first, count++);
     }
 
-    state_.SetKernelVectorSize(graph_->NumberOfNodes());
     for (auto& binding : kernel_bindings_) {
       BindKernel(binding.first, binding.second);
     }

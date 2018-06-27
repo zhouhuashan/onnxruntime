@@ -54,10 +54,6 @@ CustomRegistryManager& SessionState::GetCustomRegistryManager() {
   return custom_registry_manager_;
 }
 
-void SessionState::SetKernelVectorSize(size_t size) {
-  UNUSED_PARAMETER(size);
-}
-
 void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel) {
   // assumes vector is already resize()'ed to the number of nodes in the graph
   session_kernels_[node_id] = std::move(p_kernel);
