@@ -101,9 +101,6 @@ def install_python_deps():
 def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home, pb_home, configs, cmake_extra_defines, args, cmake_extra_args):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
-    nvml_stub_path = ""
-    if args.use_cuda and not is_windows():
-        nvml_stub_path = cuda_home + "/lib64/stubs"
     cmake_args = [cmake_path, cmake_dir,
                  "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if args.enable_onnx_tests else "OFF"),
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
@@ -113,9 +110,13 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
-                 "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
-                 "-DCUDA_CUDA_LIBRARY=" + nvml_stub_path
+                 "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF")
                  ]
+
+    if args.use_cuda and not is_windows():
+        nvml_stub_path = cuda_home + "/lib64/stubs"
+        cmake_args += ["-DCUDA_CUDA_LIBRARY=" + nvml_stub_path]
+
     if pb_home:
         cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
