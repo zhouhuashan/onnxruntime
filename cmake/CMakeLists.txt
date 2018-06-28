@@ -248,7 +248,6 @@ endif()
 include_directories(
     ${LOTUS_ROOT}
     ${PROJECT_SOURCE_DIR}/external/onnx
-    ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/external/onnx
     # External dependencies.
     ${PROTOBUF_INCLUDE_DIRS}
