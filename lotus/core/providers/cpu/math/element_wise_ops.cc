@@ -37,12 +37,26 @@ REGISTER_KERNEL(KernelDefBuilder("Abs")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Abs<float>);
 
+REGISTER_KERNEL(KernelDefBuilder("Abs")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(6)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
+                Abs<int8_t>);
+
 REGISTER_KERNEL(KernelDefBuilder("Neg")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(6)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Neg<float>);
+
+REGISTER_KERNEL(KernelDefBuilder("Neg")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(6)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
+                Neg<int8_t>);
 
 REGISTER_KERNEL(KernelDefBuilder("Floor")
                     .Domain(LotusIR::kOnnxDomain)
@@ -169,11 +183,6 @@ REGISTER_KERNEL(KernelDefBuilder("Affine")
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Affine<float>);
-
-template <typename T>
-auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
-template <typename T>
-auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.Data<T>(), t.Shape().Size()); }
 
 template <typename T>
 auto MakeEigenArrayMap(Tensor& t) { return EigenVectorArrayMap<T>(t.MutableData<T>(), t.Shape().Size()); }
@@ -462,26 +471,6 @@ Status Div<float>::Compute(OpKernelContext* context) const {
     while (bc)
       bc.NextEigenOutput() = bc.NextEigen0().cwiseQuotient(bc.NextEigen1());
   }
-
-  return Status::OK();
-}
-
-template <>
-Status Abs<float>::Compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->Input<Tensor>(0);
-  auto& Y = *ctx->Output(0, X.Shape());
-
-  EigenMap<float>(Y) = EigenMap<float>(X).cwiseAbs();
-
-  return Status::OK();
-}
-
-template <>
-Status Neg<float>::Compute(OpKernelContext* ctx) const {
-  auto& X = *ctx->Input<Tensor>(0);
-  auto& Y = *ctx->Output(0, X.Shape());
-
-  EigenMap<float>(Y) = -EigenMap<float>(X);
 
   return Status::OK();
 }

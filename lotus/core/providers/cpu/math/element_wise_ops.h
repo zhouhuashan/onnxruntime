@@ -7,6 +7,11 @@
 namespace Lotus {
 
 template <typename T>
+auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
+template <typename T>
+auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.Data<T>(), t.Shape().Size()); }
+
+template <typename T>
 class Add final : public OpKernel {
  public:
   Add(const OpKernelInfo& info) : OpKernel(info) {
@@ -48,7 +53,13 @@ class Abs final : public OpKernel {
   Abs(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override {
+    auto& input = *context->Input<Tensor>(0);
+    auto& output = *context->Output(0, input.Shape());
+
+    EigenMap<T>(output) = EigenMap<T>(input).cwiseAbs();
+    return Status::OK();
+  }
 };
 
 template <typename T>
@@ -57,7 +68,13 @@ class Neg final : public OpKernel {
   Neg(const OpKernelInfo& info) : OpKernel(info) {
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override {
+    auto& input = *context->Input<Tensor>(0);
+    auto& output = *context->Output(0, input.Shape());
+
+    EigenMap<T>(output) = -EigenMap<T>(input);
+    return Status::OK();
+  }
 };
 
 template <typename T>

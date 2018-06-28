@@ -150,6 +150,8 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
           return DataTypeImpl::GetTensorType<uint8_t>();
         case TensorProto_DataType_UINT16:
           return DataTypeImpl::GetTensorType<uint16_t>();
+        case TensorProto_DataType_INT8:
+          return DataTypeImpl::GetTensorType<int8_t>();
         case TensorProto_DataType_INT16:
           return DataTypeImpl::GetTensorType<int16_t>();
         case TensorProto_DataType_INT64:
