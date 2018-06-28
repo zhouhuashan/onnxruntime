@@ -17,12 +17,18 @@ class ITestCase {
   virtual Lotus::Common::Status LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) = 0;
   virtual const std::experimental::filesystem::v1::path& GetModelUrl() const = 0;
   virtual const std::string& GetTestCaseName() const = 0;
-  virtual const std::string& GetNodeName() const = 0;
+  virtual Lotus::Common::Status GetNodeName(std::string* out) = 0;
   //The number of input/output pairs
   virtual size_t GetDataCount() const = 0;
-  virtual ~ITestCase(){};
+  virtual const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const = 0;
+  virtual ~ITestCase() {}
 };
 
+class DataLoder {
+ public:
+  virtual Lotus::Common::Status Load(const std::experimental::filesystem::v1::path& p, std::unique_ptr<Lotus::MLValue>& value) const = 0;
+  virtual ~DataLoder() {}
+};
 /**
 * test_case_dir must have contents of:
 * model.onnx
@@ -33,12 +39,13 @@ class ITestCase {
 */
 class OnnxTestCase : public ITestCase {
  private:
+  std::unordered_map<std::string, DataLoder*> loaders;
   std::string test_case_name;
   std::experimental::filesystem::v1::path model_url;
   Lotus::AllocatorPtr allocator_;
   std::vector<onnx::ValueInfoProto> input_value_info_;
-  Lotus::Common::Status FromTensorProto(const onnx::TensorProto& input, std::unique_ptr<Lotus::MLValue>& value);
-  Lotus::Common::Status FromTensorProto(const std::vector<onnx::TensorProto>& input, std::vector<Lotus::MLValue>& output_values);
+  std::vector<onnx::ValueInfoProto> output_value_info_;
+
   Lotus::Common::Status FromPbFiles(const std::vector<std::experimental::filesystem::v1::path>& files, std::vector<Lotus::MLValue>& output_values);
   std::vector<std::experimental::filesystem::v1::path> test_data_dirs;
 
@@ -46,13 +53,27 @@ class OnnxTestCase : public ITestCase {
   // for https://github.com/onnx/onnx/issues/679
   Lotus::Common::Status ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, Lotus::MLValue>& out);
   std::string node_name;
+  std::once_flag model_parsed;
+  Lotus::Common::Status ParseModel();
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OnnxTestCase);
 
  public:
+  OnnxTestCase(const Lotus::AllocatorPtr&, const std::string& test_case_name);
+  ~OnnxTestCase() {
+    for (auto& ivp : loaders) {
+      delete ivp.second;
+    }
+  }
+  const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
+    return output_value_info_[i];
+  }
   size_t GetDataCount() const override {
     return test_data_dirs.size();
   }
-  const std::string& GetNodeName() const override {
-    return node_name;
+  Lotus::Common::Status GetNodeName(std::string* out) override {
+    Lotus::Common::Status st = ParseModel();
+    if (st.IsOK()) *out = node_name;
+    return st;
   }
   Lotus::Common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) override;
 
@@ -64,5 +85,4 @@ class OnnxTestCase : public ITestCase {
   }
   Lotus::Common::Status LoadInputData(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds) override;
   Lotus::Common::Status LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) override;
-  OnnxTestCase(Lotus::AllocatorPtr allocator, const std::string& test_case_name);
 };

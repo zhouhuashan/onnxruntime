@@ -4,7 +4,7 @@
     <Provider Type="VSODrop">
       <Properties>
         <Add Name="CloudTest.ProviderCustomName" Value="[MyVSODrop]" />
-        <Add Name="DropURL" Value="https://aiinfra.artifacts.visualstudio.com/DefaultCollection/_apis/drop/drops/Lotus/testdata/onnx/model/4"/>
+        <Add Name="DropURL" Value="https://aiinfra.artifacts.visualstudio.com/DefaultCollection/_apis/drop/drops/Lotus/testdata/onnx/model/6"/>
       </Properties>
     </Provider>
     <Provider Type="VSODrop">

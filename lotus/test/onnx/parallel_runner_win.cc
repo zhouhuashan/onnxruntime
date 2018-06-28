@@ -70,9 +70,9 @@ void __stdcall RunTestCase(
     _Inout_ PTP_WORK work) {
   CloseThreadpoolWork(work);
   TestCaseTask* task((TestCaseTask*)context);
-  const ITestCase* info = task->env.tests[task->task_id];
+  ITestCase* info = task->env.tests[task->task_id];
   try {
-    RunSingleTestCase(task->env, task->task_id, task->concurrent_runs, [task](std::shared_ptr<TestCaseResult> result) {
+    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, [task](std::shared_ptr<TestCaseResult> result) {
       OnTestCaseFinished(task, result);
     });
     return;

@@ -10,13 +10,55 @@ using namespace std::experimental::filesystem::v1;
 
 using namespace Lotus;
 
-Lotus::Common::Status OnnxTestCase::FromTensorProto(const onnx::TensorProto& input, std::unique_ptr<Lotus::MLValue>& value) {
-  std::unique_ptr<Tensor> tensor;
-  LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(input, &tensor, allocator_));
+template <typename InputType, typename OutputType>
+Common::Status ConvertVector(const InputType& data, OutputType** vec) {
+  //void* p = allocator->Alloc(sizeof(OutputType));
+  //if (p == nullptr)
+  //	return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "out of memory");
+  //OutputType* v = new (p) OutputType();
+  //TODO: non-tensor type has no deleter inside it. So, cannot use allocator
+  OutputType* v = new OutputType();
+  for (const auto& i : data) {
+    typename OutputType::value_type new_value;
+    for (const auto& j : i.v()) {
+      new_value[j.first] = j.second;
+    }
+    v->push_back(new_value);
+  }
+  *vec = v;
+  return Common::Status::OK();
+}
+
+template <typename InputType, typename OutputType>
+Common::Status Convert(const InputType& tensor_proto, OutputType** p_tensor, AllocatorPtr allocator);
+
+template <>
+Common::Status Convert(const onnx::TensorProto& tensor_proto, Tensor** out, AllocatorPtr allocator) {
+  std::unique_ptr<Tensor> p_tensor;
+  auto st = Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, allocator);
+  if (st.IsOK()) *out = p_tensor.release();
+  return st;
+}
+
+template <>
+Common::Status Convert(const google::protobuf::RepeatedPtrField< ::Lotus::proto::MapInt64ToFloat>& data, VectorMapInt64ToFloat** vec, AllocatorPtr allocator) {
+  return ConvertVector<google::protobuf::RepeatedPtrField< ::Lotus::proto::MapInt64ToFloat>, VectorMapInt64ToFloat>(data, vec);
+}
+
+template <>
+Common::Status Convert(const google::protobuf::RepeatedPtrField< ::Lotus::proto::MapStringToFloat>& data, VectorMapStringToFloat** vec, AllocatorPtr allocator) {
+  return ConvertVector<google::protobuf::RepeatedPtrField< ::Lotus::proto::MapStringToFloat>, VectorMapStringToFloat>(data, vec);
+}
+
+template <typename InputType, typename OutputType>
+Lotus::Common::Status ProtoToMLValue(const InputType& input, std::unique_ptr<Lotus::MLValue>& value, AllocatorPtr allocator) {
+  OutputType* tensor = nullptr;
+  Common::Status st = Convert(input, &tensor, allocator);
+  if (!st.IsOK()) return st;
   value = std::make_unique<Lotus::MLValue>();
-  value->Init(tensor.release(),
-              DataTypeImpl::GetType<Tensor>(),
-              DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+  value->Init(tensor,
+              DataTypeImpl::GetType<OutputType>(),
+              DataTypeImpl::GetType<OutputType>()->GetDeleteFunc());
   return Lotus::Common::Status::OK();
 }
 
@@ -34,7 +76,8 @@ static int ExtractFileNo(const std::string& name) {
   return static_cast<int>(ret);
 }
 
-static void SortTensorFileNames(std::vector<path>& input_pb_files) {
+static Common::Status SortTensorFileNames(std::vector<path>& input_pb_files) {
+  if (input_pb_files.size() <= 1) return Common::Status::OK();
   std::sort(input_pb_files.begin(), input_pb_files.end(), [](const path& left, const path& right) -> bool {
     std::string leftname = left.filename().string();
     std::string rightname = right.filename().string();
@@ -45,9 +88,10 @@ static void SortTensorFileNames(std::vector<path>& input_pb_files) {
   for (size_t i = 0; i != input_pb_files.size(); ++i) {
     int fileno = ExtractFileNo(input_pb_files[i].filename().string());
     if (fileno != i) {
-      LOTUS_THROW("illegal input file names");
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "illegal input file name:", input_pb_files[i].filename().string());
     }
   }
+  return Common::Status::OK();
 }
 
 Lotus::Common::Status loadModelFile(const std::string& model_url, onnx::ModelProto& model_pb) {
@@ -65,6 +109,30 @@ Lotus::Common::Status loadModelFile(const std::string& model_url, onnx::ModelPro
   return Status::OK();
 }
 
+template <typename T>
+static void RepeatedPtrFieldToVector(const ::google::protobuf::RepeatedPtrField<T>& input_value_info, std::vector<T>& out) {
+  for (int i = 0; i != input_value_info.size(); ++i) {
+    out.push_back(input_value_info[i]);
+  }
+}
+
+Lotus::Common::Status OnnxTestCase::ParseModel() {
+  Lotus::Common::Status st = Common::Status::OK();
+  std::call_once(model_parsed, [this, &st]() {
+    //parse model
+    onnx::ModelProto model_pb;
+    st = loadModelFile(model_url.string(), model_pb);
+    if (!st.IsOK()) return;
+    const onnx::GraphProto& graph = model_pb.graph();
+    if (graph.node().size() == 1) {
+      node_name = graph.node()[0].op_type();
+    }
+    RepeatedPtrFieldToVector(graph.input(), input_value_info_);
+    RepeatedPtrFieldToVector(graph.output(), output_value_info_);
+    st = Common::Status::OK();
+  });
+  return st;
+}
 Lotus::Common::Status OnnxTestCase::SetModelPath(const path& m) {
   model_url = m;
   path test_case_dir = m.parent_path();
@@ -74,44 +142,23 @@ Lotus::Common::Status OnnxTestCase::SetModelPath(const path& m) {
     }
     test_data_dirs.push_back(test_data_set->path());
   }
-  //parse model
-  onnx::ModelProto model_pb;
-  LOTUS_RETURN_IF_ERROR(loadModelFile(m.string(), model_pb));
-  const onnx::GraphProto& graph = model_pb.graph();
-  if (graph.node().size() == 1) {
-    node_name = graph.node()[0].op_type();
-  }
-  const ::google::protobuf::RepeatedPtrField<::onnx::ValueInfoProto>& input_value_info = graph.input();
-  for (int i = 0; i != input_value_info.size(); ++i) {
-    input_value_info_.push_back(input_value_info[i]);
-  }
-  return Status::OK();
-}
-
-Lotus::Common::Status OnnxTestCase::FromTensorProto(const std::vector<onnx::TensorProto>& input, std::vector<Lotus::MLValue>& output_values) {
-  for (const onnx::TensorProto& pb : input) {
-    std::unique_ptr<Lotus::MLValue> value;
-    LOTUS_RETURN_IF_ERROR(FromTensorProto(pb, value));
-    output_values.emplace_back(*value.get());
-  }
   return Status::OK();
 }
 
 //load tensors from disk
-static std::vector<onnx::TensorProto> LoadTensors(const std::vector<path>& pb_files) {
-  std::vector<onnx::TensorProto> input_pbs;
+static Common::Status LoadTensors(const std::vector<path>& pb_files, std::vector<onnx::TensorProto>* input_pbs) {
   for (size_t i = 0; i != pb_files.size(); ++i) {
     onnx::TensorProto tensor;
     std::ifstream input(pb_files.at(i), std::ios::in | std::ios::binary);
     if (!input) {
-      LOTUS_THROW("open file failed");
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "open file '", pb_files.at(i), "' failed");
     }
     if (!tensor.ParseFromIstream(&input)) {
-      LOTUS_THROW("parse file failed");
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "parse file '", pb_files.at(i), "' failed");
     }
-    input_pbs.emplace_back(tensor);
+    input_pbs->emplace_back(tensor);
   }
-  return input_pbs;
+  return Common::Status::OK();
 }
 
 Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds) {
@@ -150,77 +197,92 @@ Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<
       input_pb_files.push_back(f);
     }
   }
-  SortTensorFileNames(input_pb_files);
+  LOTUS_RETURN_IF_ERROR(SortTensorFileNames(input_pb_files));
 
-  std::vector<onnx::TensorProto> input_pbs = LoadTensors(input_pb_files);
+  std::vector<onnx::TensorProto> input_pbs;
+  LOTUS_RETURN_IF_ERROR(LoadTensors(input_pb_files, &input_pbs));
   LOTUS_RETURN_IF_ERROR(ConvertInput(input_pbs, feeds));
   return Status::OK();
 }
 
-Lotus::Common::Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<Lotus::MLValue>& output_values) {
-  std::vector<onnx::TensorProto> input_pbs;
-  const path pb(".pb");
-  const path tpb(".tpb");
-  for (const path& f : files) {
-    std::ifstream input(f, std::ios::in | std::ios::binary);
-    if (!input) {
-      return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "open file failed");
-    }
-    if (f.extension() == pb) {
-      onnx::TensorProto tensor;
+class TensorDataLoder : public DataLoder {
+ private:
+  Lotus::AllocatorPtr allocator_;
+
+ public:
+  TensorDataLoder(const Lotus::AllocatorPtr& allocator) : allocator_(allocator) {
+  }
+
+  Lotus::Common::Status Load(const path& f, std::unique_ptr<Lotus::MLValue>& value) const override {
+    onnx::TensorProto tensor;
+    {
+      std::ifstream input(f, std::ios::in | std::ios::binary);
+      if (!input) {
+        return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "open file failed");
+      }
       if (!tensor.ParseFromIstream(&input)) {
         return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "parse file failed");
       }
-      std::unique_ptr<Lotus::MLValue> value;
-      LOTUS_RETURN_IF_ERROR(FromTensorProto(tensor, value));
-      output_values.emplace_back(*value.get());
-    } else if (f.extension() == tpb) {
-      Lotus::proto::TraditionalMLData data;
-      if (!data.ParseFromIstream(&input)) {
-        return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "parse file failed");
-      }
-      if (data.has_vector_map_int64_to_float()) {
-        std::unique_ptr<VectorMapInt64ToFloat> vec = std::make_unique<VectorMapInt64ToFloat>();
-        for (const Lotus::proto::MapInt64ToFloat& i : data.vector_map_int64_to_float().v()) {
-          MapInt64ToFloat new_value;
-          for (const auto& j : i.v()) {
-            new_value[j.first] = j.second;
-          }
-          vec->push_back(new_value);
-        }
-        std::unique_ptr<Lotus::MLValue> value;
-        value = std::make_unique<Lotus::MLValue>();
-        value->Init(vec.release(),
-                    DataTypeImpl::GetType<VectorMapInt64ToFloat>(),
-                    DataTypeImpl::GetType<VectorMapInt64ToFloat>()->GetDeleteFunc());
-        output_values.emplace_back(*value.get());
-      } else if (data.has_vector_map_string_to_float()) {
-        std::unique_ptr<VectorMapStringToFloat> vec = std::make_unique<VectorMapStringToFloat>();
-        for (const Lotus::proto::MapStringToFloat& i : data.vector_map_string_to_float().v()) {
-          MapStringToFloat new_value;
-          for (const auto& j : i.v()) {
-            new_value[j.first] = j.second;
-          }
-          vec->push_back(new_value);
-        }
-        std::unique_ptr<Lotus::MLValue> value;
-        value = std::make_unique<Lotus::MLValue>();
-        value->Init(vec.release(),
-                    DataTypeImpl::GetType<VectorMapStringToFloat>(),
-                    DataTypeImpl::GetType<VectorMapStringToFloat>()->GetDeleteFunc());
-        output_values.emplace_back(*value.get());
-      } else {
-        return Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file type");
-      }
-    } else {
-      return Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file type");
     }
+    auto status = ProtoToMLValue<onnx::TensorProto, Lotus::Tensor>(tensor, value, allocator_);
+    if (!status.IsOK()) return status;
+    return Status::OK();
+  }
+};
+
+class TraditionalMLDataLoder : public DataLoder {
+ private:
+  Lotus::AllocatorPtr allocator_;
+
+ public:
+  TraditionalMLDataLoder(const Lotus::AllocatorPtr& allocator) : allocator_(allocator) {
+  }
+  Common::Status Load(const path& f, std::unique_ptr<Lotus::MLValue>& value) const override {
+    Lotus::proto::TraditionalMLData data;
+    {
+      std::ifstream input(f, std::ios::in | std::ios::binary);
+      if (!input) {
+        return Common::Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "open file failed");
+      }
+      if (!data.ParseFromIstream(&input)) {
+        return Common::Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "parse file failed");
+      }
+    }
+    Common::Status st;
+    switch (data.values_case()) {
+      case Lotus::proto::TraditionalMLData::kVectorMapStringToFloat:
+        st = ProtoToMLValue<decltype(data.vector_map_string_to_float().v()), VectorMapStringToFloat>(data.vector_map_string_to_float().v(), value, allocator_);
+        break;
+      case Lotus::proto::TraditionalMLData::kVectorMapInt64ToFloat:
+        st = ProtoToMLValue<decltype(data.vector_map_int64_to_float().v()), VectorMapInt64ToFloat>(data.vector_map_int64_to_float().v(), value, allocator_);
+        break;
+      default:
+        st = Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
+    }
+    return st;
+  }
+};
+
+Lotus::Common::Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<Lotus::MLValue>& output_values) {
+  for (const path& f : files) {
+    if (!f.has_extension()) return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file type, path = ", f);
+    std::string s = f.extension().string();
+    if (s.empty() || s[0] != '.')
+      return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "file has no extension, path = ", f);
+    auto iter = loaders.find(s.substr(1));
+    if (iter == loaders.end()) {
+      return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file extension, path = ", f);
+    }
+    std::unique_ptr<Lotus::MLValue> v;
+    LOTUS_RETURN_IF_ERROR(iter->second->Load(f, v));
+    output_values.emplace_back(*v.get());
   }
   return Status::OK();
 }
+
 Lotus::Common::Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) {
   if (id >= test_data_dirs.size())
-    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs.size());
+    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs.size());
 
   std::vector<path> output_pb_files;
   const path pb(".pb");
@@ -305,11 +367,13 @@ Lotus::Common::Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorP
     std::string name = var_names[input_index];
     const onnx::TensorProto& input = input_pbs[input_index];
     std::unique_ptr<Lotus::MLValue> v1;
-    LOTUS_RETURN_IF_ERROR(FromTensorProto(input, v1));
+    auto status = ProtoToMLValue<onnx::TensorProto, Lotus::Tensor>(input, v1, allocator_);
     out.insert(std::make_pair(name, *v1.get()));
   }
   return Status::OK();
 }
 
-OnnxTestCase::OnnxTestCase(Lotus::AllocatorPtr allocator, const std::string& test_case_name1) : allocator_(allocator), test_case_name(test_case_name1) {
+OnnxTestCase::OnnxTestCase(const Lotus::AllocatorPtr& allocator, const std::string& test_case_name1) : allocator_(allocator), test_case_name(test_case_name1) {
+  loaders["pb"] = new TensorDataLoder(allocator);
+  loaders["tpb"] = new TraditionalMLDataLoder(allocator);
 }

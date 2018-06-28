@@ -16,6 +16,8 @@ enum class EXECUTE_RESULT {
   LOAD_MODEL_FAILED = -7,
   INVALID_GRAPH = -8,
   INVALID_ARGUMENT = -9,
+  MODEL_SHAPE_MISMATCH = -10,
+  MODEL_TYPE_MISMATCH = -11,
 };
 
 struct TestCaseResult {
@@ -26,14 +28,28 @@ struct TestCaseResult {
 
   void SetResult(size_t task_id, EXECUTE_RESULT r);
 
-  std::vector<EXECUTE_RESULT> GetExcutionResult() const {
+  const std::vector<EXECUTE_RESULT>& GetExcutionResult() const {
     return excution_result_;
   }
 
+  //Time spent in Session::Run. It only make sense when SeqTestRunner was used
   Lotus::TIME_SPEC GetSpentTime() const {
     return spent_time_;
   }
 
+  //Time spent in Session::Run. It only make sense when SeqTestRunner was used
+  Lotus::TIME_SPEC GetSpentTimePerDataset() const {
+#ifdef _WIN32
+    return spent_time_ / excution_result_.size();
+#else
+    auto s = spent_time_;
+    s.tv_nsec /= excution_result_.size();
+    s.tv_sec /= excution_result_.size();
+    return s;
+#endif
+  }
+
+  //Time spent in Session::Run. It only make sense when SeqTestRunner was used
   void SetSpentTime(const Lotus::TIME_SPEC& input) const {
     memcpy((void*)&spent_time_, &input, sizeof(input));
   }

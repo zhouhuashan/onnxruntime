@@ -12,6 +12,7 @@ class DataRunner {
   std::shared_ptr<TestCaseResult> result;
   std::string test_case_name_;
   ITestCase* c_;
+  //Time spent in Session::Run. It only make sense when SeqTestRunner was used
   Lotus::TIME_SPEC spent_time_;
 
  private:
@@ -30,6 +31,27 @@ class DataRunner {
   void finish(std::shared_ptr<TestCaseResult> res) {
     CALL_BACK callback = on_finished;
     res->SetSpentTime(spent_time_);
+    for (EXECUTE_RESULT r : result->GetExcutionResult()) {
+      switch (r) {
+        case EXECUTE_RESULT::RESULT_DIFFERS:
+          LOGF_DEFAULT(ERROR, "%s: result differs\n", test_case_name_.c_str());
+          break;
+        case EXECUTE_RESULT::SHAPE_MISMATCH:
+          LOGF_DEFAULT(ERROR, "%s: shape mismatch\n", test_case_name_.c_str());
+          break;
+        case EXECUTE_RESULT::TYPE_MISMATCH:
+          LOGF_DEFAULT(ERROR, "%s: type mismatch\n", test_case_name_.c_str());
+        case EXECUTE_RESULT::MODEL_SHAPE_MISMATCH:
+          LOGF_DEFAULT(ERROR, "%s: shape in model file mismatch\n", test_case_name_.c_str());
+          break;
+        case EXECUTE_RESULT::MODEL_TYPE_MISMATCH:
+          LOGF_DEFAULT(ERROR, "%s: type in model file mismatch\n", test_case_name_.c_str());
+        default:
+          //nothing to do
+          break;
+      }
+      if (r != EXECUTE_RESULT::SUCCESS) break;
+    }
     delete this;
     callback(res);
   }
@@ -62,7 +84,7 @@ class PTestRunner : public DataRunner {
   bool ScheduleNew();
 };
 
-void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, std::function<void(std::shared_ptr<TestCaseResult>)> on_finished);
+void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, std::function<void(std::shared_ptr<TestCaseResult> result)> on_finished);
 std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, Lotus::AllocatorPtr allocator);
 void RunTests(TestEnv& env, int p_models, int concurrent_runs);
 

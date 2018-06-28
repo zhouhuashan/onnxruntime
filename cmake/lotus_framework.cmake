@@ -14,7 +14,7 @@ add_library(lotus_framework_obj OBJECT ${lotus_framework_srcs})
 set_target_properties(lotus_framework_obj PROPERTIES FOLDER "Lotus")
 set_target_properties(lotus_framework_obj PROPERTIES LINKER_LANGUAGE CUDA)
 # need onnx to build to create headers that this project includes
-add_dependencies(lotus_framework_obj onnx gsl)
+add_dependencies(lotus_framework_obj gen_onnx_proto gsl eigen)
 
 if (WIN32)
     set(lotus_framework_static_library_flags

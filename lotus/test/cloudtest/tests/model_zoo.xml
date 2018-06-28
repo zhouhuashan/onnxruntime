@@ -22,7 +22,7 @@
       <Script Path="[WorkingDirectory]\setup.bat"/>
     </Scripts>
   </Setup>
-  <!-- <TestJob Name="LotusModelTest.bvlc_alexnet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+  <TestJob Name="LotusModelTest.bvlc_alexnet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
   <TestJob Name="LotusModelTest.bvlc_alexnet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
@@ -93,7 +93,7 @@
   </TestJob>
   <TestJob Name="LotusModelTest.zfnet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob> -->
+  </TestJob>
   <TestJob Name="LotusModelTest.tiny_yolov2.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
@@ -116,6 +116,18 @@
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
   <TestJob Name="LotusModelTest.inception_v3.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.Office.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.Office.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.HTK_LSTM_Truncated_Distributed.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.HTK_LSTM_Truncated_Distributed.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
   <Cleanup TimeoutMins="1"/>

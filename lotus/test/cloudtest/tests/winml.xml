@@ -51,7 +51,7 @@
   </TestJob>
   <TestJob Name="LotusModelTest.coreml_DecisionTreeClassifier_sklearn_load_wine.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
+  </TestJob>-->
   <TestJob Name="LotusModelTest.coreml_DecisionTreeRegressor_sklearn_load_boston.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
@@ -82,6 +82,30 @@
   <!-- <TestJob Name="LotusModelTest.coreml_Inceptionv3_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob> -->
+  <TestJob Name="LotusModelTest.coreml_LinearRegression_NYCTaxi.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_LinearRegression_NYCTaxi.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_LinearRegression_sklearn_load_boston.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_LinearRegression_sklearn_load_boston.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_LinearRegression_sklearn_load_diabetes.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_LinearRegression_sklearn_load_diabetes.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_LinearSVR_sklearn_load_boston.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_LinearSVR_sklearn_load_boston.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
+  </TestJob>
   <TestJob Name="LotusModelTest.coreml_Resnet50_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>

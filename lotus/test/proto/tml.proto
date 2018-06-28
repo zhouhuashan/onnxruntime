@@ -21,6 +21,10 @@ message MapStringToString {
   map<string, string> v = 1;
 }
 
+message MapStringToInt64 {
+  map<string, int64> v = 1;
+}
+
 message MapStringToDouble {
   map<string, double> v = 1;
 }
@@ -29,8 +33,36 @@ message MapStringToFloat {
   map<string, float> v = 1;
 }
 
+message MapInt64ToString {
+  map<int64, string> v = 1;
+}
+
+message MapInt64ToInt64 {
+  map<int64, int64> v = 1;
+}
+
 message MapInt64ToFloat {
   map<int64, float> v = 1;
+}
+
+message MapInt64ToDouble {
+  map<int64, double> v = 1;
+}
+
+message VectorString {
+  repeated string v = 1;
+}
+
+message VectorFloat {
+  repeated float v = 1;
+}
+
+message VectorInt64 {
+  repeated int64 v = 1;
+}
+
+message VectorDouble {
+  repeated double v = 1;
 }
 
 message VectorMapStringToFloat {
@@ -44,9 +76,20 @@ message VectorMapInt64ToFloat {
 message TraditionalMLData {
   oneof values{
     MapStringToString map_string_to_string = 1;
-	MapStringToDouble map_string_to_double = 2;
+	MapStringToInt64 map_string_to_int64 = 2;
 	MapStringToFloat map_string_to_float = 3;
-	VectorMapStringToFloat vector_map_string_to_float = 4;
-	VectorMapInt64ToFloat vector_map_int64_to_float = 5;
+	MapStringToDouble map_string_to_double = 4;
+	MapInt64ToString map_int64_to_string = 5;
+    MapInt64ToInt64 map_int64_to_int64 = 6;
+    MapInt64ToFloat map_int64_to_float = 7;
+    MapInt64ToDouble map_int64_to_double = 8;
+	VectorString vector_string = 9;
+	VectorFloat vector_float = 10;
+	VectorInt64 vector_int64 = 11;
+	VectorDouble vector_double = 12;
+	VectorMapStringToFloat vector_map_string_to_float = 13;
+	VectorMapInt64ToFloat vector_map_int64_to_float = 14;
   }
+  // Optionally, a name for the tensor.
+  string name = 15; // namespace Value
 }

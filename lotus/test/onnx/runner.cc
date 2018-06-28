@@ -11,10 +11,9 @@
 #include <fstream>
 #include <cmath>
 #include <core/common/logging/logging.h>
-
+#include <core/framework/compare_mlvalue.h>
 #include "FixedCountFinishCallback.h"
 #include "TestCase.h"
-#include "CompareMLValue.h"
 
 using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
@@ -37,11 +36,15 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
     //run models one by one
     FixedCountFinishCallback c(static_cast<int>(env.tests.size()));
     for (size_t i = 0; i != env.tests.size(); ++i) {
-      RunSingleTestCase(env, i, concurrent_runs, [i, &c](std::shared_ptr<TestCaseResult> result) {
+      const char* test_case_name = env.tests[i]->GetTestCaseName().c_str();
+      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, [i, &c, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result) {
         TIME_SPEC ts = result->GetSpentTime();
         double spent = TimeSpecToSeconds(&ts);
+        TIME_SPEC ts2 = result->GetSpentTimePerDataset();
+        double spent2 = TimeSpecToSeconds(&ts2);
         //TODO:output this information to a xml
-        LOGF_DEFAULT(ERROR, "Test %zd finished in %.3g seconds", i, spent);
+        if (concurrent_runs == 1)
+          LOGF_DEFAULT(ERROR, "Test %s finished in %.3g seconds, took %.3g for each input", test_case_name, spent, spent2);
         c.onFinished(i, result);
       });
     }
@@ -49,6 +52,10 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
     results = c.getResults();
   }
   for (size_t i = 0; i != env.tests.size(); ++i) {
+    if (!results[i]) {
+      stat.AddFailedTest(env.tests[i]->GetTestCaseName());
+      continue;
+    }
     const TestCaseResult& r = *results[i];
     for (const EXECUTE_RESULT res : r.GetExcutionResult()) {
       if (res != EXECUTE_RESULT::SUCCESS && res != EXECUTE_RESULT::NOT_SUPPORT) {
@@ -73,10 +80,9 @@ void RunTests(TestEnv& env, int p_models, int concurrent_runs) {
           stat.result_differs++;
           if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
           break;
+        case EXECUTE_RESULT::MODEL_SHAPE_MISMATCH:
         case EXECUTE_RESULT::SHAPE_MISMATCH:
-          stat.result_differs++;
-          if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
-          break;
+        case EXECUTE_RESULT::MODEL_TYPE_MISMATCH:
         case EXECUTE_RESULT::TYPE_MISMATCH:
           stat.result_differs++;
           if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
@@ -129,7 +135,7 @@ std::vector<ITestCase*> LoadTests(const std::vector<string>& input_paths, const 
         delete l;
         continue;
       }
-      tests.emplace_back(l);
+      tests.push_back(l);
     }
   }
   return tests;
@@ -140,7 +146,10 @@ SeqTestRunner::SeqTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
                              std::function<void(std::shared_ptr<TestCaseResult> result)> on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1) {
 }
 
-DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, std::function<void(std::shared_ptr<TestCaseResult> result)> on_finished1) : session(session1), test_case_name_(test_case_name1), c_(c), on_finished(on_finished1), result(std::make_shared<TestCaseResult>(c->GetDataCount(), EXECUTE_RESULT::UNKNOWN_ERROR, c->GetNodeName())) {
+DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, std::function<void(std::shared_ptr<TestCaseResult> result)> on_finished1) : session(session1), test_case_name_(test_case_name1), c_(c), on_finished(on_finished1) {
+  std::string s;
+  c->GetNodeName(&s);
+  result = std::make_shared<TestCaseResult>(c->GetDataCount(), EXECUTE_RESULT::UNKNOWN_ERROR, s);
   SetTimeSpecToZero(&spent_time_);
 }
 
@@ -167,13 +176,13 @@ void DataRunner::RunTaskImpl(size_t task_id) {
   TIME_SPEC start_time, end_time;
   GetMonotonicTimeCounter(&start_time);
   status = session->Run(feeds, &p_fetches);
+  GetMonotonicTimeCounter(&end_time);
+  AccumulateTimeSpec(&spent_time_, &start_time, &end_time);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name_.c_str(), status.ErrorMessage().c_str());
     SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
     return;
   }
-  GetMonotonicTimeCounter(&end_time);
-  AccumulateTimeSpec(&spent_time_, &start_time, &end_time);
   //TODO: if there are no output value files, just skip the validation
   status = c_->LoadOutputData(task_id, output_values);
   if (!status.IsOK()) {
@@ -183,56 +192,85 @@ void DataRunner::RunTaskImpl(size_t task_id) {
   }
   //TODO: make it configurable
   const double abs_error = 1e-3;
+  EXECUTE_RESULT res = EXECUTE_RESULT::SUCCESS;
   for (size_t i = 0; i != output_values.size(); ++i) {
     const MLValue& o = p_fetches.at(i);
     //this is the default value for provider sync.Currently only one execution queue for CPU.
     int queue_id = 0;
     if (o.Fence())
       o.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, queue_id);
-    const MLValue& e = output_values.at(i);
-    std::pair<EXECUTE_RESULT, size_t> ret = CompareMLValue(o, e, abs_error);
-    EXECUTE_RESULT compare_result = ret.first;
-    switch (compare_result) {
-      case EXECUTE_RESULT::RESULT_DIFFERS:
-        LOGF_DEFAULT(ERROR, "%s: the %zd-th value of the %zd-th output differs\n", test_case_name_.c_str(), ret.second, i);
-        break;
-      case EXECUTE_RESULT::SHAPE_MISMATCH:
-        LOGF_DEFAULT(ERROR, "%s: shape mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
-        break;
-      case EXECUTE_RESULT::TYPE_MISMATCH:
-        LOGF_DEFAULT(ERROR, "%s: type mismatch for the %zd-th output\n", test_case_name_.c_str(), i);
-      default:
-        //nothing to do
-        break;
+    const onnx::ValueInfoProto& v = c_->GetOutputInfoFromModel(i);
+    std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), abs_error);
+    COMPARE_RESULT compare_result = ret.first;
+    if (compare_result == COMPARE_RESULT::SUCCESS) {
+      ret = VerifyValueInfo(v, o);
+      compare_result = ret.first;
+      if (compare_result != COMPARE_RESULT::SUCCESS) {
+        switch (compare_result) {
+          case COMPARE_RESULT::NOT_SUPPORT:
+            res = EXECUTE_RESULT::NOT_SUPPORT;
+            break;
+          case COMPARE_RESULT::SHAPE_MISMATCH:
+            res = EXECUTE_RESULT::MODEL_SHAPE_MISMATCH;
+            break;
+          case COMPARE_RESULT::TYPE_MISMATCH:
+            res = EXECUTE_RESULT::MODEL_TYPE_MISMATCH;
+            break;
+          default:
+            res = EXECUTE_RESULT::UNKNOWN_ERROR;
+        }
+      }
+    } else {
+      switch (compare_result) {
+        case COMPARE_RESULT::NOT_SUPPORT:
+          res = EXECUTE_RESULT::NOT_SUPPORT;
+          break;
+        case COMPARE_RESULT::RESULT_DIFFERS:
+          res = EXECUTE_RESULT::RESULT_DIFFERS;
+          break;
+        case COMPARE_RESULT::SHAPE_MISMATCH:
+          res = EXECUTE_RESULT::SHAPE_MISMATCH;
+          break;
+        case COMPARE_RESULT::TYPE_MISMATCH:
+          res = EXECUTE_RESULT::TYPE_MISMATCH;
+          break;
+        default:
+          res = EXECUTE_RESULT::UNKNOWN_ERROR;
+      }
     }
-    if (compare_result != EXECUTE_RESULT::SUCCESS) {
-      SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
-      return;
+    if (compare_result != COMPARE_RESULT::SUCCESS && !ret.second.empty()) {
+      LOGF_DEFAULT(ERROR, "%s:%s", test_case_name_.c_str(), ret.second.c_str());
+    }
+    if (compare_result != COMPARE_RESULT::SUCCESS) {
+      break;
     }
   }
-  LOGF_DEFAULT(INFO, "test %s succeeded\n", test_case_name_.c_str());
-  SetResult(task_id, EXECUTE_RESULT::SUCCESS);
+  SetResult(task_id, res);
 }
 
 void SeqTestRunner::Start(size_t) {
   const size_t data_count = c_->GetDataCount();
-  std::string node_name = c_->GetNodeName();
   for (size_t i = 0; i != data_count; ++i) {
     RunTask(i);
   }
   finish(result);
 }
 
-void RunSingleTestCase(TestEnv& env, size_t test_index, size_t concurrent_runs, std::function<void(std::shared_ptr<TestCaseResult> result)> on_finished) {
+void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, std::function<void(std::shared_ptr<TestCaseResult> result)> on_finished) {
   std::shared_ptr<TestCaseResult> ret;
-  ITestCase* info = env.tests[test_index];
   size_t data_count = info->GetDataCount();
   {
     DataRunner* r = nullptr;
-    std::string node_name = info->GetNodeName();
+    std::string node_name;
+    Lotus::Common::Status status = info->GetNodeName(&node_name);
+    if (!status.IsOK()) {
+      LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info->GetTestCaseName().c_str(), status.ErrorMessage().c_str());
+      ret = std::make_shared<TestCaseResult>(data_count, StatusCodeToExecuteResult(status.Code()), node_name);
+      goto end;
+    }
     std::shared_ptr<Lotus::InferenceSession> session_object;
     try {
-      Lotus::Common::Status status = env.sf.create(session_object, info->GetModelUrl(), info->GetTestCaseName());
+      status = sf.create(session_object, info->GetModelUrl(), info->GetTestCaseName());
       if (!status.IsOK()) {
         LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info->GetTestCaseName().c_str(), status.ErrorMessage().c_str());
         ret = std::make_shared<TestCaseResult>(data_count, StatusCodeToExecuteResult(status.Code()), node_name);
