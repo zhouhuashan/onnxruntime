@@ -331,3 +331,9 @@ add_test(NAME onnx_test_pytorch_converted
     COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-converted)
 add_test(NAME onnx_test_pytorch_operator
     COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-operator)
+
+set(lotus_perf_test_src_dir ${LOTUS_ROOT}/test/perftest)
+add_executable(lotus_perf_test ${lotus_perf_test_src_dir}/main.cc)
+target_include_directories(lotus_perf_test PUBLIC ${lotusIR_graph_header} ${onnx_test_runner_src_dir} ${lotus_exec_src_dir})
+target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs})
+set_target_properties(lotus_perf_test PROPERTIES FOLDER "LotusTest")

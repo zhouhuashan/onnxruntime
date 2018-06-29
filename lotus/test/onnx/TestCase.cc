@@ -165,6 +165,10 @@ Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<
   if (id >= test_data_dirs.size())
     return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "out of bound");
 
+  Lotus::Common::Status st = ParseModel();
+  if (!ParseModel().IsOK())
+    return Status(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed");
+
   path inputs_pb = test_data_dirs[id] / "inputs.pb";
   if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
     std::string content;
@@ -283,6 +287,9 @@ Lotus::Common::Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, 
 Lotus::Common::Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) {
   if (id >= test_data_dirs.size())
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs.size());
+
+  if (!ParseModel().IsOK())
+  return Status(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed");
 
   std::vector<path> output_pb_files;
   const path pb(".pb");
