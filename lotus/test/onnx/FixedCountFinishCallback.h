@@ -15,7 +15,7 @@ class FixedCountFinishCallbackImpl {
   std::vector<std::shared_ptr<T>> results_;
 
  public:
-  std::vector<std::shared_ptr<T>> getResults() const {
+  const std::vector<std::shared_ptr<T>>& getResults() const {
     return results_;
   }
   FixedCountFinishCallbackImpl(int s) : s_(s), results_(s) {}

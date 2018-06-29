@@ -18,7 +18,7 @@ class DataRunner {
  private:
   std::shared_ptr<Lotus::InferenceSession> session;
   CALL_BACK on_finished;
-  void RunTaskImpl(size_t task_id);
+  EXECUTE_RESULT RunTaskImpl(size_t task_id);
   void SetResult(size_t task_id, EXECUTE_RESULT result) noexcept;
 
  public:

@@ -14,6 +14,42 @@ static std::unique_ptr<Lotus::Environment> env;
 Lotus::Logging::LoggingManager* default_logger;
 static std::string logger_id("onnx_test_runner");
 
+namespace Microsoft {
+namespace VisualStudio {
+namespace CppUnitTestFramework {
+template <>
+std::wstring ToString<>(const EXECUTE_RESULT& q) {
+  switch (q) {
+    case EXECUTE_RESULT::SUCCESS:
+      return L"SUCCESS";
+    case EXECUTE_RESULT::UNKNOWN_ERROR:
+      return L"UNKNOWN_ERROR";
+    case EXECUTE_RESULT::WITH_EXCEPTION:
+      return L"WITH_EXCEPTION";
+    case EXECUTE_RESULT::RESULT_DIFFERS:
+      return L"RESULT_DIFFERS";
+    case EXECUTE_RESULT::SHAPE_MISMATCH:
+      return L"SHAPE_MISMATCH";
+    case EXECUTE_RESULT::TYPE_MISMATCH:
+      return L"TYPE_MISMATCH";
+    case EXECUTE_RESULT::NOT_SUPPORT:
+      return L"NOT_SUPPORT";
+    case EXECUTE_RESULT::LOAD_MODEL_FAILED:
+      return L"LOAD_MODEL_FAILED";
+    case EXECUTE_RESULT::INVALID_GRAPH:
+      return L"INVALID_GRAPH";
+    case EXECUTE_RESULT::INVALID_ARGUMENT:
+      return L"INVALID_ARGUMENT";
+    case EXECUTE_RESULT::MODEL_SHAPE_MISMATCH:
+      return L"MODEL_SHAPE_MISMATCH";
+    case EXECUTE_RESULT::MODEL_TYPE_MISMATCH:
+      return L"MODEL_TYPE_MISMATCH";
+  }
+  return L"UNKNOWN_RETURN_CODE";
+}
+}  // namespace CppUnitTestFramework
+}  // namespace VisualStudio
+}  // namespace Microsoft
 TEST_MODULE_INITIALIZE(ModuleInitialize) {
   Logger::WriteMessage("Initialize Lotus");
   default_logger = new Lotus::Logging::LoggingManager{std::unique_ptr<Lotus::Logging::ISink>{new VsTestSink{}},
@@ -38,40 +74,48 @@ TEST_MODULE_CLEANUP(ModuleCleanup) {
 
 static void run(const std::string& provider) {
   char buf[1024];
-  size_t requiredSize;
-  getenv_s(&requiredSize, NULL, 0, "CloudTestJobName");
-  Assert::AreNotEqual((size_t)0, requiredSize);
-  std::string cloudTestJobName(requiredSize, '\0');
-  getenv_s(&requiredSize, (char*)cloudTestJobName.data(), requiredSize, "CloudTestJobName");
-  int p_models = Lotus::Env::Default().GetNumCpuCores();
-  snprintf(buf, sizeof(buf), "running test %s with %d cores", cloudTestJobName.c_str(), p_models);
-  Logger::WriteMessage(buf);
-  size_t pos1 = cloudTestJobName.find('.', 0);
-  Assert::AreNotEqual(std::string::npos, requiredSize);
-  ++pos1;
-  size_t pos2 = cloudTestJobName.find('.', pos1);
-  Assert::AreNotEqual(std::string::npos, requiredSize);
-  std::string modelName = cloudTestJobName.substr(pos1, pos2 - pos1);
-  snprintf(buf, sizeof(buf), "model %s", modelName.c_str());
-  Logger::WriteMessage(buf);
-  //CloudTestJobName
-  //Current working directory is the one who contains 'onnx_test_runner_vstest.dll'
-  //We want debug build and release build share the same test data files, so it should
-  //be one level up.
-  Lotus::AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
-  std::vector<ITestCase*> tests = LoadTests({"..\\models"}, {modelName}, cpu_allocator);
-  TestResultStat stat;
-  SessionFactory sf(provider);
-  TestEnv args(tests, stat, sf);
-  RunTests(args, p_models, p_models);
-  std::string res = stat.ToString();
-  Logger::WriteMessage(res.c_str());
-  for (ITestCase* l : tests) {
-    delete l;
+  std::vector<EXECUTE_RESULT> res;
+  {
+    size_t requiredSize;
+    getenv_s(&requiredSize, NULL, 0, "CloudTestJobName");
+    Assert::AreNotEqual((size_t)0, requiredSize);
+    std::string cloudTestJobName(requiredSize, '\0');
+    getenv_s(&requiredSize, (char*)cloudTestJobName.data(), requiredSize, "CloudTestJobName");
+    int p_models = Lotus::Env::Default().GetNumCpuCores();
+    snprintf(buf, sizeof(buf), "running test %s with %d cores", cloudTestJobName.c_str(), p_models);
+    Logger::WriteMessage(buf);
+    size_t pos1 = cloudTestJobName.find('.', 0);
+    Assert::AreNotEqual(std::string::npos, requiredSize);
+    ++pos1;
+    size_t pos2 = cloudTestJobName.find('.', pos1);
+    Assert::AreNotEqual(std::string::npos, requiredSize);
+    std::string modelName = cloudTestJobName.substr(pos1, pos2 - pos1);
+    snprintf(buf, sizeof(buf), "model %s", modelName.c_str());
+    Logger::WriteMessage(buf);
+    //CloudTestJobName
+    //Current working directory is the one who contains 'onnx_test_runner_vstest.dll'
+    //We want debug build and release build share the same test data files, so it should
+    //be one level up.
+    Lotus::AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
+    std::vector<ITestCase*> tests = LoadTests({"..\\models"}, {modelName}, cpu_allocator);
+    Assert::AreEqual((size_t)1, tests.size());
+    SessionFactory sf(provider);
+    std::condition_variable cond;
+    std::mutex m;
+    bool finished = false;
+    RunSingleTestCase(tests[0], sf, p_models, [&cond, &res, &finished](std::shared_ptr<TestCaseResult> result) {
+      res = result->GetExcutionResult();
+      finished = true;
+      cond.notify_all();
+    });
+    {
+      std::unique_lock<std::mutex> lk(m);
+      while (!finished) cond.wait(lk);
+    }
+    delete tests[0];
   }
-  size_t failed = stat.total_test_case_count - stat.succeeded - stat.skipped - stat.not_implemented;
-  if (failed != 0) {
-    Assert::Fail(L"test failed");
+  for (EXECUTE_RESULT r : res) {
+    Assert::AreEqual(EXECUTE_RESULT::SUCCESS, r);
   }
 }
 

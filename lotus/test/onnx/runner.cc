@@ -154,23 +154,23 @@ DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const 
 }
 
 void DataRunner::RunTask(size_t task_id) {
+  EXECUTE_RESULT res = EXECUTE_RESULT::UNKNOWN_ERROR;
   try {
-    RunTaskImpl(task_id);
-    return;
+    res = RunTaskImpl(task_id);
   } catch (std::exception& ex) {
+    res = EXECUTE_RESULT::WITH_EXCEPTION;
     LOGF_DEFAULT(ERROR, "%s:%s", c_->GetTestCaseName().c_str(), ex.what());
   }
-  SetResult(task_id, EXECUTE_RESULT::WITH_EXCEPTION);
+  SetResult(task_id, res);
 }
 
-void DataRunner::RunTaskImpl(size_t task_id) {
+EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   std::unordered_map<std::string, Lotus::MLValue> feeds;
   std::vector<Lotus::MLValue> output_values;
   Common::Status status = c_->LoadInputData(task_id, feeds);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
-    SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
-    return;
+    return StatusCodeToExecuteResult(status.Code());
   }
   std::vector<MLValue> p_fetches;
   TIME_SPEC start_time, end_time;
@@ -180,15 +180,13 @@ void DataRunner::RunTaskImpl(size_t task_id) {
   AccumulateTimeSpec(&spent_time_, &start_time, &end_time);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name_.c_str(), status.ErrorMessage().c_str());
-    SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
-    return;
+    return StatusCodeToExecuteResult(status.Code());
   }
   //TODO: if there are no output value files, just skip the validation
   status = c_->LoadOutputData(task_id, output_values);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
-    SetResult(task_id, StatusCodeToExecuteResult(status.Code()));
-    return;
+    return StatusCodeToExecuteResult(status.Code());
   }
   //TODO: make it configurable
   const double abs_error = 1e-3;
@@ -245,7 +243,7 @@ void DataRunner::RunTaskImpl(size_t task_id) {
       break;
     }
   }
-  SetResult(task_id, res);
+  return res;
 }
 
 void SeqTestRunner::Start(size_t) {
