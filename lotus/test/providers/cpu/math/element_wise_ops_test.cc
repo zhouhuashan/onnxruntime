@@ -209,6 +209,22 @@ TEST(MathOpTest, Abs) {
   test.RunOnCpuAndCuda();
 }
 
+TEST(MathOpTest, Abs_int8) {
+  OpTester test("Abs");
+  std::vector<int64_t> dims{4};
+  test.AddInput<int8_t>("X", dims, {1, 2, -1, -5});
+  test.AddOutput<int8_t>("Y", dims, {1, 2, 1, 5});
+  test.RunOnCpuAndCuda();
+}
+
+TEST(MathOpTest, Abs_int32) {
+  OpTester test("Abs");
+  std::vector<int64_t> dims{4};
+  test.AddInput<int32_t>("X", dims, {1, 2, -1, -5});
+  test.AddOutput<int32_t>("Y", dims, {1, 2, 1, 5});
+  test.RunOnCpuAndCuda();
+}
+
 TEST(MathOpTest, Neg) {
   OpTester test("Neg");
   std::vector<int64_t> dims{2, 2};
@@ -218,6 +234,22 @@ TEST(MathOpTest, Neg) {
   test.AddOutput<float>("Y", dims,
                         {-1.0f, 2.0f,
                          -0.0f, 10.0f});
+  test.RunOnCpuAndCuda();
+}
+
+TEST(MathOpTest, Neg_int8) {
+  OpTester test("Neg");
+  std::vector<int64_t> dims{4};
+  test.AddInput<int8_t>("X", dims, {1, -2, 0, -10});
+  test.AddOutput<int8_t>("Y", dims, {-1, 2, 0, 10});
+  test.RunOnCpuAndCuda();
+}
+
+TEST(MathOpTest, Neg_int32) {
+  OpTester test("Neg");
+  std::vector<int64_t> dims{4};
+  test.AddInput<int32_t>("X", dims, {1, -2, 0, -10});
+  test.AddOutput<int32_t>("Y", dims, {-1, 2, 0, 10});
   test.RunOnCpuAndCuda();
 }
 

@@ -44,6 +44,13 @@ REGISTER_KERNEL(KernelDefBuilder("Abs")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
                 Abs<int8_t>);
 
+REGISTER_KERNEL(KernelDefBuilder("Abs")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(6)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+                Abs<int32_t>);
+
 REGISTER_KERNEL(KernelDefBuilder("Neg")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(6)
@@ -57,6 +64,13 @@ REGISTER_KERNEL(KernelDefBuilder("Neg")
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
                 Neg<int8_t>);
+
+REGISTER_KERNEL(KernelDefBuilder("Neg")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(6)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+                Neg<int32_t>);
 
 REGISTER_KERNEL(KernelDefBuilder("Floor")
                     .Domain(LotusIR::kOnnxDomain)
