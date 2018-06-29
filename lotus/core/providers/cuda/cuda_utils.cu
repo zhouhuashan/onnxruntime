@@ -3,7 +3,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/fill.h>
-#include "cuda_utils.h"
+#include "core/providers/cuda/shared_inc/cuda_utils.h"
 
 namespace Lotus {
 namespace Cuda {

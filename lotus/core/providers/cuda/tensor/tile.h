@@ -1,6 +1,6 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
-#include "../cuda_common.h"
+#include "core/providers/cuda/cuda_common.h"
 
 namespace Lotus {
 namespace Cuda {
@@ -10,8 +10,6 @@ struct Tile final : CudaKernel {
   }
 
   Status Compute(OpKernelContext* context) const override;
-
- private:
 };
 }  // namespace Cuda
 }  // namespace Lotus

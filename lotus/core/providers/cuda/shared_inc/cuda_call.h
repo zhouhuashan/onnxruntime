@@ -1,5 +1,5 @@
 #pragma once
-#include "cuda_pch.h"
+#include "core/providers/cuda/cuda_pch.h"
 
 namespace Lotus {
 

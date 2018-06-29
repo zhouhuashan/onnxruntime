@@ -1,16 +1,18 @@
 #pragma once
-#include <cuda_runtime.h>
+#include <stdint.h>
+#include "core/providers/cuda/shared_inc/cuda_utils.h"
 
 namespace Lotus {
 namespace Cuda {
 
+template <typename T>
 void TileImpl(
     const size_t shape_rank,
-    const int64_t* input_shape,
-    const int64_t* input_stride,
-    const float* input,
-    const int64_t* output_stride,
-    float* output,
+    const fast_divmod* input_shape,
+    const int64_t* input_strides,
+    const T* input_data,
+    const fast_divmod* fdm_output_strides,
+    T* output_data,
     const size_t N);
 
 }  // namespace Cuda

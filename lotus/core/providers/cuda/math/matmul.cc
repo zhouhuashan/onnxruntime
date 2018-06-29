@@ -1,4 +1,4 @@
-#include "../cuda_common.h"
+#include "core/providers/cuda/cuda_common.h"
 #include "matmul.h"
 #include "core/providers/cpu/math/matmul_helper.h"
 
@@ -35,9 +35,9 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
   // allocate temp memory for offset arrays
   IAllocatorUniquePtr<const float*> left_arrays_cuda, right_arrays_cuda;
   IAllocatorUniquePtr<float*> output_arrays_cuda;
-  CopySmallVectorToGPU(left_arrays_cuda, left_arrays);
-  CopySmallVectorToGPU(right_arrays_cuda, right_arrays);
-  CopySmallVectorToGPU(output_arrays_cuda, output_arrays);
+  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(left_arrays_cuda, left_arrays));
+  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(right_arrays_cuda, right_arrays));
+  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(output_arrays_cuda, output_arrays));
 
   // note that Lotus MLValue is row major, while cublas is column major,
   // so swap left/right operands

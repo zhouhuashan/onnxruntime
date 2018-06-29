@@ -269,6 +269,7 @@ endif()
 
 if (lotus_USE_CUDA)
     enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 14)
     find_package(CUDA 9.0)
     include(cub)
     set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
@@ -280,6 +281,11 @@ if (lotus_USE_CUDA)
     endif()
     list(APPEND lotus_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
     list(APPEND lotus_EXTERNAL_DEPENDENCIES cub)
+    
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_30,code=sm_30") # K series
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_50,code=sm_50") # M series
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_60,code=sm_60") # P series
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_70,code=sm_70") # V series
 endif()
 
 include(lotus_common.cmake)

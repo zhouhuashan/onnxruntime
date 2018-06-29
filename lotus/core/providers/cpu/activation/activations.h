@@ -6,81 +6,205 @@
 
 namespace Lotus {
 
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Elu,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y = (xm >= 0).select(xm, Attr("alpha") * (xm.exp() - 1));
-                                       },
-                                       {{"alpha", 1.0f}})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(HardSigmoid,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y_VAR(ym);
-                                         ym = ((Attr("alpha") * xm + Attr("beta")).cwiseMin(1.0f)).cwiseMax(0.0f);
-                                       },
-                                       {{"alpha", 0.2f}, {"beta", 0.5f}})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(LeakyRelu,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y = (xm >= 0).select(xm, Attr("alpha") * xm);
-                                       },
-                                       {{"alpha", 0.01f}})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ParametricSoftplus,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y = Attr("alpha") * ((xm * Attr("beta")).exp() + 1.0f).log();
-                                       },
-                                       {{"alpha", 1.0f}, {"beta", 1.0f}})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Relu,
-                                       { EIGEN_Y = EIGEN_X.cwiseMax(0); },
-                                       {})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ScaledTanh,
-                                       { EIGEN_Y = Attr("alpha") * (EIGEN_X * Attr("beta")).tanh(); },
-                                       {{"alpha", 1.0f}, {"beta", 1.0f}})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Selu,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y = Attr("gamma") * (xm.cwiseMax(0.0f) + (Attr("alpha") * (xm.array().exp() - 1.0f)).cwiseMin(0.0f));
-                                       },
-                                       {{"alpha", 1.67326319217681884765625f}, {"gamma", 1.05070102214813232421875f}})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Sigmoid,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y_VAR(ym);
-                                         ym = (xm >= 0).select(1 / (1. + (-xm.abs()).exp()), 1 - 1 / (1. + (-xm.abs()).exp()));
-                                       },
-                                       {})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Softsign,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y = (1 + xm.abs()).inverse() * xm;
-                                       },
-                                       {})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(Tanh, { EIGEN_Y = EIGEN_X.tanh(); }, {})
-
-DECLARE_EIGEN_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu,
-                                       {
-                                         EIGEN_X_VAR(xm);
-                                         EIGEN_Y = (xm > Attr("alpha")).select(xm, 0);
-                                       },
-                                       {{"alpha", 1.0f}})
+#define EIGEN_X ConstEigenVectorArrayMap<T>(X->Data<T>(), X->Shape().Size())
+#define EIGEN_X_VAR(var) ConstEigenVectorArrayMap<T> var(X->Data<T>(), X->Shape().Size())
+#define EIGEN_Y EigenVectorArrayMap<T>(Y->MutableData<T>(), Y->Shape().Size())
+#define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->MutableData<T>(), Y->Shape().Size())
 
 template <typename T>
-class PRelu final : public OpKernel {
+class Elu final : public OpKernel {
  public:
-  PRelu(const OpKernelInfo& info) : OpKernel(info) {
+  Elu(const OpKernelInfo& info) : OpKernel(info) {
+    info.GetAttr("alpha", &alpha_);
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y = (xm >= 0).select(xm, (T)alpha_ * (xm.exp() - 1));
+    return Status::OK();
+  }
+
+ private:
+  float alpha_ = 1.0f;
+};
+
+template <typename T>
+class HardSigmoid final : public OpKernel {
+ public:
+  HardSigmoid(const OpKernelInfo& info) : OpKernel(info) {
+    info.GetAttr("alpha", &alpha_);
+    info.GetAttr("beta", &beta_);
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y_VAR(ym);
+    ym = (((T)alpha_ * xm + (T)beta_).cwiseMin(1.0f)).cwiseMax(0.0f);
+    return Status::OK();
+  }
+
+ private:
+  float alpha_ = 0.2f;
+  float beta_ = 0.5f;
+};
+
+template <typename T>
+class LeakyRelu final : public OpKernel {
+ public:
+  LeakyRelu(const OpKernelInfo& info) : OpKernel(info) {
+    info.GetAttr("alpha", &alpha_);
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y = (xm >= 0).select(xm, (T)alpha_ * xm);
+    return Status::OK();
+  }
+
+ private:
+  float alpha_ = 0.01f;
+};
+
+template <typename T>
+class ParametricSoftplus final : public OpKernel {
+ public:
+  ParametricSoftplus(const OpKernelInfo& info) : OpKernel(info) {
+    info.GetAttr("alpha", &alpha_);
+    info.GetAttr("beta", &beta_);
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y = (T)alpha_ * ((xm * (T)beta_).exp() + 1.0f).log();
+    return Status::OK();
+  }
+
+ private:
+  float alpha_ = 1.0f;
+  float beta_ = 1.0f;
+};
+
+template <typename T>
+class Relu final : public OpKernel {
+ public:
+  Relu(const OpKernelInfo& info) : OpKernel(info) {}
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_Y = EIGEN_X.cwiseMax(0);
+    return Status::OK();
+  }
+};
+
+template <typename T>
+class ScaledTanh final : public OpKernel {
+ public:
+  ScaledTanh(const OpKernelInfo& info) : OpKernel(info) {
+    info.GetAttr("alpha", &alpha_);
+    info.GetAttr("beta", &beta_);
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_Y = (T)alpha_ * (EIGEN_X * (T)beta_).tanh();
+    return Status::OK();
+  }
+
+ private:
+  float alpha_ = 1.0f;
+  float beta_ = 1.0f;
+};
+
+template <typename T>
+class Selu final : public OpKernel {
+ public:
+  Selu(const OpKernelInfo& info) : OpKernel(info) {
+    info.GetAttr("alpha", &alpha_);
+    info.GetAttr("gamma", &gamma_);
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y = (T)gamma_ * (xm.cwiseMax(0.0f) + ((T)alpha_ * (xm.array().exp() - 1.0f)).cwiseMin(0.0f));
+    return Status::OK();
+  }
+
+ private:
+  float alpha_ = 1.67326319217681884765625f;
+  float gamma_ = 1.05070102214813232421875f;
+};
+
+template <typename T>
+class Sigmoid final : public OpKernel {
+ public:
+  Sigmoid(const OpKernelInfo& info) : OpKernel(info) {}
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y_VAR(ym);
+    ym = (xm >= 0).select(1 / (1. + (-xm.abs()).exp()), 1 - 1 / (1. + (-xm.abs()).exp()));
+    return Status::OK();
+  }
+};
+
+template <typename T>
+class Softsign final : public OpKernel {
+ public:
+  Softsign(const OpKernelInfo& info) : OpKernel(info) {}
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y = (1 + xm.abs()).inverse() * xm;
+    return Status::OK();
+  }
+};
+
+template <typename T>
+class Tanh final : public OpKernel {
+ public:
+  Tanh(const OpKernelInfo& info) : OpKernel(info) {}
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_Y = EIGEN_X.tanh();
+    return Status::OK();
+  }
+};
+
+template <typename T>
+class ThresholdedRelu final : public OpKernel {
+ public:
+  ThresholdedRelu(const OpKernelInfo& info) : OpKernel(info) {
+    info.GetAttr("alpha", &alpha_);
+  }
+
+  Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    Tensor* Y = context->Output(0, X->Shape());
+    EIGEN_X_VAR(xm);
+    EIGEN_Y = (xm > (T)alpha_).select(xm, 0);
+    return Status::OK();
+  }
+
+ private:
+  float alpha_ = 1.0f;
 };
 
 }  // namespace Lotus

@@ -3,17 +3,33 @@
 namespace Lotus {
 
 struct TensorPitches : std::vector<int64_t> {
-  TensorPitches(const Tensor &tensor)
-      : std::vector<int64_t>(tensor.Shape().NumDimensions(), 0) {
+  TensorPitches(const Tensor &tensor, size_t rank = 0)
+      : std::vector<int64_t>(std::max(rank, tensor.Shape().NumDimensions()), 0) {
     auto &dims = tensor.Shape().GetDims();
 
     // The pitches is the size of the next inner axis. Aka the amount to move by one of the next inner axis.
     // For a tensor with shape(2,3,4,5) the values would be: (3*4*5, 4*5, 5, 1)
     // Note that the outermost '2' is never used, as you never need to move by the entire size of the outermost axis
 
+    auto tensor_rank = tensor.Shape().NumDimensions();
+    auto pitch_rank = size();
+    auto padded_rank = pitch_rank - tensor_rank;
+    if (size() == 0) return;
+
     back() = 1;  // The innermost axis is 1 (single values)
-    for (size_t i = size() - 1; i-- > 0;) {
-      operator[](i) = operator[](i + 1) * dims[i + 1];
+    if (tensor_rank > 1) {
+      for (size_t i = tensor_rank - 1; i-- > 0;) {
+        operator[](i + padded_rank) = operator[](i + 1 + padded_rank) * dims[i + 1];
+      }
+    }
+
+    if (padded_rank > 1) {
+      for (size_t i = 0; i < padded_rank; ++i) {
+        if (i == 0)
+          operator[](padded_rank - 1) = operator[](padded_rank) * dims[0];
+        else
+          operator[](padded_rank - 1 - i) = operator[](padded_rank - 1);
+      }
     }
   }
 };

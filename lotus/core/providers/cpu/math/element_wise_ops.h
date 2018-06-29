@@ -246,4 +246,14 @@ class Affine final : public OpKernel {
   float beta_;
 };
 
+// PRelu is activation function, but it's closer to binary elementwise ops in implementation
+template <typename T>
+class PRelu final : public OpKernel {
+ public:
+  PRelu(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
 }  // namespace Lotus

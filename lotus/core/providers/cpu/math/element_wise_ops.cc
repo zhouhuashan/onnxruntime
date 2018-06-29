@@ -887,4 +887,36 @@ REGISTER_KERNEL(KernelDefBuilder("Atan")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Atan<float>);
 
+template <>
+Status PRelu<float>::Compute(OpKernelContext* context) const {
+  TBroadcaster<float> bc(*context);
+
+  if (bc.IsInput0Scalar()) {
+    while (bc) {
+      if (bc.NextScalar0() > 0)
+        bc.NextEigenOutput().setConstant(bc.NextScalar0());
+      else
+        bc.NextEigenOutput() = bc.NextScalar0() * bc.NextEigen1().array();
+    }
+  } else if (bc.IsInput1Scalar()) {
+    while (bc) {
+      const auto& vec0 = bc.NextEigen0();
+      bc.NextEigenOutput() = (vec0.array() > 0).select(vec0, vec0 * bc.NextScalar1());
+    }
+  } else {
+    while (bc) {
+      const auto& vec0 = bc.NextEigen0();
+      bc.NextEigenOutput() = (vec0.array() > 0).select(vec0, vec0.cwiseProduct(bc.NextEigen1()));
+    }
+  }
+  return Status::OK();
+}
+
+REGISTER_KERNEL(KernelDefBuilder("PRelu")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(7)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                PRelu<float>);
+
 }  // namespace Lotus

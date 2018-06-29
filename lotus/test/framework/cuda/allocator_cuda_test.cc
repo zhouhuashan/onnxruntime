@@ -1,5 +1,5 @@
 #include "core/framework/allocatormgr.h"
-#include "../test_utils.h"
+#include "test/framework/test_utils.h"
 #include "gtest/gtest.h"
 #include "cuda_runtime.h"
 

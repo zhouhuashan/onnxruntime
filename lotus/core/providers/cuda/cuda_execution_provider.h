@@ -2,7 +2,7 @@
 #include "cuda_pch.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
-#include "cuda_utils.h"
+#include "shared_inc/cuda_utils.h"
 
 namespace Lotus {
 
