@@ -225,4 +225,28 @@ bool SessionState::GetEnableMemoryPattern() const {
   return enable_mem_pattern_;
 }
 
+void SessionState::AddInputNameToNodeInfoMapping(const std::string& input_name, const NodeInfo& node_info) {
+  input_names_to_nodeinfo_mapping_[input_name].push_back(node_info);
+}
+
+Common::Status SessionState::GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const {
+  if (!input_names_to_nodeinfo_mapping_.count(input_name)) {
+    return Status(LOTUS, FAIL, "Failed to find input name in the mapping");
+  }
+  node_info_vec = input_names_to_nodeinfo_mapping_.at(input_name);
+  return Status::OK();
+}
+
+const SessionState::NameNodeInfoMapType& SessionState::GetInputNodeInfoMap() const {
+  return input_names_to_nodeinfo_mapping_;
+}
+
+void SessionState::AddOutputNameToNodeInfoMapping(const std::string& output_name, const NodeInfo& node_info) {
+  output_names_to_nodeinfo_mapping_[output_name].push_back(node_info);
+}
+
+const SessionState::NameNodeInfoMapType& SessionState::GetOutputNodeInfoMap() const {
+  return output_names_to_nodeinfo_mapping_;
+}
+
 }  // namespace Lotus

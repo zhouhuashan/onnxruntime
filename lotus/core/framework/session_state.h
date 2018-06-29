@@ -115,6 +115,26 @@ class SessionState {
   const CustomRegistryManager& GetCustomRegistryManager() const;
   CustomRegistryManager& GetCustomRegistryManager();
 
+  struct NodeInfo {
+    NodeInfo(size_t index0, const LotusIR::Node* p_node0, const KernelRegistry::KernelCreateInfo* kci0)
+        : index(index0),
+          p_node(p_node0),
+          kci(kci0) {
+    }
+    NodeInfo() = default;
+
+    size_t index;
+    const LotusIR::Node* p_node = nullptr;
+    const KernelRegistry::KernelCreateInfo* kci = nullptr;
+  };
+  using NameNodeInfoMapType = std::unordered_map<std::string, std::vector<NodeInfo>>;
+  void AddInputNameToNodeInfoMapping(const std::string& input_name, const NodeInfo& node_info);
+  Common::Status GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const;
+  const NameNodeInfoMapType& GetInputNodeInfoMap() const;
+
+  void AddOutputNameToNodeInfoMapping(const std::string& output_name, const NodeInfo& node_info);
+  const NameNodeInfoMapType& GetOutputNodeInfoMap() const;
+
  private:
   // cache of the constructed kernels to avoid spending construction
   // time per executor
@@ -146,5 +166,8 @@ class SessionState {
   mutable std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
   CustomRegistryManager custom_registry_manager_;
+
+  NameNodeInfoMapType input_names_to_nodeinfo_mapping_;
+  NameNodeInfoMapType output_names_to_nodeinfo_mapping_;
 };
 }  // namespace Lotus

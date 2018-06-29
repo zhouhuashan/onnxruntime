@@ -244,6 +244,7 @@ class InferenceSession::Impl {
       p_graph->CleanAllInitializedTensors();  // remove weights from the graph now to save memory
 
       LOTUS_RETURN_IF_ERROR(SaveKernels(*p_graph));
+      LOTUS_RETURN_IF_ERROR(SaveInputOutputNamesToNodeMapping(*p_graph));
 
       is_inited_ = true;
 
@@ -259,6 +260,49 @@ class InferenceSession::Impl {
       return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
     }
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "session_initialization", tp);
+    return Status::OK();
+  }
+
+  static bool IsArgNameInInputsOutputs(const std::string& name, const std::vector<const LotusIR::NodeArg*> graph_args) {
+    auto it = std::find_if(std::begin(graph_args), std::end(graph_args), [&name](const LotusIR::NodeArg* arg) {
+      return arg->Name() == name;
+    });
+    return it != graph_args.end();
+  }
+
+  Common::Status SaveInputOutputNamesToNodeMapping(const LotusIR::Graph& graph) {
+    auto& weights_map = graph.GetAllInitializedTensors();
+    auto& graph_inputs = graph.GetInputs();
+    auto& graph_outputs = graph.GetOutputs();
+
+    for (auto& node : graph.Nodes()) {
+      LOTUS_RETURN_IF_ERROR(
+          LotusIR::Node::ForEachWithIndex(
+              node.InputDefs(),
+              [this, &weights_map, &node, &graph_inputs, &graph_outputs](const LotusIR::NodeArg& arg, size_t index) {
+                if (arg.Name().empty() ||
+                    weights_map.count(arg.Name())) {
+                  return Status::OK();
+                }
+
+                // note that KernelCreateInfo may not exist for custom kernel
+                const KernelRegistry::KernelCreateInfo* kci = nullptr;
+                KernelRegistry::Instance().SearchKernelRegistry(node, &kci);
+
+                SessionState::NodeInfo node_info(index, &node, kci);
+
+                if (IsArgNameInInputsOutputs(arg.Name(), graph_inputs)) {
+                  session_state_.AddInputNameToNodeInfoMapping(arg.Name(), node_info);
+                  return Status::OK();
+                }
+                if (IsArgNameInInputsOutputs(arg.Name(), graph_outputs)) {
+                  session_state_.AddOutputNameToNodeInfoMapping(arg.Name(), node_info);
+                  return Status::OK();
+                }
+                return Status::OK();
+              }));
+    }
+
     return Status::OK();
   }
 
@@ -354,76 +398,19 @@ class InferenceSession::Impl {
   }
 
   // copies inputs across devices only if required
-  Common::Status CopyInputsAcrossDevices(const NameMLValMap& orig_feeds,
+  Common::Status CopyInputsAcrossDevices(const SessionState& session_state,
+                                         const NameMLValMap& orig_feeds,
                                          NameMLValMap& new_feeds) {
-    const LotusIR::Graph* p_graph = session_state_.GetGraph();
-    LOTUS_ENFORCE(p_graph);
-    int count_feeds = 0;
-    auto& weights_map = p_graph->GetAllInitializedTensors();
-    for (auto& node : p_graph->Nodes()) {  // TODO optimize this
-      if (count_feeds == orig_feeds.size()) {
-        break;
-      }
-
-      // note that KernelCreateInfo may not exist for custom kernel
-      const KernelRegistry::KernelCreateInfo* kci = nullptr;
-      KernelRegistry::Instance().SearchKernelRegistry(node, &kci);
-      const auto* input_mem_types = (kci != nullptr) ? &kci->kernel_def->InputMemoryType() : nullptr;
-      LOTUS_RETURN_IF_ERROR(
-          LotusIR::Node::ForEachWithIndex(
-              node.InputDefs(),
-              [this, &orig_feeds, &new_feeds, &weights_map, &count_feeds, &node, &input_mem_types](const LotusIR::NodeArg& arg, size_t index) {
-                if (arg.Name().empty() ||
-                    !orig_feeds.count(arg.Name()) ||
-                    weights_map.count(arg.Name())) {
-                  return Status::OK();
-                }
-
-                ++count_feeds;
-                auto& input_name = arg.Name();
-                // node may declare input_mem_type to be on CPU explicitly
-                bool input_on_cpu = input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index);
-                auto& required_provider_type = input_on_cpu ? LotusIR::kCpuExecutionProvider : node.GetExecutionProviderType();
-                auto& mlvalue = orig_feeds.at(input_name);
-                if (!mlvalue.IsTensor()) {
-                  // copying not supported for non-tensor types
-                  new_feeds[input_name] = mlvalue;
-                  return Status::OK();
-                }
-                auto& input_tensor = mlvalue.Get<Tensor>();
-                auto& input_tensor_loc = input_tensor.Location();
-                auto* p_input_provider = session_state_.GetExecutionProvider(input_tensor_loc);
-                if (!p_input_provider) {
-                  p_input_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
-                }
-                LOTUS_ENFORCE(p_input_provider);
-
-                auto input_provider_type = p_input_provider->Type();
-                if (input_provider_type == required_provider_type) {
-                  new_feeds[input_name] = mlvalue;
-                  return Status::OK();
-                }
-
-                auto* node_provider = session_state_.GetExecutionProvider(required_provider_type);
-                LOTUS_ENFORCE(node_provider);
-                MLValue new_mlvalue;
-                LOTUS_RETURN_IF_ERROR(AllocateHelper(required_provider_type, mlvalue, new_mlvalue));
-                auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
-                auto* node_exec_provider = session_state_.GetExecutionProvider(required_provider_type);
-                LOTUS_ENFORCE(node_exec_provider);
-
-                // our CPU exec provider doesn't support copy from GPU->CPU
-                if (required_provider_type != LotusIR::kCpuExecutionProvider) {
-                  LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *new_tensor));
-                } else {
-                  LOTUS_RETURN_IF_ERROR(p_input_provider->CopyTensor(input_tensor, *new_tensor));
-                }
-
-                new_feeds[input_name] = new_mlvalue;
-                return Status::OK();
-              }));
+    for (auto& pair : orig_feeds) {
+      MLValue new_mlvalue;
+      auto& input_name = pair.first;
+      auto& orig_mlvalue = pair.second;
+      LOTUS_RETURN_IF_ERROR(IOBinding::CopyOneInputAcrossDevices(session_state,
+                                                                 input_name,
+                                                                 orig_mlvalue,
+                                                                 new_mlvalue));
+      new_feeds[input_name] = new_mlvalue;
     }
-    LOTUS_ENFORCE(orig_feeds.size() == new_feeds.size());
     return Status::OK();
   }
 
@@ -637,7 +624,7 @@ class InferenceSession::Impl {
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
       NameMLValMap copied_feeds;
-      LOTUS_RETURN_IF_ERROR(CopyInputsAcrossDevices(feeds, copied_feeds));
+      LOTUS_RETURN_IF_ERROR(CopyInputsAcrossDevices(session_state_, feeds, copied_feeds));
 
       std::vector<MLValue> new_fetches;
       LOTUS_RETURN_IF_ERROR(MatchOutputsWithProviders(output_names, *p_fetches, new_fetches));
@@ -703,12 +690,15 @@ class InferenceSession::Impl {
     return std::make_pair(Common::Status::OK(), &output_def_list_);
   }
 
-  Common::Status NewIOBinding(LotusIR::ProviderType provider_type, std::unique_ptr<IOBinding>* io_binding) {
-    IExecutionProvider* p_exec_provider = session_state_.GetExecutionProvider(provider_type);
-    if (!p_exec_provider) {
-      return Status(LOTUS, FAIL, "You did not register this execution provider before.");
+  Common::Status NewIOBinding(std::unique_ptr<IOBinding>* io_binding) {
+    {
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (!is_inited_) {
+        LOGS(*session_logger_, ERROR) << "Session was not initialized";
+        return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
+      }
     }
-    *io_binding = std::unique_ptr<IOBinding>(new IOBinding(p_exec_provider, session_logger_));  // private constructor, can't use make_unique
+    *io_binding = std::unique_ptr<IOBinding>(new IOBinding(session_state_));  // private constructor, can't use make_unique
     return Status::OK();
   }
 
@@ -1271,8 +1261,14 @@ Common::Status InferenceSession::Load(const ModelProto& model_proto) {
   return impl_->Load(model_proto);
 }
 
-Common::Status InferenceSession::NewIOBinding(LotusIR::ProviderType provider_type, std::unique_ptr<IOBinding>* io_binding) {
-  return impl_->NewIOBinding(provider_type, io_binding);
+Common::Status InferenceSession::NewIOBinding(LotusIR::ProviderType provider_type,
+                                              std::unique_ptr<IOBinding>* io_binding) {
+  UNUSED_PARAMETER(provider_type);
+  return NewIOBinding(io_binding);
+}
+
+Common::Status InferenceSession::NewIOBinding(std::unique_ptr<IOBinding>* io_binding) {
+  return impl_->NewIOBinding(io_binding);
 }
 
 Common::Status InferenceSession::Run(const RunOptions& run_options, IOBinding& io_binding) {

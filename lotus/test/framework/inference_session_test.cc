@@ -121,6 +121,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
                                ProviderType bind_provider_type,
                                bool is_preallocate_output_vec = false,
                                ProviderType allocation_provider = kCpuExecutionProvider) {
+  UNUSED_PARAMETER(bind_provider_type);
   // prepare inputs
   std::vector<float> values_mul_x = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   /*
@@ -138,7 +139,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
   CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x_B, values_mul_x, &input_ml_value_B);
 
   unique_ptr<IOBinding> io_binding;
-  Status st = session_object.NewIOBinding(bind_provider_type, &io_binding);
+  Status st = session_object.NewIOBinding(&io_binding);
   ASSERT_TRUE(st.IsOK());
   io_binding->BindInput("A", input_ml_value_A);
   io_binding->BindInput("B", input_ml_value_B);
@@ -630,10 +631,15 @@ TEST(InferenceSessionTests, TestBindCpu) {
 TEST(InferenceSessionTests, TestIOBindingReuse) {
   SessionOptions so;
   InferenceSession session_object(so);
+  std::unique_ptr<Model> p_model;
+  CreateMatMulModel(p_model, kCpuExecutionProvider);
+
+  ASSERT_TRUE(session_object.Load(std::move(p_model)).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
   CPUExecutionProviderInfo epi;
   session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi));
   unique_ptr<IOBinding> io_binding;
-  Status st = session_object.NewIOBinding(kCpuExecutionProvider, &io_binding);
+  Status st = session_object.NewIOBinding(&io_binding);
   ASSERT_TRUE(st.IsOK());
 
   MLValue ml_value1;

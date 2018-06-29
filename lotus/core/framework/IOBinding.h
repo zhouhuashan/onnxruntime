@@ -46,7 +46,7 @@ class IOBinding {
     * Call InferenceSession::Run() only after calling this method or else you'll end up wasting cycles inside Run().
     */
   Common::Status SynchronizeInputs();
-
+  Common::Status SynchronizeOutputs();
   /**
     * This simply provides the names and optionally allocated output containers.
     */
@@ -63,12 +63,16 @@ class IOBinding {
  private:
   friend InferenceSession;
 
-  IOBinding(IExecutionProvider* p_exec_provider, const Logging::Logger* p_logger);
-  IExecutionProvider* p_exec_provider_ = nullptr;  // owned by session
+  IOBinding(const SessionState& session_state);
+  const SessionState& session_state_;
   std::unordered_map<std::string, MLValue> feeds_;
   std::vector<std::string> output_names_;
   std::vector<MLValue> outputs_;
-  const Logging::Logger* p_logger_ = nullptr;  // owned by session
+
+  static Common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
+                                                  const std::string& input_name,
+                                                  const MLValue& orig_mlvalue,
+                                                  MLValue& new_mlvalue);
 
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(IOBinding);
 };
