@@ -121,12 +121,6 @@
   <TestJob Name="LotusModelTest.coreml_Imputer-LogisticRegression_OpenML_1464_blood_transfusion_missing.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
   </TestJob>
-  <TestJob Name="LotusModelTest.coreml_Imputer-LogisticRegression_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
-  </TestJob>
-  <TestJob Name="LotusModelTest.coreml_Imputer-LogisticRegression_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
-  </TestJob>
   <TestJob Name="LotusModelTest.coreml_Imputer_OpenML_1464_blood_transfusion_missing.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
   </TestJob>
