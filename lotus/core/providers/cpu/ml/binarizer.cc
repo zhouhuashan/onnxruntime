@@ -32,7 +32,7 @@ REGISTER_KERNEL(KernelDefBuilder("Binarizer")
 
 template <typename T>
 BinarizerOp<T>::BinarizerOp(const OpKernelInfo& info) : OpKernel(info) {
-  op_kernel_info_.GetAttr<float>("float", &threshold_);  // optional
+  op_kernel_info_.GetAttr<float>("threshold", &threshold_);  // optional
 }
 
 template <typename T>

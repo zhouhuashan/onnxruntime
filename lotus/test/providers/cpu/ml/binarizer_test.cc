@@ -8,7 +8,7 @@ TEST(MLOpTest, BinarizerOp) {
   OpTester test("Binarizer", LotusIR::kMLDomain);
   float threshold = 0.3f;
   test.AddAttribute("threshold", threshold);
-  vector<float> input{0.8f, -0.5f, 0.0f, 0.8f, -1.0f, 1.0f};
+  vector<float> input{0.8f, -0.5f, 0.2f, 0.8f, -1.0f, 0.1f};
 
   // setup expected output
   vector<float> expected_output;
