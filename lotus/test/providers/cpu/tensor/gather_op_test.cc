@@ -59,6 +59,19 @@ TEST(GatherOpTest, Gather_invalid_axis) {
   test.Run(OpTester::ExpectResult::kExpectFailure, "axis -10 is not in valid range [-3,2]");
 }
 
+TEST(GatherOpTest, Gather_invalid_index) {
+  OpTester test("Gather");
+  // Invalid index 3. data[3] does not exist.
+  test.AddAttribute<int64_t>("axis", 0L);
+  test.AddInput<float>("data", {3L, 4L},
+                       {0.0f, 1.0f, 2.0f, 3.0f,
+                        4.0f, 5.0f, 6.0f, 7.0f,
+                        8.0f, 9.0f, 10.0f, 11.0f});
+  test.AddInput<int64_t>("indices", {3L}, {0L, 1L, 3L});
+  test.AddOutput<float>("output", {1L}, {1L});
+  test.Run(OpTester::ExpectResult::kExpectFailure, "indices element out of data bounds, idx=3 data_dim=3");
+}
+
 TEST(GatherOpTest, Gather_axis1) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1L);

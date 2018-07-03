@@ -41,7 +41,14 @@ class Gather final : public OpKernel {
       const T* src_p = src_base + batch * data_batch;
       T* dst_p = out + batch * gathered_batch;
       for (int64_t i = 0; i < N; ++i) {
-        const T* src = src_p + idxs[i] * block;
+        auto idx = idxs[i];
+        if (idx < 0 || idx >= data_shape[axis]) {
+          std::ostringstream err_str;
+          err_str << "indices element out of data bounds, idx=" << to_string(idx);
+          err_str << " data_dim=" << to_string(data_shape[axis]);
+          return Status(LOTUS, INVALID_ARGUMENT, err_str.str());
+        }
+        const T* src = src_p + idx * block;
         T* dst = dst_p + i * block;
         memcpy(dst, src, block_size);
       }

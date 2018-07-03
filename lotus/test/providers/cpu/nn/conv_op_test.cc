@@ -39,6 +39,31 @@ void TestConvOp(const ConvOpAttributes& attributes,
   test.AddOutput<float>("Y", expected_output_shape, expected_output);
   test.Run();
 }
+
+void TestConvOpExpectError(const ConvOpAttributes& attributes,
+                           const vector<vector<float>>& inputs,
+                           const vector<vector<int64_t>>& input_shapes,
+                           const std::initializer_list<float>& expected_output,
+                           const vector<int64_t>& expected_output_shape,
+                           const std::string expected_error) {
+  OpTester test("Conv");
+  test.AddAttribute("auto_pad", attributes.auto_pad);
+  test.AddAttribute("dilations", attributes.dilations);
+  test.AddAttribute("group", attributes.group);
+  test.AddAttribute("kernel_shape", attributes.kernel_shape);
+  if (!attributes.pads.empty()) {
+    test.AddAttribute("pads", attributes.pads);
+  }
+  test.AddAttribute("strides", attributes.strides);
+
+  LOTUS_ENFORCE(inputs.size() <= 3, "Our name array is only setup to handle 3 inputs");
+  const char* szNames[] = {"X", "W", "B"};
+  for (int i = 0; i < inputs.size(); i++) {
+    test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);
+  }
+  test.AddOutput<float>("Y", expected_output_shape, expected_output);
+  test.Run(OpTester::ExpectResult::kExpectFailure, expected_error);
+}
 }  // namespace
 
 // Conv
@@ -149,6 +174,24 @@ TEST(ConvTest, Conv2D_1) {
                         -0.04396762326359749f, 0.10081233829259872f, -0.10154513269662857f, -0.13448859751224518f};
   TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
 }
+
+TEST(ConvTest, Conv2D_Invalid_Input_Shape) {
+  ConvOpAttributes attrs = {
+      "",                           // auto_pad
+      vector<int64_t>{1, 1},        // dilations
+      1,                            // group
+      vector<int64_t>{3, 3},        // kernel_shape
+      vector<int64_t>{0, 0, 0, 0},  // pads
+      vector<int64_t>{1, 1}         // strides
+  };
+  vector<float> X = vector<float>(1 * 3 * 1 * 111, 1.0f);
+  vector<int64_t> X_shape = {1, 3, 1, 111};
+  vector<int64_t> dummy_shape = {2, 2, 1, 2};
+  auto dummy_vals = {-0.0f, 0.0f, -0.0f, -0.0f,
+                     -0.0f, 0.0f, -0.0f, -0.0f};
+  TestConvOpExpectError(attrs, {X, dummy_vals}, {X_shape, dummy_shape}, dummy_vals, dummy_shape, "Invalid input shape: {1,111}");
+}
+
 // Conv30
 TEST(ConvTest, Conv2D_2) {
   ConvOpAttributes attrs = {

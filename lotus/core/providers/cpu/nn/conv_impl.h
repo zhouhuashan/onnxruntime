@@ -57,7 +57,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
-  InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims);
+  LOTUS_RETURN_IF_ERROR(InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
   Tensor* Y = context->Output(0, TensorShape(Y_dims));
   TensorShape output_shape = Y->Shape().Slice(2);
 
@@ -177,7 +177,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
-  InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims);
+  LOTUS_RETURN_IF_ERROR(InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
   Tensor* Y = context->Output(0, TensorShape(Y_dims));
   TensorShape output_shape = Y->Shape().Slice(2);
 

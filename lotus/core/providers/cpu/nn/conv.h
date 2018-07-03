@@ -72,12 +72,12 @@ class Conv : public ConvBase {
   Status Compute(OpKernelContext* context) const override;
 
  private:
-  void InferOutputShape(const TensorShape& input_shape,
-                        const vector<int64_t>& kernel_shape,
-                        const vector<int64_t>& strides,
-                        const vector<int64_t>& dilations,
-                        vector<int64_t>* pads,
-                        vector<int64_t>* output_shape) const {
+  Status InferOutputShape(const TensorShape& input_shape,
+                          const vector<int64_t>& kernel_shape,
+                          const vector<int64_t>& strides,
+                          const vector<int64_t>& dilations,
+                          vector<int64_t>* pads,
+                          vector<int64_t>* output_shape) const {
     for (int dim = 0; dim < input_shape.NumDimensions(); ++dim) {
       int64_t dim_size = 0;
       ComputeSizeAndPad(input_shape[dim],
@@ -88,8 +88,12 @@ class Conv : public ConvBase {
                         &pads->at(dim),
                         &pads->at(input_shape.NumDimensions() + dim),
                         &dim_size);
+      if (dim_size < 0) {
+        return Status(LOTUS, INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
+      }
       output_shape->push_back(dim_size);
     }
+    return Status::OK();
   }
 };
 
