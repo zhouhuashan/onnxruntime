@@ -40,5 +40,14 @@ TEST(TensorOpTest, Unsqueeze_Duplicate) {
   test.Run(OpTester::ExpectResult::kExpectFailure, "'axes' has a duplicate axis");
 }
 
+TEST(TensorOpTest, Unsqueeze_OutOfRange) {
+  OpTester test("Unsqueeze");
+
+  test.AddAttribute("axes", std::vector<int64_t>{4});
+  test.AddInput<float>("input", {2, 3, 4}, std::vector<float>(2 * 3 * 4, 1.0f));
+  test.AddOutput<float>("output", {2, 1, 3, 4}, std::vector<float>(2 * 3 * 4, 1.0f));
+  test.Run(OpTester::ExpectResult::kExpectFailure, "'axes' has an out of range axis");
+}
+
 }  // namespace Test
 }  // namespace Lotus

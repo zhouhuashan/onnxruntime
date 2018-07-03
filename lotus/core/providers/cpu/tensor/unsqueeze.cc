@@ -19,7 +19,7 @@ Status Unsqueeze<float>::Compute(OpKernelContext *ctx) const {
 
   // Set all axes_ indices to 1 in output_dims and check for duplicates
   for (size_t axis : axes_) {
-    if (axis > output_dims.size())
+    if (axis >= output_dims.size())
       return Status(LOTUS, INVALID_ARGUMENT, "'axes' has an out of range axis");
     if (output_dims[axis] != 0)
       return Status(LOTUS, INVALID_ARGUMENT, "'axes' has a duplicate axis");
