@@ -19,7 +19,8 @@ enum ExecutionStatus {
   MODEL_LOADING_FAILURE = 1,
   DATA_LOADING_FAILURE = 2,
   PREDICTION_FAILURE = 3,
-  NOT_IMPLEMENTED = 4
+  MODEL_RUN_FAILURE = 4,
+  NOT_IMPLEMENTED = 5
 };
 
 class Model {
@@ -64,7 +65,11 @@ class Model {
   }
 
   std::string GetStatusString() const {
-    switch (exec_status_) {
+    return GetStatusString(exec_status_);
+  }
+
+  static std::string GetStatusString(ExecutionStatus exec_status) {
+    switch (exec_status) {
       case ExecutionStatus::OK:
         return "OK";
       case ExecutionStatus::MODEL_LOADING_FAILURE:

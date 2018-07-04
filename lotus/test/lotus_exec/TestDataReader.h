@@ -19,6 +19,18 @@ std::string wstr2str(const std::wstring& wstr) {
   return str;
 }
 
+class DataValidationException : public std::exception {
+ public:
+  DataValidationException(const std::string& str) : str_(str) {
+  }
+  const char* what() const noexcept override {
+    return str_.c_str();
+  }
+
+ private:
+  std::string str_;
+};
+
 class TestDataReader {
  public:
   static std::unique_ptr<TestDataReader> OpenReader(std::wstring data_file);
@@ -85,11 +97,11 @@ std::vector<T> TestDataReader::GetSample(int sample_count, bool variable_batch_s
       result.pop_back();
 
     if (result.size() != sample_count)
-      throw std::runtime_error("Not enough features in sample.");
+      throw DataValidationException("Not enough features in sample.");
   }
 
   if (variable_batch_size && (result.size() % sample_count != 0) && (sample_count != -1))
-    throw std::runtime_error("Input count is not a multiple of dimension.");
+    throw DataValidationException("Input count is not a multiple of dimension.");
 
   return result;
 }
@@ -107,7 +119,7 @@ std::vector<std::wstring> TestDataReader::GetSampleStrings(int sample_count, boo
       if (sample_count == -1 || variable_batch_size)
         break;
 
-      throw std::runtime_error("Not enough features in sample.");
+      throw DataValidationException("Not enough features in sample.");
     }
     s++;
   }
@@ -116,7 +128,7 @@ std::vector<std::wstring> TestDataReader::GetSampleStrings(int sample_count, boo
     result.push_back(L"");
 
   if (variable_batch_size && (result.size() % sample_count != 0) && (sample_count != -1))
-    throw std::runtime_error("Input count is not a multiple of dimension.");
+    throw DataValidationException("Input count is not a multiple of dimension.");
 
   return result;
 }

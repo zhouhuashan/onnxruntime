@@ -52,7 +52,7 @@ class WinMLRuntime {
 
   void FillInBatchSize(std::vector<int64_t>& shape, int input_size, int feature_size) {
     if ((input_size % feature_size != 0) && (feature_size != -1))
-      throw std::runtime_error("Input count is not a multiple of dimension.");
+      throw DataValidationException("Input count is not a multiple of dimension.");
 
     int batch_size = feature_size == -1 ? 1 : input_size / feature_size;
     shape.insert(shape.begin(), batch_size);
@@ -212,7 +212,7 @@ class WinMLRuntime {
           mlvalue = ReadTensorForMapStringToScalar<int64_t>(TestCPUExecutionProvider().GetAllocator(), inputs_reader);
           feed.insert(std::make_pair(input.Name(), mlvalue));
         } else {
-          throw std::runtime_error("Unsupported input type: " + std::string(*type));
+          throw DataValidationException("Unsupported input type: " + std::string(*type));
         }
       } else if (*type == "map(string,tensor(float))" || *type == "map(string,tensor(double))") {
         // check if really map(string, float) or map(string, double), which is all we currently support
@@ -222,7 +222,7 @@ class WinMLRuntime {
           mlvalue = ReadTensorForMapStringToScalar<float>(TestCPUExecutionProvider().GetAllocator(), inputs_reader);
           feed.insert({input.Name(), mlvalue});
         } else {
-          throw std::runtime_error("Unsupported input type: " + std::string(*type));
+          throw DataValidationException("Unsupported input type: " + std::string(*type));
         }
       } else {
         if (*type == "tensor(double)" || *type == "tensor(float)") {
@@ -234,7 +234,7 @@ class WinMLRuntime {
         else if (*type == "tensor(string)")
           mlvalue = ReadTensorStrings(TestCPUExecutionProvider().GetAllocator(), inputs_reader, feature_size, shape, variable_batch_size);
         else
-          throw std::runtime_error("Unsupported input type: " + std::string(*type));
+          throw DataValidationException("Unsupported input type: " + std::string(*type));
 
         feed.insert(std::make_pair(input.Name(), mlvalue));
       }
@@ -292,7 +292,7 @@ class WinMLRuntime {
               separator = ",";
             }
           } else {
-            throw std::runtime_error("Unsupported output type in Lotus model: " + std::string((*outputMeta)[i]->Name()));
+            throw DataValidationException("Unsupported output type in Lotus model: " + std::string((*outputMeta)[i]->Name()));
           }
         } else if (output.Type() == Lotus::DataTypeImpl::GetType<Lotus::VectorMapStringToFloat>()) {
           auto& cdata = output.Get<Lotus::VectorMapStringToFloat>();
