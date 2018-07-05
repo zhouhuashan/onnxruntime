@@ -24,7 +24,7 @@ TEST(MLOpTest, SVMRegressorSVC) {
   test.AddAttribute("n_supports", static_cast<int64_t>(5));
 
   test.AddInput<float>("X", {8, 3}, X);
-  test.AddOutput<float>("Y", {8}, predictions);
+  test.AddOutput<float>("Y", {8, 1}, predictions);
 
   test.Run();
 }
@@ -49,7 +49,7 @@ TEST(MLOpTest, SVMRegressorNuSVC) {
   test.AddAttribute("n_supports", static_cast<int64_t>(6));
 
   test.AddInput<float>("X", {8, 3}, X);
-  test.AddOutput<float>("Y", {8}, predictions);
+  test.AddOutput<float>("Y", {8, 1}, predictions);
 
   test.Run();
 }
@@ -74,7 +74,7 @@ TEST(MLOpTest, SVMRegressorNuSVCPolyKernel) {
   test.AddAttribute("n_supports", static_cast<int64_t>(6));
 
   test.AddInput<float>("X", {8, 3}, X);
-  test.AddOutput<float>("Y", {8}, predictions);
+  test.AddOutput<float>("Y", {8, 1}, predictions);
   test.SetOutputRelErr("Y", 0.01f);
   test.Run();
 }
@@ -96,7 +96,7 @@ TEST(MLOpTest, SVMRegressorLinear) {
   test.AddAttribute("n_supports", static_cast<int64_t>(0));
 
   test.AddInput<float>("X", {8, 3}, X);
-  test.AddOutput<float>("Y", {8}, predictions);
+  test.AddOutput<float>("Y", {8, 1}, predictions);
 
   test.Run();
 }
