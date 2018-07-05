@@ -24,8 +24,8 @@ class RandomNormal final : public OpKernel {
 
     int64_t dtype;
     LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK());
-    dtype_ = static_cast<TensorProto::DataType>(dtype);
-    LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+    dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
+    LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                   "Invalid dtype of ", dtype_);
 
     std::vector<int64_t> shape;
@@ -39,7 +39,7 @@ class RandomNormal final : public OpKernel {
   float mean_;
   float scale_;
   std::default_random_engine generator_;
-  TensorProto::DataType dtype_;
+  onnx::TensorProto::DataType dtype_;
   TensorShape shape_;
 };
 
@@ -59,8 +59,8 @@ class RandomNormalLike final : public OpKernel {
 
     int64_t dtype;
     if (op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
-      dtype_ = static_cast<TensorProto::DataType>(dtype);
-      LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+      dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
+      LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                     "Invalid dtype of ", dtype_);
     }
   }
@@ -71,7 +71,7 @@ class RandomNormalLike final : public OpKernel {
   float mean_;
   float scale_;
   std::default_random_engine generator_;
-  TensorProto::DataType dtype_ = TensorProto::DataType::TensorProto_DataType_UNDEFINED;  //optional and may be inferred
+  onnx::TensorProto::DataType dtype_ = onnx::TensorProto::DataType::TensorProto_DataType_UNDEFINED;  //optional and may be inferred
 };
 
 class RandomUniform final : public OpKernel {
@@ -90,8 +90,8 @@ class RandomUniform final : public OpKernel {
 
     int64_t dtype;
     LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK());
-    dtype_ = static_cast<TensorProto::DataType>(dtype);
-    LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+    dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
+    LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                   "Invalid dtype of ", dtype_);
 
     std::vector<int64_t> shape;
@@ -105,7 +105,7 @@ class RandomUniform final : public OpKernel {
   float high_;
   float low_;
   std::default_random_engine generator_;
-  TensorProto::DataType dtype_;
+  onnx::TensorProto::DataType dtype_;
   TensorShape shape_;
 };
 
@@ -124,8 +124,8 @@ class RandomUniformLike final : public OpKernel {
 
     int64_t dtype;
     if (op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
-      dtype_ = static_cast<TensorProto::DataType>(dtype);
-      LOTUS_ENFORCE(TensorProto::DataType_IsValid(dtype_) && dtype_ != TensorProto::UNDEFINED,
+      dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
+      LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                     "Invalid dtype of ", dtype_);
     }
   }
@@ -136,7 +136,7 @@ class RandomUniformLike final : public OpKernel {
   float high_;
   float low_;
   std::default_random_engine generator_;
-  TensorProto::DataType dtype_ = TensorProto::DataType::TensorProto_DataType_UNDEFINED;  //optional and may be inferred
+  onnx::TensorProto::DataType dtype_ = onnx::TensorProto::DataType::TensorProto_DataType_UNDEFINED;  //optional and may be inferred
 };
 
 class Multinomial final : public OpKernel {
@@ -153,11 +153,11 @@ class Multinomial final : public OpKernel {
 
     int64_t output_dtype_tmp;
     if (!op_kernel_info_.GetAttr<int64_t>("dtype", &output_dtype_tmp).IsOK()) {
-      output_dtype_ = TensorProto_DataType_INT32;  // default is INT32 as per spec
+      output_dtype_ = onnx::TensorProto_DataType_INT32;  // default is INT32 as per spec
     } else {
-      output_dtype_ = static_cast<TensorProto::DataType>(output_dtype_tmp);
+      output_dtype_ = static_cast<onnx::TensorProto::DataType>(output_dtype_tmp);
     }
-    LOTUS_ENFORCE(TensorProto::DataType_IsValid(output_dtype_) && output_dtype_ != TensorProto::UNDEFINED,
+    LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(output_dtype_) && output_dtype_ != onnx::TensorProto::UNDEFINED,
                   "Invalid dtype of ", output_dtype_);
   }
 
@@ -166,6 +166,6 @@ class Multinomial final : public OpKernel {
  private:
   int64_t num_samples_;
   std::default_random_engine generator_;
-  TensorProto::DataType output_dtype_;
+  onnx::TensorProto::DataType output_dtype_;
 };
 }  // namespace Lotus

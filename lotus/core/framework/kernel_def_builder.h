@@ -287,7 +287,7 @@ class KernelDefBuilder {
   // we own the KernelDef until Build() is called.
   std::unique_ptr<KernelDef> kernel_def_;
   const std::unordered_map<string, std::pair<int, int>>& domain_version_map_ =
-      OpSchemaRegistry::DomainToVersionRange::Instance().Map();
+      onnx::OpSchemaRegistry::DomainToVersionRange::Instance().Map();
 };
 
 }  // namespace Lotus

@@ -24,12 +24,12 @@
 #include "gtest/gtest.h"
 #include "core/graph/schema_registry.h"
 #include "core/framework/customregistry.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 
 // Checks test attributes set on ABI kernels can be queried with correct values
-void VerifyTestAttributes(const MLOperatorAttributes& attrs){
+void VerifyTestAttributes(const MLOperatorAttributes& attrs) {
   std::string str_attr = attrs.GetAttribute("DefaultedNonRequiredString");
   ASSERT_EQ(str_attr, "1");
 
@@ -54,18 +54,17 @@ class FooKernel {
     if (VerifyAttributes) {
       VerifyTestAttributes(info);
     }
-    
+
     VerifyShapeInfo(info);
   }
-  
+
   void VerifyShapeInfo(const MLOpKernelInfo& info) {
     if (!Truncate) {
-      const IMLOpKernelTensorShapeInfo *shape_info;
+      const IMLOpKernelTensorShapeInfo* shape_info;
       ASSERT_EQ(info.GetInterface()->HasTensorShapeInfo(), false);
       ASSERT_EQ(info.GetInterface()->GetTensorShapeInfo(&shape_info), MLStatus::REQUIREMENT_NOT_REGISTERED);
-    }
-    else {
-      const IMLOpKernelTensorShapeInfo *shape_info;
+    } else {
+      const IMLOpKernelTensorShapeInfo* shape_info;
       ASSERT_EQ(info.GetInterface()->HasTensorShapeInfo(), true);
       ASSERT_EQ(info.GetInterface()->GetTensorShapeInfo(&shape_info), MLStatus::OK);
     }
@@ -81,15 +80,14 @@ class FooKernel {
     auto shape = X.GetDimensions();
 
     // This is used to test shape inference
-    if (Truncate){
+    if (Truncate) {
       shape[0] -= 1;
     }
     if (!Truncate) {
-      IMLOpTensor *tensor;
+      IMLOpTensor* tensor;
       ASSERT_EQ(context.GetInterface()->GetOutputTensor(0, &tensor), MLStatus::SHAPE_INFERENCE_NOT_REGISTERED);
-    }
-    else {
-      IMLOpTensor *tensor;
+    } else {
+      IMLOpTensor* tensor;
       ASSERT_EQ(context.GetInterface()->GetOutputTensor(0, &tensor), MLStatus::OK);
     }
     auto Y = context.GetOutputTensor(0, shape);
@@ -208,12 +206,12 @@ KernelDefBuilder FooKernelDef(const char* schema_name) {
 }
 
 // Creates a Foo kernel implementing the ABI
-template<bool VerifyTestAttributes = false>
+template <bool VerifyTestAttributes = false>
 MLStatus CreateABIFooKernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel** op_kernel) {
-  return MLOpKernel<FooKernel<float, VerifyTestAttributes> >::CreateInstance(kernel_info, op_kernel);
+  return MLOpKernel<FooKernel<float, VerifyTestAttributes>>::CreateInstance(kernel_info, op_kernel);
 }
 
-template<bool VerifyTestAttributes = false>
+template <bool VerifyTestAttributes = false>
 MLStatus CreateABIOptionalKernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel** op_kernel) {
   return MLOpKernel<OptionalOpKernel<float>>::CreateInstance(kernel_info, op_kernel);
 }
@@ -229,7 +227,7 @@ KernelDefBuilder OptionalKernelDef() {
 
 // Creates a Foo kernel implementing the ABI
 MLStatus CreateTruncatedABIFooKernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel** op_kernel) {
-  return MLOpKernel<FooKernel<float, true, true> >::CreateInstance(kernel_info, op_kernel);
+  return MLOpKernel<FooKernel<float, true, true>>::CreateInstance(kernel_info, op_kernel);
 }
 
 // Creates a Foo kernel implementing the built-in OpKernel type.  This wraps
@@ -322,20 +320,18 @@ TEST(CustomKernelTests, CustomABIKernelWithBuildInSchema) {
 
   //Register a foo kernel which is doing Add, but bind to Mul.
   MLEdgeType floatTensorType = {
-    MLEdgeClass::kTensor,
-    MLTensorDataType::kFloat
-  };
+      MLEdgeClass::kTensor,
+      MLTensorDataType::kFloat};
 
   MLTypeConstraint constraint = {"T", &floatTensorType, 1};
 
   MLOpKernelDefinition def = {
-    LotusIR::kOnnxDomain,
-    "Mul", 
-    6,
-    LotusIR::kCpuExecutionProvider,
-    &constraint,
-    1 
-  };
+      LotusIR::kOnnxDomain,
+      "Mul",
+      6,
+      LotusIR::kCpuExecutionProvider,
+      &constraint,
+      1};
 
   EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&def, MLOpKernelOptions::kAllowDynamicInputShapes, CreateABIFooKernel));
 
@@ -396,7 +392,6 @@ TEST(CustomKernelTests, CustomKernelWithCustomSchema) {
 }
 
 TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
-
   // Test cases
   struct {
     bool type_label;
@@ -420,21 +415,20 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
 
     InferenceSession session_object{so, &DefaultLoggingManager()};
     EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
-    
+
     // Input and output parameters
-    MLFormalParameter input_param = { MLFormalParameterOptions::kSingle, MLFormalParameterTypeFormat::kLabel, "T" };
+    MLFormalParameter input_param = {MLFormalParameterOptions::kSingle, MLFormalParameterTypeFormat::kLabel, "T"};
     if (!test_cases[case_index].type_label) {
       assert(!test_cases[case_index].type_inf);
       input_param.type_format = MLFormalParameterTypeFormat::kEdgeType;
       input_param.edge_type.edge_class = MLEdgeClass::kTensor;
       input_param.edge_type.tensor_data_type = MLTensorDataType::kFloat;
-    }
-    else {
+    } else {
       input_param.type_label = "T1";
     }
 
     MLFormalParameter output_param = input_param;
-    
+
     // Type inference should set this to tensor(float) even though T2 is not matched
     // on an input label
     if (test_cases[case_index].type_inf) {
@@ -442,7 +436,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
       output_param.edge_type.tensor_data_type = MLTensorDataType::kInt32;
     }
 
-    MLFormalParameter inputs[] = { input_param, input_param };
+    MLFormalParameter inputs[] = {input_param, input_param};
     MLEdgeType edgeTypes[] = {{MLEdgeClass::kTensor, MLTensorDataType::kUInt32},
                               {MLEdgeClass::kTensor, MLTensorDataType::kUInt64},
                               {MLEdgeClass::kTensor, MLTensorDataType::kInt32},
@@ -453,7 +447,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     MLTypeConstraint constraints[] = {
         {"T1", edgeTypes, sizeof(edgeTypes) / sizeof(edgeTypes[0])},
         {"T2", edgeTypes, sizeof(edgeTypes) / sizeof(edgeTypes[0])}};
-      
+
     // Test attributes
     MLAttribute attributes[] = {
         {"DefaultedNonRequiredInt", MLAttributeType::kInt, false},
@@ -479,7 +473,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
 
     int64_t default_ints[] = {1, 2};
     float default_floats[] = {1.0f, 2.0f};
-    const char *default_strings[] = {"1", "2"};
+    const char* default_strings[] = {"1", "2"};
     default_attributes[0].ints = default_ints;
     default_attributes[1].floats = default_floats;
     default_attributes[2].strings = default_strings;
@@ -504,22 +498,22 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
 
     // Type inference function
     if (test_cases[case_index].type_inf) {
-      def.type_inference_function_context = (void *)123;
-      def.type_inference_function = [](void *reg_ctx, IMLTypeInferenceContext *ctx)->MLStatus{
-        EXPECT_EQ(reg_ctx, (void *)123);
+      def.type_inference_function_context = (void*)123;
+      def.type_inference_function = [](void* reg_ctx, IMLTypeInferenceContext* ctx) -> MLStatus {
+        EXPECT_EQ(reg_ctx, (void*)123);
         VerifyTestAttributes(MLTypeInferenceContext(ctx));
         MLEdgeType output_type = {MLEdgeClass::kTensor, MLTensorDataType::kFloat};
         MLTypeInferenceContext(ctx).SetOutputEdgeType(0, &output_type);
         return MLStatus::OK;
       };
     }
-    
+
     // Shape inference is tested by truncating the output size
     bool truncate_output = test_cases[case_index].shape_inf;
     if (truncate_output) {
-      def.shape_inference_function_context = (void *)456;
-      def.shape_inference_function = [](void *reg_ctx, IMLShapeInferenceContext *ctx)->MLStatus{
-        EXPECT_EQ(reg_ctx, (void *)456);
+      def.shape_inference_function_context = (void*)456;
+      def.shape_inference_function = [](void* reg_ctx, IMLShapeInferenceContext* ctx) -> MLStatus {
+        EXPECT_EQ(reg_ctx, (void*)456);
         VerifyTestAttributes(MLShapeInferenceContext(ctx));
         MLShapeInferenceContext(ctx).SetOutputTensorShape(0, {2, 2});
         return MLStatus::OK;
@@ -527,36 +521,33 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     }
 
     // Register the schema
-    MLOperatorSetId id = { "", 6 };
-    MLSchemaDefinition *def_list = &def;
+    MLOperatorSetId id = {"", 6};
+    MLSchemaDefinition* def_list = &def;
     EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpSetFromSchema(&id, 1, &def_list, 1));
 
     // Register a foo kernel which is doing Add, but bind to Mul.
     MLEdgeType floatTensorType = {
-      MLEdgeClass::kTensor,
-      MLTensorDataType::kFloat
-    };
+        MLEdgeClass::kTensor,
+        MLTensorDataType::kFloat};
 
     MLTypeConstraint kernel_constraint = {"T", &floatTensorType, 1};
 
     MLOpKernelDefinition kernel_def = {
-      LotusIR::kOnnxDomain,
-      "Foo", 
-      1,
-      LotusIR::kCpuExecutionProvider,
-      &kernel_constraint,
-      1,
-      nullptr,
-      0,
-      def.shape_inference_function,
-      def.shape_inference_function_context      
-    };
+        LotusIR::kOnnxDomain,
+        "Foo",
+        1,
+        LotusIR::kCpuExecutionProvider,
+        &kernel_constraint,
+        1,
+        nullptr,
+        0,
+        def.shape_inference_function,
+        def.shape_inference_function_context};
 
     if (!truncate_output) {
       MLOpKernelOptions options = MLOpKernelOptions::kAllowDynamicInputShapes;
       EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&kernel_def, options, CreateABIFooKernel<true>));
-    }
-    else {
+    } else {
       MLOpKernelOptions options = MLOpKernelOptions::kNone;
       EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&kernel_def, options, CreateTruncatedABIFooKernel));
     }
@@ -583,7 +574,6 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     // Now run
     RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);
   }
-
 }
 
 TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
@@ -594,14 +584,14 @@ TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
   //reigster optional schema
   auto optional_schema = GetOptionalOpSchema();
   std::vector<OpSchema> schemas = {optional_schema};
-  
+
   std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
 
   EXPECT_TRUE(registry->RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
   auto def = OptionalKernelDef();
   //Register a foo kernel which is doing Add, but bind to Mul.
   EXPECT_TRUE(registry->RegisterCustomKernel(def, CreateOptionalOpKernel).IsOK());
-  
+
   InferenceSession session_object{so, &DefaultLoggingManager()};
   EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
   EXPECT_TRUE(session_object.Load(OPTIONAL_MODEL1_URI).IsOK());

@@ -15,7 +15,7 @@
 #include "core/graph/schema_registry.h"
 #include "gsl/pointers"
 #include "gsl/gsl_util"
-
+using namespace onnx;
 using namespace Lotus;
 using namespace Lotus::Common;
 

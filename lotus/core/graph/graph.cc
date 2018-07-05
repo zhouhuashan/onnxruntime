@@ -15,7 +15,7 @@
 #include "core/common/logging/logging.h"
 #include "onnx/checker.h"
 #include "core/graph/schema_registry.h"
-
+using namespace onnx;
 using namespace onnx::Utils;
 using namespace onnx::checker;
 

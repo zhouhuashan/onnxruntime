@@ -28,7 +28,7 @@ limitations under the License.
 #include "core/util/math_cpuonly.h"
 #include "external/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "gsl/span"
-
+using namespace onnx;
 namespace Lotus {
 
 REGISTER_KERNEL(KernelDefBuilder("RandomNormal")
@@ -256,7 +256,7 @@ Status Multinomial::Compute(OpKernelContext* ctx) const {
       break;
     }
     default:
-      status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Invalid data type of " , output_dtype_);
+      status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Invalid data type of ", output_dtype_);
   }
 
   return status;

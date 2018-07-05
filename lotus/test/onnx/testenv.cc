@@ -1,5 +1,9 @@
 #include "testenv.h"
+#ifdef _WIN32
+#include "FixedCountFinishCallbackWin.h"
+#else
 #include "FixedCountFinishCallback.h"
+#endif
 #include <core/graph/constants.h>
 #include <core/framework/allocator.h>
 #ifdef USE_CUDA
@@ -17,6 +21,9 @@ TestEnv::TestEnv(const std::vector<ITestCase*>& tests1, TestResultStat& stat1, S
     : next_test_to_run(0), tests(tests1), stat(stat1), finished(new FixedCountFinishCallback((int)tests1.size())), sf(sf1) {
 }
 
+TestEnv::~TestEnv() {
+  delete finished;
+}
 Lotus::Common::Status SessionFactory::create(std::shared_ptr<Lotus::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
   Lotus::SessionOptions so;
   so.session_logid = logid;

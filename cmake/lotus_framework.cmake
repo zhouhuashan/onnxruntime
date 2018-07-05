@@ -11,6 +11,7 @@ endif()
 source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_framework_srcs})
 
 add_library(lotus_framework_obj OBJECT ${lotus_framework_srcs})
+target_include_directories(lotus_framework_obj PUBLIC $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> PUBLIC $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
 set_target_properties(lotus_framework_obj PROPERTIES FOLDER "Lotus")
 set_target_properties(lotus_framework_obj PROPERTIES LINKER_LANGUAGE CUDA)
 # need onnx to build to create headers that this project includes
@@ -37,7 +38,7 @@ file(GLOB_RECURSE lotus_util_srcs
 source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_util_srcs})
 
 add_library(lotus_util_obj OBJECT ${lotus_util_srcs})
-
+target_include_directories(lotus_util_obj PUBLIC $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> PUBLIC $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
 set_target_properties(lotus_util_obj PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(lotus_util_obj PROPERTIES FOLDER "Lotus")
 add_dependencies(lotus_util_obj onnx gsl ${lotus_EXTERNAL_DEPENDENCIES})

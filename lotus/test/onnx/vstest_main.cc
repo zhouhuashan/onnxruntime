@@ -100,18 +100,23 @@ static void run(const std::string& provider) {
     std::vector<ITestCase*> tests = LoadTests({"..\\models"}, {modelName}, cpu_allocator);
     Assert::AreEqual((size_t)1, tests.size());
     SessionFactory sf(provider);
-    std::condition_variable cond;
-    std::mutex m;
-    bool finished = false;
-    RunSingleTestCase(tests[0], sf, p_models, [&cond, &res, &finished](std::shared_ptr<TestCaseResult> result) {
+    HANDLE finish_event = CreateEvent(
+        NULL,                // default security attributes
+        TRUE,                // manual-reset event
+        FALSE,               // initial state is nonsignaled
+        TEXT("FinishEvent")  // object name
+    );
+    Assert::IsNotNull(finish_event);
+    RunSingleTestCase(tests[0], sf, p_models, nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       res = result->GetExcutionResult();
-      finished = true;
-      cond.notify_all();
+      if (pci)
+        SetEventWhenCallbackReturns(pci, finish_event);
+      else if (!SetEvent(finish_event))
+        abort();
+      return Lotus::Common::Status::OK();
     });
-    {
-      std::unique_lock<std::mutex> lk(m);
-      while (!finished) cond.wait(lk);
-    }
+    DWORD dwWaitResult = WaitForSingleObject(finish_event, INFINITE);
+    Assert::AreEqual(WAIT_OBJECT_0, dwWaitResult);
     delete tests[0];
   }
   for (EXECUTE_RESULT r : res) {
@@ -121,7 +126,7 @@ static void run(const std::string& provider) {
 
 TEST_CLASS(ONNX_TEST){
   public :
-  TEST_METHOD(test_sequential_planner){
-    run(LotusIR::kCpuExecutionProvider);
+    TEST_METHOD(test_sequential_planner){
+      run(LotusIR::kCpuExecutionProvider);
   }
 };

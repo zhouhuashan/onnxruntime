@@ -5,7 +5,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "test_utils.h"
 #include "gtest/gtest.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 typedef std::vector<LotusIR::NodeArg*> ArgMap;
@@ -35,7 +35,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
   LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
-  
+
   Status status = graph->Resolve();
   EXPECT_TRUE(status.IsOK());
 
@@ -65,7 +65,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   TensorShape shape(std::vector<int64_t>{2, 3});
   status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
-                                                      state.GetExecutionProvider(xp_typ)->GetAllocator()->Info(), shape);
+                                                 state.GetExecutionProvider(xp_typ)->GetAllocator()->Info(), shape);
   EXPECT_TRUE(status.IsOK());
 
   auto tensor = frame.GetMutableValue<Tensor>(0);

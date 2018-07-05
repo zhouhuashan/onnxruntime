@@ -20,7 +20,7 @@
 
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
-
+using namespace onnx;
 namespace Lotus {
 
 template <class T>

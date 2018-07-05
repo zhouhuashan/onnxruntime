@@ -19,21 +19,19 @@
 #include "core/graph/utils.h"
 #include "onnx/onnx_pb.h"
 
-using namespace onnx;
-
 // TODO - Evaluate switching the types below to support transparent comparators and enable
 // lookups based on gsl::cstring_span<> and std::string_view.  This would reduces allocations
 // converting to std::string, but requires conversion to std::map<std::string, foo, std::less<>>
 // instead of std::unordered_map<std::string, foo, [std::less<foo>]>.
 
-using NodeAttributes = std::unordered_map<std::string, AttributeProto>;
+using NodeAttributes = std::unordered_map<std::string, onnx::AttributeProto>;
 
 namespace LotusIR {
 using NodeIndex = size_t;
 using Version = int64_t;
-using NodeArgInfo = ValueInfoProto;
-using InitializedTensorSet = std::unordered_map<std::string, const TensorProto*>;
-using ArgNameToTypeMap = std::unordered_map<std::string, TypeProto>;
+using NodeArgInfo = onnx::ValueInfoProto;
+using InitializedTensorSet = std::unordered_map<std::string, const onnx::TensorProto*>;
+using ArgNameToTypeMap = std::unordered_map<std::string, onnx::TypeProto>;
 using ProviderType = const std::string&;
 
 class Graph;
@@ -68,7 +66,7 @@ class NodeArg {
   // optional. This is called when loading a <Graph> from <GraphProto>
   // normally.
   NodeArg(const std::string& name,
-          const TypeProto* p_arg_type);
+          const onnx::TypeProto* p_arg_type);
 
   NodeArg(NodeArg&& other) = default;
 
@@ -76,17 +74,17 @@ class NodeArg {
   const std::string& Name() const noexcept;
 
   // Get node arg type.
-  DataType Type() const noexcept;
-  const TypeProto* TypeAsProto() const noexcept;
+  onnx::DataType Type() const noexcept;
+  const onnx::TypeProto* TypeAsProto() const noexcept;
 
   // Get node arg shape.
   // Return null pointer if there's no shape specified.
-  const TensorShapeProto* Shape() const;
+  const onnx::TensorShapeProto* Shape() const;
 
   // Set node arg shape.
   // Shape could only be set after setting type since shape information
   // now is part of TypeProto.
-  void SetShape(const TensorShapeProto& shape);
+  void SetShape(const onnx::TensorShapeProto& shape);
 
   // Get node arg info proto.
   const NodeArgInfo& ToProto() const noexcept { return node_arg_info_; }
@@ -100,13 +98,13 @@ class NodeArg {
   LOTUS_DISALLOW_COPY_AND_ASSIGN(NodeArg);
   friend class Graph;
 
-  void SetType(DataType p_type);
-  void SetType(const TypeProto& type_proto);
+  void SetType(onnx::DataType p_type);
+  void SetType(const onnx::TypeProto& type_proto);
 
   NodeArg& operator=(NodeArg&& other) = delete;
 
   // Node arg PType.
-  DataType type_;
+  onnx::DataType type_;
 
   // Node arg name, type and shape.
   NodeArgInfo node_arg_info_;
@@ -157,7 +155,7 @@ class Node {
 
   // Get the OperatorSchema this node refers to. ValidateOpType() must have been called previously.
   // May be null in the future.
-  const OpSchema* Op() const noexcept;
+  const onnx::OpSchema* Op() const noexcept;
 
   // Get node description.
   const std::string& Description() const noexcept;
@@ -205,7 +203,7 @@ class Node {
   const std::set<std::string>& ControlInputs() const noexcept { return relationships_.control_inputs; }
 
   // Add a node attribute with specified attribute name and value.
-  void AddAttribute(const std::string& attr_name, const AttributeProto& value);
+  void AddAttribute(const std::string& attr_name, const onnx::AttributeProto& value);
 
 #define ADD_ATTR_INTERFACES(TypeName)             \
   void AddAttribute(const std::string& attr_name, \
@@ -216,8 +214,8 @@ class Node {
   ADD_ATTR_INTERFACES(int64_t)
   ADD_ATTR_INTERFACES(float)
   ADD_ATTR_INTERFACES(std::string)
-  ADD_ATTR_INTERFACES(TensorProto)
-  ADD_ATTR_INTERFACES(GraphProto)
+  ADD_ATTR_INTERFACES(onnx::TensorProto)
+  ADD_ATTR_INTERFACES(onnx::GraphProto)
 
   // Clear specified node attribute.
   bool ClearAttribute(const std::string& attr_name);
@@ -233,7 +231,7 @@ class Node {
   void SetExecutionProviderType(ProviderType execution_provider_type);
 
   // Get the corresponding <NodeProto>.
-  void ToProto(NodeProto& proto) const;
+  void ToProto(onnx::NodeProto& proto) const;
 
   // iterate through all input/output defs
   void ForEachDef(std::function<void(const LotusIR::NodeArg*, bool is_input)> func) const;
@@ -353,7 +351,7 @@ class Node {
   std::string domain_;
 
   // OperatorSchema that <*this> node refers to.
-  const OpSchema* op_ = nullptr;
+  const onnx::OpSchema* op_ = nullptr;
 
   // Node doc string.
   std::string description_;
@@ -426,7 +424,7 @@ class GraphBase {
   int NumberOfNodes() const noexcept { return num_of_nodes_; }
 
   // Get NodeArg by name, or create NodeArg owned by the graph if not found
-  NodeArg& GetOrCreateNodeArg(const std::string& name, const TypeProto* p_arg_type) {
+  NodeArg& GetOrCreateNodeArg(const std::string& name, const onnx::TypeProto* p_arg_type) {
     auto iter = node_args_.find(name);
     if (iter != node_args_.end())
       return *(iter->second);
@@ -543,7 +541,7 @@ class GraphBase {
   void AddSourceSinkNodes();
 
   // Add node with specified <node_proto>.
-  Node* AddNode(const NodeProto& node_proto,
+  Node* AddNode(const onnx::NodeProto& node_proto,
                 const ArgNameToTypeMap& name_to_type);
 
   NodeIndex SourceNodeIndex() const noexcept { return source_node_index_; }
@@ -611,7 +609,7 @@ class GraphBase {
   // Returns the inferred shape+type for every output of the node in
   // output parameter inferredShapes.
   Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
-                                                  /*out*/ std::vector<TypeProto>& inferred_shapes);
+                                                  /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_
@@ -707,9 +705,9 @@ class Graph : public GraphBase {
   void SetDescription(const std::string& description) override;
 
   // Add/Remove/Get initial tensors for some graph inputs.
-  void AddInitializedTensor(const TensorProto& tensor_proto);
+  void AddInitializedTensor(const onnx::TensorProto& tensor_proto);
   void RemoveInitializedTensor(const std::string& tensor_name);
-  bool GetInitializedTensor(const std::string& tensor_name, gsl::not_null<const TensorProto**> value) const;
+  bool GetInitializedTensor(const std::string& tensor_name, gsl::not_null<const onnx::TensorProto**> value) const;
   const InitializedTensorSet& GetAllInitializedTensors() const noexcept;
   void CleanAllInitializedTensors() noexcept;
 
@@ -717,7 +715,7 @@ class Graph : public GraphBase {
   const std::vector<const NodeArg*>& GetValueInfo() const noexcept;
 
   // Serialize the <Graph> into <GraphProto>.
-  const GraphProto& ToGraphProto();
+  const onnx::GraphProto& ToGraphProto();
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
@@ -728,7 +726,7 @@ class Graph : public GraphBase {
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object.
-  Graph(GraphProto* graph_proto,
+  Graph(onnx::GraphProto* graph_proto,
         const std::unordered_map<std::string, int>& domain_to_version,
         Version ir_version,
         const ILotusOpSchemaCollection* local_registry = nullptr);
@@ -752,7 +750,7 @@ class Graph : public GraphBase {
   Lotus::Common::Status Resolve(bool no_proto_sync_required);
 
   Lotus::Common::Status InferAndVerifyTypeMatch(Node& node,
-                                                const OpSchema& op);
+                                                const onnx::OpSchema& op);
 
   // Apply type-inference and type-checking to all inputs and initializers:
   Lotus::Common::Status TypeCheckInputsAndInitializers();
@@ -781,7 +779,7 @@ class Graph : public GraphBase {
   // functions in <Graph> will also be fed into <graph_proto_> so that
   // it's consistent with <*this> graph.
   // This pointer is owned by parent model.
-  GraphProto* graph_proto_;
+  onnx::GraphProto* graph_proto_;
 
   // The node which refers to <*this> graph (Function).
   // Node* node_;

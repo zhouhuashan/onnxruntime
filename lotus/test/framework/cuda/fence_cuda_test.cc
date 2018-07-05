@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 
 using namespace std;
+using namespace onnx;
 using namespace Lotus::Logging;
 
 namespace Lotus {

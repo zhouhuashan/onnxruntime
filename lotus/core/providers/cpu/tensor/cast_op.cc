@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/cast_op.h"
 #include <sstream>
-
+using namespace onnx;
 namespace Lotus {
 
 const std::vector<MLDataType> castOpTypeConstraints{
@@ -34,17 +34,17 @@ REGISTER_KERNEL(KernelDefBuilder("Cast")
                       .TypeConstraint("T2", DataTypeImpl::GetTensorType<float>()),  \
                   Cast<in_type>);                                                   \
                                                                                     \
-template<>                                                                          \
-Status Cast<in_type>::Compute(OpKernelContext* context) const {                     \
+  template <>                                                                       \
+  Status Cast<in_type>::Compute(OpKernelContext* context) const {                   \
     const Tensor* X = context->Input<Tensor>(0);                                    \
     const TensorShape& shape = X->Shape();                                          \
     Tensor* Y = context->Output(0, TensorShape(shape));                             \
     if (to_ != TensorProto_DataType_FLOAT)                                          \
-    /*todo: append the to_ type to string*/                                         \
+      /*todo: append the to_ type to string*/                                       \
       return Status(LOTUS, FAIL, "Cast to unsupported type.");                      \
     CastData<in_type, float>(X, Y, shape);                                          \
     return Status::OK();                                                            \
-}
+  }
 
 ADD_TO_FLOAT_CAST_OP(uint8_t);
 ADD_TO_FLOAT_CAST_OP(int16_t);

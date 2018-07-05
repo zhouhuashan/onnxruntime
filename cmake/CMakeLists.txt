@@ -91,6 +91,10 @@ if(WIN32)
   #Always enable exception handling, even for Windows ARM
   SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 endif()
+
+# External dependencies
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
+
 #Here we support three build mode:
 #1. (recommended)lotus_USE_PREBUILT_PB is set (ONNX_CUSTOM_PROTOC_EXECUTABLE should also be set)
 #   We will not build protobuf, will use a prebuilt binary instead. This mode can also support cross-compiling
@@ -108,9 +112,20 @@ if(lotus_USE_PREBUILT_PB)
     _PROTOBUF_INSTALL_PREFIX
     ${_PROTOBUF_INSTALL_PREFIX}/..
     REALPATH)
-  include(${_PROTOBUF_INSTALL_PREFIX}/cmake/protobuf-config.cmake)
+  if(WIN32)
+    include(${_PROTOBUF_INSTALL_PREFIX}/cmake/protobuf-config.cmake)
+  else()
+    include(${_PROTOBUF_INSTALL_PREFIX}/lib64/cmake/protobuf/protobuf-config.cmake)
+  endif()
   include(protobuf_function.cmake)
 else()
+  # zlib
+  find_package(ZLIB)
+  if (NOT ZLIB_FOUND)
+    include(zlib)
+    set_target_properties(zlib_copy_headers_to_destination PROPERTIES FOLDER "External/zlib")
+    set_target_properties(zlib_create_destination_dir PROPERTIES FOLDER "External/zlib")
+  endif()
   # use protobuf as a submodule
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/protobuf/cmake EXCLUDE_FROM_ALL)
   set_target_properties(libprotobuf PROPERTIES FOLDER "External/Protobuf")
@@ -124,8 +139,6 @@ else()
 endif()
 get_target_property(PROTOBUF_INCLUDE_DIRS protobuf::libprotobuf
     INTERFACE_INCLUDE_DIRECTORIES)
-
-set(googletest_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external/googletest/googletest/include ${PROJECT_SOURCE_DIR}/external/googletest/googlemock/include)
 
 if (lotus_USE_CUDA AND "${lotus_CUDNN_HOME}" STREQUAL "")
   message(FATAL_ERROR "lotus_CUDNN_HOME required for lotus_USE_CUDA")
@@ -155,10 +168,6 @@ if (lotus_SPLIT_UNIT_TEST_PROJECTS)
   set(SingleUnitTestProject OFF)
 endif()
 
-
-
-# External dependencies
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
 
 include(date)
@@ -173,11 +182,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DGSL_UNENFORCED_ON_CONT
 include(eigen)
 set(lotus_EXTERNAL_DEPENDENCIES eigen)
 set(lotus_EXTERNAL_LIBRARIES protobuf::libprotobuf)
-
-# zlib
-include(zlib)
-set_target_properties(zlib_copy_headers_to_destination PROPERTIES FOLDER "External/zlib")
-set_target_properties(zlib_create_destination_dir PROPERTIES FOLDER "External/zlib")
 
 # gtest and gmock
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/googletest EXCLUDE_FROM_ALL)
@@ -247,12 +251,8 @@ endif()
 
 include_directories(
     ${LOTUS_ROOT}
-    ${PROJECT_SOURCE_DIR}/external/onnx
-    ${CMAKE_CURRENT_BINARY_DIR}/external/onnx
     # External dependencies.
-    ${PROTOBUF_INCLUDE_DIRS}
     ${eigen_INCLUDE_DIRS}
-    ${date_INCLUDE_DIR}
     ${gsl_INCLUDE_DIR}
 )
 

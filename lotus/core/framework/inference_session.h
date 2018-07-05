@@ -161,7 +161,7 @@ class InferenceSession {
     * @param protobuf object corresponding to the model file.
     * @return OK if success.
     */
-  Common::Status Load(const ModelProto& model_proto);
+  Common::Status Load(const onnx::ModelProto& model_proto);
 
   /**
     * Load an ONNX model.

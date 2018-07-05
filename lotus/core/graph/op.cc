@@ -3,6 +3,7 @@
 #include "core/graph/op.h"
 #include "core/graph/utils.h"
 
+using namespace onnx;
 namespace LotusIR {
 
 bool TypeUtils::IsValidAttribute(const AttributeProto& attr) {

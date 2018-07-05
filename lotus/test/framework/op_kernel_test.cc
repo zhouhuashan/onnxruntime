@@ -6,8 +6,8 @@
 #include "core/graph/op.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "gtest/gtest.h"
-
 using namespace std;
+using namespace onnx;
 using namespace Lotus::Logging;
 using namespace LotusIR;
 

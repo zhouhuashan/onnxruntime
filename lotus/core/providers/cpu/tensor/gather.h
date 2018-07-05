@@ -44,8 +44,8 @@ class Gather final : public OpKernel {
         auto idx = idxs[i];
         if (idx < 0 || idx >= data_shape[axis]) {
           std::ostringstream err_str;
-          err_str << "indices element out of data bounds, idx=" << to_string(idx);
-          err_str << " data_dim=" << to_string(data_shape[axis]);
+          err_str << "indices element out of data bounds, idx=" << std::to_string(idx);
+          err_str << " data_dim=" << std::to_string(data_shape[axis]);
           return Status(LOTUS, INVALID_ARGUMENT, err_str.str());
         }
         const T* src = src_p + idx * block;

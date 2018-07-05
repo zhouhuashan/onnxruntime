@@ -12,10 +12,10 @@ class TestResultStat {
   std::atomic_int succeeded;
   std::atomic_int not_implemented;
   std::atomic_int load_model_failed;
-  std::atomic_int invalid_graph;
   std::atomic_int throwed_exception;
   std::atomic_int result_differs;
   std::atomic_int skipped;
+  std::atomic_int invalid_graph;
 
   TestResultStat() : succeeded(0), not_implemented(0), load_model_failed(0), throwed_exception(0), result_differs(0), skipped(0), invalid_graph(0) {}
 

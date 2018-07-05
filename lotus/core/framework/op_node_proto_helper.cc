@@ -7,7 +7,7 @@
 #include "core/framework/op_kernel.h"
 #include "onnx/defs/schema.h"
 #include "gsl/span"
-
+using namespace onnx;
 namespace Lotus {
 
 #define DEFINE_GET_ATTR(IMPL_T, T, type)                                     \
@@ -57,12 +57,12 @@ namespace Lotus {
     return Status::OK();                                                     \
   }
 
-#define DEFINE_GET_ATTR_SPECIALIZATIONS(type, list) \
-  DEFINE_GET_ATTR(ProtoHelperNodeContext, type, list)         \
+#define DEFINE_GET_ATTR_SPECIALIZATIONS(type, list)   \
+  DEFINE_GET_ATTR(ProtoHelperNodeContext, type, list) \
   DEFINE_GET_ATTR(InferenceContext, type, list)
 
-#define DEFINE_GET_ATTRS_SPECIALIZATIONS(type, list) \
-  DEFINE_GET_ATTRS(ProtoHelperNodeContext, type, list)         \
+#define DEFINE_GET_ATTRS_SPECIALIZATIONS(type, list)   \
+  DEFINE_GET_ATTRS(ProtoHelperNodeContext, type, list) \
   DEFINE_GET_ATTRS(InferenceContext, type, list)
 
 DEFINE_GET_ATTR_SPECIALIZATIONS(float, f)
@@ -101,11 +101,11 @@ const TypeProto* ProtoHelperNodeContext::getOutputType(size_t index) const {
   return node_.OutputDefs()[index]->TypeAsProto();
 }
 
-template<class Impl_t>
+template <class Impl_t>
 uint32_t OpNodeProtoHelper<Impl_t>::GetPrimitiveAttrElementCount(AttributeProto_AttributeType type,
-                                                    const std::string& name) const noexcept {
-   const AttributeProto* attr = impl_->getAttribute(name);
-    if (attr) {
+                                                                 const std::string& name) const noexcept {
+  const AttributeProto* attr = impl_->getAttribute(name);
+  if (attr) {
     switch (type) {
       case AttributeProto_AttributeType_FLOAT:
       case AttributeProto_AttributeType_INT:
@@ -133,9 +133,9 @@ uint32_t OpNodeProtoHelper<Impl_t>::GetPrimitiveAttrElementCount(AttributeProto_
   return 0;
 }
 
-template<class Impl_t>
+template <class Impl_t>
 bool OpNodeProtoHelper<Impl_t>::HasPrimitiveAttribute(AttributeProto_AttributeType type,
-                                         const std::string& name) const noexcept {
+                                                      const std::string& name) const noexcept {
   return GetPrimitiveAttrElementCount(type, name) > 0;
 }
 

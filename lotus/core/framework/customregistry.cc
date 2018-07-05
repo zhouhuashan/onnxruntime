@@ -1,5 +1,5 @@
 #include "core/framework/customregistry.h"
-
+using namespace onnx;
 namespace Lotus {
 
 CustomRegistry::CustomRegistry(bool create_func_kernel) : KernelRegistry(create_func_kernel) {}

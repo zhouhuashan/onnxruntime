@@ -5,8 +5,6 @@
 #include "core/common/exceptions.h"
 #include "onnx/onnx_pb.h"
 
-using namespace onnx;
-
 namespace Lotus {
 //maps
 using MapStringToString = std::map<std::string, std::string>;
@@ -29,9 +27,9 @@ using VectorMapInt64ToFloat = std::vector<MapInt64ToFloat>;
 class DataTypeImpl;
 class TensorTypeBase;
 // DataTypeImpl pointer as unique DataTypeImpl identifier.
-using MLDataType = const DataTypeImpl *;
-using DeleteFunc = std::function<void (void *)>;
-using CreateFunc = std::function<void *()>;
+using MLDataType = const DataTypeImpl*;
+using DeleteFunc = std::function<void(void*)>;
+using CreateFunc = std::function<void*()>;
 
 template <typename T>
 static void Delete(void* p) {
@@ -49,7 +47,7 @@ class DataTypeImpl {
   // able to represent multiple type protos, for example, "float" could match float16, float.
   // 3) After sub-class having the implementation of this function in-place, we should either
   // change the return value from true to false here or make this function as a pure virtual function.
-  virtual bool IsCompatible(const TypeProto& type_proto) const = 0;
+  virtual bool IsCompatible(const onnx::TypeProto& type_proto) const = 0;
   virtual size_t Size() const = 0;
 
   virtual DeleteFunc GetDeleteFunc() const = 0;
@@ -102,7 +100,7 @@ class TensorTypeBase : public DataTypeImpl {
     // should never reach here.
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
-  bool IsCompatible(const TypeProto& /*type_proto*/) const override {
+  bool IsCompatible(const onnx::TypeProto& /*type_proto*/) const override {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
@@ -120,7 +118,7 @@ struct TensorType : public TensorTypeBase {
   MLDataType GetElementType() const override {
     return DataTypeImpl::GetType<elemT>();
   }
-  bool IsCompatible(const TypeProto& type_proto) const override;
+  bool IsCompatible(const onnx::TypeProto& type_proto) const override;
 
  private:
   TensorType() = default;
@@ -146,7 +144,7 @@ class NonTensorType : public NonTensorTypeBase {
     return &non_tensor_type;
   }
 
-  CreateFunc GetCreateFunc() const override{
+  CreateFunc GetCreateFunc() const override {
     return []() { return new T(); };
   }
 
@@ -158,7 +156,7 @@ class NonTensorType : public NonTensorTypeBase {
     return &Delete<T>;
   }
 
-  bool IsCompatible(const TypeProto& type_proto) const override;
+  bool IsCompatible(const onnx::TypeProto& type_proto) const override;
 
  private:
   NonTensorType() = default;
@@ -167,7 +165,7 @@ class NonTensorType : public NonTensorTypeBase {
 template <typename T>
 class NonOnnxType : public DataTypeImpl {
  public:
-  bool IsCompatible(const TypeProto& type_proto) const override{
+  bool IsCompatible(const onnx::TypeProto& type_proto) const override {
     UNUSED_PARAMETER(type_proto);
     return false;
   }

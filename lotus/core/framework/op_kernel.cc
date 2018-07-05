@@ -20,7 +20,7 @@ std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
 // "name" can represent either a type parameter or an input/output parameter.
 // Returns null if a match is not found.
 const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::string& name) {
-  const OpSchema& op_schema = *node.Op();
+  const onnx::OpSchema& op_schema = *node.Op();
   // search inputs:
   const size_t len = node.InputArgCount().size();
   LOTUS_ENFORCE(len <= op_schema.inputs().size());

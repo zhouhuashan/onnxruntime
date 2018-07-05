@@ -8,7 +8,7 @@
 #include "core/framework/session_state.h"
 #include "core/graph/utils.h"
 #include "core/framework/data_types.h"
-
+using namespace onnx;
 namespace Lotus {
 
 std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind) {
@@ -216,14 +216,14 @@ class PlannerImpl {
 
   MLDataType GetMLDataType(const LotusIR::NodeArg& arg) {
     const DataType ptype = arg.Type();
-    const onnx::TypeProto& type_proto = onnx::Utils::DataTypeUtils::ToTypeProto(ptype);
+    const TypeProto& type_proto = Utils::DataTypeUtils::ToTypeProto(ptype);
     return DataTypeImpl::TypeFromProto(type_proto);
   }
 
   /*! \brief Given a tensor-type, return the size of an element of the tensor.
   */
   size_t GetElementSize(const DataType& tensor_type) {
-    const onnx::TypeProto& type_proto = onnx::Utils::DataTypeUtils::ToTypeProto(tensor_type);
+    const TypeProto& type_proto = Utils::DataTypeUtils::ToTypeProto(tensor_type);
     MLDataType ml_data_type = DataTypeImpl::TypeFromProto(type_proto);
     const TensorTypeBase* tensor_type_base = ml_data_type->AsTensorType();
     LOTUS_ENFORCE(nullptr != tensor_type_base);
@@ -492,7 +492,7 @@ class PlannerImpl {
   bool IsNonTensor(const LotusIR::NodeArg& nodearg) {
     // TODO: unclear why we should go through a string-representation of type
     auto ptype = nodearg.Type();
-    auto& type_proto = onnx::Utils::DataTypeUtils::ToTypeProto(ptype);
+    auto& type_proto = Utils::DataTypeUtils::ToTypeProto(ptype);
     return !type_proto.has_tensor_type();
   }
 

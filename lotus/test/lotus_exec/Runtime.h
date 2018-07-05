@@ -169,7 +169,7 @@ class WinMLRuntime {
     for (size_t index = 0, end = inputs.size(); index < end; ++index) {
       MLValue mlvalue;
       const LotusIR::NodeArg& input = *(inputs[index]);
-      const TensorShapeProto* input_shape = input.Shape();
+      const onnx::TensorShapeProto* input_shape = input.Shape();
       if (input.Name().empty())
         continue;
 
@@ -262,7 +262,7 @@ class WinMLRuntime {
         if (output.IsTensor()) {
           ctensor = &output.Get<Tensor>();
 
-          ValueInfoProto expected_output_info = (*outputMeta)[i]->ToProto();
+          onnx::ValueInfoProto expected_output_info = (*outputMeta)[i]->ToProto();
           std::pair<COMPARE_RESULT, std::string> ret = VerifyValueInfo(expected_output_info, output);
           COMPARE_RESULT compare_result = ret.first;
           compare_result = ret.first;

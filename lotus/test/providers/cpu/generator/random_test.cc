@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <random>
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 

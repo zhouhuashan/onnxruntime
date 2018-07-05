@@ -22,7 +22,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/node_placement.h"
-
+using namespace onnx;
 namespace Lotus {
 
 class InferenceSession::Impl {

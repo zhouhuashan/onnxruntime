@@ -3,7 +3,7 @@
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 

@@ -19,7 +19,7 @@ function(AddTest)
   endif(_UT_DEPENDS)
 
   target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
-  
+  target_include_directories(${_UT_TARGET} PRIVATE ${date_INCLUDE_DIR})
   if (WIN32)
     #It's cmake bug, cannot add this compile option for cuda compiler
     #(https://gitlab.kitware.com/cmake/cmake/issues/17535)
@@ -260,9 +260,10 @@ endif()
 
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
 add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
+target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/external/onnx/onnx $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
-lotus_protobuf_generate(APPEND_PATH TARGET onnx_test_runner_common)
+lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${PROJECT_SOURCE_DIR}/external/onnx/onnx TARGET onnx_test_runner_common)
 
 set(onnx_test_libs 
     ${FS_STDLIB}
@@ -299,7 +300,6 @@ if (lotus_USE_OPENBLAS)
 endif()
 
 add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
-target_include_directories(onnx_test_runner PUBLIC ${lotusIR_graph_header})
 target_link_libraries(onnx_test_runner PRIVATE onnx_test_runner_common ${GETOPT_LIB} ${onnx_test_libs})
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
@@ -311,6 +311,7 @@ if(WIN32)
   if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")
     add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
     target_compile_options(onnx_test_runner_vstest PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
+    target_include_directories(onnx_test_runner_vstest PRIVATE ${date_INCLUDE_DIR}) 
     target_link_libraries(onnx_test_runner_vstest ${onnx_test_libs} onnx_test_runner_common)
     set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
   endif()

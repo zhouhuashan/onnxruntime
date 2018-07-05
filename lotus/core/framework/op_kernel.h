@@ -39,10 +39,8 @@ class OpKernel {
 
   virtual Status Compute(OpKernelContext* context) const = 0;
 
-  virtual Status ComputeAsync(OpKernelContext* context,
-                              DoneCallback done) const {
-    UNUSED_PARAMETER(context);
-    UNUSED_PARAMETER(done);
+  virtual Status ComputeAsync(OpKernelContext*,
+                              DoneCallback) const {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
@@ -70,7 +68,7 @@ class OpKernelContext {
   @param arg_num The operator argument number. 
   @returns Number of inputs the argument has. 
   */
-  int NumInputs(int arg_num) const {
+  int NumInputs(size_t arg_num) const {
     auto& arg_counts = kernel_->Node().InputArgCount();
 
     LOTUS_ENFORCE(arg_num < arg_counts.size(),
@@ -162,9 +160,8 @@ class OpKernelContext {
 
 // Fetching output tensor without shape is not allowed.
 template <>
-inline Tensor* OpKernelContext::Output<Tensor>(int index) {
+inline Tensor* OpKernelContext::Output<Tensor>(int) {
   LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
-  (index);
   return nullptr;
 }
 

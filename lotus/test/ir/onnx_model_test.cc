@@ -7,7 +7,7 @@
 #include "test/ir/node_helper.h"
 
 using namespace Lotus;
-
+using namespace onnx;
 namespace LotusIR {
 namespace Test {
 // Tests that Resolve() properly clears the state of topological sorted nodes,
@@ -15,7 +15,7 @@ namespace Test {
 // Assumes the graph passed in has been previously resolved.
 void TestResolve(LotusIR::Graph* p_graph) {
   const std::vector<LotusIR::NodeIndex>* nodes;
-  p_graph->GetNodesInTopologicalOrder(&nodes);
+  EXPECT_TRUE(p_graph->GetNodesInTopologicalOrder(&nodes).IsOK());
   auto nodes_before = *nodes;
   auto& inputs_before = p_graph->GetInputs();
   auto& outputs_before = p_graph->GetOutputs();

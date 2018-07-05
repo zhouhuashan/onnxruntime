@@ -2,7 +2,6 @@
 #include <atomic>
 #include <vector>
 #include "TestResultStat.h"
-#include "FixedCountFinishCallback.h"
 #include <core/common/common.h>
 #include <core/framework/inference_session.h>
 #include "test/framework/TestAllocatorManager.h"
@@ -13,6 +12,10 @@
 #endif
 
 class ITestCase;
+class TestCaseResult;
+template <typename T>
+class FixedCountFinishCallbackImpl;
+using FixedCountFinishCallback = FixedCountFinishCallbackImpl<TestCaseResult>;
 
 class SessionFactory {
  private:
@@ -29,9 +32,10 @@ class TestEnv {
   std::vector<ITestCase*> tests;
   std::atomic_int next_test_to_run;
   TestResultStat& stat;
-  std::unique_ptr<FixedCountFinishCallback> finished;
+  FixedCountFinishCallback* finished;
   const SessionFactory& sf;
   TestEnv(const std::vector<ITestCase*>& tests, TestResultStat& stat1, SessionFactory& sf1);
+  ~TestEnv();
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TestEnv);

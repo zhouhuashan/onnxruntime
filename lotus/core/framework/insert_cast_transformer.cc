@@ -1,7 +1,7 @@
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/data_types.h"
 #include "core/inc/op_kernel_author.h"
-
+using namespace onnx;
 namespace Lotus {
 class IdGenerator {
  public:

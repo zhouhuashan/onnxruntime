@@ -310,6 +310,42 @@
   <TestJob Name="LotusModelTest.coreml_SqueezeNet_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
   </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_OpenML_1464_blood_transfusion.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_OpenML_1464_blood_transfusion.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_OpenML_312_scene.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_OpenML_312_scene.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_sklearn_load_wine.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVC_sklearn_load_wine.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVR_sklearn_load_boston.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVR_sklearn_load_boston.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVR_sklearn_load_diabetes.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SVR_sklearn_load_diabetes.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
   <TestJob Name="LotusModelTest.coreml_VGG16_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
   </TestJob>

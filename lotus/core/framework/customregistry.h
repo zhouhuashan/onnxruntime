@@ -29,7 +29,7 @@ class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegis
   * Call this before invoking Load().
   * @return OK if success.
   */
-  Common::Status RegisterCustomOpSet(std::vector<OpSchema>& schemas, const std::string& domain, int version);
+  Common::Status RegisterCustomOpSet(std::vector<onnx::OpSchema>& schemas, const std::string& domain, int version);
 
  private:
   CustomRegistry() = delete;

@@ -1,15 +1,19 @@
 #include "TestCase.h"
-#include "core/platform/env.h"
-#include "core/framework/tensorprotoutils.h"
 #include <fstream>
-#include <google/protobuf/util/delimited_message_util.h>
 #include <memory>
+
+#include "core/platform/env.h"
+#include "core/graph/model.h"
+#include "core/framework/tensorprotoutils.h"
+#include <google/protobuf/util/delimited_message_util.h>
+
 #include "tml.pb.h"
 
 using namespace std::experimental::filesystem::v1;
 
 using namespace Lotus;
 
+namespace {
 template <typename InputType, typename OutputType>
 Common::Status ConvertVector(const InputType& data, OutputType** vec) {
   //void* p = allocator->Alloc(sizeof(OutputType));
@@ -94,19 +98,48 @@ static Common::Status SortTensorFileNames(std::vector<path>& input_pb_files) {
   return Common::Status::OK();
 }
 
-Lotus::Common::Status loadModelFile(const std::string& model_url, onnx::ModelProto& model_pb) {
+template <typename FUNC>
+Lotus::Common::Status LoopDataFile(const path& outputs_pb, Lotus::AllocatorPtr allocator, FUNC func) {
+  std::string content;
+  LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
+  google::protobuf::io::CodedInputStream coded_input((const uint8_t*)content.data(), (int)content.size());
+  bool clean_eof = false;
+  Lotus::Common::Status st;
+  int item_id = 1;
+  for (Lotus::proto::TraditionalMLData data; google::protobuf::util::ParseDelimitedFromCodedStream(&data, &coded_input, &clean_eof); ++item_id, data.Clear()) {
+    std::unique_ptr<Lotus::MLValue> value;
+    switch (data.values_case()) {
+      case Lotus::proto::TraditionalMLData::kVectorMapStringToFloat:
+        st = ProtoToMLValue<decltype(data.vector_map_string_to_float().v()), VectorMapStringToFloat>(data.vector_map_string_to_float().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kVectorMapInt64ToFloat:
+        st = ProtoToMLValue<decltype(data.vector_map_int64_to_float().v()), VectorMapInt64ToFloat>(data.vector_map_int64_to_float().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kTensor:
+        st = ProtoToMLValue<onnx::TensorProto, Lotus::Tensor>(data.tensor(), value, allocator);
+        break;
+      default:
+        st = Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
+    }
+    if (!st.IsOK()) break;
+    st = func(data.name(), value);
+    if (!st.IsOK()) break;
+  }
+  if (!st.IsOK()) return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::FAIL, "load the ", item_id, "-th item in file '", outputs_pb.string(), "' failed,", st.ErrorMessage());
+  if (!clean_eof) {
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "parse input file '", outputs_pb.string(), "' failed, clean_eof==false");
+  }
+  return Status::OK();
+}
+
+Lotus::Common::Status loadModelFile(const std::string& model_url, onnx::ModelProto* model_pb) {
   std::ifstream input(model_url, std::ios::in | std::ios::binary);
   if (!input) {
     std::ostringstream oss;
     oss << "open file " << model_url << " failed";
     return Status(Lotus::Common::LOTUS, Lotus::Common::NO_SUCHFILE, oss.str());
   }
-  if (!model_pb.ParseFromIstream(&input)) {
-    std::ostringstream oss;
-    oss << "parse file " << model_url << " failed";
-    return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_PROTOBUF, oss.str());
-  }
-  return Status::OK();
+  return LotusIR::Model::Load(input, model_pb);
 }
 
 template <typename T>
@@ -115,13 +148,13 @@ static void RepeatedPtrFieldToVector(const ::google::protobuf::RepeatedPtrField<
     out.push_back(input_value_info[i]);
   }
 }
-
+}  // namespace
 Lotus::Common::Status OnnxTestCase::ParseModel() {
   Lotus::Common::Status st = Common::Status::OK();
   std::call_once(model_parsed, [this, &st]() {
     //parse model
     onnx::ModelProto model_pb;
-    st = loadModelFile(model_url.string(), model_pb);
+    st = loadModelFile(model_url.string(), &model_pb);
     if (!st.IsOK()) return;
     const onnx::GraphProto& graph = model_pb.graph();
     if (graph.node().size() == 1) {
@@ -171,22 +204,14 @@ Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<
 
   path inputs_pb = test_data_dirs[id] / "inputs.pb";
   if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
-    std::string content;
-    LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(inputs_pb.c_str(), &content));
-    std::vector<onnx::TensorProto> input_pbs;
-    google::protobuf::io::CodedInputStream coded_input((const uint8_t*)content.data(), (int)content.size());
-    bool clean_eof = false;
-    onnx::TensorProto tensor;
-    while (google::protobuf::util::ParseDelimitedFromCodedStream(&tensor, &coded_input, &clean_eof)) {
-      input_pbs.push_back(tensor);
-      tensor.Clear();
-    }
-
-    if (!clean_eof) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "parse input file '", inputs_pb.string(), "' failed, clean_eof==false");
-    }
-    LOTUS_RETURN_IF_ERROR(ConvertInput(input_pbs, feeds));
-    return Status::OK();
+    return LoopDataFile(inputs_pb, allocator_, [&feeds](const std::string& name, std::unique_ptr<Lotus::MLValue>& value) {
+      if (name.empty())
+        return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "name is empty");
+      auto pv = feeds.insert(std::make_pair(name, *value.release()));
+      if (!pv.second)
+        return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "duplicated input name");
+      return Status::OK();
+    });
   }
 
   std::vector<path> input_pb_files;
@@ -234,39 +259,6 @@ class TensorDataLoder : public DataLoder {
   }
 };
 
-class TraditionalMLDataLoder : public DataLoder {
- private:
-  Lotus::AllocatorPtr allocator_;
-
- public:
-  TraditionalMLDataLoder(const Lotus::AllocatorPtr& allocator) : allocator_(allocator) {
-  }
-  Common::Status Load(const path& f, std::unique_ptr<Lotus::MLValue>& value) const override {
-    Lotus::proto::TraditionalMLData data;
-    {
-      std::ifstream input(f, std::ios::in | std::ios::binary);
-      if (!input) {
-        return Common::Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "open file failed");
-      }
-      if (!data.ParseFromIstream(&input)) {
-        return Common::Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "parse file failed");
-      }
-    }
-    Common::Status st;
-    switch (data.values_case()) {
-      case Lotus::proto::TraditionalMLData::kVectorMapStringToFloat:
-        st = ProtoToMLValue<decltype(data.vector_map_string_to_float().v()), VectorMapStringToFloat>(data.vector_map_string_to_float().v(), value, allocator_);
-        break;
-      case Lotus::proto::TraditionalMLData::kVectorMapInt64ToFloat:
-        st = ProtoToMLValue<decltype(data.vector_map_int64_to_float().v()), VectorMapInt64ToFloat>(data.vector_map_int64_to_float().v(), value, allocator_);
-        break;
-      default:
-        st = Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
-    }
-    return st;
-  }
-};
-
 Lotus::Common::Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<Lotus::MLValue>& output_values) {
   for (const path& f : files) {
     if (!f.has_extension()) return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown file type, path = ", f);
@@ -287,10 +279,16 @@ Lotus::Common::Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, 
 Lotus::Common::Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) {
   if (id >= test_data_dirs.size())
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs.size());
-
-  if (!ParseModel().IsOK())
-  return Status(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed");
-
+  Lotus::Common::Status st = ParseModel();
+  if (!st.IsOK())
+    return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed: ", st.ErrorMessage());
+  path outputs_pb = test_data_dirs[id] / "outputs.pb";
+  if (std::experimental::filesystem::exists(outputs_pb)) {  //has an all-in-one output file
+    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, std::unique_ptr<Lotus::MLValue>& value) {
+      output_values.push_back(*value.release());
+      return Status::OK();
+    });
+  }
   std::vector<path> output_pb_files;
   const path pb(".pb");
   const path tpb(".tpb");
@@ -382,5 +380,5 @@ Lotus::Common::Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorP
 
 OnnxTestCase::OnnxTestCase(const Lotus::AllocatorPtr& allocator, const std::string& test_case_name1) : allocator_(allocator), test_case_name(test_case_name1) {
   loaders["pb"] = new TensorDataLoder(allocator);
-  loaders["tpb"] = new TraditionalMLDataLoder(allocator);
+  //TODO: add more
 }

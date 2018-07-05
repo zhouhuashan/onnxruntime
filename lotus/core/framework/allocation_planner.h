@@ -103,12 +103,12 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
 // to do the planning.
 class ISequentialPlannerContext {
  public:
-  virtual const TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const = 0;
+  virtual const onnx::TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const = 0;
 };
 
 class SequentialPlannerContext : public ISequentialPlannerContext {
  public:
-  const TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
+  const onnx::TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
     return arg.Shape();
   }
 };

@@ -9,7 +9,6 @@
 #include "core/framework/arena.h"
 #include "core/framework/data_types.h"
 #include "core/framework/tensor_shape.h"
-using namespace onnx;
 
 namespace Lotus {
 

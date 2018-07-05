@@ -1,5 +1,5 @@
 #include "memcpy.h"
-
+using namespace onnx;
 namespace Lotus {
 
 // These ops are internal-only, so register outside of onnx

@@ -67,9 +67,9 @@
   <TestJob Name="LotusModelTest.resnet50.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
-  <TestJob Name="LotusModelTest.resnet50.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+  <!-- <TestJob Name="LotusModelTest.resnet50.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
+  </TestJob> -->
   <TestJob Name="LotusModelTest.shufflenet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
@@ -85,9 +85,9 @@
   <TestJob Name="LotusModelTest.vgg19.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
-  <TestJob Name="LotusModelTest.vgg19.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+  <!-- <TestJob Name="LotusModelTest.vgg19.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
+  </TestJob> -->
   <TestJob Name="LotusModelTest.zfnet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>

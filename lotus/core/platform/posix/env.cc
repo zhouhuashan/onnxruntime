@@ -12,6 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <thread>
 #include <vector>
@@ -46,6 +50,7 @@ class PosixEnv : public Env {
   int GetNumCpuCores() const override {
     // TODO if you need the number of physical cores you'll need to parse
     // /proc/cpuinfo and grep for "cpu cores".
+    //However, that information is not always available(output of 'grep -i core /proc/cpuinfo' is empty)
     return std::thread::hardware_concurrency();
   }
 
@@ -74,12 +79,44 @@ class PosixEnv : public Env {
                       std::function<void()> fn) const override {
     return new StdThread(thread_options, name, fn);
   }
-  Common::Status ReadFileAsString(const char* fname, std::string* out) const override{
-    return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "Not implemented");
+
+  Common::Status ReadFileAsString(const char* fname, std::string* out) const override {
+    if (!out) {
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "'out' cannot be NULL");
+    }
+    char errbuf[512];
+    int fd = open(fname, O_RDONLY);
+    if (fd < 0) {
+      snprintf(errbuf, sizeof(errbuf), "%s:%d open file %s fail, errcode = %d", __FILE__, (int)__LINE__, fname, errno);
+      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+    }
+    struct stat stbuf;
+    if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
+      close(fd);
+      snprintf(errbuf, sizeof(errbuf), "%s:%d read file %s fail", __FILE__, (int)__LINE__, fname);
+      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+    }
+    if (stbuf.st_size == 0) {
+      out->clear();
+    } else {
+      out->resize(stbuf.st_size, '\0');
+      ssize_t bytes_readed = read(fd, (void*)out->data(), stbuf.st_size);
+      if (bytes_readed <= 0 || bytes_readed != stbuf.st_size) {
+        close(fd);
+        snprintf(errbuf,
+                 sizeof(errbuf),
+                 "%s:%d open file %s fail, errcode = %d",
+                 __FILE__,
+                 (int)__LINE__,
+                 fname,
+                 errno);
+        return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+      }
+      close(fd);
+    }
+    return Common::Status::OK();
   }
-  Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override{
-    return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "Not implemented");
-  }
+
  private:
   PosixEnv() = default;
 };

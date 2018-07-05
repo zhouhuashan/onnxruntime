@@ -1,5 +1,5 @@
 #include "transformer_memcpy.h"
-
+using namespace onnx;
 namespace Lotus {
 
 /*

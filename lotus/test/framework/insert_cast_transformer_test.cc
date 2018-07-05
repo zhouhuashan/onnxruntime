@@ -3,7 +3,7 @@
 #include "core/framework/insert_cast_transformer.h"
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 typedef std::vector<LotusIR::NodeArg*> ArgMap;
@@ -45,7 +45,7 @@ TEST(TransformerTest, InsertCastGPUTest) {
     EXPECT_EQ((*it)->OpType(), "Cast");
   }
   for (auto it = node2->InputNodesBegin(); it != node2->InputNodesEnd(); it++) {
-    if (!graph->IsSourceNode((*it)->Index())){
+    if (!graph->IsSourceNode((*it)->Index())) {
       EXPECT_EQ((*it)->OpType(), "Cast");
     }
   }
@@ -53,7 +53,7 @@ TEST(TransformerTest, InsertCastGPUTest) {
     EXPECT_EQ((*it)->OpType(), "Cast");
   }
   for (auto it = node3->InputNodesBegin(); it != node3->InputNodesEnd(); it++) {
-    if (!graph->IsSourceNode((*it)->Index())){
+    if (!graph->IsSourceNode((*it)->Index())) {
       EXPECT_EQ((*it)->OpType(), "Cast");
     }
   }
@@ -103,7 +103,7 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
     EXPECT_NE((*it)->OpType(), "Cast");
   }
   for (auto it = node3->InputNodesBegin(); it != node3->InputNodesEnd(); it++) {
-    if (!graph->IsSourceNode((*it)->Index())){
+    if (!graph->IsSourceNode((*it)->Index())) {
       EXPECT_NE((*it)->OpType(), "Cast");
     }
   }

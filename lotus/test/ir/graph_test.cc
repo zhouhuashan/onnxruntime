@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "test/ir/node_helper.h"
 
+using namespace onnx;
 namespace LotusIR {
 namespace Test {
 using google::protobuf::util::MessageDifferencer;

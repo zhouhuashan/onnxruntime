@@ -25,7 +25,7 @@
 #include "core/graph/schema_registry.h"
 #include "core/framework/customregistry.h"
 #include "Eigen/src/Core/arch/CUDA/Half.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 
@@ -138,12 +138,12 @@ TEST(Float16_Tests, Mul_16_Test) {
   SessionOptions so;
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
-  
+
   std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
   InferenceSession session_object{so, &DefaultLoggingManager()};
   EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
   auto mulfp16_schema = GetMulFP16Schema();
-  std::vector<OpSchema> schemas = { mulfp16_schema };
+  std::vector<OpSchema> schemas = {mulfp16_schema};
 
   EXPECT_TRUE(registry->RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
 

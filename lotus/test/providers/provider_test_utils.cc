@@ -258,7 +258,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
 
     // Verify the outputs
     // Todo: support check output with map/sequence/....
-    int idx = 0;
+    size_t idx = 0;
     for (auto& expected_data : output_data_) {
       MLValue& mlvalue = fetches[idx];
       if (mlvalue.Fence())

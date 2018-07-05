@@ -2,7 +2,7 @@
 #include "test/providers/provider_test_utils.h"
 #include "core/providers/cpu/tensor/cast_op.h"
 #include "core/providers/cpu/tensor/crop.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 

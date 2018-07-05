@@ -2,7 +2,7 @@
 #include "core/framework/transformer_memcpy.h"
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Test {
 

@@ -4,7 +4,7 @@
 #include "core/graph/tensorutils.h"
 #include "tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
-
+using namespace onnx;
 namespace Lotus {
 namespace Utils {
 std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tensor_proto) {

@@ -1,11 +1,8 @@
 #include "testenv.h"
 #include "runner.h"
+#include "core/common/common.h"
 #include <Windows.h>
-
-using std::experimental::filesystem::v1::path;
-
-extern std::vector<onnx::TensorProto> LoadTensors(const std::vector<path>& pb_files);
-
+#include "FixedCountFinishCallbackWin.h"
 namespace {
 struct TestCaseTask {
   TestEnv& env;
@@ -24,9 +21,8 @@ void __stdcall RunTestCase(
     _Inout_opt_ PVOID context,
     _Inout_ PTP_WORK work);
 
-void OnTestCaseFinished(TestCaseTask* task, std::shared_ptr<TestCaseResult> result) {
-  //TODO:shared_ptr is better
-  FixedCountFinishCallback* finished = task->env.finished.get();
+Lotus::Common::Status OnTestCaseFinished(PTP_CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result) {
+  FixedCountFinishCallback* finished = task->env.finished;
   auto task_id = task->task_id;
   bool failed = false;
   {
@@ -47,13 +43,13 @@ void OnTestCaseFinished(TestCaseTask* task, std::shared_ptr<TestCaseResult> resu
     }
   }
   if (failed)
-    finished->fail();
+    return finished->fail(pci);
   else
-    finished->onFinished(task_id, result);
+    return finished->onFinished(task_id, result, pci);
 }
 
 void __stdcall RunSingleDataItem(
-    _Inout_ PTP_CALLBACK_INSTANCE,
+    _Inout_ PTP_CALLBACK_INSTANCE pci,
     _Inout_opt_ PVOID context,
     _Inout_ PTP_WORK work) {
   CloseThreadpoolWork(work);
@@ -61,26 +57,30 @@ void __stdcall RunSingleDataItem(
   PTestRunner* env = task->env;
   const size_t task_id = task->task_id;
   delete task;
-  env->RunTask(task_id);
+  env->RunTask(task_id, pci);
 }
 
 void __stdcall RunTestCase(
-    _Inout_ PTP_CALLBACK_INSTANCE,
+    _Inout_ PTP_CALLBACK_INSTANCE pci,
     _Inout_opt_ PVOID context,
     _Inout_ PTP_WORK work) {
   CloseThreadpoolWork(work);
   TestCaseTask* task((TestCaseTask*)context);
   ITestCase* info = task->env.tests[task->task_id];
   try {
-    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, [task](std::shared_ptr<TestCaseResult> result) {
-      OnTestCaseFinished(task, result);
+    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, pci, [task](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
+      return OnTestCaseFinished(pci, task, result);
     });
     return;
   } catch (std::exception& ex) {
     LOGF_DEFAULT(ERROR, ex.what());
   }
   std::shared_ptr<TestCaseResult> ret = std::make_shared<TestCaseResult>(info->GetDataCount(), EXECUTE_RESULT::UNKNOWN_ERROR, "");
-  OnTestCaseFinished(task, ret);
+  auto status = OnTestCaseFinished(pci, task, ret);
+  if (!status.IsOK()) {
+    LOGF_DEFAULT(ERROR, "FATAL ERROR");
+    abort();
+  }
 }
 }  // namespace
 void ParallelRunTests(TestEnv& env, int p_models, size_t current_runs) {
@@ -120,13 +120,13 @@ bool PTestRunner::ScheduleNew() {
   return true;
 }
 
-void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT) noexcept {
+void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT, PTP_CALLBACK_INSTANCE pci) noexcept {
   try {
     ScheduleNew();
     if (++finished == c_->GetDataCount()) {
       //For each test case, only one DataTask can reach here
       //copy things out because we want to free DataTask before calling the callback
-      finish(result);
+      finish(result, pci);
     }
   } catch (std::exception& ex) {
     LOGF_DEFAULT(ERROR, "%s:unrecoverable error:%s,exit...\n", c_->GetTestCaseName().c_str(), ex.what());
@@ -139,5 +139,5 @@ void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT) noexcept {
 
 PTestRunner::PTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
                          ITestCase* c,
-                         std::function<void(std::shared_ptr<TestCaseResult> result)> on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), next_test_to_run(0), finished(0) {
+                         TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), next_test_to_run(0), finished(0) {
 }

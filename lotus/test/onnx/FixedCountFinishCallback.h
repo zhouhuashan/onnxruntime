@@ -56,4 +56,4 @@ class FixedCountFinishCallbackImpl {
   }
 };
 
-typedef FixedCountFinishCallbackImpl<TestCaseResult> FixedCountFinishCallback;
+using FixedCountFinishCallback = FixedCountFinishCallbackImpl<TestCaseResult>;

@@ -3,6 +3,7 @@
 #include "core/inc/op_kernel_author.h"
 #include "onnx/defs/data_type_utils.h"
 
+using namespace onnx;
 namespace Lotus {
 template <>
 MLDataType DataTypeImpl::GetType<Tensor>() {

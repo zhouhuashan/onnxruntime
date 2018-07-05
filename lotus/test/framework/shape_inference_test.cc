@@ -5,6 +5,8 @@
 #include "core/graph/model.h"
 #include "test/framework/model_builder_utils.h"
 
+using namespace onnx;
+
 namespace Lotus {
 namespace Test {
 
@@ -29,7 +31,7 @@ class ShapeInferenceTest : public ::testing::Test {
     return name_to_arg_[name].get();
   }
 
-  LotusIR::Node* Node(std::string op, std::string input, std::string output) {
+  LotusIR::Node* Node(const std::string& op, const std::string& input, const std::string& output) {
     std::vector<LotusIR::NodeArg*> input_args({Arg(input)});
     std::vector<LotusIR::NodeArg*> output_args({Arg(output)});
     int num = node_count_++;
