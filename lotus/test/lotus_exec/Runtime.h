@@ -17,6 +17,7 @@
 
 #include "core/common/logging/sinks/clog_sink.h"
 #include "core/common/logging/logging.h"
+#include "core/framework/compare_mlvalue.h"
 #include "core/framework/data_types.h"
 #include "core/framework/inference_session.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
@@ -260,6 +261,27 @@ class WinMLRuntime {
 
         if (output.IsTensor()) {
           ctensor = &output.Get<Tensor>();
+
+          ValueInfoProto expected_output_info = (*outputMeta)[i]->ToProto();
+          std::pair<COMPARE_RESULT, std::string> ret = VerifyValueInfo(expected_output_info, output);
+          COMPARE_RESULT compare_result = ret.first;
+          compare_result = ret.first;
+          if (compare_result != COMPARE_RESULT::SUCCESS) {
+            switch (compare_result) {
+              case COMPARE_RESULT::NOT_SUPPORT:
+                throw std::runtime_error("Unsupported output type in Lotus model: " + std::string((*outputMeta)[i]->Name()));
+                break;
+              case COMPARE_RESULT::SHAPE_MISMATCH:
+                throw std::runtime_error("Output shape mismatch in Lotus model: " + std::string((*outputMeta)[i]->Name()));
+                break;
+              case COMPARE_RESULT::TYPE_MISMATCH:
+                throw std::runtime_error("Output type mismatch in Lotus model: " + std::string((*outputMeta)[i]->Name()));
+                break;
+              default:
+                throw std::runtime_error("Unknown error in Lotus model: " + std::string((*outputMeta)[i]->Name()));
+            }
+          }
+
           //REVIEW mzs: Map output types are not tested because I couldn't find any tests for that.
           if (ctensor->DataType() == Lotus::DataTypeImpl::GetType<std::map<int64_t, float>>()) {
             const std::map<int64_t, float>* ci = &output.Get<std::map<int64_t, float>>();
