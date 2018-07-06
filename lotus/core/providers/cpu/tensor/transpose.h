@@ -5,10 +5,10 @@
 #include "core/framework/op_kernel.h"
 
 namespace Lotus {
-template <typename T>
-class Transpose final : public OpKernel {
- public:
-  Transpose(const OpKernelInfo& info) : OpKernel{info}, perm_specified_(false) {
+
+class TransposeBase {
+ protected:
+  TransposeBase(const OpKernelInfo& info) {
     Status status = info.GetAttrs<int64_t>("perm", perm_);
 
     if (status.IsOK()) {
@@ -26,10 +26,43 @@ class Transpose final : public OpKernel {
     }
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  void ComputeOutputShape(const Tensor& X, std::vector<int64_t>& output_dims,
+                          std::vector<int64_t>& default_perm, const std::vector<int64_t>*& p_perm) const {
+    size_t rank = X.Shape().NumDimensions();
+    const auto& input_dims = X.Shape().GetDims();
 
- private:
-  bool perm_specified_;
+    // Determine permutation to use:
+    // If no permutation was specified in the attributes, the default is [rank-1, ..., 0]
+    default_perm.resize(rank);
+
+    if (perm_specified_)
+      p_perm = &perm_;
+    else {
+      for (int i = 0; i < rank; ++i)
+        default_perm[i] = rank - i - 1;
+      p_perm = &default_perm;
+    }
+
+    // Determine shape of output, as well as stride to be used:
+    // stride[i] indicates the stride for the input-tensor dimension corresponding
+    // to the i-th dimension of the output
+
+    output_dims.resize(rank);
+    for (int i = 0; i < rank; i++) {
+      size_t inpdim = (*p_perm)[i];
+      output_dims[i] = input_dims[inpdim];
+    }
+  }
+
+  bool perm_specified_ = false;
   std::vector<int64_t> perm_;
+};
+
+template <typename T>
+class Transpose final : public OpKernel, public TransposeBase {
+ public:
+  Transpose(const OpKernelInfo& info) : OpKernel(info), TransposeBase(info) {}
+
+  Status Compute(OpKernelContext* context) const override;
 };
 }  // namespace Lotus

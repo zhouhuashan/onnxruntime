@@ -222,7 +222,7 @@ struct BroadcastIterator {
   }
 
   void Init(int64_t axis, int64_t largest) {
-    LOTUS_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimention other than 1. ", axis, " by ", largest);
+    LOTUS_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
 
     deltas_.push_back(axis > 1);
     counts_.push_back(largest);
@@ -230,7 +230,7 @@ struct BroadcastIterator {
   }
 
   void Append(int64_t axis, int64_t largest) {
-    LOTUS_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimention other than 1. ", axis, " by ", largest);
+    LOTUS_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
 
     // If we're greater than 1, it doesn't matter what the other tensor does
     if (axis > 1) {

@@ -2,15 +2,17 @@
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
+#include "core/providers/cuda/cuda_common.h"
 #include "gsl/gsl_util"
-#include "reshape_helper.h"
+#include "core/providers/cpu/tensor/reshape_helper.h"
 
 namespace Lotus {
+namespace Cuda {
 
 template <typename T>
-class Reshape final : public OpKernel {
+class Reshape final : public CudaKernel {
  public:
-  Reshape(const OpKernelInfo& info) : OpKernel(info) {
+  Reshape(const OpKernelInfo& info) : CudaKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override {
@@ -34,7 +36,7 @@ class Reshape final : public OpKernel {
     T* target = Y->MutableData<T>();
     //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
     if (target != source) {
-      memcpy(target, source, X_shape.Size() * sizeof(T));
+      provider_->CopyTensor(*X, *Y);
     }
 
     return Status::OK();
@@ -42,9 +44,9 @@ class Reshape final : public OpKernel {
 };
 
 template <typename T>
-class Reshape_1 final : public OpKernel {
+class Reshape_1 final : public CudaKernel {
  public:
-  Reshape_1(const OpKernelInfo& info) : OpKernel(info) {
+  Reshape_1(const OpKernelInfo& info) : CudaKernel(info) {
     Status status = info.GetAttrs<int64_t>("shape", shape_);
     LOTUS_ENFORCE(status.IsOK(), "Attribute shape is not set.");
   }
@@ -61,7 +63,7 @@ class Reshape_1 final : public OpKernel {
     T* target = Y->MutableData<T>();
     //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
     if (target != source) {
-      memcpy(target, source, X_shape.Size() * sizeof(T));
+      provider_->CopyTensor(*X, *Y);
     }
 
     return Status::OK();
@@ -71,4 +73,5 @@ class Reshape_1 final : public OpKernel {
   std::vector<int64_t> shape_;
 };
 
+}  // namespace Cuda
 }  //namespace Lotus

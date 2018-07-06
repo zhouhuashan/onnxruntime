@@ -11,7 +11,7 @@ TEST(TensorOpTest, Pad_Constant_1D) {
   test.AddAttribute("value", 1234.0f);
   test.AddInput<float>("data", {2}, {1.0f, 2.0f});
   test.AddOutput<float>("output", {5}, {1234.0f, 1.0f, 2.0f, 1234.0f, 1234.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Pad_Constant_1D_Zero) {
@@ -21,7 +21,7 @@ TEST(TensorOpTest, Pad_Constant_1D_Zero) {
   test.AddAttribute("value", 1234.0f);
   test.AddInput<float>("data", {2}, {1.0f, 2.0f});
   test.AddOutput<float>("output", {2}, {1.0f, 2.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Pad_Constant_2D) {
@@ -37,7 +37,7 @@ TEST(TensorOpTest, Pad_Constant_2D) {
                          1234.0f, 1234.0f, 11.0f, 21.0f, 1234.0f, 1234.0f,
                          1234.0f, 1234.0f, 12.0f, 22.0f, 1234.0f, 1234.0f,
                          1234.0f, 1234.0f, 1234.0f, 1234.0f, 1234.0f, 1234.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Pad_Edge_2D) {
@@ -55,7 +55,7 @@ TEST(TensorOpTest, Pad_Edge_2D) {
                          12.0f, 12.0f, 12.0f, 22.0f, 32.0f, 32.0f, 32.0f,
                          12.0f, 12.0f, 12.0f, 22.0f, 32.0f, 32.0f, 32.0f,
                          12.0f, 12.0f, 12.0f, 22.0f, 32.0f, 32.0f, 32.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Pad_Edge_3D) {
@@ -88,7 +88,7 @@ TEST(TensorOpTest, Pad_Edge_3D) {
                          12.0f, 12.0f, 12.0f, 22.0f, 32.0f, 32.0f, 32.0f,
                          12.0f, 12.0f, 12.0f, 22.0f, 32.0f, 32.0f, 32.0f});
 
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, Pad_Reflect_2D) {
@@ -108,7 +108,7 @@ TEST(TensorOpTest, Pad_Reflect_2D) {
                          33.0f, 23.0f, 13.0f, 23.0f, 33.0f, 23.0f, 13.0f,
                          32.0f, 22.0f, 12.0f, 22.0f, 32.0f, 22.0f, 12.0f,
                          31.0f, 21.0f, 11.0f, 21.0f, 31.0f, 21.0f, 11.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 }  // namespace Test

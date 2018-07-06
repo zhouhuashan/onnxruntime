@@ -1,12 +1,11 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
-#include "core/util/math_cpuonly.h"
 
 namespace Lotus {
 
-template <typename T>
-struct Pad final : OpKernel {
-  Pad(const OpKernelInfo& info) : OpKernel(info) {
+class PadBase {
+ protected:
+  PadBase(const OpKernelInfo& info) {
     std::string mode;
     if (info.GetAttr("mode", &mode).IsOK()) {
       if (mode == "constant")
@@ -33,18 +32,24 @@ struct Pad final : OpKernel {
     info.GetAttr("value", &value_);  // Value is optional and initialized to 0 by default
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  ~PadBase() {}
 
- private:
-  enum class Mode {
-    Constant,
+  enum class Mode : int {
+    Constant = 0,
     Reflect,
     Edge
   };
   Mode mode_{Mode::Constant};
   std::vector<int64_t> pads_;    // After construction, only >=0 values are in here
   std::vector<int64_t> slices_;  // All of the negative padding values are separated out into slices_
-  T value_{};
+  float value_ = 0;
+};
+
+template <typename T>
+struct Pad final : public OpKernel, public PadBase {
+  Pad(const OpKernelInfo& info) : PadBase(info), OpKernel(info) {}
+
+  Status Compute(OpKernelContext* context) const override;
 };
 
 }  // namespace Lotus

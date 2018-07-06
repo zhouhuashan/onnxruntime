@@ -43,7 +43,6 @@ Status Tile<T>::Compute(OpKernelContext *ctx) const {
   for (auto input_dim : input_shape)
     fdm_input_shape.emplace_back(fast_divmod(gsl::narrow_cast<int>(input_dim)));
 
-  // allocate temp memory for offset arrays
   IAllocatorUniquePtr<int64_t> input_stride_cuda;
   IAllocatorUniquePtr<fast_divmod> fdm_input_shape_cuda, fdm_output_strides_cuda;
   LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(fdm_input_shape_cuda, fdm_input_shape));

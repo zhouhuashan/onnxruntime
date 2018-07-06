@@ -7,7 +7,6 @@
 
 namespace Lotus {
 
-template <typename T>
 class Shape final : public OpKernel {
  public:
   Shape(const OpKernelInfo& info) : OpKernel(info) {

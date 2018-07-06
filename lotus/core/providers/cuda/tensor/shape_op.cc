@@ -15,7 +15,8 @@ const std::vector<MLDataType> shapeOpTypeConstraints{
 REGISTER_KERNEL(KernelDefBuilder("Shape")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .Provider(LotusIR::kCudaExecutionProvider)
+                    .OutputMemoryType<kMemTypeCPUOutput>(0)
                     .TypeConstraint("T", shapeOpTypeConstraints)
                     .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
                 Shape);

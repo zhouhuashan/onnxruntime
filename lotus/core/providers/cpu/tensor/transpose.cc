@@ -90,28 +90,14 @@ Status Transpose<float>::Compute(OpKernelContext* ctx) const {
   const std::vector<int64_t>& input_dims = input_shape.GetDims();
   size_t rank = input_dims.size();
 
-  // Determine permutation to use:
-  // If no permutation was specified in the attributes, the default is [rank-1, ..., 0]
+  std::vector<int64_t> output_dims(rank);
   const std::vector<int64_t>* p_perm;
   std::vector<int64_t> default_perm(rank);
+  ComputeOutputShape(X, output_dims, default_perm, p_perm);
 
-  if (perm_specified_)
-    p_perm = &perm_;
-  else {
-    for (int i = 0; i < rank; ++i)
-      default_perm[i] = rank - i - 1;
-    p_perm = &default_perm;
-  }
-
-  // Determine shape of output, as well as stride to be used:
-  // stride[i] indicates the stride for the input-tensor dimension corresponding
-  // to the i-th dimension of the output
-
-  std::vector<int64_t> output_dims(rank);
   std::vector<size_t> stride(rank);
   for (int i = 0; i < rank; i++) {
     size_t inpdim = (*p_perm)[i];
-    output_dims[i] = input_dims[inpdim];
     if (inpdim + 1 < rank)
       stride[i] = input_shape.SizeFromDimension(inpdim + 1);
     else
