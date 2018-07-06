@@ -220,6 +220,21 @@ TEST(InferenceSessionTests, NoTimeout) {
   RunModel(session_object, run_options);
 }
 
+TEST(InferenceSessionTests, DisableCPUArena) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.DisableCPUArena";
+  so.enable_cpu_mem_arena = false;
+
+  InferenceSession session_object{so, &DefaultLoggingManager()};
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = "one session/one tag";
+  RunModel(session_object, run_options);
+}
+
 static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg) {
   if (f_arg.size() != s_arg.size()) {
     cout << "Sizes differ: f_arg size: " << f_arg.size() << " s_arg size: " << s_arg.size() << endl;

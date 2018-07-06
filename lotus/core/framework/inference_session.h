@@ -51,6 +51,11 @@ struct SessionOptions {
   bool enable_mem_pattern = true;
 
   unsigned max_num_graph_transformation_steps = 5;  // TODO choose a good default here?
+
+  // enable the memory arena on CPU
+  // Arena may pre-allocate memory for future usage.
+  // set this option to false if you don't want it.
+  bool enable_cpu_mem_arena = true;
 };
 
 /**

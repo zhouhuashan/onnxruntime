@@ -255,7 +255,8 @@ void addObjectMethods(py::module& m) {
       .def_readwrite("session_logid", &SessionOptions::session_logid)
       .def_readwrite("session_log_verbosity_level", &SessionOptions::session_log_verbosity_level)
       .def_readwrite("enable_mem_pattern", &SessionOptions::enable_mem_pattern)
-      .def_readwrite("max_num_graph_transformation_steps", &SessionOptions::max_num_graph_transformation_steps);
+      .def_readwrite("max_num_graph_transformation_steps", &SessionOptions::max_num_graph_transformation_steps)
+      .def_readwrite("enable_cpu_mem_arena", &SessionOptions::enable_cpu_mem_arena);
 
   py::class_<RunOptions>(m, "RunOptions")
       .def(py::init())

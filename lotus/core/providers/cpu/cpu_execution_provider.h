@@ -7,6 +7,12 @@ namespace Lotus {
 // Information needed to construct CPU execution providers.
 struct CPUExecutionProviderInfo {
   std::string name;
+  bool create_arena;
+
+  CPUExecutionProviderInfo(const char* provider_name, bool use_arena = true)
+      : name(provider_name), create_arena(use_arena) {}
+  CPUExecutionProviderInfo()
+      : CPUExecutionProviderInfo("") {}
 };
 
 class CPUTransformer : public LotusIR::GraphTransformer {
@@ -35,7 +41,12 @@ class CPUExecutionProvider : public IExecutionProvider {
                                         std::shared_ptr<IArenaAllocator>(
                                             std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0))))));
 #else
-      allocators_.insert(std::make_pair(kMemTypeDefault, CreateAllocator(cpu_allocator_creator->second)));
+      if (info.create_arena)
+        allocators_.insert(std::make_pair(kMemTypeDefault, CreateAllocator(cpu_allocator_creator->second)));
+      else
+        allocators_.insert(std::make_pair(kMemTypeDefault,
+                                          std::shared_ptr<IArenaAllocator>(
+                                              std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0))))));
 #endif
     }
   }

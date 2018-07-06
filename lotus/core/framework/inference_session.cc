@@ -216,7 +216,7 @@ class InferenceSession::Impl {
       if (!session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)) {
         // Register default CPUExecutionProvider if user didn't provide it through the Register() calls
         LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
-        CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
+        CPUExecutionProviderInfo epi{"CPUExecutionProvider", session_options_.enable_cpu_mem_arena};
         session_state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider,
                                             std::make_unique<CPUExecutionProvider>(epi));
       }
