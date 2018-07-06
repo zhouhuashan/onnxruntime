@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+    <metadata>
+        <!-- The identifier that must be unique within the hosting gallery -->
+        <id>Lotus</id>
+
+        <!-- The package version number that is used when resolving dependencies -->
+        <version>0.0.1</version>
+
+        <!-- Authors contain text that appears directly on the gallery -->
+        <authors>Lotus Team</authors>
+
+        <!-- 
+            Owners are typically nuget.org identities that allow gallery
+            users to easily find other packages by the same owners.  
+        -->
+        <owners>Lotus Team</owners>
+
+         <!-- License and project URLs provide links for the gallery -->
+        <licenseUrl>http://opensource.org/licenses/MS-PL</licenseUrl>
+        <projectUrl>https://aiinfra.visualstudio.com/Lotus/Lotus%20Team/_git/Lotus</projectUrl>
+
+        <!-- The icon is used in Visual Studio's package manager UI -->
+        <iconUrl>http://github.com/contoso/UsefulStuff/nuget_icon.png</iconUrl>
+
+        <!-- 
+            If true, this value prompts the user to accept the license when
+            installing the package. 
+        -->
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+
+        <!-- Any details about this particular release -->
+        <releaseNotes>Initial Release</releaseNotes>
+
+        <!-- 
+            The description can be used in package manager UI. Note that the
+            nuget.org gallery uses information you add in the portal. 
+        -->
+        <description>Lotus is a runtime for ONNX models</description>
+
+        <!-- Copyright information -->
+        <copyright>Copyright ©2016 Microsoft</copyright>
+
+        <!-- Tags appear in the gallery and can be used for tag searches -->
+        <tags>ONNX DeepLearning</tags>
+    </metadata>
+
+    <files>
+	    <!-- libs -->
+        <file src="@@DebugBinaryRoot@@/external/onnx/Debug/onnx.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnx.lib" />
+		<file src="@@DebugBinaryRoot@@/external/onnx/Debug/onnx_proto.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnx_proto.lib" />
+		<file src="@@DebugBinaryRoot@@/external/protobuf/cmake/Debug/libprotobufd.lib" target="lib/native/debug/@@MSBuildArchitecture@@/libprotobufd.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/lotusIR_graph.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotusIR_graph.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/lotus_common.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotus_common.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/lotus_framework.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotus_framework.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/lotus_providers.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotus_providers.lib" />
+		
+		<file src="@@ReleaseBinaryRoot@@/external/onnx/Release/onnx.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnx.lib" />
+		<file src="@@ReleaseBinaryRoot@@/external/onnx/Release/onnx_proto.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnx_proto.lib" />
+		<file src="@@ReleaseBinaryRoot@@/external/protobuf/cmake/Release/libprotobuf.lib" target="lib/native/retail/@@MSBuildArchitecture@@/libprotobuf.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/lotusIR_graph.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotusIR_graph.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/lotus_common.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotus_common.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/lotus_framework.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotus_framework.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/lotus_providers.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotus_providers.lib" />
+		
+		<!-- headers -->
+		<file src="@@SrcRoot@@\lotus\core\common\*.h" target="build\native\include\core\common" />
+		<file src="@@SrcRoot@@\lotus\core\common\logging\*.h" target="build\native\include\core\common\logging" />
+		<file src="@@SrcRoot@@/lotus/core/framework/ml_value.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/inference_session.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/tensor.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/arena.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/allocator.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/allocatormgr.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/data_types.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/tensor_shape.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/environment.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/fence.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/framework/execution_provider.h" target="build/native/include/core/framework" />
+		<file src="@@SrcRoot@@/lotus/core/graph/schema_registry.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/graph/graph.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/graph/graph_transformer.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/graph/model.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/graph/constants.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/graph/graph_nodes.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/graph/rewrite_rule.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/graph/utils.h" target="build/native/include/core/graph" />
+		<file src="@@SrcRoot@@/lotus/core/inc/op_kernel_author.h" target="build/native/include/core/inc" />
+		<file src="@@SrcRoot@@/lotus/core/inc/ml_status.h" target="build/native/include/core/inc" />
+		<file src="@@SrcRoot@@/lotus/core/platform/types.h" target="build/native/include/core/platform" />
+		<file src="@@SrcRoot@@/lotus/core/providers/cpu/cpu_execution_provider.h" target="build/native/include/core/providers/cpu" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/onnx_pb.h" target="build/native/include/onnx" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/checker.h" target="build/native/include/onnx" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/proto_utils.h" target="build/native/include/onnx" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/string_utils.h" target="build/native/include/onnx" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/string_utils.h" target="build/native/include/onnx" />
+		<file src="@@DebugBinaryRoot@@/external/onnx/onnx/onnx-ml.pb.h" target="build/native/include/onnx" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/defs/schema.h" target="build/native/include/onnx/defs" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/defs/data_type_utils.h" target="build/native/include/onnx/defs" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/defs/shape_inference.h" target="build/native/include/onnx/defs" />
+		<file src="@@SrcRoot@@/cmake/external/onnx/onnx/common/constants.h" target="build/native/include/onnx/common" />
+		<file src="@@DebugBinaryRoot@@\external\gsl\include\gsl\*" target="build/native/include/gsl" />
+		<file src="@@SrcRoot@@\cmake\external\protobuf\src\google\protobuf\*.h" target="build\native\include\google\protobuf" />
+		<file src="@@SrcRoot@@\cmake\external\protobuf\src\google\protobuf\compiler\*.h" target="build\native\include\google\protobuf\compiler" />
+		<file src="@@SrcRoot@@\cmake\external\protobuf\src\google\protobuf\io\*.h" target="build\native\include\google\protobuf\io" />
+		<file src="@@SrcRoot@@\cmake\external\protobuf\src\google\protobuf\stubs\*.h" target="build\native\include\google\protobuf\stubs" />
+		<file src="@@SrcRoot@@\cmake\external\protobuf\src\google\protobuf\util\*.h" target="build\native\include\google\protobuf\util" />
+		<!-- Target -->
+		<file src="@@SrcRoot@@/tools/nuget/lotus.targets" target="build/native/" />
+    </files>
+</package>
