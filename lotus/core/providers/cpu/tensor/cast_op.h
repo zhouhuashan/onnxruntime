@@ -6,12 +6,12 @@
 #include "Eigen/src/Core/arch/CUDA/Half.h"
 
 namespace Lotus {
+
 template <typename SrcType,
           typename DstType>
 inline void CastData(const Tensor* in, Tensor* out, const TensorShape& shape) {
   auto out_data = out->MutableData<DstType>();
   auto in_data = in->Data<SrcType>();
-
   for (int64_t i = 0; i < shape.Size(); ++i) {
     out_data[i] = static_cast<DstType>(in_data[i]);
   }
@@ -35,6 +35,26 @@ inline void CastData<MLFloat16, float>(const Tensor* in, Tensor* out, const Tens
   }
 }
 
+template <typename SrcType,
+          typename DstType>
+inline void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) {
+  auto* p_provider = info.GetExecutionProvider();
+  LOTUS_ENFORCE(p_provider);
+  auto allocator = p_provider->GetAllocator();
+  LOTUS_ENFORCE(allocator != nullptr);
+  void* buffer = allocator->Alloc(sizeof(float) * shape.Size());
+  LOTUS_ENFORCE(buffer);
+  Tensor tmp_tensor(DataTypeImpl::GetType<float>(), shape, buffer, allocator->Info(), allocator);
+
+  if (std::is_same<SrcType, MLFloat16>::value) {
+    CastData<MLFloat16, float>(in, &tmp_tensor, shape);  // first cast to float
+    CastData<float, DstType>(&tmp_tensor, out, shape);   // then cast to the destination type.
+  } else if (std::is_same<DstType, MLFloat16>::value) {
+    CastData<SrcType, float>(in, &tmp_tensor, shape);
+    CastData<float, MLFloat16>(&tmp_tensor, out, shape);
+  }
+}
+
 template <typename T>
 class Cast final : public OpKernel {
  public:
@@ -54,6 +74,13 @@ class Cast final : public OpKernel {
     Lotus::CastData<SrcType, DstType>(in, out, shape);
   }
 
+  template <typename SrcType,
+            typename DstType>
+  void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) const {
+    Lotus::CastFloat16Data<SrcType, DstType>(in, out, shape, info);
+  }
+
   onnx::TensorProto_DataType to_;
 };
+
 }  //namespace Lotus

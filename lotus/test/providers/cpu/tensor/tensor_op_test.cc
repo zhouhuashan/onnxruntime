@@ -6,6 +6,8 @@ using namespace onnx;
 namespace Lotus {
 namespace Test {
 
+using ExpectResult = OpTester::ExpectResult;
+
 TEST(TensorOpTest, Reshape) {
   OpTester test("Reshape");
 
@@ -52,48 +54,118 @@ template <typename SrcType,
 void TestCastOp(const std::initializer_list<SrcType>& input,
                 const std::initializer_list<DstType>& output,
                 const std::vector<int64_t>& dimensions,
-                int64_t toType) {
+                int64_t toType,
+                ExpectResult expect_result = ExpectResult::kExpectSuccess,
+                const std::string& expected_failure_string = "") {
   OpTester test("Cast");
   test.AddAttribute("to", toType);
   test.AddInput<SrcType>("input", dimensions, input);
   test.AddOutput<DstType>("output", dimensions, output);
-  test.Run();
+  test.Run(expect_result, expected_failure_string);
 }
 
-TEST(TensorOpTest, Cast) {
-  auto float_data = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
+template <typename SrcType>
+void TestCastFromSrc() {
+  std::initializer_list<SrcType> input_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   const std::vector<int64_t> shape{3, 2, 2};
 
   auto float_output = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
-  TestCastOp(float_data, float_output, shape, TensorProto::FLOAT);
+  TestCastOp(input_data, float_output, shape, TensorProto::FLOAT);
 
-  auto double_data = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0};
-  TestCastOp(float_data, double_data, shape, TensorProto::DOUBLE);
+  auto double_output = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0};
+  TestCastOp(input_data, double_output, shape, TensorProto::DOUBLE);
 
-  auto bool_data = {false, true, true, true, true, true, true, true, true, true, true, true};
-  TestCastOp(float_data, bool_data, shape, TensorProto::BOOL);
+  auto bool_output = {false, true, true, true, true, true, true, true, true, true, true, true};
+  TestCastOp(input_data, bool_output, shape, TensorProto::BOOL);
 
-  const std::initializer_list<uint8_t> uint8_t_data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  TestCastOp(float_data, uint8_t_data, shape, TensorProto::UINT8);
+  const std::initializer_list<uint8_t> uint8_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input_data, uint8_t_output, shape, TensorProto::UINT8);
 
-  const std::initializer_list<uint16_t> uint16_t_data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  TestCastOp(float_data, uint16_t_data, shape, TensorProto::UINT16);
+  const std::initializer_list<uint16_t> uint16_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input_data, uint16_t_output, shape, TensorProto::UINT16);
 
-  const std::initializer_list<uint32_t> uint32_t_data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  TestCastOp(float_data, uint32_t_data, shape, TensorProto::UINT32);
+  const std::initializer_list<uint32_t> uint32_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input_data, uint32_t_output, shape, TensorProto::UINT32);
 
-  const std::initializer_list<uint64_t> uint64_t_data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  TestCastOp(float_data, uint64_t_data, shape, TensorProto::UINT64);
+  const std::initializer_list<uint64_t> uint64_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input_data, uint64_t_output, shape, TensorProto::UINT64);
 
-  const std::initializer_list<int16_t> int16_t_data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  TestCastOp(float_data, int16_t_data, shape, TensorProto::INT16);
+  const std::initializer_list<int16_t> int16_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input_data, int16_t_output, shape, TensorProto::INT16);
 
-  const std::initializer_list<int32_t> int32_t_data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  TestCastOp(float_data, int32_t_data, shape, TensorProto::INT32);
+  const std::initializer_list<int32_t> int32_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input_data, int32_t_output, shape, TensorProto::INT32);
 
-  const std::initializer_list<int64_t> int64_t_data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-  TestCastOp(float_data, int64_t_data, shape, TensorProto::INT64);
+  const std::initializer_list<int64_t> int64_t_output{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input_data, int64_t_output, shape, TensorProto::INT64);
+};
 
+TEST(TensorOpTest, Cast) {
+  TestCastFromSrc<float>();
+  TestCastFromSrc<double>();
+  TestCastFromSrc<uint8_t>();
+  TestCastFromSrc<uint16_t>();
+  TestCastFromSrc<uint32_t>();
+  TestCastFromSrc<uint64_t>();
+  TestCastFromSrc<int8_t>();
+  TestCastFromSrc<int16_t>();
+  TestCastFromSrc<int32_t>();
+  TestCastFromSrc<int64_t>();
+}
+
+TEST(TensorOpTest, CastFromBool) {
+  auto bool_data = {false, true, true, true, true, true, true, true, true, true, false, true};
+  const std::vector<int64_t> shape{3, 2, 2};
+
+  const std::initializer_list<float> float_output = {0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f};
+  TestCastOp(bool_data, float_output, shape, TensorProto::FLOAT);
+
+  const std::initializer_list<double> double_output = {0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0};
+  TestCastOp(bool_data, double_output, shape, TensorProto::DOUBLE);
+
+  auto bool_output = {false, true, true, true, true, true, true, true, true, true, false, true};
+  TestCastOp(bool_data, bool_output, shape, TensorProto::BOOL);
+
+  const std::initializer_list<uint8_t> uint8_t_output{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1};
+  TestCastOp(bool_data, uint8_t_output, shape, TensorProto::UINT8);
+
+  const std::initializer_list<uint16_t> uint16_t_output{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1};
+  TestCastOp(bool_data, uint16_t_output, shape, TensorProto::UINT16);
+
+  const std::initializer_list<uint32_t> uint32_t_output{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1};
+  TestCastOp(bool_data, uint32_t_output, shape, TensorProto::UINT32);
+
+  const std::initializer_list<uint64_t> uint64_t_output{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1};
+  TestCastOp(bool_data, uint64_t_output, shape, TensorProto::UINT64);
+
+  const std::initializer_list<int16_t> int16_t_output{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1};
+  TestCastOp(bool_data, int16_t_output, shape, TensorProto::INT16);
+
+  const std::initializer_list<int32_t> int32_t_output{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1};
+  TestCastOp(bool_data, int32_t_output, shape, TensorProto::INT32);
+
+  const std::initializer_list<int64_t> int64_t_output{0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1};
+  TestCastOp(bool_data, int64_t_output, shape, TensorProto::INT64);
+
+  const std::initializer_list<MLFloat16> float16_output{
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(0.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(0.0f).x),
+      MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x)};
+  TestCastOp(bool_data, float16_output, shape, TensorProto::FLOAT16);
+}
+
+TEST(TensorOpTest, CastToFloat16) {
+  const std::vector<int64_t> shape{3, 2, 2};
+  std::initializer_list<float> float_data = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   const std::initializer_list<MLFloat16> float16_output{
       MLFloat16(Eigen::half_impl::float_to_half_rtne(0.0f).x),
       MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
@@ -107,16 +179,37 @@ TEST(TensorOpTest, Cast) {
       MLFloat16(Eigen::half_impl::float_to_half_rtne(9.0f).x),
       MLFloat16(Eigen::half_impl::float_to_half_rtne(10.0f).x),
       MLFloat16(Eigen::half_impl::float_to_half_rtne(11.0f).x)};
+
   TestCastOp(float_data, float16_output, shape, TensorProto::FLOAT16);
 
-  TestCastOp(uint8_t_data, float_data, shape, TensorProto::FLOAT);
-  TestCastOp(int16_t_data, float_data, shape, TensorProto::FLOAT);
-  TestCastOp(uint16_t_data, float_data, shape, TensorProto::FLOAT);
-  TestCastOp(int32_t_data, float_data, shape, TensorProto::FLOAT);
-  TestCastOp(uint32_t_data, float_data, shape, TensorProto::FLOAT);
+  std::initializer_list<uint8_t> uint8_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(uint8_t_data, float16_output, shape, TensorProto::FLOAT16);
+
+  std::initializer_list<uint16_t> uint16_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(uint16_t_data, float16_output, shape, TensorProto::FLOAT16);
+
+  std::initializer_list<uint32_t> uint32_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(uint32_t_data, float16_output, shape, TensorProto::FLOAT16);
+
+  std::initializer_list<uint64_t> uint64_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(uint64_t_data, float16_output, shape, TensorProto::FLOAT16);
+
+  std::initializer_list<int8_t> int8_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(int8_t_data, float16_output, shape, TensorProto::FLOAT16);
+
+  std::initializer_list<int16_t> int16_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(int16_t_data, float16_output, shape, TensorProto::FLOAT16);
+
+  std::initializer_list<int32_t> int32_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(int32_t_data, float16_output, shape, TensorProto::FLOAT16);
+
+  std::initializer_list<int64_t> int64_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(int64_t_data, float16_output, shape, TensorProto::FLOAT16);
 }
 
-TEST(TensorOpTest, Float16Cast) {
+TEST(TensorOpTest, CastFromFloat16) {
+  const std::vector<int64_t> shape{3, 2, 2};
+  const std::initializer_list<float> float_output = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   const std::initializer_list<MLFloat16> input = {
       MLFloat16(Eigen::half_impl::float_to_half_rtne(0.0f).x),
       MLFloat16(Eigen::half_impl::float_to_half_rtne(1.0f).x),
@@ -130,10 +223,35 @@ TEST(TensorOpTest, Float16Cast) {
       MLFloat16(Eigen::half_impl::float_to_half_rtne(9.0f).x),
       MLFloat16(Eigen::half_impl::float_to_half_rtne(10.0f).x),
       MLFloat16(Eigen::half_impl::float_to_half_rtne(11.0f).x)};
-  const std::vector<int64_t> shape{3, 2, 2};
 
-  const std::initializer_list<float> float_output = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   TestCastOp(input, float_output, shape, TensorProto::FLOAT);
+
+  auto bool_data = {false, true, true, true, true, true, true, true, true, true, true, true};
+  TestCastOp(input, bool_data, shape, TensorProto::BOOL);
+
+  std::initializer_list<uint8_t> uint8_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, uint8_t_data, shape, TensorProto::UINT8);
+
+  std::initializer_list<uint16_t> uint16_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, uint16_t_data, shape, TensorProto::UINT16);
+
+  std::initializer_list<uint32_t> uint32_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, uint32_t_data, shape, TensorProto::UINT32);
+
+  std::initializer_list<uint64_t> uint64_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, uint64_t_data, shape, TensorProto::UINT64);
+
+  std::initializer_list<int8_t> int8_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, int8_t_data, shape, TensorProto::INT8);
+
+  std::initializer_list<int16_t> int16_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, int16_t_data, shape, TensorProto::INT16);
+
+  std::initializer_list<int32_t> int32_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, int32_t_data, shape, TensorProto::INT32);
+
+  std::initializer_list<int64_t> int64_t_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  TestCastOp(input, int64_t_data, shape, TensorProto::INT64);
 }
 
 TEST(TensorOpTest, CropBorderOnly) {
