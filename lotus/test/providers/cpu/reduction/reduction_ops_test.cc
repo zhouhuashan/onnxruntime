@@ -64,7 +64,7 @@ TEST(ReductionOpTest, ReduceL1_default_axes_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 1, 1}, {78.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceL1_do_not_keepdims) {
@@ -81,7 +81,7 @@ TEST(ReductionOpTest, ReduceL1_do_not_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 2}, {3.0f, 7.0f, 11.0f, 15.0f, 19.0f, 23.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceL1_keepdims) {
@@ -98,7 +98,7 @@ TEST(ReductionOpTest, ReduceL1_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 2, 1}, {3.0f, 7.0f, 11.0f, 15.0f, 19.0f, 23.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceL1) {
@@ -114,8 +114,8 @@ TEST(ReductionOpTest, ReduceL1) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 2, 1}, {33.0f, 45.0f});
-  test.Run();
-}  // namespace Test
+  test.RunOnCpuAndCuda();
+}
 
 TEST(ReductionOpTest, ReduceL2_default_axes_keepdims) {
   OpTester test("ReduceL2");
@@ -130,7 +130,7 @@ TEST(ReductionOpTest, ReduceL2_default_axes_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 1, 1}, {25.49509757f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceL2_do_not_keepdims) {
@@ -147,7 +147,7 @@ TEST(ReductionOpTest, ReduceL2_do_not_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 2}, {2.23606798f, 5.0f, 7.81024968f, 10.63014581f, 13.45362405f, 16.2788206f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceL2_keepdims) {
@@ -164,7 +164,7 @@ TEST(ReductionOpTest, ReduceL2_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 2, 1}, {2.23606798f, 5.0f, 7.81024968f, 10.63014581f, 13.45362405f, 16.2788206f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceL2) {
@@ -181,7 +181,7 @@ TEST(ReductionOpTest, ReduceL2) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {2}, {15.71623325f, 20.07485962f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceLogSum) {
@@ -283,7 +283,7 @@ TEST(ReductionOpTest, ReduceMax_default_axes_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {1, 1, 1}, {60.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMax_do_not_keepdims) {
@@ -300,7 +300,7 @@ TEST(ReductionOpTest, ReduceMax_do_not_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {3, 2}, {20.0f, 2.0f, 40.0f, 2.0f, 60.0f, 2.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMax_keepdims) {
@@ -317,7 +317,7 @@ TEST(ReductionOpTest, ReduceMax_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {3, 1, 2}, {20.0f, 2.0f, 40.0f, 2.0f, 60.0f, 2.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMax) {
@@ -334,7 +334,7 @@ TEST(ReductionOpTest, ReduceMax) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 1, 1}, {4.0f, 8.0f, 12.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMean_default_axes_keepdims) {
@@ -350,7 +350,7 @@ TEST(ReductionOpTest, ReduceMean_default_axes_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {1, 1, 1}, {18.25f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMean_do_not_keepdims) {
@@ -367,7 +367,7 @@ TEST(ReductionOpTest, ReduceMean_do_not_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {3, 2}, {12.5f, 1.5f, 35.0f, 1.5f, 57.5f, 1.5f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMean_keepdims) {
@@ -384,7 +384,7 @@ TEST(ReductionOpTest, ReduceMean_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {3, 1, 2}, {12.5f, 1.5f, 35.0f, 1.5f, 57.5f, 1.5f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMean) {
@@ -401,7 +401,7 @@ TEST(ReductionOpTest, ReduceMean) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 2, 1}, {5.5f, 7.5f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMin_default_axes_keepdims) {
@@ -417,7 +417,7 @@ TEST(ReductionOpTest, ReduceMin_default_axes_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {1, 1, 1}, {1.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMin_do_not_keepdims) {
@@ -451,7 +451,7 @@ TEST(ReductionOpTest, ReduceMin_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {3, 1, 2}, {5.0f, 1.0f, 30.0f, 1.0f, 55.0f, 1.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceMin) {
@@ -468,7 +468,7 @@ TEST(ReductionOpTest, ReduceMin) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 2, 1}, {1.0f, 3.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceSum) {
@@ -485,7 +485,7 @@ TEST(ReductionOpTest, ReduceSum) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 2, 1}, {33.0f, 45.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceSum_default_axes_keepdims) {
@@ -501,26 +501,19 @@ TEST(ReductionOpTest, ReduceSum_default_axes_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 1, 1}, {78.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceSum_do_not_keepdims) {
   OpTester test("ReduceSum");
   test.AddAttribute("axes", std::vector<int64_t>{1});
   test.AddAttribute("keepdims", (int64_t)0);
-  test.AddInput<float>("data", {3, 2, 2},
+  test.AddInput<float>("data", {1, 2, 2},
                        {1.0f, 2.0f,
-                        3.0f, 4.0f,
-
-                        5.0f, 6.0f,
-                        7.0f, 8.0f,
-
-                        9.0f, 10.0f,
-                        11.0f, 12.0f});
-  test.AddOutput<float>("reduced", {3, 2}, {4.0f, 6.0f, 12.0f, 14.0f, 20.0f, 22.0f});
-  test.Run();
+                        3.0f, 4.0f});
+  test.AddOutput<float>("reduced", {1, 2}, {4.0f, 6.0f});
+  test.RunOnCpuAndCuda();
 }
-
 
 TEST(ReductionOpTest, ReduceSum_keepdims) {
   OpTester test("ReduceSum");
@@ -536,7 +529,7 @@ TEST(ReductionOpTest, ReduceSum_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 1, 2}, {4.0f, 6.0f, 12.0f, 14.0f, 20.0f, 22.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceSumSquare) {
@@ -618,7 +611,7 @@ TEST(ReductionOpTest, ReduceProd_default_axes_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 1, 1}, {479001600.f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceProd_do_not_keepdims) {
@@ -635,7 +628,7 @@ TEST(ReductionOpTest, ReduceProd_do_not_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 2}, {3.f, 8.f, 35.f, 48.f, 99.f, 120.f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceProd_keepdims) {
@@ -652,7 +645,7 @@ TEST(ReductionOpTest, ReduceProd_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 1, 2}, {3.f, 8.f, 35.f, 48.f, 99.f, 120.f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ReduceProd) {
@@ -668,7 +661,7 @@ TEST(ReductionOpTest, ReduceProd) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {1, 2, 1}, {5400.f, 88704.f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ArgMax) {
@@ -688,7 +681,7 @@ TEST(ReductionOpTest, ArgMax) {
                           {1, 1,
                            1, 1,
                            1, 1});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(ReductionOpTest, ArgMin) {
@@ -707,7 +700,7 @@ TEST(ReductionOpTest, ArgMin) {
   test.AddOutput<int64_t>("reduced", {2, 2},
                           {0, 0,
                            0, 0});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 }  // namespace Test

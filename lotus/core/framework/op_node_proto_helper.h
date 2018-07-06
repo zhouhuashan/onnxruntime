@@ -20,6 +20,12 @@ class OpNodeProtoHelper {
   template <typename T>
   Status GetAttr(const std::string& name, T* value) const;
 
+  template <typename T>
+  void GetAttrOrDefault(const std::string& name, T* value, const T& default_value) const {
+    if (!GetAttr<T>(name, value).IsOK())
+      *value = default_value;
+  }
+
   //Get repeated attributes
   template <typename T>
   Status GetAttrs(const std::string& name, std::vector<T>& values) const;

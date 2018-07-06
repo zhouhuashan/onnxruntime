@@ -11,21 +11,22 @@ namespace Cuda {
 // 5. Add op kernel registration and compute specialization in unary_elementwise_ops.cc
 // 6. Enable test of the newly added kernel on CUDA by changing test.Run() to test.RunOnCpuAndCuda()
 
-#define UNARY_OPS()                        \
-  UNARY_OP_NAME_EXPR(Abs, _Abs(a))         \
-  UNARY_OP_NAME_EXPR(Neg, -a)              \
-  UNARY_OP_NAME_EXPR(Ceil, _Ceil(a))       \
-  UNARY_OP_NAME_EXPR(Floor, _Floor(a))     \
-  UNARY_OP_NAME_EXPR(Reciprocal, T(1) / a) \
-  UNARY_OP_NAME_EXPR(Sqrt, _Sqrt(a))       \
-  UNARY_OP_NAME_EXPR(Exp, _Exp(a))         \
-  UNARY_OP_NAME_EXPR(Log, _Log(a))
+#define UNARY_OPS()                          \
+  UNARY_OP_NAME_EXPR(Abs, _Abs(a))           \
+  UNARY_OP_NAME_EXPR(Neg, -a)                \
+  UNARY_OP_NAME_EXPR(Ceil, _Ceil(a))         \
+  UNARY_OP_NAME_EXPR(Floor, _Floor(a))       \
+  UNARY_OP_NAME_EXPR(Reciprocal, InT(1) / a) \
+  UNARY_OP_NAME_EXPR(Sqrt, _Sqrt(a))         \
+  UNARY_OP_NAME_EXPR(Exp, _Exp(a))           \
+  UNARY_OP_NAME_EXPR(Log, _Log(a))           \
+  UNARY_OP_NAME_EXPR(Cast, (OutT)(a))
 
 #define UNARY_ELEMENTWISE_IMPL_DECLARATION(name) \
-  template <typename T>                          \
+  template <typename InT, typename OutT>         \
   void Impl_##name(                              \
-      const T* input_data,                       \
-      T* output_data,                            \
+      const InT* input_data,                     \
+      OutT* output_data,                         \
       size_t count)
 
 #define UNARY_OP_NAME_EXPR(name, expr) UNARY_ELEMENTWISE_IMPL_DECLARATION(name);

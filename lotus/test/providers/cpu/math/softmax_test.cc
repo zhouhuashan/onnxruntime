@@ -20,7 +20,7 @@ static void RunTest(const std::vector<float> &x_vals,
 
   test.AddInput<float>("X", dimensions, x_vals);
   test.AddOutput<float>("Y", dimensions, expected_vals);
-  test.Run(expect_result, error_msg);
+  test.RunOnCpuAndCuda(expect_result, error_msg);
 }
 
 TEST(SoftmaxOperator, Simple) {

@@ -1,4 +1,3 @@
-#include "core/providers/cuda/cuda_common.h"
 #include "binary_elementwise_ops.h"
 #include "core/providers/cpu/tensor/utils.h"
 #include "binary_elementwise_ops_impl.h"

@@ -58,6 +58,10 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return cublas_handle_;
   }
 
+  cudnnHandle_t CudnnHandle() const {
+    return cudnn_handle_;
+  }
+
   cudaStream_t GetStream(int queue_id) const {
     LOTUS_ENFORCE(queue_id >= 0 && queue_id < kTotalCudaStreams);
     return streams_[queue_id];
@@ -73,7 +77,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
  private:
   CUDATransformer transformer_;
   int device_id_;
-  cublasHandle_t cublas_handle_;
+  cublasHandle_t cublas_handle_ = nullptr;
+  cudnnHandle_t cudnn_handle_ = nullptr;
   cudaStream_t streams_[kTotalCudaStreams];
   std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
 };

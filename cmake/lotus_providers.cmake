@@ -60,7 +60,8 @@ if (lotus_USE_CUDA)
         )
     endif()
     set(CUDA_INCLUDE "${CUDA_TOOLKIT_ROOT_DIR}/include")
-    include_directories(${CUDA_INCLUDE})
+    set(CUDNN_INCLUDE "${lotus_CUDNN_HOME}/include")
+    include_directories(${CUDA_INCLUDE} ${CUDNN_INCLUDE})
 endif()
 
 

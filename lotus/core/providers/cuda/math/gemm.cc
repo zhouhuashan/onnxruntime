@@ -1,4 +1,3 @@
-#include "core/providers/cuda/cuda_common.h"
 #include "gemm.h"
 #include "core/providers/cpu/math/gemm_helper.h"
 

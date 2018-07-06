@@ -7,6 +7,7 @@
 #include "cuda_execution_provider.h"
 
 namespace Lotus {
+namespace Cuda {
 
 #define CUDA_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDA_CALL(expr) ? Status::OK() : Status(LOTUS, FAIL))
 #define CUBLAS_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUBLAS_CALL(expr) ? Status::OK() : Status(LOTUS, FAIL))
@@ -31,17 +32,25 @@ class CudaKernel : public OpKernel {
     return provider_->CublasHandle();
   }
 
+  cudnnHandle_t CudnnHandle() const {
+    return provider_->CudnnHandle();
+  }
+
   template <typename T>
-  inline void AllocateSmallBufferOnGPU(IAllocatorUniquePtr<T>& gpu_copy, size_t bytes) const {
+  inline void AllocateBufferOnGPU(IAllocatorUniquePtr<T>& gpu_copy, size_t count_or_bytes, bool warn_big_buffer) const {
     auto alloc = provider_->GetAllocator();
-    if (bytes == 0) {
+    if (count_or_bytes == 0) {
       gpu_copy.release();
       return;
     }
 
+    size_t bytes = count_or_bytes;
+    if (!std::is_void<T>::value)
+      bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
+
     // CUDA inlines cudaMemcpyHostToDevice for size < 64KB, so cudaMemcpy is not blocking GPU
     // Bigger size would synchronize GPU and cpu execution
-    if (bytes >= 64 * 1024)
+    if (warn_big_buffer && bytes >= 64 * 1024)
       LOGS_DEFAULT(WARNING) << "CopyToGPU exceeded cudaMemcpyHostToDevice limit and may synchronize CPU/GPU execution";
 
     gpu_copy = IAllocator::MakeUniquePtr<T>(alloc, bytes);
@@ -49,16 +58,15 @@ class CudaKernel : public OpKernel {
 
   template <typename T>
   inline Status CopySmallObjectToGPU(IAllocatorUniquePtr<T>& gpu_copy, const T& cpu_copy) const {
-    AllocateSmallBufferOnGPU(gpu_copy, sizeof(T));
+    AllocateBufferOnGPU(gpu_copy, sizeof(T), true);
     CUDA_RETURN_IF_ERROR(cudaMemcpy(gpu_copy.get(), &cpu_copy, sizeof(T), cudaMemcpyHostToDevice));
     return Status::OK();
   }
 
   template <typename T>
   inline Status CopySmallVectorToGPU(IAllocatorUniquePtr<T>& gpu_vector, const std::vector<T>& cpu_vector) const {
-    size_t bytes = cpu_vector.size() * sizeof(T);
-    AllocateSmallBufferOnGPU(gpu_vector, bytes);
-    CUDA_RETURN_IF_ERROR(cudaMemcpy(gpu_vector.get(), cpu_vector.data(), bytes, cudaMemcpyHostToDevice));
+    AllocateBufferOnGPU(gpu_vector, cpu_vector.size(), true);
+    CUDA_RETURN_IF_ERROR(cudaMemcpy(gpu_vector.get(), cpu_vector.data(), cpu_vector.size() * sizeof(T), cudaMemcpyHostToDevice));
     return Status::OK();
   }
 
@@ -78,4 +86,5 @@ class ToCudaType<MLFloat16> {
   typedef half MappedType;
 };
 
+}  // namespace Cuda
 }  // namespace Lotus

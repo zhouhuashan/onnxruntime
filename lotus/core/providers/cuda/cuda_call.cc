@@ -53,6 +53,12 @@ const char* CudaErrString<curandStatus>(curandStatus) {
   return "(see curand.h & look for curandStatus or CURAND_STATUS_xxx)";
 }
 
+template <>
+const char* CudaErrString<cudnnStatus_t>(cudnnStatus_t e) {
+  cudaDeviceSynchronize();
+  return cudnnGetErrorString(e);
+}
+
 template <typename ERRTYPE, bool THRW>
 bool CudaCall(ERRTYPE retCode, const char* exprString, const char* libName, ERRTYPE successCode, const char* msg) {
   if (retCode != successCode) {
@@ -99,5 +105,7 @@ template bool CudaCall<cudaError, false>(cudaError retCode, const char* exprStri
 template bool CudaCall<cudaError, true>(cudaError retCode, const char* exprString, const char* libName, cudaError successCode, const char* msg);
 template bool CudaCall<cublasStatus_t, false>(cublasStatus_t retCode, const char* exprString, const char* libName, cublasStatus_t successCode, const char* msg);
 template bool CudaCall<cublasStatus_t, true>(cublasStatus_t retCode, const char* exprString, const char* libName, cublasStatus_t successCode, const char* msg);
+template bool CudaCall<cudnnStatus_t, false>(cudnnStatus_t retCode, const char* exprString, const char* libName, cudnnStatus_t successCode, const char* msg);
+template bool CudaCall<cudnnStatus_t, true>(cudnnStatus_t retCode, const char* exprString, const char* libName, cudnnStatus_t successCode, const char* msg);
 
 }  // namespace Lotus

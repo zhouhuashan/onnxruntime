@@ -1,4 +1,3 @@
-#include "core/providers/cuda/cuda_common.h"
 #include "unary_elementwise_ops.h"
 #include "unary_elementwise_ops_impl.h"
 
@@ -24,7 +23,7 @@ Status UnaryElementwise::Prepare(OpKernelContext* context, UnaryElementwisePrepa
   Status x<T>::Compute(OpKernelContext* context) const {                                          \
     UnaryElementwisePreparation p;                                                                \
     UnaryElementwise::Prepare(context, &p);                                                       \
-    Impl_##x<typename ToCudaType<T>::MappedType>(                                                 \
+    Impl_##x(                                                                                     \
         reinterpret_cast<const typename ToCudaType<T>::MappedType*>(p.input_tensor->Data<T>()),   \
         reinterpret_cast<typename ToCudaType<T>::MappedType*>(p.output_tensor->MutableData<T>()), \
         p.output_tensor->Shape().Size());                                                         \

@@ -35,9 +35,10 @@ Status CUDATransformer::Apply(LotusIR::Graph* graph, bool* modified) const {
 }
 
 CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& info)
-    : transformer_(info.name), device_id_(info.device_id), cublas_handle_(nullptr) {
+    : transformer_(info.name), device_id_(info.device_id) {
   CUDA_CALL_THROW(cudaSetDevice(device_id_));
   CUBLAS_CALL_THROW(cublasCreate(&cublas_handle_));
+  CUDNN_CALL_THROW(cudnnCreate(&cudnn_handle_));
   // create streams, default is nullptr
   streams_[kCudaStreamDefault] = nullptr;
   CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyIn], cudaStreamNonBlocking));
@@ -59,6 +60,7 @@ CUDAExecutionProvider::~CUDAExecutionProvider() {
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyIn]));
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyOut]));
   CUBLAS_CALL_THROW(cublasDestroy(cublas_handle_));
+  CUDNN_CALL_THROW(cudnnDestroy(cudnn_handle_));
 }
 
 Common::Status CUDAExecutionProvider::Sync() {

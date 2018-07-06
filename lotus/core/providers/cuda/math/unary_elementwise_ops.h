@@ -1,6 +1,6 @@
 #pragma once
-
 #include "core/providers/cuda/cuda_common.h"
+
 namespace Lotus {
 namespace Cuda {
 

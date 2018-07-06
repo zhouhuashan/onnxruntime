@@ -5,3 +5,4 @@
 #include <cublas_v2.h>
 #include <cusparse.h>
 #include <curand.h>
+#include <cudnn.h>

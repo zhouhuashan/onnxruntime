@@ -6,24 +6,27 @@
 namespace Lotus {
 namespace Cuda {
 
-#define OP(name, expr)                                     \
-  template <class T>                                       \
-  struct OP_##name {                                       \
-    __device__ __inline__ T operator()(const T& a) const { \
-      return expr;                                         \
-    }                                                      \
+#define OP(name, expr)                                          \
+  template <typename InT, typename OutT>                        \
+  struct OP_##name {                                            \
+    __device__ __inline__ OutT operator()(const InT& a) const { \
+      return expr;                                              \
+    }                                                           \
   };
 
-#define UNARY_ELEMENTWISE_IMPL(name)         \
-  UNARY_ELEMENTWISE_IMPL_DECLARATION(name) { \
-    UnaryElementWiseImpl(input_data,         \
-                         output_data,        \
-                         OP_##name<T>(),     \
-                         count);             \
+#define UNARY_ELEMENTWISE_IMPL(name)             \
+  UNARY_ELEMENTWISE_IMPL_DECLARATION(name) {     \
+    UnaryElementWiseImpl(input_data,             \
+                         output_data,            \
+                         OP_##name<InT, OutT>(), \
+                         count);                 \
   }
 
+#define SPECIALIZED_UNARY_ELEMENTWISE_IMPL2(name, InT, OutT) \
+  template void Impl_##name<InT, OutT>(const InT* input_data, OutT* output_data, size_t count);
+
 #define SPECIALIZED_UNARY_ELEMENTWISE_IMPL(name, T) \
-  template void Impl_##name<T>(const T* input_data, T* output_data, size_t count);
+  SPECIALIZED_UNARY_ELEMENTWISE_IMPL2(name, T, T)
 
 #define UNARY_OP_NAME_EXPR(name, expr) \
   OP(name, expr)                       \
@@ -73,6 +76,8 @@ SPECIALIZED_UNARY_ELEMENTWISE_IMPL_HFD(Reciprocal)
 SPECIALIZED_UNARY_ELEMENTWISE_IMPL_HFD(Sqrt)
 SPECIALIZED_UNARY_ELEMENTWISE_IMPL_HFD(Log)
 SPECIALIZED_UNARY_ELEMENTWISE_IMPL_HFD(Exp)
+
+SPECIALIZED_UNARY_ELEMENTWISE_IMPL2(Cast, uint32_t, int64_t)
 
 }  // namespace Cuda
 }  // namespace Lotus

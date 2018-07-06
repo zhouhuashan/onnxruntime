@@ -3,15 +3,16 @@
 namespace Lotus {
 
 struct TensorPitches : std::vector<int64_t> {
-  TensorPitches(const Tensor &tensor, size_t rank = 0)
-      : std::vector<int64_t>(std::max(rank, tensor.Shape().NumDimensions()), 0) {
-    auto &dims = tensor.Shape().GetDims();
+  TensorPitches(const Tensor &tensor, size_t rank = 0) : TensorPitches(tensor.Shape(), rank) {}
+  TensorPitches(const TensorShape &shape, size_t rank = 0) : TensorPitches(shape.GetDims(), rank) {}
 
+  TensorPitches(const std::vector<int64_t> &dims, size_t rank = 0)
+      : std::vector<int64_t>(std::max(rank, dims.size()), 0) {
     // The pitches is the size of the next inner axis. Aka the amount to move by one of the next inner axis.
     // For a tensor with shape(2,3,4,5) the values would be: (3*4*5, 4*5, 5, 1)
     // Note that the outermost '2' is never used, as you never need to move by the entire size of the outermost axis
 
-    auto tensor_rank = tensor.Shape().NumDimensions();
+    auto tensor_rank = dims.size();
     auto pitch_rank = size();
     auto padded_rank = pitch_rank - tensor_rank;
     if (size() == 0) return;

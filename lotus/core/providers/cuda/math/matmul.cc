@@ -1,4 +1,3 @@
-#include "core/providers/cuda/cuda_common.h"
 #include "matmul.h"
 #include "core/providers/cpu/math/matmul_helper.h"
 

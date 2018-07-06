@@ -123,6 +123,8 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
 
     if is_windows():
         cmake_args += cmake_extra_args
+        if args.use_cuda:
+            os.environ["PATH"] += os.pathsep + os.path.join(cudnn_home, 'bin')
 
     for config in configs:
         config_build_dir = get_config_build_dir(build_dir, config)
