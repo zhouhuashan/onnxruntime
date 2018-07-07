@@ -46,7 +46,7 @@ TEST(MLOpTest, TreeEnsembleClassifier) {
   test.AddAttribute("classlabels_int64s", classes);
 
   test.AddInput<float>("X", {N, 3}, X);
-  test.AddOutput<int64_t>("Y", {N}, results);
+  test.AddOutput<int64_t>("Y", {N, 1}, results);
   test.AddOutput<float>("Z", {N, static_cast<int64_t>(classes.size())}, scores);
   test.Run();
 }
@@ -93,7 +93,7 @@ TEST(MLOpTest, TreeEnsembleClassifierLabels) {
   test.AddAttribute("classlabels_strings", labels);
 
   test.AddInput<float>("X", {N, 3}, X);
-  test.AddOutput<std::string>("Y", {N}, results);
+  test.AddOutput<std::string>("Y", {N, 1}, results);
   test.AddOutput<float>("Z", {N, static_cast<int64_t>(labels.size())}, scores);
 
   test.Run();
@@ -142,7 +142,7 @@ TEST(MLOpTest, TreeEnsembleClassifierBinary) {
   test.AddAttribute("classlabels_int64s", classes);
 
   test.AddInput<float>("X", {N, 3}, X);
-  test.AddOutput<int64_t>("Y", {N}, results);
+  test.AddOutput<int64_t>("Y", {N, 1}, results);
   test.AddOutput<float>("Z", {N, 1}, scores);
 
   test.Run();

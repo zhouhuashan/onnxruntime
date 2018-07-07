@@ -35,7 +35,7 @@ TEST(MLOpTest, SVMClassifierMulticlassSVC) {
   test.AddAttribute("classlabels_ints", classes);
 
   test.AddInput<float>("X", {8, 3}, X);
-  test.AddOutput<int64_t>("Y", {8}, predictions);
+  test.AddOutput<int64_t>("Y", {8, 1}, predictions);
   test.AddOutput<float>("Z", {8, 6}, scores);
 
   test.Run();
@@ -68,7 +68,7 @@ TEST(MLOpTest, SVMClassifierMulticlassLinearSVC) {
   test.AddAttribute("classlabels_ints", classes);
 
   test.AddInput<float>("X", {8, 3}, X);
-  test.AddOutput<int64_t>("Y", {8}, predictions);
+  test.AddOutput<int64_t>("Y", {8, 1}, predictions);
   test.AddOutput<float>("Z", {8, 4}, scores);
 
   test.Run();
@@ -106,7 +106,7 @@ TEST(MLOpTest, SVMClassifierSVCProbabilities) {
   test.AddAttribute("prob_b", probb);
 
   test.AddInput<float>("X", {5, 3}, X);
-  test.AddOutput<int64_t>("Y", {5}, class_predictions);
+  test.AddOutput<int64_t>("Y", {5, 1}, class_predictions);
   test.AddOutput<float>("Z", {5, 4}, prob_predictions);
 
   test.Run();

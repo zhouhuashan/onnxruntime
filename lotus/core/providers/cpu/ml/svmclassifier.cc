@@ -93,7 +93,7 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
   int64_t stride = X->Shape().Size() == 1 ? X->Shape()[0] : X->Shape()[1];
   int64_t N = X->Shape().Size() == 1 ? 1 : X->Shape()[0];
 
-  Tensor* Y = ctx->Output(0, TensorShape({N}));
+  Tensor* Y = ctx->Output(0, TensorShape({N, 1}));
   Tensor* Z;
 
   std::vector<int64_t> dims;
