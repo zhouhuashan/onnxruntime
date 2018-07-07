@@ -61,7 +61,7 @@ void TestCastOp(const std::initializer_list<SrcType>& input,
   test.AddAttribute("to", toType);
   test.AddInput<SrcType>("input", dimensions, input);
   test.AddOutput<DstType>("output", dimensions, output);
-  test.Run(expect_result, expected_failure_string);
+  test.RunOnCpuAndCuda(expect_result, expected_failure_string);
 }
 
 template <typename SrcType>

@@ -6,27 +6,24 @@
 namespace Lotus {
 namespace Cuda {
 
-#define OP(name, expr)                                          \
-  template <typename InT, typename OutT>                        \
-  struct OP_##name {                                            \
-    __device__ __inline__ OutT operator()(const InT& a) const { \
-      return expr;                                              \
-    }                                                           \
+#define OP(name, expr)                                     \
+  template <typename T>                                    \
+  struct OP_##name {                                       \
+    __device__ __inline__ T operator()(const T& a) const { \
+      return expr;                                         \
+    }                                                      \
   };
 
-#define UNARY_ELEMENTWISE_IMPL(name)             \
-  UNARY_ELEMENTWISE_IMPL_DECLARATION(name) {     \
-    UnaryElementWiseImpl(input_data,             \
-                         output_data,            \
-                         OP_##name<InT, OutT>(), \
-                         count);                 \
+#define UNARY_ELEMENTWISE_IMPL(name)         \
+  UNARY_ELEMENTWISE_IMPL_DECLARATION(name) { \
+    UnaryElementWiseImpl(input_data,         \
+                         output_data,        \
+                         OP_##name<T>(),     \
+                         count);             \
   }
 
-#define SPECIALIZED_UNARY_ELEMENTWISE_IMPL2(name, InT, OutT) \
-  template void Impl_##name<InT, OutT>(const InT* input_data, OutT* output_data, size_t count);
-
 #define SPECIALIZED_UNARY_ELEMENTWISE_IMPL(name, T) \
-  SPECIALIZED_UNARY_ELEMENTWISE_IMPL2(name, T, T)
+  template void Impl_##name<T>(const T* input_data, T* output_data, size_t count);
 
 #define UNARY_OP_NAME_EXPR(name, expr) \
   OP(name, expr)                       \
@@ -77,7 +74,67 @@ SPECIALIZED_UNARY_ELEMENTWISE_IMPL_HFD(Sqrt)
 SPECIALIZED_UNARY_ELEMENTWISE_IMPL_HFD(Log)
 SPECIALIZED_UNARY_ELEMENTWISE_IMPL_HFD(Exp)
 
-SPECIALIZED_UNARY_ELEMENTWISE_IMPL2(Cast, uint32_t, int64_t)
+// When casting, half needs to be converted via float type from most other types
+template <typename T>
+struct ViaTypeMap {
+  typedef T ViaT;
+};
+
+template <>
+struct ViaTypeMap<half> {
+  typedef float ViaT;
+};
+
+template <typename InT, typename OutT>
+struct OP_Cast {
+  __device__ __inline__ OutT operator()(const InT& a) const {
+    const bool any_float16 = std::is_same<half, InT>::value || std::is_same<half, OutT>::value;
+    typedef typename std::conditional<any_float16, half, OutT>::type T;
+    typedef typename ViaTypeMap<T>::ViaT ViaT;
+    return (OutT)((ViaT)a);
+  }
+};
+
+template <typename InT, typename OutT>
+void Impl_Cast(
+    const InT* input_data,
+    OutT* output_data,
+    size_t count) {
+  UnaryElementWiseImpl(input_data,
+                       output_data,
+                       OP_Cast<InT, OutT>(),
+                       count);
+}
+
+#define SPECIALIZED_CAST_IMPL2(InT, OutT) \
+  template void Impl_Cast<InT, OutT>(const InT* input_data, OutT* output_data, size_t count);
+
+#define SPECIALIZED_CAST_FROM(T)      \
+  SPECIALIZED_CAST_IMPL2(T, half)     \
+  SPECIALIZED_CAST_IMPL2(T, float)    \
+  SPECIALIZED_CAST_IMPL2(T, double)   \
+  SPECIALIZED_CAST_IMPL2(T, int8_t)   \
+  SPECIALIZED_CAST_IMPL2(T, int16_t)  \
+  SPECIALIZED_CAST_IMPL2(T, int32_t)  \
+  SPECIALIZED_CAST_IMPL2(T, int64_t)  \
+  SPECIALIZED_CAST_IMPL2(T, uint8_t)  \
+  SPECIALIZED_CAST_IMPL2(T, uint16_t) \
+  SPECIALIZED_CAST_IMPL2(T, uint32_t) \
+  SPECIALIZED_CAST_IMPL2(T, uint64_t) \
+  SPECIALIZED_CAST_IMPL2(T, bool)
+
+SPECIALIZED_CAST_FROM(half)
+SPECIALIZED_CAST_FROM(float)
+SPECIALIZED_CAST_FROM(double)
+SPECIALIZED_CAST_FROM(int8_t)
+SPECIALIZED_CAST_FROM(int16_t)
+SPECIALIZED_CAST_FROM(int32_t)
+SPECIALIZED_CAST_FROM(int64_t)
+SPECIALIZED_CAST_FROM(uint8_t)
+SPECIALIZED_CAST_FROM(uint16_t)
+SPECIALIZED_CAST_FROM(uint32_t)
+SPECIALIZED_CAST_FROM(uint64_t)
+SPECIALIZED_CAST_FROM(bool)
 
 }  // namespace Cuda
 }  // namespace Lotus
