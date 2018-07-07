@@ -46,5 +46,21 @@ class CudnnReduceDescriptor final {
   cudnnReduceTensorDescriptor_t desc_;
 };
 
+class CudnnPoolingDescriptor final {
+ public:
+  CudnnPoolingDescriptor();
+  ~CudnnPoolingDescriptor();
+
+  Status Set(cudnnPoolingMode_t mode,
+             const std::vector<int64_t>& kernel_shape,
+             const std::vector<int64_t>& pads,
+             const std::vector<int64_t>& stides);
+
+  operator cudnnPoolingDescriptor_t() const { return desc_; }
+
+ private:
+  cudnnPoolingDescriptor_t desc_;
+};
+
 }  // namespace Cuda
 }  // namespace Lotus

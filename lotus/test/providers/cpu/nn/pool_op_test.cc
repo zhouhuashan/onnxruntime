@@ -84,7 +84,7 @@ TEST(PoolTest, MaxPool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(PoolTest, GlobalMaxPool) {
@@ -160,7 +160,7 @@ TEST(PoolTest, GlobalMaxPool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(PoolTest, AveragePool) {
@@ -241,7 +241,7 @@ TEST(PoolTest, AveragePool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(PoolTest, AveragePool_IncludePadPixel) {
@@ -265,7 +265,7 @@ TEST(PoolTest, AveragePool_IncludePadPixel) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(PoolTest, GlobalAveragePool) {
@@ -341,7 +341,7 @@ TEST(PoolTest, GlobalAveragePool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(PoolTest, LpPool) {

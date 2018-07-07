@@ -89,5 +89,47 @@ Status CudnnReduceDescriptor::Set(cudnnReduceTensorOp_t op, cudnnDataType_t type
   return Status::OK();
 }
 
+CudnnPoolingDescriptor::CudnnPoolingDescriptor() : desc_(nullptr) {
+}
+
+CudnnPoolingDescriptor::~CudnnPoolingDescriptor() {
+  if (desc_ != nullptr) {
+    cudnnDestroyPoolingDescriptor(desc_);
+    desc_ = nullptr;
+  }
+}
+
+Status CudnnPoolingDescriptor::Set(cudnnPoolingMode_t mode,
+                                   const std::vector<int64_t>& kernel_shape,
+                                   const std::vector<int64_t>& pads,
+                                   const std::vector<int64_t>& strides) {
+  if (!desc_)
+    CUDNN_RETURN_IF_ERROR(cudnnCreatePoolingDescriptor(&desc_));
+
+  int rank = gsl::narrow_cast<int>(kernel_shape.size());
+  std::vector<int> window(rank);
+  std::vector<int> padding(rank);
+  std::vector<int> stride(rank);
+  for (int i = 0; i < rank; i++) {
+    window[i] = gsl::narrow_cast<int>(kernel_shape[i]);
+  }
+  for (int i = 0; i < rank; i++) {
+    padding[i] = gsl::narrow_cast<int>(pads[i]);
+  }
+  for (int i = 0; i < rank; i++) {
+    stride[i] = gsl::narrow_cast<int>(strides[i]);
+  }
+  CUDNN_RETURN_IF_ERROR(cudnnSetPoolingNdDescriptor(
+      desc_,
+      mode,
+      CUDNN_PROPAGATE_NAN,
+      rank,
+      window.data(),
+      padding.data(),
+      stride.data()));
+
+  return Status::OK();
+}
+
 }  // namespace Cuda
 }  // namespace Lotus

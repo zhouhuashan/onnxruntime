@@ -6,9 +6,9 @@
 
 namespace Lotus {
 
-class PoolBase : public OpKernel {
- public:
-  PoolBase(OpKernelInfo info) : OpKernel(info) {
+class PoolBase {
+ protected:
+  PoolBase(OpKernelInfo info) {
     const std::string op_name = info.GetKernelDef().OpName();
     global_pooling_ = (op_name == "GlobalAveragePool" || op_name == "GlobalMaxPool" || op_name == "GlobalLpPool");
 
@@ -34,15 +34,21 @@ class PoolBase : public OpKernel {
       if (pads_.empty()) {
         pads_.resize(kernel_shape_.size() * 2, 0);
       }
+
+      for (int dim = 0; dim < kernel_shape_.size(); ++dim) {
+        LOTUS_ENFORCE(kernel_shape_[dim] > 0);
+        LOTUS_ENFORCE(pads_[dim] < kernel_shape_[dim] && pads_[dim + kernel_shape_.size()] < kernel_shape_[dim],
+          "Pad should be smaller than kernel.");
+      }
+
       if (strides_.empty()) {
         strides_.resize(kernel_shape_.size(), 1);
       }
-
       LOTUS_ENFORCE(strides_.size() == kernel_shape_.size());
     }
   }
 
-  ~PoolBase() override = default;
+  ~PoolBase() {};
 
   std::vector<int64_t> SetOutputSize(const TensorShape& input_shape,
                                      int64_t output_channel,

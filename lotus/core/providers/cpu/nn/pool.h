@@ -14,16 +14,16 @@ struct PoolProcessContext {
 };
 
 template <typename T, typename PoolType>
-class Pool final : public PoolBase {
+class Pool final : public OpKernel, public PoolBase {
  public:
-  Pool(OpKernelInfo info) : PoolBase(info) {
+  Pool(OpKernelInfo info) : OpKernel(info), PoolBase(info) {
     const std::string& op_name = info.GetKernelDef().OpName();
     if (op_name == "LpPool" || op_name == "GlobalLpPool") {
       info.GetAttr<int64_t>("p", &pool_context_.p_);
     }
   }
 
-  ~Pool() override = default;
+  ~Pool() {};
 
   Status Compute(OpKernelContext* context) const override;
 
