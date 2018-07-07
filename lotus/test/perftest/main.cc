@@ -28,7 +28,7 @@ using namespace LotusIR;
 using namespace Lotus;
 
 void usage() {
-  std::cout << "lotus_perf_test -m model_path -r result_file" << std::endl;
+  std::cout << "lotus_perf_test -m model_path -r result_file [-t repeated_times] [-d count_of_dataset_to_use]" << std::endl;
 }
 
 struct PerfMetrics {
@@ -38,7 +38,7 @@ struct PerfMetrics {
   void DumpToFile(const std::string& path, const std::string& model_name) {
     std::ofstream outfile;
     outfile.open(path, std::ofstream::out | std::ofstream::app);
-    if( !outfile.good() ){
+    if (!outfile.good()) {
       LOGF_DEFAULT(ERROR, "failed to open result file");
       return;
     }
@@ -51,7 +51,7 @@ size_t GetPeakWorkingSetSize() {
 #ifdef _WIN32
   PROCESS_MEMORY_COUNTERS pmc;
   if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
-     return pmc.PeakWorkingSetSize;
+    return pmc.PeakWorkingSetSize;
   } else {
     LOGF_DEFAULT(ERROR, "failed to get process memory");
     return 0;
@@ -61,31 +61,41 @@ size_t GetPeakWorkingSetSize() {
 #endif
 }
 
-void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics) {
+void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeated_times, size_t count_of_dataset_to_use) {
   std::shared_ptr<Lotus::InferenceSession> session_object;
   SessionFactory sf(kCpuExecutionProvider);
   sf.create(session_object, test_case.GetModelUrl(), test_case.GetTestCaseName());
 
   size_t data_count = test_case.GetDataCount();
+
+  if (data_count == 0) {
+    LOGF_DEFAULT(ERROR, "there is no test data for model %s", test_case.GetTestCaseName().c_str());
+    return;
+  }
+
   TIME_SPEC time_spent;
   Lotus::SetTimeSpecToZero(&time_spent);
 
-  for (size_t data_index = 0; data_index < data_count; data_index++){
-    std::unordered_map<std::string, Lotus::MLValue> feeds;
-    test_case.LoadInputData(data_index, feeds);
-    std::vector<MLValue> fetches;
-    TIME_SPEC start_time, end_time;
-    GetMonotonicTimeCounter(&start_time);
-    Status status = session_object->Run(feeds, &fetches);
-    if (!status.IsOK()) {
-      LOGF_DEFAULT(ERROR, "inference failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu", test_case.GetTestCaseName().c_str(), status.ErrorMessage().c_str(), data_index);
-       continue;
+  size_t count_of_inferences = 0;
+  for (size_t times = 0; times < repeated_times; times++) {
+    for (size_t data_index = 0; data_index < std::min(data_count, count_of_dataset_to_use); data_index++) {
+      std::unordered_map<std::string, Lotus::MLValue> feeds;
+      test_case.LoadInputData(data_index, feeds);
+      std::vector<MLValue> fetches;
+      TIME_SPEC start_time, end_time;
+      GetMonotonicTimeCounter(&start_time);
+      Status status = session_object->Run(feeds, &fetches);
+      GetMonotonicTimeCounter(&end_time);
+      if (!status.IsOK()) {
+        LOGF_DEFAULT(ERROR, "inference failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu", test_case.GetTestCaseName().c_str(), status.ErrorMessage().c_str(), data_index);
+        continue;
+      }
+      count_of_inferences++;
+      AccumulateTimeSpec(&time_spent, &start_time, &end_time);
     }
-    GetMonotonicTimeCounter(&end_time);
-    AccumulateTimeSpec(&time_spent, &start_time, &end_time);
   }
 
-  perf_metrics.seconds_spent = TimeSpecToSeconds(&time_spent) / data_count;
+  perf_metrics.seconds_spent = count_of_inferences != 0 ? TimeSpecToSeconds(&time_spent) / count_of_inferences : 0;
   perf_metrics.peak_workingset_size = GetPeakWorkingSetSize();
 }
 
@@ -122,6 +132,29 @@ int main(int argc, const char* args[]) {
   }
   const std::string resultfile = *parser.GetCommandArg("-r");
 
+  size_t repeated_times = 100;
+  if (parser.GetCommandArg("-t")) {
+    long repeated_times_from_arg = strtol(parser.GetCommandArg("-t")->c_str(), nullptr, 10);
+    if (repeated_times_from_arg <= 0) {
+      LOGF_DEFAULT(ERROR, "repeated times should be bigger than 0");
+      usage();
+      return -1;
+    }
+
+    repeated_times = static_cast<size_t>(repeated_times_from_arg);
+  }
+
+  size_t count_of_dataset_to_use = 1;
+  if (parser.GetCommandArg("-d")) {
+    long count_of_dataset_to_use_from_arg = strtol(parser.GetCommandArg("-t")->c_str(), nullptr, 10);
+    if (count_of_dataset_to_use_from_arg <= 0) {
+      LOGF_DEFAULT(ERROR, "count of the dataset to use should be bigger than 0");
+      usage();
+      return -1;
+    }
+    count_of_dataset_to_use = static_cast<size_t>(count_of_dataset_to_use_from_arg);
+  }
+
   std::string model_name = model_path.parent_path().filename().string();
   if (model_name.compare(0, 5, "test_") == 0) model_name = model_name.substr(5);
 
@@ -133,7 +166,7 @@ int main(int argc, const char* args[]) {
   }
 
   PerfMetrics perf_metrics;
-  RunPerfTest(test_case, perf_metrics);
+  RunPerfTest(test_case, perf_metrics, repeated_times, count_of_dataset_to_use);
   perf_metrics.DumpToFile(resultfile, test_case.GetTestCaseName());
   std::cout << test_case.GetTestCaseName() << "," << perf_metrics.seconds_spent << "," << perf_metrics.peak_workingset_size << std::endl;
 
