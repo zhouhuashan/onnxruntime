@@ -43,7 +43,7 @@ struct PerfMetrics {
       LOGF_DEFAULT(ERROR, "failed to open result file");
       return;
     }
-    for (int runs = 0; runs< valid_runs; runs++){
+    for (size_t runs = 0; runs< valid_runs; runs++){
       outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size <<"," <<runs << std::endl;
     }
     outfile.close();
