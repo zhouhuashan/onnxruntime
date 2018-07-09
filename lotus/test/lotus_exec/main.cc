@@ -33,7 +33,7 @@ int main(int argc, const char* args[]) {
     std::cerr << "Execution Status: " << Model::GetStatusString(ExecutionStatus::DATA_LOADING_FAILURE) << std::endl;
     std::cout << "Exception msg: " << e.what() << std::endl;
   } catch (const std::exception& e) {
-    std::cerr << "Execution Status: " << Model::GetStatusString(ExecutionStatus::MODEL_RUN_FAILURE) << std::endl;
+    std::cerr << "Execution Status: " << Model::GetStatusString(ExecutionStatus::PREDICTION_FAILURE) << std::endl;
     std::cout << "Exception msg: " << e.what() << std::endl;
   }
 }
