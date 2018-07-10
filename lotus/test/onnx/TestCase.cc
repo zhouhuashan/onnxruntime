@@ -122,7 +122,7 @@ Lotus::Common::Status LoopDataFile(const path& outputs_pb, Lotus::AllocatorPtr a
         st = Status(Lotus::Common::LOTUS, Lotus::Common::NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
     }
     if (!st.IsOK()) break;
-    st = func(data.name(), value);
+    st = func(data.name(), value.get());
     if (!st.IsOK()) break;
   }
   if (!st.IsOK()) return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::FAIL, "load the ", item_id, "-th item in file '", outputs_pb.string(), "' failed,", st.ErrorMessage());
@@ -204,10 +204,10 @@ Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<
 
   path inputs_pb = test_data_dirs[id] / "inputs.pb";
   if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
-    return LoopDataFile(inputs_pb, allocator_, [&feeds](const std::string& name, std::unique_ptr<Lotus::MLValue>& value) {
+    return LoopDataFile(inputs_pb, allocator_, [&feeds](const std::string& name, Lotus::MLValue* value) {
       if (name.empty())
         return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "name is empty");
-      auto pv = feeds.insert(std::make_pair(name, *value.release()));
+      auto pv = feeds.insert(std::make_pair(name, *value));
       if (!pv.second)
         return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "duplicated input name");
       return Status::OK();
@@ -284,8 +284,8 @@ Lotus::Common::Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus:
     return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed: ", st.ErrorMessage());
   path outputs_pb = test_data_dirs[id] / "outputs.pb";
   if (std::experimental::filesystem::exists(outputs_pb)) {  //has an all-in-one output file
-    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, std::unique_ptr<Lotus::MLValue>& value) {
-      output_values.push_back(*value.release());
+    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, Lotus::MLValue* value) {
+      output_values.push_back(*value);
       return Status::OK();
     });
   }
