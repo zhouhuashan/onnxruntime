@@ -68,6 +68,8 @@ Use the individual flags to only run the specified stages.
                         help="Install ONNX. This also creates Lotus ONNX test data in the build directory.")
     parser.add_argument("--use_jemalloc", action='store_true', help="use jemalloc")
     parser.add_argument("--use_openblas", action='store_true', help="Build with OpenBLAS.")
+    parser.add_argument("--use_preinstalled_eigen", action='store_true', help="Use pre-installed eigen.")
+    parser.add_argument("--eigen_path", help="Path to pre-installed eigen.")
     return parser.parse_args()
 
 def is_windows():
