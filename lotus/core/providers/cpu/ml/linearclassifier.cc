@@ -66,7 +66,7 @@ Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
 
   int64_t stride = X->Shape().Size() == 1 ? X->Shape()[0] : X->Shape()[1];
   int64_t N = X->Shape().Size() == 1 ? 1 : X->Shape()[0];
-  Tensor* Y = ctx->Output(0, TensorShape({N, 1}));
+  Tensor* Y = ctx->Output(0, TensorShape({N}));
 
   int64_t output_classes = class_count_;
   bool add_second_class = false;
