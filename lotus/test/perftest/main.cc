@@ -32,8 +32,9 @@ void usage() {
 }
 
 struct PerfMetrics {
-  double seconds_spent;
-  size_t peak_workingset_size;
+  size_t peak_workingset_size{0};
+  size_t valid_runs{0};
+  std::vector<double> time_costs;
 
   void DumpToFile(const std::string& path, const std::string& model_name) {
     std::ofstream outfile;
@@ -42,7 +43,9 @@ struct PerfMetrics {
       LOGF_DEFAULT(ERROR, "failed to open result file");
       return;
     }
-    outfile << model_name << "," << seconds_spent << "," << peak_workingset_size << std::endl;
+    for (size_t runs = 0; runs< valid_runs; runs++){
+      outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size <<"," <<runs << std::endl;
+    }
     outfile.close();
   }
 };
@@ -73,9 +76,7 @@ void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeate
     return;
   }
 
-  TIME_SPEC time_spent;
-  Lotus::SetTimeSpecToZero(&time_spent);
-
+  perf_metrics.time_costs.resize(repeated_times * std::min(data_count, count_of_dataset_to_use));
   size_t count_of_inferences = 0;
   for (size_t times = 0; times < repeated_times; times++) {
     for (size_t data_index = 0; data_index < std::min(data_count, count_of_dataset_to_use); data_index++) {
@@ -90,12 +91,16 @@ void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeate
         LOGF_DEFAULT(ERROR, "inference failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu", test_case.GetTestCaseName().c_str(), status.ErrorMessage().c_str(), data_index);
         continue;
       }
+      TIME_SPEC time_cost;
+      Lotus::SetTimeSpecToZero(&time_cost);
+      AccumulateTimeSpec(&time_cost, &start_time, &end_time);
+      perf_metrics.time_costs[count_of_inferences] = TimeSpecToSeconds(&time_cost);
+      std::cout << test_case.GetTestCaseName() << "," << perf_metrics.time_costs[count_of_inferences] << "," << std::endl;
       count_of_inferences++;
-      AccumulateTimeSpec(&time_spent, &start_time, &end_time);
     }
   }
 
-  perf_metrics.seconds_spent = count_of_inferences != 0 ? TimeSpecToSeconds(&time_spent) / count_of_inferences : 0;
+  perf_metrics.valid_runs = count_of_inferences;
   perf_metrics.peak_workingset_size = GetPeakWorkingSetSize();
 }
 
@@ -168,7 +173,6 @@ int main(int argc, const char* args[]) {
   PerfMetrics perf_metrics;
   RunPerfTest(test_case, perf_metrics, repeated_times, count_of_dataset_to_use);
   perf_metrics.DumpToFile(resultfile, test_case.GetTestCaseName());
-  std::cout << test_case.GetTestCaseName() << "," << perf_metrics.seconds_spent << "," << perf_metrics.peak_workingset_size << std::endl;
 
   return 0;
 }
