@@ -58,20 +58,16 @@ template <typename T, typename PoolType>
 Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   TensorShape x_shape = X->Shape();
-  LOTUS_ENFORCE(x_shape.NumDimensions() > 2, "Input dimension cannot be less than 3.");
+
+  if (x_shape.NumDimensions() < 3) {
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input dimension cannot be less than 3.");
+  }
 
   std::vector<int64_t> pads = pads_;
   std::vector<int64_t> kernel_shape = kernel_shape_;
 
-  if (!global_pooling_) {
-    for (int dim = 0; dim < kernel_shape_.size(); ++dim) {
-      LOTUS_ENFORCE(kernel_shape_[dim] > 0);
-      LOTUS_ENFORCE(
-          pads_[dim] < kernel_shape_[dim] && pads_[dim + kernel_shape_.size()] < kernel_shape_[dim],
-          "Pad should be smaller than kernel.");
-    }
-  } else {
-    const std::vector<int64_t> input_dims = x_shape.GetDims();
+  if (global_pooling_) {
+    const auto& input_dims = x_shape.GetDims();
     kernel_shape.assign(input_dims.begin() + 2, input_dims.end());
     pads.assign(kernel_shape.size(), 0);
   }
