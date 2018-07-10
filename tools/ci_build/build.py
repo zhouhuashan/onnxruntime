@@ -119,6 +119,10 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
         nvml_stub_path = cuda_home + "/lib64/stubs"
         cmake_args += ["-DCUDA_CUDA_LIBRARY=" + nvml_stub_path]
 
+    if args.use_preinstalled_eigen:
+        cmake_args += ["-Dlotus_USE_PREINSTALLED_EIGEN=ON",
+                       "-Deigen_SOURCE_PATH=" + args.eigen_path]
+
     if pb_home:
         cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]

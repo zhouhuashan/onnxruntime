@@ -32,6 +32,7 @@ option(lotus_USE_PREBUILT_PB "Use prebuilt protobuf library" OFF)
 option(lotus_USE_JEMALLOC "Use jecmalloc" OFF)
 option(lotus_MSVC_STATIC_RUNTIME "Compile for the static CRT" OFF)
 option(lotus_BUILD_UNIT_TESTS "Build Lotus unit tests" ON)
+option(lotus_USE_PREINSTALLED_EIGEN "Use pre-installed EIGEN. Need to provide eigen_SOURCE_PATH if turn this on." OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
@@ -179,7 +180,7 @@ include(gsl)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGSL_THROW_ON_CONTRACT_VIOLATION")
 # no bounds checking in release build so no perf cost
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DGSL_UNENFORCED_ON_CONTRACT_VIOLATION")
-    
+
 include(eigen)
 set(lotus_EXTERNAL_DEPENDENCIES eigen)
 set(lotus_EXTERNAL_LIBRARIES protobuf::libprotobuf)

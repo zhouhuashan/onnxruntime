@@ -4,7 +4,7 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4554)
 #endif
-#include "eigen/src/eigen/unsupported/Eigen/CXX11/Tensor"
+#include "unsupported/Eigen/CXX11/Tensor"
 #include <array>
 
 namespace Lotus {

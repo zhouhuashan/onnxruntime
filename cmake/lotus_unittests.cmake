@@ -71,7 +71,6 @@ file(GLOB lotus_test_ir_src
 set(lotus_test_framework_src_patterns
     "${LOTUS_ROOT}/test/framework/*.cc"
     "${LOTUS_ROOT}/test/platform/*.cc"
-    "${LOTUS_ROOT}/test/lib/*.cc"
 )
 
 if(WIN32)
@@ -260,7 +259,7 @@ endif()
 
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
 add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
-target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/external/onnx/onnx $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/external/onnx/onnx $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
 lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${PROJECT_SOURCE_DIR}/external/onnx/onnx TARGET onnx_test_runner_common)

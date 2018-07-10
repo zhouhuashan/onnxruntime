@@ -18,15 +18,17 @@ limitations under the License.
 
 // build\windows\debug\external\eigen3\unsupported\eigen\cxx11\src/Tensor/Tensor.h(76):
 // warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+// build\windows\relwithdebinfo\eigen\src\eigen\eigen-eigen-5a0156e40feb\unsupported\eigen\cxx11\src/Tensor/TensorChipping.h(52)
+// warning C4100: 'dim': unreferenced formal parameter
 #ifdef _WIN32
-#pragma warning(disable : 4554)
+#pragma warning(disable : 4554 4100)
 #endif
 
 #include <algorithm>
 #include <chrono>
 #include <random>
 #include "core/util/math_cpuonly.h"
-#include "external/eigen3/unsupported/Eigen/CXX11/Tensor"
+#include "unsupported/Eigen/CXX11/Tensor"
 #include "gsl/span"
 using namespace onnx;
 namespace Lotus {
