@@ -55,6 +55,62 @@ Common::Status Convert(const google::protobuf::RepeatedPtrField< ::Lotus::proto:
 }
 
 template <typename InputType, typename OutputType>
+void ConvertMap(const InputType& data, OutputType** out) {
+  OutputType* ret = new OutputType();
+  for (const auto& pv : data) {
+    (*ret)[pv.first] = pv.second;
+  }
+  *out = ret;
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<std::string, std::string>& data, MapStringToString** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<std::string, int64_t>& data, MapStringToInt64** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<std::string, float>& data, MapStringToFloat** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<std::string, double>& data, MapStringToDouble** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<int64_t, std::string>& data, MapInt64ToString** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<int64_t, int64_t>& data, MapInt64ToInt64** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<int64_t, float>& data, MapInt64ToFloat** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+
+template <>
+Common::Status Convert(const google::protobuf::Map<int64_t, double>& data, MapInt64ToDouble** out, AllocatorPtr allocator) {
+  ConvertMap(data, out);
+  return Common::Status::OK();
+}
+template <typename InputType, typename OutputType>
 Lotus::Common::Status ProtoToMLValue(const InputType& input, std::unique_ptr<Lotus::MLValue>& value, AllocatorPtr allocator) {
   OutputType* tensor = nullptr;
   Common::Status st = Convert(input, &tensor, allocator);
@@ -114,6 +170,30 @@ Lotus::Common::Status LoopDataFile(const path& outputs_pb, Lotus::AllocatorPtr a
         break;
       case Lotus::proto::TraditionalMLData::kVectorMapInt64ToFloat:
         st = ProtoToMLValue<decltype(data.vector_map_int64_to_float().v()), VectorMapInt64ToFloat>(data.vector_map_int64_to_float().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapStringToString:
+        st = ProtoToMLValue<decltype(data.map_string_to_string().v()), MapStringToString>(data.map_string_to_string().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapStringToInt64:
+        st = ProtoToMLValue<decltype(data.map_string_to_int64().v()), MapStringToInt64>(data.map_string_to_int64().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapStringToFloat:
+        st = ProtoToMLValue<decltype(data.map_string_to_float().v()), MapStringToFloat>(data.map_string_to_float().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapStringToDouble:
+        st = ProtoToMLValue<decltype(data.map_string_to_double().v()), MapStringToDouble>(data.map_string_to_double().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapInt64ToString:
+        st = ProtoToMLValue<decltype(data.map_int64_to_string().v()), MapInt64ToString>(data.map_int64_to_string().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapInt64ToInt64:
+        st = ProtoToMLValue<decltype(data.map_int64_to_int64().v()), MapInt64ToInt64>(data.map_int64_to_int64().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapInt64ToFloat:
+        st = ProtoToMLValue<decltype(data.map_int64_to_float().v()), MapInt64ToFloat>(data.map_int64_to_float().v(), value, allocator);
+        break;
+      case Lotus::proto::TraditionalMLData::kMapInt64ToDouble:
+        st = ProtoToMLValue<decltype(data.map_int64_to_double().v()), MapInt64ToDouble>(data.map_int64_to_double().v(), value, allocator);
         break;
       case Lotus::proto::TraditionalMLData::kTensor:
         st = ProtoToMLValue<onnx::TensorProto, Lotus::Tensor>(data.tensor(), value, allocator);
