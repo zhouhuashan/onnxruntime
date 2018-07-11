@@ -20,81 +20,14 @@
 #include "core/providers/cpu/nn/conv_base.h"
 
 namespace Lotus {
-namespace {
-// helper function
-inline void ComputeSizeAndPad(
-    const int64_t in_dim,
-    const int64_t stride,
-    const int64_t kernel,
-    const int64_t dilation,
-    AutoPadType pad_type,
-    int64_t* pad_head,
-    int64_t* pad_tail,
-    int64_t* out_dim) {
-  const int64_t dkernel = dilation * (kernel - 1) + 1;
-
-  if (pad_type == AutoPadType::NOTSET) {
-    *out_dim = static_cast<int64_t>(static_cast<float>(in_dim + *pad_head + *pad_tail - dkernel) / stride + 1);
-  } else {
-    switch (pad_type) {
-      case AutoPadType::VALID:
-        *pad_head = 0;
-        *pad_tail = 0;
-        *out_dim = (in_dim - dkernel) / stride + 1;
-        break;
-      case AutoPadType::SAME_UPPER:
-      case AutoPadType::SAME_LOWER: {
-        LOTUS_ENFORCE(dilation == 1, "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER.");
-        int64_t legacy_target_size = (in_dim + stride - 1) / stride;
-        int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
-        *out_dim = (in_dim + pad_needed - dkernel) / stride + 1;
-
-        if (pad_type == AutoPadType::SAME_LOWER) {
-          *pad_head = (pad_needed + 1) / 2;
-        } else {
-          *pad_head = pad_needed / 2;
-        }
-        *pad_tail = pad_needed - *pad_head;
-      } break;
-      default:
-        throw NotImplementedException("pad type not supported");
-    }
-  }
-}
-}  // namespace
 
 template <typename T>
-class Conv : public ConvBase {
+class Conv : public OpKernel, public ConvBase {
  public:
-  Conv(const OpKernelInfo& info) : ConvBase(info) {
+  Conv(const OpKernelInfo& info) : OpKernel(info), ConvBase(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
-
- private:
-  Status InferOutputShape(const TensorShape& input_shape,
-                          const vector<int64_t>& kernel_shape,
-                          const vector<int64_t>& strides,
-                          const vector<int64_t>& dilations,
-                          vector<int64_t>* pads,
-                          vector<int64_t>* output_shape) const {
-    for (int dim = 0; dim < input_shape.NumDimensions(); ++dim) {
-      int64_t dim_size = 0;
-      ComputeSizeAndPad(input_shape[dim],
-                        strides[dim],
-                        kernel_shape[dim],
-                        dilations[dim],
-                        auto_pad_,
-                        &pads->at(dim),
-                        &pads->at(input_shape.NumDimensions() + dim),
-                        &dim_size);
-      if (dim_size < 0) {
-        return Status(LOTUS, INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
-      }
-      output_shape->push_back(dim_size);
-    }
-    return Status::OK();
-  }
 };
 
 }  // namespace Lotus

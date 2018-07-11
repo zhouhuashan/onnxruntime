@@ -23,7 +23,7 @@
 
 namespace Lotus {
 namespace {
-inline void ComputeSizeAndPad(
+inline void ComputeTransposePadAndOutputShape(
     const int64_t in_size,
     const int64_t stride,
     const int64_t kernel,
@@ -70,9 +70,9 @@ inline void ComputeSizeAndPad(
 }
 }  // namespace
 template <typename T>
-class ConvTranspose : public ConvBase {
+class ConvTranspose : public OpKernel, public ConvBase {
  public:
-  ConvTranspose(const OpKernelInfo& info) : ConvBase(info) {
+  ConvTranspose(const OpKernelInfo& info) : OpKernel(info), ConvBase(info) {
     // output_shape and output_padding are both optional
     info.GetAttrs<int64_t>("output_shape", output_shape_);
     info.GetAttrs<int64_t>("output_padding", output_padding_);
@@ -204,7 +204,7 @@ class ConvTranspose : public ConvBase {
       LOTUS_ENFORCE(output_width >= W, "Output width cannot be smaller than input width.");
     }
 
-    ComputeSizeAndPad(
+    ComputeTransposePadAndOutputShape(
         H,
         strides[0],
         kernel_shape[0],
@@ -214,7 +214,7 @@ class ConvTranspose : public ConvBase {
         &pads->at(2),
         &output_height);
 
-    ComputeSizeAndPad(
+    ComputeTransposePadAndOutputShape(
         W,
         strides[1],
         kernel_shape[1],

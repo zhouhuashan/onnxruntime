@@ -6,11 +6,54 @@
 #include "core/providers/cpu/nn/autopad_type.h"
 
 namespace Lotus {
+namespace {
+// helper function
+inline Status ComputePadAndOutputShape(
+    const int64_t in_dim,
+    const int64_t stride,
+    const int64_t kernel,
+    const int64_t dilation,
+    AutoPadType pad_type,
+    int64_t* pad_head,
+    int64_t* pad_tail,
+    int64_t* out_dim) {
+  const int64_t dkernel = dilation * (kernel - 1) + 1;
+
+  if (pad_type == AutoPadType::NOTSET) {
+    *out_dim = static_cast<int64_t>(static_cast<float>(in_dim + *pad_head + *pad_tail - dkernel) / stride + 1);
+  } else {
+    switch (pad_type) {
+      case AutoPadType::VALID:
+        *pad_head = 0;
+        *pad_tail = 0;
+        *out_dim = (in_dim - dkernel) / stride + 1;
+        break;
+      case AutoPadType::SAME_UPPER:
+      case AutoPadType::SAME_LOWER: {
+        LOTUS_ENFORCE(dilation == 1, "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER.");
+        int64_t legacy_target_size = (in_dim + stride - 1) / stride;
+        int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
+        *out_dim = (in_dim + pad_needed - dkernel) / stride + 1;
+
+        if (pad_type == AutoPadType::SAME_LOWER) {
+          *pad_head = (pad_needed + 1) / 2;
+        } else {
+          *pad_head = pad_needed / 2;
+        }
+        *pad_tail = pad_needed - *pad_head;
+      } break;
+      default:
+        return Status(LOTUS, INVALID_ARGUMENT, "pad type not supported.");
+    }
+  }
+  return Status::OK();
+}
+}  // namespace
 
 // base class used by Conv and ConvTranspose
-class ConvBase : public OpKernel {
- public:
-  ConvBase(const OpKernelInfo& info) : OpKernel(info) {
+class ConvBase {
+ protected:
+  ConvBase(const OpKernelInfo& info) {
     std::string auto_pad;
     auto status = info.GetAttr<std::string>("auto_pad", &auto_pad);
     auto_pad_ = status.IsOK() ? StringToAutoPadType(auto_pad) : AutoPadType::NOTSET;
@@ -50,7 +93,7 @@ class ConvBase : public OpKernel {
 #endif
   }
 
-  ~ConvBase() override {}
+  ~ConvBase() {}
 
  protected:
   vector<int64_t> ComputeKernelShape(const TensorShape& weight_shape) const {
@@ -61,6 +104,36 @@ class ConvBase : public OpKernel {
       vector<int64_t> result(weight_dims.begin() + 2, weight_dims.end());
       return result;
     }
+  }
+
+  Status InferOutputShape(const TensorShape& input_shape,
+                          const vector<int64_t>& kernel_shape,
+                          const vector<int64_t>& strides,
+                          const vector<int64_t>& dilations,
+                          vector<int64_t>* pads,
+                          vector<int64_t>* output_shape) const {
+    int rank = gsl::narrow_cast<int>(input_shape.NumDimensions());
+    for (int dim = 0; dim < rank; ++dim) {
+      if (dim >= strides.size() || dim >= kernel_shape.size() ||
+          dim >= dilations.size() || dim >= pads->size() ||
+          rank + dim >= pads->size()) {
+        return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Out of bound access to array");
+      }
+      int64_t dim_size = 0;
+      LOTUS_RETURN_IF_ERROR(ComputePadAndOutputShape(input_shape[dim],
+                        strides[dim],
+                        kernel_shape[dim],
+                        dilations[dim],
+                        auto_pad_,
+                        &pads->at(dim),
+                        &pads->at(input_shape.NumDimensions() + dim),
+                        &dim_size));
+      if (dim_size < 0) {
+        return Status(LOTUS, INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
+      }
+      output_shape->push_back(dim_size);
+    }
+    return Status::OK();
   }
 
   AutoPadType auto_pad_;

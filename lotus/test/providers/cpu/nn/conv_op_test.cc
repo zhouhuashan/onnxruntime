@@ -20,7 +20,8 @@ void TestConvOp(const ConvOpAttributes& attributes,
                 const vector<vector<float>>& inputs,
                 const vector<vector<int64_t>>& input_shapes,
                 const std::initializer_list<float>& expected_output,
-                const vector<int64_t>& expected_output_shape) {
+                const vector<int64_t>& expected_output_shape,
+                bool is_cuda_supported=false) {
   OpTester test("Conv");
   test.AddAttribute("auto_pad", attributes.auto_pad);
   test.AddAttribute("dilations", attributes.dilations);
@@ -37,7 +38,11 @@ void TestConvOp(const ConvOpAttributes& attributes,
     test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);
   }
   test.AddOutput<float>("Y", expected_output_shape, expected_output);
-  test.Run();
+  if (is_cuda_supported) {
+    test.RunOnCpuAndCuda();
+  } else {
+    test.Run();
+  }
 }
 
 void TestConvOpExpectError(const ConvOpAttributes& attributes,
@@ -233,7 +238,7 @@ TEST(ConvTest, Conv2D_2) {
                         0.15021422505378723f, -0.0028631272725760937f, -0.19993697106838226f, -0.03527900204062462f,
                         0.06516310572624207f, -0.015176207758486271f, 0.14682966470718384f, -0.02665453404188156f,
                         -0.18779225647449493f};
-  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
+  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape, true);
 }
 
 TEST(ConvTest, Conv2D_Bias_1) {
@@ -389,7 +394,7 @@ TEST(ConvTest, Conv3D_1) {
                         0.10670476406812668f, -0.054437506943941116f, -0.014473143965005875f,
                         -0.13092079758644104f, 0.10221172869205475f, -0.1479327529668808f,
                         -0.011351631954312325f, -0.10867488384246826f, -0.05184098333120346f};
-  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
+  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape, true);
 }
 
 // Conv22
@@ -430,7 +435,7 @@ TEST(ConvTest, Conv3D_2) {
                         0.0f, 0.09152615070343018f, 0.08054415881633759f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
                         0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
                         0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
+  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape, true);
 }
 
 // Conv23
