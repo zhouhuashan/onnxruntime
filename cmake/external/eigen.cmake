@@ -26,9 +26,9 @@ else ()
         PREFIX eigen
         GIT_REPOSITORY ${eigen_URL}
         GIT_TAG ${eigen_TAG}
-        CONFIGURE_COMMAND cmake -E echo "Skipping configure step."
-        BUILD_COMMAND cmake -E echo "Skipping build step."
-        INSTALL_COMMAND cmake -E echo "Skipping install step."
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
         #DOWNLOAD_DIR "${DOWNLOAD_LOCATION}"
     )
 endif()
