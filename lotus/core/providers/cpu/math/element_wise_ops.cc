@@ -142,26 +142,33 @@ REGISTER_KERNEL(KernelDefBuilder("Max")
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 Max<float>);
 
+REGISTER_KERNEL(KernelDefBuilder("Not")
+                    .Domain(LotusIR::kOnnxDomain)
+                    .SinceVersion(1)
+                    .Provider(LotusIR::kCpuExecutionProvider)
+                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+                Not);
+
 REGISTER_KERNEL(KernelDefBuilder("And")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(7)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                And<bool>);
+                And);
 
 REGISTER_KERNEL(KernelDefBuilder("Or")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(7)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                Or<bool>);
+                Or);
 
 REGISTER_KERNEL(KernelDefBuilder("Xor")
                     .Domain(LotusIR::kOnnxDomain)
                     .SinceVersion(7)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                Xor<bool>);
+                Xor);
 
 REGISTER_KERNEL(KernelDefBuilder("Less")
                     .Domain(LotusIR::kOnnxDomain)
@@ -402,12 +409,6 @@ struct TBroadcaster {
 };
 
 template <typename T, typename TOutput, typename Op>
-void Loop(gsl::span<const T> input1, gsl::span<const T> input2, gsl::span<TOutput> output, Op op) {
-  for (auto i = 0; i < output.size(); i++)
-    output[i] = op(input1[i], input2[i]);
-}
-
-template <typename T, typename TOutput, typename Op>
 void Loop(T scalar1, gsl::span<const T> input2, gsl::span<TOutput> output, Op op) {
   for (auto i = 0; i < output.size(); i++)
     output[i] = op(scalar1, input2[i]);
@@ -630,8 +631,15 @@ Status Max<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-template <>
-Status And<bool>::Compute(OpKernelContext* context) const {
+Status Not::Compute(OpKernelContext* context) const {
+  auto& input = *context->Input<Tensor>(0);
+  auto& output = *context->Output(0, input.Shape());
+
+  EigenMap<bool>(output).array() = !EigenMap<bool>(input).array();
+  return Status::OK();
+}
+
+Status And::Compute(OpKernelContext* context) const {
   auto op = [](bool a, bool b) { return a && b; };
 
   TBroadcaster<bool> bc(*context);
@@ -643,13 +651,12 @@ Status And<bool>::Compute(OpKernelContext* context) const {
       Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
   } else {
     while (bc)
-      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+      bc.NextEigenOutput().array() = bc.NextEigen0().array() && bc.NextEigen1().array();
   }
   return Status::OK();
 }
 
-template <>
-Status Or<bool>::Compute(OpKernelContext* context) const {
+Status Or::Compute(OpKernelContext* context) const {
   auto op = [](bool a, bool b) { return a || b; };
 
   TBroadcaster<bool> bc(*context);
@@ -661,13 +668,12 @@ Status Or<bool>::Compute(OpKernelContext* context) const {
       Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
   } else {
     while (bc)
-      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+      bc.NextEigenOutput().array() = bc.NextEigen0().array() || bc.NextEigen1().array();
   }
   return Status::OK();
 }
 
-template <>
-Status Xor<bool>::Compute(OpKernelContext* context) const {
+Status Xor::Compute(OpKernelContext* context) const {
   auto op = [](bool a, bool b) { return (a ^ b) != 0; };
 
   TBroadcaster<bool> bc(*context);
@@ -679,7 +685,7 @@ Status Xor<bool>::Compute(OpKernelContext* context) const {
       Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
   } else {
     while (bc)
-      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+      bc.NextEigenOutput().array() = bc.NextEigen0().array() ^ bc.NextEigen1().array();
   }
   return Status::OK();
 }
@@ -697,7 +703,7 @@ Status Equal<int32_t>::Compute(OpKernelContext* context) const {
       Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
   } else {
     while (bc)
-      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+      bc.NextEigenOutput().array() = bc.NextEigen0().array() == bc.NextEigen1().array();
   }
   return Status::OK();
 }
@@ -715,7 +721,7 @@ Status Less<float>::Compute(OpKernelContext* context) const {
       Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
   } else {
     while (bc)
-      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+      bc.NextEigenOutput().array() = bc.NextEigen0().array() < bc.NextEigen1().array();
   }
   return Status::OK();
 }
@@ -733,7 +739,7 @@ Status Greater<float>::Compute(OpKernelContext* context) const {
       Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
   } else {
     while (bc)
-      Loop(bc.NextSpan0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
+      bc.NextEigenOutput().array() = bc.NextEigen0().array() > bc.NextEigen1().array();
   }
   return Status::OK();
 }

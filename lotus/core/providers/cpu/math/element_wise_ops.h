@@ -167,7 +167,14 @@ class Max final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
-template <typename T>
+class Not final : public OpKernel {
+ public:
+  Not(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
 class And final : public OpKernel {
  public:
   And(const OpKernelInfo& info) : OpKernel(info) {
@@ -176,7 +183,6 @@ class And final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
-template <typename T>
 class Or final : public OpKernel {
  public:
   Or(const OpKernelInfo& info) : OpKernel(info) {
@@ -185,7 +191,6 @@ class Or final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
-template <typename T>
 class Xor final : public OpKernel {
  public:
   Xor(const OpKernelInfo& info) : OpKernel(info) {

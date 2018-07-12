@@ -417,6 +417,14 @@ TEST(MathOpTest, Max) {
   test.Run();
 }
 
+TEST(MathOpTest, Not) {
+  OpTester test("Not");
+  std::vector<int64_t> dims{2};
+  test.AddInput<bool>("X", dims, {false, true});
+  test.AddOutput<bool>("Y", dims, {true, false});
+  test.Run();
+}
+
 TEST(MathOpTest, And) {
   OpTester test("And");
   std::vector<int64_t> dims{4};
