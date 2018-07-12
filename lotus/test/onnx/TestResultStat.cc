@@ -26,8 +26,10 @@ std::string TestResultStat::ToString() {
   int failed = static_cast<int>(this->total_test_case_count) - this->succeeded - this->skipped - this->not_implemented;
   int other_reason_failed = failed - this->load_model_failed - this->result_differs - this->throwed_exception - this->invalid_graph;
   std::ostringstream oss;
-  oss << "result: \n"
-         "\tTotal test cases: "
+  oss << "result: "
+         "\n\tModels: "
+      << this->total_model_count
+      << "\n\tTotal test cases: "
       << this->total_test_case_count
       << "\n\t\tSucceeded: " << this->succeeded
       << "\n\t\tNot implemented: " << this->not_implemented

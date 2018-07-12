@@ -9,6 +9,7 @@
 class TestResultStat {
  public:
   size_t total_test_case_count = 0;
+  size_t total_model_count = 0;
   std::atomic_int succeeded;
   std::atomic_int not_implemented;
   std::atomic_int load_model_failed;

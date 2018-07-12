@@ -10,13 +10,14 @@ using namespace Lotus;
 
 namespace {
 template <typename FLOAT_TYPE>
-std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue, const Tensor& expected_value, double abs_error) {
+std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue, const Tensor& expected_value, double per_sample_tolerance, double relative_per_sample_tolerance) {
   const size_t size1 = expected_value.Shape().Size();
   const FLOAT_TYPE* expected_output = expected_value.Data<FLOAT_TYPE>();
   const FLOAT_TYPE* real_output = outvalue.Data<FLOAT_TYPE>();
   for (size_t di = 0; di != size1; ++di) {
     const double diff = fabs(expected_output[di] - real_output[di]);
-    if (diff > abs_error) {
+    const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(expected_output[di]);
+    if (diff > rtol) {
       return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
     }
   }
@@ -36,7 +37,7 @@ std::pair<COMPARE_RESULT, std::string> IsResultExactlyMatch(const Tensor& outval
   return std::make_pair(COMPARE_RESULT::SUCCESS, "");
 }
 
-std::pair<COMPARE_RESULT, std::string> CompareFloat16Result(const Tensor& outvalue, const Tensor& expected_value, double abs_error) {
+std::pair<COMPARE_RESULT, std::string> CompareFloat16Result(const Tensor& outvalue, const Tensor& expected_value, double per_sample_tolerance, double relative_per_sample_tolerance) {
   const size_t size1 = expected_value.Shape().Size();
   const MLFloat16* expected_output = expected_value.Data<MLFloat16>();
   const MLFloat16* real_output = outvalue.Data<MLFloat16>();
@@ -44,14 +45,15 @@ std::pair<COMPARE_RESULT, std::string> CompareFloat16Result(const Tensor& outval
     float expected = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(expected_output[di].val));
     float real = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(real_output[di].val));
     const double diff = fabs(expected - real);
-    if (diff > abs_error) {
+    const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(expected);
+    if (diff > rtol) {
       return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
     }
   }
   return std::make_pair(COMPARE_RESULT::SUCCESS, "");
 }
 
-std::pair<COMPARE_RESULT, std::string> CompareTwoTensors(const Tensor& outvalue, const Tensor& expected_tensor, double abs_error) {
+std::pair<COMPARE_RESULT, std::string> CompareTwoTensors(const Tensor& outvalue, const Tensor& expected_tensor, double per_sample_tolerance, double relative_per_sample_tolerance) {
   if (expected_tensor.Shape() != outvalue.Shape()) {
     std::ostringstream oss;
     oss << "shape mismatch, expect " << expected_tensor.Shape().ToString() << " got " << outvalue.Shape().ToString();
@@ -59,9 +61,9 @@ std::pair<COMPARE_RESULT, std::string> CompareTwoTensors(const Tensor& outvalue,
   }
   auto p1 = outvalue.DataType();
   if (p1 == DataTypeImpl::GetType<float>()) {
-    return CompareFloatResult<float>(outvalue, expected_tensor, abs_error);
+    return CompareFloatResult<float>(outvalue, expected_tensor, per_sample_tolerance, relative_per_sample_tolerance);
   } else if (p1 == DataTypeImpl::GetType<double>()) {
-    return CompareFloatResult<double>(outvalue, expected_tensor, abs_error);
+    return CompareFloatResult<double>(outvalue, expected_tensor, per_sample_tolerance, relative_per_sample_tolerance);
   } else if (p1 == DataTypeImpl::GetType<std::string>()) {
     return IsResultExactlyMatch<std::string>(outvalue, expected_tensor);
   } else if (p1 == DataTypeImpl::GetType<uint8_t>()) {
@@ -83,18 +85,18 @@ std::pair<COMPARE_RESULT, std::string> CompareTwoTensors(const Tensor& outvalue,
   } else if (p1 == DataTypeImpl::GetType<bool>()) {
     return IsResultExactlyMatch<bool>(outvalue, expected_tensor);
   } else if (p1 == DataTypeImpl::GetType<MLFloat16>()) {
-    return CompareFloat16Result(outvalue, expected_tensor, abs_error);
+    return CompareFloat16Result(outvalue, expected_tensor, per_sample_tolerance, relative_per_sample_tolerance);
   } else {
     return std::make_pair(COMPARE_RESULT::NOT_SUPPORT, "");
   }
 }
 template <typename T>
-std::pair<COMPARE_RESULT, std::string> CompareSeqOfMapToFloat(const T& p1, const T& p2, double abs_error) {
-  if (p1.size() != p2.size()) {
+std::pair<COMPARE_RESULT, std::string> CompareSeqOfMapToFloat(const T& p1, const T& expected_value, double per_sample_tolerance, double relative_per_sample_tolerance) {
+  if (p1.size() != expected_value.size()) {
     return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
   }
   for (size_t i = 0; i != p1.size(); ++i) {
-    const auto& p2i = p2[i];
+    const auto& p2i = expected_value[i];
     if (p1[i].size() != p2i.size()) {
       return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
     }
@@ -105,7 +107,8 @@ std::pair<COMPARE_RESULT, std::string> CompareSeqOfMapToFloat(const T& p1, const
         return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
       }
       const double diff = fabs(iter->second - pv.second);
-      if (diff > abs_error) {
+      const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(iter->second);
+      if (diff > rtol) {
         return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
       }
     }
@@ -196,27 +199,27 @@ std::string ToString(const ::onnx::TensorShapeProto& shape) {
 }  // namespace
 
 namespace Lotus {
-std::pair<COMPARE_RESULT, std::string> CompareMLValue(const MLValue& o, const MLValue& e, const double abs_error) {
-  if (o.IsTensor() != e.IsTensor() || o.Type() != e.Type()) {
+std::pair<COMPARE_RESULT, std::string> CompareMLValue(const MLValue& o, const MLValue& expected_mlvalue, double per_sample_tolerance, double relative_per_sample_tolerance) {
+  if (o.IsTensor() != expected_mlvalue.IsTensor() || o.Type() != expected_mlvalue.Type()) {
     return std::make_pair(COMPARE_RESULT::TYPE_MISMATCH, "");
   }
   if (!o.IsTensor()) {
     if (o.Type() == DataTypeImpl::GetType<VectorMapInt64ToFloat>()) {
-      return CompareSeqOfMapToFloat(o.Get<VectorMapInt64ToFloat>(), e.Get<VectorMapInt64ToFloat>(), abs_error);
+      return CompareSeqOfMapToFloat(o.Get<VectorMapInt64ToFloat>(), expected_mlvalue.Get<VectorMapInt64ToFloat>(), per_sample_tolerance, relative_per_sample_tolerance);
     }
     if (o.Type() == DataTypeImpl::GetType<VectorMapStringToFloat>()) {
-      return CompareSeqOfMapToFloat(o.Get<VectorMapStringToFloat>(), e.Get<VectorMapStringToFloat>(), abs_error);
+      return CompareSeqOfMapToFloat(o.Get<VectorMapStringToFloat>(), expected_mlvalue.Get<VectorMapStringToFloat>(), per_sample_tolerance, relative_per_sample_tolerance);
     }
     return std::make_pair(COMPARE_RESULT::NOT_SUPPORT, "");
   }
   const Tensor& outvalue = o.Get<Tensor>();
-  const Tensor& expected_value = e.Get<Tensor>();
-  if (outvalue.DataType() != expected_value.DataType()) {
+  const Tensor& expected_tensor = expected_mlvalue.Get<Tensor>();
+  if (outvalue.DataType() != expected_tensor.DataType()) {
     std::ostringstream oss;
-    oss << "expect " << ElementTypeToString(expected_value.DataType()) << " got " << ElementTypeToString(outvalue.DataType());
+    oss << "expect " << ElementTypeToString(expected_tensor.DataType()) << " got " << ElementTypeToString(outvalue.DataType());
     return std::make_pair(COMPARE_RESULT::TYPE_MISMATCH, oss.str());
   }
-  return CompareTwoTensors(outvalue, expected_value, abs_error);
+  return CompareTwoTensors(outvalue, expected_tensor, per_sample_tolerance, relative_per_sample_tolerance);
 }
 
 std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const onnx::ValueInfoProto& v, const MLValue& o) {

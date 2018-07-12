@@ -154,9 +154,11 @@ static Common::Status SortTensorFileNames(std::vector<path>& input_pb_files) {
   return Common::Status::OK();
 }
 
+//Doesn't support file size >2 GB
 template <typename FUNC>
 Lotus::Common::Status LoopDataFile(const path& outputs_pb, Lotus::AllocatorPtr allocator, FUNC func) {
   std::string content;
+  //TODO: mmap is better
   LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
   google::protobuf::io::CodedInputStream coded_input((const uint8_t*)content.data(), (int)content.size());
   bool clean_eof = false;

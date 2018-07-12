@@ -22,6 +22,8 @@ class ITestCase {
   virtual size_t GetDataCount() const = 0;
   virtual const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const = 0;
   virtual ~ITestCase() {}
+  virtual double GetPerSampleTolerance() const = 0;
+  virtual double GetRelativePerSampleTolerance() const = 0;
 };
 
 class DataLoder {
@@ -63,6 +65,14 @@ class OnnxTestCase : public ITestCase {
     for (auto& ivp : loaders) {
       delete ivp.second;
     }
+  }
+  //TODO: make it configurable
+  double GetPerSampleTolerance() const override {
+    return 1e-3;
+  }
+  //TODO: make it configurable
+  double GetRelativePerSampleTolerance() const override {
+    return 1e-5;
   }
   const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
     return output_value_info_[i];

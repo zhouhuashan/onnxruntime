@@ -43,6 +43,7 @@ Lotus::Common::Status SetWindowsEvent(LOTUS_CALLBACK_INSTANCE, pthread_cond_t* f
 
 Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs) {
   TestResultStat& stat = env.stat;
+  stat.total_model_count = env.tests.size();
   stat.total_test_case_count = std::accumulate(env.tests.begin(), env.tests.end(), static_cast<size_t>(0), [](size_t v, const ITestCase* info) {
     return info->GetDataCount() + v;
   });
@@ -238,8 +239,9 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
   }
-  //TODO: make it configurable
-  const double abs_error = 1e-3;
+
+  double per_sample_tolerance = c_->GetPerSampleTolerance();
+  double relative_per_sample_tolerance = c_->GetRelativePerSampleTolerance();
   EXECUTE_RESULT res = EXECUTE_RESULT::SUCCESS;
   for (size_t i = 0; i != output_values.size(); ++i) {
     const MLValue& o = p_fetches.at(i);
@@ -248,7 +250,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     if (o.Fence())
       o.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, queue_id);
     const onnx::ValueInfoProto& v = c_->GetOutputInfoFromModel(i);
-    std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), abs_error);
+    std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), per_sample_tolerance, relative_per_sample_tolerance);
     COMPARE_RESULT compare_result = ret.first;
     if (compare_result == COMPARE_RESULT::SUCCESS) {
       ret = VerifyValueInfo(v, o);
