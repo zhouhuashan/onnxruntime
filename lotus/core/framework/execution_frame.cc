@@ -41,7 +41,7 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
         for (int i = 0; i < mem_patterns_->locations.size(); i++) {
           LOTUS_ENFORCE(buffers_.find(mem_patterns_->locations[i]) == buffers_.end());
           AllocatorPtr alloc = GetAllocator(mem_patterns_->locations[i]);
-          void* buffer = alloc->Alloc(mem_patterns_->patterns[i].peak_size());
+          void* buffer = mem_patterns_->patterns[i].peak_size() > 0 ? alloc->Alloc(mem_patterns_->patterns[i].peak_size()) : nullptr;
           buffers_[mem_patterns_->locations[i]] = BufferUniquePtr(buffer, alloc);
         }
       }
