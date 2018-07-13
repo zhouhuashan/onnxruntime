@@ -72,7 +72,7 @@ TEST_MODULE_CLEANUP(ModuleCleanup) {
   Logger::WriteMessage("Cleanup Lotus finished");
 }
 
-static void run(const std::string& provider) {
+static void run(SessionFactory& sf) {
   char buf[1024];
   std::vector<EXECUTE_RESULT> res;
   {
@@ -99,7 +99,6 @@ static void run(const std::string& provider) {
     Lotus::AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
     std::vector<ITestCase*> tests = LoadTests({"..\\models"}, {modelName}, cpu_allocator);
     Assert::AreEqual((size_t)1, tests.size());
-    SessionFactory sf(provider);
     HANDLE finish_event = CreateEvent(
         NULL,                // default security attributes
         TRUE,                // manual-reset event
@@ -109,14 +108,12 @@ static void run(const std::string& provider) {
     Assert::IsNotNull(finish_event);
     RunSingleTestCase(tests[0], sf, p_models, nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       res = result->GetExcutionResult();
-      if (pci)
-        SetEventWhenCallbackReturns(pci, finish_event);
-      else if (!SetEvent(finish_event))
-        abort();
-      return Lotus::Common::Status::OK();
+      return SetWindowsEvent(pci, finish_event);
     });
     DWORD dwWaitResult = WaitForSingleObject(finish_event, INFINITE);
     Assert::AreEqual(WAIT_OBJECT_0, dwWaitResult);
+    CloseHandle(finish_event);
+    Assert::AreEqual(tests[0]->GetDataCount(), res.size());
     delete tests[0];
   }
   for (EXECUTE_RESULT r : res) {
@@ -126,7 +123,13 @@ static void run(const std::string& provider) {
 
 TEST_CLASS(ONNX_TEST){
   public :
-    TEST_METHOD(test_sequential_planner){
-      run(LotusIR::kCpuExecutionProvider);
-  }
+    TEST_METHOD(normal_run){
+      SessionFactory sf(LotusIR::kCpuExecutionProvider, true, true);
+      run(sf);
+    }
+
+    TEST_METHOD(disable_cpu_mem_arena) {
+      SessionFactory sf(LotusIR::kCpuExecutionProvider, true, false);
+      run(sf);
+    }
 };

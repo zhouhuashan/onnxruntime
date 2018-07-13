@@ -34,6 +34,7 @@ void usage() {
       "onnx_test_runner [options...] <data_root>\n"
       "Options:\n"
       "\t-j [models]: Specifies the number of models to run simultaneously.\n"
+      "\t-A : Disable memory arena\n"
       "\t-c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.\n"
       "\t-n [test_case_name]: Specifies a single test case to run.\n"
       "\t-e [EXECUTION_PROVIDER]: EXECUTION_PROVIDER could be 'cpu' or 'cuda'. Default: 'cpu'.\n"
@@ -59,11 +60,15 @@ int main(int argc, char* argv[]) {
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
   int concurrent_session_runs = Env::Default().GetNumCpuCores();
+  bool enable_cpu_mem_arena = true;
   int p_models = Env::Default().GetNumCpuCores();
   {
     int ch;
-    while ((ch = getopt(argc, argv, "c:hj:m:n:e:")) != -1) {
+    while ((ch = getopt(argc, argv, "Ac:hj:m:n:e:")) != -1) {
       switch (ch) {
+        case 'A':
+          enable_cpu_mem_arena = false;
+          break;
         case 'c':
           concurrent_session_runs = static_cast<int>(strtol(optarg, nullptr, 10));
           if (concurrent_session_runs <= 0) {
@@ -123,7 +128,7 @@ int main(int argc, char* argv[]) {
   AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
   std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
   TestResultStat stat;
-  SessionFactory sf(provider);
+  SessionFactory sf(provider, true, enable_cpu_mem_arena);
   TestEnv args(tests, stat, sf);
   RunTests(args, p_models, concurrent_session_runs);
   std::string res = stat.ToString();

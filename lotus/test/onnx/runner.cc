@@ -240,8 +240,15 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     return StatusCodeToExecuteResult(status.Code());
   }
 
-  double per_sample_tolerance = c_->GetPerSampleTolerance();
-  double relative_per_sample_tolerance = c_->GetRelativePerSampleTolerance();
+  double per_sample_tolerance, relative_per_sample_tolerance;
+  if (!(status = c_->GetPerSampleTolerance(&per_sample_tolerance)).IsOK()) {
+    LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
+    return StatusCodeToExecuteResult(status.Code());
+  }
+  if (!(status = c_->GetRelativePerSampleTolerance(&relative_per_sample_tolerance)).IsOK()) {
+    LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
+    return StatusCodeToExecuteResult(status.Code());
+  }
   EXECUTE_RESULT res = EXECUTE_RESULT::SUCCESS;
   for (size_t i = 0; i != output_values.size(); ++i) {
     const MLValue& o = p_fetches.at(i);

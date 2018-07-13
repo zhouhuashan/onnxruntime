@@ -76,7 +76,7 @@ message VectorMapInt64ToFloat {
 }
 
 message TraditionalMLData {
-  oneof values{
+  oneof values {
     MapStringToString map_string_to_string = 1;
     MapStringToInt64 map_string_to_int64 = 2;
     MapStringToFloat map_string_to_float = 3;
@@ -94,5 +94,10 @@ message TraditionalMLData {
     onnx.TensorProto tensor = 16;
   }
   // Optionally, a name for the tensor.
-  string name = 15; // namespace Value
+  string name = 15;  // namespace Value
+}
+
+message TestCaseConfig {
+  double per_sample_tolerance = 1;
+  double relative_per_sample_tolerance = 2;
 }

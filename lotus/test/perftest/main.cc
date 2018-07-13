@@ -43,8 +43,8 @@ struct PerfMetrics {
       LOGF_DEFAULT(ERROR, "failed to open result file");
       return;
     }
-    for (size_t runs = 0; runs< valid_runs; runs++){
-      outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size <<"," <<runs << std::endl;
+    for (size_t runs = 0; runs < valid_runs; runs++) {
+      outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size << "," << runs << std::endl;
     }
     outfile.close();
   }
@@ -66,7 +66,7 @@ size_t GetPeakWorkingSetSize() {
 
 void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeated_times, size_t count_of_dataset_to_use) {
   std::shared_ptr<Lotus::InferenceSession> session_object;
-  SessionFactory sf(kCpuExecutionProvider);
+  SessionFactory sf(kCpuExecutionProvider, true, true);
   sf.create(session_object, test_case.GetModelUrl(), test_case.GetTestCaseName());
 
   size_t data_count = test_case.GetDataCount();

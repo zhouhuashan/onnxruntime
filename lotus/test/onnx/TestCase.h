@@ -22,8 +22,8 @@ class ITestCase {
   virtual size_t GetDataCount() const = 0;
   virtual const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const = 0;
   virtual ~ITestCase() {}
-  virtual double GetPerSampleTolerance() const = 0;
-  virtual double GetRelativePerSampleTolerance() const = 0;
+  virtual Lotus::Common::Status GetPerSampleTolerance(double* value) = 0;
+  virtual Lotus::Common::Status GetRelativePerSampleTolerance(double* value) = 0;
 };
 
 class DataLoder {
@@ -55,8 +55,12 @@ class OnnxTestCase : public ITestCase {
   // for https://github.com/onnx/onnx/issues/679
   Lotus::Common::Status ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, Lotus::MLValue>& out);
   std::string node_name;
-  std::once_flag model_parsed;
+  std::once_flag model_parsed_;
+  std::once_flag config_parsed_;
+  double per_sample_tolerance_;
+  double relative_per_sample_tolerance_;
   Lotus::Common::Status ParseModel();
+  Lotus::Common::Status ParseConfig();
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OnnxTestCase);
 
  public:
@@ -66,14 +70,9 @@ class OnnxTestCase : public ITestCase {
       delete ivp.second;
     }
   }
-  //TODO: make it configurable
-  double GetPerSampleTolerance() const override {
-    return 1e-3;
-  }
-  //TODO: make it configurable
-  double GetRelativePerSampleTolerance() const override {
-    return 1e-5;
-  }
+  Lotus::Common::Status GetPerSampleTolerance(double* value) override;
+  Lotus::Common::Status GetRelativePerSampleTolerance(double* value) override;
+
   const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
     return output_value_info_[i];
   }

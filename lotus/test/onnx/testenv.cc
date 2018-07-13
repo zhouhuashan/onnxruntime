@@ -29,7 +29,7 @@ Lotus::Common::Status SessionFactory::create(std::shared_ptr<Lotus::InferenceSes
   so.session_logid = logid;
   sess.reset(new Lotus::InferenceSession(so));
   Lotus::Common::Status status;
-  if (provider == LotusIR::kCudaExecutionProvider) {
+  if (provider_ == LotusIR::kCudaExecutionProvider) {
 #if USE_CUDA
     Lotus::CUDAExecutionProviderInfo cuda_epi;
     cuda_epi.device_id = 0;

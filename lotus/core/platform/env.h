@@ -71,7 +71,10 @@ class Env {
   virtual Thread* StartThread(const ThreadOptions& thread_options,
                               const std::string& name,
                               std::function<void()> fn) const = 0;
-
+  virtual Common::Status FileExists(const char* fname) const = 0;
+#ifdef _WIN32
+  virtual Common::Status FileExists(const wchar_t* fname) const = 0;
+#endif
   /// File size must less than 2GB.
   /// No support for non-regular files(e.g. socket, pipe, "/proc/*")
   virtual Common::Status ReadFileAsString(const char* fname, std::string* out) const = 0;

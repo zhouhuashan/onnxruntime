@@ -79,7 +79,9 @@ class PosixEnv : public Env {
                       std::function<void()> fn) const override {
     return new StdThread(thread_options, name, fn);
   }
-
+  Common::Status FileExists(const char* fname) const override {
+    return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
+  }
   Common::Status ReadFileAsString(const char* fname, std::string* out) const override {
     if (!out) {
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "'out' cannot be NULL");

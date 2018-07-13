@@ -42,6 +42,28 @@ class StdThread : public Thread {
 };
 
 class WindowsEnv : public Env {
+ private:
+  template <typename T, typename F>
+  static Common::Status FileExists_(T fname, F f) {
+    if (!fname)
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
+    struct _stat st;
+    int ret = f(fname, &st);
+    if (ret == 0) {
+      if (st.st_mode & _S_IFREG)
+        return Common::Status::OK();
+      return LOTUS_MAKE_STATUS(Common::LOTUS, Common::FAIL, fname, "is not a regular file");
+    }
+    switch (errno) {
+      case ENOENT:
+        return Common::Status(Common::LOTUS, Common::NO_SUCHFILE, "");
+      case EINVAL:
+        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "");
+      default:
+        return Common::Status(Common::LOTUS, Common::FAIL, "unknown error inside FileExists");
+    }
+  }
+
  public:
   void SleepForMicroseconds(int64 micros) const override { Sleep(static_cast<DWORD>(micros) / 1000); }
 
@@ -50,7 +72,7 @@ class WindowsEnv : public Env {
     return new StdThread(thread_options, name, fn);
   }
 
-  virtual int GetNumCpuCores() const override {
+  int GetNumCpuCores() const override {
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer[256];
     DWORD returnLength = sizeof(buffer);
     if (GetLogicalProcessorInformation(buffer, &returnLength) == FALSE) {
@@ -79,7 +101,15 @@ class WindowsEnv : public Env {
     return default_env;
   }
 
-  virtual Common::Status ReadFileAsString(const char* fname, std::string* out) const {
+  Common::Status FileExists(const char* fname) const override {
+    return FileExists_(fname, _stat);
+  }
+  Common::Status FileExists(const wchar_t* fname) const override {
+    return FileExists_(fname, _wstat);
+  }
+  Common::Status ReadFileAsString(const char* fname, std::string* out) const override{
+    if (!fname)
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
     size_t flen = strlen(fname);
     if (flen >= std::numeric_limits<int>::max()) {
       return LOTUS_MAKE_STATUS(Common::LOTUS, Common::INVALID_ARGUMENT, "input path too long");
@@ -93,7 +123,9 @@ class WindowsEnv : public Env {
     return ReadFileAsString(wStreamName.c_str(), out);
   }
 
-  virtual Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const {
+  Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override{
+    if (!fname)
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
     if (!out) {
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "'out' cannot be NULL");
     }

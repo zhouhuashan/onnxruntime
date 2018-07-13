@@ -6,6 +6,7 @@
 #include "core/graph/model.h"
 #include "core/framework/tensorprotoutils.h"
 #include <google/protobuf/util/delimited_message_util.h>
+#include <google/protobuf/text_format.h>
 
 #include "tml.pb.h"
 
@@ -231,9 +232,54 @@ static void RepeatedPtrFieldToVector(const ::google::protobuf::RepeatedPtrField<
   }
 }
 }  // namespace
+
+Lotus::Common::Status OnnxTestCase::GetPerSampleTolerance(double* value) {
+  Lotus::Common::Status st = ParseConfig();
+  if (!st.IsOK())
+    return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
+
+  *value = per_sample_tolerance_;
+  return Lotus::Common::Status::OK();
+}
+Lotus::Common::Status OnnxTestCase::GetRelativePerSampleTolerance(double* value) {
+  Lotus::Common::Status st = ParseConfig();
+  if (!st.IsOK())
+    return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
+  *value = relative_per_sample_tolerance_;
+  return Lotus::Common::Status::OK();
+}
+
+Lotus::Common::Status OnnxTestCase::ParseConfig() {
+  Lotus::Common::Status st = Common::Status::OK();
+  std::call_once(config_parsed_, [this, &st]() {
+    path config_path = model_url.replace_filename("config.txt");
+    st = Env::Default().FileExists(config_path.c_str());
+    if (!st.IsOK()) {
+      per_sample_tolerance_ = 1e-3;
+      relative_per_sample_tolerance_ = 1e-5;
+      st = Common::Status::OK();
+      return;
+    }
+    //parse model
+    Lotus::proto::TestCaseConfig config_pb;
+    std::string body;
+    st = Env::Default().ReadFileAsString(config_path.c_str(), &body);
+    if (!st.IsOK()) {
+      return;
+    }
+    if (!google::protobuf::TextFormat::ParseFromString(body, &config_pb)) {
+      st = Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "Parse config failed");
+      return;
+    }
+    per_sample_tolerance_ = config_pb.per_sample_tolerance();
+    relative_per_sample_tolerance_ = config_pb.relative_per_sample_tolerance();
+    st = Common::Status::OK();
+  });
+  return st;
+}
 Lotus::Common::Status OnnxTestCase::ParseModel() {
   Lotus::Common::Status st = Common::Status::OK();
-  std::call_once(model_parsed, [this, &st]() {
+  std::call_once(model_parsed_, [this, &st]() {
     //parse model
     onnx::ModelProto model_pb;
     st = loadModelFile(model_url.string(), &model_pb);
@@ -281,8 +327,8 @@ Lotus::Common::Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<
     return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "out of bound");
 
   Lotus::Common::Status st = ParseModel();
-  if (!ParseModel().IsOK())
-    return Status(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed");
+  if (!st.IsOK())
+    return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed:", st.ErrorMessage());
 
   path inputs_pb = test_data_dirs[id] / "inputs.pb";
   if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
@@ -363,7 +409,7 @@ Lotus::Common::Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus:
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs.size());
   Lotus::Common::Status st = ParseModel();
   if (!st.IsOK())
-    return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed: ", st.ErrorMessage());
+    return LOTUS_MAKE_STATUS(Lotus::Common::LOTUS, Lotus::Common::MODEL_LOADED, "parse model failed:", st.ErrorMessage());
   path outputs_pb = test_data_dirs[id] / "outputs.pb";
   if (std::experimental::filesystem::exists(outputs_pb)) {  //has an all-in-one output file
     return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, Lotus::MLValue* value) {
