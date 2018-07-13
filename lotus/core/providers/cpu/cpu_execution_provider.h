@@ -60,7 +60,7 @@ class CPUExecutionProvider : public IExecutionProvider {
     UNUSED_PARAMETER(context);
     return Common::Status(
         LOTUS, FAIL,
-        "CPU execution provider: can not run an op of type `" + node.OpType() + "'.");
+        "CPU execution provider: cannot run an op of type `" + node.OpType() + "'.");
   }
 
   std::string Type() const override {

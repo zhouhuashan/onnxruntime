@@ -10,7 +10,7 @@ template <typename T>
 class Softmax final : public CudaKernel {
  public:
   Softmax(const OpKernelInfo& info) : CudaKernel{info} {
-    info.GetAttrOrDefault("axis", &axis_, (int64_t)1);
+    info.GetAttrOrDefault("axis", &axis_, static_cast<int64_t>(1));
   }
 
   Status Compute(OpKernelContext* context) const override;

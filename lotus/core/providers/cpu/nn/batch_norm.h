@@ -34,31 +34,12 @@ class BatchNorm final : public OpKernel {
     if (op_kernel_info.GetAttr<float>("epsilon", &tmp_eplison).IsOK()) {
       epsilon_ = tmp_eplison;
     }
-
-    // keeping the below for reference. we don't need these for inference.
-    //LOTUS_ENFORCE(op_kernel_info.GetAttr<int64_t>("is_test", &is_test_).IsOK());
-    //LOTUS_ENFORCE(op_kernel_info.GetAttr<float>("momentum", &momentum_).IsOK());
-    //LOTUS_ENFORCE(op_kernel_info.GetAttr<int64_t>("spatial", &spatial_).IsOK());
   }
-
-  Status ValidateInputs(const Tensor* X,
-                        const Tensor* scale,
-                        const Tensor* B,
-                        const Tensor* mean,
-                        const Tensor* var) const;
 
   Status Compute(OpKernelContext* p_op_kernel_context) const override;
 
  private:
   float epsilon_ = 1e-5f;
   int64_t is_test_;  // ignored in this implementation since we're doing inferencing only.
-  float momentum_;   // ignored in this implementation since we're doing inferencing only.
-  int64_t spatial_;  // ignored in this implementation since we're doing inferencing only.
-
-  // defined as per spec and used for validation
-  const int kNumInputScaleDimensions = 1;
-  const int kNumInputBiasDimensions = 1;
-  const int kNumInputMeanDimensions = 1;
-  const int kNumInputVarianceDimensions = 1;
 };
 }  // namespace Lotus

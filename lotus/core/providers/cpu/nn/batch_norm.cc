@@ -1,4 +1,5 @@
 #include "core/providers/cpu/nn/batch_norm.h"
+#include "core/providers/cpu/nn/batch_norm_helper.h"
 
 namespace Lotus {
 // spec: https://github.com/onnx/onnx/blob/master/docs/Operators.md#BatchNormalization
@@ -16,41 +17,6 @@ REGISTER_KERNEL(KernelDefBuilder("BatchNormalization")
                 BatchNorm<float>);
 
 template <>
-Status BatchNorm<float>::ValidateInputs(const Tensor* X,
-                                        const Tensor* scale,
-                                        const Tensor* B,
-                                        const Tensor* mean,
-                                        const Tensor* var) const {
-  if (X->Shape().GetDims().empty()) {
-    std::ostringstream ostr;
-    ostr << "Invalid input X: Empty dimensions";
-    return Status(LOTUS, INVALID_ARGUMENT, ostr.str());
-  }
-  if (scale->Shape().NumDimensions() != kNumInputScaleDimensions) {
-    std::ostringstream ostr;
-    ostr << "Invalid input scale: NumDimensions() != " << kNumInputScaleDimensions;
-    return Status(LOTUS, INVALID_ARGUMENT, ostr.str());
-  }
-  if (B->Shape().NumDimensions() != kNumInputBiasDimensions) {
-    std::ostringstream ostr;
-    ostr << "Invalid input B: NumDimensions() != " << kNumInputBiasDimensions;
-    return Status(LOTUS, INVALID_ARGUMENT, ostr.str());
-  }
-  if (mean->Shape().NumDimensions() != kNumInputMeanDimensions) {
-    std::ostringstream ostr;
-    ostr << "Invalid input mean: NumDimensions() != " << kNumInputMeanDimensions;
-    return Status(LOTUS, INVALID_ARGUMENT, ostr.str());
-  }
-  if (var->Shape().NumDimensions() != kNumInputVarianceDimensions) {
-    std::ostringstream ostr;
-    ostr << "Invalid input var: NumDimensions() != " << kNumInputVarianceDimensions;
-    return Status(LOTUS, INVALID_ARGUMENT, ostr.str());
-  }
-
-  return Status::OK();
-}
-
-template <>
 Status BatchNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   const Tensor* X = p_op_kernel_context->Input<Tensor>(0);
   const Tensor* scale = p_op_kernel_context->Input<Tensor>(1);
@@ -58,7 +24,7 @@ Status BatchNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   const Tensor* mean = p_op_kernel_context->Input<Tensor>(3);
   const Tensor* var = p_op_kernel_context->Input<Tensor>(4);
 
-  LOTUS_RETURN_IF_ERROR(ValidateInputs(X, scale, B, mean, var));
+  LOTUS_RETURN_IF_ERROR(BatchNormHelper::ValidateInputs(X, scale, B, mean, var));
 
   const TensorShape& x_shape = X->Shape();
   Tensor* Y = p_op_kernel_context->Output(0, x_shape);

@@ -201,9 +201,9 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
     }
   }
 
-  //In the case of CPU execution provider there is no value in creating a function kernel since the
-  //CPU exec provider is going to simply return a fail status any way. This is hardly helpful for debugging issues where
-  //a kernel cannot be found due to user errors for e.g if the node was created incorrectly by the user.
+  // In the case of CPU execution provider there is no value in creating a function kernel since the
+  // CPU exec provider is going to simply return a fail status any way. This is hardly helpful for debugging issues where
+  // a kernel cannot be found due to user errors for e.g if the node was created incorrectly by the user.
   if (node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider) {
     std::ostringstream ostr;
     ostr << "Failed to find kernel def for op: " << node.OpType()
@@ -213,7 +213,7 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
   }
 
   LOGS_DEFAULT(INFO) << "Finding function kernel def for op: " << node.OpType()
-                     << " since we couldn't find kernel def"
+                     << " since we couldn't find kernel def."
                      << " Encountered following errors: " << ToString(error_strs);
 
   if (create_func_kernel_) {

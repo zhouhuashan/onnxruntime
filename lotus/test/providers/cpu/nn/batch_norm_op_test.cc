@@ -20,19 +20,21 @@ void TestBatchNorm(const InputDataMap& input_data_map,
                    optional<float> epsilon,
                    const std::initializer_list<float>& expected_output,
                    const vector<int64_t>& expected_output_shape,
+                   int64_t spatial_mode = 1,
                    OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
                    const std::string& err_str = "") {
   OpTester test("BatchNormalization");
   if (epsilon.has_value()) {
     test.AddAttribute("epsilon", epsilon.value());
   }
+  test.AddAttribute("spatial", spatial_mode);
   test.AddInput<float>("X", input_shapes_map.at("X"), input_data_map.at("X"));
   test.AddInput<float>("scale", input_shapes_map.at("scale"), input_data_map.at("scale"));
   test.AddInput<float>("B", input_shapes_map.at("B"), input_data_map.at("B"));
   test.AddInput<float>("mean", input_shapes_map.at("mean"), input_data_map.at("mean"));
   test.AddInput<float>("var", input_shapes_map.at("var"), input_data_map.at("var"));
   test.AddOutput<float>("output", expected_output_shape, expected_output);
-  test.Run(expect_result, err_str);
+  test.RunOnCpuAndCuda(expect_result, err_str);
 }
 
 TEST(BatchNormTest, PositiveTestCase) {
@@ -379,7 +381,7 @@ TEST(BatchNormTest, InvalidScaleDim) {
                 input_shapes_map,
                 epsilon,
                 expected_output,
-                expected_output_shape,
+                expected_output_shape, 1,
                 OpTester::ExpectResult::kExpectFailure,
                 "Invalid input scale");
 }
@@ -421,7 +423,7 @@ TEST(BatchNormTest, InvalidBDim) {
                 input_shapes_map,
                 epsilon,
                 expected_output,
-                expected_output_shape,
+                expected_output_shape, 1,
                 OpTester::ExpectResult::kExpectFailure,
                 "Invalid input B");
 }
@@ -463,7 +465,7 @@ TEST(BatchNormTest, InvalidMeanDim) {
                 input_shapes_map,
                 epsilon,
                 expected_output,
-                expected_output_shape,
+                expected_output_shape, 1,
                 OpTester::ExpectResult::kExpectFailure,
                 "Invalid input mean");
 }
@@ -505,7 +507,7 @@ TEST(BatchNormTest, InvalidVarDim) {
                 input_shapes_map,
                 epsilon,
                 expected_output,
-                expected_output_shape,
+                expected_output_shape, 1,
                 OpTester::ExpectResult::kExpectFailure,
                 "Invalid input var");
 }

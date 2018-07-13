@@ -29,7 +29,7 @@ Status CudnnTensor::Set(const std::vector<int64_t>& input_dims, cudnnDataType_t 
     dims[i] = gsl::narrow_cast<int>(input_dims[i]);
     strides[i] = gsl::narrow_cast<int>(pitches[i]);
   }
-  CUDNN_RETURN_IF_ERROR(cudnnSetTensorNdDescriptor(tensor_, dataType, (int)rank, dims.data(), strides.data()));
+  CUDNN_RETURN_IF_ERROR(cudnnSetTensorNdDescriptor(tensor_, dataType, static_cast<int>(rank), dims.data(), strides.data()));
   return Status::OK();
 }
 
