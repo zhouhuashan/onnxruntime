@@ -681,6 +681,43 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
   }
 }
 
+TEST(InferenceSessionTests, InvalidInputTypeOfTensorElement) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.InvalidInputTypeOfTensorElement";
+
+  InferenceSession session_object{so, &DefaultLoggingManager()};
+  ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = so.session_logid;
+
+  // prepare inputs
+  std::vector<int64_t> dims_mul_x = {3, 2};
+  std::vector<int64_t> values_mul_x = {1, 2, 3, 4, 5, 6};
+  MLValue ml_value;
+  CreateMLValue<int64_t>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value);
+  NameMLValMap feeds;
+  feeds.insert(std::make_pair("X", ml_value));
+
+  // prepare outputs
+  std::vector<std::string> output_names;
+  output_names.push_back("Y");
+  std::vector<MLValue> fetches;
+
+  // prepare expected inputs and outputs
+  std::vector<int64_t> expected_dims_mul_y = {3, 2};
+  std::vector<float> expected_values_mul_y = {1.0f, 4.0f, 9.0f, 16.0f, 25.0f, 36.0f};
+
+  // Now run
+  Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
+  if (!st.IsOK()) {
+    std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
+  }
+  ASSERT_TRUE(!st.IsOK());
+}
+
 #ifdef USE_CUDA
 
 TEST(InferenceSessionTests, TestBindCuda) {

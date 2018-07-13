@@ -8,6 +8,8 @@
 #include "core/framework/session_state.h"
 #include "core/graph/utils.h"
 #include "core/framework/data_types.h"
+#include "core/framework/mldata_type_utils.h"
+
 using namespace onnx;
 namespace Lotus {
 
@@ -214,16 +216,10 @@ class PlannerImpl {
     return true;
   }
 
-  MLDataType GetMLDataType(const LotusIR::NodeArg& arg) {
-    const DataType ptype = arg.Type();
-    const TypeProto& type_proto = Utils::DataTypeUtils::ToTypeProto(ptype);
-    return DataTypeImpl::TypeFromProto(type_proto);
-  }
-
   /*! \brief Given a tensor-type, return the size of an element of the tensor.
   */
   size_t GetElementSize(const DataType& tensor_type) {
-    const TypeProto& type_proto = Utils::DataTypeUtils::ToTypeProto(tensor_type);
+    const TypeProto& type_proto = ONNX_NAMESPACE::Utils::DataTypeUtils::ToTypeProto(tensor_type);
     MLDataType ml_data_type = DataTypeImpl::TypeFromProto(type_proto);
     const TensorTypeBase* tensor_type_base = ml_data_type->AsTensorType();
     LOTUS_ENFORCE(nullptr != tensor_type_base);
@@ -406,7 +402,7 @@ class PlannerImpl {
       auto input_index = Index(graph_input->Name());
       SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(input_index);
       thisplan.alloc_kind = AllocKind::kPreExisting;
-      thisplan.value_type = GetMLDataType(*graph_input);
+      thisplan.value_type = Utils::GetMLDataType(*graph_input);
     }
 
     GeneratePlanForWeights(graph);
@@ -421,7 +417,7 @@ class PlannerImpl {
       for (auto node_output : pnode->OutputDefs()) {
         if (!node_output->Exists()) continue;
         auto current = Index(node_output->Name());
-        AllocPlan(current).value_type = GetMLDataType(*node_output);
+        AllocPlan(current).value_type = Utils::GetMLDataType(*node_output);
         MLValueIndex reused;
         if (std::find(graph_outputs.begin(), graph_outputs.end(), node_output) != graph_outputs.end()) {
           // node_output is graph's output, so we can't reuse intermedia buffer
@@ -492,7 +488,7 @@ class PlannerImpl {
   bool IsNonTensor(const LotusIR::NodeArg& nodearg) {
     // TODO: unclear why we should go through a string-representation of type
     auto ptype = nodearg.Type();
-    auto& type_proto = Utils::DataTypeUtils::ToTypeProto(ptype);
+    auto& type_proto = ONNX_NAMESPACE::Utils::DataTypeUtils::ToTypeProto(ptype);
     return !type_proto.has_tensor_type();
   }
 

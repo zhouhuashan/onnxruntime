@@ -22,6 +22,8 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/node_placement.h"
+#include "core/framework/mldata_type_utils.h"
+
 using namespace onnx;
 namespace Lotus {
 
@@ -317,7 +319,47 @@ class InferenceSession::Impl {
     return Run(run_options, feeds, output_names, p_fetches);
   }
 
-  Common::Status ValidateInputs(const NameMLValMap& feeds) {
+  static Common::Status CheckTypes(MLDataType actual, MLDataType expected) {
+    if (actual == expected) {
+      return Status::OK();
+    }
+    auto actual_name = std::string(typeid(*actual).name());
+    auto expected_name = std::string(typeid(*expected).name());
+    return Status(LOTUS, INVALID_ARGUMENT,
+                  "Unexpected input data type. Actual: (" + actual_name + ") , expected: (" + expected_name + ")");
+  }
+
+  Common::Status ValidateInputTypes(const NameMLValMap& feeds) {
+    for (auto& arg : input_def_list_) {
+      auto& arg_name = arg->Name();
+      if (arg_name.empty() || !feeds.count(arg_name)) {
+        continue;
+      }
+
+      auto& input_ml_value = feeds.at(arg_name);
+      auto input_type = input_ml_value.Type();
+      auto expected_type = Utils::GetMLDataType(*arg);
+
+      if (!input_ml_value.IsTensor()) {
+        auto retval = CheckTypes(input_type, expected_type);
+        if (!retval.IsOK()) {
+          return retval;
+        } else {
+          continue;
+        }
+      }
+
+      auto expected_element_type = expected_type->AsTensorType()->GetElementType();
+      auto input_element_type = input_ml_value.Get<Tensor>().DataType();
+      auto retval = CheckTypes(input_element_type, expected_element_type);
+      if (!retval.IsOK()) {
+        return retval;
+      }
+    }
+    return Status::OK();
+  }
+
+  Common::Status ValidateInputNames(const NameMLValMap& feeds) {
     if (model_input_names_.size() != feeds.size()) {
       return Common::Status(Common::LOTUS, Common::FAIL, "The number of feeds is not same as the number of the model input");
     }
@@ -331,9 +373,7 @@ class InferenceSession::Impl {
       }
     }
 
-    if (valid) {
-      return Common::Status::OK();
-    } else {
+    if (!valid) {
       std::ostringstream ostr;
       std::for_each(std::begin(model_input_names_), std::end(model_input_names_), [&ostr](const std::string& elem) {
         ostr << elem << " ";
@@ -343,6 +383,14 @@ class InferenceSession::Impl {
                             "Invalid Feed Input Names:" + invalid_names.str() +
                                 " Valid input names are: " + ostr.str());
     }
+
+    return Status::OK();
+  }
+
+  Common::Status ValidateInputs(const NameMLValMap& feeds) {
+    LOTUS_RETURN_IF_ERROR(ValidateInputNames(feeds));
+    LOTUS_RETURN_IF_ERROR(ValidateInputTypes(feeds));
+    return Status::OK();
   }
 
   Common::Status ValidateOutputs(const std::vector<std::string>& output_names,
