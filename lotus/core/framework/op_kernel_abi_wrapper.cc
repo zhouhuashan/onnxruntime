@@ -1197,7 +1197,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpSetFromSchema)(
     }
 
     // Register the operator set with Lotus
-    LOTUS_ENFORCE(custom_registry_->RegisterCustomOpSet(schema_vector, opSetId->domain, opSetId->version).IsOK());
+    LOTUS_ENFORCE(custom_registry_->RegisterOpSet(schema_vector, opSetId->domain, baseline_version, opSetId->version).IsOK());
 
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {

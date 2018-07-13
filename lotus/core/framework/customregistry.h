@@ -22,24 +22,15 @@ class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegis
     */
   Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
-  /**
-  * Register a onnx opset to this session.
-  * If any conflict happened between registered schema and built-in schema,
-  * registered schema will have higher priority.
-  * Call this before invoking Load().
-  * @return OK if success.
-  */
-  Common::Status RegisterCustomOpSet(std::vector<onnx::OpSchema>& schemas, const std::string& domain, int version);
-
  private:
   CustomRegistry() = delete;
 
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
 };
 
-class CustomRegistryManager : public LotusIR::ILotusOpSchemaCollection {
+class KernelRegistryManager {
  public:
-  void RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry);
+  void RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry);
 
   Status CreateKernel(const LotusIR::Node& node,
                       const IExecutionProvider* execution_provider,
@@ -49,28 +40,15 @@ class CustomRegistryManager : public LotusIR::ILotusOpSchemaCollection {
   Status SearchKernelRegistry(const LotusIR::Node& node,
                               /*out*/ const KernelRegistry::KernelCreateInfo** kernel_create_info) const;
 
-  bool HasSchema() const;
-
-  LotusIR::Domain_To_Version_Map DomainToVersionMap() const override;
-
-  const ONNX_NAMESPACE::OpSchema* Schema(
-      const std::string& key,
-      const std::string& domain = LotusIR::kOnnxDomain) const override;
-
-  const ONNX_NAMESPACE::OpSchema* Schema(
-      const std::string& key,
-      const int maxInclusiveVersion,
-      const std::string& domain = LotusIR::kOnnxDomain) const override;
-
   std::vector<const KernelRegistry*> GetAllKernelRegistries() {
     std::vector<const KernelRegistry*> result;
-    for (auto& registry : custom_registries) {
+    for (auto& registry : kernel_registries) {
       result.push_back(registry.get());
     }
     return result;
   }
 
  private:
-  std::list<std::shared_ptr<CustomRegistry>> custom_registries;
+  std::list<std::shared_ptr<KernelRegistry>> kernel_registries;
 };
 }  // namespace Lotus

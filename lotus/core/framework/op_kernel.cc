@@ -96,12 +96,26 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
   // check if version matches
   int kernel_start_version, kernel_end_version;
   kernel_def.SinceVersion(&kernel_start_version, &kernel_end_version);
-  int node_version = node.Op()->since_version();
-  if (kernel_start_version > node_version || node_version > kernel_end_version) {
+
+  int node_since_version = node.Op()->since_version();
+  // Ideal case is, if schema is Since(5), current opset version is opset 7,
+  // kernel_def Since(8)     Invalid
+  // kernel_def Since(6)     Valid
+  // kernel_def Since(5)     Valid
+  // kernel_def Since(4)     Invalid
+  // kernel_def Since(4, 6)  Valid
+
+  // Right now there is no "until version" on schema, it is difficult to get opset version here.(require a lot of interface change.)
+  // As a trade off, we will temporary require kernel definition to have the same since version as schema definition.
+  // so kernel_def Since(6) will become invalid now.
+  // After ONNX add "until version" on the schema object, we will update this place
+  bool valid_version = kernel_start_version == node_since_version  // the idea case this branch should be kernel_start_version >= node_version && kernel_start_version <= until_version
+                       || (kernel_start_version < node_since_version && kernel_end_version != INT_MAX && kernel_end_version >= node_since_version);
+  if (!valid_version) {
     std::ostringstream ostr;
     ostr << "Op: " << node.OpType()
          << " Version mismatch."
-         << " node_version: " << node_version
+         << " node_version: " << node_since_version
          << " kernel start version: " << kernel_start_version
          << " kernel_end_version: " << kernel_end_version;
     error_str = ostr.str();
@@ -227,7 +241,9 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
   }
 }
 
-bool KernelRegistry::CanExecutionProviderCreateKernel(const LotusIR::Node& node, LotusIR::ProviderType exec_provider) const {
+bool KernelRegistry::CanExecutionProviderCreateKernel(
+    const LotusIR::Node& node,
+    LotusIR::ProviderType exec_provider) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {

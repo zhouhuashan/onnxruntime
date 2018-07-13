@@ -8,7 +8,7 @@ namespace Cuda {
 #define REGISTER_KERNEL_TYPED(T)                                              \
   REGISTER_KERNEL(KernelDefBuilder("Tile")                                    \
                       .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(1)                                        \
+                      .SinceVersion(6)                                        \
                       .Provider(LotusIR::kCudaExecutionProvider)              \
                       .InputMemoryType<kMemTypeCPUInput>(1)                   \
                       .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \

@@ -403,12 +403,12 @@ using google::protobuf::RepeatedPtrField;
 Graph::Graph(GraphProto* graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version,
              Version ir_version,
-             const ILotusOpSchemaCollection* local_registry)
+             ILotusOpSchemaCollectionPtr schema_registry)
 
     : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version, ir_version),
       graph_proto_{graph_proto},
       graph_type_{Type::Main},
-      local_registry_(local_registry) {
+      schema_registry_(schema_registry) {
   LOTUS_ENFORCE(graph_proto != nullptr, "Expected either name or graph_proto.");
   ArgNameToTypeMap name_to_type_map;
 
@@ -967,56 +967,6 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   return Status::OK();
 }  // namespace LotusIR
 
-#define enforce_non_empty_field(proto, field) \
-  do {                                        \
-    if (proto.field().empty()) {              \
-      fail_check(                             \
-          "Field '",                          \
-          #field,                             \
-          "' of ",                            \
-          #proto,                             \
-          " is required to be non-empty.");   \
-    }                                         \
-  } while (0)
-
-static void check_node(
-    const NodeProto& node,
-    const CheckerContext& ctx,
-    const LexicalScopeContext& lex_ctx,
-    const ILotusOpSchemaCollection& registry) {
-  enforce_non_empty_field(node, op_type);
-
-  if (node.input().empty() && node.output().empty()) {
-    fail_check(
-        "NodeProto (name: ",
-        node.name(),
-        ", type: ",
-        node.op_type(),
-        ") has zero input and zero output.");
-  }
-
-  // Resolve domain for node
-  const auto& opset_imports = ctx.get_opset_imports();
-  auto dit = opset_imports.find(node.domain());
-  if (dit == opset_imports.end()) {
-    fail_check("No opset import for domain '" + node.domain() + "'");
-  }
-  auto domain_version = dit->second;
-
-  for (const auto& attr : node.attribute()) {
-    check_attribute(attr, ctx, lex_ctx);
-  }
-
-  const auto* schema =
-      registry.Schema(node.op_type(), domain_version, node.domain());
-  if (!schema) {
-    fail_check(
-        "No Schema registered for " + node.op_type() +
-        " with domain_version of " + ONNX_NAMESPACE::to_string(domain_version));
-  }
-  schema->Verify(node);
-}
-
 // Apply type-inference and type-checking to all inputs and initializers:
 Lotus::Common::Status Graph::TypeCheckInputsAndInitializers() {
   // Check that the type of every input is specified:
@@ -1085,6 +1035,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     CheckerContext ctx;
     ctx.set_ir_version(gsl::narrow_cast<int>(IrVersion()));
     ctx.set_opset_imports(DomainToVersionMap());
+    ctx.set_schema_registry(schema_registry_.get());
     LexicalScopeContext lsc;
     for (auto& kv : output_args) {
       auto ignored = lsc.output_names.insert(kv.first);
@@ -1095,24 +1046,13 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     auto& domain = node.Domain();
     auto maxInclusiveVersion = DomainToVersionMap().find(domain)->second;
 
-    // check node from local schema first
-    if (local_registry_) {
-      try {
-        check_node(node_proto, ctx, lsc, *local_registry_);
-        node.op_ = local_registry_->Schema(node.OpType(), maxInclusiveVersion, node.Domain());
-      } catch (const std::exception& ex) {
-        LOGS_DEFAULT(WARNING) << "verify node from local registry failed: " << ex.what() << std::endl
-                              << "Will try to search from build in schema." << std::endl;
-      }
-    }
-
     if (!node.op_) {
       try {
         checker::check_node(node_proto, ctx, lsc);
       } catch (const std::exception& ex) {
         return Status(LOTUS, FAIL, ex.what());
       }
-      node.op_ = OpSchemaRegistry::Schema(node.OpType(), maxInclusiveVersion, node.Domain());
+      node.op_ = schema_registry_->GetSchema(node.OpType(), maxInclusiveVersion, node.Domain());
     }
 
     LOTUS_RETURN_IF_ERROR(node.UpdateInputArgCount());
@@ -1774,4 +1714,9 @@ bool GraphBase::ReleaseNode(NodeIndex index) {
 
   return true;
 }
+
+ILotusOpSchemaCollectionPtr Graph::GetSchemaRegistry() const {
+  return schema_registry_;
+}
+
 }  // namespace LotusIR

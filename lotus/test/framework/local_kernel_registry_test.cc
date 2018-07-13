@@ -168,7 +168,7 @@ onnx::OpSchema GetFooSchema() {
       "T",
       OpSchema::numeric_types_for_math_reduction(),
       "Constrain input and output types to high-precision numeric tensors.");
-  schema.SinceVersion(6);
+  schema.SinceVersion(7);
   return schema;
 }
 
@@ -199,7 +199,7 @@ onnx::OpSchema GetOptionalOpSchema() {
 KernelDefBuilder FooKernelDef(const char* schema_name) {
   KernelDefBuilder def(schema_name);
   def.Domain(LotusIR::kOnnxDomain)
-      .SinceVersion(6)
+      .SinceVersion(7)
       .Provider(LotusIR::kCpuExecutionProvider)
       .TypeConstraint("T", DataTypeImpl::GetTensorType<float>());
   return def;
@@ -328,7 +328,7 @@ TEST(CustomKernelTests, CustomABIKernelWithBuildInSchema) {
   MLOpKernelDefinition def = {
       LotusIR::kOnnxDomain,
       "Mul",
-      6,
+      7,
       LotusIR::kCpuExecutionProvider,
       &constraint,
       1};
@@ -367,7 +367,7 @@ TEST(CustomKernelTests, CustomKernelWithCustomSchema) {
   //register foo schema
   auto foo_schema = GetFooSchema();
   std::vector<OpSchema> schemas = {foo_schema};
-  EXPECT_TRUE(registry->RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
+  EXPECT_TRUE(registry->RegisterOpSet(schemas, LotusIR::kOnnxDomain, 5, 7).IsOK());
   auto def = FooKernelDef("Foo");
   //Register a foo kernel which is doing Add, but bind to Mul.
   EXPECT_TRUE(registry->RegisterCustomKernel(def, CreateFooKernel).IsOK());
@@ -484,7 +484,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     // Schema definition
     MLSchemaDefinition def = {};
     def.name = "Foo";
-    def.operator_set_since_version = 6;  // TODO - why does Lotus not allow a lower version than an opset is registered for?
+    def.operator_set_since_version = 7;
     def.inputs = inputs;
     def.input_count = 2;
     def.outputs = &output_param;
@@ -521,7 +521,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     }
 
     // Register the schema
-    MLOperatorSetId id = {"", 6};
+    MLOperatorSetId id = {"", 7};
     MLSchemaDefinition* def_list = &def;
     EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpSetFromSchema(&id, 1, &def_list, 1));
 
@@ -535,7 +535,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     MLOpKernelDefinition kernel_def = {
         LotusIR::kOnnxDomain,
         "Foo",
-        1,
+        7,
         LotusIR::kCpuExecutionProvider,
         &kernel_constraint,
         1,
@@ -587,7 +587,7 @@ TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
 
   std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
 
-  EXPECT_TRUE(registry->RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
+  EXPECT_TRUE(registry->RegisterOpSet(schemas, LotusIR::kOnnxDomain, 5, 7).IsOK());
   auto def = OptionalKernelDef();
   //Register a foo kernel which is doing Add, but bind to Mul.
   EXPECT_TRUE(registry->RegisterCustomKernel(def, CreateOptionalOpKernel).IsOK());

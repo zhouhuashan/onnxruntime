@@ -39,6 +39,7 @@ class GraphBase;
 class Node;
 class OpSignature;
 class ILotusOpSchemaCollection;
+using ILotusOpSchemaCollectionPtr = std::shared_ptr<ILotusOpSchemaCollection>;
 
 namespace Test {
 struct NodeTestHelper;
@@ -717,6 +718,8 @@ class Graph : public GraphBase {
   // Serialize the <Graph> into <GraphProto>.
   const onnx::GraphProto& ToGraphProto();
 
+  ILotusOpSchemaCollectionPtr GetSchemaRegistry() const;
+
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
 
@@ -729,7 +732,7 @@ class Graph : public GraphBase {
   Graph(onnx::GraphProto* graph_proto,
         const std::unordered_map<std::string, int>& domain_to_version,
         Version ir_version,
-        const ILotusOpSchemaCollection* local_registry = nullptr);
+        ILotusOpSchemaCollectionPtr schema_registry);
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object and Resolve() it.
@@ -793,6 +796,6 @@ class Graph : public GraphBase {
   // Graph value_info.
   std::vector<const NodeArg*> value_info_;
 
-  const ILotusOpSchemaCollection* local_registry_;
+  ILotusOpSchemaCollectionPtr schema_registry_;
 };
 }  // namespace LotusIR

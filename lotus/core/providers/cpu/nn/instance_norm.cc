@@ -4,7 +4,7 @@
 namespace Lotus {
 REGISTER_KERNEL(KernelDefBuilder("InstanceNormalization")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
+                    .SinceVersion(6)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 InstanceNorm<float>);

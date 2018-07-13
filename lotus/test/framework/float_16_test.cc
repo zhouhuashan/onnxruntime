@@ -145,7 +145,7 @@ TEST(Float16_Tests, Mul_16_Test) {
   auto mulfp16_schema = GetMulFP16Schema();
   std::vector<OpSchema> schemas = {mulfp16_schema};
 
-  EXPECT_TRUE(registry->RegisterCustomOpSet(schemas, LotusIR::kOnnxDomain, 6).IsOK());
+  EXPECT_TRUE(registry->RegisterOpSet(schemas, LotusIR::kOnnxDomain, 5, 7).IsOK());
 
   auto def = MulFP16KernelDef();
   //Register a foo kernel which is doing Add, but bind to Mul.

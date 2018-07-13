@@ -4,7 +4,6 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
-
 #include "core/common/logging/logging.h"
 #include "core/common/profiler.h"
 #include "core/framework/allocation_planner.h"
@@ -112,8 +111,8 @@ class SessionState {
   */
   bool GetEnableMemoryPattern() const;
 
-  const CustomRegistryManager& GetCustomRegistryManager() const;
-  CustomRegistryManager& GetCustomRegistryManager();
+  const KernelRegistryManager& GetKernelRegistryManager() const;
+  KernelRegistryManager& GetKernelRegistryManager();
 
   struct NodeInfo {
     NodeInfo(size_t index0, const LotusIR::Node* p_node0, const KernelRegistry::KernelCreateInfo* kci0)
@@ -165,7 +164,7 @@ class SessionState {
   // cache for the generated mem_patterns. key is calculated based on input shapes.
   mutable std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
-  CustomRegistryManager custom_registry_manager_;
+  KernelRegistryManager custom_registry_manager_;
 
   NameNodeInfoMapType input_names_to_nodeinfo_mapping_;
   NameNodeInfoMapType output_names_to_nodeinfo_mapping_;

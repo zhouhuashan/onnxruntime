@@ -273,21 +273,12 @@ class KernelDefBuilder {
 
   // Return the kernel definition, passing ownership of the KernelDef to the caller
   unique_ptr<KernelDef> Build() {
-    int domain_version_start = domain_version_map_.at(kernel_def_->op_domain_).first;
-    int domain_version_end = domain_version_map_.at(kernel_def_->op_domain_).second;
-    if (kernel_def_->op_since_version_end_ == INT_MAX) {
-      kernel_def_->op_since_version_end_ = domain_version_end;
-    }
-    LOTUS_ENFORCE(kernel_def_->op_since_version_start_ >= domain_version_start && kernel_def_->op_since_version_end_ <= domain_version_end);
-
     return std::move(kernel_def_);
   }
 
  private:
   // we own the KernelDef until Build() is called.
   std::unique_ptr<KernelDef> kernel_def_;
-  const std::unordered_map<string, std::pair<int, int>>& domain_version_map_ =
-      onnx::OpSchemaRegistry::DomainToVersionRange::Instance().Map();
 };
 
 }  // namespace Lotus

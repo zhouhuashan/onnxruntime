@@ -4,6 +4,7 @@
 #include "core/common/status.h"
 #include "onnx/defs/schema.h"
 #include <mutex>
+#include <deque>
 #include "sstream"
 
 namespace LotusIR {
@@ -11,101 +12,67 @@ using OpName_Domain_Version_Schema_Map = std::unordered_map<
     std::string,
     std::unordered_map<std::string, std::map<ONNX_NAMESPACE::OperatorSetVersion, ONNX_NAMESPACE::OpSchema>>>;
 
-using Domain_To_Version_Map = std::unordered_map<std::string, std::pair<int, int>>;
-
-class ILotusOpSchemaCollection {
- public:
-  virtual Domain_To_Version_Map DomainToVersionMap() const = 0;
-
-  virtual const ONNX_NAMESPACE::OpSchema* Schema(
-      const std::string& key,
-      const std::string& domain) const = 0;
-
-  virtual const ONNX_NAMESPACE::OpSchema* Schema(
-      const std::string& key,
-      const int maxInclusiveVersion,
-      const std::string& domain) const = 0;
+// Lotus schema registry is a supplyment to built-in schema,
+// Every schema registry represent a collection of schema deltas from baseline_opset_version to opset_version
+struct SchemaRegistryVersion {
+  int baseline_opset_version;
+  int opset_version;
 };
 
-// OpSchemaRegistry is a singleton in onnx, so we have to duplicate it in Lotus
-// If later onnx design changed, we don't need it any more.
-class LotusOpSchemaRegistry {
+using Domain_To_Version_Map = std::unordered_map<std::string, int>;
+using Domain_To_Version_Range_Map = std::unordered_map<std::string, SchemaRegistryVersion>;
+
+class ILotusOpSchemaCollection : public ONNX_NAMESPACE::ISchemaRegistry {
+ public:
+  virtual Domain_To_Version_Map GetLatestOpsetVersions(bool is_onnx_only) const = 0;
+
+  using ISchemaRegistry::GetSchema;
+
+  virtual const ONNX_NAMESPACE::OpSchema* GetSchema(
+      const std::string& key,
+      const int maxInclusiveVersion,
+      const std::string& domain) const final {
+    const ONNX_NAMESPACE::OpSchema* latest_schema = nullptr;
+    int earliest_opset_where_unchanged = std::numeric_limits<int>::max();
+    GetSchemaAndHistory(key, maxInclusiveVersion, domain, &latest_schema, &earliest_opset_where_unchanged);
+
+    assert(latest_schema == nullptr || (latest_schema->SinceVersion() <= maxInclusiveVersion &&
+                                        earliest_opset_where_unchanged == latest_schema->SinceVersion()));
+
+    return latest_schema;
+  }
+
+  virtual void GetSchemaAndHistory(
+      const std::string& key,
+      const int maxInclusiveVersion,
+      const std::string& domain,
+      const ONNX_NAMESPACE::OpSchema** latest_schema,
+      int* earliest_opset_where_unchanged) const = 0;
+};
+
+// LotusOpSchemaRegistry is used to provide supplement for built-in ONNX schemas.
+// Each LotushOpSchmeaRegistry must register complete opsets delta from a baseline version to max opset version.
+// (Please notice that basline opsets are not include in the delta)
+// For example, lotus is build with ONNX 1.2 which is at opset7, to use onnx opset8 and opset9,
+// user could create a LotusOpSchemaRegistry and config it as {baseline_opset_version = 7, opset_version = 9}
+// it means this LotusOpSchemaRegistry contains the complete delta from opset7 to opset9.
+class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
  public:
   LotusOpSchemaRegistry() = default;
-  // Add customized domain to min/max version.
-  // Onnx partners are able to use onnx operator schema api to
-  // register customized op in their own domain.
-  Lotus::Common::Status AddDomainToVersion(
+
+  Lotus::Common::Status SetBaselineAndOpsetVersionForDomain(
       const std::string& domain,
-      int max_version) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = domain_version_map_.find(domain);
-    if (domain_version_map_.end() != it) {
-      it->second.second = std::max(max_version, it->second.second);
-      it->second.second = std::min(max_version, it->second.second);
-    } else
-      domain_version_map_[domain] = std::make_pair(max_version, max_version);
-    return Lotus::Common::Status::OK();
-  }
+      int baseline_opset_version,
+      int opset_version);
 
-  const Domain_To_Version_Map& DomainVersionMap() const noexcept {
-    return domain_version_map_;
-  }
+  Domain_To_Version_Map GetLatestOpsetVersions(bool is_onnx_only) const override;
 
-  Lotus::Common::Status RegisterOpSchema(ONNX_NAMESPACE::OpSchema& op_schema) {
-    try {
-      op_schema.Finalize();
-    } catch (const std::exception& e) {
-      return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "Schema error: " + std::string(e.what()));
-    }
-
-    auto& op_name = op_schema.Name();
-    auto& op_domain = op_schema.domain();
-    auto ver = op_schema.SinceVersion();
-
-    if (map_[op_name][op_domain].count(ver)) {
-      const auto& schema = map_[op_name][op_domain][ver];
-      std::stringstream ostream;
-      ostream << "Trying to register schema with name " << op_name
-              << " (domain: " << op_domain << " version: " << ver
-              << ") from file " << op_schema.file() << " line "
-              << op_schema.line()
-              << ", but it is already registered from file "
-              << schema.file() << " line " << schema.line() << std::endl;
-      return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
-    }
-
-    auto ver_range_map = DomainVersionMap();
-    auto ver_range_it = ver_range_map.find(op_domain);
-    if (ver_range_it == ver_range_map.end()) {
-      std::stringstream ostream;
-      ostream << "Trying to register schema with name " << op_name
-              << " (domain: " << op_domain << " version: " << ver
-              << ") from file " << op_schema.file() << " line "
-              << op_schema.line() << ", but it its domain is not"
-              << "known by the checker." << std::endl;
-      return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
-    }
-    auto lower_bound_incl = ver_range_it->second.first;
-    auto upper_bound_incl = ver_range_it->second.second;
-    if (!(lower_bound_incl <= ver && upper_bound_incl >= ver)) {
-      std::stringstream ostream;
-      ostream
-          << "Trying to register schema with name " << op_name
-          << " (domain: " << op_domain << " version: " << ver
-          << ") from file " << op_schema.file() << " line "
-          << op_schema.line() << ", but it its version is not"
-          << "in the inclusive range [" << lower_bound_incl << ", "
-          << upper_bound_incl << "] (usually, this means you "
-          << "bumped the operator version but "
-          << "forgot to update the version range in DomainToVersionRange "
-          << "in onnx/defs/schema.h)." << std::endl;
-      return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
-    }
-
-    auto ignored = map_[op_name][op_domain].emplace(std::make_pair(ver, op_schema));
-    return Lotus::Common::Status::OK();
-  }
+  // LotusOpSchemaRegistry must register complete delta for a opset.
+  Lotus::Common::Status RegisterOpSet(
+      std::vector<ONNX_NAMESPACE::OpSchema>& schemas,
+      const std::string& domain,
+      int baseline_opset_version,
+      int opset_version);
 
 // conversion of kOnnxDomain to std::string creates unnamed temporary.  Suppress C26444 (es.84) the hard way.
 // GSL_SUPPRESS(es.84) doesn't work as the default arg temporary isn't in a scope the suppress attribute handles.
@@ -114,86 +81,53 @@ class LotusOpSchemaRegistry {
 #pragma warning(disable : 26444)
 #endif
 
-  // Return the latest schema for an operator in specified domain.
-  // Domain with default value ONNX_DOMAIN means ONNX.
-  const ONNX_NAMESPACE::OpSchema* Schema(
-      const std::string& key,
-      const std::string& domain = kOnnxDomain) const {
-    auto it = map_.find(key);
-    if (it != map_.end()) {
-      auto s_it = it->second.find(domain);
-      if (s_it != it->second.end()) {
-        return &s_it->second.rbegin()->second;
-      } else {
-        return nullptr;
-      }
-    } else {
-      return nullptr;
-    }
-  }
+  using ILotusOpSchemaCollection::GetSchema;
 
-  // Return the schema with biggest version, which is not greater than specified
-  // <maxInclusiveVersion> in specified domain. Domain with default value
-  // ONNX_DOMAIN means ONNX.
-  const ONNX_NAMESPACE::OpSchema* Schema(
+  void GetSchemaAndHistory(
       const std::string& key,
       const int maxInclusiveVersion,
-      const std::string& domain = kOnnxDomain) const {
-    auto it = map_.find(key);
-    if (it == map_.end())
-      return nullptr;
-    auto s_it = it->second.find(domain);
-    if (s_it != it->second.end()) {
-      auto pos = s_it->second.lower_bound(maxInclusiveVersion);
-      if (s_it->second.begin() == pos && pos->first > maxInclusiveVersion) {
-        // All versions are greater than specified version.
-        return nullptr;
-      }
-      if (s_it->second.end() == pos || pos->first > maxInclusiveVersion) {
-        // All versions are less than specified version, or,
-        // The <pos> version is greater than specified version.
-        --pos;
-        return &(pos->second);
-      }
-      // Schema with exact version as specified one exists.
-      return &(pos->second);
-    } else {
-      return nullptr;
-    }
-  }
+      const std::string& domain,
+      const ONNX_NAMESPACE::OpSchema** latest_schema,
+      int* earliest_opset_where_unchanged) const override;
 
 #ifdef _MSC_VER
 #pragma warning(pop)  // C26444
 #endif
 
+  bool empty() const {
+    return map_.empty();
+  }
+
  private:
+  Lotus::Common::Status RegisterOpSchema(ONNX_NAMESPACE::OpSchema&& op_schema);
+
+  Lotus::Common::Status RegisterOpSchemaInternal(ONNX_NAMESPACE::OpSchema&& op_schema);
+
   std::mutex mutex_;
 
   OpName_Domain_Version_Schema_Map map_;
-  Domain_To_Version_Map domain_version_map_;
-
- public:
-  const std::vector<ONNX_NAMESPACE::OpSchema> get_all_schemas_with_history() {
-    std::vector<ONNX_NAMESPACE::OpSchema> r;
-    for (auto x : map_) {
-      for (auto y : x.second) {
-        for (auto z : y.second) {
-          r.emplace_back(z.second);
-        }
-      }
-    }
-    return r;
-  }
-
-  const std::vector<ONNX_NAMESPACE::OpSchema> get_all_schemas() const {
-    std::vector<ONNX_NAMESPACE::OpSchema> r;
-    for (auto x : map_) {
-      for (auto y : x.second) {
-        auto& version2schema = y.second;
-        r.emplace_back(version2schema.rbegin()->second);
-      }
-    }
-    return r;
-  }
+  Domain_To_Version_Range_Map domain_version_range_map_;
 };
+
+// SchemaRegistryManager provides a view based on built-in ONNX schema and a list of LotusOpSchemaRegistry as supplement.
+// User need to make sure the customized schema registry is valid, otherwise the behavior is undefined.
+// We may add more consistent check later.
+class SchemaRegistryManager : public LotusIR::ILotusOpSchemaCollection {
+ public:
+  // The schema registry priority is the reverse of register order.
+  void RegisterRegistry(std::shared_ptr<ILotusOpSchemaCollection> registry);
+
+  Domain_To_Version_Map GetLatestOpsetVersions(bool is_onnx_only) const override;
+
+  void GetSchemaAndHistory(
+      const std::string& key,
+      const int maxInclusiveVersion,
+      const std::string& domain,
+      const ONNX_NAMESPACE::OpSchema** latest_schema,
+      int* earliest_opset_where_unchanged) const override;
+
+ private:
+  std::deque<std::shared_ptr<ILotusOpSchemaCollection>> registries;
+};
+
 }  // namespace LotusIR

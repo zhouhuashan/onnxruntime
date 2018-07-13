@@ -20,7 +20,7 @@ using namespace Lotus;
 using namespace Lotus::Common;
 
 namespace LotusIR {
-Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const ModelMetaData& model_metadata, const ILotusOpSchemaCollection* local_registry) {
+Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const ModelMetaData& model_metadata, const ILotusOpSchemaRegistryList* local_registries) {
   model_proto_ = std::make_unique<ModelProto>();
   model_proto_->set_ir_version(onnx::Version::IR_VERSION);
   model_proto_->mutable_graph()->set_name(graph_name);
@@ -31,31 +31,53 @@ Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const Mode
     prop->set_value(metadata.second);
   }
 
-  // Set domain_to_version_ to contain related domains with latest version.
-  std::unordered_map<std::string, int> domain_to_version;
-  AddImportOpSets(is_onnx_domain_only, &domain_to_version, local_registry);
+  auto schema_registry = std::shared_ptr<SchemaRegistryManager>(new SchemaRegistryManager());
+  if (local_registries != nullptr) {
+    for (auto schema_collection : *local_registries) {
+      schema_registry->RegisterRegistry(schema_collection);
+    }
+  }
 
+  // Set domain_to_version_ to contain related domains with latest version.
+  std::unordered_map<std::string, int> domain_to_version = schema_registry->GetLatestOpsetVersions(is_onnx_domain_only);
+  for (auto domain : domain_to_version) {
+    const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
+    opset_id_proto->set_domain(domain.first);
+    opset_id_proto->set_version(domain.second);
+  }
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
-  graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), local_registry));
+  graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), schema_registry));
 }
 
-Model::Model(const ModelProto& model_proto, const ILotusOpSchemaCollection* local_registry)
-    : Model(std::make_unique<ModelProto>(model_proto), local_registry) {
+Model::Model(const ModelProto& model_proto, const ILotusOpSchemaRegistryList* local_registries)
+    : Model(std::make_unique<ModelProto>(model_proto), local_registries) {
 }
 
-Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaCollection* local_registry) {
+Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaRegistryList* local_registries) {
   assert(nullptr != model_proto);
   model_proto_.reset(model_proto.release());
   for (auto& prop : model_proto_->metadata_props()) {
     model_metadata_[prop.key()] = prop.value();
   }
 
+  auto schema_registry = std::shared_ptr<SchemaRegistryManager>(new SchemaRegistryManager());
+  if (local_registries != nullptr) {
+    for (auto schema_collection : *local_registries) {
+      schema_registry->RegisterRegistry(schema_collection);
+    }
+  }
+
   std::unordered_map<std::string, int> domain_to_version;
   if (0 == model_proto_->opset_import_size()) {
     // Operator sets are not specified in this model.
     // Will use global operator store instead.
-    AddImportOpSets(false, &domain_to_version, local_registry);
+    domain_to_version = schema_registry->GetLatestOpsetVersions(false);
+    for (auto domain : domain_to_version) {
+      const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
+      opset_id_proto->set_domain(domain.first);
+      opset_id_proto->set_version(domain.second);
+    }
   } else {
     for (auto& opSet : model_proto_->opset_import()) {
       domain_to_version[opSet.domain()] = gsl::narrow_cast<int>(opSet.version());
@@ -65,7 +87,7 @@ Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaCollec
   if (model_proto_->has_graph()) {
     // create instance. need to call private ctor so can't use make_unique
     GSL_SUPPRESS(r .11)
-    graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), local_registry));
+    graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), schema_registry));
   }
 }
 
@@ -136,51 +158,6 @@ ModelProto Model::ToProto() {
   return *model_proto_;
 }
 
-void Model::AddImportOpSets(bool is_onnx_domain_only,
-                            /*out*/ gsl::not_null<std::unordered_map<std::string, int>*> domain_to_version,
-                            const ILotusOpSchemaCollection* local_registry) {
-  auto& domain_to_version_range_map = OpSchemaRegistry::DomainToVersionRange::Instance().Map();
-  Domain_To_Version_Map local_domain_to_version_map = local_registry ? local_registry->DomainToVersionMap() : Domain_To_Version_Map();
-  for (auto& domainToVersionRange : domain_to_version_range_map) {
-    if (is_onnx_domain_only && domainToVersionRange.first.compare(kOnnxDomain) != 0) {
-      // Constructing an onnx-domain-only model.
-      // Only ops in ONNX domain should be used.
-      continue;
-    }
-
-    int max = domainToVersionRange.second.second;
-    //merge with local domain versions
-    if (local_registry) {
-      auto it = local_domain_to_version_map.find(domainToVersionRange.first);
-      if (it != local_domain_to_version_map.end())
-        max = std::max(it->second.second, max);
-    }
-
-    auto ignored = domain_to_version->insert({domainToVersionRange.first, max});
-    const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
-    opset_id_proto->set_domain(domainToVersionRange.first);
-    opset_id_proto->set_version(domainToVersionRange.second.second);
-  }
-
-  //merge the local domain versions
-  if (local_registry) {
-    for (auto& local_domain : local_domain_to_version_map) {
-      if (is_onnx_domain_only && local_domain.first.compare(kOnnxDomain) != 0) {
-        // Constructing an onnx-domain-only model.
-        // Only ops in ONNX domain should be used.
-        continue;
-      }
-
-      if (domain_to_version_range_map.end() != domain_to_version_range_map.find(local_domain.first)) {
-        auto ignored = domain_to_version->insert({local_domain.first, local_domain.second.second});
-        const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
-        opset_id_proto->set_domain(local_domain.first);
-        opset_id_proto->set_version(local_domain.second.second);
-      }
-    }
-  }
-}
-
 Status Model::Load(std::istream& model_istream, ModelProto* p_model_proto) {
   if (!model_istream.good()) {
     return Status(LOTUS, INVALID_ARGUMENT, "Invalid istream object.");
@@ -195,7 +172,7 @@ Status Model::Load(std::istream& model_istream, ModelProto* p_model_proto) {
   return Status::OK();
 }
 
-Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model, const ILotusOpSchemaCollection* local_registry) {
+Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model, const ILotusOpSchemaRegistryList* local_registries) {
   // we expect a graph to be present
   if (!model_proto.has_graph()) {
     return Status(LOTUS, INVALID_ARGUMENT, "No graph was found in the protobuf.");
@@ -203,7 +180,7 @@ Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model,
 
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
-  model.reset(new Model(model_proto, local_registry));
+  model.reset(new Model(model_proto, local_registries));
 
   if (model->MainGraph() != nullptr) {
     LOTUS_RETURN_IF_ERROR(model->MainGraph()->Resolve(true));
@@ -214,10 +191,10 @@ Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model,
 #ifdef _WIN32
 GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the internal call to Load
 GSL_SUPPRESS(r .35)
-Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
+Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
   int fd;
   LOTUS_RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
-  auto status = Load(fd, p_model, local_registry);
+  auto status = Load(fd, p_model, local_registries);
   LOTUS_RETURN_IF_ERROR(FileClose(fd));
   return status;
 }
@@ -234,24 +211,24 @@ Status Model::Save(Model& model, const std::wstring& file_path) {
 
 GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the internal call to Load
 GSL_SUPPRESS(r .35)
-Status Model::Load(const std::string& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
+Status Model::Load(const std::string& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
   int fd;
   if (!FileOpenRd(file_path, &fd).IsOK()) {
     return Status(LOTUS, NO_MODEL, "Failed to open: " + file_path);
   }
-  auto status = Load(fd, p_model, local_registry);
+  auto status = Load(fd, p_model, local_registries);
   LOTUS_RETURN_IF_ERROR(FileClose(fd));
   return status;
 }
 
-Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
+Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
   std::unique_ptr<ModelProto> modelProto = std::make_unique<ModelProto>();
   const bool result = modelProto->ParseFromArray(p_bytes, count);
   if (!result) {
     return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
   }
 
-  p_model = std::make_shared<Model>(std::move(modelProto), local_registry);
+  p_model = std::make_shared<Model>(std::move(modelProto), local_registries);
   if (p_model->MainGraph() != nullptr) {
     LOTUS_RETURN_IF_ERROR(p_model->MainGraph()->Resolve(true));
   }
@@ -270,7 +247,7 @@ using ::google::protobuf::io::CodedInputStream;
 using ::google::protobuf::io::FileInputStream;
 using ::google::protobuf::io::ZeroCopyInputStream;
 
-Status Model::Load(int fd, std::shared_ptr<Model>& p_model, const ILotusOpSchemaCollection* local_registry) {
+Status Model::Load(int fd, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
   if (fd < 0) {
     return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> less than 0.");
   }
@@ -290,7 +267,7 @@ Status Model::Load(int fd, std::shared_ptr<Model>& p_model, const ILotusOpSchema
     return Status(LOTUS, INVALID_PROTOBUF, "Protobuf parsing failed.");
   }
 
-  p_model = std::make_shared<Model>(std::move(model_proto), local_registry);
+  p_model = std::make_shared<Model>(std::move(model_proto), local_registries);
   if (p_model->MainGraph() != nullptr) {
     LOTUS_RETURN_IF_ERROR(p_model->MainGraph()->Resolve(true));
   }

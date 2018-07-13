@@ -47,10 +47,10 @@ const AllocatorInfo& SessionState::GetAllocatorInfo(LotusIR::NodeIndex node_id, 
   return allocator->Info();
 }
 
-const CustomRegistryManager& SessionState::GetCustomRegistryManager() const {
+const KernelRegistryManager& SessionState::GetKernelRegistryManager() const {
   return custom_registry_manager_;
 }
-CustomRegistryManager& SessionState::GetCustomRegistryManager() {
+KernelRegistryManager& SessionState::GetKernelRegistryManager() {
   return custom_registry_manager_;
 }
 

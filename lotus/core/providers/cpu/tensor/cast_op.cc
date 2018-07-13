@@ -20,7 +20,7 @@ const std::vector<MLDataType> castOpTypeConstraints{
 #define ADD_FROM_CAST_OP(in_type)                                                    \
   REGISTER_KERNEL(KernelDefBuilder("Cast")                                           \
                       .Domain(LotusIR::kOnnxDomain)                                  \
-                      .SinceVersion(1)                                               \
+                      .SinceVersion(6)                                               \
                       .Provider(LotusIR::kCpuExecutionProvider)                      \
                       .TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())  \
                       .TypeConstraint("T2", castOpTypeConstraints),                  \
@@ -97,7 +97,7 @@ ADD_FROM_CAST_OP(double);
 
 REGISTER_KERNEL(KernelDefBuilder("Cast")
                     .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
+                    .SinceVersion(6)
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T1", DataTypeImpl::GetTensorType<MLFloat16>())
                     .TypeConstraint("T2", castOpTypeConstraints),

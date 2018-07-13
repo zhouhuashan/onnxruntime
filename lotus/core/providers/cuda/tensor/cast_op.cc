@@ -23,7 +23,7 @@ const std::vector<MLDataType> castOpTypeConstraints{
 #define REGISTER_KERNEL_TYPED(T)                                              \
   REGISTER_KERNEL(KernelDefBuilder("Cast")                                    \
                       .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(1)                                        \
+                      .SinceVersion(6)                                        \
                       .Provider(LotusIR::kCudaExecutionProvider)              \
                       .TypeConstraint("T1", DataTypeImpl::GetTensorType<T>()) \
                       .TypeConstraint("T2", castOpTypeConstraints),           \

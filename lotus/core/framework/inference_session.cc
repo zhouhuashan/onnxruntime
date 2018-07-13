@@ -3,6 +3,7 @@
 #include <mutex>
 #include <sstream>
 #include <unordered_set>
+#include <list>
 
 #include "core/common/logging/logging.h"
 #include "core/framework/allocatormgr.h"
@@ -68,12 +69,13 @@ class InferenceSession::Impl {
       return Status(LOTUS, FAIL, "Received nullptr for custom registry");
     }
 
-    session_state_.GetCustomRegistryManager().RegisterCustomRegistry(custom_registry);
+    session_state_.GetKernelRegistryManager().RegisterKernelRegistry(custom_registry);
+    custom_schema_registries_.push_back(custom_registry);
     return Status::OK();
   }
 
   bool HaslocalSchema() const {
-    return session_state_.GetCustomRegistryManager().HasSchema();
+    return custom_schema_registries_.size() > 0;
   }
 
   Common::Status Load(const std::string& model_uri) {
@@ -87,7 +89,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, p_tmp_model, HaslocalSchema() ? &session_state_.GetCustomRegistryManager() : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -117,7 +119,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &session_state_.GetCustomRegistryManager() : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -153,7 +155,7 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &session_state_.GetCustomRegistryManager() : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -909,7 +911,7 @@ class InferenceSession::Impl {
       provider_preference.push_back(p->Type());
     }
     std::vector<const KernelRegistry*> registries;
-    auto custom_registries = session_state_.GetCustomRegistryManager().GetAllKernelRegistries();
+    auto custom_registries = session_state_.GetKernelRegistryManager().GetAllKernelRegistries();
     //The order of registeries represent the priority, put the custom register with higher priority
     registries.assign(custom_registries.begin(),
                       custom_registries.end());
@@ -927,7 +929,7 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(ep->GetTransformer().Apply(graph, &modified));
     }
 
-    for (auto registry : session_state_.GetCustomRegistryManager().GetAllKernelRegistries()) {
+    for (auto registry : session_state_.GetKernelRegistryManager().GetAllKernelRegistries()) {
       insert_cast_transformer_.AddKernelRegistry(registry);
     }
 
@@ -1162,7 +1164,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
-    Common::Status status = session_state_.GetCustomRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
+    Common::Status status = session_state_.GetKernelRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
 
     if (status.IsOK()) {
       return status;
@@ -1235,6 +1237,8 @@ class InferenceSession::Impl {
 
   std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
   InsertCastTransformer insert_cast_transformer_;
+
+  std::list<std::shared_ptr<LotusIR::ILotusOpSchemaCollection>> custom_schema_registries_;
 };  // namespace Lotus
 
 //

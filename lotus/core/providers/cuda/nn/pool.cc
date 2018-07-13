@@ -6,22 +6,22 @@
 namespace Lotus {
 namespace Cuda {
 
-#define POOLING_KERNEL(op_name, data_type, pool_type)                                 \
+#define POOLING_KERNEL(op_name, data_type, pool_type, since_version)                  \
   REGISTER_KERNEL(KernelDefBuilder(op_name)                                           \
                       .Domain(LotusIR::kOnnxDomain)                                   \
-                      .SinceVersion(1)                                                \
+                      .SinceVersion(since_version)                                    \
                       .Provider(LotusIR::kCudaExecutionProvider)                      \
                       .TypeConstraint("T", DataTypeImpl::GetTensorType<data_type>()), \
                   Pool<data_type, pool_type>);
 
-POOLING_KERNEL("AveragePool", float, AveragePool)
-POOLING_KERNEL("AveragePool", double, AveragePool)
-POOLING_KERNEL("GlobalAveragePool", float, AveragePool)
-POOLING_KERNEL("GlobalAveragePool", double, AveragePool)
-POOLING_KERNEL("MaxPool", float, MaxPool)
-POOLING_KERNEL("MaxPool", double, MaxPool)
-POOLING_KERNEL("GlobalMaxPool", float, MaxPool)
-POOLING_KERNEL("GlobalMaxPool", double, MaxPool)
+POOLING_KERNEL("AveragePool", float, AveragePool, 7)
+POOLING_KERNEL("AveragePool", double, AveragePool, 7)
+POOLING_KERNEL("GlobalAveragePool", float, AveragePool, 1)
+POOLING_KERNEL("GlobalAveragePool", double, AveragePool, 1)
+POOLING_KERNEL("MaxPool", float, MaxPool, 1)
+POOLING_KERNEL("MaxPool", double, MaxPool, 1)
+POOLING_KERNEL("GlobalMaxPool", float, MaxPool, 1)
+POOLING_KERNEL("GlobalMaxPool", double, MaxPool, 1)
 
 class CudnnPoolingDescriptor final {
  public:
