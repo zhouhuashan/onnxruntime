@@ -27,22 +27,23 @@ Status Transpose<T>::Compute(OpKernelContext* ctx) const {
 
   TensorShape output_shape{output_dims};
   Tensor* Y = ctx->Output(0, output_shape);
-  TensorPitches input_pitches(X);
-  FastDivModStrides fdm_output_strides(output_dims);
 
-  IAllocatorUniquePtr<int64_t> input_strides_cuda;
-  IAllocatorUniquePtr<int64_t> perm_cuda;
-  IAllocatorUniquePtr<fast_divmod> fdm_output_strides_cuda;
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(input_strides_cuda, input_pitches));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(perm_cuda, *p_perm));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(fdm_output_strides_cuda, fdm_output_strides.GetStrides()));
+  CudaAsyncBuffer<int64_t> input_strides(provider_, rank);
+  CudaAsyncBuffer<int64_t> perm(provider_, *p_perm);
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides(provider_, rank);
+  LOTUS_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_dims));
+  LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
+
+  LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(perm.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
 
   TransposeImpl(
       rank,
-      input_strides_cuda.get(),
-      perm_cuda.get(),
+      input_strides.GpuPtr(),
+      perm.GpuPtr(),
       reinterpret_cast<const typename ToCudaType<T>::MappedType*>(X.Data<T>()),
-      fdm_output_strides_cuda.get(),
+      fdm_output_strides.GpuPtr(),
       reinterpret_cast<typename ToCudaType<T>::MappedType*>(Y->MutableData<T>()),
       output_shape.Size());
 

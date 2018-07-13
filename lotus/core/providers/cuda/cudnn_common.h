@@ -33,34 +33,5 @@ struct Consts<half> {
   static const float One;
 };
 
-class CudnnReduceDescriptor final {
- public:
-  CudnnReduceDescriptor();
-  ~CudnnReduceDescriptor();
-
-  Status Set(cudnnReduceTensorOp_t op, cudnnDataType_t type, cudnnReduceTensorIndices_t indices);
-
-  operator cudnnReduceTensorDescriptor_t() const { return desc_; }
-
- private:
-  cudnnReduceTensorDescriptor_t desc_;
-};
-
-class CudnnPoolingDescriptor final {
- public:
-  CudnnPoolingDescriptor();
-  ~CudnnPoolingDescriptor();
-
-  Status Set(cudnnPoolingMode_t mode,
-             const std::vector<int64_t>& kernel_shape,
-             const std::vector<int64_t>& pads,
-             const std::vector<int64_t>& stides);
-
-  operator cudnnPoolingDescriptor_t() const { return desc_; }
-
- private:
-  cudnnPoolingDescriptor_t desc_;
-};
-
 }  // namespace Cuda
 }  // namespace Lotus

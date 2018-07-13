@@ -59,16 +59,20 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   }
 
   p->output_rank_or_simple_broadcast = out_rank;
-  TensorPitches lhs_padded_strides(*p->lhs_tensor, p->output_rank_or_simple_broadcast);
-  TensorPitches rhs_padded_strides(*p->rhs_tensor, p->output_rank_or_simple_broadcast);
-  FastDivModStrides fdm_output_strides(output_dims);
 
-  p->lhs_dim0_broadcast = (lhs_rank == 0 || lhs_shape[0] == 1 || lhs_rank < p->output_rank_or_simple_broadcast);
-  p->rhs_dim0_broadcast = (rhs_rank == 0 || rhs_shape[0] == 1 || rhs_rank < p->output_rank_or_simple_broadcast);
+  p->lhs_padded_strides.AllocCpuPtr(out_rank);
+  p->rhs_padded_strides.AllocCpuPtr(out_rank);
+  p->fdm_output_strides.AllocCpuPtr(out_rank);
+  LOTUS_ENFORCE(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), p->lhs_tensor->Shape().GetDims()));
+  LOTUS_ENFORCE(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), p->rhs_tensor->Shape().GetDims()));
+  LOTUS_ENFORCE(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_dims));
 
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(p->lhs_padded_strides_cuda, lhs_padded_strides));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(p->rhs_padded_strides_cuda, rhs_padded_strides));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(p->fdm_output_strides_cuda, fdm_output_strides.GetStrides()));
+  p->lhs_dim0_broadcast = (lhs_rank == 0 || lhs_shape[0] == 1 || lhs_rank < out_rank);
+  p->rhs_dim0_broadcast = (rhs_rank == 0 || rhs_shape[0] == 1 || rhs_rank < out_rank);
+
+  LOTUS_RETURN_IF_ERROR(p->lhs_padded_strides.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(p->rhs_padded_strides.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(p->fdm_output_strides.CopyToGpu());
   return Status::OK();
 }
 
@@ -83,17 +87,17 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
 #define BINARY_ELEMENTWISE_COMPUTE(x, T)                                                                \
   template <>                                                                                           \
   Status x<T>::Compute(OpKernelContext* context) const {                                                \
-    BinaryElementwisePreparation prepare;                                                               \
+    BinaryElementwisePreparation prepare(provider_);                                                    \
     Prepare(context, &prepare);                                                                         \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                       \
         prepare.output_rank_or_simple_broadcast,                                                        \
         prepare.lhs_dim0_broadcast,                                                                     \
-        prepare.lhs_padded_strides_cuda.get(),                                                          \
+        prepare.lhs_padded_strides.GpuPtr(),                                                            \
         reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.lhs_tensor->Data<T>()),     \
         prepare.rhs_dim0_broadcast,                                                                     \
-        prepare.rhs_padded_strides_cuda.get(),                                                          \
+        prepare.rhs_padded_strides.GpuPtr(),                                                            \
         reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.rhs_tensor->Data<T>()),     \
-        prepare.fdm_output_strides_cuda.get(),                                                          \
+        prepare.fdm_output_strides.GpuPtr(),                                                            \
         reinterpret_cast<typename ToCudaType<T>::MappedType*>(prepare.output_tensor->MutableData<T>()), \
         prepare.output_tensor->Shape().Size());                                                         \
                                                                                                         \

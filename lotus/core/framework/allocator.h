@@ -27,7 +27,7 @@ enum AllocatorType {  // TODO use enum class
 enum MemType : int {                // TODO use enum class
   kMemTypeCPUInput = -2,            // Any CPU memory used by non-CPU execution provider
   kMemTypeCPUOutput = -1,           // CPU accessible memory outputted by non-CPU execution provider, i.e. CUDA_PINNED
-  kMemTypeCPU = kMemTypeCPUOutput,  // keep the enum before WinML picks up kMemTypeCPUOutput. Should not be used inside Lotus
+  kMemTypeCPU = kMemTypeCPUOutput,  // temporary CPU accessible memory allocated by non-CPU execution provider, i.e. CUDA_PINNED
   kMemTypeDefault = 0,              // the default allocator for execution provider
 };
 

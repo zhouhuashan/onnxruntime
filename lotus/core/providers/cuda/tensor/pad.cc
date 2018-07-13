@@ -16,46 +16,47 @@ namespace Cuda {
 template <typename T>
 Status Pad<T>::Compute(OpKernelContext *ctx) const {
   const auto &input_tensor = *ctx->Input<Tensor>(0);
-  const auto &input_dims = input_tensor.Shape().GetDims();
-  TensorPitches input_pitches(input_tensor);
-  std::vector<int64_t> output_dims(input_dims);
-  size_t dimension_count = output_dims.size();
+  auto const &input_shape = input_tensor.Shape();
+  auto dimension_count = input_shape.NumDimensions();
+  CudaAsyncBuffer<int64_t> input_dims(provider_, input_shape.GetDims());
+  CudaAsyncBuffer<int64_t> input_strides(provider_, dimension_count);
+  CudaAsyncBuffer<int64_t> lower_pads(provider_, dimension_count);
+  CudaAsyncBuffer<int64_t> upper_pads(provider_, dimension_count);
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides(provider_, dimension_count);
+
+  TensorPitches::Calculate(input_strides.CpuSpan(), input_shape.GetDims());
+  std::vector<int64_t> output_dims(input_shape.GetDims());
 
   LOTUS_ENFORCE(dimension_count * 2 == pads_.size(), "'pads' attribute has wrong number of values");
 
   // Calculate output dimensions, and handle any negative padding
-  std::vector<int64_t> lower_pads(dimension_count);
-  std::vector<int64_t> upper_pads(dimension_count);
+  auto lower_pads_span = lower_pads.CpuSpan();
+  auto upper_pads_span = upper_pads.CpuSpan();
   for (size_t i = 0; i < dimension_count; i++) {
-    lower_pads[i] = pads_[i] + slices_[i];
-    upper_pads[i] = pads_[i + dimension_count] + slices_[i + dimension_count];
-    output_dims[i] += lower_pads[i] + upper_pads[i];
+    lower_pads_span[i] = pads_[i] + slices_[i];
+    upper_pads_span[i] = pads_[i + dimension_count] + slices_[i + dimension_count];
+    output_dims[i] += lower_pads_span[i] + upper_pads_span[i];
   }
   TensorShape output_shape(output_dims);
-  FastDivModStrides fdm_output_strides(output_dims);
   auto &output_tensor = *ctx->Output(0, output_shape);
+  LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
 
-  IAllocatorUniquePtr<int64_t> input_dims_cuda;
-  IAllocatorUniquePtr<int64_t> input_strides_cuda;
-  IAllocatorUniquePtr<int64_t> lower_pads_cuda;
-  IAllocatorUniquePtr<int64_t> upper_pads_cuda;
-  IAllocatorUniquePtr<fast_divmod> fdm_output_strides_cuda;
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(input_dims_cuda, input_dims));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(input_strides_cuda, input_pitches));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(lower_pads_cuda, lower_pads));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(upper_pads_cuda, upper_pads));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(fdm_output_strides_cuda, fdm_output_strides.GetStrides()));
+  LOTUS_RETURN_IF_ERROR(input_dims.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(lower_pads.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(upper_pads.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
 
   PadImpl(
       dimension_count,
-      input_dims_cuda.get(),
-      input_strides_cuda.get(),
-      lower_pads_cuda.get(),
-      upper_pads_cuda.get(),
+      input_dims.GpuPtr(),
+      input_strides.GpuPtr(),
+      lower_pads.GpuPtr(),
+      upper_pads.GpuPtr(),
       value_,
       static_cast<int>(mode_),
       reinterpret_cast<const typename ToCudaType<T>::MappedType *>(input_tensor.Data<T>()),
-      fdm_output_strides_cuda.get(),
+      fdm_output_strides.GpuPtr(),
       reinterpret_cast<typename ToCudaType<T>::MappedType *>(output_tensor.MutableData<T>()),
       output_tensor.Shape().Size());
 

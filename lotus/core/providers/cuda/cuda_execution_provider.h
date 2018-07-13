@@ -45,7 +45,11 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return LotusIR::kCudaExecutionProvider;
   }
 
-  Common::Status Sync() override;
+  Status Sync() override;
+
+  Status OnRunStart() override;
+
+  Status OnRunEnd() override;
 
   Status CopyTensor(const Tensor& src, Tensor& dst) const override;
 
@@ -74,6 +78,14 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return constant_ones_->GetBuffer(count);
   }
 
+  void AddDeferredReleaseCPUPtr(void* p) {
+    // when not running in InferenceSession (e.g. Test)
+    // it's OK to not remember the deferred release ptr
+    // as the actual memory will be cleaned in arena allocator dtor
+    if (current_deferred_release_event)
+      deferred_release_cpu_ptr[current_deferred_release_event].push_back(p);
+  }
+
  private:
   CUDATransformer transformer_;
   int device_id_;
@@ -81,6 +93,11 @@ class CUDAExecutionProvider : public IExecutionProvider {
   cudnnHandle_t cudnn_handle_ = nullptr;
   cudaStream_t streams_[kTotalCudaStreams];
   std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
+
+  // deferred release for temporary CPU pinned memory used in cudaMemcpyAsync
+  // note that cudaEvent will be assigned at OnRunEnd()
+  cudaEvent_t current_deferred_release_event = nullptr;
+  std::unordered_map<cudaEvent_t, std::vector<void*>> deferred_release_cpu_ptr;
 };
 
 }  // namespace Lotus

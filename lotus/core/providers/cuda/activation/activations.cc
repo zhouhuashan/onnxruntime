@@ -20,13 +20,13 @@ namespace Cuda {
   Status x<T>::Compute(OpKernelContext* context) const {                                          \
     UnaryElementwisePreparation p;                                                                \
     UnaryElementwise::Prepare(context, &p);                                                       \
-    auto func_ctx = MakeFuncCtx();                                                                \
-    IAllocatorUniquePtr<Ctx##x> func_ctx_cuda;                                                    \
-    LOTUS_RETURN_IF_ERROR(CopySmallObjectToGPU(func_ctx_cuda, func_ctx));                         \
+    CudaAsyncBuffer<Ctx##x> func_ctx(provider_, MakeFuncCtx());                                   \
+    if (!std::is_same<CtxNull, Ctx##x>::value)                                                    \
+      LOTUS_RETURN_IF_ERROR(func_ctx.CopyToGpu());                                                \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                 \
         reinterpret_cast<const typename ToCudaType<T>::MappedType*>(p.input_tensor->Data<T>()),   \
         reinterpret_cast<typename ToCudaType<T>::MappedType*>(p.output_tensor->MutableData<T>()), \
-        func_ctx_cuda.get(),                                                                      \
+        func_ctx.GpuPtr(),                                                                        \
         p.output_tensor->Shape().Size());                                                         \
                                                                                                   \
     return Status::OK();                                                                          \

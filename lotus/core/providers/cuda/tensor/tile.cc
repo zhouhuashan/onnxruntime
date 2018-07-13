@@ -36,25 +36,28 @@ Status Tile<T>::Compute(OpKernelContext *ctx) const {
 
   T *output_data = output_tensor.MutableData<T>();
   const T *input_data = input_tensor.Data<T>();
-  TensorPitches input_pitches(input_tensor);
-  FastDivModStrides fdm_output_strides(output_dims);
 
-  std::vector<fast_divmod> fdm_input_shape;
-  for (auto input_dim : input_shape)
-    fdm_input_shape.emplace_back(fast_divmod(gsl::narrow_cast<int>(input_dim)));
+  CudaAsyncBuffer<int64_t> input_strides(provider_, rank);
+  CudaAsyncBuffer<fast_divmod> fdm_input_shape(provider_, rank);
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides(provider_, rank);
 
-  IAllocatorUniquePtr<int64_t> input_stride_cuda;
-  IAllocatorUniquePtr<fast_divmod> fdm_input_shape_cuda, fdm_output_strides_cuda;
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(fdm_input_shape_cuda, fdm_input_shape));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(input_stride_cuda, input_pitches));
-  LOTUS_RETURN_IF_ERROR(CopySmallVectorToGPU(fdm_output_strides_cuda, fdm_output_strides.GetStrides()));
+  LOTUS_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_shape));
+  LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
+
+  auto fdm_input_shape_span = fdm_input_shape.CpuSpan();
+  for (size_t i = 0; i < input_shape.size(); ++i)
+    fdm_input_shape_span[i] = fast_divmod(gsl::narrow_cast<int>(input_shape[i]));
+
+  LOTUS_RETURN_IF_ERROR(fdm_input_shape.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
+  LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
 
   TileImpl(
       rank,
-      fdm_input_shape_cuda.get(),
-      input_stride_cuda.get(),
+      fdm_input_shape.GpuPtr(),
+      input_strides.GpuPtr(),
       reinterpret_cast<const typename ToCudaType<T>::MappedType *>(input_data),
-      fdm_output_strides_cuda.get(),
+      fdm_output_strides.GpuPtr(),
       reinterpret_cast<typename ToCudaType<T>::MappedType *>(output_data),
       output_tensor.Shape().Size());
 

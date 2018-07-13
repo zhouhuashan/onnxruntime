@@ -14,6 +14,38 @@ namespace Cuda {
                       .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
                   name<T>);
 
+class CudnnReduceDescriptor final {
+ public:
+  CudnnReduceDescriptor() : desc_(nullptr) {
+  }
+
+  ~CudnnReduceDescriptor() {
+    if (desc_ != nullptr) {
+      cudnnDestroyReduceTensorDescriptor(desc_);
+      desc_ = nullptr;
+    }
+  }
+
+  Status Set(cudnnReduceTensorOp_t op, cudnnDataType_t type, cudnnReduceTensorIndices_t indices) {
+    if (!desc_)
+      CUDNN_RETURN_IF_ERROR(cudnnCreateReduceTensorDescriptor(&desc_));
+
+    CUDNN_RETURN_IF_ERROR(cudnnSetReduceTensorDescriptor(
+        desc_,
+        op,
+        type,
+        CUDNN_PROPAGATE_NAN,
+        indices,
+        CUDNN_32BIT_INDICES));  // currently only the 32-bit (unsigned int) type is supported.
+    return Status::OK();
+  }
+
+  operator cudnnReduceTensorDescriptor_t() const { return desc_; }
+
+ private:
+  cudnnReduceTensorDescriptor_t desc_;
+};
+
 template <typename T, cudnnReduceTensorIndices_t ReduceTensorIndices>
 Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cudnnReduceOp) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
@@ -62,12 +94,12 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
   size_t indices_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
   IAllocatorUniquePtr<void> indices_cuda;
-  AllocateBufferOnGPU(indices_cuda, indices_bytes, false);
+  AllocateBufferOnGPU(indices_cuda, indices_bytes);
 
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
   IAllocatorUniquePtr<void> workspace_cuda;
-  AllocateBufferOnGPU(workspace_cuda, workspace_bytes, false);
+  AllocateBufferOnGPU(workspace_cuda, workspace_bytes);
 
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_NO_INDICES) {
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
@@ -78,7 +110,7 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
     // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
     IAllocatorUniquePtr<CudaT> temp_output;
     auto output_count = Y->Shape().Size();
-    AllocateBufferOnGPU(temp_output, output_count, false);
+    AllocateBufferOnGPU(temp_output, output_count);
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
         CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
         &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),

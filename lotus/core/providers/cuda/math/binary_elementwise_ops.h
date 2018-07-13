@@ -13,9 +13,13 @@ struct BinaryElementwisePreparation {
   size_t output_rank_or_simple_broadcast = 0;  // for no_broadcast|left_scalar|right_scalar cases, output_rank uses SimpleBroadcast enums
   bool lhs_dim0_broadcast = false;
   bool rhs_dim0_broadcast = false;
-  IAllocatorUniquePtr<int64_t> lhs_padded_strides_cuda;
-  IAllocatorUniquePtr<int64_t> rhs_padded_strides_cuda;
-  IAllocatorUniquePtr<fast_divmod> fdm_output_strides_cuda;
+  CudaAsyncBuffer<int64_t> lhs_padded_strides;
+  CudaAsyncBuffer<int64_t> rhs_padded_strides;
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides;
+
+  BinaryElementwisePreparation(CUDAExecutionProvider* provider) : lhs_padded_strides(provider),
+                                                                  rhs_padded_strides(provider),
+                                                                  fdm_output_strides(provider) {}
 };
 
 // trait classes to indicate if the kernel supports broadcast

@@ -50,8 +50,28 @@ def GenSharedWeights():
     data_x = np.random.rand(*x.shape).astype(np.float32)
     data_y = y.eval(data_x)
     Save('test_shared_weights', y, data_x, data_y)
+    
+def GenSimpleMNIST():
+    input_dim = 784
+    num_output_classes = 10
+    num_hidden_layers = 1
+    hidden_layers_dim = 200
+
+    feature = C.input_variable(input_dim, np.float32)
+
+    scaled_input = C.element_times(C.constant(0.00390625, shape=(input_dim,)), feature)
+
+    z = C.layers.Sequential([C.layers.For(range(num_hidden_layers), lambda i: C.layers.Dense(hidden_layers_dim, activation=C.relu)),
+                    C.layers.Dense(num_output_classes)])(scaled_input)
+
+    model = C.softmax(z)
+
+    data_feature = np.random.rand(*feature.shape).astype(np.float32)
+    data_output = model.eval(data_feature)
+    Save('test_simpleMNIST', model, data_feature, data_output)
 
 if __name__=='__main__':
     np.random.seed(0)
     GenSimple()
     GenSharedWeights()
+    GenSimpleMNIST()

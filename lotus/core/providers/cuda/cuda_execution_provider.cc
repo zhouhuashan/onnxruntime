@@ -63,9 +63,36 @@ CUDAExecutionProvider::~CUDAExecutionProvider() {
   CUDNN_CALL_THROW(cudnnDestroy(cudnn_handle_));
 }
 
-Common::Status CUDAExecutionProvider::Sync() {
-  bool status = CUDA_CALL(cudaDeviceSynchronize());
-  return status ? Status::OK() : Status(LOTUS, FAIL, "Sync failed.");
+Status CUDAExecutionProvider::Sync() {
+  CUDA_RETURN_IF_ERROR(cudaDeviceSynchronize());
+  return Status::OK();
+}
+
+Status CUDAExecutionProvider::OnRunStart() {
+  // check if cudaEvents has passed for deferred release
+  auto cpu_alloc = GetAllocator(kMemTypeCPU);
+  auto it = deferred_release_cpu_ptr.begin();
+  while (it != deferred_release_cpu_ptr.end()) {
+    auto& e = it->first;
+    auto& v = it->second;
+    if (CUDA_CALL(cudaEventQuery(e))) {
+      for (auto p : v) {
+        cpu_alloc->Free(p);
+      }
+      it = deferred_release_cpu_ptr.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event));
+  deferred_release_cpu_ptr.emplace(std::make_pair(current_deferred_release_event, std::vector<void*>()));
+  return Status::OK();
+}
+
+Status CUDAExecutionProvider::OnRunEnd() {
+  // record deferred release event on default stream
+  CUDA_RETURN_IF_ERROR(cudaEventRecord(current_deferred_release_event, nullptr));
+  return Status::OK();
 }
 
 Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
@@ -82,25 +109,24 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   const void* src_data = src.DataRaw();
   void* dst_data = dst.MutableDataRaw();
 
-  bool succeeded = true;
   if (dst.Location().name != CUDA) {
     // copying from CUDA device
     if (dst.Location().name == CUDA_PINNED) {
-      succeeded = CUDA_CALL(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyDeviceToHost, streams_[kCudaStreamCopyOut]));
+      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyDeviceToHost, streams_[kCudaStreamCopyOut]));
     } else
-      succeeded = CUDA_CALL(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToHost));
+      CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToHost));
   } else if (src.Location().name != CUDA) {
     // copying to CUDA device, the default stream would sync on this fence when using dst as input tensor in kernel
     if (src.Location().name == CUDA_PINNED) {
-      succeeded = CUDA_CALL(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyHostToDevice, streams_[kCudaStreamCopyIn]));
+      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyHostToDevice, streams_[kCudaStreamCopyIn]));
     } else
-      succeeded = CUDA_CALL(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyHostToDevice));
+      CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyHostToDevice));
   } else {
     // copying between device, use default stream for now
-    succeeded = CUDA_CALL(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToDevice));
+    CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToDevice));
   }
 
-  return succeeded ? Status::OK() : Status(LOTUS, FAIL);
+  return Status::OK();
 }
 
 }  // namespace Lotus

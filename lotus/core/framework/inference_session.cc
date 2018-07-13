@@ -638,26 +638,26 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  Common::Status Run(const RunOptions& run_options0,
-                     const NameMLValMap& feeds,
-                     const std::vector<std::string>& output_names,
-                     std::vector<MLValue>* p_fetches) {
+  Status Run(const RunOptions& run_options0,
+             const NameMLValMap& feeds,
+             const std::vector<std::string>& output_names,
+             std::vector<MLValue>* p_fetches) {
     auto tp = session_profiler_.StartTime();
-    Common::Status retval;
+    Status retval = Common::Status::OK();
     const RunOptions run_options(run_options0);
     try {
       {
         std::lock_guard<std::mutex> l(session_mutex_);
         if (!is_inited_) {
           LOGS(*session_logger_, ERROR) << "Session was not initialized";
-          return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
+          retval = Status(LOTUS, FAIL, "Session not initialized.");
         }
       }
 
-      LOTUS_RETURN_IF_ERROR(ValidateInputs(feeds));
+      LOTUS_CHECK_AND_SET_RETVAL(ValidateInputs(feeds));
 
       // if the output vector is non-empty, ensure that its the same size as the output_names
-      LOTUS_RETURN_IF_ERROR(ValidateOutputs(output_names, p_fetches));
+      LOTUS_CHECK_AND_SET_RETVAL(ValidateOutputs(output_names, p_fetches));
 
       if (!run_options.run_tag.empty()) {
         LOGS(*session_logger_, INFO) << "Running with tag: " << run_options.run_tag;
@@ -671,35 +671,45 @@ class InferenceSession::Impl {
       unique_ptr<Logging::Logger> owned_run_logger;
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
+      // info all execution providers InferenceSession:Run started
+      // TODO: only call OnRunStart for all providers in-use
+      for (auto& xp : session_state_.GetExecutionProviders())
+        LOTUS_CHECK_AND_SET_RETVAL(xp->OnRunStart());
+
       NameMLValMap copied_feeds;
-      LOTUS_RETURN_IF_ERROR(CopyInputsAcrossDevices(session_state_, feeds, copied_feeds));
+      LOTUS_CHECK_AND_SET_RETVAL(CopyInputsAcrossDevices(session_state_, feeds, copied_feeds));
 
       std::vector<MLValue> new_fetches;
-      LOTUS_RETURN_IF_ERROR(MatchOutputsWithProviders(output_names, *p_fetches, new_fetches));
+      LOTUS_CHECK_AND_SET_RETVAL(MatchOutputsWithProviders(output_names, *p_fetches, new_fetches));
 
       std::unique_ptr<Executor> p_exec;
-      if (session_options_.enable_sequential_execution) {
-        p_exec = Executor::NewSequentialExecutor(session_state_, copied_feeds, output_names, new_fetches, run_logger);
-      } else {
-        LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
+      if (retval.IsOK()) {
+        if (session_options_.enable_sequential_execution) {
+          p_exec = Executor::NewSequentialExecutor(session_state_, copied_feeds, output_names, new_fetches, run_logger);
+        } else {
+          LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
+        }
       }
 
-      retval = p_exec->Execute(run_options, copied_feeds, output_names, &new_fetches);
-      if (retval.IsOK()) {
-        retval = CopyOutputsAcrossDevices(new_fetches, *p_fetches);
-      }
+      LOTUS_CHECK_AND_SET_RETVAL(p_exec->Execute(run_options, copied_feeds, output_names, &new_fetches));
+      LOTUS_CHECK_AND_SET_RETVAL(CopyOutputsAcrossDevices(new_fetches, *p_fetches));
     } catch (const std::exception& e) {
-      retval = Common::Status(Common::LOTUS, Common::FAIL, e.what());
+      retval = Status(LOTUS, FAIL, e.what());
     } catch (...) {
       retval = Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Run()");
     }
+
+    // info all execution providers InferenceSession:Run ended
+    for (auto& xp : session_state_.GetExecutionProviders())
+      LOTUS_CHECK_AND_SET_RETVAL(xp->OnRunEnd());
 
     --current_num_runs_;
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_run", tp);
     return retval;
   }
 
-  std::pair<Common::Status, const ModelMetadata*> GetModelMetadata() const {
+  std::pair<Common::Status, const ModelMetadata*>
+  GetModelMetadata() const {
     {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_model_loaded_) {

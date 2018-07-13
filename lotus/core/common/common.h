@@ -118,6 +118,14 @@ std::vector<std::string> GetStackTrace();
     if ((!_status.IsOK())) return _status; \
   } while (0)
 
+// use this macro when cannot early return
+#define LOTUS_CHECK_AND_SET_RETVAL(expr) \
+  do {                                   \
+    if (retval.IsOK()) {                 \
+      retval = (expr);                   \
+    }                                    \
+  } while (0)
+
 // C++ Core Guideline check suppression
 #ifdef _MSC_VER
 #define GSL_SUPPRESS(tag) [[gsl::suppress(tag)]]

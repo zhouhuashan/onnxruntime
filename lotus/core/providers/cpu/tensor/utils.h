@@ -5,33 +5,38 @@ namespace Lotus {
 struct TensorPitches : std::vector<int64_t> {
   TensorPitches(const Tensor &tensor, size_t rank = 0) : TensorPitches(tensor.Shape(), rank) {}
   TensorPitches(const TensorShape &shape, size_t rank = 0) : TensorPitches(shape.GetDims(), rank) {}
-
   TensorPitches(const std::vector<int64_t> &dims, size_t rank = 0)
       : std::vector<int64_t>(std::max(rank, dims.size()), 0) {
+    Calculate(gsl::span<int64_t>(data(), size()), dims);
+  }
+
+  static bool Calculate(gsl::span<int64_t> p, const std::vector<int64_t> &dims) {
     // The pitches is the size of the next inner axis. Aka the amount to move by one of the next inner axis.
     // For a tensor with shape(2,3,4,5) the values would be: (3*4*5, 4*5, 5, 1)
     // Note that the outermost '2' is never used, as you never need to move by the entire size of the outermost axis
 
     auto tensor_rank = dims.size();
-    auto pitch_rank = size();
+    auto pitch_rank = p.size();
     auto padded_rank = pitch_rank - tensor_rank;
-    if (size() == 0) return;
+    if (gsl::narrow_cast<ptrdiff_t>(padded_rank) < 0)
+      return false;
 
-    back() = 1;  // The innermost axis is 1 (single values)
+    *(p.rbegin()) = 1;  // The innermost axis is 1 (single values)
     if (tensor_rank > 1) {
       for (size_t i = tensor_rank - 1; i-- > 0;) {
-        operator[](i + padded_rank) = operator[](i + 1 + padded_rank) * dims[i + 1];
+        p.operator[](i + padded_rank) = p.operator[](i + 1 + padded_rank) * dims[i + 1];
       }
     }
 
     if (padded_rank > 1) {
       for (size_t i = 0; i < padded_rank; ++i) {
         if (i == 0)
-          operator[](padded_rank - 1) = operator[](padded_rank) * dims[0];
+          p.operator[](padded_rank - 1) = p.operator[](padded_rank) * dims[0];
         else
-          operator[](padded_rank - 1 - i) = operator[](padded_rank - 1);
+          p.operator[](padded_rank - 1 - i) = p.operator[](padded_rank - 1);
       }
     }
+    return true;
   }
 };
 

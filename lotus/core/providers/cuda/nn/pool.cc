@@ -6,13 +6,13 @@
 namespace Lotus {
 namespace Cuda {
 
-#define POOLING_KERNEL(op_name, data_type, pool_type)                              \
-  REGISTER_KERNEL(KernelDefBuilder(op_name)                                        \
-                    .Domain(LotusIR::kOnnxDomain)                                  \
-                    .SinceVersion(1)                                               \
-                    .Provider(LotusIR::kCudaExecutionProvider)                     \
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<data_type>()),\
-                Pool<data_type, pool_type>);
+#define POOLING_KERNEL(op_name, data_type, pool_type)                                 \
+  REGISTER_KERNEL(KernelDefBuilder(op_name)                                           \
+                      .Domain(LotusIR::kOnnxDomain)                                   \
+                      .SinceVersion(1)                                                \
+                      .Provider(LotusIR::kCudaExecutionProvider)                      \
+                      .TypeConstraint("T", DataTypeImpl::GetTensorType<data_type>()), \
+                  Pool<data_type, pool_type>);
 
 POOLING_KERNEL("AveragePool", float, AveragePool)
 POOLING_KERNEL("AveragePool", double, AveragePool)
@@ -22,6 +22,56 @@ POOLING_KERNEL("MaxPool", float, MaxPool)
 POOLING_KERNEL("MaxPool", double, MaxPool)
 POOLING_KERNEL("GlobalMaxPool", float, MaxPool)
 POOLING_KERNEL("GlobalMaxPool", double, MaxPool)
+
+class CudnnPoolingDescriptor final {
+ public:
+  CudnnPoolingDescriptor() : desc_(nullptr) {
+  }
+
+  ~CudnnPoolingDescriptor() {
+    if (desc_ != nullptr) {
+      cudnnDestroyPoolingDescriptor(desc_);
+      desc_ = nullptr;
+    }
+  }
+
+  Status Set(cudnnPoolingMode_t mode,
+             const std::vector<int64_t>& kernel_shape,
+             const std::vector<int64_t>& pads,
+             const std::vector<int64_t>& strides) {
+    if (!desc_)
+      CUDNN_RETURN_IF_ERROR(cudnnCreatePoolingDescriptor(&desc_));
+
+    int rank = gsl::narrow_cast<int>(kernel_shape.size());
+    std::vector<int> window(rank);
+    std::vector<int> padding(rank);
+    std::vector<int> stride(rank);
+    for (int i = 0; i < rank; i++) {
+      window[i] = gsl::narrow_cast<int>(kernel_shape[i]);
+    }
+    for (int i = 0; i < rank; i++) {
+      padding[i] = gsl::narrow_cast<int>(pads[i]);
+    }
+    for (int i = 0; i < rank; i++) {
+      stride[i] = gsl::narrow_cast<int>(strides[i]);
+    }
+    CUDNN_RETURN_IF_ERROR(cudnnSetPoolingNdDescriptor(
+        desc_,
+        mode,
+        CUDNN_PROPAGATE_NAN,
+        rank,
+        window.data(),
+        padding.data(),
+        stride.data()));
+
+    return Status::OK();
+  }
+
+  operator cudnnPoolingDescriptor_t() const { return desc_; }
+
+ private:
+  cudnnPoolingDescriptor_t desc_;
+};
 
 template <typename T, PoolType type>
 Status Pool<T, type>::Compute(OpKernelContext* context) const {
@@ -59,8 +109,7 @@ Status Pool<T, type>::Compute(OpKernelContext* context) const {
 
   cudnnPoolingMode_t mode = CUDNN_POOLING_MAX;
   if (type == Lotus::Cuda::PoolType::AveragePool) {
-    mode = count_include_pad_ ? CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING :
-                                CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
+    mode = count_include_pad_ ? CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING : CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
   }
   CudnnPoolingDescriptor pooling_desc;
   LOTUS_RETURN_IF_ERROR(pooling_desc.Set(mode, kernel_shape, pads, strides));

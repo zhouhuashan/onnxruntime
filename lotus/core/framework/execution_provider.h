@@ -59,6 +59,20 @@ class IExecutionProvider {
     return Status::OK();
   };
 
+  // Called when InferenceSession::Run started
+  // NOTE that due to async execution in provider, the actual work of previous Run may not be finished on device
+  // This function should be regarded as the point after which a new Run would start to submit commands from CPU
+  virtual Common::Status OnRunStart() {
+    return Status::OK();
+  }
+
+  // Called when InferenceSession::Run ended
+  // NOTE that due to async execution in provider, the actual work of this Run may not be finished on device
+  // This function should be regarded as the point that all commands of current Run has been submmited by CPU
+  virtual Common::Status OnRunEnd() {
+    return Status::OK();
+  }
+
  protected:
   AllocatorMap allocators_;
 };

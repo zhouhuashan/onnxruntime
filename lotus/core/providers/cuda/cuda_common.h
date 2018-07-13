@@ -5,6 +5,7 @@
 #include "core/graph/graph.h"
 #include "shared_inc/cuda_call.h"
 #include "cuda_execution_provider.h"
+#include "shared_inc/fast_divmod.h"
 
 namespace Lotus {
 namespace Cuda {
@@ -15,6 +16,64 @@ namespace Cuda {
 #define CURAND_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CURAND_CALL(expr) ? Status::OK() : Status(LOTUS, FAIL))
 #define CUDNN_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDNN_CALL(expr) ? Status::OK() : Status(LOTUS, FAIL))
 #define CUDNN2_RETURN_IF_ERROR(expr, m) LOTUS_RETURN_IF_ERROR(CUDNN_CALL2(expr, m) ? Status::OK() : Status(LOTUS, FAIL))
+
+// To support cudaMemcpyAsync, the cpu memory should be allocated in pinned memory
+// and it can only be released after the copy has finished
+template <typename T>
+class CudaAsyncBuffer {
+ public:
+  CudaAsyncBuffer(CUDAExecutionProvider* provider) : provider_(provider), count_(0) {}
+
+  CudaAsyncBuffer(CUDAExecutionProvider* provider, size_t count) : CudaAsyncBuffer(provider) {
+    AllocCpuPtr(count);
+  }
+
+  CudaAsyncBuffer(CUDAExecutionProvider* provider, const T& value) : CudaAsyncBuffer(provider, 1) {
+    *CpuPtr() = value;
+  }
+
+  CudaAsyncBuffer(CUDAExecutionProvider* provider, const std::vector<T>& vec) : CudaAsyncBuffer(provider, vec.size()) {
+    memcpy(CpuPtr(), vec.data(), vec.size() * sizeof(T));
+  }
+
+  void AllocCpuPtr(size_t count) {
+    cpu_pinned_copy_ = IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(kMemTypeCPU), count * sizeof(T));
+    count_ = count;
+  }
+
+  Status CopyToGpu() {
+    // note that release gpu_copy_ after launch is OK because it's just going back to arena allocator
+    // so the actual GPU operation would have a valid pointer to copy to
+    // but CPU memory release needs to be deferred, otherwise if it's reused later from the arena allocator
+    // before the copy starts on GPU, the copy would have corrupted data
+    gpu_copy_ = IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(), count_ * sizeof(T));
+    CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(gpu_copy_.get(), cpu_pinned_copy_.get(), count_ * sizeof(T), cudaMemcpyHostToDevice));
+    provider_->AddDeferredReleaseCPUPtr(cpu_pinned_copy_.release());
+    return Status::OK();
+  }
+
+  T* CpuPtr() const {
+    return cpu_pinned_copy_.get();
+  }
+
+  gsl::span<T> CpuSpan() const {
+    return gsl::span<T>(CpuPtr(), count_);
+  }
+
+  T* GpuPtr() const {
+    return gpu_copy_.get();
+  }
+
+  size_t count() const {
+    return count_;
+  }
+
+ protected:
+  IAllocatorUniquePtr<T> gpu_copy_;
+  IAllocatorUniquePtr<T> cpu_pinned_copy_;
+  size_t count_;
+  CUDAExecutionProvider* provider_;
+};
 
 // -----------------------------------------------------------------------
 // Base class for CUDA kernels
@@ -37,7 +96,7 @@ class CudaKernel : public OpKernel {
   }
 
   template <typename T>
-  inline void AllocateBufferOnGPU(IAllocatorUniquePtr<T>& gpu_copy, size_t count_or_bytes, bool warn_big_buffer) const {
+  inline void AllocateBufferOnGPU(IAllocatorUniquePtr<T>& gpu_copy, size_t count_or_bytes) const {
     auto alloc = provider_->GetAllocator();
     if (count_or_bytes == 0) {
       gpu_copy.release();
@@ -48,26 +107,7 @@ class CudaKernel : public OpKernel {
     if (!std::is_void<T>::value)
       bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
 
-    // CUDA inlines cudaMemcpyHostToDevice for size < 64KB, so cudaMemcpy is not blocking GPU
-    // Bigger size would synchronize GPU and cpu execution
-    if (warn_big_buffer && bytes >= 64 * 1024)
-      LOGS_DEFAULT(WARNING) << "CopyToGPU exceeded cudaMemcpyHostToDevice limit and may synchronize CPU/GPU execution";
-
     gpu_copy = IAllocator::MakeUniquePtr<T>(alloc, bytes);
-  }
-
-  template <typename T>
-  inline Status CopySmallObjectToGPU(IAllocatorUniquePtr<T>& gpu_copy, const T& cpu_copy) const {
-    AllocateBufferOnGPU(gpu_copy, sizeof(T), true);
-    CUDA_RETURN_IF_ERROR(cudaMemcpy(gpu_copy.get(), &cpu_copy, sizeof(T), cudaMemcpyHostToDevice));
-    return Status::OK();
-  }
-
-  template <typename T>
-  inline Status CopySmallVectorToGPU(IAllocatorUniquePtr<T>& gpu_vector, const std::vector<T>& cpu_vector) const {
-    AllocateBufferOnGPU(gpu_vector, cpu_vector.size(), true);
-    CUDA_RETURN_IF_ERROR(cudaMemcpy(gpu_vector.get(), cpu_vector.data(), cpu_vector.size() * sizeof(T), cudaMemcpyHostToDevice));
-    return Status::OK();
   }
 
   CUDAExecutionProvider* provider_;
@@ -85,6 +125,20 @@ class ToCudaType<MLFloat16> {
  public:
   typedef half MappedType;
 };
+
+inline bool CalculateFdmStrides(gsl::span<fast_divmod> p, const std::vector<int64_t>& dims) {
+  int stride = 1;
+  if (p.size() < gsl::narrow_cast<ptrdiff_t>(dims.size()))
+    return false;
+  auto rank = p.size();
+  for (int i = 0; i < rank; i++) {
+    p[rank - 1 - i] = fast_divmod(stride);
+    if (i < dims.size() - 1) {
+      stride *= static_cast<int>(dims[dims.size() - 1 - i]);
+    }
+  }
+  return true;
+}
 
 }  // namespace Cuda
 }  // namespace Lotus
