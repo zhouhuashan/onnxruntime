@@ -54,6 +54,10 @@
 #include <mlas.h>
 #endif
 
+#ifdef USE_MKLDNN
+#include "mkldnn.h"
+#endif
+
 namespace Lotus {
 namespace Math {
 
@@ -102,6 +106,19 @@ void Gemm<float, CPUMathUtil>(
   int lda = (int)((TransA == CblasNoTrans) ? K : M);
   int ldb = (int)((TransB == CblasNoTrans) ? N : K);
   MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, N);
+#elif defined(USE_MKLDNN)
+  int lda = (int)((TransA == CblasTrans) ? M : K);
+  int ldb = (int)((TransB == CblasTrans) ? K : N);
+  int M_ = (int)M;
+  int N_ = (int)N;
+  int K_ = (int)K;
+  // mkldnn_sgemm expects col major matrices, so we need to swap the operands A and B
+  mkldnn_sgemm(TransB == CblasNoTrans ? "N" : "T",
+               TransA == CblasNoTrans ? "N" : "T",
+               &N_, &M_, &K_,
+               &alpha, B, &ldb,
+               A, &lda,
+               &beta, C, &N_);
 #else
   auto C_mat = EigenMatrixMap<float>(C, N, M);
   if (beta == 0) {

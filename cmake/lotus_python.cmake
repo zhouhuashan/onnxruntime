@@ -46,6 +46,7 @@ if (MSVC)
   target_link_libraries(lotus_pybind11_state ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
 else()
   target_link_libraries(lotus_pybind11_state ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
+  set_target_properties(lotus_pybind11_state PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
 endif()
 
 set_target_properties(lotus_pybind11_state PROPERTIES PREFIX "")
@@ -94,4 +95,14 @@ add_custom_command(
       $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/tools/
   COMMAND ${CMAKE_COMMAND} -E copy
       $<TARGET_FILE:lotus_pybind11_state>
-      $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/ )
+      $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/
+)
+
+if (lotus_USE_MKLDNN)
+  add_custom_command(
+    TARGET lotus_pybind11_state POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${MKLDNN_LIB_DIR}/${MKLDNN_SHARED_LIB}
+        $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/
+  )
+endif()

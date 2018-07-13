@@ -298,6 +298,14 @@ if (lotus_USE_OPENBLAS)
   endif()
 endif()
 
+if (lotus_USE_MKLDNN)
+  list(APPEND onnx_test_libs mkldnn)
+  add_custom_command(
+    TARGET ${test_data_target} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${MKLDNN_LIB_DIR}/${MKLDNN_SHARED_LIB} $<TARGET_FILE_DIR:${test_data_target}>
+  )
+endif()
+
 add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
 target_link_libraries(onnx_test_runner PRIVATE onnx_test_runner_common ${GETOPT_LIB} ${onnx_test_libs})
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")

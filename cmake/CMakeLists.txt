@@ -27,6 +27,7 @@ option(lotus_ENABLE_PYTHON "Enable python buildings" OFF)
 option(lotus_USE_CUDA "Build with CUDA support" OFF)
 option(lotus_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
 option(lotus_USE_MLAS "Use optimized blas library for GEMM and 2D Convolution" OFF)
+option(lotus_USE_MKLDNN "Build with MKL-DNN support" OFF)
 option(lotus_USE_OPENBLAS "Use openblas" OFF)
 option(lotus_USE_PREBUILT_PB "Use prebuilt protobuf library" OFF)
 option(lotus_USE_JEMALLOC "Use jecmalloc" OFF)
@@ -257,6 +258,13 @@ include_directories(
     ${eigen_INCLUDE_DIRS}
     ${gsl_INCLUDE_DIR}
 )
+
+if (lotus_USE_MKLDNN)
+  add_definitions(-DUSE_MKLDNN=1)
+  include(mkldnn)
+  list(APPEND lotus_EXTERNAL_LIBRARIES mkldnn)
+  list(APPEND lotus_EXTERNAL_DEPENDENCIES mkldnn)
+endif()
 
 if (lotus_USE_OPENBLAS)
   add_definitions(-DUSE_OPENBLAS=1)
