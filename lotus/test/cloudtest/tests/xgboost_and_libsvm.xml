@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestJobGroup>
+  <ExecutionMode Type="SharedSetup">
+    <Properties>
+      <Property Name="MaxParallelismForJobs" Value="1"/>
+    </Properties>
+  </ExecutionMode>
+  <ResourceSpec>
+    <Resource Image="2016-Datacenter" SKU="Standard_A2_v2"/>
+  </ResourceSpec>
+  <Setup TimeoutMins="1">
+    <BuildFiles>
+      <Copy Dest="[WorkingDirectory]\" IsRecursive="true" Src="[BuildRoot]\bin\*"/>
+    </BuildFiles>
+    <DataFiles>
+      <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\Microsoft.VC141.DebugCRT\*"/>
+      <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\ucrtbased.dll"/>
+      <Copy Dest="[WorkingDirectory]\" IsRecursive="true" Src="[MyVCRT]\vcredist_x64.exe"/>
+      <Copy Dest="[WorkingDirectory]\models" IsRecursive="true" Src="[MyVSODrop]\xgboost_and_libsvm\*"/>
+    </DataFiles>
+    <Scripts>
+      <Script Path="[WorkingDirectory]\setup.bat"/>
+    </Scripts>
+  </Setup>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_OpenML_1464_blood_transfusion.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_OpenML_1464_blood_transfusion.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_OpenML_312_scene.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_OpenML_312_scene.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_sklearn_load_wine.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVC_sklearn_load_wine.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVR_sklearn_load_boston.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVR_sklearn_load_boston.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVR_sklearn_load_diabetes.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.libsvm_Nu_SVR_sklearn_load_diabetes.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_OpenML_1464_blood_transfusion.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_OpenML_1464_blood_transfusion.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_OpenML_312_scene.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_OpenML_312_scene.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_sklearn_load_wine.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGClassifier_sklearn_load_wine.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGRegressor_sklearn_load_boston.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGRegressor_sklearn_load_boston.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGRegressor_sklearn_load_diabetes.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.XGBoost_XGRegressor_sklearn_load_diabetes.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <Cleanup TimeoutMins="1"/>
+</TestJobGroup>

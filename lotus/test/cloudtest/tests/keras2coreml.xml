@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestJobGroup>
+  <ExecutionMode Type="SharedSetup">
+    <Properties>
+      <Property Name="MaxParallelismForJobs" Value="1"/>
+    </Properties>
+  </ExecutionMode>
+  <ResourceSpec>
+    <Resource Image="2016-Datacenter" SKU="Standard_A2_v2"/>
+  </ResourceSpec>
+  <Setup TimeoutMins="1">
+    <BuildFiles>
+      <Copy Dest="[WorkingDirectory]\" IsRecursive="true" Src="[BuildRoot]\bin\*"/>
+    </BuildFiles>
+    <DataFiles>
+      <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\Microsoft.VC141.DebugCRT\*"/>
+      <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\ucrtbased.dll"/>
+      <Copy Dest="[WorkingDirectory]\" IsRecursive="true" Src="[MyVCRT]\vcredist_x64.exe"/>
+      <Copy Dest="[WorkingDirectory]\models" IsRecursive="true" Src="[MyVSODrop]\keras2coreml\*"/>
+    </DataFiles>
+    <Scripts>
+      <Script Path="[WorkingDirectory]\setup.bat"/>
+    </Scripts>
+  </Setup>
+  <TestJob Name="LotusModelTest.coreml_AgeNet_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_Inceptionv3_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_Resnet50_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_SqueezeNet_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.coreml_VGG16_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_AveragePooling_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_AveragePooling_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Conv2D_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Dense_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Dense_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Dense_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Dense_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_linear_load_boston.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_linear_load_boston.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_linear_load_diabetes.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_linear_load_diabetes.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Dense_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Dense_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_OpenML_1464_blood_transfusion.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_OpenML_1464_blood_transfusion.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_OpenML_312_scene.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_OpenML_312_scene.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_OpenML_31_credit.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_dense_softmax_OpenML_31_credit.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_elu_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_GlobalMaxPooling_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_GlobalMaxPooling_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_hard_sigmoid_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_leakyrelu_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_linear_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_MaxPoolingPooling_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_MaxPoolingPooling_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_MNIST.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_MNIST.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Normalizer_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding-Upsampling-Normalizer_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Padding_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Permute_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Pooling_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Pooling_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_ReLU_ImageNet.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_ReLU_ImageNet.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_ReLU_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_ReLU_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_ReLU_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_ReLU_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_relu_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_relu_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Reshape_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Reshape_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Reshape_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Reshape_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Reshape_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_Reshape_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_sigmoid_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_sigmoid_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_sigmoid_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_sigmoid_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_sigmoid_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_sigmoid_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softplus_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softplus_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softsign_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softsign_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softsign_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softsign_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softsign_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_softsign_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_tanh_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_tanh_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_tanh_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_tanh_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_tanh_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_tanh_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_thresholdedrelu_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_thresholdedrelu_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_thresholdedrelu_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_thresholdedrelu_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_thresholdedrelu_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_thresholdedrelu_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_UpSampling_ImageNet_large.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_UpSampling_ImageNet_large.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_UpSampling_ImageNet_small.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_UpSampling_ImageNet_small.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_UpSampling_sklearn_load_breast_cancer.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <TestJob Name="LotusModelTest.keras2coreml_UpSampling_sklearn_load_breast_cancer.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="60" Type="SingleBox">
+    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest" />
+  </TestJob>
+  <Cleanup TimeoutMins="1"/>
+</TestJobGroup>

@@ -4,7 +4,7 @@
     <Provider Type="VSODrop">
       <Properties>
         <Add Name="CloudTest.ProviderCustomName" Value="[MyVSODrop]" />
-        <Add Name="DropURL" Value="https://aiinfra.artifacts.visualstudio.com/DefaultCollection/_apis/drop/drops/Lotus/testdata/onnx/model/9"/>
+        <Add Name="DropURL" Value="https://aiinfra.artifacts.visualstudio.com/DefaultCollection/_apis/drop/drops/Lotus/testdata/onnx/model/12"/>
       </Properties>
     </Provider>
     <Provider Type="VSODrop">
@@ -15,5 +15,10 @@
     </Provider>
   </Providers>
   <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\model_zoo.xml" IsActive="true"/>
-  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\winml.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\tensorflow.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\cntk.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\coreml.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\keras2coreml.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\scikit.xml" IsActive="true"/>
+  <TestJobGroup Name="TestGroup" TestSystem="Default" ConfigPath="[BuildRoot]\tests\xgboost_and_libsvm.xml" IsActive="true"/>  
 </TestMap>

@@ -16,7 +16,7 @@
       <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\Microsoft.VC141.DebugCRT\*"/>
       <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\ucrtbased.dll"/>
       <Copy Dest="[WorkingDirectory]\" IsRecursive="true" Src="[MyVCRT]\vcredist_x64.exe"/>
-      <Copy Dest="[WorkingDirectory]\models" IsRecursive="true" Src="[MyVSODrop]\*"/>
+      <Copy Dest="[WorkingDirectory]\models" IsRecursive="true" Src="[MyVSODrop]\modelzoo\*"/>
     </DataFiles>
     <Scripts>
       <Script Path="[WorkingDirectory]\setup.bat"/>
@@ -111,24 +111,6 @@
   </TestJob>
   <TestJob Name="LotusModelTest.emotion_ferplus.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.inception_v3.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.inception_v3.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.Office.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.Office.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.HTK_LSTM_Truncated_Distributed.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.HTK_LSTM_Truncated_Distributed.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
+  </TestJob>  
   <Cleanup TimeoutMins="1"/>
 </TestJobGroup>
