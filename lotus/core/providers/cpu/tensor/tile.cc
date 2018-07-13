@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Can't use gsl::copy without disabling this warning
+#endif
+#include "gsl/gsl_algorithm"
 #include "core/providers/cpu/tensor/tile.h"
 #include "core/providers/cpu/tensor/utils.h"
 

@@ -1,5 +1,5 @@
 #pragma once
-
+#include "gsl/gsl_algorithm"
 namespace Lotus {
 
 struct TensorPitches : std::vector<int64_t> {
@@ -134,8 +134,9 @@ struct SliceIterator {
   }
 
   T *CopyInnermostAxis(T *output) {
-    for (size_t i = 0; i < inner_extent_; i++)
-      *output++ = *input_++;
+    gsl::copy(gsl::make_span(input_, inner_extent_), gsl::make_span(output, inner_extent_));
+    input_ += inner_extent_;
+    output += inner_extent_;
     AdvanceOverInnerExtent();
     return output;
   }

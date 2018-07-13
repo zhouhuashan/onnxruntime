@@ -1,3 +1,6 @@
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)  // Can't use gsl::copy without disabling this warning
+#endif
 #include "core/providers/cpu/tensor/pad.h"
 #include "core/providers/cpu/tensor/utils.h"
 
