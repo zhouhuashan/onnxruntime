@@ -30,7 +30,10 @@ struct OP_LeakyRelu : public CtxLeakyRelu {
 template <typename T>
 struct OP_ParametricSoftplus : public CtxParametricSoftplus {
   __device__ __inline__ T operator()(const T& a) const {
-    return (T)alpha * _Log(_Exp(a * (T)beta) + (T)1);
+    if (a > (T)0)
+      return (T)alpha * (a * (T)beta + _Log(_Exp(-a * (T)beta) + (T)1));
+    else
+      return (T)alpha * _Log(_Exp(a * (T)beta) + (T)1);
   }
 };
 

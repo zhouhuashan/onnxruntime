@@ -83,7 +83,7 @@ class ParametricSoftplus final : public OpKernel {
     const Tensor* X = context->Input<Tensor>(0);
     Tensor* Y = context->Output(0, X->Shape());
     EIGEN_X_VAR(xm);
-    EIGEN_Y = (T)alpha_ * ((xm * (T)beta_).exp() + 1.0f).log();
+    EIGEN_Y = (T)alpha_ * (xm * (T)beta_ > 0).select(xm * (T)beta_ + ((-xm * (T)beta_).exp() + 1.0f).log(), ((xm * (T)beta_).exp() + 1.0f).log());
     return Status::OK();
   }
 

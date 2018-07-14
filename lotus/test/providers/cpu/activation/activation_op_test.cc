@@ -26,6 +26,7 @@ void TestUnaryElementwiseOp(const char* szOp, std::vector<float>& input_vals,
 
 std::vector<float> input_vals = {
     -1.0f, 0, 1.0f,                                              // normal input values for activation
+    100.0f, -100.0f, 1000.0f, -1000.0f,                          // input values that leads to exp() overflow
     FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10,                        // min, denorm, -denorm
     FLT_MAX, -FLT_MAX, std::numeric_limits<float>::infinity()};  // max, -max, inf
 
@@ -33,10 +34,6 @@ std::vector<float> no_inf_input_vals = {
     -1.0f, 0, 1.0f,                        // normal input values for activation
     FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10,  // min, denorm, -denorm
     FLT_MAX, -FLT_MAX};                    // max, -max
-
-std::vector<float> exp_safe_input_vals = {
-    -1.0f, 0, 1.0f,                                   // normal input values for activation
-    FLT_MIN, FLT_MIN / 10, -FLT_MIN / 10, -FLT_MAX};  // min, denorm, -denorm, -max
 
 TEST(ActivationOpTest, Sigmoid) {
   TestUnaryElementwiseOp("Sigmoid",
@@ -188,15 +185,26 @@ TEST(ActivationOpTest, ParametricSoftplus) {
   static constexpr float beta = 1.5f;
 
   TestUnaryElementwiseOp("ParametricSoftplus",
-                         exp_safe_input_vals,
-                         [](float x) { return alpha * log(exp(beta * x) + 1); },
+                         input_vals,
+                         [](float x) {
+                           float bx = beta * x;
+                           if (bx > 0)
+                             return alpha * (bx + logf(expf(-bx) + 1));
+                           else
+                             return alpha * logf(expf(bx) + 1);
+                         },
                          {{"alpha", alpha}, {"beta", beta}});
 }
 
 TEST(ActivationOpTest, Softplus) {
   TestUnaryElementwiseOp("Softplus",
-                         exp_safe_input_vals,
-                         [](float x) { return log(exp(x) + 1); });
+                         input_vals,
+                         [](float x) {
+                           if (x > 0)
+                             return x + logf(expf(-x) + 1);
+                           else
+                             return logf(expf(x) + 1);
+                         });
 }
 
 TEST(ActivationOpTest, Softsign) {
