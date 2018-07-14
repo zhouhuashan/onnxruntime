@@ -3,6 +3,7 @@
 #include "core/common/status.h"
 #include "core/framework/op_kernel.h"
 #include "core/graph/graph.h"
+#include "core/inc/op_kernel_author.h"
 #include "shared_inc/cuda_call.h"
 #include "cuda_execution_provider.h"
 #include "shared_inc/fast_divmod.h"

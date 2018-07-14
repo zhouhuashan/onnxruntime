@@ -1,5 +1,6 @@
 #include "core/providers/cpu/ml/zipmap.h"
-
+#include "core/platform/types.h"
+#include "core/util/math_cpuonly.h"
 /**
 https://github.com/onnx/onnx/blob/master/onnx/defs/traditionalml/defs.cc
 ONNX_OPERATOR_SCHEMA(ZipMap)
@@ -45,8 +46,7 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const TensorShape& x_shape = X.Shape();
   const vector<int64_t> x_dims = x_shape.GetDims();
 
-  if (x_dims.empty())
-  {
+  if (x_dims.empty()) {
     return Status(LOTUS,
                   INVALID_ARGUMENT,
                   "Zipmap does not support empty dim count");
@@ -56,9 +56,9 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   int64_t features_per_batch = x_dims[x_dims.size() - 1];
 
   if (x_dims.size() > 2) {
-      return Status(LOTUS,
-                    INVALID_ARGUMENT,
-                    "Zipmap only supports 1D or 2D input tensors");
+    return Status(LOTUS,
+                  INVALID_ARGUMENT,
+                  "Zipmap only supports 1D or 2D input tensors");
   }
 
   const float* x_data = X.Data<float>();

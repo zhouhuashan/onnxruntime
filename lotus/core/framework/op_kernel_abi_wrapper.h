@@ -266,7 +266,7 @@ class MLKernelInferenceContext final : public OpNodeInfoWrapper<ProtoHelperNodeC
  private:
   EdgeShapes& inferred_output_shapes_;
 };
-
+class CustomRegistry;
 class AbiCustomRegistry : public IMLOperatorRegistry {
  public:
   AbiCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry);

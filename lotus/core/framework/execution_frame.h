@@ -7,6 +7,8 @@
 #include "core/framework/ml_value.h"
 #include "core/framework/tensor.h"
 #include "core/graph/graph.h"
+#include "core/framework/sequential_execution_plan.h"
+#include "core/framework/allocation_planner.h"
 #include "core/framework/ml_value_patterns_planner.h"
 #include "core/common/logging/logging.h"
 // #include "core/framework/session_state.h"

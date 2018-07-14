@@ -290,7 +290,7 @@ class InferenceSession::Impl {
                 }
 
                 // note that KernelCreateInfo may not exist for custom kernel
-                const KernelRegistry::KernelCreateInfo* kci = nullptr;
+                const KernelCreateInfo* kci = nullptr;
                 KernelRegistry::Instance().SearchKernelRegistry(node, &kci);
 
                 SessionState::NodeInfo node_info(index, &node, kci);

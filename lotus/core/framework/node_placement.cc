@@ -1,5 +1,5 @@
 #include "core/framework/node_placement.h"
-
+using namespace Lotus::Common;
 namespace Lotus {
 Status GraphPlacementPlanner::Apply(LotusIR::Graph* graph, bool* modified) const {
   if (provider_preference_.empty())

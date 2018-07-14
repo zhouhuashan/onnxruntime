@@ -2,6 +2,7 @@
 #include "core/framework/data_types.h"
 #include "core/inc/op_kernel_author.h"
 using namespace onnx;
+using namespace Lotus::Common;
 namespace Lotus {
 class IdGenerator {
  public:

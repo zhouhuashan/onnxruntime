@@ -7,13 +7,17 @@
 #include "core/common/logging/logging.h"
 #include "core/common/profiler.h"
 #include "core/framework/allocation_planner.h"
-#include "core/framework/customregistry.h"
+#include "core/framework/kernel_registry_manager.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/mem_pattern.h"
-#include "core/framework/op_kernel.h"
+#include "core/framework/ml_value.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
+class OpKernel;
+class KernelDef;
+struct SequentialExecutionPlan;
+struct MemoryPatternGroup;
 // SessionState should be modified by the inference session class only.
 // It is supposed to be passed by const-ref only to all the executors.
 class SessionState {
@@ -115,7 +119,7 @@ class SessionState {
   KernelRegistryManager& GetKernelRegistryManager();
 
   struct NodeInfo {
-    NodeInfo(size_t index0, const LotusIR::Node* p_node0, const KernelRegistry::KernelCreateInfo* kci0)
+    NodeInfo(size_t index0, const LotusIR::Node* p_node0, const KernelCreateInfo* kci0)
         : index(index0),
           p_node(p_node0),
           kci(kci0) {
@@ -124,7 +128,7 @@ class SessionState {
 
     size_t index;
     const LotusIR::Node* p_node = nullptr;
-    const KernelRegistry::KernelCreateInfo* kci = nullptr;
+    const KernelCreateInfo* kci = nullptr;
   };
   using NameNodeInfoMapType = std::unordered_map<std::string, std::vector<NodeInfo>>;
   void AddInputNameToNodeInfoMapping(const std::string& input_name, const NodeInfo& node_info);

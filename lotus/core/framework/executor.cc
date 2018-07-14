@@ -2,11 +2,12 @@
 
 #include <chrono>
 #include <thread>
-
+#include <vector>
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/session_state.h"
+#include "core/framework/op_kernel.h"
 
 namespace Lotus {
 Common::Status Executor::Execute(const RunOptions& run_options,

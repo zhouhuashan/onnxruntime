@@ -8,6 +8,7 @@
 #include "core/framework/tensor.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
+#include "core/inc/op_kernel_author.h"
 
 #include "test/test_environment.h"
 #include "test/framework/TestAllocatorManager.h"

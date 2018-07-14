@@ -1,4 +1,7 @@
 #pragma once
+#include <string>
+#include <vector>
+#include <unordered_map>
 
 #include "core/framework/execution_provider.h"
 #include "core/common/status.h"
@@ -7,6 +10,7 @@
 #include "core/common/logging/logging.h"
 
 namespace Lotus {
+class SessionState;
 /**
   * Input/Output binding.
   * Usage is as follows:

@@ -1,5 +1,5 @@
 #include "core/providers/cpu/tensor/reshape.h"
-
+#include "core/inc/op_kernel_author.h"
 namespace Lotus {
 
 #define REGISTER_KERNEL_TYPED(T)                                                        \

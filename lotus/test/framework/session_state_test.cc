@@ -15,6 +15,7 @@
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
 #include "core/graph/op.h"
+#include "core/framework/op_kernel.h"
 #include "gtest/gtest.h"
 using namespace onnx;
 namespace Lotus {

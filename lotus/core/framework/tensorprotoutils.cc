@@ -1,6 +1,8 @@
 #include "tensorprotoutils.h"
 
 #include <memory>
+#include "core/inc/op_kernel_author.h"
+#include "core/common/logging/logging.h"
 #include "core/graph/tensorutils.h"
 #include "tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"

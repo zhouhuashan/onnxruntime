@@ -4,6 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 #include "Eigen/src/Core/arch/CUDA/Half.h"
+#include "core/inc/op_kernel_author.h"
 
 namespace Lotus {
 

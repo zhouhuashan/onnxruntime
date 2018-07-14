@@ -1,5 +1,8 @@
 #pragma once
 #include "core/framework/mem_pattern_planner.h"
+#include "core/framework/allocation_planner.h"
+#include <vector>
+#include <memory>
 #include <mutex>
 
 namespace Lotus {

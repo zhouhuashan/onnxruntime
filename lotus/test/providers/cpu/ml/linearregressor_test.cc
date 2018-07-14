@@ -13,13 +13,13 @@ TEST(MLOpTest, LinearRegressorUniTarget) {
     r3 =model.fit(X, Z)
     r4 =model.predict ([[1, 0.],[3.,44.],[23.,11.3]])
     r3.coef_
-    array([-9.00000000e+00,  -1.99600736e-16])
+    array([-9.00000000e+00,Â  -1.99600736e-16])
 
     r3.intercept_
     array([4.10000000e+01])
 
     r4
-    array([[32.], [14.], [-166.]])
+    array([[32.],Â [14.],Â [-166.]])
   */
 
   OpTester test("LinearRegressor", LotusIR::kMLDomain);
@@ -42,12 +42,12 @@ TEST(MLOpTest, LinearRegressorMultiTarget) {
     r3 =model.fit(X, Z)
     r4 =model.predict ([[1, 0.],[3.,44.],[23.,11.3]])
     r3.coef_
-    array([[  1.00000000e+00,  -2.49500920e-17],
-    [ -9.00000000e+00,  -1.99600736e-16]])
+    array([[Â  1.00000000e+00,Â  -2.49500920e-17],
+    [ -9.00000000e+00,Â  -1.99600736e-16]])
     r3.intercept_
-    array([  2.22044605e-16,   4.10000000e+01])
+    array([Â  2.22044605e-16,Â Â  4.10000000e+01])
     r4
-    array([[   1.,   32.], [   3.,   14.], [  23., -166.]])
+    array([[Â Â  1.,Â Â  32.],Â [Â Â  3.,Â Â  14.],Â [Â  23., -166.]])
   */
 
   OpTester test("LinearRegressor", LotusIR::kMLDomain);

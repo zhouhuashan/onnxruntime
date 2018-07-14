@@ -2,6 +2,7 @@
 #include "core/graph/graph.h"  // for LotusIR::ProviderType
 #include "core/common/logging/logging.h"
 #include "core/framework/session_state.h"
+#include "core/framework/op_kernel.h"
 
 namespace Lotus {
 IOBinding::IOBinding(const SessionState& session_state) : session_state_(session_state) {
@@ -54,7 +55,7 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
   for (auto& node_info : node_info_vec) {
     size_t index = node_info.index;
     auto& node = *node_info.p_node;
-    const KernelRegistry::KernelCreateInfo* kci = node_info.kci;
+    const KernelCreateInfo* kci = node_info.kci;
     const auto* input_mem_types = (kci != nullptr) ? &kci->kernel_def->InputMemoryType() : nullptr;
 
     // node may declare input_mem_type to be on CPU explicitly

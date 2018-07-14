@@ -6,7 +6,7 @@
 
 #include <limits>
 #include <assert.h>
-
+#include "core/platform/types.h"
 #include "core/framework/customregistry.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/op_kernel_abi_wrapper.h"

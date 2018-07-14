@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "core/common/logging/logging.h"
+#include "core/framework/op_kernel.h"
 
 namespace Lotus {
 
@@ -26,7 +27,7 @@ const KernelDef* SessionState::GetKernelDef(LotusIR::NodeIndex node_id) const {
   auto node = p_graph_->GetNode(node_id);
   LOTUS_ENFORCE(nullptr != node);
 
-  const KernelRegistry::KernelCreateInfo* kernel_create_info = nullptr;
+  const KernelCreateInfo* kernel_create_info = nullptr;
   if (custom_registry_manager_.SearchKernelRegistry(*node, &kernel_create_info).IsOK()) {
     return kernel_create_info->kernel_def.get();
   }
