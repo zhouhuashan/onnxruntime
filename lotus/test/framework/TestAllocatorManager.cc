@@ -4,7 +4,7 @@ namespace Lotus {
 namespace Test {
 
 static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena) {
-  std::stringstream ss;
+  std::ostringstream ss;
   if (isArena)
     ss << "arena_";
   else

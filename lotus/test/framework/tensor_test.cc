@@ -200,7 +200,7 @@ TEST(TensorTest, ConvertToString) {
 
   EXPECT_EQ(shape.ToString(), "{2,3,4}");
 
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << shape;
   EXPECT_EQ(ss.str(), "{2,3,4}");
 }

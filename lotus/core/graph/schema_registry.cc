@@ -59,7 +59,7 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMES
 
   if (map_[op_name][op_domain].count(ver)) {
     const auto& schema = map_[op_name][op_domain][ver];
-    std::stringstream ostream;
+    std::ostringstream ostream;
     ostream << "Trying to register schema with name " << op_name
             << " (domain: " << op_domain << " version: " << ver
             << ") from file " << op_schema.file() << " line "
@@ -71,7 +71,7 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMES
 
   auto ver_range_it = domain_version_range_map_.find(op_domain);
   if (ver_range_it == domain_version_range_map_.end()) {
-    std::stringstream ostream;
+    std::ostringstream ostream;
     ostream << "Trying to register schema with name " << op_name
             << " (domain: " << op_domain << " version: " << ver
             << ") from file " << op_schema.file() << " line "
@@ -80,7 +80,7 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMES
     return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
   }
   if (ver > ver_range_it->second.opset_version) {
-    std::stringstream ostream;
+    std::ostringstream ostream;
     ostream
         << "Trying to register schema with name " << op_name
         << " (domain: " << op_domain << " version: " << ver

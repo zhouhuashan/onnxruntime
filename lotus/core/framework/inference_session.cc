@@ -780,7 +780,7 @@ class InferenceSession::Impl {
   }
 
   void StartProfiling(const std::string& file_prefix) {
-    std::stringstream ss;
+    std::ostringstream ss;
     ss << file_prefix << "_" << GetCurrentTimeString() << ".json";
     session_profiler_.StartProfiling(session_logger_, ss.str());
   }
