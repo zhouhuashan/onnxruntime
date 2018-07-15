@@ -470,15 +470,15 @@ void GemmBatched<float, CPUMathUtil>(
   }
 }
 
-// MKL will be implmenet as an execution provider
-////////////////////////////////////////////////////////////////////////////////
-// MKL VML alternatives.
-// Depending on whether we are using MKL, we will delegate the Caffe math
-// functions that are VML-related to either the VML call or the Eigen
-// implementation. If you are setting the flags (such as AVX) right for your CPU
-// architecture, usually Eigen will deliver a throughput as fast as the VML
-// functions.
-////////////////////////////////////////////////////////////////////////////////
+  // MKL will be implmenet as an execution provider
+  ////////////////////////////////////////////////////////////////////////////////
+  // MKL VML alternatives.
+  // Depending on whether we are using MKL, we will delegate the Caffe math
+  // functions that are VML-related to either the VML call or the Eigen
+  // implementation. If you are setting the flags (such as AVX) right for your CPU
+  // architecture, usually Eigen will deliver a throughput as fast as the VML
+  // functions.
+  ////////////////////////////////////////////////////////////////////////////////
 
 #define DELEGATE_SIMPLE_UNARY_FUNCTION(T, Funcname, expr)                      \
   template <>                                                                  \
@@ -875,8 +875,8 @@ void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
     kernel_size *= kernel_shape[i];
   }
   const int64_t channels_col = col_shape[0];
-  vector<int64_t> d_offset(N, 0);
-  vector<int64_t> d_iter(N, 0);
+  std::vector<int64_t> d_offset(N, 0);
+  std::vector<int64_t> d_iter(N, 0);
   for (int64_t c_col = 0; c_col < channels_col; ++c_col) {
     // Loop over spatial axes in reverse order to compute a per-axis offset.
     int64_t offset = c_col;

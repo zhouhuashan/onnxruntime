@@ -5,6 +5,7 @@
 #include "core/util/math_cpuonly.h"
 
 #include "gsl/gsl_util"
+using namespace Lotus::Common;
 
 namespace Lotus {
 

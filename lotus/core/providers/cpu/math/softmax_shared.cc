@@ -52,7 +52,7 @@ Common::Status SoftmaxCPU(const int64_t N,
     ss << "SoftmaxCPU inputs N, D and N * D must be < " << INT32_MAX << ". N=" << N << ", D=" << D;
     std::string msg = ss.str();
 
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, msg);
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, msg);
   }
 
   const int n = gsl::narrow_cast<int>(N);

@@ -23,12 +23,12 @@ class CapturingSink : public Logging::ISink {
     messages_.push_back(msg.str());
   }
 
-  const std::vector<string> &Messages() const {
+  const std::vector<std::string> &Messages() const {
     return messages_;
   }
 
  private:
-  std::vector<string> messages_;
+  std::vector<std::string> messages_;
 };
 }  // namespace Test
 }  // namespace Lotus

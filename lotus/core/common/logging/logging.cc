@@ -120,7 +120,7 @@ LoggingManager::~LoggingManager() {
 void LoggingManager::CreateDefaultLogger(const std::string &logger_id) {
   // this method is only called from ctor in scope where DefaultLoggerMutex() is already locked
 
-  unique_ptr<Logger> &default_logger{GetDefaultLogger()};
+  std::unique_ptr<Logger> &default_logger{GetDefaultLogger()};
 
   if (default_logger != nullptr) {
     throw std::logic_error("Default logger already set. ");

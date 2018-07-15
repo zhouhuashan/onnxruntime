@@ -1,5 +1,6 @@
 #include "core/providers/cpu/nn/instance_norm.h"
 #include "core/util/math_cpuonly.h"
+using namespace Lotus::Common;
 
 namespace Lotus {
 REGISTER_KERNEL(KernelDefBuilder("InstanceNormalization")

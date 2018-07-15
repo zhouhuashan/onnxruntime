@@ -2,7 +2,7 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cpu/nn/batch_norm_helper.h"
-
+using namespace std;
 namespace Lotus {
 namespace Cuda {
 

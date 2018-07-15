@@ -54,7 +54,7 @@ using Timestamp = std::chrono::time_point<std::chrono::system_clock>;
 #ifdef _DEBUG
 static bool vlog_enabled = true;  // Set directly based on your needs.
 #else
-static const bool vlog_enabled = false;  // no VLOG output
+constexpr bool vlog_enabled = false;  // no VLOG output
 #endif
 
 enum class DataType {
@@ -233,7 +233,7 @@ class Logger {
 
 inline const Logger &LoggingManager::DefaultLogger() {
   // fetch the container for the default logger once to void function calls in the future
-  static unique_ptr<Logger> &default_logger = GetDefaultLogger();
+  static std::unique_ptr<Logger> &default_logger = GetDefaultLogger();
 
   if (default_logger == nullptr) {
     // fail early for attempted misuse. don't use logging macros as we have no logger.

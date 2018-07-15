@@ -11,7 +11,6 @@
 #include "core/framework/allocation_planner.h"
 #include "core/framework/ml_value_patterns_planner.h"
 #include "core/common/logging/logging.h"
-// #include "core/framework/session_state.h"
 
 namespace Lotus {
 
@@ -115,34 +114,37 @@ class ExecutionFrame {
   // Return nullptr if index map to an value that is an unused optional input/output
   template <typename T>
   const T* GetValue(int index) const {
-    LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
     return node_values_[index] >= 0 ? &all_values_[node_values_[index]].Get<T>() : nullptr;
   }
 
   Fence_t GetFence(int index) const {
-    LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
     return node_values_[index] >= 0 ? all_values_[node_values_[index]].Fence() : nullptr;
   }
 
   // Return nullptr if index map to an value that is an unused optional input/output
   MLDataType GetType(int index) const {
-    LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
     return node_values_[index] >= 0 ? all_values_[node_values_[index]].Type() : nullptr;
   }
 
   // Return nullptr if index map to an value that is an unused optional input/output
   template <typename T>
   T* GetMutableValue(int index) {
-    LOTUS_ENFORCE(index >= 0 && index < node_values_.size());
+    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
     return node_values_[index] >= 0 ? all_values_[node_values_[index]].GetMutable<T>() : nullptr;
   }
 
   AllocatorPtr GetAllocator(const AllocatorInfo& info);
 
-  void ReleaseMLValue(int mlvalue_idx) {
-    LOTUS_ENFORCE(mlvalue_idx >= 0 || mlvalue_idx < all_values_.size());
+  Status ReleaseMLValue(int mlvalue_idx) {
+    if (mlvalue_idx < 0 || mlvalue_idx >= all_values_.size()) {
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "invalid index ", mlvalue_idx);
+    }
     all_values_[mlvalue_idx] = MLValue();
     TraceFree(mlvalue_idx);
+    return Status::OK();
   }
 
   const Lotus::SessionState& SessionState() const {
@@ -170,8 +172,8 @@ class ExecutionFrame {
                                                   bool create_fence);
 
   void Init(const LotusIR::Graph* graph,
-            const std::unordered_map<string, MLValue>& feeds,
-            const std::vector<string>& output_names,
+            const std::unordered_map<std::string, MLValue>& feeds,
+            const std::vector<std::string>& output_names,
             const std::vector<MLValue>& fetches);
 
   void SetupNodeArg(const LotusIR::NodeArg* arg);
@@ -187,7 +189,7 @@ class ExecutionFrame {
   template <typename T>
   Status GetOrCreateMLValue(int index, const MLValueAllocationParameters& parameters, T*& value) {
     if (index < 0 || index >= node_values_.size()) {
-      return Status(LOTUS, INVALID_ARGUMENT,
+      return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                     "Try to access with invalid node value index: " + std::to_string(index));
     }
 
@@ -236,7 +238,7 @@ class ExecutionFrame {
   // i-th kernel is still waiting for pending_counts_[i] inputs.
   std::vector<int> pending_counts_;  // not used currently
 
-  std::unordered_map<string, int> value_name_to_index_;
+  std::unordered_map<std::string, int> value_name_to_index_;
 
   const Lotus::SessionState& session_state_;
 

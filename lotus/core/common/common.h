@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <map>
 #include <memory>
 #include <numeric>
 #include <set>
@@ -39,21 +38,11 @@
 
 namespace Lotus {
 
-template <typename Key, typename Value>
-using LotusMap = std::unordered_map<Key, Value>;
-
 using TimePoint = std::chrono::high_resolution_clock::time_point;
 
 // Using statements for common classes that we refer to in lotus very often.
 // TODO(Task:137) Remove 'using' statements from header files
 using Common::Status;
-using Common::StatusCategory;
-using Common::StatusCode;
-using std::make_unique;
-using std::set;
-using std::string;
-using std::unique_ptr;
-using std::vector;
 
 #ifdef _WIN32
 #define UNUSED_PARAMETER(x) (x)
@@ -91,7 +80,7 @@ std::vector<std::string> GetStackTrace();
   if (!(condition)) throw Lotus::LotusException(WHERE_WITH_STACK, #condition, Lotus::MakeString(__VA_ARGS__))
 
 #define LOTUS_MAKE_STATUS(category, code, ...) \
-  Status(category, code, Lotus::MakeString(__VA_ARGS__))
+  Lotus::Common::Status(Lotus::Common::category, Lotus::Common::code, Lotus::MakeString(__VA_ARGS__))
 
 // Macros to disable the copy and/or move ctor and assignment methods
 // These are usually placed in the private: declarations for a class.
@@ -143,33 +132,33 @@ std::vector<std::string> GetStackTrace();
 #define LOTUS_EXPORT
 #endif
 
-inline void MakeStringInternal(std::stringstream& /*ss*/) noexcept {}
+inline void MakeStringInternal(std::ostringstream& /*ss*/) noexcept {}
 
 template <typename T>
-inline void MakeStringInternal(std::stringstream& ss, const T& t) noexcept {
+inline void MakeStringInternal(std::ostringstream& ss, const T& t) noexcept {
   ss << t;
 }
 
 template <typename T, typename... Args>
-inline void MakeStringInternal(std::stringstream& ss, const T& t, const Args&... args) noexcept {
+inline void MakeStringInternal(std::ostringstream& ss, const T& t, const Args&... args) noexcept {
   ::Lotus::MakeStringInternal(ss, t);
   ::Lotus::MakeStringInternal(ss, args...);
 }
 
 template <typename... Args>
-string MakeString(const Args&... args) {
-  std::stringstream ss;
+std::string MakeString(const Args&... args) {
+  std::ostringstream ss;
   ::Lotus::MakeStringInternal(ss, args...);
-  return string(ss.str());
+  return std::string(ss.str());
 }
 
 // Specializations for already-a-string types.
 template <>
-inline string MakeString(const string& str) {
+inline std::string MakeString(const std::string& str) {
   return str;
 }
-inline string MakeString(const char* p_str) {
-  return string(p_str);
+inline std::string MakeString(const char* p_str) {
+  return p_str;
 }
 
 inline long long TimeDiffMicroSeconds(TimePoint start_time) {

@@ -21,20 +21,20 @@ class TensorUtils {
       if (size == 0)                                                                                      \
         return Status::OK();                                                                              \
       else                                                                                                \
-        return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);                               \
+        return Status(Common::LOTUS, Common::INVALID_ARGUMENT);                                           \
     }                                                                                                     \
     if (nullptr == p_data || Type != tensor.data_type()) {                                                \
-      return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT);                                 \
+      return Status(Common::LOTUS, Common::INVALID_ARGUMENT);                                             \
     }                                                                                                     \
     if (tensor.has_raw_data()) {                                                                          \
       if (tensor.raw_data().size() != ((expected_size) * sizeof(T)))                                      \
-        return Status(StatusCategory::LOTUS, StatusCode::FAIL,                                            \
+        return Status(Common::LOTUS, Common::FAIL,                                                        \
                       "UnpackTensor: the pre-allocated size does not match the raw data size");           \
       UnpackTensorWithRawData(tensor, p_data);                                                            \
       return Status::OK();                                                                                \
     }                                                                                                     \
     if (tensor.field_size() != expected_size)                                                             \
-      return Status(StatusCategory::LOTUS, StatusCode::FAIL,                                              \
+      return Status(Common::LOTUS, Common::FAIL,                                                          \
                     "UnpackTensor: the pre-allocated size does not match the size in proto");             \
     const auto span = gsl::make_span(p_data, expected_size);                                              \
     auto& data = tensor.field_name();                                                                     \

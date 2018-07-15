@@ -43,7 +43,7 @@ inline Status ComputePadAndOutputShape(
         *pad_tail = pad_needed - *pad_head;
       } break;
       default:
-        return Status(LOTUS, INVALID_ARGUMENT, "pad type not supported.");
+        return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "pad type not supported.");
     }
   }
   return Status::OK();
@@ -96,22 +96,22 @@ class ConvBase {
   ~ConvBase() {}
 
  protected:
-  vector<int64_t> ComputeKernelShape(const TensorShape& weight_shape) const {
+  std::vector<int64_t> ComputeKernelShape(const TensorShape& weight_shape) const {
     if (kernel_shape_specified_)
       return kernel_shape_;
     else {
       auto& weight_dims = weight_shape.GetDims();
-      vector<int64_t> result(weight_dims.begin() + 2, weight_dims.end());
+      std::vector<int64_t> result(weight_dims.begin() + 2, weight_dims.end());
       return result;
     }
   }
 
   Status InferOutputShape(const TensorShape& input_shape,
-                          const vector<int64_t>& kernel_shape,
-                          const vector<int64_t>& strides,
-                          const vector<int64_t>& dilations,
-                          vector<int64_t>* pads,
-                          vector<int64_t>* output_shape) const {
+                          const std::vector<int64_t>& kernel_shape,
+                          const std::vector<int64_t>& strides,
+                          const std::vector<int64_t>& dilations,
+                          std::vector<int64_t>* pads,
+                          std::vector<int64_t>* output_shape) const {
     int rank = gsl::narrow_cast<int>(input_shape.NumDimensions());
     for (int dim = 0; dim < rank; ++dim) {
       if (dim >= strides.size() || dim >= kernel_shape.size() ||
@@ -121,15 +121,15 @@ class ConvBase {
       }
       int64_t dim_size = 0;
       LOTUS_RETURN_IF_ERROR(ComputePadAndOutputShape(input_shape[dim],
-                        strides[dim],
-                        kernel_shape[dim],
-                        dilations[dim],
-                        auto_pad_,
-                        &pads->at(dim),
-                        &pads->at(input_shape.NumDimensions() + dim),
-                        &dim_size));
+                                                     strides[dim],
+                                                     kernel_shape[dim],
+                                                     dilations[dim],
+                                                     auto_pad_,
+                                                     &pads->at(dim),
+                                                     &pads->at(input_shape.NumDimensions() + dim),
+                                                     &dim_size));
       if (dim_size < 0) {
-        return Status(LOTUS, INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
+        return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
       }
       output_shape->push_back(dim_size);
     }
@@ -139,12 +139,12 @@ class ConvBase {
   AutoPadType auto_pad_;
   int64_t group_;
   bool kernel_shape_specified_;
-  vector<int64_t> strides_;
-  vector<int64_t> pads_;
-  vector<int64_t> dilations_;
+  std::vector<int64_t> strides_;
+  std::vector<int64_t> pads_;
+  std::vector<int64_t> dilations_;
 
  private:
-  vector<int64_t> kernel_shape_;  // must use ComputeKernelShape(...), instead of kernel_shape_
+  std::vector<int64_t> kernel_shape_;  // must use ComputeKernelShape(...), instead of kernel_shape_
 };
 
 }  // namespace Lotus

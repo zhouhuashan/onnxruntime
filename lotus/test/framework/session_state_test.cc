@@ -18,6 +18,8 @@
 #include "core/framework/op_kernel.h"
 #include "gtest/gtest.h"
 using namespace onnx;
+using namespace std;
+
 namespace Lotus {
 namespace Test {
 class TestOpKernel : public OpKernel {

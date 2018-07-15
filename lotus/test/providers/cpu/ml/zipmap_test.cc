@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
-
+using namespace std;
 namespace Lotus {
 namespace Test {
 template <typename T>

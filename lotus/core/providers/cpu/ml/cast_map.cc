@@ -1,6 +1,7 @@
 #include "core/providers/cpu/ml/cast_map.h"
 #include <algorithm>
 #include <gsl/span>
+using namespace Lotus::Common;
 
 namespace Lotus {
 namespace ML {
@@ -27,11 +28,9 @@ Status CastMap::Compute(OpKernelContext* context) const {
   if (input_type == DataTypeImpl::GetType<std::map<int64_t, float>>()) {
     float_input = true;
   } else if (input_type != DataTypeImpl::GetType<std::map<int64_t, std::string>>()) {
-    std::ostringstream err_msg;
-    err_msg << "Invalid input type of value: "
-            << input_type
-            << " Expected std::map<int64_t, float> or std::map<int64_t, std::string>";
-    return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Invalid input type of value: ",
+                             input_type,
+                             " Expected std::map<int64_t, float> or std::map<int64_t, std::string>");
   }
 
   Status status;

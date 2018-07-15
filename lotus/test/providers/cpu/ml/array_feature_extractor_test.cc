@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 #include "gsl/gsl"
-
+using namespace std;
 namespace Lotus {
 namespace Test {
 

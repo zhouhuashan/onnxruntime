@@ -12,7 +12,7 @@ enum class AutoPadType {
   SAME_LOWER = 3,
 };
 
-inline AutoPadType StringToAutoPadType(const string& str) {
+inline AutoPadType StringToAutoPadType(const std::string& str) {
   if (str.empty()) {
     return AutoPadType::NOTSET;
   } else if (str == "NOTSET") {  // in onnx spec, default value is "NOTSET"

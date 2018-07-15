@@ -19,7 +19,7 @@ Status Hardmax<float>::Compute(OpKernelContext* ctx) const {
     ss << "Hardmax inputs N, D and N * D must be < " << INT32_MAX << ". N=" << tmpN << ", D=" << tmpD;
     std::string msg = ss.str();
 
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, msg);
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, msg);
   }
 
   const int N = gsl::narrow_cast<int>(tmpN);

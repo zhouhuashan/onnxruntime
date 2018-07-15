@@ -3,7 +3,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/framework/mem_pattern_planner.h"
-
+using namespace Lotus::Common;
 namespace Lotus {
 
 ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
@@ -74,7 +74,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
 
   int64_t len = shape.Size();
   if (len < 0) {
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
   len *= element_type->Size();
   //safety check for 32 bits systems
@@ -288,8 +288,8 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
 }
 
 void ExecutionFrame::Init(const LotusIR::Graph* graph,
-                          const std::unordered_map<string, MLValue>& feeds,
-                          const std::vector<string>& output_names,
+                          const std::unordered_map<std::string, MLValue>& feeds,
+                          const std::vector<std::string>& output_names,
                           const std::vector<MLValue>& fetches) {
   LOTUS_ENFORCE(graph);
 

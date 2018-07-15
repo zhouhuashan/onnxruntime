@@ -59,7 +59,7 @@ class CPUExecutionProvider : public IExecutionProvider {
     UNUSED_PARAMETER(node);
     UNUSED_PARAMETER(context);
     return Common::Status(
-        LOTUS, FAIL,
+        Common::LOTUS, Common::FAIL,
         "CPU execution provider: cannot run an op of type `" + node.OpType() + "'.");
   }
 

@@ -18,6 +18,7 @@
 using namespace onnx;
 using namespace onnx::Utils;
 using namespace onnx::checker;
+using namespace Lotus::Common;
 
 namespace LotusIR {
 
@@ -1148,8 +1149,8 @@ Status Graph::Resolve(bool no_proto_sync_required) {
 
 Status GraphBase::GetNodesInTopologicalOrder(gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const {
   if (graph_resolve_needed_) {
-    return Status{StatusCategory::LOTUS, StatusCode::FAIL,
-                  "Resolve() must be called before using the graph as modifications have been made to it."};
+    return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL,
+                  "Resolve() must be called before using the graph as modifications have been made to it.");
   }
 
   *pp_nodes = &nodes_in_topological_order_;

@@ -15,18 +15,18 @@ class Crop final : public OpKernel {
     info.GetAttrs("scale", scale_);
   }
 
-  Status Compute(OpKernelContext* context) const override {
-    if (border_.empty() || border_.size() < 4) {
-      return Status(LOTUS, INVALID_ARGUMENT,
-                    "Attribute border needs to be specified with four border elements.");
+  Common::Status Compute(OpKernelContext* context) const override {
+    if (border_.size() < 4) {
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
+                               "Attribute border needs to be specified with four border elements, got ", border_.size());
     }
 
     const Tensor* X = context->Input<Tensor>(0);
     const auto dims = X->Shape().GetDims();
 
     if (dims.size() < 4) {
-      return Status(LOTUS, INVALID_ARGUMENT,
-                    "Input is expected to have four dimensions corresponding to [N,C,H,W]");
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
+                               "Input is expected to have four dimensions corresponding to [N,C,H,W], got ", dims.size());
     }
 
     const int64_t N = dims[0];
@@ -41,19 +41,11 @@ class Crop final : public OpKernel {
             bottomBorder = border_[3];
 
     if (H < topBorder + bottomBorder) {
-      std::ostringstream err_msg;
-      err_msg << "Input's height (" << H
-              << ") needs to be greater than the topBorder (" << topBorder
-              << ") + bottomBorder (" << bottomBorder << ")";
-      return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input's height (", H, ") needs to be greater than the topBorder (", topBorder, ") + bottomBorder (", bottomBorder, ")");
     }
 
     if (W < leftBorder + rightBorder) {
-      std::ostringstream err_msg;
-      err_msg << "Input's width (" << W
-              << ") needs to be greater than the leftBorder (" << leftBorder
-              << ") + rightBorder (" << rightBorder << ")";
-      return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input's width (", W, ") needs to be greater than the leftBorder (", leftBorder, ") + rightBorder (", rightBorder, ")");
     }
 
     int64_t bottomLimit = H - bottomBorder;
@@ -65,19 +57,12 @@ class Crop final : public OpKernel {
       rightLimit = leftBorder + scale_[1];
 
       if (H < bottomLimit) {
-        std::ostringstream err_msg;
-        err_msg << "Input's height (" << H
-                << ") needs to be greater than the topBorder (" << topBorder
-                << ") + scale_[0] (" << scale_[0] << ")";
-        return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+        return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
+                                 "Input's height (", H, ") needs to be greater than the topBorder (", topBorder, ") + scale_[0] (", scale_[0], ")");
       }
 
       if (W < rightLimit) {
-        std::ostringstream err_msg;
-        err_msg << "Input's width (" << W
-                << ") needs to be greater than the leftBorder (" << leftBorder
-                << ") + scale_[1] (" << scale_[1] << ")";
-        return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+        return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input's width (", W, ") needs to be greater than the leftBorder (", leftBorder, ") + scale_[1] (", scale_[1], ")");
       }
     }
 

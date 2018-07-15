@@ -83,7 +83,7 @@ class Status {
     State(StatusCategory cat0, int code0, const std::string& msg0)
         : category(cat0), code(code0), msg(msg0) {}
 
-    StatusCategory category = StatusCategory::NONE;
+    StatusCategory category = Common::NONE;
     int code = 0;
     std::string msg;
   };

@@ -2,7 +2,7 @@
 #include "core/providers/cpu/rnn/rnn.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
-
+using namespace std;
 namespace Lotus {
 namespace Test {
 

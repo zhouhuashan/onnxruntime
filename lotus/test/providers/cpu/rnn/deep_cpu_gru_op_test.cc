@@ -5,7 +5,7 @@
 
 #include "core/providers/cpu/rnn/deep_cpu_gru.h"
 #include "test/providers/provider_test_utils.h"
-
+using namespace std;
 namespace Lotus {
 namespace Test {
 

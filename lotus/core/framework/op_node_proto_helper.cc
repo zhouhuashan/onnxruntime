@@ -8,23 +8,24 @@
 #include "onnx/defs/schema.h"
 #include "gsl/span"
 using namespace onnx;
+using namespace Lotus::Common;
 namespace Lotus {
 
-#define DEFINE_GET_ATTR(IMPL_T, T, type)                                     \
-  template <>                                                                \
-  template <>                                                                \
-  Status OpNodeProtoHelper<IMPL_T>::GetAttr<T>(                              \
-      const std::string& name, T* value) const {                             \
-    const AttributeProto* attr = TryGetAttribute(name);                      \
-    if (!attr) {                                                             \
-      return Status(LOTUS, FAIL, "No attribute with this name is defined."); \
-    }                                                                        \
-    if (!attr->has_##type()) {                                               \
-      return Status(LOTUS, FAIL, "Attibute name and type don't match");      \
-    } else {                                                                 \
-      *value = static_cast<T>(attr->type());                                 \
-      return Status::OK();                                                   \
-    }                                                                        \
+#define DEFINE_GET_ATTR(IMPL_T, T, type)                                                       \
+  template <>                                                                                  \
+  template <>                                                                                  \
+  Status OpNodeProtoHelper<IMPL_T>::GetAttr<T>(                                                \
+      const std::string& name, T* value) const {                                               \
+    const AttributeProto* attr = TryGetAttribute(name);                                        \
+    if (!attr) {                                                                               \
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "No attribute with name:'", name, "'is defined."); \
+    }                                                                                          \
+    if (!attr->has_##type()) {                                                                 \
+      return Status(LOTUS, FAIL, "Attibute name and type don't match");                        \
+    } else {                                                                                   \
+      *value = static_cast<T>(attr->type());                                                   \
+      return Status::OK();                                                                     \
+    }                                                                                          \
   }
 
 #define DEFINE_GET_ATTRS(IMPL_T, T, list)                                    \

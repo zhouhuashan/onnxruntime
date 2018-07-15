@@ -27,7 +27,8 @@ to int64s and the cats_int64s category list will be used for the lookups.
 AttributeProto::INT,
 OPTIONAL);
 */
-
+using namespace Lotus::Common;
+using namespace std;
 namespace Lotus {
 namespace ML {
 

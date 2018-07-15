@@ -37,7 +37,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   Status Compute(const LotusIR::Node& node, OpKernelContext* /*context*/) const override {
     return Common::Status(
-        LOTUS, FAIL,
+        Common::LOTUS, Common::FAIL,
         "CUDA execution provider: cannot run an op of type `" + node.OpType() + "'.");
   }
 

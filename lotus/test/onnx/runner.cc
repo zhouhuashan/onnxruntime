@@ -153,7 +153,7 @@ Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs) 
   return Common::Status::OK();
 }
 
-std::vector<ITestCase*> LoadTests(const std::vector<string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, Lotus::AllocatorPtr allocator) {
+std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, Lotus::AllocatorPtr allocator) {
   std::vector<ITestCase*> tests;
   std::vector<path> paths;
   for (const std::string& s : input_paths) {
@@ -360,11 +360,11 @@ end:
 
 EXECUTE_RESULT StatusCodeToExecuteResult(int input) {
   switch (input) {
-    case StatusCode::NOT_IMPLEMENTED:
+    case Common::NOT_IMPLEMENTED:
       return EXECUTE_RESULT::NOT_SUPPORT;
-    case StatusCode::INVALID_GRAPH:
+    case Common::INVALID_GRAPH:
       return EXECUTE_RESULT::INVALID_GRAPH;
-    case StatusCode::INVALID_ARGUMENT:
+    case Common::INVALID_ARGUMENT:
       return EXECUTE_RESULT::INVALID_ARGUMENT;
     default:
       return EXECUTE_RESULT::UNKNOWN_ERROR;

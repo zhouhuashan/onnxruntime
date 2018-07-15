@@ -4,7 +4,7 @@
 
 #include "core/common/logging/logging.h"
 #include "core/framework/op_kernel.h"
-
+using namespace Lotus::Common;
 namespace Lotus {
 
 void SessionState::SetGraph(const LotusIR::Graph* graph) {

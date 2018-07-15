@@ -28,14 +28,14 @@ class GemmHelper {
     }
 
     if (right[k_dim] != K_)
-      status_ = Status(LOTUS, INVALID_ARGUMENT,
-                       "GEMM: Dimension mismatch, W: " +
-                           right.ToString() +
-                           " K: " + std::to_string(K_) +
-                           " N:" + std::to_string(N_));
+      status_ = LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
+                                  "GEMM: Dimension mismatch, W: ",
+                                  right.ToString(),
+                                  " K: " + std::to_string(K_),
+                                  " N:" + std::to_string(N_));
 
     if (!IsValidBroadcast(bias, M_, N_))
-      status_ = Status(LOTUS, INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
+      status_ = Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
 
     LOTUS_ENFORCE(M_ > 0 && N_ > 0 && K_ > 0);
   }
@@ -54,12 +54,9 @@ class GemmHelper {
       return true;
     // shape is (N,) or (1, N) or (M, 1)
     // or (M, N), in last case no broadcast needed, but don't fail it
-    if ((shape.NumDimensions() == 1 && shape[0] == N) ||
-        (shape.NumDimensions() == 2 && shape[0] == M && (shape[1] == 1 || shape[1] == N)) ||
-        (shape.NumDimensions() == 2 && shape[0] == 1 && shape[1] == N))
-      return true;
-    else
-      return false;
+    return ((shape.NumDimensions() == 1 && shape[0] == N) ||
+            (shape.NumDimensions() == 2 && shape[0] == M && (shape[1] == 1 || shape[1] == N)) ||
+            (shape.NumDimensions() == 2 && shape[0] == 1 && shape[1] == N));
   }
 
  private:

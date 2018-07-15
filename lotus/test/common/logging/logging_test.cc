@@ -41,10 +41,10 @@ class LoggingTestsFixture : public ::testing::Test {
   }
 
   // Objects declared here can be used by all tests in the test case for Foo.
-  static unique_ptr<LoggingManager> default_logging_manager_;
+  static std::unique_ptr<LoggingManager> default_logging_manager_;
 };
 
-unique_ptr<LoggingManager> LoggingTestsFixture::default_logging_manager_;
+std::unique_ptr<LoggingManager> LoggingTestsFixture::default_logging_manager_;
 
 /// <summary>
 /// Tests that the WHERE macro populates all fields correctly.

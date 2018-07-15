@@ -2,7 +2,8 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cuda/nn/conv.h"
-
+using namespace Lotus::Common;
+using namespace std;
 namespace Lotus {
 namespace Cuda {
 
@@ -87,22 +88,22 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   cudnnConvolutionFwdAlgo_t algo;
   cudnnConvolutionFwdPreference_t preference = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
   CUDNN_RETURN_IF_ERROR(cudnnGetConvolutionForwardAlgorithm(CudnnHandle(),
-                                      x_tensor,
-                                      w_tensor,
-                                      conv_desc,
-                                      y_tensor,
-                                      preference,
-                                      0, // no memory limit
-                                      &algo));
+                                                            x_tensor,
+                                                            w_tensor,
+                                                            conv_desc,
+                                                            y_tensor,
+                                                            preference,
+                                                            0,  // no memory limit
+                                                            &algo));
 
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetConvolutionForwardWorkspaceSize(CudnnHandle(),
-                                      x_tensor,
-                                      w_tensor,
-                                      conv_desc,
-                                      y_tensor,
-                                      algo,
-                                      &workspace_bytes));
+                                                                x_tensor,
+                                                                w_tensor,
+                                                                conv_desc,
+                                                                y_tensor,
+                                                                algo,
+                                                                &workspace_bytes));
 
   IAllocatorUniquePtr<void> workspace;
   if (workspace_bytes != 0) {
@@ -111,18 +112,18 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
 
   if (B == nullptr) {
     CUDNN_RETURN_IF_ERROR(cudnnConvolutionForward(CudnnHandle(),
-                                      &alpha,
-                                      x_tensor,
-                                      x_data,
-                                      w_tensor,
-                                      w_data,
-                                      conv_desc,
-                                      algo,
-                                      workspace.get(),
-                                      workspace_bytes,
-                                      &beta,
-                                      y_tensor,
-                                      y_data));
+                                                  &alpha,
+                                                  x_tensor,
+                                                  x_data,
+                                                  w_tensor,
+                                                  w_data,
+                                                  conv_desc,
+                                                  algo,
+                                                  workspace.get(),
+                                                  workspace_bytes,
+                                                  &beta,
+                                                  y_tensor,
+                                                  y_data));
   }
 
   return Status::OK();
@@ -149,10 +150,10 @@ Status CudnnFilterDescriptor::Set(const std::vector<int64_t>& filter_dims, cudnn
   }
 
   CUDNN_RETURN_IF_ERROR(cudnnSetFilterNdDescriptor(desc_,
-                        data_type,
-                        CUDNN_TENSOR_NCHW,
-                        rank,
-                        w_dims.data()));
+                                                   data_type,
+                                                   CUDNN_TENSOR_NCHW,
+                                                   rank,
+                                                   w_dims.data()));
   return Status::OK();
 }
 
@@ -186,15 +187,15 @@ Status CudnnConvolutionDescriptor::Set(const std::vector<int64_t>& kernel_shape,
   }
 
   CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionNdDescriptor(desc_,
-			    rank,
-			    pad_dims.data(),
-			    stride_dims.data(),
-			    dilation_dims.data(),
-          mode,
-			    data_type));
+                                                        rank,
+                                                        pad_dims.data(),
+                                                        stride_dims.data(),
+                                                        dilation_dims.data(),
+                                                        mode,
+                                                        data_type));
 
   return Status::OK();
 }
 
-}
-}
+}  // namespace Cuda
+}  // namespace Lotus

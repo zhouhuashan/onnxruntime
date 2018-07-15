@@ -2,7 +2,7 @@
 #include "core/providers/cuda/math/unary_elementwise_ops_impl.h"
 
 using namespace onnx;
-
+using namespace Lotus::Common;
 namespace Lotus {
 namespace Cuda {
 

@@ -114,7 +114,8 @@ std::string("NONE"))
 AttributeProto::FLOATS,
 OPTIONAL);
 */
-
+using namespace Lotus::Common;
+using namespace std;
 namespace Lotus {
 namespace ML {
 
@@ -127,14 +128,14 @@ REGISTER_KERNEL(KernelDefBuilder("TreeEnsembleClassifier")
                                            DataTypeImpl::GetTensorType<std::string>()}),
                 TreeEnsembleClassifier<float>);
 
-#define ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(in_type)                                    \
-  REGISTER_KERNEL(KernelDefBuilder("TreeEnsembleClassifier")                                \
-                      .Domain(LotusIR::kMLDomain)                                           \
-                      .SinceVersion(1)                                                      \
-                      .Provider(LotusIR::kCpuExecutionProvider)                             \
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())         \
-                      .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(),        \
-                                             DataTypeImpl::GetTensorType<std::string>()}),  \
+#define ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(in_type)                                   \
+  REGISTER_KERNEL(KernelDefBuilder("TreeEnsembleClassifier")                               \
+                      .Domain(LotusIR::kMLDomain)                                          \
+                      .SinceVersion(1)                                                     \
+                      .Provider(LotusIR::kCpuExecutionProvider)                            \
+                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())        \
+                      .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(),       \
+                                             DataTypeImpl::GetTensorType<std::string>()}), \
                   TreeEnsembleClassifier<in_type>);
 
 ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(double);

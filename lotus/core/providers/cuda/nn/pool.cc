@@ -2,7 +2,7 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cuda/nn/pool.h"
-
+using namespace Lotus::Common;
 namespace Lotus {
 namespace Cuda {
 

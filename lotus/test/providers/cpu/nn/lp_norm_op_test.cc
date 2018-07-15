@@ -1,7 +1,7 @@
 #include "core/graph/utils.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
-
+using namespace std;
 namespace Lotus {
 namespace Test {
 
@@ -59,24 +59,24 @@ TEST(LpNormalizationTest, L2Normalization) {
 }
 
 TEST(LpNormalizationTest, LpNormalizationDefaultAxisAndP) {
-    OpTester test("LpNormalization");
+  OpTester test("LpNormalization");
 
-    vector<float> input = { 
-        0.0f, 0.5f, 2.0f, 2.0f,
-        1.0f, 0.5f, 2.0f, 2.5f,
-        1.0f, 1.5f, 3.0f, 3.0f,
-        1.5f, 2.0f, 3.5f, 3.5f };
+  vector<float> input = {
+      0.0f, 0.5f, 2.0f, 2.0f,
+      1.0f, 0.5f, 2.0f, 2.5f,
+      1.0f, 1.5f, 3.0f, 3.0f,
+      1.5f, 2.0f, 3.5f, 3.5f};
 
-    vector<int64_t> input_dims = { 16 };
-    test.AddInput<float>("input", input_dims, input);
+  vector<int64_t> input_dims = {16};
+  test.AddInput<float>("input", input_dims, input);
 
-    vector<float> expected_output = {
-        0.0f, 0.059028134f, 0.236112535f, 0.236112535f,
-        0.118056267f, 0.059028134f, 0.236112535f, 0.295140654f,
-        0.118056267f, 0.177084401f, 0.354168802f, 0.354168802f,
-        0.177084401f, 0.236112535f, 0.413196921f, 0.413196921f };
-    test.AddOutput<float>("Y", input_dims, expected_output);
-    test.Run();
+  vector<float> expected_output = {
+      0.0f, 0.059028134f, 0.236112535f, 0.236112535f,
+      0.118056267f, 0.059028134f, 0.236112535f, 0.295140654f,
+      0.118056267f, 0.177084401f, 0.354168802f, 0.354168802f,
+      0.177084401f, 0.236112535f, 0.413196921f, 0.413196921f};
+  test.AddOutput<float>("Y", input_dims, expected_output);
+  test.Run();
 }
 }  // namespace Test
 }  // namespace Lotus

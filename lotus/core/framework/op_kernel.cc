@@ -4,7 +4,7 @@
 #include "core/graph/op.h"
 #include "op_kernel_abi_wrapper.h"
 #include "core/common/logging/logging.h"
-
+using namespace Lotus::Common;
 namespace Lotus {
 
 std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {

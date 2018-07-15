@@ -21,7 +21,7 @@ static Status RegisterAllocator(std::unordered_map<std::string, AllocatorPtr>& m
 
   auto status = Status::OK();
   if (map.find(allocator_id) != map.end())
-    status = Status(Common::LOTUS, StatusCode::FAIL, "allocator already exists");
+    status = Status(Common::LOTUS, Common::FAIL, "allocator already exists");
   else {
     if (use_arena)
       map[allocator_id] = std::make_shared<DummyArena>(std::move(allocator));

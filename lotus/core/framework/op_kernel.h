@@ -133,7 +133,7 @@ class OpKernelContext {
   Status GetTempSpaceAllocator(AllocatorPtr* output) const {
     *output = execution_frame_->GetAllocator(kernel_->Allocator(kMemTypeDefault));
     if (!*output)
-      return Status(LOTUS, FAIL, "TempSpace allocator not found");
+      return Status(Common::LOTUS, Common::FAIL, "TempSpace allocator not found");
     return Status::OK();
   }
 
@@ -170,11 +170,11 @@ inline Tensor* OpKernelContext::Output<Tensor>(int) {
 using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 struct KernelCreateInfo {
-  unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
+  std::unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
   KernelCreateFn kernel_create_func;
   Status status;
 
-  KernelCreateInfo(unique_ptr<KernelDef> definition,
+  KernelCreateInfo(std::unique_ptr<KernelDef> definition,
                    KernelCreateFn create_func)
       : kernel_def(std::move(definition)),
         kernel_create_func(create_func) {}

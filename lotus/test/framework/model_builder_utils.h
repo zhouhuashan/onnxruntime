@@ -18,7 +18,7 @@ struct Shape {
   }
 
   // construct a shape with given symbolic dimensions
-  Shape(std::initializer_list<string> dims) {
+  Shape(std::initializer_list<std::string> dims) {
     for (auto d : dims) {
       auto dim = value.add_dim();
       dim->set_dim_param(d);
@@ -46,7 +46,7 @@ struct Type {
   }
 
   // construct a float-tensor-type with given symbolic dimensions
-  Type(std::initializer_list<string> symbolic_dims) {
+  Type(std::initializer_list<std::string> symbolic_dims) {
     value.mutable_tensor_type()->set_elem_type(onnx::TensorProto_DataType_FLOAT);
     auto p_shape = value.mutable_tensor_type()->mutable_shape();
     for (auto d : symbolic_dims) {

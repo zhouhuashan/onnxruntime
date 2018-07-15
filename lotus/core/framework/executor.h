@@ -13,7 +13,7 @@ namespace Lotus {
 class Executor {
  public:
   virtual ~Executor() {}
-
+  //SequentialExecutor doesn't support run_options yet
   static std::unique_ptr<Executor> NewSequentialExecutor(const SessionState& session_state,
                                                          const NameMLValMap& feeds,                    /* required for execution frame construction */
                                                          const std::vector<std::string>& output_names, /* required for execution frame construction */
@@ -23,6 +23,6 @@ class Executor {
   virtual Common::Status Execute(const RunOptions& run_options,
                                  const NameMLValMap& feeds,
                                  const std::vector<std::string>& output_names,
-                                 std::vector<MLValue>* p_fetches);
+                                 std::vector<MLValue>* p_fetches) = 0;
 };
 }  // namespace Lotus

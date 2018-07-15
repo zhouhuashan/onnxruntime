@@ -60,7 +60,7 @@ template <typename T>
 Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT,
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 

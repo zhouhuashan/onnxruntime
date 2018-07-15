@@ -8,8 +8,8 @@ template <typename T>
 class Upsample : public OpKernel {
  public:
   Upsample(OpKernelInfo info) : OpKernel(info) {
-    string mode;
-    if (!info.GetAttr<string>("mode", &mode).IsOK())
+    std::string mode;
+    if (!info.GetAttr<std::string>("mode", &mode).IsOK())
       mode = Upsample<float>::UpsampleModeNN;
     mode_ = StringToUpsampleMode(mode);
 
@@ -24,8 +24,8 @@ class Upsample : public OpKernel {
   Status Compute(OpKernelContext* context) const;
 
  protected:
-  static const string UpsampleModeNN;
-  static const string UpsampleModeLinear;
+  static const std::string UpsampleModeNN;
+  static const std::string UpsampleModeLinear;
 
   enum class UpsampleMode {
     NN = 0,      // nearest neighbour
@@ -34,9 +34,9 @@ class Upsample : public OpKernel {
 
   UpsampleMode mode_;
 
-  vector<float> scales_;
+  std::vector<float> scales_;
 
-  UpsampleMode StringToUpsampleMode(const string& mode) {
+  UpsampleMode StringToUpsampleMode(const std::string& mode) {
     if (mode == Upsample<float>::UpsampleModeNN) {
       return UpsampleMode::NN;
     } else if (mode == Upsample<float>::UpsampleModeLinear) {

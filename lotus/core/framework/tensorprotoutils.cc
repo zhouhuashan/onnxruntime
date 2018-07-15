@@ -7,6 +7,7 @@
 #include "tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
 using namespace onnx;
+using namespace Lotus::Common;
 namespace Lotus {
 namespace Utils {
 std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tensor_proto) {
@@ -39,12 +40,12 @@ Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
                                               size_t preallocated_size) {
   int64_t tensor_size = tensor_shape.Size();
   if (tensor_size < 0) {
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
   size_t size_to_allocate = sizeof(T) * gsl::narrow_cast<size_t>(tensor_size);
 
   if (preallocated && preallocated_size != size_to_allocate)
-    return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size, expected ", size_to_allocate, ", got ", preallocated_size);
 
   T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
@@ -66,7 +67,7 @@ Common::Status GetTensorByTypeFromTensorProto<std::string>(const TensorProto& te
                                                            size_t preallocated_size) {
   int64_t tensor_size = tensor_shape.Size();
   if (tensor_size < 0) {
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
   size_t size_to_allocate = sizeof(std::string) * gsl::narrow_cast<size_t>(tensor_size);
 
@@ -102,7 +103,7 @@ Common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
                                                          size_t preallocated_size) {
   int64_t tensor_size = tensor_shape.Size();
   if (tensor_size < 0) {
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
   static_assert(sizeof(MLFloat16) == sizeof(uint16_t), "MLFloat16 must has 16 bit size");
   size_t size_to_allocate = sizeof(MLFloat16) * gsl::narrow_cast<size_t>(tensor_size);
@@ -126,7 +127,7 @@ Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
                                         AllocatorPtr allocator,
                                         void* preallocated,
                                         size_t preallocated_size) {
-  vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
+  std::vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
 
   // Note: We permit an empty tensor_shape_vec, and treat it as a scalar (a tensor of size 1).
 
@@ -164,7 +165,7 @@ Common::Status TraceTensorAllocFromTensorProto(int mlvalue_index, const onnx::Te
   if (!planner)
     return Status(LOTUS, INVALID_ARGUMENT);
 
-  vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
+  std::vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
   TensorShape tensor_shape{tensor_shape_vec};
   int64_t size = 0;
   switch (tensor_proto.data_type()) {

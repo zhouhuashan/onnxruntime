@@ -272,7 +272,7 @@ class KernelDefBuilder {
   }
 
   // Return the kernel definition, passing ownership of the KernelDef to the caller
-  unique_ptr<KernelDef> Build() {
+  std::unique_ptr<KernelDef> Build() {
     return std::move(kernel_def_);
   }
 

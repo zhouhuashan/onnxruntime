@@ -1,7 +1,7 @@
 #include "core/graph/utils.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
-
+using namespace std;
 namespace Lotus {
 namespace Test {
 
@@ -21,7 +21,7 @@ void TestConvOp(const ConvOpAttributes& attributes,
                 const vector<vector<int64_t>>& input_shapes,
                 const std::initializer_list<float>& expected_output,
                 const vector<int64_t>& expected_output_shape,
-                bool is_cuda_supported=false) {
+                bool is_cuda_supported = false) {
   OpTester test("Conv");
   test.AddAttribute("auto_pad", attributes.auto_pad);
   test.AddAttribute("dilations", attributes.dilations);

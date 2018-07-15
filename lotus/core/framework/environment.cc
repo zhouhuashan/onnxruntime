@@ -25,9 +25,9 @@ Status Environment::Initialize() {
     // TODO: Should register microsoft domain kernels here.
 
   } catch (std::exception& ex) {
-    status = Status{LOTUS, StatusCode::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
+    status = Status{LOTUS, Common::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
   } catch (...) {
-    status = Status{LOTUS, StatusCode::RUNTIME_EXCEPTION};
+    status = Status{LOTUS, Common::RUNTIME_EXCEPTION};
   }
 
   return status;

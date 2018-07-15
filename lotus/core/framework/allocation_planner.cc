@@ -9,7 +9,7 @@
 #include "core/graph/utils.h"
 #include "core/framework/data_types.h"
 #include "core/framework/mldata_type_utils.h"
-
+using namespace Lotus::Common;
 using namespace onnx;
 namespace Lotus {
 
@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
   const SequentialExecutionPlan& plan = *planinfo.first;
   const SessionState& session_state = *planinfo.second;
   const LotusIR::Graph& graph = *session_state.GetGraph();
-  std::unordered_map<int, string> index_to_name;
+  std::unordered_map<int, std::string> index_to_name;
 
   out << "Allocation Plan:\n";
   for (auto& name_index : session_state.GetMLValueIdxMap()) {

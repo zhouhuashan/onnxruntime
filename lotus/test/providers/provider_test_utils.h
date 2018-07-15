@@ -144,7 +144,7 @@ struct OpTester {
 
   template <typename TKey, typename TVal>
   void AddInput(const char* name, const std::map<TKey, TVal>& val) {
-    std::unique_ptr<std::map<TKey, TVal>> ptr = make_unique<std::map<TKey, TVal>>(val);
+    std::unique_ptr<std::map<TKey, TVal>> ptr = std::make_unique<std::map<TKey, TVal>>(val);
     MLValue value;
     value.Init(ptr.release(),
                DataTypeImpl::GetType<std::map<TKey, TVal>>(),
@@ -177,7 +177,7 @@ struct OpTester {
   // Add non tensor output
   template <typename TKey, typename TVal>
   void AddOutput(const char* name, const std::vector<std::map<TKey, TVal>>& val) {
-    auto ptr = make_unique<std::vector<std::map<TKey, TVal>>>(val);
+    auto ptr = std::make_unique<std::vector<std::map<TKey, TVal>>>(val);
     MLValue ml_value;
     ml_value.Init(ptr.release(),
                   DataTypeImpl::GetType<std::vector<std::map<TKey, TVal>>>(),
@@ -192,7 +192,7 @@ struct OpTester {
   void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
     add_attribute_funcs_.emplace_back(
-        [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
+        [ name = std::move(name), value = std::move(value) ](LotusIR::Node & node) { node.AddAttribute(name, value); });
   }
 
   enum class ExpectResult {
@@ -227,11 +227,11 @@ struct OpTester {
       auto allocator = Lotus::Test::AllocatorManager::Instance().GetAllocator(CPU);
       auto size_in_bytes = values_count * sizeof(T);
       void* buffer = allocator->Alloc(size_in_bytes);
-      auto p_tensor = make_unique<Tensor>(DataTypeImpl::GetType<T>(),
-                                          shape,
-                                          buffer,
-                                          allocator->Info(),
-                                          allocator);
+      auto p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
+                                               shape,
+                                               buffer,
+                                               allocator->Info(),
+                                               allocator);
       auto* data_ptr = p_tensor->template MutableData<T>();
       for (int64_t i = 0; i < values_count; i++) {
         data_ptr[i] = values[i];

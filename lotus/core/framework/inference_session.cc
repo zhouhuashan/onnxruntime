@@ -49,7 +49,7 @@ class InferenceSession::Impl {
 
   Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
     if (p_exec_provider.get() == nullptr) {
-      return Status(LOTUS, FAIL, "Received nullptr for exec provider");
+      return Status(Common::LOTUS, Common::FAIL, "Received nullptr for exec provider");
     }
     std::string provider_type = p_exec_provider->Type();
     VLOGS(*session_logger_, 1) << "Adding execution provider of type: " << provider_type;
@@ -59,14 +59,14 @@ class InferenceSession::Impl {
 
   Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
     if (p_graph_transformer.get() == nullptr) {
-      return Status(LOTUS, FAIL, "Received nullptr for graph transformer");
+      return Status(Common::LOTUS, Common::FAIL, "Received nullptr for graph transformer");
     }
     return graph_transformation_mgr_.Register(std::move(p_graph_transformer));
   }
 
   Common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry) {
     if (custom_registry.get() == nullptr) {
-      return Status(LOTUS, FAIL, "Received nullptr for custom registry");
+      return Status(Common::LOTUS, Common::FAIL, "Received nullptr for custom registry");
     }
 
     session_state_.GetKernelRegistryManager().RegisterKernelRegistry(custom_registry);
@@ -99,10 +99,10 @@ class InferenceSession::Impl {
 
       LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(Common::LOTUS, Common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_uri", tp);
     return Common::Status::OK();
@@ -129,10 +129,10 @@ class InferenceSession::Impl {
 
       LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(Common::LOTUS, Common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_proto", tp);
     return Status::OK();
@@ -151,7 +151,7 @@ class InferenceSession::Impl {
       ModelProto model_proto;
       const bool result = model_proto.ParseFromIstream(&model_istream);
       if (!result) {
-        return Status(LOTUS, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
+        return Status(Common::LOTUS, Common::INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
@@ -165,10 +165,10 @@ class InferenceSession::Impl {
 
       LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(Common::LOTUS, Common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_istream", tp);
     return Common::Status::OK();
@@ -193,10 +193,10 @@ class InferenceSession::Impl {
 
       LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(LOTUS, FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(Common::LOTUS, Common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_p_model", tp);
     return Common::Status::OK();
@@ -255,13 +255,13 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, INFO) << "Session successfully initialized.";
     } catch (const NotImplementedException& ex) {
       LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
-      return Status(LOTUS, NOT_IMPLEMENTED, "Exception during initialization: " + std::string(ex.what()));
+      return Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "Exception during initialization: " + std::string(ex.what()));
     } catch (const std::exception& ex) {
       LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
-      return Status(LOTUS, FAIL, "Exception during initialization: " + std::string(ex.what()));
+      return Status(Common::LOTUS, Common::FAIL, "Exception during initialization: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Initialize()";
-      return Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
+      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
     }
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "session_initialization", tp);
     return Status::OK();
@@ -327,7 +327,7 @@ class InferenceSession::Impl {
     }
     auto actual_name = std::string(typeid(*actual).name());
     auto expected_name = std::string(typeid(*expected).name());
-    return Status(LOTUS, INVALID_ARGUMENT,
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                   "Unexpected input data type. Actual: (" + actual_name + ") , expected: (" + expected_name + ")");
   }
 
@@ -363,7 +363,9 @@ class InferenceSession::Impl {
 
   Common::Status ValidateInputNames(const NameMLValMap& feeds) {
     if (model_input_names_.size() != feeds.size()) {
-      return Common::Status(Common::LOTUS, Common::FAIL, "The number of feeds is not same as the number of the model input");
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL,
+                               "The number of feeds is not same as the number of the model input, expect ", model_input_names_.size(),
+                               " got ", feeds.size());
     }
 
     bool valid = true;
@@ -559,7 +561,8 @@ class InferenceSession::Impl {
       new_fetches[idx] = weight;
     }
 
-    LOTUS_ENFORCE(seen_outputs.size() == output_names.size());  // make sure we've seen all outputs
+    if (seen_outputs.size() != output_names.size())  // make sure we've seen all outputs
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "output size mismatch, expected ", output_names.size(), " got ", seen_outputs.size());
     return Status::OK();
   }
 
@@ -567,12 +570,15 @@ class InferenceSession::Impl {
                                 const MLValue& fetched_mlvalue,
                                 MLValue& output_mlvalue) {
     auto* p_provider = session_state_.GetExecutionProvider(provider_type);
-    LOTUS_ENFORCE(p_provider);
+    if (!p_provider)
+      return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "invalid provider_type");
     auto allocator = p_provider->GetAllocator();
-    LOTUS_ENFORCE(allocator != nullptr);
+    if (!allocator)
+      return Status(Common::LOTUS, Common::FAIL, "invalid allocator");
     auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
     void* buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
-    LOTUS_ENFORCE(buffer);
+    if (!buffer)
+      return Status(Common::LOTUS, Common::FAIL, "invalid buffer");
     std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(fetched_tensor.DataType(),
                                                                 fetched_tensor.Shape(),
                                                                 buffer,
@@ -652,7 +658,7 @@ class InferenceSession::Impl {
         std::lock_guard<std::mutex> l(session_mutex_);
         if (!is_inited_) {
           LOGS(*session_logger_, ERROR) << "Session was not initialized";
-          retval = Status(LOTUS, FAIL, "Session not initialized.");
+          retval = Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
         }
       }
 
@@ -670,7 +676,7 @@ class InferenceSession::Impl {
       // TODO should we add this exec to the list of executors? i guess its not needed now?
 
       // scope of owned_run_logger is just the call to Execute. If Execute ever becomes async we need a different approach
-      unique_ptr<Logging::Logger> owned_run_logger;
+      std::unique_ptr<Logging::Logger> owned_run_logger;
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
       // info all execution providers InferenceSession:Run started
@@ -696,9 +702,9 @@ class InferenceSession::Impl {
       LOTUS_CHECK_AND_SET_RETVAL(p_exec->Execute(run_options, copied_feeds, output_names, &new_fetches));
       LOTUS_CHECK_AND_SET_RETVAL(CopyOutputsAcrossDevices(new_fetches, *p_fetches));
     } catch (const std::exception& e) {
-      retval = Status(LOTUS, FAIL, e.what());
+      retval = Status(Common::LOTUS, Common::FAIL, e.what());
     } catch (...) {
-      retval = Status(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Run()");
+      retval = Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Run()");
     }
 
     // info all execution providers InferenceSession:Run ended
@@ -844,7 +850,7 @@ class InferenceSession::Impl {
   // If the default logger is used, new_run_logger will remain empty.
   // The returned value should be used in the execution.
   const Logging::Logger& CreateLoggerForRun(const RunOptions& run_options,
-                                            unique_ptr<Logging::Logger>& new_run_logger) {
+                                            std::unique_ptr<Logging::Logger>& new_run_logger) {
     const Logging::Logger* run_logger;
 
     // create a per-run logger if we can
@@ -944,7 +950,7 @@ class InferenceSession::Impl {
     std::unique_ptr<Tensor> p_tensor;
     auto alloc_ptr = session_state_.GetAllocator(alloc_info);
     if (!alloc_ptr) {
-      return Status(LOTUS, FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
+      return Status(Common::LOTUS, Common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
     }
 
     if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPUOutput) {
@@ -958,7 +964,7 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor, deserialize_alloc_ptr));
 
       if (preallocated && preallocated_size != p_deserialize_tensor->Size())
-        return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
+        return Status(Common::LOTUS, Common::FAIL, "The buffer planner is not consistent with tensor buffer size");
 
       IExecutionProvider* provider = session_state_.GetExecutionProvider(alloc_info);
       LOTUS_ENFORCE(provider != nullptr);
@@ -1038,7 +1044,7 @@ class InferenceSession::Impl {
       LOTUS_ENFORCE(weights_buffers_.find(location) == weights_buffers_.end());
       auto alloc = session_state_.GetAllocator(location);
       if (!alloc)
-        return Status(LOTUS, FAIL, "Failed to get allocator for location: " + location.ToString());
+        return Status(Common::LOTUS, Common::FAIL, "Failed to get allocator for location: " + location.ToString());
       void* buffer = mem_patterns.patterns[i].peak_size() > 0 ? alloc->Alloc(mem_patterns.patterns[i].peak_size()) : nullptr;
       weights_buffers_[location] = BufferUniquePtr(buffer, alloc);
     }
@@ -1052,7 +1058,7 @@ class InferenceSession::Impl {
       auto& location = execution_plan->allocation_plan[mlvalue_index].location;
       auto it = weights_buffers_.find(location);
       if (it == weights_buffers_.end())
-        return Status(LOTUS, FAIL, "Weight buffer not found");
+        return Status(Common::LOTUS, Common::FAIL, "Weight buffer not found");
 
       auto pattern = mem_patterns.GetPatterns(location);
       auto block = pattern->GetBlock(mlvalue_index);

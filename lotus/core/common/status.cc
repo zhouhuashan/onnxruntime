@@ -19,11 +19,11 @@ bool Status::IsOK() const noexcept {
 }
 
 StatusCategory Status::Category() const noexcept {
-  return IsOK() ? StatusCategory::NONE : state_->category;
+  return IsOK() ? Common::NONE : state_->category;
 }
 
 int Status::Code() const noexcept {
-  return IsOK() ? static_cast<int>(StatusCode::OK) : state_->code;
+  return IsOK() ? static_cast<int>(Common::OK) : state_->code;
 }
 
 const std::string& Status::ErrorMessage() const noexcept {
@@ -37,11 +37,11 @@ std::string Status::ToString() const {
 
   std::string result;
 
-  if (StatusCategory::SYSTEM == state_->category) {
+  if (Common::SYSTEM == state_->category) {
     result += "SystemError";
     result += " : ";
     result += std::to_string(errno);
-  } else if (StatusCategory::LOTUS == state_->category) {
+  } else if (Common::LOTUS == state_->category) {
     result += "[LotusError]";
     result += " : ";
     result += std::to_string(Code());

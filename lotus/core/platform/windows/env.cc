@@ -52,7 +52,7 @@ class WindowsEnv : public Env {
     if (ret == 0) {
       if (st.st_mode & _S_IFREG)
         return Common::Status::OK();
-      return LOTUS_MAKE_STATUS(Common::LOTUS, Common::FAIL, fname, "is not a regular file");
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, fname, "is not a regular file");
     }
     switch (errno) {
       case ENOENT:
@@ -107,23 +107,23 @@ class WindowsEnv : public Env {
   Common::Status FileExists(const wchar_t* fname) const override {
     return FileExists_(fname, _wstat);
   }
-  Common::Status ReadFileAsString(const char* fname, std::string* out) const override{
+  Common::Status ReadFileAsString(const char* fname, std::string* out) const override {
     if (!fname)
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
     size_t flen = strlen(fname);
     if (flen >= std::numeric_limits<int>::max()) {
-      return LOTUS_MAKE_STATUS(Common::LOTUS, Common::INVALID_ARGUMENT, "input path too long");
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "input path too long");
     }
     int len = MultiByteToWideChar(CP_ACP, 0, fname, (int)(flen + 1), nullptr, 0);
     if (len <= 0) {
-      return LOTUS_MAKE_STATUS(Common::LOTUS, Common::FAIL, "MultiByteToWideChar error");
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "MultiByteToWideChar error");
     }
     std::wstring wStreamName((size_t)(len - 1), L'\0');
     MultiByteToWideChar(CP_ACP, 0, fname, (int)flen, (LPWSTR)wStreamName.data(), len);
     return ReadFileAsString(wStreamName.c_str(), out);
   }
 
-  Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override{
+  Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override {
     if (!fname)
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
     if (!out) {

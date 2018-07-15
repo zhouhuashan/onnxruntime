@@ -6,6 +6,8 @@
 #include "test_utils.h"
 #include "gtest/gtest.h"
 using namespace onnx;
+using namespace std;
+
 namespace Lotus {
 namespace Test {
 typedef std::vector<LotusIR::NodeArg*> ArgMap;

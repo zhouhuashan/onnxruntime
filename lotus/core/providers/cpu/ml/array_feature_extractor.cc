@@ -23,7 +23,8 @@ ONNX_OPERATOR_SCHEMA(ArrayFeatureExtractor)
          "tensor(string)"},
         "allowed types.");
 */
-
+using namespace Lotus::Common;
+using namespace std;
 namespace Lotus {
 namespace ML {
 #define REG_ARRAYFEATUREEXTRACTOR(X_TYPE)                                          \

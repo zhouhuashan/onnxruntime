@@ -1,5 +1,6 @@
 #include "core/providers/cpu/nn/pool.h"
 #include <cmath>
+using namespace Lotus::Common;
 
 namespace Lotus {
 

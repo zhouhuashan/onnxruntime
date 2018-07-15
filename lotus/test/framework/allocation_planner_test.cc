@@ -142,7 +142,7 @@ class PlannerTest : public ::testing::Test {
   std::unique_ptr<Lotus::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
   std::unique_ptr<Lotus::KernelDef> in_place_kernel_;  // a unary kernel with in-place
 
-  std::unordered_map<string, std::unique_ptr<LotusIR::NodeArg>> name_to_arg_;
+  std::unordered_map<std::string, std::unique_ptr<LotusIR::NodeArg>> name_to_arg_;
   std::vector<std::unique_ptr<UnaryNode>> nodes_;
   std::vector<std::unique_ptr<OpKernelInfo>> op_kernel_infos_;
   std::vector<std::pair<LotusIR::Node*, KernelDef&>> kernel_bindings_;

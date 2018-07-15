@@ -7,7 +7,7 @@ namespace Test {
 // cast from map<int64_t,TFrom> to Tensor<TCastTo>
 template <typename TFrom, typename TCastTo>
 static void RunTest(const std::map<int64_t, TFrom> &input,
-                    const vector<TCastTo> &output,
+                    const std::vector<TCastTo> &output,
                     const std::string &cast_to,
                     int64_t max_map = -1,
                     OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
@@ -82,7 +82,7 @@ Cast to Tensor<string>
 TEST(CastMap, StringToString) {
   std::map<int64_t, std::string> map{{0, "-1.0f"}, {1, "3"}};
 
-  std::vector<string> output{"-1.0f", "3"};
+  std::vector<std::string> output{"-1.0f", "3"};
 
   RunTest(map, output, "TO_STRING");
 }
@@ -91,7 +91,7 @@ TEST(CastMap, FloatToString) {
   std::map<int64_t, float> map{{0, -1.0f}, {1, 3.0f}};
 
   // std::stof converts to these values.
-  std::vector<string> output{"-1.000000", "3.000000"};
+  std::vector<std::string> output{"-1.000000", "3.000000"};
 
   RunTest(map, output, "TO_STRING");
 }

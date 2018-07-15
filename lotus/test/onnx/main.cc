@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     usage();
     return -1;
   }
-  std::vector<string> data_dirs;
+  std::vector<std::string> data_dirs;
   for (int i = 0; i != argc; ++i) {
     path p(argv[i]);
     if (!is_directory(p)) {

@@ -38,7 +38,7 @@ class PoolBase {
       for (int dim = 0; dim < kernel_shape_.size(); ++dim) {
         LOTUS_ENFORCE(kernel_shape_[dim] > 0);
         LOTUS_ENFORCE(pads_[dim] < kernel_shape_[dim] && pads_[dim + kernel_shape_.size()] < kernel_shape_[dim],
-          "Pad should be smaller than kernel.");
+                      "Pad should be smaller than kernel.");
       }
 
       if (strides_.empty()) {
@@ -48,7 +48,7 @@ class PoolBase {
     }
   }
 
-  ~PoolBase() {};
+  ~PoolBase(){};
 
   std::vector<int64_t> SetOutputSize(const TensorShape& input_shape,
                                      int64_t output_channel,
@@ -63,9 +63,9 @@ class PoolBase {
     return output_dims;
   }
 
-  inline void InferOutputSize(const vector<int64_t>& input_dims,
-                              vector<int64_t>* output_dims,
-                              vector<int64_t>* pads) const {
+  inline void InferOutputSize(const std::vector<int64_t>& input_dims,
+                              std::vector<int64_t>* output_dims,
+                              std::vector<int64_t>* pads) const {
     if (global_pooling_) {
       output_dims->assign(input_dims.size() - 2, 1);
     } else {

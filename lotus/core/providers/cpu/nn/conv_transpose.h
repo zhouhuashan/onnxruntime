@@ -93,26 +93,26 @@ class ConvTranspose : public OpKernel, public ConvBase {
     const int64_t W = input_shape[3];
     const int64_t C = F->Shape()[1];
 
-    vector<int64_t> kernel_shape = ComputeKernelShape(F->Shape());
+    std::vector<int64_t> kernel_shape = ComputeKernelShape(F->Shape());
 
-    vector<int64_t> output_padding(output_padding_);
+    std::vector<int64_t> output_padding(output_padding_);
     if (output_padding.empty()) {
       output_padding.resize(kernel_shape.size(), 0);
     }
-    vector<int64_t> pads(pads_);
+    std::vector<int64_t> pads(pads_);
     if (pads.empty()) {
       pads.resize(kernel_shape.size() * 2, 0);
     }
-    vector<int64_t> dilations(dilations_);
+    std::vector<int64_t> dilations(dilations_);
     if (dilations.empty()) {
       dilations.resize(kernel_shape.size(), 1);
     }
-    vector<int64_t> strides(strides_);
+    std::vector<int64_t> strides(strides_);
     if (strides.empty()) {
       strides.resize(kernel_shape.size(), 1);
     }
 
-    vector<int64_t> Y_dims;
+    std::vector<int64_t> Y_dims;
 
     ComputePadsAndOutputShape(input_shape, C, kernel_shape, strides, output_padding, &pads, &Y_dims);
     TensorShape Yshape(Y_dims);
@@ -181,16 +181,16 @@ class ConvTranspose : public OpKernel, public ConvBase {
   }
 
  private:
-  vector<int64_t> output_padding_;
-  vector<int64_t> output_shape_;
+  std::vector<int64_t> output_padding_;
+  std::vector<int64_t> output_shape_;
 
   void ComputePadsAndOutputShape(const TensorShape input_shape,
                                  const int64_t output_channel,
-                                 const vector<int64_t>& kernel_shape,
-                                 const vector<int64_t>& strides,
-                                 const vector<int64_t>& output_padding,
-                                 vector<int64_t>* pads,
-                                 vector<int64_t>* output_shape) const {
+                                 const std::vector<int64_t>& kernel_shape,
+                                 const std::vector<int64_t>& strides,
+                                 const std::vector<int64_t>& output_padding,
+                                 std::vector<int64_t>* pads,
+                                 std::vector<int64_t>* output_shape) const {
     const int64_t N = input_shape[0];
     const int64_t H = input_shape[2];
     const int64_t W = input_shape[3];

@@ -180,7 +180,7 @@ Common::Status TreeEnsembleRegressor<T>::ProcessTreeNode(std::unordered_map<int6
     }
 
     if (treeindex < 0) {
-      return Common::Status(StatusCategory::LOTUS, StatusCode::RUNTIME_EXCEPTION,
+      return Common::Status(Common::LOTUS, Common::RUNTIME_EXCEPTION,
                             "treeindex evaluated to a negative value, which should not happen.");
     }
     treeindex = treeindex + root;
@@ -221,7 +221,7 @@ template <typename T>
 Common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT,
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 

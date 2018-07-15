@@ -1,6 +1,6 @@
 #include "core/providers/cpu/reduction/reduction_ops.h"
 #include "core/util/math_cpuonly.h"
-
+using namespace std;
 namespace Lotus {
 
 REGISTER_KERNEL(KernelDefBuilder("ReduceL1")

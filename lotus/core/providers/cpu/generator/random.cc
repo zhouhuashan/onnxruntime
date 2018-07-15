@@ -32,6 +32,7 @@ limitations under the License.
 #include "unsupported/Eigen/CXX11/Tensor"
 #include "gsl/span"
 using namespace onnx;
+using namespace Lotus::Common;
 namespace Lotus {
 
 REGISTER_KERNEL(KernelDefBuilder("RandomNormal")

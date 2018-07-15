@@ -6,6 +6,7 @@
 #include "test/framework/model_builder_utils.h"
 
 using namespace onnx;
+using namespace std;
 
 namespace Lotus {
 namespace Test {

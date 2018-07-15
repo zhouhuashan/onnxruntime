@@ -1,16 +1,18 @@
 #pragma once
 
-//#include "core/common/common.h"
-//#include "core/common/exceptions.h"
+#include <set>
+#include <string>
+#include "core/common/common.h"
+#include "core/common/exceptions.h"
 #include "core/framework/op_kernel.h"
 
 namespace Lotus {
 template <typename T>
 class RNN : public OpKernel {
-  const set<string> allowed_activations{"Relu", "Tanh", "Sigmoid", "Affine", "LeakyRelu", "ThresholdedRelu", "ScaledTanh", "HardSigmoid", "Elu", "Softsign", "Softplus"};
-  const string default_activation = "Tanh";
-  const set<string> allowed_directions{"forward", "reverse", "bidirectional"};
-  const string default_direction = "forward";
+  const std::set<std::string> allowed_activations{"Relu", "Tanh", "Sigmoid", "Affine", "LeakyRelu", "ThresholdedRelu", "ScaledTanh", "HardSigmoid", "Elu", "Softsign", "Softplus"};
+  const std::string default_activation = "Tanh";
+  const std::set<std::string> allowed_directions{"forward", "reverse", "bidirectional"};
+  const std::string default_direction = "forward";
 
  public:
   RNN(const OpKernelInfo& info) : OpKernel(info) {
@@ -26,11 +28,11 @@ class RNN : public OpKernel {
 
     // assign default attributes
     if (activation_alpha_.empty())
-      activation_alpha_ = vector<float>(num_directions, 0.0F);
+      activation_alpha_ = std::vector<float>(num_directions, 0.0F);
     if (activation_beta_.empty())
-      activation_beta_ = vector<float>(num_directions, 0.0F);
+      activation_beta_ = std::vector<float>(num_directions, 0.0F);
     if (activations_.empty())
-      activations_ = vector<string>(num_directions, default_activation);
+      activations_ = std::vector<std::string>(num_directions, default_activation);
     else if (activations_.size() == 2 && num_directions == 1) {
       // ONNX RNN default activations are {"Tanh", "Tanh"}
       // In this case, take the first default activation.
@@ -47,19 +49,19 @@ class RNN : public OpKernel {
 
  private:
   // optional, default values tied to the activation function
-  vector<float> activation_alpha_;
+  std::vector<float> activation_alpha_;
 
   // optional, default values tied to the activation function
-  vector<float> activation_beta_;
+  std::vector<float> activation_beta_;
 
   // optional, default = "Tanh"
-  vector<string> activations_;
+  std::vector<std::string> activations_;
 
   // optional, default no clip_
   float clip_ = -1;
 
   // optional
-  string direction_ = default_direction;
+  std::string direction_ = default_direction;
 
   // required
   int64_t hidden_size_;

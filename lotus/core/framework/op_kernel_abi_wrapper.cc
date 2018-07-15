@@ -13,14 +13,10 @@
 #include "core/framework/op_kernel.h"
 #include "core/inc/op_kernel_author_helper.h"
 
-#if _WIN32
-// Unreference parameter warning.  TODO - disable once complete
-#pragma warning(disable : 4100)
-#endif
-
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
 using namespace onnx;
+using namespace Lotus::Common;
 namespace Lotus {
 
 template <class T>

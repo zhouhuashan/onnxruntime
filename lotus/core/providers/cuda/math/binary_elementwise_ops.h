@@ -36,7 +36,7 @@ class BinaryElementwise : public CudaKernel {
 
   BinaryElementwise(const OpKernelInfo& info) : CudaKernel(info) {}
   Status Compute(OpKernelContext*) const override {
-    return Status(LOTUS, FAIL);  // should not reach here
+    return Status(Common::LOTUS, Common::FAIL);  // should not reach here
   }
   Status Prepare(OpKernelContext* context, BinaryElementwisePreparation* p) const;
 };

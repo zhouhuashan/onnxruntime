@@ -19,7 +19,7 @@
 #endif  // _MSC_VER
 
 #include <iterator>
-
+using namespace std;
 namespace lotus {
 namespace python {
 

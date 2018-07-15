@@ -1,7 +1,7 @@
 #include "binary_elementwise_ops.h"
 #include "core/providers/cpu/tensor/utils.h"
 #include "binary_elementwise_ops_impl.h"
-
+using namespace Lotus::Common;
 namespace Lotus {
 namespace Cuda {
 
@@ -108,20 +108,20 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   BINARY_ELEMENTWISE_REGISTER_KERNEL(name, ver, T) \
   BINARY_ELEMENTWISE_COMPUTE(name, T)
 
-// since different ops has different types, we cannot use BINARY_OPS() directly
-// the postfix of means the types supported by the op:
-// B: uint8_t
-// W: uint16_t
-// U: uint32_t
-// Z: uint64_t
-// C: int8_t
-// S: int16_t
-// I: int32_t
-// L: int64_t
-// H: float16
-// F: float
-// D: double
-// O: bool
+  // since different ops has different types, we cannot use BINARY_OPS() directly
+  // the postfix of means the types supported by the op:
+  // B: uint8_t
+  // W: uint16_t
+  // U: uint32_t
+  // Z: uint64_t
+  // C: int8_t
+  // S: int16_t
+  // I: int32_t
+  // L: int64_t
+  // H: float16
+  // F: float
+  // D: double
+  // O: bool
 
 #define BINARY_OP_HFD(name, ver)        \
   BINARY_OP_TYPED(name, ver, MLFloat16) \

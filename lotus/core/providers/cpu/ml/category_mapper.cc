@@ -1,6 +1,7 @@
 #include "core/providers/cpu/ml/category_mapper.h"
 #include <algorithm>
 #include <gsl/span>
+using namespace Lotus::Common;
 
 namespace Lotus {
 namespace ML {

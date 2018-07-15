@@ -1,6 +1,6 @@
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
-
+using namespace std;
 namespace Lotus {
 
 Tensor::Tensor(MLDataType p_type,
@@ -27,10 +27,10 @@ void Tensor::Init(MLDataType p_type,
   buffer_deleter_ = deleter;
   // for string tensors, if this tensor own the buffer (caller passed in the deleter)
   // do the placement new for strings on pre-allocated buffer.
-  if (buffer_deleter_ && dtype_ == DataTypeImpl::GetType<std::string>()) {
-    std::string* ptr = static_cast<std::string*>(p_data_);
+  if (buffer_deleter_ && dtype_ == DataTypeImpl::GetType<string>()) {
+    string* ptr = static_cast<string*>(p_data_);
     for (int64_t i = 0, n = shape.Size(); i < n; ++i) {
-      new (ptr + i) std::string();
+      new (ptr + i) string();
     }
   }
   alloc_info_ = alloc;
@@ -45,7 +45,7 @@ Tensor::Tensor(Tensor&& other)
       p_data_(other.p_data_),
       buffer_deleter_(other.buffer_deleter_) {
   other.dtype_ = DataTypeImpl::GetType<float>();
-  other.shape_ = TensorShape(std::vector<int64_t>(1, 0));
+  other.shape_ = TensorShape(vector<int64_t>(1, 0));
   other.p_data_ = nullptr;
   other.buffer_deleter_ = nullptr;
   other.byte_offset_ = 0;
@@ -61,7 +61,7 @@ Tensor& Tensor::operator=(Tensor&& other) {
     buffer_deleter_ = other.buffer_deleter_;
 
     other.dtype_ = DataTypeImpl::GetType<float>();
-    other.shape_ = TensorShape(std::vector<int64_t>(1, 0));
+    other.shape_ = TensorShape(vector<int64_t>(1, 0));
     other.p_data_ = nullptr;
     other.byte_offset_ = 0;
     other.buffer_deleter_ = nullptr;
@@ -85,9 +85,10 @@ Tensor::~Tensor() {
     // if current tensor is responsible for delete the buffer
     // and it is a string tensor, need to explict call string's
     // deconstructor.
-    if (dtype_ == DataTypeImpl::GetType<std::string>()) {
-      std::string* ptr = static_cast<std::string*>(p_data_);
-      for (int i = 0; i < shape_.Size(); i++)
+    if (dtype_ == DataTypeImpl::GetType<string>()) {
+      string* ptr = static_cast<string*>(p_data_);
+      int64_t len = shape_.Size();
+      for (int64_t i = 0; i < len; i++)
         ptr[i].~string();
     }
     buffer_deleter_->Free(p_data_);

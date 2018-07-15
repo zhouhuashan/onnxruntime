@@ -19,8 +19,8 @@ class ImageScaler final : public OpKernel {
     const auto dims = X->Shape().GetDims();
 
     if (dims.size() < 4) {
-      return Status(LOTUS, INVALID_ARGUMENT,
-                    "Input is expected to have four dimensions corresponding to [N,C,H,W]");
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
+                               "Input is expected to have four dimensions corresponding to [N,C,H,W], got ", dims.size());
     }
 
     const int64_t N = dims[0];
@@ -29,10 +29,7 @@ class ImageScaler final : public OpKernel {
     const int64_t W = dims[3];
 
     if (!bias_.empty() && bias_.size() != static_cast<size_t>(C)) {
-      std::ostringstream err_msg;
-      err_msg << "Bias size (" << bias_.size()
-              << ") does not match the number of channels (" << C << ")";
-      return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Bias size (", bias_.size(), ") does not match the number of channels (", C, ")");
     }
 
     Tensor* Y = context->Output(0, TensorShape({N, C, H, W}));

@@ -22,9 +22,9 @@ class DeepCpuLstmOp final : public OpKernel {
     hidden_size_ = gsl::narrow<int>(int64_value);
 
     // optional attributes
-    vector<std::string> activation_func_names;
-    vector<float> activation_func_alphas;
-    vector<float> activation_func_betas;
+    std::vector<std::string> activation_func_names;
+    std::vector<float> activation_func_alphas;
+    std::vector<float> activation_func_betas;
     op_kernel_info_.GetAttrs<std::string>("activations", activation_func_names);
     op_kernel_info_.GetAttrs<float>("activation_alpha", activation_func_alphas);
     op_kernel_info_.GetAttrs<float>("activation_beta", activation_func_betas);

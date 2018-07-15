@@ -191,19 +191,19 @@ TEST(SoftmaxOperator, TestInputTooLarge) {
   int64_t N = int64_t(INT32_MAX) + 1;
   int64_t D = 1;
   auto status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
-  EXPECT_EQ(status.Code(), StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(status.Code(), Common::INVALID_ARGUMENT);
 
   // D > INT32_MAX
   N = 1;
   D = int64_t(INT32_MAX) + 1;
   status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
-  EXPECT_EQ(status.Code(), StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(status.Code(), Common::INVALID_ARGUMENT);
 
   // N * D > INT32_MAX
   N = int64_t(INT32_MAX) / 2;
   D = 3;
   status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
-  EXPECT_EQ(status.Code(), StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(status.Code(), Common::INVALID_ARGUMENT);
 
   /*
     Common::Status SoftmaxCPU(const int64_t N,
@@ -222,7 +222,7 @@ TEST(SoftmaxOperator, TestInputTooLarge) {
             ss << "SoftmaxCPU inputs N, D and N * D must be < " << INT32_MAX << ". N=" << N << ", D=" << D;
             std::string msg = ss.str();
 
-            return Status(StatusCategory::LOTUS, StatusCode::INVALID_ARGUMENT, msg);
+            return Status(Common::LOTUS, Common::INVALID_ARGUMENT, msg);
         }*/
 }
 }  // namespace Test

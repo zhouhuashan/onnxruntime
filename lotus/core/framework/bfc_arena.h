@@ -52,7 +52,7 @@ struct AllocatorStats {
     this->total_allocated_bytes_ = 0;
   }
 
-  string DebugString() const {
+  std::string DebugString() const {
     std::stringstream ss;
     ss << "Limit:          " << this->bytes_limit << "\n"
        << "InUse:         " << this->bytes_in_use << "\n"
@@ -160,8 +160,8 @@ class BFCArena : public IArenaAllocator {
 
     bool in_use() const { return allocation_id != -1; }
 
-    string DebugString(BFCArena* a,
-                       bool recurse) {
+    std::string DebugString(BFCArena* a,
+                            bool recurse) {
       std::stringstream ss;
       ss << "  Size: " << size << " | Requested Size: " << requested_size << " | in_use: " << in_use();
       if (recurse && prev != BFCArena::kInvalidChunkHandle) {

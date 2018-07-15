@@ -3,7 +3,7 @@
 #include "core/framework/transformer_memcpy.h"
 #include "core/framework/memcpy.h"
 #include "cuda_fence.h"
-
+using namespace Lotus::Common;
 namespace Lotus {
 
 REGISTER_KERNEL(KernelDefBuilder("MemcpyFromHost")

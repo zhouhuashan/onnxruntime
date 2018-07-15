@@ -31,7 +31,7 @@ class Record {
 
   Status GetName(int index, const std::string** pp_name) const {
     if (nullptr == pp_name || index >= names_.size()) {
-      return Status(LOTUS, StatusCode::INVALID_ARGUMENT);
+      return Status(LOTUS, Common::INVALID_ARGUMENT);
     }
 
     *pp_name = &(names_[index]);

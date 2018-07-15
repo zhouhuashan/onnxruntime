@@ -1,5 +1,6 @@
 #include "core/providers/cpu/tensor/upsample.h"
-
+using namespace Lotus::Common;
+using namespace std;
 namespace Lotus {
 template <typename T>
 const string Upsample<T>::UpsampleModeNN = "nearest";

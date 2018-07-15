@@ -39,22 +39,22 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   const int64_t C = X->Shape()[1];
   const int64_t M = W->Shape()[0];
 
-  vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
+  std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
   bool Is2DKernel = kernel_shape.size() == 2;
-  vector<int64_t> pads(pads_);
+  std::vector<int64_t> pads(pads_);
   if (pads.empty()) {
     pads.resize(kernel_shape.size() * 2, 0);
   }
-  vector<int64_t> dilations(dilations_);
+  std::vector<int64_t> dilations(dilations_);
   if (dilations.empty()) {
     dilations.resize(kernel_shape.size(), 1);
   }
-  vector<int64_t> strides(strides_);
+  std::vector<int64_t> strides(strides_);
   if (strides.empty()) {
     strides.resize(kernel_shape.size(), 1);
   }
 
-  vector<int64_t> Y_dims;
+  std::vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
   LOTUS_RETURN_IF_ERROR(InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
@@ -81,7 +81,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   T* Ydata = Y->template MutableData<T>();
 
   TensorShape image_shape = X->Shape().Slice(1);
-  vector<int64_t> col_buffer_shape{kernel_dim};
+  std::vector<int64_t> col_buffer_shape{kernel_dim};
   col_buffer_shape.insert(col_buffer_shape.end(), output_shape.GetDims().begin(),
                           output_shape.GetDims().end());
 
@@ -159,22 +159,22 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   const int64_t C = X->Shape()[1];
   const int64_t M = W->Shape()[0];
 
-  vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
+  std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
   bool Is2DKernel = kernel_shape.size() == 2;
-  vector<int64_t> pads(pads_);
+  std::vector<int64_t> pads(pads_);
   if (pads.empty()) {
     pads.resize(kernel_shape.size() * 2, 0);
   }
-  vector<int64_t> dilations(dilations_);
+  std::vector<int64_t> dilations(dilations_);
   if (dilations.empty()) {
     dilations.resize(kernel_shape.size(), 1);
   }
-  vector<int64_t> strides(strides_);
+  std::vector<int64_t> strides(strides_);
   if (strides.empty()) {
     strides.resize(kernel_shape.size(), 1);
   }
 
-  vector<int64_t> Y_dims;
+  std::vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
   LOTUS_RETURN_IF_ERROR(InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
@@ -197,7 +197,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   float* Ydata = Y->template MutableData<float>();
 
   TensorShape image_shape = X->Shape().Slice(1);
-  vector<int64_t> col_buffer_shape{kernel_dim};
+  std::vector<int64_t> col_buffer_shape{kernel_dim};
   col_buffer_shape.insert(col_buffer_shape.end(), output_shape.GetDims().begin(),
                           output_shape.GetDims().end());
 

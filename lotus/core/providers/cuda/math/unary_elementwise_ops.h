@@ -13,7 +13,7 @@ class UnaryElementwise : public CudaKernel {
  protected:
   UnaryElementwise(const OpKernelInfo& info) : CudaKernel(info) {}
   Status Compute(OpKernelContext*) const override {
-    return Status(LOTUS, FAIL);  // should not reach here
+    return Status(Common::LOTUS, Common::FAIL);  // should not reach here
   }
   Status Prepare(OpKernelContext* context, UnaryElementwisePreparation* p) const;
 };

@@ -21,7 +21,7 @@
 #include "core/framework/tensor.h"
 #include "core/util/math_cpuonly.h"
 #include <queue>
-
+using namespace std;
 namespace Lotus {
 // spec https://github.com/onnx/onnx/blob/master/docs/Operators.md#TopK
 REGISTER_KERNEL(KernelDefBuilder("TopK")
@@ -54,8 +54,8 @@ using ConstEigenMatrixMapRowMajor = Eigen::Map<
 template <typename T>
 struct ValueCmp {
   bool operator()(
-      const std::pair<T, int64_t>& lhs,
-      const std::pair<T, int64_t>& rhs) {
+      const pair<T, int64_t>& lhs,
+      const pair<T, int64_t>& rhs) {
     return (
         lhs.first > rhs.first ||
         (lhs.first == rhs.first && lhs.second < rhs.second));
@@ -71,7 +71,7 @@ Status TopK<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   // e.g. [3, 4, 5] -> [12, 5]
   // [5] -> [5]
   if (in_dims.back() < k_) {
-    std::ostringstream err_msg;
+    ostringstream err_msg;
     err_msg << "k argment [" << k_ << "] should not be greater than last dim [" << in_dims.back() << "]";
     return Status(Common::LOTUS, Common::FAIL, err_msg.str());
   }
@@ -100,9 +100,9 @@ Status TopK<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   for (int64_t i = 0; i < linear_shape[0]; ++i) {
     // Build a min-heap, the heap element is pair of (value, idx)
     // the top of the heap is the smallest value
-    std::priority_queue<
-        std::pair<float, int64_t>,
-        std::vector<std::pair<float, int64_t>>,
+    priority_queue<
+        pair<float, int64_t>,
+        vector<pair<float, int64_t>>,
         ValueCmp<float>>
         min_heap;
 
