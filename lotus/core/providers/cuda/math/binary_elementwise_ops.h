@@ -107,5 +107,15 @@ class PRelu final : public BinaryElementwise<ShouldBroadcast> {
   Status Compute(OpKernelContext* context) const override;
 };
 
+// Sum allows varadic inputs, and it uses binary elementwise Add in implementation
+template <typename T>
+class Sum final : public CudaKernel {
+ public:
+  Sum(const OpKernelInfo& info) : CudaKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
 }  // namespace Cuda
 }  // namespace Lotus

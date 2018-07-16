@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
       if (elt_plan.alloc_kind == AllocKind::kReuse) out << " " << elt_plan.reused_buffer;
       auto& loc = elt_plan.location;
       out << ", " << loc.ToString();
-      if (elt_plan.create_fence) out << ", use fence";
+      if (elt_plan.create_fence_if_async) out << ", use fence when async";
       out << std::endl;
     } else {
       out << "Index out-of-range!" << std::endl;
@@ -347,11 +347,13 @@ class PlannerImpl {
           }
         }
       }
-      // if sync is needed, mark allocation plan as create_fence=true
+      // if sync is needed, mark allocation plan as create_fence_if_async=true
+      // note that the input arg may come from an execution provider (i.e. CPU) that does not support async,
+      // in which case create_fence_if_async would be ignored when creating MLValue
       if (p_kernelDef->ExecQueueId() != 0) {
         pnode->ForEachDef([this](const LotusIR::NodeArg* arg, bool /*is_input*/) {
           MLValueIndex index = Index(arg->Name());
-          AllocPlan(index).create_fence = true;
+          AllocPlan(index).create_fence_if_async = true;
         });
       }
     }

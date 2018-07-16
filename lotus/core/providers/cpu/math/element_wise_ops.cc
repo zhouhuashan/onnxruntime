@@ -572,20 +572,20 @@ Status Log<float>::Compute(OpKernelContext* ctx) const {
 
 template <>
 Status Sum<float>::Compute(OpKernelContext* ctx) const {
-  auto inputCount = Node().InputArgCount().front();
-  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+  auto input_count = Node().InputArgCount().front();
+  LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
   auto& shape = data_0.Shape();
   auto sum = EigenMap<float>(*ctx->Output(0, shape));
 
-  if (inputCount == 1) {
+  if (input_count == 1) {
     sum = EigenMap<float>(data_0);
   } else {
     auto& data_1 = *ctx->Input<Tensor>(1);
     LOTUS_ENFORCE(data_1.Shape() == shape, "All inputs must have the same shape");
 
     sum = EigenMap<float>(data_0) + EigenMap<float>(data_1);
-    for (int index = 2; index < inputCount; index++) {
+    for (int index = 2; index < input_count; index++) {
       auto& data_n = *ctx->Input<Tensor>(index);
       LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
       sum += EigenMap<float>(data_n);

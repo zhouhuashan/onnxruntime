@@ -370,7 +370,7 @@ TEST(MathOpTest, Sum) {
                         {3.0f, 0.0f, 6.0f,
                          -6.0f, 6.6f, 28.0f,
                          -1.0f, 0.06f, 0.25f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, Min) {

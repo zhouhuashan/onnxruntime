@@ -69,7 +69,7 @@ class ExecutionFrame {
                                             MLDataType element_type,
                                             const AllocatorInfo& location,
                                             const TensorShape& shape,
-                                            bool create_fence = false);
+                                            bool try_create_fence = false);
 
   Status AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
                                                 int mlvalue_index_reuse,
@@ -87,7 +87,7 @@ class ExecutionFrame {
                                          MLDataType element_type,
                                          const AllocatorInfo& location,
                                          const TensorShape& shape,
-                                         bool create_fence = false);
+                                         bool try_create_fence = false);
 
   // Create tensor at index mlvalue, with pre-allocate buffer
   // This tensor does not own the buffer.
