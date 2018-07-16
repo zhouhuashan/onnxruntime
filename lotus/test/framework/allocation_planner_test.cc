@@ -132,6 +132,11 @@ class SequentialPlannerTestContext : public ISequentialPlannerContext {
 };
 
 class PlannerTest : public ::testing::Test {
+ private:
+  void index(const std::string& name, int* out) {
+    ASSERT_TRUE(state_.GetMLValueIdx(name, out).IsOK());
+  }
+
  protected:
   LotusIR::Model model_;
   LotusIR::Graph* graph_;
@@ -226,21 +231,19 @@ class PlannerTest : public ::testing::Test {
     AllocationPlanTestUtility::BasicIntegrityCheck(plan_, name_to_arg_.size());
   }
 
-  int index(const std::string& name) {
-    int indx;
-    state_.GetMLValueIdx(name, &indx);
-    return indx;
-  }
-
   void CheckAllocKind(const std::string& name, AllocKind kind) {
-    EXPECT_EQ(plan_.allocation_plan[index(name)].alloc_kind, kind) << "Error in allocation kind for " << name;
+    int id;
+    index(name, &id);
+    EXPECT_EQ(plan_.allocation_plan[id].alloc_kind, kind) << "Error in allocation kind for " << name;
   }
 
   void CheckFreed(int step_number, std::initializer_list<std::string> freed_items) {
     // create set and check equality
     std::unordered_set<int> expected;
     for (auto& name : freed_items) {
-      expected.insert(index(name));
+      int id;
+      index(name, &id);
+      expected.insert(id);
     }
     std::unordered_set<int> plan_result;
     auto& step_plan = plan_.execution_plan[step_number];
