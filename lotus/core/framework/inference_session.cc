@@ -363,7 +363,7 @@ class InferenceSession::Impl {
 
   Common::Status ValidateInputNames(const NameMLValMap& feeds) {
     if (model_input_names_.size() != feeds.size()) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL,
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
                                "The number of feeds is not same as the number of the model input, expect ", model_input_names_.size(),
                                " got ", feeds.size());
     }
@@ -400,17 +400,19 @@ class InferenceSession::Impl {
   Common::Status ValidateOutputs(const std::vector<std::string>& output_names,
                                  const std::vector<MLValue>* p_fetches) {
     if (!p_fetches) {
-      return Common::Status(Common::LOTUS, Common::FAIL, "Output vector pointer is NULL");
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Output vector pointer is NULL");
     }
 
-    // TODO check for emptiness of the output_names vector; can't do it now or else all winml tests will fail.
+    if (output_names.empty()) {
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "At least one output should be requested.");
+    }
 
     if (!p_fetches->empty() &&
         (output_names.size() != p_fetches->size())) {
       std::ostringstream ostr;
       ostr << "Output vector incorrectly sized: output_names.size(): " << output_names.size()
            << "p_fetches->size(): " << p_fetches->size();
-      return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, ostr.str());
     }
 
     bool valid = true;
