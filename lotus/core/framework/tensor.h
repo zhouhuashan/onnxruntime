@@ -45,7 +45,7 @@ for a piece of memory, with additional shape information.
 Memory is owned and managed by Executor / Workspace, so Tensor just uses 
 it, and won't do any allocation / release.
 */
-class Tensor {
+class Tensor final {
   friend class TensorUtil;
   friend class MLValue;
   friend class ExecutionFrame;
@@ -59,7 +59,7 @@ class Tensor {
          AllocatorPtr deleter = nullptr,
          int64_t offset = 0);
 
-  virtual ~Tensor();
+  ~Tensor();
 
   // Copy constructor and assign op will just pass the shape and memory
   // reference to another tensor. Not deep clone/copy.
