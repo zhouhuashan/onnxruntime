@@ -470,15 +470,15 @@ void GemmBatched<float, CPUMathUtil>(
   }
 }
 
-  // MKL will be implmenet as an execution provider
-  ////////////////////////////////////////////////////////////////////////////////
-  // MKL VML alternatives.
-  // Depending on whether we are using MKL, we will delegate the Caffe math
-  // functions that are VML-related to either the VML call or the Eigen
-  // implementation. If you are setting the flags (such as AVX) right for your CPU
-  // architecture, usually Eigen will deliver a throughput as fast as the VML
-  // functions.
-  ////////////////////////////////////////////////////////////////////////////////
+// MKL will be implmenet as an execution provider
+////////////////////////////////////////////////////////////////////////////////
+// MKL VML alternatives.
+// Depending on whether we are using MKL, we will delegate the Caffe math
+// functions that are VML-related to either the VML call or the Eigen
+// implementation. If you are setting the flags (such as AVX) right for your CPU
+// architecture, usually Eigen will deliver a throughput as fast as the VML
+// functions.
+////////////////////////////////////////////////////////////////////////////////
 
 #define DELEGATE_SIMPLE_UNARY_FUNCTION(T, Funcname, expr)                      \
   template <>                                                                  \
@@ -960,6 +960,49 @@ void Col2imNd<float, CPUMathUtil, StorageOrder::NCHW>(
       true);
 }
 
+static void Im2colWithEqualPadding(int64_t output_h, int64_t output_w, const float* data_im,
+                                   const int64_t channels,
+                                   const int64_t height,
+                                   const int64_t width,
+                                   const int64_t kernel_h,
+                                   const int64_t kernel_w,
+                                   const int64_t dilation_h,
+                                   const int64_t dilation_w,
+                                   const int64_t pad_t,
+                                   const int64_t pad_l,
+                                   const int64_t stride_h,
+                                   const int64_t stride_w,
+                                   float* data_col) {
+  // From Intel, https://github.com/BVLC/caffe/pull/3536
+  const int64_t pad_h = pad_t;
+  const int64_t pad_w = pad_l;
+  const int64_t channel_size = height * width;
+  for (int64_t channel = channels; channel--; data_im += channel_size) {
+    for (int64_t kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
+      for (int64_t kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
+        int64_t input_row = -pad_h + kernel_row * dilation_h;
+        for (int64_t output_rows = output_h; output_rows; output_rows--) {
+          if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
+            memset(data_col, 0, output_w * sizeof(float));
+            data_col += output_w;
+          } else {
+            int64_t input_col = -pad_w + kernel_col * dilation_w;
+            const float* rdptr = data_im + input_row * width + input_col;
+            for (int64_t i = 0; i != output_w; ++i) {
+              if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
+                *(data_col++) = rdptr[i * stride_w];
+              } else {
+                *(data_col++) = 0;
+              }
+              input_col += stride_w;
+            }
+          }
+          input_row += stride_h;
+        }
+      }
+    }
+  }
+}
 template <>
 void Im2col<float, CPUMathUtil, StorageOrder::NCHW>(
     const float* data_im,
@@ -1020,35 +1063,7 @@ void Im2col<float, CPUMathUtil, StorageOrder::NCHW>(
 
   // Fast path for equal padding
   if (pad_l == pad_r && pad_t == pad_b) {
-    // From Intel, https://github.com/BVLC/caffe/pull/3536
-    const int64_t pad_h = pad_t;
-    const int64_t pad_w = pad_l;
-    const int64_t channel_size = height * width;
-    for (int64_t channel = channels; channel--; data_im += channel_size) {
-      for (int64_t kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
-        for (int64_t kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
-          int64_t input_row = -pad_h + kernel_row * dilation_h;
-          for (int64_t output_rows = output_h; output_rows; output_rows--) {
-            if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
-              for (int64_t output_cols = output_w; output_cols; output_cols--) {
-                *(data_col++) = 0;
-              }
-            } else {
-              int64_t input_col = -pad_w + kernel_col * dilation_w;
-              for (int64_t output_col = output_w; output_col; output_col--) {
-                if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
-                  *(data_col++) = data_im[input_row * width + input_col];
-                } else {
-                  *(data_col++) = 0;
-                }
-                input_col += stride_w;
-              }
-            }
-            input_row += stride_h;
-          }
-        }
-      }
-    }
+    Im2colWithEqualPadding(output_h, output_w, data_im, channels, height, width, kernel_h, kernel_w, dilation_h, dilation_w, pad_t, pad_l, stride_h, stride_w, data_col);
     return;
   }
 
