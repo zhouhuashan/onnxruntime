@@ -46,6 +46,7 @@ class SequentialExecutor : public Executor {
                                  session_state_.GetGraph()->GetNode(node_index)->Name());
 
       const std::string& node_name = p_op_kernel->Node().Name();
+      const std::string& op_name = p_op_kernel->KernelDef().OpName();
       // construct OpKernelContext
       // TODO: log kernel inputs?
       OpKernelContext op_kernel_context(&root_frame_, p_op_kernel, run_logger_);
@@ -65,15 +66,15 @@ class SequentialExecutor : public Executor {
         if (fence) {
           fence->BeforeUsingAsOutput(p_op_kernel->Node().GetExecutionProviderType(), queue_id);
         }
-      }
-      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_fence_before", sync_time_begin);
+      } 
+      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_fence_before", sync_time_begin, std::unordered_map<std::string, std::string>{{"op_name",op_name}});
 
       // call compute on the kernel
       VLOGS(run_logger_, 1) << "Computing kernel: " << p_op_kernel->Node().Name();
 
       auto kernel_begin_time = session_state_.Profiler().StartTime();
       LOTUS_RETURN_IF_ERROR(p_op_kernel->Compute(&op_kernel_context));
-      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_kernel_time", kernel_begin_time);
+      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_kernel_time", kernel_begin_time, std::unordered_map<std::string, std::string>{{"op_name",op_name}});
 
       sync_time_begin = session_state_.Profiler().StartTime();
       // sync after compute for outputs
@@ -89,7 +90,7 @@ class SequentialExecutor : public Executor {
           fence->AfterUsedAsOutput(queue_id);
         }
       }
-      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_fence_after", sync_time_begin);
+      session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT, node_name + "_fence_after", sync_time_begin, std::unordered_map<std::string, std::string>{{"op_name",op_name}});
 
       // free ml-values corresponding to this node
       VLOGS(run_logger_, 1) << "Releasing node ML values after computing kernel: " << p_op_kernel->Node().Name();

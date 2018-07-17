@@ -20,16 +20,17 @@ void Profiler::StartProfiling(const Logging::Logger* session_logger, const std::
 void Profiler::EndTimeAndRecordEvent(EventCategory category,
                                      const std::string& event_name,
                                      TimePoint& start_time,
+                                     std::unordered_map<std::string, std::string>&& event_args,
                                      bool /*sync_gpu*/) {
   if (!enabled_)
     return;
   //TODO: sync_gpu if needed.
   std::lock_guard<std::mutex> lock(mutex_);
-  if (timing_events_.size() < max_num_events_) {
+  if (events_.size() < max_num_events_) {
     long long dur = TimeDiffMicroSeconds(start_time);
     long long ts = TimeDiffMicroSeconds(profiling_start_time_, start_time);
-    timing_events_.emplace_back(category, Logging::GetProcessId(),
-                                Logging::GetThreadId(), event_name, ts, dur);
+    events_.emplace_back(category, Logging::GetProcessId(),
+                                Logging::GetThreadId(), event_name, ts, dur, std::move(event_args));
   } else {
     if (session_logger_ && !max_events_reached) {
       LOGS(*session_logger_, ERROR)
@@ -43,8 +44,8 @@ std::string Profiler::WriteProfileData() {
   std::lock_guard<std::mutex> lock(mutex_);
   profile_stream_ << "[\n";
 
-  for (int i = 0; i < timing_events_.size(); ++i) {
-    auto& rec = timing_events_[i];
+  for (int i = 0; i < events_.size(); ++i) {
+    auto& rec = events_[i];
     profile_stream_ << "{\"cat\" : \"" << event_categor_names_[rec.cat] << "\",";
     profile_stream_ << "\"pid\" :" << rec.pid << ",";
     profile_stream_ << "\"tid\" :" << rec.tid << ",";
@@ -52,8 +53,15 @@ std::string Profiler::WriteProfileData() {
     profile_stream_ << "\"ts\" :" << rec.ts << ",";
     profile_stream_ << "\"ph\" : \"X\",";
     profile_stream_ << "\"name\" :\"" << rec.name << "\",";
-    profile_stream_ << "\"args\" : {}";
-    if (i == timing_events_.size() - 1) {
+    profile_stream_ << "\"args\" : {";
+    bool is_first_arg = true;
+    for(std::pair<std::string, std::string> event_arg : rec.args){
+      if(!is_first_arg) profile_stream_ << ",";
+      profile_stream_ << "\"" << event_arg.first << "\" : \"" << event_arg.second << "\"";
+      is_first_arg = false;
+    }
+    profile_stream_ << "}";
+    if (i == events_.size() - 1) {
       profile_stream_ << "}\n";
     } else {
       profile_stream_ << "},\n";
