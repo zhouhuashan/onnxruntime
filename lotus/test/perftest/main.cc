@@ -12,7 +12,7 @@
 #include <core/framework/environment.h>
 #include <core/framework/inference_session.h>
 #include <core/platform/env.h>
-#include <core/providers/cpu/cpu_execution_provider.h>
+#include <core/framework/IOBinding.h>
 
 // Windows Specific
 #ifdef _WIN32
@@ -28,7 +28,7 @@ using namespace LotusIR;
 using namespace Lotus;
 
 void usage() {
-  std::cout << "lotus_perf_test -m model_path -r result_file [-t repeated_times] [-d count_of_dataset_to_use]" << std::endl;
+  std::cout << "lotus_perf_test -m model_path -r result_file [-t repeated_times] [-d count_of_dataset_to_use] [-e cpu|cuda]" << std::endl;
 }
 
 struct PerfMetrics {
@@ -64,11 +64,7 @@ size_t GetPeakWorkingSetSize() {
 #endif
 }
 
-void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeated_times, size_t count_of_dataset_to_use) {
-  std::shared_ptr<Lotus::InferenceSession> session_object;
-  SessionFactory sf(kCpuExecutionProvider, true, true);
-  sf.create(session_object, test_case.GetModelUrl(), test_case.GetTestCaseName());
-
+void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeated_times, size_t count_of_dataset_to_use, Lotus::InferenceSession* session_object, IOBinding* io_binding) {
   size_t data_count = test_case.GetDataCount();
 
   if (data_count == 0) {
@@ -82,10 +78,24 @@ void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeate
     for (size_t data_index = 0; data_index < std::min(data_count, count_of_dataset_to_use); data_index++) {
       std::unordered_map<std::string, Lotus::MLValue> feeds;
       test_case.LoadInputData(data_index, feeds);
-      std::vector<MLValue> fetches;
+      for (auto feed : feeds) {
+        io_binding->BindInput(feed.first, feed.second);
+      }
+      auto outputs = session_object->GetOutputs();
+      auto status = outputs.first;
+      if (!outputs.first.IsOK()) {
+        LOGF_DEFAULT(ERROR, "GetOutputs failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu", test_case.GetTestCaseName().c_str(), status.ErrorMessage().c_str(), data_index);
+        continue;
+      }
+      std::vector<MLValue> output_mlvalues(outputs.second->size());
+      for (size_t i_output = 0; i_output < outputs.second->size(); ++i_output) {
+        auto output = outputs.second->at(i_output);
+        if (!output) continue;
+        io_binding->BindOutput(output->Name(), output_mlvalues[i_output]);
+      }
       TIME_SPEC start_time, end_time;
       GetMonotonicTimeCounter(&start_time);
-      Status status = session_object->Run(feeds, &fetches);
+      status = session_object->Run(*io_binding);
       GetMonotonicTimeCounter(&end_time);
       if (!status.IsOK()) {
         LOGF_DEFAULT(ERROR, "inference failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu", test_case.GetTestCaseName().c_str(), status.ErrorMessage().c_str(), data_index);
@@ -160,18 +170,37 @@ int main(int argc, const char* args[]) {
     count_of_dataset_to_use = static_cast<size_t>(count_of_dataset_to_use_from_arg);
   }
 
+  std::string provider_type = LotusIR::kCpuExecutionProvider;
+  if (parser.GetCommandArg("-e")) {
+    const std::string& xp_type = *parser.GetCommandArg("-e");
+    if (xp_type == "cuda")
+      provider_type = LotusIR::kCudaExecutionProvider;
+  }
+
   std::string model_name = model_path.parent_path().filename().string();
   if (model_name.compare(0, 5, "test_") == 0) model_name = model_name.substr(5);
 
-  AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
-  OnnxTestCase test_case(cpu_allocator, model_name);
+  OnnxTestCase test_case(model_name);
+
   if (!test_case.SetModelPath(model_path).IsOK()) {
     LOGF_DEFAULT(ERROR, "load data from %s failed", status.ErrorMessage().c_str());
     return -1;
   }
 
+  std::shared_ptr<Lotus::InferenceSession> session_object;
+  SessionFactory sf(provider_type, true, true);
+  sf.create(session_object, test_case.GetModelUrl(), test_case.GetTestCaseName());
+
+  std::unique_ptr<IOBinding> io_binding;
+  if (!session_object->NewIOBinding(&io_binding).IsOK()) {
+    LOGF_DEFAULT(ERROR, "Failed to init session and IO binding");
+    return -1;
+  }
+  AllocatorPtr cpu_allocator = io_binding->GetCPUAllocator(provider_type);
+  test_case.SetAllocator(cpu_allocator);
+
   PerfMetrics perf_metrics;
-  RunPerfTest(test_case, perf_metrics, repeated_times, count_of_dataset_to_use);
+  RunPerfTest(test_case, perf_metrics, repeated_times, count_of_dataset_to_use, session_object.get(), io_binding.get());
   perf_metrics.DumpToFile(resultfile, test_case.GetTestCaseName());
 
   return 0;

@@ -252,7 +252,7 @@ Status OnnxTestCase::GetRelativePerSampleTolerance(double* value) {
 Status OnnxTestCase::ParseConfig() {
   Status st = Status::OK();
   std::call_once(config_parsed_, [this, &st]() {
-    path config_path = model_url.replace_filename("config.txt");
+    path config_path = model_url_.replace_filename("config.txt");
     st = Env::Default().FileExists(config_path.c_str());
     if (!st.IsOK()) {
       per_sample_tolerance_ = 1e-3;
@@ -282,11 +282,11 @@ Status OnnxTestCase::ParseModel() {
   std::call_once(model_parsed_, [this, &st]() {
     //parse model
     onnx::ModelProto model_pb;
-    st = loadModelFile(model_url.string(), &model_pb);
+    st = loadModelFile(model_url_.string(), &model_pb);
     if (!st.IsOK()) return;
     const onnx::GraphProto& graph = model_pb.graph();
     if (graph.node().size() == 1) {
-      node_name = graph.node()[0].op_type();
+      node_name_ = graph.node()[0].op_type();
     }
     RepeatedPtrFieldToVector(graph.input(), input_value_info_);
     RepeatedPtrFieldToVector(graph.output(), output_value_info_);
@@ -295,13 +295,13 @@ Status OnnxTestCase::ParseModel() {
   return st;
 }
 Status OnnxTestCase::SetModelPath(const path& m) {
-  model_url = m;
+  model_url_ = m;
   path test_case_dir = m.parent_path();
   for (directory_iterator test_data_set(test_case_dir), end2; test_data_set != end2; ++test_data_set) {
     if (!is_directory(*test_data_set)) {
       continue;
     }
-    test_data_dirs.push_back(test_data_set->path());
+    test_data_dirs_.push_back(test_data_set->path());
   }
   return Status::OK();
 }
@@ -323,14 +323,14 @@ static Common::Status LoadTensors(const std::vector<path>& pb_files, std::vector
 }
 
 Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds) {
-  if (id >= test_data_dirs.size())
+  if (id >= test_data_dirs_.size())
     return Status(LOTUS, INVALID_ARGUMENT, "out of bound");
 
   Status st = ParseModel();
   if (!st.IsOK())
     return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
 
-  path inputs_pb = test_data_dirs[id] / "inputs.pb";
+  path inputs_pb = test_data_dirs_[id] / "inputs.pb";
   if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
     return LoopDataFile(inputs_pb, allocator_, [&feeds](const std::string& name, Lotus::MLValue* value) {
       if (name.empty())
@@ -345,7 +345,7 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, Lo
   std::vector<path> input_pb_files;
   const path pb(".pb");
 
-  for (directory_iterator pb_file(test_data_dirs[id]), end3; pb_file != end3; ++pb_file) {
+  for (directory_iterator pb_file(test_data_dirs_[id]), end3; pb_file != end3; ++pb_file) {
     path f = *pb_file;
     if (!is_regular_file(f)) continue;
     if (f.extension() != pb) continue;
@@ -393,8 +393,8 @@ Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<Lot
     std::string s = f.extension().string();
     if (s.empty() || s[0] != '.')
       return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "file has no extension, path = ", f);
-    auto iter = loaders.find(s.substr(1));
-    if (iter == loaders.end()) {
+    auto iter = loaders_.find(s.substr(1));
+    if (iter == loaders_.end()) {
       return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "unknown file extension, path = ", f);
     }
     std::unique_ptr<Lotus::MLValue> v;
@@ -405,12 +405,12 @@ Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<Lot
 }
 
 Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) {
-  if (id >= test_data_dirs.size())
-    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs.size());
+  if (id >= test_data_dirs_.size())
+    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name_, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs_.size());
   Status st = ParseModel();
   if (!st.IsOK())
     return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
-  path outputs_pb = test_data_dirs[id] / "outputs.pb";
+  path outputs_pb = test_data_dirs_[id] / "outputs.pb";
   if (std::experimental::filesystem::exists(outputs_pb)) {  //has an all-in-one output file
     return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, Lotus::MLValue* value) {
       output_values.push_back(*value);
@@ -420,7 +420,7 @@ Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus::MLValue>& outp
   std::vector<path> output_pb_files;
   const path pb(".pb");
   const path tpb(".tpb");
-  for (directory_iterator pb_file(test_data_dirs[id]), end3; pb_file != end3; ++pb_file) {
+  for (directory_iterator pb_file(test_data_dirs_[id]), end3; pb_file != end3; ++pb_file) {
     path f = *pb_file;
     if (!is_regular_file(f)) continue;
     if (f.extension() != pb && f.extension() != tpb) continue;
@@ -506,7 +506,12 @@ Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pb
   return Status::OK();
 }
 
-OnnxTestCase::OnnxTestCase(const Lotus::AllocatorPtr& allocator, const std::string& test_case_name1) : allocator_(allocator), test_case_name(test_case_name1) {
-  loaders["pb"] = new TensorDataLoder(allocator);
+OnnxTestCase::OnnxTestCase(const Lotus::AllocatorPtr& allocator, const std::string& test_case_name) : OnnxTestCase(test_case_name) {
+  SetAllocator(allocator);
+}
+
+void OnnxTestCase::SetAllocator(const Lotus::AllocatorPtr& allocator) {
+  allocator_ = allocator;
+  loaders_["pb"] = new TensorDataLoder(allocator);
   //TODO: add more
 }

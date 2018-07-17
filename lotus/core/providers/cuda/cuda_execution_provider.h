@@ -53,6 +53,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   Status CopyTensor(const Tensor& src, Tensor& dst) const override;
 
+  Status CopyTensor(const Tensor& src, Tensor& dst, int exec_queue_id) const override;
+
   virtual const void* GetExecutionHandle() const noexcept override {
     // The CUDA interface does not return anything interesting.
     return nullptr;

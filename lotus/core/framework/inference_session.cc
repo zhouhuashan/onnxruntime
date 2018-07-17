@@ -683,7 +683,7 @@ class InferenceSession::Impl {
              const std::vector<std::string>& output_names,
              std::vector<MLValue>* p_fetches) {
     auto tp = session_profiler_.StartTime();
-    Status retval = Common::Status::OK();
+    Status retval = Status::OK();
     const RunOptions run_options(run_options0);
     try {
       {

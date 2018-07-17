@@ -64,6 +64,11 @@ class IOBinding {
 
   const std::unordered_map<std::string, MLValue>& GetInputs() const;
 
+  /**
+    * Get a CPU allocator from provider for async copy later if the provider supports that
+    */
+  AllocatorPtr GetCPUAllocator(LotusIR::ProviderType provider_type) const;
+
  private:
   friend InferenceSession;
 

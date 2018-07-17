@@ -75,7 +75,7 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
     LOTUS_ENFORCE(p_input_provider);
 
     auto input_provider_type = p_input_provider->Type();
-    if (input_provider_type == required_provider_type) {
+    if (input_provider_type == required_provider_type && input_tensor_loc.mem_type == kMemTypeDefault) {
       new_mlvalue = orig_mlvalue;
       return Status::OK();
     }
@@ -160,4 +160,19 @@ std::vector<MLValue>& IOBinding::GetOutputs() {
 const std::unordered_map<std::string, MLValue>& IOBinding::GetInputs() const {
   return feeds_;
 }
+
+AllocatorPtr IOBinding::GetCPUAllocator(LotusIR::ProviderType provider_type) const {
+  auto* p_provider = session_state_.GetExecutionProvider(provider_type);
+  LOTUS_ENFORCE(p_provider);
+  auto allocator = p_provider->GetAllocator(kMemTypeCPU);
+
+  // if the provider does not implement CPU allocator, fall back to CPU
+  if (allocator) {
+    return allocator;
+  } else {
+    auto* cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+    return cpu_provider->GetAllocator();
+  }
+}
+
 }  // namespace Lotus

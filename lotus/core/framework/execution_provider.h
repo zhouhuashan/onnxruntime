@@ -30,7 +30,10 @@ class IExecutionProvider {
 
   // Get allocator with specified MemType
   virtual AllocatorPtr GetAllocator(MemType mem_type = kMemTypeDefault) const {
-    return allocators_.at(mem_type);
+    if (allocators_.count(mem_type) > 0)
+      return allocators_.at(mem_type);
+    else
+      return nullptr;
   }
 
   // Run the computation of a given node.
@@ -38,6 +41,13 @@ class IExecutionProvider {
 
   // Copy tensor between execution providers
   virtual Common::Status CopyTensor(const Tensor& src, Tensor& dst) const = 0;
+
+  // Copy tensor between execution providers on specified exec queue
+  virtual Common::Status CopyTensor(const Tensor& src, Tensor& dst, int exec_queue_id) const {
+    // execution provider may override this to support different exec queues
+    LOTUS_ENFORCE(exec_queue_id == 0);
+    return CopyTensor(src, dst);
+  }
 
   // Returns an opaque handle whose exact type varies based on the provider
   // and is interpreted accordingly by the corresponding kernel implementation.

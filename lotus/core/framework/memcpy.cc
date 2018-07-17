@@ -35,7 +35,7 @@ Memcpy::Memcpy(const OpKernelInfo& info)
 Status Memcpy::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   Tensor* Y = ctx->Output(0, X->Shape());
-  Status retval = provider_->CopyTensor(*X, *Y);
+  Status retval = provider_->CopyTensor(*X, *Y, op_kernel_info_.GetKernelDef().ExecQueueId());
   return retval;
 }
 

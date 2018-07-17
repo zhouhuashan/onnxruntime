@@ -122,7 +122,11 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
                                ProviderType bind_provider_type,
                                bool is_preallocate_output_vec = false,
                                ProviderType allocation_provider = kCpuExecutionProvider) {
-  UNUSED_PARAMETER(bind_provider_type);
+  unique_ptr<IOBinding> io_binding;
+  Status st = session_object.NewIOBinding(&io_binding);
+  ASSERT_TRUE(st.IsOK());
+  auto input_allocator = io_binding->GetCPUAllocator(bind_provider_type);
+
   // prepare inputs
   std::vector<float> values_mul_x = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   /*
@@ -131,17 +135,16 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
       8 9 10 11   6 7 8
       9 10 11
       */
+  // bind one input to cpu allocator from bind_provider_type, and another on user provided CPU memory
+  // so both code pathes are covered
   MLValue input_ml_value_A;
   std::vector<int64_t> dims_mul_x_A = {3, 4};
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x_A, values_mul_x, &input_ml_value_A);
+  CreateMLValue<float>(input_allocator, dims_mul_x_A, values_mul_x, &input_ml_value_A);
 
   MLValue input_ml_value_B;
   std::vector<int64_t> dims_mul_x_B = {4, 3};
   CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x_B, values_mul_x, &input_ml_value_B);
 
-  unique_ptr<IOBinding> io_binding;
-  Status st = session_object.NewIOBinding(&io_binding);
-  ASSERT_TRUE(st.IsOK());
   io_binding->BindInput("A", input_ml_value_A);
   io_binding->BindInput("B", input_ml_value_B);
 

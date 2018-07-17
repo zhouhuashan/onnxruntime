@@ -75,7 +75,7 @@ Status CUDAExecutionProvider::OnRunStart() {
   while (it != deferred_release_cpu_ptr.end()) {
     auto& e = it->first;
     auto& v = it->second;
-    if (CUDA_CALL(cudaEventQuery(e))) {
+    if (cudaSuccess == cudaEventQuery(e)) {
       for (auto p : v) {
         cpu_alloc->Free(p);
       }
@@ -85,7 +85,7 @@ Status CUDAExecutionProvider::OnRunStart() {
     }
   }
   CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event));
-  deferred_release_cpu_ptr.emplace(std::make_pair(current_deferred_release_event, std::vector<void*>()));
+  deferred_release_cpu_ptr.emplace(current_deferred_release_event, std::vector<void*>());
   return Status::OK();
 }
 
@@ -96,11 +96,16 @@ Status CUDAExecutionProvider::OnRunEnd() {
 }
 
 Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
+  return CopyTensor(src, dst, kCudaStreamDefault);
+}
+
+Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst, int exec_queue_id) const {
   if (src.Shape().Size() != dst.Shape().Size()) {
     return Status(LOTUS, FAIL, "Tensor size mismatch");
   }
 
-  if (src.Location().name != CUDA && dst.Location().name != CUDA) {
+  if (src.Location().name != CUDA && src.Location().name != CUDA_PINNED &&
+      dst.Location().name != CUDA && dst.Location().name != CUDA_PINNED) {
     return Status(LOTUS, FAIL, "Unsupported tensor location: src_location is: " + src.Location().name + " and dst_location is: " + dst.Location().name);
   }
 
@@ -109,21 +114,28 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   const void* src_data = src.DataRaw();
   void* dst_data = dst.MutableDataRaw();
 
-  if (dst.Location().name != CUDA) {
-    // copying from CUDA device
-    if (dst.Location().name == CUDA_PINNED) {
-      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyDeviceToHost, streams_[kCudaStreamCopyOut]));
-    } else
-      CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToHost));
-  } else if (src.Location().name != CUDA) {
-    // copying to CUDA device, the default stream would sync on this fence when using dst as input tensor in kernel
+  if (dst.Location().name == CUDA) {
     if (src.Location().name == CUDA_PINNED) {
-      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyHostToDevice, streams_[kCudaStreamCopyIn]));
-    } else
+      // copy from pinned memory to GPU, this is non-blocking
+      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyHostToDevice, streams_[exec_queue_id]));
+    } else if (src.Location().name == CUDA) {
+      // copying between GPU, this is non-blocking
+      CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToDevice));
+    } else {
+      // copy from other CPU memory to GPU, this is blocking
       CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyHostToDevice));
+    }
+  } else if (src.Location().name == CUDA) {
+    if (dst.Location().name == CUDA_PINNED) {
+      // copying from GPU to pinned memory, this is non-blocking
+      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyDeviceToHost, streams_[exec_queue_id]));
+    } else {
+      // copying from GPU to CPU memory, this is blocking
+      CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToHost));
+    }
   } else {
-    // copying between device, use default stream for now
-    CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyDeviceToDevice));
+    // copying between cpu memory
+    memcpy(dst_data, src_data, bytes);
   }
 
   return Status::OK();

@@ -41,20 +41,20 @@ class DataLoder {
 */
 class OnnxTestCase : public ITestCase {
  private:
-  std::unordered_map<std::string, DataLoder*> loaders;
-  std::string test_case_name;
-  std::experimental::filesystem::v1::path model_url;
+  std::unordered_map<std::string, DataLoder*> loaders_;
+  std::string test_case_name_;
+  std::experimental::filesystem::v1::path model_url_;
   Lotus::AllocatorPtr allocator_;
   std::vector<onnx::ValueInfoProto> input_value_info_;
   std::vector<onnx::ValueInfoProto> output_value_info_;
 
   Lotus::Common::Status FromPbFiles(const std::vector<std::experimental::filesystem::v1::path>& files, std::vector<Lotus::MLValue>& output_values);
-  std::vector<std::experimental::filesystem::v1::path> test_data_dirs;
+  std::vector<std::experimental::filesystem::v1::path> test_data_dirs_;
 
   //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
   // for https://github.com/onnx/onnx/issues/679
   Lotus::Common::Status ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, Lotus::MLValue>& out);
-  std::string node_name;
+  std::string node_name_;
   std::once_flag model_parsed_;
   std::once_flag config_parsed_;
   double per_sample_tolerance_;
@@ -64,12 +64,14 @@ class OnnxTestCase : public ITestCase {
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OnnxTestCase);
 
  public:
+  OnnxTestCase(const std::string& test_case_name) : test_case_name_(test_case_name) {}
   OnnxTestCase(const Lotus::AllocatorPtr&, const std::string& test_case_name);
   ~OnnxTestCase() {
-    for (auto& ivp : loaders) {
+    for (auto& ivp : loaders_) {
       delete ivp.second;
     }
   }
+  void SetAllocator(const Lotus::AllocatorPtr&);
   Lotus::Common::Status GetPerSampleTolerance(double* value) override;
   Lotus::Common::Status GetRelativePerSampleTolerance(double* value) override;
 
@@ -77,20 +79,20 @@ class OnnxTestCase : public ITestCase {
     return output_value_info_[i];
   }
   size_t GetDataCount() const override {
-    return test_data_dirs.size();
+    return test_data_dirs_.size();
   }
   Lotus::Common::Status GetNodeName(std::string* out) override {
     Lotus::Common::Status st = ParseModel();
-    if (st.IsOK()) *out = node_name;
+    if (st.IsOK()) *out = node_name_;
     return st;
   }
   Lotus::Common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) override;
 
   const std::experimental::filesystem::v1::path& GetModelUrl() const override {
-    return model_url;
+    return model_url_;
   }
   const std::string& GetTestCaseName() const override {
-    return test_case_name;
+    return test_case_name_;
   }
   Lotus::Common::Status LoadInputData(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds) override;
   Lotus::Common::Status LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) override;
