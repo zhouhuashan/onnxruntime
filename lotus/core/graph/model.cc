@@ -188,6 +188,22 @@ Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model,
   return Status::OK();
 }
 
+Status Model::Load(std::unique_ptr<ModelProto> p_model_proto, std::shared_ptr<Model>& model, const ILotusOpSchemaRegistryList* local_registries) {
+  // we expect a graph to be present
+  if (!p_model_proto->has_graph()) {
+    return Status(LOTUS, INVALID_ARGUMENT, "No graph was found in the protobuf.");
+  }
+
+  // need to call private ctor so can't use make_shared
+  GSL_SUPPRESS(r .11)
+  model.reset(new Model(std::move(p_model_proto), local_registries));
+
+  if (model->MainGraph() != nullptr) {
+    LOTUS_RETURN_IF_ERROR(model->MainGraph()->Resolve(true));
+  }
+  return Status::OK();
+}
+
 #ifdef _WIN32
 GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the internal call to Load
 GSL_SUPPRESS(r .35)

@@ -101,6 +101,9 @@ class Model {
   static Lotus::Common::Status Load(const onnx::ModelProto& model_proto, /*out*/ std::shared_ptr<Model>& p_model,
                                     const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
+  static Lotus::Common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto, /*out*/ std::shared_ptr<Model>& p_model,
+                                    const ILotusOpSchemaRegistryList* local_registries = nullptr);
+
  private:
   // Model data.
   std::unique_ptr<onnx::ModelProto> model_proto_;

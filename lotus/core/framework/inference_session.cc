@@ -138,6 +138,36 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
+  Common::Status Load(std::unique_ptr<ModelProto> p_model_proto) {
+    auto tp = session_profiler_.StartTime();
+    try {
+      LOGS(*session_logger_, INFO) << "Loading model using model_proto";
+      std::lock_guard<std::mutex> l(session_mutex_);
+      if (is_model_loaded_) {  // already loaded
+        LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
+        return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
+      }
+
+      std::shared_ptr<LotusIR::Model> p_tmp_model;
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(std::move(p_model_proto), p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
+      model_ = p_tmp_model;
+
+      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+
+      // all steps complete, mark the model as loaded.
+      is_model_loaded_ = true;
+
+      LOGS(*session_logger_, INFO) << "Model successfully loaded.";
+    } catch (const std::exception& ex) {
+      return Status(Common::LOTUS, Common::FAIL, "Exception during loading: " + std::string(ex.what()));
+    } catch (...) {
+      LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
+      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+    }
+    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_proto", tp);
+    return Status::OK();
+  }
+
   Common::Status Load(std::istream& model_istream) {
     auto tp = session_profiler_.StartTime();
     try {
@@ -1329,6 +1359,10 @@ Common::Status InferenceSession::RegisterCustomRegistry(std::shared_ptr<CustomRe
 
 Common::Status InferenceSession::Load(const ModelProto& model_proto) {
   return impl_->Load(model_proto);
+}
+
+Common::Status InferenceSession::Load(std::unique_ptr<ModelProto> p_model_proto) {
+  return impl_->Load(std::move(p_model_proto));
 }
 
 Common::Status InferenceSession::NewIOBinding(LotusIR::ProviderType provider_type,

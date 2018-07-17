@@ -163,14 +163,22 @@ class InferenceSession {
 
   /**
     * Load an ONNX model.
-    * @param protobuf object corresponding to the model file.
+    * @param protobuf object corresponding to the model file. model_proto will be copied by the API.
     * @return OK if success.
     */
   Common::Status Load(const onnx::ModelProto& model_proto);
 
   /**
     * Load an ONNX model.
-    * @param p_model externally created Model obj.
+    * @param protobuf object corresponding to the model file. This is primarily supported to support large models.
+    * @return OK if success.
+    */
+  Common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto);
+
+  /**
+    * Load an ONNX model.
+    * @param p_model externally created Model obj. This API is here for the sake of lotus test tools only and
+    * not intended for external usage.
     * @return OK if success.
     */
   Common::Status Load(std::unique_ptr<LotusIR::Model> p_model);

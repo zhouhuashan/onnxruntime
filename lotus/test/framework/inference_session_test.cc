@@ -718,6 +718,23 @@ TEST(InferenceSessionTests, InvalidInputTypeOfTensorElement) {
   ASSERT_TRUE(!st.IsOK());
 }
 
+TEST(InferenceSessionTests, TestModelProtoUniquePtrInterface) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.TestModelProtoUniquePtrInterface";
+
+  InferenceSession session_object{so};
+  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
+  auto p_model_proto = std::make_unique<ModelProto>();
+  ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, p_model_proto.get()).IsOK());
+  ASSERT_TRUE(session_object.Load(std::move(p_model_proto)).IsOK());
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = so.session_logid;
+  RunModel(session_object, run_options);
+}
+
 #ifdef USE_CUDA
 
 TEST(InferenceSessionTests, TestBindCuda) {
