@@ -63,7 +63,6 @@ class OpKernelContext {
                            const Logging::Logger& logger);
 
   ~OpKernelContext() = default;
-  ;
 
   /** 
   Return the number of inputs for a variadic argument. 
