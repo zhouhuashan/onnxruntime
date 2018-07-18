@@ -27,8 +27,7 @@ class OpKernel {
  public:
   using DoneCallback = std::function<void()>;
 
-  explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {
-  }
+  explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {}
   virtual ~OpKernel() = default;
 
   const LotusIR::Node& Node() const {
@@ -50,7 +49,10 @@ class OpKernel {
     return op_kernel_info_.GetAllocatorInfo(mem_type);
   }
 
- protected:
+  const OpKernelInfo& Info() const { return op_kernel_info_; }
+
+ private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OpKernel);
   OpKernelInfo op_kernel_info_;
 };
 

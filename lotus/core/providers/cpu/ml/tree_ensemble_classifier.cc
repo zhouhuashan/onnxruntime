@@ -144,25 +144,25 @@ ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(int32_t);
 
 template <typename T>
 TreeEnsembleClassifier<T>::TreeEnsembleClassifier(const OpKernelInfo& info) : OpKernel(info) {
-  op_kernel_info_.GetAttrs<int64_t>("nodes_treeids", nodes_treeids_);
-  op_kernel_info_.GetAttrs<int64_t>("nodes_nodeids", nodes_nodeids_);
-  op_kernel_info_.GetAttrs<int64_t>("nodes_featureids", nodes_featureids_);
-  op_kernel_info_.GetAttrs<float>("nodes_values", nodes_values_);
-  op_kernel_info_.GetAttrs<float>("nodes_hitrates", nodes_hitrates_);
-  op_kernel_info_.GetAttrs<int64_t>("nodes_truenodeids", nodes_truenodeids_);
-  op_kernel_info_.GetAttrs<int64_t>("nodes_falsenodeids", nodes_falsenodeids_);
-  op_kernel_info_.GetAttrs<std::string>("nodes_modes", nodes_modes_names_);
-  op_kernel_info_.GetAttrs<int64_t>("nodes_missing_value_tracks_true", missing_tracks_true_);
-  op_kernel_info_.GetAttrs<int64_t>("class_treeids", class_treeids_);
-  op_kernel_info_.GetAttrs<int64_t>("class_nodeids", class_nodeids_);
-  op_kernel_info_.GetAttrs<int64_t>("class_ids", class_ids_);
-  op_kernel_info_.GetAttrs<float>("class_weights", class_weights_);
-  op_kernel_info_.GetAttrs<std::string>("classlabels_strings", classlabels_strings_);
-  op_kernel_info_.GetAttrs<int64_t>("classlabels_int64s", classlabels_int64s_);
-  op_kernel_info_.GetAttrs<float>("base_values", base_values_);
+  info.GetAttrs<int64_t>("nodes_treeids", nodes_treeids_);
+  info.GetAttrs<int64_t>("nodes_nodeids", nodes_nodeids_);
+  info.GetAttrs<int64_t>("nodes_featureids", nodes_featureids_);
+  info.GetAttrs<float>("nodes_values", nodes_values_);
+  info.GetAttrs<float>("nodes_hitrates", nodes_hitrates_);
+  info.GetAttrs<int64_t>("nodes_truenodeids", nodes_truenodeids_);
+  info.GetAttrs<int64_t>("nodes_falsenodeids", nodes_falsenodeids_);
+  info.GetAttrs<std::string>("nodes_modes", nodes_modes_names_);
+  info.GetAttrs<int64_t>("nodes_missing_value_tracks_true", missing_tracks_true_);
+  info.GetAttrs<int64_t>("class_treeids", class_treeids_);
+  info.GetAttrs<int64_t>("class_nodeids", class_nodeids_);
+  info.GetAttrs<int64_t>("class_ids", class_ids_);
+  info.GetAttrs<float>("class_weights", class_weights_);
+  info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_);
+  info.GetAttrs<int64_t>("classlabels_int64s", classlabels_int64s_);
+  info.GetAttrs<float>("base_values", base_values_);
 
   std::string tmp = "NONE";
-  op_kernel_info_.GetAttr<std::string>("post_transform", &tmp);
+  info.GetAttr<std::string>("post_transform", &tmp);
   post_transform_ = MakeTransform(tmp);
 
   LOTUS_ENFORCE(!nodes_treeids_.empty());

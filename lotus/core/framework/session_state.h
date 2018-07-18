@@ -4,6 +4,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+#include "core/common/common.h"
 #include "core/common/logging/logging.h"
 #include "core/common/profiler.h"
 #include "core/framework/allocation_planner.h"
@@ -139,6 +140,8 @@ class SessionState {
   const NameNodeInfoMapType& GetOutputNodeInfoMap() const;
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SessionState);
+
   // cache of the constructed kernels to avoid spending construction
   // time per executor
   std::unordered_map<LotusIR::NodeIndex, std::unique_ptr<OpKernel>> session_kernels_;

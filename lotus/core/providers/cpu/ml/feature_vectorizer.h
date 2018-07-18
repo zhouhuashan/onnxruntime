@@ -11,7 +11,7 @@ namespace ML {
 class FeatureVectorizer final : public OpKernel {
  public:
   FeatureVectorizer(const OpKernelInfo& info) : OpKernel(info) {
-    auto status = op_kernel_info_.GetAttrs<int64_t>("inputdimensions", input_dimensions_);
+    auto status = info.GetAttrs<int64_t>("inputdimensions", input_dimensions_);
     LOTUS_ENFORCE(status.IsOK() && !input_dimensions_.empty(), "inputdimensions attribute must be provided");
 
     total_dimensions_ = std::accumulate(input_dimensions_.cbegin(), input_dimensions_.cend(), 0LL);

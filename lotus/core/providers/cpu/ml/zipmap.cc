@@ -35,8 +35,8 @@ REGISTER_KERNEL(KernelDefBuilder("ZipMap")
                 ZipMapOp);
 
 ZipMapOp::ZipMapOp(const OpKernelInfo& info) : OpKernel(info) {
-  op_kernel_info_.GetAttrs<std::string>("classlabels_strings", classlabels_strings_);  // optional
-  op_kernel_info_.GetAttrs<int64_t>("classlabels_int64s", classlabels_int64s_);        // optional
+  info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_);  // optional
+  info.GetAttrs<int64_t>("classlabels_int64s", classlabels_int64s_);        // optional
   LOTUS_ENFORCE(classlabels_strings_.empty() ^ classlabels_int64s_.empty(),
                 "Must provide classlabels_strings or classlabels_int64s but not both.");
   using_strings_ = !classlabels_strings_.empty();

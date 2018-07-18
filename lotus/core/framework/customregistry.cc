@@ -7,6 +7,6 @@ Common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def
 }
 
 void KernelRegistryManager::RegisterKernelRegistry(std::shared_ptr<KernelRegistry> custom_registry) {
-  kernel_registries.push_front(custom_registry);
+  kernel_registries_.push_front(custom_registry);
 }
 }  // namespace Lotus

@@ -70,7 +70,7 @@ const std::vector<MLDataType> castOpTypeConstraints{
         if (std::is_same<in_type, float>::value) {                                   \
           CastData<float, MLFloat16>(X, Y, shape);                                   \
         } else {                                                                     \
-          CastFloat16Data<in_type, MLFloat16>(X, Y, shape, op_kernel_info_);         \
+          CastFloat16Data<in_type, MLFloat16>(X, Y, shape, Info());                  \
         }                                                                            \
         break;                                                                       \
       case TensorProto_DataType_STRING:                                              \
@@ -108,31 +108,32 @@ Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& shape = X->Shape();
   Tensor* Y = context->Output(0, TensorShape(shape));
+  const auto& op_kernel_info = Info();
 
   switch (to_) {
     case TensorProto_DataType_BOOL:
-      CastFloat16Data<MLFloat16, bool>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, bool>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_INT16:
-      CastFloat16Data<MLFloat16, int16_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, int16_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_INT32:
-      CastFloat16Data<MLFloat16, int32_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, int32_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_INT64:
-      CastFloat16Data<MLFloat16, int64_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, int64_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_UINT8:
-      CastFloat16Data<MLFloat16, uint8_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, uint8_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_UINT16:
-      CastFloat16Data<MLFloat16, uint16_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, uint16_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_UINT32:
-      CastFloat16Data<MLFloat16, uint32_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, uint32_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_UINT64:
-      CastFloat16Data<MLFloat16, uint64_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, uint64_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_FLOAT:
       CastData<MLFloat16, float>(X, Y, shape);
@@ -141,10 +142,10 @@ Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {
       // no op
       break;
     case TensorProto_DataType_DOUBLE:
-      CastFloat16Data<MLFloat16, double>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, double>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_INT8:
-      CastFloat16Data<MLFloat16, int8_t>(X, Y, shape, op_kernel_info_);
+      CastFloat16Data<MLFloat16, int8_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_STRING:
       LOTUS_THROW("Casting to and from strings is not supported yet."); /*break;*/

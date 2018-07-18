@@ -20,6 +20,8 @@ class TransformerMemcpyImpl {
   void ProcessInitializers();
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TransformerMemcpyImpl);
+
   std::set<LotusIR::Node*> provider_nodes_;
   std::set<const LotusIR::NodeArg*> non_provider_input_defs_;   // all input defs of non-provider nodes
   std::set<const LotusIR::NodeArg*> non_provider_output_defs_;  // all output defs of non-provider nodes

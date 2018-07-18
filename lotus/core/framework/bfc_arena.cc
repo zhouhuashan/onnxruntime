@@ -51,7 +51,7 @@ BFCArena::Chunk* BFCArena::ChunkFromHandle(ChunkHandle h) {
 }
 
 bool BFCArena::Extend(size_t rounded_bytes) {
-  size_t available_bytes = memory_limit_ - stats_.total_allocated_bytes_;
+  size_t available_bytes = memory_limit_ - stats_.total_allocated_bytes;
   // Rounds available_bytes down to the nearest multiple of kMinAllocationSize.
   available_bytes = (available_bytes / kMinAllocationSize) * kMinAllocationSize;
 
@@ -99,9 +99,9 @@ bool BFCArena::Extend(size_t rounded_bytes) {
   LOGS_DEFAULT(INFO) << "Extending allocation by " << bytes
                      << " bytes.";
 
-  stats_.total_allocated_bytes_ += bytes;
+  stats_.total_allocated_bytes += bytes;
   LOGS_DEFAULT(INFO) << "Total allocated bytes: "
-                     << stats_.total_allocated_bytes_;
+                     << stats_.total_allocated_bytes;
 
   LOGS_DEFAULT(INFO) << "Allocated memory at " << mem_addr << " to "
                      << static_cast<void*>(static_cast<char*>(mem_addr) + bytes);
@@ -173,7 +173,7 @@ void* BFCArena::Reserve(size_t size) {
   stats_.num_allocs += 1;
   stats_.max_alloc_size = std::max<size_t>(stats_.max_alloc_size, size);
   stats_.max_bytes_in_use = std::max<size_t>(stats_.max_bytes_in_use, stats_.bytes_in_use);
-  stats_.total_allocated_bytes_ += size;
+  stats_.total_allocated_bytes += size;
   return ptr;
 }
 
@@ -331,7 +331,7 @@ void BFCArena::Free(void* p) {
   if (it != reserved_chunks_.end()) {
     device_allocator_->Free(it->first);
     stats_.bytes_in_use -= it->second;
-    stats_.total_allocated_bytes_ -= it->second;
+    stats_.total_allocated_bytes -= it->second;
     reserved_chunks_.erase(it);
   } else {
     DeallocateRawInternal(p);

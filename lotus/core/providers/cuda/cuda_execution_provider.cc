@@ -52,7 +52,7 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
   for (auto pair : all_info) {
     auto iter = device_factories.find(pair.first);
     if (iter != device_factories.end())
-      allocators_.insert(std::make_pair(pair.second, CreateAllocator(iter->second, device_id_)));
+      InsertAllocator(pair.second, CreateAllocator(iter->second, device_id_));
   }
 }
 

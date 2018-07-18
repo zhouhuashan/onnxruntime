@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <vector>
+#include "core/common/common.h"
 #include "core/common/status.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/ml_value.h"
@@ -158,6 +159,8 @@ class ExecutionFrame {
   }
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ExecutionFrame);
+
   friend class OpKernelContext;
   // This method is not thread safe!
   void Release(int offset);

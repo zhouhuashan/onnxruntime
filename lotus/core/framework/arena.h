@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+
+#include "core/common/common.h"
 #include "core/framework/allocator.h"
 
 namespace Lotus {
@@ -64,6 +66,8 @@ class DummyArena : public IArenaAllocator {
   }
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(DummyArena);
+
   std::unique_ptr<IDeviceAllocator> allocator_;
   AllocatorInfo info_;
 };

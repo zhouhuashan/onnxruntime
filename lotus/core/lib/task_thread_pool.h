@@ -28,7 +28,9 @@ Changed to use std::packaged_task instead of std::function so exceptions can be 
 #include <thread>
 #include <utility>
 
+#include "core/common/common.h"
 #include "core/common/logging/logging.h"
+
 namespace Lotus {
 
 class TaskThreadPool {
@@ -118,6 +120,8 @@ class TaskThreadPool {
   }
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TaskThreadPool);
+
   /// @brief Entry point for pool threads.
   void MainLoop(std::size_t index) {
     while (running_) {

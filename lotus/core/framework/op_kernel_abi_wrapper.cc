@@ -846,6 +846,7 @@ AbiOpKernel::~AbiOpKernel() {
 }
 
 Status AbiOpKernel::Compute(OpKernelContext* context) const {
+  const auto& op_kernel_info = Info();
   auto infer_shapes_and_create_kernel = [&](const EdgeShapes& input_shapes, EdgeShapes& output_shapes, IMLOpKernel** kernel) {
     // If the output size is not dynamic, infer it using the kernel. The result of inference is stored in inferred_output_shapes_.
     if (requires_output_shapes_at_creation_) {
@@ -853,7 +854,7 @@ Status AbiOpKernel::Compute(OpKernelContext* context) const {
     }
 
     OpKernelInfoWrapper kernelInfoWrapper(
-        &op_kernel_info_,
+        &op_kernel_info,
         &input_shapes,
         requires_input_shapes_at_creation_ ? &output_shapes : nullptr,
         requires_input_shapes_at_creation_,
@@ -887,7 +888,7 @@ Status AbiOpKernel::Compute(OpKernelContext* context) const {
 
         OpKernelContextWrapper kernelContextWrapper(
             context,
-            op_kernel_info_.GetExecutionProvider(),
+            op_kernel_info.GetExecutionProvider(),
             requires_output_shapes_at_creation_ ? &local_inferred_output_shapes : nullptr);
 
         MLStatus status = kernel->Compute(&kernelContextWrapper);
@@ -908,7 +909,7 @@ Status AbiOpKernel::Compute(OpKernelContext* context) const {
 
   OpKernelContextWrapper kernelContextWrapper(
       context,
-      op_kernel_info_.GetExecutionProvider(),
+      op_kernel_info.GetExecutionProvider(),
       requires_output_shapes_at_creation_ ? &inferred_output_shapes_ : nullptr);
 
   MLStatus status = impl_->Compute(&kernelContextWrapper);

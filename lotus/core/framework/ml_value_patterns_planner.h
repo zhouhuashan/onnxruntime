@@ -1,4 +1,5 @@
 #pragma once
+#include "core/common/common.h"
 #include "core/framework/mem_pattern_planner.h"
 #include "core/framework/allocation_planner.h"
 #include <vector>
@@ -43,14 +44,15 @@ class MLValuePatternPlanner {
     std::lock_guard<std::mutex> lock(lock_);
     for (auto it = planner_map_.begin(); it != planner_map_.end(); ++it) {
       out->locations.push_back(it->first);
-      MemoryPattern p;
-      LOTUS_RETURN_IF_ERROR(it->second->GenerateMemPattern(&p));
-      out->patterns.push_back(p);
+      out->patterns.push_back(it->second->GenerateMemPattern());
     }
+
     return Common::Status::OK();
   }
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(MLValuePatternPlanner);
+
   mutable std::mutex lock_;
   std::map<AllocatorInfo, MemPatternPlanner*> planner_map_;
   std::vector<std::unique_ptr<MemPatternPlanner> > pattern_planners_;

@@ -41,7 +41,7 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
         for (int i = 0; i < mem_patterns_->locations.size(); i++) {
           LOTUS_ENFORCE(buffers_.find(mem_patterns_->locations[i]) == buffers_.end());
           AllocatorPtr alloc = GetAllocator(mem_patterns_->locations[i]);
-          void* buffer = mem_patterns_->patterns[i].peak_size() > 0 ? alloc->Alloc(mem_patterns_->patterns[i].peak_size()) : nullptr;
+          void* buffer = mem_patterns_->patterns[i].PeakSize() > 0 ? alloc->Alloc(mem_patterns_->patterns[i].PeakSize()) : nullptr;
           buffers_[mem_patterns_->locations[i]] = BufferUniquePtr(buffer, alloc);
         }
       }
@@ -169,7 +169,7 @@ Status ExecutionFrame::AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_
   MLValue* p_mlvalue_reuse = &all_values_[mlvalue_index_reuse];
 
   Tensor* reuse_tensor = p_mlvalue_reuse->GetMutable<Tensor>();
-  void* reuse_buffer = reuse_tensor->GetRaw();
+  void* reuse_buffer = reuse_tensor->MutableDataRaw();
 
   // reused MLValue share the same fence
   p_mlvalue->ShareFenceWith(*p_mlvalue_reuse);

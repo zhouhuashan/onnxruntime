@@ -51,10 +51,10 @@ REGISTER_KERNEL(KernelDefBuilder("Imputer")
                 ImputerOp);
 
 ImputerOp::ImputerOp(const OpKernelInfo& info) : OpKernel(info) {
-  op_kernel_info_.GetAttrs<float>("imputed_value_floats", imputed_values_float_);
-  op_kernel_info_.GetAttr<float>("replaced_value_float", &replaced_value_float_);
-  op_kernel_info_.GetAttrs<int64_t>("imputed_value_int64s", imputed_values_int64_);
-  op_kernel_info_.GetAttr<int64_t>("replaced_value_int64", &replaced_value_int64_);
+  info.GetAttrs<float>("imputed_value_floats", imputed_values_float_);
+  info.GetAttr<float>("replaced_value_float", &replaced_value_float_);
+  info.GetAttrs<int64_t>("imputed_value_int64s", imputed_values_int64_);
+  info.GetAttr<int64_t>("replaced_value_int64", &replaced_value_int64_);
   LOTUS_ENFORCE(imputed_values_float_.empty() ^ imputed_values_int64_.empty(),
                 "Must provide imputed_values_float_ or imputed_values_int64_ but not both.");
 }

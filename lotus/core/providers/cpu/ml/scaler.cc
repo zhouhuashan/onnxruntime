@@ -63,8 +63,8 @@ REGISTER_KERNEL(KernelDefBuilder("Scaler")
 
 template <typename T>
 ScalerOp<T>::ScalerOp(const OpKernelInfo& info) : OpKernel(info) {
-  op_kernel_info_.GetAttrs<float>("scale", scale_);    // optional
-  op_kernel_info_.GetAttrs<float>("offset", offset_);  // optional
+  info.GetAttrs<float>("scale", scale_);    // optional
+  info.GetAttrs<float>("offset", offset_);  // optional
   LOTUS_ENFORCE(!scale_.empty(), "Empty scale in attributes");
   LOTUS_ENFORCE(scale_.size() == offset_.size(),
                 "Scale size: (" + std::to_string(scale_.size()) + ") != (" + std::to_string(offset_.size()) + ")");

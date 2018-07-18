@@ -13,11 +13,11 @@ class CategoryMapper final : public OpKernel {
     std::vector<std::string> string_categories;
     std::vector<int64_t> int_categories;
 
-    LOTUS_ENFORCE(op_kernel_info_.GetAttrs<std::string>("cats_strings", string_categories).IsOK());
-    LOTUS_ENFORCE(op_kernel_info_.GetAttrs<int64_t>("cats_int64s", int_categories).IsOK());
+    LOTUS_ENFORCE(info.GetAttrs<std::string>("cats_strings", string_categories).IsOK());
+    LOTUS_ENFORCE(info.GetAttrs<int64_t>("cats_int64s", int_categories).IsOK());
 
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<std::string>("default_string", &default_string_).IsOK());
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("default_int64", &default_int_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<std::string>("default_string", &default_string_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("default_int64", &default_int_).IsOK());
 
     auto num_entries = string_categories.size();
 

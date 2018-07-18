@@ -127,7 +127,7 @@ docker login
 docker build -t lotus-ubuntu16.04 .
 docker run -it --rm --name lotus-cpu -v [LocalPath]/Git/Lotus:/home/lotusdev/Lotus lotus-ubuntu16.04 /bin/bash
 source /usr/local/miniconda3/bin/activate lotus-py35
-python /home/lotusdev/Lotus/tools/ci_build/build.py --build_dir /home/lotusdev/Lotus/build --config Debug --skip_submodule_sync --enable_pybind
+python /home/lotusdev/Lotus/tools/ci_build/build.py --build_dir /home/lotusdev/Lotus/build/Linux --config Debug --skip_submodule_sync --enable_pybind
 ```
 Run command below if the conda environment `lotus-py35` does not exist
 ```

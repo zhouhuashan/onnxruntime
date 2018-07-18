@@ -13,7 +13,7 @@ class Normalizer final : public OpKernel {
  public:
   Normalizer(const OpKernelInfo& info) : OpKernel(info) {
     std::string norm;
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<std::string>("norm", &norm).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<std::string>("norm", &norm).IsOK());
 
     normalization_ = MakeNormalize(norm);
   }

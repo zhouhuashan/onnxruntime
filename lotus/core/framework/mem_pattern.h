@@ -7,7 +7,7 @@ struct MemoryBlock {
   size_t offset_{0};
   size_t size_{0};
 
-  MemoryBlock()  = default;
+  MemoryBlock() = default;
   MemoryBlock(size_t offset, size_t size) : offset_(offset), size_(size) {}
 };
 
@@ -15,9 +15,19 @@ class MemoryPattern {
   friend class MemPatternPlanner;
 
  public:
-  MemoryPattern()  = default;
+  MemoryPattern() = default;
 
-  size_t peak_size() const {
+  MemoryPattern(MemoryPattern&& rhs)
+      : patterns_{std::move(rhs.patterns_)},
+        peak_size_{std::move(rhs.peak_size_)} {}
+
+  MemoryPattern& operator=(MemoryPattern&& rhs) {
+    patterns_ = std::move(rhs.patterns_);
+    peak_size_ = std::move(rhs.peak_size_);
+    return *this;
+  }
+
+  size_t PeakSize() const {
     return peak_size_;
   }
 
@@ -29,12 +39,10 @@ class MemoryPattern {
       return &it->second;
   }
 
-  void clear() {
-    peak_size_ = 0;
-    patterns_.clear();
-  }
-
  private:
+  // allow move
+  LOTUS_DISALLOW_COPY_AND_ASSIGN(MemoryPattern);
+
   std::unordered_map<int, MemoryBlock> patterns_;
   size_t peak_size_{0};
 };

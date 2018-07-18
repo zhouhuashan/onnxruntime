@@ -16,10 +16,10 @@ class DeepCpuGruOp final : public OpKernel {
   DeepCpuGruOp(const OpKernelInfo& info) : OpKernel(info) {
     // required attributes
     std::string direction;
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr("direction", &direction).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("direction", &direction).IsOK());
 
     int64_t int64_value;
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr("linear_before_reset", &int64_value).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("linear_before_reset", &int64_value).IsOK());
     linear_before_reset_ = gsl::narrow<int>(int64_value);
 
     // TODO: Implementation needs changes to support linear_before_reset as Rbh and Wbh are added together
@@ -27,18 +27,18 @@ class DeepCpuGruOp final : public OpKernel {
     // is calculated. VSTS Task 609: Support linear_before_reset in GRU operator
     LOTUS_ENFORCE(linear_before_reset_ == 0, "linear_before_reset is not currently supported.");
 
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr("hidden_size", &int64_value).IsOK() && int64_value > 0);
+    LOTUS_ENFORCE(info.GetAttr("hidden_size", &int64_value).IsOK() && int64_value > 0);
     hidden_size_ = gsl::narrow<int>(int64_value);
 
     // optional attributes
     std::vector<std::string> activation_func_names;
     std::vector<float> activation_func_alphas;
     std::vector<float> activation_func_betas;
-    op_kernel_info_.GetAttrs<std::string>("activations", activation_func_names);
-    op_kernel_info_.GetAttrs<float>("activation_alpha", activation_func_alphas);
-    op_kernel_info_.GetAttrs<float>("activation_beta", activation_func_betas);
+    info.GetAttrs<std::string>("activations", activation_func_names);
+    info.GetAttrs<float>("activation_alpha", activation_func_alphas);
+    info.GetAttrs<float>("activation_beta", activation_func_betas);
 
-    op_kernel_info_.GetAttr<float>("clip", &clip_);
+    info.GetAttr<float>("clip", &clip_);
     LOTUS_ENFORCE(clip_ > 0.f);
 
     direction_ = Rnn::detail::MakeDirection(direction);

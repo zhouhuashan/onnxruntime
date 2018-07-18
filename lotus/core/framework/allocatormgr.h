@@ -1,10 +1,11 @@
 #pragma once
 
+#include "core/common/common.h"
 #include "core/framework/arena.h"
 
 namespace Lotus {
 
-using DeviceAllocatorFactory = std::function<std::unique_ptr<IDeviceAllocator> (int)>;
+using DeviceAllocatorFactory = std::function<std::unique_ptr<IDeviceAllocator>(int)>;
 
 struct DeviceAllocatorRegistrationInfo {
   MemType mem_type;
@@ -16,9 +17,10 @@ AllocatorPtr CreateAllocator(DeviceAllocatorRegistrationInfo info, int device_id
 
 class DeviceAllocatorRegistry {
  public:
-  void RegisterDeviceAllocator(std::string&& name, DeviceAllocatorFactory factory, size_t max_mem, MemType mem_type = kMemTypeDefault) {
+  void RegisterDeviceAllocator(std::string&& name, DeviceAllocatorFactory factory, size_t max_mem,
+                               MemType mem_type = kMemTypeDefault) {
     DeviceAllocatorRegistrationInfo info({mem_type, factory, max_mem});
-    device_allocator_registrations_.insert(std::make_pair(std::move(name), std::move(info)));
+    auto ignored = device_allocator_registrations_.emplace(std::move(name), std::move(info));
   }
 
   const std::map<std::string, DeviceAllocatorRegistrationInfo>& AllRegistrations() const {
@@ -28,6 +30,9 @@ class DeviceAllocatorRegistry {
   static DeviceAllocatorRegistry& Instance();
 
  private:
+  DeviceAllocatorRegistry() = default;
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(DeviceAllocatorRegistry);
+
   std::map<std::string, DeviceAllocatorRegistrationInfo> device_allocator_registrations_;
 };
 

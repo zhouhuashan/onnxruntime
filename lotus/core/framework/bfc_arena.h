@@ -31,14 +31,14 @@ limitations under the License.
 namespace Lotus {
 // Runtime statistics collected by an allocator.
 struct AllocatorStats {
-  int64_t num_allocs;              // Number of allocations.
-  int64_t bytes_in_use;            // Number of bytes in use.
-  int64_t total_allocated_bytes_;  // The total number of allocated bytes by the allocator.
-  int64_t max_bytes_in_use;        // The maximum bytes in use.
-  int64_t max_alloc_size;          // The max single allocation seen.
-                                   // The upper limit what the allocator can allocate, if such a limit
-                                   // is known. Certain allocator may return 0 to indicate the limit is
-                                   // unknown.
+  int64_t num_allocs;             // Number of allocations.
+  int64_t bytes_in_use;           // Number of bytes in use.
+  int64_t total_allocated_bytes;  // The total number of allocated bytes by the allocator.
+  int64_t max_bytes_in_use;       // The maximum bytes in use.
+  int64_t max_alloc_size;         // The max single allocation seen.
+                                  // The upper limit what the allocator can allocate, if such a limit
+                                  // is known. Certain allocator may return 0 to indicate the limit is
+                                  // unknown.
   int64_t bytes_limit;
 
   AllocatorStats() { Clear(); }
@@ -49,17 +49,17 @@ struct AllocatorStats {
     this->max_bytes_in_use = 0;
     this->max_alloc_size = 0;
     this->bytes_limit = 0;
-    this->total_allocated_bytes_ = 0;
+    this->total_allocated_bytes = 0;
   }
 
   std::string DebugString() const {
     std::ostringstream ss;
-    ss << "Limit:          " << this->bytes_limit << "\n"
-       << "InUse:         " << this->bytes_in_use << "\n"
-       << "TotalAllocate: " << this->total_allocated_bytes_ << "\n"
-       << "MaxInUse:      " << this->max_bytes_in_use << "\n"
-       << "NumAllocs:     " << this->num_allocs << "\n"
-       << "MaxAllocSize:  " << this->max_alloc_size << "\n";
+    ss << "Limit:           " << this->bytes_limit << "\n"
+       << "InUse:          " << this->bytes_in_use << "\n"
+       << "TotalAllocated: " << this->total_allocated_bytes << "\n"
+       << "MaxInUse:       " << this->max_bytes_in_use << "\n"
+       << "NumAllocs:      " << this->num_allocs << "\n"
+       << "MaxAllocSize:   " << this->max_alloc_size << "\n";
     return ss.str();
   }
 };
@@ -160,14 +160,14 @@ class BFCArena : public IArenaAllocator {
 
     bool in_use() const { return allocation_id != -1; }
 
-    std::string DebugString(BFCArena* a,
-                            bool recurse) {
+    std::string DebugString(BFCArena* a, bool recurse) {
       std::ostringstream ss;
       ss << "  Size: " << size << " | Requested Size: " << requested_size << " | in_use: " << in_use();
       if (recurse && prev != BFCArena::kInvalidChunkHandle) {
         Chunk* p = a->ChunkFromHandle(prev);
         ss << ", prev: " << p->DebugString(a, false);
       }
+
       if (recurse && next != BFCArena::kInvalidChunkHandle) {
         Chunk* n = a->ChunkFromHandle(next);
         ss << ", next: " << n->DebugString(a, false);
@@ -184,6 +184,7 @@ class BFCArena : public IArenaAllocator {
     struct ChunkComparator {
       explicit ChunkComparator(BFCArena* allocator)
           : allocator_(allocator) {}
+
       // Sort first by size and then use pointer address as a tie breaker.
       bool operator()(const ChunkHandle ha,
                       const ChunkHandle hb) const {
@@ -308,6 +309,8 @@ class BFCArena : public IArenaAllocator {
     const std::vector<AllocationRegion>& regions() const { return regions_; }
 
    private:
+    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RegionManager);
+
     static bool Comparator(const void* ptr, const AllocationRegion& other) {
       return ptr < other.end_ptr();
     }
@@ -427,14 +430,17 @@ class BFCArena : public IArenaAllocator {
   Bin* BinFromIndex(BinNum index) {
     return reinterpret_cast<Bin*>(&(bins_space_[index * sizeof(Bin)]));
   }
+
   size_t BinNumToSize(BinNum index) {
     return static_cast<size_t>(256) << index;
   }
+
   BinNum BinNumForSize(size_t bytes) {
     uint64_t v = std::max<size_t>(bytes, 256) >> kMinAllocationBits;
     int b = std::min(kNumBins - 1, Log2FloorNonZero(v));
     return b;
   }
+
   Bin* BinForSize(size_t bytes) { return BinFromIndex(BinNumForSize(bytes)); }
 
   char bins_space_[sizeof(Bin) * kNumBins];
@@ -465,6 +471,6 @@ class BFCArena : public IArenaAllocator {
 
   std::unordered_map<void*, size_t> reserved_chunks_;
 
-  LOTUS_DISALLOW_ASSIGN(BFCArena);
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(BFCArena);
 };
 }  // namespace Lotus

@@ -12,16 +12,16 @@ class CastMap final : public OpKernel {
   CastMap(const OpKernelInfo& info) : OpKernel(info) {
     std::string attr;
 
-    if (op_kernel_info_.GetAttr<std::string>("cast_to", &attr).IsOK()) {
+    if (info.GetAttr<std::string>("cast_to", &attr).IsOK()) {
       cast_to_ = MakeCast(attr);
     }
 
-    if (op_kernel_info_.GetAttr<std::string>("map_form", &attr).IsOK()) {
+    if (info.GetAttr<std::string>("map_form", &attr).IsOK()) {
       map_form_ = MakePack(attr);
     }
 
     // ignore if not found as we fall back to the default of 1
-    auto ignored = op_kernel_info_.GetAttr<int64_t>("max_map", &max_map_);
+    auto ignored = info.GetAttr<int64_t>("max_map", &max_map_);
 
     LOTUS_ENFORCE(map_form_ != PACK_MAP::SPARSE || max_map_ > 0, "max_map must be > 0 if map_form is SPARSE");
   }

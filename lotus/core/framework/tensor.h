@@ -46,10 +46,6 @@ Memory is owned and managed by Executor / Workspace, so Tensor just uses
 it, and won't do any allocation / release.
 */
 class Tensor final {
-  friend class TensorUtil;
-  friend class MLValue;
-  friend class ExecutionFrame;
-
  public:
   // Create tensor with given type, shape, pre-allocate memory and allocator info.
   Tensor(MLDataType p_type,
@@ -85,7 +81,7 @@ class Tensor final {
     // Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
                   DataTypeImpl::GetType<T>(), "!=", dtype_);
-    return reinterpret_cast<T*>(static_cast<char*>(GetRaw()) + byte_offset_);
+    return reinterpret_cast<T*>(static_cast<char*>(p_data_) + byte_offset_);
   }
 
   // May return nullptr if tensor size is zero
@@ -94,7 +90,7 @@ class Tensor final {
     // Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
                   DataTypeImpl::GetType<T>(), "!=", dtype_);
-    T* data = reinterpret_cast<T*>(static_cast<char*>(GetRaw()) + byte_offset_);
+    T* data = reinterpret_cast<T*>(static_cast<char*>(p_data_) + byte_offset_);
     return gsl::make_span(data, shape_.Size());
   }
 
@@ -103,7 +99,7 @@ class Tensor final {
     // Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
                   DataTypeImpl::GetType<T>(), "!=", dtype_);
-    return reinterpret_cast<const T*>(static_cast<char*>(GetRaw()) + byte_offset_);
+    return reinterpret_cast<const T*>(static_cast<char*>(p_data_) + byte_offset_);
   }
 
   template <typename T>
@@ -111,26 +107,26 @@ class Tensor final {
     // Type check
     LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
                   DataTypeImpl::GetType<T>(), "!=", dtype_);
-    const T* data = reinterpret_cast<const T*>(static_cast<char*>(GetRaw()) + byte_offset_);
+    const T* data = reinterpret_cast<const T*>(static_cast<char*>(p_data_) + byte_offset_);
     return gsl::make_span(data, shape_.Size());
   }
 
   void* MutableDataRaw(MLDataType type) {
     LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
-    return GetRaw();
+    return p_data_;
   }
 
   const void* DataRaw(MLDataType type) const {
     LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
-    return GetRaw();
+    return p_data_;
   }
 
   void* MutableDataRaw() noexcept {
-    return GetRaw();
+    return p_data_;
   }
 
   const void* DataRaw() const noexcept {
-    return GetRaw();
+    return p_data_;
   }
 
   /**
@@ -157,10 +153,6 @@ class Tensor final {
             const AllocatorInfo& alloc,
             AllocatorPtr deleter,
             int64_t offset = 0);
-
-  void* GetRaw() const noexcept {
-    return p_data_;
-  }
 
   void* p_data_;
   // if buffer_deleter_ is null, it means tensor does not own the buffer.

@@ -11,25 +11,25 @@ namespace Lotus {
 class RandomNormal final : public OpKernel {
  public:
   RandomNormal(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("mean", &mean_).IsOK());
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("scale", &scale_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("mean", &mean_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("scale", &scale_).IsOK());
 
     // read optional seed attribute and generate if not provided
     float seed = 0.f;
-    if (!op_kernel_info_.GetAttr<float>("seed", &seed).IsOK()) {
+    if (!info.GetAttr<float>("seed", &seed).IsOK()) {
       seed = gsl::narrow_cast<float>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
 
     generator_ = std::default_random_engine{gsl::narrow_cast<uint32_t>(seed)};
 
     int64_t dtype;
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("dtype", &dtype).IsOK());
     dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
     LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                   "Invalid dtype of ", dtype_);
 
     std::vector<int64_t> shape;
-    LOTUS_ENFORCE(op_kernel_info_.GetAttrs<int64_t>("shape", shape).IsOK());
+    LOTUS_ENFORCE(info.GetAttrs<int64_t>("shape", shape).IsOK());
     shape_ = TensorShape(shape);
   }
 
@@ -46,19 +46,19 @@ class RandomNormal final : public OpKernel {
 class RandomNormalLike final : public OpKernel {
  public:
   RandomNormalLike(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("mean", &mean_).IsOK());
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("scale", &scale_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("mean", &mean_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("scale", &scale_).IsOK());
 
     // read optional seed attribute and generate if not provided
     float seed = 0.f;
-    if (!op_kernel_info_.GetAttr<float>("seed", &seed).IsOK()) {
+    if (!info.GetAttr<float>("seed", &seed).IsOK()) {
       seed = gsl::narrow_cast<float>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
 
     generator_ = std::default_random_engine{gsl::narrow_cast<uint32_t>(seed)};
 
     int64_t dtype;
-    if (op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
+    if (info.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
       dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
       LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                     "Invalid dtype of ", dtype_);
@@ -77,25 +77,25 @@ class RandomNormalLike final : public OpKernel {
 class RandomUniform final : public OpKernel {
  public:
   RandomUniform(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("high", &high_).IsOK());
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("low", &low_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("high", &high_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("low", &low_).IsOK());
 
     // read optional seed attribute and generate if not provided
     float seed = 0.f;
-    if (!op_kernel_info_.GetAttr<float>("seed", &seed).IsOK()) {
+    if (!info.GetAttr<float>("seed", &seed).IsOK()) {
       seed = gsl::narrow_cast<float>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
 
     generator_ = std::default_random_engine{gsl::narrow_cast<uint32_t>(seed)};
 
     int64_t dtype;
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("dtype", &dtype).IsOK());
     dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
     LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                   "Invalid dtype of ", dtype_);
 
     std::vector<int64_t> shape;
-    LOTUS_ENFORCE(op_kernel_info_.GetAttrs<int64_t>("shape", shape).IsOK());
+    LOTUS_ENFORCE(info.GetAttrs<int64_t>("shape", shape).IsOK());
     shape_ = TensorShape(shape);
   }
 
@@ -112,18 +112,18 @@ class RandomUniform final : public OpKernel {
 class RandomUniformLike final : public OpKernel {
  public:
   RandomUniformLike(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("high", &high_).IsOK());
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<float>("low", &low_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("high", &high_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<float>("low", &low_).IsOK());
     // read optional seed attribute and generate if not provided
     float seed = 0.f;
-    if (!op_kernel_info_.GetAttr<float>("seed", &seed).IsOK()) {
+    if (!info.GetAttr<float>("seed", &seed).IsOK()) {
       seed = gsl::narrow_cast<float>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
 
     generator_ = std::default_random_engine{gsl::narrow_cast<uint32_t>(seed)};
 
     int64_t dtype;
-    if (op_kernel_info_.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
+    if (info.GetAttr<int64_t>("dtype", &dtype).IsOK()) {
       dtype_ = static_cast<onnx::TensorProto::DataType>(dtype);
       LOTUS_ENFORCE(onnx::TensorProto::DataType_IsValid(dtype_) && dtype_ != onnx::TensorProto::UNDEFINED,
                     "Invalid dtype of ", dtype_);
@@ -142,17 +142,17 @@ class RandomUniformLike final : public OpKernel {
 class Multinomial final : public OpKernel {
  public:
   Multinomial(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("sample_size", &num_samples_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("sample_size", &num_samples_).IsOK());
 
     float seed = 0.f;
-    if (!op_kernel_info_.GetAttr<float>("seed", &seed).IsOK()) {
+    if (!info.GetAttr<float>("seed", &seed).IsOK()) {
       seed = gsl::narrow_cast<float>(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     }
 
     generator_ = std::default_random_engine{gsl::narrow_cast<uint32_t>(seed)};
 
     int64_t output_dtype_tmp;
-    if (!op_kernel_info_.GetAttr<int64_t>("dtype", &output_dtype_tmp).IsOK()) {
+    if (!info.GetAttr<int64_t>("dtype", &output_dtype_tmp).IsOK()) {
       output_dtype_ = onnx::TensorProto_DataType_INT32;  // default is INT32 as per spec
     } else {
       output_dtype_ = static_cast<onnx::TensorProto::DataType>(output_dtype_tmp);

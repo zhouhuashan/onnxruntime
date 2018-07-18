@@ -25,13 +25,13 @@ class KernelRegistryManager {
 
   std::vector<const KernelRegistry*> GetAllKernelRegistries() {
     std::vector<const KernelRegistry*> result;
-    for (auto& registry : kernel_registries) {
+    for (auto& registry : kernel_registries_) {
       result.push_back(registry.get());
     }
     return result;
   }
 
  private:
-  std::list<std::shared_ptr<KernelRegistry>> kernel_registries;
+  std::list<std::shared_ptr<KernelRegistry>> kernel_registries_;
 };
 }  // namespace Lotus

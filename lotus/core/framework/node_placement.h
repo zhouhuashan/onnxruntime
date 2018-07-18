@@ -7,17 +7,20 @@
 namespace Lotus {
 class GraphPlacementPlanner : public LotusIR::GraphTransformer {
  public:
-  //The order of kernel registries repesent the priority
-  //The order of provider types repesent the user prefernece.
+  //The order of kernel registries represents the priority.
+  //The order of provider types represents the user preference.
   GraphPlacementPlanner(const std::string& name,
                         const std::vector<const KernelRegistry*>& registries,
-                        const std::vector<std::string>& providers) : LotusIR::GraphTransformer(name, "Split the graph according to the kernerl registrations."),
-                                                                     kernels_registries_(registries),
-                                                                     provider_preference_(providers) {}
+                        const std::vector<std::string>& providers)
+      : LotusIR::GraphTransformer(name, "Split the graph according to the kernel registrations."),
+        kernels_registries_(registries),
+        provider_preference_(providers) {}
 
   Status Apply(LotusIR::Graph* graph, bool* modified) const override;
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphPlacementPlanner);
+
   std::vector<const KernelRegistry*> kernels_registries_;
   std::vector<std::string> provider_preference_;
 };

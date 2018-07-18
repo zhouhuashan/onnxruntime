@@ -9,8 +9,8 @@ namespace ML {
 class DictVectorizerOp final : public OpKernel {
  public:
   DictVectorizerOp(const OpKernelInfo& info) : OpKernel(info) {
-    op_kernel_info_.GetAttrs<std::string>("string_vocabulary", string_index_);
-    op_kernel_info_.GetAttrs<int64_t>("int64_vocabulary", int_index_);
+    info.GetAttrs<std::string>("string_vocabulary", string_index_);
+    info.GetAttrs<int64_t>("int64_vocabulary", int_index_);
     LOTUS_ENFORCE(string_index_.empty() ^ int_index_.empty(),
                   "Must provide string_vocabulary or int64_vocabulary but not both.");
   }

@@ -37,16 +37,16 @@ class CPUExecutionProvider : public IExecutionProvider {
     if (cpu_allocator_creator != device_factories.end()) {
 #ifdef USE_JEMALLOC
       //JEMalloc already has memory pool, so just use device allocator.
-      allocators_.insert(std::make_pair(kMemTypeDefault,
-                                        std::shared_ptr<IArenaAllocator>(
-                                            std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0))))));
+      InsertAllocator(kMemTypeDefault,
+                      std::shared_ptr<IArenaAllocator>(
+                          std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0)))));
 #else
       if (info.create_arena)
-        allocators_.insert(std::make_pair(kMemTypeDefault, CreateAllocator(cpu_allocator_creator->second)));
+        InsertAllocator(kMemTypeDefault, CreateAllocator(cpu_allocator_creator->second));
       else
-        allocators_.insert(std::make_pair(kMemTypeDefault,
-                                          std::shared_ptr<IArenaAllocator>(
-                                              std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0))))));
+        InsertAllocator(kMemTypeDefault,
+                        std::shared_ptr<IArenaAllocator>(
+                            std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0)))));
 #endif
     }
   }

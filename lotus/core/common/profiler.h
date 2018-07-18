@@ -7,7 +7,6 @@ namespace Lotus {
 
 namespace Profiling {
 
-
 enum EventCategory {
   SESSION_EVENT = 0,
   NODE_EVENT,
@@ -50,8 +49,9 @@ a corresponding "complete event (X)" in "chrome tracing" format.
 */
 class Profiler {
  public:
-  Profiler() noexcept : enabled_(false), 
-      max_events_reached(false), session_logger_(nullptr){};  // turned off by default.
+  Profiler() noexcept : enabled_(false),
+                        max_events_reached(false),
+                        session_logger_(nullptr){};  // turned off by default.
 
   /*
   Start profiler and record beginning time.
@@ -78,7 +78,8 @@ class Profiler {
   */
   std::string WriteProfileData();
 
- protected: 
+ private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Profiler);
 
   // Mutex controlling access to profiler data
   std::mutex mutex_;

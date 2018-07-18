@@ -13,21 +13,21 @@ REGISTER_KERNEL(KernelDefBuilder("SVMRegressor")
 template <typename T>
 SVMRegressor<T>::SVMRegressor(const OpKernelInfo& info) : OpKernel(info), SVMCommon<T>(info) {
   vector_count_ = 0;
-  op_kernel_info_.GetAttr<int64_t>("n_supports", &vector_count_);
+  info.GetAttr<int64_t>("n_supports", &vector_count_);
 
-  LOTUS_ENFORCE(op_kernel_info_.GetAttrs<float>("rho", rho_).IsOK());
-  LOTUS_ENFORCE(op_kernel_info_.GetAttrs<float>("coefficients", coefficients_).IsOK());
+  LOTUS_ENFORCE(info.GetAttrs<float>("rho", rho_).IsOK());
+  LOTUS_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
   LOTUS_ENFORCE(coefficients_.size() > 0);
 
   // optional for linear
-  op_kernel_info_.GetAttrs<float>("support_vectors", support_vectors_);
+  info.GetAttrs<float>("support_vectors", support_vectors_);
 
   int64_t onec = 0;
-  op_kernel_info_.GetAttr<int64_t>("one_class", &onec);
+  info.GetAttr<int64_t>("one_class", &onec);
   one_class_ = (onec != 0);
 
   std::string tmp = "NONE";
-  op_kernel_info_.GetAttr<std::string>("post_transform", &tmp);
+  info.GetAttr<std::string>("post_transform", &tmp);
   POST_EVAL_TRANSFORM tmpval = MakeTransform(tmp);
   post_transform_ = tmpval;
 

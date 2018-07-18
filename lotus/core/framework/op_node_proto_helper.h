@@ -67,7 +67,7 @@ class OpNodeProtoHelper {
     return attr;
   }
 
- protected:
+ private:
   OpNodeProtoHelper() = delete;
   const Impl_t* impl_ = nullptr;
 };

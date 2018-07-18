@@ -52,15 +52,14 @@ class MemPatternPlanner {
     }
   }
 
-  Status GenerateMemPattern(MemoryPattern* out) {
-    if (!out)
-      return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT);
-    out->peak_size_ = buffer_size;
+  MemoryPattern GenerateMemPattern() {
+    MemoryPattern pattern;
+    pattern.peak_size_ = buffer_size;
     for (auto& alloc : allocs_) {
-      out->patterns_[alloc.index_] = alloc.block_;
+      pattern.patterns_[alloc.index_] = alloc.block_;
     }
 
-    return Status::OK();
+    return pattern;
   }
 
  private:

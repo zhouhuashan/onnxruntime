@@ -10,11 +10,9 @@ TEST(MemPatternPlannerTest, TraceAllocaitonTest) {
   planner.TraceAllocation(2, 512);
   planner.TraceAllocation(3, 1024);
 
-  MemoryPattern pattern;
-  auto status = planner.GenerateMemPattern(&pattern);
-  EXPECT_TRUE(status.IsOK());
+  auto pattern = planner.GenerateMemPattern();
 
-  EXPECT_EQ(pattern.peak_size(), 1024 + 256 + 512 + 1024);
+  EXPECT_EQ(pattern.PeakSize(), 1024 + 256 + 512 + 1024);
   EXPECT_EQ(pattern.GetBlock(0)->offset_, 0);
   EXPECT_EQ(pattern.GetBlock(1)->offset_, 1024);
   EXPECT_EQ(pattern.GetBlock(2)->offset_, 1024 + 256);
@@ -26,11 +24,9 @@ TEST(MemPatternPlannerTest, TraceAllocaitonTest) {
   planner.TraceAllocation(5, 600);
   planner.TraceAllocation(6, 200);
 
-  pattern.clear();
-  status = planner.GenerateMemPattern(&pattern);
-  EXPECT_TRUE(status.IsOK());
+  pattern = planner.GenerateMemPattern();
 
-  EXPECT_EQ(pattern.peak_size(), 1024 + 256 + 512 + 1024 + 512);
+  EXPECT_EQ(pattern.PeakSize(), 1024 + 256 + 512 + 1024 + 512);
   EXPECT_EQ(pattern.GetBlock(4)->offset_, 1024 + 256 + 512 + 1024);
   EXPECT_EQ(pattern.GetBlock(5)->offset_, 1024 + 256 + 512);
   EXPECT_EQ(pattern.GetBlock(6)->offset_, 1024);

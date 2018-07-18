@@ -12,10 +12,10 @@ class LabelEncoder final : public OpKernel {
   LabelEncoder(const OpKernelInfo& info) : OpKernel(info) {
     std::vector<std::string> string_classes;
 
-    LOTUS_ENFORCE(op_kernel_info_.GetAttrs<std::string>("classes_strings", string_classes).IsOK());
+    LOTUS_ENFORCE(info.GetAttrs<std::string>("classes_strings", string_classes).IsOK());
 
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<std::string>("default_string", &default_string_).IsOK());
-    LOTUS_ENFORCE(op_kernel_info_.GetAttr<int64_t>("default_int64", &default_int_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<std::string>("default_string", &default_string_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("default_int64", &default_int_).IsOK());
 
     auto num_entries = string_classes.size();
 

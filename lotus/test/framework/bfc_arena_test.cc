@@ -229,7 +229,7 @@ TEST(BFCArenaTest, TestReserve) {
 
   AllocatorStats stats;
   a.GetStats(&stats);
-  EXPECT_EQ(stats.total_allocated_bytes_, 1048576);
+  EXPECT_EQ(stats.total_allocated_bytes, 1048576);
 }
 }  // namespace Test
 }  // namespace Lotus

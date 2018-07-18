@@ -28,24 +28,24 @@ ADD_IN_TYPE_SVM_CLASSIFIER_OP(int32_t);
 
 template <typename T>
 SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info) : OpKernel(info), SVMCommon<T>(info) {
-  LOTUS_ENFORCE(op_kernel_info_.GetAttrs<float>("rho", rho_).IsOK());
-  LOTUS_ENFORCE(op_kernel_info_.GetAttrs<float>("coefficients", coefficients_).IsOK());
+  LOTUS_ENFORCE(info.GetAttrs<float>("rho", rho_).IsOK());
+  LOTUS_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
 
   // optional attributes
-  op_kernel_info_.GetAttrs<int64_t>("vectors_per_class", vectors_per_class_);
-  op_kernel_info_.GetAttrs<float>("support_vectors", support_vectors_);
+  info.GetAttrs<int64_t>("vectors_per_class", vectors_per_class_);
+  info.GetAttrs<float>("support_vectors", support_vectors_);
 
   // prob_a and prob_b are optional for Z output
-  op_kernel_info_.GetAttrs<float>("prob_a", proba_);
-  op_kernel_info_.GetAttrs<float>("prob_b", probb_);
+  info.GetAttrs<float>("prob_a", proba_);
+  info.GetAttrs<float>("prob_b", probb_);
   LOTUS_ENFORCE(proba_.size() == probb_.size());
 
   // one of these should be valid
-  LOTUS_ENFORCE(op_kernel_info_.GetAttrs<std::string>("classlabels_strings", classlabels_strings_).IsOK() ||
-                op_kernel_info_.GetAttrs<int64_t>("classlabels_ints", classlabels_ints_).IsOK());
+  LOTUS_ENFORCE(info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_).IsOK() ||
+                info.GetAttrs<int64_t>("classlabels_ints", classlabels_ints_).IsOK());
 
   std::string tmp = "NONE";
-  op_kernel_info_.GetAttr<std::string>("post_transform", &tmp);
+  info.GetAttr<std::string>("post_transform", &tmp);
   POST_EVAL_TRANSFORM tmpval = MakeTransform(tmp);
   post_transform_ = tmpval;
 

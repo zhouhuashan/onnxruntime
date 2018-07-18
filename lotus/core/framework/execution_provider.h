@@ -83,7 +83,11 @@ class IExecutionProvider {
     return Status::OK();
   }
 
- protected:
+  void InsertAllocator(MemType mem_type, AllocatorPtr allocator) {
+    allocators_.insert({mem_type, allocator});
+  }
+
+ private:
   AllocatorMap allocators_;
 };
 }  // namespace Lotus
