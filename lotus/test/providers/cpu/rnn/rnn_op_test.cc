@@ -384,7 +384,7 @@ TEST(RNNTest, RNN_bidirectional) {
 
   std::vector<int64_t> sequence_lens_dims({batch_size});
   std::vector<int> sequence_lens_data(batch_size, (int)seq_length);
-  test.AddInput<int>("", sequence_lens_dims, sequence_lens_data);
+  test.AddInput<int>("sequence_lens", sequence_lens_dims, sequence_lens_data);
 
   std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
   std::vector<float> initial_h_data({0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
@@ -629,6 +629,68 @@ TEST(RNNTest, RNN_reverse_direction) {
     test_do_not_use_default.AddAttribute("hidden_size", hidden_size);
     runTest(test_do_not_use_default, false, RNNOutputBoth);
   }
+}
+
+TEST(RNNTest, RNN_invalid_sequence_lens) {
+  int64_t num_directions = 1, input_size = 2, hidden_size = 3, batch_size = 2, seq_length = 3;
+
+  auto run_test = [&](const std::vector<int>& sequence_lens,
+                      const std::string& error_msg) {
+    OpTester test("RNN");
+
+    test.AddAttribute("activations", vector<string>(num_directions, "Tanh"));
+    test.AddAttribute("direction", "forward");
+    test.AddAttribute("hidden_size", hidden_size);
+
+    std::vector<int64_t> X_dims = {seq_length, batch_size, input_size};
+    std::vector<float> X_data({0.1f, 0.2f, 0.3f,
+                               0.4f, 0.5f, 0.6f,
+                               0.7f, 0.8f, 0.9f,
+                               0.11f, 0.12f, 0.13f});
+
+    test.AddInput<float>("X", X_dims, X_data);
+
+    std::vector<int64_t> W_dims = {num_directions, hidden_size, input_size};
+    std::vector<float> W_data({-0.1f, 0.2f, 1.f, -2.f, -1.f, 3.f});
+
+    test.AddInput<float>("W", W_dims, W_data);
+
+    std::vector<int64_t> R_dims = {num_directions, hidden_size, hidden_size};
+    std::vector<float> R_data({0.f, 0.f, 0.f,
+                               0.f, 0.f, 0.f,
+                               0.f, 0.f, 0.f});
+    test.AddInput<float>("R", R_dims, R_data);
+
+    std::vector<int64_t> B_dims = {num_directions, 2 * hidden_size};
+    std::vector<float> B_data{0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    test.AddInput<float>("B", B_dims, B_data);
+
+    // std::vector<int64_t> sequence_lens_dims({batch_size});
+    std::vector<int64_t> sequence_lens_dims{gsl::narrow_cast<int64_t>(sequence_lens.size())};
+    test.AddInput<int>("sequence_lens", sequence_lens_dims, sequence_lens);
+
+    std::vector<int64_t> initial_h_dims = {num_directions, batch_size, hidden_size};
+    std::vector<float> initial_h_data{0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    test.AddInput<float>("initial_h", initial_h_dims, initial_h_data);
+
+    // Y
+    test.AddMissingOptionalOutput<float>();
+
+    std::vector<int64_t> Y_h_dims{num_directions, batch_size, hidden_size};
+    std::vector<float> Y_h_data{0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
+
+    test.Run(OpTester::ExpectResult::kExpectFailure, error_msg);
+  };
+
+  // should batch batch_size to be valid
+  std::vector<int> invalid_num_seq_len_entries(batch_size - 1, 5);
+
+  run_test(invalid_num_seq_len_entries, "Input sequence_lens must have shape {2}. Actual:{1}");
+
+  // 0 is an invalid value
+  std::vector<int> bad_seq_len_entry{0, 5};
+  run_test(bad_seq_len_entry, "Invalid value/s in sequence_lens. All values must be > 0 and < seq_length.");
 }
 }  // namespace Test
 }  // namespace Lotus

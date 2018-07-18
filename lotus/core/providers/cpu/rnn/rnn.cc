@@ -32,10 +32,13 @@ template <typename T>
 void ApplyActivationToBatches(const Tensor* sequence_lens, const T* h_prev, T* Y_buffer_data_current_frame,
                               int64_t time_step, int64_t batch_size, int64_t hidden_size,
                               T alpha, T beta, T clip, std::function<T(T, T, T)> activation_func) {
+  const int* seq_len_data = sequence_lens ? sequence_lens->Data<int>() : nullptr;
+
   for (int batch = 0; batch < batch_size; batch++) {
     bool valid = true;
-    if (nullptr != sequence_lens) {
-      valid = time_step < sequence_lens->Data<int>()[batch];
+    if (nullptr != seq_len_data) {
+      // sequence_lens is already validated to have batch_size entries
+      valid = time_step < seq_len_data[batch];
     }
 
     for (int feature = 0; feature < hidden_size; ++feature) {
@@ -110,7 +113,9 @@ Status RNN<float>::Compute(OpKernelContext* ctx) const {
   int64_t batch_size = X.Shape()[1];
   int64_t input_size = X.Shape()[2];
 
-  Rnn::detail::ValidateCommonRnnInputs(X, W, R, B, 1, sequence_lens, initial_h, num_directions, hidden_size_);
+  auto status = Rnn::detail::ValidateCommonRnnInputs(X, W, R, B, 1, sequence_lens, initial_h,
+                                                     num_directions, hidden_size_);
+  LOTUS_RETURN_IF_ERROR(status);
 
   // RNN outputs are optional
   std::vector<int64_t> Y_dims({seq_length, num_directions, batch_size, hidden_size_});

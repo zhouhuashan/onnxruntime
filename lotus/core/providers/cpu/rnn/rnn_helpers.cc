@@ -80,7 +80,7 @@ Status ValidateCommonRnnInputs(const Tensor &X,
     if (sequence_lens_shape.NumDimensions() != 1 ||
         sequence_lens_shape[0] != batch_size) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input sequence_lens must have shape {",
-                               num_directions, "}. Actual:", sequence_lens_shape);
+                               batch_size, "}. Actual:", sequence_lens_shape);
     }
 
     auto sequence_len_entries = sequence_lens->DataAsSpan<int>();
