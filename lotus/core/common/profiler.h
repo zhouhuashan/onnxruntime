@@ -23,24 +23,28 @@ static const std::string event_categor_names_[EVENT_CATEGORY_MAX] = {
 /*
 Timing record for all events.
 */
-struct TimingRecord {
-  TimingRecord(EventCategory category,
+struct EventRecord {
+  EventRecord(EventCategory category,
                int process_id,
                int thread_id,
                std::string event_name,
                long long time_stamp,
-               long long duration) : cat(category),
+               long long duration,
+               std::unordered_map<std::string, std::string>&& event_args) : 
+                                     cat(category),
                                      pid(process_id),
                                      tid(thread_id),
                                      name(std::move(event_name)),
                                      ts(time_stamp),
-                                     dur(duration) {}
+                                     dur(duration),
+                                     args(event_args) {}
   EventCategory cat;
   int pid;
   int tid;
   std::string name;
   long long ts;
   long long dur;
+  std::unordered_map<std::string, std::string> args;
 };
 
 /*
@@ -70,6 +74,7 @@ class Profiler {
   void EndTimeAndRecordEvent(EventCategory category,
                              const std::string& event_name,
                              TimePoint& start_time,
+                             std::unordered_map<std::string, std::string>&& event_args = std::unordered_map<std::string, std::string>(),
                              bool sync_gpu = false);
 
   /*
@@ -88,7 +93,7 @@ class Profiler {
   std::string profile_stream_file_;
   const Logging::Logger* session_logger_;
   TimePoint profiling_start_time_;
-  std::vector<TimingRecord> timing_events_;
+  std::vector<EventRecord> events_;
   bool max_events_reached;
   const int max_num_events_ = 1000000;
 };
