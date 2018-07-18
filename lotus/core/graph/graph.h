@@ -285,9 +285,14 @@ class Node {
     // Node output edges.
     std::set<EdgeEnd*> output_edges;
 
+    struct IndexCompare {
+      bool operator()(const Node* lhs, const Node* rhs) {
+        return lhs->Index() < rhs->Index();
+      }
+    };
     // Node input nodes, besides input nodes mentioned in <inputs_> above,
     // it also contains all control input nodes;
-    std::set<const Node*> input_nodes;
+    std::set<const Node*, IndexCompare> input_nodes;
     // Control input nodes' names.
     std::set<std::string> control_inputs;
     // Node's output nodes.
