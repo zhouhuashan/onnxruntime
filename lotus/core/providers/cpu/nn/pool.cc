@@ -157,7 +157,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
               int64_t wend = std::min(wstart + kernel_shape[1], width);
               wstart = std::max(wstart, static_cast<int64_t>(0));
               for (int64_t pd = 0; pd < pooled_depth; ++pd) {
-                int64_t dstart = pd * stride_d() - pads_[2];
+                int64_t dstart = pd * stride_d() - pads[2];
                 int64_t dend = std::min(dstart + kernel_shape[2], depth);
                 dstart = std::max(dstart, static_cast<int64_t>(0));
                 const int64_t pool_index =
