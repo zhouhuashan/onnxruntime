@@ -37,8 +37,7 @@ class DataRunner {
  public:
   DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1);
   virtual void OnTaskFinished(size_t task_id, EXECUTE_RESULT res, LOTUS_CALLBACK_INSTANCE pci) noexcept = 0;
-  void RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci);
-  void SetResult(size_t task_id, EXECUTE_RESULT result, LOTUS_CALLBACK_INSTANCE pci) noexcept;
+  void RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store_result);
   virtual ~DataRunner() {}
 
   virtual void Start(size_t concurrent_runs) = 0;
@@ -74,9 +73,12 @@ class DataRunner {
 };
 
 class SeqTestRunner : public DataRunner {
+ private:
+  size_t repeat_count_;
+
  public:
   SeqTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
-                ITestCase* c,
+                ITestCase* c, size_t repeat_count,
                 TestCaseCallBack on_finished1);
 
   void Start(size_t concurrent_runs) override;
@@ -101,12 +103,12 @@ class PTestRunner : public DataRunner {
 };
 
 std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, Lotus::AllocatorPtr allocator);
-Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs);
+Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count);
 
 EXECUTE_RESULT StatusCodeToExecuteResult(int input);
 
 #ifdef _WIN32
-extern void ParallelRunTests(TestEnv& env, int p_models, size_t concurrent_runs);
+extern void ParallelRunTests(TestEnv& env, int p_models, size_t concurrent_runs, size_t repeat_count);
 Lotus::Common::Status SetWindowsEvent(LOTUS_CALLBACK_INSTANCE pci, HANDLE finish_event);
 #endif
-void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished);
+void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished);

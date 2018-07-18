@@ -36,6 +36,7 @@ void usage() {
       "\t-j [models]: Specifies the number of models to run simultaneously.\n"
       "\t-A : Disable memory arena\n"
       "\t-c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.\n"
+      "\t-r [repeat]: Specifies the number of times to repeat\n"
       "\t-n [test_case_name]: Specifies a single test case to run.\n"
       "\t-e [EXECUTION_PROVIDER]: EXECUTION_PROVIDER could be 'cpu' or 'cuda'. Default: 'cpu'.\n"
       "\t-h: help\n");
@@ -61,10 +62,11 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> whitelisted_test_cases;
   int concurrent_session_runs = Env::Default().GetNumCpuCores();
   bool enable_cpu_mem_arena = true;
+  int repeat_count = 1;
   int p_models = Env::Default().GetNumCpuCores();
   {
     int ch;
-    while ((ch = getopt(argc, argv, "Ac:hj:m:n:e:")) != -1) {
+    while ((ch = getopt(argc, argv, "Ac:hj:m:n:r:e:")) != -1) {
       switch (ch) {
         case 'A':
           enable_cpu_mem_arena = false;
@@ -79,6 +81,13 @@ int main(int argc, char* argv[]) {
         case 'j':
           p_models = static_cast<int>(strtol(optarg, nullptr, 10));
           if (p_models <= 0) {
+            usage();
+            return -1;
+          }
+          break;
+        case 'r':
+          repeat_count = static_cast<int>(strtol(optarg, nullptr, 10));
+          if (repeat_count <= 0) {
             usage();
             return -1;
           }
@@ -109,6 +118,11 @@ int main(int argc, char* argv[]) {
       }
     }
   }
+  if (concurrent_session_runs > 1 && repeat_count > 1) {
+    fprintf(stderr, "when you use '-r [repeat]', please set '-c' to 1");
+    usage();
+    return -1;
+  }
   argc -= optind;
   argv += optind;
   if (argc < 1) {
@@ -125,12 +139,12 @@ int main(int argc, char* argv[]) {
     }
     data_dirs.emplace_back(argv[i]);
   }
-  AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
+  AllocatorPtr cpu_allocator = std::make_shared<Lotus::CPUAllocator>();
   std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
   TestResultStat stat;
   SessionFactory sf(provider, true, enable_cpu_mem_arena);
   TestEnv args(tests, stat, sf);
-  RunTests(args, p_models, concurrent_session_runs);
+  RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count));
   std::string res = stat.ToString();
   fwrite(res.c_str(), 1, res.size(), stdout);
   for (ITestCase* l : tests) {
@@ -145,8 +159,11 @@ int main(int argc, char* argv[]) {
                                                "operator_addconstant", "operator_addmm", "operator_basic", "operator_lstm", "operator_mm", "operator_non_float_params",
                                                "operator_params", "operator_pow", "operator_rnn", "operator_rnn_single_layer", "PoissonNLLLLoss_no_reduce", "PReLU_1d",
                                                "PReLU_1d_multiparam", "PReLU_2d", "PReLU_2d_multiparam", "PReLU_3d", "PReLU_3d_multiparam", "Softsign"};
-  for (const std::string s : stat.GetFailedTest()) {
-    if (broken_tests.find(s) == broken_tests.end()) return -1;
+  for (const std::string& s : stat.GetFailedTest()) {
+    if (broken_tests.find(s) == broken_tests.end()) {
+      fprintf(stderr, "test %s failed, please fix it\n", s.c_str());
+      return -1;
+    }
   }
   return 0;
 }

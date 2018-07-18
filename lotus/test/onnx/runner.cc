@@ -41,7 +41,7 @@ Lotus::Common::Status SetWindowsEvent(LOTUS_CALLBACK_INSTANCE, pthread_cond_t* f
 }
 #endif
 
-Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs) {
+Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count) {
   TestResultStat& stat = env.stat;
   stat.total_model_count = env.tests.size();
   stat.total_test_case_count = std::accumulate(env.tests.begin(), env.tests.end(), static_cast<size_t>(0), [](size_t v, const ITestCase* info) {
@@ -50,7 +50,7 @@ Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs) 
   std::vector<std::shared_ptr<TestCaseResult>> results;
 #ifdef _WIN32
   if (p_models > 1 && env.tests.size() > 1) {
-    ParallelRunTests(env, p_models, concurrent_runs);
+    ParallelRunTests(env, p_models, concurrent_runs, repeat_count);
     results = env.finished->getResults();
   } else
 #endif
@@ -74,13 +74,12 @@ Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs) 
       pthread_cond_t* finish_event = &finish_event_data;
       pthread_mutex_t finish_event_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
-      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, nullptr, [i, &finished, &results, finish_event, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
+      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, repeat_count, nullptr, [repeat_count, i, &finished, &results, finish_event, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
         //TODO:output this information to a xml
         if (concurrent_runs == 1) {
           TIME_SPEC ts = result->GetSpentTime();
           double spent = TimeSpecToSeconds(&ts);
-          TIME_SPEC ts2 = result->GetSpentTimePerDataset();
-          double spent2 = TimeSpecToSeconds(&ts2);
+          double spent2 = spent / result->GetExcutionResult().size() / repeat_count;
           LOGF_DEFAULT(ERROR, "Test %s finished in %.3g seconds, took %.3g for each input", test_case_name, spent, spent2);
         }
         results.push_back(result);
@@ -193,8 +192,8 @@ std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, c
 }
 
 SeqTestRunner::SeqTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
-                             ITestCase* c,
-                             TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1) {
+                             ITestCase* c, size_t repeat_count,
+                             TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), repeat_count_(repeat_count) {
 }
 
 DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1) : session(session1), test_case_name_(test_case_name1), c_(c), on_finished(on_finished1) {
@@ -204,7 +203,7 @@ DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const 
   SetTimeSpecToZero(&spent_time_);
 }
 
-void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci) {
+void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store_result) {
   EXECUTE_RESULT res = EXECUTE_RESULT::UNKNOWN_ERROR;
   try {
     res = RunTaskImpl(task_id);
@@ -212,7 +211,10 @@ void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci) {
     res = EXECUTE_RESULT::WITH_EXCEPTION;
     LOGF_DEFAULT(ERROR, "%s:%s", c_->GetTestCaseName().c_str(), ex.what());
   }
-  SetResult(task_id, res, pci);
+  if (store_result) {
+    result->SetResult(task_id, res);
+  }
+  OnTaskFinished(task_id, res, pci);
 }
 
 EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
@@ -307,13 +309,14 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
 
 void SeqTestRunner::Start(size_t) {
   const size_t data_count = c_->GetDataCount();
-  for (size_t i = 0; i != data_count; ++i) {
-    RunTask(i, nullptr);
-  }
+  for (size_t j = 0; j != repeat_count_; ++j)
+    for (size_t i = 0; i != data_count; ++i) {
+      RunTask(i, nullptr, i == 0);
+    }
   finish(result, nullptr);
 }
 
-void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished) {
+void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished) {
   std::shared_ptr<TestCaseResult> ret;
   size_t data_count = info->GetDataCount();
   {
@@ -349,7 +352,7 @@ void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurr
     } else
 #endif
     {
-      r = new SeqTestRunner(session_object, info, on_finished);
+      r = new SeqTestRunner(session_object, info, repeat_count, on_finished);
     }
     r->Start(concurrent_runs);
     return;
@@ -369,9 +372,4 @@ EXECUTE_RESULT StatusCodeToExecuteResult(int input) {
     default:
       return EXECUTE_RESULT::UNKNOWN_ERROR;
   }
-}
-
-void DataRunner::SetResult(size_t task_id, EXECUTE_RESULT res, LOTUS_CALLBACK_INSTANCE pci) noexcept {
-  result->SetResult(task_id, res);
-  OnTaskFinished(task_id, res, pci);
 }

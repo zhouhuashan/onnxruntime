@@ -38,18 +38,6 @@ class TestCaseResult {
   }
 
   //Time spent in Session::Run. It only make sense when SeqTestRunner was used
-  Lotus::TIME_SPEC GetSpentTimePerDataset() const {
-#ifdef _WIN32
-    return spent_time_ / excution_result_.size();
-#else
-    auto s = spent_time_;
-    s.tv_nsec /= excution_result_.size();
-    s.tv_sec /= excution_result_.size();
-    return s;
-#endif
-  }
-
-  //Time spent in Session::Run. It only make sense when SeqTestRunner was used
   void SetSpentTime(const Lotus::TIME_SPEC& input) const {
     memcpy((void*)&spent_time_, &input, sizeof(input));
   }

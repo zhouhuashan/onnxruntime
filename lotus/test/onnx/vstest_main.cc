@@ -106,7 +106,7 @@ static void run(SessionFactory& sf) {
         TEXT("FinishEvent")  // object name
     );
     Assert::IsNotNull(finish_event);
-    RunSingleTestCase(tests[0], sf, p_models, nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
+    RunSingleTestCase(tests[0], sf, p_models, 1, nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       res = result->GetExcutionResult();
       return SetWindowsEvent(pci, finish_event);
     });
@@ -123,13 +123,13 @@ static void run(SessionFactory& sf) {
 
 TEST_CLASS(ONNX_TEST){
   public :
-    TEST_METHOD(normal_run){
-      SessionFactory sf(LotusIR::kCpuExecutionProvider, true, true);
-      run(sf);
-    }
+  TEST_METHOD(normal_run){
+    SessionFactory sf(LotusIR::kCpuExecutionProvider, true, true);
+    run(sf);
+  }
 
-    TEST_METHOD(disable_cpu_mem_arena) {
-      SessionFactory sf(LotusIR::kCpuExecutionProvider, true, false);
-      run(sf);
-    }
+  TEST_METHOD(disable_cpu_mem_arena) {
+    SessionFactory sf(LotusIR::kCpuExecutionProvider, true, false);
+    run(sf);
+  }
 };

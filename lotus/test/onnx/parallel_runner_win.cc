@@ -9,6 +9,7 @@ struct TestCaseTask {
   const int task_id;
   //The max number of concurrent Session::Run() for each model
   const size_t concurrent_runs;
+  const size_t repeat_count;
 };
 
 struct DataTask {
@@ -31,7 +32,7 @@ Lotus::Common::Status OnTestCaseFinished(PTP_CALLBACK_INSTANCE pci, TestCaseTask
     int next_test = env.next_test_to_run++;
     if (next_test < env.tests.size()) {
       //schedule the next TestCase
-      std::unique_ptr<TestCaseTask> t(new TestCaseTask{env, next_test, task->concurrent_runs});
+      std::unique_ptr<TestCaseTask> t(new TestCaseTask{env, next_test, task->concurrent_runs, task->repeat_count});
       PTP_WORK work = CreateThreadpoolWork(RunTestCase, t.get(), nullptr);
       if (!work) {
         LOGF_DEFAULT(ERROR, "schedule test task failed\n");
@@ -57,7 +58,7 @@ void __stdcall RunSingleDataItem(
   PTestRunner* env = task->env;
   const size_t task_id = task->task_id;
   delete task;
-  env->RunTask(task_id, pci);
+  env->RunTask(task_id, pci, true);
 }
 
 void __stdcall RunTestCase(
@@ -68,7 +69,7 @@ void __stdcall RunTestCase(
   TestCaseTask* task((TestCaseTask*)context);
   ITestCase* info = task->env.tests[task->task_id];
   try {
-    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, pci, [task](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
+    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, task->repeat_count, pci, [task](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       return OnTestCaseFinished(pci, task, result);
     });
     return;
@@ -83,12 +84,12 @@ void __stdcall RunTestCase(
   }
 }
 }  // namespace
-void ParallelRunTests(TestEnv& env, int p_models, size_t current_runs) {
+void ParallelRunTests(TestEnv& env, int p_models, size_t current_runs, size_t repeat_count) {
   LOGF_DEFAULT(ERROR, "Running tests in parallel with %d threads\n", p_models);
   p_models = (int)std::min<size_t>(p_models, env.tests.size());
   env.next_test_to_run = p_models;
   for (int i = 0; i != p_models; ++i) {
-    TestCaseTask* t = new TestCaseTask{env, i, current_runs};
+    TestCaseTask* t = new TestCaseTask{env, i, current_runs, repeat_count};
     PTP_WORK work = CreateThreadpoolWork(RunTestCase, t, nullptr);
     if (!work) {
       delete t;
