@@ -96,6 +96,7 @@ file(GLOB_RECURSE lotus_test_providers_src
 
 if(lotus_USE_CUDA)
     set_source_files_properties("${LOTUS_ROOT}/test/providers/provider_test_utils.cc"
+        "${LOTUS_ROOT}/test/framework/test_utils.cc"
         PROPERTIES
         COMPILE_FLAGS "-DUSE_CUDA"
         )

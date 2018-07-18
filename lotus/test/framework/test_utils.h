@@ -8,18 +8,10 @@
 
 namespace Lotus {
 namespace Test {
-static IExecutionProvider* TestCPUExecutionProvider() {
-  static CPUExecutionProviderInfo info;
-  static CPUExecutionProvider cpu_provider(info);
-  return &cpu_provider;
-}
+IExecutionProvider* TestCPUExecutionProvider();
 
 #ifdef USE_CUDA
-static IExecutionProvider* TestCudaExecutionProvider() {
-  static CUDAExecutionProviderInfo info;
-  static CUDAExecutionProvider cuda_provider(info);
-  return &cuda_provider;
-}
+IExecutionProvider* TestCudaExecutionProvider();
 #endif
 
 template <typename T>
