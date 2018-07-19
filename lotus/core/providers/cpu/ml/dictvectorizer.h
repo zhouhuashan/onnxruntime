@@ -1,48 +1,39 @@
 #pragma once
-
+#include <string>
+#include <vector>
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
 namespace Lotus {
 namespace ML {
-
+template <typename AttrType, typename TargetType>
 class DictVectorizerOp final : public OpKernel {
  public:
   DictVectorizerOp(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttrs<std::string>("string_vocabulary", string_index_);
-    info.GetAttrs<int64_t>("int64_vocabulary", int_index_);
-    LOTUS_ENFORCE(string_index_.empty() ^ int_index_.empty(),
-                  "Must provide string_vocabulary or int64_vocabulary but not both.");
+    //In some stupid models, the vocabulary could have duplicated elements.
+    //We must support that, otherwise some tests will be break.
+    LOTUS_ENFORCE(info.GetAttrs(std::is_same<AttrType, std::string>::value ? "string_vocabulary" : "int64_vocabulary", vocabulary_).IsOK());
   }
-
-  Status Compute(OpKernelContext* context) const override;
-
- private:
-  template <typename TKey, typename TVal>
-  Status ComputeWithType(OpKernelContext* ctx,
-                         const std::vector<TKey>& vocabulary,
-                         TVal default_value) const {
-    auto map = ctx->Input<std::map<TKey, TVal> >(0);
-    std::vector<int64_t> dims{1, static_cast<int64_t>(vocabulary.size())};
+  Common::Status Compute(OpKernelContext* ctx) const override {
+    auto map = ctx->Input<std::map<AttrType, TargetType> >(0);
+    std::vector<int64_t> dims{1, static_cast<int64_t>(vocabulary_.size())};
     auto Y = ctx->Output(0, TensorShape(dims));
-    auto* y_data = Y->MutableData<TVal>();
-    int64_t write_index = 0;
-    //for each vocab word, if its in the input, use that value, otherwise output 0f
-    for (int64_t i = 0, end = static_cast<int64_t>(vocabulary.size()); i < end; ++i) {
-      auto index = map->find(vocabulary[i]);
+    auto* y_data = Y->MutableData<TargetType>();
+    for (size_t i = 0, end = vocabulary_.size(); i < end; ++i) {
+      auto index = map->find(vocabulary_[i]);
       if (index != map->end()) {
-        y_data[write_index] = index->second;
+        *y_data++ = index->second;
       } else {
-        y_data[write_index] = default_value;
+        //Any keys not present in the input dictionary, will be zero in the output array
+        *y_data++ = TargetType();
       }
-      write_index++;
     }
     return Status::OK();
   }
 
-  std::vector<std::string> string_index_;
-  std::vector<int64_t> int_index_;
+  std::vector<AttrType> vocabulary_;
 };
+
 }  // namespace ML
 
 }  // namespace Lotus
