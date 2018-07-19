@@ -10,13 +10,13 @@ IOBinding::IOBinding(const SessionState& session_state) : session_state_(session
 
 Common::Status IOBinding::BindInput(const std::string& name, const MLValue& ml_value) {
   if (!ml_value.IsTensor()) {
-    feeds_.insert({name, ml_value});
+    feeds_[name] = ml_value;
     return Status::OK();
   }
 
   MLValue new_mlvalue;
   LOTUS_RETURN_IF_ERROR(CopyOneInputAcrossDevices(session_state_, name, ml_value, new_mlvalue));
-  feeds_.insert({name, new_mlvalue});
+  feeds_[name] = new_mlvalue;
   return Status::OK();
 }
 
