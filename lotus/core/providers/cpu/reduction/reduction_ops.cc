@@ -86,12 +86,12 @@ REGISTER_KERNEL(KernelDefBuilder("ArgMin")
                     .Provider(LotusIR::kCpuExecutionProvider)
                     .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
                 ArgMin<float>);
-
-void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
-                                    std::vector<float>& transposedInputData,
-                                    Tensor** reducedTensor,
-                                    int64_t& block_size,
-                                    int64_t& blocks) const {
+template <bool allow_multi_axes>
+void ReduceKernel<allow_multi_axes>::PrepareForReduce(OpKernelContext* ctx,
+                                                      std::vector<float>& transposedInputData,
+                                                      Tensor** reducedTensor,
+                                                      int64_t& block_size,
+                                                      int64_t& blocks) const {
   const Tensor& input = *ctx->Input<Tensor>(0);
 
   size_t ndim = input.Shape().GetDims().size();

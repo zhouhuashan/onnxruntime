@@ -31,9 +31,8 @@ REGISTER_KERNEL(KernelDefBuilder("Binarizer")
                 BinarizerOp<float>);
 
 template <typename T>
-BinarizerOp<T>::BinarizerOp(const OpKernelInfo& info) : OpKernel(info) {
-  info.GetAttr<float>("threshold", &threshold_);  // optional
-}
+BinarizerOp<T>::BinarizerOp(const OpKernelInfo& info)
+    : OpKernel(info), threshold_(info.GetAttrOrDefault<float>("threshold", 1.0f)) {}
 
 template <typename T>
 Common::Status BinarizerOp<T>::Compute(OpKernelContext* context) const {

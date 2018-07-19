@@ -11,7 +11,7 @@ class BinarizerOp final : public OpKernel {
   Common::Status Compute(OpKernelContext* context) const override;
 
  private:
-  float threshold_ = 0.f;
+  const float threshold_;
 };
 }  // namespace ML
 }  // namespace Lotus
