@@ -717,16 +717,44 @@ void UniDirectionalLstm<T>::LoadWeightsWithTranspose(const gsl::span<const T>& i
   const int weight_size = dim0_size * dim1_size;
   const int fused_offset = 4 * dim0_size;
 
-  auto copy_weight_with_transpose = [&](int row, int out, int in) {
-    for (int c = 0; c < dim0_size; c++)
-      output_weights[row * fused_offset + out * dim0_size + c] = input_weights[in * weight_size + c * dim1_size + row];
+  // process each weight type in a separate thread. we could use more or less threads as a refinement
+  // but starting with the simple approach first. provides ~2x speedup to cntk.test_HTK_LSTM_Truncated_Distributed
+  // over the original code when did each copy/transpose sequentially.
+  std::vector<std::future<void>> task_results{};
+  task_results.reserve(4);
+
+  auto copy_weights_with_transpose = [&](int out, int in) {
+    auto out_offset = out * dim0_size;
+    for (int row = 0; row < dim1_size; row++) {
+      auto in_offset = in * weight_size + row;
+      for (int c = 0; c < dim0_size; c++) {
+        // original code but much slower due to the calculations on each loop.
+        // output_weights[row * fused_offset + out * dim0_size + c] = input_weights[in * weight_size + c * dim1_size + row];
+        output_weights[out_offset + c] = input_weights[in_offset];
+        in_offset += dim1_size;
+      }
+      out_offset += fused_offset;
+    }
   };
 
-  for (int row = 0; row < dim1_size; row++) {
-    copy_weight_with_transpose(row, i_out, i_in);
-    copy_weight_with_transpose(row, f_out, f_in);
-    copy_weight_with_transpose(row, o_out, o_in);
-    copy_weight_with_transpose(row, c_out, c_in);
+  auto add_task = [&](int out, int in) {
+    std::packaged_task<void()> task{std::bind(copy_weights_with_transpose, out, in)};
+    task_results.push_back(task.get_future());
+    ttp_.RunTask(std::move(task));
+  };
+
+  add_task(i_out, i_in);
+  add_task(f_out, f_in);
+  add_task(o_out, o_in);
+  add_task(c_out, c_in);
+
+  try {
+    // wait for all and propagate any exceptions
+    for (auto& future : task_results)
+      future.get();
+  } catch (const std::exception& ex) {
+    LOGS(logger_, ERROR) << "Loading weights - exception running tasks: " << ex.what();
+    throw;
   }
 }
 
