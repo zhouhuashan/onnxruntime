@@ -165,8 +165,7 @@ class NonTensorType : public NonTensorTypeBase {
 template <typename T>
 class NonOnnxType : public DataTypeImpl {
  public:
-  bool IsCompatible(const onnx::TypeProto& type_proto) const override {
-    UNUSED_PARAMETER(type_proto);
+  bool IsCompatible(const onnx::TypeProto&) const override {
     return false;
   }
 

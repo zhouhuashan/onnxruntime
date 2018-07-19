@@ -1,7 +1,6 @@
 #include <cstring>
 #include "core/graph/constants.h"
 #include "core/graph/op.h"
-#include "core/graph/utils.h"
 
 using namespace onnx;
 using namespace Lotus::Common;

@@ -55,8 +55,8 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKe
   std::vector<std::string> modes;
   info.GetAttrs<std::string>("nodes_modes", modes);
 
-  for (size_t i = 0; i < modes.size(); i++) {
-    nodes_modes_.push_back(Lotus::ML::MakeTreeNodeMode(modes[i]));
+  for (const auto& mode : modes) {
+    nodes_modes_.push_back(Lotus::ML::MakeTreeNodeMode(mode));
   }
 
   size_t nodes_id_size = nodes_nodeids_.size();
@@ -97,7 +97,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKe
     int64_t id1 = std::get<1>(leafnode_data_[i]);
     if (id0 != field0 || id1 != field1) {
       int64_t id = id0 * four_billion_ + id1;
-      auto p3 = std::make_pair<int64_t&, size_t&>(id, i);  // position is i
+      auto p3 = std::make_pair(id, i);  // position is i
       leafdata_map_.insert(p3);
       field0 = id;
       field1 = static_cast<int64_t>(i);
@@ -112,12 +112,12 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKe
   for (size_t i = 0; i < nodes_treeids_.size(); i++) {
     //make an index to look up later
     int64_t id = nodes_treeids_[i] * four_billion_ + nodes_nodeids_[i];
-    auto p3 = std::make_pair<int64_t&, size_t&>(id, i);  // i is the position
+    auto p3 = std::make_pair(id, i);  // i is the position
     indices.insert(p3);
     it = parents.find(id);
     if (it == parents.end()) {
       //start counter at 0
-      auto p1 = std::make_pair<int64_t&, size_t&>(id, start_counter);
+      auto p1 = std::make_pair(id, start_counter);
       parents.insert(p1);
     }
   }
@@ -140,9 +140,9 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKe
     it->second++;
   }
   //find all the nodes that dont have other nodes pointing at them
-  for (auto it2 = parents.begin(); it2 != parents.end(); ++it2) {
-    if (it2->second == 0) {
-      int64_t id = it2->first;
+  for (auto& parent : parents) {
+    if (parent.second == 0) {
+      int64_t id = parent.first;
       it = indices.find(id);
       roots_.push_back(it->second);
     }
@@ -203,7 +203,7 @@ Common::Status TreeEnsembleRegressor<T>::ProcessTreeNode(std::unordered_map<int6
       if (it_classes != classes.end()) {
         it_classes->second += weight;
       } else {
-        auto p1 = std::make_pair<int64_t&, float&>(classid, weight);
+        auto p1 = std::make_pair(classid, weight);
         classes.insert(p1);
       }
       index++;
@@ -261,16 +261,16 @@ Common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const
       outputs.push_back(val);
     }
     if (transform_ == Lotus::ML::POST_EVAL_TRANSFORM::LOGISTIC) {
-      for (size_t k = 0; k < outputs.size(); k++) {
-        outputs[k] = Lotus::ML::ml_logit(outputs[k]);
+      for (float& output : outputs) {
+        output = Lotus::ML::ml_logit(output);
       }
     } else if (transform_ == Lotus::ML::POST_EVAL_TRANSFORM::SOFTMAX) {
       Lotus::ML::compute_softmax(outputs);
     } else if (transform_ == Lotus::ML::POST_EVAL_TRANSFORM::SOFTMAX_ZERO) {
       Lotus::ML::compute_softmax_zero(outputs);
     }
-    for (size_t k = 0; k < outputs.size(); k++) {
-      Y->MutableData<float>()[write_index] = outputs[k];
+    for (float output : outputs) {
+      Y->MutableData<float>()[write_index] = output;
       write_index++;
     }
   }

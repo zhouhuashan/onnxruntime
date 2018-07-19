@@ -159,7 +159,7 @@ enum class SVM_TYPE {
 static inline float ml_inv_erf(float x) {
   float sgn = x < 0 ? -1.0f : 1.0f;
   x = (1 - x) * (1 + x);
-  float log = (float)std::log(x);
+  float log = std::log(x);
   float v = 2 / (3.14159f * 0.147f) + 0.5f * log;
   float v2 = 1 / (0.147f) * log;
   float v3 = -v + std::sqrt(v * v - v2);
@@ -237,13 +237,13 @@ static inline void compute_softmax(std::vector<float>& values) {
   std::vector<float> newscores;
   // compute exp with negative number to be numerically stable
   float v_max = -std::numeric_limits<float>::max();
-  for (int64_t k = 0; k < static_cast<int64_t>(values.size()); k++) {
-    if (values[k] > v_max)
-      v_max = values[k];
+  for (float value : values) {
+    if (value > v_max)
+      v_max = value;
   }
   float this_sum = 0.f;
-  for (int64_t k = 0; k < static_cast<int64_t>(values.size()); k++) {
-    float val2 = std::exp(values[k] - v_max);
+  for (float value : values) {
+    float val2 = std::exp(value - v_max);
     this_sum += val2;
     newscores.push_back(val2);
   }
@@ -257,19 +257,19 @@ static inline void compute_softmax_zero(std::vector<float>& values) {
   std::vector<float> newscores;
   // compute exp with negative number to be numerically stable
   float v_max = -std::numeric_limits<float>::max();
-  for (int64_t k = 0; k < static_cast<int64_t>(values.size()); k++) {
-    if (values[k] > v_max)
-      v_max = values[k];
+  for (float value : values) {
+    if (value > v_max)
+      v_max = value;
   }
   float exp_neg_v_max = std::exp(-v_max);
   float this_sum = 0.f;
-  for (int64_t k = 0; k < static_cast<int64_t>(values.size()); k++) {
-    if (values[k] > 0.0000001f || values[k] < -0.0000001f) {
-      float val2 = std::exp(values[k] - v_max);
+  for (float value : values) {
+    if (value > 0.0000001f || value < -0.0000001f) {
+      float val2 = std::exp(value - v_max);
       this_sum += val2;
       newscores.push_back(val2);
     } else {
-      newscores.push_back(values[k] * exp_neg_v_max);
+      newscores.push_back(value * exp_neg_v_max);
     }
   }
   for (int64_t k = 0; k < static_cast<int64_t>(values.size()); k++) {
@@ -283,8 +283,8 @@ static inline void write_scores(std::vector<float>& scores, POST_EVAL_TRANSFORM 
     Z->MutableData<float>()[write_index] = scores[0];
   } else if (scores.size() >= 2) {  //multiclass
     if (post_transform == POST_EVAL_TRANSFORM::LOGISTIC) {
-      for (int64_t k = 0; k < static_cast<int64_t>(scores.size()); k++) {
-        scores[k] = ml_logit(scores[k]);
+      for (float& score : scores) {
+        score = ml_logit(score);
       }
     } else if (post_transform == POST_EVAL_TRANSFORM::SOFTMAX) {
       compute_softmax(scores);
@@ -315,8 +315,8 @@ static inline void write_scores(std::vector<float>& scores, POST_EVAL_TRANSFORM 
       }
     }
   }
-  for (int k = 0; k < scores.size(); k++) {
-    Z->MutableData<float>()[write_index] = scores[k];
+  for (float score : scores) {
+    Z->MutableData<float>()[write_index] = score;
     write_index++;
   }
 }

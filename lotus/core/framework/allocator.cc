@@ -1,6 +1,6 @@
 #include "core/framework/allocator.h"
 #include "core/framework/allocatormgr.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <sstream>
 
 namespace Lotus {

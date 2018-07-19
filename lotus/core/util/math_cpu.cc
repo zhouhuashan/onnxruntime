@@ -36,7 +36,7 @@
 #include <chrono>
 #include <random>
 #include <unordered_set>
-
+#include "core/platform/env.h"
 #include "core/common/logging/logging.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/util/math.h"
@@ -1288,7 +1288,7 @@ void Col2im<float, CPUMathUtil, StorageOrder::NHWC>(
           if (ih >= 0 && ih < height && iw >= 0 && iw < width) {
             auto* data_im_patch = data_im + (ih * width + iw) * channels;
             Add<float, CPUMathUtil>(
-                (int)channels, data_im_patch, data_col, data_im_patch, context);
+                static_cast<int>(channels), data_im_patch, data_col, data_im_patch, context);
           }
           data_col += channels;
         }
@@ -1444,12 +1444,7 @@ uint32_t randomNumberSeed() {
   const uint32_t kPrime1 = 61631;
   const uint32_t kPrime2 = 64997;
   const uint32_t kPrime3 = 111857;
-
-#ifdef _MSC_VER
-  static const uint32_t pid{::GetCurrentProcessId()};
-#else   // !_MSC_VER
-  static const uint32_t pid{(uint32_t)getpid()};
-#endif  // _MSC_VER
+  static const uint32_t pid = static_cast<uint32_t>(Env::Default().GetSelfPid());
   return kPrime0 * (seedInput++) + kPrime1 * pid +
          kPrime2 * tv_sec + kPrime3 * tv_usec;
 }

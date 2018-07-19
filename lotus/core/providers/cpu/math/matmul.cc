@@ -1,6 +1,7 @@
+#include "core/providers/cpu/math/matmul.h"
+
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
-#include "core/providers/cpu/math/matmul.h"
 #include "matmul_helper.h"
 
 namespace Lotus {

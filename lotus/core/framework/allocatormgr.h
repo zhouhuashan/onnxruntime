@@ -20,7 +20,7 @@ class DeviceAllocatorRegistry {
   void RegisterDeviceAllocator(std::string&& name, DeviceAllocatorFactory factory, size_t max_mem,
                                MemType mem_type = kMemTypeDefault) {
     DeviceAllocatorRegistrationInfo info({mem_type, factory, max_mem});
-    auto ignored = device_allocator_registrations_.emplace(std::move(name), std::move(info));
+    device_allocator_registrations_.emplace(std::move(name), std::move(info));
   }
 
   const std::map<std::string, DeviceAllocatorRegistrationInfo>& AllRegistrations() const {

@@ -95,8 +95,8 @@ void ReduceKernel::PrepareForReduce(OpKernelContext* ctx,
   const Tensor& input = *ctx->Input<Tensor>(0);
 
   size_t ndim = input.Shape().GetDims().size();
-  for (int i = 0; i < axes_.size(); ++i) {
-    LOTUS_ENFORCE(axes_[i] >= 0 && axes_[i] < (int64_t)ndim, "Axis attribute out of range");
+  for (int64_t axe : axes_) {
+    LOTUS_ENFORCE(axe >= 0 && axe < (int64_t)ndim, "Axis attribute out of range");
   }
 
   transposedInputData.resize(input.Shape().Size(), 0);

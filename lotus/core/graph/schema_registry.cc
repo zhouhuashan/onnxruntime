@@ -37,8 +37,8 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSet(
     int baseline_opset_version,
     int opset_version) {
   LOTUS_RETURN_IF_ERROR(SetBaselineAndOpsetVersionForDomain(domain, baseline_opset_version, opset_version));
-  for (int i = 0; i < schemas.size(); i++)
-    LOTUS_RETURN_IF_ERROR(RegisterOpSchema(std::move(schemas[i])));
+  for (auto& schema : schemas)
+    LOTUS_RETURN_IF_ERROR(RegisterOpSchema(std::move(schema)));
   return Lotus::Common::Status::OK();
 }
 

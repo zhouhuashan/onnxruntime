@@ -176,8 +176,8 @@ static Status MultinomialCompute(OpKernelContext* ctx,
 
   // TODO (perf optimization) - the idea behind making this a lambda is so that we can parallelize across batches.
   // When we do that this lamdba will act as one task given to a thread
-  auto DoWork = [ctx, num_samples, num_classes, &generator, &Y, &X, &logits, &output](int64_t start_row,
-                                                                                      int64_t limit_row) {
+  auto DoWork = [ctx, num_samples, num_classes, &generator, &logits, &output](int64_t start_row,
+                                                                              int64_t limit_row) {
     std::default_random_engine generator_copy = generator;
     // BEGIN create temporary tensor
     AllocatorPtr alloc;

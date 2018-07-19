@@ -20,15 +20,26 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <gsl/pointers>
 
 #include "core/common/common.h"
 #include "core/platform/env_time.h"
 #include "core/platform/types.h"
 
+#ifndef _WIN32
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
 namespace Lotus {
 
 class Thread;
 struct ThreadOptions;
+#ifdef _WIN32
+using PIDType = unsigned long;
+#else
+using PIDType = pid_t;
+#endif
 
 /// \brief An interface used by the Lotus implementation to
 /// access operating system functionality like the filesystem etc.
@@ -80,7 +91,16 @@ class Env {
 #ifdef _WIN32
   virtual Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const = 0;
 #endif
-  // TODO add filesystem related functions
+
+#ifdef _WIN32
+  virtual Common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual Common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+#endif
+  virtual Common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual Common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual Common::Status FileClose(int fd) const = 0;
+  //This functions is always successful. It can't fail.
+  virtual PIDType GetSelfPid() const = 0;
 
  protected:
   Env();

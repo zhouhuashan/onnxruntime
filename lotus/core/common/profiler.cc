@@ -30,7 +30,7 @@ void Profiler::EndTimeAndRecordEvent(EventCategory category,
     long long dur = TimeDiffMicroSeconds(start_time);
     long long ts = TimeDiffMicroSeconds(profiling_start_time_, start_time);
     events_.emplace_back(category, Logging::GetProcessId(),
-                                Logging::GetThreadId(), event_name, ts, dur, std::move(event_args));
+                         Logging::GetThreadId(), event_name, ts, dur, std::move(event_args));
   } else {
     if (session_logger_ && !max_events_reached) {
       LOGS(*session_logger_, ERROR)
@@ -46,17 +46,17 @@ std::string Profiler::WriteProfileData() {
 
   for (int i = 0; i < events_.size(); ++i) {
     auto& rec = events_[i];
-    profile_stream_ << "{\"cat\" : \"" << event_categor_names_[rec.cat] << "\",";
+    profile_stream_ << R"({"cat" : ")" << event_categor_names_[rec.cat] << "\",";
     profile_stream_ << "\"pid\" :" << rec.pid << ",";
     profile_stream_ << "\"tid\" :" << rec.tid << ",";
     profile_stream_ << "\"dur\" :" << rec.dur << ",";
     profile_stream_ << "\"ts\" :" << rec.ts << ",";
-    profile_stream_ << "\"ph\" : \"X\",";
-    profile_stream_ << "\"name\" :\"" << rec.name << "\",";
+    profile_stream_ << R"("ph" : "X",)";
+    profile_stream_ << R"("name" :")" << rec.name << "\",";
     profile_stream_ << "\"args\" : {";
     bool is_first_arg = true;
-    for(std::pair<std::string, std::string> event_arg : rec.args){
-      if(!is_first_arg) profile_stream_ << ",";
+    for (std::pair<std::string, std::string> event_arg : rec.args) {
+      if (!is_first_arg) profile_stream_ << ",";
       profile_stream_ << "\"" << event_arg.first << "\" : \"" << event_arg.second << "\"";
       is_first_arg = false;
     }

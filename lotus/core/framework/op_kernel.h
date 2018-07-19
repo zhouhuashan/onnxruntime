@@ -82,7 +82,7 @@ class OpKernelContext {
 
   template <typename T>
   const T* Input(int index) const {
-    if (index >= kernel_->Node().InputDefs().size())
+    if (index < 0 || static_cast<size_t>(index) >= kernel_->Node().InputDefs().size())
       return nullptr;
 
     return execution_frame_->GetValue<T>(arg_start_index_ + index);
@@ -100,7 +100,7 @@ class OpKernelContext {
   // Fetch output (non-tensor) with specified index.
   template <typename T>
   T* Output(int index) {
-    if (index >= kernel_->Node().OutputDefs().size())
+    if (index < 0 || static_cast<size_t>(index) >= kernel_->Node().OutputDefs().size())
       return nullptr;
 
     auto output_arg_index = GetOutputArgIndex(index);

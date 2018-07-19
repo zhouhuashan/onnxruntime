@@ -16,7 +16,6 @@
 #include "core/graph/constants.h"
 #include "core/graph/graph_nodes.h"
 #include "onnx/defs/schema.h"
-#include "core/graph/utils.h"
 #include "onnx/onnx_pb.h"
 
 // TODO - Evaluate switching the types below to support transparent comparators and enable

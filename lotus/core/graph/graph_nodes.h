@@ -26,11 +26,11 @@ class GraphNodes {
   using MutableNodeIterator = NodeIterator<TNodesContainer::iterator>;
 
   ConstNodeIterator cbegin() const noexcept {
-    return ConstNodeIterator(nodes_.cbegin(), nodes_.cend());
+    return {nodes_.cbegin(), nodes_.cend()};
   }
 
   ConstNodeIterator cend() const noexcept {
-    return ConstNodeIterator(nodes_.cend(), nodes_.cend());
+    return {nodes_.cend(), nodes_.cend()};
   }
 
   ConstNodeIterator begin() const noexcept {
@@ -42,11 +42,11 @@ class GraphNodes {
   }
 
   MutableNodeIterator begin() noexcept {
-    return MutableNodeIterator(nodes_.begin(), nodes_.end());
+    return {nodes_.begin(), nodes_.end()};
   }
 
   MutableNodeIterator end() noexcept {
-    return MutableNodeIterator(nodes_.end(), nodes_.end());
+    return {nodes_.end(), nodes_.end()};
   }
 
   // Iterator to provide const and non-const access to nodes, skipping invalid nodes.

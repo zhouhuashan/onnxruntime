@@ -52,7 +52,7 @@ struct MemoryPatternGroup {
   std::vector<MemoryPattern> patterns;
 
   const MemoryPattern* GetPatterns(const AllocatorInfo& location) const {
-    for (int i = 0; i < locations.size(); i++)
+    for (size_t i = 0; i < locations.size(); i++)
       if (locations[i] == location) {
         return &patterns[i];
       }

@@ -42,9 +42,9 @@ class MLValuePatternPlanner {
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT);
 
     std::lock_guard<std::mutex> lock(lock_);
-    for (auto it = planner_map_.begin(); it != planner_map_.end(); ++it) {
-      out->locations.push_back(it->first);
-      out->patterns.push_back(it->second->GenerateMemPattern());
+    for (auto& it : planner_map_) {
+      out->locations.push_back(it.first);
+      out->patterns.push_back(it.second->GenerateMemPattern());
     }
 
     return Common::Status::OK();

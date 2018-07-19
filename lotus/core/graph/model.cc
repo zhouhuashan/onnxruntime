@@ -1,3 +1,7 @@
+#include "core/graph/model.h"
+
+#include <memory>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 // 'type' : forcing value to bool 'true' or 'false' (performance warning)
@@ -9,12 +13,11 @@
 #endif
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
-#include <memory>
-#include "core/graph/model.h"
-#include "core/graph/utils.h"
-#include "core/graph/schema_registry.h"
 #include "gsl/pointers"
 #include "gsl/gsl_util"
+
+#include "core/platform/env.h"
+#include "core/graph/schema_registry.h"
 using namespace onnx;
 using namespace Lotus;
 using namespace Lotus::Common;
@@ -31,7 +34,7 @@ Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const Mode
     prop->set_value(metadata.second);
   }
 
-  auto schema_registry = std::shared_ptr<SchemaRegistryManager>(new SchemaRegistryManager());
+  auto schema_registry = std::make_shared<SchemaRegistryManager>();
   if (local_registries != nullptr) {
     for (auto schema_collection : *local_registries) {
       schema_registry->RegisterRegistry(schema_collection);
@@ -61,7 +64,7 @@ Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaRegist
     model_metadata_[prop.key()] = prop.value();
   }
 
-  auto schema_registry = std::shared_ptr<SchemaRegistryManager>(new SchemaRegistryManager());
+  auto schema_registry = std::make_shared<SchemaRegistryManager>();
   if (local_registries != nullptr) {
     for (auto schema_collection : *local_registries) {
       schema_registry->RegisterRegistry(schema_collection);
@@ -209,17 +212,17 @@ GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the i
 GSL_SUPPRESS(r .35)
 Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
   int fd;
-  LOTUS_RETURN_IF_ERROR(FileOpenRd(file_path, &fd));
+  LOTUS_RETURN_IF_ERROR(Env::Default().FileOpenRd(file_path, &fd));
   auto status = Load(fd, p_model, local_registries);
-  LOTUS_RETURN_IF_ERROR(FileClose(fd));
+  LOTUS_RETURN_IF_ERROR(Env::Default().FileClose(fd));
   return status;
 }
 
 Status Model::Save(Model& model, const std::wstring& file_path) {
   int fd;
-  LOTUS_RETURN_IF_ERROR(FileOpenWr(file_path, &fd));
+  LOTUS_RETURN_IF_ERROR(Env::Default().FileOpenWr(file_path, &fd));
   auto status = Save(model, fd);
-  LOTUS_RETURN_IF_ERROR(FileClose(fd));
+  LOTUS_RETURN_IF_ERROR(Env::Default().FileClose(fd));
   return status;
 }
 
@@ -229,12 +232,17 @@ GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the i
 GSL_SUPPRESS(r .35)
 Status Model::Load(const std::string& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
   int fd;
-  if (!FileOpenRd(file_path, &fd).IsOK()) {
+  Status status = Env::Default().FileOpenRd(file_path, &fd);
+  if (!status.IsOK()) {
     return Status(LOTUS, NO_MODEL, "Failed to open: " + file_path);
   }
-  auto status = Load(fd, p_model, local_registries);
-  LOTUS_RETURN_IF_ERROR(FileClose(fd));
-  return status;
+  try {
+    status = Load(fd, p_model, local_registries);
+  } catch (std::exception& ex) {
+    Env::Default().FileClose(fd);
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Failed to load: " + file_path, ". ", ex.what());
+  }
+  return Env::Default().FileClose(fd);
 }
 
 Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
@@ -253,10 +261,14 @@ Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Mo
 
 Status Model::Save(Model& model, const std::string& file_path) {
   int fd;
-  LOTUS_RETURN_IF_ERROR(FileOpenWr(file_path, &fd));
-  auto status = Save(model, fd);
-  LOTUS_RETURN_IF_ERROR(FileClose(fd));
-  return status;
+  LOTUS_RETURN_IF_ERROR(Env::Default().FileOpenWr(file_path, &fd));
+  try {
+    auto status = Save(model, fd);
+  } catch (std::exception& ex) {
+    Env::Default().FileClose(fd);
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Failed to save model to " + file_path, ". ", ex.what());
+  }
+  return Env::Default().FileClose(fd);
 }
 
 using ::google::protobuf::io::CodedInputStream;

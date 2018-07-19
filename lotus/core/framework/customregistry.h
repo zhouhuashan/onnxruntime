@@ -13,7 +13,7 @@ class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegis
  public:
   explicit CustomRegistry(bool create_func_kernel);
 
-  ~CustomRegistry() = default;
+  ~CustomRegistry() override = default;
 
   /**
     * Register a kernel definition together with kernel factory method to this session.

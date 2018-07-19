@@ -32,14 +32,12 @@ class ReshapeHelper {
     if (unknown_dim != -1) {
       // calculate unknown dimension
       LOTUS_ENFORCE((input_shape.Size() % size) == 0,
-                    "The input tensor cannot be reshaped to the requested shape. Input shape:", input_shape,
-                    " Output shape:", requested_shape);
+                    "The input tensor cannot be reshaped to the requested shape. Input shape:", input_shape);
       requested_shape[unknown_dim] = input_shape.Size() / size;
     } else {
       // check if the output shape is valid.
       LOTUS_ENFORCE(gsl::narrow_cast<int64_t>(input_shape.Size()) == size,
-                    "The input tensor cannot be reshaped to the requested shape. Input shape:", input_shape,
-                    " Output shape:", requested_shape);
+                    "The input tensor cannot be reshaped to the requested shape. Input shape:", input_shape);
     }
   }
 };

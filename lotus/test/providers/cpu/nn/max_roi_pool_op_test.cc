@@ -1,4 +1,3 @@
-#include "core/graph/utils.h"
 #include "core/providers/cpu/nn/roi_pool.h"
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"

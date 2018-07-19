@@ -11,7 +11,6 @@
 #include "gsl/pointers"
 #include "core/graph/graph.h"
 #include "core/graph/op.h"
-#include "core/graph/utils.h"
 #include "core/common/logging/logging.h"
 #include "onnx/checker.h"
 #include "core/graph/schema_registry.h"

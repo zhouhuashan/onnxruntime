@@ -20,12 +20,12 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
       session_state.GetExecutionPlan()) {
     std::vector<TensorShape> input_shapes;
     bool all_tensors = true;
-    for (auto it = feeds.begin(), end = feeds.end(); it != end; it++) {
-      if (!(it->second.IsTensor())) {
+    for (const auto& feed : feeds) {
+      if (!(feed.second.IsTensor())) {
         all_tensors = false;
         break;
       }
-      auto& tensor = it->second.Get<Tensor>();
+      auto& tensor = feed.second.Get<Tensor>();
       input_shapes.push_back(tensor.Shape());
     }
     // if there is some traditional ml value type in inputs
@@ -306,12 +306,12 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   }
 
   // 3. handle feed in values
-  for (auto it = feeds.begin(), end = feeds.end(); it != end; it++) {
+  for (const auto& feed : feeds) {
     int mlvalue_idx;
-    Common::Status status = session_state_.GetMLValueIdx(it->first, &mlvalue_idx);
+    Common::Status status = session_state_.GetMLValueIdx(feed.first, &mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     // we are sharing the underline tensor/object for MLValue
-    all_values_[mlvalue_idx] = it->second;
+    all_values_[mlvalue_idx] = feed.second;
   }
 
   // 4. Handle non-empty output vector

@@ -40,9 +40,9 @@ class DeepCpuLstmOp final : public OpKernel {
 
     if (activation_func_names.empty()) {
       for (int i = 0; i < num_directions_; ++i) {
-        activation_func_names.push_back("sigmoid");
-        activation_func_names.push_back("tanh");
-        activation_func_names.push_back("tanh");
+        activation_func_names.emplace_back("sigmoid");
+        activation_func_names.emplace_back("tanh");
+        activation_func_names.emplace_back("tanh");
       }
     }
 
@@ -55,7 +55,7 @@ class DeepCpuLstmOp final : public OpKernel {
 
   Status Compute(OpKernelContext* context) const override;
 
-  ~DeepCpuLstmOp() = default;
+  ~DeepCpuLstmOp() override = default;
 
  private:
   template <typename T>

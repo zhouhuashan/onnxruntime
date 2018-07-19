@@ -192,9 +192,9 @@ std::exception LoggingManager::LogFatalAndCreateException(const char *category,
 
 unsigned int GetThreadId() {
 #ifdef _WIN32
-  return (unsigned int)GetCurrentThreadId();
+  return static_cast<unsigned int>(GetCurrentThreadId());
 #else
-  return (unsigned int)syscall(SYS_gettid);
+  return static_cast<unsigned int>(syscall(SYS_gettid));
 #endif
 }
 
@@ -203,9 +203,9 @@ unsigned int GetThreadId() {
 //
 unsigned int GetProcessId() {
 #ifdef _WIN32
-  return (unsigned int)GetCurrentProcessId();
+  return static_cast<unsigned int>(GetCurrentProcessId());
 #else
-  return (unsigned int)syscall(SYS_getpid);
+  return static_cast<unsigned int>(syscall(SYS_getpid));
 #endif
 }
 

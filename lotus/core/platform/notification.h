@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef LOTUS_CORE_PLATFORM_NOTIFICATION_H_
 #define LOTUS_CORE_PLATFORM_NOTIFICATION_H_
 
-#include <assert.h>
+#include <cassert>
 #include <atomic>              // NOLINT
 #include <chrono>              // NOLINT
 #include <condition_variable>  // NOLINT
@@ -27,7 +27,7 @@ namespace Lotus {
 
 class Notification {
  public:
-  Notification() : notified_(0) {}
+  Notification() : notified_(false) {}
   ~Notification() {
     // In case the notification is being used to synchronize its own deletion,
     // force any prior notifier to leave its critical section before the object

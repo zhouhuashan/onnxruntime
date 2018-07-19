@@ -4,6 +4,20 @@
 #include "core/graph/graph.h"
 #include "gsl/span"
 
+#ifdef __has_attribute
+#define LOTUS_HAVE_ATTRIBUTE(x) __has_attribute(x)
+#else
+#define LOTUS_HAVE_ATTRIBUTE(x) 0
+#endif
+
+#if LOTUS_HAVE_ATTRIBUTE(nodiscard)
+#define LOTUS_MUST_USE_RESULT [[nodiscard]]
+#elif defined(__clang__) && LOTUS_HAVE_ATTRIBUTE(warn_unused_result)
+#define LOTUS_MUST_USE_RESULT __attribute__((warn_unused_result))
+#else
+#define LOTUS_MUST_USE_RESULT
+#endif
+
 class IMLOpKernel;
 
 namespace Lotus {
@@ -18,7 +32,7 @@ class OpNodeProtoHelper {
 
   //Get a single attribute
   template <typename T>
-  Status GetAttr(const std::string& name, T* value) const;
+  LOTUS_MUST_USE_RESULT Status GetAttr(const std::string& name, T* value) const;
 
   template <typename T>
   void GetAttrOrDefault(const std::string& name, T* value, const T& default_value) const {
@@ -28,10 +42,10 @@ class OpNodeProtoHelper {
 
   //Get repeated attributes
   template <typename T>
-  Status GetAttrs(const std::string& name, std::vector<T>& values) const;
+  LOTUS_MUST_USE_RESULT Status GetAttrs(const std::string& name, std::vector<T>& values) const;
 
   template <typename T>
-  Status GetAttrs(const std::string& name, gsl::span<T> values) const;
+  LOTUS_MUST_USE_RESULT Status GetAttrs(const std::string& name, gsl::span<T> values) const;
 
   uint32_t GetPrimitiveAttrElementCount(onnx::AttributeProto_AttributeType type,
                                         const std::string& name) const noexcept;

@@ -46,7 +46,7 @@ class CPUExecutionProvider : public IExecutionProvider {
       else
         InsertAllocator(kMemTypeDefault,
                         std::shared_ptr<IArenaAllocator>(
-                            std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0)))));
+                            std::make_unique<DummyArena>(cpu_allocator_creator->second.factory(0))));
 #endif
     }
   }

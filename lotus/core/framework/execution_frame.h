@@ -36,23 +36,15 @@ inline void VerifyShape(const T* value,
 }
 
 template <>
-inline void VerifyShape<VectorMapStringToFloat>(const VectorMapStringToFloat* value,
-                                                const MLValue* p_mlvalue,
-                                                const MLValueAllocationParameters& parameters) {
-  // no verification needed in this case.
-  UNUSED_PARAMETER(value);
-  UNUSED_PARAMETER(p_mlvalue);
-  UNUSED_PARAMETER(parameters);
+inline void VerifyShape<VectorMapStringToFloat>(const VectorMapStringToFloat*,
+                                                const MLValue*,
+                                                const MLValueAllocationParameters&) {
 }
 
 template <>
-inline void VerifyShape<VectorMapInt64ToFloat>(const VectorMapInt64ToFloat* value,
-                                               const MLValue* p_mlvalue,
-                                               const MLValueAllocationParameters& parameters) {
-  // no verification needed in this case.
-  UNUSED_PARAMETER(value);
-  UNUSED_PARAMETER(p_mlvalue);
-  UNUSED_PARAMETER(parameters);
+inline void VerifyShape<VectorMapInt64ToFloat>(const VectorMapInt64ToFloat*,
+                                               const MLValue*,
+                                               const MLValueAllocationParameters&) {
 }
 
 class ExecutionFrame {
@@ -102,7 +94,7 @@ class ExecutionFrame {
                                              const TensorShape& shape);
 
   const MLValue& GetMLValue(int mlvalue_index) const {
-    LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
+    LOTUS_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
     return all_values_[mlvalue_index];
   }
 
@@ -140,7 +132,7 @@ class ExecutionFrame {
   AllocatorPtr GetAllocator(const AllocatorInfo& info);
 
   Status ReleaseMLValue(int mlvalue_idx) {
-    if (mlvalue_idx < 0 || mlvalue_idx >= all_values_.size()) {
+    if (mlvalue_idx < 0 || static_cast<size_t>(mlvalue_idx) >= all_values_.size()) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "invalid index ", mlvalue_idx);
     }
     all_values_[mlvalue_idx] = MLValue();
@@ -191,7 +183,7 @@ class ExecutionFrame {
   // Return S_OK and nullptr if index map to an value that is an unused optional input/output
   template <typename T>
   Status GetOrCreateMLValue(int index, const MLValueAllocationParameters& parameters, T*& value) {
-    if (index < 0 || index >= node_values_.size()) {
+    if (index < 0 || static_cast<size_t>(index) >= node_values_.size()) {
       return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                     "Try to access with invalid node value index: " + std::to_string(index));
     }

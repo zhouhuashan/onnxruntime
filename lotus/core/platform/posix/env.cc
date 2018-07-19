@@ -79,6 +79,35 @@ class PosixEnv : public Env {
                       std::function<void()> fn) const override {
     return new StdThread(thread_options, name, fn);
   }
+
+  PIDType GetSelfPid() const override {
+    return getpid();
+  }
+
+  Common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+    *p_fd = open(path.c_str(), O_RDONLY);
+    if (0 > *p_fd) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
+  }
+
+  Common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+    *p_fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (0 > *p_fd) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
+  }
+
+  Common::Status FileClose(int fd) const override {
+    int ret = close(fd);
+    if (0 != ret) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
+  }
+
   Common::Status FileExists(const char* fname) const override {
     return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
   }
@@ -89,13 +118,13 @@ class PosixEnv : public Env {
     char errbuf[512];
     int fd = open(fname, O_RDONLY);
     if (fd < 0) {
-      snprintf(errbuf, sizeof(errbuf), "%s:%d open file %s fail, errcode = %d", __FILE__, (int)__LINE__, fname, errno);
+      snprintf(errbuf, sizeof(errbuf), "%s:%d open file %s fail, errcode = %d", __FILE__, __LINE__, fname, errno);
       return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
     }
     struct stat stbuf;
     if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
       close(fd);
-      snprintf(errbuf, sizeof(errbuf), "%s:%d read file %s fail", __FILE__, (int)__LINE__, fname);
+      snprintf(errbuf, sizeof(errbuf), "%s:%d read file %s fail", __FILE__, __LINE__, fname);
       return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
     }
     if (stbuf.st_size == 0) {
@@ -109,7 +138,7 @@ class PosixEnv : public Env {
                  sizeof(errbuf),
                  "%s:%d open file %s fail, errcode = %d",
                  __FILE__,
-                 (int)__LINE__,
+                 __LINE__,
                  fname,
                  errno);
         return Common::Status(Common::LOTUS, Common::FAIL, errbuf);

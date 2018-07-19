@@ -19,9 +19,9 @@ class Upsample : public OpKernel {
     }
   }
 
-  virtual ~Upsample() = default;
+  ~Upsample() override = default;
 
-  Status Compute(OpKernelContext* context) const;
+  Status Compute(OpKernelContext* context) const override;
 
  protected:
   static const std::string UpsampleModeNN;

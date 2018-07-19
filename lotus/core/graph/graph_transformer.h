@@ -59,15 +59,12 @@ class RuleBasedGraphTransformer : public GraphTransformer {
   }
 
   // Apply for all applicable rules against one graph.
-  Lotus::Common::Status Apply(Graph* graph, bool* modified) const override {
-    UNUSED_PARAMETER(graph);
-    UNUSED_PARAMETER(modified);
+  Lotus::Common::Status Apply(Graph*, bool*) const override {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
  private:
-  typedef std::unordered_map<const onnx::OpSchema*, std::vector<std::unique_ptr<RewriteRule>>>
-      RewriteRuleSet;
+  using RewriteRuleSet = std::unordered_map<const onnx::OpSchema*, std::vector<std::unique_ptr<RewriteRule>>>;
 
   RewriteRuleSet op_to_rules_;
 };

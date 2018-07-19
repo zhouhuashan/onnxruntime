@@ -274,13 +274,13 @@ class ActivationFuncs {
 
 namespace deepcpu {
 
-typedef void (*AddBiasIntoFuncPtr)(const float*, float*, const int);
-typedef void (*ClipWithBiasFuncPtr)(const float, const float*, float*, const int);
-typedef void (*ActivationFuncPtr)(float*, const int, const float, const float);
-typedef void (*ActivationFuncBPtr)(const float*, float*, const int, const float, const float);
-typedef void (*LstmMergeGatesFuncPtr)(const float*, float*, const float*, float*, const int, const float, const float);
-typedef void (*GruResetGateFuncPtr)(const float*, float*, float*, const int, const float, const float);
-typedef void (*GruOutputGateFuncPtr)(float*, const float*, const float*, float*, const int, const float, const float);
+using AddBiasIntoFuncPtr = void (*)(const float*, float*, const int);
+using ClipWithBiasFuncPtr = void (*)(const float, const float*, float*, const int);
+using ActivationFuncPtr = void (*)(float*, const int, const float, const float);
+using ActivationFuncBPtr = void (*)(const float*, float*, const int, const float, const float);
+using LstmMergeGatesFuncPtr = void (*)(const float*, float*, const float*, float*, const int, const float, const float);
+using GruResetGateFuncPtr = void (*)(const float*, float*, float*, const int, const float, const float);
+using GruOutputGateFuncPtr = void (*)(float*, const float*, const float*, float*, const int, const float, const float);
 
 ActivationFuncPtr ActivationFuncByName(const std::string& func);
 LstmMergeGatesFuncPtr LstmMergeGatesFuncByName(const std::string& func);

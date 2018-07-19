@@ -4,9 +4,9 @@
 #include <algorithm>
 #include <sstream>
 #include "core/common/exceptions.h"
+#include "core/platform/env.h"
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/session_state.h"
-#include "core/graph/utils.h"
 #include "core/framework/data_types.h"
 #include "core/framework/mldata_type_utils.h"
 using namespace Lotus::Common;

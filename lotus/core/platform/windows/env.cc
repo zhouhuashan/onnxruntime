@@ -16,14 +16,15 @@ limitations under the License.
 #include <Shlwapi.h>
 #include <Windows.h>
 
+#include <string>
+#include <thread>
+#include <fcntl.h>
+#include <fstream>
+#include <io.h>
+
 #include "core/common/logging/logging.h"
 #include "core/platform/env.h"
 #include "core/platform/types.h"
-
-#include <string>
-#include <thread>
-
-#pragma comment(lib, "Shlwapi.lib")
 
 namespace Lotus {
 
@@ -99,6 +100,50 @@ class WindowsEnv : public Env {
   static WindowsEnv& Instance() {
     static WindowsEnv default_env;
     return default_env;
+  }
+
+  PIDType GetSelfPid() const override {
+    return GetCurrentProcessId();
+  }
+
+  Common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+    _wsopen_s(p_fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > *p_fd) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
+  }
+
+  Common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+    _wsopen_s(p_fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > *p_fd) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
+  }
+
+  Common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+    _sopen_s(p_fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > *p_fd) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
+  }
+
+  Common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+    _sopen_s(p_fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
+    if (0 > *p_fd) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
+  }
+
+  Common::Status FileClose(int fd) const override {
+    int ret = _close(fd);
+    if (0 != ret) {
+      return Common::Status(Common::SYSTEM, errno);
+    }
+    return Status::OK();
   }
 
   Common::Status FileExists(const char* fname) const override {

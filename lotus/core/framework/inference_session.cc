@@ -1,5 +1,6 @@
 #include "core/framework/inference_session.h"
 
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <unordered_set>
@@ -48,7 +49,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
-    if (p_exec_provider.get() == nullptr) {
+    if (!p_exec_provider) {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for exec provider");
     }
     std::string provider_type = p_exec_provider->Type();
@@ -58,14 +59,14 @@ class InferenceSession::Impl {
   }
 
   Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer) {
-    if (p_graph_transformer.get() == nullptr) {
+    if (p_graph_transformer == nullptr) {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for graph transformer");
     }
     return graph_transformation_mgr_.Register(std::move(p_graph_transformer));
   }
 
   Common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry) {
-    if (custom_registry.get() == nullptr) {
+    if (custom_registry == nullptr) {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for custom registry");
     }
 
@@ -1000,11 +1001,11 @@ class InferenceSession::Impl {
 
       IExecutionProvider* provider = session_state_.GetExecutionProvider(alloc_info);
       LOTUS_ENFORCE(provider != nullptr);
-      p_tensor.reset(new Tensor(p_deserialize_tensor->DataType(),
-                                p_deserialize_tensor->Shape(),
-                                preallocated ? preallocated : static_cast<void*>(alloc_ptr->Alloc(p_deserialize_tensor->Size())),
-                                alloc_info,
-                                preallocated ? nullptr : alloc_ptr));  // no deleter for preallocated
+      p_tensor = std::make_unique<Tensor>(p_deserialize_tensor->DataType(),
+                                          p_deserialize_tensor->Shape(),
+                                          preallocated ? preallocated : static_cast<void*>(alloc_ptr->Alloc(p_deserialize_tensor->Size())),
+                                          alloc_info,
+                                          preallocated ? nullptr : alloc_ptr);  // no deleter for preallocated
       Status copy_status = provider->CopyTensor(*p_deserialize_tensor, *p_tensor);
       if (!copy_status.IsOK()) {
         if (copy_status.ErrorMessage().empty()) {

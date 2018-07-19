@@ -35,8 +35,7 @@ class SequentialExecutor : public Executor {
     const auto& exec_plan_vec = p_seq_exec_plan->execution_plan;
     VLOGS(run_logger_, 1) << "Size of execution plan vector: " << exec_plan_vec.size();
 
-    for (size_t i = 0; i < exec_plan_vec.size(); ++i) {
-      const auto& node_exec_plan = exec_plan_vec[i];
+    for (const auto& node_exec_plan : exec_plan_vec) {
       auto node_index = node_exec_plan.node_index;
       auto p_op_kernel = session_state_.GetKernel(node_index);
 
@@ -66,12 +65,12 @@ class SequentialExecutor : public Executor {
         if (fence) {
           fence->BeforeUsingAsOutput(p_op_kernel->Node().GetExecutionProviderType(), queue_id);
         }
-      } 
+      }
       session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
                                                       node_name + "_fence_before",
                                                       sync_time_begin,
                                                       std::unordered_map<std::string,
-                                                      std::string>{{"op_name",op_name}});
+                                                                         std::string>{{"op_name", op_name}});
 
       // call compute on the kernel
       VLOGS(run_logger_, 1) << "Computing kernel: " << p_op_kernel->Node().Name();
@@ -81,7 +80,7 @@ class SequentialExecutor : public Executor {
       session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
                                                       node_name + "_kernel_time",
                                                       kernel_begin_time,
-                                                      std::unordered_map<std::string, std::string>{{"op_name",op_name}});
+                                                      std::unordered_map<std::string, std::string>{{"op_name", op_name}});
 
       sync_time_begin = session_state_.Profiler().StartTime();
       // sync after compute for outputs
@@ -100,7 +99,7 @@ class SequentialExecutor : public Executor {
       session_state_.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
                                                       node_name + "_fence_after",
                                                       sync_time_begin,
-                                                      std::unordered_map<std::string, std::string>{{"op_name",op_name}});
+                                                      std::unordered_map<std::string, std::string>{{"op_name", op_name}});
 
       // free ml-values corresponding to this node
       VLOGS(run_logger_, 1) << "Releasing node ML values after computing kernel: " << p_op_kernel->Node().Name();
@@ -113,12 +112,12 @@ class SequentialExecutor : public Executor {
     if (root_frame_.HasPlan()) {
       std::vector<TensorShape> input_shapes;
       bool all_tensors = true;
-      for (auto it = feeds.begin(), end = feeds.end(); it != end; it++) {
-        if (!(it->second.IsTensor())) {
+      for (const auto& feed : feeds) {
+        if (!(feed.second.IsTensor())) {
           all_tensors = false;
           break;
         }
-        auto& tensor = it->second.Get<Tensor>();
+        auto& tensor = feed.second.Get<Tensor>();
         input_shapes.push_back(tensor.Shape());
       }
 

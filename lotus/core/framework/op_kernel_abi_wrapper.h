@@ -206,7 +206,7 @@ class AbiOpKernel : public OpKernel {
       MLShapeInferenceFunction shape_inference_function,
       void* shape_inference_function_context);
 
-  ~AbiOpKernel();
+  ~AbiOpKernel() override;
 
   Status Compute(OpKernelContext* context) const override;
 

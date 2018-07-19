@@ -10,7 +10,7 @@ class MaxPool;
 
 struct PoolProcessContext {
   int64_t p_{2};
-  PoolProcessContext()  {}
+  PoolProcessContext() {}
 };
 
 template <typename T, typename PoolType>
@@ -23,7 +23,7 @@ class Pool final : public OpKernel, public PoolBase {
     }
   }
 
-  ~Pool() {};
+  ~Pool() override{};
 
   Status Compute(OpKernelContext* context) const override;
 

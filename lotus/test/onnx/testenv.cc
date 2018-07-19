@@ -18,7 +18,7 @@
 using namespace std::experimental::filesystem::v1;
 
 TestEnv::TestEnv(const std::vector<ITestCase*>& tests1, TestResultStat& stat1, SessionFactory& sf1)
-    : next_test_to_run(0), tests(tests1), stat(stat1), finished(new FixedCountFinishCallback((int)tests1.size())), sf(sf1) {
+    : next_test_to_run(0), tests(tests1), stat(stat1), finished(new FixedCountFinishCallback(static_cast<int>(tests1.size()))), sf(sf1) {
 }
 
 TestEnv::~TestEnv() {
@@ -27,6 +27,8 @@ TestEnv::~TestEnv() {
 Lotus::Common::Status SessionFactory::create(std::shared_ptr<Lotus::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
   Lotus::SessionOptions so;
   so.session_logid = logid;
+  so.enable_cpu_mem_arena = enable_cpu_mem_arena_;
+  so.enable_mem_pattern = enable_mem_pattern_;
   sess.reset(new Lotus::InferenceSession(so));
   Lotus::Common::Status status;
   if (provider_ == LotusIR::kCudaExecutionProvider) {

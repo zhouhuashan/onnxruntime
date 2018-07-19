@@ -46,7 +46,7 @@ BFCArena::~BFCArena() {
 }
 
 BFCArena::Chunk* BFCArena::ChunkFromHandle(ChunkHandle h) {
-  LOTUS_ENFORCE(h < static_cast<int>(chunks_.size()));
+  LOTUS_ENFORCE(h < chunks_.size());
   return &(chunks_[h]);
 }
 
@@ -81,7 +81,7 @@ bool BFCArena::Extend(size_t rounded_bytes) {
 
     // Try allocating less memory.
     while (mem_addr == nullptr) {
-      bytes = RoundedBytes((size_t)(bytes * kBackpedalFactor));
+      bytes = RoundedBytes(static_cast<size_t>(bytes * kBackpedalFactor));
       if (bytes < rounded_bytes) break;
       mem_addr = device_allocator_->Alloc(bytes);
     }

@@ -136,7 +136,7 @@ std::string NormalizeActivationArgumentAndGetAlphaBetaCount(const std::string &a
                                                             float &alpha, float &beta) {
   std::string name(activation);
   std::transform(name.begin(), name.end(), name.begin(),
-                 [](const unsigned char i) { return (char)::tolower(i); });
+                 [](const unsigned char i) { return static_cast<char>(::tolower(i)); });
 
   auto usage_entry = NameToArgUsageMap.find(name);
   if (usage_entry == NameToArgUsageMap.end()) {

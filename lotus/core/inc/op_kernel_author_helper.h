@@ -296,7 +296,7 @@ class MLOpKernelInfo : public MLOperatorAttributes {
   MLOpKernelTensorShapeInfo GetTensorShapeInfo() const {
     const IMLOpKernelTensorShapeInfo* ret = nullptr;
     ML_CHECK_STATUS(impl_->GetTensorShapeInfo(&ret));
-    return MLOpKernelTensorShapeInfo(ret);
+    return {ret};
   }
 
  private:
@@ -483,14 +483,14 @@ class MLOpTensor {
 
 class MLTemporaryDataDeleter {
  public:
-  MLTemporaryDataDeleter() : context_(nullptr) {}
+  MLTemporaryDataDeleter()  {}
   MLTemporaryDataDeleter(const MLOpKernelContext* context)
       : context_(context) {}
 
   void operator()(void* p) const;
 
  private:
-  const MLOpKernelContext* context_;
+  const MLOpKernelContext* context_{nullptr};
 };
 
 using MLTemporaryDataUniquePtr = std::unique_ptr<void, MLTemporaryDataDeleter>;

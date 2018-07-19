@@ -1,19 +1,23 @@
 #pragma once
-
-#include "core/graph/graph.h"
 #include <list>
+#include <unordered_map>
+#include <memory>
+#include <climits>
+#include <string>
+#include "core/graph/graph.h"
+
 #include "gsl/pointers"
 
 namespace LotusIR {
 typedef std::unordered_map<std::string, std::string> ModelMetaData;
-typedef std::list<std::shared_ptr<ILotusOpSchemaCollection> > ILotusOpSchemaRegistryList;
+using ILotusOpSchemaRegistryList = std::list<std::shared_ptr<ILotusOpSchemaCollection> >;
 
 // A machine learning model representation class.
 // Besides a main <Graph>, it also holds basic information, say,
 // model version, model domain, model author, license etc.
 class Model {
  public:
-  const Version kNoVersion = INT64_MAX;
+  static constexpr Version kNoVersion = INT64_MAX;
 
   // Construct model from scratch.
   explicit Model(const std::string& graph_name,

@@ -86,7 +86,7 @@ else()
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     string(APPEND CMAKE_CXX_FLAGS " -Wno-error=maybe-uninitialized -Wno-error=unused-but-set-variable")
   else()
-    string(APPEND CMAKE_CXX_FLAGS " -Wno-error=missing-braces -Wno-error=inconsistent-missing-override -Wno-error=undefined-internal -Wno-error=unused-variable -Wno-error=unused-lambda-capture")
+    string(APPEND CMAKE_CXX_FLAGS " -Wno-error=invalid-partial-specialization -Wno-error=missing-braces -Wno-error=inconsistent-missing-override -Wno-error=undefined-internal -Wno-error=unused-variable -Wno-error=unused-lambda-capture")
   endif()
 endif()
 

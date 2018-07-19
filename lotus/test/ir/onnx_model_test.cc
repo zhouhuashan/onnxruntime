@@ -1,5 +1,6 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <memory>
+#include "core/platform/env.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
 #include "core/graph/op.h"
@@ -63,7 +64,7 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
   using ::google::protobuf::io::FileInputStream;
   using ::google::protobuf::io::ZeroCopyInputStream;
   int fd;
-  FileOpenRd("../models/test_bvlc_alexnet/model.onnx", &fd);
+  ASSERT_TRUE(Env::Default().FileOpenRd("../models/test_bvlc_alexnet/model.onnx", &fd).IsOK());
   ASSERT_TRUE(fd > 0);
   std::unique_ptr<ZeroCopyInputStream> raw_input(new FileInputStream(fd));
   std::unique_ptr<CodedInputStream> coded_input(new CodedInputStream(raw_input.get()));
@@ -74,7 +75,7 @@ TEST(ONNXModelsTest, bvlc_alexnet) {
   coded_input.reset();
   raw_input.reset();
   EXPECT_TRUE(result);
-  FileClose(fd);
+  ASSERT_TRUE(Env::Default().FileClose(fd).IsOK());
 
   std::shared_ptr<Model> model;
   ASSERT_TRUE(Model::Load("../models/test_bvlc_alexnet/model.onnx", model).IsOK());

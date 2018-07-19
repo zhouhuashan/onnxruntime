@@ -25,19 +25,18 @@ Timing record for all events.
 */
 struct EventRecord {
   EventRecord(EventCategory category,
-               int process_id,
-               int thread_id,
-               std::string event_name,
-               long long time_stamp,
-               long long duration,
-               std::unordered_map<std::string, std::string>&& event_args) : 
-                                     cat(category),
-                                     pid(process_id),
-                                     tid(thread_id),
-                                     name(std::move(event_name)),
-                                     ts(time_stamp),
-                                     dur(duration),
-                                     args(event_args) {}
+              int process_id,
+              int thread_id,
+              std::string event_name,
+              long long time_stamp,
+              long long duration,
+              std::unordered_map<std::string, std::string>&& event_args) : cat(category),
+                                                                           pid(process_id),
+                                                                           tid(thread_id),
+                                                                           name(std::move(event_name)),
+                                                                           ts(time_stamp),
+                                                                           dur(duration),
+                                                                           args(event_args) {}
   EventCategory cat;
   int pid;
   int tid;
@@ -53,9 +52,7 @@ a corresponding "complete event (X)" in "chrome tracing" format.
 */
 class Profiler {
  public:
-  Profiler() noexcept : enabled_(false),
-                        max_events_reached(false),
-                        session_logger_(nullptr){};  // turned off by default.
+  Profiler() noexcept {};  // turned off by default.
 
   /*
   Start profiler and record beginning time.
@@ -88,13 +85,13 @@ class Profiler {
 
   // Mutex controlling access to profiler data
   std::mutex mutex_;
-  bool enabled_;
+  bool enabled_{false};
   std::ofstream profile_stream_;
   std::string profile_stream_file_;
-  const Logging::Logger* session_logger_;
+  const Logging::Logger* session_logger_{nullptr};
   TimePoint profiling_start_time_;
   std::vector<EventRecord> events_;
-  bool max_events_reached;
+  bool max_events_reached{false};
   const int max_num_events_ = 1000000;
 };
 

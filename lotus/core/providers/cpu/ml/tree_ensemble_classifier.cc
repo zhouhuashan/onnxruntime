@@ -244,7 +244,7 @@ void TreeEnsembleClassifier<T>::Initialize() {
     if (id0 != field0 || id1 != field1) {
       int64_t id = id0 * kOffset_ + id1;
       int64_t position = static_cast<int64_t>(i);
-      auto p3 = std::make_pair<int64_t&, int64_t&>(id, position);
+      auto p3 = std::make_pair(id, position);
       leafdata_map_.insert(p3);
       field0 = id;
       field1 = position;
@@ -260,13 +260,13 @@ void TreeEnsembleClassifier<T>::Initialize() {
     // make an index to look up later
     int64_t id = nodes_treeids_[i] * kOffset_ + nodes_nodeids_[i];
     int64_t position = static_cast<int64_t>(i);
-    auto p3 = std::make_pair<int64_t&, int64_t&>(id, position);
+    auto p3 = std::make_pair(id, position);
     indices.insert(p3);
     it = parents.find(id);
     if (it == parents.end()) {
       // start counter at 0
       int64_t b = (int64_t)0L;
-      auto p1 = std::make_pair<int64_t&, int64_t&>(id, b);
+      auto p1 = std::make_pair(id, b);
       parents.insert(p1);
     }
   }
@@ -289,9 +289,9 @@ void TreeEnsembleClassifier<T>::Initialize() {
     it->second++;
   }
   // find all the nodes that dont have other nodes pointing at them
-  for (auto it2 = parents.begin(); it2 != parents.end(); ++it2) {
-    if (it2->second == 0) {
-      int64_t id = it2->first;
+  for (auto& parent : parents) {
+    if (parent.second == 0) {
+      int64_t id = parent.first;
       it = indices.find(id);
       roots_.push_back(it->second);
     }
@@ -342,10 +342,10 @@ Common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
     // write top class
     int write_additional_scores = -1;
     if (class_count_ > 2) {
-      for (auto it_classes = classes.begin(); it_classes != classes.end(); ++it_classes) {
-        if (maxclass == -1 || it_classes->second > maxweight) {
-          maxclass = it_classes->first;
-          maxweight = it_classes->second;
+      for (auto& classe : classes) {
+        if (maxclass == -1 || classe.second > maxweight) {
+          maxclass = classe.first;
+          maxweight = classe.second;
         }
       }
       if (using_strings_) {
@@ -431,8 +431,8 @@ Common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
         }
       }
     } else {
-      for (auto it_classes = classes.begin(); it_classes != classes.end(); ++it_classes) {
-        scores.push_back(it_classes->second);
+      for (auto& classe : classes) {
+        scores.push_back(classe.second);
       }
     }
     write_scores(scores, post_transform_, zindex, Z, write_additional_scores);
@@ -507,7 +507,7 @@ Common::Status TreeEnsembleClassifier<T>::ProcessTreeNode(std::unordered_map<int
     if (it_classes != classes.end()) {
       it_classes->second += weight;
     } else {
-      auto p1 = std::make_pair<int64_t&, float&>(classid, weight);
+      auto p1 = std::make_pair(classid, weight);
       classes.insert(p1);
     }
     ++index;

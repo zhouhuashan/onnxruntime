@@ -1,7 +1,7 @@
 #pragma once
 #include <iosfwd>
 
-namespace Lotus{
+namespace Lotus {
 // The ML-Values fall into the following categories with respect to their
 // memory management:
 //   - inference inputs: owned (allocated and freed) by caller, and is by
@@ -19,12 +19,12 @@ namespace Lotus{
 //     Generalizing this is future work.
 
 enum class AllocKind {
-	kAllocate = 0,
-	kReuse = 1,
-	kPreExisting = 2,
-	kAllocateStatically = 3,
-	kAllocateOutput = 4
+  kAllocate = 0,
+  kReuse = 1,
+  kPreExisting = 2,
+  kAllocateStatically = 3,
+  kAllocateOutput = 4
 };
 
 std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind);
-}
+}  // namespace Lotus
