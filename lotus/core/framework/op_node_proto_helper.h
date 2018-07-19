@@ -34,6 +34,14 @@ class OpNodeProtoHelper {
   template <typename T>
   LOTUS_MUST_USE_RESULT Status GetAttr(const std::string& name, T* value) const;
 
+  //Get a single attribute
+  template <typename T>
+  T GetAttrOrDefault(const std::string& name, const T& default_value) const {
+    T tmp;
+    return GetAttr<T>(name, &tmp).IsOK() ? tmp : default_value;
+  }
+
+  //Get a single attribute
   template <typename T>
   void GetAttrOrDefault(const std::string& name, T* value, const T& default_value) const {
     if (!GetAttr<T>(name, value).IsOK())

@@ -14,9 +14,7 @@ namespace Lotus {
 template <typename T>
 class Elu final : public OpKernel {
  public:
-  Elu(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("alpha", &alpha_);
-  }
+  Elu(const OpKernelInfo& info) : OpKernel(info), alpha_(info.GetAttrOrDefault("alpha", 1.0f)) {}
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
@@ -27,16 +25,14 @@ class Elu final : public OpKernel {
   }
 
  private:
-  float alpha_ = 1.0f;
+  const float alpha_;
 };
 
 template <typename T>
 class HardSigmoid final : public OpKernel {
  public:
-  HardSigmoid(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("beta", &beta_);
-  }
+  HardSigmoid(const OpKernelInfo& info)
+      : OpKernel(info), alpha_(info.GetAttrOrDefault("alpha", 0.2f)), beta_(info.GetAttrOrDefault("beta", 0.5f)) {}
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
@@ -48,16 +44,14 @@ class HardSigmoid final : public OpKernel {
   }
 
  private:
-  float alpha_ = 0.2f;
-  float beta_ = 0.5f;
+  const float alpha_;
+  const float beta_;
 };
 
 template <typename T>
 class LeakyRelu final : public OpKernel {
  public:
-  LeakyRelu(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("alpha", &alpha_);
-  }
+  LeakyRelu(const OpKernelInfo& info) : OpKernel(info), alpha_(info.GetAttrOrDefault("alpha", 0.01f)) {}
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
@@ -68,28 +62,28 @@ class LeakyRelu final : public OpKernel {
   }
 
  private:
-  float alpha_ = 0.01f;
+  const float alpha_;
 };
 
 template <typename T>
 class ParametricSoftplus final : public OpKernel {
  public:
-  ParametricSoftplus(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("beta", &beta_);
-  }
+  ParametricSoftplus(const OpKernelInfo& info)
+      : OpKernel(info), alpha_(info.GetAttrOrDefault("alpha", 1.0f)), beta_(info.GetAttrOrDefault("beta", 1.0f)) {}
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
     Tensor* Y = context->Output(0, X->Shape());
     EIGEN_X_VAR(xm);
-    EIGEN_Y = (T)alpha_ * (xm * (T)beta_ > 0).select(xm * (T)beta_ + ((-xm * (T)beta_).exp() + 1.0f).log(), ((xm * (T)beta_).exp() + 1.0f).log());
+    EIGEN_Y = (T)alpha_ *
+              (xm * (T)beta_ > 0)
+                  .select(xm * (T)beta_ + ((-xm * (T)beta_).exp() + 1.0f).log(), ((xm * (T)beta_).exp() + 1.0f).log());
     return Status::OK();
   }
 
  private:
-  float alpha_ = 1.0f;
-  float beta_ = 1.0f;
+  const float alpha_;
+  const float beta_;
 };
 
 template <typename T>
@@ -108,10 +102,8 @@ class Relu final : public OpKernel {
 template <typename T>
 class ScaledTanh final : public OpKernel {
  public:
-  ScaledTanh(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("beta", &beta_);
-  }
+  ScaledTanh(const OpKernelInfo& info)
+      : OpKernel(info), alpha_(info.GetAttrOrDefault("alpha", 1.0f)), beta_(info.GetAttrOrDefault("beta", 1.0f)) {}
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
@@ -121,17 +113,18 @@ class ScaledTanh final : public OpKernel {
   }
 
  private:
-  float alpha_ = 1.0f;
-  float beta_ = 1.0f;
+  const float alpha_;
+  const float beta_;
 };
 
 template <typename T>
 class Selu final : public OpKernel {
  public:
-  Selu(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("gamma", &gamma_);
-  }
+  // TODO: I don't think float can represent such a long string(1.67326319217681884765625)
+  Selu(const OpKernelInfo& info)
+      : OpKernel(info),
+        alpha_(info.GetAttrOrDefault("alpha", 1.67326319217681884765625f)),
+        gamma_(info.GetAttrOrDefault("gamma", 1.05070102214813232421875f)) {}
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
@@ -142,8 +135,8 @@ class Selu final : public OpKernel {
   }
 
  private:
-  float alpha_ = 1.67326319217681884765625f;
-  float gamma_ = 1.05070102214813232421875f;
+  const float alpha_;
+  const float gamma_;
 };
 
 template <typename T>
@@ -191,9 +184,7 @@ class Tanh final : public OpKernel {
 template <typename T>
 class ThresholdedRelu final : public OpKernel {
  public:
-  ThresholdedRelu(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("alpha", &alpha_);
-  }
+  ThresholdedRelu(const OpKernelInfo& info) : OpKernel(info), alpha_(info.GetAttrOrDefault("alpha", 1.0f)) {}
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
@@ -204,7 +195,7 @@ class ThresholdedRelu final : public OpKernel {
   }
 
  private:
-  float alpha_ = 1.0f;
+  const float alpha_;
 };
 
 }  // namespace Lotus
