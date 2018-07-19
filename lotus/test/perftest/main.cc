@@ -28,7 +28,7 @@ using namespace LotusIR;
 using namespace Lotus;
 
 void usage() {
-  std::cout << "lotus_perf_test -m model_path -r result_file [-t repeated_times] [-d count_of_dataset_to_use] [-e cpu|cuda]" << std::endl;
+  std::cout << "lotus_perf_test -m model_path -r result_file [-t repeated_times] [-d count_of_dataset_to_use] [-e cpu|cuda] [-p profile_file]" << std::endl;
 }
 
 struct PerfMetrics {
@@ -64,7 +64,12 @@ size_t GetPeakWorkingSetSize() {
 #endif
 }
 
-void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeated_times, size_t count_of_dataset_to_use, Lotus::InferenceSession* session_object, IOBinding* io_binding) {
+void RunPerfTest(ITestCase& test_case,
+                 PerfMetrics& perf_metrics,
+                 size_t repeated_times,
+                 size_t count_of_dataset_to_use,
+                 Lotus::InferenceSession* session_object,
+                 IOBinding* io_binding) {
   size_t data_count = test_case.GetDataCount();
 
   if (data_count == 0) {
@@ -84,7 +89,10 @@ void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeate
       auto outputs = session_object->GetOutputs();
       auto status = outputs.first;
       if (!outputs.first.IsOK()) {
-        LOGF_DEFAULT(ERROR, "GetOutputs failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu", test_case.GetTestCaseName().c_str(), status.ErrorMessage().c_str(), data_index);
+        LOGF_DEFAULT(ERROR, "GetOutputs failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu",
+                     test_case.GetTestCaseName().c_str(),
+                     status.ErrorMessage().c_str(),
+                     data_index);
         continue;
       }
       std::vector<MLValue> output_mlvalues(outputs.second->size());
@@ -98,14 +106,20 @@ void RunPerfTest(ITestCase& test_case, PerfMetrics& perf_metrics, size_t repeate
       status = session_object->Run(*io_binding);
       GetMonotonicTimeCounter(&end_time);
       if (!status.IsOK()) {
-        LOGF_DEFAULT(ERROR, "inference failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu", test_case.GetTestCaseName().c_str(), status.ErrorMessage().c_str(), data_index);
+        LOGF_DEFAULT(ERROR, "inference failed, TestCaseName:%s, ErrorMessage:%s, DataSetIndex:%zu",
+                     test_case.GetTestCaseName().c_str(),
+                     status.ErrorMessage().c_str(),
+                     data_index);
         continue;
       }
       TIME_SPEC time_cost;
       Lotus::SetTimeSpecToZero(&time_cost);
       AccumulateTimeSpec(&time_cost, &start_time, &end_time);
       perf_metrics.time_costs[count_of_inferences] = TimeSpecToSeconds(&time_cost);
-      std::cout << test_case.GetTestCaseName() << "," << perf_metrics.time_costs[count_of_inferences] << "," << std::endl;
+      if(count_of_inferences%100 == 0)
+        std::cout << test_case.GetTestCaseName() << ","
+                  << perf_metrics.time_costs[count_of_inferences] << ","
+                  << count_of_inferences << std::endl;
       count_of_inferences++;
     }
   }
@@ -177,6 +191,11 @@ int main(int argc, const char* args[]) {
       provider_type = LotusIR::kCudaExecutionProvider;
   }
 
+  std::string profile_file;
+  if (parser.GetCommandArg("-p")) {
+    profile_file = *parser.GetCommandArg("-p");
+  }
+
   std::string model_name = model_path.parent_path().filename().string();
   if (model_name.compare(0, 5, "test_") == 0) model_name = model_name.substr(5);
 
@@ -191,6 +210,9 @@ int main(int argc, const char* args[]) {
   SessionFactory sf(provider_type, true, true);
   sf.create(session_object, test_case.GetModelUrl(), test_case.GetTestCaseName());
 
+  if (!profile_file.empty())
+    session_object->StartProfiling(profile_file);
+
   std::unique_ptr<IOBinding> io_binding;
   if (!session_object->NewIOBinding(&io_binding).IsOK()) {
     LOGF_DEFAULT(ERROR, "Failed to init session and IO binding");
@@ -202,6 +224,9 @@ int main(int argc, const char* args[]) {
   PerfMetrics perf_metrics;
   RunPerfTest(test_case, perf_metrics, repeated_times, count_of_dataset_to_use, session_object.get(), io_binding.get());
   perf_metrics.DumpToFile(resultfile, test_case.GetTestCaseName());
+
+  if (!profile_file.empty())
+    session_object->EndProfiling();
 
   return 0;
 }
