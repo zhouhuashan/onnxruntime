@@ -21,19 +21,19 @@ int main(int argc, const char* args[]) {
     Model model(*modelfile);
 
     if (model.GetStatus() == ExecutionStatus::OK) {
-      std::cerr << "Done loading model: " << modelfile->c_str() << std::endl;
+      std::cout << "Done loading model: " << modelfile->c_str() << std::endl;
       const std::string* testfile = parser.GetCommandArg("-t");
       if (testfile) {
         model.Execute(*testfile);
       }
     }
 
-    std::cerr << "Execution Status: " << model.GetStatusString() << std::endl;
+    std::cout << "Execution Status: " << model.GetStatusString() << std::endl;
   } catch (const DataValidationException& e) {
-    std::cerr << "Execution Status: " << Model::GetStatusString(ExecutionStatus::DATA_LOADING_FAILURE) << std::endl;
-    std::cout << "Exception msg: " << e.what() << std::endl;
+    std::cout << "Execution Status: " << Model::GetStatusString(ExecutionStatus::DATA_LOADING_FAILURE) << std::endl;
+    std::cerr << "Exception msg: " << e.what() << std::endl;
   } catch (const std::exception& e) {
-    std::cerr << "Execution Status: " << Model::GetStatusString(ExecutionStatus::PREDICTION_FAILURE) << std::endl;
-    std::cout << "Exception msg: " << e.what() << std::endl;
+    std::cout << "Execution Status: " << Model::GetStatusString(ExecutionStatus::PREDICTION_FAILURE) << std::endl;
+    std::cerr << "Exception msg: " << e.what() << std::endl;
   }
 }
