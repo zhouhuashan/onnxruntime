@@ -20,7 +20,9 @@ void TestConvOp(const ConvOpAttributes& attributes,
                 const vector<vector<int64_t>>& input_shapes,
                 const std::initializer_list<float>& expected_output,
                 const vector<int64_t>& expected_output_shape,
-                bool is_cuda_supported = false) {
+                bool is_cuda_supported = false,
+                OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
+                const std::string& err_str = "") {
   OpTester test("Conv");
   test.AddAttribute("auto_pad", attributes.auto_pad);
   test.AddAttribute("dilations", attributes.dilations);
@@ -38,36 +40,12 @@ void TestConvOp(const ConvOpAttributes& attributes,
   }
   test.AddOutput<float>("Y", expected_output_shape, expected_output);
   if (is_cuda_supported) {
-    test.RunOnCpuAndCuda();
+    test.RunOnCpuAndCuda(expect_result, err_str);
   } else {
-    test.Run();
+    test.Run(expect_result, err_str);
   }
 }
 
-void TestConvOpExpectError(const ConvOpAttributes& attributes,
-                           const vector<vector<float>>& inputs,
-                           const vector<vector<int64_t>>& input_shapes,
-                           const std::initializer_list<float>& expected_output,
-                           const vector<int64_t>& expected_output_shape,
-                           const std::string expected_error) {
-  OpTester test("Conv");
-  test.AddAttribute("auto_pad", attributes.auto_pad);
-  test.AddAttribute("dilations", attributes.dilations);
-  test.AddAttribute("group", attributes.group);
-  test.AddAttribute("kernel_shape", attributes.kernel_shape);
-  if (!attributes.pads.empty()) {
-    test.AddAttribute("pads", attributes.pads);
-  }
-  test.AddAttribute("strides", attributes.strides);
-
-  LOTUS_ENFORCE(inputs.size() <= 3, "Our name array is only setup to handle 3 inputs");
-  const char* szNames[] = {"X", "W", "B"};
-  for (int i = 0; i < inputs.size(); i++) {
-    test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);
-  }
-  test.AddOutput<float>("Y", expected_output_shape, expected_output);
-  test.Run(OpTester::ExpectResult::kExpectFailure, expected_error);
-}
 }  // namespace
 
 // Conv
@@ -193,7 +171,8 @@ TEST(ConvTest, Conv2D_Invalid_Input_Shape) {
   vector<int64_t> dummy_shape = {2, 2, 1, 2};
   auto dummy_vals = {-0.0f, 0.0f, -0.0f, -0.0f,
                      -0.0f, 0.0f, -0.0f, -0.0f};
-  TestConvOpExpectError(attrs, {X, dummy_vals}, {X_shape, dummy_shape}, dummy_vals, dummy_shape, "Invalid input shape: {1,111}");
+  TestConvOp(attrs, {X, dummy_vals}, {X_shape, dummy_shape}, dummy_vals, dummy_shape, false,
+             OpTester::ExpectResult::kExpectFailure, "Input channels C is not equal to kernel channels * group.");
 }
 
 // Conv30

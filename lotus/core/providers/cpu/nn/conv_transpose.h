@@ -85,15 +85,42 @@ class ConvTranspose : public OpKernel, public ConvBase {
     const Tensor* B = num_inputs == 3 ? context->Input<Tensor>(2) : nullptr;
 
     const TensorShape& input_shape = X->Shape();
-    if (input_shape.NumDimensions() != 4)
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input must be 4-dimensional");
+
+    if (input_shape.NumDimensions() != 4) {
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input X must be 4-dimensional.",
+                               " X: ", X->Shape().ToString().c_str());
+    }
+
+    if (X->Shape().NumDimensions() != F->Shape().NumDimensions()) {
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "X num_dims does not match W num_dims.",
+                               " X: ", X->Shape().ToString().c_str(),
+                               " W: ", F->Shape().ToString().c_str());
+    }
     const int64_t N = input_shape[0];
     const int64_t M = input_shape[1];
     const int64_t H = input_shape[2];
     const int64_t W = input_shape[3];
     const int64_t C = F->Shape()[1];
 
+    if (F->Shape()[0] != M) {
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "filter number not equal to input channel number.",
+                               " filter_number: ", F->Shape()[0],
+                               " M: ", M);
+    }
+
     std::vector<int64_t> kernel_shape = ComputeKernelShape(F->Shape());
+
+    if (kernel_shape[0] != F->Shape()[2]) {
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "kernel height does not match filter height.",
+                               " kernel_height: ", kernel_shape[0],
+                               " filter_height: ", F->Shape()[2]);
+    }
+
+    if (kernel_shape[1] != F->Shape()[3]) {
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "kernel width does not match filter width.",
+                               " kernel_width: ", kernel_shape[1],
+                               " filter_width: ", F->Shape()[3]);
+    }
 
     std::vector<int64_t> output_padding(output_padding_);
     if (output_padding.empty()) {
