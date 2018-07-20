@@ -82,6 +82,12 @@ std::vector<std::string> GetStackTrace();
 #define LOTUS_MAKE_STATUS(category, code, ...) \
   Lotus::Common::Status(Lotus::Common::category, Lotus::Common::code, Lotus::MakeString(__VA_ARGS__))
 
+// Check condition. if not met, return status.
+#define LOTUS_RETURN_IF_NOT(condition, ...)                                                                                     \
+  if (!(condition)) {                                                                                                           \
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Not satsified: " #condition "\n", WHERE.ToString(), Lotus::MakeString(__VA_ARGS__)); \
+  }
+
 // Macros to disable the copy and/or move ctor and assignment methods
 // These are usually placed in the private: declarations for a class.
 

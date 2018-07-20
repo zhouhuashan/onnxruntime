@@ -6,7 +6,7 @@ namespace Lotus {
 
 class MatMulComputeHelper {
  public:
-  MatMulComputeHelper(const TensorShape& left_shape, const TensorShape& right_shape) {
+  Status Compute(const TensorShape& left_shape, const TensorShape& right_shape) {
     // Following numpy.matmul for shape inference:
     // https://docs.scipy.org/doc/numpy/reference/generated/numpy.matmul.html
     // The behavior depends on the arguments in the following way.
@@ -17,7 +17,25 @@ class MatMulComputeHelper {
 
     size_t left_num_dims = left_shape.NumDimensions();
     size_t right_num_dims = right_shape.NumDimensions();
-    LOTUS_ENFORCE(left_num_dims >= 1 && right_num_dims >= 1);
+    LOTUS_RETURN_IF_NOT(left_num_dims >= 1 && right_num_dims >= 1);
+
+    // special case for right_shape being 2D and left_shape > 2D by flattening left_shape to 2D
+    // note that padding 1s in front of the right shape can be flattened too
+    if (left_num_dims >= 2 && right_num_dims >= 2 &&
+        right_shape.SizeToDimension(right_num_dims - 1) == right_shape[right_num_dims - 2]) {
+      M_ = left_shape.SizeToDimension(left_num_dims - 1);
+      K_ = left_shape[left_num_dims - 1];
+      N_ = right_shape[right_num_dims - 1];
+      std::vector<int64_t> output_dims = left_shape.GetDims();
+      output_dims[left_num_dims - 1] = N_;
+      output_shape_ = TensorShape(output_dims);
+      output_offsets_ = {0};
+      left_offsets_ = {0};
+      right_offsets_ = {0};
+      LOTUS_RETURN_IF_NOT(K_ == right_shape[right_num_dims - 2], "MatMul dimension mismatch");
+      return Status::OK();
+    }
+
     bool has_1D_input = (left_num_dims == 1 || right_num_dims == 1);
 
     size_t num_input_dims = std::max(left_num_dims, right_num_dims);
@@ -57,9 +75,9 @@ class MatMulComputeHelper {
     for (int idx_dim = 0; idx_dim < num_dims_with_pad - 2; ++idx_dim) {
       output_dims[idx_dim] = std::max(left_padded_dims_[idx_dim], right_padded_dims_[idx_dim]);
       if (left_padded_dims_[idx_dim] != output_dims[idx_dim])
-        LOTUS_ENFORCE(left_padded_dims_[idx_dim] == 1, "left operand cannot broadcast on dim ", idx_dim);
+        LOTUS_RETURN_IF_NOT(left_padded_dims_[idx_dim] == 1, "left operand cannot broadcast on dim ", idx_dim);
       if (right_padded_dims_[idx_dim] != output_dims[idx_dim])
-        LOTUS_ENFORCE(right_padded_dims_[idx_dim] == 1, "right operand cannot broadcast on dim ", idx_dim);
+        LOTUS_RETURN_IF_NOT(right_padded_dims_[idx_dim] == 1, "right operand cannot broadcast on dim ", idx_dim);
     }
 
     M_ = has_1D_input ? 1 : left_shape[left_num_dims - 2];
@@ -67,24 +85,24 @@ class MatMulComputeHelper {
     N_ = (right_num_dims == 1) ? 1 : right_shape[right_num_dims - 1];
 
     if (!has_1D_input) {
-      LOTUS_ENFORCE(K_ == right_shape[right_num_dims - 2], "MatMul dimension mismatch");
+      LOTUS_RETURN_IF_NOT(K_ == right_shape[right_num_dims - 2], "MatMul dimension mismatch");
       // left (...M x K), right (...K x N), output (...M x N)
-      assert(num_dims_with_pad == num_output_dims);
+      LOTUS_RETURN_IF_NOT(num_dims_with_pad == num_output_dims);
       output_dims[num_output_dims - 2] = M_;
       output_dims[num_output_dims - 1] = N_;
     } else {
       if (num_output_dims == 0) {
         // for left and right being both vector, output is scalar thus no shape
-        assert(M_ == 1 && N_ == 1);
+        LOTUS_RETURN_IF_NOT(M_ == 1 && N_ == 1);
       } else {
         if (left_num_dims == 1) {
-          assert(num_dims_with_pad - 1 == num_output_dims);
-          LOTUS_ENFORCE(K_ == right_shape[right_num_dims - 1], "MatMul dimension mismatch");
+          LOTUS_RETURN_IF_NOT(num_dims_with_pad - 1 == num_output_dims);
+          LOTUS_RETURN_IF_NOT(K_ == right_shape[right_num_dims - 1], "MatMul dimension mismatch");
           // left (K), right (...K,N), output (...N)
           output_dims[num_output_dims - 1] = N_;
         } else {
-          assert(num_dims_with_pad - 2 == num_output_dims);
-          LOTUS_ENFORCE(K_ == right_shape[0], "MatMul dimension mismatch");
+          LOTUS_RETURN_IF_NOT(num_dims_with_pad - 2 == num_output_dims);
+          LOTUS_RETURN_IF_NOT(K_ == right_shape[0], "MatMul dimension mismatch");
           // left(...K), right (K), output (...), already assigned
         }
       }
@@ -95,6 +113,8 @@ class MatMulComputeHelper {
 
     // compute broadcast offsets
     ComputeBroadcastOffsets();
+
+    return Status::OK();
   }
 
  private:
