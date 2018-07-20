@@ -32,7 +32,7 @@ ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                              
     ArrayFeatureExtractor,                                                           \
     1,                                                                               \
     in_type,                                                                         \
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>()), \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<in_type>()),  \
     ArrayFeatureExtractorOp<in_type>);
 
 REG_ARRAYFEATUREEXTRACTOR(float);
