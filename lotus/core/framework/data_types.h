@@ -1,9 +1,19 @@
 #pragma once
 
 #include <string>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+#include "onnx/onnx_pb.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
-#include "onnx/onnx_pb.h"
 
 namespace Lotus {
 //maps

@@ -5,7 +5,11 @@
 #include "core/common/common.h"
 #include "core/common/status.h"
 #include "allocator.h"
-#include "onnx/onnx_pb.h"
+
+namespace onnx {
+class TensorProto;
+class TensorShapeProto;
+}  // namespace onnx
 
 namespace Lotus {
 class Tensor;

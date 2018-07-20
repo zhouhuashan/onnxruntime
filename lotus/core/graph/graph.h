@@ -15,8 +15,16 @@
 #include "core/common/const_pointer_container.h"
 #include "core/graph/constants.h"
 #include "core/graph/graph_nodes.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 #include "onnx/defs/schema.h"
 #include "onnx/onnx_pb.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 // TODO - Evaluate switching the types below to support transparent comparators and enable
 // lookups based on gsl::cstring_span<> and std::string_view.  This would reduces allocations
