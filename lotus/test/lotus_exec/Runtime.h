@@ -267,23 +267,19 @@ class WinMLRuntime {
           COMPARE_RESULT compare_result = ret.first;
           compare_result = ret.first;
           if (compare_result != COMPARE_RESULT::SUCCESS) {
-            std::string error;
             switch (compare_result) {
               case COMPARE_RESULT::NOT_SUPPORT:
-                error = "Unsupported output type in Lotus model: ";
+                throw std::runtime_error("Unsupported output type in Lotus model: " + std::string((*outputMeta)[i]->Name()));
                 break;
               case COMPARE_RESULT::SHAPE_MISMATCH:
-                error = "Output shape mismatch in Lotus model: ";
+                throw std::runtime_error("Output shape mismatch in Lotus model: " + std::string((*outputMeta)[i]->Name()));
                 break;
               case COMPARE_RESULT::TYPE_MISMATCH:
-                error = "Output type mismatch in Lotus model: ";
+                throw std::runtime_error("Output type mismatch in Lotus model: " + std::string((*outputMeta)[i]->Name()));
                 break;
               default:
-                error = "Unknown error in Lotus model: ";
-                break;
+                throw std::runtime_error("Unknown error in Lotus model: " + std::string((*outputMeta)[i]->Name()));
             }
-
-            throw std::runtime_error(error + std::string((*outputMeta)[i]->Name()) + ". " + ret.second);
           }
 
           //REVIEW mzs: Map output types are not tested because I couldn't find any tests for that.
