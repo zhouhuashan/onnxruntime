@@ -5,12 +5,12 @@ namespace Cuda {
 
 #define REGISTER_ACTIVATION_KERNEL_ALIAS(alias, x, ver, T)                                         \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                                                   \
-    alias,                                                                                        \
+    alias,                                                                                         \
     kOnnxDomain,                                                                                   \
     ver,                                                                                           \
     T,                                                                                             \
     kCudaExecutionProvider,                                                                        \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()).MayInplace(0, 0), \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()).MayInplace(0, 0),     \
     x<T>);
 
 #define REGISTER_ACTIVATION_KERNEL(x, ver, T) \

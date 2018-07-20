@@ -26,7 +26,6 @@ if [ $BUILD_DEVICE = "gpu" ]; then
     python $SCRIPT_DIR/../../build.py --build_dir /home/lotusdev \
         --config $BUILD_CONFIG --install_onnx \
         --skip_submodule_sync \
-        --enable_pybind \
         --parallel \
         --use_cuda \
         --cuda_home /usr/local/cuda \

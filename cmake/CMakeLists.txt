@@ -279,6 +279,7 @@ if (lotus_USE_OPENBLAS)
 endif()
 
 if (lotus_USE_CUDA)
+    add_definitions(-DUSE_CUDA=1)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 14)
     find_package(CUDA 9.0)

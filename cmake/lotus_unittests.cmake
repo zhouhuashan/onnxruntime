@@ -94,15 +94,6 @@ file(GLOB_RECURSE lotus_test_providers_src
     ${LOTUS_ROOT}/test/framework/TestAllocatorManager.h
 )
 
-if(lotus_USE_CUDA)
-    set_source_files_properties("${LOTUS_ROOT}/test/providers/provider_test_utils.cc"
-        "${LOTUS_ROOT}/test/framework/test_utils.cc"
-        PROPERTIES
-        COMPILE_FLAGS "-DUSE_CUDA"
-        )
-endif()
-
-
 # tests from lowest level library up.
 # the order of libraries should be maintained, with higher libraries being added first in the list
 
@@ -283,10 +274,6 @@ if (lotus_USE_MLAS AND WIN32)
 endif()
 
 if(lotus_USE_CUDA)
-  set_source_files_properties("${LOTUS_ROOT}/test/onnx/testenv.cc" "${LOTUS_ROOT}/test/framework/inference_session_test.cc"
-    PROPERTIES
-    COMPILE_FLAGS "-DUSE_CUDA"
-  )
   list(APPEND onnx_test_libs lotus_providers_cuda)
   list(APPEND onnx_test_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
