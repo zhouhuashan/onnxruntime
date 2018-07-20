@@ -4,22 +4,27 @@
 
 namespace Lotus {
 
-class AveragePool;
+class LpPool;
 
-class MaxPool;
+class PoolProcessContext {
+ private:
+  int64_t p_;
 
-struct PoolProcessContext {
-  int64_t p_{2};
+ public:
+  friend class LpPool;
   PoolProcessContext() {}
+  void init(const OpKernelInfo& info) {
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("p", &p_).IsOK());
+  }
 };
 
 template <typename T, typename PoolType>
 class Pool final : public OpKernel, public PoolBase {
  public:
-  Pool(OpKernelInfo info) : OpKernel(info), PoolBase(info) {
+  Pool(const OpKernelInfo& info) : OpKernel(info), PoolBase(info) {
     const std::string& op_name = info.GetKernelDef().OpName();
     if (op_name == "LpPool" || op_name == "GlobalLpPool") {
-      info.GetAttr<int64_t>("p", &pool_context_.p_);
+      pool_context_.init(info);
     }
   }
 

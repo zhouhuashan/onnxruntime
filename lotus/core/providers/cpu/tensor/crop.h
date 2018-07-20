@@ -10,9 +10,7 @@ namespace Lotus {
 template <typename T>
 class Crop final : public OpKernel {
  public:
-  Crop(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttrs("border", border_);
-    info.GetAttrs("scale", scale_);
+  Crop(const OpKernelInfo& info) : OpKernel(info), border_(info.GetAttrsOrDefault<int64_t>("border")), scale_(info.GetAttrsOrDefault<int64_t>("scale")) {
   }
 
   Common::Status Compute(OpKernelContext* context) const override {
@@ -94,8 +92,8 @@ class Crop final : public OpKernel {
   }
 
  private:
-  std::vector<int64_t> border_;  // (leftBorder, topBorder, rightBorder, bottomBorder)
-  std::vector<int64_t> scale_;   // (height, width)
+  const std::vector<int64_t> border_;  // (leftBorder, topBorder, rightBorder, bottomBorder)
+  const std::vector<int64_t> scale_;   // (height, width)
 };
 
 }  //namespace Lotus

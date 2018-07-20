@@ -13,7 +13,7 @@ namespace Lotus {
 class DeepCpuLstmOp final : public OpKernel {
  public:
   DeepCpuLstmOp(const OpKernelInfo& info)
-      : OpKernel(info) {
+      : OpKernel(info), clip_(info.GetAttrOrDefault<float>("clip", std::numeric_limits<float>::max())) {
     std::string direction;
     LOTUS_ENFORCE(info.GetAttr("direction", &direction).IsOK());
 
@@ -22,14 +22,9 @@ class DeepCpuLstmOp final : public OpKernel {
     hidden_size_ = gsl::narrow<int>(int64_value);
 
     // optional attributes
-    std::vector<std::string> activation_func_names;
-    std::vector<float> activation_func_alphas;
-    std::vector<float> activation_func_betas;
-    info.GetAttrs<std::string>("activations", activation_func_names);
-    info.GetAttrs<float>("activation_alpha", activation_func_alphas);
-    info.GetAttrs<float>("activation_beta", activation_func_betas);
-
-    info.GetAttr<float>("clip", &clip_);
+    std::vector<std::string> activation_func_names = info.GetAttrsOrDefault<std::string>("activations");
+    std::vector<float> activation_func_alphas = info.GetAttrsOrDefault<float>("activation_alpha");
+    std::vector<float> activation_func_betas = info.GetAttrsOrDefault<float>("activation_beta");
     LOTUS_ENFORCE(clip_ > 0.f);
 
     if (info.GetAttr("input_forget", &int64_value).IsOK())
@@ -75,7 +70,7 @@ class DeepCpuLstmOp final : public OpKernel {
   int num_directions_;
 
   int hidden_size_ = 0;
-  float clip_ = std::numeric_limits<float>::max();
+  float clip_;
   bool input_forget_ = false;
 
   Rnn::detail::ActivationFuncs activation_funcs_;

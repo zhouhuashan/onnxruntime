@@ -24,20 +24,20 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
   auto& input_dimensions = input_tensor.Shape().GetDims();
 
   // Initialize the starts & ends to the actual tensor shape
-  size_t dimension_count = input_dimensions.size();
+  const size_t dimension_count = input_dimensions.size();
   std::vector<int64_t> starts(dimension_count, 0);
-  std::vector<int64_t> output_dims;
-  for (size_t i = 0; i < dimension_count; i++)
-    output_dims.push_back(input_dimensions[i]);
+  std::vector<int64_t> output_dims(input_dimensions);
 
   // Initialize axes to the provided axes attribute or to the default sequence
   std::vector<size_t> axes;
-  if (axes_.size()) {
-    for (auto axis : axes_)
-      axes.push_back(axis);
+  if (has_axes_) {
+    axes.resize(axes_.size());
+    std::copy(axes_.begin(), axes_.end(), axes.begin());
   } else {
+    //axes are omitted, they are set to[0, ..., ndim - 1]
+    axes.resize(starts.size());
     for (size_t i = 0; i < starts.size(); i++)
-      axes.push_back(i);
+      axes[i] = i;
   }
 
   if (axes.size() > starts_.size())

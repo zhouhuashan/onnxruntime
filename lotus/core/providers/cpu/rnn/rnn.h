@@ -10,30 +10,22 @@ namespace Lotus {
 template <typename T>
 class RNN : public OpKernel {
   const std::set<std::string> allowed_activations{"Relu", "Tanh", "Sigmoid", "Affine", "LeakyRelu", "ThresholdedRelu", "ScaledTanh", "HardSigmoid", "Elu", "Softsign", "Softplus"};
-  const std::string default_activation = "Tanh";
   const std::set<std::string> allowed_directions{"forward", "reverse", "bidirectional"};
-  const std::string default_direction = "forward";
 
  public:
-  RNN(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttrs("activation_alpha", activation_alpha_);
-    info.GetAttrs("activation_beta", activation_beta_);
-    info.GetAttrs("activations", activations_);
-    info.GetAttr("clip", &clip_);
-    info.GetAttr("direction", &direction_);
+  RNN(const OpKernelInfo& info) : OpKernel(info),
+                                  clip_(info.GetAttrOrDefault("clip", -1.0f)) {
+    LOTUS_ENFORCE(info.GetAttr("direction", &direction_).IsOK());
+    LOTUS_ENFORCE(allowed_directions.find(direction_) != allowed_directions.end());
+    const int num_directions = direction_ == "bidirectional" ? 2 : 1;
+
+    activation_alpha_ = info.GetAttrsOrDefault("activation_alpha", std::vector<float>(num_directions, 0.0F));
+    activation_beta_ = info.GetAttrsOrDefault("activation_beta", std::vector<float>(num_directions, 0.0F));
+    LOTUS_ENFORCE(info.GetAttrs("activations", activations_).IsOK());
+    //TODO: is it optional or not?
     LOTUS_ENFORCE(info.GetAttr("hidden_size", &hidden_size_).IsOK());
 
-    LOTUS_ENFORCE(allowed_directions.find(direction_) != allowed_directions.end());
-    int num_directions = direction_ == "bidirectional" ? 2 : 1;
-
-    // assign default attributes
-    if (activation_alpha_.empty())
-      activation_alpha_ = std::vector<float>(num_directions, 0.0F);
-    if (activation_beta_.empty())
-      activation_beta_ = std::vector<float>(num_directions, 0.0F);
-    if (activations_.empty())
-      activations_ = std::vector<std::string>(num_directions, default_activation);
-    else if (activations_.size() == 2 && num_directions == 1) {
+    if (activations_.size() == 2 && num_directions == 1) {
       // ONNX RNN default activations are {"Tanh", "Tanh"}
       // In this case, take the first default activation.
       activations_.resize(1);
@@ -58,10 +50,10 @@ class RNN : public OpKernel {
   std::vector<std::string> activations_;
 
   // optional, default no clip_
-  float clip_ = -1;
+  float clip_;
 
   // optional
-  std::string direction_ = default_direction;
+  std::string direction_;
 
   // required
   int64_t hidden_size_;

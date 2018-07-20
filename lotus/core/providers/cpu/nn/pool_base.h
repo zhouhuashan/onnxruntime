@@ -8,7 +8,7 @@ namespace Lotus {
 
 class PoolBase {
  protected:
-  PoolBase(OpKernelInfo info) {
+  PoolBase(const OpKernelInfo& info) {
     const std::string op_name = info.GetKernelDef().OpName();
     global_pooling_ = (op_name == "GlobalAveragePool" || op_name == "GlobalMaxPool" || op_name == "GlobalLpPool");
 
@@ -20,19 +20,18 @@ class PoolBase {
       LOTUS_ENFORCE(info.GetAttr<std::string>("auto_pad", &auto_padding).IsOK());
       auto_pad_ = StringToAutoPadType(auto_padding);
 
-      info.GetAttrs<int64_t>("pads", pads_);
-
-      info.GetAttrs<int64_t>("strides", strides_);
-
-      if (op_name == "AveragePool") {
-        int64_t temp = 0;
-        info.GetAttr<int64_t>("count_include_pad", &temp);
-        count_include_pad_ = (temp != 0);
+      if (!info.GetAttrs<int64_t>("pads", pads_).IsOK() || pads_.empty()) {
+        pads_.resize(kernel_shape_.size() * 2, 0);
       }
 
-      //default values
-      if (pads_.empty()) {
-        pads_.resize(kernel_shape_.size() * 2, 0);
+      if (!info.GetAttrs<int64_t>("strides", strides_).IsOK() || strides_.empty()) {
+        strides_.resize(kernel_shape_.size(), 1);
+      }
+
+      if (op_name == "AveragePool") {
+        int64_t temp;
+        LOTUS_ENFORCE(info.GetAttr<int64_t>("count_include_pad", &temp).IsOK());
+        count_include_pad_ = (temp != 0);
       }
 
       for (int dim = 0; dim < kernel_shape_.size(); ++dim) {
@@ -41,9 +40,6 @@ class PoolBase {
                       "Pad should be smaller than kernel.");
       }
 
-      if (strides_.empty()) {
-        strides_.resize(kernel_shape_.size(), 1);
-      }
       LOTUS_ENFORCE(strides_.size() == kernel_shape_.size());
     }
   }

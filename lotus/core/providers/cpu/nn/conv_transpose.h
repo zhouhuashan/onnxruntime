@@ -72,10 +72,7 @@ inline void ComputeTransposePadAndOutputShape(
 template <typename T>
 class ConvTranspose : public OpKernel, public ConvBase {
  public:
-  ConvTranspose(const OpKernelInfo& info) : OpKernel(info), ConvBase(info) {
-    // output_shape and output_padding are both optional
-    info.GetAttrs<int64_t>("output_shape", output_shape_);
-    info.GetAttrs<int64_t>("output_padding", output_padding_);
+  ConvTranspose(const OpKernelInfo& info) : OpKernel(info), ConvBase(info), output_shape_(info.GetAttrsOrDefault<int64_t>("output_shape")), output_padding_(info.GetAttrsOrDefault<int64_t>("output_padding")) {
   }
 
   Status Compute(OpKernelContext* context) const override {
@@ -96,6 +93,7 @@ class ConvTranspose : public OpKernel, public ConvBase {
                                " X: ", X->Shape().ToString().c_str(),
                                " W: ", F->Shape().ToString().c_str());
     }
+
     const int64_t N = input_shape[0];
     const int64_t M = input_shape[1];
     const int64_t H = input_shape[2];
@@ -208,8 +206,8 @@ class ConvTranspose : public OpKernel, public ConvBase {
   }
 
  private:
-  std::vector<int64_t> output_padding_;
-  std::vector<int64_t> output_shape_;
+  const std::vector<int64_t> output_padding_;
+  const std::vector<int64_t> output_shape_;
 
   void ComputePadsAndOutputShape(const TensorShape input_shape,
                                  const int64_t output_channel,

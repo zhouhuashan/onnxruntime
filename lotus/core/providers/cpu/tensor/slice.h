@@ -7,7 +7,7 @@ namespace Lotus {
 template <typename T>
 struct Slice final : OpKernel {
   Slice(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttrs("axes", axes_);
+    has_axes_ = info.GetAttrs("axes", axes_).IsOK();
 
     if (!info.GetAttrs("starts", starts_).IsOK())
       LOTUS_THROW("Invalid 'starts' attribute value");
@@ -19,6 +19,7 @@ struct Slice final : OpKernel {
 
  private:
   std::vector<int64_t> axes_;
+  bool has_axes_;
   std::vector<int64_t> starts_, ends_;
 };  // namespace Lotus
 

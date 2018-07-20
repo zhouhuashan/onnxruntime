@@ -5,7 +5,7 @@ namespace Lotus {
 
 class PadBase {
  protected:
-  PadBase(const OpKernelInfo& info) {
+  PadBase(const OpKernelInfo& info) : value_(info.GetAttrOrDefault("value", 0.f)) {
     std::string mode;
     if (info.GetAttr("mode", &mode).IsOK()) {
       if (mode == "constant")
@@ -29,7 +29,7 @@ class PadBase {
       }
     }
 
-    info.GetAttr("value", &value_);  // Value is optional and initialized to 0 by default
+    ;  // Value is optional and initialized to 0 by default
   }
 
   ~PadBase() {}
@@ -42,7 +42,7 @@ class PadBase {
   Mode mode_{Mode::Constant};
   std::vector<int64_t> pads_;    // After construction, only >=0 values are in here
   std::vector<int64_t> slices_;  // All of the negative padding values are separated out into slices_
-  float value_ = 0;
+  const float value_;
 };
 
 template <typename T>

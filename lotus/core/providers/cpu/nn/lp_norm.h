@@ -25,15 +25,15 @@ template <typename T>
 class LpNorm final : public OpKernel {
  public:
   LpNorm(const OpKernelInfo& op_kernel_info) : OpKernel(op_kernel_info) {
-    op_kernel_info.GetAttr<int64_t>("axis", &axis_);
-    op_kernel_info.GetAttr<int64_t>("p", &p_);
+    LOTUS_ENFORCE(op_kernel_info.GetAttr<int64_t>("axis", &axis_).IsOK());
+    LOTUS_ENFORCE(op_kernel_info.GetAttr<int64_t>("p", &p_).IsOK());
     LOTUS_ENFORCE(p_ == 1 || p_ == 2);
   }
 
   Status Compute(OpKernelContext* p_op_kernel_context) const override;
 
  private:
-  int64_t axis_ = -1;
-  int64_t p_ = 2;
+  int64_t axis_;
+  int64_t p_;
 };
 }  // namespace Lotus
