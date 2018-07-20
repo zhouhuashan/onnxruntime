@@ -1038,7 +1038,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     ctx.set_schema_registry(schema_registry_.get());
     LexicalScopeContext lsc;
     for (auto& kv : output_args) {
-      auto ignored = lsc.output_names.insert(kv.first);
+      lsc.output_names.insert(kv.first);
     }
     NodeProto node_proto;
     node.ToProto(node_proto);
@@ -1496,7 +1496,7 @@ void Graph::CleanUnusedInitializers() {
   std::vector<std::string> unused_names;
   std::set<const NodeArg*> input_args;
   for (const auto& node : Nodes())
-    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { auto ignored = input_args.insert(def); });
+    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { input_args.insert(def); });
 
   for (const auto& pv : name_to_initial_tensor_) {
     const std::string& s = pv.first;

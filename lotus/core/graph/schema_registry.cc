@@ -90,7 +90,7 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMES
     return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
   }
 
-  auto ignored = map_[op_name][op_domain].emplace(std::make_pair(ver, op_schema));
+  map_[op_name][op_domain].emplace(std::make_pair(ver, op_schema));
   return Lotus::Common::Status::OK();
 }
 
@@ -164,7 +164,7 @@ Domain_To_Version_Map SchemaRegistryManager::GetLatestOpsetVersions(bool is_onnx
       // If the map doesn't yet contain this domain, insert it with this registry's value.
       // Otherwise, merge the existing range in the map.
       if (iter == domain_version_map.end()) {
-        auto ignored = domain_version_map.insert(local_domain);
+        domain_version_map.insert(local_domain);
       } else {
         iter->second = std::max(iter->second, local_domain.second);
       }
@@ -180,7 +180,7 @@ Domain_To_Version_Map SchemaRegistryManager::GetLatestOpsetVersions(bool is_onnx
       continue;
     auto it = domain_version_map.find(domain.first);
     if (it == domain_version_map.end()) {
-      auto ignored = domain_version_map.insert(std::pair<std::string, int>(domain.first, domain.second.second));
+      domain_version_map.insert(std::pair<std::string, int>(domain.first, domain.second.second));
     } else {
       it->second = std::max(it->second, domain.second.second);
     }
@@ -222,9 +222,9 @@ void SchemaRegistryManager::GetSchemaAndHistory(
     }
 
     if (new_version < version) {
-      auto ignored = unchecked_registry_indices.insert(unchecked_registry_indices.end(),
-                                                       checked_registry_indices.begin(),
-                                                       checked_registry_indices.end());
+      unchecked_registry_indices.insert(unchecked_registry_indices.end(),
+                                        checked_registry_indices.begin(),
+                                        checked_registry_indices.end());
       checked_registry_indices.clear();
       version = new_version;
     }
