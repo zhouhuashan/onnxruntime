@@ -291,17 +291,16 @@ bool Node::ClearAttribute(const std::string& attr_name) {
 Status Node::UpdateInputArgCount() {
   // The node refers to a primitive operator.
   // Infer and verify node input arg type information.
-  auto total_arg_count = std::accumulate(definitions_.input_arg_count.cbegin(),
-                                         definitions_.input_arg_count.cend(), 0);
+  int total_arg_count = std::accumulate(definitions_.input_arg_count.cbegin(),
+                                        definitions_.input_arg_count.cend(), 0);
 
-  if (total_arg_count != definitions_.input_defs.size()) {
-    Status status(LOTUS, FAIL,
-                  "The sum of input arg count is not equal to size of input defs in node (" + name_ + ").");
-    return status;
+  if (total_arg_count < 0 || static_cast<size_t>(total_arg_count) != definitions_.input_defs.size()) {
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL,
+                             "The sum of input arg count is not equal to size of input defs in node (", name_, ")");
   }
 
   // op_ is always valid when this is called
-  auto& op = *op_;
+  const onnx::OpSchema& op = *op_;
 
   // Verify size of node arg count is same as input number in
   // operator definition.
@@ -739,7 +738,7 @@ Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_or
     }
   }
 
-  if (NumberOfNodes() == nodes_in_topological_order.size()) {
+  if (num_of_nodes_ >= 0 && static_cast<size_t>(num_of_nodes_) == nodes_in_topological_order.size()) {
     return Status::OK();
   } else {
     return Status(LOTUS, FAIL, "Error: the graph is not acyclic.");
@@ -1106,10 +1105,9 @@ Status Graph::VerifyInputAndInitializerNames(/*OUT*/ std::unordered_set<std::str
     }
   }
   for (auto& initializer_pair : name_to_initial_tensor_) {
-    auto result = inputs_and_initializers.insert(initializer_pair.first);
+    inputs_and_initializers.insert(initializer_pair.first);
     // Initializers are expected to be included in inputs (according to ONNX spec).
     // Lotus relaxes this constraint. No duplicate-name check here.
-    (result);
   }
   return Status::OK();
 }
