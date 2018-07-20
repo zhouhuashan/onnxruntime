@@ -365,7 +365,7 @@ TEST(InferenceSessionTests, CheckRunProfilerWithSessionOptions) {
   SessionOptions so;
 
   so.session_logid = "CheckRunProfiler";
-  so.enable_profiling;
+  so.enable_profiling = true;
   so.profile_file_prefix = "lotus_profile_test";
 
   InferenceSession session_object(so);
@@ -379,6 +379,7 @@ TEST(InferenceSessionTests, CheckRunProfilerWithSessionOptions) {
   std::string profile_file = session_object.EndProfiling();
 
   std::ifstream profile(profile_file);
+  ASSERT_TRUE(profile);
   std::string line;
 
   std::vector<std::string> tags = {"pid", "dur", "ts", "ph", "X", "name", "args"};

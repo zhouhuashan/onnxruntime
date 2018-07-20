@@ -74,7 +74,7 @@ Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, 
       pthread_cond_t* finish_event = &finish_event_data;
       pthread_mutex_t finish_event_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
-      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, repeat_count, nullptr, [repeat_count, i, &finished, &results, finish_event, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
+      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, repeat_count, nullptr, [repeat_count, &finished, &results, finish_event, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
         //TODO:output this information to a xml
         if (concurrent_runs == 1) {
           TIME_SPEC ts = result->GetSpentTime();

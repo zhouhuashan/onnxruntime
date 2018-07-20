@@ -6,6 +6,14 @@
 
 using namespace onnx;
 
+#ifdef __GNUC__
+#define LOTUS_UNUSED __attribute__((unused))
+#else
+#define LOTUS_UNUSED
+#endif
+
+#define LOTUS_OPERATOR_SCHEMA LOTUS_UNUSED ONNX_OPERATOR_SCHEMA
+
 namespace LotusIR {
 namespace Test {
 TEST(FormalParamTest, Success) {
@@ -18,7 +26,7 @@ TEST(FormalParamTest, Success) {
 }
 
 TEST(OpRegistrationTest, OpRegTest) {
-  ONNX_OPERATOR_SCHEMA(__TestOpReg)
+  LOTUS_OPERATOR_SCHEMA(__TestOpReg)
       .SetDoc("Op Registration Basic Test.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
@@ -126,7 +134,7 @@ TEST(OpRegistrationTest, OpsetRegTest) {
 }
 
 TEST(OpRegistrationTest, TypeConstraintTest) {
-  ONNX_OPERATOR_SCHEMA(__TestTypeConstraint)
+  LOTUS_OPERATOR_SCHEMA(__TestTypeConstraint)
       .SetDoc("Op with Type Constraint.")
       .Input(0, "input_1", "docstr for input_1.", "T")
       .Input(1, "input_2", "docstr for input_2.", "T")
@@ -156,7 +164,7 @@ TEST(OpRegistrationTest, TypeConstraintTest) {
 }
 
 TEST(OpRegistrationTest, AttributeDefaultValueTest) {
-  ONNX_OPERATOR_SCHEMA(__TestAttrDefaultValue)
+  LOTUS_OPERATOR_SCHEMA(__TestAttrDefaultValue)
       .SetDoc("Op with attributes that have default values")
       .Attr("my_attr_int", "attr with default value of 99.", AttrType::AttributeProto_AttributeType_INT, int64_t(99))
       .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::AttributeProto_AttributeType_FLOAT, float(0.99))
@@ -191,7 +199,7 @@ TEST(OpRegistrationTest, AttributeDefaultValueTest) {
 }
 
 TEST(OpRegistrationTest, AttributeDefaultValueListTest) {
-  ONNX_OPERATOR_SCHEMA(__TestAttrDefaultValueList)
+  LOTUS_OPERATOR_SCHEMA(__TestAttrDefaultValueList)
       .SetDoc("Op with attributes that have default list of values.")
       .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::AttributeProto_AttributeType_INTS, std::vector<int64_t>{int64_t(98), int64_t(99), int64_t(100)})
       .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::AttributeProto_AttributeType_FLOATS, std::vector<float>{float(0.98), float(0.99), float(1.00)})

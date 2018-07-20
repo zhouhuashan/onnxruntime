@@ -1254,7 +1254,6 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
     // TODO - handle default attributes, shape inference, and options
     auto status = custom_registry_->RegisterCustomKernel(builder,
                                            [op_kernel_factory,
-                                            options,
                                             requires_input_shapes_at_creation,
                                             requires_output_shapes_at_creation,
                                             inference_function,
