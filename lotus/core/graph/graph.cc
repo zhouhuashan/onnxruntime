@@ -201,6 +201,9 @@ void Node::Init(const std::string& name,
   definitions_.input_defs = input_args;
   definitions_.output_defs = output_args;
   domain_ = domain;
+  if (kOnnxDomainAlias == domain_) {
+	  domain_ = kOnnxDomain;
+  }
 
   // Set each arg count as 1 by default.
   // It could be adjusted when resolving the node with its operator

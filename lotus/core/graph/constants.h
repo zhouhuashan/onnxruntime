@@ -12,6 +12,7 @@ constexpr const char* kConstant = "Constant";
 constexpr const char* kFunctionOp = "_kFunctionOp";
 constexpr const char* kConstantValue = "value";
 constexpr const char* kOnnxDomain = "";
+constexpr const char* kOnnxDomainAlias = "ai.onnx";
 constexpr const char* kMLDomain = "ai.onnx.ml";
 constexpr const char* kMSDomain = "com.microsoft";
 constexpr const char* kCpuExecutionProvider = "CPUExecutionProvider";
