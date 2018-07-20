@@ -85,6 +85,15 @@ Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaRegist
     for (auto& opSet : model_proto_->opset_import()) {
       domain_to_version[opSet.domain()] = gsl::narrow_cast<int>(opSet.version());
     }
+    auto domain_map = schema_registry->GetLatestOpsetVersions(false);
+    for (auto domain : domain_map) {
+      if (domain_to_version.find(domain.first) == domain_to_version.end()) {
+        domain_to_version[domain.first] = domain.second;
+        const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
+        opset_id_proto->set_domain(domain.first);
+        opset_id_proto->set_version(domain.second);
+      }
+    }
   }
 
   if (model_proto_->has_graph()) {
