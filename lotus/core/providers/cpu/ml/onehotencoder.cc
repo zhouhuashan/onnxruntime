@@ -32,34 +32,18 @@ using namespace std;
 namespace Lotus {
 namespace ML {
 
+#define REG_KERNEL(TYPE)                                                           \
+  ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                               \
+      OneHotEncoder,                                                               \
+      1,                                                                           \
+      TYPE,                                                                        \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<TYPE>()), \
+      OneHotEncoderOp<TYPE>);
 
-ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
-    OneHotEncoder,
-    1,
-    int64_t,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()),
-    OneHotEncoderOp<int64_t>);
-
-ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
-    OneHotEncoder,
-    1,
-    float,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    OneHotEncoderOp<int64_t>);
-
-ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
-    OneHotEncoder,
-    1,
-    double,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<double>()),
-    OneHotEncoderOp<double>);
-
-ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
-    OneHotEncoder,
-    1,
-    string,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<string>()),
-    OneHotEncoderOp<string>);
+REG_KERNEL(int64_t);
+REG_KERNEL(float);
+REG_KERNEL(double);
+REG_KERNEL(string);
 
 template <typename T>
 OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(info.GetAttrOrDefault<int64_t>("zeros", 1)), num_categories_(0) {
