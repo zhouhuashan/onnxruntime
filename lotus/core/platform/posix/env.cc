@@ -30,9 +30,7 @@ namespace {
 
 class StdThread : public Thread {
  public:
-  // name and thread_options are both ignored.
-  StdThread(const ThreadOptions& thread_options, const std::string& name,
-            std::function<void()> fn)
+  StdThread(std::function<void()> fn)
       : thread_(fn) {}
   ~StdThread() override { thread_.join(); }
 
@@ -75,9 +73,9 @@ class PosixEnv : public Env {
     }
   }
 
-  Thread* StartThread(const ThreadOptions& thread_options, const std::string& name,
+  Thread* StartThread(const ThreadOptions& /*thread_options*/, const std::string& /*name*/,
                       std::function<void()> fn) const override {
-    return new StdThread(thread_options, name, fn);
+    return new StdThread(fn);
   }
 
   PIDType GetSelfPid() const override {
@@ -108,7 +106,7 @@ class PosixEnv : public Env {
     return Status::OK();
   }
 
-  Common::Status FileExists(const char* fname) const override {
+  Common::Status FileExists(const char* /*fname*/) const override {
     return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
   }
   Common::Status ReadFileAsString(const char* fname, std::string* out) const override {
