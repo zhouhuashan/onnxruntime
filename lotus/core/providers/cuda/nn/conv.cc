@@ -7,26 +7,32 @@ using namespace std;
 namespace Lotus {
 namespace Cuda {
 
-REGISTER_KERNEL(KernelDefBuilder("Conv")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Conv<float>);
+ONNX_OPERATOR_TYPED_KERNEL_EX(
+    Conv,
+    kOnnxDomain,
+    1,
+    float,
+    kCudaExecutionProvider,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Conv<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Conv")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<double>()),
-                Conv<double>);
+ONNX_OPERATOR_TYPED_KERNEL_EX(
+    Conv,
+    kOnnxDomain,
+    1,
+    double,
+    kCudaExecutionProvider,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<double>()),
+    Conv<double>);
 
-REGISTER_KERNEL(KernelDefBuilder("Conv")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<MLFloat16>()),
-                Conv<MLFloat16>);
+ONNX_OPERATOR_TYPED_KERNEL_EX(
+    Conv,
+    kOnnxDomain,
+    1,
+    MLFloat16,
+    kCudaExecutionProvider,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<MLFloat16>()),
+    Conv<MLFloat16>);
 
 template <typename T>
 Status Conv<T>::Compute(OpKernelContext* context) const {

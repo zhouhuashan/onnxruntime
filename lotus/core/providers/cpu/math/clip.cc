@@ -1,12 +1,11 @@
 #include "core/providers/cpu/math/clip.h"
 
 namespace Lotus {
-REGISTER_KERNEL(KernelDefBuilder("Clip")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .MayInplace(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Clip<float>);
+
+ONNX_CPU_OPERATOR_KERNEL(
+    Clip,
+    6,
+    KernelDefBuilder().MayInplace(0, 0).TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Clip<float>);
 
 }  // namespace Lotus

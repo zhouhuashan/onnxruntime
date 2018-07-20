@@ -2,12 +2,11 @@
 #include "core/util/math_cpuonly.h"
 
 namespace Lotus {
-REGISTER_KERNEL(KernelDefBuilder("LpNormalization")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                LpNorm<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    LpNormalization,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    LpNorm<float>);
 
 using InnerStride = Eigen::InnerStride<Eigen::Dynamic>;
 using StridedVec = Eigen::Map<Eigen::Matrix<float, 1, Eigen::Dynamic>, 0, InnerStride>;

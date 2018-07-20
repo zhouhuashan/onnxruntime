@@ -161,15 +161,15 @@ class KernelDef {
 
 class KernelDefBuilder {
  public:
-  KernelDefBuilder() = default;
+  explicit KernelDefBuilder()
+      : kernel_def_(new KernelDef()) {}
 
-  // Starts with just the name field set.
-  explicit KernelDefBuilder(const std::string& op_name)
-      : kernel_def_(new KernelDef()) {
+  KernelDefBuilder& SetName(const std::string& op_name) {
     kernel_def_->op_name_ = op_name;
+	return *this;
   }
 
-  KernelDefBuilder& Domain(const std::string& domain) {
+  KernelDefBuilder& SetDomain(const std::string& domain) {
     kernel_def_->op_domain_ = domain;
     return *this;
   }

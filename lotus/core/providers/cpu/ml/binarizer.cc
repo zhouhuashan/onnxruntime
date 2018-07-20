@@ -23,12 +23,11 @@ OPTIONAL);
 
 namespace Lotus {
 namespace ML {
-REGISTER_KERNEL(KernelDefBuilder("Binarizer")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                BinarizerOp<float>);
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    Binarizer,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    BinarizerOp<float>);
 
 template <typename T>
 BinarizerOp<T>::BinarizerOp(const OpKernelInfo& info)

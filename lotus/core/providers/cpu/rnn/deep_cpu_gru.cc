@@ -131,14 +131,13 @@ Equations (Default: f=Sigmoid, g=Tanh):
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("GRU")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(),
-                                          DataTypeImpl::GetTensorType<double>()})
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
-                DeepCpuGruOp);
+ONNX_CPU_OPERATOR_KERNEL(
+    GRU,
+    7,
+    KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(),
+                                            DataTypeImpl::GetTensorType<double>()})
+                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
+    DeepCpuGruOp);
 
 using namespace Rnn::detail;
 

@@ -197,8 +197,9 @@ onnx::OpSchema GetOptionalOpSchema() {
 //For test purpose, we register this Foo kernel to Mul op.
 //Once the custom schema is ready, should update this.
 KernelDefBuilder FooKernelDef(const char* schema_name) {
-  KernelDefBuilder def(schema_name);
-  def.Domain(LotusIR::kOnnxDomain)
+  KernelDefBuilder def;
+  def.SetName(schema_name)
+      .SetDomain(LotusIR::kOnnxDomain)
       .SinceVersion(7)
       .Provider(LotusIR::kCpuExecutionProvider)
       .TypeConstraint("T", DataTypeImpl::GetTensorType<float>());
@@ -217,8 +218,9 @@ MLStatus CreateABIOptionalKernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel
 }
 
 KernelDefBuilder OptionalKernelDef() {
-  KernelDefBuilder def("OptionalOp");
-  def.Domain(LotusIR::kOnnxDomain)
+  KernelDefBuilder def;
+  def.SetName("OptionalOp")
+      .SetDomain(LotusIR::kOnnxDomain)
       .SinceVersion(6)
       .Provider(LotusIR::kCpuExecutionProvider)
       .TypeConstraint("T", DataTypeImpl::GetTensorType<float>());

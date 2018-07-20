@@ -34,11 +34,10 @@ Status Softmax<float>::Compute(OpKernelContext* ctx) const {
   return status;
 }
 
-REGISTER_KERNEL(KernelDefBuilder("Softmax")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Softmax<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Softmax,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Softmax<float>);
 
 }  // namespace Lotus

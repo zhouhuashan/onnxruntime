@@ -3,26 +3,33 @@
 #include "core/framework/transformer_memcpy.h"
 #include "core/framework/memcpy.h"
 #include "cuda_fence.h"
+
+using namespace LotusIR;
 using namespace Lotus::Common;
+
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("MemcpyFromHost")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .InputMemoryType<kMemTypeCPUInput>(0)
-                    .ExecQueueId(kCudaStreamCopyIn)
-                    .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
-                Memcpy);
+namespace Cuda {
 
-REGISTER_KERNEL(KernelDefBuilder("MemcpyToHost")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .OutputMemoryType<kMemTypeCPUOutput>(0)
-                    .ExecQueueId(kCudaStreamCopyOut)
-                    .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
-                Memcpy);
+ONNX_OPERATOR_KERNEL_EX(
+    MemcpyFromHost,
+    kOnnxDomain,
+    1,
+    kCudaExecutionProvider,
+    KernelDefBuilder().InputMemoryType<kMemTypeCPUInput>(0).ExecQueueId(kCudaStreamCopyIn)
+                      .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
+    Memcpy);
+
+ONNX_OPERATOR_KERNEL_EX(
+    MemcpyToHost,
+    kOnnxDomain,
+    1,
+    kCudaExecutionProvider,
+    KernelDefBuilder().OutputMemoryType<kMemTypeCPUOutput>(0).ExecQueueId(kCudaStreamCopyOut)
+                      .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
+    Memcpy);
+
+} // namespace Cuda
 
 CUDATransformer::CUDATransformer(const std::string& name)
     : LotusIR::GraphTransformer(name, "Transformer for CUDA execution provider") {

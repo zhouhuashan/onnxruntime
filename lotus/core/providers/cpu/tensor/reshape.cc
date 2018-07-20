@@ -3,22 +3,22 @@
 namespace Lotus {
 
 #define REGISTER_KERNEL_TYPED(T)                                                        \
-  REGISTER_KERNEL(KernelDefBuilder("Reshape")                                           \
-                      .Domain(LotusIR::kOnnxDomain)                                     \
-                      .SinceVersion(5)                                                  \
-                      .Provider(LotusIR::kCpuExecutionProvider)                         \
-                      .Alias(0, 0)                                                      \
+ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                         \
+    Reshape,                                                                            \
+    5,                                                                                  \
+    T,                                                                                  \
+    KernelDefBuilder().Alias(0, 0)                                                      \
                       .TypeConstraint("T", DataTypeImpl::GetTensorType<T>())            \
                       .TypeConstraint("shape", DataTypeImpl::GetTensorType<int64_t>()), \
-                  Reshape<T>);                                                          \
+    Reshape<T>);                                                                        \
                                                                                         \
-  REGISTER_KERNEL(KernelDefBuilder("Reshape")                                           \
-                      .Domain(LotusIR::kOnnxDomain)                                     \
-                      .SinceVersion(1, 4)                                               \
-                      .Provider(LotusIR::kCpuExecutionProvider)                         \
-                      .Alias(0, 0)                                                      \
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(                                                     \
+    Reshape_##T,                                                                        \
+    1,                                                                                  \
+    4,                                                                                  \
+    KernelDefBuilder().Alias(0, 0)                                                      \
                       .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()),           \
-                  Reshape_1<T>);
+    Reshape_1<T>);
 
 REGISTER_KERNEL_TYPED(MLFloat16)
 REGISTER_KERNEL_TYPED(float)

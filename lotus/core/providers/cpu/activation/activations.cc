@@ -2,16 +2,14 @@
 
 namespace Lotus {
 
-#define REGISTER_UNARY_ELEMENTWISE_KERNEL_ALIAS(alias, x, sinceVersion)           \
-  REGISTER_KERNEL(KernelDefBuilder(#alias)                                        \
-                      .Domain(LotusIR::kOnnxDomain)                               \
-                      .SinceVersion(sinceVersion)                                 \
-                      .Provider(LotusIR::kCpuExecutionProvider)                   \
-                      .MayInplace(0, 0)                                           \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()), \
-                  x<float>)
+#define REGISTER_UNARY_ELEMENTWISE_KERNEL_ALIAS(alias, x, sinceVersion)                           \
+  ONNX_CPU_OPERATOR_KERNEL(                                                                       \
+    alias,                                                                                       \
+    sinceVersion,                                                                                 \
+    KernelDefBuilder().MayInplace(0, 0).TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),\
+    x<float>);                                                       
 
-#define REGISTER_UNARY_ELEMENTWISE_KERNEL(x, sinceVersion) \
+#define REGISTER_UNARY_ELEMENTWISE_KERNEL(x, sinceVersion)   \
   REGISTER_UNARY_ELEMENTWISE_KERNEL_ALIAS(x, x, sinceVersion)
 
 REGISTER_UNARY_ELEMENTWISE_KERNEL(Elu, 6);

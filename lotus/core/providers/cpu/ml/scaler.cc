@@ -29,37 +29,33 @@ using namespace std;
 namespace Lotus {
 namespace ML {
 
-REGISTER_KERNEL(KernelDefBuilder("Scaler")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .MayInplace(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ScalerOp<float>);
+ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
+    Scaler,
+    1,
+    float,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()).MayInplace(0, 0),
+    ScalerOp<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Scaler")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .MayInplace(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<double>()),
-                ScalerOp<double>);
+ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
+    Scaler,
+    1,
+    double,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<double>()).MayInplace(0, 0),
+    ScalerOp<double>);
 
-REGISTER_KERNEL(KernelDefBuilder("Scaler")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .MayInplace(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()),
-                ScalerOp<int64_t>);
+ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
+    Scaler,
+    1,
+    int64_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()).MayInplace(0, 0),
+    ScalerOp<int64_t>);
 
-REGISTER_KERNEL(KernelDefBuilder("Scaler")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .MayInplace(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
-                ScalerOp<int32_t>);
+ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
+    Scaler,
+    1,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()).MayInplace(0, 0),
+    ScalerOp<int32_t>);
 
 template <typename T>
 ScalerOp<T>::ScalerOp(const OpKernelInfo& info) : OpKernel(info) {

@@ -6,13 +6,15 @@ namespace Lotus {
 namespace Cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                              \
-  REGISTER_KERNEL(KernelDefBuilder("Tile")                                    \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(6)                                        \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .InputMemoryType<kMemTypeCPUInput>(1)                   \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
+    Tile,                                                                     \
+    kOnnxDomain,                                                              \
+    6,                                                                        \
+    T,                                                                        \
+    kCudaExecutionProvider,                                                   \
+    KernelDefBuilder().InputMemoryType<kMemTypeCPUInput>(1)                   \
                       .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-                  Tile<T>);
+    Tile<T>);
 
 template <typename T>
 Status Tile<T>::Compute(OpKernelContext *ctx) const {

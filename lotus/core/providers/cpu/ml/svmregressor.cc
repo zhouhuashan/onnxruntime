@@ -3,12 +3,11 @@
 namespace Lotus {
 namespace ML {
 
-REGISTER_KERNEL(KernelDefBuilder("SVMRegressor")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                SVMRegressor<float>);
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    SVMRegressor,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    SVMRegressor<float>);
 
 template <typename T>
 SVMRegressor<T>::SVMRegressor(const OpKernelInfo& info) : OpKernel(info), SVMCommon<T>(info) {

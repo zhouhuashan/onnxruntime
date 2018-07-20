@@ -3,14 +3,15 @@
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_ACTIVATION_KERNEL_ALIAS(alias, x, ver, T)                    \
-  REGISTER_KERNEL(KernelDefBuilder(#alias)                                    \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(ver)                                      \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .MayInplace(0, 0)                                       \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-                  x<T>);
+#define REGISTER_ACTIVATION_KERNEL_ALIAS(alias, x, ver, T)                                         \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                                   \
+    alias,                                                                                        \
+    kOnnxDomain,                                                                                   \
+    ver,                                                                                           \
+    T,                                                                                             \
+    kCudaExecutionProvider,                                                                        \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()).MayInplace(0, 0), \
+    x<T>);
 
 #define REGISTER_ACTIVATION_KERNEL(x, ver, T) \
   REGISTER_ACTIVATION_KERNEL_ALIAS(x, x, ver, T)

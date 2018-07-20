@@ -1225,8 +1225,9 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
     }
 
     // Set the name, domain, version, and provider
-    KernelDefBuilder builder(op_kernel->name);
-    builder.Domain(op_kernel->domain)
+    KernelDefBuilder builder;
+	builder.SetName(op_kernel->name)
+        .SetDomain(op_kernel->domain)
         .SinceVersion(op_kernel->operator_set_since_version)
         .Provider(op_kernel->execution_provider_name);
 

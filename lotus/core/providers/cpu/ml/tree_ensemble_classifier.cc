@@ -119,25 +119,17 @@ using namespace std;
 namespace Lotus {
 namespace ML {
 
-REGISTER_KERNEL(KernelDefBuilder("TreeEnsembleClassifier")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(),
-                                           DataTypeImpl::GetTensorType<std::string>()}),
-                TreeEnsembleClassifier<float>);
-
 #define ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(in_type)                                   \
-  REGISTER_KERNEL(KernelDefBuilder("TreeEnsembleClassifier")                               \
-                      .Domain(LotusIR::kMLDomain)                                          \
-                      .SinceVersion(1)                                                     \
-                      .Provider(LotusIR::kCpuExecutionProvider)                            \
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())        \
+ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                         \
+    TreeEnsembleClassifier,                                                                \
+    1,                                                                                     \
+    in_type,                                                                               \
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())        \
                       .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(),       \
                                              DataTypeImpl::GetTensorType<std::string>()}), \
-                  TreeEnsembleClassifier<in_type>);
+    TreeEnsembleClassifier<in_type>);
 
+ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(float);
 ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(double);
 ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(int64_t);
 ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(int32_t);

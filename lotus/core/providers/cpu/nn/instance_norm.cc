@@ -3,12 +3,12 @@
 using namespace Lotus::Common;
 
 namespace Lotus {
-REGISTER_KERNEL(KernelDefBuilder("InstanceNormalization")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                InstanceNorm<float>);
+
+ONNX_CPU_OPERATOR_KERNEL(
+    InstanceNormalization,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    InstanceNorm<float>);
 
 static Status ValidateInputs(const Tensor* input, const Tensor* scale, const Tensor* B) {
   if (input->Shape().NumDimensions() < 3) {

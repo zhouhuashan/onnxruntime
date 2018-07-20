@@ -2,10 +2,10 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Gemm")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Gemm<float, float, float, float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Gemm,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Gemm<float, float, float, float>);
+
 }

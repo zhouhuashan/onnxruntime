@@ -3,18 +3,15 @@
 
 namespace Lotus {
 // spec: https://github.com/onnx/onnx/blob/master/docs/Operators.md#BatchNormalization
-REGISTER_KERNEL(KernelDefBuilder("BatchNormalization")
-                    .Domain(LotusIR::kOnnxDomain)
-                    // This operator is used if you are using version 7 of the default ONNX operator
-                    // set until the next BC-breaking change to this operator
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("X", DataTypeImpl::GetTensorType<float>())
+ONNX_CPU_OPERATOR_KERNEL(
+    BatchNormalization,
+    7,
+    KernelDefBuilder().TypeConstraint("X", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("scale", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("B", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("mean", DataTypeImpl::GetTensorType<float>())
                     .TypeConstraint("var", DataTypeImpl::GetTensorType<float>()),
-                BatchNorm<float>);
+    BatchNorm<float>);
 
 template <>
 Status BatchNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {

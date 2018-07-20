@@ -3,13 +3,11 @@
 namespace Lotus {
 namespace ML {
 
-REGISTER_KERNEL(KernelDefBuilder("TreeEnsembleRegressor")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .MayInplace(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                TreeEnsembleRegressor<float>);
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    TreeEnsembleRegressor,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()).MayInplace(0, 0),
+    TreeEnsembleRegressor<float>);
 
 template <typename T>
 TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKernel(info) {

@@ -87,11 +87,10 @@ Status LRN<float>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDefBuilder("LRN")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                LRN<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    LRN,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    LRN<float>);
 
 }  // namespace Lotus

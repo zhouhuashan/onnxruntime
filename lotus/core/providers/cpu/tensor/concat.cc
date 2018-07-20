@@ -2,12 +2,11 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Concat")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(4)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Concat<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Concat,
+    4,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Concat<float>);
 
 template <>
 Status Concat<float>::Compute(OpKernelContext* ctx) const {

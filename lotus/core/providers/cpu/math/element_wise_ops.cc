@@ -2,208 +2,185 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Add")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Add<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Add,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Add<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Sub")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Sub<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Sub,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Sub<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Mul")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Mul<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Mul,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Mul<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Div")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Div<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Div,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Div<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Abs")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Abs<float>);
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Abs,
+    6,
+    float,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Abs<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Abs")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
-                Abs<int8_t>);
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Abs,
+    6,
+    int8_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
+    Abs<int8_t>);
 
-REGISTER_KERNEL(KernelDefBuilder("Abs")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
-                Abs<int32_t>);
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Abs,
+    6,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Abs<int32_t>);
 
-REGISTER_KERNEL(KernelDefBuilder("Neg")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Neg<float>);
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Neg,
+    6,
+    float,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Neg<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Neg")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
-                Neg<int8_t>);
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Neg,
+    6,
+    int8_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int8_t>()),
+    Neg<int8_t>);
 
-REGISTER_KERNEL(KernelDefBuilder("Neg")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
-                Neg<int32_t>);
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Neg,
+    6,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Neg<int32_t>);
 
-REGISTER_KERNEL(KernelDefBuilder("Floor")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Floor<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Floor,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Floor<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Ceil")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Ceil<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Ceil,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Ceil<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Reciprocal")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Reciprocal<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Reciprocal,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Reciprocal<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Sqrt")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Sqrt<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Sqrt,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Sqrt<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Pow")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pow<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Pow,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pow<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Exp")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Exp<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Exp,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Exp<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Log")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Log<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Log,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Log<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Sum")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Sum<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Sum,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Sum<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Min")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Min<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Min,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Min<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Max")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Max<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Max,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Max<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Not")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                Not);
+ONNX_CPU_OPERATOR_KERNEL(
+    Not,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+    Not);
 
-REGISTER_KERNEL(KernelDefBuilder("And")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                And);
+ONNX_CPU_OPERATOR_KERNEL(
+    And,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+    And);
 
-REGISTER_KERNEL(KernelDefBuilder("Or")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                Or);
+ONNX_CPU_OPERATOR_KERNEL(
+    Or,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+    Or);
 
-REGISTER_KERNEL(KernelDefBuilder("Xor")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-                Xor);
+ONNX_CPU_OPERATOR_KERNEL(
+    Xor,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+    Xor);
 
-REGISTER_KERNEL(KernelDefBuilder("Less")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Less<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Less,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Less<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Greater")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Greater<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Greater,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Greater<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Equal")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
-                Equal<int32_t>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Equal,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Equal<int32_t>);
 
-REGISTER_KERNEL(KernelDefBuilder("Mean")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Mean<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Mean,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Mean<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("Affine")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Affine<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Affine,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Affine<float>);
 
 template <typename T>
 auto MakeEigenArrayMap(Tensor& t) { return EigenVectorArrayMap<T>(t.MutableData<T>(), t.Shape().Size()); }
@@ -795,12 +772,11 @@ class Sin final : public OpKernel {
   }
 };
 
-REGISTER_KERNEL(KernelDefBuilder("Sin")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Sin<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Sin,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Sin<float>);
 
 template <typename T>
 class Cos final : public OpKernel {
@@ -816,12 +792,11 @@ class Cos final : public OpKernel {
   }
 };
 
-REGISTER_KERNEL(KernelDefBuilder("Cos")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Cos<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Cos,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Cos<float>);
 
 template <typename T>
 class Tan final : public OpKernel {
@@ -837,12 +812,11 @@ class Tan final : public OpKernel {
   }
 };
 
-REGISTER_KERNEL(KernelDefBuilder("Tan")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Tan<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Tan,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Tan<float>);
 
 template <typename T>
 class Asin final : public OpKernel {
@@ -858,12 +832,11 @@ class Asin final : public OpKernel {
   }
 };
 
-REGISTER_KERNEL(KernelDefBuilder("Asin")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Asin<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Asin,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Asin<float>);
 
 template <typename T>
 class Acos final : public OpKernel {
@@ -879,12 +852,11 @@ class Acos final : public OpKernel {
   }
 };
 
-REGISTER_KERNEL(KernelDefBuilder("Acos")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Acos<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Acos,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Acos<float>);
 
 template <typename T>
 class Atan final : public OpKernel {
@@ -900,12 +872,11 @@ class Atan final : public OpKernel {
   }
 };
 
-REGISTER_KERNEL(KernelDefBuilder("Atan")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Atan<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Atan,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Atan<float>);
 
 template <>
 Status PRelu<float>::Compute(OpKernelContext* context) const {
@@ -932,11 +903,10 @@ Status PRelu<float>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDefBuilder("PRelu")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                PRelu<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    PRelu,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    PRelu<float>);
 
 }  // namespace Lotus

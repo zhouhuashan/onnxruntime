@@ -21,13 +21,15 @@ const std::vector<MLDataType> castOpTypeConstraints{
     DataTypeImpl::GetTensorType<bool>()};
 
 #define REGISTER_KERNEL_TYPED(T)                                              \
-  REGISTER_KERNEL(KernelDefBuilder("Cast")                                    \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(6)                                        \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<T>()) \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
+    Cast,                                                                     \
+    kOnnxDomain,                                                              \
+    6,                                                                        \
+    T,                                                                        \
+    kCudaExecutionProvider,                                                   \
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<T>()) \
                       .TypeConstraint("T2", castOpTypeConstraints),           \
-                  Cast<T>);
+    Cast<T>);
 
 template <typename SrcT>
 Status Cast<SrcT>::Compute(OpKernelContext* context) const {

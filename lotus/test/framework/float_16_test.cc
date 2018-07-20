@@ -63,8 +63,9 @@ class MulFP16Kernel {
 //For test purpose, we register this MulFP16Kernel kernel to Mul op.
 //Once the custom schema is ready, should update this.
 KernelDefBuilder MulFP16KernelDef() {
-  KernelDefBuilder def("Mul16");
-  def.Domain(LotusIR::kOnnxDomain)
+  KernelDefBuilder def;
+  def.SetName("Mul16")
+      .SetDomain(LotusIR::kOnnxDomain)
       .SinceVersion(6)
       .Provider(LotusIR::kCpuExecutionProvider)
       .TypeConstraint("T", DataTypeImpl::GetTensorType<MLFloat16>());

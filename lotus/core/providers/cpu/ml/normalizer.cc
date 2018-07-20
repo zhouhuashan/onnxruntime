@@ -29,16 +29,15 @@ ONNX_OPERATOR_SCHEMA(Normalizer)
 namespace Lotus {
 namespace ML {
 
-REGISTER_KERNEL(KernelDefBuilder("Normalizer")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .MayInplace(0, 0)  // input is 4 or 8 byte, output is 4 byte
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(),
-                                                                 DataTypeImpl::GetTensorType<double>(),
-                                                                 DataTypeImpl::GetTensorType<int32_t>(),
-                                                                 DataTypeImpl::GetTensorType<int64_t>()}),
-                Normalizer);
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    Normalizer,
+    1,
+    KernelDefBuilder().MayInplace(0, 0)  // input is 4 or 8 byte, output is 4 byte
+	                  .TypeConstraint("T", std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(),
+                                                                   DataTypeImpl::GetTensorType<double>(),
+                                                                   DataTypeImpl::GetTensorType<int32_t>(),
+                                                                   DataTypeImpl::GetTensorType<int64_t>()}),
+    Normalizer);
 
 Status Normalizer::Compute(OpKernelContext* context) const {
   MLDataType input_type = context->Input<Tensor>(0)->DataType();

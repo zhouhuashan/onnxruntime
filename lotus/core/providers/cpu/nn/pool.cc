@@ -194,46 +194,40 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDefBuilder("AveragePool")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pool<float, AveragePool>);
+ONNX_CPU_OPERATOR_KERNEL(
+    AveragePool,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pool<float, AveragePool>);
 
-REGISTER_KERNEL(KernelDefBuilder("MaxPool")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pool<float, MaxPool>);
+ONNX_CPU_OPERATOR_KERNEL(
+    MaxPool,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pool<float, MaxPool>);
 
-REGISTER_KERNEL(KernelDefBuilder("LpPool")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(2)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pool<float, LpPool>);
+ONNX_CPU_OPERATOR_KERNEL(
+    LpPool,
+    2,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pool<float, LpPool>);
 
-REGISTER_KERNEL(KernelDefBuilder("GlobalLpPool")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(2)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pool<float, LpPool>);
+ONNX_CPU_OPERATOR_KERNEL(
+    GlobalLpPool,
+    2,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pool<float, LpPool>);
 
-REGISTER_KERNEL(KernelDefBuilder("GlobalAveragePool")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pool<float, AveragePool>);
+ONNX_CPU_OPERATOR_KERNEL(
+    GlobalAveragePool,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pool<float, AveragePool>);
 
-REGISTER_KERNEL(KernelDefBuilder("GlobalMaxPool")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pool<float, MaxPool>);
+ONNX_CPU_OPERATOR_KERNEL(
+    GlobalMaxPool,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pool<float, MaxPool>);
 
 }  // namespace Lotus

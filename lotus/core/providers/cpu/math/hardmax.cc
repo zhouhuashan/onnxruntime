@@ -45,11 +45,10 @@ Status Hardmax<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDefBuilder("Hardmax")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Hardmax<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Hardmax,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Hardmax<float>);
 
 }  // namespace Lotus

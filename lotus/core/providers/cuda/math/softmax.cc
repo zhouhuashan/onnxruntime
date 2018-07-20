@@ -6,12 +6,14 @@ namespace Lotus {
 namespace Cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                              \
-  REGISTER_KERNEL(KernelDefBuilder("Softmax")                                 \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(1)                                        \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-                  Softmax<T>);
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
+    Softmax,                                                                  \
+    kOnnxDomain,                                                              \
+    1,                                                                        \
+    T,                                                                        \
+    kCudaExecutionProvider,                                                   \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+    Softmax<T>);
 
 template <typename T>
 Status Softmax<T>::Compute(OpKernelContext* ctx) const {

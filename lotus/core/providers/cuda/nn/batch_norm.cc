@@ -7,16 +7,18 @@ namespace Lotus {
 namespace Cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                                 \
-  REGISTER_KERNEL(KernelDefBuilder("BatchNormalization")                         \
-                      .Domain(LotusIR::kOnnxDomain)                              \
-                      .SinceVersion(7)                                           \
-                      .Provider(LotusIR::kCudaExecutionProvider)                 \
-                      .TypeConstraint("X", DataTypeImpl::GetTensorType<T>())     \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                 \
+    BatchNormalization,                                                          \
+    kOnnxDomain,                                                                 \
+    7,                                                                           \
+    T,                                                                           \
+    kCudaExecutionProvider,                                                      \
+    KernelDefBuilder().TypeConstraint("X", DataTypeImpl::GetTensorType<T>())     \
                       .TypeConstraint("scale", DataTypeImpl::GetTensorType<T>()) \
                       .TypeConstraint("B", DataTypeImpl::GetTensorType<T>())     \
                       .TypeConstraint("mean", DataTypeImpl::GetTensorType<T>())  \
                       .TypeConstraint("var", DataTypeImpl::GetTensorType<T>()),  \
-                  BatchNorm<T>);
+    BatchNorm<T>);
 
 struct BNTensorDescriptor final {
   ~BNTensorDescriptor() {

@@ -322,7 +322,7 @@ class InferenceSession::Impl {
 
                 // note that KernelCreateInfo may not exist for custom kernel
                 const KernelCreateInfo* kci = nullptr;
-                KernelRegistry::Instance().SearchKernelRegistry(node, &kci);
+                GetOpKernelRegistry().SearchKernelRegistry(node, &kci);
 
                 SessionState::NodeInfo node_info(index, &node, kci);
 
@@ -954,7 +954,7 @@ class InferenceSession::Impl {
     //The order of registeries represent the priority, put the custom register with higher priority
     registries.assign(custom_registries.begin(),
                       custom_registries.end());
-    registries.push_back(&KernelRegistry::Instance());
+    registries.push_back(&GetOpKernelRegistry());
 
     //do node placement based on registered kernels
     bool modified = false;
@@ -972,7 +972,7 @@ class InferenceSession::Impl {
       insert_cast_transformer_.AddKernelRegistry(registry);
     }
 
-    insert_cast_transformer_.AddKernelRegistry(&KernelRegistry::Instance());
+    insert_cast_transformer_.AddKernelRegistry(&GetOpKernelRegistry());
 
     LOTUS_RETURN_IF_ERROR(insert_cast_transformer_.Apply(graph, &modified));
 
@@ -1209,7 +1209,7 @@ class InferenceSession::Impl {
       return status;
     }
 
-    return KernelRegistry::Instance().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
+    return GetOpKernelRegistry().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
   }
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {

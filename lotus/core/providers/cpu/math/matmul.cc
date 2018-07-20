@@ -6,12 +6,11 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("MatMul")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                MatMul<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    MatMul,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    MatMul<float>);
 
 template <>
 Status MatMul<float>::Compute(OpKernelContext* ctx) const {

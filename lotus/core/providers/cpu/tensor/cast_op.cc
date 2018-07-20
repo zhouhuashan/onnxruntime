@@ -18,13 +18,13 @@ const std::vector<MLDataType> castOpTypeConstraints{
     DataTypeImpl::GetTensorType<MLFloat16>()};
 
 #define ADD_FROM_CAST_OP(in_type)                                                    \
-  REGISTER_KERNEL(KernelDefBuilder("Cast")                                           \
-                      .Domain(LotusIR::kOnnxDomain)                                  \
-                      .SinceVersion(6)                                               \
-                      .Provider(LotusIR::kCpuExecutionProvider)                      \
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())  \
+  ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                    \
+    Cast,                                                                            \
+    6,                                                                               \
+    in_type,                                                                         \
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())  \
                       .TypeConstraint("T2", castOpTypeConstraints),                  \
-                  Cast<in_type>);                                                    \
+    Cast<in_type>);                                                                  \
                                                                                      \
   template <>                                                                        \
   Status Cast<in_type>::Compute(OpKernelContext* context) const {                    \
@@ -95,13 +95,13 @@ ADD_FROM_CAST_OP(bool);
 ADD_FROM_CAST_OP(float);
 ADD_FROM_CAST_OP(double);
 
-REGISTER_KERNEL(KernelDefBuilder("Cast")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<MLFloat16>())
-                    .TypeConstraint("T2", castOpTypeConstraints),
-                Cast<MLFloat16>);
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Cast,
+    6,
+    MLFloat16,
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<MLFloat16>())
+                      .TypeConstraint("T2", castOpTypeConstraints),
+    Cast<MLFloat16>);
 
 template <>
 Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {

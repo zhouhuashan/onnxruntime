@@ -4,12 +4,13 @@
 namespace Lotus {
 namespace Cuda {
 
-REGISTER_KERNEL(KernelDefBuilder("Gemm")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Gemm<float>);
+ONNX_OPERATOR_KERNEL_EX(
+    Gemm,
+    kOnnxDomain,
+    7,
+    kCudaExecutionProvider,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Gemm<float>);
 
 template <>
 Status Gemm<float>::Compute(OpKernelContext* ctx) const {

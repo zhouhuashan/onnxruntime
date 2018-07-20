@@ -31,7 +31,7 @@ TEST(TransformerTest, InsertCastGPUTest) {
   ASSERT_TRUE(status.IsOK());
 
   InsertCastTransformer transformer("Test");
-  transformer.AddKernelRegistry(&KernelRegistry::Instance());
+  transformer.AddKernelRegistry(&GetOpKernelRegistry());
 
   bool modified = true;
   EXPECT_TRUE(transformer.Apply(graph, &modified).IsOK());
@@ -86,7 +86,7 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
   ASSERT_TRUE(status.IsOK());
 
   InsertCastTransformer transformer("Test");
-  transformer.AddKernelRegistry(&KernelRegistry::Instance());
+  transformer.AddKernelRegistry(&GetOpKernelRegistry());
 
   bool modified = true;
   EXPECT_TRUE(transformer.Apply(graph, &modified).IsOK());

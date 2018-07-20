@@ -6,12 +6,11 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Pad")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(2)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Pad<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Pad,
+    2,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Pad<float>);
 
 // This is the general padding method to n-dimensionally do edge or reflection padding (based on the inputDelta values)
 template <typename T>

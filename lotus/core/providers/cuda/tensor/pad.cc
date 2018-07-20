@@ -6,12 +6,14 @@ namespace Lotus {
 namespace Cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                              \
-  REGISTER_KERNEL(KernelDefBuilder("Pad")                                     \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(2)                                        \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-                  Pad<T>);
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
+    Pad,                                                                      \
+    kOnnxDomain,                                                              \
+    2,                                                                        \
+    T,                                                                        \
+    kCudaExecutionProvider,                                                   \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+    Pad<T>);
 
 template <typename T>
 Status Pad<T>::Compute(OpKernelContext *ctx) const {

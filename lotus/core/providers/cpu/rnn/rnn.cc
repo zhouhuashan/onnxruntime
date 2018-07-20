@@ -5,13 +5,12 @@
 #include "core/util/math_cpuonly.h"
 
 namespace Lotus {
-REGISTER_KERNEL(KernelDefBuilder("RNN")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int>()),
-                RNN<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    RNN,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
+                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int>()),
+    RNN<float>);
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)

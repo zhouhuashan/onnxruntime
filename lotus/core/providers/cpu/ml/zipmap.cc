@@ -26,13 +26,12 @@ using namespace Lotus::Common;
 using namespace std;
 namespace Lotus {
 namespace ML {
-REGISTER_KERNEL(KernelDefBuilder("ZipMap")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetType<std::vector<std::map<std::string, float>>>(),
-                                          DataTypeImpl::GetType<std::vector<std::map<std::int64_t, float>>>()}),
-                ZipMapOp);
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    ZipMap,
+    1,
+    KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetType<std::vector<std::map<std::string, float>>>(),
+                                            DataTypeImpl::GetType<std::vector<std::map<std::int64_t, float>>>()}),
+    ZipMapOp);
 
 ZipMapOp::ZipMapOp(const OpKernelInfo& info) : OpKernel(info) {
   info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_);  // optional

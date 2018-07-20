@@ -3,12 +3,11 @@ using namespace Lotus::Common;
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Unsqueeze")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Unsqueeze<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Unsqueeze,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Unsqueeze<float>);
 
 template <>
 Status Unsqueeze<float>::Compute(OpKernelContext *ctx) const {

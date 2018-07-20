@@ -7,16 +7,15 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Split")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(2)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T",
-                                    std::vector<MLDataType>{
-                                        DataTypeImpl::GetTensorType<float>(),
-                                        DataTypeImpl::GetTensorType<double>(),
-                                    }),
-                Split);
+ONNX_CPU_OPERATOR_KERNEL(
+    Split,
+    2,
+    KernelDefBuilder().TypeConstraint("T",
+                                       std::vector<MLDataType>{
+                                           DataTypeImpl::GetTensorType<float>(),
+                                           DataTypeImpl::GetTensorType<double>(),
+                                       }),
+    Split);
 
 Status Split::Compute(OpKernelContext* context) const {
   const Tensor& input = *context->Input<Tensor>(0);

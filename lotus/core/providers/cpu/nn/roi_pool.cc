@@ -2,12 +2,11 @@
 #include <cmath>
 
 namespace Lotus {
-REGISTER_KERNEL(KernelDefBuilder("MaxRoiPool")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                RoiPool<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    MaxRoiPool,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    RoiPool<float>);
 
 template <>
 Status RoiPool<float>::Compute(OpKernelContext* context) const {

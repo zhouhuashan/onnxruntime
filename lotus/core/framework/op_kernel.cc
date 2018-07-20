@@ -7,10 +7,22 @@
 using namespace Lotus::Common;
 namespace Lotus {
 
+KernelRegistry opKernelRegistry(true, RegisterOperatorKernels);
+
+KernelRegistry& GetOpKernelRegistry() {
+  return opKernelRegistry;
+}
+
+std::multimap<std::string, KernelCreateInfo> const& KernelRegistry::kernel_creator_fn_map() const
+{
+  std::call_once(kernelCreationFlag, kernel_reg_fn_, [&](KernelCreateInfo&& info) { RegisterInternal(info); });
+  return *kernel_creator_fn_map_;
+}
+
 std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
-  std::vector<std::string> ret(kernel_creator_fn_map_.size());
+  std::vector<std::string> ret(kernel_creator_fn_map().size());
   size_t i = 0;
-  for (const auto& kvp : kernel_creator_fn_map_) {
+  for (const auto& kvp : kernel_creator_fn_map()) {
     ret[i++] = kvp.first;
   }
   return ret;
@@ -153,9 +165,10 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
                                 KernelCreateFn kernel_creator) {
   KernelCreateInfo create_info(kernel_builder.Build(), kernel_creator);
   auto& op_name = create_info.kernel_def->OpName();
+  auto& map = const_cast<KernelCreateMap&>(kernel_creator_fn_map());
 
   // Check op version conflicts.
-  auto range = kernel_creator_fn_map_.equal_range(op_name);
+  auto range = map.equal_range(op_name);
   for (auto i = range.first; i != range.second; ++i) {
     if (i->second.kernel_def &&
         i->second.status.IsOK() &&
@@ -164,16 +177,42 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
           Status(LOTUS, FAIL,
                  "Failed to add kernel for " + op_name +
                      ": Conflicting with a registered kernel with op versions.");
-      // Becuase currently we still using static registration, keep the invalid entry in the map now
-      kernel_creator_fn_map_.emplace(op_name, std::move(create_info));
+      // Because currently we still using static registration, keep the invalid entry in the map now
+      map.emplace(op_name, std::move(create_info));
       return create_info.status;
     }
   }
 
   // Register the kernel.
   // Ownership of the KernelDef is transferred to the map.
-  kernel_creator_fn_map_.emplace(op_name, std::move(create_info));
+  map.emplace(op_name, std::move(create_info));
   return Status::OK();
+}
+
+void KernelRegistry::RegisterInternal(KernelCreateInfo& create_info) const
+{
+  auto& op_name = create_info.kernel_def->OpName();
+  auto map = kernel_creator_fn_map_.get();
+
+  // Check op version conflicts.
+  auto range = map->equal_range(op_name);
+  for (auto i = range.first; i != range.second; ++i) {
+    if (i->second.kernel_def &&
+        i->second.status.IsOK() &&
+        i->second.kernel_def->IsConflict(*create_info.kernel_def)) {
+      create_info.status =
+          Status(LOTUS, FAIL,
+                 "Failed to add kernel for " + op_name +
+                     ": Conflicting with a registered kernel with op versions.");
+      // Because currently we still using static registration, keep the invalid entry in the map now
+      map->emplace(op_name, std::move(create_info));
+      return;
+    }
+  }
+
+  // Register the kernel.
+  // Ownership of the KernelDef is transferred to the map.
+  map->emplace(op_name, std::move(create_info));
 }
 
 static std::string ToString(const std::vector<std::string>& error_strs) {
@@ -197,7 +236,7 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
 
 Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
                                             /*out*/ const KernelCreateInfo** kernel_create_info) const {
-  auto range = kernel_creator_fn_map_.equal_range(node.OpType());
+  auto range = kernel_creator_fn_map().equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     // Check if the kernel is ill-formed.
@@ -234,7 +273,7 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
     // The node is assigned to an execution provider and no kernel registered
     // for the operator referred by the node. Create FunctionKernel to delegate
     // the node run to corresponding execution provider.
-    *kernel_create_info = &(kernel_creator_fn_map_.find(LotusIR::kFunctionOp)->second);
+    *kernel_create_info = &(kernel_creator_fn_map().find(LotusIR::kFunctionOp)->second);
     return Status::OK();
   } else {
     return Status(LOTUS, FAIL, "KernelDef not found.");
@@ -244,7 +283,7 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
 bool KernelRegistry::CanExecutionProviderCreateKernel(
     const LotusIR::Node& node,
     LotusIR::ProviderType exec_provider) const {
-  auto range = kernel_creator_fn_map_.equal_range(node.OpType());
+  auto range = kernel_creator_fn_map_->equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     if (!i->second.status.IsOK()) {

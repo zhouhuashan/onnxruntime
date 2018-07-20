@@ -136,11 +136,10 @@ Status Transpose<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-REGISTER_KERNEL(KernelDefBuilder("Transpose")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Transpose<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Transpose,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Transpose<float>);
 
 }  // namespace Lotus

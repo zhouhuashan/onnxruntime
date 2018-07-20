@@ -65,7 +65,7 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node) {
     provider_nodes_.insert(&node);
     // note KernelCreateInfo might be nullptr for custom kernel
     const KernelCreateInfo* kci = nullptr;
-    KernelRegistry::Instance().SearchKernelRegistry(node, &kci);
+    GetOpKernelRegistry().SearchKernelRegistry(node, &kci);
     const auto* input_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(

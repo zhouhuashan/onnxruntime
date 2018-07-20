@@ -3,89 +3,78 @@
 using namespace std;
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceL1")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceL1<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceL1,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceL1<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceL2")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceL2<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceL2,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceL2<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceLogSum")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceLogSum<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceLogSum,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceLogSum<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceLogSumExp")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceLogSumExp<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceLogSumExp,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceLogSumExp<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceMax")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceMax<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceMax,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceMax<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceMean")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceMean<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceMean,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceMean<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceMin")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceMin<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceMin,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceMin<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceProd")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceProd<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceProd,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceProd<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceSum")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceSum<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceSum,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceSum<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ReduceSumSquare")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ReduceSumSquare<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ReduceSumSquare,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ReduceSumSquare<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ArgMax")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ArgMax<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ArgMax,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ArgMax<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("ArgMin")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                ArgMin<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    ArgMin,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    ArgMin<float>);
+
 template <bool allow_multi_axes>
 void ReduceKernel<allow_multi_axes>::PrepareForReduce(OpKernelContext* ctx,
                                                       std::vector<float>& transposedInputData,

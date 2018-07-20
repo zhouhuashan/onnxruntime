@@ -11,12 +11,14 @@ Status UnaryElementwise::Prepare(OpKernelContext* context, UnaryElementwisePrepa
 }
 
 #define UNARY_ELEMENTWISE_REGISTER_KERNEL(x, ver, T)                          \
-  REGISTER_KERNEL(KernelDefBuilder(#x)                                        \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(ver)                                      \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-                  x<T>);
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
+    x,                                                                       \
+    kOnnxDomain,                                                              \
+    ver,                                                                      \
+    T,                                                                        \
+    kCudaExecutionProvider,                                                   \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+    x<T>);
 
 #define UNARY_ELEMENTWISE_COMPUTE(x, T)                                                           \
   template <>                                                                                     \

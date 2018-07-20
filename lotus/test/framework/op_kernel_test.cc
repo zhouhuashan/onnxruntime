@@ -98,7 +98,7 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   FunctionKernelExecutionProvider exec_provider;
   SessionState session_state;
   std::unique_ptr<OpKernel> kernel;
-  auto status = KernelRegistry::Instance().CreateKernel(*node, &exec_provider, session_state, &kernel);
+  auto status = GetOpKernelRegistry().CreateKernel(*node, &exec_provider, session_state, &kernel);
   ASSERT_TRUE(status.IsOK());
   const auto& k = *kernel;
   ASSERT_EQ(typeid(FunctionKernel).name(), typeid(k).name());
@@ -107,7 +107,7 @@ TEST(OpKernelTest, CreateFunctionKernelTest) {
   AllocatorInfo alloc_info_2("XPU", AllocatorType::kArenaAllocator);
   FunctionKernelExecutionProvider exec_provider_2;
   std::unique_ptr<OpKernel> kernel_2;
-  auto status_2 = KernelRegistry::Instance().CreateKernel(*node, &exec_provider_2, session_state, &kernel_2);
+  auto status_2 = GetOpKernelRegistry().CreateKernel(*node, &exec_provider_2, session_state, &kernel_2);
   const auto& k2 = *kernel_2;
   ASSERT_EQ(typeid(FunctionKernel).name(), typeid(k2).name());
   ASSERT_TRUE(status_2.IsOK());

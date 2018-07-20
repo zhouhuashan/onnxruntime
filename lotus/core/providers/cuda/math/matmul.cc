@@ -4,12 +4,13 @@
 namespace Lotus {
 namespace Cuda {
 
-REGISTER_KERNEL(KernelDefBuilder("MatMul")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCudaExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                MatMul<float>);
+ONNX_OPERATOR_KERNEL_EX(
+    MatMul,
+    kOnnxDomain,
+    1,
+    kCudaExecutionProvider,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    MatMul<float>);
 
 template <>
 Status MatMul<float>::Compute(OpKernelContext* ctx) const {

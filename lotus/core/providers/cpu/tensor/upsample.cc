@@ -7,12 +7,12 @@ const string Upsample<T>::UpsampleModeNN = "nearest";
 template <typename T>
 const string Upsample<T>::UpsampleModeLinear = "linear";
 
-REGISTER_KERNEL(KernelDefBuilder("Upsample")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Upsample<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Upsample,
+    7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Upsample<float>);
+
 
 void upsampleNearest2x(
     int64_t batch_size,

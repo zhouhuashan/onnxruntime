@@ -146,14 +146,13 @@ Equations (Default: f=Sigmoid, g=Tanh, h=Tanh):
 namespace Lotus {
 
 /* LSTM operator */
-REGISTER_KERNEL(KernelDefBuilder("LSTM")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(),
-                                          DataTypeImpl::GetTensorType<double>()})
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
-                DeepCpuLstmOp);
+ONNX_CPU_OPERATOR_KERNEL(
+    LSTM,
+    7,
+    KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(),
+                                            DataTypeImpl::GetTensorType<double>()})
+                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
+    DeepCpuLstmOp);
 
 using namespace Rnn::detail;
 

@@ -7,11 +7,6 @@
 namespace Lotus {
 
 template <typename T>
-auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
-template <typename T>
-auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.Data<T>(), t.Shape().Size()); }
-
-template <typename T>
 class Add final : public OpKernel {
  public:
   Add(const OpKernelInfo& info) : OpKernel(info) {

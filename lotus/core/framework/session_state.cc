@@ -32,7 +32,7 @@ const KernelDef* SessionState::GetKernelDef(LotusIR::NodeIndex node_id) const {
     return kernel_create_info->kernel_def.get();
   }
 
-  if (KernelRegistry::Instance().SearchKernelRegistry(*node, &kernel_create_info).IsOK()) {
+  if (GetOpKernelRegistry().SearchKernelRegistry(*node, &kernel_create_info).IsOK()) {
     return kernel_create_info->kernel_def.get();
   }
   return nullptr;

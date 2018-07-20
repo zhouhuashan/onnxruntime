@@ -7,12 +7,14 @@ namespace Lotus {
 namespace Cuda {
 
 #define REGISTER_KERNEL_TYPED(name, T)                                        \
-  REGISTER_KERNEL(KernelDefBuilder(#name)                                     \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(1)                                        \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-                  name<T>);
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
+    name,                                                                     \
+    kOnnxDomain,                                                              \
+    1,                                                                        \
+    T,                                                                        \
+    kCudaExecutionProvider,                                                   \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+    name<T>);
 
 class CudnnReduceDescriptor final {
  public:

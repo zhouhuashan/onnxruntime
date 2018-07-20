@@ -3,12 +3,11 @@
 namespace Lotus {
 namespace ML {
 
-REGISTER_KERNEL(KernelDefBuilder("LinearRegressor")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                LinearRegressor<float>);
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    LinearRegressor,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    LinearRegressor<float>);
 
 template <typename T>
 LinearRegressor<T>::LinearRegressor(const OpKernelInfo& info) : OpKernel(info) {

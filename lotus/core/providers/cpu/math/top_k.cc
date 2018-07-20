@@ -24,13 +24,13 @@
 using namespace std;
 namespace Lotus {
 // spec https://github.com/onnx/onnx/blob/master/docs/Operators.md#TopK
-REGISTER_KERNEL(KernelDefBuilder("TopK")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("I", DataTypeImpl::GetTensorType<int64_t>()),
-                TopK<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    TopK,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
+                      .TypeConstraint("I", DataTypeImpl::GetTensorType<int64_t>()),
+    TopK<float>);
+
 
 static int64_t SizeToDim(size_t k, const vector<int64_t>& dims) {
   LOTUS_ENFORCE(k <= dims.size());

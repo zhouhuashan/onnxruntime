@@ -8,12 +8,11 @@ using namespace Lotus::Common;
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Tile")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(6)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Tile<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Tile,
+    6,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Tile<float>);
 
 template <>
 Status Tile<float>::Compute(OpKernelContext *ctx) const {

@@ -6,17 +6,16 @@ using namespace Lotus::Common;
 namespace Lotus {
 namespace ML {
 
-REGISTER_KERNEL(KernelDefBuilder("CategoryMapper")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1",
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    CategoryMapper,
+    1,
+    KernelDefBuilder().TypeConstraint("T1",
                                     std::vector<MLDataType>{DataTypeImpl::GetTensorType<std::string>(),
                                                             DataTypeImpl::GetTensorType<int64_t>()})
                     .TypeConstraint("T2",
                                     std::vector<MLDataType>{DataTypeImpl::GetTensorType<std::string>(),
                                                             DataTypeImpl::GetTensorType<int64_t>()}),
-                CategoryMapper);
+    CategoryMapper);
 
 Status CategoryMapper::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);

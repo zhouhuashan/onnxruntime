@@ -32,11 +32,10 @@ Status LogSoftmax<float>::Compute(OpKernelContext* ctx) const {
   return status;
 }
 
-REGISTER_KERNEL(KernelDefBuilder("LogSoftmax")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                LogSoftmax<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    LogSoftmax,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    LogSoftmax<float>);
 
 }  // namespace Lotus

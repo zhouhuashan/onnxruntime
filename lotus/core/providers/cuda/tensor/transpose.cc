@@ -6,12 +6,14 @@ namespace Lotus {
 namespace Cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                              \
-  REGISTER_KERNEL(KernelDefBuilder("Transpose")                               \
-                      .Domain(LotusIR::kOnnxDomain)                           \
-                      .SinceVersion(1)                                        \
-                      .Provider(LotusIR::kCudaExecutionProvider)              \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-                  Transpose<T>);
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
+    Transpose,                                                                \
+    kOnnxDomain,                                                              \
+    1,                                                                        \
+    T,                                                                        \
+    kCudaExecutionProvider,                                                   \
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+    Transpose<T>);
 
 template <typename T>
 Status Transpose<T>::Compute(OpKernelContext* ctx) const {

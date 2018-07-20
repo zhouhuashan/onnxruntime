@@ -9,19 +9,18 @@
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("SpaceToDepth")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                SpaceToDepth<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    SpaceToDepth,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    SpaceToDepth<float>);
 
-REGISTER_KERNEL(KernelDefBuilder("DepthToSpace")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1, 4)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                DepthToSpace<float>);
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
+    DepthToSpace,
+    1,
+	4,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    DepthToSpace<float>);
 
 // intemediate tensor shapes are:
 // (batch, blocksize, blocksize, input_depth / (blocksize * blocksize), input_height, input_width) for DepthToSpace

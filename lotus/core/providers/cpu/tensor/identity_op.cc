@@ -2,20 +2,17 @@
 #include "core/inc/op_kernel_author.h"
 
 namespace Lotus {
-//copying reshape kernel
-REGISTER_KERNEL(KernelDefBuilder("Dropout")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", {DataTypeImpl::GetTensorType<MLFloat16>(), DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()}),
-                IdentityOp<true>);
+	
+ONNX_CPU_OPERATOR_KERNEL(
+    Dropout,
+    7,
+    KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetTensorType<MLFloat16>(), DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()}),
+    IdentityOp<true>);
 
-REGISTER_KERNEL(KernelDefBuilder("Identity")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .Alias(0, 0)
-                    .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
-                IdentityOp<false>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Identity,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::AllTensorTypes()).Alias(0, 0),
+    IdentityOp<false>);
 
 }  // namespace Lotus

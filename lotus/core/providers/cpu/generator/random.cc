@@ -35,54 +35,49 @@ using namespace onnx;
 using namespace Lotus::Common;
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("RandomNormal")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", std::vector<MLDataType>{
-                                             DataTypeImpl::GetTensorType<float>(),
-                                             DataTypeImpl::GetTensorType<double>()}),
-                RandomNormal);
+ONNX_CPU_OPERATOR_KERNEL(
+    RandomNormal,
+    1,
+    KernelDefBuilder().TypeConstraint("T", std::vector<MLDataType>{
+                                               DataTypeImpl::GetTensorType<float>(),
+                                               DataTypeImpl::GetTensorType<double>()}),
+    RandomNormal);
 
-REGISTER_KERNEL(KernelDefBuilder("RandomUniform")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", std::vector<MLDataType>{
-                                             DataTypeImpl::GetTensorType<float>(),
-                                             DataTypeImpl::GetTensorType<double>()}),
-                RandomUniform);
+ONNX_CPU_OPERATOR_KERNEL(
+    RandomUniform,
+    1,
+    KernelDefBuilder().TypeConstraint("T", std::vector<MLDataType>{
+                                               DataTypeImpl::GetTensorType<float>(),
+                                               DataTypeImpl::GetTensorType<double>()}),
+    RandomUniform);
 
-REGISTER_KERNEL(KernelDefBuilder("RandomNormalLike")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
-                    .TypeConstraint("T2", std::vector<MLDataType>{
+ONNX_CPU_OPERATOR_KERNEL(
+    RandomNormalLike,
+    1,
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
+                      .TypeConstraint("T2", std::vector<MLDataType>{
                                               DataTypeImpl::GetTensorType<float>(),
                                               DataTypeImpl::GetTensorType<double>()}),
-                RandomNormalLike);
+    RandomNormalLike);
 
-REGISTER_KERNEL(KernelDefBuilder("RandomUniformLike")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
-                    .TypeConstraint("T2", std::vector<MLDataType>{
+ONNX_CPU_OPERATOR_KERNEL(
+    RandomUniformLike,
+    1,
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
+                      .TypeConstraint("T2", std::vector<MLDataType>{
                                               DataTypeImpl::GetTensorType<float>(),
                                               DataTypeImpl::GetTensorType<double>()}),
-                RandomUniformLike);
+    RandomUniformLike);
 
 // https://github.com/onnx/onnx/blob/master/docs/Operators.md#multinomial
-REGISTER_KERNEL(KernelDefBuilder("Multinomial")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(7)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("T2", std::vector<MLDataType>{
+ONNX_CPU_OPERATOR_KERNEL(
+    Multinomial,
+    7,
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
+                      .TypeConstraint("T2", std::vector<MLDataType>{
                                               DataTypeImpl::GetTensorType<int32_t>(),
                                               DataTypeImpl::GetTensorType<int64_t>()}),
-                Multinomial);
+    Multinomial);
 
 template <typename T, typename TDistribution>
 void GenerateData(std::default_random_engine generator, TDistribution distribution, Tensor& tensor);

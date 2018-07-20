@@ -49,6 +49,11 @@ template <typename T>
 using ConstEigenMatrixMapRowMajor = Eigen::Map<
     const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
 
+template <typename T>
+auto EigenMap(Tensor& t) { return EigenVectorMap<T>(t.MutableData<T>(), t.Shape().Size()); }
+template <typename T>
+auto EigenMap(const Tensor& t) { return ConstEigenVectorMap<T>(t.Data<T>(), t.Shape().Size()); }
+
 class CPUMathUtil {
  public:
   /*CPUMathUtil contains some help method like generate a

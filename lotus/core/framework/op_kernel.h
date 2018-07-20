@@ -17,6 +17,10 @@
 #include "onnx/defs/schema.h"
 #include "gsl/span"
 
+#include <functional>
+
+using namespace LotusIR;
+
 class IMLOpKernel;
 
 namespace Lotus {
@@ -185,6 +189,8 @@ struct KernelCreateInfo {
         kernel_create_func(other.kernel_create_func) {}
 };
 
+using KernelCreateMap = std::multimap<std::string, KernelCreateInfo>;
+
 class KernelRegistry {
  public:
   // Register a kernel with kernel definition and function to create the kernel.
@@ -210,13 +216,13 @@ class KernelRegistry {
       const LotusIR::Node& node,
       LotusIR::ProviderType exec_provider) const;
 
-  static KernelRegistry& Instance() {
-    static KernelRegistry kernel_registry(true);
-    return kernel_registry;
-  }
+  KernelRegistry() = delete;
+  KernelRegistry(bool create_func_kernel_flag,
+                 std::function<void(std::function<void(KernelCreateInfo&&)>)> kernel_reg_fn =
+                     [](std::function<void(KernelCreateInfo&&)>) {})
+      : create_func_kernel_(create_func_kernel_flag), kernel_reg_fn_(kernel_reg_fn) {}
 
- protected:
-  KernelRegistry(bool create_func_kernel_flag) : create_func_kernel_(create_func_kernel_flag) {}
+  void RegisterInternal(KernelCreateInfo& create_info) const;
 
  private:
   friend class InferenceSession;
@@ -230,21 +236,103 @@ class KernelRegistry {
                               LotusIR::ProviderType exec_provider = "");
 
   // Kernel create function map from op name to kernel creation info.
-  std::multimap<std::string, KernelCreateInfo> kernel_creator_fn_map_;
+  mutable std::unique_ptr<KernelCreateMap> kernel_creator_fn_map_ =
+      std::make_unique<KernelCreateMap>();
+  KernelCreateMap const& kernel_creator_fn_map() const;
+  mutable std::once_flag kernelCreationFlag;
 
-  bool create_func_kernel_;
+  bool create_func_kernel_ = false;
+  std::function<void(std::function<void(KernelCreateInfo&&)>)> kernel_reg_fn_;
 };
 
-#define REGISTER_KERNEL(kernel_def_builder, ...) \
-  REGISTER_KERNEL_UNIQ_HELPER(__COUNTER__, kernel_def_builder, __VA_ARGS__)
+// There is a single shared kernel registry used by all ONNX defined ops.
+KernelRegistry& GetOpKernelRegistry();
 
-#define REGISTER_KERNEL_UNIQ_HELPER(counter, kernel_def_builder, ...) \
-  REGISTER_KERNEL_UNIQ(counter, kernel_def_builder, __VA_ARGS__)
+// Methods to register OpKernels
+extern void RegisterOperatorKernels(std::function<void(KernelCreateInfo&&)>);
 
-#define REGISTER_KERNEL_UNIQ(counter, kernel_def_builder, ...)         \
-  static Lotus::Common::Status kernel_def_builder_##counter##_status = \
-      KernelRegistry::Instance().Register(                             \
-          kernel_def_builder,                                          \
-          [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); })
+// Forward declarations for the non-specialized BuildKernel method.
+template <typename T>
+KernelCreateInfo BuildKernel();
+
+namespace ML {
+template <typename T>
+KernelCreateInfo BuildKernel();
+}  // namespace ML
+
+namespace Cuda {
+template <typename T>
+KernelCreateInfo BuildKernel();
+}  // namespace Cuda
+
+// Naming convention for operator kernel classes
+#define ONNX_OPERATOR_KERNEL_CLASS_NAME(provider, domain, ver, name) \
+  provider##_##name##_##domain##_ver##ver
+
+#define ONNX_CPU_OPERATOR_KERNEL(name, ver, builder, ...) \
+  ONNX_OPERATOR_KERNEL_EX(name, kOnnxDomain, ver, kCpuExecutionProvider, builder, __VA_ARGS__)
+
+#define ONNX_CPU_OPERATOR_ML_KERNEL(name, ver, builder, ...) \
+  ONNX_OPERATOR_KERNEL_EX(name, kMLDomain, ver, kCpuExecutionProvider, builder, __VA_ARGS__)
+
+#define ONNX_OPERATOR_KERNEL_EX(name, domain, ver, provider, builder, ...)            \
+  class ONNX_OPERATOR_KERNEL_CLASS_NAME(provider, domain, ver, name);                 \
+  template <>                                                                         \
+  KernelCreateInfo                                                                    \
+  BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(provider, domain, ver, name)>() {       \
+    return KernelCreateInfo(                                                          \
+        builder.SetName(#name)                                                        \
+            .SetDomain(domain)                                                        \
+            .SinceVersion(ver)                                                        \
+            .Provider(provider)                                                       \
+            .Build(),                                                                 \
+        [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); }); \
+  }
+
+#define ONNX_OPERATOR_VERSIONED_KERNEL_CLASS_NAME(provider, domain, startver, endver, name) \
+  provider##_##name##_##domain##_ver##startver##_##endver
+
+#define ONNX_CPU_OPERATOR_VERSIONED_KERNEL(name, startver, endver, builder, ...) \
+  ONNX_OPERATOR_VERSIONED_KERNEL_EX(name, kOnnxDomain, startver, endver, kCpuExecutionProvider, builder, __VA_ARGS__)
+
+#define ONNX_CPU_OPERATOR_VERSIONED_ML_KERNEL(name, startver, endver, builder, ...) \
+  ONNX_OPERATOR_VERSIONED_KERNEL_EX(name, kMLDomain, startver, endver, kCpuExecutionProvider, builder, __VA_ARGS__)
+
+#define ONNX_OPERATOR_VERSIONED_KERNEL_EX(name, domain, startver, endver, provider, builder, ...)      \
+  class ONNX_OPERATOR_VERSIONED_KERNEL_CLASS_NAME(provider, domain, startver, endver, name);           \
+  template <>                                                                                          \
+  KernelCreateInfo                                                                                     \
+  BuildKernel<ONNX_OPERATOR_VERSIONED_KERNEL_CLASS_NAME(provider, domain, startver, endver, name)>() { \
+    return KernelCreateInfo(                                                                           \
+        builder.SetName(#name)                                                                         \
+            .SetDomain(domain)                                                                         \
+            .SinceVersion(startver, endver)                                                            \
+            .Provider(provider)                                                                        \
+            .Build(),                                                                                  \
+        [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });                  \
+  }
+
+#define ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(provider, domain, ver, type, name) \
+  provider##_##name##_##domain##_ver##ver##_##type
+
+#define ONNX_CPU_OPERATOR_TYPED_KERNEL(name, ver, type, builder, ...) \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(name, kOnnxDomain, ver, type, kCpuExecutionProvider, builder, __VA_ARGS__)
+
+#define ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(name, ver, type, builder, ...) \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(name, kMLDomain, ver, type, kCpuExecutionProvider, builder, __VA_ARGS__)
+
+#define ONNX_OPERATOR_TYPED_KERNEL_EX(name, domain, ver, type, provider, builder, ...)      \
+  class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(provider, domain, ver, type, name);           \
+  template <>                                                                               \
+  KernelCreateInfo                                                                          \
+  BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(provider, domain, ver, type, name)>() { \
+    return KernelCreateInfo(                                                                \
+        builder.SetName(#name)                                                              \
+            .SetDomain(domain)                                                              \
+            .SinceVersion(ver)                                                              \
+            .Provider(provider)                                                             \
+            .Build(),                                                                       \
+        [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });       \
+  }
 
 }  // namespace Lotus

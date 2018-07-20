@@ -1,11 +1,9 @@
 #include "core/providers/cpu/tensor/crop.h"
 
 namespace Lotus {
-
-REGISTER_KERNEL(KernelDefBuilder("Crop")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Crop<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Crop,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Crop<float>);
 }  // namespace Lotus

@@ -4,16 +4,16 @@
 
 namespace Lotus {
 namespace ML {
-REGISTER_KERNEL(KernelDefBuilder("FeatureVectorizer")
-                    .Domain(LotusIR::kMLDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T1", std::vector<MLDataType>{
-                                              DataTypeImpl::GetTensorType<int32_t>(),
-                                              DataTypeImpl::GetTensorType<int64_t>(),
-                                              DataTypeImpl::GetTensorType<float>(),
-                                              DataTypeImpl::GetTensorType<double>()}),
-                FeatureVectorizer);
+
+ONNX_CPU_OPERATOR_ML_KERNEL(
+    FeatureVectorizer,
+    1,
+    KernelDefBuilder().TypeConstraint("T1", std::vector<MLDataType>{
+                                                DataTypeImpl::GetTensorType<int32_t>(),
+                                                DataTypeImpl::GetTensorType<int64_t>(),
+                                                DataTypeImpl::GetTensorType<float>(),
+                                                DataTypeImpl::GetTensorType<double>()}),
+    FeatureVectorizer);
 
 template <typename T>
 static void VectorizeTensor(const Tensor& input_tensor, int64_t feature_size, int64_t sum_input_dimensions,

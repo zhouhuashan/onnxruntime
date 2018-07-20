@@ -27,19 +27,19 @@ using namespace Lotus::Common;
 using namespace std;
 namespace Lotus {
 namespace ML {
-#define REG_ARRAYFEATUREEXTRACTOR(X_TYPE)                                          \
-  REGISTER_KERNEL(KernelDefBuilder("ArrayFeatureExtractor")                        \
-                      .Domain(LotusIR::kMLDomain)                                  \
-                      .SinceVersion(1)                                             \
-                      .Provider(LotusIR::kCpuExecutionProvider)                    \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<X_TYPE>()), \
-                  ArrayFeatureExtractorOp<X_TYPE>);
+#define REG_ARRAYFEATUREEXTRACTOR(in_type)                                           \
+ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                   \
+    ArrayFeatureExtractor,                                                           \
+    1,                                                                               \
+    in_type,                                                                         \
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>()), \
+    ArrayFeatureExtractorOp<in_type>);
 
 REG_ARRAYFEATUREEXTRACTOR(float);
 REG_ARRAYFEATUREEXTRACTOR(double);
 REG_ARRAYFEATUREEXTRACTOR(int32_t);
 REG_ARRAYFEATUREEXTRACTOR(int64_t);
-REG_ARRAYFEATUREEXTRACTOR(std::string);
+REG_ARRAYFEATUREEXTRACTOR(string);
 
 template <typename T>
 ArrayFeatureExtractorOp<T>::ArrayFeatureExtractorOp(const OpKernelInfo& info)

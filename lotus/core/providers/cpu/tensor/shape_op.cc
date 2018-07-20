@@ -12,11 +12,11 @@ const std::vector<MLDataType> shapeOpTypeConstraints{
     DataTypeImpl::GetTensorType<uint8_t>(),
     DataTypeImpl::GetTensorType<uint16_t>()};
 
-REGISTER_KERNEL(KernelDefBuilder("Shape")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", shapeOpTypeConstraints)
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
-                Shape);
+ONNX_CPU_OPERATOR_KERNEL(
+    Shape,
+    1,
+    KernelDefBuilder().TypeConstraint("T", shapeOpTypeConstraints)
+                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
+    Shape);
+
 }  // namespace Lotus

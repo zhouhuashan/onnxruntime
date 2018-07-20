@@ -4,12 +4,11 @@ using namespace Lotus::Common;
 
 namespace Lotus {
 
-REGISTER_KERNEL(KernelDefBuilder("Slice")
-                    .Domain(LotusIR::kOnnxDomain)
-                    .SinceVersion(1)
-                    .Provider(LotusIR::kCpuExecutionProvider)
-                    .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-                Slice<float>);
+ONNX_CPU_OPERATOR_KERNEL(
+    Slice,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Slice<float>);
 
 // std::clamp doesn't exist until C++17 so create a local version
 template <typename T>
