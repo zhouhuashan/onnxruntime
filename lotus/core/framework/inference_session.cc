@@ -1098,6 +1098,11 @@ class InferenceSession::Impl {
       MLValue mlvalue;
       // if block is not found, means this mlvalue is not traced
       // fall back to allocate seperate buffer.
+
+      // if it->second.get() is null, then fall back to the block not found case
+      if (it->second.get() == nullptr) {
+        block = nullptr;
+      }
       if (!block) {
         LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(location, tensor_proto, mlvalue, nullptr, 0));
       } else {
