@@ -159,12 +159,13 @@ class LoggingManager final {
   Timestamp GetTimestamp() const noexcept;
   void CreateDefaultLogger(const std::string &logger_id);
 
+  std::unique_ptr<ISink> sink_;
   const Severity default_min_severity_;
   const bool default_filter_user_data_;
   const int default_max_vlog_level_;
   bool owns_default_logger_;
 
-  std::unique_ptr<ISink> sink_;
+
 
   struct Epochs {
     const std::chrono::time_point<std::chrono::high_resolution_clock> high_res;

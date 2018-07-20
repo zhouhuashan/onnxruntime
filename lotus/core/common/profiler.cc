@@ -44,7 +44,7 @@ std::string Profiler::WriteProfileData() {
   std::lock_guard<std::mutex> lock(mutex_);
   profile_stream_ << "[\n";
 
-  for (int i = 0; i < events_.size(); ++i) {
+  for (size_t i = 0; i < events_.size(); ++i) {
     auto& rec = events_[i];
     profile_stream_ << R"({"cat" : ")" << event_categor_names_[rec.cat] << "\",";
     profile_stream_ << "\"pid\" :" << rec.pid << ",";

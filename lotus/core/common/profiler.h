@@ -92,7 +92,7 @@ class Profiler {
   TimePoint profiling_start_time_;
   std::vector<EventRecord> events_;
   bool max_events_reached{false};
-  const int max_num_events_ = 1000000;
+  static constexpr size_t max_num_events_ = 1000000;
 };
 
 }  // namespace Profiling
