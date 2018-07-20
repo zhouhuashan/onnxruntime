@@ -12,12 +12,7 @@ namespace ML {
 template <typename T>
 class SVMCommon {
  protected:
-  SVMCommon(const OpKernelInfo& info) {
-    std::string tmp = "LINEAR";
-    info.GetAttr<std::string>("kernel_type", &tmp);
-    KERNEL tmpval2 = MakeKernel(tmp);
-    kernel_type_ = tmpval2;
-
+  SVMCommon(const OpKernelInfo& info) : kernel_type_(MakeKernel(info.GetAttrOrDefault<std::string>("kernel_type", "LINEAR"))) {
     std::vector<float> kernel_params;
     LOTUS_ENFORCE(info.GetAttrs<float>("kernel_params", kernel_params).IsOK());
 

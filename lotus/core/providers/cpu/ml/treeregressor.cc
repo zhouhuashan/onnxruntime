@@ -10,21 +10,24 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
     TreeEnsembleRegressor<float>);
 
 template <typename T>
-TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKernel(info) {
-  info.GetAttrs<int64_t>("nodes_treeids", nodes_treeids_);
-  info.GetAttrs<int64_t>("nodes_nodeids", nodes_nodeids_);
-  info.GetAttrs<int64_t>("nodes_featureids", nodes_featureids_);
-  info.GetAttrs<float>("nodes_values", nodes_values_);
-  info.GetAttrs<float>("nodes_hitrates", nodes_hitrates_);
-  info.GetAttrs<int64_t>("nodes_truenodeids", nodes_truenodeids_);
-  info.GetAttrs<int64_t>("nodes_falsenodeids", nodes_falsenodeids_);
-  info.GetAttrs<int64_t>("nodes_missing_value_tracks_true", missing_tracks_true_);
-  info.GetAttrs<int64_t>("target_treeids", target_treeids_);
-  info.GetAttrs<int64_t>("target_nodeids", target_nodeids_);
-  info.GetAttrs<int64_t>("target_ids", target_ids_);
-  info.GetAttrs<float>("target_weights", target_weights_);
+TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
+    : OpKernel(info),
+      nodes_treeids_(info.GetAttrsOrDefault<int64_t>("nodes_treeids")),
+      nodes_nodeids_(info.GetAttrsOrDefault<int64_t>("nodes_nodeids")),
+      nodes_featureids_(info.GetAttrsOrDefault<int64_t>("nodes_featureids")),
+      nodes_values_(info.GetAttrsOrDefault<float>("nodes_values")),
+      nodes_hitrates_(info.GetAttrsOrDefault<float>("nodes_hitrates")),
+      nodes_truenodeids_(info.GetAttrsOrDefault<int64_t>("nodes_truenodeids")),
+      nodes_falsenodeids_(info.GetAttrsOrDefault<int64_t>("nodes_falsenodeids")),
+      missing_tracks_true_(info.GetAttrsOrDefault<int64_t>("nodes_missing_value_tracks_true")),
+      target_treeids_(info.GetAttrsOrDefault<int64_t>("target_treeids")),
+      target_nodeids_(info.GetAttrsOrDefault<int64_t>("target_nodeids")),
+      target_ids_(info.GetAttrsOrDefault<int64_t>("target_ids")),
+      target_weights_(info.GetAttrsOrDefault<float>("target_weights")),
+      base_values_(info.GetAttrsOrDefault<float>("base_values")),
+      aggregate_function_(Lotus::ML::MakeAggregateFunction(info.GetAttrOrDefault<std::string>("aggregate_function", "SUM"))),
+      transform_(Lotus::ML::MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
   LOTUS_ENFORCE(info.GetAttr<int64_t>("n_targets", &n_targets_).IsOK());
-  info.GetAttrs<float>("base_values", base_values_);
 
   //update nodeids to start at 0
   LOTUS_ENFORCE(!nodes_treeids_.empty());
@@ -50,8 +53,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKe
     target_nodeids_[i] = target_nodeids_[i] - offset;
   }
 
-  std::vector<std::string> modes;
-  info.GetAttrs<std::string>("nodes_modes", modes);
+  std::vector<std::string> modes = info.GetAttrsOrDefault<std::string>("nodes_modes");
 
   for (const auto& mode : modes) {
     nodes_modes_.push_back(Lotus::ML::MakeTreeNodeMode(mode));
@@ -66,14 +68,6 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info) : OpKe
   LOTUS_ENFORCE(nodes_id_size == nodes_truenodeids_.size());
   LOTUS_ENFORCE(nodes_id_size == nodes_falsenodeids_.size());
   LOTUS_ENFORCE((nodes_id_size == nodes_hitrates_.size()) || (0 == nodes_hitrates_.size()));
-
-  std::string tmp = "SUM";
-  info.GetAttr<std::string>("aggregate_function", &tmp);
-  aggregate_function_ = Lotus::ML::MakeAggregateFunction(tmp);
-
-  tmp = "NONE";
-  info.GetAttr<std::string>("post_transform", &tmp);
-  transform_ = Lotus::ML::MakeTransform(tmp);
 
   max_tree_depth_ = 1000;
   offset_ = four_billion_;

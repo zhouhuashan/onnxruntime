@@ -10,25 +10,18 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
     SVMRegressor<float>);
 
 template <typename T>
-SVMRegressor<T>::SVMRegressor(const OpKernelInfo& info) : OpKernel(info), SVMCommon<T>(info) {
-  vector_count_ = 0;
-  info.GetAttr<int64_t>("n_supports", &vector_count_);
-
+SVMRegressor<T>::SVMRegressor(const OpKernelInfo& info)
+    : OpKernel(info),
+      SVMCommon<T>(info),
+      vector_count_(info.GetAttrOrDefault<int64_t>("n_supports", 0)),
+      support_vectors_(info.GetAttrsOrDefault<float>("support_vectors")),
+      post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
   LOTUS_ENFORCE(info.GetAttrs<float>("rho", rho_).IsOK());
   LOTUS_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
   LOTUS_ENFORCE(coefficients_.size() > 0);
 
-  // optional for linear
-  info.GetAttrs<float>("support_vectors", support_vectors_);
-
-  int64_t onec = 0;
-  info.GetAttr<int64_t>("one_class", &onec);
+  int64_t onec = info.GetAttrOrDefault<int64_t>("one_class", 0);
   one_class_ = (onec != 0);
-
-  std::string tmp = "NONE";
-  info.GetAttr<std::string>("post_transform", &tmp);
-  POST_EVAL_TRANSFORM tmpval = MakeTransform(tmp);
-  post_transform_ = tmpval;
 
   if (vector_count_ > 0) {
     feature_count_ = support_vectors_.size() / vector_count_;  //length of each support vector

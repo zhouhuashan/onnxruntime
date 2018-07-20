@@ -135,28 +135,25 @@ ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(int64_t);
 ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(int32_t);
 
 template <typename T>
-TreeEnsembleClassifier<T>::TreeEnsembleClassifier(const OpKernelInfo& info) : OpKernel(info) {
-  info.GetAttrs<int64_t>("nodes_treeids", nodes_treeids_);
-  info.GetAttrs<int64_t>("nodes_nodeids", nodes_nodeids_);
-  info.GetAttrs<int64_t>("nodes_featureids", nodes_featureids_);
-  info.GetAttrs<float>("nodes_values", nodes_values_);
-  info.GetAttrs<float>("nodes_hitrates", nodes_hitrates_);
-  info.GetAttrs<int64_t>("nodes_truenodeids", nodes_truenodeids_);
-  info.GetAttrs<int64_t>("nodes_falsenodeids", nodes_falsenodeids_);
-  info.GetAttrs<std::string>("nodes_modes", nodes_modes_names_);
-  info.GetAttrs<int64_t>("nodes_missing_value_tracks_true", missing_tracks_true_);
-  info.GetAttrs<int64_t>("class_treeids", class_treeids_);
-  info.GetAttrs<int64_t>("class_nodeids", class_nodeids_);
-  info.GetAttrs<int64_t>("class_ids", class_ids_);
-  info.GetAttrs<float>("class_weights", class_weights_);
-  info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_);
-  info.GetAttrs<int64_t>("classlabels_int64s", classlabels_int64s_);
-  info.GetAttrs<float>("base_values", base_values_);
-
-  std::string tmp = "NONE";
-  info.GetAttr<std::string>("post_transform", &tmp);
-  post_transform_ = MakeTransform(tmp);
-
+TreeEnsembleClassifier<T>::TreeEnsembleClassifier(const OpKernelInfo& info)
+    : OpKernel(info),
+      nodes_treeids_(info.GetAttrsOrDefault<int64_t>("nodes_treeids")),
+      nodes_nodeids_(info.GetAttrsOrDefault<int64_t>("nodes_nodeids")),
+      nodes_featureids_(info.GetAttrsOrDefault<int64_t>("nodes_featureids")),
+      nodes_values_(info.GetAttrsOrDefault<float>("nodes_values")),
+      nodes_hitrates_(info.GetAttrsOrDefault<float>("nodes_hitrates")),
+      nodes_truenodeids_(info.GetAttrsOrDefault<int64_t>("nodes_truenodeids")),
+      nodes_falsenodeids_(info.GetAttrsOrDefault<int64_t>("nodes_falsenodeids")),
+      nodes_modes_names_(info.GetAttrsOrDefault<std::string>("nodes_modes")),
+      missing_tracks_true_(info.GetAttrsOrDefault<int64_t>("nodes_missing_value_tracks_true")),
+      class_treeids_(info.GetAttrsOrDefault<int64_t>("class_treeids")),
+      class_nodeids_(info.GetAttrsOrDefault<int64_t>("class_nodeids")),
+      class_ids_(info.GetAttrsOrDefault<int64_t>("class_ids")),
+      class_weights_(info.GetAttrsOrDefault<float>("class_weights")),
+      classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")),
+      classlabels_int64s_(info.GetAttrsOrDefault<int64_t>("classlabels_int64s")),
+      base_values_(info.GetAttrsOrDefault<float>("base_values")),
+      post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
   LOTUS_ENFORCE(!nodes_treeids_.empty());
   LOTUS_ENFORCE(class_nodeids_.size() == class_ids_.size());
   LOTUS_ENFORCE(class_nodeids_.size() == class_weights_.size());

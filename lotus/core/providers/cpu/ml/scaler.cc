@@ -58,9 +58,9 @@ ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     ScalerOp<int32_t>);
 
 template <typename T>
-ScalerOp<T>::ScalerOp(const OpKernelInfo& info) : OpKernel(info) {
-  info.GetAttrs<float>("scale", scale_);    // optional
-  info.GetAttrs<float>("offset", offset_);  // optional
+ScalerOp<T>::ScalerOp(const OpKernelInfo& info) : OpKernel(info),
+                                                  scale_(info.GetAttrsOrDefault<float>("scale")),
+                                                  offset_(info.GetAttrsOrDefault<float>("offset")) {
   LOTUS_ENFORCE(!scale_.empty(), "Empty scale in attributes");
   LOTUS_ENFORCE(scale_.size() == offset_.size(),
                 "Scale size: (" + std::to_string(scale_.size()) + ") != (" + std::to_string(offset_.size()) + ")");

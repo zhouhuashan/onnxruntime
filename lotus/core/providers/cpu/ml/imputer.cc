@@ -50,11 +50,13 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
                                             DataTypeImpl::GetTensorType<int64_t>()}),
     ImputerOp);
 
-ImputerOp::ImputerOp(const OpKernelInfo& info) : OpKernel(info) {
-  info.GetAttrs<float>("imputed_value_floats", imputed_values_float_);
-  info.GetAttr<float>("replaced_value_float", &replaced_value_float_);
-  info.GetAttrs<int64_t>("imputed_value_int64s", imputed_values_int64_);
-  info.GetAttr<int64_t>("replaced_value_int64", &replaced_value_int64_);
+ImputerOp::ImputerOp(const OpKernelInfo& info) : OpKernel(info),
+                                                 imputed_values_float_(info.GetAttrsOrDefault<float>("imputed_value_floats")),
+                                                 imputed_values_int64_(info.GetAttrsOrDefault<int64_t>("imputed_value_int64s")) {
+  if (imputed_values_float_.size() && !info.GetAttr<float>("replaced_value_float", &replaced_value_float_).IsOK())
+    LOTUS_THROW("Expected 'replaced_value_float' attribute since 'imputed_value_floats' is specified");
+  if (imputed_values_int64_.size() && !info.GetAttr<int64_t>("replaced_value_int64", &replaced_value_int64_).IsOK())
+    LOTUS_THROW("Expected 'replace_value_int64' attribute since 'imputed_values_int64' is specified");
   LOTUS_ENFORCE(imputed_values_float_.empty() ^ imputed_values_int64_.empty(),
                 "Must provide imputed_values_float_ or imputed_values_int64_ but not both.");
 }

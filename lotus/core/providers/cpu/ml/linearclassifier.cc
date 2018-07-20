@@ -40,20 +40,17 @@ ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     LinearClassifier<int32_t>);
 
 template <typename T>
-LinearClassifier<T>::LinearClassifier(const OpKernelInfo& info) : OpKernel(info) {
-  info.GetAttr<int64_t>("multi_class", &multi_class_);
-  info.GetAttrs<float>("coefficients", coefficients_);
-  info.GetAttrs<float>("intercepts", intercepts_);
-  info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_);
-  info.GetAttrs<int64_t>("classlabels_ints", classlabels_ints_);
-  LOTUS_ENFORCE(!coefficients_.empty());
+LinearClassifier<T>::LinearClassifier(const OpKernelInfo& info) : OpKernel(info),
+                                                                  intercepts_(info.GetAttrsOrDefault<float>("intercepts")),
+                                                                  multi_class_(info.GetAttrOrDefault<int64_t>("multi_class", 0)),
+                                                                  classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")),
+                                                                  classlabels_ints_(info.GetAttrsOrDefault<int64_t>("classlabels_ints")),
+                                                                  post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
+  if (!info.GetAttrs<float>("coefficients", coefficients_).IsOK())
+    LOTUS_ENFORCE(!coefficients_.empty());
 
   using_strings_ = !classlabels_strings_.empty();
   class_count_ = static_cast<int64_t>(intercepts_.size());
-
-  std::string tmp = "NONE";
-  info.GetAttr<std::string>("post_transform", &tmp);
-  post_transform_ = MakeTransform(tmp);
 }
 
 template <typename T>

@@ -62,12 +62,9 @@ ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     OneHotEncoderOp<string>);
 
 template <typename T>
-OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(1), num_categories_(0) {
-  std::vector<int64_t> tmp_cats_int64s;
-  std::vector<std::string> tmp_cats_strings;
-  info.GetAttrs<int64_t>("cats_int64s", tmp_cats_int64s);   // optional
-  info.GetAttrs<string>("cats_strings", tmp_cats_strings);  // optional
-  info.GetAttr<int64_t>("zeros", &zeros_);                  // optional
+OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(info.GetAttrOrDefault<int64_t>("zeros", 1)), num_categories_(0) {
+  std::vector<int64_t> tmp_cats_int64s = info.GetAttrsOrDefault<int64_t>("cats_int64s");
+  std::vector<std::string> tmp_cats_strings = info.GetAttrsOrDefault<string>("cats_strings");
   LOTUS_ENFORCE(tmp_cats_int64s.empty() || tmp_cats_strings.empty());
   if (!tmp_cats_int64s.empty()) {
     num_categories_ = tmp_cats_int64s.size();

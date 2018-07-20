@@ -10,13 +10,11 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
     LinearRegressor<float>);
 
 template <typename T>
-LinearRegressor<T>::LinearRegressor(const OpKernelInfo& info) : OpKernel(info) {
+LinearRegressor<T>::LinearRegressor(const OpKernelInfo& info) : OpKernel(info),
+                                                                intercepts_(info.GetAttrsOrDefault<float>("intercepts")),
+                                                                post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
   LOTUS_ENFORCE(info.GetAttr<int64_t>("targets", &targets_).IsOK());
   LOTUS_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
-  info.GetAttrs<float>("intercepts", intercepts_);
-  std::string tmp = "NONE";
-  info.GetAttr<std::string>("post_transform", &tmp);
-  post_transform_ = MakeTransform(tmp);
 }
 
 template <>
