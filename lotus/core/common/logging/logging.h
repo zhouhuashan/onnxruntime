@@ -245,12 +245,11 @@ inline const Logger &LoggingManager::DefaultLogger() {
 }
 
 inline Timestamp LoggingManager::GetTimestamp() const noexcept {
-  using namespace std::chrono;
-
   static const Epochs &epochs = GetEpochs();
 
-  const auto high_res_now = high_resolution_clock::now();
-  return time_point_cast<system_clock::duration>(epochs.system + (high_res_now - epochs.high_res) + epochs.localtime_offset_from_utc);
+  const auto high_res_now = std::chrono::high_resolution_clock::now();
+  return std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+      epochs.system + (high_res_now - epochs.high_res) + epochs.localtime_offset_from_utc);
 }
 
 /**

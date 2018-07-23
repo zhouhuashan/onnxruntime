@@ -3,7 +3,7 @@
 
 ## Code Style
 
-Google style from https://google.github.io/styleguide/cppguide.html with 3 minor alterations:
+Google style from https://google.github.io/styleguide/cppguide.html with a few minor alterations:
 
 * Max line length 120
   *	Aim for 80, but up to 120 is fine.
@@ -12,6 +12,11 @@ Google style from https://google.github.io/styleguide/cppguide.html with 3 minor
 * Non-const references
   *	Allowed
   *	However const correctness and usage of smart pointers (shared_ptr and unique_ptr) is expected, so a non-const reference equates to “this is a non-null object that you can change but are not being given ownership of”.
+* 'using namespace' permitted with limited scope
+  * Not allowing 'using namespace' at all is overly restrictive. Follow the C++ Core Guidelines:
+    * [SF.6: Use using namespace directives for transition, for foundation libraries (such as std), or within a local scope (only)](https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#Rs-using)
+    * [SF.7: Don't write using namespace at global scope in a header file](https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#Rs-using-directive)
+
 
 #### Clang-format
 Clang-format will handle automatically formatting code to these rules, and there’s a Visual Studio plugin that can format on save at https://marketplace.visualstudio.com/items?itemName=LLVMExtensions.ClangFormat. 
