@@ -954,6 +954,8 @@ class InferenceSession::Impl {
     //The order of registeries represent the priority, put the custom register with higher priority
     registries.assign(custom_registries.begin(),
                       custom_registries.end());
+    // must call this to create built-in function maps prior to node placement
+    GetOpKernelRegistry().kernel_creator_fn_map();
     registries.push_back(&GetOpKernelRegistry());
 
     //do node placement based on registered kernels
@@ -1283,7 +1285,7 @@ class InferenceSession::Impl {
   InsertCastTransformer insert_cast_transformer_;
 
   std::list<std::shared_ptr<LotusIR::ILotusOpSchemaCollection>> custom_schema_registries_;
-};  // namespace Lotus
+};
 
 //
 // InferenceSession
