@@ -336,7 +336,28 @@ add_test(NAME onnx_test_pytorch_operator
     COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-operator)
 
 set(lotus_perf_test_src_dir ${LOTUS_ROOT}/test/perftest)
-add_executable(lotus_perf_test ${lotus_perf_test_src_dir}/main.cc)
+set(lotus_perf_test_src_patterns
+     "${lotus_perf_test_src_dir}/*.cc"
+     "${lotus_perf_test_src_dir}/*.h")
+
+if(WIN32)
+    list(APPEND lotus_perf_test_src_patterns
+         "${lotus_perf_test_src_dir}/windows/*.cc"
+         "${lotus_perf_test_src_dir}/windows/*.h" )
+else ()
+    list(APPEND lotus_perf_test_src_patterns
+         "${lotus_perf_test_src_dir}/posix/*.cc"
+         "${lotus_perf_test_src_dir}/posix/*.h" )
+endif()
+
+file(GLOB lotus_perf_test_src ${lotus_perf_test_src_patterns})
+
+add_executable(lotus_perf_test ${lotus_perf_test_src})
 target_include_directories(lotus_perf_test PUBLIC ${lotusIR_graph_header} ${onnx_test_runner_src_dir} ${lotus_exec_src_dir})
-target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs})
+
+if(WIN32)
+    target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
+else ()
+   target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs})
+endif()
 set_target_properties(lotus_perf_test PROPERTIES FOLDER "LotusTest")
