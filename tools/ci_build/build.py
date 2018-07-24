@@ -303,16 +303,18 @@ def setup_cuda_vars(args):
                 minor = m.group(2)
                 os.environ["CUDA_PATH_V{}_{}".format(major, minor)] = cuda_home
 
-            vc_ver_str = os.getenv("VCToolsVersion")
+            vc_ver_str = os.getenv("VCToolsVersion") or ""
             vc_ver = vc_ver_str.split(".")
             if len(vc_ver) != 3:
-                log.error("Failed to get valid Visual C++ Tools version from VCToolsVersion environment variable value of '" + vc_ver_str + "'")
-                sys.exit(-1)
+                log.warning("Unable to automatically verify VS 2017 toolset is compatible with CUDA. Will attempt to use.")
+                log.warning("Failed to get valid Visual C++ Tools version from VCToolsVersion environment variable value of '" + vc_ver_str + "'")
+                log.warning("VCToolsVersion is set in a VS 2017 Developer Command shell, or by running \"%VS2017INSTALLDIR%\\VC\\Auxiliary\\Build\\vcvars64.bat\"")
+                log.warning("See ReadMe.md in the root Lotus directory for instructions on installing the Visual C++ 2017 14.11 toolset if needed.")
 
-            if vc_ver[0] == "14" and int(vc_ver[1]) > 11:
-                log.error("Visual C++ Tools version not supported by CUDA. You must setup the environment to use the 14.11 toolchain.")
+            elif vc_ver[0] == "14" and int(vc_ver[1]) > 11:
+                log.error("Visual C++ Tools version not supported by CUDA. You must setup the environment to use the 14.11 toolset.")
                 log.info("Current version is {}. CUDA 9.2 requires version 14.11.*".format(vc_ver_str))
-                log.info("If necessary manually install the 14.11 toolchain using the Visual Studio 2017 updater.")
+                log.info("If necessary manually install the 14.11 toolset using the Visual Studio 2017 updater.")
                 log.info("See https://blogs.msdn.microsoft.com/vcblog/2017/11/15/side-by-side-minor-version-msvc-toolsets-in-visual-studio-2017/")
                 log.info("Run 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat amd64 -vcvars_ver=14.11' prior to this script, or use build.amd64.1411.bat.")
                 sys.exit(-1)
