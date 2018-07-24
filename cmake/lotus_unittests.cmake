@@ -24,6 +24,13 @@ function(AddTest)
     #It's cmake bug, cannot add this compile option for cuda compiler
     #(https://gitlab.kitware.com/cmake/cmake/issues/17535)
     string(APPEND CMAKE_CXX_FLAGS " /EHsc") # exception handling - C++ may throw, extern "C" will not
+    
+    if (lotus_USE_CUDA)
+        # disable a warning from the CUDA headers about unreferenced local functions
+        if (MSVC)
+            target_compile_options(${_UT_TARGET} PRIVATE /wd4505) 
+        endif()
+    endif()    
   endif()
 
   # Add the define for conditionally using the framework Environment class in TestEnvironment

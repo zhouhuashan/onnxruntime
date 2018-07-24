@@ -11,7 +11,7 @@ git clone --recursive https://aiinfra.visualstudio.com/_git/Lotus
 cd Lotus
 ```
 
-Gerneate the project files (only needed once):
+Generate the project files (only needed once):
 ```
 set CMAKE_BUILD_TYPE=Debug
 mkdir cmake_build
@@ -31,16 +31,6 @@ ctest -C %CMAKE_BUILD_TYPE%
 `ALL_BUILD.vcxproj` will check external dependecies and takes a little longer. During development you want to
 use a more specific project like `lotus_test_core_runtime.vcxproj`.
 
-# CUDA Build
-Lotus supports CUDA builds. You need to download and install `CUDA8` and `CUDNN6` from the Nvidia website.
-Debug builds for CUDA builds have issues, we use RelWithDebInfo. NVidia supports only VS2015 for CUDA8.
-You can build with:
-```
-set CMAKE_BUILD_TYPE=RelWithDebInfo
-mkdir cmake_build_gpu
-
-cmake ../cmake -A x64 -G "Visual Studio 14 2015" -T host=x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -Dlotus_USE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=where_you_installed_cuda -Dlotus_CUDNN_HOME=where_you_installed_cudnn
-```
 
 # Source tree structure
 TODO
@@ -58,7 +48,7 @@ into 1 exe. More TODO.
 TODO
 
 # Coding guidelines
-[Google C++ style guide](https://google.github.io/styleguide/cppguide.html)
+Please see [Coding Conventions and Standards](./docs/Coding Conventions and Standards.md)
 
 # Checkin procedure
 ```
@@ -73,21 +63,59 @@ https://aiinfra.visualstudio.com/_git/Lotus
 or with codeflow. New code should be accompanied by unittests.
 
 # Additional Build Flavors
+## CUDA Build
+Lotus supports CUDA builds. You will need to download and install [CUDA](https://developer.nvidia.com/cuda-toolkit) and [CUDNN](https://developer.nvidia.com/cudnn).
+
+Lotus is built and tested with CUDA 9.0 and CUDNN 7.0 using the Visual Studio 2017 14.11 toolset (i.e. Visual Studio 2017 v15.3). 
+CUDA versions up to 9.2 and CUDNN version 7.1 should also work with versions of Visual Studio 2017 up to and including v15.7, however you may need to explicitly install and use the 14.11 toolset due to CUDA and CUDNN only being compatible with earlier versions of Visual Studio 2017.
+
+To install the Visual Studio 2017 14.11 toolset, see <https://blogs.msdn.microsoft.com/vcblog/2017/11/15/side-by-side-minor-version-msvc-toolsets-in-visual-studio-2017/> 
+
+If using this toolset with a later version of Visual Studio 2017 you have two options:
+
+1. Setup the Visual Studio environment variables to point to the 14.11 toolset by running vcvarsall.bat prior to running cmake
+   - e.g.  if you have VS2017 Enterprise, an x64 build would use the following command
+`"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" amd64 -vcvars_ver=14.11`
+
+2. Alternatively if you have CMake 3.12 or later you can specify the toolset version in the "-T" parameter by adding "version=14.11"
+   - e.g. use the following with the below cmake command
+`-T version=14.11,host=x64`
+
+CMake should automatically find the CUDA installation. If it does not, or finds a different version to the one you wish to use, specify your root CUDA installation directory via the -DCUDA_TOOLKIT_ROOT_DIR CMake parameter.  
+
+_Side note: If you have multiple versions of CUDA installed on a Windows machine and are building with Visual Studio, CMake will use the build files for the highest version of CUDA it finds in the BuildCustomization folder.  e.g. C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\BuildCustomizations\. If you want to build with an earlier version, you must temporarily remove the 'CUDA x.y.*' files for later versions from this directory._ 
+
+The path to the 'cuda' folder in the CUDNN installation must be provided. The 'cuda' folder should contain 'bin', 'include' and 'lib' directories.
+
+You can build with:
+
+```
+mkdir cmake_build_gpu
+cd cmake_build_gpu    
+cmake ..\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -A x64 -G "Visual Studio 15 2017" -T host=x64 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=<path to top level 'cuda' directory in CUDNN installation>
+```
+	
+where the CUDNN path would be something like `C:\cudnn-9.2-windows10-x64-v7.1\cuda`
+
 ## MKL
 To build Lotus with MKL support, download MKL from Intel and call cmake the following way:
 ```
-cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp" -Dlotus_USE_EIGEN=OFF -Dlotus_USE_MKL=ON -Dlotus_MKL_HOME=%MKL_HOME%
+mkdir cmake_build_mkl
+cd cmake_build_mkl
+cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp" -Dlotus_USE_EIGEN=OFF -Dlotus_USE_MKL=ON -Dlotus_MKL_HOME=%MKL_HOME%
 ```
 where MKL_HOME would be something like:
 `D:\local\IntelSWTools\compilers_and_libraries\windows\mkl`
 
-## Openblas
-To build Lotus with Openblas support, download Openblas and compile it for windows.
-Instructions how to build Openblas for windows can be found here https://github.com/xianyi/OpenBLAS/wiki/How-to-use-OpenBLAS-in-Microsoft-Visual-Studio#build-openblas-for-universal-windows-platform.
+## OpenBLAS
+To build Lotus with OpenBLAS support, download OpenBLAS and compile it for windows.
+Instructions how to build OpenBLAS for windows can be found here https://github.com/xianyi/OpenBLAS/wiki/How-to-use-OpenBLAS-in-Microsoft-Visual-Studio#build-openblas-for-universal-windows-platform.
 
-Once you have the Openblas binaries, call the Lotus cmake like:
+Once you have the OpenBLAS binaries, call the Lotus cmake like:
 ```
-cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp"  -Dlotus_USE_EIGEN=OFF -Dlotus_USE_OPENBLAS=ON -Dlotus_OPENBLAS_HOME=%OPENBLAS_HOME%
+mkdir cmake_build_openblas
+cd cmake_build_openblas
+cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp"  -Dlotus_USE_EIGEN=OFF -Dlotus_USE_OPENBLAS=ON -Dlotus_OPENBLAS_HOME=%OPENBLAS_HOME%
 ```
 where OPENBLAS_HOME would be something like:
 `d:\share\openblas`
@@ -98,19 +126,8 @@ sudo apt-get install libopenblas-dev
 ## AVX, AVX2, OpenMP
 To pass in additional compiler flags, for example to build with SIMD instructions, you can pass in CXX_FLAGS from the cmake command line, for example to build eigen with avx2 support and openmp, you can call cmake like:
 ```
-cmake .. -G "Visual Studio 14 2015" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
+cmake .. -G "Visual Studio 15 2017" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
 ```
-## CUDA
-To build Lotus with CUDA support, download CUDA9.0 and CUDNN7 from NVidia and CMake 3.11 For VisualStudio 2017, it also need VC compiler v14.11, instead of default v14.13.
-Once installed you can call cmake for Lotus as follows:
-```
-python %~dp0\tools\ci_build\build.py --build_dir %~dp0\build\Windows --use_cuda --cudnn_home %CUDNN_HOME% --cuda_home %CUDA_HOME% %* 
-
-you may have to specify your root CUDA installation directory via -DCUDA_TOOLKIT_ROOT_DIR
-```
-where CUDNN_HOME may look something like `d:\local\cudnn-9.0-windows10-x64-v7.0.5\cuda`
-and
-CUDA_TOOLKIT_ROOT_DIR is something like `c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0`
 
 # Build with Docker (CPU)
 Register a docker account at `https://www.docker.com/`

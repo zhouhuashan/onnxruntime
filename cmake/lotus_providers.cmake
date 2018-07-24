@@ -58,6 +58,12 @@ if (lotus_USE_CUDA)
             PROPERTIES
             COMPILE_FLAGS "/Yccuda_pch.h"
         )
+        
+        # disable a warning from the CUDA headers about unreferenced local functions
+        if (MSVC)
+            target_compile_options(lotus_providers_cuda_cc_obj PRIVATE /wd4505) 
+        endif()
+
     endif()
     set(CUDA_INCLUDE "${CUDA_TOOLKIT_ROOT_DIR}/include")
     set(CUDNN_INCLUDE "${lotus_CUDNN_HOME}/include")

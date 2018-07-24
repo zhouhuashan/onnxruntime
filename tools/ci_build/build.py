@@ -7,6 +7,7 @@ import logging
 import multiprocessing
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -44,9 +45,11 @@ Use the individual flags to only run the specified stages.
                         When running the Test phase, run onnx_test_running against available test data directories.''')
     parser.add_argument("--pb_home", help="Path to protobuf installation")
     # CUDA related
-    parser.add_argument("--cudnn_home", help="Path to CUDNN home.")
-    parser.add_argument("--cuda_home", help="Path to CUDA home.")
-    parser.add_argument("--use_cuda", action='store_true', help="Enable Cuda.")
+    parser.add_argument("--use_cuda", action='store_true', help="Enable CUDA.")
+    parser.add_argument("--cuda_home", help="Path to CUDA home."
+                                            "Read from CUDA_HOME environment variable if --use_cuda is true and --cuda_home is not specified.")
+    parser.add_argument("--cudnn_home", help="Path to CUDNN home. "
+                                             "Read from CUDNN_HOME environment variable if --use_cuda is true and --cudnn_home is not specified.")
 
     # Python bindings
     parser.add_argument("--enable_pybind", action='store_true', help="Enable Python Bindings.")
@@ -127,6 +130,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
 
     if pb_home:
         cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
+
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 
     if is_windows():
@@ -255,15 +259,65 @@ def add_dir_if_exists(dir, dir_list):
     if (os.path.isdir(dir)):
         dir_list.append(dir)
 
-def set_cuda_dir(cuda_home):
-    if (is_windows()):
-        cuda_bin_path = os.path.join(cuda_home, 'bin')
-        os.environ["CUDA_PATH"] = cuda_home
-        os.environ["CUDA_BIN_PATH"] = cuda_bin_path
-        os.environ["CUDA_PATH_V9_0"] = cuda_home 
-        os.environ["CUDA_TOOLKIT_ROOT_DIR"] = cuda_home
-        os.environ["PATH"] += os.pathsep + cuda_bin_path
+def setup_cuda_vars(args):
+    
+    cuda_home = ""
+    cudnn_home = ""
+    
+    if (args.use_cuda):
+        cuda_home = args.cuda_home if args.cuda_home else os.getenv("CUDA_HOME")
+        cudnn_home = args.cudnn_home if args.cudnn_home else os.getenv("CUDNN_HOME")
 
+        cuda_home_valid = (cuda_home != None and os.path.exists(cuda_home))
+        cudnn_home_valid = (cudnn_home != None and os.path.exists(cudnn_home))
+
+        if (not cuda_home_valid or not cudnn_home_valid):
+            log.error("cuda_home and cudnn_home paths must be specified and valid.")
+            log.error("cuda_home='{}' valid={}. cudnn_home='{}' valid={}"
+                      .format(cuda_home, cuda_home_valid, cudnn_home, cudnn_home_valid))
+            sys.exit(-1)
+
+        if (is_windows()):
+            os.environ["CUDA_PATH"] = cuda_home
+            os.environ["CUDA_TOOLKIT_ROOT_DIR"] = cuda_home
+
+            cuda_bin_path = os.path.join(cuda_home, 'bin')
+            os.environ["CUDA_BIN_PATH"] = cuda_bin_path
+            os.environ["PATH"] += os.pathsep + cuda_bin_path
+
+            # Add version specific CUDA_PATH_Vx_y value as the Visual Studio build files require that
+            version_file = os.path.join(cuda_home, 'version.txt')
+            if not os.path.exists(version_file):
+                log.error("No version file found in CUDA install directory. Looked for " + version_file)
+                sys.exit(-1)
+
+            with open(version_file) as f:
+                # First line of version file should have something like 'CUDA Version 9.2.148'
+                first_line = f.readline()
+                m = re.match("CUDA Version (\d+).(\d+)", first_line)
+                if not m:
+                    log.error("Couldn't read version from first line of " + version_file)
+                    sys.exit(-1)
+
+                major = m.group(1)
+                minor = m.group(2)
+                os.environ["CUDA_PATH_V{}_{}".format(major, minor)] = cuda_home
+
+            vc_ver_str = os.getenv("VCToolsVersion")
+            vc_ver = vc_ver_str.split(".")
+            if len(vc_ver) != 3:
+                log.error("Failed to get valid Visual C++ Tools version from VCToolsVersion environment variable value of '" + vc_ver_str + "'")
+                sys.exit(-1)
+
+            if vc_ver[0] == "14" and int(vc_ver[1]) > 11:
+                log.error("Visual C++ Tools version not supported by CUDA. You must setup the environment to use the 14.11 toolchain.")
+                log.info("Current version is {}. CUDA 9.2 requires version 14.11.*".format(vc_ver_str))
+                log.info("If necessary manually install the 14.11 toolchain using the Visual Studio 2017 updater.")
+                log.info("See https://blogs.msdn.microsoft.com/vcblog/2017/11/15/side-by-side-minor-version-msvc-toolsets-in-visual-studio-2017/")
+                log.info("Run 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat amd64 -vcvars_ver=14.11' prior to this script, or use build.amd64.1411.bat.")
+                sys.exit(-1)
+
+    return cuda_home, cudnn_home
 
 def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests):
     for config in configs:
@@ -276,7 +330,6 @@ def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests):
             if is_windows():
                 cwd = os.path.join(cwd, config)
             run_subprocess([sys.executable, 'lotus_test_python.py'], cwd=cwd)
-
 
 def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir):
 
@@ -315,12 +368,17 @@ def main():
     if args.build_wheel:
         args.enable_pybind = True
 
+    configs = set(args.config)
+
+    # setup paths and directories
     ctest_path = args.ctest_path
     build_dir = args.build_dir
-    cudnn_home = args.cudnn_home
-    cuda_home = args.cuda_home
     script_dir = os.path.realpath(os.path.dirname(__file__))
     source_dir = os.path.normpath(os.path.join(script_dir, "..", ".."))
+
+    # if using cuda, setup cuda paths and env vars
+    cuda_home, cudnn_home = setup_cuda_vars(args)
+
     # directory from ONNX submodule with ONNX test data
     onnx_test_data_dir = os.path.join(source_dir, "external", "onnx", "onnx", "backend", "test", "data")
 
@@ -330,11 +388,6 @@ def main():
     lotus_onnx_test_data_dir = os.path.join(build_dir, 'test_data')
 
     os.makedirs(build_dir, exist_ok=True)
-
-    configs = set(args.config)
-
-    if (cuda_home):
-        set_cuda_dir(cuda_home)
 
     log.info("Build started")
 
