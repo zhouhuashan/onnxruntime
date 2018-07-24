@@ -243,11 +243,17 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   }
 
   double per_sample_tolerance, relative_per_sample_tolerance;
+  bool post_procesing;
+
   if (!(status = c_->GetPerSampleTolerance(&per_sample_tolerance)).IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
   }
   if (!(status = c_->GetRelativePerSampleTolerance(&relative_per_sample_tolerance)).IsOK()) {
+    LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
+    return StatusCodeToExecuteResult(status.Code());
+  }
+  if (!(status = c_->GetPostProcessing(&post_procesing)).IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
   }
@@ -259,7 +265,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     if (o.Fence())
       o.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, queue_id);
     const onnx::ValueInfoProto& v = c_->GetOutputInfoFromModel(i);
-    std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), per_sample_tolerance, relative_per_sample_tolerance);
+    std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), per_sample_tolerance, relative_per_sample_tolerance, post_procesing);
     COMPARE_RESULT compare_result = ret.first;
     if (compare_result == COMPARE_RESULT::SUCCESS) {
       ret = VerifyValueInfo(v, o);

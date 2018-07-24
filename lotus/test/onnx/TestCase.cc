@@ -241,11 +241,21 @@ Status OnnxTestCase::GetPerSampleTolerance(double* value) {
   *value = per_sample_tolerance_;
   return Status::OK();
 }
+
 Status OnnxTestCase::GetRelativePerSampleTolerance(double* value) {
   Status st = ParseConfig();
   if (!st.IsOK())
     return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
   *value = relative_per_sample_tolerance_;
+  return Status::OK();
+}
+
+Status OnnxTestCase::GetPostProcessing(bool* value) {
+  Status st = ParseConfig();
+  if (!st.IsOK()) {
+    return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
+  }
+  *value = post_processing_;
   return Status::OK();
 }
 
@@ -257,6 +267,7 @@ Status OnnxTestCase::ParseConfig() {
     if (!st.IsOK()) {
       per_sample_tolerance_ = 1e-3;
       relative_per_sample_tolerance_ = 1e-5;
+      post_processing_ = false;
       st = Status::OK();
       return;
     }

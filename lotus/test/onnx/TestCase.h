@@ -24,6 +24,7 @@ class ITestCase {
   virtual ~ITestCase() {}
   virtual Lotus::Common::Status GetPerSampleTolerance(double* value) = 0;
   virtual Lotus::Common::Status GetRelativePerSampleTolerance(double* value) = 0;
+  virtual Lotus::Common::Status GetPostProcessing(bool* value) = 0;
 };
 
 class DataLoder {
@@ -59,6 +60,7 @@ class OnnxTestCase : public ITestCase {
   std::once_flag config_parsed_;
   double per_sample_tolerance_;
   double relative_per_sample_tolerance_;
+  bool post_processing_;
   Lotus::Common::Status ParseModel();
   Lotus::Common::Status ParseConfig();
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OnnxTestCase);
@@ -74,6 +76,7 @@ class OnnxTestCase : public ITestCase {
   void SetAllocator(const Lotus::AllocatorPtr&);
   Lotus::Common::Status GetPerSampleTolerance(double* value) override;
   Lotus::Common::Status GetRelativePerSampleTolerance(double* value) override;
+  Lotus::Common::Status GetPostProcessing(bool* value) override;
 
   const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
     return output_value_info_[i];
