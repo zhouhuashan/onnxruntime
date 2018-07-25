@@ -2,8 +2,8 @@
 
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
+#include "core/common/task_thread_pool.h"
 #include "core/framework/allocator.h"
-#include "core/lib/task_thread_pool.h"
 
 /*
 ONNX_OPERATOR_SCHEMA(LSTM)
@@ -151,7 +151,7 @@ ONNX_CPU_OPERATOR_KERNEL(
     7,
     KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(),
                                             DataTypeImpl::GetTensorType<double>()})
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
+        .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
     DeepCpuLstmOp);
 
 using namespace Rnn::detail;
@@ -254,15 +254,6 @@ class UniDirectionalLstm {
 
   int input_num_threads_ = -1;
   int hidden_num_threads_ = -1;
-
-  // Currently these values are not changed from their defaults.
-  // In LotusRT there is code that's #ifdef'd on TIMING and AUTO_PERF_PROFILE (disabled by default though)
-  // to track timing and update these values, however the lifetime and usage of this class is
-  // completely different in Lotus so would have no real effect. In Lotus UniDirectionalGru is not shared
-  // across all calls to Compute, as we can have concurrent calls to Compute, and Compute is stateless.
-  // Will discuss with Wenhan and see if that code can be ported over somehow and updated for the Lotus setup.
-  int input_mkl_num_threads_ = 1;
-  int hidden_mkl_num_threads_ = 1;
 
   IAllocatorUniquePtr<T> weights_ifoc_ptr, recurrent_weights_ifoc_ptr_, output_ifoc_ptr_;
   IAllocatorUniquePtr<T> hidden0_ptr_, batched_hidden0_ptr_;
@@ -887,6 +878,17 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
   const int hidden_size_x4 = 4 * hidden_size_;
   const int total_rows = max_sequence_length * batch_size_;
 
+#if defined(HAVE_PARALLELIZED_GEMM)
+  // apply the weights to all the inputs and save to output_IFOC
+  ComputeGemm(total_rows, hidden_size_x4, input_size_, alpha,
+              inputs.cbegin(), inputs.cend(),
+              input_size_,
+              weights_ifoc_.cbegin(), weights_ifoc_.cend(),  // W[ifoc]^T
+              hidden_size_x4, beta,
+              output_ifoc_.begin(), output_ifoc_.end(),
+              hidden_size_x4);
+#else
+
   int fused_input_rows = total_rows / input_num_threads_;
   if (total_rows % input_num_threads_ != 0)
     fused_input_rows++;
@@ -898,8 +900,6 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
     if ((row + fused_input_rows) > total_rows)
       local_fused_input_rows = total_rows - row;
 
-    set_mkl_num_threads_local(input_mkl_num_threads_);
-
     // compute Xt*(W[ifoc]^T)
     ComputeGemm(local_fused_input_rows, hidden_size_x4, input_size_, alpha,
                 inputs.cbegin() + row * input_size_, inputs.cend(),  // Xt
@@ -908,12 +908,11 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
                 hidden_size_x4, beta,
                 output_ifoc_.begin() + row * hidden_size_x4, output_ifoc_.end(),
                 hidden_size_x4);
-
-    set_mkl_num_threads_local(0);
   };
 
   ExecuteLambdaInParallel("Applying weights to inputs", input_gemm, total_rows, fused_input_rows,
                           ttp_, logger_);
+#endif
 
   DumpMatrix("Xt*(W[ifoc]^T)", output_ifoc_.data(), total_rows, hidden_size_x4);
 
@@ -953,8 +952,6 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
 
         span_T_iter step_out_IFOC = output_ifoc_.begin() + (step * batch_size_ + row) * hidden_size_x4;
 
-        set_mkl_num_threads_local(hidden_mkl_num_threads_);
-
         // calculate Xt*(W[ifoc]^T) + Ht-t*R[ifoc]
         ComputeGemm(local_fused_hidden_rows, hidden_size_x4, hidden_size_, alpha,
                     previous_state, previous_state_end,  // Ht-1
@@ -963,8 +960,6 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
                     hidden_size_x4, beta,
                     step_out_IFOC, output_ifoc_.end(),  // input contains Xt*(W[ifoc]^T)
                     hidden_size_x4);
-
-        set_mkl_num_threads_local(0);
 
         DumpMatrix("Xt*(W[ifoc]^T) + Ht-t*R[ifoc]" + row_str,
                    &*step_out_IFOC, local_fused_hidden_rows, hidden_size_x4);
@@ -1029,8 +1024,16 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
 
       span_T_iter step_out_IFOC = output_ifoc_.begin() + (step * batch_size_) * hidden_size_x4;
 
-      set_mkl_num_threads_local(hidden_mkl_num_threads_);
-
+#if defined(HAVE_PARALLELIZED_GEMM)
+      // calculate Xt*(W[ifoc]^T) + Ht-t*R[ifoc]
+      ComputeGemm(batch_size_, hidden_size_x4, hidden_size_, alpha,
+                  previous_state, previous_state_end,  // Ht-1
+                  hidden_size_,
+                  recurrent_weights_ifoc_.cbegin(), recurrent_weights_ifoc_.cend(),  // R[ifoc]
+                  hidden_size_x4, beta,
+                  step_out_IFOC, output_ifoc_.end(),  // input contains Xt*(W[ifoc]^T)
+                  hidden_size_x4);
+#else
       auto hidden_gemm_compute = [&](int thread_id) {
         int local_cols = hidden_size_x4 / hidden_num_threads_;
         int start_col = thread_id * local_cols;
@@ -1051,7 +1054,7 @@ void UniDirectionalLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
       ExecuteLambdaInParallel("Calculating Xt*(W[ifoc]^T) + Ht-1*R[ifoc])" + seqno_str,
                               hidden_gemm_compute, hidden_num_threads_, 1, ttp_, logger_);
 
-      set_mkl_num_threads_local(0);
+#endif
 
       span_T_iter batched_output, batched_output_end;
       if (output_sequence) {
@@ -1253,7 +1256,11 @@ void UniDirectionalLstm<T>::SetNumThreads() {
   if (imt > 24)
     imt = 24;
 
-  input_num_threads_ = imt;
+  // total number of operations in the call to ComputeGemm to apply the weights to the inputs
+  auto work = seq_length_ * batch_size_ * hidden_size_ * 4 * input_size_;
+  const double kMinTaskSize = 50000;  // this value is copied from Eigen. simplistic and could be refined.
+
+  input_num_threads_ = std::max<int>(1, std::min<int>(imt, static_cast<int>(work / kMinTaskSize)));
 
   VLOGS(logger_, 1) << "Input Threads : " << input_num_threads_;
 

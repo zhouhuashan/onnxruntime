@@ -23,6 +23,13 @@
 #include "Eigen/Core"
 #include "Eigen/Dense"
 
+// check if we're using a GEMM implementation that does its own parallelization.
+// MLAS uses Windows thread pool
+// Eigen and MKL DNN will use OpenMP threads
+#if defined(USE_MLAS) || defined(USE_OPENMP) || defined(USE_MKLDNN)
+#define HAVE_PARALLELIZED_GEMM
+#endif
+
 namespace Lotus {
 
 // Common Eigen types that we will often use

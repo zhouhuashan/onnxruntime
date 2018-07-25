@@ -3,7 +3,7 @@
 #include <limits>
 
 #include "core/framework/op_kernel.h"
-#include "core/lib/task_thread_pool.h"
+#include "core/common/task_thread_pool.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"
 
 namespace Lotus {

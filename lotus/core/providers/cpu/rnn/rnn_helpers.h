@@ -9,15 +9,11 @@
 #include "gsl/span"
 
 #include "core/common/common.h"
+#include "core/common/task_thread_pool.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/allocator.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
-#include "core/lib/task_thread_pool.h"
-
-#ifdef LOTUS_USE_MKL
-#include "mkl.h"
-#endif
 
 namespace Lotus {
 class Tensor;
@@ -232,14 +228,6 @@ void ExecuteLambdaInParallel(const std::string& name, TLambda lambda, int max, i
     LOGS(logger, ERROR) << name << " - exception running tasks: " << ex.what();
     throw;
   }
-#endif
-}
-
-inline void set_mkl_num_threads_local(int threads) {
-#ifdef LOTUS_USE_MKL
-  mkl_set_num_threads_local(threads);
-#else
-  UNUSED_PARAMETER(threads);
 #endif
 }
 

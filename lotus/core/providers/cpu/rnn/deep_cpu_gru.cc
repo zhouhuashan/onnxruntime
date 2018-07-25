@@ -136,7 +136,7 @@ ONNX_CPU_OPERATOR_KERNEL(
     7,
     KernelDefBuilder().TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(),
                                             DataTypeImpl::GetTensorType<double>()})
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
+        .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
     DeepCpuGruOp);
 
 using namespace Rnn::detail;
@@ -196,15 +196,6 @@ class UniDirectionalGru {
 
   int input_num_threads_ = -1;
   int hidden_num_threads_ = -1;
-
-  // Currently these values are not changed from their defaults.
-  // In LotusRT there is code that's #ifdef'd on TIMING and AUTO_PERF_PROFILE (disabled by default though)
-  // to track timing and update these values, however the lifetime and usage of this class is
-  // completely different in Lotus so would have no real effect. In Lotus UniDirectionalGru is not shared
-  // across all calls to Compute, as we can have concurrent calls to Compute, and Compute is stateless.
-  // Will discuss with Wenhan and see if that code can be ported over somehow and updated for the Lotus setup.
-  int input_mkl_num_threads_ = 1;
-  int hidden_mkl_num_threads_ = 1;
 
   IAllocatorUniquePtr<T> input_weightsZRH_ptr_, recurrent_weightsZR_ptr_, recurrent_weightsH_ptr_;
   IAllocatorUniquePtr<T> outputZRH_ptr_;
@@ -550,12 +541,22 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
   const int hidden_size_x3 = 3 * hidden_size_;
   const int total_rows = max_sequence_length * batch_size_;
 
+  float alpha = 1.0f;
+  float beta = 0.0f;  // zero out outputZRH_ when calling ComputeGemm.
+
+#if defined(HAVE_PARALLELIZED_GEMM)
+  // apply weights to all the inputs
+  ComputeGemm(total_rows, hidden_size_x3, input_size_, alpha,
+              inputs.cbegin(), inputs.cend(),
+              input_size_,
+              input_weightsZRH_.cbegin(), input_weightsZRH_.cend(),
+              hidden_size_x3, beta,
+              outputZRH_.begin(), outputZRH_.end(),
+              hidden_size_x3);
+#else
   int fused_input_rows = total_rows / input_num_threads_;
   if (total_rows % input_num_threads_ != 0)
     fused_input_rows++;
-
-  float alpha = 1.0f;
-  float beta = 0.0f;  // zero out outputZRH_ when calling ComputeGemm.
 
   // lambda to apply weights to all the inputs
   auto input_gemm = [&](int row) {
@@ -566,8 +567,6 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
     if ((row + fused_input_rows) > total_rows)
       local_fused_input_rows = total_rows - row;
 
-    set_mkl_num_threads_local(input_mkl_num_threads_);
-
     ComputeGemm(local_fused_input_rows, hidden_size_x3, input_size_, alpha,
                 inputs.cbegin() + row * input_size_, inputs.cend(),
                 input_size_,
@@ -575,13 +574,12 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
                 hidden_size_x3, beta,
                 outputZRH_.begin() + row * hidden_size_x3, outputZRH_.end(),
                 hidden_size_x3);
-
-    set_mkl_num_threads_local(0);
   };
 
   // Xt * W[zrh] for all rows are written to outputZRH_
   ExecuteLambdaInParallel("Applying weights to inputs", input_gemm, total_rows, fused_input_rows,
                           ttp_, logger_);
+#endif
 
   DumpMatrix("inputs with weights applied", outputZRH_.data(), seq_length_ * batch_size_ * 3, hidden_size_);
 
@@ -629,8 +627,6 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
         batched_bias_R_local_end = batched_bias_WRr_.cend();
         batched_bias_H_local_end = batched_bias_WRo_.cend();
       }
-
-      set_mkl_num_threads_local(hidden_mkl_num_threads_);
 
       for (int step = 0; step < max_sequence_length; step++) {
         const std::string row_str = " [row=" + std::to_string(row) + ",seqno=" + std::to_string(step) + "]";
@@ -733,8 +729,6 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
         s_t1_prev = output;
         s_t1_prev_end = output_end;
       }
-
-      set_mkl_num_threads_local(0);
     };
 
     ExecuteLambdaInParallel("Processing batch", hidden_gemm_and_activations, batch_size_, fused_hidden_rows,
@@ -754,8 +748,6 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
     span_T_const_iter batched_bias_R_local_end = batched_bias_WRr_.cend();
     span_T_const_iter batched_bias_H_local_end = batched_bias_WRo_.cend();
 
-    set_mkl_num_threads_local(hidden_mkl_num_threads_);
-
     // for each item in sequence run all calculations
     for (int step = 0; step < max_sequence_length; step++) {
       const std::string seqno_str = " [seqno=" + std::to_string(step) + "]";
@@ -764,6 +756,17 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
 
       out_added_offset = (step * batch_size_) * hidden_size_x3;
 
+#if defined(HAVE_PARALLELIZED_GEMM)
+      // calculate Ht-1*R[zh], and add to the weighted inputs that are in outputZRH_
+      // Ht-1 * R[zh] + Xt*(W[zh]^T)
+      ComputeGemm(batch_size_, hidden_size_x2, hidden_size_, alpha,
+                  s_t1_prev, s_t1_prev_end,
+                  hidden_size_,
+                  recurrent_weightsZR_.cbegin(), recurrent_weightsZR_.cend(),
+                  hidden_size_x2, beta,
+                  outputZRH_.begin() + out_added_offset, outputZRH_.end(),
+                  hidden_size_x3);
+#else
       auto hidden_gemm_compute1 = [&](int thread_id) {
         int local_cols = hidden_size_x2 / hidden_num_threads_;
         int start_col = thread_id * local_cols;
@@ -785,6 +788,7 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
 
       ExecuteLambdaInParallel("Calculating Ht-1*R[zh] + Xt*(W[zh]^T)" + seqno_str,
                               hidden_gemm_compute1, hidden_num_threads_, 1, ttp_, logger_);
+#endif
 
       DumpMatrix("Ht-1 * R[zh] + Xt*(W[zh]^T)" + seqno_str,
                  outputZRH_.data() + out_added_offset, batch_size_, hidden_size_x2, 0, hidden_size_x3);
@@ -805,6 +809,19 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
 
       DumpMatrix("rt (.) Ht-1" + seqno_str, &*H_t2_local, batch_size_, hidden_size_);
 
+#if defined(HAVE_PARALLELIZED_GEMM)
+      // out_H currently contains Xt*(Wh^T).
+      auto out_H = outputZRH_.begin() + out_added_offset + hidden_size_x2;
+
+      // Xt*(Wh^T) + rt (.) Ht-1 * Rh
+      ComputeGemm(batch_size_, hidden_size_, hidden_size_, alpha,
+                  H_t2_local, H_t2_local_end,  // rt (.) Ht-1
+                  hidden_size_,
+                  recurrent_weightsH_.cbegin(), recurrent_weightsH_.cend(),  // Rh
+                  hidden_size_, beta,
+                  out_H, outputZRH_.end(),
+                  hidden_size_x3);
+#else
       auto hidden_gemm_compute2 = [&](int thread_id) {
         int local_cols = hidden_size_ / hidden_num_threads_;
         int start_col = thread_id * local_cols;
@@ -828,6 +845,7 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
 
       ExecuteLambdaInParallel("Calculating Xt*(Wh^T) + rt (.) Ht-1 * Rh" + seqno_str,
                               hidden_gemm_compute2, hidden_num_threads_, 1, ttp_, logger_);
+#endif
 
       DumpMatrix("Xt*(Wh^T) + rt (.) Ht-1 * Rh" + seqno_str, outputZRH_.data() + out_added_offset,
                  batch_size_, hidden_size_, hidden_size_x2, hidden_size_x3);
@@ -885,8 +903,6 @@ void UniDirectionalGru<T>::Compute(const gsl::span<const T>& inputs_arg,
       s_t1_prev = output;
       s_t1_prev_end = output_end;
     }
-
-    set_mkl_num_threads_local(0);
   }
 
   if (output_sequence) {
@@ -946,7 +962,12 @@ void UniDirectionalGru<T>::SetNumThreads() {
     imt = 16;
   if (imt > 24)
     imt = 24;
-  input_num_threads_ = imt;
+
+  // total number of operations in the call to ComputeGemm to apply the weights to the inputs
+  auto work = seq_length_ * batch_size_ * hidden_size_ * 3 * input_size_;
+  const double kMinTaskSize = 50000;  // this value is copied from Eigen. simplistic and could be refined.
+
+  input_num_threads_ = std::max<int>(1, std::min<int>(imt, static_cast<int>(work / kMinTaskSize)));
 
   VLOGS(logger_, 1) << "Input Threads : " << input_num_threads_;
 

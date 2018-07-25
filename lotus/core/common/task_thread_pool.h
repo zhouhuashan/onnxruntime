@@ -16,6 +16,31 @@
 
 /*
 Changed to use std::packaged_task instead of std::function so exceptions can be propagated.
+
+This also allows the task threadpool to be shared across multiple operators as the caller
+can keep a container of the packaged_task futures to check when they have completed. Calling
+WaitWorkComplete in that use case is invalid as there may be other concurrent usage of the 
+threadpool.
+
+Example of that usage:
+
+  std::vector<std::future<void>> task_results{};
+
+  for (...) {
+    std::packaged_task<void()> task{std::bind(lambda, i)};
+    task_results.push_back(task.get_future());
+    task_thread_pool.RunTask(std::move(task));
+  }
+
+  try {
+    // wait for all and propagate any exceptions
+    for (auto& future : task_results)
+      future.get();
+  } catch (const std::exception& ex) {
+    ...
+    throw;
+  }
+
 */
 
 #pragma once
