@@ -33,6 +33,7 @@ Use the individual flags to only run the specified stages.
                         help="Configuration(s) to build.")
     parser.add_argument("--update", action='store_true', help="Update makefiles.")
     parser.add_argument("--build", action='store_true', help="Build.")
+    parser.add_argument("--clean", action='store_true', help="Run 'cmake --build --target clean' for the selected config/s.")
     parser.add_argument("--parallel", action='store_true', help='''Use parallel build.
     The build setup doesn't get all dependencies right, so --parallel only works if you're just rebuilding Lotus code. 
     If you've done an update that fetched external dependencies you have to build without --parallel the first time. 
@@ -144,14 +145,24 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
 
         run_subprocess(cmake_args  + ["-DCMAKE_BUILD_TYPE={}".format(config)], cwd=config_build_dir)
 
+def clean_targets(cmake_path, build_dir, configs):
+    for config in configs:
+        log.info("Cleaning targets for %s configuration", config)
+        build_dir2 = get_config_build_dir(build_dir, config)
+        cmd_args = [cmake_path,
+                    "--build", build_dir2,
+                    "--config", config,
+                    "--target", "clean"]
+
+        run_subprocess(cmd_args)
+
 def build_targets(cmake_path, build_dir, configs, parallel):
     for config in configs:
         log.info("Building targets for %s configuration", config)
         build_dir2 = get_config_build_dir(build_dir, config)
         cmd_args = [cmake_path,
-                       "--build", build_dir2,
-                       "--config", config,
-                       ]
+                    "--build", build_dir2,
+                    "--config", config]
 
         build_tool_args = []
         if parallel:
@@ -361,7 +372,7 @@ def main():
     cmake_extra_defines = args.cmake_extra_defines if args.cmake_extra_defines else []
 
     # if there was no explicit argument saying what to do, default to update, build and test.
-    if (args.update == False and args.build == False and args.test == False):
+    if (args.update == False and args.clean == False and args.build == False and args.test == False):
         log.debug("Defaulting to running update, build and test.")
         args.update = True
         args.build = True
@@ -413,6 +424,9 @@ def main():
 
         generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home, args.pb_home, configs, cmake_extra_defines,
                             args, cmake_extra_args)
+
+    if (args.clean):
+        clean_targets(cmake_path, build_dir, configs)
 
     if (args.build):
         build_targets(cmake_path, build_dir, configs, args.parallel)
