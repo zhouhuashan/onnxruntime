@@ -284,6 +284,7 @@ Status OnnxTestCase::ParseConfig() {
     }
     per_sample_tolerance_ = config_pb.per_sample_tolerance();
     relative_per_sample_tolerance_ = config_pb.relative_per_sample_tolerance();
+    post_processing_ = config_pb.post_processing();
     st = Status::OK();
   });
   return st;
