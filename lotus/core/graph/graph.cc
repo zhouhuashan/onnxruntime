@@ -202,7 +202,7 @@ void Node::Init(const std::string& name,
   definitions_.output_defs = output_args;
   domain_ = domain;
   if (kOnnxDomainAlias == domain_) {
-	  domain_ = kOnnxDomain;
+    domain_ = kOnnxDomain;
   }
 
   // Set each arg count as 1 by default.
@@ -1040,6 +1040,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     ctx.set_schema_registry(schema_registry_.get());
     LexicalScopeContext lsc;
     for (auto& kv : output_args) {
+      GSL_SUPPRESS(es .84)
       lsc.output_names.insert(kv.first);
     }
     NodeProto node_proto;
@@ -1105,6 +1106,7 @@ Status Graph::VerifyInputAndInitializerNames(/*OUT*/ std::unordered_set<std::str
     }
   }
   for (auto& initializer_pair : name_to_initial_tensor_) {
+    GSL_SUPPRESS(es .84)
     inputs_and_initializers.insert(initializer_pair.first);
     // Initializers are expected to be included in inputs (according to ONNX spec).
     // Lotus relaxes this constraint. No duplicate-name check here.
@@ -1496,8 +1498,10 @@ void Graph::SyncGraphInputsOutputs() {
 void Graph::CleanUnusedInitializers() {
   std::vector<std::string> unused_names;
   std::set<const NodeArg*> input_args;
-  for (const auto& node : Nodes())
-    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { input_args.insert(def); });
+  for (const auto& node : Nodes()) {
+    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { GSL_SUPPRESS(es .84)
+                                                                      input_args.insert(def); });
+  }
 
   for (const auto& pv : name_to_initial_tensor_) {
     const std::string& s = pv.first;

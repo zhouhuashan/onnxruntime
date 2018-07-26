@@ -444,6 +444,7 @@ class GraphBase {
 
     owned_node_args_.push_back(std::make_unique<NodeArg>(name, p_arg_type));
     NodeArg* new_arg = owned_node_args_.back().get();
+    GSL_SUPPRESS(es .84)
     node_args_.insert(std::make_pair(name, new_arg));
     return *new_arg;
   }

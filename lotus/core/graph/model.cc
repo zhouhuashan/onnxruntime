@@ -216,23 +216,66 @@ Status Model::Load(std::unique_ptr<ModelProto> p_model_proto, std::shared_ptr<Mo
   return Status::OK();
 }
 
+template <typename T>
+static Status LoadModel(const T& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
+  int fd;
+  Status status = Env::Default().FileOpenRd(file_path, &fd);
+  if (!status.IsOK()) {
+    if (status.Category() == Common::SYSTEM) {
+      switch (status.Code()) {
+        case ENOENT:
+          return LOTUS_MAKE_STATUS(LOTUS, NO_SUCHFILE, "Load model failed. File doesn't exist");
+        case EINVAL:
+          return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT);
+        default:
+          return LOTUS_MAKE_STATUS(LOTUS, FAIL, "system error number ", status.Code());
+      }
+    }
+  }
+  try {
+    status = Model::Load(fd, p_model, local_registries);
+  } catch (std::exception& ex) {
+    GSL_SUPPRESS(es .84)
+    (void) Env::Default().FileClose(fd);
+    return Status(LOTUS, FAIL, ex.what());
+  }
+  if (!status.IsOK()) {
+    GSL_SUPPRESS(es .84)
+    (void) Env::Default().FileClose(fd);
+    return status;
+  }
+  return Env::Default().FileClose(fd);
+}
+
+template <typename T>
+static Status SaveModel(Model& model, const T& file_path) {
+  int fd;
+  Status status = Env::Default().FileOpenWr(file_path, &fd);
+  LOTUS_RETURN_IF_ERROR(status);
+  try {
+    status = Model::Save(model, fd);
+  } catch (std::exception& ex) {
+    GSL_SUPPRESS(es .84)
+    (void) Env::Default().FileClose(fd);
+    return Status(LOTUS, FAIL, ex.what());
+  }
+  if (!status.IsOK()) {
+    GSL_SUPPRESS(es .84)
+    (void) Env::Default().FileClose(fd);
+    return status;
+  }
+  return Env::Default().FileClose(fd);
+}
+
 #ifdef _WIN32
 GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the internal call to Load
 GSL_SUPPRESS(r .35)
 Status Model::Load(const std::wstring& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
-  int fd;
-  LOTUS_RETURN_IF_ERROR(Env::Default().FileOpenRd(file_path, &fd));
-  auto status = Load(fd, p_model, local_registries);
-  LOTUS_RETURN_IF_ERROR(Env::Default().FileClose(fd));
-  return status;
+  return LoadModel(file_path, p_model, local_registries);
 }
 
 Status Model::Save(Model& model, const std::wstring& file_path) {
-  int fd;
-  LOTUS_RETURN_IF_ERROR(Env::Default().FileOpenWr(file_path, &fd));
-  auto status = Save(model, fd);
-  LOTUS_RETURN_IF_ERROR(Env::Default().FileClose(fd));
-  return status;
+  return SaveModel(model, file_path);
 }
 
 #endif
@@ -240,18 +283,11 @@ Status Model::Save(Model& model, const std::wstring& file_path) {
 GSL_SUPPRESS(r .30)  // spurious warnings. p_model is potentially reset in the internal call to Load
 GSL_SUPPRESS(r .35)
 Status Model::Load(const std::string& file_path, std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
-  int fd;
-  Status status = Env::Default().FileOpenRd(file_path, &fd);
-  if (!status.IsOK()) {
-    return Status(LOTUS, NO_MODEL, "Failed to open: " + file_path);
-  }
-  try {
-    status = Load(fd, p_model, local_registries);
-  } catch (std::exception& ex) {
-    Env::Default().FileClose(fd);
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Failed to load: " + file_path, ". ", ex.what());
-  }
-  return Env::Default().FileClose(fd);
+  return LoadModel(file_path, p_model, local_registries);
+}
+
+Status Model::Save(Model& model, const std::string& file_path) {
+  return SaveModel(model, file_path);
 }
 
 Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Model>& p_model, const ILotusOpSchemaRegistryList* local_registries) {
@@ -266,18 +302,6 @@ Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Mo
     LOTUS_RETURN_IF_ERROR(p_model->MainGraph()->Resolve(true));
   }
   return Status::OK();
-}
-
-Status Model::Save(Model& model, const std::string& file_path) {
-  int fd;
-  LOTUS_RETURN_IF_ERROR(Env::Default().FileOpenWr(file_path, &fd));
-  try {
-    auto status = Save(model, fd);
-  } catch (std::exception& ex) {
-    Env::Default().FileClose(fd);
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Failed to save model to " + file_path, ". ", ex.what());
-  }
-  return Env::Default().FileClose(fd);
 }
 
 using ::google::protobuf::io::CodedInputStream;
