@@ -1,5 +1,9 @@
 #include "test/framework/TestAllocatorManager.h"
 #include "core/framework/allocatormgr.h"
+#ifdef USE_CUDA
+#include "core/providers/cuda/cuda_allocator.h"
+#endif  //  USE_CUDA
+
 namespace Lotus {
 namespace Test {
 
@@ -43,14 +47,16 @@ AllocatorManager::AllocatorManager() {
 
 Status AllocatorManager::InitializeAllocators() {
   Status status = Status::OK();
+  auto cpu_alocator = std::make_unique<CPUAllocator>();
+  status = RegisterAllocator(map_, std::move(cpu_alocator), std::numeric_limits<size_t>::max(), true);
+#ifdef USE_CUDA
+  auto cuda_alocator = std::make_unique<CUDAAllocator>(0);
+  status = RegisterAllocator(map_, std::move(cuda_alocator), std::numeric_limits<size_t>::max(), true);
 
-  for (const auto& pair : DeviceAllocatorRegistry::Instance().AllRegistrations()) {
-    if (status.IsOK()) {
-      auto allocator = std::unique_ptr<IDeviceAllocator>(pair.second.factory(0));
-      bool use_arena = allocator->AllowsArena();
-      status = RegisterAllocator(map_, std::move(allocator), pair.second.max_mem, use_arena);
-    }
-  }
+  auto cuda_pinned_alocator = std::make_unique<CUDAPinnedAllocator>();
+  status = RegisterAllocator(map_, std::move(cuda_pinned_alocator), std::numeric_limits<size_t>::max(), true);
+#endif  // USE_CUDA
+
   return status;
 }
 

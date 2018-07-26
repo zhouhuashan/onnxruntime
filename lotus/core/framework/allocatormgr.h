@@ -36,17 +36,4 @@ class DeviceAllocatorRegistry {
   std::map<std::string, DeviceAllocatorRegistrationInfo> device_allocator_registrations_;
 };
 
-#define REGISTER_DEVICE_ALLOCATOR_WITH_MEM_TYPE(name, func, max_mem, mem_type) \
-  class REGISTER_DEVICE_ALLOCATOR_##name {                                     \
-   public:                                                                     \
-    REGISTER_DEVICE_ALLOCATOR_##name() {                                       \
-      DeviceAllocatorRegistry::Instance().RegisterDeviceAllocator(             \
-          std::string(#name), func, max_mem, mem_type);                        \
-    }                                                                          \
-  };                                                                           \
-  REGISTER_DEVICE_ALLOCATOR_##name g_REGISTER_DEVICE_ALLOCATOR_##name;
-
-#define REGISTER_DEVICE_ALLOCATOR(name, func, max_mem) \
-  REGISTER_DEVICE_ALLOCATOR_WITH_MEM_TYPE(name, func, max_mem, kMemTypeDefault)
-
 }  // namespace Lotus

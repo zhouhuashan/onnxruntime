@@ -6,18 +6,6 @@
 
 namespace Lotus {
 
-REGISTER_DEVICE_ALLOCATOR_WITH_MEM_TYPE(
-    Cuda,
-    [](int id) { return std::make_unique<CUDAAllocator>(id); },
-    std::numeric_limits<size_t>::max(),  //TODO: set correct gpu memory limit?
-    kMemTypeDefault)
-
-REGISTER_DEVICE_ALLOCATOR_WITH_MEM_TYPE(
-    CudaPinned,
-    [](int) { return std::make_unique<CUDAPinnedAllocator>(); },
-    std::numeric_limits<size_t>::max(),  //TODO: set correct cpu memory limit?
-    kMemTypeCPUOutput)
-
 static CUDAExecutionProvider* GetCUDAExecutionProvider(const SessionState* session_state) {
   return dynamic_cast<CUDAExecutionProvider*>(session_state->GetExecutionProvider(LotusIR::kCudaExecutionProvider));
 }

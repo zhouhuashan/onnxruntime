@@ -32,23 +32,20 @@ class CPUExecutionProvider : public IExecutionProvider {
  public:
   explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info)
       : cpu_transformer_(info.name) {
-    auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
-    auto cpu_allocator_creator = device_factories.find(CPU);
-    if (cpu_allocator_creator != device_factories.end()) {
+    DeviceAllocatorRegistrationInfo device_info({kMemTypeDefault, [](int) { return std::make_unique<CPUAllocator>(); }, std::numeric_limits<size_t>::max()});
 #ifdef USE_JEMALLOC
-      //JEMalloc already has memory pool, so just use device allocator.
+    //JEMalloc already has memory pool, so just use device allocator.
+    InsertAllocator(kMemTypeDefault,
+                    std::shared_ptr<IArenaAllocator>(
+                        std::make_unique<DummyArena>(std::move(device_info.factory(0)))));
+#else
+    if (info.create_arena)
+      InsertAllocator(kMemTypeDefault, CreateAllocator(device_info));
+    else
       InsertAllocator(kMemTypeDefault,
                       std::shared_ptr<IArenaAllocator>(
-                          std::make_unique<DummyArena>(std::move(cpu_allocator_creator->second.factory(0)))));
-#else
-      if (info.create_arena)
-        InsertAllocator(kMemTypeDefault, CreateAllocator(cpu_allocator_creator->second));
-      else
-        InsertAllocator(kMemTypeDefault,
-                        std::shared_ptr<IArenaAllocator>(
-                            std::make_unique<DummyArena>(cpu_allocator_creator->second.factory(0))));
+                          std::make_unique<DummyArena>(device_info.factory(0))));
 #endif
-    }
   }
 
   const LotusIR::GraphTransformer& GetTransformer() const override {

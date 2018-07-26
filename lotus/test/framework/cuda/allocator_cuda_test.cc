@@ -2,15 +2,16 @@
 #include "test/framework/test_utils.h"
 #include "gtest/gtest.h"
 #include "cuda_runtime.h"
+#include "core/providers/cuda/cuda_allocator.h"
 
 namespace Lotus {
 namespace Test {
 TEST(AllocatorTest, CUDAAllocatorTest) {
   int cuda_device_id = 0;
-  auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
-  auto cuda_allocator_creator = device_factories.find(CUDA);
-  EXPECT_TRUE(cuda_allocator_creator != device_factories.end());
-  auto cuda_arena = CreateAllocator(cuda_allocator_creator->second, cuda_device_id);
+  DeviceAllocatorRegistrationInfo default_allocator_info({kMemTypeDefault,
+                                                          [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
+
+  auto cuda_arena = CreateAllocator(default_allocator_info, cuda_device_id);
 
   size_t size = 1024;
 
@@ -23,9 +24,10 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
   auto cuda_addr = cuda_arena->Alloc(size);
   EXPECT_TRUE(cuda_addr);
 
-  auto pinned_allocator_creator = device_factories.find(CUDA_PINNED);
-  EXPECT_TRUE(pinned_allocator_creator != device_factories.end());
-  auto pinned_allocator = CreateAllocator(pinned_allocator_creator->second);
+  DeviceAllocatorRegistrationInfo pinned_allocator_info({kMemTypeCPUOutput,
+                                                         [](int) { return std::make_unique<CUDAPinnedAllocator>(); }, std::numeric_limits<size_t>::max()});
+
+  auto pinned_allocator = CreateAllocator(pinned_allocator_info);
 
   EXPECT_EQ(pinned_allocator->Info().name, CUDA_PINNED);
   EXPECT_EQ(pinned_allocator->Info().id, 0);

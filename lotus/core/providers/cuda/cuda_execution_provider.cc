@@ -3,6 +3,7 @@
 #include "core/framework/transformer_memcpy.h"
 #include "core/framework/memcpy.h"
 #include "cuda_fence.h"
+#include "cuda_allocator.h"
 
 using namespace LotusIR;
 using namespace Lotus::Common;
@@ -51,16 +52,13 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
   CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyIn], cudaStreamNonBlocking));
   CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyOut], cudaStreamNonBlocking));
 
-  auto& device_factories = DeviceAllocatorRegistry::Instance().AllRegistrations();
+  DeviceAllocatorRegistrationInfo default_allocator_info({kMemTypeDefault,
+                                                          [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
+  InsertAllocator(kMemTypeDefault, CreateAllocator(default_allocator_info, device_id_));
 
-  typedef std::pair<std::string, MemType> AllocCreateInfo;
-  std::vector<AllocCreateInfo> all_info({{CUDA, kMemTypeDefault},
-                                         {CUDA_PINNED, kMemTypeCPUOutput}});
-  for (auto pair : all_info) {
-    auto iter = device_factories.find(pair.first);
-    if (iter != device_factories.end())
-      InsertAllocator(pair.second, CreateAllocator(iter->second, device_id_));
-  }
+  DeviceAllocatorRegistrationInfo pinned_allocator_info({kMemTypeCPUOutput,
+                                                          [](int) { return std::make_unique<CUDAPinnedAllocator>(); }, std::numeric_limits<size_t>::max()});
+  InsertAllocator(kMemTypeCPUOutput, CreateAllocator(pinned_allocator_info, device_id_));
 }
 
 CUDAExecutionProvider::~CUDAExecutionProvider() {
