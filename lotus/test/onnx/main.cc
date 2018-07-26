@@ -4,7 +4,7 @@
 #include <core/framework/allocator.h>
 #include <core/framework/op_kernel.h>
 #include <core/common/logging/sinks/clog_sink.h>
-#include <core/framework/inference_session.h>
+#include <core/session/inference_session.h>
 #include <core/common/logging/logging.h>
 #include <core/platform/env.h>
 #include <core/providers/cpu/cpu_execution_provider.h>

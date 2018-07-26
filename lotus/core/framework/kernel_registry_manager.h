@@ -11,9 +11,13 @@ class OpKernel;
 struct KernelCreateInfo;
 class IExecutionProvider;
 class SessionState;
+enum class KernelRegistryPriority {
+  HighPriority,
+  LowPriority
+};
 class KernelRegistryManager {
  public:
-  void RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry);
+  void RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry, KernelRegistryPriority priority);
 
   Status CreateKernel(const LotusIR::Node& node,
                       const IExecutionProvider* execution_provider,

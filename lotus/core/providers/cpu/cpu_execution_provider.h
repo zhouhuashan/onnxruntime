@@ -27,6 +27,9 @@ class CPUTransformer : public LotusIR::GraphTransformer {
   }
 };
 
+struct KernelCreateInfo;
+void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn);
+
 // Logical device representation.
 class CPUExecutionProvider : public IExecutionProvider {
  public:
@@ -81,6 +84,8 @@ class CPUExecutionProvider : public IExecutionProvider {
     // The CPU interface does not return anything interesting.
     return nullptr;
   }
+
+  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const;
 
  private:
   CPUTransformer cpu_transformer_;

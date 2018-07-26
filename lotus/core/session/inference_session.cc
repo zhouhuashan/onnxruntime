@@ -1,4 +1,4 @@
-#include "core/framework/inference_session.h"
+#include "core/session/inference_session.h"
 
 #include <memory>
 #include <mutex>
@@ -25,6 +25,7 @@
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/node_placement.h"
 #include "core/framework/mldata_type_utils.h"
+#include "core/framework/transformer_memcpy.h"
 
 using namespace onnx;
 namespace Lotus {
@@ -70,7 +71,7 @@ class InferenceSession::Impl {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for custom registry");
     }
 
-    session_state_.GetKernelRegistryManager().RegisterKernelRegistry(custom_registry);
+    session_state_.GetKernelRegistryManager().RegisterKernelRegistry(custom_registry, KernelRegistryPriority::HighPriority);
     custom_schema_registries_.push_back(custom_registry);
     return Status::OK();
   }
@@ -322,7 +323,7 @@ class InferenceSession::Impl {
 
                 // note that KernelCreateInfo may not exist for custom kernel
                 const KernelCreateInfo* kci = nullptr;
-                GetOpKernelRegistry().SearchKernelRegistry(node, &kci);
+                session_state_.GetKernelRegistryManager().SearchKernelRegistry(node, &kci);
 
                 SessionState::NodeInfo node_info(index, &node, kci);
 
@@ -949,14 +950,25 @@ class InferenceSession::Impl {
     for (auto& p : providers) {
       provider_preference.push_back(p->Type());
     }
+
+    // collect the kernel registries from execution providers;
+    for (auto& provider : providers) {
+      session_state_.GetKernelRegistryManager().RegisterKernelRegistry(provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);  // push it with lower priority than custom kernels.
+    }
+
+    // insert copy nodes
+    for (auto& provider : providers) {
+      if (provider->Type() != LotusIR::kCpuExecutionProvider) {
+        TransformerMemcpyImpl copy_impl(graph, provider->Type());
+        copy_impl.ModifyGraph(session_state_.GetKernelRegistryManager());
+      }
+    }
+
     std::vector<const KernelRegistry*> registries;
     auto custom_registries = session_state_.GetKernelRegistryManager().GetAllKernelRegistries();
     //The order of registeries represent the priority, put the custom register with higher priority
     registries.assign(custom_registries.begin(),
                       custom_registries.end());
-    // must call this to create built-in function maps prior to node placement
-    GetOpKernelRegistry().kernel_creator_fn_map();
-    registries.push_back(&GetOpKernelRegistry());
 
     //do node placement based on registered kernels
     bool modified = false;
@@ -973,8 +985,6 @@ class InferenceSession::Impl {
     for (auto registry : session_state_.GetKernelRegistryManager().GetAllKernelRegistries()) {
       insert_cast_transformer_.AddKernelRegistry(registry);
     }
-
-    insert_cast_transformer_.AddKernelRegistry(&GetOpKernelRegistry());
 
     LOTUS_RETURN_IF_ERROR(insert_cast_transformer_.Apply(graph, &modified));
 
@@ -1210,13 +1220,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
-    Common::Status status = session_state_.GetKernelRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
-
-    if (status.IsOK()) {
-      return status;
-    }
-
-    return GetOpKernelRegistry().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
+    return session_state_.GetKernelRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
   }
 
   Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {

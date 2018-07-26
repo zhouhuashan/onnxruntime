@@ -3,7 +3,7 @@
 #include <vector>
 #include "TestResultStat.h"
 #include <core/common/common.h>
-#include <core/framework/inference_session.h>
+#include <core/session/inference_session.h>
 #include "test/framework/TestAllocatorManager.h"
 
 #include <experimental/filesystem>

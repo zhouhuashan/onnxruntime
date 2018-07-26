@@ -6,13 +6,7 @@
 #include "core/common/logging/logging.h"
 using namespace Lotus::Common;
 namespace Lotus {
-
-KernelRegistry opKernelRegistry(true, RegisterOperatorKernels);
-
-KernelRegistry& GetOpKernelRegistry() {
-  return opKernelRegistry;
-}
-
+	
 std::multimap<std::string, KernelCreateInfo> const& KernelRegistry::kernel_creator_fn_map() const
 {
   std::call_once(kernelCreationFlag, kernel_reg_fn_, [&](KernelCreateInfo&& info) { RegisterInternal(info); });
@@ -283,7 +277,7 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
 bool KernelRegistry::CanExecutionProviderCreateKernel(
     const LotusIR::Node& node,
     LotusIR::ProviderType exec_provider) const {
-  auto range = kernel_creator_fn_map_->equal_range(node.OpType());
+  auto range = kernel_creator_fn_map().equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     if (!i->second.status.IsOK()) {

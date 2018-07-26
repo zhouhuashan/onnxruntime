@@ -2,6 +2,7 @@
 #include "core/framework/transformer_memcpy.h"
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
+#include "test_utils.h"
 using namespace onnx;
 namespace Lotus {
 namespace Test {
@@ -88,9 +89,13 @@ TEST(TransformerTest, MemcpyTransformerTest) {
   auto status = graph->Resolve();
   ASSERT_TRUE(status.IsOK());
 
+  auto cpu_execution_provider = TestCPUExecutionProvider();
+  KernelRegistryManager test_registry_manager;
+  test_registry_manager.RegisterKernelRegistry(cpu_execution_provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
+
   TransformerMemcpyImpl transformer(graph, LotusIR::kCudaExecutionProvider);
 
-  bool modified = transformer.ModifyGraph();
+  bool modified = transformer.ModifyGraph(test_registry_manager);
   EXPECT_TRUE(modified);
 
   status = graph->Resolve();

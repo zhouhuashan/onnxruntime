@@ -12,10 +12,10 @@ class TransformerMemcpyImpl {
   TransformerMemcpyImpl(LotusIR::Graph* graph, const std::string& provider)
       : graph_(graph), provider_(provider) {}
 
-  bool ModifyGraph();
+  bool ModifyGraph(const KernelRegistryManager& schema_registries);
 
  private:
-  void ProcessDefs(LotusIR::Node& node);
+  void ProcessDefs(LotusIR::Node& node, const KernelRegistryManager& kernel_registries);
   void AddCopyNode(const LotusIR::NodeArg* arg, bool is_input);
   void ProcessInitializers();
 

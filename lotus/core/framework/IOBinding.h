@@ -6,7 +6,7 @@
 #include "core/framework/execution_provider.h"
 #include "core/common/status.h"
 #include "core/framework/ml_value.h"
-#include "core/framework/inference_session.h"
+#include "core/session/inference_session.h"
 #include "core/common/logging/logging.h"
 
 namespace Lotus {

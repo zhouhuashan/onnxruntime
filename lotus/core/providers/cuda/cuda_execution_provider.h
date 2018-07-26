@@ -88,6 +88,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
       deferred_release_cpu_ptr[current_deferred_release_event].push_back(p);
   }
 
+  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const;
+
  private:
   CUDATransformer transformer_;
   int device_id_;
@@ -101,5 +103,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
   cudaEvent_t current_deferred_release_event = nullptr;
   std::unordered_map<cudaEvent_t, std::vector<void*>> deferred_release_cpu_ptr;
 };
+
+struct KernelCreateInfo;
+void RegisterCudaKernels(std::function<void(KernelCreateInfo&&)> create_fn);
 
 }  // namespace Lotus

@@ -1,4 +1,4 @@
-#include "core/framework/inference_session.h"
+#include "core/session/inference_session.h"
 
 #include <algorithm>
 #include <functional>

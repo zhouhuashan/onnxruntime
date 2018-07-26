@@ -28,6 +28,17 @@ else()
   target_link_libraries(lotus_providers PUBLIC lotus_framework lotus_common PRIVATE ${lotus_EXTERNAL_LIBRARIES})
 endif()
 
+file(GLOB lotus_session_srcs
+    "${LOTUS_ROOT}/core/session/*.h"
+    "${LOTUS_ROOT}/core/session/*.cc"
+    )
+
+add_library(lotus_session ${lotus_session_srcs})
+target_include_directories(lotus_session PRIVATE $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+add_dependencies(lotus_session onnx)
+
+set_target_properties(lotus_session PROPERTIES FOLDER "Lotus")
+
 if (lotus_USE_CUDA)
     file(GLOB_RECURSE lotus_providers_cuda_cc_srcs
         "${LOTUS_ROOT}/core/providers/cuda/*.h"

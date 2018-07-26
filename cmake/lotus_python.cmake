@@ -37,15 +37,13 @@ set(lotus_pybind_srcs
     ${LOTUS_ROOT}/python/lotus_pybind_state.cc
 )
 
-add_whole_archive_flag(lotus_providers lotus_providers_whole_archive)
-add_whole_archive_flag(lotus_framework lotus_framework_whole_archive)
 add_library(lotus_pybind11_state MODULE ${lotus_pybind_srcs})
-add_dependencies(lotus_pybind11_state lotus_framework lotus_providers pybind11)
+add_dependencies(lotus_pybind11_state lotus_session lotus_framework lotus_providers pybind11)
 if (MSVC)
   # if MSVC, pybind11 looks for release version of python lib (pybind11/detail/common.h undefs _DEBUG)
-  target_link_libraries(lotus_pybind11_state ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
+  target_link_libraries(lotus_pybind11_state lotus_session lotus_providers lotus_framework lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
 else()
-  target_link_libraries(lotus_pybind11_state ${lotus_providers_whole_archive} ${lotus_framework_whole_archive} lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
+  target_link_libraries(lotus_pybind11_state lotus_session lotus_providers lotus_framework lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
   set_target_properties(lotus_pybind11_state PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
 endif()
 

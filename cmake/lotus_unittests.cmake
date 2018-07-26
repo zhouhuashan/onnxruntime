@@ -34,7 +34,7 @@ function(AddTest)
   endif()
 
   # Add the define for conditionally using the framework Environment class in TestEnvironment
-  if (${lotus_framework_whole_archive} IN_LIST _UT_LIBS)
+  if (lotus_framework IN_LIST _UT_LIBS)
     # message("Adding -DHAVE_FRAMEWORK_LIB for " ${_UT_TARGET})
     target_compile_definitions(${_UT_TARGET} PUBLIC -DHAVE_FRAMEWORK_LIB)
   endif()
@@ -51,12 +51,6 @@ function(AddTest)
     WORKING_DIRECTORY $<TARGET_FILE_DIR:${_UT_TARGET}>
   )
 endfunction(AddTest)
-
-add_whole_archive_flag(lotus_framework lotus_framework_whole_archive)
-add_whole_archive_flag(lotus_providers lotus_providers_whole_archive)
-if(lotus_USE_CUDA)
-  add_whole_archive_flag(lotus_providers_cuda lotus_providers_cuda_whole_archive)
-endif()
 
 file(GLOB lotus_test_utils_src
     "${LOTUS_ROOT}/test/*.h"
@@ -120,9 +114,9 @@ set(lotus_test_ir_libs
 )
 
 set(lotus_test_framework_libs
-    ${lotus_providers_whole_archive} # code smell! see if CPUExecutionProvider should move to framework so this isn't needed.
-    ${lotus_providers_cuda_whole_archive}
-    ${lotus_framework_whole_archive}
+    lotus_session
+    lotus_providers
+    lotus_framework
     lotusIR_graph
     onnx
     onnx_proto
@@ -131,14 +125,18 @@ set(lotus_test_framework_libs
     gtest gmock
 )
 
+if(lotus_USE_CUDA)
+  list(APPEND lotus_test_framework_libs lotus_providers_cuda)
+endif()
+
 if(WIN32)
     list(APPEND lotus_test_framework_libs Advapi32)
 endif()
     
 set(lotus_test_providers_libs
-    ${lotus_providers_whole_archive}
-    ${lotus_providers_cuda_whole_archive}
-    ${lotus_framework_whole_archive}
+    lotus_session
+    lotus_providers
+    lotus_framework
     lotusIR_graph
     onnx
     onnx_proto
@@ -146,6 +144,10 @@ set(lotus_test_providers_libs
     protobuf::libprotobuf
     gtest gmock
 )
+
+if(lotus_USE_CUDA)
+  list(APPEND lotus_test_providers_libs lotus_providers_cuda)
+endif()
 
 set (lotus_test_providers_dependencies lotus_providers)
 
@@ -265,9 +267,9 @@ lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${PROJECT_SOURCE_DIR}/external/o
 
 set(onnx_test_libs 
     ${FS_STDLIB}
-    ${lotus_providers_whole_archive}
-    ${lotus_providers_cuda_whole_archive}
-    ${lotus_framework_whole_archive}
+    lotus_session
+    lotus_providers
+    lotus_framework
     lotusIR_graph
     onnx
     onnx_proto
@@ -278,6 +280,10 @@ set(onnx_test_libs
 
 if (lotus_USE_MLAS AND WIN32)
   list(APPEND onnx_test_libs mlas)
+endif()
+
+if(lotus_USE_CUDA)
+  list(APPEND onnx_test_libs lotus_providers_cuda)
 endif()
 
 if(lotus_USE_CUDA)

@@ -1,5 +1,5 @@
 #include "core/framework/tensor.h"
-#include "core/framework/inference_session.h"
+#include "core/session/inference_session.h"
 #include "test/providers/provider_test_utils.h"
 
 #include "gtest/gtest.h"

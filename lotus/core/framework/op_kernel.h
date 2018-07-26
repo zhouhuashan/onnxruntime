@@ -245,12 +245,6 @@ class KernelRegistry {
   std::function<void(std::function<void(KernelCreateInfo&&)>)> kernel_reg_fn_;
 };
 
-// There is a single shared kernel registry used by all ONNX defined ops.
-KernelRegistry& GetOpKernelRegistry();
-
-// Methods to register OpKernels
-extern void RegisterOperatorKernels(std::function<void(KernelCreateInfo&&)>);
-
 // Forward declarations for the non-specialized BuildKernel method.
 template <typename T>
 KernelCreateInfo BuildKernel();

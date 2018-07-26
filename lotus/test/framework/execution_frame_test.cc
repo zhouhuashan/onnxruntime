@@ -48,6 +48,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   state.AddMLValueNameIdx("X", 0);
   state.AddMLValueNameIdx("Y", 1);
   std::string provider_type = cpu_xp->Type();
+  state.GetKernelRegistryManager().RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
   state.AddExecutionProvider(provider_type, std::move(cpu_xp));
   node->SetExecutionProviderType(provider_type);
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
@@ -122,6 +123,7 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   state.AddMLValueNameIdx("Y", 1);
   auto cpu_xp = CreateCPUExecutionProvider();
   std::string provider_type = cpu_xp->Type();
+  state.GetKernelRegistryManager().RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
   state.AddExecutionProvider(provider_type, std::move(cpu_xp));
   vector<MLValue> outputs;
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X", value}},
@@ -167,6 +169,7 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   state.AddMLValueNameIdx("T1", 3);
   state.AddMLValueNameIdx("T2", 4);
   state.AddMLValueNameIdx("T3", 5);
+  state.GetKernelRegistryManager().RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
   state.AddExecutionProvider(xp_type, std::move(cpu_xp));
   auto cpu_allocator = state.GetExecutionProvider(xp_type)->GetAllocator();
   MLValue v1, v2, v3;

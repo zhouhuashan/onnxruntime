@@ -4,7 +4,7 @@
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/common/logging/logging.h>
 #include <core/framework/environment.h>
-#include <core/framework/inference_session.h>
+#include <core/session/inference_session.h>
 #include <core/platform/env.h>
 #include <core/framework/IOBinding.h>
 

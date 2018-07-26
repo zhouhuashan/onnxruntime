@@ -19,7 +19,7 @@
 #include "core/common/logging/logging.h"
 #include "core/framework/compare_mlvalue.h"
 #include "core/framework/data_types.h"
-#include "core/framework/inference_session.h"
+#include "core/session/inference_session.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 
 #if !defined(_MSC_VER)

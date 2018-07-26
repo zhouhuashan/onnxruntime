@@ -27,7 +27,7 @@ This transformer does not currently optimize copies between, e.g., two different
 
 */
 
-bool TransformerMemcpyImpl::ModifyGraph() {
+bool TransformerMemcpyImpl::ModifyGraph(const KernelRegistryManager& kernel_registries) {
   bool modified = false;
 
   // find defs that require copy
@@ -35,7 +35,7 @@ bool TransformerMemcpyImpl::ModifyGraph() {
     if (graph_->IsSourceNode(node) || graph_->IsSinkNode(node))
       continue;
     //don't need to do node placement here now, Lotus will do it according to registred kernels.
-    ProcessDefs(node);
+    ProcessDefs(node, kernel_registries);
   }
 
   // for initializers shared by different providers, create dups
@@ -60,12 +60,12 @@ bool TransformerMemcpyImpl::ModifyGraph() {
   return modified;
 }
 
-void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node) {
+void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node, const KernelRegistryManager& kernel_registries) {
   if (node.GetExecutionProviderType() == provider_) {
     provider_nodes_.insert(&node);
     // note KernelCreateInfo might be nullptr for custom kernel
     const KernelCreateInfo* kci = nullptr;
-    GetOpKernelRegistry().SearchKernelRegistry(node, &kci);
+	kernel_registries.SearchKernelRegistry(node, &kci);
     const auto* input_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(

@@ -4,7 +4,7 @@
 #include <memory>
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
-#include "core/framework/inference_session.h"
+#include "core/session/inference_session.h"
 #ifdef USE_CUDA
 #include "core/providers/cuda/cuda_execution_provider.h"
 #endif

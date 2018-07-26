@@ -8,7 +8,7 @@
 #include "core/graph/graph_transformer.h"
 
 namespace Lotus {
-
+class KernelRegistry;
 class OpKernelContext;
 
 // Logical device representation.
@@ -35,6 +35,8 @@ class IExecutionProvider {
     else
       return nullptr;
   }
+
+  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const = 0;
 
   // Run the computation of a given node.
   virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;

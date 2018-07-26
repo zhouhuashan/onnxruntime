@@ -4,7 +4,7 @@
 #include "core/common/status.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/execution_frame.h"
-#include "core/framework/inference_session.h"
+#include "core/framework/framework_common.h"
 #include "core/framework/ml_value.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"

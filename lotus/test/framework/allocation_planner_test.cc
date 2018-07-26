@@ -222,8 +222,9 @@ class PlannerTest : public ::testing::Test {
       BindKernel(binding.first, binding.second);
     }
 
-    state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider, std::make_unique<CPUExecutionProvider>(
-                                                                    CPUExecutionProviderInfo()));
+    auto cpu_execution_provider = std::make_unique<CPUExecutionProvider>(CPUExecutionProviderInfo());
+    state_.GetKernelRegistryManager().RegisterKernelRegistry(cpu_execution_provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
+    state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider, std::move(cpu_execution_provider));
 
     SequentialPlannerTestContext test_context(&shape_map_);
     auto status = SequentialPlanner::CreatePlan(state_, test_context, &plan_);
