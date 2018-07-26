@@ -16,7 +16,7 @@ enum EventCategory {
 /*
 Event descriptions for the above session events.
 */
-static const std::string event_categor_names_[EVENT_CATEGORY_MAX] = {
+static constexpr const char* event_categor_names_[EVENT_CATEGORY_MAX] = {
     "Session",
     "Node"};
 
