@@ -2,6 +2,7 @@
 
 import argparse
 import fileinput
+import getpass
 import glob
 import logging
 import multiprocessing
@@ -88,19 +89,57 @@ def get_config_build_dir(build_dir, config):
     # build directory per configuration
     return os.path.join(build_dir, config)
 
-def run_subprocess(args, cwd=None):
+def run_subprocess(args, cwd=None, capture=False):
     log.debug("Running subprocess: \n%s", args)
-    subprocess.run(args, cwd=cwd, check=True)
+
+    if (capture):
+        result = subprocess.run(args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    else:
+        result = subprocess.run(args, cwd=cwd, check=True)
+
+    return result
 
 def update_submodules(source_dir):
     run_subprocess(["git", "submodule", "update", "--init", "--recursive"], cwd=source_dir)
 
+def is_docker():
+    path = '/proc/self/cgroup'
+    return (
+        os.path.exists('/.dockerenv') or
+        os.path.isfile(path) and any('docker' in line for line in open(path))
+    )
+
+def is_sudo():
+    return 'SUDO_UID' in os.environ.keys()
+
+def install_apt_package(package):
+    have = package in str(run_subprocess(["apt", "list", "--installed", package], capture=True).stdout)
+    if not have:
+        if is_sudo():
+            run_subprocess(['apt-get', 'install', '-y', package])
+        else:
+            log.error(package + " APT package missing. Please re-run this script using sudo to install.")
+            sys.exit(-1)
+
 def install_ubuntu_deps(args):
-    try:
-        run_subprocess(['add-apt-repository', 'ppa:deadsnakes/ppa'])
-    except Exception as e:
-        log.error("Could not install ubuntu dependency packages {}".format(str(e)))
-        sys.exit(-1)
+    'Check if the necessary Ubuntu dependencies are installed. Not required on docker. Provider help output if missing.'
+
+    # check we need the packages first
+    if not (args.enable_pybind or args.use_openblas):
+        return
+
+    # not needed on docker as packages are pre-installed
+    if not is_docker():
+        try:
+            if args.enable_pybind:
+                install_apt_package("python3")
+
+            if args.use_openblas:
+                install_apt_package("libopenblas-dev")
+
+        except Exception as e:
+            log.error("Error setting up required APT packages. {}".format(str(e)))
+            sys.exit(-1)
 
 def install_python_deps():
     dep_packages = ['setuptools', 'wheel', 'numpy']
