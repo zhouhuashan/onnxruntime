@@ -97,7 +97,7 @@ class MatMulComputeHelper {
       } else {
         if (left_num_dims == 1) {
           LOTUS_RETURN_IF_NOT(num_dims_with_pad - 1 == num_output_dims);
-          LOTUS_RETURN_IF_NOT(K_ == right_shape[right_num_dims - 1], "MatMul dimension mismatch");
+          LOTUS_RETURN_IF_NOT(K_ == right_shape[right_num_dims - 2], "MatMul dimension mismatch");
           // left (K), right (...K,N), output (...N)
           output_dims[num_output_dims - 1] = N_;
         } else {
