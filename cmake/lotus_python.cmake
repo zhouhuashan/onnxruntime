@@ -38,12 +38,32 @@ set(lotus_pybind_srcs
 )
 
 add_library(lotus_pybind11_state MODULE ${lotus_pybind_srcs})
-add_dependencies(lotus_pybind11_state lotus_session lotus_framework lotus_providers pybind11)
+set(lotus_pybind11_state_libs
+    lotus_session
+    lotus_providers
+    lotus_framework
+    lotusIR_graph
+    onnx
+    lotus_common
+)
+
+set(lotus_pybind11_state_dependencies
+    lotus_session
+    lotus_framework
+    lotus_providers
+    pybind11
+)
+
+if(lotus_USE_MKLDNN)
+    list(APPEND lotus_pybind11_state_libs lotus_providers_mkldnn)
+    list(APPEND lotus_pybind11_state_dependencies lotus_providers_mkldnn)
+endif()
+add_dependencies(lotus_pybind11_state ${lotus_pybind11_state_dependencies})
 if (MSVC)
   # if MSVC, pybind11 looks for release version of python lib (pybind11/detail/common.h undefs _DEBUG)
-  target_link_libraries(lotus_pybind11_state lotus_session lotus_providers lotus_framework lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
+  target_link_libraries(lotus_pybind11_state ${lotus_pybind11_state_libs} ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
 else()
-  target_link_libraries(lotus_pybind11_state lotus_session lotus_providers lotus_framework lotusIR_graph onnx lotus_common ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
+  target_link_libraries(lotus_pybind11_state ${lotus_pybind11_state_libs} ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
   set_target_properties(lotus_pybind11_state PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
 endif()
 
@@ -101,6 +121,14 @@ if (lotus_USE_MKLDNN)
     TARGET lotus_pybind11_state POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         ${MKLDNN_LIB_DIR}/${MKLDNN_SHARED_LIB}
+        $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/
+  )
+endif()
+if (lotus_USE_MKLML)
+  add_custom_command(
+    TARGET lotus_pybind11_state POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${MKLDNN_LIB_DIR}/${MKLML_SHARED_LIB} ${MKLDNN_LIB_DIR}/${IOMP5MD_SHARED_LIB}
         $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/
   )
 endif()

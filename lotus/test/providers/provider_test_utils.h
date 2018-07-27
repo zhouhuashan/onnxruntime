@@ -192,7 +192,7 @@ struct OpTester {
   void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
     add_attribute_funcs_.emplace_back(
-        [ name = std::move(name), value = std::move(value) ](LotusIR::Node & node) { node.AddAttribute(name, value); });
+        [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
   }
 
   enum class ExpectResult {
@@ -202,6 +202,7 @@ struct OpTester {
 
   void Run(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "", LotusIR::ProviderType provider_type = LotusIR::kCpuExecutionProvider);
   void RunOnCpuAndCuda(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
+  void RunOnMklDnn(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
 
   struct Data {
     LotusIR::NodeArg def_;

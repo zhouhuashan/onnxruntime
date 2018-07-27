@@ -13,6 +13,10 @@
 #include <core/framework/environment.h>
 #include "core/session/inference_session.h"
 #include "core/graph/graph.h"
+#if USE_MKLDNN
+#include "core/providers/mkldnn/mkldnn_execution_provider.h"
+#endif
+#include "core/providers/cpu/cpu_execution_provider.h"
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4267 4996 4503 4003)
@@ -301,6 +305,19 @@ void addObjectMethods(py::module& m) {
       .def("load_model", [](InferenceSession* sess, const std::string& path) {
         auto status = sess->Load(path);
 
+        if (!status.IsOK()) {
+          throw std::runtime_error(status.ToString().c_str());
+        }
+
+#ifdef USE_MKLDNN
+        MKLDNNExecutionProviderInfo epi;
+        status = sess->RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi));
+        if (!status.IsOK()) {
+          throw std::runtime_error(status.ToString().c_str());
+        }
+#endif
+        CPUExecutionProviderInfo cpu_epi;
+        status = sess->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(cpu_epi));
         if (!status.IsOK()) {
           throw std::runtime_error(status.ToString().c_str());
         }

@@ -113,12 +113,15 @@ void Gemm<float, CPUMathUtil>(
   int N_ = (int)N;
   int K_ = (int)K;
   // mkldnn_sgemm expects col major matrices, so we need to swap the operands A and B
-  mkldnn_sgemm(TransB == CblasNoTrans ? "N" : "T",
-               TransA == CblasNoTrans ? "N" : "T",
-               &N_, &M_, &K_,
-               &alpha, B, &ldb,
-               A, &lda,
-               &beta, C, &N_);
+  auto status = mkldnn_sgemm(TransB == CblasNoTrans ? "N" : "T",
+                             TransA == CblasNoTrans ? "N" : "T",
+                             &N_, &M_, &K_,
+                             &alpha, B, &ldb,
+                             A, &lda,
+                             &beta, C, &N_);
+  if (status != mkldnn_success) {
+    LOTUS_THROW("mkldnn_sgemm failed with status: " + status);
+  }
 #else
   auto C_mat = EigenMatrixMap<float>(C, N, M);
   if (beta == 0) {

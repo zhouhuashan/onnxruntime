@@ -13,21 +13,16 @@ try:
 except ImportError:
     bdist_wheel = None
 
-data = []
 if platform.system() == 'Linux':
-  pybind_module = path.join('python', 'lotus_pybind11_state.so')
-  mkl_dll = path.join('python', 'libmkldnn.so.0')
+  libs = ['lotus_pybind11_state.so', 'libmkldnn.so.0', 'libmklml.so', 'libiomp5md.so']
 else:
-  pybind_module = path.join('python', 'lotus_pybind11_state.pyd')
-  mkl_dll = path.join('python', 'mkldnn.dll')
+  libs = ['lotus_pybind11_state.pyd', 'mkldnn.dll', 'mklml.dll', 'libiomp5md.dll']
 
-data.append(pybind_module)
-if path.isfile(path.join('lotus', mkl_dll)):
-  data.append(mkl_dll)
+data = [path.join('python', x) for x in libs if path.isfile(path.join('lotus', 'python', x))]
 
 setup(
     name='lotus',
-    version='0.1.3',
+    version='0.1.4',
     description='Lotus Runtime Python bindings',
     long_description="Python bindings for Lotus Runtime.",
     author='Lotus team',

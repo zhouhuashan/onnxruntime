@@ -35,8 +35,8 @@ void CUDAAllocator::Free(void* p) {
 }
 
 const AllocatorInfo& CUDAAllocator::Info() const {
-  static AllocatorInfo cudaAllocatorInfo(CUDA, AllocatorType::kDeviceAllocator, device_id_, kMemTypeDefault);
-  return cudaAllocatorInfo;
+  static AllocatorInfo cuda_allocator_info(CUDA, AllocatorType::kDeviceAllocator, device_id_, kMemTypeDefault);
+  return cuda_allocator_info;
 }
 
 FencePtr CUDAAllocator::CreateFence(const SessionState* session_state) {
@@ -56,8 +56,8 @@ void CUDAPinnedAllocator::Free(void* p) {
 }
 
 const AllocatorInfo& CUDAPinnedAllocator::Info() const {
-  static AllocatorInfo cudaAllocatorInfo(CUDA_PINNED, AllocatorType::kDeviceAllocator, 0, kMemTypeCPUOutput);
-  return cudaAllocatorInfo;
+  static AllocatorInfo cuda_allocator_info(CUDA_PINNED, AllocatorType::kDeviceAllocator, 0, kMemTypeCPUOutput);
+  return cuda_allocator_info;
 }
 
 FencePtr CUDAPinnedAllocator::CreateFence(const SessionState* session_state) {

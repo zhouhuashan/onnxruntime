@@ -14,6 +14,8 @@ namespace Lotus {
 #define CPU "Cpu"
 #define CUDA "Cuda"
 #define CUDA_PINNED "CudaPinned"
+#define MKLDNN "MklDnn"
+#define MKLDNN_CPU "MklDnnCpu"
 
 // forward declaration
 class SessionState;

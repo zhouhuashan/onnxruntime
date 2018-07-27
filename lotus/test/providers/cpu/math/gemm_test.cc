@@ -21,6 +21,7 @@ TEST(MathOpTest, GemmNoTrans) {
                         {11.0f, 11.0f, 11.0f,
                          -9.0f, -9.0f, -9.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 TEST(MathOpTest, GemmBroadcast) {
@@ -40,6 +41,7 @@ TEST(MathOpTest, GemmBroadcast) {
                         {11.0f, 12.0f, 13.0f,
                          -9.0f, -8.0f, -7.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 TEST(MathOpTest, GemmTrans) {
@@ -61,6 +63,7 @@ TEST(MathOpTest, GemmTrans) {
                         {11.0f, 11.0f, 11.0f,
                          -9.0f, -9.0f, -9.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 TEST(MathOpTest, GemmAlphaBeta) {
@@ -80,6 +83,7 @@ TEST(MathOpTest, GemmAlphaBeta) {
                         {7.0f, 7.0f, 7.0f,
                          -3.0f, -3.0f, -3.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 TEST(MathOpTest, GemmNaN) {
@@ -99,6 +103,7 @@ TEST(MathOpTest, GemmNaN) {
                         {10.0f, 10.0f, 10.0f,
                          -10.0f, -10.0f, -10.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 TEST(MathOpTest, GemmScalarBroadcast) {
@@ -118,6 +123,7 @@ TEST(MathOpTest, GemmScalarBroadcast) {
                         {11.0f, 11.0f, 11.0f,
                          -9.0f, -9.0f, -9.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 TEST(MathOpTest, Gemm2DBroadcast) {
@@ -137,6 +143,7 @@ TEST(MathOpTest, Gemm2DBroadcast) {
                         {11.0f, 11.0f, 11.0f,
                          -8.0f, -8.0f, -8.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 TEST(MathOpTest, GemmFalseBroadcast) {
@@ -156,6 +163,7 @@ TEST(MathOpTest, GemmFalseBroadcast) {
                         {11.0f, 11.0f, 11.0f,
                          -8.0f, -8.0f, -8.0f});
   test.RunOnCpuAndCuda();
+  test.RunOnMklDnn();
 }
 
 }  // namespace Test

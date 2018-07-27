@@ -259,6 +259,11 @@ template <typename T>
 KernelCreateInfo BuildKernel();
 }  // namespace Cuda
 
+namespace MklDnn {
+template <typename T>
+KernelCreateInfo BuildKernel();
+}  // namespace MklDnn
+
 // Naming convention for operator kernel classes
 #define ONNX_OPERATOR_KERNEL_CLASS_NAME(provider, domain, ver, name) \
   provider##_##name##_##domain##_ver##ver

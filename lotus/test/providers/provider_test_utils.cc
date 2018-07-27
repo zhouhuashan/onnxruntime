@@ -8,6 +8,9 @@
 #ifdef USE_CUDA
 #include "core/providers/cuda/cuda_execution_provider.h"
 #endif
+#ifdef USE_MKLDNN
+#include "core/providers/mkldnn/mkldnn_execution_provider.h"
+#endif
 
 using namespace Lotus::Logging;
 
@@ -216,6 +219,11 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
       epi.device_id = 0;
       EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(epi)).IsOK());
 #endif
+    } else if (provider_type == LotusIR::kMklDnnExecutionProvider) {
+#ifdef USE_MKLDNN
+      MKLDNNExecutionProviderInfo epi;
+      EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi)).IsOK());
+#endif
     }
 
     status = session_object.Load(std::move(p_model));
@@ -291,6 +299,15 @@ void OpTester::RunOnCpuAndCuda(ExpectResult expect_result, const std::string& ex
   Run(expect_result, expected_failure_string, LotusIR::kCpuExecutionProvider);
 #ifdef USE_CUDA
   Run(expect_result, expected_failure_string, LotusIR::kCudaExecutionProvider);
+#endif
+}
+
+void OpTester::RunOnMklDnn(ExpectResult expect_result, const std::string& expected_failure_string) {
+#ifdef USE_MKLDNN
+  Run(expect_result, expected_failure_string, LotusIR::kMklDnnExecutionProvider);
+#else
+  UNUSED_PARAMETER(expect_result);
+  UNUSED_PARAMETER(expected_failure_string);
 #endif
 }
 

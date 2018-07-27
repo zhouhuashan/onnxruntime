@@ -81,4 +81,21 @@ if (lotus_USE_CUDA)
     include_directories(${CUDA_INCLUDE} ${CUDNN_INCLUDE})
 endif()
 
+if (lotus_USE_MKLDNN)
+    file(GLOB_RECURSE lotus_providers_mkldnn_cc_srcs
+        "${LOTUS_ROOT}/core/providers/mkldnn/*.h"
+        "${LOTUS_ROOT}/core/providers/mkldnn/*.cc"
+    )
+
+    source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_mkldnn_cc_srcs})
+    add_library(lotus_providers_mkldnn_cc_obj OBJECT ${lotus_providers_mkldnn_cc_srcs})
+    add_dependencies(lotus_providers_mkldnn_cc_obj eigen gsl onnx)
+    set_target_properties(lotus_providers_mkldnn_cc_obj PROPERTIES FOLDER "Lotus")
+    target_include_directories(lotus_providers_mkldnn_cc_obj PRIVATE $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+    add_library(lotus_providers_mkldnn $<TARGET_OBJECTS:lotus_providers_mkldnn_cc_obj>)
+    set_target_properties(lotus_providers_mkldnn PROPERTIES LINKER_LANGUAGE CXX)
+    set_target_properties(lotus_providers_mkldnn PROPERTIES FOLDER "Lotus")
+    target_link_libraries(lotus_providers_mkldnn PUBLIC lotus_framework lotus_common PRIVATE ${lotus_EXTERNAL_LIBRARIES})
+endif()
+
 

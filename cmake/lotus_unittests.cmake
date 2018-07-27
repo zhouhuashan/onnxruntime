@@ -129,6 +129,10 @@ if(lotus_USE_CUDA)
   list(APPEND lotus_test_framework_libs lotus_providers_cuda)
 endif()
 
+if(lotus_USE_MKLDNN)
+  list(APPEND lotus_test_framework_libs lotus_providers_mkldnn)
+endif()
+
 if(WIN32)
     list(APPEND lotus_test_framework_libs Advapi32)
 endif()
@@ -149,6 +153,10 @@ if(lotus_USE_CUDA)
   list(APPEND lotus_test_providers_libs lotus_providers_cuda)
 endif()
 
+if(lotus_USE_MKLDNN)
+  list(APPEND lotus_test_providers_libs lotus_providers_mkldnn)
+endif()
+
 set (lotus_test_providers_dependencies lotus_providers)
 
 if (lotus_USE_MLAS AND WIN32)
@@ -158,6 +166,10 @@ endif()
 if(lotus_USE_CUDA)
     list(APPEND lotus_test_providers_dependencies lotus_providers_cuda)
     list(APPEND lotus_test_providers_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+endif()
+
+if(lotus_USE_MKLDNN)
+    list(APPEND lotus_test_providers_dependencies lotus_providers_mkldnn)
 endif()
     
 if (SingleUnitTestProject)
@@ -286,6 +298,10 @@ if(lotus_USE_CUDA)
   list(APPEND onnx_test_libs lotus_providers_cuda)
 endif()
 
+if(lotus_USE_MKLDNN)
+  list(APPEND onnx_test_libs lotus_providers_mkldnn)
+endif()
+
 if(lotus_USE_CUDA)
   list(APPEND onnx_test_libs lotus_providers_cuda)
   list(APPEND onnx_test_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
@@ -300,10 +316,19 @@ if (lotus_USE_OPENBLAS)
 endif()
 
 if (lotus_USE_MKLDNN)
-  list(APPEND onnx_test_libs mkldnn)
+  list(APPEND onnx_test_libs lotus_providers_mkldnn mkldnn)
   add_custom_command(
     TARGET ${test_data_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${MKLDNN_LIB_DIR}/${MKLDNN_SHARED_LIB} $<TARGET_FILE_DIR:${test_data_target}>
+  )
+endif()
+
+if (lotus_USE_MKLML)
+  add_custom_command(
+    TARGET ${test_data_target} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${MKLDNN_LIB_DIR}/${MKLML_SHARED_LIB} ${MKLDNN_LIB_DIR}/${IOMP5MD_SHARED_LIB}
+        $<TARGET_FILE_DIR:${test_data_target}>
   )
 endif()
 
