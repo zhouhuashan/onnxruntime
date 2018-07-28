@@ -17,6 +17,7 @@
 
 #include "core/common/logging/sinks/clog_sink.h"
 #include "core/common/logging/logging.h"
+#include "core/framework/environment.h"
 #include "core/framework/compare_mlvalue.h"
 #include "core/framework/data_types.h"
 #include "core/session/inference_session.h"
@@ -36,6 +37,11 @@ class WinMLRuntime {
   WinMLRuntime() {
     using namespace Lotus;
     using namespace Lotus::Logging;
+
+    static std::unique_ptr<Lotus::Environment> lotus_env = nullptr;
+    static std::once_flag env_flag;
+    std::call_once(env_flag, []() { Lotus::Environment::Create(lotus_env); });
+
     static LoggingManager& s_default_logging_manager = DefaultLoggingManager();
     SessionOptions so;
     so.session_logid = "WinMLRuntime";
