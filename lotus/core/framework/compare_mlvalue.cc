@@ -1,6 +1,7 @@
 #include "compare_mlvalue.h"
 #include <cmath>
 #include <sstream>
+#include <google/protobuf/text_format.h>
 
 #include "core/inc/op_kernel_author.h"
 #include "core/util/math_cpuonly.h"
@@ -21,7 +22,9 @@ std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue
     const double diff = fabs(expected_output[di] - real_value);
     const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(expected_output[di]);
     if (diff > rtol) {
-      return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
+      std::ostringstream oss;
+      oss << "expected " << expected_output[di] << ", got " << real_value << ", diff: " << diff << ", tol=" << rtol;
+      return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, oss.str());
     }
   }
   return std::make_pair(COMPARE_RESULT::SUCCESS, "");
@@ -174,36 +177,24 @@ const char* ElementTypeToString(MLDataType type) {
   }
 }
 
-bool is_shape_equal(const TensorShape& v1, const ::onnx::TensorShapeProto& v2) {
-  const int len = v2.dim_size();
-  //because v1.NumDimensions() cannot be negative
+//The expected_shape could contain unknown dimensions, but the real_shape cannot
+bool AreShapesEqual(const TensorShape& real_shape, const ::onnx::TensorShapeProto& expected_shape) {
+  const int len = expected_shape.dim_size();
+  //because real_shape.NumDimensions() cannot be negative
   if (len < 0) return false;
-  if (v1.NumDimensions() != static_cast<size_t>(len)) return false;
+  if (real_shape.NumDimensions() != static_cast<size_t>(len)) return false;
   for (int i = 0; i != len; ++i) {
-    ::google::protobuf::int64 d = v2.dim(i).dim_value();
+    if (expected_shape.dim(i).has_dim_param()) {
+      //symbolic shape, cannot validate it right now
+      continue;
+    }
+    ::google::protobuf::int64 d = expected_shape.dim(i).dim_value();
     //dim value can be zero or negative, in such case, we assume it can match any value
-    if (d > 0 && d != v1[i]) return false;
+    if (d != real_shape[i]) return false;
   }
   return true;
 }
 
-std::string ToString(const ::onnx::TensorShapeProto& shape) {
-  std::string result;
-
-  result.append("{");
-  bool first = true;
-  for (int i = 0; i != shape.dim_size(); i++) {
-    if (!first) {
-      result.append(",");
-    }
-
-    result.append(std::to_string(shape.dim(i).dim_value()));
-    first = false;
-  }
-  result.append("}");
-
-  return result;
-}
 }  // namespace
 
 namespace Lotus {
@@ -248,9 +239,13 @@ std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const onnx::ValueInfoProt
       if (o1.DataType() != DataTypeImpl::ElementTypeFromProto(t.elem_type())) {
         return std::make_pair(COMPARE_RESULT::TYPE_MISMATCH, "");
       }
-      if (!is_shape_equal(o1.Shape(), t.shape())) {
+      if (!AreShapesEqual(o1.Shape(), t.shape())) {
+        std::string result;
+        if (!google::protobuf::TextFormat::PrintToString(t.shape(), &result)) {
+          result = "(unknown)";
+        }
         std::ostringstream oss;
-        oss << "Tensor shape mismatch, model file expects " << ToString(t.shape()) << ", real output is " << o1.Shape().ToString();
+        oss << "Tensor shape mismatch, model file expects '" << result << "', real output is " << o1.Shape().ToString();
         return std::make_pair(COMPARE_RESULT::SHAPE_MISMATCH, oss.str());
       }
     } else {
