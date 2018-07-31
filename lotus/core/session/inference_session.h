@@ -6,7 +6,6 @@
 #include "core/common/logging/logging.h"
 #include "core/framework/framework_common.h"
 #include "core/framework/ml_value.h"
-#include "core/graph/schema_registry.h"
 #include "core/inc/op_kernel_author.h"
 #include "core/platform/types.h"
 

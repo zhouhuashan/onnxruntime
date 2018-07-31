@@ -16,6 +16,7 @@ limitations under the License.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dlfcn.h>
 
 #include <thread>
 #include <vector>
@@ -144,6 +145,50 @@ class PosixEnv : public Env {
       close(fd);
     }
     return Common::Status::OK();
+  }
+
+  virtual Common::Status LoadLibrary(const std::string& library_filename, void** handle) const override {
+    *handle = dlopen(library_filename.c_str(), RTLD_NOW | RTLD_LOCAL);
+    if (!*handle) {
+      return Common::Status(Common::LOTUS, Common::FAIL,
+                            "Failed to load library " + library_filename + " with error: " + dlerror());
+    }
+    return Common::Status::OK();
+  }
+
+  virtual Common::Status UnloadLibrary(void* handle) const override {
+    if (!handle) {
+      return Common::Status(Common::LOTUS, Common::FAIL, "Got null library handle");
+    }
+    int retval = dlclose(handle);
+    if (retval != 0) {
+      return Common::Status(Common::LOTUS, Common::FAIL, "Failed to unload library");
+    }
+    return Common::Status::OK();
+  }
+
+  virtual Common::Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const override {
+    char* error_str = dlerror();  // clear any old error str
+    *symbol = dlsym(handle, symbol_name.c_str());
+    error_str = dlerror();
+    if (!error_str) {
+      return Common::Status(Common::LOTUS, Common::FAIL,
+                            "Failed to get symbol " + symbol_name + " with error: " + error_str);
+    }
+    if (!*symbol) {
+      return Common::Status(Common::LOTUS, Common::FAIL, "Got null symbol from library");
+    }
+    return Common::Status::OK();
+  }
+
+  virtual std::string FormatLibraryFileName(const std::string& name, const std::string& version) const override {
+    std::string filename;
+    if (version.empty()) {
+      filename = "lib" + name + ".so";
+    } else {
+      filename = "lib" + name + ".so" + "." + version;
+    }
+    return filename;
   }
 
  private:

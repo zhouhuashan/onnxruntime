@@ -205,6 +205,30 @@ class WindowsEnv : public Env {
     return Common::Status::OK();
   }
 
+  virtual Status LoadLibrary(const std::string& library_filename, void** handle) const override {
+    UNUSED_PARAMETER(library_filename);
+    UNUSED_PARAMETER(handle);
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  }
+
+  virtual Common::Status UnloadLibrary(void* handle) const override {
+    UNUSED_PARAMETER(handle);
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  }
+
+  virtual Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const override {
+    UNUSED_PARAMETER(handle);
+    UNUSED_PARAMETER(symbol_name);
+    UNUSED_PARAMETER(symbol);
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  }
+
+  virtual std::string FormatLibraryFileName(const std::string& name, const std::string& version) const override {
+    UNUSED_PARAMETER(name);
+    UNUSED_PARAMETER(version);
+    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  }
+
  private:
   WindowsEnv()
       : GetSystemTimePreciseAsFileTime_(nullptr) {
