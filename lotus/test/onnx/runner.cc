@@ -315,9 +315,9 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
 
 void SeqTestRunner::Start(size_t) {
   const size_t data_count = c_->GetDataCount();
-  for (size_t j = 0; j != repeat_count_; ++j)
-    for (size_t i = 0; i != data_count; ++i) {
-      RunTask(i, nullptr, i == 0);
+  for (size_t idx_repeat = 0; idx_repeat != repeat_count_; ++idx_repeat)
+    for (size_t idx_data = 0; idx_data != data_count; ++idx_data) {
+      RunTask(idx_data, nullptr, idx_repeat == 0);
     }
   finish(result, nullptr);
 }
