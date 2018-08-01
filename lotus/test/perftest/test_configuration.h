@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 
+#include "core/graph/constants.h"
 
 namespace Lotus {
 namespace PerfTest {
