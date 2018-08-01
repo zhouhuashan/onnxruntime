@@ -103,7 +103,7 @@ static void run(SessionFactory& sf) {
         NULL,                // default security attributes
         TRUE,                // manual-reset event
         FALSE,               // initial state is nonsignaled
-        TEXT("FinishEvent")  // object name
+        NULL
     );
     Assert::IsNotNull(finish_event);
     RunSingleTestCase(tests[0], sf, p_models, 1, nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {

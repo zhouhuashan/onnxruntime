@@ -64,7 +64,7 @@ Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, 
           NULL,                // default security attributes
           TRUE,                // manual-reset event
           FALSE,               // initial state is nonsignaled
-          TEXT("FinishEvent")  // object name
+          NULL
       );
       if (finish_event == NULL) {
         return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unable to create finish event");

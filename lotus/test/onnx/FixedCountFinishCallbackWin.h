@@ -25,7 +25,7 @@ class FixedCountFinishCallbackImpl {
         NULL,                // default security attributes
         TRUE,                // manual-reset event
         FALSE,               // initial state is nonsignaled
-        TEXT("FinishEvent")  // object name
+        NULL
     );
     if (finish_event_ == nullptr) {
       throw std::runtime_error("init failed");
