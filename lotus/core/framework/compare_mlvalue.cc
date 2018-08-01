@@ -142,27 +142,34 @@ std::pair<COMPARE_RESULT, std::string> CompareTwoTensors(const Tensor& outvalue,
   }
 }
 template <typename T>
-std::pair<COMPARE_RESULT, std::string> CompareSeqOfMapToFloat(const T& p1, const T& expected_value, double per_sample_tolerance, double relative_per_sample_tolerance,
+std::pair<COMPARE_RESULT, std::string> CompareSeqOfMapToFloat(const T& real_output_vector, const T& expected_value, double per_sample_tolerance, double relative_per_sample_tolerance,
                                                               bool post_processing) {
-  if (p1.size() != expected_value.size()) {
-    return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
+  if (real_output_vector.size() != expected_value.size()) {
+    std::ostringstream oss;
+    oss << "vector size mismatch, expected " << expected_value.size() << ", got " << real_output_vector.size();
+    return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, oss.str());
   }
-  for (size_t i = 0; i != p1.size(); ++i) {
-    const auto& p2i = expected_value[i];
-    if (p1[i].size() != p2i.size()) {
-      return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
+  for (size_t i = 0; i != real_output_vector.size(); ++i) {
+    const auto& expected_map = expected_value[i];
+    //compare if expected_map equals real_output_vector[i]
+    if (real_output_vector[i].size() != expected_map.size()) {
+      std::ostringstream oss;
+      oss << "map size mismatch, expected " << expected_map.size() << ", got " << real_output_vector[i].size();
+      return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, oss.str());
     }
 
-    for (const auto& pv : p1[i]) {
-      auto iter = p2i.find(pv.first);
-      if (iter == p2i.end()) {
+    for (const auto& real_output_key_value_pair : real_output_vector[i]) {
+      auto expected_key_value_pair = expected_map.find(real_output_key_value_pair.first);
+      if (expected_key_value_pair == expected_map.end()) {
         return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
       }
-      const double real = post_processing ? std::max<double>(0.0, std::min<double>(255.0, iter->second)) : iter->second;
-      const double diff = fabs(iter->second - real);
-      const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(iter->second);
+      const double real = post_processing ? std::max<double>(0.0, std::min<double>(255.0, real_output_key_value_pair.second)) : real_output_key_value_pair.second;
+      const double diff = fabs(expected_key_value_pair->second - real);
+      const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(expected_key_value_pair->second);
       if (diff > rtol) {
-        return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
+        std::ostringstream oss;
+        oss << "expected " << expected_key_value_pair->second << ", got " << real << ", diff: " << diff << ", tol=" << rtol;
+        return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, oss.str());
       }
     }
   }
