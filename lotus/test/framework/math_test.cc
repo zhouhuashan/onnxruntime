@@ -19,7 +19,6 @@
 */
 #include "core/util/math.h"
 #include <gtest/gtest.h>
-#include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/util/math_cpuonly.h"
 namespace Lotus {
 
