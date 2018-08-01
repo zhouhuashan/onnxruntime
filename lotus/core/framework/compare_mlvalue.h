@@ -1,8 +1,12 @@
 #pragma once
+//TODO(@chasun): move compare_mlvalue.{h,cc} to test dir
 
 #include <core/framework/ml_value.h>
-#include <onnx/onnx_pb.h>
+#include <string>
 
+namespace onnx {
+class ValueInfoProto;
+}
 namespace Lotus {
 enum class COMPARE_RESULT {
   SUCCESS,

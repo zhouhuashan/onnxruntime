@@ -80,7 +80,6 @@ class DataTypeImpl {
   static MLDataType GetTensorType();
 
   static MLDataType TypeFromProto(const onnx::TypeProto& proto);
-  static MLDataType ElementTypeFromProto(onnx::TensorProto_DataType type);
 
   static const std::vector<MLDataType>& AllTensorTypes();
 };

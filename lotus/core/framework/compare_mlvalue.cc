@@ -3,6 +3,16 @@
 #include <sstream>
 #include <google/protobuf/text_format.h>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+#include "onnx/onnx_pb.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 #include "core/inc/op_kernel_author.h"
 #include "core/util/math_cpuonly.h"
 #include "Eigen/src/Core/arch/CUDA/Half.h"
@@ -10,6 +20,38 @@
 using namespace Lotus;
 
 namespace {
+MLDataType ElementTypeFromProto(onnx::TensorProto_DataType type) {
+  switch (type) {
+    case onnx::TensorProto_DataType_FLOAT:
+      return DataTypeImpl::GetType<float>();
+    case onnx::TensorProto_DataType_BOOL:
+      return DataTypeImpl::GetType<bool>();
+    case onnx::TensorProto_DataType_INT32:
+      return DataTypeImpl::GetType<int>();
+    case onnx::TensorProto_DataType_DOUBLE:
+      return DataTypeImpl::GetType<double>();
+    case onnx::TensorProto_DataType_STRING:
+      return DataTypeImpl::GetType<std::string>();
+    case onnx::TensorProto_DataType_INT8:
+      return DataTypeImpl::GetType<int8_t>();
+    case onnx::TensorProto_DataType_UINT8:
+      return DataTypeImpl::GetType<uint8_t>();
+    case onnx::TensorProto_DataType_UINT16:
+      return DataTypeImpl::GetType<uint16_t>();
+    case onnx::TensorProto_DataType_INT16:
+      return DataTypeImpl::GetType<int16_t>();
+    case onnx::TensorProto_DataType_INT64:
+      return DataTypeImpl::GetType<int64_t>();
+    case onnx::TensorProto_DataType_UINT32:
+      return DataTypeImpl::GetType<uint32_t>();
+    case onnx::TensorProto_DataType_UINT64:
+      return DataTypeImpl::GetType<uint64_t>();
+    case onnx::TensorProto_DataType_FLOAT16:
+      return DataTypeImpl::GetType<MLFloat16>();
+    default:
+      LOTUS_NOT_IMPLEMENTED(__FUNCTION__, ":tensor type ", type, " is not supported");
+  }
+}
 template <typename FLOAT_TYPE>
 std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue, const Tensor& expected_value, double per_sample_tolerance,
                                                           double relative_per_sample_tolerance, bool post_processing) {
@@ -236,7 +278,7 @@ std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const onnx::ValueInfoProt
       //	return COMPARE_RESULT::TYPE_MISMATCH;
       //}
       const Tensor& o1 = o.Get<Tensor>();
-      if (o1.DataType() != DataTypeImpl::ElementTypeFromProto(t.elem_type())) {
+      if (o1.DataType() != ElementTypeFromProto(t.elem_type())) {
         return std::make_pair(COMPARE_RESULT::TYPE_MISMATCH, "");
       }
       if (!AreShapesEqual(o1.Shape(), t.shape())) {

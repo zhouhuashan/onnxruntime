@@ -289,39 +289,6 @@ LOTUS_REGISTER_NON_ONNX_TYPE(uint32_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(uint64_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(MLFloat16);
 
-MLDataType DataTypeImpl::ElementTypeFromProto(onnx::TensorProto_DataType type) {
-  switch (type) {
-    case TensorProto_DataType_FLOAT:
-      return DataTypeImpl::GetType<float>();
-    case TensorProto_DataType_BOOL:
-      return DataTypeImpl::GetType<bool>();
-    case TensorProto_DataType_INT32:
-      return DataTypeImpl::GetType<int>();
-    case TensorProto_DataType_DOUBLE:
-      return DataTypeImpl::GetType<double>();
-    case TensorProto_DataType_STRING:
-      return DataTypeImpl::GetType<std::string>();
-    case TensorProto_DataType_INT8:
-      return DataTypeImpl::GetType<int8_t>();
-    case TensorProto_DataType_UINT8:
-      return DataTypeImpl::GetType<uint8_t>();
-    case TensorProto_DataType_UINT16:
-      return DataTypeImpl::GetType<uint16_t>();
-    case TensorProto_DataType_INT16:
-      return DataTypeImpl::GetType<int16_t>();
-    case TensorProto_DataType_INT64:
-      return DataTypeImpl::GetType<int64_t>();
-    case TensorProto_DataType_UINT32:
-      return DataTypeImpl::GetType<uint32_t>();
-    case TensorProto_DataType_UINT64:
-      return DataTypeImpl::GetType<uint64_t>();
-    case TensorProto_DataType_FLOAT16:
-      return DataTypeImpl::GetType<MLFloat16>();
-    default:
-      LOTUS_NOT_IMPLEMENTED(__FUNCTION__, ":tensor type ", type, " is not supported");
-  }
-}
-
 const std::vector<MLDataType>& DataTypeImpl::AllTensorTypes() {
   static std::vector<MLDataType> all_tensor_types =
       {DataTypeImpl::GetTensorType<float>(),
