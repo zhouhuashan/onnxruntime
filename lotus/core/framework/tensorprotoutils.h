@@ -14,7 +14,6 @@ class TensorShapeProto;
 namespace Lotus {
 class Tensor;
 class MLValuePatternPlanner;
-struct MemoryBlock;
 namespace Utils {
 Common::Status GetTensorFromTensorProto(const onnx::TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor, AllocatorPtr allocator, void* preallocated = nullptr, size_t preallocated_size = 0);
 std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tensor_proto);
