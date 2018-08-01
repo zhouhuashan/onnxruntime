@@ -17,7 +17,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/providers/cpu/math/element_wise_ops.h"
 #include "core/framework/tensorprotoutils.h"
-#include "core/framework/IOBinding.h"
+#include "core/session/IOBinding.h"
 
 #include "test/capturing_sink.h"
 #include "test/test_environment.h"

@@ -6,7 +6,7 @@
 #include <core/framework/environment.h>
 #include <core/session/inference_session.h>
 #include <core/platform/env.h>
-#include <core/framework/IOBinding.h>
+#include <core/session/IOBinding.h>
 
 #include "test_configuration.h"
 
