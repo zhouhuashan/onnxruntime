@@ -14,7 +14,7 @@ except ImportError:
     bdist_wheel = None
 
 if platform.system() == 'Linux':
-  libs = ['lotus_pybind11_state.so', 'libmkldnn.so.0', 'libmklml.so', 'libiomp5md.so']
+  libs = ['lotus_pybind11_state.so', 'libmkldnn.so.0', 'libmklml_intel.so', 'libiomp5.so']
 else:
   libs = ['lotus_pybind11_state.pyd', 'mkldnn.dll', 'mklml.dll', 'libiomp5md.dll']
 
