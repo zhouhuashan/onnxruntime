@@ -941,6 +941,13 @@ class InferenceSession::Impl {
   }
 
   Common::Status TransformGraph(LotusIR::Graph* graph) {
+    // The transformer order:
+    // 1. built-in graph rewriter
+    // 2. each execution provider's transformer
+    // 3. do node placement according to kernel definition
+    // 4. insert copy nodes
+    // 5. insert cast nodes.
+    
     // first apply the default/system/basic transformations
     LOTUS_RETURN_IF_ERROR(graph_transformation_mgr_.ApplyAll(graph));
 
@@ -951,10 +958,26 @@ class InferenceSession::Impl {
       provider_preference.push_back(p->Type());
     }
 
+    bool modified = false;
+    // now apply the transformations from the execution providers
+    for (auto& ep : session_state_.GetExecutionProviders()) {
+      // TODO: log which execution provider is transforming the graph and
+      // whether modified is true/false.
+      LOTUS_RETURN_IF_ERROR(ep->GetTransformer().Apply(graph, &modified));
+    }
+
     // collect the kernel registries from execution providers;
     for (auto& provider : providers) {
       session_state_.GetKernelRegistryManager().RegisterKernelRegistry(provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);  // push it with lower priority than custom kernels.
     }
+    std::vector<const KernelRegistry*> registries;
+    auto custom_registries = session_state_.GetKernelRegistryManager().GetAllKernelRegistries();
+    //The order of registeries represent the priority, put the custom register with higher priority
+    registries.assign(custom_registries.begin(),
+                      custom_registries.end());
+    //do node placement based on registered kernels
+    GraphPlacementPlanner placement_planner("GraphPlacementPlanner", registries, provider_preference);
+    LOTUS_RETURN_IF_ERROR(placement_planner.Apply(graph, &modified));
 
     // insert copy nodes
     for (auto& provider : providers) {
@@ -963,25 +986,7 @@ class InferenceSession::Impl {
         copy_impl.ModifyGraph(session_state_.GetKernelRegistryManager());
       }
     }
-
-    std::vector<const KernelRegistry*> registries;
-    auto custom_registries = session_state_.GetKernelRegistryManager().GetAllKernelRegistries();
-    //The order of registeries represent the priority, put the custom register with higher priority
-    registries.assign(custom_registries.begin(),
-                      custom_registries.end());
-
-    //do node placement based on registered kernels
-    bool modified = false;
-    GraphPlacementPlanner placement_planner("GraphPlacementPlanner", registries, provider_preference);
-    LOTUS_RETURN_IF_ERROR(placement_planner.Apply(graph, &modified));
-
-    // now apply the transformations from the execution providers
-    for (auto& ep : session_state_.GetExecutionProviders()) {
-      // TODO: log which execution provider is transforming the graph and
-      // whether modified is true/false.
-      LOTUS_RETURN_IF_ERROR(ep->GetTransformer().Apply(graph, &modified));
-    }
-
+    // insert cast node
     for (auto registry : session_state_.GetKernelRegistryManager().GetAllKernelRegistries()) {
       insert_cast_transformer_.AddKernelRegistry(registry);
     }
