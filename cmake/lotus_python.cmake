@@ -42,15 +42,14 @@ set(lotus_pybind11_state_libs
     lotus_session
     lotus_providers
     lotus_framework
+    lotus_util
     lotusIR_graph
     onnx
     lotus_common
 )
 
 set(lotus_pybind11_state_dependencies
-    lotus_session
-    lotus_framework
-    lotus_providers
+    ${lotus_EXTERNAL_DEPENDENCIES}
     pybind11
 )
 
@@ -74,9 +73,6 @@ if (MSVC)
   set_target_properties(lotus_pybind11_state PROPERTIES SUFFIX ".pyd")
 else()
   set_target_properties(lotus_pybind11_state PROPERTIES SUFFIX ".so")
-  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set_target_properties(lotus_pybind11_state PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-  endif()
 endif()
 
 file(GLOB lotus_python_srcs

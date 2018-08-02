@@ -29,7 +29,7 @@ file(GLOB lotus_session_srcs
 
 add_library(lotus_session ${lotus_session_srcs})
 target_include_directories(lotus_session PRIVATE $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
-add_dependencies(lotus_session onnx)
+add_dependencies(lotus_session ${lotus_EXTERNAL_DEPENDENCIES})
 
 set_target_properties(lotus_session PROPERTIES FOLDER "Lotus")
 

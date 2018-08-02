@@ -18,7 +18,7 @@ function(AddTest)
     add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   endif(_UT_DEPENDS)
 
-  target_link_libraries(${_UT_TARGET} ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
+  target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
   target_include_directories(${_UT_TARGET} PRIVATE ${date_INCLUDE_DIR})
   if (WIN32)
     #It's cmake bug, cannot add this compile option for cuda compiler
@@ -117,6 +117,7 @@ set(lotus_test_framework_libs
     lotus_session
     lotus_providers
     lotus_framework
+    lotus_util
     lotusIR_graph
     onnx
     onnx_proto
@@ -141,6 +142,7 @@ set(lotus_test_providers_libs
     lotus_session
     lotus_providers
     lotus_framework
+    lotus_util
     lotusIR_graph
     onnx
     onnx_proto
@@ -157,7 +159,7 @@ if(lotus_USE_MKLDNN)
   list(APPEND lotus_test_providers_libs lotus_providers_mkldnn)
 endif()
 
-set (lotus_test_providers_dependencies lotus_providers)
+set (lotus_test_providers_dependencies ${lotus_test_providers_dependencies})
 
 if (lotus_USE_MLAS AND WIN32)
   list(APPEND lotus_test_providers_libs mlas)
@@ -211,7 +213,7 @@ else()
         TARGET lotus_test_ir
         SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
         LIBS ${lotus_test_ir_libs}
-        DEPENDS lotusIR_graph
+        DEPENDS ${lotus_test_providers_dependencies}
     )
 
     AddTest(
@@ -219,7 +221,7 @@ else()
         SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
         LIBS ${lotus_test_framework_libs}
         # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
-        DEPENDS lotus_framework lotus_providers
+        DEPENDS ${lotus_test_providers_dependencies}
     )
 
     AddTest(
@@ -271,7 +273,7 @@ else()
 endif()
 
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
-add_dependencies(onnx_test_runner_common lotus_providers lotus_framework lotusIR_graph onnx)
+add_dependencies(onnx_test_runner_common ${lotus_EXTERNAL_DEPENDENCIES})
 target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/external/onnx/onnx $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
@@ -282,6 +284,7 @@ set(onnx_test_libs
     lotus_session
     lotus_providers
     lotus_framework
+    lotus_util
     lotusIR_graph
     onnx
     onnx_proto
@@ -357,7 +360,7 @@ file(GLOB lotus_exec_src
 )
 add_executable(lotus_exec ${lotus_exec_src})
 # we need to force these dependencies to build first. just using target_link_libraries isn't sufficient
-add_dependencies(lotus_exec lotus_providers lotus_framework lotusIR_graph onnx)
+add_dependencies(lotus_exec ${lotus_EXTERNAL_DEPENDENCIES})
 target_link_libraries(lotus_exec ${onnx_test_libs} ${GETOPT_LIB})
 set_target_properties(lotus_exec PROPERTIES FOLDER "LotusTest")
 
