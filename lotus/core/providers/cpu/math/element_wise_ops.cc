@@ -2,29 +2,61 @@
 
 namespace Lotus {
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Add,
     7,
+    float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Add<float>);
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Add,
+    7,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Add<int32_t>);
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Sub,
     7,
+    float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Sub<float>);
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Sub,
+    7,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Sub<int32_t>);
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Mul,
     7,
+    float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Mul<float>);
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Mul,
+    7,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Mul<int32_t>);
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Div,
     7,
+    float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Div<float>);
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Div,
+    7,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Div<int32_t>);
 
 ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Abs,
@@ -164,11 +196,19 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Greater<float>);
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Equal,
     7,
+    int32_t,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
     Equal<int32_t>);
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Equal,
+    7,
+    bool,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+    Equal<bool>);
 
 ONNX_CPU_OPERATOR_KERNEL(
     Mean,
@@ -397,9 +437,9 @@ void Loop(gsl::span<const T> input1, T scalar2, gsl::span<TOutput> output, Op op
     output[i] = op(input1[i], scalar2);
 }
 
-template <>
-Status Add<float>::Compute(OpKernelContext* context) const {
-  TBroadcaster<float> bc(*context);
+template <typename T>
+Status Add<T>::Compute(OpKernelContext* context) const {
+  TBroadcaster<T> bc(*context);
 
   if (bc.IsInput0Scalar()) {
     while (bc)
@@ -414,9 +454,9 @@ Status Add<float>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-template <>
-Status Sub<float>::Compute(OpKernelContext* context) const {
-  TBroadcaster<float> bc(*context);
+template <typename T>
+Status Sub<T>::Compute(OpKernelContext* context) const {
+  TBroadcaster<T> bc(*context);
 
   if (bc.IsInput0Scalar()) {
     while (bc)
@@ -432,9 +472,9 @@ Status Sub<float>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-template <>
-Status Mul<float>::Compute(OpKernelContext* context) const {
-  TBroadcaster<float> bc(*context);
+template <typename T>
+Status Mul<T>::Compute(OpKernelContext* context) const {
+  TBroadcaster<T> bc(*context);
 
   if (bc.IsInput0Scalar()) {
     while (bc)
@@ -449,9 +489,9 @@ Status Mul<float>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-template <>
-Status Div<float>::Compute(OpKernelContext* context) const {
-  TBroadcaster<float> bc(*context);
+template <typename T>
+Status Div<T>::Compute(OpKernelContext* context) const {
+  TBroadcaster<T> bc(*context);
 
   if (bc.IsInput0Scalar()) {
     while (bc)
@@ -667,11 +707,11 @@ Status Xor::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-template <>
-Status Equal<int32_t>::Compute(OpKernelContext* context) const {
+template <typename T>
+Status Equal<T>::Compute(OpKernelContext* context) const {
   auto op = [](auto a, auto b) { return a == b; };
 
-  TBroadcaster<int32_t, bool> bc(*context);
+  TBroadcaster<T, bool> bc(*context);
   if (bc.IsInput0Scalar()) {
     while (bc)
       Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);

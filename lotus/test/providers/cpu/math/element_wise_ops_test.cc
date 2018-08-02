@@ -4,6 +4,14 @@
 namespace Lotus {
 namespace Test {
 
+TEST(MathOpTest, Add_int32) {
+  OpTester test("Add");
+  test.AddInput<int32_t>("A", {3}, {1, 2, 3});
+  test.AddInput<int32_t>("B", {3}, {4, 5, 6});
+  test.AddOutput<int32_t>("C", {3}, {5, 7, 9});
+  test.RunOnCpuAndCuda();
+}
+
 TEST(MathOpTest, Add) {
   OpTester test("Add");
   std::vector<int64_t> dims{3, 3};
@@ -135,6 +143,14 @@ TEST(MathOpTest, Add_Broadcast_2x1x1_3x4) {
   test.RunOnCpuAndCuda();
 }
 
+TEST(MathOpTest, Sub_int32) {
+  OpTester test("Sub");
+  test.AddInput<int32_t>("A", {3}, {1, 4, 3});
+  test.AddInput<int32_t>("B", {3}, {4, 2, 4});
+  test.AddOutput<int32_t>("C", {3}, {-3, 2, -1});
+  test.RunOnCpuAndCuda();
+}
+
 TEST(MathOpTest, Sub) {
   OpTester test("Sub");
   std::vector<int64_t> dims{3, 3};
@@ -168,6 +184,14 @@ TEST(MathOpTest, Sub_Broadcast_Scalar) {
   test.RunOnCpuAndCuda();
 }
 
+TEST(MathOpTest, Mul_int32) {
+  OpTester test("Mul");
+  test.AddInput<int32_t>("A", {3}, {1, 2, 3});
+  test.AddInput<int32_t>("B", {3}, {4, -3, 6});
+  test.AddOutput<int32_t>("C", {3}, {4, -6, 18});
+  test.RunOnCpuAndCuda();
+}
+
 TEST(MathOpTest, Mul) {
   OpTester test("Mul");
   std::vector<int64_t> dims{3, 3};
@@ -183,6 +207,14 @@ TEST(MathOpTest, Mul) {
                         {-1.0f, 8.8f, -432.3f,
                          0.0f, 5.25f, -6'400.0f,
                          29.16f, 86.49f, -100'000'000.0f});
+  test.RunOnCpuAndCuda();
+}
+
+TEST(MathOpTest, Div_int32) {
+  OpTester test("Div");
+  test.AddInput<int32_t>("A", {3}, {4, 8, 8});
+  test.AddInput<int32_t>("B", {3}, {1, 3, 2});
+  test.AddOutput<int32_t>("C", {3}, {4, 2, 4});
   test.RunOnCpuAndCuda();
 }
 
@@ -496,11 +528,20 @@ TEST(MathOpTest, Greater) {
   test.Run();
 }
 
-TEST(MathOpTest, Equal) {
+TEST(MathOpTest, Equal_int32) {
   OpTester test("Equal");
   std::vector<int64_t> dims{4};
   test.AddInput<int32_t>("A", dims, {1, 0, -1, -1});
   test.AddInput<int32_t>("B", dims, {1, 1, 2, -1});
+  test.AddOutput<bool>("C", dims, {true, false, false, true});
+  test.Run();
+}
+
+TEST(MathOpTest, Equal_bool) {
+  OpTester test("Equal");
+  std::vector<int64_t> dims{4};
+  test.AddInput<bool>("A", dims, {false, true, false, true});
+  test.AddInput<bool>("B", dims, {false, false, true, true});
   test.AddOutput<bool>("C", dims, {true, false, false, true});
   test.Run();
 }
