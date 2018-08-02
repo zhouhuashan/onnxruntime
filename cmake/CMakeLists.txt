@@ -35,6 +35,17 @@ option(lotus_USE_JEMALLOC "Use jecmalloc" OFF)
 option(lotus_MSVC_STATIC_RUNTIME "Compile for the static CRT" OFF)
 option(lotus_BUILD_UNIT_TESTS "Build Lotus unit tests" ON)
 option(lotus_USE_PREINSTALLED_EIGEN "Use pre-installed EIGEN. Need to provide eigen_SOURCE_PATH if turn this on." OFF)
+option(lotus_BUILD_BENCHMARKS "Build Lotus micro-benchmarks" OFF)
+
+if(lotus_BUILD_BENCHMARKS)
+  if(NOT TARGET benchmark)
+    # We will not need to test benchmark lib itself.
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark testing as we don't need it.")
+    # We will not need to install benchmark since we link it statically.
+    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "Disable benchmark install to avoid overwriting vendor install.")
+	add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx/third_party/benchmark EXCLUDE_FROM_ALL)
+  endif()
+endif()
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
