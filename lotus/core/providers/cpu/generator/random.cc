@@ -29,7 +29,7 @@ limitations under the License.
 #include <random>
 #include "core/platform/types.h"
 #include "core/util/math_cpuonly.h"
-#include "unsupported/Eigen/CXX11/Tensor"
+#include "core/util/eigen_common_wrapper.h"
 #include "gsl/span"
 using namespace onnx;
 using namespace Lotus::Common;

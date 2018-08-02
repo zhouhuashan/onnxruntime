@@ -4,7 +4,7 @@
 #ifdef _MSC_VER
 #pragma warning(disable : 4554)
 #endif
-#include "unsupported/Eigen/CXX11/Tensor"
+#include "core/util/eigen_common_wrapper.h"
 #include <array>
 
 namespace Lotus {
