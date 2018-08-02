@@ -1,7 +1,7 @@
+#include <core/providers/cpu/cpu_execution_provider.h>  //TODO(@chasun): this is a temp hack
 #include "runner.h"
 #include <core/common/logging/logging.h>
 #include <core/framework/tensorprotoutils.h>
-#include <core/providers/cpu/cpu_execution_provider.h>
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -61,11 +61,10 @@ Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, 
       bool finished = false;
 #ifdef _WIN32
       HANDLE finish_event = CreateEvent(
-          NULL,                // default security attributes
-          TRUE,                // manual-reset event
-          FALSE,               // initial state is nonsignaled
-          NULL
-      );
+          NULL,   // default security attributes
+          TRUE,   // manual-reset event
+          FALSE,  // initial state is nonsignaled
+          NULL);
       if (finish_event == NULL) {
         return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unable to create finish event");
       }

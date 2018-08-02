@@ -4,6 +4,24 @@
 #include "core/graph/op.h"
 #include "onnx/defs/schema.h"
 
+#ifndef LOTUS_HAVE_ATTRIBUTE
+#ifdef __has_attribute
+#define LOTUS_HAVE_ATTRIBUTE(x) __has_attribute(x)
+#else
+#define LOTUS_HAVE_ATTRIBUTE(x) 0
+#endif
+#endif
+
+// LOTUS_ATTRIBUTE_UNUSED
+//
+// Prevents the compiler from complaining about or optimizing away variables
+// that appear unused.
+#if LOTUS_HAVE_ATTRIBUTE(unused) || (defined(__GNUC__) && !defined(__clang__))
+#undef LOTUS_ATTRIBUTE_UNUSED
+#define LOTUS_ATTRIBUTE_UNUSED __attribute__((__unused__))
+#else
+#define LOTUS_ATTRIBUTE_UNUSED
+#endif
 namespace Lotus {
 
 using namespace Lotus::Common;
@@ -23,7 +41,7 @@ Status Environment::Initialize() {
     // Register MemCpy schema;
 
     // These ops are internal-only, so register outside of onnx
-    ONNX_OPERATOR_SCHEMA(MemcpyFromHost)
+    LOTUS_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MemcpyFromHost)
         .Input(0, "X", "input", "T")
         .Output(0, "Y", "output", "T")
         .TypeConstraint(
@@ -35,7 +53,7 @@ Status Environment::Initialize() {
 Internal copy node
 )DOC");
 
-    ONNX_OPERATOR_SCHEMA(MemcpyToHost)
+    LOTUS_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MemcpyToHost)
         .Input(0, "X", "input", "T")
         .Output(0, "Y", "output", "T")
         .TypeConstraint(

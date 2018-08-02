@@ -4,9 +4,11 @@
 #include "core/common/status.h"
 #include "core/framework/arena.h"
 #include "core/framework/tensor.h"
-#include "core/graph/graph.h"
-#include "core/graph/graph_transformer.h"
 
+namespace LotusIR {
+class GraphTransformer;
+class Node;
+}  // namespace LotusIR
 namespace Lotus {
 class KernelRegistry;
 class OpKernelContext;

@@ -1,5 +1,6 @@
 #pragma once
 #include "cuda_pch.h"
+#include "core/graph/graph_transformer.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
 #include "shared_inc/cuda_utils.h"

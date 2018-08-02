@@ -2,8 +2,11 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "core/common/common.h"
+#include "core/graph/basic_types.h"
 #include "core/framework/data_types.h"
 
 namespace Lotus {
@@ -135,8 +138,10 @@ class KernelDef {
   int op_since_version_start_ = 1;
   int op_since_version_end_ = INT_MAX;
 
-  // THe operator domain supported by <*this> kernel.
-  std::string op_domain_ = LotusIR::kOnnxDomain;
+  // The operator domain supported by <*this> kernel.
+  // Default to 'LotusIR::kOnnxDomain'.
+  // Please note the behavior of std::string("") and std::string() are different
+  std::string op_domain_;
 
   // The type of the execution provider.
   std::string provider_type_;
@@ -166,7 +171,7 @@ class KernelDefBuilder {
 
   KernelDefBuilder& SetName(const std::string& op_name) {
     kernel_def_->op_name_ = op_name;
-	return *this;
+    return *this;
   }
 
   KernelDefBuilder& SetDomain(const std::string& domain) {

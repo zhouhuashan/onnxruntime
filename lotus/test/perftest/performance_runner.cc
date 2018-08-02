@@ -4,7 +4,7 @@
 #ifdef _MSC_VER
 #include <filesystem>
 #endif
-
+#include "core/graph/graph.h"  //for LotusIR::NodeArg
 #include "runner.h"
 #include "utils.h"
 

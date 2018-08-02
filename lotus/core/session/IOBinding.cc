@@ -1,5 +1,4 @@
 #include "IOBinding.h"
-#include "core/graph/graph.h"  // for LotusIR::ProviderType
 #include "core/common/logging/logging.h"
 #include "core/framework/session_state.h"
 #include "core/framework/op_kernel.h"
@@ -29,7 +28,7 @@ static Common::Status AllocateHelper(const SessionState& session_state,
   auto allocator = p_provider->GetAllocator();
   LOTUS_ENFORCE(allocator != nullptr);
   auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
-  void* buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
+  void* buffer = allocator->Alloc(fetched_tensor.Size());
   LOTUS_ENFORCE(buffer);
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(fetched_tensor.DataType(),
                                                               fetched_tensor.Shape(),
@@ -167,12 +166,11 @@ AllocatorPtr IOBinding::GetCPUAllocator(LotusIR::ProviderType provider_type) con
   auto allocator = p_provider->GetAllocator(kMemTypeCPU);
 
   // if the provider does not implement CPU allocator, fall back to CPU
-  if (allocator) {
+  if (allocator)
     return allocator;
-  } else {
-    auto* cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
-    return cpu_provider->GetAllocator();
-  }
+
+  auto* cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  return cpu_provider->GetAllocator();
 }
 
 }  // namespace Lotus

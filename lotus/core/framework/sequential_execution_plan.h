@@ -1,5 +1,6 @@
 #pragma once
 #include "core/platform/types.h"
+#include "core/graph/basic_types.h"
 #include "core/framework/alloc_kind.h"
 namespace Lotus {
 // Every ml-value has a unique name and is assigned a unique integral number.

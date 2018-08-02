@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/common/common.h"
-#include "core/graph/graph.h"
+#include "core/graph/basic_types.h"
 
 namespace Lotus {
 

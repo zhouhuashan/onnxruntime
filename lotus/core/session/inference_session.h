@@ -16,8 +16,8 @@ class NodeArg;
 }  // namespace LotusIR
 
 namespace onnx {
-class OpSchema;
-}
+class ModelProto;
+}  // namespace onnx
 
 namespace Lotus {
 class IExecutionProvider;  // forward decl
@@ -207,7 +207,7 @@ class InferenceSession {
   * @param provider_type specifies the location where the inputs need to be potentially copied. See IOBinding class
   * for more info.
   */
-  Common::Status NewIOBinding(LotusIR::ProviderType provider_type /*unused; preserved to not break WinML code; use below API instead*/,
+  Common::Status NewIOBinding(LotusIR::ProviderType /*unused; preserved to not break WinML code; use below API instead*/,
                               std::unique_ptr<IOBinding>* io_binding);
   Common::Status NewIOBinding(std::unique_ptr<IOBinding>* io_binding);
 
