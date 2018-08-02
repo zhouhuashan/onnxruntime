@@ -2,6 +2,8 @@
 
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
+#include "core/graph/graph_transformer.h"
+#include "core/graph/constants.h"
 
 namespace Lotus {
 // Information needed to construct CPU execution providers.
@@ -9,7 +11,7 @@ struct CPUExecutionProviderInfo {
   std::string name;
   bool create_arena;
 
-  CPUExecutionProviderInfo(const char* provider_name, bool use_arena = true)
+  explicit CPUExecutionProviderInfo(const char* provider_name, bool use_arena = true)
       : name(provider_name), create_arena(use_arena) {}
   CPUExecutionProviderInfo()
       : CPUExecutionProviderInfo("") {}
@@ -17,7 +19,7 @@ struct CPUExecutionProviderInfo {
 
 class CPUTransformer : public LotusIR::GraphTransformer {
  public:
-  CPUTransformer(const std::string& name)
+  explicit CPUTransformer(const std::string& name)
       : LotusIR::GraphTransformer(name, "Transformer for CPU execution provider") {
   }
 
