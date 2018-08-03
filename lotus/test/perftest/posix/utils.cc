@@ -1,3 +1,5 @@
+#include "test/perftest/utils.h"
+
 #include <cstddef>
 
 #include <sys/time.h>
@@ -8,10 +10,29 @@ namespace PerfTest {
 namespace Utils {
 
 std::size_t GetPeakWorkingSetSize() {
-   //TO DO: add support for other linux version
   struct rusage rusage;
   getrusage(RUSAGE_SELF, &rusage);
   return static_cast<size_t>(rusage.ru_maxrss * 1024L);
+}
+
+class CPUUsage : public ICPUUsage {
+ public:
+  CPUUsage() {
+    Reset();
+  }
+
+  short GetUsage() const override {
+     // To Be Impelemented.
+    return 0;
+  }
+
+  void Reset() override {
+     // To Be Implemented.
+  }
+};
+
+std::unique_ptr<ICPUUsage> CreateICPUUsage() {
+  return std::make_unique<CPUUsage>();
 }
 
 }  // namespace Utils

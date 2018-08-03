@@ -24,6 +24,7 @@ void PerformanceRunner::Run() {
   if (!performance_test_config_.run_config.profile_file.empty())
     session_object_->StartProfiling(performance_test_config_.run_config.profile_file);
 
+  std::unique_ptr<Utils::ICPUUsage> p_ICPUUsage = Utils::CreateICPUUsage();
   switch (performance_test_config_.run_config.test_mode) {
     case TestMode::kFixDurationMode:
       RunFixDuration();
@@ -35,7 +36,7 @@ void PerformanceRunner::Run() {
       LOGF_DEFAULT(ERROR, "unknown test mode");
       return;
   }
-
+  performance_result_.average_CPU_usage = p_ICPUUsage->GetUsage();
   performance_result_.peak_workingset_size = Utils::GetPeakWorkingSetSize();
 
   if (!performance_test_config_.run_config.profile_file.empty())

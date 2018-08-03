@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 // Lotus dependencies
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/common/logging/logging.h>
@@ -15,6 +18,7 @@ namespace PerfTest {
 
 struct PerformanceResult {
   size_t peak_workingset_size{0};
+  short average_CPU_usage{0};
   double total_time_cost{0};
   std::vector<double> time_costs;
   std::string model_name;
@@ -27,7 +31,7 @@ struct PerformanceResult {
       return;
     }
     for (size_t runs = 0; runs < time_costs.size(); runs++) {
-      outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size << "," << runs << std::endl;
+      outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size << "," << average_CPU_usage << "," << runs << std::endl;
     }
     outfile.close();
   }
