@@ -150,6 +150,10 @@ Common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
       return GetTensorByTypeFromTensorProto<double>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_BOOL:
       return GetTensorByTypeFromTensorProto<bool>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
+    case onnx::TensorProto_DataType::TensorProto_DataType_INT8:
+      return GetTensorByTypeFromTensorProto<int8_t>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
+    case onnx::TensorProto_DataType::TensorProto_DataType_UINT8:
+      return GetTensorByTypeFromTensorProto<uint8_t>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_INT32:
       return GetTensorByTypeFromTensorProto<int32_t>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
     case onnx::TensorProto_DataType::TensorProto_DataType_INT64:
@@ -189,6 +193,14 @@ Common::Status TraceTensorAllocFromTensorProto(int mlvalue_index, const onnx::Te
     }
     case onnx::TensorProto_DataType::TensorProto_DataType_BOOL: {
       size = GetTensorSize<bool>(tensor_shape);
+      break;
+    }
+    case onnx::TensorProto_DataType::TensorProto_DataType_INT8: {
+      size = GetTensorSize<int8_t>(tensor_shape);
+      break;
+    }
+    case onnx::TensorProto_DataType::TensorProto_DataType_UINT8: {
+      size = GetTensorSize<uint8_t>(tensor_shape);
       break;
     }
     case onnx::TensorProto_DataType::TensorProto_DataType_INT32: {
