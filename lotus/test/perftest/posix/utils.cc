@@ -2,8 +2,10 @@
 
 #include <cstddef>
 
-#include <sys/time.h>
+#include <sys/times.h>
 #include <sys/resource.h>
+
+#include "core/platform/env.h"
 
 namespace Lotus {
 namespace PerfTest {
@@ -22,13 +24,31 @@ class CPUUsage : public ICPUUsage {
   }
 
   short GetUsage() const override {
-     // To Be Impelemented.
-    return 0;
+     struct tms time_sample;
+     clock_t total_clock_now = times(&time_sample);
+     if (total_clock_now <= total_clock_start_ ||
+         time_sample.tms_stime < proc_sys_clock_start_ ||
+         time_sample.tms_utime < proc_user_clock_start_){
+       // overflow detection
+       return -1;
+     }
+     else {
+       clock_t proc_total_clock_diff = (time_sample.tms_stime - proc_sys_clock_start_) + (time_sample.tms_utime - proc_user_clock_start_);
+       clock_t total_clock_diff = total_clock_now - total_clock_start_;
+       return static_cast<short>( 100.0 * proc_total_clock_diff / total_clock_diff / Lotus::Env::Default().GetNumCpuCores() );
+     }
   }
 
   void Reset() override {
-     // To Be Implemented.
+    struct tms time_sample;
+    total_clock_start_ = times(&time_sample);
+    proc_sys_clock_start_ = time_sample.tms_stime;
+    proc_user_clock_start_ = time_sample.tms_utime;
   }
+ private:
+  clock_t total_clock_start_;
+  clock_t proc_sys_clock_start_;
+  clock_t proc_user_clock_start_;
 };
 
 std::unique_ptr<ICPUUsage> CreateICPUUsage() {
