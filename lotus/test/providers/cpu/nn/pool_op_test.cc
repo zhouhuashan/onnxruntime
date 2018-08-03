@@ -86,6 +86,24 @@ TEST(PoolTest, MaxPool) {
   test.RunOnCpuAndCuda();
 }
 
+TEST(PoolTest, MaxPool1D) {
+  OpTester test("MaxPool");
+
+  test.AddAttribute("auto_pad", "");
+  test.AddAttribute("strides", std::vector<int64_t>{2});
+  test.AddAttribute("pads", vector<int64_t>{0, 0});
+  test.AddAttribute("kernel_shape", vector<int64_t>{2});
+
+  std::vector<float> x_vals = {1, 2, 3, 4, 5, 6, 7, 8};
+  std::vector<int64_t> x_dims = {1, 2, 4};
+  std::vector<int64_t> expected_dims = {1, 2, 2};
+  std::vector<float> expected_vals = {2, 4, 6, 8};
+
+  test.AddInput<float>("X", x_dims, x_vals);
+  test.AddOutput<float>("Y", expected_dims, expected_vals);
+  test.RunOnCpuAndCuda();
+}
+
 TEST(PoolTest, GlobalMaxPool) {
   OpTester test("GlobalMaxPool");
 

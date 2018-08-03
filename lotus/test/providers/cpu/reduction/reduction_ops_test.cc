@@ -684,6 +684,18 @@ TEST(ReductionOpTest, ArgMax) {
   test.RunOnCpuAndCuda();
 }
 
+TEST(ReductionOpTest, ArgMax2D) {
+  OpTester test("ArgMax");
+  test.AddAttribute("axis", (int64_t)1);
+  test.AddAttribute("keepdims", (int64_t)1);
+  test.AddInput<float>("data", {3, 2},
+                       {1.0f, 2.0f,
+                        6.0f, 5.0f,
+                        9.0f, 10.0f});
+  test.AddOutput<int64_t>("reduced", {3, 1},
+                          {1, 0, 1});
+  test.RunOnCpuAndCuda();
+}
 TEST(ReductionOpTest, ArgMin) {
   OpTester test("ArgMin");
   test.AddAttribute("axis", (int64_t)0);

@@ -12,7 +12,14 @@ namespace Cuda {
 template <typename T>
 class Conv : public CudaKernel, public ConvBase {
  public:
-  Conv(const OpKernelInfo& info) : CudaKernel(info), ConvBase(info) {}
+  Conv(const OpKernelInfo& info) : CudaKernel(info), ConvBase(info) {
+    auto pads_size = pads_.size();
+    LOTUS_ENFORCE(pads_size % 2 == 0);
+    auto rank = pads_size / 2;
+    for (size_t i = 0; i < rank; i++) {
+      LOTUS_ENFORCE(pads_[i] == pads_[i + rank], "cudnn only supports symmetric padding");
+    }
+  }
 
   Status Compute(OpKernelContext* context) const override;
 };
@@ -48,5 +55,5 @@ class CudnnConvolutionDescriptor final {
   cudnnConvolutionDescriptor_t desc_;
 };
 
-}
+}  // namespace Cuda
 }  // namespace Lotus

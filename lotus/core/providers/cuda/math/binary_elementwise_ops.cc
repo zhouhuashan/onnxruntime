@@ -42,11 +42,17 @@ static Status ComputeOutputShape(const std::string& node_name, const TensorShape
   return Status::OK();
 }
 
-Status BinaryElementwiseBroadcastPrepare(const Tensor* lhs_tensor, const Tensor* rhs_tensor, Tensor* output_tensor, BinaryElementwisePreparation* p) {
+Status BinaryElementwiseBroadcastPrepare(
+    const Tensor* lhs_tensor,
+    const Tensor* rhs_tensor,
+    Tensor* output_tensor,
+    BinaryElementwisePreparation* p,
+    const TensorShape* override_lhs_shape = nullptr,
+    const TensorShape* override_rhs_shape = nullptr) {
   p->lhs_tensor = lhs_tensor;
   p->rhs_tensor = rhs_tensor;
-  const auto& lhs_shape = lhs_tensor->Shape();
-  const auto& rhs_shape = rhs_tensor->Shape();
+  const auto& lhs_shape = override_lhs_shape ? *override_lhs_shape : lhs_tensor->Shape();
+  const auto& rhs_shape = override_rhs_shape ? *override_rhs_shape : rhs_tensor->Shape();
   size_t lhs_rank = lhs_shape.NumDimensions();
   size_t rhs_rank = rhs_shape.NumDimensions();
   size_t out_rank = std::max(lhs_rank, rhs_rank);
@@ -70,8 +76,8 @@ Status BinaryElementwiseBroadcastPrepare(const Tensor* lhs_tensor, const Tensor*
   p->lhs_padded_strides.AllocCpuPtr(out_rank);
   p->rhs_padded_strides.AllocCpuPtr(out_rank);
   p->fdm_output_strides.AllocCpuPtr(out_rank);
-  LOTUS_ENFORCE(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), p->lhs_tensor->Shape().GetDims()));
-  LOTUS_ENFORCE(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), p->rhs_tensor->Shape().GetDims()));
+  LOTUS_ENFORCE(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
+  LOTUS_ENFORCE(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
   LOTUS_ENFORCE(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_tensor->Shape().GetDims()));
 
   p->lhs_dim0_broadcast = (lhs_rank == 0 || lhs_shape[0] == 1 || lhs_rank < out_rank);

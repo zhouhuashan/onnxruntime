@@ -2,10 +2,19 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cuda/nn/conv.h"
-using namespace Lotus::Common;
-using namespace std;
+#include "core/providers/cuda/math/binary_elementwise_ops.h"
+#include "core/providers/cuda/math/binary_elementwise_ops_impl.h"
+
 namespace Lotus {
 namespace Cuda {
+
+Status BinaryElementwiseBroadcastPrepare(
+    const Tensor* lhs_tensor,
+    const Tensor* rhs_tensor,
+    Tensor* output_tensor,
+    BinaryElementwisePreparation* p,
+    const TensorShape* override_lhs_shape,
+    const TensorShape* override_rhs_shape);
 
 ONNX_OPERATOR_TYPED_KERNEL_EX(
     Conv,
@@ -48,24 +57,42 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   const int64_t N = X->Shape()[0];
   const int64_t M = W->Shape()[0];
 
-  vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
-  vector<int64_t> pads(pads_);
+  LOTUS_RETURN_IF_ERROR(ValidateInputShape(X, W));
+
+  std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
+  std::vector<int64_t> pads(pads_);
   if (pads.empty()) {
     pads.resize(kernel_shape.size() * 2, 0);
   }
-  vector<int64_t> dilations(dilations_);
+  std::vector<int64_t> dilations(dilations_);
   if (dilations.empty()) {
     dilations.resize(kernel_shape.size(), 1);
   }
-  vector<int64_t> strides(strides_);
+  std::vector<int64_t> strides(strides_);
   if (strides.empty()) {
     strides.resize(kernel_shape.size(), 1);
   }
 
-  vector<int64_t> y_dims;
+  std::vector<int64_t> y_dims;
   y_dims.insert(y_dims.begin(), {N, M});
   InferOutputShape(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims);
   Tensor* Y = context->Output(0, TensorShape(y_dims));
+
+  const TensorShape& w_shape = W->Shape();
+  std::vector<int64_t> w_dims = w_shape.GetDims();
+  std::vector<int64_t> x_dims_cudnn = x_dims;
+  std::vector<int64_t> y_dims_cudnn = y_dims;
+  if (kernel_shape.size() < 2) {
+    // cudnn only takes 4D or 5D input, so pad dimensions if needed
+    x_dims_cudnn.push_back(1);
+    y_dims_cudnn.push_back(1);
+    w_dims.push_back(1);
+    pads.insert(pads.begin() + kernel_shape.size(), 0);
+    pads.insert(pads.end(), 0);
+    kernel_shape.push_back(1);
+    strides.push_back(1);
+    dilations.push_back(1);
+  }
 
   auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
   auto w_data = reinterpret_cast<const CudaT*>(W->Data<T>());
@@ -75,15 +102,9 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   const auto beta = Consts<CudaT>::Zero;
   CudnnTensor x_tensor;
   CudnnTensor y_tensor;
-  LOTUS_RETURN_IF_ERROR(x_tensor.Set(x_dims, CudnnTensor::GetDataType<CudaT>()));
-  LOTUS_RETURN_IF_ERROR(y_tensor.Set(y_dims, CudnnTensor::GetDataType<CudaT>()));
+  LOTUS_RETURN_IF_ERROR(x_tensor.Set(x_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
+  LOTUS_RETURN_IF_ERROR(y_tensor.Set(y_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
 
-  if (B != nullptr) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Conv with bias not support yet on CUDA.");
-  }
-
-  const TensorShape& w_shape = W->Shape();
-  const auto& w_dims = w_shape.GetDims();
   CudnnFilterDescriptor w_tensor;
   LOTUS_RETURN_IF_ERROR(w_tensor.Set(w_dims, CudnnTensor::GetDataType<CudaT>()));
 
@@ -116,20 +137,40 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
     AllocateBufferOnGPU(workspace, workspace_bytes);
   }
 
-  if (B == nullptr) {
-    CUDNN_RETURN_IF_ERROR(cudnnConvolutionForward(CudnnHandle(),
-                                                  &alpha,
-                                                  x_tensor,
-                                                  x_data,
-                                                  w_tensor,
-                                                  w_data,
-                                                  conv_desc,
-                                                  algo,
-                                                  workspace.get(),
-                                                  workspace_bytes,
-                                                  &beta,
-                                                  y_tensor,
-                                                  y_data));
+  CUDNN_RETURN_IF_ERROR(cudnnConvolutionForward(CudnnHandle(),
+                                                &alpha,
+                                                x_tensor,
+                                                x_data,
+                                                w_tensor,
+                                                w_data,
+                                                conv_desc,
+                                                algo,
+                                                workspace.get(),
+                                                workspace_bytes,
+                                                &beta,
+                                                y_tensor,
+                                                y_data));
+
+  if (B) {
+    std::vector<int64_t> overrided_B_dims = B->Shape().GetDims();
+    for (int i = 0; i < kernel_shape.size(); i++)
+      overrided_B_dims.push_back(1);
+
+    TensorShape overrided_B_shape(overrided_B_dims);
+
+    BinaryElementwisePreparation prepare(provider_);
+    LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(Y, B, Y, &prepare, nullptr, &overrided_B_shape));
+    Impl_Add<CudaT>(
+        prepare.output_rank_or_simple_broadcast,
+        prepare.lhs_dim0_broadcast,
+        prepare.lhs_padded_strides.GpuPtr(),
+        reinterpret_cast<const CudaT*>(prepare.lhs_tensor->Data<T>()),
+        prepare.rhs_dim0_broadcast,
+        prepare.rhs_padded_strides.GpuPtr(),
+        reinterpret_cast<const CudaT*>(prepare.rhs_tensor->Data<T>()),
+        prepare.fdm_output_strides.GpuPtr(),
+        reinterpret_cast<CudaT*>(prepare.output_tensor->MutableData<T>()),
+        prepare.output_tensor->Shape().Size());
   }
 
   return Status::OK();

@@ -6,15 +6,15 @@ using namespace Lotus::Common;
 namespace Lotus {
 namespace Cuda {
 
-#define POOLING_KERNEL(op_name, data_type, pool_type, since_version)                  \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                      \
-    op_name,                                                                          \
-    kOnnxDomain,                                                                      \
-    since_version,                                                                    \
-    data_type,                                                                        \
-    kCudaExecutionProvider,                                                           \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<data_type>()), \
-    Pool<data_type, pool_type>);
+#define POOLING_KERNEL(op_name, data_type, pool_type, since_version)                    \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                        \
+      op_name,                                                                          \
+      kOnnxDomain,                                                                      \
+      since_version,                                                                    \
+      data_type,                                                                        \
+      kCudaExecutionProvider,                                                           \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<data_type>()), \
+      Pool<data_type, pool_type>);
 
 POOLING_KERNEL(AveragePool, float, AveragePool, 7)
 POOLING_KERNEL(AveragePool, double, AveragePool, 7)
@@ -102,12 +102,24 @@ Status Pool<T, type>::Compute(OpKernelContext* context) const {
   auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
   auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
 
+  std::vector<int64_t> x_dims_cudnn = x_dims;
+  std::vector<int64_t> y_dims_cudnn = y_dims;
+  if (kernel_shape.size() < 2) {
+    // cudnn only takes 4D or 5D input, so pad dimensions if needed
+    x_dims_cudnn.push_back(1);
+    y_dims_cudnn.push_back(1);
+    pads.insert(pads.begin() + kernel_shape.size(), 0);
+    pads.insert(pads.end(), 0);
+    kernel_shape.push_back(1);
+    strides.push_back(1);
+  }
+
   const auto alpha = Consts<CudaT>::One;
   const auto beta = Consts<CudaT>::Zero;
   CudnnTensor x_tensor;
   CudnnTensor y_tensor;
-  LOTUS_RETURN_IF_ERROR(x_tensor.Set(x_dims, CudnnTensor::GetDataType<CudaT>()));
-  LOTUS_RETURN_IF_ERROR(y_tensor.Set(y_dims, CudnnTensor::GetDataType<CudaT>()));
+  LOTUS_RETURN_IF_ERROR(x_tensor.Set(x_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
+  LOTUS_RETURN_IF_ERROR(y_tensor.Set(y_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
 
   cudnnPoolingMode_t mode = CUDNN_POOLING_MAX;
   if (type == Lotus::Cuda::PoolType::AveragePool) {
