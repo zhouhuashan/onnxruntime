@@ -305,7 +305,11 @@ Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
   auto output_arg_index = arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
   MLValueAllocationParameters parameters;
   parameters.tensor_shape = shape;
-  Tensor* ret;
+  //@chasun: Though we don't need to give 'ret' an initial value, GCC would generate a warning if we don't do that
+  //"error: 'ret' may be used uninitialized in this function"
+  //This warning only exists in Release build.
+  //I believe it's a false alarm.
+  Tensor* ret = nullptr;
   Status status = execution_frame_->GetOrCreateMLValue<Tensor>(output_arg_index, parameters, ret);
   LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
   return ret;

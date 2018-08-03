@@ -109,7 +109,7 @@ class OpKernelContext {
 
     auto output_arg_index = GetOutputArgIndex(index);
     MLValueAllocationParameters parameters;
-    T* ret;
+    T* ret = nullptr;
     LOTUS_ENFORCE(execution_frame_->GetOrCreateMLValue<T>(output_arg_index, parameters, ret).IsOK());
     return ret;
   }
