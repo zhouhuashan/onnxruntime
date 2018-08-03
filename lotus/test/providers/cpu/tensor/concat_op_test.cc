@@ -4,6 +4,17 @@
 namespace Lotus {
 namespace Test {
 
+TEST(MathOpTest, Concat1D_int32) {
+  OpTester test("Concat");
+  test.AddAttribute("axis", int64_t{0});
+
+  test.AddInput<int32_t>("input1", {1}, {1});
+  test.AddInput<int32_t>("input2", {2}, {2, 3});
+  test.AddInput<int32_t>("input3", {4}, {4, 5, 6, 7});
+  test.AddOutput<int32_t>("concat_result", {7}, {1, 2, 3, 4, 5, 6, 7});
+  test.Run();
+}
+
 TEST(MathOpTest, Concat1D) {
   OpTester test("Concat");
   test.AddAttribute("axis", int64_t{0});

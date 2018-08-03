@@ -3,14 +3,22 @@ using namespace Lotus::Common;
 
 namespace Lotus {
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Unsqueeze,
     1,
+    float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Unsqueeze<float>);
 
-template <>
-Status Unsqueeze<float>::Compute(OpKernelContext *ctx) const {
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Unsqueeze,
+    1,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Unsqueeze<int32_t>);
+
+template <typename T>
+Status Unsqueeze<T>::Compute(OpKernelContext *ctx) const {
   auto &input_tensor = *ctx->Input<Tensor>(0);
 
   // New dimension count is the current dimensions + the number of entries in axes_
@@ -38,8 +46,8 @@ Status Unsqueeze<float>::Compute(OpKernelContext *ctx) const {
 
   TensorShape output_shape(output_dims);
   auto &output_tensor = *ctx->Output(0, output_shape);
-  auto *output = output_tensor.MutableData<float>();
-  auto *input = input_tensor.Data<float>();
+  auto *output = output_tensor.MutableData<T>();
+  auto *input = input_tensor.Data<T>();
 
   // Copy the tensor
   size_t size = output_shape.Size();

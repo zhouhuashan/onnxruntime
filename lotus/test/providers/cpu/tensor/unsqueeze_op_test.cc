@@ -13,6 +13,15 @@ TEST(TensorOpTest, Unsqueeze_1) {
   test.Run();
 }
 
+TEST(TensorOpTest, Unsqueeze_1_int32) {
+  OpTester test("Unsqueeze");
+
+  test.AddAttribute("axes", std::vector<int64_t>{1});
+  test.AddInput<int32_t>("input", {2, 3, 4}, std::vector<int32_t>(2 * 3 * 4, 1));
+  test.AddOutput<int32_t>("output", {2, 1, 3, 4}, std::vector<int32_t>(2 * 3 * 4, 1));
+  test.Run();
+}
+
 TEST(TensorOpTest, Unsqueeze_2) {
   OpTester test("Unsqueeze");
 

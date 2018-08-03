@@ -2,14 +2,22 @@
 
 namespace Lotus {
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Concat,
     4,
+    float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Concat<float>);
 
-template <>
-Status Concat<float>::Compute(OpKernelContext* ctx) const {
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Concat,
+    4,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Concat<int32_t>);
+
+template <typename T>
+Status Concat<T>::Compute(OpKernelContext* ctx) const {
   auto input_count = Node().InputArgCount().front();
   LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
 
@@ -46,7 +54,7 @@ Status Concat<float>::Compute(OpKernelContext* ctx) const {
     output_axis_pitch *= dims[i];
 
   auto& concat_result = *ctx->Output(0, outputShape);
-  float* output_base = concat_result.MutableData<float>();
+  T* output_base = concat_result.MutableData<T>();
 
   for (int input_index = 0; input_index < input_count; input_index++) {
     auto& data_n = *ctx->Input<Tensor>(input_index);
@@ -56,11 +64,11 @@ Status Concat<float>::Compute(OpKernelContext* ctx) const {
     for (int i = int(data_n.Shape().NumDimensions()); i-- > axis_;)
       input_axis_pitch *= data_n.Shape()[i];
 
-    const float* input = data_n.Data<float>();
+    const T* input = data_n.Data<T>();
     auto input_size = data_n.Shape().Size();
 
     // Copy the data across. For every 'input_axis_pitch' values copied, we move over by the 'output_axis_pitch'
-    float* output = output_base;
+    T* output = output_base;
     for (int i = 0, j = 0; i < input_size; i++) {
       output[i] = input[i];
       if (++j == input_axis_pitch) {

@@ -20,9 +20,6 @@ class ReduceKernel : public OpKernel {
       keepdims_ = (keepdims == 1);
   }
 
-  void PrepareForReduce(OpKernelContext* ctx, std::vector<float>& transposedInputData, Tensor** reducedTensor,
-                        int64_t& block_size, int64_t& blocks) const;
-
   std::vector<int64_t> axes_;
   bool keepdims_ = true;
 };

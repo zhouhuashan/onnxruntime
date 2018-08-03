@@ -4,13 +4,16 @@
 
 namespace Lotus {
 
+    const static std::string UpsampleModeNN = "nearest";
+    const static std::string UpsampleModeLinear = "linear";
+
 template <typename T>
 class Upsample : public OpKernel {
  public:
   Upsample(OpKernelInfo info) : OpKernel(info) {
     std::string mode;
-    if (!info.GetAttr<std::string>("mode", &mode).IsOK())
-      mode = Upsample<float>::UpsampleModeNN;
+    LOTUS_ENFORCE(info.GetAttr<std::string>("mode", &mode).IsOK());
+
     mode_ = StringToUpsampleMode(mode);
 
     LOTUS_ENFORCE(info.GetAttrs<float>("scales", scales_).IsOK());
@@ -24,9 +27,6 @@ class Upsample : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 
  protected:
-  static const std::string UpsampleModeNN;
-  static const std::string UpsampleModeLinear;
-
   enum class UpsampleMode {
     NN = 0,      // nearest neighbour
     LINEAR = 1,  // linear interpolation
@@ -37,9 +37,9 @@ class Upsample : public OpKernel {
   std::vector<float> scales_;
 
   UpsampleMode StringToUpsampleMode(const std::string& mode) {
-    if (mode == Upsample<float>::UpsampleModeNN) {
+    if (mode == UpsampleModeNN) {
       return UpsampleMode::NN;
-    } else if (mode == Upsample<float>::UpsampleModeLinear) {
+    } else if (mode == UpsampleModeLinear) {
       return UpsampleMode::LINEAR;
     } else {
       LOTUS_THROW("mode attribute is " + mode + ". It can only be " +

@@ -12,6 +12,14 @@ TEST(SqueezeOpTest, Squeeze_1) {
   test.Run();
 }
 
+TEST(SqueezeOpTest, Squeeze_1_int32) {
+  OpTester test("Squeeze");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddInput<int32_t>("data", {1, 3, 4, 5}, std::vector<int32_t>(60, 1));
+  test.AddOutput<int32_t>("squeezed", {3, 4, 5}, std::vector<int32_t>(60, 1));
+  test.Run();
+}
+
 TEST(SqueezeOpTest, Squeeze_2) {
   OpTester test("Squeeze");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2, 3});

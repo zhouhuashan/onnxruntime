@@ -36,6 +36,37 @@ TEST(UpsampleOpTest, UpsampleOpNearestTest) {
   test.Run();
 }
 
+TEST(UpsampleOpTest, UpsampleOpNearestTest_int32) {
+  OpTester test("Upsample");
+
+  std::vector<float> scales{1.0f, 1.0f, 2.0f, 3.0f};
+  test.AddAttribute("mode", "nearest");
+  test.AddAttribute("scales", scales);
+
+  const int64_t N = 1, C = 2, H = 2, W = 2;
+  std::vector<int32_t> X = {1, 3,
+                            3, 5,
+
+                            3, 5,
+                            7, 9};
+
+  test.AddInput<int32_t>("X", {N, C, H, W}, X);
+
+  std::vector<int32_t> Y = {
+      1, 1, 1, 3, 3, 3,
+      1, 1, 1, 3, 3, 3,
+      3, 3, 3, 5, 5, 5,
+      3, 3, 3, 5, 5, 5,
+
+      3, 3, 3, 5, 5, 5,
+      3, 3, 3, 5, 5, 5,
+      7, 7, 7, 9, 9, 9,
+      7, 7, 7, 9, 9, 9};
+
+  test.AddOutput<int32_t>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
+  test.Run();
+}
+
 TEST(UpsampleOpTest, UpsampleOpNearest2XTest) {
   OpTester test("Upsample");
 
@@ -67,6 +98,37 @@ TEST(UpsampleOpTest, UpsampleOpNearest2XTest) {
   test.Run();
 }
 
+TEST(UpsampleOpTest, UpsampleOpNearest2XTest_int32) {
+  OpTester test("Upsample");
+
+  std::vector<float> scales{1.0f, 1.0f, 2.0f, 2.0f};
+  test.AddAttribute("mode", "nearest");
+  test.AddAttribute("scales", scales);
+
+  const int64_t N = 1, C = 2, H = 2, W = 2;
+  std::vector<int32_t> X = {1, 3,
+                            3, 5,
+
+                            3, 5,
+                            7, 9};
+
+  test.AddInput<int32_t>("X", {N, C, H, W}, X);
+
+  std::vector<int32_t> Y = {
+      1, 1, 3, 3,
+      1, 1, 3, 3,
+      3, 3, 5, 5,
+      3, 3, 5, 5,
+
+      3, 3, 5, 5,
+      3, 3, 5, 5,
+      7, 7, 9, 9,
+      7, 7, 9, 9};
+
+  test.AddOutput<int32_t>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
+  test.Run();
+}
+
 TEST(UpsampleOpTest, UpsampleOpBilinearTest) {
   OpTester test("Upsample");
 
@@ -95,6 +157,37 @@ TEST(UpsampleOpTest, UpsampleOpBilinearTest) {
       7.0f, 7.5f, 8.0f, 8.5f, 9.0f, 9.0f, 9.0f, 9.0f};
 
   test.AddOutput<float>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
+  test.Run();
+}
+
+TEST(UpsampleOpTest, UpsampleOpBilinearTest_int32) {
+  OpTester test("Upsample");
+
+  std::vector<float> scales{1.0f, 1.0f, 2.0f, 4.0f};
+  test.AddAttribute("mode", "linear");
+  test.AddAttribute("scales", scales);
+
+  const int64_t N = 2, C = 1, H = 2, W = 2;
+  std::vector<int32> X = {1, 3,
+                          3, 5,
+
+                          3, 5,
+                          7, 9};
+
+  test.AddInput<int32>("X", {N, C, H, W}, X);
+
+  std::vector<int32> Y = {
+      1, 1, 2, 2, 3, 3, 3, 3,
+      2, 2, 3, 3, 4, 4, 4, 4,
+      3, 3, 4, 4, 5, 5, 5, 5,
+      3, 3, 4, 4, 5, 5, 5, 5,
+
+      3, 3, 4, 4, 5, 5, 5, 5,
+      5, 5, 6, 6, 7, 7, 7, 7,
+      7, 7, 8, 8, 9, 9, 9, 9,
+      7, 7, 8, 8, 9, 9, 9, 9};
+
+  test.AddOutput<int32>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
   test.Run();
 }
 }  // namespace Test

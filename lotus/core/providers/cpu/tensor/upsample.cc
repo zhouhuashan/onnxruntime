@@ -2,16 +2,20 @@
 using namespace Lotus::Common;
 using namespace std;
 namespace Lotus {
-template <typename T>
-const string Upsample<T>::UpsampleModeNN = "nearest";
-template <typename T>
-const string Upsample<T>::UpsampleModeLinear = "linear";
 
-ONNX_CPU_OPERATOR_KERNEL(
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Upsample,
     7,
+    float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Upsample<float>);
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Upsample,
+    7,
+    int32_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
+    Upsample<int32_t>);
 
 
 void upsampleNearest2x(
@@ -124,6 +128,7 @@ Status upsampleLiner(const T* input,
   return Status::OK();
 }
 
+template <typename T>
 void upsampleBilinear(
     int64_t batch_size,
     int64_t num_channels,
@@ -131,8 +136,8 @@ void upsampleBilinear(
     int64_t input_width,
     float height_scale,
     float width_scale,
-    const float* Xdata,
-    float* Ydata) {
+    const T* Xdata,
+    T* Ydata) {
   int64_t output_width = static_cast<int64_t>(input_width * width_scale);
   int64_t output_height = static_cast<int64_t>(input_height * height_scale);
 
@@ -149,6 +154,9 @@ void upsampleBilinear(
           dy2 = 0.5f;
         }
 
+        const int64_t input_width_mul_y1 = input_width * in_y1;
+        const int64_t input_width_mul_y2 = input_width * in_y2;
+
         for (int64_t x = 0; x < output_width; ++x) {
           float in_x = std::min(x / width_scale, static_cast<float>(input_width - 1));
           const int64_t in_x1 = std::min(static_cast<int64_t>(in_x), input_width - 1);
@@ -161,15 +169,15 @@ void upsampleBilinear(
             dx2 = 0.5f;
           }
 
-          float X11 = Xdata[input_width * in_y1 + in_x1];
-          float X21 = Xdata[input_width * in_y1 + in_x2];
-          float X12 = Xdata[input_width * in_y2 + in_x1];
-          float X22 = Xdata[input_width * in_y2 + in_x2];
+          T X11 = Xdata[input_width_mul_y1 + in_x1];
+          T X21 = Xdata[input_width_mul_y1 + in_x2];
+          T X12 = Xdata[input_width_mul_y2 + in_x1];
+          T X22 = Xdata[input_width_mul_y2 + in_x2];
 
-          Ydata[output_width * y + x] = dx2 * dy2 * X11 +
-                                        dx1 * dy2 * X21 +
-                                        dx2 * dy1 * X12 +
-                                        dx1 * dy1 * X22;
+          Ydata[output_width * y + x] = static_cast<T>( dx2 * dy2 * X11 +
+                                                            dx1 * dy2 * X21 +
+                                                            dx2 * dy1 * X12 +
+                                                            dx1 * dy1 * X22);
         }
       }
       Xdata += input_height * input_width;
@@ -178,8 +186,8 @@ void upsampleBilinear(
   }
 }
 
-template <>
-Status Upsample<float>::Compute(OpKernelContext* context) const {
+template <typename T>
+Status Upsample<T>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const std::vector<int64_t>& dims = X->Shape().GetDims();
   if (dims.size() != scales_.size()) {
@@ -197,16 +205,16 @@ Status Upsample<float>::Compute(OpKernelContext* context) const {
 
   switch (mode_) {
     case UpsampleMode::NN:
-      return upsampleNearest<float>(X->Data<float>(), Y->MutableData<float>(), X->Shape(), Y->Shape(), scales_);
+      return upsampleNearest<T>(X->Data<T>(), Y->MutableData<T>(), X->Shape(), Y->Shape(), scales_);
     case UpsampleMode::LINEAR: {
       //What's the correct behavior of linear mode is not clear right now,
       //Only support bilinear with 4D tensor to keep consistent with previous behavior
       if (dims.size() != 4)
         return Status(LOTUS, FAIL, "Upsample: liner mode upsample only support 4-D tensor with NCHW layout");
       upsampleBilinear(batch_size, num_channels, input_height, input_width,
-                       scales_[2], scales_[3], X->Data<float>(), Y->MutableData<float>());
+                       scales_[2], scales_[3], X->Data<T>(), Y->MutableData<T>());
       return Status::OK();
-      //return upsampleLiner<float>(X->Data<float>(), Y->MutableData<float>(), X->Shape(), Y->Shape(), scales_);
+      //return upsampleLiner<T>(X->Data<T>(), Y->MutableData<T>(), X->Shape(), Y->Shape(), scales_);
     }
     default:
       return Status(LOTUS, FAIL, "Upsample: unexpected mode");

@@ -5,14 +5,17 @@
 #include "core/providers/common.h"
 
 namespace Lotus {
-template <typename T, typename TInd>
 class Gather final : public OpKernel {
  public:
   Gather(const OpKernelInfo& info) : OpKernel(info) {
     LOTUS_ENFORCE(info.GetAttr<int64_t>("axis", &axis_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override {
+  Status Compute(OpKernelContext* context) const override;
+  
+ private:
+  template <typename T, typename TInd>
+  Status GatherImpl(OpKernelContext* context) const {
     const Tensor* data = context->Input<Tensor>(0);
     const TensorShape& data_shape = data->Shape();
     const Tensor* indices = context->Input<Tensor>(1);
@@ -55,7 +58,9 @@ class Gather final : public OpKernel {
     return Status::OK();
   }
 
- private:
+  template <typename Tind_type>
+  Status TindTypedGatherImpl(OpKernelContext* context, const MLDataType& T_type) const;
+
   int64_t axis_;
 };
 }  // namespace Lotus
