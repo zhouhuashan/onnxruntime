@@ -53,43 +53,42 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
   typedef typename ToCudaType<T>::MappedType CudaT;
   const Tensor& X = *ctx->Input<Tensor>(0);
   const TensorShape input_shape{X.Shape()};
-  const auto input_rank = input_shape.NumDimensions();
+  const auto rank = input_shape.NumDimensions();
 
-  if (input_rank > 8) {
+  if (rank > 8) {
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "cuDNN only supports up to 8-D tensors in reduction");
   }
 
   const auto& input_dims = input_shape.GetDims();
   std::vector<int64_t> output_dims;
-  std::vector<bool> reduced(input_dims.size(), false);
+  std::vector<bool> reduced(rank, false);
   std::vector<int64_t> squeezed_output_dims;
   if (axes_.size() > 0) {
     output_dims = input_dims;
     for (auto reduced_axis : axes_) {
-      const int64_t axis = HandleNegativeAxis(reduced_axis, input_rank);
+      const int64_t axis = HandleNegativeAxis(reduced_axis, rank);
       output_dims[axis] = 1;
       reduced[axis] = true;
     }
   } else {
-    output_dims = std::vector<int64_t>(input_dims.size(), 1);
+    output_dims = std::vector<int64_t>(rank, 1);
   }
 
   if (keepdims_) {
     squeezed_output_dims = output_dims;
   } else {
-    for (size_t i = 0; i < input_dims.size(); ++i) {
+    for (size_t i = 0; i < rank; ++i) {
       if (!reduced[i])
         squeezed_output_dims.push_back(input_dims[i]);
     }
   }
 
   Tensor* Y = ctx->Output(0, TensorShape(squeezed_output_dims));
+  ResetScratchBuffer();
 
   // CUDNN requires at least 3D input, so pad 1s if needed
   std::vector<int64_t> input_dims_cudnn = input_dims;
   std::vector<int64_t> output_dims_cudnn = output_dims;
-
-  auto rank = input_dims.size();
   if (rank < 3) {
     std::vector<int64_t> pads(3 - rank, 1);
     input_dims_cudnn.insert(input_dims_cudnn.end(), pads.begin(), pads.end());
@@ -106,30 +105,27 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
   LOTUS_RETURN_IF_ERROR(output_tensor.Set(output_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
   size_t indices_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
-  IAllocatorUniquePtr<void> indices_cuda;
-  AllocateBufferOnGPU(indices_cuda, indices_bytes);
+  void* indices_cuda = GetScratchBuffer<void>(indices_bytes);
 
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
-  IAllocatorUniquePtr<void> workspace_cuda;
-  AllocateBufferOnGPU(workspace_cuda, workspace_bytes);
+  void* workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
 
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_NO_INDICES) {
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
-        CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
+        CudnnHandle(), reduce_desc, indices_cuda, indices_bytes, workspace_cuda, workspace_bytes,
         &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
         &beta, output_tensor, reinterpret_cast<CudaT*>(Y->MutableData<T>())));
   } else {
     // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
-    IAllocatorUniquePtr<CudaT> temp_output;
     auto output_count = Y->Shape().Size();
-    AllocateBufferOnGPU(temp_output, output_count);
+    CudaT* temp_output = GetScratchBuffer<CudaT>(output_count);
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
-        CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
+        CudnnHandle(), reduce_desc, indices_cuda, indices_bytes, workspace_cuda, workspace_bytes,
         &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
-        &beta, output_tensor, temp_output.get()));
+        &beta, output_tensor, temp_output));
     // CUDA reduction index is uint32_t for now, cast it to int64_t according to ONNX spec
-    Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda.get()), Y->MutableData<int64_t>(), output_count);
+    Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda), Y->MutableData<int64_t>(), output_count);
   }
 
   return Status::OK();

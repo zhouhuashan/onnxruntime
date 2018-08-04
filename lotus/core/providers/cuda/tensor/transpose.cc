@@ -5,15 +5,16 @@
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_KERNEL_TYPED(T)                                              \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
-    Transpose,                                                                \
-    kOnnxDomain,                                                              \
-    1,                                                                        \
-    T,                                                                        \
-    kCudaExecutionProvider,                                                   \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-    Transpose<T>);
+#define REGISTER_KERNEL_TYPED(T)                                  \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
+      Transpose,                                                  \
+      kOnnxDomain,                                                \
+      1,                                                          \
+      T,                                                          \
+      kCudaExecutionProvider,                                     \
+      KernelDefBuilder()                                          \
+          .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      Transpose<T>);
 
 template <typename T>
 Status Transpose<T>::Compute(OpKernelContext* ctx) const {
@@ -30,9 +31,10 @@ Status Transpose<T>::Compute(OpKernelContext* ctx) const {
   TensorShape output_shape{output_dims};
   Tensor* Y = ctx->Output(0, output_shape);
 
-  CudaAsyncBuffer<int64_t> input_strides(provider_, rank);
-  CudaAsyncBuffer<int64_t> perm(provider_, *p_perm);
-  CudaAsyncBuffer<fast_divmod> fdm_output_strides(provider_, rank);
+  ResetScratchBuffer();
+  CudaAsyncBuffer<int64_t> input_strides(this, rank);
+  CudaAsyncBuffer<int64_t> perm(this, *p_perm);
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides(this, rank);
   LOTUS_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_dims));
   LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
 

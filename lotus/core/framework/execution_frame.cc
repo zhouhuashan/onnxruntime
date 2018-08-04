@@ -74,7 +74,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
 
   int64_t len = shape.Size();
   if (len < 0) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
+    return Status(LOTUS, INVALID_ARGUMENT, "Tensor shape cannot contain any negative value");
   }
   len *= element_type->Size();
   //safety check for 32 bits systems
@@ -182,7 +182,7 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlva
                                                                  const AllocatorInfo& location,
                                                                  const TensorShape& shape) {
   if (p_mlvalue->IsAllocated()) {
-    return Common::Status::OK();
+    return Status::OK();
   }
   std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
                                                               shape,
@@ -192,7 +192,7 @@ Status ExecutionFrame::AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlva
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
-  return Common::Status::OK();
+  return Status::OK();
 }
 
 Status ExecutionFrame::AllocateTensorWithPreAllocateBuffer(const int offset,
@@ -215,9 +215,9 @@ void ExecutionFrame::Release(const int offset) {
   }
 }
 
-Common::Status AllocateTraditionalMLValue(MLValue* p_mlvalue,
-                                          const NonTensorTypeBase* type,
-                                          const MLValueAllocationParameters& parameters) {
+Status AllocateTraditionalMLValue(MLValue* p_mlvalue,
+                                  const NonTensorTypeBase* type,
+                                  const MLValueAllocationParameters& parameters) {
   // right now we don't need any parameter for ml value creation,
   // keep it in api for extensibility
   UNUSED_PARAMETER(parameters);
@@ -229,8 +229,8 @@ Common::Status AllocateTraditionalMLValue(MLValue* p_mlvalue,
 }
 
 // This method is not thread safe!
-Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
-                                                           const MLValueAllocationParameters& parameters) {
+Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
+                                                   const MLValueAllocationParameters& parameters) {
   if (mlvalue_index < 0 || mlvalue_index >= all_values_.size())
     return Status(LOTUS, INVALID_ARGUMENT,
                   "Tried to allocated with invalid mlvalue index: " + std::to_string(mlvalue_index));
@@ -278,11 +278,11 @@ Common::Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
     default: {
       std::ostringstream ostr;
       ostr << "Invalid allocation kind: " << static_cast<std::underlying_type<AllocKind>::type>(alloc_kind);
-      return Common::Status(Common::LOTUS, Common::FAIL, ostr.str());
+      return Status(LOTUS, FAIL, ostr.str());
     }
   }
 
-  return Common::Status::OK();
+  return Status::OK();
 }
 
 void ExecutionFrame::Init(const LotusIR::Graph* graph,
@@ -308,7 +308,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   // 3. handle feed in values
   for (const auto& feed : feeds) {
     int mlvalue_idx;
-    Common::Status status = session_state_.GetMLValueIdx(feed.first, &mlvalue_idx);
+    Status status = session_state_.GetMLValueIdx(feed.first, &mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     // we are sharing the underline tensor/object for MLValue
     all_values_[mlvalue_idx] = feed.second;
@@ -318,7 +318,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   // setup output_indices_, we dont' want to generate mem plan on output tensors.
   for (const auto& oname : output_names) {
     int mlvalue_idx;
-    Common::Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+    Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     output_indices_.push_back(mlvalue_idx);
   }
@@ -332,7 +332,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
     auto idx = 0;
     for (const auto& oname : output_names) {
       int mlvalue_idx;
-      Common::Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+      Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
       LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
       all_values_[mlvalue_idx] = fetches.at(idx++);
       output_indices_.push_back(mlvalue_idx);
@@ -363,7 +363,7 @@ void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
     node_values_.push_back(-1);
   } else {
     int index;
-    Common::Status status = session_state_.GetMLValueIdx(name, &index);
+    Status status = session_state_.GetMLValueIdx(name, &index);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     node_values_.push_back(index);
   }

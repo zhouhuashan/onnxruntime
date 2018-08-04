@@ -61,12 +61,12 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return nullptr;
   }
 
-  cublasHandle_t CublasHandle() const {
-    return cublas_handle_;
+  cublasHandle_t PerThreadCublasHandle() {
+    return per_thread_context_->CublasHandle();
   }
 
-  cudnnHandle_t CudnnHandle() const {
-    return cudnn_handle_;
+  cudnnHandle_t PerThreadCudnnHandle() {
+    return per_thread_context_->CudnnHandle();
   }
 
   cudaStream_t GetStream(int queue_id) const {
@@ -81,28 +81,95 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return constant_ones_->GetBuffer(count);
   }
 
-  void AddDeferredReleaseCPUPtr(void* p) {
-    // when not running in InferenceSession (e.g. Test)
-    // it's OK to not remember the deferred release ptr
-    // as the actual memory will be cleaned in arena allocator dtor
-    if (current_deferred_release_event)
-      deferred_release_cpu_ptr[current_deferred_release_event].push_back(p);
+  void AddDeferredReleaseCPUPtr(void* p);
+
+  template <typename T>
+  inline T* GetScratchBuffer(size_t count_or_bytes) {
+    return per_thread_context_->GetScratchBuffer<T>(count_or_bytes);
+  }
+
+  void ResetScratchBuffer() {
+    return per_thread_context_->ResetScratchBuffer();
   }
 
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const;
 
  private:
-  CUDATransformer transformer_;
-  int device_id_;
-  cublasHandle_t cublas_handle_ = nullptr;
-  cudnnHandle_t cudnn_handle_ = nullptr;
   cudaStream_t streams_[kTotalCudaStreams];
   std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
+  CUDATransformer transformer_;
+  int device_id_;
 
-  // deferred release for temporary CPU pinned memory used in cudaMemcpyAsync
-  // note that cudaEvent will be assigned at OnRunEnd()
-  cudaEvent_t current_deferred_release_event = nullptr;
-  std::unordered_map<cudaEvent_t, std::vector<void*>> deferred_release_cpu_ptr;
+  struct DeferredReleaseCPUPtrs {
+    bool recorded = false;
+    std::vector<void*> cpu_ptrs;
+  };
+  std::unordered_map<cudaEvent_t, DeferredReleaseCPUPtrs> deferred_release_cpu_ptr_;
+  std::mutex deferred_release_cpu_ptr_mutex_;
+
+  class PerThreadContext final {
+   public:
+    PerThreadContext(int device_id, AllocatorPtr gpu_allocator);
+    ~PerThreadContext();
+
+    cublasHandle_t CublasHandle() const {
+      return cublas_handle_;
+    }
+
+    cudnnHandle_t CudnnHandle() const {
+      return cudnn_handle_;
+    }
+
+    cudaEvent_t& GetCurrentDeferredReleaseEvent() {
+      return current_deferred_release_event_;
+    }
+
+    void ResetScratchBuffer() {
+      gpu_scratch_buffer_bytes_used_ = 0;
+    }
+
+    template <typename T>
+    inline T* GetScratchBuffer(size_t count_or_bytes) {
+      if (count_or_bytes == 0) {
+        return nullptr;
+      }
+
+      size_t bytes = count_or_bytes;
+
+      if (!std::is_void<T>::value)
+        bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
+
+      size_t used_bytes = bytes + gpu_scratch_buffer_bytes_used_;
+      if (used_bytes > gpu_scratch_buffer_size_) {
+        // note that scratch buffer is write-only, so no copy needed when reallocate to a bigger size
+        gpu_scratch_buffer_.reset();
+        gpu_scratch_buffer_ = IAllocator::MakeUniquePtr<uint8_t>(gpu_allocator_, used_bytes);
+        gpu_scratch_buffer_size_ = used_bytes;
+      }
+      T* p = reinterpret_cast<T*>(gpu_scratch_buffer_.get() + gpu_scratch_buffer_bytes_used_);
+      gpu_scratch_buffer_bytes_used_ += bytes;
+      return p;
+    }
+
+   private:
+    cublasHandle_t cublas_handle_ = nullptr;
+    cudnnHandle_t cudnn_handle_ = nullptr;
+
+    // deferred release for temporary CPU pinned memory used in cudaMemcpyAsync
+    // note that cudaEvent will be assigned at OnRunEnd() when PerThreadContext destory
+    // so the ownership is passed to deferred_release_cpu_ptr_
+    cudaEvent_t current_deferred_release_event_ = nullptr;
+
+    // each thread needs to have its own GPU scratch buffer since it
+    // needs to be shared within the same thread, while execution in GPU is async.
+    // This is different from temporary CPU pinned memory which needs to be hold
+    // until GPU copy finished (indicated by deferred_release_event)
+    IAllocatorUniquePtr<uint8_t> gpu_scratch_buffer_;
+    size_t gpu_scratch_buffer_size_ = 0;
+    size_t gpu_scratch_buffer_bytes_used_ = 0;
+    AllocatorPtr gpu_allocator_;
+  };
+  static thread_local std::unique_ptr<PerThreadContext> per_thread_context_;
 };
 
 struct KernelCreateInfo;

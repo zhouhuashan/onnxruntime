@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mutex>
 #include <vector>
 #include "core/common/common.h"
 #include "core/common/status.h"
@@ -216,7 +215,6 @@ class ExecutionFrame {
 
   const SequentialExecutionPlan::AllocPlanPerValue& GetAllocationPlan(int mlvalue_idx);
 
-  std::mutex mutex_;
   Status status_;
 
   // The values for the inputs and outputs of the nodes.

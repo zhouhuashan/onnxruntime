@@ -5,26 +5,29 @@
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_KERNEL_TYPED(T)                                              \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
-    Pad,                                                                      \
-    kOnnxDomain,                                                              \
-    2,                                                                        \
-    T,                                                                        \
-    kCudaExecutionProvider,                                                   \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-    Pad<T>);
+#define REGISTER_KERNEL_TYPED(T)                                  \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
+      Pad,                                                        \
+      kOnnxDomain,                                                \
+      2,                                                          \
+      T,                                                          \
+      kCudaExecutionProvider,                                     \
+      KernelDefBuilder()                                          \
+          .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      Pad<T>);
 
 template <typename T>
 Status Pad<T>::Compute(OpKernelContext *ctx) const {
   const auto &input_tensor = *ctx->Input<Tensor>(0);
   auto const &input_shape = input_tensor.Shape();
   auto dimension_count = input_shape.NumDimensions();
-  CudaAsyncBuffer<int64_t> input_dims(provider_, input_shape.GetDims());
-  CudaAsyncBuffer<int64_t> input_strides(provider_, dimension_count);
-  CudaAsyncBuffer<int64_t> lower_pads(provider_, dimension_count);
-  CudaAsyncBuffer<int64_t> upper_pads(provider_, dimension_count);
-  CudaAsyncBuffer<fast_divmod> fdm_output_strides(provider_, dimension_count);
+
+  ResetScratchBuffer();
+  CudaAsyncBuffer<int64_t> input_dims(this, input_shape.GetDims());
+  CudaAsyncBuffer<int64_t> input_strides(this, dimension_count);
+  CudaAsyncBuffer<int64_t> lower_pads(this, dimension_count);
+  CudaAsyncBuffer<int64_t> upper_pads(this, dimension_count);
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides(this, dimension_count);
 
   TensorPitches::Calculate(input_strides.CpuSpan(), input_shape.GetDims());
   std::vector<int64_t> output_dims(input_shape.GetDims());

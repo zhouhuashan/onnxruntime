@@ -36,7 +36,7 @@ class Reshape final : public CudaKernel {
     T* target = Y->MutableData<T>();
     //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
     if (target != source) {
-      provider_->CopyTensor(*X, *Y);
+      CopyTensor(*X, *Y);
     }
 
     return Status::OK();
@@ -63,7 +63,7 @@ class Reshape_1 final : public CudaKernel {
     T* target = Y->MutableData<T>();
     //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
     if (target != source) {
-      provider_->CopyTensor(*X, *Y);
+      CopyTensor(*X, *Y);
     }
 
     return Status::OK();

@@ -59,8 +59,9 @@ void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKerne
 
 void SessionState::AddExecutionProvider(const std::string& provider_id,
                                         std::unique_ptr<IExecutionProvider> p_exec_provider) {
-  exec_provider_set_.provider_idx_map.insert(
+  auto inserted = exec_provider_set_.provider_idx_map.insert(
       {provider_id, exec_provider_set_.exec_providers.size()});
+  LOTUS_ENFORCE(inserted.second);  // the same provider should only be registered once
   const auto& allocator_map = p_exec_provider->GetAllocatorMap();
   for (const auto& pair : allocator_map) {
     auto allocator = pair.second;

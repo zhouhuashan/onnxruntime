@@ -5,16 +5,17 @@ using namespace Lotus::Common;
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_KERNEL_TYPED(T)                                              \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
-    Tile,                                                                     \
-    kOnnxDomain,                                                              \
-    6,                                                                        \
-    T,                                                                        \
-    kCudaExecutionProvider,                                                   \
-    KernelDefBuilder().InputMemoryType<kMemTypeCPUInput>(1)                   \
-                      .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-    Tile<T>);
+#define REGISTER_KERNEL_TYPED(T)                                  \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
+      Tile,                                                       \
+      kOnnxDomain,                                                \
+      6,                                                          \
+      T,                                                          \
+      kCudaExecutionProvider,                                     \
+      KernelDefBuilder()                                          \
+          .InputMemoryType<kMemTypeCPUInput>(1)                   \
+          .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      Tile<T>);
 
 template <typename T>
 Status Tile<T>::Compute(OpKernelContext *ctx) const {
@@ -39,9 +40,10 @@ Status Tile<T>::Compute(OpKernelContext *ctx) const {
   T *output_data = output_tensor.MutableData<T>();
   const T *input_data = input_tensor.Data<T>();
 
-  CudaAsyncBuffer<int64_t> input_strides(provider_, rank);
-  CudaAsyncBuffer<fast_divmod> fdm_input_shape(provider_, rank);
-  CudaAsyncBuffer<fast_divmod> fdm_output_strides(provider_, rank);
+  ResetScratchBuffer();
+  CudaAsyncBuffer<int64_t> input_strides(this, rank);
+  CudaAsyncBuffer<fast_divmod> fdm_input_shape(this, rank);
+  CudaAsyncBuffer<fast_divmod> fdm_output_strides(this, rank);
 
   LOTUS_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_shape));
   LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));

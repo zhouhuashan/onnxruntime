@@ -23,8 +23,8 @@ Status CudnnTensor::Set(const std::vector<int64_t>& input_dims, cudnnDataType_t 
 
   int rank = gsl::narrow_cast<int>(input_dims.size());
   TensorPitches pitches(input_dims);
-  std::vector<int> dims(rank + 1);
-  std::vector<int> strides(pitches.size() + 1);
+  std::vector<int> dims(rank);
+  std::vector<int> strides(rank);
   for (int i = 0; i < rank; i++) {
     dims[i] = gsl::narrow_cast<int>(input_dims[i]);
     strides[i] = gsl::narrow_cast<int>(pitches[i]);

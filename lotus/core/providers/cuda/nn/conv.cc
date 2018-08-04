@@ -77,6 +77,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   y_dims.insert(y_dims.begin(), {N, M});
   InferOutputShape(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims);
   Tensor* Y = context->Output(0, TensorShape(y_dims));
+  ResetScratchBuffer();
 
   const TensorShape& w_shape = W->Shape();
   std::vector<int64_t> w_dims = w_shape.GetDims();
@@ -132,10 +133,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
                                                                 algo,
                                                                 &workspace_bytes));
 
-  IAllocatorUniquePtr<void> workspace;
-  if (workspace_bytes != 0) {
-    AllocateBufferOnGPU(workspace, workspace_bytes);
-  }
+  void* workspace = GetScratchBuffer<void>(workspace_bytes);
 
   CUDNN_RETURN_IF_ERROR(cudnnConvolutionForward(CudnnHandle(),
                                                 &alpha,
@@ -145,7 +143,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
                                                 w_data,
                                                 conv_desc,
                                                 algo,
-                                                workspace.get(),
+                                                workspace,
                                                 workspace_bytes,
                                                 &beta,
                                                 y_tensor,
@@ -158,7 +156,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
 
     TensorShape overrided_B_shape(overrided_B_dims);
 
-    BinaryElementwisePreparation prepare(provider_);
+    BinaryElementwisePreparation prepare(this);
     LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(Y, B, Y, &prepare, nullptr, &overrided_B_shape));
     Impl_Add<CudaT>(
         prepare.output_rank_or_simple_broadcast,

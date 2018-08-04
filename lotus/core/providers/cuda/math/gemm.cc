@@ -54,7 +54,7 @@ Status Gemm<float>::Compute(OpKernelContext* ctx) const {
           N, M, 1,
           /*alpha*/ &one,
           b_data, N,
-          provider_->GetConstOnes(M), 1,
+          GetConstOnes(M), 1,
           /*beta*/ &zero,
           out_data, N));
     } else if (b_shape.NumDimensions() == 2 && b_shape[1] == 1) {
@@ -65,7 +65,7 @@ Status Gemm<float>::Compute(OpKernelContext* ctx) const {
           CUBLAS_OP_N,
           N, M, 1,
           /*alpha*/ &one,
-          provider_->GetConstOnes(N), N,
+          GetConstOnes(N), N,
           b_data, 1,
           /*beta*/ &zero,
           out_data, N));

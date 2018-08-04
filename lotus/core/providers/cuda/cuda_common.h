@@ -18,64 +18,6 @@ namespace Cuda {
 #define CUDNN_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDNN_CALL(expr) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
 #define CUDNN2_RETURN_IF_ERROR(expr, m) LOTUS_RETURN_IF_ERROR(CUDNN_CALL2(expr, m) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
 
-// To support cudaMemcpyAsync, the cpu memory should be allocated in pinned memory
-// and it can only be released after the copy has finished
-template <typename T>
-class CudaAsyncBuffer {
- public:
-  CudaAsyncBuffer(CUDAExecutionProvider* provider) : provider_(provider), count_(0) {}
-
-  CudaAsyncBuffer(CUDAExecutionProvider* provider, size_t count) : CudaAsyncBuffer(provider) {
-    AllocCpuPtr(count);
-  }
-
-  CudaAsyncBuffer(CUDAExecutionProvider* provider, const T& value) : CudaAsyncBuffer(provider, 1) {
-    *CpuPtr() = value;
-  }
-
-  CudaAsyncBuffer(CUDAExecutionProvider* provider, const std::vector<T>& vec) : CudaAsyncBuffer(provider, vec.size()) {
-    memcpy(CpuPtr(), vec.data(), vec.size() * sizeof(T));
-  }
-
-  void AllocCpuPtr(size_t count) {
-    cpu_pinned_copy_ = IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(kMemTypeCPU), count * sizeof(T));
-    count_ = count;
-  }
-
-  Status CopyToGpu() {
-    // note that release gpu_copy_ after launch is OK because it's just going back to arena allocator
-    // so the actual GPU operation would have a valid pointer to copy to
-    // but CPU memory release needs to be deferred, otherwise if it's reused later from the arena allocator
-    // before the copy starts on GPU, the copy would have corrupted data
-    gpu_copy_ = IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(), count_ * sizeof(T));
-    CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(gpu_copy_.get(), cpu_pinned_copy_.get(), count_ * sizeof(T), cudaMemcpyHostToDevice));
-    provider_->AddDeferredReleaseCPUPtr(cpu_pinned_copy_.release());
-    return Status::OK();
-  }
-
-  T* CpuPtr() const {
-    return cpu_pinned_copy_.get();
-  }
-
-  gsl::span<T> CpuSpan() const {
-    return gsl::span<T>(CpuPtr(), count_);
-  }
-
-  T* GpuPtr() const {
-    return gpu_copy_.get();
-  }
-
-  size_t count() const {
-    return count_;
-  }
-
- protected:
-  IAllocatorUniquePtr<T> gpu_copy_;
-  IAllocatorUniquePtr<T> cpu_pinned_copy_;
-  size_t count_;
-  CUDAExecutionProvider* provider_;
-};
-
 // -----------------------------------------------------------------------
 // Base class for CUDA kernels
 // -----------------------------------------------------------------------
@@ -87,30 +29,101 @@ class CudaKernel : public OpKernel {
         provider_(const_cast<CUDAExecutionProvider*>(dynamic_cast<const CUDAExecutionProvider*>(info.GetExecutionProvider()))) {
   }
 
- protected:
-  cublasHandle_t CublasHandle() const {
-    return provider_->CublasHandle();
-  }
-
-  cudnnHandle_t CudnnHandle() const {
-    return provider_->CudnnHandle();
+  template <typename T>
+  inline IAllocatorUniquePtr<T> AllocateBufferOnCPUPinned(size_t count_or_bytes) const {
+    return IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(kMemTypeCPU), count_or_bytes);
   }
 
   template <typename T>
-  inline void AllocateBufferOnGPU(IAllocatorUniquePtr<T>& gpu_copy, size_t count_or_bytes) const {
-    auto alloc = provider_->GetAllocator();
-    if (count_or_bytes == 0) {
-      gpu_copy.release();
-      return;
-    }
-
-    size_t bytes = count_or_bytes;
-    if (!std::is_void<T>::value)
-      bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
-
-    gpu_copy = IAllocator::MakeUniquePtr<T>(alloc, bytes);
+  inline T* GetScratchBuffer(size_t count_or_bytes) const {
+    return provider_->GetScratchBuffer<T>(count_or_bytes);
   }
 
+  inline void ResetScratchBuffer() const {
+    provider_->ResetScratchBuffer();
+  }
+
+  inline void AddDeferredReleaseCPUPtr(void* p) const {
+    provider_->AddDeferredReleaseCPUPtr(p);
+  }
+
+  // To support cudaMemcpyAsync, the cpu memory should be allocated in pinned memory
+  // and it can only be released after the copy has finished
+  template <typename T>
+  class CudaAsyncBuffer {
+   public:
+    CudaAsyncBuffer(const CudaKernel* op_kernel) : op_kernel_(op_kernel), count_(0) {}
+
+    CudaAsyncBuffer(const CudaKernel* op_kernel, size_t count) : CudaAsyncBuffer(op_kernel) {
+      AllocCpuPtr(count);
+    }
+
+    CudaAsyncBuffer(const CudaKernel* op_kernel, const T& value) : CudaAsyncBuffer(op_kernel, 1) {
+      *CpuPtr() = value;
+    }
+
+    CudaAsyncBuffer(const CudaKernel* op_kernel, const std::vector<T>& vec) : CudaAsyncBuffer(op_kernel, vec.size()) {
+      memcpy(CpuPtr(), vec.data(), vec.size() * sizeof(T));
+    }
+
+    void AllocCpuPtr(size_t count) {
+      cpu_pinned_copy_ = op_kernel_->AllocateBufferOnCPUPinned<T>(count);
+      count_ = count;
+    }
+
+    Status CopyToGpu() {
+      // note that release gpu_copy_ after launch is OK because it's just going back to arena allocator
+      // so the actual GPU operation would have a valid pointer to copy to
+      // but CPU memory release needs to be deferred, otherwise if it's reused later from the arena allocator
+      // before the copy starts on GPU, the copy would have corrupted data
+      // note the gpu arena allocator is per-thread to avoid race condition
+      gpu_copy_ = op_kernel_->GetScratchBuffer<T>(count_);
+      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(gpu_copy_, cpu_pinned_copy_.get(), count_ * sizeof(T), cudaMemcpyHostToDevice));
+      op_kernel_->AddDeferredReleaseCPUPtr(cpu_pinned_copy_.release());
+      return Status::OK();
+    }
+
+    T* CpuPtr() const {
+      return cpu_pinned_copy_.get();
+    }
+
+    gsl::span<T> CpuSpan() const {
+      return gsl::span<T>(CpuPtr(), count_);
+    }
+
+    T* GpuPtr() const {
+      return gpu_copy_;
+    }
+
+    size_t count() const {
+      return count_;
+    }
+
+   protected:
+    T* gpu_copy_;
+    IAllocatorUniquePtr<T> cpu_pinned_copy_;
+    size_t count_;
+    const CudaKernel* op_kernel_;
+  };
+
+ protected:
+  inline cublasHandle_t CublasHandle() const {
+    return provider_->PerThreadCublasHandle();
+  }
+
+  inline cudnnHandle_t CudnnHandle() const {
+    return provider_->PerThreadCudnnHandle();
+  }
+
+  inline const float* GetConstOnes(size_t count) const {
+    return provider_->GetConstOnes(count);
+  }
+
+  inline Status CopyTensor(const Tensor& src, Tensor& dst) const {
+    return provider_->CopyTensor(src, dst);
+  }
+
+ private:
   CUDAExecutionProvider* provider_;
 };
 

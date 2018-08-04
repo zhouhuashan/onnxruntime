@@ -3,15 +3,17 @@
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_ACTIVATION_KERNEL_ALIAS(alias, x, ver, T)                                         \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                                   \
-    alias,                                                                                         \
-    kOnnxDomain,                                                                                   \
-    ver,                                                                                           \
-    T,                                                                                             \
-    kCudaExecutionProvider,                                                                        \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()).MayInplace(0, 0),     \
-    x<T>);
+#define REGISTER_ACTIVATION_KERNEL_ALIAS(alias, x, ver, T)       \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                 \
+      alias,                                                     \
+      kOnnxDomain,                                               \
+      ver,                                                       \
+      T,                                                         \
+      kCudaExecutionProvider,                                    \
+      KernelDefBuilder()                                         \
+          .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()) \
+          .MayInplace(0, 0),                                     \
+      x<T>);
 
 #define REGISTER_ACTIVATION_KERNEL(x, ver, T) \
   REGISTER_ACTIVATION_KERNEL_ALIAS(x, x, ver, T)
@@ -21,7 +23,8 @@ namespace Cuda {
   Status x<T>::Compute(OpKernelContext* context) const {                                          \
     UnaryElementwisePreparation p;                                                                \
     UnaryElementwise::Prepare(context, &p);                                                       \
-    CudaAsyncBuffer<Ctx##x> func_ctx(provider_, MakeFuncCtx());                                   \
+    ResetScratchBuffer();                                                                         \
+    CudaAsyncBuffer<Ctx##x> func_ctx(this, MakeFuncCtx());                                        \
     if (!std::is_same<CtxNull, Ctx##x>::value)                                                    \
       LOTUS_RETURN_IF_ERROR(func_ctx.CopyToGpu());                                                \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                 \

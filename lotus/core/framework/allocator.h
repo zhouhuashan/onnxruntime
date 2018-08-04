@@ -89,17 +89,17 @@ class IAllocator {
 
   /// Create a std::unique_ptr that is allocated and freed by the provided IAllocator.
   /// @param allocator The allocator.
-  /// @param size The exact size to allocate if T is void, otherwise the number of elements to allocate.
+  /// @param count_or_bytes The exact bytes to allocate if T is void, otherwise the number of elements to allocate.
   /// @returns std::unique_ptr with allocated memory and deleter.
   template <typename T>
-  static IAllocatorUniquePtr<T> MakeUniquePtr(std::shared_ptr<IAllocator> allocator, size_t size) {
+  static IAllocatorUniquePtr<T> MakeUniquePtr(std::shared_ptr<IAllocator> allocator, size_t count_or_bytes) {
     // for now limit to fundamental types. we could support others, but to do so either we or the caller
     // needs to call the dtor for the objects, for buffers allocated on device we don't have destructor
     //static_assert(std::is_fundamental<T>::value, "Fundamental type required as no destructors are called.");
 
-    size_t alloc_size = size;
+    size_t alloc_size = count_or_bytes;
 
-    // if T is not void, 'size' == number of items so allow for that
+    // if T is not void, 'count_or_bytes' == number of items so allow for that
     if (!std::is_void<T>::value)
       // sizeof(void) isn't valid, but the compiler isn't smart enough to ignore that this line isn't
       // reachable if T is void. use std::conditional to 'use' void* in the sizeof call

@@ -105,20 +105,21 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   return Status::OK();
 }
 
-#define BINARY_ELEMENTWISE_REGISTER_KERNEL(x, ver, T)                         \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
-    x,                                                                       \
-    kOnnxDomain,                                                              \
-    ver,                                                                      \
-    T,                                                                        \
-    kCudaExecutionProvider,                                                   \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-    x<T>);
+#define BINARY_ELEMENTWISE_REGISTER_KERNEL(x, ver, T)                           \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                \
+      x,                                                                        \
+      kOnnxDomain,                                                              \
+      ver,                                                                      \
+      T,                                                                        \
+      kCudaExecutionProvider,                                                   \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      x<T>);
 
 #define BINARY_ELEMENTWISE_COMPUTE(x, T)                                                                \
   template <>                                                                                           \
   Status x<T>::Compute(OpKernelContext* context) const {                                                \
-    BinaryElementwisePreparation prepare(provider_);                                                    \
+    ResetScratchBuffer();                                                                               \
+    BinaryElementwisePreparation prepare(this);                                                         \
     Prepare(context, &prepare);                                                                         \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                       \
         prepare.output_rank_or_simple_broadcast,                                                        \
@@ -198,7 +199,7 @@ Status Sum<T>::Compute(OpKernelContext* context) const {
       LOTUS_RETURN_IF_ERROR(ComputeOutputShape(node_name, previous_output_shape, context->Input<Tensor>(index)->Shape(), output_shape));
     }
     Tensor* output_tensor = context->Output(0, output_shape);
-    BinaryElementwisePreparation prepare(provider_);
+    BinaryElementwisePreparation prepare(this);
     if (input_count == 2) {
       // special case for 2 tensors to avoid memset zero
       LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(context->Input<Tensor>(0), context->Input<Tensor>(1), output_tensor, &prepare));

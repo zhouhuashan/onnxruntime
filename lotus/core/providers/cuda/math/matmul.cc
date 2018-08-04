@@ -45,9 +45,10 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
     return Status::OK();
   }
 
-  CudaAsyncBuffer<const float*> left_arrays(provider_, helper.LeftOffsets().size());
-  CudaAsyncBuffer<const float*> right_arrays(provider_, helper.RightOffsets().size());
-  CudaAsyncBuffer<float*> output_arrays(provider_, helper.OutputOffsets().size());
+  ResetScratchBuffer();
+  CudaAsyncBuffer<const float*> left_arrays(this, helper.LeftOffsets().size());
+  CudaAsyncBuffer<const float*> right_arrays(this, helper.RightOffsets().size());
+  CudaAsyncBuffer<float*> output_arrays(this, helper.OutputOffsets().size());
   MatMulComputeHelper::OffsetToArrays(left_X->Data<float>(), helper.LeftOffsets(), left_arrays.CpuSpan());
   MatMulComputeHelper::OffsetToArrays(right_X->Data<float>(), helper.RightOffsets(), right_arrays.CpuSpan());
   MatMulComputeHelper::OffsetToArrays(Y->MutableData<float>(), helper.OutputOffsets(), output_arrays.CpuSpan());

@@ -609,15 +609,7 @@ static void TestBindHelper(const std::string& log_str,
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
 
-  if (bind_provider_type == kCudaExecutionProvider) {
-#ifdef USE_CUDA
-    CUDAExecutionProviderInfo epi;
-    epi.device_id = 0;
-    EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(epi)).IsOK());
-#endif
-  }
-
-  if (run_provider_type == kCudaExecutionProvider) {
+  if (bind_provider_type == kCudaExecutionProvider || run_provider_type == kCudaExecutionProvider) {
 #ifdef USE_CUDA
     CUDAExecutionProviderInfo epi;
     epi.device_id = 0;
@@ -656,8 +648,6 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
 
   ASSERT_TRUE(session_object.Load(std::move(p_model)).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
-  CPUExecutionProviderInfo epi;
-  session_object.RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(epi));
   unique_ptr<IOBinding> io_binding;
   Status st = session_object.NewIOBinding(&io_binding);
   ASSERT_TRUE(st.IsOK());

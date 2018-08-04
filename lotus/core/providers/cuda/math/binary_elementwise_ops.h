@@ -13,13 +13,13 @@ struct BinaryElementwisePreparation {
   size_t output_rank_or_simple_broadcast = 0;  // for no_broadcast|left_scalar|right_scalar cases, output_rank uses SimpleBroadcast enums
   bool lhs_dim0_broadcast = false;
   bool rhs_dim0_broadcast = false;
-  CudaAsyncBuffer<int64_t> lhs_padded_strides;
-  CudaAsyncBuffer<int64_t> rhs_padded_strides;
-  CudaAsyncBuffer<fast_divmod> fdm_output_strides;
+  CudaKernel::CudaAsyncBuffer<int64_t> lhs_padded_strides;
+  CudaKernel::CudaAsyncBuffer<int64_t> rhs_padded_strides;
+  CudaKernel::CudaAsyncBuffer<fast_divmod> fdm_output_strides;
 
-  BinaryElementwisePreparation(CUDAExecutionProvider* provider) : lhs_padded_strides(provider),
-                                                                  rhs_padded_strides(provider),
-                                                                  fdm_output_strides(provider) {}
+  BinaryElementwisePreparation(const CudaKernel* op_kernel) : lhs_padded_strides(op_kernel),
+                                                              rhs_padded_strides(op_kernel),
+                                                              fdm_output_strides(op_kernel) {}
 };
 
 // trait classes to indicate if the kernel supports broadcast

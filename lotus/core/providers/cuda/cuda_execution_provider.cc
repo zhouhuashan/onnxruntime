@@ -38,11 +38,23 @@ Status CUDATransformer::Apply(LotusIR::Graph* /*graph*/, bool* /*modified*/) con
   return Status::OK();
 }
 
+thread_local std::unique_ptr<CUDAExecutionProvider::PerThreadContext> CUDAExecutionProvider::per_thread_context_;
+
+CUDAExecutionProvider::PerThreadContext::PerThreadContext(int device_id, AllocatorPtr gpu_allocator)
+    : gpu_allocator_(gpu_allocator) {
+  CUDA_CALL_THROW(cudaSetDevice(device_id));
+  CUBLAS_CALL_THROW(cublasCreate(&cublas_handle_));
+  CUDNN_CALL_THROW(cudnnCreate(&cudnn_handle_));
+}
+
+CUDAExecutionProvider::PerThreadContext::~PerThreadContext() {
+  CUBLAS_CALL_THROW(cublasDestroy(cublas_handle_));
+  CUDNN_CALL_THROW(cudnnDestroy(cudnn_handle_));
+}
+
 CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& info)
     : transformer_(info.name), device_id_(info.device_id) {
   CUDA_CALL_THROW(cudaSetDevice(device_id_));
-  CUBLAS_CALL_THROW(cublasCreate(&cublas_handle_));
-  CUDNN_CALL_THROW(cudnnCreate(&cudnn_handle_));
   // create streams, default is nullptr
   streams_[kCudaStreamDefault] = nullptr;
   CUDA_CALL_THROW(cudaStreamCreateWithFlags(&streams_[kCudaStreamCopyIn], cudaStreamNonBlocking));
@@ -58,10 +70,22 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
 }
 
 CUDAExecutionProvider::~CUDAExecutionProvider() {
+  auto cpu_alloc = GetAllocator(kMemTypeCPU);
+  std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
+  auto it = deferred_release_cpu_ptr_.begin();
+  while (it != deferred_release_cpu_ptr_.end()) {
+    auto& e = it->first;
+    auto& v = it->second;
+    if (v.recorded)
+      CUDA_CALL_THROW(cudaEventSynchronize(e));
+    for (auto p : v.cpu_ptrs) {
+      cpu_alloc->Free(p);
+    }
+    CUDA_CALL_THROW(cudaEventDestroy(e));
+    it = deferred_release_cpu_ptr_.erase(it);
+  }
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyIn]));
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyOut]));
-  CUBLAS_CALL_THROW(cublasDestroy(cublas_handle_));
-  CUDNN_CALL_THROW(cudnnDestroy(cudnn_handle_));
 }
 
 Status CUDAExecutionProvider::Sync() {
@@ -69,30 +93,56 @@ Status CUDAExecutionProvider::Sync() {
   return Status::OK();
 }
 
+void CUDAExecutionProvider::AddDeferredReleaseCPUPtr(void* p) {
+  // when not running in InferenceSession (e.g. Test)
+  // it's OK to not remember the deferred release ptr
+  // as the actual memory will be cleaned in arena allocator dtor
+  auto current_deferred_release_event = per_thread_context_->GetCurrentDeferredReleaseEvent();
+  if (current_deferred_release_event) {
+    std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
+    auto iter = deferred_release_cpu_ptr_.find(current_deferred_release_event);
+    LOTUS_ENFORCE(iter != deferred_release_cpu_ptr_.end());
+    iter->second.cpu_ptrs.push_back(p);
+  }
+}
+
 Status CUDAExecutionProvider::OnRunStart() {
-  // check if cudaEvents has passed for deferred release
   auto cpu_alloc = GetAllocator(kMemTypeCPU);
-  auto it = deferred_release_cpu_ptr.begin();
-  while (it != deferred_release_cpu_ptr.end()) {
+  // check if cudaEvents has passed for deferred release
+  // note that we need to take a mutex in case of multi-threaded Run()
+  std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
+  auto it = deferred_release_cpu_ptr_.begin();
+  while (it != deferred_release_cpu_ptr_.end()) {
     auto& e = it->first;
     auto& v = it->second;
-    if (cudaSuccess == cudaEventQuery(e)) {
-      for (auto p : v) {
+    // note that cudaEventQuery returns cudaSucess before first cudaEventRecord
+    if (v.recorded && cudaSuccess == cudaEventQuery(e)) {
+      for (auto p : v.cpu_ptrs) {
         cpu_alloc->Free(p);
       }
-      it = deferred_release_cpu_ptr.erase(it);
+      cudaEvent_t expired_event = it->first;
+      it = deferred_release_cpu_ptr_.erase(it);
+      CUDA_RETURN_IF_ERROR(cudaEventDestroy(expired_event));
     } else {
       ++it;
     }
   }
-  CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event));
-  deferred_release_cpu_ptr.emplace(current_deferred_release_event, std::vector<void*>());
+  // start a new per_thread context, store in TLS
+  per_thread_context_ = std::make_unique<PerThreadContext>(device_id_, GetAllocator());
+  auto& current_deferred_release_event = per_thread_context_->GetCurrentDeferredReleaseEvent();
+  CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event, cudaEventDisableTiming));
+  deferred_release_cpu_ptr_.emplace(current_deferred_release_event, DeferredReleaseCPUPtrs());
   return Status::OK();
 }
 
 Status CUDAExecutionProvider::OnRunEnd() {
-  // record deferred release event on default stream
+  LOTUS_RETURN_IF_NOT(per_thread_context_ != nullptr);
+  // record deferred release event on default stream, and release per_thread_context
+  auto current_deferred_release_event = per_thread_context_->GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventRecord(current_deferred_release_event, nullptr));
+  per_thread_context_.reset();
+  std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
+  deferred_release_cpu_ptr_[current_deferred_release_event].recorded = true;
   return Status::OK();
 }
 
