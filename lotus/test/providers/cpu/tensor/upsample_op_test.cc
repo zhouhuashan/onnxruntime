@@ -190,5 +190,27 @@ TEST(UpsampleOpTest, UpsampleOpBilinearTest_int32) {
   test.AddOutput<int32>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
   test.Run();
 }
+
+TEST(UpsampleOpTest, UpsampleOpNearestTest_1D) {
+  OpTester test("Upsample");
+
+  std::vector<float> scales{2.0f};
+  test.AddAttribute("mode", "nearest");
+  test.AddAttribute("scales", scales);
+
+  std::vector<float> X = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+
+  test.AddInput<float>("X", {5}, X);
+
+  std::vector<float> Y = {
+      1.0f, 1.0f,
+      2.0f, 2.0f,
+      3.0f, 3.0f,
+      4.0f, 4.0f,
+      5.0f, 5.0f};
+
+  test.AddOutput<float>("Y", {10}, Y);
+  test.Run();
+}
 }  // namespace Test
 }  // namespace Lotus

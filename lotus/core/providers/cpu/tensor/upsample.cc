@@ -194,9 +194,6 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
     return Status(LOTUS, INVALID_ARGUMENT, "Upsample: input tensor's dimension does not match the scales.");
   }
 
-  const int64_t batch_size = dims[0], num_channels = dims[1];
-  const int64_t input_height = dims[2], input_width = dims[3];
-
   std::vector<int64_t> Y_dims;
   for (auto i = 0; i < dims.size(); i++) {
     Y_dims.push_back(static_cast<int64_t>(scales_[i] * dims[i]));
@@ -211,6 +208,10 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
       //Only support bilinear with 4D tensor to keep consistent with previous behavior
       if (dims.size() != 4)
         return Status(LOTUS, FAIL, "Upsample: liner mode upsample only support 4-D tensor with NCHW layout");
+
+      const int64_t batch_size = dims[0], num_channels = dims[1];
+      const int64_t input_height = dims[2], input_width = dims[3];
+
       upsampleBilinear(batch_size, num_channels, input_height, input_width,
                        scales_[2], scales_[3], X->Data<T>(), Y->MutableData<T>());
       return Status::OK();
