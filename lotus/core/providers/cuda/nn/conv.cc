@@ -114,15 +114,21 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   LOTUS_RETURN_IF_ERROR(conv_desc.Set(kernel_shape, pads, strides, dilations, mode, CudnnTensor::GetDataType<CudaT>()));
 
   cudnnConvolutionFwdAlgo_t algo;
-  cudnnConvolutionFwdPreference_t preference = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
-  CUDNN_RETURN_IF_ERROR(cudnnGetConvolutionForwardAlgorithm(CudnnHandle(),
-                                                            x_tensor,
-                                                            w_tensor,
-                                                            conv_desc,
-                                                            y_tensor,
-                                                            preference,
-                                                            0,  // no memory limit
-                                                            &algo));
+  auto algo_cache_it = algo_cache_.find(x_dims);
+  if (algo_cache_it != algo_cache_.end()) {
+    algo = algo_cache_it->second;
+  } else {
+    cudnnConvolutionFwdPreference_t preference = CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
+    CUDNN_RETURN_IF_ERROR(cudnnGetConvolutionForwardAlgorithm(CudnnHandle(),
+                                                              x_tensor,
+                                                              w_tensor,
+                                                              conv_desc,
+                                                              y_tensor,
+                                                              preference,
+                                                              0,  // no memory limit
+                                                              &algo));
+    algo_cache_.insert(std::make_pair(x_dims, algo));
+  }
 
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetConvolutionForwardWorkspaceSize(CudnnHandle(),

@@ -22,6 +22,11 @@ class Conv : public CudaKernel, public ConvBase {
   }
 
   Status Compute(OpKernelContext* context) const override;
+
+ private:
+  // cudnn algorithm search is slow, so cache it with input shape
+  // the map is mutable because Compute is const
+  mutable std::map<std::vector<int64_t>, cudnnConvolutionFwdAlgo_t> algo_cache_;
 };
 
 class CudnnFilterDescriptor final {
