@@ -77,6 +77,7 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--use_mklml", action='store_true', help="Build with MKLML.")
     parser.add_argument("--use_preinstalled_eigen", action='store_true', help="Use pre-installed eigen.")
     parser.add_argument("--eigen_path", help="Path to pre-installed eigen.")
+    parser.add_argument("--use_tvm", action="store_true", help="Build with tvm")
     return parser.parse_args()
 
 def is_windows():
@@ -89,13 +90,22 @@ def get_config_build_dir(build_dir, config):
     # build directory per configuration
     return os.path.join(build_dir, config)
 
-def run_subprocess(args, cwd=None, capture=False):
+def run_subprocess(args, cwd=None, capture=False, dll_path=None):
     log.debug("Running subprocess: \n%s", args)
+    my_env = os.environ.copy()
+    if dll_path:
+        if is_windows():
+            my_env["PATH"] += os.pathsep +dll_path
+        else:
+            if "LD_LIBRARY_PATH" in my_env:
+                my_env["LD_LIBRARY_PATH"] += os.pathsep + dll_path
+            else:
+                my_env["LD_LIBRARY_PATH"] = dll_path
 
     if (capture):
-        result = subprocess.run(args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = subprocess.run(args, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=my_env)
     else:
-        result = subprocess.run(args, cwd=cwd, check=True)
+        result = subprocess.run(args, cwd=cwd, check=True, env=my_env)
 
     return result
 
@@ -161,7 +171,8 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
                  "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
                  "-Dlotus_USE_MKLDNN=" + ("ON" if args.use_mkldnn else "OFF"),
-                 "-Dlotus_USE_MKLML=" + ("ON" if args.use_mklml else "OFF")
+                 "-Dlotus_USE_MKLML=" + ("ON" if args.use_mklml else "OFF"),
+                 "-Dlotus_USE_TVM=" + ("ON" if args.use_tvm else "OFF")
                  ]
 
     if args.use_cuda and not is_windows():
@@ -375,17 +386,18 @@ def setup_cuda_vars(args):
 
     return cuda_home, cudnn_home
 
-def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests):
+def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests, enable_tvm = False):
     for config in configs:
         log.info("Running tests for %s configuration", config)
         cwd = get_config_build_dir(build_dir, config)
+        dll_path = os.path.join(build_dir, config, "external", "tvm", config) if enable_tvm else None
         run_subprocess([ctest_path, "--build-config", config, "--verbose"],
-                       cwd=cwd)
+                       cwd=cwd, dll_path=dll_path)
 
         if enable_python_tests:
             if is_windows():
                 cwd = os.path.join(cwd, config)
-            run_subprocess([sys.executable, 'lotus_test_python.py'], cwd=cwd)
+            run_subprocess([sys.executable, 'lotus_test_python.py'], cwd=cwd, dll_path=dll_path)
 
 def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir):
 
@@ -483,7 +495,7 @@ def main():
 
 
     if (args.test):
-        run_lotus_tests(ctest_path, build_dir, configs, args.enable_pybind)
+        run_lotus_tests(ctest_path, build_dir, configs, args.enable_pybind, args.use_tvm)
 
     # run the onnx tests if requested explicitly.
     # it could be done implicitly by user installing onnx but currently the tests fail so that doesn't work for CI

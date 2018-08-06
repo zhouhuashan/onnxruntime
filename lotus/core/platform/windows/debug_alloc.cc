@@ -8,7 +8,8 @@
 // It creates & destroys itself in init_seg(lib) so it should scope all user code
 //
 #if defined(_DEBUG)
-
+// TVM need to run with shared CRT, so won't work with debug heap alloc
+#ifndef USE_TVM
 constexpr int c_callstack_limit = 16;  // Maximum depth of callstack in leak trace
 #define VALIDATE_HEAP_EVERY_ALLOC 0    // Call HeapValidate on every new/delete
 
@@ -239,4 +240,5 @@ Memory_LeakCheck::~Memory_LeakCheck() {
   HeapDestroy(g_heap);
   g_heap = nullptr;  // Any allocations after this point will fail
 }
+#endif
 #endif

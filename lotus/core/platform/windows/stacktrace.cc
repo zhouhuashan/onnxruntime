@@ -29,7 +29,12 @@ class CaptureStackTrace {
 // Get the stack trace. Currently only enabled for a DEBUG build as we require the DbgHelp library.
 std::vector<std::string> GetStackTrace() {
 #if defined(_DEBUG)
+// TVM need to run with shared CRT, so won't work with debug helper now
+#ifndef USE_TVM
   return detail::CaptureStackTrace().Trace();
+#else
+  return {};
+#endif
 #else
   return {};
 #endif
@@ -37,7 +42,7 @@ std::vector<std::string> GetStackTrace() {
 
 namespace detail {
 #if defined(_DEBUG)
-
+#ifndef USE_TVM
 class SymbolHelper {
  public:
   SymbolHelper() noexcept {
@@ -136,6 +141,6 @@ std::string CaptureStackTrace::Lookup(void* address_in) const {
 }
 
 #endif
-
+#endif
 }  // namespace detail
 }  // namespace Lotus

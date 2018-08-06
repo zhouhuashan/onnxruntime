@@ -19,7 +19,11 @@ function(AddTest)
   endif(_UT_DEPENDS)
 
   target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
-  target_include_directories(${_UT_TARGET} PRIVATE ${date_INCLUDE_DIR})
+  if (lotus_USE_TVM)
+    target_include_directories(${_UT_TARGET} PRIVATE ${date_INCLUDE_DIR} ${TVM_INCLUDESS})
+  else(lotus_USE_TVM)
+    target_include_directories(${_UT_TARGET} PRIVATE ${date_INCLUDE_DIR})
+  endif()
   if (WIN32)
     #It's cmake bug, cannot add this compile option for cuda compiler
     #(https://gitlab.kitware.com/cmake/cmake/issues/17535)
@@ -30,7 +34,10 @@ function(AddTest)
         if (MSVC)
             target_compile_options(${_UT_TARGET} PRIVATE /wd4505) 
         endif()
-    endif()    
+    endif() 
+    if (lotus_USE_TVM)
+        target_compile_options(${_UT_TARGET} PRIVATE /wd4100 /wd4244 /wd4275 /wd4251 /wd4389)
+    endif()	
   endif()
 
   # Add the define for conditionally using the framework Environment class in TestEnvironment
@@ -173,10 +180,33 @@ endif()
 if(lotus_USE_MKLDNN)
     list(APPEND lotus_test_providers_dependencies lotus_providers_mkldnn)
 endif()
+
+
+file(GLOB_RECURSE lotus_test_tvm_src
+    "${LOTUS_ROOT}/test/tvm/*.h"
+    "${LOTUS_ROOT}/test/tvm/*.cc"
+)
+
+set(lotus_test_tvm_libs
+    tvm
+    nnvm_compiler
+)
+
+set(lotus_test_tvm_dependencies
+    tvm
+    nnvm_compiler
+)
     
 if (SingleUnitTestProject)
     set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
-
+    set(all_libs ${lotus_test_providers_libs})
+	set(all_dependencies ${lotus_test_providers_dependencies} )
+    
+    if (lotus_USE_TVM)
+        list(APPEND all_tests ${lotus_test_tvm_src})
+	    list(APPEND all_libs ${lotus_test_tvm_libs})
+        list(APPEND all_dependencies ${lotus_test_tvm_dependencies})
+	endif()
     # we can only have one 'main', so remove them all and add back the providers test_main as it sets 
     # up everything we need for all tests
     file(GLOB_RECURSE test_mains "${LOTUS_ROOT}/test/*/test_main.cc")  
@@ -189,12 +219,12 @@ if (SingleUnitTestProject)
     if(WIN32)
         list(APPEND lotus_test_providers_libs Advapi32)
     endif()
-
+    
     AddTest(
         TARGET lotus_test_all
         SOURCES ${all_tests}
-        LIBS ${lotus_test_providers_libs}
-        DEPENDS ${lotus_test_providers_dependencies}
+        LIBS ${all_libs}
+        DEPENDS ${all_dependencies}
     )
 
     # the default logger tests conflict with the need to have an overall default logger

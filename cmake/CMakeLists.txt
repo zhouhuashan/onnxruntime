@@ -36,6 +36,7 @@ option(lotus_MSVC_STATIC_RUNTIME "Compile for the static CRT" OFF)
 option(lotus_BUILD_UNIT_TESTS "Build Lotus unit tests" ON)
 option(lotus_USE_PREINSTALLED_EIGEN "Use pre-installed EIGEN. Need to provide eigen_SOURCE_PATH if turn this on." OFF)
 option(lotus_BUILD_BENCHMARKS "Build Lotus micro-benchmarks" OFF)
+option(lotus_USE_TVM "Build tvm for code-gen" OFF)
 
 if(lotus_BUILD_BENCHMARKS)
   if(NOT TARGET benchmark)
@@ -95,6 +96,9 @@ else()
   string(APPEND CMAKE_CXX_FLAGS " -Wno-error=missing-field-initializers -Wno-error=unused-parameter -Wno-error=reorder -Wno-error=sign-compare -Wno-error=parentheses -Wno-error=comment")
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     string(APPEND CMAKE_CXX_FLAGS " -Wno-error=invalid-partial-specialization -Wno-error=missing-braces -Wno-error=inconsistent-missing-override")
+  endif()
+  if (lotus_USE_TVM)
+    string(APPEND CMAKE_CXX_FLAGS " -Wno-error=extra -Wno-error=ignored-qualifiers")
   endif()
 endif()
 
@@ -210,6 +214,23 @@ set_target_properties(gen_onnx_proto PROPERTIES FOLDER "External/ONNX")
 # fix a warning in onnx code we can't do anything about
 if (MSVC)
     target_compile_options(onnx_proto PRIVATE /wd4146) # unary minus operator applied to unsigned type
+endif()
+
+# TVM
+if (lotus_USE_TVM)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/tvm EXCLUDE_FROM_ALL)
+set_target_properties(tvm PROPERTIES FOLDER "External/tvm")
+set_target_properties(tvm_topi PROPERTIES FOLDER "External/tvm")
+set_target_properties(tvm_runtime PROPERTIES FOLDER "External/tvm")
+set_target_properties(nnvm_compiler PROPERTIES FOLDER "External/tvm")
+
+set(TVM_INCLUDESS ${PROJECT_SOURCE_DIR}/external/tvm/include 
+    ${PROJECT_SOURCE_DIR}/external/tvm/dmlc-core/include
+    ${PROJECT_SOURCE_DIR}/external/tvm/dlpack/include
+    $<TARGET_PROPERTY:tvm,INTERFACE_INCLUDE_DIRECTORIES> 
+    $<TARGET_PROPERTY:tvm_topi,INTERFACE_INCLUDE_DIRECTORIES> 
+    $<TARGET_PROPERTY:nnvm_compiler,INTERFACE_INCLUDE_DIRECTORIES>)
+add_definitions(-DUSE_TVM)
 endif()
 
 add_definitions(-DONNX_ML)
