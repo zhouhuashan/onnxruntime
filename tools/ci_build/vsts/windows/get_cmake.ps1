@@ -4,6 +4,8 @@ Param(
     [string]$outputDirectory
 )
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 $ErrorActionPreference = "Stop"
 
 $cmakeDirectory = $(Join-Path $outputDirectory "cmake")
