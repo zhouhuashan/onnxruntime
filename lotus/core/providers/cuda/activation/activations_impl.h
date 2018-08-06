@@ -28,6 +28,7 @@ typedef CtxNull CtxRelu;
 typedef CtxAlphaBeta CtxScaledTanh;
 typedef CtxAlphaGamma CtxSelu;
 typedef CtxNull CtxSigmoid;
+typedef CtxNull CtxSoftplus;
 typedef CtxNull CtxSoftsign;
 typedef CtxNull CtxTanh;
 typedef CtxAlpha CtxThresholdedRelu;
@@ -41,6 +42,7 @@ typedef CtxAlpha CtxThresholdedRelu;
   UNARY_ACTIVATION_OP_NAME(ScaledTanh)         \
   UNARY_ACTIVATION_OP_NAME(Selu)               \
   UNARY_ACTIVATION_OP_NAME(Sigmoid)            \
+  UNARY_ACTIVATION_OP_NAME(Softplus)           \
   UNARY_ACTIVATION_OP_NAME(Softsign)           \
   UNARY_ACTIVATION_OP_NAME(Tanh)               \
   UNARY_ACTIVATION_OP_NAME(ThresholdedRelu)

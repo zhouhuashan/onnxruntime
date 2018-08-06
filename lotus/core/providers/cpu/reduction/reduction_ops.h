@@ -16,12 +16,12 @@ class ReduceKernel : public OpKernel {
       axes_.push_back(v);
     }
     int64_t keepdims = 1;
-    if (info.GetAttr("keepdims", &keepdims).IsOK())
-      keepdims_ = (keepdims == 1);
+    LOTUS_ENFORCE(info.GetAttr("keepdims", &keepdims).IsOK());
+    keepdims_ = (keepdims == 1);
   }
 
   std::vector<int64_t> axes_;
-  bool keepdims_ = true;
+  bool keepdims_;
 };
 
 template <typename T>

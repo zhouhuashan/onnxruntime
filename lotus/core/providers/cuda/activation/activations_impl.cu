@@ -66,6 +66,16 @@ struct OP_Sigmoid : public CtxSigmoid {
 };
 
 template <typename T>
+struct OP_Softplus : public CtxSoftplus {
+  __device__ __inline__ T operator()(const T& a) const {
+    if (a > (T)0)
+      return a + _Log(_Exp(-a) + (T)1);
+    else
+      return _Log(_Exp(a) + (T)1);
+  }
+};
+
+template <typename T>
 struct OP_Softsign : public CtxSoftsign {
   __device__ __inline__ T operator()(const T& a) const {
     return a / ((T)1. + _Abs(a));

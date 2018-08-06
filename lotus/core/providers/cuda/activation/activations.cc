@@ -3,9 +3,9 @@
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_ACTIVATION_KERNEL_ALIAS(alias, x, ver, T)       \
+#define REGISTER_ACTIVATION_KERNEL(x, ver, T)                    \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                 \
-      alias,                                                     \
+      x,                                                         \
       kOnnxDomain,                                               \
       ver,                                                       \
       T,                                                         \
@@ -14,9 +14,6 @@ namespace Cuda {
           .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()) \
           .MayInplace(0, 0),                                     \
       x<T>);
-
-#define REGISTER_ACTIVATION_KERNEL(x, ver, T) \
-  REGISTER_ACTIVATION_KERNEL_ALIAS(x, x, ver, T)
 
 #define UNARY_ACTIVATION_COMPUTE(x, T)                                                            \
   template <>                                                                                     \
@@ -53,14 +50,10 @@ UNARY_ACTIVATION_OP_HFD(Relu, 6);
 UNARY_ACTIVATION_OP_HFD(ScaledTanh, 1);
 UNARY_ACTIVATION_OP_HFD(Selu, 6);
 UNARY_ACTIVATION_OP_HFD(Sigmoid, 6);
+UNARY_ACTIVATION_OP_HFD(Softplus, 1);
 UNARY_ACTIVATION_OP_HFD(Softsign, 1);
 UNARY_ACTIVATION_OP_HFD(Tanh, 6);
 UNARY_ACTIVATION_OP_HFD(ThresholdedRelu, 1);
-
-// SoftPlus is the default case for ParametricSoftPlus
-REGISTER_ACTIVATION_KERNEL_ALIAS(Softplus, ParametricSoftplus, 1, MLFloat16)
-REGISTER_ACTIVATION_KERNEL_ALIAS(Softplus, ParametricSoftplus, 1, float)
-REGISTER_ACTIVATION_KERNEL_ALIAS(Softplus, ParametricSoftplus, 1, double)
 
 //REGISTER_ACTIVATION_KERNEL(PRelu, 7);
 

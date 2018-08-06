@@ -14,7 +14,7 @@ class ReduceKernel : public CudaKernel {
       info.GetAttr("axis", &axes_[0]);
     }
     int64_t keepdims;
-    info.GetAttrOrDefault("keepdims", &keepdims, (int64_t)1);
+    LOTUS_ENFORCE(info.GetAttr("keepdims", &keepdims).IsOK());
     keepdims_ = (keepdims == 1);
   }
 
@@ -25,7 +25,7 @@ class ReduceKernel : public CudaKernel {
 
  private:
   std::vector<int64_t> axes_;
-  bool keepdims_ = true;
+  bool keepdims_;
 };
 
 template <typename T>

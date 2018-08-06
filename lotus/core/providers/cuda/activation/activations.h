@@ -41,7 +41,7 @@ template <typename T>
 class Elu final : public UnaryElementwise {
  public:
   Elu(const OpKernelInfo& info) : UnaryElementwise(info) {
-    info.GetAttr("alpha", &alpha_);
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -49,15 +49,15 @@ class Elu final : public UnaryElementwise {
  private:
   MAKE_FUNC_CTX_ALPHA()
 
-  float alpha_ = 1.0f;
+  float alpha_;
 };
 
 template <typename T>
 class HardSigmoid final : public UnaryElementwise {
  public:
   HardSigmoid(const OpKernelInfo& info) : UnaryElementwise(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("beta", &beta_);
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -65,15 +65,15 @@ class HardSigmoid final : public UnaryElementwise {
  private:
   MAKE_FUNC_CTX_ALPHA_BETA()
 
-  float alpha_ = 0.2f;
-  float beta_ = 0.5f;
+  float alpha_;
+  float beta_;
 };
 
 template <typename T>
 class LeakyRelu final : public UnaryElementwise {
  public:
   LeakyRelu(const OpKernelInfo& info) : UnaryElementwise(info) {
-    info.GetAttr("alpha", &alpha_);
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -81,15 +81,15 @@ class LeakyRelu final : public UnaryElementwise {
  private:
   MAKE_FUNC_CTX_ALPHA()
 
-  float alpha_ = 0.01f;
+  float alpha_;
 };
 
 template <typename T>
 class ParametricSoftplus final : public UnaryElementwise {
  public:
   ParametricSoftplus(const OpKernelInfo& info) : UnaryElementwise(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("beta", &beta_);
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -97,8 +97,8 @@ class ParametricSoftplus final : public UnaryElementwise {
  private:
   MAKE_FUNC_CTX_ALPHA_BETA()
 
-  float alpha_ = 1.0f;
-  float beta_ = 1.0f;
+  float alpha_;
+  float beta_;
 };
 
 template <typename T>
@@ -116,8 +116,8 @@ template <typename T>
 class ScaledTanh final : public UnaryElementwise {
  public:
   ScaledTanh(const OpKernelInfo& info) : UnaryElementwise(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("beta", &beta_);
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -125,16 +125,16 @@ class ScaledTanh final : public UnaryElementwise {
  private:
   MAKE_FUNC_CTX_ALPHA_BETA()
 
-  float alpha_ = 1.0f;
-  float beta_ = 1.0f;
+  float alpha_;
+  float beta_;
 };
 
 template <typename T>
 class Selu final : public UnaryElementwise {
  public:
   Selu(const OpKernelInfo& info) : UnaryElementwise(info) {
-    info.GetAttr("alpha", &alpha_);
-    info.GetAttr("gamma", &gamma_);
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("gamma", &gamma_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -142,14 +142,25 @@ class Selu final : public UnaryElementwise {
  private:
   MAKE_FUNC_CTX_ALPHA_GAMMA()
 
-  float alpha_ = 1.67326319217681884765625f;
-  float gamma_ = 1.05070102214813232421875f;
+  float alpha_;
+  float gamma_;
 };
 
 template <typename T>
 class Sigmoid final : public UnaryElementwise {
  public:
   Sigmoid(const OpKernelInfo& info) : UnaryElementwise(info) {}
+
+  Status Compute(OpKernelContext* context) const override;
+
+ private:
+  MAKE_FUNC_CTX_NULL()
+};
+
+template <typename T>
+class Softplus final : public UnaryElementwise {
+ public:
+  Softplus(const OpKernelInfo& info) : UnaryElementwise(info) {}
 
   Status Compute(OpKernelContext* context) const override;
 
@@ -183,14 +194,14 @@ template <typename T>
 class ThresholdedRelu final : public UnaryElementwise {
  public:
   ThresholdedRelu(const OpKernelInfo& info) : UnaryElementwise(info) {
-    info.GetAttr("alpha", &alpha_);
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA()
-  float alpha_ = 1.0f;
+  float alpha_;
 };
 
 }  // namespace Cuda
