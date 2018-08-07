@@ -22,11 +22,25 @@ class TransformerMemcpyImpl {
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TransformerMemcpyImpl);
 
-  std::set<LotusIR::Node*> provider_nodes_;
-  std::set<const LotusIR::NodeArg*> non_provider_input_defs_;   // all input defs of non-provider nodes
-  std::set<const LotusIR::NodeArg*> non_provider_output_defs_;  // all output defs of non-provider nodes
-  std::set<const LotusIR::NodeArg*> provider_input_defs_;       // all input defs of provider nodes that should be in provider allocator
-  std::set<const LotusIR::NodeArg*> provider_output_defs_;      // all output defs of provider nodes that should be in provider allocator
+  // use value-based compare to make sure transformer output order is consistent
+  struct NodeCompare {
+    bool operator()(const LotusIR::Node* lhs, const LotusIR::Node* rhs) const {
+      return lhs->Index() < rhs->Index();
+    }
+  };
+
+  // use value-based compare to make sure transformer output order is consistent
+  struct NodeArgCompare {
+    bool operator()(const LotusIR::NodeArg* lhs, const LotusIR::NodeArg* rhs) const {
+      return lhs->Name() < rhs->Name();
+    }
+  };
+
+  std::set<LotusIR::Node*, NodeCompare> provider_nodes_;
+  std::set<const LotusIR::NodeArg*, NodeArgCompare> non_provider_input_defs_;   // all input defs of non-provider nodes
+  std::set<const LotusIR::NodeArg*, NodeArgCompare> non_provider_output_defs_;  // all output defs of non-provider nodes
+  std::set<const LotusIR::NodeArg*, NodeArgCompare> provider_input_defs_;       // all input defs of provider nodes that should be in provider allocator
+  std::set<const LotusIR::NodeArg*, NodeArgCompare> provider_output_defs_;      // all output defs of provider nodes that should be in provider allocator
   std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacements_;
   LotusIR::Graph* graph_;
   std::string provider_;

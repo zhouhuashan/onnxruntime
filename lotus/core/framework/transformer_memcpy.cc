@@ -65,7 +65,7 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node, const KernelRegistr
     provider_nodes_.insert(&node);
     // note KernelCreateInfo might be nullptr for custom kernel
     const KernelCreateInfo* kci = nullptr;
-	kernel_registries.SearchKernelRegistry(node, &kci);
+    kernel_registries.SearchKernelRegistry(node, &kci);
     const auto* input_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(
@@ -126,10 +126,12 @@ void TransformerMemcpyImpl::AddCopyNode(const LotusIR::NodeArg* arg, bool is_inp
   replacements_.insert(std::make_pair(original_arg, new_arg));
 }
 
-static const LotusIR::NodeArg* FindNodeArg(std::set<const LotusIR::NodeArg*> def_set, const std::string& name) {
-  for (auto* def : def_set)
-    if (def->Name() == name)
-      return def;
+template <typename NodeArgSetType>
+static const LotusIR::NodeArg* FindNodeArg(const NodeArgSetType& def_set, const std::string& name) {
+  NodeArg def(name, nullptr);
+  auto it = def_set.find(&def);  // this works since we use name to compare NodeArg
+  if (it != def_set.end())
+    return *it;
   return nullptr;
 }
 
