@@ -13,7 +13,7 @@
 
 #include "core/inc/op_kernel_author.h"
 #include "core/common/logging/logging.h"
-#include "core/graph/tensorutils.h"
+#include "core/framework/tensorutils.h"
 #include "tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
 using namespace onnx;
@@ -121,7 +121,7 @@ Common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
   if (preallocated && preallocated_size != size_to_allocate)
     return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
-  uint16_t* p_data = static_cast<uint16_t*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
+  MLFloat16* p_data = static_cast<MLFloat16*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
   LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<MLFloat16>(),
                                        tensor_shape,

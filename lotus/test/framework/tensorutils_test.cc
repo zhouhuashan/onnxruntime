@@ -1,4 +1,4 @@
-#include "core/graph/tensorutils.h"
+#include "core/framework/tensorutils.h"
 #include "onnx/onnx_pb.h"
 #include "gtest/gtest.h"
 

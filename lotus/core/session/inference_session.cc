@@ -10,7 +10,7 @@
 #include "core/graph/graph.h"
 #include "core/graph/graph_transformer.h"
 #include "core/graph/model.h"
-#include "core/graph/tensorutils.h"
+#include "core/framework/tensorutils.h"
 #include "core/platform/notification.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/customregistry.h"

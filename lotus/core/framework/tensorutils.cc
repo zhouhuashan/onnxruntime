@@ -3,7 +3,7 @@
 //TODO(@chasun): remove std::copy from DEFINE_UNPACK_TENSOR
 #pragma warning(disable : 4244)
 #endif
-#include "core/graph/tensorutils.h"
+#include "core/framework/tensorutils.h"
 
 #include <algorithm>
 
@@ -19,6 +19,8 @@
 
 #include "gsl/pointers"
 #include "gsl/span"
+
+#include "core/inc/op_kernel_author.h"
 
 GSL_SUPPRESS(type .1)  // allow use of reinterpret_cast for this special case
 inline bool IsLittleEndianOrder() noexcept {
@@ -152,7 +154,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
 }
 template <>
 Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
-                                 /*out*/ uint16_t* p_data,
+                                 /*out*/MLFloat16* p_data,
                                  int64_t expected_size) {
   if (nullptr == p_data) {
     const size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.int32_data_size();
