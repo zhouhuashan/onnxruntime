@@ -28,7 +28,7 @@ struct TensorPitches : std::vector<int64_t> {
       }
     }
 
-    if (padded_rank > 1) {
+    if (padded_rank >= 1) {
       for (size_t i = 0; i < padded_rank; ++i) {
         if (i == 0)
           p.operator[](padded_rank - 1) = p.operator[](padded_rank) * dims[0];

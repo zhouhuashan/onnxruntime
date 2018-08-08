@@ -139,6 +139,9 @@ class CUDAExecutionProvider : public IExecutionProvider {
       if (!std::is_void<T>::value)
         bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
 
+      // align up to multiple of 16-bytes to avoid cuda misaligned address error
+      bytes = (bytes + static_cast<size_t>(15)) & (~static_cast<size_t>(15));
+
       size_t used_bytes = bytes + gpu_scratch_buffer_bytes_used_;
       if (used_bytes > gpu_scratch_buffer_size_) {
         // note that scratch buffer is write-only, so no copy needed when reallocate to a bigger size
