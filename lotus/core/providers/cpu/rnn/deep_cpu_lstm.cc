@@ -1267,17 +1267,22 @@ void UniDirectionalLstm<T>::SetNumThreads() {
   int hmt = threads;
   batch_parallel_ = false;
 
-  if (batch_size_ > 4 || (batch_size_ >= 2 && hidden_size_ <= 256)) {
+  // for readability of the below logic
+  const auto num_rows = batch_size_;
+  const auto num_columns = hidden_size_;
+
+  // parallelize by partitioning the batch rows
+  if (num_rows > 4 || (num_rows >= 2 && num_columns <= 256)) {
     batch_parallel_ = true;
     hidden_num_threads_ = hmt;
-  } else {
-    if (hmt > 2 && hidden_size_ <= 128)
+  } else {  // otherwise parallelize by partitioning the columns.
+    if (hmt > 2 && num_columns <= 128)
       hmt = 2;
-    if (hmt > 5 && hidden_size_ <= 256)
+    if (hmt > 5 && num_columns <= 256)
       hmt = 5;
-    if (hmt > 7 && hidden_size_ <= 512)
+    if (hmt > 7 && num_columns <= 512)
       hmt = 7;
-    if (hmt > 11 && hidden_size_ <= 1024)
+    if (hmt > 11 && num_columns <= 1024)
       hmt = 11;
 
     hidden_num_threads_ = hmt;

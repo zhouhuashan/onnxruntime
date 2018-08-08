@@ -189,6 +189,111 @@ TEST(GRUTest, BidirectionalDefaultActivationsSimpleWeightsNoBiasTwoRows) {
   DefaultActivationsSimpleWeightsNoBias("bidirectional", Y_data, Y_h_data);
 }
 
+void DefaultActivationsSimpleWeightsWithBias(std::string direction,
+                                             const std::vector<float>& Y_data,
+                                             bool linear_before_reset = false,
+                                             bool one_row = false) {
+  int64_t seq_length = 2;
+  int batch_size = one_row ? 1 : 2;  // if 2 take batch_parallel_ path. if 1, don't.
+  int64_t input_size = 1;
+  int64_t hidden_size = 3;
+
+  int num_directions = direction == "bidirectional" ? 2 : 1;
+
+  std::vector<float> X_data;
+
+  if (batch_size == 2)
+    X_data = {-0.1f, 0.2f, -0.3f, 0.4f};
+  else
+    X_data = {-0.1f, -0.3f};
+
+  std::vector<float> W_data{0.1f, 0.2f, 0.3f,   // wz
+                            0.2f, 0.3f, 0.1f,   // wr
+                            0.3f, 0.1f, 0.2f};  // wh
+
+  std::vector<float> B_data{
+      -0.01f, 0.1f, 0.01f,  // Wb[zrh]
+      -0.2f, -0.02f, 0.02f,
+      0.3f, -0.3f, -0.3f,
+
+      -0.03f, 0.5f, -0.7f,  // Rb[zrh]
+      0.05f, -0.7f, 0.3f,
+      0.07f, -0.03f, 0.5f};
+
+  // duplicate for bidirectional
+  auto duplicate_data = [](std::vector<float>& data) {
+    data.reserve(data.size() * 2);  // need to avoid reallocation when inserting
+    std::copy(data.cbegin(), data.cend(), std::back_inserter(data));
+  };
+
+  if (num_directions == 2) {
+    duplicate_data(W_data);
+    duplicate_data(B_data);
+  }
+
+  std::vector<float> R_data(num_directions * 3 * hidden_size * hidden_size, 0.1f);
+
+  RunGruTest(X_data, W_data, R_data, Y_data, {}, input_size, batch_size, hidden_size, seq_length,
+             &B_data, nullptr, nullptr, direction, 999.f, /* output_sequence*/ true, linear_before_reset);
+}  // namespace Test
+
+TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallel) {
+  std::vector<float> Y_data{
+      0.16783132f, -0.11754231f, 0.11977843f,
+      0.2046872f, -0.10372487f, 0.15365849f,
+
+      0.22688604f, -0.19698407f, 0.14017843f,
+      0.33386092f, -0.15799662f, 0.2381169f};
+
+  DefaultActivationsSimpleWeightsWithBias("forward", Y_data);
+}
+
+TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset) {
+  std::vector<float> Y_data{
+      0.15024948f, -0.11097029f, -0.02121867f,
+      0.18887489f, -0.09747667f, 0.02093463f,
+
+      0.19538902f, -0.19016478f, -0.05644283f,
+      0.30856851f, -0.15190377f, 0.05999807f};
+
+  const bool linear_before_reset = true;
+  DefaultActivationsSimpleWeightsWithBias("forward", Y_data, linear_before_reset);
+}
+
+TEST(GRUTest, ReverseDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset) {
+  std::vector<float> Y_data{
+      0.20910699f, -0.18880953f, -0.04005555f,
+      0.29700265f, -0.15308119f, 0.04537245f,
+
+      0.12252139f, -0.12032216f, -0.05064924f,
+      0.21249877f, -0.08884402f, 0.04751285f};
+
+  const bool linear_before_reset = true;
+  DefaultActivationsSimpleWeightsWithBias("reverse", Y_data, linear_before_reset);
+}
+
+// test forward !batch_parallel_ path with linear_before_reset
+TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset) {
+  std::vector<float> Y_data{
+      0.15024948f, -0.11097029f, -0.02121867f,
+      0.19538902f, -0.19016478f, -0.05644283f};
+
+  const bool linear_before_reset = true;
+  const bool one_row = true;
+  DefaultActivationsSimpleWeightsWithBias("forward", Y_data, linear_before_reset, one_row);
+}
+
+// test reverse !batch_parallel_ path with linear_before_reset
+TEST(GRUTest, ReverseDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset) {
+  std::vector<float> Y_data{
+      0.20910699f, -0.18880953f, -0.04005555f,
+      0.12252139f, -0.12032216f, -0.05064924f};
+
+  const bool linear_before_reset = true;
+  const bool one_row = true;
+  DefaultActivationsSimpleWeightsWithBias("reverse", Y_data, linear_before_reset, one_row);
+}
+
 /*******************
 * Tests from LotusRT
 */

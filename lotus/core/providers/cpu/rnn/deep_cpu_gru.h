@@ -22,11 +22,6 @@ class DeepCpuGruOp final : public OpKernel {
     LOTUS_ENFORCE(info.GetAttr("linear_before_reset", &int64_value).IsOK());
     linear_before_reset_ = gsl::narrow<int>(int64_value);
 
-    // TODO: Implementation needs changes to support linear_before_reset as Rbh and Wbh are added together
-    // at the start of processing in the current version and are not available as separate values where ht
-    // is calculated. VSTS Task 609: Support linear_before_reset in GRU operator
-    LOTUS_ENFORCE(linear_before_reset_ == 0, "linear_before_reset is not currently supported.");
-
     LOTUS_ENFORCE(info.GetAttr("hidden_size", &int64_value).IsOK() && int64_value > 0);
     hidden_size_ = gsl::narrow<int>(int64_value);
 
@@ -34,7 +29,6 @@ class DeepCpuGruOp final : public OpKernel {
     std::vector<std::string> activation_func_names = info.GetAttrsOrDefault<std::string>("activations");
     std::vector<float> activation_func_alphas = info.GetAttrsOrDefault<float>("activation_alpha");
     std::vector<float> activation_func_betas = info.GetAttrsOrDefault<float>("activation_beta");
-    ;
 
     clip_ = info.GetAttrOrDefault<float>("clip", std::numeric_limits<float>::max());
     LOTUS_ENFORCE(clip_ > 0.f);

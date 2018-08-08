@@ -1,5 +1,17 @@
 import numpy as np
 
+DebugOutput = False
+np.set_printoptions(suppress=True) #, precision=16, floatmode='maxprec')
+
+def print_with_shape(name, a, force_output=False):
+    if (force_output or DebugOutput):
+        print(name + " [shape: ", a.shape, "]\n", a)
+
+def print_results(Y):
+    print("*************************")
+    print_with_shape("Y", Y, True)
+    print("*************************")
+
 class GRU_Helper():
 
     def __init__(self, **params):
@@ -77,9 +89,6 @@ class OneDirectionGRU():
 
     def __init__(self, X, W, R, B, initial_h, LBR):
 
-        # set debug to True to dump most of the tensors from the various calculations
-        self.debug = False
-        self.match_lotus = True
         self.X = X
         # remove num_directions axis for W, R, B, H_0
         self.W = np.squeeze(W, axis=0)
@@ -94,31 +103,27 @@ class OneDirectionGRU():
     def g(self, x):
         return np.tanh(x)
 
-    def print_with_shape(self, name, a):
-        if (self.debug):
-            print(name + " [shape: ", a.shape, "]\n", a)
-
     def execute(self):
-        self.print_with_shape("X", self.X)
+        print_with_shape("X", self.X)
 
         [w_z, w_r, w_h] = np.split(self.W, 3)
         [r_z, r_r, r_h] = np.split(self.R, 3)
         [w_bz, w_br, w_bh, r_bz, r_br, r_bh] = np.split(self.B, 6)
 
-        #self.print_with_shape("w_z", w_z)
-        #self.print_with_shape("w_r", w_r)
-        #self.print_with_shape("w_h", w_h)
+        #print_with_shape("w_z", w_z)
+        #print_with_shape("w_r", w_r)
+        #print_with_shape("w_h", w_h)
 
-        #self.print_with_shape("r_z", r_z)
-        #self.print_with_shape("r_r", r_r)
-        #self.print_with_shape("r_h", r_h)
+        #print_with_shape("r_z", r_z)
+        #print_with_shape("r_r", r_r)
+        #print_with_shape("r_h", r_h)
 
-        #self.print_with_shape("w_bz", w_bz)
-        #self.print_with_shape("w_br", w_br)
-        #self.print_with_shape("w_bh", w_bh)
-        #self.print_with_shape("r_bz", r_bz)
-        #self.print_with_shape("r_br", r_br)
-        #self.print_with_shape("r_bh", r_bh)
+        #print_with_shape("w_bz", w_bz)
+        #print_with_shape("w_br", w_br)
+        #print_with_shape("w_bh", w_bh)
+        #print_with_shape("r_bz", r_bz)
+        #print_with_shape("r_br", r_br)
+        #print_with_shape("r_bh", r_bh)
 
         seq_len = self.X.shape[0]
         num_directions = 1
@@ -128,51 +133,20 @@ class OneDirectionGRU():
         output = np.empty((0, num_directions, batch_size, hidden_size), np.float32)
 
         for row in self.X:
-            self.print_with_shape ("row", row)
-            wz_t = np.transpose(w_z)
-            #self.print_with_shape ("wz_t", wz_t)
-            r_wzt = (np.dot(row, wz_t))
-            self.print_with_shape ("r_wzt", r_wzt)
-
-            wr_t = np.transpose(w_r)
-            #self.print_with_shape ("wr_t", wr_t)
-            r_wrt = (np.dot(row, wr_t))
-            self.print_with_shape ("r_wrt", r_wrt)
-
-            if self.match_lotus:
-                h0_rz = np.dot(self.H_0, np.transpose(r_z))
-                h0_rr = np.dot(self.H_0, np.transpose(r_r))
-                wz_h0_rz = np.dot(row, np.transpose(w_z)) + h0_rz
-                wr_h0_rr = np.dot(row, np.transpose(w_r)) + h0_rr
-                z = self.f(wz_h0_rz + w_bz + r_bz)
-                r = self.f(wr_h0_rr + w_br + r_br)
-                h_default = self.g(np.dot(row, np.transpose(w_h)) + np.dot(r * self.H_0, np.transpose(r_h)) + w_bh + r_bh)
-                h_linear = self.g(np.dot(row, np.transpose(w_h)) + r * (np.dot(self.H_0, np.transpose(r_h)) + r_bh) + w_bh)
-
-            else:
-                # this is what the ONNX example has. there is no transpose of R[zrh]
-                h0_rz = np.dot(self.H_0, r_z)
-                h0_rr = np.dot(self.H_0, r_r)
-                wz_h0_rz = np.dot(row, np.transpose(w_z)) + h0_rz
-                wr_h0_rr = np.dot(row, np.transpose(w_r)) + h0_rr
-                z = self.f(wz_h0_rz + w_bz + r_bz)
-                r = self.f(wr_h0_rr + w_br + r_br)
-                h_default = self.g(np.dot(row, np.transpose(w_h)) + np.dot(r * self.H_0, r_h) + w_bh + r_bh)
-                h_linear = self.g(np.dot(row, np.transpose(w_h)) + r * (np.dot(self.H_0, r_h) + r_bh) + w_bh)
+            z = self.f(np.dot(row, np.transpose(w_z)) + np.dot(self.H_0, np.transpose(r_z)) + w_bz + r_bz)
+            r = self.f(np.dot(row, np.transpose(w_r)) + np.dot(self.H_0, np.transpose(r_r)) + w_br + r_br)
+            h_default = self.g(np.dot(row, np.transpose(w_h)) + np.dot(r * self.H_0, np.transpose(r_h)) + w_bh + r_bh)
+            h_linear = self.g(np.dot(row, np.transpose(w_h)) + r * (np.dot(self.H_0, np.transpose(r_h)) + r_bh) + w_bh)
 
             h = h_linear if self.LBR else h_default
 
-            self.print_with_shape("h0_rz", h0_rz)
-            self.print_with_shape("h0_rr", h0_rr)
-            self.print_with_shape("wz_h0_rz", wz_h0_rz)
-            self.print_with_shape("wr_h0_rr", wr_h0_rr)
-            self.print_with_shape("z", z)
-            self.print_with_shape("r", r)
-            self.print_with_shape("h", h)
+            print_with_shape("z", z)
+            print_with_shape("r", r)
+            print_with_shape("h", h)
 
             H = (1 - z) * h + z * self.H_0
 
-            self.print_with_shape("H", H)
+            print_with_shape("H", H)
             output = np.append(output, H.reshape(1, 1, batch_size, hidden_size), axis=0)
 
             self.H_0 = H
@@ -234,9 +208,7 @@ class GRU_LotusUnitTests():
         batch_size = 2
         input_size = 1
         hidden_size = 3
-        input = np.array([[[1.], [2.]],
-                          [[10.], [11.]]]).astype(np.float32)
-
+        input = np.array([1., 2., 10., 11.]).astype(np.float32).reshape(seq_length, batch_size, input_size)
 
         W = np.array([0.1, 0.2, 0.3, 1, 2, 3, 10, 11, 12]).astype(np.float32).reshape(1, 3 * hidden_size, input_size)
 
@@ -245,7 +217,7 @@ class GRU_LotusUnitTests():
 
         gru = GRU_Helper(X=input,W=W,R=R,direction='forward')
         fw_output = gru.run()
-        print (fw_output)
+        print_results(fw_output)
 
     @staticmethod
     def ReverseDefaultActivationsSimpleWeightsNoBiasTwoRows():
@@ -267,7 +239,7 @@ class GRU_LotusUnitTests():
 
         gru = GRU_Helper(X=input,W=W,R=R,direction='reverse')
         fw_output = gru.run()
-        print(fw_output)
+        print_results(fw_output)
 
     @staticmethod
     def BidirectionalDefaultActivationsSimpleWeightsNoBiasTwoRows():
@@ -294,7 +266,64 @@ class GRU_LotusUnitTests():
                          direction='bidirectional')
 
         fw_output = gru.run()
-        print(fw_output)
+        print_results(fw_output)
+
+    @staticmethod
+    def DefaultActivationsSimpleWeightsWithBias(rows=2, direction="forward", linear_before_reset=0):
+
+        print(GRU_LotusUnitTests.DefaultActivationsSimpleWeightsWithBias.__name__ +
+              " batch_parallel=" + str(rows != 1) +
+              " direction=" + direction +
+              " linear_before_reset=" + str(linear_before_reset))
+
+        seq_length = 2
+        batch_size = rows
+        input_size = 1
+        hidden_size = 3
+
+        if (batch_size == 1):
+            input = [-0.1, -0.3]
+        else:
+            input = [-0.1, 0.2, -0.3, 0.4]
+
+        input = np.array(input).astype(np.float32).reshape(seq_length, batch_size, input_size)
+
+        W = np.array([0.1, 0.2, 0.3, 0.2, 0.3, 0.1, 0.3, 0.1, 0.2]).astype(np.float32).reshape(1, 3 * hidden_size, input_size)
+
+        weight_scale = 0.1
+        R = weight_scale * np.ones((1, 3 * hidden_size, hidden_size)).astype(np.float32)
+
+        # Wb[zrh] Rb[zrh]
+        B = np.array([-0.01, 0.1, 0.01, -0.2, -0.02, 0.02, 0.3, -0.3, -0.3,
+                      -0.03, 0.5, -0.7, 0.05, -0.7, 0.3, 0.07, -0.03, 0.5 ]).astype(np.float32).reshape(1, 6 * hidden_size)
+
+        gru = GRU_Helper(X=input,W=W,R=R, B=B, direction=direction, linear_before_reset=linear_before_reset)
+        fw_output = gru.run()
+        print_results(fw_output)
+
+    @staticmethod
+    def ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallel():
+        GRU_LotusUnitTests.DefaultActivationsSimpleWeightsWithBias()
+
+    @staticmethod
+    def ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset():
+
+        GRU_LotusUnitTests.DefaultActivationsSimpleWeightsWithBias(linear_before_reset=1)
+
+    @staticmethod
+    def ReverseDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset(linear_before_reset=0):
+
+        GRU_LotusUnitTests.DefaultActivationsSimpleWeightsWithBias(direction="reverse", linear_before_reset=1)
+
+    @staticmethod
+    def ForwardDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset():
+
+        GRU_LotusUnitTests.DefaultActivationsSimpleWeightsWithBias(rows=1, linear_before_reset=1)
+
+    @staticmethod
+    def ReverseDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset(linear_before_reset=0):
+
+        GRU_LotusUnitTests.DefaultActivationsSimpleWeightsWithBias(rows=1, direction="reverse", linear_before_reset=1)
 
     @staticmethod
     def Legacy_TestGRUOpForwardBasic():
@@ -307,7 +336,7 @@ class GRU_LotusUnitTests():
         W, R, B = LotusRTTestContext.OneDirectionWeights()
         gru = GRU_Helper(X=input, W=W, R=R, B=B)
         output = gru.run()
-        print(output)
+        print_results(output)
 
     @staticmethod
     def Legacy_TestGRUOpBackwardBasic():
@@ -319,7 +348,7 @@ class GRU_LotusUnitTests():
         W, R, B = LotusRTTestContext.OneDirectionWeights()
         gru = GRU_Helper(X=input, W=W, R=R, B=B, direction='reverse')
         output = gru.run()
-        print(output)
+        print_results(output)
 
     @staticmethod
     def Legacy_TestGRUOpBidirectionalBasic():
@@ -332,12 +361,18 @@ class GRU_LotusUnitTests():
         W, R, B = LotusRTTestContext.BidirectionalWeights()
         gru = GRU_Helper(X=input, W=W, R=R, B=B, direction='bidirectional')
         output = gru.run()
-        print(output)
-
+        print_results(output)
 
 GRU_LotusUnitTests.ForwardDefaultActivationsSimpleWeightsNoBiasTwoRows()
 GRU_LotusUnitTests.ReverseDefaultActivationsSimpleWeightsNoBiasTwoRows()
 GRU_LotusUnitTests.BidirectionalDefaultActivationsSimpleWeightsNoBiasTwoRows()
+
+GRU_LotusUnitTests.ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallel()
+GRU_LotusUnitTests.ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset()
+GRU_LotusUnitTests.ReverseDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset()
+GRU_LotusUnitTests.ForwardDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset()
+GRU_LotusUnitTests.ReverseDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset()
+
 GRU_LotusUnitTests.Legacy_TestGRUOpForwardBasic()
 GRU_LotusUnitTests.Legacy_TestGRUOpBackwardBasic()
 GRU_LotusUnitTests.Legacy_TestGRUOpBidirectionalBasic()

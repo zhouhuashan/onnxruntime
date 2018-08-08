@@ -278,7 +278,6 @@ GruOutputGateFuncPtr GruOutputGateFuncByName(const std::string& func);
 void add_bias_into_ignore(const float* ignored, float* pd, const int c);
 void add_bias_into(const float* ps, float* pd, const int c);
 void clip(const float b, float* pd, const int c);
-void clip_b(const float b, const float* pb, float* pd, const int c);
 void clip_add_bias(const float b, const float* pb, float* pd, const int c);
 void clip_ignore_bias(const float b, const float* pb, float* pd, const int c);
 void sigmoid_m(const float* ps1, float* ps1_c, const float* ps2, float* pd, int c, const float alpha, const float beta);

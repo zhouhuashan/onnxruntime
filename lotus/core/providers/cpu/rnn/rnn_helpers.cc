@@ -290,18 +290,6 @@ void clip(const float b, float *pd, const int c) {
   }
 }
 
-void clip_b(const float b, const float *pb, float *pd, const int c) {
-  for (int i = 0; i < c; i++) {
-    const auto x = pd[i] + pb[i];
-    if (x > b)
-      pd[i] = b;
-    else if (x < -b)
-      pd[i] = -b;
-    else
-      pd[i] = x;
-  }
-}
-
 void clip_ignore_bias(const float b, const float *pb, float *pd, const int c) {
   UNUSED_PARAMETER(pb);
 
