@@ -33,7 +33,7 @@ class ArgMax final : public ReduceKernel {
  public:
   ArgMax(const OpKernelInfo& info) : ReduceKernel(info, false) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T, CUDNN_REDUCE_TENSOR_FLATTENED_INDICES>(ctx, CUDNN_REDUCE_TENSOR_MAX);
   }
 };
@@ -43,7 +43,7 @@ class ArgMin final : public ReduceKernel {
  public:
   ArgMin(const OpKernelInfo& info) : ReduceKernel(info, false) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T, CUDNN_REDUCE_TENSOR_FLATTENED_INDICES>(ctx, CUDNN_REDUCE_TENSOR_MIN);
   }
 };
@@ -53,7 +53,7 @@ class ReduceL1 final : public ReduceKernel {
  public:
   ReduceL1(const OpKernelInfo& info) : ReduceKernel(info) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_NORM1);
   }
 };
@@ -63,7 +63,7 @@ class ReduceL2 final : public ReduceKernel {
  public:
   ReduceL2(const OpKernelInfo& info) : ReduceKernel(info) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_NORM2);
   }
 };
@@ -73,7 +73,7 @@ class ReduceMax final : public ReduceKernel {
  public:
   ReduceMax(const OpKernelInfo& info) : ReduceKernel(info) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_MAX);
   }
 };
@@ -83,7 +83,7 @@ class ReduceMean final : public ReduceKernel {
  public:
   ReduceMean(const OpKernelInfo& info) : ReduceKernel(info) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_AVG);
   }
 };
@@ -93,7 +93,7 @@ class ReduceMin final : public ReduceKernel {
  public:
   ReduceMin(const OpKernelInfo& info) : ReduceKernel(info) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_MIN);
   }
 };
@@ -103,7 +103,7 @@ class ReduceProd final : public ReduceKernel {
  public:
   ReduceProd(const OpKernelInfo& info) : ReduceKernel(info) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_MUL);
   }
 };
@@ -113,7 +113,7 @@ class ReduceSum final : public ReduceKernel {
  public:
   ReduceSum(const OpKernelInfo& info) : ReduceKernel(info) {}
 
-  Status Compute(OpKernelContext* ctx) const override {
+  Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_ADD);
   }
 };

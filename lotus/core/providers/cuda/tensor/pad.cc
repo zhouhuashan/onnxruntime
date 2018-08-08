@@ -17,7 +17,7 @@ namespace Cuda {
       Pad<T>);
 
 template <typename T>
-Status Pad<T>::Compute(OpKernelContext *ctx) const {
+Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
   const auto &input_tensor = *ctx->Input<Tensor>(0);
   auto const &input_shape = input_tensor.Shape();
   auto dimension_count = input_shape.NumDimensions();
@@ -70,7 +70,7 @@ Status Pad<T>::Compute(OpKernelContext *ctx) const {
 
 #define SPECIALIZED_COMPUTE(T) \
   REGISTER_KERNEL_TYPED(T)     \
-  template Status Pad<T>::Compute(OpKernelContext *ctx) const;
+  template Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const;
 
 SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)

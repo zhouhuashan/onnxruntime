@@ -117,7 +117,7 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
 
 #define BINARY_ELEMENTWISE_COMPUTE(x, T)                                                                \
   template <>                                                                                           \
-  Status x<T>::Compute(OpKernelContext* context) const {                                                \
+  Status x<T>::ComputeInternal(OpKernelContext* context) const {                                        \
     ResetScratchBuffer();                                                                               \
     BinaryElementwisePreparation prepare(this);                                                         \
     Prepare(context, &prepare);                                                                         \
@@ -132,7 +132,6 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
         prepare.fdm_output_strides.GpuPtr(),                                                            \
         reinterpret_cast<typename ToCudaType<T>::MappedType*>(prepare.output_tensor->MutableData<T>()), \
         prepare.output_tensor->Shape().Size());                                                         \
-                                                                                                        \
     return Status::OK();                                                                                \
   }
 
@@ -178,7 +177,7 @@ BINARY_OP_TYPED(Xor, 7, bool)
 BINARY_OP_HFD(PRelu, 7)
 
 template <typename T>
-Status Sum<T>::Compute(OpKernelContext* context) const {
+Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
   const auto& node = Node();
   const auto& node_name = node.Name();
@@ -233,13 +232,12 @@ Status Sum<T>::Compute(OpKernelContext* context) const {
       }
     }
   }
-
   return Status::OK();
 }
 
 #undef BINARY_ELEMENTWISE_COMPUTE
 #define BINARY_ELEMENTWISE_COMPUTE(name, T) \
-  template Status name<T>::Compute(OpKernelContext* context) const;
+  template Status name<T>::ComputeInternal(OpKernelContext* context) const;
 
 BINARY_OP_UZILHFD(Sum, 6)  // bump up this when upgrading ONNX to current
 }  // namespace Cuda

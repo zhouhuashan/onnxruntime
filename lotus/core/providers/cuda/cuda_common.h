@@ -29,6 +29,16 @@ class CudaKernel : public OpKernel {
         provider_(const_cast<CUDAExecutionProvider*>(dynamic_cast<const CUDAExecutionProvider*>(info.GetExecutionProvider()))) {
   }
 
+  Status Compute(OpKernelContext* p_op_kernel_context) const override {
+    auto s = ComputeInternal(p_op_kernel_context);
+    // use this to precisely locate the node where CUDA failure comes from
+    //  if (cudaSuccess != cudaDeviceSynchronize())
+    //    __debugbreak();
+    return s;
+  }
+
+  virtual Status ComputeInternal(OpKernelContext* p_op_kernel_context) const = 0;
+
   template <typename T>
   inline IAllocatorUniquePtr<T> AllocateBufferOnCPUPinned(size_t count_or_bytes) const {
     return IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(kMemTypeCPU), count_or_bytes);

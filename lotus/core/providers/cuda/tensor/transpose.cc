@@ -17,7 +17,7 @@ namespace Cuda {
       Transpose<T>);
 
 template <typename T>
-Status Transpose<T>::Compute(OpKernelContext* ctx) const {
+Status Transpose<T>::ComputeInternal(OpKernelContext* ctx) const {
   const Tensor& X = *ctx->Input<Tensor>(0);
   const TensorShape& input_shape = X.Shape();
   const std::vector<int64_t>& input_dims = input_shape.GetDims();
@@ -56,7 +56,7 @@ Status Transpose<T>::Compute(OpKernelContext* ctx) const {
 
 #define SPECIALIZED_COMPUTE(T) \
   REGISTER_KERNEL_TYPED(T)     \
-  template Status Transpose<T>::Compute(OpKernelContext* ctx) const;
+  template Status Transpose<T>::ComputeInternal(OpKernelContext* ctx) const;
 
 SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)

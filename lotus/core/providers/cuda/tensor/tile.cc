@@ -18,7 +18,7 @@ namespace Cuda {
       Tile<T>);
 
 template <typename T>
-Status Tile<T>::Compute(OpKernelContext *ctx) const {
+Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const {
   auto &input_tensor = *ctx->Input<Tensor>(0);
   auto &repeats_tensor = *ctx->Input<Tensor>(1);
   size_t rank = input_tensor.Shape().NumDimensions();
@@ -70,7 +70,7 @@ Status Tile<T>::Compute(OpKernelContext *ctx) const {
 
 #define SPECIALIZED_COMPUTE(T) \
   REGISTER_KERNEL_TYPED(T)     \
-  template Status Tile<T>::Compute(OpKernelContext *ctx) const;
+  template Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const;
 
 SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)

@@ -21,7 +21,7 @@ class Gemm final : public CudaKernel {
     LOTUS_ENFORCE(info.GetAttr<float>("beta", &beta_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   bool trans_A_;

@@ -44,7 +44,7 @@ ONNX_OPERATOR_TYPED_KERNEL_EX(
     Conv<MLFloat16>);
 
 template <typename T>
-Status Conv<T>::Compute(OpKernelContext* context) const {
+Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& x_shape = X->Shape();

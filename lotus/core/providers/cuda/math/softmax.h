@@ -13,7 +13,7 @@ class Softmax final : public CudaKernel {
     info.GetAttrOrDefault("axis", &axis_, static_cast<int64_t>(1));
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   int64_t axis_;

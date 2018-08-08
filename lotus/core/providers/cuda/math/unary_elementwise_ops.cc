@@ -10,19 +10,19 @@ Status UnaryElementwise::Prepare(OpKernelContext* context, UnaryElementwisePrepa
   return Status::OK();
 }
 
-#define UNARY_ELEMENTWISE_REGISTER_KERNEL(x, ver, T)                          \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
-    x,                                                                       \
-    kOnnxDomain,                                                              \
-    ver,                                                                      \
-    T,                                                                        \
-    kCudaExecutionProvider,                                                   \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-    x<T>);
+#define UNARY_ELEMENTWISE_REGISTER_KERNEL(x, ver, T)                            \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                \
+      x,                                                                        \
+      kOnnxDomain,                                                              \
+      ver,                                                                      \
+      T,                                                                        \
+      kCudaExecutionProvider,                                                   \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      x<T>);
 
 #define UNARY_ELEMENTWISE_COMPUTE(x, T)                                                           \
   template <>                                                                                     \
-  Status x<T>::Compute(OpKernelContext* context) const {                                          \
+  Status x<T>::ComputeInternal(OpKernelContext* context) const {                                  \
     UnaryElementwisePreparation p;                                                                \
     UnaryElementwise::Prepare(context, &p);                                                       \
     Impl_##x(                                                                                     \

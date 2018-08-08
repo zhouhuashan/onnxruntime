@@ -15,7 +15,7 @@ class Reshape final : public CudaKernel {
   Reshape(const OpKernelInfo& info) : CudaKernel(info) {
   }
 
-  Status Compute(OpKernelContext* context) const override {
+  Status ComputeInternal(OpKernelContext* context) const override {
     // Copy the second input tensor into the shape vector
     const Tensor* shapeTensor = context->Input<Tensor>(1);
     LOTUS_ENFORCE(shapeTensor->Shape().NumDimensions() == 1,
@@ -51,7 +51,7 @@ class Reshape_1 final : public CudaKernel {
     LOTUS_ENFORCE(status.IsOK(), "Attribute shape is not set.");
   }
 
-  Status Compute(OpKernelContext* context) const override {
+  Status ComputeInternal(OpKernelContext* context) const override {
     std::vector<int64_t> shape = shape_;
     const Tensor* X = context->Input<Tensor>(0);
     const TensorShape& X_shape = X->Shape();

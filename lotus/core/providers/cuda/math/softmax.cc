@@ -5,18 +5,18 @@
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_KERNEL_TYPED(T)                                              \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
-    Softmax,                                                                  \
-    kOnnxDomain,                                                              \
-    1,                                                                        \
-    T,                                                                        \
-    kCudaExecutionProvider,                                                   \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-    Softmax<T>);
+#define REGISTER_KERNEL_TYPED(T)                                                \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                \
+      Softmax,                                                                  \
+      kOnnxDomain,                                                              \
+      1,                                                                        \
+      T,                                                                        \
+      kCudaExecutionProvider,                                                   \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      Softmax<T>);
 
 template <typename T>
-Status Softmax<T>::Compute(OpKernelContext* ctx) const {
+Status Softmax<T>::ComputeInternal(OpKernelContext* ctx) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
   const Tensor& X = *ctx->Input<Tensor>(0);
   const TensorShape input_shape{X.Shape()};
@@ -45,7 +45,7 @@ Status Softmax<T>::Compute(OpKernelContext* ctx) const {
 
 #define SPECIALIZED_COMPUTE(T) \
   REGISTER_KERNEL_TYPED(T)     \
-  template Status Softmax<T>::Compute(OpKernelContext* ctx) const;
+  template Status Softmax<T>::ComputeInternal(OpKernelContext* ctx) const;
 
 SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)

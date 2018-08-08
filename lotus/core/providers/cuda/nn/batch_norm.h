@@ -34,7 +34,7 @@ class BatchNorm final : public CudaKernel {
     }
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   double epsilon_;

@@ -13,7 +13,7 @@ ONNX_OPERATOR_KERNEL_EX(
     Gemm<float>);
 
 template <>
-Status Gemm<float>::Compute(OpKernelContext* ctx) const {
+Status Gemm<float>::ComputeInternal(OpKernelContext* ctx) const {
   const auto X = ctx->Input<Tensor>(0);
   const auto W = ctx->Input<Tensor>(1);
   const auto B = ctx->Input<Tensor>(2);

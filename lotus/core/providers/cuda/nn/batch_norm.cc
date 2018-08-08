@@ -6,19 +6,20 @@ using namespace std;
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_KERNEL_TYPED(T)                                                 \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                                 \
-    BatchNormalization,                                                          \
-    kOnnxDomain,                                                                 \
-    7,                                                                           \
-    T,                                                                           \
-    kCudaExecutionProvider,                                                      \
-    KernelDefBuilder().TypeConstraint("X", DataTypeImpl::GetTensorType<T>())     \
-                      .TypeConstraint("scale", DataTypeImpl::GetTensorType<T>()) \
-                      .TypeConstraint("B", DataTypeImpl::GetTensorType<T>())     \
-                      .TypeConstraint("mean", DataTypeImpl::GetTensorType<T>())  \
-                      .TypeConstraint("var", DataTypeImpl::GetTensorType<T>()),  \
-    BatchNorm<T>);
+#define REGISTER_KERNEL_TYPED(T)                                     \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                     \
+      BatchNormalization,                                            \
+      kOnnxDomain,                                                   \
+      7,                                                             \
+      T,                                                             \
+      kCudaExecutionProvider,                                        \
+      KernelDefBuilder()                                             \
+          .TypeConstraint("X", DataTypeImpl::GetTensorType<T>())     \
+          .TypeConstraint("scale", DataTypeImpl::GetTensorType<T>()) \
+          .TypeConstraint("B", DataTypeImpl::GetTensorType<T>())     \
+          .TypeConstraint("mean", DataTypeImpl::GetTensorType<T>())  \
+          .TypeConstraint("var", DataTypeImpl::GetTensorType<T>()),  \
+      BatchNorm<T>);
 
 struct BNTensorDescriptor final {
   ~BNTensorDescriptor() {
@@ -57,7 +58,7 @@ static void NormalizeDims(const TensorShape& x_shape, std::vector<int64_t>& new_
 }
 
 template <typename T>
-Status BatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const {
+Status BatchNorm<T>::ComputeInternal(OpKernelContext* p_op_kernel_context) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
 
   const Tensor* X = p_op_kernel_context->Input<Tensor>(0);
@@ -110,7 +111,7 @@ Status BatchNorm<T>::Compute(OpKernelContext* p_op_kernel_context) const {
 
 #define SPECIALIZED_COMPUTE(T) \
   REGISTER_KERNEL_TYPED(T)     \
-  template Status BatchNorm<T>::Compute(OpKernelContext* ctx) const;
+  template Status BatchNorm<T>::ComputeInternal(OpKernelContext* ctx) const;
 
 SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)

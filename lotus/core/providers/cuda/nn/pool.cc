@@ -76,7 +76,7 @@ class CudnnPoolingDescriptor final {
 };
 
 template <typename T, PoolType type>
-Status Pool<T, type>::Compute(OpKernelContext* context) const {
+Status Pool<T, type>::ComputeInternal(OpKernelContext* context) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& x_shape = X->Shape();

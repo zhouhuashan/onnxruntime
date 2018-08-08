@@ -20,19 +20,20 @@ const std::vector<MLDataType> castOpTypeConstraints{
     DataTypeImpl::GetTensorType<uint64_t>(),
     DataTypeImpl::GetTensorType<bool>()};
 
-#define REGISTER_KERNEL_TYPED(T)                                              \
-  ONNX_OPERATOR_TYPED_KERNEL_EX(                                              \
-    Cast,                                                                     \
-    kOnnxDomain,                                                              \
-    6,                                                                        \
-    T,                                                                        \
-    kCudaExecutionProvider,                                                   \
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<T>()) \
-                      .TypeConstraint("T2", castOpTypeConstraints),           \
-    Cast<T>);
+#define REGISTER_KERNEL_TYPED(T)                                  \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
+      Cast,                                                       \
+      kOnnxDomain,                                                \
+      6,                                                          \
+      T,                                                          \
+      kCudaExecutionProvider,                                     \
+      KernelDefBuilder()                                          \
+          .TypeConstraint("T1", DataTypeImpl::GetTensorType<T>()) \
+          .TypeConstraint("T2", castOpTypeConstraints),           \
+      Cast<T>);
 
 template <typename SrcT>
-Status Cast<SrcT>::Compute(OpKernelContext* context) const {
+Status Cast<SrcT>::ComputeInternal(OpKernelContext* context) const {
   typedef typename ToCudaType<SrcT>::MappedType CudaSrcT;
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& shape = X->Shape();
@@ -73,7 +74,7 @@ Status Cast<SrcT>::Compute(OpKernelContext* context) const {
 
 #define SPECIALIZE_IMPL(T) \
   REGISTER_KERNEL_TYPED(T) \
-  template Status Cast<T>::Compute(OpKernelContext* context) const;
+  template Status Cast<T>::ComputeInternal(OpKernelContext* context) const;
 
 SPECIALIZE_IMPL(MLFloat16)
 SPECIALIZE_IMPL(float)

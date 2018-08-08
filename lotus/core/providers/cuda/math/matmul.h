@@ -13,7 +13,7 @@ class MatMul final : public CudaKernel {
       : CudaKernel(info) {
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 }  // namespace Cuda
 }  // namespace Lotus

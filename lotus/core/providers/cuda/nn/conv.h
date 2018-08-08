@@ -21,7 +21,7 @@ class Conv : public CudaKernel, public ConvBase {
     }
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   // cudnn algorithm search is slow, so cache it with input shape

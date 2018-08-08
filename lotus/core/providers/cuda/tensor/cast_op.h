@@ -15,7 +15,7 @@ class Cast final : public CudaKernel {
     to_ = gsl::narrow_cast<onnx::TensorProto_DataType>(to);
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   onnx::TensorProto_DataType to_;

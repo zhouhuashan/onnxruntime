@@ -44,7 +44,7 @@ class Elu final : public UnaryElementwise {
     LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA()
@@ -60,7 +60,7 @@ class HardSigmoid final : public UnaryElementwise {
     LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA_BETA()
@@ -76,7 +76,7 @@ class LeakyRelu final : public UnaryElementwise {
     LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA()
@@ -92,7 +92,7 @@ class ParametricSoftplus final : public UnaryElementwise {
     LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA_BETA()
@@ -106,7 +106,7 @@ class Relu final : public UnaryElementwise {
  public:
   Relu(const OpKernelInfo& info) : UnaryElementwise(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_NULL()
@@ -120,7 +120,7 @@ class ScaledTanh final : public UnaryElementwise {
     LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA_BETA()
@@ -137,7 +137,7 @@ class Selu final : public UnaryElementwise {
     LOTUS_ENFORCE(info.GetAttr("gamma", &gamma_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA_GAMMA()
@@ -151,7 +151,7 @@ class Sigmoid final : public UnaryElementwise {
  public:
   Sigmoid(const OpKernelInfo& info) : UnaryElementwise(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_NULL()
@@ -162,7 +162,7 @@ class Softplus final : public UnaryElementwise {
  public:
   Softplus(const OpKernelInfo& info) : UnaryElementwise(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_NULL()
@@ -173,7 +173,7 @@ class Softsign final : public UnaryElementwise {
  public:
   Softsign(const OpKernelInfo& info) : UnaryElementwise(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_NULL()
@@ -184,7 +184,7 @@ class Tanh final : public UnaryElementwise {
  public:
   Tanh(const OpKernelInfo& info) : UnaryElementwise(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_NULL()
@@ -197,7 +197,7 @@ class ThresholdedRelu final : public UnaryElementwise {
     LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
   MAKE_FUNC_CTX_ALPHA()

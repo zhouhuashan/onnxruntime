@@ -9,7 +9,7 @@ struct Tile final : CudaKernel {
   Tile(const OpKernelInfo& info) : CudaKernel(info) {
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 }  // namespace Cuda
 }  // namespace Lotus

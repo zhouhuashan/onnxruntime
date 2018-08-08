@@ -11,7 +11,7 @@ class Pad final : public PadBase, public CudaKernel {
  public:
   Pad(const OpKernelInfo& info) : PadBase(info), CudaKernel(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 }  // namespace Cuda

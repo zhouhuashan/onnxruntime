@@ -18,7 +18,7 @@ class Pool final : public CudaKernel, public PoolBase {
  public:
   Pool(OpKernelInfo info) : CudaKernel(info), PoolBase(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 }  // namespace Cuda
 }  // namespace Lotus

@@ -14,7 +14,7 @@ class Transpose final : public CudaKernel, public TransposeBase {
  public:
   Transpose(const OpKernelInfo& info) : CudaKernel(info), TransposeBase(info) {}
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 }  // namespace Cuda

@@ -13,7 +13,7 @@ ONNX_OPERATOR_KERNEL_EX(
     MatMul<float>);
 
 template <>
-Status MatMul<float>::Compute(OpKernelContext* ctx) const {
+Status MatMul<float>::ComputeInternal(OpKernelContext* ctx) const {
   const Tensor* left_X = ctx->Input<Tensor>(0);
   const Tensor* right_X = ctx->Input<Tensor>(1);
 

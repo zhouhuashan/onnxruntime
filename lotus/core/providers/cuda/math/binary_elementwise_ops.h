@@ -35,7 +35,7 @@ class BinaryElementwise : public CudaKernel {
   typedef BroadcastTrait broadcast_type;
 
   BinaryElementwise(const OpKernelInfo& info) : CudaKernel(info) {}
-  Status Compute(OpKernelContext*) const override {
+  Status ComputeInternal(OpKernelContext*) const override {
     return Status(Common::LOTUS, Common::FAIL);  // should not reach here
   }
   Status Prepare(OpKernelContext* context, BinaryElementwisePreparation* p) const;
@@ -45,56 +45,56 @@ template <typename T>
 class Add final : public BinaryElementwise<ShouldBroadcast> {
  public:
   Add(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 template <typename T>
 class Sub final : public BinaryElementwise<ShouldBroadcast> {
  public:
   Sub(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 template <typename T>
 class Mul final : public BinaryElementwise<ShouldBroadcast> {
  public:
   Mul(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 template <typename T>
 class Div final : public BinaryElementwise<ShouldBroadcast> {
  public:
   Div(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 template <typename T>
 class Pow final : public BinaryElementwise<ShouldBroadcast> {
  public:
   Pow(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 template <typename T>
 class And final : public BinaryElementwise<ShouldBroadcast> {
  public:
   And(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 template <typename T>
 class Or final : public BinaryElementwise<ShouldBroadcast> {
  public:
   Or(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 template <typename T>
 class Xor final : public BinaryElementwise<ShouldBroadcast> {
  public:
   Xor(const OpKernelInfo& info) : BinaryElementwise(info) {}
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 // PRelu is activation function, but it's closer to binary elementwise ops in implementation
@@ -104,7 +104,7 @@ class PRelu final : public BinaryElementwise<ShouldBroadcast> {
   PRelu(const OpKernelInfo& info) : BinaryElementwise(info) {
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 // Sum allows varadic inputs, and it uses binary elementwise Add in implementation
@@ -114,7 +114,7 @@ class Sum final : public CudaKernel {
   Sum(const OpKernelInfo& info) : CudaKernel(info) {
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status ComputeInternal(OpKernelContext* context) const override;
 };
 
 }  // namespace Cuda

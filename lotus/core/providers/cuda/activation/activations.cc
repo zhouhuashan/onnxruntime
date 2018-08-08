@@ -17,7 +17,7 @@ namespace Cuda {
 
 #define UNARY_ACTIVATION_COMPUTE(x, T)                                                            \
   template <>                                                                                     \
-  Status x<T>::Compute(OpKernelContext* context) const {                                          \
+  Status x<T>::ComputeInternal(OpKernelContext* context) const {                                  \
     UnaryElementwisePreparation p;                                                                \
     UnaryElementwise::Prepare(context, &p);                                                       \
     ResetScratchBuffer();                                                                         \
