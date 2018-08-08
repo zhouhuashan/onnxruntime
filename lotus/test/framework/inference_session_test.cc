@@ -36,6 +36,7 @@ static void VerifyOutputs(const std::vector<MLValue>& fetches,
                           const std::vector<int64_t>& expected_dims,
                           const std::vector<float>& expected_values);
 static const std::string MODEL_URI = "testdata/mul_1.pb";
+static const std::string MODEL_URI_NO_OPSET = "testdata/mul_1.pb.noopset";
 //static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx"; // TODO enable this after we've weights?
 
 static void CreateMatMulModel(std::unique_ptr<LotusIR::Model>& p_model, ProviderType provider_type) {
@@ -763,5 +764,18 @@ TEST(InferenceSessionTests, TestBindCudaPreallocateOutputOnCpu2) {
 }
 
 #endif
+
+TEST(InferenceSessionTests, ModelWithoutOpset) {
+  SessionOptions so;
+
+  so.session_logid = "InferenceSessionTests.ModelWithoutOpset";
+
+  InferenceSession session_object{so, &DefaultLoggingManager()};
+  Status retval = session_object.Load(MODEL_URI_NO_OPSET);
+  ASSERT_FALSE(retval.IsOK());
+  if (!retval.IsOK()) {
+    ASSERT_TRUE(retval.ErrorMessage().find("Missing opset in the model") != std::string::npos);
+  }
+}
 }  // namespace Test
 }  // namespace Lotus

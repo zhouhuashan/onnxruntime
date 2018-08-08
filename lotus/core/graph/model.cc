@@ -73,14 +73,9 @@ Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaRegist
 
   std::unordered_map<std::string, int> domain_to_version;
   if (0 == model_proto_->opset_import_size()) {
-    // Operator sets are not specified in this model.
-    // Will use global operator store instead.
-    domain_to_version = schema_registry->GetLatestOpsetVersions(false);
-    for (auto domain : domain_to_version) {
-      const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
-      opset_id_proto->set_domain(domain.first);
-      opset_id_proto->set_version(domain.second);
-    }
+    throw std::invalid_argument(
+        "Missing opset in the model. All ModelProtos MUST have at least one entry that"
+        " specifies which version of the ONNX OperatorSet is being imported.");
   } else {
     for (auto& opSet : model_proto_->opset_import()) {
       domain_to_version[opSet.domain()] = gsl::narrow_cast<int>(opSet.version());
@@ -192,7 +187,11 @@ Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model,
 
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
-  model.reset(new Model(model_proto, local_registries));
+  try {
+    model.reset(new Model(model_proto, local_registries));
+  } catch (const std::exception& ex) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Failed to load model with error: " + std::string(ex.what()));
+  }
 
   if (model->MainGraph() != nullptr) {
     LOTUS_RETURN_IF_ERROR(model->MainGraph()->Resolve(true));
@@ -208,7 +207,11 @@ Status Model::Load(std::unique_ptr<ModelProto> p_model_proto, std::shared_ptr<Mo
 
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
-  model.reset(new Model(std::move(p_model_proto), local_registries));
+  try {
+    model.reset(new Model(std::move(p_model_proto), local_registries));
+  } catch (const std::exception& ex) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Failed to load model with error: " + std::string(ex.what()));
+  }
 
   if (model->MainGraph() != nullptr) {
     LOTUS_RETURN_IF_ERROR(model->MainGraph()->Resolve(true));
@@ -236,12 +239,12 @@ static Status LoadModel(const T& file_path, std::shared_ptr<Model>& p_model, con
     status = Model::Load(fd, p_model, local_registries);
   } catch (std::exception& ex) {
     GSL_SUPPRESS(es .84)
-    (void) Env::Default().FileClose(fd);
+    (void)Env::Default().FileClose(fd);
     return Status(LOTUS, FAIL, ex.what());
   }
   if (!status.IsOK()) {
     GSL_SUPPRESS(es .84)
-    (void) Env::Default().FileClose(fd);
+    (void)Env::Default().FileClose(fd);
     return status;
   }
   return Env::Default().FileClose(fd);
@@ -256,12 +259,12 @@ static Status SaveModel(Model& model, const T& file_path) {
     status = Model::Save(model, fd);
   } catch (std::exception& ex) {
     GSL_SUPPRESS(es .84)
-    (void) Env::Default().FileClose(fd);
+    (void)Env::Default().FileClose(fd);
     return Status(LOTUS, FAIL, ex.what());
   }
   if (!status.IsOK()) {
     GSL_SUPPRESS(es .84)
-    (void) Env::Default().FileClose(fd);
+    (void)Env::Default().FileClose(fd);
     return status;
   }
   return Env::Default().FileClose(fd);
