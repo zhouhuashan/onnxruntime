@@ -44,7 +44,7 @@ if(lotus_BUILD_BENCHMARKS)
     set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark testing as we don't need it.")
     # We will not need to install benchmark since we link it statically.
     set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "Disable benchmark install to avoid overwriting vendor install.")
-	add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx/third_party/benchmark EXCLUDE_FROM_ALL)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx/third_party/benchmark EXCLUDE_FROM_ALL)
   endif()
 endif()
 
@@ -152,8 +152,6 @@ else()
   add_executable(protobuf::protoc ALIAS protoc)
   include(protobuf_function.cmake)
 endif()
-get_target_property(PROTOBUF_INCLUDE_DIRS protobuf::libprotobuf
-    INTERFACE_INCLUDE_DIRECTORIES)
 
 if (lotus_USE_CUDA AND "${lotus_CUDNN_HOME}" STREQUAL "")
   message(FATAL_ERROR "lotus_CUDNN_HOME required for lotus_USE_CUDA")
@@ -196,7 +194,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DGSL_UNENFORCED_ON_CONT
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DGSL_UNENFORCED_ON_CONTRACT_VIOLATION")
 
 include(eigen)
-set(lotus_EXTERNAL_DEPENDENCIES eigen gsl onnx_proto)
 set(lotus_EXTERNAL_LIBRARIES protobuf::libprotobuf)
 
 # gtest and gmock
@@ -215,6 +212,7 @@ set_target_properties(gen_onnx_proto PROPERTIES FOLDER "External/ONNX")
 if (MSVC)
     target_compile_options(onnx_proto PRIVATE /wd4146) # unary minus operator applied to unsigned type
 endif()
+set(lotus_EXTERNAL_DEPENDENCIES gsl onnx_proto)
 
 # TVM
 if (lotus_USE_TVM)
@@ -239,6 +237,10 @@ if (lotus_RUN_ONNX_TESTS)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()
 
+if (lotus_USE_MLAS AND WIN32)
+    set(MLAS_INC ${PROJECT_SOURCE_DIR}/../../mlas/inc)
+    set(MLAS_LIBRARY mlas)
+endif()
 if (WIN32)
     add_definitions(-DPLATFORM_WINDOWS -DNOGDI -DNOMINMAX -D_USE_MATH_DEFINES)
     # parallel build
@@ -258,7 +260,7 @@ if (WIN32)
     endif()
 
     # compile warning level 4
-    string(APPEND CMAKE_CXX_FLAGS " /W4")  
+    string(APPEND CMAKE_CXX_FLAGS " /W4")
 
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
       # treat warnings as errors
@@ -284,8 +286,6 @@ endif()
 
 include_directories(
     ${LOTUS_ROOT}
-    # External dependencies.
-    ${eigen_INCLUDE_DIRS}
     ${gsl_INCLUDE_DIR}
 )
 
@@ -333,6 +333,13 @@ include(lotus_common.cmake)
 include(lotusIR_graph.cmake)
 include(lotus_framework.cmake)
 include(lotus_providers.cmake)
+
+if(lotus_USE_MKLDNN)
+  set(LOTUS_PROVIDERS_MKLDNN lotus_providers_mkldnn)
+endif()
+if(lotus_USE_CUDA)
+  set(LOTUS_PROVIDERS_CUDA lotus_providers_cuda)
+endif()
 
 if (lotus_BUILD_UNIT_TESTS)
   include(lotus_unittests.cmake)

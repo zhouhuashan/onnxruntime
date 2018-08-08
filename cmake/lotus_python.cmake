@@ -30,21 +30,23 @@ if(NOT NUMPY_INCLUDE_DIR)
 endif(NOT NUMPY_INCLUDE_DIR)
 
 # ---[ Python + Numpy
-include_directories(${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
-include_directories(${pybind11_INCLUDE_DIRS})
-
 set(lotus_pybind_srcs
     ${LOTUS_ROOT}/python/lotus_pybind_state.cc
 )
 
+#TODO(@chasun): enable cuda and test it
 add_library(lotus_pybind11_state MODULE ${lotus_pybind_srcs})
+target_include_directories(lotus_pybind11_state PRIVATE ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
+target_include_directories(lotus_pybind11_state PRIVATE ${pybind11_INCLUDE_DIRS})
 set(lotus_pybind11_state_libs
     lotus_session
+    ${LOTUS_PROVIDERS_MKLDNN}
     lotus_providers
     lotus_framework
     lotus_util
     lotusIR_graph
     onnx
+    onnx_proto
     lotus_common
 )
 
@@ -53,14 +55,10 @@ set(lotus_pybind11_state_dependencies
     pybind11
 )
 
-if(lotus_USE_MKLDNN)
-    list(APPEND lotus_pybind11_state_libs lotus_providers_mkldnn)
-    list(APPEND lotus_pybind11_state_dependencies lotus_providers_mkldnn)
-endif()
 add_dependencies(lotus_pybind11_state ${lotus_pybind11_state_dependencies})
 if (MSVC)
   # if MSVC, pybind11 looks for release version of python lib (pybind11/detail/common.h undefs _DEBUG)
-  target_link_libraries(lotus_pybind11_state ${lotus_pybind11_state_libs} ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
+  target_link_libraries(lotus_pybind11_state ${lotus_pybind11_state_libs} ${MLAS_LIBRARY} ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
 else()
   target_link_libraries(lotus_pybind11_state ${lotus_pybind11_state_libs} ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
   set_target_properties(lotus_pybind11_state PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
