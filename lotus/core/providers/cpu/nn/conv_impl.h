@@ -277,7 +277,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
     WorkingBufferSize = col_buffer_size;
   }
 
-  auto col_data = alloc->Alloc(sizeof(float) * WorkingBufferSize);
+  auto col_data = WorkingBufferSize > 0 ? alloc->Alloc(sizeof(float) * WorkingBufferSize) : nullptr;
   BufferUniquePtr col_buffer(col_data, BufferDeleter(alloc));
   float* col_buffer_data = static_cast<float*>(col_buffer.get());
 
