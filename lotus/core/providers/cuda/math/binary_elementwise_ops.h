@@ -10,12 +10,14 @@ struct BinaryElementwisePreparation {
   const Tensor* lhs_tensor = nullptr;
   const Tensor* rhs_tensor = nullptr;
   Tensor* output_tensor = nullptr;
-  size_t output_rank_or_simple_broadcast = 0;  // for no_broadcast|left_scalar|right_scalar cases, output_rank uses SimpleBroadcast enums
-  bool lhs_dim0_broadcast = false;
-  bool rhs_dim0_broadcast = false;
-  CudaKernel::CudaAsyncBuffer<int64_t> lhs_padded_strides;
-  CudaKernel::CudaAsyncBuffer<int64_t> rhs_padded_strides;
+  size_t output_rank_or_simple_broadcast = 0;               // for no_broadcast|left_scalar|right_scalar cases, output_rank uses SimpleBroadcast enums
+  CudaKernel::CudaAsyncBuffer<int64_t> lhs_padded_strides;  // for lhs shape == output shape, this is nullptr
+  CudaKernel::CudaAsyncBuffer<int64_t> rhs_padded_strides;  // for rhs shape == output shape, this is nullptr
   CudaKernel::CudaAsyncBuffer<fast_divmod> fdm_output_strides;
+
+  // these are for RightPerChannel case
+  fast_divmod fdm_H;
+  fast_divmod fdm_C;
 
   BinaryElementwisePreparation(const CudaKernel* op_kernel) : lhs_padded_strides(op_kernel),
                                                               rhs_padded_strides(op_kernel),

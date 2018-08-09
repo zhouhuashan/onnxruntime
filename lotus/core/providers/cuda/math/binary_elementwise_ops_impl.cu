@@ -1,7 +1,7 @@
 #include <cuda_runtime.h>
 #include "binary_elementwise_ops_impl.h"
 #include "core/providers/cuda/cu_inc/common.cuh"
-#include "core/providers/cuda/cu_inc/elementwise_impl.cuh"
+#include "core/providers/cuda/cu_inc/binary_elementwise_impl.cuh"
 
 namespace Lotus {
 namespace Cuda {
@@ -17,20 +17,20 @@ namespace Cuda {
 #define BINARY_ELEMENTWISE_IMPL(name)                      \
   BINARY_ELEMENTWISE_IMPL_DECLARATION(name) {              \
     BinaryElementWiseImpl(output_rank_or_simple_broadcast, \
-                          lhs_dim0_broadcast,              \
                           lhs_padded_strides,              \
                           lhs_data,                        \
-                          rhs_dim0_broadcast,              \
                           rhs_padded_strides,              \
                           rhs_data,                        \
                           fdm_output_strides,              \
+                          fdm_H,                           \
+                          fdm_C,                           \
                           output_data,                     \
                           OP_##name<T>(),                  \
                           count);                          \
   }
 
 #define SPECIALIZED_BINARY_ELEMENTWISE_IMPL(x, T) \
-  template void Impl_##x<T>(size_t output_rank, bool lhs_dim0_broadcast, const int64_t* lhs_padded_strides, const T* lhs_data, bool rhs_dim0_broadcast, const int64_t* rhs_padded_strides, const T* rhs_data, const fast_divmod* fdm_output_strides, T* output_data, size_t count);
+  template void Impl_##x<T>(size_t output_rank, const int64_t* lhs_padded_strides, const T* lhs_data, const int64_t* rhs_padded_strides, const T* rhs_data, const fast_divmod* fdm_output_strides, const fast_divmod& fdm_H, const fast_divmod& fdm_C, T* output_data, size_t count);
 
 #define SPECIALIZED_BINARY_ELEMENTWISE_IMPL_UZILHFD(x) \
   SPECIALIZED_BINARY_ELEMENTWISE_IMPL(x, uint32_t)     \

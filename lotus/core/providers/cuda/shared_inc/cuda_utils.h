@@ -13,6 +13,8 @@ enum class SimpleBroadcast : size_t {
   NoBroadcast = (size_t)-1,
   LeftScalar = (size_t)-2,
   RightScalar = (size_t)-3,
+  RightPerChannelBatch1 = (size_t)-4,
+  RightPerChannelBatchN = (size_t)-5,
 };
 
 template <typename T>

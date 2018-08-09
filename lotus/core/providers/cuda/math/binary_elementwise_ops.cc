@@ -71,20 +71,56 @@ Status BinaryElementwiseBroadcastPrepare(
     return Status::OK();
   }
 
+  const auto& output_shape = output_tensor->Shape();
+
+  // special case for lhs(N,C,H) and rhs (C,1) which is used in conv bias
+  // when N == 1: out[id] = op(lhs[id], rhs[id / H])
+  // When N > 1:  out[id] = op(lhs[id], rhs[id / H % C])
+  if (lhs_shape == output_tensor->Shape()) {
+    const auto& rhs_dims = rhs_shape.GetDims();
+    int64_t C;
+    if (1 == std::count_if(rhs_dims.begin(), rhs_dims.end(), [&C](int64_t dim) { if (dim > 1) C = dim; return (dim > 1); })) {
+      auto dim_C = std::find(rhs_dims.begin(), rhs_dims.end(), C) - rhs_dims.begin() + output_shape.NumDimensions() - rhs_shape.NumDimensions();
+      int64_t N = output_shape.SizeToDimension(dim_C);
+      int64_t H = (dim_C < out_rank - 1 ? output_shape.SizeFromDimension(dim_C + 1) : 1);
+
+      std::vector<int64_t> new_output_dims;
+      if (N == 1) {
+        p->output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::RightPerChannelBatch1);
+        p->fdm_H = fast_divmod(gsl::narrow_cast<int>(H));
+      } else {
+        p->output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::RightPerChannelBatchN);
+        p->fdm_H = fast_divmod(gsl::narrow_cast<int>(H));
+        p->fdm_C = fast_divmod(gsl::narrow_cast<int>(C));
+      }
+      return Status::OK();
+    }
+  }
+
   p->output_rank_or_simple_broadcast = out_rank;
 
-  p->lhs_padded_strides.AllocCpuPtr(out_rank);
-  p->rhs_padded_strides.AllocCpuPtr(out_rank);
+  if (lhs_shape != output_shape) {
+    // compute strides with 1 more dim than out_rank, and use strides[0] == strides[1]
+    // to decide if dim0 needs broadcast
+    p->lhs_padded_strides.AllocCpuPtr(out_rank + 1);
+    LOTUS_RETURN_IF_NOT(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
+    if (lhs_shape[0] > 1 && lhs_rank == out_rank)
+      p->lhs_padded_strides.CpuPtr()[0] = 0;
+    LOTUS_RETURN_IF_ERROR(p->lhs_padded_strides.CopyToGpu());
+  }
+
+  if (rhs_shape != output_shape) {
+    p->rhs_padded_strides.AllocCpuPtr(out_rank + 1);
+    LOTUS_RETURN_IF_NOT(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
+    if (rhs_shape[0] > 1 && rhs_rank == out_rank)
+      p->rhs_padded_strides.CpuPtr()[0] = 0;
+    LOTUS_RETURN_IF_ERROR(p->rhs_padded_strides.CopyToGpu());
+  }
+
+  LOTUS_RETURN_IF_NOT(p->lhs_padded_strides.GpuPtr() || p->rhs_padded_strides.GpuPtr());
+
   p->fdm_output_strides.AllocCpuPtr(out_rank);
-  LOTUS_ENFORCE(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
-  LOTUS_ENFORCE(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
-  LOTUS_ENFORCE(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_tensor->Shape().GetDims()));
-
-  p->lhs_dim0_broadcast = (lhs_rank == 0 || lhs_shape[0] == 1 || lhs_rank < out_rank);
-  p->rhs_dim0_broadcast = (rhs_rank == 0 || rhs_shape[0] == 1 || rhs_rank < out_rank);
-
-  LOTUS_RETURN_IF_ERROR(p->lhs_padded_strides.CopyToGpu());
-  LOTUS_RETURN_IF_ERROR(p->rhs_padded_strides.CopyToGpu());
+  LOTUS_RETURN_IF_NOT(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_tensor->Shape().GetDims()));
   LOTUS_RETURN_IF_ERROR(p->fdm_output_strides.CopyToGpu());
   return Status::OK();
 }
@@ -123,13 +159,13 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
     Prepare(context, &prepare);                                                                         \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                       \
         prepare.output_rank_or_simple_broadcast,                                                        \
-        prepare.lhs_dim0_broadcast,                                                                     \
         prepare.lhs_padded_strides.GpuPtr(),                                                            \
         reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.lhs_tensor->Data<T>()),     \
-        prepare.rhs_dim0_broadcast,                                                                     \
         prepare.rhs_padded_strides.GpuPtr(),                                                            \
         reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.rhs_tensor->Data<T>()),     \
         prepare.fdm_output_strides.GpuPtr(),                                                            \
+        prepare.fdm_H,                                                                                  \
+        prepare.fdm_C,                                                                                  \
         reinterpret_cast<typename ToCudaType<T>::MappedType*>(prepare.output_tensor->MutableData<T>()), \
         prepare.output_tensor->Shape().Size());                                                         \
     return Status::OK();                                                                                \
@@ -182,7 +218,7 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
   const auto& node = Node();
   const auto& node_name = node.Name();
   auto input_count = node.InputArgCount().front();
-  LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
+  LOTUS_RETURN_IF_NOT(input_count >= 1, "Must have 1 or more inputs");
 
   if (input_count == 1) {
     auto input_tensor = context->Input<Tensor>(0);
@@ -204,13 +240,13 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
       LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(context->Input<Tensor>(0), context->Input<Tensor>(1), output_tensor, &prepare));
       Impl_Add<CudaT>(
           prepare.output_rank_or_simple_broadcast,
-          prepare.lhs_dim0_broadcast,
           prepare.lhs_padded_strides.GpuPtr(),
           reinterpret_cast<const CudaT*>(prepare.lhs_tensor->Data<T>()),
-          prepare.rhs_dim0_broadcast,
           prepare.rhs_padded_strides.GpuPtr(),
           reinterpret_cast<const CudaT*>(prepare.rhs_tensor->Data<T>()),
           prepare.fdm_output_strides.GpuPtr(),
+          prepare.fdm_H,
+          prepare.fdm_C,
           reinterpret_cast<CudaT*>(prepare.output_tensor->MutableData<T>()),
           prepare.output_tensor->Shape().Size());
     } else {
@@ -220,13 +256,13 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
         LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(output_tensor, context->Input<Tensor>(index), output_tensor, &prepare));
         Impl_Add<CudaT>(
             prepare.output_rank_or_simple_broadcast,
-            prepare.lhs_dim0_broadcast,
             prepare.lhs_padded_strides.GpuPtr(),
             reinterpret_cast<const CudaT*>(prepare.lhs_tensor->Data<T>()),
-            prepare.rhs_dim0_broadcast,
             prepare.rhs_padded_strides.GpuPtr(),
             reinterpret_cast<const CudaT*>(prepare.rhs_tensor->Data<T>()),
             prepare.fdm_output_strides.GpuPtr(),
+            prepare.fdm_H,
+            prepare.fdm_C,
             reinterpret_cast<CudaT*>(prepare.output_tensor->MutableData<T>()),
             prepare.output_tensor->Shape().Size());
       }

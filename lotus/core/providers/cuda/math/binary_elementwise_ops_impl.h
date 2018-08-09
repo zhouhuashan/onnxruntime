@@ -31,13 +31,13 @@ namespace Cuda {
   template <typename T>                           \
   void Impl_##name(                               \
       size_t output_rank_or_simple_broadcast,     \
-      bool lhs_dim0_broadcast,                    \
       const int64_t* lhs_padded_strides,          \
       const T* lhs_data,                          \
-      bool rhs_dim0_broadcast,                    \
       const int64_t* rhs_padded_strides,          \
       const T* rhs_data,                          \
       const fast_divmod* fdm_output_strides,      \
+      const fast_divmod& fdm_H,                   \
+      const fast_divmod& fdm_C,                   \
       T* output_data,                             \
       size_t count)
 

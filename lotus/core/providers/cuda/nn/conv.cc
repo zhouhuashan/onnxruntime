@@ -166,13 +166,13 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
     LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(Y, B, Y, &prepare, nullptr, &overrided_B_shape));
     Impl_Add<CudaT>(
         prepare.output_rank_or_simple_broadcast,
-        prepare.lhs_dim0_broadcast,
         prepare.lhs_padded_strides.GpuPtr(),
         reinterpret_cast<const CudaT*>(prepare.lhs_tensor->Data<T>()),
-        prepare.rhs_dim0_broadcast,
         prepare.rhs_padded_strides.GpuPtr(),
         reinterpret_cast<const CudaT*>(prepare.rhs_tensor->Data<T>()),
         prepare.fdm_output_strides.GpuPtr(),
+        prepare.fdm_H,
+        prepare.fdm_C,
         reinterpret_cast<CudaT*>(prepare.output_tensor->MutableData<T>()),
         prepare.output_tensor->Shape().Size());
   }
