@@ -9,7 +9,7 @@
 #endif
 #include <core/graph/constants.h>
 #include <core/framework/allocator.h>
-
+#include <core/common/logging/logging.h>
 
 #include <experimental/filesystem>
 #ifdef _MSC_VER

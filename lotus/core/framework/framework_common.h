@@ -1,4 +1,9 @@
 #pragma once
+
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace LotusIR {  // forward declarations
 class Model;
 class GraphTransformer;

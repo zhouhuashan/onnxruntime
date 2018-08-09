@@ -1,13 +1,12 @@
 #pragma once
 
+#include <string>
+#include <unordered_map>
+
 #include "core/common/common.h"
-#include "core/common/profiler.h"
 #include "core/common/status.h"
-#include "core/common/logging/logging.h"
 #include "core/framework/framework_common.h"
-#include "core/framework/ml_value.h"
-#include "core/inc/op_kernel_author.h"
-#include "core/platform/types.h"
+#include "core/graph/basic_types.h"
 
 namespace LotusIR {  // forward declarations
 class Model;
@@ -27,6 +26,10 @@ class IOBinding;
 class OpKernelInfo;
 class OpKernel;
 class CustomRegistry;
+
+namespace Logging {
+class LoggingManager;
+}
 
 /**
   * Configuration information for a session.

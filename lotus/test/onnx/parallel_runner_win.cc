@@ -1,6 +1,7 @@
 #include "testenv.h"
 #include "runner.h"
 #include "core/common/common.h"
+#include "core/common/logging/logging.h"
 #include <Windows.h>
 #include "FixedCountFinishCallbackWin.h"
 namespace {

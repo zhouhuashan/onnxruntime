@@ -1,12 +1,15 @@
 #pragma once
-#include <vector>
 #include <string>
-#include "testenv.h"
-#include "core/framework/ml_value.h"
+#include <vector>
+
 #include "core/common/common.h"
+#include "core/common/logging/logging.h"
+#include "core/framework/ml_value.h"
 #include "core/platform/env_time.h"
+
 #include "TestCase.h"
 #include "TestCaseResult.h"
+#include "testenv.h"
 
 #ifdef _WIN32
 #include <Windows.h>
