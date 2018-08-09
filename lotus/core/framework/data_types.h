@@ -82,6 +82,7 @@ class DataTypeImpl {
   static MLDataType TypeFromProto(const onnx::TypeProto& proto);
 
   static const std::vector<MLDataType>& AllTensorTypes();
+  static const std::vector<MLDataType>& AllFixedSizeTensorTypes();
 };
 
 std::ostream& operator<<(std::ostream& out, MLDataType data_type);

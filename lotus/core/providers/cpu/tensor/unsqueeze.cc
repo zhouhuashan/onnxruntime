@@ -3,22 +3,15 @@ using namespace Lotus::Common;
 
 namespace Lotus {
 
-ONNX_CPU_OPERATOR_TYPED_KERNEL(
+ONNX_CPU_OPERATOR_KERNEL(
     Unsqueeze,
     1,
-    float,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    Unsqueeze<float>);
+    KernelDefBuilder()
+        .Alias(0, 0)
+        .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
+    Unsqueeze);
 
-ONNX_CPU_OPERATOR_TYPED_KERNEL(
-    Unsqueeze,
-    1,
-    int32_t,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
-    Unsqueeze<int32_t>);
-
-template <typename T>
-Status Unsqueeze<T>::Compute(OpKernelContext *ctx) const {
+Status UnsqueezeBase::PrepareCompute(OpKernelContext *ctx, Prepare &p) const {
   auto &input_tensor = *ctx->Input<Tensor>(0);
 
   // New dimension count is the current dimensions + the number of entries in axes_
@@ -45,15 +38,31 @@ Status Unsqueeze<T>::Compute(OpKernelContext *ctx) const {
   }
 
   TensorShape output_shape(output_dims);
-  auto &output_tensor = *ctx->Output(0, output_shape);
-  auto *output = output_tensor.MutableData<T>();
-  auto *input = input_tensor.Data<T>();
+  p.output_tensor = ctx->Output(0, output_shape);
+  p.input_tensor = &input_tensor;
+  return Status::OK();
+}
 
-  // Copy the tensor
-  size_t size = output_shape.Size();
-  for (size_t i = 0; i < size; ++i)
-    output[i] = input[i];
-  // TODO(RyanHill): Optimize away copy when we can do an inplace operation
+Status Unsqueeze::Compute(OpKernelContext *ctx) const {
+  Prepare p;
+  LOTUS_RETURN_IF_ERROR(PrepareCompute(ctx, p));
+
+  const void *input = p.input_tensor->DataRaw();
+  void *output = p.output_tensor->MutableDataRaw();
+  if (p.input_tensor == p.output_tensor)
+    return Status::OK();
+
+  auto count = p.input_tensor->Shape().Size();
+  auto element_bytes = p.input_tensor->DataType()->Size();
+
+  auto is_string_type = p.input_tensor->DataType() == DataTypeImpl::GetType<std::string>();
+
+  if (is_string_type) {
+    for (int64_t i = 0; i < count; ++i)
+      static_cast<std::string *>(output)[i] = static_cast<const std::string *>(input)[i];
+  } else {
+    memcpy(output, input, count * element_bytes);
+  }
 
   return Status::OK();
 }

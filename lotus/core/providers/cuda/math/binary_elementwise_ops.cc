@@ -224,7 +224,7 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
     auto input_tensor = context->Input<Tensor>(0);
     const auto& input_shape = input_tensor->Shape();
     auto output_tensor = context->Output(0, input_shape);
-    CUDA_RETURN_IF_ERROR(cudaMemcpy(output_tensor->MutableDataRaw(), input_tensor->DataRaw(), sizeof(CudaT) * input_shape.Size(), cudaMemcpyDeviceToDevice));
+    CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(output_tensor->MutableDataRaw(), input_tensor->DataRaw(), sizeof(CudaT) * input_shape.Size(), cudaMemcpyDeviceToDevice));
   } else {
     // compute output shape first, using broadcast rule
     TensorShape output_shape;

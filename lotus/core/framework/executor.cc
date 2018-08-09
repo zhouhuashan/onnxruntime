@@ -35,6 +35,9 @@ class SequentialExecutor : public Executor {
     const auto& exec_plan_vec = p_seq_exec_plan->execution_plan;
     VLOGS(run_logger_, 1) << "Size of execution plan vector: " << exec_plan_vec.size();
 
+    // uncomment the line below to dump execution plan
+    //std::cout << std::make_pair(p_seq_exec_plan, &session_state_) << "\n";
+
     for (const auto& node_exec_plan : exec_plan_vec) {
       auto node_index = node_exec_plan.node_index;
       auto p_op_kernel = session_state_.GetKernel(node_index);

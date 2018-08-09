@@ -289,6 +289,24 @@ LOTUS_REGISTER_NON_ONNX_TYPE(uint32_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(uint64_t);
 LOTUS_REGISTER_NON_ONNX_TYPE(MLFloat16);
 
+const std::vector<MLDataType>& DataTypeImpl::AllFixedSizeTensorTypes() {
+  static std::vector<MLDataType> all_fixed_size_tensor_types =
+      {DataTypeImpl::GetTensorType<float>(),
+       DataTypeImpl::GetTensorType<double>(),
+       DataTypeImpl::GetTensorType<int64_t>(),
+       DataTypeImpl::GetTensorType<uint64_t>(),
+       DataTypeImpl::GetTensorType<int32_t>(),
+       DataTypeImpl::GetTensorType<uint32_t>(),
+       DataTypeImpl::GetTensorType<int16_t>(),
+       DataTypeImpl::GetTensorType<uint16_t>(),
+       DataTypeImpl::GetTensorType<int8_t>(),
+       DataTypeImpl::GetTensorType<uint8_t>(),
+       DataTypeImpl::GetTensorType<MLFloat16>(),
+       DataTypeImpl::GetTensorType<bool>()};
+
+  return all_fixed_size_tensor_types;
+}
+
 const std::vector<MLDataType>& DataTypeImpl::AllTensorTypes() {
   static std::vector<MLDataType> all_tensor_types =
       {DataTypeImpl::GetTensorType<float>(),

@@ -71,7 +71,7 @@ Status Gemm<float>::ComputeInternal(OpKernelContext* ctx) const {
           out_data, N));
     } else {
       // B is (M, N), no broadcast needed.
-      CUDA_RETURN_IF_ERROR(cudaMemcpy(out_data, b_data, M * N * sizeof(float), cudaMemcpyDeviceToDevice));
+      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(out_data, b_data, M * N * sizeof(float), cudaMemcpyDeviceToDevice));
     }
   }
 
