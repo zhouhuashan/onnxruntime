@@ -20,11 +20,6 @@ class IExecutionProvider {
  public:
   virtual ~IExecutionProvider() = default;
 
-  // Graph to graph transformation. The resulting graph may contain custom
-  // operators introduced by this execution provider. Newly formed custom
-  // functions must be registered in kernelRegistry_.
-  virtual const LotusIR::GraphTransformer& GetTransformer() const = 0;
-
   // Get all IAllocators for <*this> execution provider.
   const AllocatorMap& GetAllocatorMap() const {
     return allocators_;
@@ -38,10 +33,15 @@ class IExecutionProvider {
       return nullptr;
   }
 
+  // Get kernel registry per execution provider type.
+  // The KernelRegistry share pointer returned is shared across sessions.
+  //
+  // NOTE: this is a tricky but final solution to acheive following goals,
+  // 1. The execution provider type based kernel registry should be shared across sessions.
+  //    Only one copy of this kind of kernel registry exists in lotus runtime with multiple sessions/models.
+  // 2. Adding an execution provider into lotus does not need to touch lotus frameowrk/session code.
+  // 3. Lotus runtime (framework/session) does not depend on any specific execution provider lib.
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const = 0;
-
-  // Run the computation of a given node.
-  virtual Common::Status Compute(const LotusIR::Node& node, OpKernelContext* context) const = 0;
 
   // Copy tensor between execution providers
   virtual Common::Status CopyTensor(const Tensor& src, Tensor& dst) const = 0;

@@ -259,19 +259,7 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
     return Status(LOTUS, FAIL, ostr.str());
   }
 
-  LOGS_DEFAULT(INFO) << "Finding function kernel def for op: " << node.OpType()
-                     << " since we couldn't find kernel def."
-                     << " Encountered following errors: " << ToString(error_strs);
-
-  if (create_func_kernel_) {
-    // The node is assigned to an execution provider and no kernel registered
-    // for the operator referred by the node. Create FunctionKernel to delegate
-    // the node run to corresponding execution provider.
-    *kernel_create_info = &(kernel_creator_fn_map().find(LotusIR::kFunctionOp)->second);
-    return Status::OK();
-  } else {
-    return Status(LOTUS, FAIL, "KernelDef not found.");
-  }
+  return Status(LOTUS, FAIL, "KernelDef not found.");
 }
 
 bool KernelRegistry::CanExecutionProviderCreateKernel(

@@ -20,27 +20,11 @@ enum CUDAStreamType : int {
   kTotalCudaStreams,
 };
 
-class CUDATransformer : public LotusIR::GraphTransformer {
- public:
-  CUDATransformer(const std::string& name);
-  Status Apply(LotusIR::Graph* graph, bool* modified) const override;
-};
-
 // Logical device representation.
 class CUDAExecutionProvider : public IExecutionProvider {
  public:
   explicit CUDAExecutionProvider(const CUDAExecutionProviderInfo& info);
   virtual ~CUDAExecutionProvider();
-
-  const LotusIR::GraphTransformer& GetTransformer() const override {
-    return transformer_;
-  }
-
-  Status Compute(const LotusIR::Node& node, OpKernelContext* /*context*/) const override {
-    return Common::Status(
-        Common::LOTUS, Common::FAIL,
-        "CUDA execution provider: cannot run an op of type `" + node.OpType() + "'.");
-  }
 
   std::string Type() const override {
     return LotusIR::kCudaExecutionProvider;
@@ -92,12 +76,11 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return per_thread_context_->ResetScratchBuffer();
   }
 
-  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const;
+  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;
 
  private:
   cudaStream_t streams_[kTotalCudaStreams];
   std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
-  CUDATransformer transformer_;
   int device_id_;
 
   struct DeferredReleaseCPUPtrs {

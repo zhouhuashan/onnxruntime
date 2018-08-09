@@ -140,7 +140,7 @@ TEST(Float16_Tests, Mul_16_Test) {
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
-  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
+  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>();
   InferenceSession session_object{so, &DefaultLoggingManager()};
   EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
   auto mulfp16_schema = GetMulFP16Schema();

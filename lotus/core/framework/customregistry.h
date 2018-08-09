@@ -11,8 +11,7 @@ namespace Lotus {
 
 class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegistry {
  public:
-  explicit CustomRegistry(bool create_func_kernel);
-
+  CustomRegistry() = default;
   ~CustomRegistry() override = default;
 
   /**
@@ -25,7 +24,6 @@ class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegis
   Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
  private:
-  CustomRegistry() = delete;
 
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
 };

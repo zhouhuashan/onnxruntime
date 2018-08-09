@@ -15,10 +15,16 @@ enum class KernelRegistryPriority {
   HighPriority,
   LowPriority
 };
+
+// Kernel registries' manager.
+// There're 2 kinds of kernel registries with priority from high to low as below,
+// 1. Custom execution provider type specific kernel registries.
+// 2. Common execution provider type specific kernel registries.
+// The 1st and 2nd ones are shared across sessions.
 class KernelRegistryManager {
  public:
   void RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry, KernelRegistryPriority priority);
-
+  
   Status CreateKernel(const LotusIR::Node& node,
                       const IExecutionProvider* execution_provider,
                       const SessionState& session_state,
@@ -27,15 +33,16 @@ class KernelRegistryManager {
   Status SearchKernelRegistry(const LotusIR::Node& node,
                               /*out*/ const KernelCreateInfo** kernel_create_info) const;
 
-  std::vector<const KernelRegistry*> GetAllKernelRegistries() {
+  std::vector<const KernelRegistry*> GetAllKernelRegistries() const{
     std::vector<const KernelRegistry*> result;
-    for (auto& registry : kernel_registries_) {
+	for (auto& registry : kernel_registries_) {
       result.push_back(registry.get());
     }
     return result;
   }
 
  private:
+  // This list stores all kernel registries shared across sessions, including common ones and customized ones.
   std::list<std::shared_ptr<KernelRegistry>> kernel_registries_;
 };
 }  // namespace Lotus

@@ -23,11 +23,15 @@ Status KernelRegistryManager::CreateKernel(const LotusIR::Node& node,
   return status;
 }
 
-void KernelRegistryManager::RegisterKernelRegistry(std::shared_ptr<KernelRegistry> custom_registry, KernelRegistryPriority priority) {
-  if (priority == KernelRegistryPriority::HighPriority)
-    kernel_registries_.push_front(custom_registry);
-  else
-    kernel_registries_.push_back(custom_registry);
+void KernelRegistryManager::RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry, KernelRegistryPriority priority) {
+  if (nullptr == kernel_registry) {
+    return;
+  }
+  if (priority == KernelRegistryPriority::HighPriority) {
+    kernel_registries_.push_front(kernel_registry);
+  } else {
+    kernel_registries_.push_back(kernel_registry);
+  }
 }
 
 Status KernelRegistryManager::SearchKernelRegistry(const LotusIR::Node& node,

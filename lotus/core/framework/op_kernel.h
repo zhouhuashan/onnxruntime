@@ -216,11 +216,10 @@ class KernelRegistry {
       const LotusIR::Node& node,
       LotusIR::ProviderType exec_provider) const;
 
-  KernelRegistry() = delete;
-  KernelRegistry(bool create_func_kernel_flag,
-                 std::function<void(std::function<void(KernelCreateInfo&&)>)> kernel_reg_fn =
-                     [](std::function<void(KernelCreateInfo&&)>) {})
-      : create_func_kernel_(create_func_kernel_flag), kernel_reg_fn_(kernel_reg_fn) {}
+  KernelRegistry() : KernelRegistry([](std::function<void(KernelCreateInfo&&)>) {}) {}
+
+  KernelRegistry(std::function<void(std::function<void(KernelCreateInfo&&)>)> kernel_reg_fn)
+      : kernel_reg_fn_(kernel_reg_fn) {}
 
   void RegisterInternal(KernelCreateInfo& create_info) const;
 
@@ -241,7 +240,6 @@ class KernelRegistry {
   KernelCreateMap const& kernel_creator_fn_map() const;
   mutable std::once_flag kernelCreationFlag;
 
-  bool create_func_kernel_ = false;
   std::function<void(std::function<void(KernelCreateInfo&&)>)> kernel_reg_fn_;
 };
 

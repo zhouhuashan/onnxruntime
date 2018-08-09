@@ -282,7 +282,7 @@ TEST(CustomKernelTests, CustomKernelWithBuildInSchema) {
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
   // Register a foo kernel which is doing Add, but bind to Mul.
-  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
+  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>();
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
   EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
@@ -314,7 +314,7 @@ TEST(CustomKernelTests, CustomABIKernelWithBuildInSchema) {
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
-  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
+  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>();
   AbiCustomRegistry abi_registry(registry);
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
@@ -361,7 +361,7 @@ TEST(CustomKernelTests, CustomKernelWithCustomSchema) {
 
   so.session_logid = "InferenceSessionTests.NoTimeout";
 
-  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
+  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>();
 
   InferenceSession session_object{so, &DefaultLoggingManager()};
   EXPECT_TRUE(session_object.RegisterCustomRegistry(registry).IsOK());
@@ -412,7 +412,7 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
 
     so.session_logid = "InferenceSessionTests.NoTimeout";
 
-    std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
+    std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>();
     AbiCustomRegistry abi_registry(registry);
 
     InferenceSession session_object{so, &DefaultLoggingManager()};
@@ -587,7 +587,7 @@ TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
   auto optional_schema = GetOptionalOpSchema();
   std::vector<OpSchema> schemas = {optional_schema};
 
-  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>(false);
+  std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>();
 
   EXPECT_TRUE(registry->RegisterOpSet(schemas, LotusIR::kOnnxDomain, 5, 7).IsOK());
   auto def = OptionalKernelDef();

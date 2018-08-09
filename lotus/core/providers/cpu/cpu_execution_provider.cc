@@ -4,7 +4,6 @@
 namespace Lotus {
 
 // Forward declarations of op kernels
-class FunctionKernel_1_Registrar;
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 6, Clip);
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 6, Elu);
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 6, HardSigmoid);
@@ -154,7 +153,6 @@ class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 
 class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 7, int32_t, Upsample);
 
 void RegisterOnnxOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
-  fn(BuildKernel<FunctionKernel_1_Registrar>());
   fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 6, Clip)>());
   fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 6, Elu)>());
   fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 6, HardSigmoid)>());
@@ -401,7 +399,7 @@ void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
 }
 
 std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const {
-  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(true, RegisterCPUKernels);
+  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(RegisterCPUKernels);
   return kernel_registry;
 }
 }  // namespace Lotus

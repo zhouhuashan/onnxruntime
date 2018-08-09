@@ -30,14 +30,6 @@ ONNX_OPERATOR_KERNEL_EX(
 
 }  // namespace Cuda
 
-CUDATransformer::CUDATransformer(const std::string& name)
-    : LotusIR::GraphTransformer(name, "Transformer for CUDA execution provider") {
-}
-
-Status CUDATransformer::Apply(LotusIR::Graph* /*graph*/, bool* /*modified*/) const {
-  return Status::OK();
-}
-
 thread_local std::unique_ptr<CUDAExecutionProvider::PerThreadContext> CUDAExecutionProvider::per_thread_context_;
 
 CUDAExecutionProvider::PerThreadContext::PerThreadContext(int device_id, AllocatorPtr gpu_allocator)
@@ -53,7 +45,7 @@ CUDAExecutionProvider::PerThreadContext::~PerThreadContext() {
 }
 
 CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& info)
-    : transformer_(info.name), device_id_(info.device_id) {
+    : device_id_(info.device_id) {
   CUDA_CALL_THROW(cudaSetDevice(device_id_));
   // create streams, default is nullptr
   streams_[kCudaStreamDefault] = nullptr;
@@ -590,7 +582,7 @@ void RegisterCudaKernels(std::function<void(KernelCreateInfo&&)> fn) {
 }  // namespace Cuda
 
 std::shared_ptr<KernelRegistry> CUDAExecutionProvider::GetKernelRegistry() const {
-  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(true, Lotus::Cuda::RegisterCudaKernels);
+  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(Lotus::Cuda::RegisterCudaKernels);
   return kernel_registry;
 }
 

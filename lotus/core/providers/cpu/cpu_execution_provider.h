@@ -17,26 +17,13 @@ struct CPUExecutionProviderInfo {
       : CPUExecutionProviderInfo("") {}
 };
 
-class CPUTransformer : public LotusIR::GraphTransformer {
- public:
-  explicit CPUTransformer(const std::string& name)
-      : LotusIR::GraphTransformer(name, "Transformer for CPU execution provider") {
-  }
-
-  Status Apply(LotusIR::Graph* /*graph*/, bool* /*modified*/) const override {
-    //TODO: any fusing needed on cpu
-    return Common::Status::OK();
-  }
-};
-
 struct KernelCreateInfo;
 void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn);
 
 // Logical device representation.
 class CPUExecutionProvider : public IExecutionProvider {
  public:
-  explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info)
-      : cpu_transformer_(info.name) {
+  explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info) {
     DeviceAllocatorRegistrationInfo device_info({kMemTypeDefault, [](int) { return std::make_unique<CPUAllocator>(); }, std::numeric_limits<size_t>::max()});
 #ifdef USE_JEMALLOC
     //JEMalloc already has memory pool, so just use device allocator.
@@ -51,18 +38,6 @@ class CPUExecutionProvider : public IExecutionProvider {
                       std::shared_ptr<IArenaAllocator>(
                           std::make_unique<DummyArena>(device_info.factory(0))));
 #endif
-  }
-
-  const LotusIR::GraphTransformer& GetTransformer() const override {
-    return cpu_transformer_;
-  }
-
-  Status Compute(const LotusIR::Node& node, OpKernelContext* context) const override {
-    UNUSED_PARAMETER(node);
-    UNUSED_PARAMETER(context);
-    return Common::Status(
-        Common::LOTUS, Common::FAIL,
-        "CPU execution provider: cannot run an op of type `" + node.OpType() + "'.");
   }
 
   std::string Type() const override {
@@ -87,9 +62,6 @@ class CPUExecutionProvider : public IExecutionProvider {
     return nullptr;
   }
 
-  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const;
-
- private:
-  CPUTransformer cpu_transformer_;
+  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;
 };
 }  // namespace Lotus

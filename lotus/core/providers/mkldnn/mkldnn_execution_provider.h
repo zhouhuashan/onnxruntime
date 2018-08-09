@@ -15,27 +15,11 @@ struct MKLDNNExecutionProviderInfo {
       : MKLDNNExecutionProviderInfo("") {}
 };
 
-class MKLDNNTransformer : public LotusIR::GraphTransformer {
- public:
-  MKLDNNTransformer(const std::string& name);
-  Status Apply(LotusIR::Graph* graph, bool* modified) const override;
-};
-
 // Logical device representation.
 class MKLDNNExecutionProvider : public IExecutionProvider {
  public:
   explicit MKLDNNExecutionProvider(const MKLDNNExecutionProviderInfo& info);
   virtual ~MKLDNNExecutionProvider();
-
-  const LotusIR::GraphTransformer& GetTransformer() const override {
-    return transformer_;
-  }
-
-  Status Compute(const LotusIR::Node& node, OpKernelContext* /*context*/) const override {
-    return Common::Status(
-        Common::LOTUS, Common::FAIL,
-        "MKLDNN execution provider: can not run an op of type `" + node.OpType() + "'.");
-  }
 
   std::string Type() const override {
     return LotusIR::kMklDnnExecutionProvider;
@@ -47,10 +31,7 @@ class MKLDNNExecutionProvider : public IExecutionProvider {
     return nullptr;
   }
 
-  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const;
-
- private:
-  MKLDNNTransformer transformer_;
+  virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;
 };
 
 }  // namespace Lotus

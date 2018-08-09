@@ -25,16 +25,7 @@ ONNX_OPERATOR_KERNEL_EX(
 
 }  // namespace MklDnn
 
-MKLDNNTransformer::MKLDNNTransformer(const std::string& name)
-    : LotusIR::GraphTransformer(name, "Transformer for MKLDNN execution provider") {
-}
-
-Status MKLDNNTransformer::Apply(LotusIR::Graph* /*graph*/, bool* /*modified*/) const {
-  return Status::OK();
-}
-
-MKLDNNExecutionProvider::MKLDNNExecutionProvider(const MKLDNNExecutionProviderInfo& info)
-    : transformer_(info.name) {
+MKLDNNExecutionProvider::MKLDNNExecutionProvider(const MKLDNNExecutionProviderInfo& info){
   DeviceAllocatorRegistrationInfo default_allocator_info({kMemTypeDefault,
                                                           [](int) { return std::make_unique<MKLDNNAllocator>(); }, std::numeric_limits<size_t>::max()});
   InsertAllocator(kMemTypeDefault, CreateAllocator(default_allocator_info));
@@ -76,7 +67,7 @@ void RegisterMKLDNNKernels(std::function<void(KernelCreateInfo&&)> fn) {
 }  // namespace MklDnn
 
 std::shared_ptr<KernelRegistry> MKLDNNExecutionProvider::GetKernelRegistry() const {
-  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(true, Lotus::MklDnn::RegisterMKLDNNKernels);
+  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(Lotus::MklDnn::RegisterMKLDNNKernels);
   return kernel_registry;
 }
 }  // namespace Lotus

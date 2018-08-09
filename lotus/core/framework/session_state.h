@@ -171,6 +171,11 @@ class SessionState {
   // cache for the generated mem_patterns. key is calculated based on input shapes.
   mutable std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
+  // <custom_registry_manager_> contains 2 kinds of kernel registries
+  // with priority from high to low as below,
+  // 1. Custom execution provider type specific kernel registries.
+  // 2. Common execution provider type specific kernel registries.
+  // The 1st and 2nd ones are shared across sessions.
   KernelRegistryManager custom_registry_manager_;
 
   NameNodeInfoMapType input_names_to_nodeinfo_mapping_;
