@@ -81,7 +81,7 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
         map1[classlabels_strings_[j]] = x_data[current_weight_0 + j];
       }
       current_weight_0 += features_per_batch;
-      (*y_data)[n] = map1;
+      (*y_data)[n] = std::move(map1);
     }
   } else {
     if (features_per_batch != static_cast<int64>(classlabels_int64s_.size())) {
@@ -100,7 +100,7 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
         map2[classlabels_int64s_[j]] = x_data[current_weight_0 + j];
       }
       current_weight_0 += features_per_batch;
-      (*y_data)[n] = map2;
+      (*y_data)[n] = std::move(map2);
     }
   }
   return Common::Status::OK();
