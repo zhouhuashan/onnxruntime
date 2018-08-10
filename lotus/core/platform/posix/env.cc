@@ -53,6 +53,17 @@ class PosixEnv : public Env {
     return std::thread::hardware_concurrency();
   }
 
+  EnvThread* CreateThread(std::function<void()> fn) const override {
+    return new StdThread(fn);
+  }
+
+  Task CreateTask(std::function<void()> f) const override {
+    return Task{std::move(f)};
+  }
+  void ExecuteTask(const Task& t) const override {
+    t.f();
+  }
+
   void SleepForMicroseconds(int64 micros) const override {
     while (micros > 0) {
       timespec sleep_time;

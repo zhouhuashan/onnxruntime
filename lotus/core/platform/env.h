@@ -34,6 +34,7 @@ limitations under the License.
 namespace Lotus {
 
 class Thread;
+
 struct ThreadOptions;
 #ifdef _WIN32
 using PIDType = unsigned long;
@@ -52,7 +53,13 @@ using PIDType = pid_t;
 class Env {
  public:
   virtual ~Env() = default;
+  /// for use with Eigen::ThreadPool
+  using EnvThread = Thread;
 
+  /// for use with Eigen::ThreadPool
+  struct Task {
+    std::function<void()> f;
+  };
   /// \brief Returns a default environment suitable for the current operating
   /// system.
   ///
@@ -71,7 +78,15 @@ class Env {
   virtual uint64 NowSeconds() const { return env_time_->NowSeconds(); }
 
   /// Sleeps/delays the thread for the prescribed number of micro-seconds.
+  /// On Windows, it's the min time to sleep, not the actual one.
   virtual void SleepForMicroseconds(int64 micros) const = 0;
+
+  /// for use with Eigen::ThreadPool
+  virtual EnvThread* CreateThread(std::function<void()> f) const = 0;
+  /// for use with Eigen::ThreadPool
+  virtual Task CreateTask(std::function<void()> f) const = 0;
+  /// for use with Eigen::ThreadPool
+  virtual void ExecuteTask(const Task& t) const = 0;
 
   /// \brief Returns a new thread that is running fn() and is identified
   /// (for debugging/performance-analysis) by "name".
@@ -93,11 +108,16 @@ class Env {
 #endif
 
 #ifdef _WIN32
+  //Mainly for use with protobuf library
   virtual Common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  //Mainly for use with protobuf library
   virtual Common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
 #endif
+  //Mainly for use with protobuf library
   virtual Common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  //Mainly for use with protobuf library
   virtual Common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  //Mainly for use with protobuf library
   virtual Common::Status FileClose(int fd) const = 0;
   //This functions is always successful. It can't fail.
   virtual PIDType GetSelfPid() const = 0;
@@ -112,6 +132,7 @@ class Env {
   // OK from the function.
   // Otherwise returns nullptr in "*handle" and an error status from the
   // function.
+  // TODO(@chasun): rename LoadLibrary to something else. LoadLibrary is already defined in Windows.h
   virtual Common::Status LoadLibrary(const std::string& library_filename, void** handle) const = 0;
 
   virtual Common::Status UnloadLibrary(void* handle) const = 0;

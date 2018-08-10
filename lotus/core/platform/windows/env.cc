@@ -32,8 +32,7 @@ namespace {
 
 class StdThread : public Thread {
  public:
-  // name and thread_options are both ignored for now.
-  StdThread(const ThreadOptions&, const std::string&, std::function<void()> fn)
+  StdThread(std::function<void()> fn)
       : thread_(fn) {}
 
   ~StdThread() { thread_.join(); }
@@ -68,9 +67,9 @@ class WindowsEnv : public Env {
  public:
   void SleepForMicroseconds(int64 micros) const override { Sleep(static_cast<DWORD>(micros) / 1000); }
 
-  Thread* StartThread(const ThreadOptions& thread_options, const std::string& name,
+  Thread* StartThread(const ThreadOptions&, const std::string&,
                       std::function<void()> fn) const override {
-    return new StdThread(thread_options, name, fn);
+    return new StdThread(fn);
   }
 
   int GetNumCpuCores() const override {
@@ -104,6 +103,17 @@ class WindowsEnv : public Env {
 
   PIDType GetSelfPid() const override {
     return GetCurrentProcessId();
+  }
+
+  EnvThread* CreateThread(std::function<void()> fn) const override {
+    return new StdThread(fn);
+  }
+
+  Task CreateTask(std::function<void()> f) const override {
+    return Task{std::move(f)};
+  }
+  void ExecuteTask(const Task& t) const override {
+    t.f();
   }
 
   Common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
