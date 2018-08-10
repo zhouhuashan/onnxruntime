@@ -5,6 +5,7 @@
 #include "core/util/math_cpuonly.h"
 #include "Eigen/src/Core/arch/CUDA/Half.h"
 #include "core/inc/op_kernel_author.h"
+#include "core/util/math_cpuonly.h"
 
 #if defined(USE_MLAS) && defined(_AMD64_)
 #include <windows.h>
@@ -16,22 +17,19 @@ namespace Lotus {
 template <typename SrcType,
           typename DstType>
 inline void CastData(const Tensor* in, Tensor* out, const TensorShape& shape) {
-  auto out_data = out->MutableData<DstType>();
-  auto in_data = in->Data<SrcType>();
   auto shape_size = shape.Size();
-  for (int64_t i = 0; i < shape_size; ++i) {
-    out_data[i] = static_cast<DstType>(in_data[i]);
-  }
+  auto in_vector = ConstEigenVectorMap<SrcType>(in->Data<SrcType>(), shape_size);
+  auto output_vector = EigenVectorMap<DstType>(out->MutableData<DstType>(), shape_size);
+  output_vector = in_vector.template cast<DstType>();
 }
 
 template <>
 inline void CastData<float, MLFloat16>(const Tensor* in, Tensor* out, const TensorShape& shape) {
   auto out_data = out->MutableData<MLFloat16>();
-  auto in_data = in->Data<float>();
   auto shape_size = shape.Size();
-  for (int64_t i = 0; i < shape_size; ++i) {
-    out_data[i] = MLFloat16(Eigen::half_impl::float_to_half_rtne(in_data[i]).x);
-  }
+  auto in_vector = ConstEigenVectorMap<float>(in->Data<float>(), shape_size);
+  auto output_vector = EigenVectorMap<Eigen::half>(static_cast<Eigen::half*>(static_cast<void*>(out_data)), shape_size);
+  output_vector = in_vector.template cast<Eigen::half>();
 }
 
 template <>
@@ -42,9 +40,9 @@ inline void CastData<MLFloat16, float>(const Tensor* in, Tensor* out, const Tens
 #if defined(USE_MLAS) && defined(_AMD64_)
   MlasConvertHalfToFloatBuffer(&in_data[0].val, out_data, shape_size);
 #else
-  for (int64_t i = 0; i < shape_size; ++i) {
-    out_data[i] = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(in_data[i].val));
-  }
+  auto in_vector = ConstEigenVectorMap<Eigen::half>(static_cast<const Eigen::half*>(static_cast<const void*>(in_data)), shape_size);
+  auto output_vector = EigenVectorMap<float>(out_data, shape_size);
+  output_vector = in_vector.template cast<float>();
 #endif
 }
 
