@@ -6,6 +6,11 @@
 #include "Eigen/src/Core/arch/CUDA/Half.h"
 #include "core/inc/op_kernel_author.h"
 
+#if defined(USE_MLAS) && defined(_AMD64_)
+#include <windows.h>
+#include <mlas.h>
+#endif
+
 namespace Lotus {
 
 template <typename SrcType,
@@ -34,9 +39,13 @@ inline void CastData<MLFloat16, float>(const Tensor* in, Tensor* out, const Tens
   auto out_data = out->MutableData<float>();
   auto in_data = in->Data<MLFloat16>();
   auto shape_size = shape.Size();
+#if defined(USE_MLAS) && defined(_AMD64_)
+  MlasConvertHalfToFloatBuffer(&in_data[0].val, out_data, shape_size);
+#else
   for (int64_t i = 0; i < shape_size; ++i) {
     out_data[i] = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(in_data[i].val));
   }
+#endif
 }
 
 template <typename SrcType,
