@@ -23,7 +23,11 @@ using namespace Lotus;
 using namespace Lotus::Common;
 
 namespace LotusIR {
-Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const ModelMetaData& model_metadata, const ILotusOpSchemaRegistryList* local_registries) {
+Model::Model(const std::string& graph_name,
+             bool is_onnx_domain_only,
+             const ModelMetaData& model_metadata,
+             const ILotusOpSchemaRegistryList* local_registries,
+             const std::unordered_map<std::string, int>& domain_to_version) {
   model_proto_ = std::make_unique<ModelProto>();
   model_proto_->set_ir_version(onnx::Version::IR_VERSION);
   model_proto_->mutable_graph()->set_name(graph_name);
@@ -41,16 +45,20 @@ Model::Model(const std::string& graph_name, bool is_onnx_domain_only, const Mode
     }
   }
 
-  // Set domain_to_version_ to contain related domains with latest version.
-  std::unordered_map<std::string, int> domain_to_version = schema_registry->GetLatestOpsetVersions(is_onnx_domain_only);
-  for (auto domain : domain_to_version) {
+  auto* p_domain_to_version = &domain_to_version;
+  std::unordered_map<std::string, int> domain_to_version_static;
+  if (p_domain_to_version->empty()) {
+    domain_to_version_static = std::move(schema_registry->GetLatestOpsetVersions(is_onnx_domain_only));
+    p_domain_to_version = &domain_to_version_static;
+  }
+  for (auto domain : *p_domain_to_version) {
     const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
     opset_id_proto->set_domain(domain.first);
     opset_id_proto->set_version(domain.second);
   }
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
-  graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), schema_registry));
+  graph_.reset(new Graph(model_proto_->mutable_graph(), *p_domain_to_version, IrVersion(), schema_registry));
 }
 
 Model::Model(const ModelProto& model_proto, const ILotusOpSchemaRegistryList* local_registries)

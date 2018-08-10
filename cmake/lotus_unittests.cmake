@@ -308,7 +308,7 @@ add_dependencies(onnx_test_runner_common ${lotus_EXTERNAL_DEPENDENCIES})
 target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/external/onnx/onnx $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
-lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${PROJECT_SOURCE_DIR}/external/onnx/onnx TARGET onnx_test_runner_common)
+lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${PROJECT_SOURCE_DIR}/external/onnx TARGET onnx_test_runner_common)
 
 
 

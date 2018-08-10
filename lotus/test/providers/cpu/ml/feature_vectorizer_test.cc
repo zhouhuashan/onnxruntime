@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Test {
 
 TEST(FeatureVectorizer, BasicFunctionality) {
-  OpTester test("FeatureVectorizer", LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{3, 2, 1, 4});
 
@@ -27,7 +27,7 @@ TEST(FeatureVectorizer, BasicFunctionality) {
 }
 
 TEST(FeatureVectorizer, HandleInputDimensionMismatch) {
-  OpTester test("FeatureVectorizer", LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{2, 3});
 
@@ -44,7 +44,7 @@ TEST(FeatureVectorizer, HandleInputDimensionMismatch) {
 
 // test with batch size of 2.
 TEST(FeatureVectorizer, Batch) {
-  OpTester test("FeatureVectorizer", LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{2, 2});
 
@@ -63,7 +63,7 @@ TEST(FeatureVectorizer, Batch) {
 
 // test with batch size of 2.
 TEST(FeatureVectorizer, BatchWith3DInput) {
-  OpTester test("FeatureVectorizer", LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{2, 4});
 

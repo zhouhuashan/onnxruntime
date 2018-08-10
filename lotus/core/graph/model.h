@@ -23,7 +23,8 @@ class Model {
   explicit Model(const std::string& graph_name,
                  bool is_onnx_domain_only = false,
                  const ModelMetaData& model_metadata = ModelMetaData(),
-                 const ILotusOpSchemaRegistryList* local_registries = nullptr);
+                 const ILotusOpSchemaRegistryList* local_registries = nullptr,
+				 const std::unordered_map<std::string, int>& domain_to_version = {});
 
   // NOTE: after calling this constructor, <*this> model will
   // hold a copy of <model_proto>.

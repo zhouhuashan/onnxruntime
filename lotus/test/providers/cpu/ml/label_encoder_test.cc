@@ -6,7 +6,7 @@ namespace Test {
 
 template <typename TInput, typename TOutput>
 static void RunTest(const std::vector<int64_t>& dims, const std::vector<TInput>& input, const std::vector<TOutput>& output) {
-  OpTester test("LabelEncoder", LotusIR::kMLDomain);
+  OpTester test("LabelEncoder", 1, LotusIR::kMLDomain);
 
   static const std::vector<std::string> labels = {"Beer", "Wine", "Tequila"};
 

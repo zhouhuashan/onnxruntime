@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Test {
 
 TEST(MLOpTest, ImputerOpFloat) {
-  OpTester test("Imputer", LotusIR::kMLDomain);
+  OpTester test("Imputer", 1, LotusIR::kMLDomain);
   const int N = 5;
   std::vector<float> impute = {10.0f};
   float replace = 1.f;
@@ -28,7 +28,7 @@ TEST(MLOpTest, ImputerOpFloat) {
 }
 
 TEST(MLOpTest, ImputerOpInts) {
-  OpTester test("Imputer", LotusIR::kMLDomain);
+  OpTester test("Imputer", 1, LotusIR::kMLDomain);
   std::vector<int64_t> impute = {10, 20, 30, 40, 50};
   int64_t replace = 2;
   test.AddAttribute("imputed_value_int64s", impute);

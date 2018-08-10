@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Test {
 
 TEST(MLOpTest, DictVectorizerStringInput) {
-  OpTester test("DictVectorizer", LotusIR::kMLDomain);
+  OpTester test("DictVectorizer", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("string_vocabulary", std::vector<std::string>{"a", "b", "c", "d"});
 
@@ -23,7 +23,7 @@ TEST(MLOpTest, DictVectorizerStringInput) {
 }
 
 TEST(MLOpTest, DictVectorizerInt64Input) {
-  OpTester test("DictVectorizer", LotusIR::kMLDomain);
+  OpTester test("DictVectorizer", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("int64_vocabulary", std::vector<int64_t>{1, 2, 3, 4});
 

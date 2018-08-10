@@ -11,7 +11,7 @@ static void RunTest(const std::map<int64_t, TFrom> &input,
                     const std::string &cast_to,
                     int64_t max_map = -1,
                     OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
-  OpTester test("CastMap", LotusIR::kMLDomain);
+  OpTester test("CastMap", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("cast_to", cast_to);
 
@@ -105,7 +105,7 @@ void RunBadAttributeTest(const std::string &cast_to,
                          const std::string &map_form,
                          int64_t max_map = -1,
                          OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
-  OpTester test("CastMap", LotusIR::kMLDomain);
+  OpTester test("CastMap", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("cast_to", cast_to);
   test.AddAttribute("map_form", map_form);

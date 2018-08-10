@@ -16,7 +16,7 @@ void TestIntCategory(std::vector<T> &input) {
         expected_output.push_back(1.0);
 
   // Test Matrix [Batch * Labels]
-  OpTester test_matrix("OneHotEncoder", LotusIR::kMLDomain);
+  OpTester test_matrix("OneHotEncoder", 1, LotusIR::kMLDomain);
   test_matrix.AddAttribute("cats_int64s", categories);
   test_matrix.AddInput<T>("X", {1, 7}, input);
   test_matrix.AddOutput<float>("Y", {1, 7, 8}, expected_output);
@@ -28,7 +28,7 @@ void TestIntCategory(std::vector<T> &input) {
   test_matrix.Run(OpTester::ExpectResult::kExpectFailure);
 
   // Test Vector [Labels]
-  OpTester test_vector("OneHotEncoder", LotusIR::kMLDomain);
+  OpTester test_vector("OneHotEncoder", 1, LotusIR::kMLDomain);
   test_vector.AddAttribute("cats_int64s", categories);
   test_vector.AddInput<T>("X", {7}, input);
   test_vector.AddOutput<float>("Y", {7, 8}, expected_output);
@@ -70,7 +70,7 @@ TEST(OneHotEncoderOpTest, String) {
         expected_output.push_back(1.0);
 
   // Test Matrix [Batch, Labels]
-  OpTester test_matrix("OneHotEncoder", LotusIR::kMLDomain);
+  OpTester test_matrix("OneHotEncoder", 1, LotusIR::kMLDomain);
   test_matrix.AddAttribute("cats_strings", categories);
   test_matrix.AddInput<string>("X", {1, 5}, input);
   test_matrix.AddOutput<float>("Y", {1, 5, 7}, expected_output);
@@ -82,7 +82,7 @@ TEST(OneHotEncoderOpTest, String) {
   test_matrix.Run(OpTester::ExpectResult::kExpectFailure);
 
   // Test Vector [Labels]
-  OpTester test_vector("OneHotEncoder", LotusIR::kMLDomain);
+  OpTester test_vector("OneHotEncoder", 1, LotusIR::kMLDomain);
   test_vector.AddAttribute("cats_strings", categories);
   test_vector.AddInput<string>("X", {5}, input);
   test_vector.AddOutput<float>("Y", {5, 7}, expected_output);

@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Test {
 
 TEST(MLOpTest, TreeEnsembleClassifier) {
-  OpTester test("TreeEnsembleClassifier", LotusIR::kMLDomain);
+  OpTester test("TreeEnsembleClassifier", 1, LotusIR::kMLDomain);
 
   std::vector<int64_t> lefts = {1, -1, 3, -1, -1, 1, -1, 3, 4, -1, -1, -1, 1, 2, -1, 4, -1, -1, -1};
   std::vector<int64_t> rights = {2, -1, 4, -1, -1, 2, -1, 6, 5, -1, -1, -1, 6, 3, -1, 5, -1, -1, -1};
@@ -52,7 +52,7 @@ TEST(MLOpTest, TreeEnsembleClassifier) {
 }
 
 TEST(MLOpTest, TreeEnsembleClassifierLabels) {
-  OpTester test("TreeEnsembleClassifier", LotusIR::kMLDomain);
+  OpTester test("TreeEnsembleClassifier", 1, LotusIR::kMLDomain);
 
   std::vector<int64_t> lefts = {1, -1, 3, -1, -1, 1, -1, 3, 4, -1, -1, -1, 1, 2, -1, 4, -1, -1, -1};
   std::vector<int64_t> rights = {2, -1, 4, -1, -1, 2, -1, 6, 5, -1, -1, -1, 6, 3, -1, 5, -1, -1, -1};
@@ -100,7 +100,7 @@ TEST(MLOpTest, TreeEnsembleClassifierLabels) {
 }
 
 TEST(MLOpTest, TreeEnsembleClassifierBinary) {
-  OpTester test("TreeEnsembleClassifier", LotusIR::kMLDomain);
+  OpTester test("TreeEnsembleClassifier", 1, LotusIR::kMLDomain);
 
   std::vector<int64_t> lefts = {1, -1, 3, -1, -1, 1, -1, 3, 4, -1, -1, -1, 1, 2, -1, 4, -1, -1, -1};
   std::vector<int64_t> rights = {2, -1, 4, -1, -1, 2, -1, 6, 5, -1, -1, -1, 6, 3, -1, 5, -1, -1, -1};

@@ -5,7 +5,7 @@ namespace Lotus {
 namespace Test {
 
 TEST(MLOpTest, TreeRegressorMultiTarget) {
-  OpTester test("TreeEnsembleRegressor", LotusIR::kMLDomain);
+  OpTester test("TreeEnsembleRegressor", 1, LotusIR::kMLDomain);
 
   //tree
   std::vector<int64_t> lefts = {1, 2, -1, -1, -1, 1, -1, 3, -1, -1, 1, -1, -1};

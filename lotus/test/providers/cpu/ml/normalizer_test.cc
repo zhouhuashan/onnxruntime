@@ -11,7 +11,7 @@ static void RunTest(const vector<T> &input,
                     const std::string &norm,
                     OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
                     const std::string &expect_error_message = "") {
-  OpTester test("Normalizer", LotusIR::kMLDomain);
+  OpTester test("Normalizer", 1, LotusIR::kMLDomain);
 
   test.AddAttribute("norm", norm);
 

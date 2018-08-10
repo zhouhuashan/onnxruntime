@@ -6,7 +6,7 @@ namespace Test {
 
 template <typename TInput, typename TOutput>
 static void RunTest(const std::vector<int64_t>& dims, const std::vector<TInput>& input, const std::vector<TOutput>& output) {
-  OpTester test("CategoryMapper", LotusIR::kMLDomain);
+  OpTester test("CategoryMapper", 1, LotusIR::kMLDomain);
 
   static const std::vector<std::string> categories = {"Three", "Two", "One"};
   static const std::vector<int64_t> indexes = {3, 2, 1};

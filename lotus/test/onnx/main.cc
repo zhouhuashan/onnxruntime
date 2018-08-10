@@ -158,12 +158,18 @@ int main(int argc, char* argv[]) {
                                                "operator_add_size1_broadcast", "operator_add_size1_right_broadcast", "operator_add_size1_singleton_broadcast",
                                                "operator_addconstant", "operator_addmm", "operator_basic", "operator_lstm", "operator_mm", "operator_non_float_params",
                                                "operator_params", "operator_pow", "operator_rnn", "operator_rnn_single_layer", "PoissonNLLLLoss_no_reduce", "PReLU_1d",
-                                               "PReLU_1d_multiparam", "PReLU_2d", "PReLU_2d_multiparam", "PReLU_3d", "PReLU_3d_multiparam", "Softsign"};
+                                               "PReLU_1d_multiparam", "PReLU_2d", "PReLU_2d_multiparam", "PReLU_3d", "PReLU_3d_multiparam", "Softsign", "min_one_input",
+                                               "sum_two_inputs", "mvn", "max_example", "maxpool_2d_default", "sum_one_input", "sum_example", "min_two_inputs", "min_example", "mean_two_inputs",
+                                               "maxpool_1d_default", "mean_one_input", "mean_example", "max_two_inputs", "max_one_input", "maxpool_2d_pads", "maxpool_with_argmax_2d_precomputed_strides",
+                                               "maxpool_with_argmax_2d_precomputed_pads", "maxpool_3d_default", "maxpool_2d_strides", "maxpool_2d_same_upper", "maxpool_2d_same_lower",
+                                               "maxpool_2d_precomputed_strides", "maxpool_2d_precomputed_same_upper", "maxpool_2d_precomputed_pads", "expand_dim_unchanged",
+                                               "convtranspose_1d", "expand_dim_changed", "convtranspose_3d"};
+  int result = 0;
   for (const std::string& s : stat.GetFailedTest()) {
     if (broken_tests.find(s) == broken_tests.end()) {
       fprintf(stderr, "test %s failed, please fix it\n", s.c_str());
-      return -1;
+      result = -1;
     }
   }
-  return 0;
+  return result;
 }

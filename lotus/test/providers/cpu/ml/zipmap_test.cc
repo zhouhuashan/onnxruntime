@@ -8,7 +8,7 @@ void TestHelper(const std::vector<T>& classes,
                 const std::string& type,
                 const vector<int64_t>& input_dims,
                 OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
-  OpTester test("ZipMap", LotusIR::kMLDomain);
+  OpTester test("ZipMap", 1, LotusIR::kMLDomain);
 
   std::vector<float> input{1.f, 0.f, 3.f, 44.f, 23.f, 11.3f};
 

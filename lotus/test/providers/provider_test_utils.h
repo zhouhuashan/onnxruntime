@@ -127,7 +127,8 @@ const VectorOfMapTypeProto<TKey, TVal> s_vec_map_type_proto;
 // for new output types, add a new specialization for Check<>
 // See current usage for an example, should be self explanatory
 struct OpTester {
-  OpTester(const char* op, const char* domain = LotusIR::kOnnxDomain) : op_(op), domain_(domain) {}
+  OpTester(const char* op, int opset_version = 7, const char* domain = LotusIR::kOnnxDomain)
+	  : op_(op), opset_version_(opset_version), domain_(domain) {}
   ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
@@ -249,6 +250,7 @@ struct OpTester {
 
   const char* op_;
   const char* domain_;
+  int opset_version_;
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;

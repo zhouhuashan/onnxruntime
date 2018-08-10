@@ -810,6 +810,12 @@ class InferenceContextImpl : public onnx::InferenceContext {
     return &allOutputTypes_[index];
   }
 
+  const TensorProto* getInputData(size_t) const override {
+	// TODO: this interface should be implemented with initializers
+	// so that more accurate shape inference could be done.
+	return nullptr;
+  }
+
  private:
   Node& node_;
   // allOutputTypes_ will be populated by the operator-specific shape inference.
