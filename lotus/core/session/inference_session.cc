@@ -24,6 +24,7 @@
 #include "core/framework/node_placement.h"
 #include "core/framework/mldata_type_utils.h"
 #include "core/framework/transformer_memcpy.h"
+#include "core/session/CustomOpsLoader.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/session/IOBinding.h"
 
@@ -64,6 +65,16 @@ class InferenceSession::Impl {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for graph transformer");
     }
     return graph_transformation_mgr_.Register(std::move(p_graph_transformer));
+  }
+
+  Common::Status LoadCustomOps(const std::vector<std::string>& dso_list) {
+    std::shared_ptr<CustomRegistry> custom_registry;
+    LOTUS_RETURN_IF_ERROR(custom_ops_loader_.LoadCustomOps(dso_list, custom_registry));
+    if (!custom_registry) {
+      return Status(Common::LOTUS, Common::FAIL, "Null custom_registry after loading custom ops.");
+    }
+    LOTUS_RETURN_IF_ERROR(RegisterCustomRegistry(custom_registry));
+    return Status::OK();
   }
 
   Common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry) {
@@ -1241,6 +1252,8 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
+  CustomOpsLoader custom_ops_loader_;
+
   const SessionOptions session_options_;
 
   LotusIR::GraphTransformerManager graph_transformation_mgr_;
@@ -1401,5 +1414,9 @@ Common::Status InferenceSession::Run(const RunOptions& run_options, IOBinding& i
 
 Common::Status InferenceSession::Run(IOBinding& io_binding) {
   return impl_->Run(io_binding);
+}
+
+Common::Status InferenceSession::LoadCustomOps(const std::vector<std::string>& dso_list) {
+  return impl_->LoadCustomOps(dso_list);
 }
 }  // namespace Lotus

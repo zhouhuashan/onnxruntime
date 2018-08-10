@@ -6,9 +6,8 @@
 #include "core/common/logging/logging.h"
 using namespace Lotus::Common;
 namespace Lotus {
-	
-std::multimap<std::string, KernelCreateInfo> const& KernelRegistry::kernel_creator_fn_map() const
-{
+
+std::multimap<std::string, KernelCreateInfo> const& KernelRegistry::kernel_creator_fn_map() const {
   std::call_once(kernelCreationFlag, kernel_reg_fn_, [&](KernelCreateInfo&& info) { RegisterInternal(info); });
   return *kernel_creator_fn_map_;
 }
@@ -158,6 +157,10 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
 Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
                                 KernelCreateFn kernel_creator) {
   KernelCreateInfo create_info(kernel_builder.Build(), kernel_creator);
+  return Register(create_info);
+}
+
+Status KernelRegistry::Register(KernelCreateInfo& create_info) {
   auto& op_name = create_info.kernel_def->OpName();
   auto& map = const_cast<KernelCreateMap&>(kernel_creator_fn_map());
 
@@ -183,8 +186,7 @@ Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
   return Status::OK();
 }
 
-void KernelRegistry::RegisterInternal(KernelCreateInfo& create_info) const
-{
+void KernelRegistry::RegisterInternal(KernelCreateInfo& create_info) const {
   auto& op_name = create_info.kernel_def->OpName();
   auto map = kernel_creator_fn_map_.get();
 

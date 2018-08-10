@@ -196,6 +196,8 @@ class KernelRegistry {
   // Register a kernel with kernel definition and function to create the kernel.
   Status Register(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
+  Status Register(KernelCreateInfo&);
+
   // Mainly for provide debug info
   std::vector<std::string> GetAllRegisteredOpNames() const;
 

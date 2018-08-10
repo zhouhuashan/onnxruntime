@@ -128,6 +128,15 @@ class InferenceSession {
   Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer);
 
   /**
+  * Load custom ops implemented in a dynamically linked shared library.
+  * @param dso_list list of library file paths containing the custom ops implementation.
+  * In order to implement a custom op please see file: custom_ops_author.h
+  * TODO add sample code
+  * @return OK if success
+  */
+  Common::Status LoadCustomOps(const std::vector<std::string>& dso_list);
+
+  /**
     * Register a custom registry for operator schema and kernels.  If you've one to register, 
     * call this before invoking Initialize().
     * The order of invocation indicates the preference order as well. In other words call this method on your
