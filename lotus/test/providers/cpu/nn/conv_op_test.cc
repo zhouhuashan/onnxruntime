@@ -499,5 +499,24 @@ TEST(ConvTest, Conv3D_Bias) {
   TestConvOp(attrs, {X, W, B}, {X_shape, W_shape, B_shape}, expected_vals, Y_shape);
 }
 
+TEST(ConvTest, Conv2D_group) {
+  ConvOpAttributes attrs = {
+      "",                           // auto_pad
+      vector<int64_t>{1, 1},        // dilations
+      2,                            // group
+      vector<int64_t>{1, 1},        // kernel_shape
+      vector<int64_t>{0, 0, 0, 0},  // pads
+      vector<int64_t>{1, 1}         // strides
+  };
+  vector<float> X = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f};
+  vector<int64_t> X_shape = {1, 2, 3, 3};
+  vector<float> W = {1.0f, 2.0f};
+  vector<int64_t> W_shape = {2, 1, 1, 1};
+  vector<int64_t> Y_shape = {1, 2, 3, 3};
+  auto expected_vals = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 18.0f, 20.0f, 22.0f, 24.0f, 26.0f, 28.0f, 30.0f, 32.0f, 34.0f};
+
+  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
+}
+
 }  // namespace Test
 }  // namespace Lotus

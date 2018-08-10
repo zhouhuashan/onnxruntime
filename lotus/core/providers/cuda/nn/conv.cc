@@ -112,6 +112,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
   CudnnConvolutionDescriptor conv_desc;
   cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION;
   LOTUS_RETURN_IF_ERROR(conv_desc.Set(kernel_shape, pads, strides, dilations, mode, CudnnTensor::GetDataType<CudaT>()));
+  CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionGroupCount(conv_desc, gsl::narrow_cast<int>(group_)));
 
   cudnnConvolutionFwdAlgo_t algo;
   auto algo_cache_it = algo_cache_.find(x_dims);
