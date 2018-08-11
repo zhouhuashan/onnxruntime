@@ -39,7 +39,10 @@ ONNX_OPERATOR_KERNEL_EX(
 thread_local std::unique_ptr<CUDAExecutionProvider::PerThreadContext> CUDAExecutionProvider::per_thread_context_;
 
 CUDAExecutionProvider::PerThreadContext::PerThreadContext(int device_id, AllocatorPtr gpu_allocator)
-    : gpu_allocator_(gpu_allocator) {
+    : gpu_allocator_(gpu_allocator),
+      gpu_scratch_buffer_size_(0),
+      gpu_scratch_buffer_bytes_used_(0),
+      gpu_scratch_buffer_bytes_booked_(0) {
   CUDA_CALL_THROW(cudaSetDevice(device_id));
   CUBLAS_CALL_THROW(cublasCreate(&cublas_handle_));
   CUDNN_CALL_THROW(cudnnCreate(&cudnn_handle_));

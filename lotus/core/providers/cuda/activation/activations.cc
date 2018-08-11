@@ -20,8 +20,8 @@ namespace Cuda {
   Status x<T>::ComputeInternal(OpKernelContext* context) const {                                  \
     UnaryElementwisePreparation p;                                                                \
     UnaryElementwise::Prepare(context, &p);                                                       \
-    ResetScratchBuffer();                                                                         \
     CudaAsyncBuffer<Ctx##x> func_ctx(this, MakeFuncCtx());                                        \
+    PrepareScratchBuffer();                                                                       \
     if (!std::is_same<CtxNull, Ctx##x>::value)                                                    \
       LOTUS_RETURN_IF_ERROR(func_ctx.CopyToGpu());                                                \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                 \

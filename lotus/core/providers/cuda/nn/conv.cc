@@ -77,7 +77,6 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
   y_dims.insert(y_dims.begin(), {N, M});
   InferOutputShape(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims);
   Tensor* Y = context->Output(0, TensorShape(y_dims));
-  ResetScratchBuffer();
 
   const TensorShape& w_shape = W->Shape();
   std::vector<int64_t> w_dims = w_shape.GetDims();
@@ -140,8 +139,22 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
                                                                 algo,
                                                                 &workspace_bytes));
 
-  void* workspace = GetScratchBuffer<void>(workspace_bytes);
+  BookScratchBuffer<void>(workspace_bytes);
 
+  BinaryElementwisePreparation prepare(this);
+  if (B) {
+    std::vector<int64_t> overrided_B_dims = B->Shape().GetDims();
+
+    for (int i = 0; i < kernel_shape.size(); i++)
+      overrided_B_dims.push_back(1);
+
+    TensorShape overrided_B_shape(overrided_B_dims);
+    LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(Y, B, Y, &prepare, nullptr, &overrided_B_shape));
+  }
+
+  // book all scratch buffers before prepare and execute
+  PrepareScratchBuffer();
+  void* workspace = GetScratchBuffer<void>(workspace_bytes);
   CUDNN_RETURN_IF_ERROR(cudnnConvolutionForward(CudnnHandle(),
                                                 &alpha,
                                                 x_tensor,
@@ -157,14 +170,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
                                                 y_data));
 
   if (B) {
-    std::vector<int64_t> overrided_B_dims = B->Shape().GetDims();
-    for (int i = 0; i < kernel_shape.size(); i++)
-      overrided_B_dims.push_back(1);
-
-    TensorShape overrided_B_shape(overrided_B_dims);
-
-    BinaryElementwisePreparation prepare(this);
-    LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(Y, B, Y, &prepare, nullptr, &overrided_B_shape));
+    LOTUS_RETURN_IF_ERROR(prepare.CopyToGpu());
     Impl_Add<CudaT>(
         prepare.output_rank_or_simple_broadcast,
         prepare.lhs_padded_strides.GpuPtr(),

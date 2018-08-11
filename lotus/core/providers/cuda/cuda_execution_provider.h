@@ -72,8 +72,13 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return per_thread_context_->GetScratchBuffer<T>(count_or_bytes);
   }
 
-  void ResetScratchBuffer() {
-    return per_thread_context_->ResetScratchBuffer();
+  template <typename T>
+  void BookScratchBuffer(size_t count_or_bytes) {
+    per_thread_context_->BookScratchBuffer<T>(count_or_bytes);
+  }
+
+  void PrepareScratchBuffer() {
+    return per_thread_context_->PrepareScratchBuffer();
   }
 
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;
@@ -107,8 +112,31 @@ class CUDAExecutionProvider : public IExecutionProvider {
       return current_deferred_release_event_;
     }
 
-    void ResetScratchBuffer() {
+    template <typename T>
+    static size_t CalculateBytesNeeded(size_t count_or_bytes) {
+      size_t bytes = count_or_bytes;
+
+      if (!std::is_void<T>::value)
+        bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
+
+      // align up to multiple of 16-bytes to avoid cuda misaligned address error
+      return (bytes + static_cast<size_t>(15)) & (~static_cast<size_t>(15));
+    }
+
+    template <typename T>
+    void BookScratchBuffer(size_t count_or_bytes) {
+      gpu_scratch_buffer_bytes_booked_ += CalculateBytesNeeded<T>(count_or_bytes);
+    }
+
+    void PrepareScratchBuffer() {
+      if (gpu_scratch_buffer_bytes_booked_ > gpu_scratch_buffer_size_) {
+        // note that scratch buffer is write-only, so no copy needed when reallocate to a bigger size
+        gpu_scratch_buffer_.reset();
+        gpu_scratch_buffer_ = IAllocator::MakeUniquePtr<uint8_t>(gpu_allocator_, gpu_scratch_buffer_bytes_booked_);
+        gpu_scratch_buffer_size_ = gpu_scratch_buffer_bytes_booked_;
+      }
       gpu_scratch_buffer_bytes_used_ = 0;
+      gpu_scratch_buffer_bytes_booked_ = 0;
     }
 
     template <typename T>
@@ -117,23 +145,12 @@ class CUDAExecutionProvider : public IExecutionProvider {
         return nullptr;
       }
 
-      size_t bytes = count_or_bytes;
-
-      if (!std::is_void<T>::value)
-        bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
-
-      // align up to multiple of 16-bytes to avoid cuda misaligned address error
-      bytes = (bytes + static_cast<size_t>(15)) & (~static_cast<size_t>(15));
-
+      size_t bytes = CalculateBytesNeeded<T>(count_or_bytes);
       size_t used_bytes = bytes + gpu_scratch_buffer_bytes_used_;
-      if (used_bytes > gpu_scratch_buffer_size_) {
-        // note that scratch buffer is write-only, so no copy needed when reallocate to a bigger size
-        gpu_scratch_buffer_.reset();
-        gpu_scratch_buffer_ = IAllocator::MakeUniquePtr<uint8_t>(gpu_allocator_, used_bytes);
-        gpu_scratch_buffer_size_ = used_bytes;
-      }
+      LOTUS_ENFORCE(used_bytes <= gpu_scratch_buffer_size_);
+
       T* p = reinterpret_cast<T*>(gpu_scratch_buffer_.get() + gpu_scratch_buffer_bytes_used_);
-      gpu_scratch_buffer_bytes_used_ += bytes;
+      gpu_scratch_buffer_bytes_used_ = used_bytes;
       return p;
     }
 
@@ -153,6 +170,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
     IAllocatorUniquePtr<uint8_t> gpu_scratch_buffer_;
     size_t gpu_scratch_buffer_size_ = 0;
     size_t gpu_scratch_buffer_bytes_used_ = 0;
+    size_t gpu_scratch_buffer_bytes_booked_ = 0;
     AllocatorPtr gpu_allocator_;
   };
   static thread_local std::unique_ptr<PerThreadContext> per_thread_context_;

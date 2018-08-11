@@ -106,7 +106,6 @@ Status BinaryElementwiseBroadcastPrepare(
     LOTUS_RETURN_IF_NOT(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
     if (lhs_shape[0] > 1 && lhs_rank == out_rank)
       p->lhs_padded_strides.CpuPtr()[0] = 0;
-    LOTUS_RETURN_IF_ERROR(p->lhs_padded_strides.CopyToGpu());
   }
 
   if (rhs_shape != output_shape) {
@@ -114,14 +113,10 @@ Status BinaryElementwiseBroadcastPrepare(
     LOTUS_RETURN_IF_NOT(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
     if (rhs_shape[0] > 1 && rhs_rank == out_rank)
       p->rhs_padded_strides.CpuPtr()[0] = 0;
-    LOTUS_RETURN_IF_ERROR(p->rhs_padded_strides.CopyToGpu());
   }
-
-  LOTUS_RETURN_IF_NOT(p->lhs_padded_strides.GpuPtr() || p->rhs_padded_strides.GpuPtr());
 
   p->fdm_output_strides.AllocCpuPtr(out_rank);
   LOTUS_RETURN_IF_NOT(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_tensor->Shape().GetDims()));
-  LOTUS_RETURN_IF_ERROR(p->fdm_output_strides.CopyToGpu());
   return Status::OK();
 }
 
@@ -154,9 +149,10 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
 #define BINARY_ELEMENTWISE_COMPUTE(x, T)                                                                \
   template <>                                                                                           \
   Status x<T>::ComputeInternal(OpKernelContext* context) const {                                        \
-    ResetScratchBuffer();                                                                               \
     BinaryElementwisePreparation prepare(this);                                                         \
     Prepare(context, &prepare);                                                                         \
+    PrepareScratchBuffer();                                                                             \
+    LOTUS_RETURN_IF_ERROR(prepare.CopyToGpu());                                                         \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                       \
         prepare.output_rank_or_simple_broadcast,                                                        \
         prepare.lhs_padded_strides.GpuPtr(),                                                            \

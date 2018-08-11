@@ -22,6 +22,13 @@ struct BinaryElementwisePreparation {
   BinaryElementwisePreparation(const CudaKernel* op_kernel) : lhs_padded_strides(op_kernel),
                                                               rhs_padded_strides(op_kernel),
                                                               fdm_output_strides(op_kernel) {}
+
+  Status CopyToGpu() {
+    LOTUS_RETURN_IF_ERROR(lhs_padded_strides.CopyToGpu());
+    LOTUS_RETURN_IF_ERROR(rhs_padded_strides.CopyToGpu());
+    LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
+    return Status::OK();
+  }
 };
 
 // trait classes to indicate if the kernel supports broadcast

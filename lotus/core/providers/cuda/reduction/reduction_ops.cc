@@ -84,7 +84,6 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
   }
 
   Tensor* Y = ctx->Output(0, TensorShape(squeezed_output_dims));
-  ResetScratchBuffer();
 
   // CUDNN requires at least 3D input, so pad 1s if needed
   std::vector<int64_t> input_dims_cudnn = input_dims;
@@ -105,13 +104,15 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
   LOTUS_RETURN_IF_ERROR(output_tensor.Set(output_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
   size_t indices_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
-  void* indices_cuda = GetScratchBuffer<void>(indices_bytes);
-
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
-  void* workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
+  BookScratchBuffer<void>(indices_bytes);
+  BookScratchBuffer<void>(workspace_bytes);
 
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_NO_INDICES) {
+    PrepareScratchBuffer();
+    void* indices_cuda = GetScratchBuffer<void>(indices_bytes);
+    void* workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
         CudnnHandle(), reduce_desc, indices_cuda, indices_bytes, workspace_cuda, workspace_bytes,
         &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
@@ -119,6 +120,10 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
   } else {
     // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
     auto output_count = Y->Shape().Size();
+    BookScratchBuffer<CudaT>(output_count);
+    PrepareScratchBuffer();
+    void* indices_cuda = GetScratchBuffer<void>(indices_bytes);
+    void* workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
     CudaT* temp_output = GetScratchBuffer<CudaT>(output_count);
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
         CudnnHandle(), reduce_desc, indices_cuda, indices_bytes, workspace_cuda, workspace_bytes,

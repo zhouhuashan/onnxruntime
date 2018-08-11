@@ -22,7 +22,6 @@ Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
   auto const &input_shape = input_tensor.Shape();
   auto dimension_count = input_shape.NumDimensions();
 
-  ResetScratchBuffer();
   CudaAsyncBuffer<int64_t> input_dims(this, input_shape.GetDims());
   CudaAsyncBuffer<int64_t> input_strides(this, dimension_count);
   CudaAsyncBuffer<int64_t> lower_pads(this, dimension_count);
@@ -45,7 +44,7 @@ Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
   TensorShape output_shape(output_dims);
   auto &output_tensor = *ctx->Output(0, output_shape);
   LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
-
+  PrepareScratchBuffer();
   LOTUS_RETURN_IF_ERROR(input_dims.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(lower_pads.CopyToGpu());

@@ -44,13 +44,22 @@ class CudaKernel : public OpKernel {
     return IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(kMemTypeCPU), count_or_bytes);
   }
 
+  // CUDA kernels can use BookScratchBuffer/PrepareScratchBuffer/GetScratchBuffer to allocate scratch buffers on GPU
+  // Note that GetScratchBuffer()/CudaAsyncBuffer::CopyToGpu() can only be called after PrepareScratchBuffer()
+  // Because each kernel should have a single place to allocate scratch buffer to make sure all GPU scratch buffers
+  // are valid when launching CUDA operations
+  template <typename T>
+  inline void BookScratchBuffer(size_t count_or_bytes) const {
+    provider_->BookScratchBuffer<T>(count_or_bytes);
+  }
+
+  inline void PrepareScratchBuffer() const {
+    provider_->PrepareScratchBuffer();
+  }
+
   template <typename T>
   inline T* GetScratchBuffer(size_t count_or_bytes) const {
     return provider_->GetScratchBuffer<T>(count_or_bytes);
-  }
-
-  inline void ResetScratchBuffer() const {
-    provider_->ResetScratchBuffer();
   }
 
   inline void AddDeferredReleaseCPUPtr(void* p) const {
@@ -78,18 +87,16 @@ class CudaKernel : public OpKernel {
 
     void AllocCpuPtr(size_t count) {
       cpu_pinned_copy_ = op_kernel_->AllocateBufferOnCPUPinned<T>(count);
+      op_kernel_->BookScratchBuffer<T>(count);
       count_ = count;
     }
 
     Status CopyToGpu() {
-      // note that release gpu_copy_ after launch is OK because it's just going back to arena allocator
-      // so the actual GPU operation would have a valid pointer to copy to
-      // but CPU memory release needs to be deferred, otherwise if it's reused later from the arena allocator
-      // before the copy starts on GPU, the copy would have corrupted data
-      // note the gpu arena allocator is per-thread to avoid race condition
-      gpu_copy_ = op_kernel_->GetScratchBuffer<T>(count_);
-      CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(gpu_copy_, cpu_pinned_copy_.get(), count_ * sizeof(T), cudaMemcpyHostToDevice));
-      op_kernel_->AddDeferredReleaseCPUPtr(cpu_pinned_copy_.release());
+      if (cpu_pinned_copy_) {
+        gpu_copy_ = op_kernel_->GetScratchBuffer<T>(count_);
+        CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(gpu_copy_, cpu_pinned_copy_.get(), count_ * sizeof(T), cudaMemcpyHostToDevice));
+        op_kernel_->AddDeferredReleaseCPUPtr(cpu_pinned_copy_.release());
+      }
       return Status::OK();
     }
 

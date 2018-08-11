@@ -45,7 +45,6 @@ Status MatMul<float>::ComputeInternal(OpKernelContext* ctx) const {
     return Status::OK();
   }
 
-  ResetScratchBuffer();
   CudaAsyncBuffer<const float*> left_arrays(this, helper.LeftOffsets().size());
   CudaAsyncBuffer<const float*> right_arrays(this, helper.RightOffsets().size());
   CudaAsyncBuffer<float*> output_arrays(this, helper.OutputOffsets().size());
@@ -53,9 +52,7 @@ Status MatMul<float>::ComputeInternal(OpKernelContext* ctx) const {
   MatMulComputeHelper::OffsetToArrays(right_X->Data<float>(), helper.RightOffsets(), right_arrays.CpuSpan());
   MatMulComputeHelper::OffsetToArrays(Y->MutableData<float>(), helper.OutputOffsets(), output_arrays.CpuSpan());
 
-  // allocate temp memory for offset arrays
-  IAllocatorUniquePtr<const float*> left_arrays_cuda, right_arrays_cuda;
-  IAllocatorUniquePtr<float*> output_arrays_cuda;
+  PrepareScratchBuffer();
   LOTUS_RETURN_IF_ERROR(left_arrays.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(right_arrays.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(output_arrays.CopyToGpu());

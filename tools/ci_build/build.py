@@ -399,7 +399,7 @@ def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests, enable_
                 cwd = os.path.join(cwd, config)
             run_subprocess([sys.executable, 'lotus_test_python.py'], cwd=cwd, dll_path=dll_path)
 
-def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir):
+def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, use_cuda):
 
     for config in configs:
         test_data_dirs = []
@@ -412,6 +412,8 @@ def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_
            exe = os.path.join(cwd, 'onnx_test_runner')
         if test_data_dirs:
             run_subprocess([exe] + test_data_dirs, cwd=cwd)
+            if use_cuda:
+                run_subprocess([exe, "-e", "cuda"] + test_data_dirs, cwd=cwd)
 
 def build_python_wheel(source_dir, build_dir, configs):
     for config in configs:
@@ -500,7 +502,7 @@ def main():
     # run the onnx tests if requested explicitly.
     # it could be done implicitly by user installing onnx but currently the tests fail so that doesn't work for CI
     if (args.enable_onnx_tests or args.install_onnx):
-        run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir)
+        run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, args.use_cuda)
 
     if args.build_wheel:
         build_python_wheel(source_dir, build_dir, configs)
