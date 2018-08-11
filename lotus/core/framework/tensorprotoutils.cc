@@ -14,7 +14,7 @@
 #include "core/inc/op_kernel_author.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/tensorutils.h"
-#include "tensor.h"
+#include "core/framework/tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
 using namespace onnx;
 using namespace Lotus::Common;

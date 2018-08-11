@@ -1,4 +1,4 @@
-#include "tensor_shape.h"
+#include "core/framework/tensor_shape.h"
 #include <iostream>
 #include "core/common/common.h"
 namespace Lotus {

@@ -4,7 +4,7 @@
 
 #include "core/common/common.h"
 #include "core/common/status.h"
-#include "allocator.h"
+#include "core/framework/allocator.h"
 
 namespace onnx {
 class TensorProto;

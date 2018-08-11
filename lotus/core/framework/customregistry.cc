@@ -1,4 +1,4 @@
-#include "customregistry.h"
+#include "core/framework/customregistry.h"
 namespace Lotus {
 
 Common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator) {
