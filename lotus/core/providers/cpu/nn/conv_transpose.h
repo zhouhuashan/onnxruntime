@@ -80,42 +80,58 @@ class ConvTranspose : public OpKernel, public ConvBase {
     const Tensor* X = context->Input<Tensor>(0);
     const Tensor* F = context->Input<Tensor>(1);
     const Tensor* B = num_inputs == 3 ? context->Input<Tensor>(2) : nullptr;
-
     const TensorShape& input_shape = X->Shape();
 
+    // input validations
+    if (group_ <= 0) {
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "group count is <= 0",
+                               " group: ", group_);
+    }
+
     if (input_shape.NumDimensions() != 4) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input X must be 4-dimensional.",
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input X must be 4-dimensional.",
                                " X: ", X->Shape().ToString().c_str());
     }
 
-    if (X->Shape().NumDimensions() != F->Shape().NumDimensions()) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "X num_dims does not match W num_dims.",
+    if (input_shape.NumDimensions() != F->Shape().NumDimensions()) {
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "X num_dims does not match W num_dims.",
                                " X: ", X->Shape().ToString().c_str(),
                                " W: ", F->Shape().ToString().c_str());
     }
 
+    const int64_t num_input_channels = input_shape[1];
+
+    if (F->Shape()[0] != num_input_channels) {
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "filter number not equal to input channel number.",
+                               " filter_number: ", F->Shape()[0],
+                               " num_input_channels: ", num_input_channels);
+    }
+
     const int64_t N = input_shape[0];
-    const int64_t M = input_shape[1];
     const int64_t H = input_shape[2];
     const int64_t W = input_shape[3];
-    const int64_t C = F->Shape()[1];
+    const int64_t num_output_channels_multiplier = F->Shape()[1];
+    const int64_t num_output_channels = num_output_channels_multiplier * group_;
 
-    if (F->Shape()[0] != M) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "filter number not equal to input channel number.",
-                               " filter_number: ", F->Shape()[0],
-                               " M: ", M);
+    // it looks like num_output_channels is really k*group_ similar to how in the conv case
+    // num_input_channels is k*group_. hence removing the check for num_output_channels here.
+
+    if (num_input_channels % group_ != 0) {
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input channels is not divisible by group.",
+                               " num_input_channels: ", num_input_channels,
+                               " group: ", group_);
     }
 
     std::vector<int64_t> kernel_shape = ComputeKernelShape(F->Shape());
 
     if (kernel_shape[0] != F->Shape()[2]) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "kernel height does not match filter height.",
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "kernel height does not match filter height.",
                                " kernel_height: ", kernel_shape[0],
                                " filter_height: ", F->Shape()[2]);
     }
 
     if (kernel_shape[1] != F->Shape()[3]) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "kernel width does not match filter width.",
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "kernel width does not match filter width.",
                                " kernel_width: ", kernel_shape[1],
                                " filter_width: ", F->Shape()[3]);
     }
@@ -139,12 +155,15 @@ class ConvTranspose : public OpKernel, public ConvBase {
 
     std::vector<int64_t> Y_dims;
 
-    ComputePadsAndOutputShape(input_shape, C, kernel_shape, strides, output_padding, &pads, &Y_dims);
+    ComputePadsAndOutputShape(input_shape, num_output_channels, kernel_shape, strides, output_padding, &pads, &Y_dims);
     TensorShape Yshape(Y_dims);
     Tensor* Y = context->Output(0, Yshape);
 
-    const int64_t kernel_dim = C * kernel_shape[0] * kernel_shape[1];
     const int64_t input_image_size = H * W;
+    const int64_t X_offset = num_input_channels / group_ * input_image_size;
+    const int64_t Y_offset = Y->Shape().Size() / Y->Shape()[0] / group_;
+    const int64_t W_offset = F->Shape().Size() / group_;
+    const int64_t kernel_dim = num_output_channels / group_ * kernel_shape[0] * kernel_shape[1];
     const int64_t output_image_size = Y_dims[2] * Y_dims[3];
 
     AllocatorPtr alloc;
@@ -159,47 +178,49 @@ class ConvTranspose : public OpKernel, public ConvBase {
     T* Ydata = Y->template MutableData<T>();
 
     for (auto image_id = 0; image_id < N; ++image_id) {
-      // Weight term
-      Math::Gemm<T, CPUMathUtil>(
-          CblasTrans,
-          CblasNoTrans,
-          kernel_dim,
-          input_image_size,
-          M,
-          1,
-          filter_data,
-          Xdata,
-          0,
-          col_buffer_data,
-          &CPUMathUtil::Instance());
+      for (int group_id = 0; group_id < group_; ++group_id) {
+        // Weight term
+        Math::Gemm<T, CPUMathUtil>(
+            CblasTrans,
+            CblasNoTrans,
+            kernel_dim,
+            input_image_size,
+            num_input_channels / group_,
+            1,
+            filter_data + group_id * W_offset,
+            Xdata + group_id * X_offset,
+            0,
+            col_buffer_data,
+            &CPUMathUtil::Instance());
 
-      // Col2im
-      Math::Col2im<T, CPUMathUtil, StorageOrder::NCHW>(
-          col_buffer_data,
-          C,
-          Y_dims[2],
-          Y_dims[3],
-          kernel_shape[0],
-          kernel_shape[1],
-          1,
-          1,
-          pads[0],
-          pads[1],
-          pads[2],
-          pads[3],
-          strides[0],
-          strides[1],
-          Ydata,
-          &CPUMathUtil::Instance());
+        // Col2im
+        Math::Col2im<T, CPUMathUtil, StorageOrder::NCHW>(
+            col_buffer_data,
+            num_output_channels / group_,
+            Y_dims[2],
+            Y_dims[3],
+            kernel_shape[0],
+            kernel_shape[1],
+            1,
+            1,
+            pads[0],
+            pads[1],
+            pads[2],
+            pads[3],
+            strides[0],
+            strides[1],
+            Ydata + group_id * Y_offset,
+            &CPUMathUtil::Instance());
+      }
 
       if (B != nullptr) {
-        auto Ymatrix = EigenMatrixMap<T>(Ydata, output_image_size, C);
-        auto Bvec = ConstEigenVectorMap<T>(B->template Data<T>(), C);
+        auto Ymatrix = EigenMatrixMap<T>(Ydata, output_image_size, num_output_channels);
+        auto Bvec = ConstEigenVectorMap<T>(B->template Data<T>(), num_output_channels);
         Ymatrix.rowwise() += Bvec.transpose();
       }
 
-      Xdata += M * H * W;
-      Ydata += Yshape.Size() / Yshape[0];
+      Xdata += X_offset * group_;
+      Ydata += Y_offset * group_;
     }
 
     return Status::OK();

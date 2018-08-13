@@ -12,6 +12,7 @@ struct ConvTransposeOpAttributes {
   vector<int64_t> output_shape;
   vector<int64_t> pads;
   vector<int64_t> strides;
+  int64_t group;
 };
 
 void TestConvTransposeOp(const ConvTransposeOpAttributes& attributes,
@@ -31,6 +32,7 @@ void TestConvTransposeOp(const ConvTransposeOpAttributes& attributes,
   }
   test.AddAttribute("pads", attributes.pads);
   test.AddAttribute("strides", attributes.strides);
+  test.AddAttribute("group", attributes.group);
 
   LOTUS_ENFORCE(inputs.size() <= 3, "Our name array is only setup to handle 3 inputs");
   const char* szNames[] = {"X", "W", "B"};
@@ -48,7 +50,8 @@ TEST(ConvTransposeTest, ConvTranspose_1) {
       vector<int64_t>{1, 1},        // output_padding
       {},                           // output_shape
       vector<int64_t>{1, 1, 1, 1},  // pads
-      vector<int64_t>{2, 2}         // strides
+      vector<int64_t>{2, 2},        // strides
+      1                             // group
   };
   vector<float> X = {0.16857791f, -0.15161794f, 0.08540368f,
                      0.1820628f, -0.21746576f, 0.08245695f,
@@ -74,7 +77,8 @@ TEST(ConvTransposeTest, ConvTranspose_Bias_1) {
       vector<int64_t>{0, 0},        // output_padding
       {},                           // output_shape
       vector<int64_t>{1, 1, 1, 1},  // pads
-      vector<int64_t>{1, 1}         // strides
+      vector<int64_t>{1, 1},        // strides
+      1                             // group
   };
   vector<float> X = {0.22572887f, -0.07105902f, -0.40399021f, -0.14461157f, 0.05367219f,
                      -0.08353302f, 0.41023391f, 0.42745841f, -0.3769345f, -0.42057109f,
@@ -103,7 +107,8 @@ TEST(ConvTransposeTest, ConvTranspose_Bias_2) {
       vector<int64_t>{0, 0},        // output_padding
       {},                           // output_shape
       vector<int64_t>{0, 0, 0, 0},  // pads
-      vector<int64_t>{1, 1}         // strides
+      vector<int64_t>{1, 1},        // strides
+      1                             // group
   };
   vector<float> X = {0.01270282f, 0.09657472f, -0.36909008f, -0.08085269f,
                      0.0242992f, 0.40873009f, -0.46927932f, 0.34412372f,
@@ -149,7 +154,8 @@ TEST(ConvTransposeTest, ConvTranspose_Output_Shape) {
       {},                           // output_padding
       vector<int64_t>{1, 3, 4, 4},  // output_shape
       vector<int64_t>{0, 0, 0, 0},  // pads
-      vector<int64_t>{1, 1}         // strides
+      vector<int64_t>{1, 1},        // strides
+      1                             // group
   };
   int image_size = 4 * 4;
   int input_channels = 3;
@@ -187,7 +193,8 @@ TEST(ConvTransposeTest, ConvTranspose_Output_Shape2) {
       {},                            // output_padding
       vector<int64_t>{1, 1, 1, 14},  // output_shape
       vector<int64_t>{0, 0, 0, 0},   // pads
-      vector<int64_t>{1, 1}          // strides
+      vector<int64_t>{1, 1},         // strides
+      1                              // group
   };
   vector<float> X = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f};
   vector<int64_t> X_shape = {1, 1, 1, 10};
@@ -206,7 +213,8 @@ TEST(ConvTransposeTest, ConvTranspose_Output_Shape_Batch) {
       {},                            // output_padding
       vector<int64_t>{2, 1, 1, 14},  // output_shape
       vector<int64_t>{0, 0, 0, 0},   // pads
-      vector<int64_t>{1, 1}          // strides
+      vector<int64_t>{1, 1},         // strides
+      1                              // group
   };
   vector<float> X = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f,
                      10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f};
@@ -227,7 +235,8 @@ TEST(ConvTransposeTest, ConvTranspose_Invalid_Kernel_Shape) {
       {},                            // output_padding
       vector<int64_t>{2, 1, 1, 14},  // output_shape
       vector<int64_t>{0, 0, 0, 0},   // pads
-      vector<int64_t>{1, 1}          // strides
+      vector<int64_t>{1, 1},         // strides
+      1                              // group
   };
   vector<float> X = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f,
                      10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f, 16.0f, 17.0f, 18.0f, 19.0f};
@@ -242,6 +251,51 @@ TEST(ConvTransposeTest, ConvTranspose_Invalid_Kernel_Shape) {
   TestConvTransposeOp(attrs, {X, W, B}, {X_shape, W_shape, B_shape}, expected_vals, Y_shape,
                       OpTester::ExpectResult::kExpectFailure,
                       "kernel width does not match filter width. kernel_width: 1 filter_width: 5");
+}
+
+TEST(ConvTransposeTest, ConvTranspose_onnx) {
+  ConvTransposeOpAttributes attrs = {
+      vector<int64_t>{3, 3},        // kernel_shape
+      {},                           // output_padding
+      {},                           // output_shape
+      vector<int64_t>{0, 0, 0, 0},  // pads
+      vector<int64_t>{1, 1},        // strides
+      1                             // group
+  };
+  vector<float> X = {0., 1., 2., 3., 4., 5., 6., 7., 8.};
+  vector<int64_t> X_shape = {1, 1, 3, 3};
+  vector<float> W = {1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.};
+  vector<int64_t> W_shape = {1, 2, 3, 3};
+  vector<int64_t> Y_shape = {1, 2, 5, 5};
+  auto expected_vals = {0.f, 1.f, 3.f, 3.f, 2.f, 3.f,
+                        8.f, 15.f, 12.f, 7.f,
+                        9.f, 21.f, 36.f, 27.f, 15.f,
+                        9.f, 20.f, 33.f, 24.f, 13.f,
+                        6.f, 13.f, 21.f, 15.f, 8.f,
+                        0.f, 1.f, 3.f, 3.f, 2.f,
+                        3.f, 8.f, 15.f, 12.f, 7.f,
+                        9.f, 21.f, 36.f, 27.f, 15.f,
+                        9.f, 20.f, 33.f, 24.f, 13.f,
+                        6.f, 13.f, 21.f, 15.f, 8.f};
+  TestConvTransposeOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
+}
+
+TEST(ConvTransposeTest, ConvTranspose_onnx_group) {
+  ConvTransposeOpAttributes attrs = {
+      vector<int64_t>{1, 1},        // kernel_shape
+      {},                           // output_padding
+      {},                           // output_shape
+      vector<int64_t>{0, 0, 0, 0},  // pads
+      vector<int64_t>{1, 1},        // strides
+      4                             // group
+  };
+  vector<float> X = {0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f, 11.f, 12.f, 13.f, 14.f, 15.f};
+  vector<int64_t> X_shape = {1, 16, 1, 1};
+  vector<float> W = {0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f, 9.f, 10.f, 11.f, 12.f, 13.f, 14.f, 15.f, 16.f, 17.f, 18.f, 19.f, 20.f, 21.f, 22.f, 23.f, 24.f, 25.f, 26.f, 27.f, 28.f, 29.f, 30.f, 31.0f};
+  vector<int64_t> W_shape = {16, 2, 1, 1};
+  vector<int64_t> Y_shape = {1, 8, 1, 1};
+  auto expected_vals = {28.f, 34.f, 252.f, 274.f, 732.f, 770.f, 1468.f, 1522.f};
+  TestConvTransposeOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
 }
 
 }  // namespace Test
