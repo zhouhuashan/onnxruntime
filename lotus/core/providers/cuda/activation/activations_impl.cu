@@ -7,6 +7,13 @@ namespace Lotus {
 namespace Cuda {
 
 template <typename T>
+struct OP_Affine : public CtxAffine {
+  __device__ __inline__ T operator()(const T& a) const {
+    return a * (T)alpha + (T)beta;
+  }
+};
+
+template <typename T>
 struct OP_Elu : public CtxElu {
   __device__ __inline__ T operator()(const T& a) const {
     return a > (T)0 ? a : (T)alpha * (_Exp(a) - (T)1);

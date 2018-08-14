@@ -38,6 +38,23 @@ namespace Cuda {
   }
 
 template <typename T>
+class Affine final : public UnaryElementwise {
+ public:
+  Affine(const OpKernelInfo& info) : UnaryElementwise(info) {
+    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
+    LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
+  }
+
+  Status ComputeInternal(OpKernelContext* context) const override;
+
+ private:
+  MAKE_FUNC_CTX_ALPHA_BETA()
+
+  float alpha_;
+  float beta_;
+};
+
+template <typename T>
 class Elu final : public UnaryElementwise {
  public:
   Elu(const OpKernelInfo& info) : UnaryElementwise(info) {

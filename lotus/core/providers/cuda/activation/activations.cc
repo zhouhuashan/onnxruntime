@@ -42,7 +42,8 @@ namespace Cuda {
   UNARY_ACTIVATION_OP_TYPED(name, ver, float)     \
   UNARY_ACTIVATION_OP_TYPED(name, ver, double)
 
-UNARY_ACTIVATION_OP_HFD(Elu, 6)
+UNARY_ACTIVATION_OP_HFD(Affine, 1);
+UNARY_ACTIVATION_OP_HFD(Elu, 6);
 UNARY_ACTIVATION_OP_HFD(HardSigmoid, 6);
 UNARY_ACTIVATION_OP_HFD(LeakyRelu, 6);
 UNARY_ACTIVATION_OP_HFD(ParametricSoftplus, 1);
@@ -55,7 +56,6 @@ UNARY_ACTIVATION_OP_HFD(Softsign, 1);
 UNARY_ACTIVATION_OP_HFD(Tanh, 6);
 UNARY_ACTIVATION_OP_HFD(ThresholdedRelu, 1);
 
-//REGISTER_ACTIVATION_KERNEL(PRelu, 7);
 
 }  // namespace Cuda
 }  // namespace Lotus

@@ -573,7 +573,7 @@ TEST(MathOpTest, AffineDefaultAttributes) {
   std::vector<int64_t> dims{2, 2};
   test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("B", dims, {0.0f, 1.0f, 2.0f, 3.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(MathOpTest, Affine) {
@@ -583,7 +583,7 @@ TEST(MathOpTest, Affine) {
   test.AddAttribute("beta", 1.0f);
   test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("B", dims, {1.0f, 3.0f, 5.0f, 7.0f});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 template <float (&op)(float value)>
