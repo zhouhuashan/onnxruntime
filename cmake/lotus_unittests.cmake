@@ -304,11 +304,12 @@ else()
 endif()
 
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
+lotus_add_include_to_target(onnx_test_runner_common onnx protobuf::libprotobuf)
 add_dependencies(onnx_test_runner_common ${lotus_EXTERNAL_DEPENDENCIES})
-target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/external/onnx/onnx $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
-lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${PROJECT_SOURCE_DIR}/external/onnx TARGET onnx_test_runner_common)
+lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${LOTUS_ROOT}/core/protobuf TARGET onnx_test_runner_common)
 
 
 
@@ -428,9 +429,5 @@ file(GLOB lotus_perf_test_src ${lotus_perf_test_src_patterns})
 add_executable(lotus_perf_test ${lotus_perf_test_src})
 target_include_directories(lotus_perf_test PUBLIC ${lotusIR_graph_header} ${onnx_test_runner_src_dir} ${lotus_exec_src_dir})
 
-if(WIN32)
-    target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
-else ()
-   target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs})
-endif()
+target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
 set_target_properties(lotus_perf_test PROPERTIES FOLDER "LotusTest")

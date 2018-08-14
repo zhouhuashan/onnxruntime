@@ -204,11 +204,18 @@ set_target_properties(gmock_main PROPERTIES FOLDER "External/GTest")
 set_target_properties(gtest PROPERTIES FOLDER "External/GTest")
 set_target_properties(gtest_main PROPERTIES FOLDER "External/GTest")
 
+function(lotus_add_include_to_target dst_target)
+    foreach(src_target ${ARGN})
+        target_include_directories(${dst_target} PRIVATE $<TARGET_PROPERTY:${src_target},INTERFACE_INCLUDE_DIRECTORIES>)
+        target_compile_definitions(${dst_target} PRIVATE $<TARGET_PROPERTY:${src_target},INTERFACE_COMPILE_DEFINITIONS>)
+    endforeach()
+endfunction()
+
 # ONNX
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx EXCLUDE_FROM_ALL)
+add_subdirectory(onnx)
 set_target_properties(onnx PROPERTIES FOLDER "External/ONNX")
 set_target_properties(onnx_proto PROPERTIES FOLDER "External/ONNX")
-set_target_properties(gen_onnx_proto PROPERTIES FOLDER "External/ONNX")
+#set_target_properties(gen_onnx_proto PROPERTIES FOLDER "External/ONNX")
 # fix a warning in onnx code we can't do anything about
 if (MSVC)
     target_compile_options(onnx_proto PRIVATE /wd4146) # unary minus operator applied to unsigned type
@@ -232,8 +239,6 @@ set(TVM_INCLUDESS ${PROJECT_SOURCE_DIR}/external/tvm/include
 add_definitions(-DUSE_TVM)
 endif()
 
-add_definitions(-DONNX_ML)
-add_definitions(-DONNX_NAMESPACE=onnx)
 if (lotus_RUN_ONNX_TESTS)
   add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
 endif()

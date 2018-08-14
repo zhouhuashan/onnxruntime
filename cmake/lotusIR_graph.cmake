@@ -9,8 +9,7 @@ file(GLOB_RECURSE lotusIR_defs_src
 
 add_library(lotusIR_graph ${lotusIR_graph_src} ${lotusIR_defs_src})
 add_dependencies(lotusIR_graph onnx_proto gsl)
-target_include_directories(lotusIR_graph PRIVATE $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES>  $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
-
+lotus_add_include_to_target(lotusIR_graph onnx protobuf::libprotobuf)
 
 set_target_properties(lotusIR_graph PROPERTIES FOLDER "Lotus")
 set_target_properties(lotusIR_graph PROPERTIES LINKER_LANGUAGE CXX)

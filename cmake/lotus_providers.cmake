@@ -10,7 +10,8 @@ file(GLOB lotus_providers_common_srcs
     
 source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_common_srcs} ${lotus_providers_srcs})
 add_library(lotus_providers ${lotus_providers_common_srcs} ${lotus_providers_srcs})
-target_include_directories(lotus_providers PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS} $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+lotus_add_include_to_target(lotus_providers onnx protobuf::libprotobuf)
+target_include_directories(lotus_providers PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS})
 
 add_dependencies(lotus_providers eigen gsl onnx)
 
@@ -23,7 +24,7 @@ file(GLOB lotus_session_srcs
     )
 
 add_library(lotus_session ${lotus_session_srcs})
-target_include_directories(lotus_session PRIVATE $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+lotus_add_include_to_target(lotus_session onnx protobuf::libprotobuf)
 add_dependencies(lotus_session ${lotus_EXTERNAL_DEPENDENCIES})
 
 set_target_properties(lotus_session PROPERTIES FOLDER "Lotus")
@@ -38,12 +39,15 @@ if (lotus_USE_CUDA)
         "${LOTUS_ROOT}/core/providers/cuda/*.cuh"
     )
     source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_cuda_cc_srcs})
+    #TODO: remove lotus_providers_cuda_cc_obj
     add_library(lotus_providers_cuda_cc_obj OBJECT ${lotus_providers_cuda_cc_srcs})
+    lotus_add_include_to_target(lotus_providers_cuda_cc_obj onnx protobuf::libprotobuf)
     add_dependencies(lotus_providers_cuda_cc_obj eigen ${lotus_EXTERNAL_DEPENDENCIES})
     set_target_properties(lotus_providers_cuda_cc_obj PROPERTIES FOLDER "Lotus")
-    target_include_directories(lotus_providers_cuda_cc_obj PRIVATE ${eigen_INCLUDE_DIRS} $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_include_directories(lotus_providers_cuda_cc_obj PRIVATE ${eigen_INCLUDE_DIRS})
 
     add_library(lotus_providers_cuda $<TARGET_OBJECTS:lotus_providers_cuda_cc_obj> ${lotus_providers_cuda_cu_srcs})
+    lotus_add_include_to_target(lotus_providers_cuda onnx protobuf::libprotobuf)
     set_target_properties(lotus_providers_cuda PROPERTIES LINKER_LANGUAGE CUDA)
     set_target_properties(lotus_providers_cuda PROPERTIES FOLDER "Lotus")
     target_link_libraries(lotus_providers_cuda PRIVATE lotus_framework lotus_common ${lotus_EXTERNAL_LIBRARIES})
@@ -78,9 +82,10 @@ if (lotus_USE_MKLDNN)
 
     source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_mkldnn_cc_srcs})
     add_library(lotus_providers_mkldnn ${lotus_providers_mkldnn_cc_srcs})
+    lotus_add_include_to_target(lotus_providers_mkldnn onnx protobuf::libprotobuf)
     add_dependencies(lotus_providers_mkldnn eigen ${lotus_EXTERNAL_DEPENDENCIES})
     set_target_properties(lotus_providers_mkldnn PROPERTIES FOLDER "Lotus")
-    target_include_directories(lotus_providers_mkldnn PRIVATE ${eigen_INCLUDE_DIRS} $<TARGET_PROPERTY:onnx,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_include_directories(lotus_providers_mkldnn PRIVATE ${eigen_INCLUDE_DIRS})
     set_target_properties(lotus_providers_mkldnn PROPERTIES LINKER_LANGUAGE CXX)
 endif()
 
