@@ -157,7 +157,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
       }
 
       break;
-	}
+    }
     case 3:
     {
       int64_t x_step = height * width * depth;
