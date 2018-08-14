@@ -36,8 +36,8 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--build", action='store_true', help="Build.")
     parser.add_argument("--clean", action='store_true', help="Run 'cmake --build --target clean' for the selected config/s.")
     parser.add_argument("--parallel", action='store_true', help='''Use parallel build.
-    The build setup doesn't get all dependencies right, so --parallel only works if you're just rebuilding Lotus code. 
-    If you've done an update that fetched external dependencies you have to build without --parallel the first time. 
+    The build setup doesn't get all dependencies right, so --parallel only works if you're just rebuilding Lotus code.
+    If you've done an update that fetched external dependencies you have to build without --parallel the first time.
     Once that's done, run with "--build --parallel --test" to just build in parallel and run tests.''')
     parser.add_argument("--test", action='store_true', help="Run unit tests.")
 
@@ -78,6 +78,7 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--use_preinstalled_eigen", action='store_true', help="Use pre-installed eigen.")
     parser.add_argument("--eigen_path", help="Path to pre-installed eigen.")
     parser.add_argument("--use_tvm", action="store_true", help="Build with tvm")
+    parser.add_argument("--use_openmp", action='store_true', help="Build with OpenMP.")
     return parser.parse_args()
 
 def is_windows():
@@ -165,13 +166,14 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Dlotus_GENERATE_TEST_REPORTS=ON",
                  "-DPYTHON_EXECUTABLE=" + sys.executable,
                  "-Dlotus_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
-                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),  
+                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),
                  "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc and not args.enable_pybind else "OFF"),
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
                  "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
                  "-Dlotus_USE_MKLDNN=" + ("ON" if args.use_mkldnn else "OFF"),
                  "-Dlotus_USE_MKLML=" + ("ON" if args.use_mklml else "OFF"),
+                 "-Dlotus_USE_OPENMP=" + ("ON" if args.use_openmp else "OFF"),
                  "-Dlotus_USE_TVM=" + ("ON" if args.use_tvm else "OFF")
                  ]
 
@@ -325,10 +327,10 @@ def add_dir_if_exists(dir, dir_list):
         dir_list.append(dir)
 
 def setup_cuda_vars(args):
-    
+
     cuda_home = ""
     cudnn_home = ""
-    
+
     if (args.use_cuda):
         cuda_home = args.cuda_home if args.cuda_home else os.getenv("CUDA_HOME")
         cudnn_home = args.cudnn_home if args.cudnn_home else os.getenv("CUDNN_HOME")

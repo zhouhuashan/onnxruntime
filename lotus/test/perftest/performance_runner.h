@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 // Lotus dependencies
 #include <core/common/logging/sinks/clog_sink.h>
@@ -31,9 +32,31 @@ struct PerformanceResult {
       LOGF_DEFAULT(ERROR, "failed to open result file");
       return;
     }
+
     for (size_t runs = 0; runs < time_costs.size(); runs++) {
       outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size << "," << average_CPU_usage << "," << runs << std::endl;
     }
+
+    if (time_costs.size() > 0) {
+      std::vector<double> sorted_time = time_costs;
+
+      size_t total = sorted_time.size();
+      size_t n50 = static_cast<size_t>(total * 0.5);
+      size_t n90 = static_cast<size_t>(total * 0.9);
+      size_t n95 = static_cast<size_t>(total * 0.95);
+      size_t n99 = static_cast<size_t>(total * 0.99);
+      size_t n999 = static_cast<size_t>(total * 0.999);
+
+      std::sort(sorted_time.begin(), sorted_time.end());
+
+      outfile << std::endl;
+      outfile << "P50 Latency is " << sorted_time[n50] << "sec" << std::endl;
+      outfile << "P90 Latency is " << sorted_time[n90] << "sec" << std::endl;
+      outfile << "P95 Latency is " << sorted_time[n95] << "sec" << std::endl;
+      outfile << "P99 Latency is " << sorted_time[n99] << "sec" << std::endl;
+      outfile << "P999 Latency is " << sorted_time[n999] << "sec" << std::endl;
+    }
+
     outfile.close();
   }
 };

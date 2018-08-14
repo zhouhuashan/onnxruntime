@@ -37,6 +37,7 @@ option(lotus_BUILD_UNIT_TESTS "Build Lotus unit tests" ON)
 option(lotus_USE_PREINSTALLED_EIGEN "Use pre-installed EIGEN. Need to provide eigen_SOURCE_PATH if turn this on." OFF)
 option(lotus_BUILD_BENCHMARKS "Build Lotus micro-benchmarks" OFF)
 option(lotus_USE_TVM "Build tvm for code-gen" OFF)
+option(lotus_USE_OPENMP "Build with OpenMP support" OFF)
 
 if(lotus_BUILD_BENCHMARKS)
   if(NOT TARGET benchmark)

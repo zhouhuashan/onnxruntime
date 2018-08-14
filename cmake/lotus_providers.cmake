@@ -18,6 +18,10 @@ add_dependencies(lotus_providers eigen gsl onnx)
 set_target_properties(lotus_providers PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(lotus_providers PROPERTIES FOLDER "Lotus")
 
+if (WIN32 AND lotus_USE_OPENMP AND ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+  add_definitions(/openmp)
+endif()
+
 file(GLOB lotus_session_srcs
     "${LOTUS_ROOT}/core/session/*.h"
     "${LOTUS_ROOT}/core/session/*.cc"
