@@ -22,7 +22,7 @@ TEST(TensorOpTest, Identity) {
   std::vector<float> X{1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
   test.AddInput<float>("input", {2, 3}, X);
   test.AddOutput<float>("output", {2, 3}, X);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, IdentityString) {
@@ -38,7 +38,7 @@ TEST(TensorOpTest, ShapeTest2D) {
 
   test.AddInput<float>("data", {2, 3}, std::vector<float>(6, 1.0f));
   test.AddOutput<int64_t>("shape", {2}, {2, 3});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, ShapeTest3D) {
@@ -46,7 +46,7 @@ TEST(TensorOpTest, ShapeTest3D) {
 
   test.AddInput<float>("data", {2, 3, 4}, std::vector<float>(24, 1.0f));
   test.AddOutput<int64_t>("shape", {3}, {2, 3, 4});
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 template <typename SrcType,

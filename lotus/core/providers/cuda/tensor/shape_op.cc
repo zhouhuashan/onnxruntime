@@ -18,10 +18,11 @@ ONNX_OPERATOR_KERNEL_EX(
     kOnnxDomain,
     1,
     kCudaExecutionProvider,
-    KernelDefBuilder().OutputMemoryType<kMemTypeCPUOutput>(0)
-                    .TypeConstraint("T", shapeOpTypeConstraints)
-                    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
+    KernelDefBuilder()
+        .OutputMemoryType<kMemTypeCPUOutput>(0)
+        .TypeConstraint("T", shapeOpTypeConstraints)
+        .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
     Shape);
 
-}
+}  // namespace Cuda
 }  // namespace Lotus
