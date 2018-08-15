@@ -48,7 +48,7 @@ Model::Model(const std::string& graph_name,
   auto* p_domain_to_version = &domain_to_version;
   std::unordered_map<std::string, int> domain_to_version_static;
   if (p_domain_to_version->empty()) {
-    domain_to_version_static = std::move(schema_registry->GetLatestOpsetVersions(is_onnx_domain_only));
+    domain_to_version_static = schema_registry->GetLatestOpsetVersions(is_onnx_domain_only);
     p_domain_to_version = &domain_to_version_static;
   }
   for (auto domain : *p_domain_to_version) {

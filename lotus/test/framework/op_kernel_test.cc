@@ -32,9 +32,6 @@ class XPUExecutionProvider : public IExecutionProvider {
     // The XPU interface does not return anything interesting.
     return nullptr;
   }
-
- private:
-  GraphTransformer* graph_transformer_ = nullptr;
 };
 
 }  // namespace Test
