@@ -37,18 +37,17 @@ class PosixEnvTime : public EnvTime {
 
 #if defined(PLATFORM_POSIX) || defined(__ANDROID__)
 EnvTime* EnvTime::Default() {
-  static EnvTime* default_env_time = new PosixEnvTime;
-  return default_env_time;
+  static PosixEnvTime default_env_time;
+  return &default_env_time;
 }
 #endif
 
 bool GetMonotonicTimeCounter(TIME_SPEC* value) {
-  return clock_gettime(CLOCK_MONOTONIC,value) == 0;
+  return clock_gettime(CLOCK_MONOTONIC, value) == 0;
 }
 
-
 void SetTimeSpecToZero(TIME_SPEC* value) {
-  memset(value,0,sizeof(TIME_SPEC));
+  memset(value, 0, sizeof(TIME_SPEC));
 }
 
 void AccumulateTimeSpec(TIME_SPEC* base, TIME_SPEC* y, TIME_SPEC* x) {
@@ -68,16 +67,16 @@ void AccumulateTimeSpec(TIME_SPEC* base, TIME_SPEC* y, TIME_SPEC* x) {
      tv_nsec is certainly positive. */
   base->tv_sec += x->tv_sec - y->tv_sec;
   base->tv_nsec += x->tv_nsec - y->tv_nsec;
-  if(base->tv_nsec >= 1000000000){
+  if (base->tv_nsec >= 1000000000) {
     base->tv_nsec -= 1000000000;
-    ++base->tv_sec;  
+    ++base->tv_sec;
   }
 }
 
 //Return the interval in seconds.
 //If the function fails, the return value is zero
 double TimeSpecToSeconds(TIME_SPEC* value) {
-  return value->tv_sec + value->tv_nsec/(double)1000000000;
+  return value->tv_sec + value->tv_nsec / (double)1000000000;
 }
 
 }  // namespace Lotus
