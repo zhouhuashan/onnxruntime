@@ -46,7 +46,7 @@ void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE pci, void* context, LOTU
   }
 }
 
-void PTestRunner::Start(size_t concurrent_runs) {
+void PTestRunner::Start(LOTUS_CALLBACK_INSTANCE, size_t concurrent_runs) {
   concurrent_runs = std::min<size_t>(std::max<size_t>(1, concurrent_runs), c_->GetDataCount());
   next_test_to_run = 0;
   for (size_t i = 0; i != concurrent_runs; ++i) {
@@ -385,13 +385,13 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   return res;
 }
 
-void SeqTestRunner::Start(size_t) {
+void SeqTestRunner::Start(LOTUS_CALLBACK_INSTANCE pci, size_t) {
   const size_t data_count = c_->GetDataCount();
   for (size_t idx_repeat = 0; idx_repeat != repeat_count_; ++idx_repeat)
     for (size_t idx_data = 0; idx_data != data_count; ++idx_data) {
       RunTask(idx_data, nullptr, idx_repeat == 0);
     }
-  finish(nullptr);
+  finish(pci);
 }
 
 void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, PThreadPool tpool, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished) {
@@ -429,7 +429,7 @@ void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurr
     } else {
       r = new SeqTestRunner(session_object, info, repeat_count, on_finished);
     }
-    r->Start(concurrent_runs);
+    r->Start(pci, concurrent_runs);
     return;
   }
 end:

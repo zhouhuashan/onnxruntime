@@ -50,7 +50,7 @@ class DataRunner {
   void RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store_result);
   virtual ~DataRunner() {}
 
-  virtual void Start(size_t concurrent_runs) = 0;
+  virtual void Start(LOTUS_CALLBACK_INSTANCE pci, size_t concurrent_runs) = 0;
 
   void finish(LOTUS_CALLBACK_INSTANCE pci) {
     std::shared_ptr<TestCaseResult> res = result;
@@ -96,7 +96,7 @@ class SeqTestRunner : public DataRunner {
                 ITestCase* c, size_t repeat_count,
                 TestCaseCallBack on_finished1);
 
-  void Start(size_t concurrent_runs) override;
+  void Start(LOTUS_CALLBACK_INSTANCE pci, size_t concurrent_runs) override;
   void OnTaskFinished(size_t, EXECUTE_RESULT, LOTUS_CALLBACK_INSTANCE) noexcept override {}
 };
 
@@ -107,7 +107,7 @@ class PTestRunner : public DataRunner {
   void OnTaskFinished(size_t task_id, EXECUTE_RESULT res, LOTUS_CALLBACK_INSTANCE pci) noexcept override;
 
  public:
-  void Start(size_t concurrent_runs) override;
+  void Start(LOTUS_CALLBACK_INSTANCE pci, size_t concurrent_runs) override;
 
   PTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
               ITestCase* c, PThreadPool tpool,
