@@ -1,12 +1,10 @@
 #ifdef USE_CUDA
-#include <core/providers/cuda/cuda_execution_provider.h> //TODO(@chasun): this is a temp hack
+#include <core/providers/cuda/cuda_execution_provider.h>  //TODO(@chasun): this is a temp hack
 #endif
 #include "testenv.h"
-#ifdef _WIN32
-#include "FixedCountFinishCallbackWin.h"
-#else
+
 #include "FixedCountFinishCallback.h"
-#endif
+
 #include <core/graph/constants.h>
 #include <core/framework/allocator.h>
 #include <core/common/logging/logging.h>

@@ -22,7 +22,7 @@ enum class EXECUTE_RESULT {
 
 class TestCaseResult {
  public:
-  TestCaseResult(size_t count, EXECUTE_RESULT result, const std::string& node_name1) : excution_result_(count, result), node_name(node_name1) {
+  TestCaseResult(size_t count, EXECUTE_RESULT result, const std::string& node_name1) : node_name(node_name1), excution_result_(count, result) {
     Lotus::SetTimeSpecToZero(&spent_time_);
   }
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <condition_variable>
+#include "sync_api.h"
+
 #include <mutex>
-#include "TestCaseResult.h"
 
 template <typename T>
 class FixedCountFinishCallbackImpl {
@@ -10,7 +10,7 @@ class FixedCountFinishCallbackImpl {
   //remain tasks
   int s_;
   std::mutex m_;
-  std::condition_variable cond_;
+  LOTUS_EVENT finish_event_;
   bool failed = false;
   std::vector<std::shared_ptr<T>> results_;
 
@@ -18,42 +18,42 @@ class FixedCountFinishCallbackImpl {
   const std::vector<std::shared_ptr<T>>& getResults() const {
     return results_;
   }
-  FixedCountFinishCallbackImpl(int s) : s_(s), results_(s) {}
-
-  void fail() {
-    std::lock_guard<std::mutex> g(m_);
-    s_ = 0;  //fail earlier
-    failed = true;
-    cond_.notify_all();
+  FixedCountFinishCallbackImpl(int s) : s_(s), results_(s) {
+    LOTUS_ENFORCE(CreateLotusEvent(&finish_event_).IsOK());
   }
 
-  void onFinished(size_t task_index, std::shared_ptr<T> result) {
-    std::lock_guard<std::mutex> g(m_);
-    s_--;
-    results_.at(task_index) = result;
-    cond_.notify_all();
+  Lotus::Common::Status fail(LOTUS_CALLBACK_INSTANCE pci) {
+    {
+      std::lock_guard<std::mutex> g(m_);
+      failed = true;
+      s_ = 0;  //fail earlier
+    }
+    return LotusSetEventWhenCallbackReturns(pci, finish_event_);
   }
 
-  bool shouldStop() { return failed; }
+  Lotus::Common::Status onFinished(size_t task_index, std::shared_ptr<T> result, LOTUS_CALLBACK_INSTANCE pci) {
+    int v;
+    {
+      std::lock_guard<std::mutex> g(m_);
+      v = --s_;
+      results_.at(task_index) = result;
+    }
+    if (v == 0) {
+      return LotusSetEventWhenCallbackReturns(pci, finish_event_);
+    }
+    return Lotus::Common::Status::OK();
+  }
+
+  bool shouldStop() {
+    std::lock_guard<std::mutex> g(m_);
+    return failed;
+  }
+  //this function can only be invoked once
   bool wait() {
-    std::unique_lock<std::mutex> lk(m_);
-    while (s_) {
-      cond_.wait(lk);
+    LOTUS_ENFORCE(WaitAndCloseEvent(finish_event_).IsOK());
+    {
+      std::lock_guard<std::mutex> g(m_);
+      return !failed;
     }
-    return !failed;
-  }
-
-  template <typename T1>
-  bool wait_for(const T1& dur) {
-    std::unique_lock<std::mutex> lk(m_);
-    while (s_) {
-      std::cv_status state = cond_.wait_for(lk, dur);
-      if (state == std::cv_status::timeout) {
-        return false;
-      }
-    }
-    return !failed;
   }
 };
-
-using FixedCountFinishCallback = FixedCountFinishCallbackImpl<TestCaseResult>;

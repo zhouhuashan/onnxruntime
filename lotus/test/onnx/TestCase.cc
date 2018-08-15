@@ -46,12 +46,12 @@ Common::Status Convert(const onnx::TensorProto& tensor_proto, Tensor** out, Allo
 }
 
 template <>
-Common::Status Convert(const google::protobuf::RepeatedPtrField< ::Lotus::proto::MapInt64ToFloat>& data, VectorMapInt64ToFloat** vec, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::RepeatedPtrField< ::Lotus::proto::MapInt64ToFloat>& data, VectorMapInt64ToFloat** vec, AllocatorPtr) {
   return ConvertVector<google::protobuf::RepeatedPtrField< ::Lotus::proto::MapInt64ToFloat>, VectorMapInt64ToFloat>(data, vec);
 }
 
 template <>
-Common::Status Convert(const google::protobuf::RepeatedPtrField< ::Lotus::proto::MapStringToFloat>& data, VectorMapStringToFloat** vec, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::RepeatedPtrField< ::Lotus::proto::MapStringToFloat>& data, VectorMapStringToFloat** vec, AllocatorPtr) {
   return ConvertVector<google::protobuf::RepeatedPtrField< ::Lotus::proto::MapStringToFloat>, VectorMapStringToFloat>(data, vec);
 }
 
@@ -65,49 +65,49 @@ void ConvertMap(const InputType& data, OutputType** out) {
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<std::string, std::string>& data, MapStringToString** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<std::string, std::string>& data, MapStringToString** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<std::string, int64_t>& data, MapStringToInt64** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<std::string, int64_t>& data, MapStringToInt64** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<std::string, float>& data, MapStringToFloat** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<std::string, float>& data, MapStringToFloat** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<std::string, double>& data, MapStringToDouble** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<std::string, double>& data, MapStringToDouble** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<int64_t, std::string>& data, MapInt64ToString** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<int64_t, std::string>& data, MapInt64ToString** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<int64_t, int64_t>& data, MapInt64ToInt64** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<int64_t, int64_t>& data, MapInt64ToInt64** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<int64_t, float>& data, MapInt64ToFloat** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<int64_t, float>& data, MapInt64ToFloat** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-Common::Status Convert(const google::protobuf::Map<int64_t, double>& data, MapInt64ToDouble** out, AllocatorPtr allocator) {
+Common::Status Convert(const google::protobuf::Map<int64_t, double>& data, MapInt64ToDouble** out, AllocatorPtr) {
   ConvertMap(data, out);
   return Status::OK();
 }
@@ -205,7 +205,7 @@ Status LoopDataFile(const path& outputs_pb, Lotus::AllocatorPtr allocator, FUNC 
         st = Status(LOTUS, NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
     }
     if (!st.IsOK()) break;
-    st = func(data.name(), value.get());
+    st = func(data.name(), value.get(), data.debug_info());
     if (!st.IsOK()) break;
   }
   if (!st.IsOK()) return LOTUS_MAKE_STATUS(LOTUS, FAIL, "load the ", item_id, "-th item in file '", outputs_pb.string(), "' failed,", st.ErrorMessage());
@@ -232,6 +232,95 @@ static void RepeatedPtrFieldToVector(const ::google::protobuf::RepeatedPtrField<
   }
 }
 }  // namespace
+
+class DataLoader {
+ public:
+  virtual Lotus::Common::Status Load(const std::experimental::filesystem::v1::path& p, std::unique_ptr<Lotus::MLValue>& value) const = 0;
+  virtual ~DataLoader() {}
+};
+/**
+   * test_case_dir must have contents of:
+   * model.onnx
+   * ???/input_??.pb
+   * ???/output_??.pb
+   * ???/input_??.pb
+   * ???/output_??.pb
+   */
+class OnnxTestCase : public ITestCase {
+ private:
+  std::unordered_map<std::string, DataLoader*> loaders_;
+  std::string test_case_name_;
+  std::experimental::filesystem::v1::path model_url_;
+  Lotus::AllocatorPtr allocator_;
+  std::vector<std::string> debuginfo_strings;
+  std::mutex m_;
+  std::vector<onnx::ValueInfoProto> input_value_info_;
+  std::vector<onnx::ValueInfoProto> output_value_info_;
+
+  Lotus::Common::Status FromPbFiles(const std::vector<std::experimental::filesystem::v1::path>& files, std::vector<Lotus::MLValue>& output_values);
+  std::vector<std::experimental::filesystem::v1::path> test_data_dirs_;
+
+  std::string GetDatasetDebugInfoString(size_t dataset_id) override {
+    std::lock_guard<std::mutex> l(m_);
+    if (dataset_id < debuginfo_strings.size())
+      return debuginfo_strings[dataset_id];
+    return test_data_dirs_.at(dataset_id).string();
+  }
+  //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
+  // for https://github.com/onnx/onnx/issues/679
+  Lotus::Common::Status ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, Lotus::MLValue>& out);
+  std::string node_name_;
+  std::once_flag model_parsed_;
+  std::once_flag config_parsed_;
+  double per_sample_tolerance_;
+  double relative_per_sample_tolerance_;
+  bool post_processing_;
+  Lotus::Common::Status ParseModel();
+  Lotus::Common::Status ParseConfig();
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OnnxTestCase);
+
+ public:
+  OnnxTestCase(const Lotus::AllocatorPtr&, const std::string& test_case_name);
+  explicit OnnxTestCase(const std::string& test_case_name) : test_case_name_(test_case_name) {}
+  ~OnnxTestCase() {
+    for (auto& ivp : loaders_) {
+      delete ivp.second;
+    }
+  }
+  void SetAllocator(const Lotus::AllocatorPtr&) override;
+  Lotus::Common::Status GetPerSampleTolerance(double* value) override;
+  Lotus::Common::Status GetRelativePerSampleTolerance(double* value) override;
+  Lotus::Common::Status GetPostProcessing(bool* value) override;
+
+  const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
+    return output_value_info_[i];
+  }
+  size_t GetDataCount() const override {
+    return test_data_dirs_.size();
+  }
+  Lotus::Common::Status GetNodeName(std::string* out) override {
+    Lotus::Common::Status st = ParseModel();
+    if (st.IsOK()) *out = node_name_;
+    return st;
+  }
+  Lotus::Common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) override;
+
+  const std::experimental::filesystem::v1::path& GetModelUrl() const override {
+    return model_url_;
+  }
+  const std::string& GetTestCaseName() const override {
+    return test_case_name_;
+  }
+  Lotus::Common::Status LoadInputData(size_t id, std::unordered_map<std::string, Lotus::MLValue>& feeds) override;
+  Lotus::Common::Status LoadOutputData(size_t id, std::vector<Lotus::MLValue>& output_values) override;
+};
+
+ITestCase* CreateOnnxTestCase(const Lotus::AllocatorPtr& ptr, const std::string& test_case_name) {
+  return new OnnxTestCase(ptr, test_case_name);
+}
+ITestCase* CreateOnnxTestCase(const std::string& test_case_name) {
+  return new OnnxTestCase(test_case_name);
+}
 
 Status OnnxTestCase::GetPerSampleTolerance(double* value) {
   Status st = ParseConfig();
@@ -314,6 +403,7 @@ Status OnnxTestCase::SetModelPath(const path& m) {
       continue;
     }
     test_data_dirs_.push_back(test_data_set->path());
+    debuginfo_strings.push_back(test_data_set->path().string());
   }
   return Status::OK();
 }
@@ -344,7 +434,12 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, Lo
 
   path inputs_pb = test_data_dirs_[id] / "inputs.pb";
   if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
-    return LoopDataFile(inputs_pb, allocator_, [&feeds](const std::string& name, Lotus::MLValue* value) {
+    std::ostringstream oss;
+    oss << debuginfo_strings[id];
+    st = LoopDataFile(inputs_pb, allocator_, [&feeds, &oss](const std::string& name, Lotus::MLValue* value, const std::string& debug_info) {
+      if (!debug_info.empty()) {
+        oss << ":" << debug_info;
+      }
       if (name.empty())
         return Status(LOTUS, FAIL, "name is empty");
       auto pv = feeds.insert(std::make_pair(name, *value));
@@ -352,6 +447,11 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, Lo
         return Status(LOTUS, FAIL, "duplicated input name");
       return Status::OK();
     });
+    {
+      std::lock_guard<std::mutex> l(m_);
+      debuginfo_strings[id] = oss.str();
+    }
+    return st;
   }
 
   std::vector<path> input_pb_files;
@@ -374,7 +474,7 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, Lo
   return Status::OK();
 }
 
-class TensorDataLoder : public DataLoder {
+class TensorDataLoder : public DataLoader {
  private:
   Lotus::AllocatorPtr allocator_;
 
@@ -424,7 +524,7 @@ Status OnnxTestCase::LoadOutputData(size_t id, std::vector<Lotus::MLValue>& outp
     return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
   path outputs_pb = test_data_dirs_[id] / "outputs.pb";
   if (std::experimental::filesystem::exists(outputs_pb)) {  //has an all-in-one output file
-    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, Lotus::MLValue* value) {
+    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, Lotus::MLValue* value, const std::string&) {
       output_values.push_back(*value);
       return Status::OK();
     });
@@ -513,12 +613,13 @@ Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pb
     const onnx::TensorProto& input = input_pbs[input_index];
     std::unique_ptr<Lotus::MLValue> v1;
     auto status = ProtoToMLValue<onnx::TensorProto, Lotus::Tensor>(input, v1, allocator_);
+    LOTUS_RETURN_IF_ERROR(status);
     out.insert(std::make_pair(name, *v1.get()));
   }
   return Status::OK();
 }
 
-OnnxTestCase::OnnxTestCase(const Lotus::AllocatorPtr& allocator, const std::string& test_case_name) : OnnxTestCase(test_case_name) {
+OnnxTestCase::OnnxTestCase(const Lotus::AllocatorPtr& allocator, const std::string& test_case_name) : test_case_name_(test_case_name) {
   SetAllocator(allocator);
 }
 

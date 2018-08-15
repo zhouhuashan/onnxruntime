@@ -1,79 +1,164 @@
-#include <core/providers/cpu/cpu_execution_provider.h>  //TODO(@chasun): this is a temp hack
 #include "runner.h"
-#include <core/common/logging/logging.h>
-#include <core/framework/tensorprotoutils.h>
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <pthread.h>
-#endif
+
 #ifdef _MSC_VER
 #include <filesystem>
 #endif
 #include <fstream>
 #include <cmath>
+
 #include <core/common/logging/logging.h>
+#include <core/graph/constants.h>
+#include <core/platform/env.h>
 #include <core/framework/compare_mlvalue.h>
-#include "TestCase.h"
+#include <core/framework/tensorprotoutils.h>
+#include <core/providers/cpu/cpu_execution_provider.h>
 #ifdef _WIN32
-#include "FixedCountFinishCallbackWin.h"
+#include <Windows.h>
+#else
+#include <pthread.h>
+#include <unsupported/Eigen/CXX11/ThreadPool>
 #endif
+#include "TestCase.h"
+#include "FixedCountFinishCallback.h"
 using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
 using namespace Lotus;
+using Lotus::Common::Status;
 
-#ifdef _WIN32
-Lotus::Common::Status SetWindowsEvent(LOTUS_CALLBACK_INSTANCE pci, HANDLE finish_event) {
-  if (pci)
-    SetEventWhenCallbackReturns(pci, finish_event);
-  else if (!SetEvent(finish_event)) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "SetEvent failed");
+void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE pci, void* context, LOTUS_WORK work) {
+  LotusCloseThreadpoolWork(work);
+  TestCaseTask* task((TestCaseTask*)context);
+  ITestCase* info = task->env.tests[task->task_id];
+  std::shared_ptr<TestCaseResult> ret;
+  try {
+    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, task->repeat_count, task->pool, pci, [task](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
+      return OnTestCaseFinished(pci, task, result);
+    });
+    return;
+  } catch (std::exception& ex) {
+    ret = std::make_shared<TestCaseResult>(info->GetDataCount(), EXECUTE_RESULT::WITH_EXCEPTION, ex.what());
   }
-  return Common::Status::OK();
+  auto status = OnTestCaseFinished(pci, task, ret);
+  if (!status.IsOK()) {
+    LOGF_DEFAULT(ERROR, "FATAL ERROR");
+    abort();
+  }
 }
-#else
-Lotus::Common::Status SetWindowsEvent(LOTUS_CALLBACK_INSTANCE, pthread_cond_t* finish_event) {
-  if (!pthread_cond_broadcast(finish_event))
-    return Common::Status::OK();
-  else
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "SetEvent failed");
-}
-#endif
 
-Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count) {
+void PTestRunner::Start(size_t concurrent_runs) {
+  concurrent_runs = std::min<size_t>(std::max<size_t>(1, concurrent_runs), c_->GetDataCount());
+  next_test_to_run = 0;
+  for (size_t i = 0; i != concurrent_runs; ++i) {
+    if (!ScheduleNew()) {
+      throw std::runtime_error("ScheduleNew task failed");
+    }
+  }
+}
+
+bool PTestRunner::ScheduleNew() {
+  size_t next_test = next_test_to_run++;
+  if (next_test >= c_->GetDataCount()) return false;
+  DataTask* t = new DataTask{this, next_test};
+  Status st = CreateAndSubmitThreadpoolWork(RunSingleDataItem, t, tpool_);
+  if (!st.IsOK()) {
+    delete t;
+    LOGF_DEFAULT(ERROR, "schedule test task failed: %s\n", st.ErrorMessage().c_str());
+    return false;
+  }
+  return true;
+}
+
+void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT, LOTUS_CALLBACK_INSTANCE pci) noexcept {
+  try {
+    ScheduleNew();
+    if (++finished == c_->GetDataCount()) {
+      //For each test case, only one DataTask can reach here
+      finish(pci);
+    }
+  } catch (std::exception& ex) {
+    LOGF_DEFAULT(ERROR, "%s:unrecoverable error:%s,exit...\n", c_->GetTestCaseName().c_str(), ex.what());
+    abort();
+  } catch (...) {
+    LOGF_DEFAULT(ERROR, "%s:unrecoverable error,exit...\n", c_->GetTestCaseName().c_str());
+    abort();
+  }
+}
+
+PTestRunner::PTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
+                         ITestCase* c, PThreadPool tpool,
+                         TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), next_test_to_run(0), finished(0), tpool_(tpool) {
+}
+
+void LOTUS_CALLBACK RunSingleDataItem(LOTUS_CALLBACK_INSTANCE instance, void* context, LOTUS_WORK work) {
+  LotusCloseThreadpoolWork(work);
+  DataTask* task((DataTask*)context);
+  PTestRunner* env = task->env;
+  const size_t task_id = task->task_id;
+  delete task;
+  env->RunTask(task_id, instance, true);
+}
+
+Status OnTestCaseFinished(LOTUS_CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result) {
+  FixedCountFinishCallback* finished = task->env.finished;
+  auto task_id = task->task_id;
+  bool failed = false;
+  {
+    std::unique_ptr<TestCaseTask> unused(task);
+    TestEnv& env = task->env;
+    int next_test = env.next_test_to_run++;
+    if (static_cast<size_t>(next_test) < env.tests.size()) {
+      //schedule the next TestCase
+      std::unique_ptr<TestCaseTask> t(new TestCaseTask{env, next_test, task->concurrent_runs, task->repeat_count, task->pool});
+      Status st = CreateAndSubmitThreadpoolWork(RunTestCase, t.get(), task->pool);
+      if (st.IsOK()) {
+        t.release();
+      } else
+        return st;
+    }
+  }
+  if (failed)
+    return finished->fail(pci);
+  else
+    return finished->onFinished(task_id, result, pci);
+}
+
+//Do not run this function in the thread pool passed in
+static Status ParallelRunTests(TestEnv& env, int p_models, size_t current_runs, size_t repeat_count, PThreadPool pool) {
+  p_models = (int)std::min<size_t>(p_models, env.tests.size());
+  LOGF_DEFAULT(ERROR, "Running tests in parallel: at most %d models at any time", p_models);
+  env.next_test_to_run = p_models;
+  for (int i = 0; i != p_models; ++i) {
+    std::unique_ptr<TestCaseTask> t(new TestCaseTask{env, i, current_runs, repeat_count, pool});
+    auto st = CreateAndSubmitThreadpoolWork(RunTestCase, t.get(), pool);
+    if (!st.IsOK()) return st;
+    t.release();
+  }
+  bool ret = env.finished->wait();
+  if (!ret) {
+    return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "ParallelRunTests failed");
+  }
+  LOGF_DEFAULT(ERROR, "Running tests finished. Generating report");
+  return Status::OK();
+}
+
+Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count, PThreadPool tpool) {
   TestResultStat& stat = env.stat;
   stat.total_model_count = env.tests.size();
   stat.total_test_case_count = std::accumulate(env.tests.begin(), env.tests.end(), static_cast<size_t>(0), [](size_t v, const ITestCase* info) {
     return info->GetDataCount() + v;
   });
   std::vector<std::shared_ptr<TestCaseResult>> results;
-#ifdef _WIN32
   if (p_models > 1 && env.tests.size() > 1) {
-    ParallelRunTests(env, p_models, concurrent_runs, repeat_count);
+    LOTUS_RETURN_IF_ERROR(ParallelRunTests(env, p_models, concurrent_runs, repeat_count, tpool));
     results = env.finished->getResults();
-  } else
-#endif
-  {
+  } else {
     //run models one by one
     for (size_t i = 0; i != env.tests.size(); ++i) {
       const char* test_case_name = env.tests[i]->GetTestCaseName().c_str();
-      bool finished = false;
-#ifdef _WIN32
-      HANDLE finish_event = CreateEvent(
-          NULL,   // default security attributes
-          TRUE,   // manual-reset event
-          FALSE,  // initial state is nonsignaled
-          NULL);
-      if (finish_event == NULL) {
-        return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unable to create finish event");
-      }
-#else
-      pthread_cond_t finish_event_data = PTHREAD_COND_INITIALIZER;
-      pthread_cond_t* finish_event = &finish_event_data;
-      pthread_mutex_t finish_event_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
-      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, repeat_count, nullptr, [repeat_count, &finished, &results, finish_event, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
+      LOTUS_EVENT ev;
+      LOTUS_RETURN_IF_ERROR(CreateLotusEvent(&ev));
+      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, repeat_count, tpool, nullptr, [repeat_count, &results, ev, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
         //TODO:output this information to a xml
         if (concurrent_runs == 1) {
           TIME_SPEC ts = result->GetSpentTime();
@@ -82,21 +167,9 @@ Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, 
           LOGF_DEFAULT(ERROR, "Test %s finished in %.3g seconds, took %.3g for each input", test_case_name, spent, spent2);
         }
         results.push_back(result);
-        finished = true;
-        return SetWindowsEvent(pci, finish_event);
+        return LotusSetEventWhenCallbackReturns(pci, ev);
       });
-#ifdef _WIN32
-      DWORD dwWaitResult = WaitForSingleObject(finish_event, INFINITE);
-      if (dwWaitResult != WAIT_OBJECT_0) {
-        return LOTUS_MAKE_STATUS(LOTUS, FAIL, "WaitForSingleObject failed");
-      }
-#else
-      pthread_mutex_lock(&finish_event_mutex);
-      while (!finished) {
-        pthread_cond_wait(finish_event, &finish_event_mutex);
-      }
-      pthread_mutex_unlock(&finish_event_mutex);
-#endif
+      LOTUS_RETURN_IF_ERROR(WaitAndCloseEvent(ev));
     }
   }
   for (size_t i = 0; i != env.tests.size(); ++i) {
@@ -161,25 +234,24 @@ std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, c
   while (!paths.empty()) {
     path node_data_root_path = paths.back();
     paths.pop_back();
-    for (directory_iterator test_case_dir(node_data_root_path), end; test_case_dir != end; ++test_case_dir) {
-      if (is_directory(*test_case_dir)) {
-        paths.push_back(test_case_dir->path());
+    for (directory_iterator file_entry(node_data_root_path), end; file_entry != end; ++file_entry) {
+      if (is_directory(*file_entry)) {
+        paths.push_back(file_entry->path());
         continue;
       }
 
-      std::string filename = test_case_dir->path().filename().string();
-      if (!test_case_dir->path().has_extension()) continue;
-      if (test_case_dir->path().extension() != ext_onnx) continue;
-      std::string test_case_name = test_case_dir->path().parent_path().filename().string();
+      if (!file_entry->path().has_extension()) continue;
+      if (file_entry->path().extension() != ext_onnx) continue;
+      std::string test_case_name = file_entry->path().parent_path().filename().string();
       if (test_case_name.compare(0, 5, "test_") == 0) test_case_name = test_case_name.substr(5);
       if (!whitelisted_test_cases.empty() && std::find(whitelisted_test_cases.begin(), whitelisted_test_cases.end(), test_case_name) == whitelisted_test_cases.end()) {
         continue;
       }
 
-      OnnxTestCase* l = new OnnxTestCase(allocator, test_case_name);
-      auto status = l->SetModelPath(test_case_dir->path());
+      ITestCase* l = CreateOnnxTestCase(allocator, test_case_name);
+      auto status = l->SetModelPath(file_entry->path());
       if (!status.IsOK()) {
-        std::string s = test_case_dir->path().string();
+        std::string s = file_entry->path().string();
         LOGF_DEFAULT(ERROR, "load data from %s failed:%s\n", s.c_str(), status.ErrorMessage().c_str());
         delete l;
         continue;
@@ -195,7 +267,7 @@ SeqTestRunner::SeqTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
                              TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), repeat_count_(repeat_count) {
 }
 
-DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1) : session(session1), test_case_name_(test_case_name1), c_(c), on_finished(on_finished1) {
+DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1) : test_case_name_(test_case_name1), c_(c), session(session1), on_finished(on_finished1) {
   std::string s;
   c->GetNodeName(&s);
   result = std::make_shared<TestCaseResult>(c->GetDataCount(), EXECUTE_RESULT::UNKNOWN_ERROR, s);
@@ -303,6 +375,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
       }
     }
     if (compare_result != COMPARE_RESULT::SUCCESS && !ret.second.empty()) {
+      c_->GetDatasetDebugInfoString(i);
       LOGF_DEFAULT(ERROR, "%s:%s", test_case_name_.c_str(), ret.second.c_str());
     }
     if (compare_result != COMPARE_RESULT::SUCCESS) {
@@ -318,16 +391,16 @@ void SeqTestRunner::Start(size_t) {
     for (size_t idx_data = 0; idx_data != data_count; ++idx_data) {
       RunTask(idx_data, nullptr, idx_repeat == 0);
     }
-  finish(result, nullptr);
+  finish(nullptr);
 }
 
-void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished) {
+void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, PThreadPool tpool, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished) {
   std::shared_ptr<TestCaseResult> ret;
   size_t data_count = info->GetDataCount();
   {
     DataRunner* r = nullptr;
     std::string node_name;
-    Lotus::Common::Status status = info->GetNodeName(&node_name);
+    Status status = info->GetNodeName(&node_name);
     if (!status.IsOK()) {
       LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info->GetTestCaseName().c_str(), status.ErrorMessage().c_str());
       ret = std::make_shared<TestCaseResult>(data_count, StatusCodeToExecuteResult(status.Code()), node_name);
@@ -351,12 +424,9 @@ void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurr
       goto end;
     }
     LOGF_DEFAULT(INFO, "testing %s\n", info->GetTestCaseName().c_str());
-#ifdef _WIN32
     if (concurrent_runs > 1 && data_count > 1) {
-      r = new PTestRunner(session_object, info, on_finished);
-    } else
-#endif
-    {
+      r = new PTestRunner(session_object, info, tpool, on_finished);
+    } else {
       r = new SeqTestRunner(session_object, info, repeat_count, on_finished);
     }
     r->Start(concurrent_runs);

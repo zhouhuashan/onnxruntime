@@ -7,11 +7,11 @@ function(AddTest)
 
   list(REMOVE_DUPLICATES _UT_LIBS)
   list(REMOVE_DUPLICATES _UT_SOURCES)
-  
+
   if (_UT_DEPENDS)
     list(REMOVE_DUPLICATES _UT_DEPENDS)
   endif(_UT_DEPENDS)
-    
+
   add_executable(${_UT_TARGET} ${_UT_SOURCES})
   source_group(TREE ${TEST_SRC_DIR} FILES ${_UT_SOURCES})
   set_target_properties(${_UT_TARGET} PROPERTIES FOLDER "LotusTest")
@@ -31,13 +31,13 @@ function(AddTest)
     #It's cmake bug, cannot add this compile option for cuda compiler
     #(https://gitlab.kitware.com/cmake/cmake/issues/17535)
     string(APPEND CMAKE_CXX_FLAGS " /EHsc") # exception handling - C++ may throw, extern "C" will not
-    
+
     if (lotus_USE_CUDA)
         # disable a warning from the CUDA headers about unreferenced local functions
         if (MSVC)
-            target_compile_options(${_UT_TARGET} PRIVATE /wd4505) 
+            target_compile_options(${_UT_TARGET} PRIVATE /wd4505)
         endif()
-    endif() 
+    endif()
     if (lotus_USE_TVM)
         target_compile_options(${_UT_TARGET} PRIVATE /wd4100 /wd4244 /wd4275 /wd4251 /wd4389)
     endif()
@@ -48,7 +48,7 @@ function(AddTest)
     # message("Adding -DHAVE_FRAMEWORK_LIB for " ${_UT_TARGET})
     target_compile_definitions(${_UT_TARGET} PUBLIC -DHAVE_FRAMEWORK_LIB)
   endif()
-  
+
   set(TEST_ARGS)
   if (lotus_GENERATE_TEST_REPORTS)
     # generate a report file next to the test program
@@ -165,7 +165,6 @@ set(lotus_test_providers_libs
 
 
 
-
 set (lotus_test_providers_dependencies ${lotus_EXTERNAL_DEPENDENCIES})
 
 if (lotus_USE_MLAS AND WIN32)
@@ -196,18 +195,18 @@ set(lotus_test_tvm_dependencies
     tvm
     nnvm_compiler
 )
-    
+
 if (SingleUnitTestProject)
     set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
     set(all_libs ${lotus_test_providers_libs})
     set(all_dependencies ${lotus_test_providers_dependencies} )
-    
+
     if (lotus_USE_TVM)
         list(APPEND all_tests ${lotus_test_tvm_src})
         list(APPEND all_libs ${lotus_test_tvm_libs})
         list(APPEND all_dependencies ${lotus_test_tvm_dependencies})
     endif()
-    # we can only have one 'main', so remove them all and add back the providers test_main as it sets 
+    # we can only have one 'main', so remove them all and add back the providers test_main as it sets
     # up everything we need for all tests
     file(GLOB_RECURSE test_mains "${TEST_SRC_DIR}/*/test_main.cc")
     list(REMOVE_ITEM all_tests ${test_mains})
@@ -219,7 +218,7 @@ if (SingleUnitTestProject)
     if(WIN32)
         list(APPEND lotus_test_providers_libs Advapi32)
     endif()
-    
+
     AddTest(
         TARGET lotus_test_all
         SOURCES ${all_tests}
@@ -228,7 +227,7 @@ if (SingleUnitTestProject)
     )
 
     # the default logger tests conflict with the need to have an overall default logger
-    # so skip in this type of 
+    # so skip in this type of
     target_compile_definitions(lotus_test_all PUBLIC -DSKIP_DEFAULT_LOGGER_TESTS)
 
     set(test_data_target lotus_test_all)
@@ -290,34 +289,33 @@ ${onnx_test_runner_src_dir}/runner.h
 ${onnx_test_runner_src_dir}/runner.cc
 ${onnx_test_runner_src_dir}/TestCase.cc
 ${onnx_test_runner_src_dir}/TestCase.h
+${onnx_test_runner_src_dir}/sync_api.h
 ${TEST_SRC_DIR}/proto/tml.proto
 )
 
 if(WIN32)
-  set(onnx_test_runner_common_srcs ${onnx_test_runner_common_srcs} ${onnx_test_runner_src_dir}/parallel_runner_win.cc)
+  set(onnx_test_runner_common_srcs ${onnx_test_runner_common_srcs} ${onnx_test_runner_src_dir}/sync_api_win.cc)
   add_library(win_getopt ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h)
   set_target_properties(win_getopt PROPERTIES FOLDER "LotusTest")
   set(GETOPT_LIB win_getopt)
 else()
-  set(onnx_test_runner_common_srcs ${onnx_test_runner_common_srcs})
+  set(onnx_test_runner_common_srcs ${onnx_test_runner_common_srcs} ${onnx_test_runner_src_dir}/lotus_event.h ${onnx_test_runner_src_dir}/simple_thread_pool.h ${onnx_test_runner_src_dir}/sync_api_linux.cc)
   set(FS_STDLIB stdc++fs)
 endif()
 
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
 lotus_add_include_to_target(onnx_test_runner_common onnx protobuf::libprotobuf)
 add_dependencies(onnx_test_runner_common ${lotus_EXTERNAL_DEPENDENCIES})
-target_include_directories(onnx_test_runner_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx)
+target_include_directories(onnx_test_runner_common PRIVATE ${eigen_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
 lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${LOTUS_ROOT}/core/protobuf TARGET onnx_test_runner_common)
-
-
 
 if(lotus_USE_CUDA)
   set(onnx_cuda_test_libs lotus_providers_cuda ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
-set(onnx_test_libs 
+set(onnx_test_libs
     ${FS_STDLIB}
     lotus_session
     ${onnx_cuda_test_libs}
@@ -368,7 +366,7 @@ target_link_libraries(onnx_test_runner PRIVATE onnx_test_runner_common ${onnx_te
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(lotus_BUILD_BENCHMARKS)
-  add_executable(lotus_benchmark ${TEST_SRC_DIR}/onnx/microbenchmark/main.cc)
+  add_executable(lotus_benchmark ${TEST_SRC_DIR}/onnx/microbenchmark/main.cc ${TEST_SRC_DIR}/onnx/microbenchmark/modeltest.cc)
   target_include_directories(lotus_benchmark PUBLIC ${lotusIR_graph_header} benchmark)
   target_compile_options(lotus_benchmark PRIVATE "/wd4141")
   if (lotus_USE_MLAS AND WIN32)
@@ -387,7 +385,7 @@ if(WIN32)
   if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")
     add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
     target_compile_options(onnx_test_runner_vstest PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
-    target_include_directories(onnx_test_runner_vstest PRIVATE ${date_INCLUDE_DIR}) 
+    target_include_directories(onnx_test_runner_vstest PRIVATE ${date_INCLUDE_DIR})
     target_link_libraries(onnx_test_runner_vstest PRIVATE ${onnx_test_libs} onnx_test_runner_common)
     set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
   endif()

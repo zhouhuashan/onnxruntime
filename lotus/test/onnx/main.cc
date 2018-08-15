@@ -1,13 +1,11 @@
 #include <core/framework/environment.h>
-#include <onnx/onnx_pb.h>
+#include <core/graph/constants.h>
 #include <core/graph/model.h>
 #include <core/framework/allocator.h>
-#include <core/framework/op_kernel.h>
+#include <core/common/logging/logging.h>
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/session/inference_session.h>
-#include <core/common/logging/logging.h>
 #include <core/platform/env.h>
-#include <core/providers/cpu/cpu_execution_provider.h>
 #include <iostream>
 #include <experimental/filesystem>
 #ifdef _MSC_VER
@@ -23,9 +21,9 @@
 #include "TestResultStat.h"
 #include "testenv.h"
 #include "runner.h"
+#include "sync_api.h"
 
 using namespace std::experimental::filesystem::v1;
-using namespace LotusIR;
 using namespace Lotus;
 
 namespace {
@@ -57,7 +55,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Error creating environment: %s \n", status.ErrorMessage().c_str());
     return -1;
   }
-  std::string provider = kCpuExecutionProvider;
+  std::string provider = LotusIR::kCpuExecutionProvider;
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
   int concurrent_session_runs = Env::Default().GetNumCpuCores();
@@ -102,9 +100,9 @@ int main(int argc, char* argv[]) {
           break;
         case 'e':
           if (!strcmp(optarg, "cpu")) {
-            provider = kCpuExecutionProvider;
+            provider = LotusIR::kCpuExecutionProvider;
           } else if (!strcmp(optarg, "cuda")) {
-            provider = kCudaExecutionProvider;
+            provider = LotusIR::kCudaExecutionProvider;
           } else {
             usage();
             return -1;
@@ -119,7 +117,7 @@ int main(int argc, char* argv[]) {
     }
   }
   if (concurrent_session_runs > 1 && repeat_count > 1) {
-    fprintf(stderr, "when you use '-r [repeat]', please set '-c' to 1");
+    fprintf(stderr, "when you use '-r [repeat]', please set '-c' to 1\n");
     usage();
     return -1;
   }
@@ -134,7 +132,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i != argc; ++i) {
     path p(argv[i]);
     if (!is_directory(p)) {
-      fprintf(stderr, "input dir %s is not a valid directoy", argv[i]);
+      fprintf(stderr, "input dir %s is not a valid directoy\n", argv[i]);
       return -1;
     }
     data_dirs.emplace_back(argv[i]);
@@ -144,7 +142,11 @@ int main(int argc, char* argv[]) {
   TestResultStat stat;
   SessionFactory sf(provider, true, enable_cpu_mem_arena);
   TestEnv args(tests, stat, sf);
-  RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count));
+  Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
+  if (!st.IsOK()) {
+    fprintf(stderr, "%s\n", st.ErrorMessage().c_str());
+    return -1;
+  }
   std::string res = stat.ToString();
   fwrite(res.c_str(), 1, res.size(), stdout);
   for (ITestCase* l : tests) {

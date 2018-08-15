@@ -3,10 +3,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <core/platform/env.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+#include "onnx/defs/schema.h"
+#include "onnx/onnx_pb.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 #include "runner.h"
+
 #include <core/framework/environment.h>
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/graph/constants.h>
+
 #include "vstest_logger.h"
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -14,42 +26,6 @@ static std::unique_ptr<Lotus::Environment> env;
 Lotus::Logging::LoggingManager* default_logger;
 static std::string logger_id("onnx_test_runner");
 
-namespace Microsoft {
-namespace VisualStudio {
-namespace CppUnitTestFramework {
-template <>
-std::wstring ToString<>(const EXECUTE_RESULT& q) {
-  switch (q) {
-    case EXECUTE_RESULT::SUCCESS:
-      return L"SUCCESS";
-    case EXECUTE_RESULT::UNKNOWN_ERROR:
-      return L"UNKNOWN_ERROR";
-    case EXECUTE_RESULT::WITH_EXCEPTION:
-      return L"WITH_EXCEPTION";
-    case EXECUTE_RESULT::RESULT_DIFFERS:
-      return L"RESULT_DIFFERS";
-    case EXECUTE_RESULT::SHAPE_MISMATCH:
-      return L"SHAPE_MISMATCH";
-    case EXECUTE_RESULT::TYPE_MISMATCH:
-      return L"TYPE_MISMATCH";
-    case EXECUTE_RESULT::NOT_SUPPORT:
-      return L"NOT_SUPPORT";
-    case EXECUTE_RESULT::LOAD_MODEL_FAILED:
-      return L"LOAD_MODEL_FAILED";
-    case EXECUTE_RESULT::INVALID_GRAPH:
-      return L"INVALID_GRAPH";
-    case EXECUTE_RESULT::INVALID_ARGUMENT:
-      return L"INVALID_ARGUMENT";
-    case EXECUTE_RESULT::MODEL_SHAPE_MISMATCH:
-      return L"MODEL_SHAPE_MISMATCH";
-    case EXECUTE_RESULT::MODEL_TYPE_MISMATCH:
-      return L"MODEL_TYPE_MISMATCH";
-  }
-  return L"UNKNOWN_RETURN_CODE";
-}
-}  // namespace CppUnitTestFramework
-}  // namespace VisualStudio
-}  // namespace Microsoft
 TEST_MODULE_INITIALIZE(ModuleInitialize) {
   Logger::WriteMessage("Initialize Lotus");
   default_logger = new Lotus::Logging::LoggingManager{std::unique_ptr<Lotus::Logging::ISink>{new VsTestSink{}},
@@ -99,20 +75,16 @@ static void run(SessionFactory& sf) {
     Lotus::AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
     std::vector<ITestCase*> tests = LoadTests({"..\\models"}, {modelName}, cpu_allocator);
     Assert::AreEqual((size_t)1, tests.size());
-    HANDLE finish_event = CreateEvent(
-        NULL,                // default security attributes
-        TRUE,                // manual-reset event
-        FALSE,               // initial state is nonsignaled
-        NULL
-    );
+    LOTUS_EVENT finish_event;
+    Lotus::Status status = CreateLotusEvent(&finish_event);
+    Assert::IsTrue(status.IsOK());
     Assert::IsNotNull(finish_event);
-    RunSingleTestCase(tests[0], sf, p_models, 1, nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
+    RunSingleTestCase(tests[0], sf, p_models, 1, GetDefaultThreadPool(Lotus::Env::Default()), nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       res = result->GetExcutionResult();
-      return SetWindowsEvent(pci, finish_event);
+      return LotusSetEventWhenCallbackReturns(pci, finish_event);
     });
-    DWORD dwWaitResult = WaitForSingleObject(finish_event, INFINITE);
-    Assert::AreEqual(WAIT_OBJECT_0, dwWaitResult);
-    CloseHandle(finish_event);
+    status = WaitAndCloseEvent(finish_event);
+    Assert::IsTrue(status.IsOK());
     Assert::AreEqual(tests[0]->GetDataCount(), res.size());
     delete tests[0];
   }
@@ -120,16 +92,16 @@ static void run(SessionFactory& sf) {
     Assert::AreEqual(EXECUTE_RESULT::SUCCESS, r);
   }
 }
-
+// clang-format off
 TEST_CLASS(ONNX_TEST){
   public :
-  TEST_METHOD(normal_run){
-    SessionFactory sf(LotusIR::kCpuExecutionProvider, true, true);
-    run(sf);
-  }
+    TEST_METHOD(normal_run){
+      SessionFactory sf(LotusIR::kCpuExecutionProvider, true, true);
+      run(sf);
+    }
 
-  TEST_METHOD(disable_cpu_mem_arena) {
-    SessionFactory sf(LotusIR::kCpuExecutionProvider, true, false);
-    run(sf);
-  }
+    TEST_METHOD(disable_cpu_mem_arena) {
+      SessionFactory sf(LotusIR::kCpuExecutionProvider, true, false);
+      run(sf);
+    }
 };

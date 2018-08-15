@@ -94,7 +94,8 @@ message TraditionalMLData {
     onnx.TensorProto tensor = 16;
   }
   // Optionally, a name for the tensor.
-  string name = 15;  // namespace Value
+  string name = 15;
+  string debug_info = 17;  //A human-readable string for helping debugging
 }
 
 message TestCaseConfig {

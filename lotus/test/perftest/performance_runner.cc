@@ -1,5 +1,4 @@
 #include "performance_runner.h"
-
 #include <experimental/filesystem>
 #ifdef _MSC_VER
 #include <filesystem>
@@ -60,15 +59,15 @@ bool PerformanceRunner::Initialize() {
   performance_result_.model_name = model_name;
 
   // TO DO: remove depedency on OnnxTestCase.
-  OnnxTestCase test_case(model_name);
+  std::unique_ptr<ITestCase> test_case(CreateOnnxTestCase(model_name));
 
-  if (!test_case.SetModelPath(model_path).IsOK()) {
+  if (!test_case->SetModelPath(model_path).IsOK()) {
     LOGF_DEFAULT(ERROR, "load data from %s failed", model_path.c_str());
     return false;
   }
 
   SessionFactory sf(performance_test_config_.machine_config.provider_type_name, true, true);
-  sf.create(session_object_, test_case.GetModelUrl(), test_case.GetTestCaseName());
+  sf.create(session_object_, test_case->GetModelUrl(), test_case->GetTestCaseName());
 
   // Initialize IO Binding
   if (!session_object_->NewIOBinding(&io_binding_).IsOK()) {
@@ -76,15 +75,15 @@ bool PerformanceRunner::Initialize() {
     return false;
   }
   AllocatorPtr cpu_allocator = io_binding_->GetCPUAllocator(performance_test_config_.machine_config.provider_type_name);
-  test_case.SetAllocator(cpu_allocator);
+  test_case->SetAllocator(cpu_allocator);
 
-  if (test_case.GetDataCount() <= 0) {
-    LOGF_DEFAULT(ERROR, "there is no test data for model %s", test_case.GetTestCaseName().c_str());
+  if (test_case->GetDataCount() <= 0) {
+    LOGF_DEFAULT(ERROR, "there is no test data for model %s", test_case->GetTestCaseName().c_str());
     return false;
   }
 
   std::unordered_map<std::string, Lotus::MLValue> feeds;
-  test_case.LoadInputData(0 /* id */, feeds);
+  test_case->LoadInputData(0 /* id */, feeds);
   for (auto feed : feeds) {
     io_binding_->BindInput(feed.first, feed.second);
   }
@@ -92,7 +91,7 @@ bool PerformanceRunner::Initialize() {
   auto status = outputs.first;
   if (!outputs.first.IsOK()) {
     LOGF_DEFAULT(ERROR, "GetOutputs failed, TestCaseName:%s, ErrorMessage:%s",
-                 test_case.GetTestCaseName().c_str(),
+                 test_case->GetTestCaseName().c_str(),
                  status.ErrorMessage().c_str());
     return false;
   }
