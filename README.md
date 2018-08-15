@@ -2,6 +2,25 @@
 
 Lotus is the runtime for ONNX. Here is the [design document](https://microsoft.sharepoint.com/:w:/t/ONNX2/EdT4SATkbt1Nv4un1JoBHrYBH65Yt3EKFGHCuo2NTAv4Fg).
 
+## Supported dev environments
+
+| OS          | Supports CPU | Supports GPU| Notes                              | 
+|-------------|:------------:|:------------:|------------------------------------|
+|Windows 10   | YES          | YES         |Must use VS 2017 or the latest VS2015|
+|Windows 10 <br/> Subsystem for Linux | YES         | NO        |         |
+|Ubuntu 16.04 | YES          | YES         |                            |
+|Fedora 27    | YES          | YES         |                            |
+|Fedora 28    | YES          | NO          |Cannot build but can run GPU kernels |
+|Centos       | NO           | NO          | GCC is too old             |
+
+OS/Compiler Matrix:
+
+|             | Supports VC  | Supports GCC |  Supports Clang | 
+|-------------|:------------:|:------------:|:---------------:|
+|Windows 10   | YES          | Not tested   | Not tested      |
+|Linux        | NO           | YES          | YES             |
+
+
 # Build
 Install cmake-3.10 or better from https://cmake.org/download/.
 
@@ -31,6 +50,8 @@ ctest -C %CMAKE_BUILD_TYPE%
 `ALL_BUILD.vcxproj` will check external dependecies and takes a little longer. During development you want to
 use a more specific project like `lotus_test_core_runtime.vcxproj`.
 
+## Enable Clang tools
+You may also add '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON' to your cmake args, then your build engine(like msbuild/make/ninja) will generate a compile\_commands.json file for you. Please copy this file to the top source directory. Then you can use clang tools like ['clang-rename'](http://clang.llvm.org/extra/clang-rename.html), ['clang-tidy'](http://clang.llvm.org/extra/clang-tidy/) to clean up or refactor your code.
 
 # Source tree structure
 TODO
@@ -48,7 +69,7 @@ into 1 exe. More TODO.
 TODO
 
 # Coding guidelines
-Please see [Coding Conventions and Standards](./docs/Coding Conventions and Standards.md)
+Please see [Coding Conventions and Standards](./docs/Coding_Conventions_and_Standards.md)
 
 # Checkin procedure
 ```
@@ -63,7 +84,7 @@ https://aiinfra.visualstudio.com/_git/Lotus
 or with codeflow. New code should be accompanied by unittests.
 
 # Additional Build Flavors
-## CUDA Build
+## Windows CUDA Build
 Lotus supports CUDA builds. You will need to download and install [CUDA](https://developer.nvidia.com/cuda-toolkit) and [CUDNN](https://developer.nvidia.com/cudnn).
 
 Lotus is built and tested with CUDA 9.0 and CUDNN 7.0 using the Visual Studio 2017 14.11 toolset (i.e. Visual Studio 2017 v15.3). 
@@ -129,8 +150,43 @@ To pass in additional compiler flags, for example to build with SIMD instruction
 cmake .. -G "Visual Studio 15 2017" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
 ```
 
-# Build with Docker (CPU)
-Register a docker account at `https://www.docker.com/`
+## Build with Docker on Linux
+Install Docker: `https://docs.docker.com/install/`
+
+###CPU
+```
+cd tools/ci_build/vsts/linux/ubuntu16.04
+docker build -t lotus_dev
+docker run --rm -it lotus_dev /bin/bash
+```
+
+###GPU
+If you need GPU support, please also install:
+1. nvidia driver. Before doing this please add 'nomodeset rd.driver.blacklist=nouveau' to your linux [kernel boot parameters](https://www.kernel.org/doc/html/v4.17/admin-guide/kernel-parameters.html).
+2. nvidia-docker2: [Install doc](`https://github.com/NVIDIA/nvidia-docker/wiki/Installation-(version-2.0)`)
+
+To test if your nvidia-docker works:
+```
+docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi
+```
+
+Then build a docker image. We provided a sample for use:
+```
+cd tools/ci_build/vsts/linux/fedora27
+docker build . -t cuda_dev
+```
+(TODO: add the notes of how to install CUDNN on Fedora)
+
+Then run it
+```
+docker run --runtime=nvidia --rm -it cuda_dev /bin/bash
+PATH=$PATH:/usr/local/cuda/bin cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ../cmake -Dlotus_ENABLE_PYTHON=ON -DPYTHON_EXECUTABLE=/usr/bin/python3 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=/usr/local/cuda
+ninja
+```
+
+
+## Build with Docker (CPU) on Windows
+Register a docker account at [https://www.docker.com/](https://www.docker.com/)
 
 Download Docker for Windows: `https://store.docker.com/editions/community/docker-ce-desktop-windows`
 
@@ -150,3 +206,5 @@ Run command below if the conda environment `lotus-py35` does not exist
 ```
 /usr/local/miniconda3/bin/conda env create --file /home/lotusdev/Lotus/tools/ci_build/vsts/linux/Conda/conda-linux-lotus-py35-environment.yml --name lotus-py35 --quiet --force
 ```
+
+
