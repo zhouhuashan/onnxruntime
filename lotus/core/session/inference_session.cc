@@ -994,7 +994,7 @@ class InferenceSession::Impl {
 
     // Insert copy nodes.
     for (auto& provider : providers) {
-      if (provider->Type() != LotusIR::kCpuExecutionProvider) {
+      if (provider->Type() != LotusIR::kCpuExecutionProvider && provider->Type() != LotusIR::kMklDnnExecutionProvider) {
         TransformerMemcpyImpl copy_impl(graph, provider->Type());
         copy_impl.ModifyGraph(session_state_.GetKernelRegistryManager());
       }
