@@ -211,7 +211,6 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
     }
   }
 
-  bool Is2DKernel = kernel_shape.size() == 2;
   std::vector<int64_t> pads(pads_);
   if (pads.empty()) {
     pads.resize(kernel_shape.size() * 2, 0);
@@ -252,28 +251,20 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   col_buffer_shape.insert(col_buffer_shape.end(), output_shape.GetDims().begin(),
                           output_shape.GetDims().end());
 
-  MLAS_CONV2D_PARAMETERS Parameters;
+  MLAS_CONV_PARAMETERS Parameters;
   SIZE_T WorkingBufferSize;
 
-  if (Is2DKernel) {
-    MlasConv2DPrepare(
-        &Parameters,
-        C / group_,
-        input_shape[0],
-        input_shape[1],
-        kernel_shape[0],
-        kernel_shape[1],
-        dilations[0],
-        dilations[1],
-        pads[0],
-        pads[1],
-        pads[2],
-        pads[3],
-        strides[0],
-        strides[1],
-        M / group_,
-        &WorkingBufferSize);
-  } else {
+  bool UseMlasConv = MlasConvPrepare(&Parameters,
+                                     kernel_shape.size(),
+                                     C / group_,
+                                     input_shape.GetDims().data(),
+                                     kernel_shape.data(),
+                                     dilations.data(),
+                                     pads.data(),
+                                     strides.data(),
+                                     M / group_,
+                                     &WorkingBufferSize);
+  if (!UseMlasConv) {
     WorkingBufferSize = col_buffer_size;
   }
 
@@ -283,8 +274,8 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
 
   for (int image_id = 0; image_id < N; ++image_id) {
     for (int group_id = 0; group_id < group_; ++group_id) {
-      if (Is2DKernel) {
-        MlasConv2D(
+      if (UseMlasConv) {
+        MlasConv(
             &Parameters,
             Xdata + group_id * X_offset,
             W->template Data<float>() + group_id * W_offset,
