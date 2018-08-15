@@ -1,36 +1,33 @@
 #include "core/framework/node_placement.h"
+#include "core/graph/indexed_sub_graph.h"
+
 using namespace Lotus::Common;
 namespace Lotus {
-Status GraphPlacementPlanner::Apply(LotusIR::Graph* graph, bool* modified) const {
-  if (provider_preference_.empty())
-    return Status(LOTUS, INVALID_ARGUMENT, "No provider preference found, at least CPU provider should be chosed.");
-  if (kernels_registries_.empty())
-    return Status(LOTUS, INVALID_ARGUMENT, "No kernel registry found.");
+Status GraphPartitioner::Partition(LotusIR::Graph* graph) const {
+  if (nullptr == graph || providers_.empty()) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Graph is nullptr or no provider specified.");
+  }
+
+  for (auto& provider : providers_) {
+    // Partitioning <graph> based on provider preference.
+    auto sub_graphs = std::move(provider->GetCapability(*graph, kernel_registry_mgr_));
+    for (auto& sub_graph : sub_graphs) {
+      if (1 == sub_graph->nodes.size()) {
+        // The <provider> can run a single node in the <graph>.
+        auto node = graph->GetNode(sub_graph->nodes[0]);
+        if (node->GetExecutionProviderType().empty()) {
+          node->SetExecutionProviderType(provider->Type());
+        }
+      } else {
+        // TODO: This needs to be fused.
+        // The <provider> can run a fused <sub_graph> in the <graph>.
+      }
+    }
+  }
 
   for (auto& node : graph->Nodes()) {
-    if (graph->IsSourceNode(node) || graph->IsSinkNode(node))
-      continue;
-
-    if (node.GetExecutionProviderType().empty()) {
-      bool assigned = false;
-      for (auto& provider_type : provider_preference_) {
-        for (auto registry : kernels_registries_) {
-          if (registry->CanExecutionProviderCreateKernel(node, provider_type)) {
-            node.SetExecutionProviderType(provider_type);
-            assigned = true;
-            *modified = true;
-            break;
-          }
-        }
-        if (assigned)
-          break;
-      }
-
-      if (!assigned) {
-        //for cpu ops with float16, we don't have kernels registered.
-        //but we will insert cast to float32. so default to cpu execution provider for backward compatible.
-        node.SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
-      }
+    if (!graph->IsSourceNode(node) && !graph->IsSinkNode(node) && node.GetExecutionProviderType().empty()) {
+      return Status(LOTUS, FAIL, "Partitioning failed. No execution provider is capable of running node (" + node.Name() + ").");
     }
   }
 

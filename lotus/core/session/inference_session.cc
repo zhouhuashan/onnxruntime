@@ -988,11 +988,9 @@ class InferenceSession::Impl {
     registries.assign(custom_registries.begin(),
                       custom_registries.end());
 
-    // TODO: Now get capability of each execution provider and do partitioning.
     // Do partitioning based on execution providers' capability.
-    bool modified = false;
-    GraphPlacementPlanner placement_planner("GraphPlacementPlanner", registries, provider_preference);
-    LOTUS_RETURN_IF_ERROR(placement_planner.Apply(graph, &modified));
+    GraphPartitioner partitioner(session_state_.GetKernelRegistryManager(), providers);
+    LOTUS_RETURN_IF_ERROR(partitioner.Partition(graph));
 
     // Insert copy nodes.
     for (auto& provider : providers) {
@@ -1005,6 +1003,7 @@ class InferenceSession::Impl {
     for (auto registry : session_state_.GetKernelRegistryManager().GetAllKernelRegistries()) {
       insert_cast_transformer_.AddKernelRegistry(registry);
     }
+    bool modified = false;
     LOTUS_RETURN_IF_ERROR(insert_cast_transformer_.Apply(graph, &modified));
 
     return Common::Status::OK();
