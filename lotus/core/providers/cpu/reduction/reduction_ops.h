@@ -5,10 +5,11 @@
 #include "core/framework/op_kernel.h"
 
 namespace Lotus {
+
 template <bool allow_multi_axes>
-class ReduceKernel : public OpKernel {
+class ReduceKernelBase {
  protected:
-  ReduceKernel(const OpKernelInfo& info) : OpKernel(info) {
+  ReduceKernelBase(const OpKernelInfo& info) {
     if (allow_multi_axes) {
       axes_ = info.GetAttrsOrDefault<int64_t>("axes");
     } else {
@@ -22,6 +23,12 @@ class ReduceKernel : public OpKernel {
 
   std::vector<int64_t> axes_;
   bool keepdims_;
+};
+
+template <bool allow_multi_axes>
+class ReduceKernel : public OpKernel, public ReduceKernelBase<allow_multi_axes> {
+ protected:
+  ReduceKernel(const OpKernelInfo& info) : OpKernel(info), ReduceKernelBase<allow_multi_axes>(info) {}
 };
 
 template <typename T>

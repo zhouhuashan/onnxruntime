@@ -1,37 +1,26 @@
 #pragma once
 #include "core/providers/cuda/cuda_common.h"
+#include "core/providers/cpu/reduction/reduction_ops.h"
 
 namespace Lotus {
 namespace Cuda {
 
-class ReduceKernel : public CudaKernel {
+template <bool allow_multi_axes>
+class ReduceKernel : public CudaKernel, public ReduceKernelBase<allow_multi_axes> {
  protected:
-  ReduceKernel(const OpKernelInfo& info, bool allow_multi_axes = true) : CudaKernel(info) {
-    if (allow_multi_axes) {
-      info.GetAttrs("axes", axes_);
-    } else {
-      axes_.push_back(0);
-      info.GetAttr("axis", &axes_[0]);
-    }
-    int64_t keepdims;
-    LOTUS_ENFORCE(info.GetAttr("keepdims", &keepdims).IsOK());
-    keepdims_ = (keepdims == 1);
-  }
-
-  ~ReduceKernel() {}
+  ReduceKernel(const OpKernelInfo& info) : CudaKernel(info), ReduceKernelBase<allow_multi_axes>(info) {}
 
   template <typename T, cudnnReduceTensorIndices_t ReduceTensorIndices = CUDNN_REDUCE_TENSOR_NO_INDICES>
   Status ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cudnnReduceOp) const;
 
- private:
-  std::vector<int64_t> axes_;
-  bool keepdims_;
+  using ReduceKernelBase<allow_multi_axes>::axes_;
+  using ReduceKernelBase<allow_multi_axes>::keepdims_;
 };
 
 template <typename T>
-class ArgMax final : public ReduceKernel {
+class ArgMax final : public ReduceKernel<false> {
  public:
-  ArgMax(const OpKernelInfo& info) : ReduceKernel(info, false) {}
+  ArgMax(const OpKernelInfo& info) : ReduceKernel<false>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T, CUDNN_REDUCE_TENSOR_FLATTENED_INDICES>(ctx, CUDNN_REDUCE_TENSOR_MAX);
@@ -39,9 +28,9 @@ class ArgMax final : public ReduceKernel {
 };
 
 template <typename T>
-class ArgMin final : public ReduceKernel {
+class ArgMin final : public ReduceKernel<false> {
  public:
-  ArgMin(const OpKernelInfo& info) : ReduceKernel(info, false) {}
+  ArgMin(const OpKernelInfo& info) : ReduceKernel<false>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T, CUDNN_REDUCE_TENSOR_FLATTENED_INDICES>(ctx, CUDNN_REDUCE_TENSOR_MIN);
@@ -49,9 +38,9 @@ class ArgMin final : public ReduceKernel {
 };
 
 template <typename T>
-class ReduceL1 final : public ReduceKernel {
+class ReduceL1 final : public ReduceKernel<true> {
  public:
-  ReduceL1(const OpKernelInfo& info) : ReduceKernel(info) {}
+  ReduceL1(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_NORM1);
@@ -59,9 +48,9 @@ class ReduceL1 final : public ReduceKernel {
 };
 
 template <typename T>
-class ReduceL2 final : public ReduceKernel {
+class ReduceL2 final : public ReduceKernel<true> {
  public:
-  ReduceL2(const OpKernelInfo& info) : ReduceKernel(info) {}
+  ReduceL2(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_NORM2);
@@ -69,9 +58,9 @@ class ReduceL2 final : public ReduceKernel {
 };
 
 template <typename T>
-class ReduceMax final : public ReduceKernel {
+class ReduceMax final : public ReduceKernel<true> {
  public:
-  ReduceMax(const OpKernelInfo& info) : ReduceKernel(info) {}
+  ReduceMax(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_MAX);
@@ -79,9 +68,9 @@ class ReduceMax final : public ReduceKernel {
 };
 
 template <typename T>
-class ReduceMean final : public ReduceKernel {
+class ReduceMean final : public ReduceKernel<true> {
  public:
-  ReduceMean(const OpKernelInfo& info) : ReduceKernel(info) {}
+  ReduceMean(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_AVG);
@@ -89,9 +78,9 @@ class ReduceMean final : public ReduceKernel {
 };
 
 template <typename T>
-class ReduceMin final : public ReduceKernel {
+class ReduceMin final : public ReduceKernel<true> {
  public:
-  ReduceMin(const OpKernelInfo& info) : ReduceKernel(info) {}
+  ReduceMin(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_MIN);
@@ -99,9 +88,9 @@ class ReduceMin final : public ReduceKernel {
 };
 
 template <typename T>
-class ReduceProd final : public ReduceKernel {
+class ReduceProd final : public ReduceKernel<true> {
  public:
-  ReduceProd(const OpKernelInfo& info) : ReduceKernel(info) {}
+  ReduceProd(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_MUL);
@@ -109,9 +98,9 @@ class ReduceProd final : public ReduceKernel {
 };
 
 template <typename T>
-class ReduceSum final : public ReduceKernel {
+class ReduceSum final : public ReduceKernel<true> {
  public:
-  ReduceSum(const OpKernelInfo& info) : ReduceKernel(info) {}
+  ReduceSum(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_ADD);

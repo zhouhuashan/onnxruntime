@@ -48,8 +48,9 @@ class CudnnReduceDescriptor final {
   cudnnReduceTensorDescriptor_t desc_;
 };
 
+template <bool allow_multi_axes>
 template <typename T, cudnnReduceTensorIndices_t ReduceTensorIndices>
-Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cudnnReduceOp) const {
+Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cudnnReduceOp) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
   const Tensor& X = *ctx->Input<Tensor>(0);
   const TensorShape input_shape{X.Shape()};
@@ -135,14 +136,6 @@ Status ReduceKernel::ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cud
 
   return Status::OK();
 }
-
-#define SPECIALIZED_COMPUTE_IMPL(T)                                                                                                               \
-  template Status ReduceKernel::ComputeImpl<T, CUDNN_REDUCE_TENSOR_NO_INDICES>(OpKernelContext * ctx, cudnnReduceTensorOp_t cudnnReduceOp) const; \
-  template Status ReduceKernel::ComputeImpl<T, CUDNN_REDUCE_TENSOR_FLATTENED_INDICES>(OpKernelContext * ctx, cudnnReduceTensorOp_t cudnnReduceOp) const;
-
-SPECIALIZED_COMPUTE_IMPL(MLFloat16)
-SPECIALIZED_COMPUTE_IMPL(float)
-SPECIALIZED_COMPUTE_IMPL(double)
 
 #define REGISTER_KERNEL_HFD(name)        \
   REGISTER_KERNEL_TYPED(name, MLFloat16) \
