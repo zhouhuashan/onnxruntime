@@ -176,25 +176,6 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
   const int64_t M = W->Shape()[0];
   LOTUS_RETURN_IF_ERROR(ValidateInputShape(X, W));
 
-  if (X->Shape().NumDimensions() != W->Shape().NumDimensions()) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "X num_dims does not match W num_dims.",
-                             " X: ", X->Shape().ToString().c_str(),
-                             " W: ", W->Shape().ToString().c_str());
-  }
-
-  if (C != W->Shape()[1] * group_) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input channels C is not equal to kernel channels * group.",
-                             " C: ", C,
-                             " kernel channels: ", W->Shape()[1],
-                             " group: ", group_);
-  }
-
-  if (M % group_ != 0) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Output channels M is not divisible by group.",
-                             " M: ", M,
-                             " group: ", group_);
-  }
-
   std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
 
   if (kernel_shape.size() + 2 != W->Shape().NumDimensions()) {
