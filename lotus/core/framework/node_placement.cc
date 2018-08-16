@@ -8,9 +8,10 @@ Status GraphPartitioner::Partition(LotusIR::Graph* graph) const {
     return Status(LOTUS, INVALID_ARGUMENT, "Graph is nullptr or no provider specified.");
   }
 
+  auto kernel_registries = std::move(kernel_registry_mgr_.GetAllKernelRegistries());
   for (auto& provider : providers_) {
     // Partitioning <graph> based on provider preference.
-    auto sub_graphs = std::move(provider->GetCapability(*graph, kernel_registry_mgr_));
+    auto sub_graphs = std::move(provider->GetCapability(*graph, kernel_registries));
     for (auto& sub_graph : sub_graphs) {
       if (1 == sub_graph->nodes.size()) {
         // The <provider> can run a single node in the <graph>.

@@ -20,10 +20,8 @@ IExecutionProvider::GetAllocator(MemType mem_type) const {
 
 std::vector<std::unique_ptr<IndexedSubGraph>>
 IExecutionProvider::GetCapability(const LotusIR::Graph &graph,
-                                  const KernelRegistryManager &kernel_registry_mgr) const {
+                                  const std::vector<const KernelRegistry *> &kernel_registries) const {
   std::vector<std::unique_ptr<IndexedSubGraph>> result;
-
-  auto kernel_registries = std::move(kernel_registry_mgr.GetAllKernelRegistries());
   for (auto &node : graph.Nodes()) {
     if (graph.IsSourceNode(node) || graph.IsSinkNode(node)) {
       continue;
