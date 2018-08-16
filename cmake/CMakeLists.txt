@@ -181,6 +181,7 @@ if (lotus_SPLIT_UNIT_TEST_PROJECTS)
   set(SingleUnitTestProject OFF)
 endif()
 
+set(REPO_ROOT ${PROJECT_SOURCE_DIR}/..)
 set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
 set(LOTUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/lotus)
 
@@ -340,6 +341,7 @@ include(lotus_common.cmake)
 include(lotusIR_graph.cmake)
 include(lotus_framework.cmake)
 include(lotus_providers.cmake)
+include(lotus_session.cmake)
 
 if(lotus_USE_MKLDNN)
   set(LOTUS_PROVIDERS_MKLDNN lotus_providers_mkldnn)

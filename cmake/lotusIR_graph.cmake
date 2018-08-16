@@ -1,4 +1,5 @@
 file(GLOB_RECURSE lotusIR_graph_src
+    "${LOTUS_INCLUDE_DIR}/core/graph/*.h"    
     "${LOTUS_ROOT}/core/graph/*.h"
     "${LOTUS_ROOT}/core/graph/*.cc"
 )
@@ -14,7 +15,7 @@ lotus_add_include_to_target(lotusIR_graph onnx protobuf::libprotobuf)
 set_target_properties(lotusIR_graph PROPERTIES FOLDER "Lotus")
 set_target_properties(lotusIR_graph PROPERTIES LINKER_LANGUAGE CXX)
 
-source_group(TREE ${LOTUS_ROOT}/core FILES ${lotusIR_graph_src} ${lotusIR_defs_src})
+source_group(TREE ${REPO_ROOT} FILES ${lotusIR_graph_src} ${lotusIR_defs_src})
 
 if (WIN32)
     set(lotusIR_graph_static_library_flags

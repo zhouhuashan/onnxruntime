@@ -1,4 +1,6 @@
 set(lotus_common_src_patterns
+    "${LOTUS_INCLUDE_DIR}/core/common/*.h"    
+    "${LOTUS_INCLUDE_DIR}/core/common/logging/*.h"    
     "${LOTUS_ROOT}/core/common/*.h"
     "${LOTUS_ROOT}/core/common/*.cc"
     "${LOTUS_ROOT}/core/common/logging/*.h"
@@ -28,9 +30,10 @@ endif()
 
 file(GLOB lotus_common_src ${lotus_common_src_patterns})
 
-source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_common_src})
-
+source_group(TREE ${REPO_ROOT} FILES ${lotus_common_src})
+ 
 add_library(lotus_common ${lotus_common_src})
+
 if(NOT WIN32)
 	target_link_libraries(lotus_common dl)
 endif()

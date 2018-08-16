@@ -1,4 +1,5 @@
 file(GLOB_RECURSE lotus_framework_srcs
+    "${LOTUS_INCLUDE_DIR}/core/framework/*.h"    
     "${LOTUS_ROOT}/core/framework/*.h"
     "${LOTUS_ROOT}/core/framework/*.cc"
 )
@@ -8,9 +9,10 @@ if(lotus_USE_CUDA)
     list(APPEND lotus_framework_srcs ${lotus_framework_cuda_srcs})
 endif()
 
-source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_framework_srcs})
+source_group(TREE ${REPO_ROOT} FILES ${lotus_framework_srcs})
 
 add_library(lotus_framework ${lotus_framework_srcs})
+
 #TODO: remove ${eigen_INCLUDE_DIRS} from here
 target_include_directories(lotus_framework PRIVATE ${eigen_INCLUDE_DIRS})
 lotus_add_include_to_target(lotus_framework onnx protobuf::libprotobuf)
