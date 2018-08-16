@@ -89,104 +89,123 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
 
   switch (kernel_shape.size()) {
     case 1:
-      for (int64_t n = 0; n < x_shape[0]; ++n) {
-        for (int64_t c = 0; c < channels; ++c) {
-          for (int64_t ph = 0; ph < pooled_height; ++ph) {
-            int64_t hstart = ph * stride_h() - pads[0];
-            int64_t hend = std::min(hstart + kernel_shape[0], height);
-            hstart = std::max(hstart, static_cast<int64_t>(0));
-            T Yh = PoolType::Initialize();
-            for (int64_t h = hstart; h < hend; ++h) {
-              PoolType::Process(Xdata[h], Yh, pool_context_);
-            }
-            if (count_include_pad_) {
-              PoolType::Finalize(kernel_shape[0], Yh, pool_context_);
-            } else {
-              PoolType::Finalize(hend - hstart, Yh, pool_context_);
-            }
-            Ydata[ph] = Yh;
+    {
+      int64_t x_step = height;
+      int64_t y_step = pooled_height;
+      const int64_t total_channels = x_shape[0] * channels;
+
+#pragma omp parallel for
+      for (int64_t c = 0; c < total_channels; ++c) {
+        const float* x_d = Xdata + c * x_step;
+        float* y_d = Ydata + c * y_step;
+
+        for (int64_t ph = 0; ph < pooled_height; ++ph) {
+          int64_t hstart = ph * stride_h() - pads[0];
+          int64_t hend = std::min(hstart + kernel_shape[0], height);
+          hstart = std::max(hstart, static_cast<int64_t>(0));
+          T Yh = PoolType::Initialize();
+          for (int64_t h = hstart; h < hend; ++h) {
+            PoolType::Process(x_d[h], Yh, pool_context_);
           }
-          // Do offset.
-          Xdata += height;
-          Ydata += pooled_height;
+          if (count_include_pad_) {
+            PoolType::Finalize(kernel_shape[0], Yh, pool_context_);
+          } else {
+            PoolType::Finalize(hend - hstart, Yh, pool_context_);
+          }
+          y_d[ph] = Yh;
         }
       }
+
       break;
+    }
+
     case 2:
-      for (int64_t n = 0; n < x_shape[0]; ++n) {
-        for (int64_t c = 0; c < channels; ++c) {
-          for (int64_t ph = 0; ph < pooled_height; ++ph) {
-            int64_t hstart = ph * stride_h() - pads[0];
-            int64_t hend = std::min(hstart + kernel_shape[0], height);
-            hstart = std::max(hstart, static_cast<int64_t>(0));
-            for (int64_t pw = 0; pw < pooled_width; ++pw) {
-              int64_t wstart = pw * stride_w() - pads[1];
-              int64_t wend = std::min(wstart + kernel_shape[1], width);
-              wstart = std::max(wstart, static_cast<int64_t>(0));
-              const int64_t pool_index = ph * pooled_width + pw;
+    {
+      int64_t x_step = height * width;
+      int64_t y_step = pooled_height * pooled_width;
+      const int64_t total_channels = x_shape[0] * channels;
+
+#pragma omp parallel for
+      for (int64_t c = 0; c < total_channels; ++c) {
+        const float* x_d = Xdata + c * x_step;
+        float* y_d = Ydata + c * y_step;
+
+        for (int64_t ph = 0; ph < pooled_height; ++ph) {
+          int64_t hstart = ph * stride_h() - pads[0];
+          int64_t hend = std::min(hstart + kernel_shape[0], height);
+          hstart = std::max(hstart, static_cast<int64_t>(0));
+          for (int64_t pw = 0; pw < pooled_width; ++pw) {
+            int64_t wstart = pw * stride_w() - pads[1];
+            int64_t wend = std::min(wstart + kernel_shape[1], width);
+            wstart = std::max(wstart, static_cast<int64_t>(0));
+            const int64_t pool_index = ph * pooled_width + pw;
+            T Yh = PoolType::Initialize();
+            for (int64_t h = hstart; h < hend; ++h) {
+              for (int64_t w = wstart; w < wend; ++w) {
+                const int64_t input_index = h * width + w;
+                PoolType::Process(x_d[input_index], Yh, pool_context_);
+              }
+            }
+            if (count_include_pad_) {
+              PoolType::Finalize(kernel_shape[0] * kernel_shape[1], Yh, pool_context_);
+            } else {
+              PoolType::Finalize((hend - hstart) * (wend - wstart), Yh, pool_context_);
+            }
+            y_d[pool_index] = Yh;
+          }
+        }
+      }
+
+      break;
+    }
+    case 3:
+    {
+      int64_t x_step = height * width * depth;
+      int64_t y_step = pooled_height * pooled_width * pooled_depth;
+      const int64_t total_channels = x_shape[0] * channels;
+
+#pragma omp parallel for
+      for (int64_t c = 0; c < total_channels; ++c) {
+        const float* x_d = Xdata + c * x_step;
+        float* y_d = Ydata + c * y_step;
+
+        for (int64_t ph = 0; ph < pooled_height; ++ph) {
+          int64_t hstart = ph * stride_h() - pads[0];
+          int64_t hend = std::min(hstart + kernel_shape[0], height);
+          hstart = std::max(hstart, static_cast<int64_t>(0));
+          for (int64_t pw = 0; pw < pooled_width; ++pw) {
+            int64_t wstart = pw * stride_w() - pads[1];
+            int64_t wend = std::min(wstart + kernel_shape[1], width);
+            wstart = std::max(wstart, static_cast<int64_t>(0));
+            for (int64_t pd = 0; pd < pooled_depth; ++pd) {
+              int64_t dstart = pd * stride_d() - pads[2];
+              int64_t dend = std::min(dstart + kernel_shape[2], depth);
+              dstart = std::max(dstart, static_cast<int64_t>(0));
+              const int64_t pool_index =
+                  ph * pooled_width * pooled_depth + pw * pooled_depth + pd;
               T Yh = PoolType::Initialize();
               for (int64_t h = hstart; h < hend; ++h) {
                 for (int64_t w = wstart; w < wend; ++w) {
-                  const int64_t input_index = h * width + w;
-                  PoolType::Process(Xdata[input_index], Yh, pool_context_);
+                  for (int64_t d = dstart; d < dend; ++d) {
+                    const int64_t input_index = h * width * depth + w * depth + d;
+                    PoolType::Process(x_d[input_index], Yh, pool_context_);
+                  }
                 }
               }
               if (count_include_pad_) {
-                PoolType::Finalize(kernel_shape[0] * kernel_shape[1], Yh, pool_context_);
+                PoolType::Finalize(kernel_shape[0] * kernel_shape[1] * kernel_shape[2], Yh, pool_context_);
               } else {
-                PoolType::Finalize((hend - hstart) * (wend - wstart), Yh, pool_context_);
+                PoolType::Finalize(
+                    (hend - hstart) * (wend - wstart) * (dend - dstart), Yh, pool_context_);
               }
-              Ydata[pool_index] = Yh;
+              y_d[pool_index] = Yh;
             }
           }
-          // Do offset.
-          Xdata += height * width;
-          Ydata += pooled_height * pooled_width;
         }
       }
+
       break;
-    case 3:
-      for (int64_t n = 0; n < x_shape[0]; ++n) {
-        for (int64_t c = 0; c < channels; ++c) {
-          for (int64_t ph = 0; ph < pooled_height; ++ph) {
-            int64_t hstart = ph * stride_h() - pads[0];
-            int64_t hend = std::min(hstart + kernel_shape[0], height);
-            hstart = std::max(hstart, static_cast<int64_t>(0));
-            for (int64_t pw = 0; pw < pooled_width; ++pw) {
-              int64_t wstart = pw * stride_w() - pads[1];
-              int64_t wend = std::min(wstart + kernel_shape[1], width);
-              wstart = std::max(wstart, static_cast<int64_t>(0));
-              for (int64_t pd = 0; pd < pooled_depth; ++pd) {
-                int64_t dstart = pd * stride_d() - pads[2];
-                int64_t dend = std::min(dstart + kernel_shape[2], depth);
-                dstart = std::max(dstart, static_cast<int64_t>(0));
-                const int64_t pool_index =
-                    ph * pooled_width * pooled_depth + pw * pooled_depth + pd;
-                T Yh = PoolType::Initialize();
-                for (int64_t h = hstart; h < hend; ++h) {
-                  for (int64_t w = wstart; w < wend; ++w) {
-                    for (int64_t d = dstart; d < dend; ++d) {
-                      const int64_t input_index = h * width * depth + w * depth + d;
-                      PoolType::Process(Xdata[input_index], Yh, pool_context_);
-                    }
-                  }
-                }
-                if (count_include_pad_) {
-                  PoolType::Finalize(kernel_shape[0] * kernel_shape[1] * kernel_shape[2], Yh, pool_context_);
-                } else {
-                  PoolType::Finalize(
-                      (hend - hstart) * (wend - wstart) * (dend - dstart), Yh, pool_context_);
-                }
-                Ydata[pool_index] = Yh;
-              }
-            }
-          }
-          // Do offset.
-          Xdata += height * width * depth;
-          Ydata += pooled_height * pooled_width * pooled_depth;
-        }
-      }
-      break;
+    }
     default:
       return Status(LOTUS, INVALID_ARGUMENT, "Unsupported pooling size : ");
   }

@@ -18,6 +18,10 @@ add_dependencies(lotus_providers eigen gsl onnx)
 set_target_properties(lotus_providers PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(lotus_providers PROPERTIES FOLDER "Lotus")
 
+if (WIN32 AND lotus_USE_OPENMP AND ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+  add_definitions(/openmp)
+endif()
+
 if (lotus_USE_CUDA)
     file(GLOB_RECURSE lotus_providers_cuda_cc_srcs
         "${LOTUS_ROOT}/core/providers/cuda/*.h"
