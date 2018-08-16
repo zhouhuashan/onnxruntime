@@ -333,7 +333,11 @@ TEST(CustomKernelTests, CustomABIKernelWithBuildInSchema) {
       7,
       LotusIR::kCpuExecutionProvider,
       &constraint,
-      1};
+      1,
+      nullptr,
+      0,
+      nullptr,
+      nullptr};
 
   EXPECT_EQ(MLStatus::OK, abi_registry.RegisterOpKernel(&def, MLOpKernelOptions::kAllowDynamicInputShapes, CreateABIFooKernel));
 
@@ -465,12 +469,12 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     // Defaults.  These are queried back during kernel creation, type and shape inference
     // and tested against the same values
     MLAttributeNameValue default_attributes[] = {
-        {"DefaultedNonRequiredInt", MLAttributeType::kInt, 1},
-        {"DefaultedNonRequiredFloat", MLAttributeType::kFloat, 1},
-        {"DefaultedNonRequiredString", MLAttributeType::kString, 1},
-        {"DefaultedNonRequiredIntArray", MLAttributeType::kIntArray, 2},
-        {"DefaultedNonRequiredFloatArray", MLAttributeType::kFloatArray, 2},
-        {"DefaultedNonRequiredStringArray", MLAttributeType::kStringArray, 2},
+        {"DefaultedNonRequiredInt", MLAttributeType::kInt, 1, {}},
+        {"DefaultedNonRequiredFloat", MLAttributeType::kFloat, 1, {}},
+        {"DefaultedNonRequiredString", MLAttributeType::kString, 1, {}},
+        {"DefaultedNonRequiredIntArray", MLAttributeType::kIntArray, 2, {}},
+        {"DefaultedNonRequiredFloatArray", MLAttributeType::kFloatArray, 2, {}},
+        {"DefaultedNonRequiredStringArray", MLAttributeType::kStringArray, 2, {}},
     };
 
     int64_t default_ints[] = {1, 2};
