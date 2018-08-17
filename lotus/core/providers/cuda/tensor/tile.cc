@@ -51,7 +51,6 @@ Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const {
   for (size_t i = 0; i < input_shape.size(); ++i)
     fdm_input_shape_span[i] = fast_divmod(gsl::narrow_cast<int>(input_shape[i]));
 
-  PrepareScratchBuffer();
   LOTUS_RETURN_IF_ERROR(fdm_input_shape.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());

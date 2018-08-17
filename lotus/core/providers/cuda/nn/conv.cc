@@ -139,22 +139,8 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
                                                                 algo,
                                                                 &workspace_bytes));
 
-  BookScratchBuffer<void>(workspace_bytes);
+  IAllocatorUniquePtr<void> workspace = GetScratchBuffer<void>(workspace_bytes);
 
-  BinaryElementwisePreparation prepare(this);
-  if (B) {
-    std::vector<int64_t> overrided_B_dims = B->Shape().GetDims();
-
-    for (int i = 0; i < kernel_shape.size(); i++)
-      overrided_B_dims.push_back(1);
-
-    TensorShape overrided_B_shape(overrided_B_dims);
-    LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(Y, B, Y, &prepare, nullptr, &overrided_B_shape));
-  }
-
-  // book all scratch buffers before prepare and execute
-  PrepareScratchBuffer();
-  void* workspace = GetScratchBuffer<void>(workspace_bytes);
   CUDNN_RETURN_IF_ERROR(cudnnConvolutionForward(CudnnHandle(),
                                                 &alpha,
                                                 x_tensor,
@@ -163,14 +149,23 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
                                                 w_data,
                                                 conv_desc,
                                                 algo,
-                                                workspace,
+                                                workspace.get(),
                                                 workspace_bytes,
                                                 &beta,
                                                 y_tensor,
                                                 y_data));
 
   if (B) {
+    BinaryElementwisePreparation prepare(this);
+    std::vector<int64_t> overrided_B_dims = B->Shape().GetDims();
+
+    for (int i = 0; i < kernel_shape.size(); i++)
+      overrided_B_dims.push_back(1);
+
+    TensorShape overrided_B_shape(overrided_B_dims);
+    LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(Y, B, Y, &prepare, nullptr, &overrided_B_shape));
     LOTUS_RETURN_IF_ERROR(prepare.CopyToGpu());
+
     Impl_Add<CudaT>(
         prepare.output_rank_or_simple_broadcast,
         prepare.lhs_padded_strides.GpuPtr(),

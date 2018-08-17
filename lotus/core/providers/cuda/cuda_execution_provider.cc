@@ -37,12 +37,9 @@ ONNX_OPERATOR_KERNEL_EX(
 }  // namespace Cuda
 
 thread_local std::unique_ptr<CUDAExecutionProvider::PerThreadContext> CUDAExecutionProvider::per_thread_context_;
+thread_local AllocatorPtr CUDAExecutionProvider::per_thread_default_allocator_;
 
-CUDAExecutionProvider::PerThreadContext::PerThreadContext(int device_id, AllocatorPtr gpu_allocator)
-    : gpu_allocator_(gpu_allocator),
-      gpu_scratch_buffer_size_(0),
-      gpu_scratch_buffer_bytes_used_(0),
-      gpu_scratch_buffer_bytes_booked_(0) {
+CUDAExecutionProvider::PerThreadContext::PerThreadContext(int device_id) {
   CUDA_CALL_THROW(cudaSetDevice(device_id));
   CUBLAS_CALL_THROW(cublasCreate(&cublas_handle_));
   CUDNN_CALL_THROW(cudnnCreate(&cudnn_handle_));
@@ -87,6 +84,25 @@ CUDAExecutionProvider::~CUDAExecutionProvider() {
   }
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyIn]));
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyOut]));
+
+  per_thread_default_allocator_.reset();
+}
+
+AllocatorPtr CUDAExecutionProvider::GetAllocator(MemType mem_type) const {
+  // Pinned memory allocator is shared between threads, but CUDA memory allocator is per-thread or it may cause result changes
+  // A hypothesis is that arena allocator is not aligned with CUDA output cache, and data from different kernel writes may
+  // cause cacheline to contain dirty data.
+  if (mem_type == kMemTypeDefault) {
+    if (!per_thread_default_allocator_) {
+      DeviceAllocatorRegistrationInfo default_allocator_info(
+          {kMemTypeDefault,
+           [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
+      per_thread_default_allocator_ = CreateAllocator(default_allocator_info, device_id_);
+    }
+    return per_thread_default_allocator_;
+  } else {
+    return IExecutionProvider::GetAllocator(mem_type);
+  }
 }
 
 Status CUDAExecutionProvider::Sync() {
@@ -129,7 +145,7 @@ Status CUDAExecutionProvider::OnRunStart() {
     }
   }
   // start a new per_thread context, store in TLS
-  per_thread_context_ = std::make_unique<PerThreadContext>(device_id_, GetAllocator());
+  per_thread_context_ = std::make_unique<PerThreadContext>(device_id_);
   auto& current_deferred_release_event = per_thread_context_->GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event, cudaEventDisableTiming));
   deferred_release_cpu_ptr_.emplace(current_deferred_release_event, DeferredReleaseCPUPtrs());
@@ -142,6 +158,7 @@ Status CUDAExecutionProvider::OnRunEnd() {
   auto current_deferred_release_event = per_thread_context_->GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventRecord(current_deferred_release_event, nullptr));
   per_thread_context_.reset();
+  per_thread_default_allocator_.reset();
   std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
   deferred_release_cpu_ptr_[current_deferred_release_event].recorded = true;
   return Status::OK();

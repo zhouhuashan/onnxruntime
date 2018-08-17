@@ -17,32 +17,32 @@ ONNX_OPERATOR_KERNEL_EX(
                                     DataTypeImpl::GetTensorType<int64_t>()}),
     Gather);
 
-#define TYPED_FUNCTION_CALL(T)                                                      \
-  if (T_type == DataTypeImpl::GetType<T>()) {                                       \
-    T* output_data = p.output_tensor->MutableData<T>();                             \
-    const T* input_data = p.input_tensor->Data<T>();                                \
-    if (Tin_type == DataTypeImpl::GetType<int32_t>()) {                             \
-      GatherImpl(                                                                   \
-          input_block_size,                                                         \
-          indices_max,                                                              \
-          p.indices_tensor->Data<int32_t>(),                                        \
-          div_strides.GpuPtr(),                                                     \
-          reinterpret_cast<const ToCudaType<T>::MappedType *>(input_data),          \
-          reinterpret_cast<typename ToCudaType<T>::MappedType *>(output_data),      \
-          p.output_tensor->Shape().Size());                                         \
-      return Status::OK();                                                          \
-    }                                                                               \
-    if (Tin_type == DataTypeImpl::GetType<int64_t>()) {                             \
-      GatherImpl(                                                                   \
-          input_block_size,                                                         \
-          indices_max,                                                              \
-          p.indices_tensor->Data<int64_t>(),                                        \
-          div_strides.GpuPtr(),                                                     \
-          reinterpret_cast<const ToCudaType<T>::MappedType *>(input_data),          \
-          reinterpret_cast<typename ToCudaType<T>::MappedType *>(output_data),      \
-          p.output_tensor->Shape().Size());                                         \
-      return Status::OK();                                                          \
-    }                                                                               \
+#define TYPED_FUNCTION_CALL(T)                                                \
+  if (T_type == DataTypeImpl::GetType<T>()) {                                 \
+    T* output_data = p.output_tensor->MutableData<T>();                       \
+    const T* input_data = p.input_tensor->Data<T>();                          \
+    if (Tin_type == DataTypeImpl::GetType<int32_t>()) {                       \
+      GatherImpl(                                                             \
+          input_block_size,                                                   \
+          indices_max,                                                        \
+          p.indices_tensor->Data<int32_t>(),                                  \
+          div_strides.GpuPtr(),                                               \
+          reinterpret_cast<const ToCudaType<T>::MappedType*>(input_data),     \
+          reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_data), \
+          p.output_tensor->Shape().Size());                                   \
+      return Status::OK();                                                    \
+    }                                                                         \
+    if (Tin_type == DataTypeImpl::GetType<int64_t>()) {                       \
+      GatherImpl(                                                             \
+          input_block_size,                                                   \
+          indices_max,                                                        \
+          p.indices_tensor->Data<int64_t>(),                                  \
+          div_strides.GpuPtr(),                                               \
+          reinterpret_cast<const ToCudaType<T>::MappedType*>(input_data),     \
+          reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_data), \
+          p.output_tensor->Shape().Size());                                   \
+      return Status::OK();                                                    \
+    }                                                                         \
   }
 
 Status Gather::ComputeInternal(OpKernelContext* context) const {
@@ -56,15 +56,13 @@ Status Gather::ComputeInternal(OpKernelContext* context) const {
   const int64_t input_block_size = input_shape.SizeFromDimension(p.axis);
   const int64_t output_block_size = N * block_size;
   const int64_t indices_max = input_shape[p.axis];
-  
+
   // Put the output_block_size and block_size into div_strides
   // for divmod calling in _GatherKernel to calculate the input index
   CudaAsyncBuffer<fast_divmod> div_strides(this, 2);
   gsl::span<fast_divmod> div_strides_span = div_strides.CpuSpan();
   div_strides_span[0] = fast_divmod(gsl::narrow_cast<int>(output_block_size));
   div_strides_span[1] = fast_divmod(gsl::narrow_cast<int>(block_size));
-
-  PrepareScratchBuffer();
   LOTUS_RETURN_IF_ERROR(div_strides.CopyToGpu());
 
   MLDataType T_type = p.input_tensor->DataType();

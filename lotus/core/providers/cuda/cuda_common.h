@@ -44,21 +44,8 @@ class CudaKernel : public OpKernel {
     return IAllocator::MakeUniquePtr<T>(provider_->GetAllocator(kMemTypeCPU), count_or_bytes);
   }
 
-  // CUDA kernels can use BookScratchBuffer/PrepareScratchBuffer/GetScratchBuffer to allocate scratch buffers on GPU
-  // Note that GetScratchBuffer()/CudaAsyncBuffer::CopyToGpu() can only be called after PrepareScratchBuffer()
-  // Because each kernel should have a single place to allocate scratch buffer to make sure all GPU scratch buffers
-  // are valid when launching CUDA operations
   template <typename T>
-  inline void BookScratchBuffer(size_t count_or_bytes) const {
-    provider_->BookScratchBuffer<T>(count_or_bytes);
-  }
-
-  inline void PrepareScratchBuffer() const {
-    provider_->PrepareScratchBuffer();
-  }
-
-  template <typename T>
-  inline T* GetScratchBuffer(size_t count_or_bytes) const {
+  inline IAllocatorUniquePtr<T> GetScratchBuffer(size_t count_or_bytes) const {
     return provider_->GetScratchBuffer<T>(count_or_bytes);
   }
 
@@ -87,14 +74,13 @@ class CudaKernel : public OpKernel {
 
     void AllocCpuPtr(size_t count) {
       cpu_pinned_copy_ = op_kernel_->AllocateBufferOnCPUPinned<T>(count);
-      op_kernel_->BookScratchBuffer<T>(count);
       count_ = count;
     }
 
     Status CopyToGpu() {
       if (cpu_pinned_copy_) {
         gpu_copy_ = op_kernel_->GetScratchBuffer<T>(count_);
-        CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(gpu_copy_, cpu_pinned_copy_.get(), count_ * sizeof(T), cudaMemcpyHostToDevice));
+        CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(gpu_copy_.get(), cpu_pinned_copy_.get(), count_ * sizeof(T), cudaMemcpyHostToDevice));
         op_kernel_->AddDeferredReleaseCPUPtr(cpu_pinned_copy_.release());
       }
       return Status::OK();
@@ -109,7 +95,7 @@ class CudaKernel : public OpKernel {
     }
 
     T* GpuPtr() const {
-      return gpu_copy_;
+      return gpu_copy_.get();
     }
 
     size_t count() const {
@@ -117,7 +103,7 @@ class CudaKernel : public OpKernel {
     }
 
    protected:
-    T* gpu_copy_;
+    IAllocatorUniquePtr<T> gpu_copy_;
     IAllocatorUniquePtr<T> cpu_pinned_copy_;
     size_t count_;
     const CudaKernel* op_kernel_;

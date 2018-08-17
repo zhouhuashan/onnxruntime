@@ -44,7 +44,6 @@ Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
   TensorShape output_shape(output_dims);
   auto &output_tensor = *ctx->Output(0, output_shape);
   LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
-  PrepareScratchBuffer();
   LOTUS_RETURN_IF_ERROR(input_dims.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(lower_pads.CopyToGpu());

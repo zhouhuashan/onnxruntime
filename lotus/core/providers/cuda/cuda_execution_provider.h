@@ -26,6 +26,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
   explicit CUDAExecutionProvider(const CUDAExecutionProviderInfo& info);
   virtual ~CUDAExecutionProvider();
 
+  virtual AllocatorPtr GetAllocator(MemType mem_type = kMemTypeDefault) const override;
+
   std::string Type() const override {
     return LotusIR::kCudaExecutionProvider;
   }
@@ -68,17 +70,11 @@ class CUDAExecutionProvider : public IExecutionProvider {
   void AddDeferredReleaseCPUPtr(void* p);
 
   template <typename T>
-  inline T* GetScratchBuffer(size_t count_or_bytes) {
-    return per_thread_context_->GetScratchBuffer<T>(count_or_bytes);
-  }
+  inline IAllocatorUniquePtr<T> GetScratchBuffer(size_t count_or_bytes) const {
+    if (count_or_bytes == 0)
+      return nullptr;
 
-  template <typename T>
-  void BookScratchBuffer(size_t count_or_bytes) {
-    per_thread_context_->BookScratchBuffer<T>(count_or_bytes);
-  }
-
-  void PrepareScratchBuffer() {
-    return per_thread_context_->PrepareScratchBuffer();
+    return IAllocator::MakeUniquePtr<T>(GetAllocator(kMemTypeDefault), count_or_bytes);
   }
 
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;
@@ -97,7 +93,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   class PerThreadContext final {
    public:
-    PerThreadContext(int device_id, AllocatorPtr gpu_allocator);
+    PerThreadContext(int device_id);
     ~PerThreadContext();
 
     cublasHandle_t CublasHandle() const {
@@ -112,48 +108,6 @@ class CUDAExecutionProvider : public IExecutionProvider {
       return current_deferred_release_event_;
     }
 
-    template <typename T>
-    static size_t CalculateBytesNeeded(size_t count_or_bytes) {
-      size_t bytes = count_or_bytes;
-
-      if (!std::is_void<T>::value)
-        bytes *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
-
-      // align up to multiple of 16-bytes to avoid cuda misaligned address error
-      return (bytes + static_cast<size_t>(15)) & (~static_cast<size_t>(15));
-    }
-
-    template <typename T>
-    void BookScratchBuffer(size_t count_or_bytes) {
-      gpu_scratch_buffer_bytes_booked_ += CalculateBytesNeeded<T>(count_or_bytes);
-    }
-
-    void PrepareScratchBuffer() {
-      if (gpu_scratch_buffer_bytes_booked_ > gpu_scratch_buffer_size_) {
-        // note that scratch buffer is write-only, so no copy needed when reallocate to a bigger size
-        gpu_scratch_buffer_.reset();
-        gpu_scratch_buffer_ = IAllocator::MakeUniquePtr<uint8_t>(gpu_allocator_, gpu_scratch_buffer_bytes_booked_);
-        gpu_scratch_buffer_size_ = gpu_scratch_buffer_bytes_booked_;
-      }
-      gpu_scratch_buffer_bytes_used_ = 0;
-      gpu_scratch_buffer_bytes_booked_ = 0;
-    }
-
-    template <typename T>
-    inline T* GetScratchBuffer(size_t count_or_bytes) {
-      if (count_or_bytes == 0) {
-        return nullptr;
-      }
-
-      size_t bytes = CalculateBytesNeeded<T>(count_or_bytes);
-      size_t used_bytes = bytes + gpu_scratch_buffer_bytes_used_;
-      LOTUS_ENFORCE(used_bytes <= gpu_scratch_buffer_size_);
-
-      T* p = reinterpret_cast<T*>(gpu_scratch_buffer_.get() + gpu_scratch_buffer_bytes_used_);
-      gpu_scratch_buffer_bytes_used_ = used_bytes;
-      return p;
-    }
-
    private:
     cublasHandle_t cublas_handle_ = nullptr;
     cudnnHandle_t cudnn_handle_ = nullptr;
@@ -162,18 +116,13 @@ class CUDAExecutionProvider : public IExecutionProvider {
     // note that cudaEvent will be assigned at OnRunEnd() when PerThreadContext destory
     // so the ownership is passed to deferred_release_cpu_ptr_
     cudaEvent_t current_deferred_release_event_ = nullptr;
-
-    // each thread needs to have its own GPU scratch buffer since it
-    // needs to be shared within the same thread, while execution in GPU is async.
-    // This is different from temporary CPU pinned memory which needs to be hold
-    // until GPU copy finished (indicated by deferred_release_event)
-    IAllocatorUniquePtr<uint8_t> gpu_scratch_buffer_;
-    size_t gpu_scratch_buffer_size_ = 0;
-    size_t gpu_scratch_buffer_bytes_used_ = 0;
-    size_t gpu_scratch_buffer_bytes_booked_ = 0;
-    AllocatorPtr gpu_allocator_;
   };
+
+  // thread local context during execution
   static thread_local std::unique_ptr<PerThreadContext> per_thread_context_;
+
+  // thread local GPU memory allocator. could be used before execution
+  static thread_local AllocatorPtr per_thread_default_allocator_;
 };
 
 struct KernelCreateInfo;

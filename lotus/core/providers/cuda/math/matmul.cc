@@ -51,8 +51,6 @@ Status MatMul<float>::ComputeInternal(OpKernelContext* ctx) const {
   MatMulComputeHelper::OffsetToArrays(left_X->Data<float>(), helper.LeftOffsets(), left_arrays.CpuSpan());
   MatMulComputeHelper::OffsetToArrays(right_X->Data<float>(), helper.RightOffsets(), right_arrays.CpuSpan());
   MatMulComputeHelper::OffsetToArrays(Y->MutableData<float>(), helper.OutputOffsets(), output_arrays.CpuSpan());
-
-  PrepareScratchBuffer();
   LOTUS_RETURN_IF_ERROR(left_arrays.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(right_arrays.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(output_arrays.CopyToGpu());

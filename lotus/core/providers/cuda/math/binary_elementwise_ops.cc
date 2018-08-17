@@ -151,7 +151,6 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   Status x<T>::ComputeInternal(OpKernelContext* context) const {                                        \
     BinaryElementwisePreparation prepare(this);                                                         \
     Prepare(context, &prepare);                                                                         \
-    PrepareScratchBuffer();                                                                             \
     LOTUS_RETURN_IF_ERROR(prepare.CopyToGpu());                                                         \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                       \
         prepare.output_rank_or_simple_broadcast,                                                        \

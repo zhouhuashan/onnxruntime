@@ -21,7 +21,6 @@ namespace Cuda {
     UnaryElementwisePreparation p;                                                                \
     UnaryElementwise::Prepare(context, &p);                                                       \
     CudaAsyncBuffer<Ctx##x> func_ctx(this, MakeFuncCtx());                                        \
-    PrepareScratchBuffer();                                                                       \
     if (!std::is_same<CtxNull, Ctx##x>::value)                                                    \
       LOTUS_RETURN_IF_ERROR(func_ctx.CopyToGpu());                                                \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                 \
@@ -55,7 +54,6 @@ UNARY_ACTIVATION_OP_HFD(Softplus, 1);
 UNARY_ACTIVATION_OP_HFD(Softsign, 1);
 UNARY_ACTIVATION_OP_HFD(Tanh, 6);
 UNARY_ACTIVATION_OP_HFD(ThresholdedRelu, 1);
-
 
 }  // namespace Cuda
 }  // namespace Lotus

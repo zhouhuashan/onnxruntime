@@ -107,31 +107,24 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
-  BookScratchBuffer<void>(indices_bytes);
-  BookScratchBuffer<void>(workspace_bytes);
+  auto indices_cuda = GetScratchBuffer<void>(indices_bytes);
+  auto workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
 
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_NO_INDICES) {
-    PrepareScratchBuffer();
-    void* indices_cuda = GetScratchBuffer<void>(indices_bytes);
-    void* workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
-        CudnnHandle(), reduce_desc, indices_cuda, indices_bytes, workspace_cuda, workspace_bytes,
+        CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
         &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
         &beta, output_tensor, reinterpret_cast<CudaT*>(Y->MutableData<T>())));
   } else {
     // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
     auto output_count = Y->Shape().Size();
-    BookScratchBuffer<CudaT>(output_count);
-    PrepareScratchBuffer();
-    void* indices_cuda = GetScratchBuffer<void>(indices_bytes);
-    void* workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
-    CudaT* temp_output = GetScratchBuffer<CudaT>(output_count);
+    auto temp_output = GetScratchBuffer<CudaT>(output_count);
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
-        CudnnHandle(), reduce_desc, indices_cuda, indices_bytes, workspace_cuda, workspace_bytes,
+        CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
         &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
-        &beta, output_tensor, temp_output));
+        &beta, output_tensor, temp_output.get()));
     // CUDA reduction index is uint32_t for now, cast it to int64_t according to ONNX spec
-    Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda), Y->MutableData<int64_t>(), output_count);
+    Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda.get()), Y->MutableData<int64_t>(), output_count);
   }
 
   return Status::OK();
