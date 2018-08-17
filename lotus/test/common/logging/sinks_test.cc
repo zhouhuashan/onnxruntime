@@ -7,7 +7,7 @@
 
 #include "test/common/logging/helpers.h"
 
-using namespace Lotus::Logging;
+using namespace ::Lotus::Logging;
 using InstanceType = LoggingManager::InstanceType;
 
 namespace {

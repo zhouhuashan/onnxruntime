@@ -144,8 +144,8 @@ class PlannerTest : public ::testing::Test {
   // some standard components used to build test-cases:
   Type float_type_;
 
-  std::unique_ptr<Lotus::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
-  std::unique_ptr<Lotus::KernelDef> in_place_kernel_;  // a unary kernel with in-place
+  std::unique_ptr<::Lotus::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
+  std::unique_ptr<::Lotus::KernelDef> in_place_kernel_;  // a unary kernel with in-place
 
   std::unordered_map<std::string, std::unique_ptr<LotusIR::NodeArg>> name_to_arg_;
   std::vector<std::unique_ptr<UnaryNode>> nodes_;
@@ -173,7 +173,7 @@ class PlannerTest : public ::testing::Test {
     return (name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, &float_type_.value)).get();
   }
 
-  LotusIR::Node* AddNode(Lotus::KernelDef& kernel_def, std::string& input, std::string& output) {
+  LotusIR::Node* AddNode(::Lotus::KernelDef& kernel_def, std::string& input, std::string& output) {
     auto node = std::make_unique<UnaryNode>(graph_, kernel_def.OpName(), Arg(input), Arg(output));
     auto* p_node = node->p_node;
     p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
@@ -190,7 +190,7 @@ class PlannerTest : public ::testing::Test {
     return AddNode(*in_place_kernel_, input, output);
   }
 
-  void BindKernel(LotusIR::Node* p_node, Lotus::KernelDef& kernel_def) {
+  void BindKernel(LotusIR::Node* p_node, ::Lotus::KernelDef& kernel_def) {
     auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, provider_.get(), session_state_);
     auto dummy = std::make_unique<DummyOpKernel>(*info);
     op_kernel_infos_.push_back(std::move(info));

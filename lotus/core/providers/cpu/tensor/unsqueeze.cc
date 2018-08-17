@@ -1,5 +1,5 @@
 #include "core/providers/cpu/tensor/unsqueeze.h"
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace Lotus {
 

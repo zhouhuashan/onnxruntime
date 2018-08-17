@@ -22,7 +22,7 @@ The order of the input and attributes determines the key-value mapping.
 .Attr("classlabels_strings", "keys if using string keys", AttributeProto::STRINGS, OPTIONAL)
 .Attr("classlabels_int64s", "keys if using int keys", AttributeProto::INTS, OPTIONAL);
 */
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 using namespace std;
 namespace Lotus {
 namespace ML {

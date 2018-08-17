@@ -389,7 +389,7 @@ void RegisterOnnxMLOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
 
 void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
   RegisterOnnxOperatorKernels(create_fn);
-  Lotus::ML::RegisterOnnxMLOperatorKernels(create_fn);
+  ::Lotus::ML::RegisterOnnxMLOperatorKernels(create_fn);
 }
 
 std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const {

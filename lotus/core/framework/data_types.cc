@@ -265,11 +265,11 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
           }
         }
         default:
-          throw Lotus::NotImplementedException("type is not supported");
+          throw ::Lotus::NotImplementedException("type is not supported");
       }
     }
     default:
-      throw Lotus::NotImplementedException(Lotus::MakeString("Onnx type: ", proto.value_case(), " is not supported."));
+      throw ::Lotus::NotImplementedException(::Lotus::MakeString("Onnx type: ", proto.value_case(), " is not supported."));
   }
 }
 

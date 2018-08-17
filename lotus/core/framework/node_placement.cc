@@ -1,17 +1,17 @@
 #include "core/framework/node_placement.h"
 #include "core/graph/indexed_sub_graph.h"
 
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 Status GraphPartitioner::Partition(LotusIR::Graph* graph) const {
   if (nullptr == graph || providers_.empty()) {
     return Status(LOTUS, INVALID_ARGUMENT, "Graph is nullptr or no provider specified.");
   }
 
-  auto kernel_registries = std::move(kernel_registry_mgr_.GetAllKernelRegistries());
+  auto kernel_registries = kernel_registry_mgr_.GetAllKernelRegistries();
   for (auto& provider : providers_) {
     // Partitioning <graph> based on provider preference.
-    auto sub_graphs = std::move(provider->GetCapability(*graph, kernel_registries));
+    auto sub_graphs = provider->GetCapability(*graph, kernel_registries);
     for (auto& sub_graph : sub_graphs) {
       if (1 == sub_graph->nodes.size()) {
         // The <provider> can run a single node in the <graph>.

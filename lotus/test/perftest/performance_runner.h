@@ -106,7 +106,7 @@ class PerformanceRunner {
   PerformanceResult performance_result_;
   PerformanceTestConfig performance_test_config_;
 
-  std::shared_ptr<Lotus::InferenceSession> session_object_;
+  std::shared_ptr<::Lotus::InferenceSession> session_object_;
   std::unique_ptr<IOBinding> io_binding_;
 };
 }  // namespace PerfTest

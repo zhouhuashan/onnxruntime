@@ -6,8 +6,8 @@
 #include "core/common/logging/severity.h"
 #include <vector>
 
-using namespace Lotus::Common;
-using namespace Lotus::Logging;
+using namespace ::Lotus::Common;
+using namespace ::Lotus::Logging;
 
 namespace Lotus {
 CustomOpsLoader::~CustomOpsLoader() {

@@ -102,6 +102,6 @@ class TensorShape : private std::vector<int64_t> {
   }
 };
 // operator<< to nicely output to a stream
-std::ostream& operator<<(std::ostream& out, const Lotus::TensorShape& shape);
+std::ostream& operator<<(std::ostream& out, const ::Lotus::TensorShape& shape);
 
 }  // namespace Lotus

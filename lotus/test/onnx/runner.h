@@ -14,7 +14,7 @@
 #include <core/graph/graph.h>  //TODO(@chasun): remove this
 #include "sync_api.h"
 
-typedef std::function<Lotus::Common::Status(std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci)> TestCaseCallBack;
+typedef std::function<::Lotus::Common::Status(std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci)> TestCaseCallBack;
 
 struct TestCaseTask {
   TestEnv& env;
@@ -28,7 +28,7 @@ struct TestCaseTask {
 void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE instance, void* context, LOTUS_WORK work);
 //TODO: implement this function for Linux
 void LOTUS_CALLBACK RunSingleDataItem(LOTUS_CALLBACK_INSTANCE instance, void* context, LOTUS_WORK work);
-Lotus::Common::Status OnTestCaseFinished(LOTUS_CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result);
+::Lotus::Common::Status OnTestCaseFinished(LOTUS_CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result);
 
 class DataRunner {
  protected:
@@ -37,15 +37,15 @@ class DataRunner {
   std::string test_case_name_;
   ITestCase* c_;
   //Time spent in Session::Run. It only make sense when SeqTestRunner was used
-  Lotus::TIME_SPEC spent_time_;
+  ::Lotus::TIME_SPEC spent_time_;
 
  private:
-  std::shared_ptr<Lotus::InferenceSession> session;
+  std::shared_ptr<::Lotus::InferenceSession> session;
   CALL_BACK on_finished;
   EXECUTE_RESULT RunTaskImpl(size_t task_id);
 
  public:
-  DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1);
+  DataRunner(std::shared_ptr<::Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1);
   virtual void OnTaskFinished(size_t task_id, EXECUTE_RESULT res, LOTUS_CALLBACK_INSTANCE pci) noexcept = 0;
   void RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store_result);
   virtual ~DataRunner() {}
@@ -92,7 +92,7 @@ class SeqTestRunner : public DataRunner {
   size_t repeat_count_;
 
  public:
-  SeqTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
+  SeqTestRunner(std::shared_ptr<::Lotus::InferenceSession> session1,
                 ITestCase* c, size_t repeat_count,
                 TestCaseCallBack on_finished1);
 
@@ -109,7 +109,7 @@ class PTestRunner : public DataRunner {
  public:
   void Start(LOTUS_CALLBACK_INSTANCE pci, size_t concurrent_runs) override;
 
-  PTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
+  PTestRunner(std::shared_ptr<::Lotus::InferenceSession> session1,
               ITestCase* c, PThreadPool tpool,
               TestCaseCallBack on_finished1);
 
@@ -123,8 +123,8 @@ struct DataTask {
   const size_t task_id;
 };
 
-std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, Lotus::AllocatorPtr allocator);
+std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::Lotus::AllocatorPtr allocator);
 //Do not run this function in the thread pool passed in
-Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count, PThreadPool tpool);
+::Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count, PThreadPool tpool);
 EXECUTE_RESULT StatusCodeToExecuteResult(int input);
 void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, PThreadPool tpool, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished);

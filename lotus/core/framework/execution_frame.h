@@ -139,7 +139,7 @@ class ExecutionFrame {
     return Status::OK();
   }
 
-  const Lotus::SessionState& SessionState() const {
+  const ::Lotus::SessionState& SessionState() const {
     return session_state_;
   }
 
@@ -233,7 +233,7 @@ class ExecutionFrame {
 
   std::unordered_map<std::string, int> value_name_to_index_;
 
-  const Lotus::SessionState& session_state_;
+  const ::Lotus::SessionState& session_state_;
 
   // If we already have cached memory pattern on these input shapes
   // Use this mem pattern that create a big chunk for all the internal

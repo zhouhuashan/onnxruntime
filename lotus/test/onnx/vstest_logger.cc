@@ -9,7 +9,7 @@
 #include "core/common/logging/capture.h"
 #include "core/common/logging/isink.h"
 
-void VsTestSink::SendImpl(const Lotus::Logging::Timestamp &timestamp, const std::string &logger_id_, const Lotus::Logging::Capture &message) {
+void VsTestSink::SendImpl(const ::Lotus::Logging::Timestamp &timestamp, const std::string &logger_id_, const ::Lotus::Logging::Capture &message) {
   // operator for formatting of timestamp in ISO8601 format including microseconds
   using date::operator<<;
 

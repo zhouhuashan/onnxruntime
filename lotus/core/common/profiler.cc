@@ -4,7 +4,7 @@ namespace Lotus {
 namespace Profiling {
 using namespace std::chrono;
 
-Lotus::TimePoint Profiling::Profiler::StartTime() const {
+::Lotus::TimePoint Profiling::Profiler::StartTime() const {
   return std::chrono::high_resolution_clock::now();
 }
 

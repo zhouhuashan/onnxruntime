@@ -60,32 +60,32 @@ std::vector<std::string> GetStackTrace();
 
 // Capture where a message is coming from. Use __FUNCTION__ rather than the much longer __PRETTY_FUNCTION__
 #define WHERE \
-  Lotus::CodeLocation(__FILE__, __LINE__, __FUNCTION__)
+  ::Lotus::CodeLocation(__FILE__, __LINE__, __FUNCTION__)
 
 #define WHERE_WITH_STACK \
-  Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__, Lotus::GetStackTrace())
+  ::Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__, ::Lotus::GetStackTrace())
 
 // Throw an exception with optional message.
 // NOTE: The arguments get streamed into a string via ostringstream::operator<<
 // DO NOT use a printf format string, as that will not work as you expect.
-#define LOTUS_THROW(...) throw Lotus::LotusException(WHERE_WITH_STACK, Lotus::MakeString(__VA_ARGS__))
+#define LOTUS_THROW(...) throw ::Lotus::LotusException(WHERE_WITH_STACK, ::Lotus::MakeString(__VA_ARGS__))
 
 // Just in order to mark things as not implemented. Do not use in final code.
-#define LOTUS_NOT_IMPLEMENTED(...) throw Lotus::NotImplementedException(Lotus::MakeString(__VA_ARGS__))
+#define LOTUS_NOT_IMPLEMENTED(...) throw ::Lotus::NotImplementedException(::Lotus::MakeString(__VA_ARGS__))
 
 // Check condition.
 // NOTE: The arguments get streamed into a string via ostringstream::operator<<
 // DO NOT use a printf format string, as that will not work as you expect.
 #define LOTUS_ENFORCE(condition, ...) \
-  if (!(condition)) throw Lotus::LotusException(WHERE_WITH_STACK, #condition, Lotus::MakeString(__VA_ARGS__))
+  if (!(condition)) throw ::Lotus::LotusException(WHERE_WITH_STACK, #condition, ::Lotus::MakeString(__VA_ARGS__))
 
 #define LOTUS_MAKE_STATUS(category, code, ...) \
-  Lotus::Common::Status(Lotus::Common::category, Lotus::Common::code, Lotus::MakeString(__VA_ARGS__))
+  ::Lotus::Common::Status(::Lotus::Common::category, ::Lotus::Common::code, ::Lotus::MakeString(__VA_ARGS__))
 
 // Check condition. if not met, return status.
 #define LOTUS_RETURN_IF_NOT(condition, ...)                                                                                     \
   if (!(condition)) {                                                                                                           \
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Not satsified: " #condition "\n", WHERE.ToString(), Lotus::MakeString(__VA_ARGS__)); \
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Not satsified: " #condition "\n", WHERE.ToString(), ::Lotus::MakeString(__VA_ARGS__)); \
   }
 
 // Macros to disable the copy and/or move ctor and assignment methods

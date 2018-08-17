@@ -114,7 +114,7 @@ std::string("NONE"))
 AttributeProto::FLOATS,
 OPTIONAL);
 */
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 using namespace std;
 namespace Lotus {
 namespace ML {

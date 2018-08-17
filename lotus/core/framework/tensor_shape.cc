@@ -91,7 +91,7 @@ int64_t TensorShape::SizeHelper(size_t start, size_t end) const {
 }
 
 // operator<< to nicely output to a stream
-std::ostream& operator<<(std::ostream& out, const Lotus::TensorShape& shape) {
+std::ostream& operator<<(std::ostream& out, const ::Lotus::TensorShape& shape) {
   return (out << shape.ToString());
 }
 }  // namespace Lotus

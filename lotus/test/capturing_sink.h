@@ -8,7 +8,7 @@
 namespace Lotus {
 namespace Test {
 
-using namespace Lotus::Logging;
+using namespace ::Lotus::Logging;
 
 class CapturingSink : public Logging::ISink {
  public:

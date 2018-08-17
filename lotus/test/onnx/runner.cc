@@ -24,7 +24,7 @@ using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
 using namespace Lotus;
-using Lotus::Common::Status;
+using ::Lotus::Common::Status;
 
 void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE pci, void* context, LOTUS_WORK work) {
   LotusCloseThreadpoolWork(work);
@@ -85,7 +85,7 @@ void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT, LOTUS_CALLBACK_INSTANCE
   }
 }
 
-PTestRunner::PTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
+PTestRunner::PTestRunner(std::shared_ptr<::Lotus::InferenceSession> session1,
                          ITestCase* c, PThreadPool tpool,
                          TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), next_test_to_run(0), finished(0), tpool_(tpool) {
 }
@@ -136,7 +136,7 @@ static Status ParallelRunTests(TestEnv& env, int p_models, size_t current_runs, 
   }
   bool ret = env.finished->wait();
   if (!ret) {
-    return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "ParallelRunTests failed");
+    return Status(::Lotus::Common::LOTUS, ::Lotus::Common::FAIL, "ParallelRunTests failed");
   }
   LOGF_DEFAULT(ERROR, "Running tests finished. Generating report");
   return Status::OK();
@@ -224,7 +224,7 @@ Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_c
   return Common::Status::OK();
 }
 
-std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, Lotus::AllocatorPtr allocator) {
+std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::Lotus::AllocatorPtr allocator) {
   std::vector<ITestCase*> tests;
   std::vector<path> paths;
   for (const std::string& s : input_paths) {
@@ -262,12 +262,12 @@ std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, c
   return tests;
 }
 
-SeqTestRunner::SeqTestRunner(std::shared_ptr<Lotus::InferenceSession> session1,
+SeqTestRunner::SeqTestRunner(std::shared_ptr<::Lotus::InferenceSession> session1,
                              ITestCase* c, size_t repeat_count,
                              TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), repeat_count_(repeat_count) {
 }
 
-DataRunner::DataRunner(std::shared_ptr<Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1) : test_case_name_(test_case_name1), c_(c), session(session1), on_finished(on_finished1) {
+DataRunner::DataRunner(std::shared_ptr<::Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1) : test_case_name_(test_case_name1), c_(c), session(session1), on_finished(on_finished1) {
   std::string s;
   c->GetNodeName(&s);
   result = std::make_shared<TestCaseResult>(c->GetDataCount(), EXECUTE_RESULT::UNKNOWN_ERROR, s);
@@ -289,8 +289,8 @@ void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store
 }
 
 EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
-  std::unordered_map<std::string, Lotus::MLValue> feeds;
-  std::vector<Lotus::MLValue> output_values;
+  std::unordered_map<std::string, ::Lotus::MLValue> feeds;
+  std::vector<::Lotus::MLValue> output_values;
   Common::Status status = c_->LoadInputData(task_id, feeds);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
@@ -406,7 +406,7 @@ void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurr
       ret = std::make_shared<TestCaseResult>(data_count, StatusCodeToExecuteResult(status.Code()), node_name);
       goto end;
     }
-    std::shared_ptr<Lotus::InferenceSession> session_object;
+    std::shared_ptr<::Lotus::InferenceSession> session_object;
     try {
       status = sf.create(session_object, info->GetModelUrl(), info->GetTestCaseName());
       if (!status.IsOK()) {
@@ -414,7 +414,7 @@ void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurr
         ret = std::make_shared<TestCaseResult>(data_count, StatusCodeToExecuteResult(status.Code()), node_name);
         goto end;
       }
-    } catch (Lotus::NotImplementedException& ex) {
+    } catch (::Lotus::NotImplementedException& ex) {
       LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info->GetTestCaseName().c_str(), ex.what());
       ret = std::make_shared<TestCaseResult>(data_count, EXECUTE_RESULT::NOT_SUPPORT, node_name);
       goto end;

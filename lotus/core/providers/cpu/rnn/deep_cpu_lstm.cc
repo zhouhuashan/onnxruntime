@@ -317,7 +317,7 @@ DeepCpuLstmOp::Compute(OpKernelContext* context) const {
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) Lotus::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::Lotus::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif

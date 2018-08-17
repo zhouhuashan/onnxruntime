@@ -7,7 +7,7 @@
 
 namespace Lotus {
 
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 AllocatorPtr CreateAllocator(DeviceAllocatorRegistrationInfo info, int device_id) {
   auto device_allocator = std::unique_ptr<IDeviceAllocator>(info.factory(device_id));

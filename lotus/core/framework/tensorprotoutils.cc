@@ -17,7 +17,7 @@
 #include "core/framework/tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
 using namespace onnx;
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 namespace Utils {
 std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tensor_proto) {
@@ -59,7 +59,7 @@ Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size, expected ", size_to_allocate, ", got ", preallocated_size);
   //TODO(@chasun): size_to_allocate could be zero. We shouldn't pass zero to alloc->Alloc()
   T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
-  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
+  LOTUS_RETURN_IF_ERROR(::Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
                                        tensor_shape,
                                        static_cast<void*>(p_data),
@@ -100,7 +100,7 @@ Common::Status GetTensorByTypeFromTensorProto<std::string>(const TensorProto& te
   however restricting it to string types only alleviates this concern for other types at least. Hence the template
   specialization for string.
   */
-  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
+  LOTUS_RETURN_IF_ERROR(::Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
 
   return Common::Status::OK();
 }
@@ -123,7 +123,7 @@ Common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
     return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
   MLFloat16* p_data = static_cast<MLFloat16*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
-  LOTUS_RETURN_IF_ERROR(Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
+  LOTUS_RETURN_IF_ERROR(::Lotus::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<MLFloat16>(),
                                        tensor_shape,
                                        static_cast<void*>(p_data),

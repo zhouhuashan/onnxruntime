@@ -17,7 +17,7 @@
 using namespace onnx;
 using namespace onnx::Utils;
 using namespace onnx::checker;
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace LotusIR {
 
@@ -976,7 +976,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
 }  // namespace LotusIR
 
 // Apply type-inference and type-checking to all inputs and initializers:
-Lotus::Common::Status Graph::TypeCheckInputsAndInitializers() {
+::Lotus::Common::Status Graph::TypeCheckInputsAndInitializers() {
   // Check that the type of every input is specified:
   for (auto* graph_input : GetInputs()) {
     if (nullptr == graph_input->Type()) {
@@ -1157,7 +1157,7 @@ Status Graph::Resolve(bool no_proto_sync_required) {
 
 Status GraphBase::GetNodesInTopologicalOrder(gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const {
   if (graph_resolve_needed_) {
-    return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL,
+    return Status(::Lotus::Common::LOTUS, ::Lotus::Common::FAIL,
                   "Resolve() must be called before using the graph as modifications have been made to it.");
   }
 

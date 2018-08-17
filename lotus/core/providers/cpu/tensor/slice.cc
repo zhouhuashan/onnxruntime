@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/slice.h"
 #include "core/providers/cpu/tensor/utils.h"
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace Lotus {
 

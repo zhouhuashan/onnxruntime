@@ -23,18 +23,18 @@ TestEnv::TestEnv(const std::vector<ITestCase*>& tests1, TestResultStat& stat1, S
 TestEnv::~TestEnv() {
   delete finished;
 }
-Lotus::Common::Status SessionFactory::create(std::shared_ptr<Lotus::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
-  Lotus::SessionOptions so;
+::Lotus::Common::Status SessionFactory::create(std::shared_ptr<::Lotus::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
+  ::Lotus::SessionOptions so;
   so.session_logid = logid;
   so.enable_cpu_mem_arena = enable_cpu_mem_arena_;
   so.enable_mem_pattern = enable_mem_pattern_;
-  sess.reset(new Lotus::InferenceSession(so));
-  Lotus::Common::Status status;
+  sess.reset(new ::Lotus::InferenceSession(so));
+  ::Lotus::Common::Status status;
   if (provider_ == LotusIR::kCudaExecutionProvider) {
 #if USE_CUDA
-    Lotus::CUDAExecutionProviderInfo cuda_epi;
+    ::Lotus::CUDAExecutionProviderInfo cuda_epi;
     cuda_epi.device_id = 0;
-    status = sess->RegisterExecutionProvider(std::make_unique<Lotus::CUDAExecutionProvider>(cuda_epi));
+    status = sess->RegisterExecutionProvider(std::make_unique<::Lotus::CUDAExecutionProvider>(cuda_epi));
     LOTUS_RETURN_IF_ERROR(status);
 #else
     LOTUS_THROW("This executable is not built with CUDA");

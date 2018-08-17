@@ -235,11 +235,11 @@ MLStatus CreateTruncatedABIFooKernel(const IMLOpKernelInfo& kernel_info, IMLOpKe
 // Creates a Foo kernel implementing the built-in OpKernel type.  This wraps
 // the ABI kernel as an implementation detail.
 OpKernel* CreateFooKernel(const OpKernelInfo& kernel_info) {
-  return new Lotus::AbiOpKernel(CreateABIFooKernel, kernel_info, false, false, nullptr, nullptr);
+  return new ::Lotus::AbiOpKernel(CreateABIFooKernel, kernel_info, false, false, nullptr, nullptr);
 }
 
 OpKernel* CreateOptionalOpKernel(const OpKernelInfo& kernel_info) {
-  return new Lotus::AbiOpKernel(CreateABIOptionalKernel, kernel_info, false, false, nullptr, nullptr);
+  return new ::Lotus::AbiOpKernel(CreateABIOptionalKernel, kernel_info, false, false, nullptr, nullptr);
 }
 static const std::string MUL_MODEL_URI = "testdata/mul_1.pb";
 static const std::string FOO_MODEL_URI = "testdata/foo_1.pb";

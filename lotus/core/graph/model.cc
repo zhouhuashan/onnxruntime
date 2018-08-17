@@ -20,7 +20,7 @@
 #include "core/graph/schema_registry.h"
 using namespace onnx;
 using namespace Lotus;
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace LotusIR {
 Model::Model(const std::string& graph_name,

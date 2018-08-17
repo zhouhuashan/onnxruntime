@@ -4,7 +4,7 @@
 
 #include "core/common/logging/logging.h"
 #include "core/framework/op_kernel.h"
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 
 void SessionState::SetGraph(const LotusIR::Graph* graph) {
@@ -181,7 +181,7 @@ void SessionState::SetProfiler(Profiling::Profiler& profiler) {
   profiler_ = &profiler;
 }
 
-Lotus::Profiling::Profiler& SessionState::Profiler() const {
+::Lotus::Profiling::Profiler& SessionState::Profiler() const {
   return *profiler_;
 }
 

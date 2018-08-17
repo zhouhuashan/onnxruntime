@@ -82,13 +82,13 @@ class Cast final : public OpKernel {
   template <typename SrcType,
             typename DstType>
   void CastData(const Tensor* in, Tensor* out, const TensorShape& shape) const {
-    Lotus::CastData<SrcType, DstType>(in, out, shape);
+    ::Lotus::CastData<SrcType, DstType>(in, out, shape);
   }
 
   template <typename SrcType,
             typename DstType>
   void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) const {
-    Lotus::CastFloat16Data<SrcType, DstType>(in, out, shape, info);
+    ::Lotus::CastFloat16Data<SrcType, DstType>(in, out, shape, info);
   }
 
   onnx::TensorProto_DataType to_;

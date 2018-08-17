@@ -28,7 +28,7 @@ class GraphTransformer {
   // Apply <*this> transformation to a specific graph.
   // Transformation happens in place.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual Lotus::Common::Status Apply(Graph* graph, bool* modified) const = 0;
+  virtual ::Lotus::Common::Status Apply(Graph* graph, bool* modified) const = 0;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphTransformer);
@@ -53,13 +53,13 @@ class RuleBasedGraphTransformer : public GraphTransformer {
   // should be stored globally. Otherwise, there will be multiple addresses/pointers
   // for the same operator or function. To avoid this, we may use OpSignature ID
   // as the key, which should be name_domain_version.
-  Lotus::Common::Status Register(const onnx::OpSchema* op, std::unique_ptr<RewriteRule> rule) {
+  ::Lotus::Common::Status Register(const onnx::OpSchema* op, std::unique_ptr<RewriteRule> rule) {
     op_to_rules_[op].push_back(std::move(rule));
-    return Lotus::Common::Status::OK();
+    return ::Lotus::Common::Status::OK();
   }
 
   // Apply for all applicable rules against one graph.
-  Lotus::Common::Status Apply(Graph*, bool*) const override {
+  ::Lotus::Common::Status Apply(Graph*, bool*) const override {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
@@ -78,14 +78,14 @@ class GraphTransformerManager {
   }
 
   // Register a graph transformer.
-  Lotus::Common::Status Register(std::unique_ptr<GraphTransformer> transformer) {
+  ::Lotus::Common::Status Register(std::unique_ptr<GraphTransformer> transformer) {
     transformers_.push_back(std::move(transformer));
-    return Lotus::Common::Status::OK();
+    return ::Lotus::Common::Status::OK();
   }
 
   // Apply the list of graph transformers registered on the specified graph
   // up to the given number of steps.
-  Lotus::Common::Status ApplyAll(Graph* graph);
+  ::Lotus::Common::Status ApplyAll(Graph* graph);
 
  private:
   GraphTransformerManager() = default;

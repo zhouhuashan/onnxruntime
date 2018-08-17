@@ -68,7 +68,7 @@ class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
  public:
   LotusOpSchemaRegistry() = default;
 
-  Lotus::Common::Status SetBaselineAndOpsetVersionForDomain(
+  ::Lotus::Common::Status SetBaselineAndOpsetVersionForDomain(
       const std::string& domain,
       int baseline_opset_version,
       int opset_version);
@@ -76,7 +76,7 @@ class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
   Domain_To_Version_Map GetLatestOpsetVersions(bool is_onnx_only) const override;
 
   // LotusOpSchemaRegistry must register complete delta for a opset.
-  Lotus::Common::Status RegisterOpSet(
+  ::Lotus::Common::Status RegisterOpSet(
       std::vector<ONNX_NAMESPACE::OpSchema>& schemas,
       const std::string& domain,
       int baseline_opset_version,
@@ -107,9 +107,9 @@ class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
   }
 
  private:
-  Lotus::Common::Status RegisterOpSchema(ONNX_NAMESPACE::OpSchema&& op_schema);
+  ::Lotus::Common::Status RegisterOpSchema(ONNX_NAMESPACE::OpSchema&& op_schema);
 
-  Lotus::Common::Status RegisterOpSchemaInternal(ONNX_NAMESPACE::OpSchema&& op_schema);
+  ::Lotus::Common::Status RegisterOpSchemaInternal(ONNX_NAMESPACE::OpSchema&& op_schema);
 
   std::mutex mutex_;
 

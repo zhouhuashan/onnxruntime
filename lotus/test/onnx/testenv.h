@@ -26,7 +26,7 @@ class SessionFactory {
  public:
   SessionFactory(const std::string& provider, bool enable_mem_pattern, bool enable_cpu_mem_arena) : provider_(provider), enable_mem_pattern_(enable_mem_pattern), enable_cpu_mem_arena_(enable_cpu_mem_arena) {}
   //Create an initialized session from a given model url
-  Lotus::Common::Status create(std::shared_ptr<Lotus::InferenceSession>& sess, const std::experimental::filesystem::v1::path& model_url, const std::string& logid) const;
+  ::Lotus::Common::Status create(std::shared_ptr<::Lotus::InferenceSession>& sess, const std::experimental::filesystem::v1::path& model_url, const std::string& logid) const;
 };
 
 class TestEnv {

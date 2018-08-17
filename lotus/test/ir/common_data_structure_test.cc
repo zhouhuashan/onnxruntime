@@ -1,7 +1,7 @@
 #include "core/graph/record.h"
 #include "gtest/gtest.h"
 
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace Lotus {
 namespace Test {

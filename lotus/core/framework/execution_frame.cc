@@ -3,13 +3,13 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/framework/mem_pattern_planner.h"
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 
 ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                                const std::vector<std::string>& output_names,
                                const std::vector<MLValue>& fetches,
-                               const Lotus::SessionState& session_state)
+                               const ::Lotus::SessionState& session_state)
     : session_state_(session_state), mem_patterns_(nullptr), planner_(nullptr) {
   Init(session_state.GetGraph(), feeds, output_names, fetches);
 

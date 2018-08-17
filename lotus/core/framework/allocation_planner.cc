@@ -9,7 +9,7 @@
 #include "core/framework/session_state.h"
 #include "core/framework/data_types.h"
 #include "core/framework/mldata_type_utils.h"
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 using namespace onnx;
 namespace Lotus {
 

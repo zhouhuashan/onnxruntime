@@ -22,20 +22,20 @@
 #include "vstest_logger.h"
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-static std::unique_ptr<Lotus::Environment> env;
-Lotus::Logging::LoggingManager* default_logger;
+static std::unique_ptr<::Lotus::Environment> env;
+::Lotus::Logging::LoggingManager* default_logger;
 static std::string logger_id("onnx_test_runner");
 
 TEST_MODULE_INITIALIZE(ModuleInitialize) {
   Logger::WriteMessage("Initialize Lotus");
-  default_logger = new Lotus::Logging::LoggingManager{std::unique_ptr<Lotus::Logging::ISink>{new VsTestSink{}},
-                                                      Lotus::Logging::Severity::kWARNING, false,
-                                                      Lotus::Logging::LoggingManager::InstanceType::Default,
+  default_logger = new ::Lotus::Logging::LoggingManager{std::unique_ptr<::Lotus::Logging::ISink>{new VsTestSink{}},
+                                                      ::Lotus::Logging::Severity::kWARNING, false,
+                                                      ::Lotus::Logging::LoggingManager::InstanceType::Default,
                                                       &logger_id};
-  auto status = Lotus::Environment::Create(env);
+  auto status = ::Lotus::Environment::Create(env);
   if (!status.IsOK()) {
     Logger::WriteMessage(status.ErrorMessage().c_str());
-    Logger::WriteMessage("Create Lotus::Environment failed");
+    Logger::WriteMessage("Create ::Lotus::Environment failed");
     abort();
   }
   Logger::WriteMessage("Initialize Lotus finished");
@@ -57,7 +57,7 @@ static void run(SessionFactory& sf) {
     Assert::AreNotEqual((size_t)0, requiredSize);
     std::string cloudTestJobName(requiredSize, '\0');
     getenv_s(&requiredSize, (char*)cloudTestJobName.data(), requiredSize, "CloudTestJobName");
-    int p_models = Lotus::Env::Default().GetNumCpuCores();
+    int p_models = ::Lotus::Env::Default().GetNumCpuCores();
     snprintf(buf, sizeof(buf), "running test %s with %d cores", cloudTestJobName.c_str(), p_models);
     Logger::WriteMessage(buf);
     size_t pos1 = cloudTestJobName.find('.', 0);
@@ -72,14 +72,14 @@ static void run(SessionFactory& sf) {
     //Current working directory is the one who contains 'onnx_test_runner_vstest.dll'
     //We want debug build and release build share the same test data files, so it should
     //be one level up.
-    Lotus::AllocatorPtr cpu_allocator(new Lotus::CPUAllocator());
+    ::Lotus::AllocatorPtr cpu_allocator(new ::Lotus::CPUAllocator());
     std::vector<ITestCase*> tests = LoadTests({"..\\models"}, {modelName}, cpu_allocator);
     Assert::AreEqual((size_t)1, tests.size());
     LOTUS_EVENT finish_event;
-    Lotus::Status status = CreateLotusEvent(&finish_event);
+    ::Lotus::Status status = CreateLotusEvent(&finish_event);
     Assert::IsTrue(status.IsOK());
     Assert::IsNotNull(finish_event);
-    RunSingleTestCase(tests[0], sf, p_models, 1, GetDefaultThreadPool(Lotus::Env::Default()), nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
+    RunSingleTestCase(tests[0], sf, p_models, 1, GetDefaultThreadPool(::Lotus::Env::Default()), nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       res = result->GetExcutionResult();
       return LotusSetEventWhenCallbackReturns(pci, finish_event);
     });

@@ -6,7 +6,7 @@
 #include "core/framework/op_kernel.h"
 
 struct KernelsContainer {
-  std::vector<Lotus::KernelCreateInfo> kernels_list;
+  std::vector<::Lotus::KernelCreateInfo> kernels_list;
 };
 
 struct SchemasContainer {

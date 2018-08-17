@@ -17,8 +17,8 @@ TEST(TensorProtoUtilsTest, test1) {
   onnx::TensorProto proto;
   ASSERT_TRUE(proto.ParseFromString(tensorbinary));
   std::unique_ptr<Tensor> tensor;
-  Lotus::AllocatorPtr cpu_allocator = std::make_shared<Lotus::CPUAllocator>();
-  st = Lotus::Utils::GetTensorFromTensorProto(proto, &tensor, cpu_allocator);
+  ::Lotus::AllocatorPtr cpu_allocator = std::make_shared<::Lotus::CPUAllocator>();
+  st = ::Lotus::Utils::GetTensorFromTensorProto(proto, &tensor, cpu_allocator);
   ASSERT_TRUE(st.IsOK());
 }
 #endif

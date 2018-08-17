@@ -2,7 +2,7 @@
 
 namespace LotusIR {
 // Add customized domain to min/max version.
-Lotus::Common::Status LotusOpSchemaRegistry::SetBaselineAndOpsetVersionForDomain(
+::Lotus::Common::Status LotusOpSchemaRegistry::SetBaselineAndOpsetVersionForDomain(
     const std::string& domain,
     int baseline_opset_version,
     int opset_version) {
@@ -10,13 +10,13 @@ Lotus::Common::Status LotusOpSchemaRegistry::SetBaselineAndOpsetVersionForDomain
 
   auto it = domain_version_range_map_.find(domain);
   if (domain_version_range_map_.end() != it) {
-    return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "Domain already set in registry");
+    return ::Lotus::Common::Status(::Lotus::Common::LOTUS, ::Lotus::Common::FAIL, "Domain already set in registry");
   }
 
   domain_version_range_map_[domain].baseline_opset_version = baseline_opset_version;
   domain_version_range_map_[domain].opset_version = opset_version;
 
-  return Lotus::Common::Status::OK();
+  return ::Lotus::Common::Status::OK();
 }
 
 Domain_To_Version_Map LotusOpSchemaRegistry::GetLatestOpsetVersions(bool is_onnx_only) const {
@@ -31,7 +31,7 @@ Domain_To_Version_Map LotusOpSchemaRegistry::GetLatestOpsetVersions(bool is_onnx
   return domain_version_map;
 }
 
-Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSet(
+::Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSet(
     std::vector<onnx::OpSchema>& schemas,
     const std::string& domain,
     int baseline_opset_version,
@@ -39,18 +39,18 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSet(
   LOTUS_RETURN_IF_ERROR(SetBaselineAndOpsetVersionForDomain(domain, baseline_opset_version, opset_version));
   for (auto& schema : schemas)
     LOTUS_RETURN_IF_ERROR(RegisterOpSchema(std::move(schema)));
-  return Lotus::Common::Status::OK();
+  return ::Lotus::Common::Status::OK();
 }
 
-Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchema(ONNX_NAMESPACE::OpSchema&& op_schema) {
+::Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchema(ONNX_NAMESPACE::OpSchema&& op_schema) {
   return RegisterOpSchemaInternal(std::move(op_schema));
 }
 
-Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMESPACE::OpSchema&& op_schema) {
+::Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMESPACE::OpSchema&& op_schema) {
   try {
     op_schema.Finalize();
   } catch (const std::exception& e) {
-    return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "Schema error: " + std::string(e.what()));
+    return ::Lotus::Common::Status(::Lotus::Common::LOTUS, ::Lotus::Common::INVALID_ARGUMENT, "Schema error: " + std::string(e.what()));
   }
 
   auto& op_name = op_schema.Name();
@@ -66,7 +66,7 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMES
             << op_schema.line()
             << ", but it is already registered from file "
             << schema.file() << " line " << schema.line() << std::endl;
-    return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
+    return ::Lotus::Common::Status(::Lotus::Common::LOTUS, ::Lotus::Common::INVALID_ARGUMENT, ostream.str());
   }
 
   auto ver_range_it = domain_version_range_map_.find(op_domain);
@@ -77,7 +77,7 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMES
             << ") from file " << op_schema.file() << " line "
             << op_schema.line() << ", but it its domain is not"
             << "known by the checker." << std::endl;
-    return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
+    return ::Lotus::Common::Status(::Lotus::Common::LOTUS, ::Lotus::Common::INVALID_ARGUMENT, ostream.str());
   }
   if (ver > ver_range_it->second.opset_version) {
     std::ostringstream ostream;
@@ -87,11 +87,11 @@ Lotus::Common::Status LotusOpSchemaRegistry::RegisterOpSchemaInternal(ONNX_NAMES
         << ") from file " << op_schema.file() << " line "
         << op_schema.line() << ", but it its version is higher"
         << "than the operator set version " << ver_range_it->second.opset_version << std::endl;
-    return Lotus::Common::Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, ostream.str());
+    return ::Lotus::Common::Status(::Lotus::Common::LOTUS, ::Lotus::Common::INVALID_ARGUMENT, ostream.str());
   }
   GSL_SUPPRESS(es .84)
   map_[op_name][op_domain].emplace(std::make_pair(ver, op_schema));
-  return Lotus::Common::Status::OK();
+  return ::Lotus::Common::Status::OK();
 }
 
 // Return the schema with biggest version, which is not greater than specified

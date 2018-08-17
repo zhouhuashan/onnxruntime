@@ -24,7 +24,7 @@ ONNX_OPERATOR_SCHEMA(Scaler)
   AttributeProto::FLOATS,
   OPTIONAL);
 */
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 using namespace std;
 namespace Lotus {
 namespace ML {

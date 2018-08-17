@@ -12,7 +12,7 @@
 #include "core/providers/mkldnn/mkldnn_execution_provider.h"
 #endif
 
-using namespace Lotus::Logging;
+using namespace ::Lotus::Logging;
 
 namespace Lotus {
 namespace Test {

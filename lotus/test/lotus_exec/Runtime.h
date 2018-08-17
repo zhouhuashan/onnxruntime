@@ -36,21 +36,21 @@ class WinMLRuntime {
  public:
   WinMLRuntime() {
     using namespace Lotus;
-    using namespace Lotus::Logging;
+    using namespace ::Lotus::Logging;
 
-    static std::unique_ptr<Lotus::Environment> lotus_env = nullptr;
+    static std::unique_ptr<::Lotus::Environment> lotus_env = nullptr;
     static std::once_flag env_flag;
-    std::call_once(env_flag, []() { Lotus::Environment::Create(lotus_env); });
+    std::call_once(env_flag, []() { ::Lotus::Environment::Create(lotus_env); });
 
     static LoggingManager& s_default_logging_manager = DefaultLoggingManager();
     SessionOptions so;
     so.session_logid = "WinMLRuntime";
 
-    inference_session_ = std::make_unique<Lotus::InferenceSession>(so, &s_default_logging_manager);
+    inference_session_ = std::make_unique<::Lotus::InferenceSession>(so, &s_default_logging_manager);
   }
 
-  Lotus::Common::Status LoadModel(const std::wstring& model_path) {
-    Lotus::Common::Status result = inference_session_->Load(wstr2str(model_path));
+  ::Lotus::Common::Status LoadModel(const std::wstring& model_path) {
+    ::Lotus::Common::Status result = inference_session_->Load(wstr2str(model_path));
     if (result.IsOK())
       result = inference_session_->Initialize();
 
@@ -65,7 +65,7 @@ class WinMLRuntime {
     shape.insert(shape.begin(), batch_size);
   }
 
-  Lotus::MLValue ReadTensorStrings(Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
+  ::Lotus::MLValue ReadTensorStrings(::Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
                                    int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
     using namespace Lotus;
 
@@ -94,7 +94,7 @@ class WinMLRuntime {
       p[i] = std::string(vec[i].begin(), vec[i].end());
     }
 
-    Lotus::MLValue result;
+    ::Lotus::MLValue result;
     result.Init(p_tensor.release(),
                 DataTypeImpl::GetType<Tensor>(),
                 DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
@@ -103,7 +103,7 @@ class WinMLRuntime {
   }
 
   template <typename T>
-  Lotus::MLValue ReadTensor(Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
+  ::Lotus::MLValue ReadTensor(::Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
                             int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
     using namespace Lotus;
 
@@ -112,31 +112,31 @@ class WinMLRuntime {
     if (variable_batch_size)
       FillInBatchSize(dims, gsl::narrow_cast<int>(vec.size()), feature_size);
 
-    Lotus::TensorShape shape(dims);
+    ::Lotus::TensorShape shape(dims);
     auto location = alloc->Info();
-    auto element_type = Lotus::DataTypeImpl::GetType<T>();
+    auto element_type = ::Lotus::DataTypeImpl::GetType<T>();
     void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
 
     if (vec.size() > 0) {
       memcpy(buffer, &vec[0], element_type->Size() * shape.Size());
     }
 
-    std::unique_ptr<Tensor> p_tensor = std::make_unique<Lotus::Tensor>(element_type,
+    std::unique_ptr<Tensor> p_tensor = std::make_unique<::Lotus::Tensor>(element_type,
                                                                        shape,
                                                                        buffer,
                                                                        location,
                                                                        alloc);
 
-    Lotus::MLValue result;
+    ::Lotus::MLValue result;
     result.Init(p_tensor.release(),
-                Lotus::DataTypeImpl::GetType<Lotus::Tensor>(),
-                Lotus::DataTypeImpl::GetType<Lotus::Tensor>()->GetDeleteFunc());
+                ::Lotus::DataTypeImpl::GetType<::Lotus::Tensor>(),
+                ::Lotus::DataTypeImpl::GetType<::Lotus::Tensor>()->GetDeleteFunc());
 
     return result;
   }
 
   template <typename V>
-  Lotus::MLValue ReadTensorForMapStringToScalar(Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader) {
+  ::Lotus::MLValue ReadTensorForMapStringToScalar(::Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader) {
     auto vec = inputs_reader.GetSample<V>(-1);
 
     auto data = std::make_unique<std::map<std::string, V>>();
@@ -145,10 +145,10 @@ class WinMLRuntime {
       data->insert({std::to_string(i + 1), vec[i]});
     }
 
-    Lotus::MLValue result;
+    ::Lotus::MLValue result;
     result.Init(data.release(),
-                Lotus::DataTypeImpl::GetType<std::map<std::string, V>>(),
-                Lotus::DataTypeImpl::GetType<std::map<std::string, V>>()->GetDeleteFunc());
+                ::Lotus::DataTypeImpl::GetType<std::map<std::string, V>>(),
+                ::Lotus::DataTypeImpl::GetType<std::map<std::string, V>>()->GetDeleteFunc());
 
     return result;
   }
@@ -159,7 +159,7 @@ class WinMLRuntime {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 
     // Create CPU input tensors
-    Lotus::NameMLValMap feed;
+    ::Lotus::NameMLValMap feed;
     inputs_reader.BufferNextSample();
     if (inputs_reader.Eof())
       return 0;
@@ -256,14 +256,14 @@ class WinMLRuntime {
     std::cout.precision(12);
     std::string separator = "";
     // Invoke the net
-    std::vector<Lotus::MLValue> outputMLValue;
-    Lotus::Common::Status result = inference_session_->Run(feed, &outputMLValue);
+    std::vector<::Lotus::MLValue> outputMLValue;
+    ::Lotus::Common::Status result = inference_session_->Run(feed, &outputMLValue);
     if (result.IsOK()) {
       auto outputMeta = inference_session_->GetOutputs().second;
       // Peel the data off the CPU
       for (unsigned int i = 0; i < output_names.size(); i++) {
-        Lotus::MLValue& output = outputMLValue[i];
-        const Lotus::Tensor* ctensor = nullptr;
+        ::Lotus::MLValue& output = outputMLValue[i];
+        const ::Lotus::Tensor* ctensor = nullptr;
 
         if (output.IsTensor()) {
           ctensor = &output.Get<Tensor>();
@@ -289,31 +289,31 @@ class WinMLRuntime {
           }
 
           //REVIEW mzs: Map output types are not tested because I couldn't find any tests for that.
-          if (ctensor->DataType() == Lotus::DataTypeImpl::GetType<std::map<int64_t, float>>()) {
+          if (ctensor->DataType() == ::Lotus::DataTypeImpl::GetType<std::map<int64_t, float>>()) {
             const std::map<int64_t, float>* ci = &output.Get<std::map<int64_t, float>>();
             for (const auto& p : *ci) {
               std::cout << separator << p.second;
               separator = ",";
             }
-          } else if (ctensor->DataType() == Lotus::DataTypeImpl::GetType<std::map<std::string, float>>()) {
+          } else if (ctensor->DataType() == ::Lotus::DataTypeImpl::GetType<std::map<std::string, float>>()) {
             const std::map<std::string, float>* ci = &output.Get<std::map<std::string, float>>();
             for (const auto& p : *ci) {
               std::cout << separator << p.second;
               separator = ",";
             }
-          } else if (ctensor->DataType() == Lotus::DataTypeImpl::GetType<float>()) {
+          } else if (ctensor->DataType() == ::Lotus::DataTypeImpl::GetType<float>()) {
             const float* cdata = ctensor->Data<float>();
             for (int ci = 0; ci < ctensor->Shape().Size(); ci++) {
               std::cout << separator << cdata[ci];
               separator = ",";
             }
-          } else if (ctensor->DataType() == Lotus::DataTypeImpl::GetType<int64_t>()) {
+          } else if (ctensor->DataType() == ::Lotus::DataTypeImpl::GetType<int64_t>()) {
             const int64_t* cdata = ctensor->Data<int64_t>();
             for (int ci = 0; ci < ctensor->Shape().Size(); ci++) {
               std::cout << separator << cdata[ci];
               separator = ",";
             }
-          } else if (ctensor->DataType() == Lotus::DataTypeImpl::GetType<std::string>()) {
+          } else if (ctensor->DataType() == ::Lotus::DataTypeImpl::GetType<std::string>()) {
             const std::string* cdata = ctensor->Data<std::string>();
             for (int ci = 0; ci < ctensor->Shape().Size(); ci++) {
               std::cout << separator << cdata[ci];
@@ -322,16 +322,16 @@ class WinMLRuntime {
           } else {
             throw DataValidationException("Unsupported output type in Lotus model: " + std::string((*outputMeta)[i]->Name()));
           }
-        } else if (output.Type() == Lotus::DataTypeImpl::GetType<Lotus::VectorMapStringToFloat>()) {
-          auto& cdata = output.Get<Lotus::VectorMapStringToFloat>();
+        } else if (output.Type() == ::Lotus::DataTypeImpl::GetType<::Lotus::VectorMapStringToFloat>()) {
+          auto& cdata = output.Get<::Lotus::VectorMapStringToFloat>();
           for (int ci = 0; ci < cdata.size(); ci++) {
             for (const auto& p : cdata[ci]) {
               std::cout << separator << p.second;
               separator = ",";
             }
           }
-        } else if (output.Type() == Lotus::DataTypeImpl::GetType<Lotus::VectorMapInt64ToFloat>()) {
-          auto& cdata = output.Get<Lotus::VectorMapInt64ToFloat>();
+        } else if (output.Type() == ::Lotus::DataTypeImpl::GetType<::Lotus::VectorMapInt64ToFloat>()) {
+          auto& cdata = output.Get<::Lotus::VectorMapInt64ToFloat>();
           for (int ci = 0; ci < cdata.size(); ci++) {
             for (const auto& p : cdata[ci]) {
               std::cout << separator << p.second;
@@ -351,14 +351,14 @@ class WinMLRuntime {
   }
 
  private:
-  std::unique_ptr<Lotus::InferenceSession> inference_session_;
+  std::unique_ptr<::Lotus::InferenceSession> inference_session_;
 
-  static Lotus::Logging::LoggingManager& DefaultLoggingManager() {
+  static ::Lotus::Logging::LoggingManager& DefaultLoggingManager() {
     using namespace Lotus;
     std::string default_logger_id{"Default"};
 
     static Logging::LoggingManager default_logging_manager{
-        std::unique_ptr<Logging::ISink>{new Lotus::Logging::CLogSink{}},
+        std::unique_ptr<Logging::ISink>{new ::Lotus::Logging::CLogSink{}},
         Logging::Severity::kWARNING, false,
         Logging::LoggingManager::InstanceType::Default,
         &default_logger_id};
@@ -366,9 +366,9 @@ class WinMLRuntime {
     return default_logging_manager;
   }
 
-  static Lotus::IExecutionProvider& TestCPUExecutionProvider() {
-    static Lotus::CPUExecutionProviderInfo info;
-    static Lotus::CPUExecutionProvider cpu_provider(info);
+  static ::Lotus::IExecutionProvider& TestCPUExecutionProvider() {
+    static ::Lotus::CPUExecutionProviderInfo info;
+    static ::Lotus::CPUExecutionProvider cpu_provider(info);
     return cpu_provider;
   }
 };

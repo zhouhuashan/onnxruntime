@@ -16,7 +16,7 @@
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
 using namespace onnx;
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 
 template <class T>
@@ -102,7 +102,7 @@ AttributeProto_AttributeType ToProto(MLAttributeType type) {
     return MLTypeTraits<x>::TensorType;     \
   }
 
-MLTensorDataType ToMLTensorDataType(Lotus::MLDataType type) {
+MLTensorDataType ToMLTensorDataType(::Lotus::MLDataType type) {
   if (type == DataTypeImpl::GetType<std::string>())
     return MLTensorDataType::kString;
 
@@ -129,7 +129,7 @@ MLTensorDataType ToMLTensorDataType(Lotus::MLDataType type) {
     return DataTypeImpl::GetTensorType<x>(); \
   }
 
-Lotus::MLDataType ToTensorDataType(MLTensorDataType type) {
+::Lotus::MLDataType ToTensorDataType(MLTensorDataType type) {
   if (type == MLTensorDataType::kString)
     return DataTypeImpl::GetTensorType<std::string>();
 
@@ -925,7 +925,7 @@ bool AbiOpKernel::InputTensorShapesDefined() const {
   ProtoHelperNodeContext proto_context(Node());
   OpNodeProtoHelper<ProtoHelperNodeContext> info(&proto_context);
 
-  return Lotus::InputTensorShapesDefined(info);
+  return ::Lotus::InputTensorShapesDefined(info);
 }
 
 EdgeShapes AbiOpKernel::GetInputShapes(OpKernelContext* context) const {
@@ -1258,7 +1258,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
                                             requires_output_shapes_at_creation,
                                             inference_function,
                                             inference_function_ctx](const OpKernelInfo& info) -> OpKernel* {
-                                             return new Lotus::AbiOpKernel(
+                                             return new ::Lotus::AbiOpKernel(
                                                  op_kernel_factory,
                                                  info,
                                                  requires_input_shapes_at_creation,

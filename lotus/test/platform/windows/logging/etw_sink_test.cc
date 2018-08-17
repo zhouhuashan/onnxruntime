@@ -11,7 +11,7 @@
 namespace Lotus {
 namespace Test {
 
-using namespace Lotus::Logging;
+using namespace ::Lotus::Logging;
 
 /// <summary>
 /// Test usage of the ETW sinks does not fail.

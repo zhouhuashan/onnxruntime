@@ -14,7 +14,7 @@ using namespace ::testing;
 //TVM is not working with StackTrace now.
 #ifndef USE_TVM
 TEST(StacktraceTests, BasicTests) {
-  auto result = Lotus::GetStackTrace();
+  auto result = ::Lotus::GetStackTrace();
 
   // if we are running code coverage the Windows CaptureStackBackTrace function only returns a single
   // frame that is unknown. adjust for that.

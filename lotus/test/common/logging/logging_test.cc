@@ -9,7 +9,7 @@
 #include "test/common/logging/helpers.h"
 
 using namespace Lotus;
-using namespace Lotus::Logging;
+using namespace ::Lotus::Logging;
 using InstanceType = LoggingManager::InstanceType;
 
 // if we pull in the whole 'testing' namespace we get warnings from date.h as both use '_' in places.

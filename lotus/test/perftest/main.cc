@@ -24,13 +24,13 @@ int main(int argc, char* args[]) {
     return -1;
   }
 
-  Lotus::PerfTest::PerformanceTestConfig test_config;
-  if (!Lotus::PerfTest::CommandLineParser::ParseArguments(test_config, argc, args)) {
-    Lotus::PerfTest::CommandLineParser::ShowUsage();
+  ::Lotus::PerfTest::PerformanceTestConfig test_config;
+  if (!::Lotus::PerfTest::CommandLineParser::ParseArguments(test_config, argc, args)) {
+    ::Lotus::PerfTest::CommandLineParser::ShowUsage();
     return -1;
   }
 
-  Lotus::PerfTest::PerformanceRunner perf_runner(test_config);
+  ::Lotus::PerfTest::PerformanceRunner perf_runner(test_config);
   perf_runner.Run();
   perf_runner.SerializeResult();
 

@@ -1018,13 +1018,13 @@ class InferenceSession::Impl {
 
     if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPUOutput) {
       // deserilize directly to CPU tensor
-      LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr, preallocated, preallocated_size));
+      LOTUS_RETURN_IF_ERROR(::Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr, preallocated, preallocated_size));
     } else {
       // deserialize to CPU first for non-CPU allocator, then alloc and copy
       AllocatorPtr deserialize_alloc_ptr;
       std::unique_ptr<Tensor> p_deserialize_tensor;
       deserialize_alloc_ptr = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)->GetAllocator();
-      LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor, deserialize_alloc_ptr));
+      LOTUS_RETURN_IF_ERROR(::Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor, deserialize_alloc_ptr));
 
       if (preallocated && preallocated_size != p_deserialize_tensor->Size())
         return Status(Common::LOTUS, Common::FAIL, "The buffer planner is not consistent with tensor buffer size");
@@ -1097,7 +1097,7 @@ class InferenceSession::Impl {
       LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
 
       const TensorProto& tensor_proto = *(entry.second);
-      LOTUS_RETURN_IF_ERROR(Lotus::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
+      LOTUS_RETURN_IF_ERROR(::Lotus::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
     }
     //2. allocate weight buffer on different locations
     MemoryPatternGroup mem_patterns;

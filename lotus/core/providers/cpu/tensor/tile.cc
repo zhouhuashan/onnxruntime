@@ -4,7 +4,7 @@
 #include "gsl/gsl_algorithm"
 #include "core/providers/cpu/tensor/tile.h"
 #include "core/providers/cpu/tensor/utils.h"
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace Lotus {
 

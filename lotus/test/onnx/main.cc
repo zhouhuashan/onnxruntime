@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     }
     data_dirs.emplace_back(argv[i]);
   }
-  AllocatorPtr cpu_allocator = std::make_shared<Lotus::CPUAllocator>();
+  AllocatorPtr cpu_allocator = std::make_shared<::Lotus::CPUAllocator>();
   std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
   TestResultStat stat;
   SessionFactory sf(provider, true, enable_cpu_mem_arena);

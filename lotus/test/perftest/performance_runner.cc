@@ -82,7 +82,7 @@ bool PerformanceRunner::Initialize() {
     return false;
   }
 
-  std::unordered_map<std::string, Lotus::MLValue> feeds;
+  std::unordered_map<std::string, ::Lotus::MLValue> feeds;
   test_case->LoadInputData(0 /* id */, feeds);
   for (auto feed : feeds) {
     io_binding_->BindInput(feed.first, feed.second);

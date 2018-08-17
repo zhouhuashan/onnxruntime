@@ -8,7 +8,7 @@
 #include "test_utils.h"
 using namespace std;
 using namespace onnx;
-using namespace Lotus::Logging;
+using namespace ::Lotus::Logging;
 using namespace LotusIR;
 
 namespace Lotus {

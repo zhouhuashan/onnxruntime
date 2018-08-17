@@ -452,7 +452,7 @@ void DeepCpuGruOpTestContext::RunTest(const std::vector<float>& X,
                                       const std::vector<float>& expected_Y,
                                       const std::vector<float>& expected_Y_h) {
   // run with and without output_sequence
-  Lotus::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
+  ::Lotus::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
                           expected_Y, expected_Y_h,
                           input_size_, batch_size, hidden_dim_, seq_length,
                           use_bias_ ? &gru_bias_ : nullptr,
@@ -466,7 +466,7 @@ void DeepCpuGruOpTestContext::RunTest(const std::vector<float>& X,
                           alphas_,
                           betas_);
 
-  Lotus::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
+  ::Lotus::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
                           expected_Y, expected_Y_h,
                           input_size_, batch_size, hidden_dim_, seq_length,
                           use_bias_ ? &gru_bias_ : nullptr,

@@ -32,7 +32,7 @@ limitations under the License.
 #include "core/util/eigen_common_wrapper.h"
 #include "gsl/span"
 using namespace onnx;
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 
 ONNX_CPU_OPERATOR_KERNEL(

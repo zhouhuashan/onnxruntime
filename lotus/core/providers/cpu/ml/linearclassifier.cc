@@ -138,11 +138,11 @@ Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
     }
     //write float values
     if (add_second_class && maxweight > 0) {
-      Lotus::ML::write_scores(scores, post_transform_, zindex, Z, 0);
+      ::Lotus::ML::write_scores(scores, post_transform_, zindex, Z, 0);
     } else if (add_second_class) {
-      Lotus::ML::write_scores(scores, post_transform_, zindex, Z, 1);
+      ::Lotus::ML::write_scores(scores, post_transform_, zindex, Z, 1);
     } else {
-      Lotus::ML::write_scores(scores, post_transform_, zindex, Z, -1);
+      ::Lotus::ML::write_scores(scores, post_transform_, zindex, Z, -1);
     }
     zindex += scores.size();
   }  //for each point

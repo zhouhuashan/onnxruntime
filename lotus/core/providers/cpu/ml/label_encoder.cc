@@ -1,7 +1,7 @@
 #include "core/providers/cpu/ml/label_encoder.h"
 #include <algorithm>
 #include <gsl/span>
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace Lotus {
 namespace ML {

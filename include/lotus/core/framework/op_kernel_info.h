@@ -41,7 +41,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
   const KernelDef& kernel_def_;
   // For non cpu/cuda case, this pointer should be set so that function kernel
   // will delegate kernel compute call to <execution_provider> compute call.
-  const Lotus::IExecutionProvider* execution_provider_;
+  const ::Lotus::IExecutionProvider* execution_provider_;
   ProtoHelperNodeContext proto_helper_context_;
   const SessionState& session_state_;
 };

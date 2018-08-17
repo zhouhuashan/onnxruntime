@@ -2,7 +2,7 @@
 #include "onnx/onnx_pb.h"
 #include "gtest/gtest.h"
 
-using namespace Lotus::Utils;
+using namespace ::Lotus::Utils;
 using namespace onnx;
 
 namespace Lotus {

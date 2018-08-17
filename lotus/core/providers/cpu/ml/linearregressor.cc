@@ -49,7 +49,7 @@ Status LinearRegressor<float>::Compute(OpKernelContext* ctx) const {
       }
       scores.push_back(weight);
     }
-    Lotus::ML::write_scores(scores, post_transform_, yindex, Y, -1);
+    ::Lotus::ML::write_scores(scores, post_transform_, yindex, Y, -1);
     yindex += scores.size();
   }
   return Status::OK();

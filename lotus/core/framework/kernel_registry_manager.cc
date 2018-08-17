@@ -2,7 +2,7 @@
 #include "core/framework/customregistry.h"
 
 using namespace onnx;
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 Status KernelRegistryManager::CreateKernel(const LotusIR::Node& node,
                                            const IExecutionProvider* execution_provider,

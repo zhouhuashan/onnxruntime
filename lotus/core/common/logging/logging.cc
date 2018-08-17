@@ -176,8 +176,8 @@ std::exception LoggingManager::LogFatalAndCreateException(const char *category,
 
   // create Capture in separate scope so it gets destructed (leading to log output) before we throw.
   {
-    Lotus::Logging::Capture c{Lotus::Logging::LoggingManager::DefaultLogger(),
-                              Lotus::Logging::Severity::kFATAL, category, Lotus::Logging::DataType::SYSTEM, location};
+    ::Lotus::Logging::Capture c{::Lotus::Logging::LoggingManager::DefaultLogger(),
+                              ::Lotus::Logging::Severity::kFATAL, category, ::Lotus::Logging::DataType::SYSTEM, location};
     va_list args;
     va_start(args, format_str);
 

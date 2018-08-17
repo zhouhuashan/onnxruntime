@@ -156,16 +156,16 @@ class Node {
   const std::string& Description() const noexcept;
 
   // Iterate through Input/OutputDefs() with index, note the loop early terminates with error
-  static Lotus::Common::Status ForEachWithIndex(
+  static ::Lotus::Common::Status ForEachWithIndex(
       const ConstPointerContainer<std::vector<NodeArg*>>& nodeArgVec,
-      std::function<Lotus::Common::Status(const NodeArg& arg, size_t index)> func) {
+      std::function<::Lotus::Common::Status(const NodeArg& arg, size_t index)> func) {
     for (size_t index = 0; index < nodeArgVec.size(); ++index) {
       auto arg = nodeArgVec[index];
       if (!arg->Exists())
         continue;
       LOTUS_RETURN_IF_ERROR(func(*arg, index));
     }
-    return Lotus::Common::Status::OK();
+    return ::Lotus::Common::Status::OK();
   }
 
   // read only access. requires special wrapper to apply const to the NodeArg
@@ -336,7 +336,7 @@ class Node {
   const Relationships& GetRelationships() const noexcept { return relationships_; }
 
   // validate and update the input arg count
-  Lotus::Common::Status UpdateInputArgCount();
+  ::Lotus::Common::Status UpdateInputArgCount();
 
   // Node index. Default to impossible value rather than 0.
   NodeIndex index_ = std::numeric_limits<NodeIndex>::max();
@@ -390,7 +390,7 @@ class GraphBase {
   // 2. Check & Setup inner nodes' dependency.
   // 3. Cleanup function definition lists.
   // Returns resolving status.
-  virtual Lotus::Common::Status Resolve() = 0;
+  virtual ::Lotus::Common::Status Resolve() = 0;
 
   // Getter and Setter for graph name.
   virtual const std::string& Name() const noexcept = 0;
@@ -489,7 +489,7 @@ class GraphBase {
   // TODO(Task:135) See if GraphBase::GetNodesInTopologicalOrder can be made more correctly const
   // by forcing Resolve to have been called directly previously. Simple change is to return error if
   // GraphResolveNeeded is true.
-  Lotus::Common::Status GetNodesInTopologicalOrder(/*out*/ gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const;
+  ::Lotus::Common::Status GetNodesInTopologicalOrder(/*out*/ gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const;
 
   // Mark Graph as needing Resolve() to be called
   GraphBase& SetGraphResolveNeeded() noexcept {
@@ -588,11 +588,11 @@ class GraphBase {
 
   // Build and verify node connection (edges).
   // Verify NodeArg name/type/shape matching correctly.
-  Lotus::Common::Status BuildConnections(
+  ::Lotus::Common::Status BuildConnections(
       const std::unordered_map<std::string, Node*>& output_args,
       const std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
-  Lotus::Common::Status VerifyNoDuplicateName(
+  ::Lotus::Common::Status VerifyNoDuplicateName(
       /*in*/ const std::unordered_set<std::string>& inputs_and_initializers,
       /*out*/ std::unordered_map<std::string, Node*>& output_args,
       /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index);
@@ -602,14 +602,14 @@ class GraphBase {
   // edge.
   // <nodes_in_topological_order> returns nodes' indexes in toplogical
   // order if <Status> returned is "OK", otherwise it's undefined.
-  Lotus::Common::Status CheckIsAcyclic(
+  ::Lotus::Common::Status CheckIsAcyclic(
       /*out*/ std::vector<NodeIndex>& nodes_in_topological_order) const;
 
   // Apply shape/type inference to a single node. This is a wrapper for
   // invoking ONNX-defined shape+type inference for a single node.
   // Returns the inferred shape+type for every output of the node in
   // output parameter inferredShapes.
-  Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
+  ::Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
                                                   /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
 
  private:
@@ -696,7 +696,7 @@ class Graph : public GraphBase {
   // 2. Check & Setup inner nodes' dependency.
   // 3. Cleanup function definition lists.
   // Returns resolving status.
-  Lotus::Common::Status Resolve() override;
+  ::Lotus::Common::Status Resolve() override;
 
   // Getter and Setter for graph name.
   const std::string& Name() const noexcept override;
@@ -736,7 +736,7 @@ class Graph : public GraphBase {
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object and Resolve() it.
-  /*static Lotus::Common::Status LoadGraph(const GraphProto& graph_proto,
+  /*static ::Lotus::Common::Status LoadGraph(const GraphProto& graph_proto,
                           const std::unordered_map<std::string, int>& domain_to_version,
                           Version ir_version,
                           std::unique_ptr<Graph>& new_graph);*/
@@ -750,26 +750,26 @@ class Graph : public GraphBase {
     Sub = 2,
   };
 
-  Lotus::Common::Status Resolve(bool no_proto_sync_required);
+  ::Lotus::Common::Status Resolve(bool no_proto_sync_required);
 
-  Lotus::Common::Status InferAndVerifyTypeMatch(Node& node,
+  ::Lotus::Common::Status InferAndVerifyTypeMatch(Node& node,
                                                 const onnx::OpSchema& op);
 
   // Apply type-inference and type-checking to all inputs and initializers:
-  Lotus::Common::Status TypeCheckInputsAndInitializers();
+  ::Lotus::Common::Status TypeCheckInputsAndInitializers();
 
   // Compute set of input and initializer names and checking for duplicate names
-  Lotus::Common::Status VerifyInputAndInitializerNames(
+  ::Lotus::Common::Status VerifyInputAndInitializerNames(
       /*OUT*/ std::unordered_set<std::string>& inputs_and_initializers);
 
   // Given nodes in topological order, infer and set type information
   // across <*this> graph if needed, and verify type/attribute
   // information match between node and op.
-  Lotus::Common::Status VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
+  ::Lotus::Common::Status VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
                                              const std::unordered_map<std::string, Node*>& output_args);
 
   // Set graph inputs/outputs when resolving a graph..
-  Lotus::Common::Status SetGraphInputsOutputs();
+  ::Lotus::Common::Status SetGraphInputsOutputs();
 
   // Sync graph inputs/outputs when serializing to proto.
   void SyncGraphInputsOutputs();

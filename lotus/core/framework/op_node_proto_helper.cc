@@ -8,7 +8,7 @@
 #include "onnx/defs/schema.h"
 #include "gsl/span"
 using namespace onnx;
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 namespace Lotus {
 
 #define DEFINE_GET_ATTR(IMPL_T, T, type)                                                       \

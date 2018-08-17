@@ -603,7 +603,7 @@ class LstmOpContext2x1x2x2 {
                float clip = 9999.f,
                bool input_forget = false) {
     // run with and without output_sequence to test UniDirectionalLstm handling when Y isn't returned
-    Lotus::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
+    ::Lotus::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
                              expected_Y, expected_Y_h, expected_Y_c,
                              input_size_, batch_size, hidden_size_, seq_length,
                              use_bias ? &bias_ : nullptr,
@@ -618,7 +618,7 @@ class LstmOpContext2x1x2x2 {
                              activation_alphas_,
                              activation_betas_);
 
-    Lotus::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
+    ::Lotus::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
                              expected_Y, expected_Y_h, expected_Y_c,
                              input_size_, batch_size, hidden_size_, seq_length,
                              use_bias ? &bias_ : nullptr,

@@ -18,7 +18,7 @@ namespace Lotus {
 namespace Rnn {
 namespace detail {
 
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 const Tensor *OptionalInput(const OpKernelContext &context, int index) {
   const Tensor *result = context.Input<Tensor>(index);

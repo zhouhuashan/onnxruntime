@@ -24,7 +24,7 @@
 #endif
 namespace Lotus {
 
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 using namespace onnx;
 
 std::once_flag schemaRegistrationOnceFlag;

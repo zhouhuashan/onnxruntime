@@ -38,7 +38,7 @@ class OpKernel {
     return op_kernel_info_.node();
   }
 
-  const Lotus::KernelDef& KernelDef() const {
+  const ::Lotus::KernelDef& KernelDef() const {
     return op_kernel_info_.GetKernelDef();
   }
 

@@ -38,7 +38,7 @@ OPTIONAL)
 AttributeProto::INT,
 static_cast<int64_t>(0));
 */
-using namespace Lotus::Common;
+using namespace ::Lotus::Common;
 
 namespace Lotus {
 namespace ML {

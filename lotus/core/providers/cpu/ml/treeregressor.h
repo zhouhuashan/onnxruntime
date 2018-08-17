@@ -31,8 +31,8 @@ class TreeEnsembleRegressor final : public OpKernel {
 
   std::vector<float> base_values_;
   int64_t n_targets_;
-  Lotus::ML::POST_EVAL_TRANSFORM transform_;
-  Lotus::ML::AGGREGATE_FUNCTION aggregate_function_;
+  ::Lotus::ML::POST_EVAL_TRANSFORM transform_;
+  ::Lotus::ML::AGGREGATE_FUNCTION aggregate_function_;
   std::vector<std::tuple<int64_t, int64_t, int64_t, float>> leafnode_data_;
   std::unordered_map<int64_t, size_t> leafdata_map_;
   std::vector<int64_t> roots_;
