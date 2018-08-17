@@ -296,10 +296,18 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
   }
+
+  // Create output feed
+  std::vector<std::string> output_names;
+  for (auto const& outp : *(session->GetOutputs().second)) {
+    output_names.push_back(outp->Name());
+  }
+
+  RunOptions run_options;
   std::vector<MLValue> p_fetches;
   TIME_SPEC start_time, end_time;
   GetMonotonicTimeCounter(&start_time);
-  status = session->Run(feeds, &p_fetches);
+  status = session->Run(run_options, feeds, output_names, & p_fetches);
   GetMonotonicTimeCounter(&end_time);
   AccumulateTimeSpec(&spent_time_, &start_time, &end_time);
   if (!status.IsOK()) {

@@ -621,7 +621,9 @@ static void TestBindHelper(const std::string& log_str,
   std::unique_ptr<Model> p_model;
   CreateMatMulModel(p_model, run_provider_type);
 
-  ASSERT_TRUE(session_object.Load(std::move(p_model)).IsOK());
+  std::stringstream s1;
+  p_model->ToProto().SerializeToOstream(&s1);
+  ASSERT_TRUE(session_object.Load(s1).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
   RunOptions run_options;
@@ -647,7 +649,9 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
   std::unique_ptr<Model> p_model;
   CreateMatMulModel(p_model, kCpuExecutionProvider);
 
-  ASSERT_TRUE(session_object.Load(std::move(p_model)).IsOK());
+  std::stringstream s1;
+  p_model->ToProto().SerializeToOstream(&s1);
+  ASSERT_TRUE(session_object.Load(s1).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
   unique_ptr<IOBinding> io_binding;
   Status st = session_object.NewIOBinding(&io_binding);

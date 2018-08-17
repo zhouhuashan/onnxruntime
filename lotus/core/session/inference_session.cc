@@ -218,34 +218,6 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
-  Common::Status Load(std::unique_ptr<LotusIR::Model> p_model) {
-    auto tp = session_profiler_.StartTime();
-    try {
-      LOGS(*session_logger_, INFO) << "Loading model";
-      std::lock_guard<std::mutex> l(session_mutex_);
-      if (is_model_loaded_) {  // already loaded
-        LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-        return Common::Status(Common::LOTUS, Common::MODEL_LOADED, "This session already contains a loaded model.");
-      }
-
-      model_ = std::move(p_model);
-
-      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
-
-      // all steps complete, mark the model as loaded.
-      is_model_loaded_ = true;
-
-      LOGS(*session_logger_, INFO) << "Model successfully loaded.";
-    } catch (const std::exception& ex) {
-      return Status(Common::LOTUS, Common::FAIL, "Exception during loading: " + std::string(ex.what()));
-    } catch (...) {
-      LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
-    }
-    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_p_model", tp);
-    return Common::Status::OK();
-  }
-
   Common::Status Initialize() {
     auto tp = session_profiler_.StartTime();
     try {
@@ -482,17 +454,6 @@ class InferenceSession::Impl {
     // TODO add more validation here like checking shape of the allocated buffers
 
     return Common::Status::OK();
-  }
-
-  Common::Status Run(const NameMLValMap& feeds,
-                     std::vector<MLValue>* p_fetches) {
-    RunOptions run_options;
-    std::vector<std::string> output_names;
-    const LotusIR::Graph* p_graph = model_->MainGraph();
-    for (const LotusIR::NodeArg* arg : p_graph->GetOutputs()) {
-      output_names.push_back(arg->Name());
-    }
-    return Run(run_options, feeds, output_names, p_fetches);
   }
 
   // copies inputs across devices only if required
@@ -1324,10 +1285,6 @@ Common::Status InferenceSession::Load(const std::string& model_uri) {
   return impl_->Load(model_uri);
 }
 
-Common::Status InferenceSession::Load(std::unique_ptr<LotusIR::Model> p_model) {
-  return impl_->Load(std::move(p_model));
-}
-
 Common::Status InferenceSession::Load(std::istream& model_istream) {
   return impl_->Load(model_istream);
 }
@@ -1342,10 +1299,6 @@ Common::Status InferenceSession::Run(const NameMLValMap& feeds,
   return impl_->Run(feeds, output_names, p_fetches);
 }
 
-Common::Status InferenceSession::Run(const NameMLValMap& feeds,
-                                     std::vector<MLValue>* p_fetches) {
-  return impl_->Run(feeds, p_fetches);
-}
 Common::Status InferenceSession::Run(const RunOptions& run_options,
                                      const NameMLValMap& feeds,
                                      const std::vector<std::string>& output_names,
@@ -1395,12 +1348,6 @@ Common::Status InferenceSession::Load(const ModelProto& model_proto) {
 
 Common::Status InferenceSession::Load(std::unique_ptr<ModelProto> p_model_proto) {
   return impl_->Load(std::move(p_model_proto));
-}
-
-Common::Status InferenceSession::NewIOBinding(LotusIR::ProviderType provider_type,
-                                              std::unique_ptr<IOBinding>* io_binding) {
-  UNUSED_PARAMETER(provider_type);
-  return NewIOBinding(io_binding);
 }
 
 Common::Status InferenceSession::NewIOBinding(std::unique_ptr<IOBinding>* io_binding) {

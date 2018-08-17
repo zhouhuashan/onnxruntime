@@ -257,7 +257,8 @@ class WinMLRuntime {
     std::string separator = "";
     // Invoke the net
     std::vector<::Lotus::MLValue> outputMLValue;
-    ::Lotus::Common::Status result = inference_session_->Run(feed, &outputMLValue);
+    RunOptions run_options;
+    ::Lotus::Common::Status result = inference_session_->Run(run_options, feed, output_names, & outputMLValue);
     if (result.IsOK()) {
       auto outputMeta = inference_session_->GetOutputs().second;
       // Peel the data off the CPU

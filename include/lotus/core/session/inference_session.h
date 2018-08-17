@@ -175,14 +175,6 @@ class InferenceSession {
   Common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto);
 
   /**
-    * Load an ONNX model.
-    * @param p_model externally created Model obj. This API is here for the sake of lotus test tools only and
-    * not intended for external usage.
-    * @return OK if success.
-    */
-  Common::Status Load(std::unique_ptr<LotusIR::Model> p_model);
-
-  /**
     * Initializes a previously loaded model. Initialization includes but is not
     * limited to graph transformations, construction of kernels, etc.
     * This method assumes that a method has been loaded previously.
@@ -219,24 +211,10 @@ class InferenceSession {
   * @param provider_type specifies the location where the inputs need to be potentially copied. See IOBinding class
   * for more info.
   */
-  Common::Status NewIOBinding(LotusIR::ProviderType /*unused; preserved to not break WinML code; use below API instead*/,
-                              std::unique_ptr<IOBinding>* io_binding);
   Common::Status NewIOBinding(std::unique_ptr<IOBinding>* io_binding);
 
   Common::Status Run(const RunOptions& run_options, IOBinding& io_binding);
   Common::Status Run(IOBinding& io_binding);
-
-  /**
-    * TEST ONLY: This API exists to facilitate testing only since today the ONNX model
-    * input/outputs don't have names. Issue: https://github.com/onnx/onnx/issues/679.
-    * Fetches all possible outputs of the model. The order of the outputs is as obtained
-    * from Graph->GetOutputs().
-    * See Run(const NameMLValMap& feeds, const std::vector<std::string>& output_names, std::vector<MLValue>* p_fetches)
-    * for details.
-    * @return OK if success.
-    */
-  Common::Status Run(const NameMLValMap& feeds,
-                     std::vector<MLValue>* p_fetches);
 
   /**
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.

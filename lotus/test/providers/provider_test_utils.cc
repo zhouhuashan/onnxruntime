@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "gmock/gmock.h"
 #include "test/providers/provider_test_utils.h"
 #include <exception>
@@ -228,7 +230,9 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
 #endif
     }
 
-    status = session_object.Load(std::move(p_model));
+    std::stringstream s1;
+    p_model->ToProto().SerializeToOstream(&s1);
+    status = session_object.Load(s1);
     EXPECT_TRUE(status.IsOK());
     if (!status.IsOK()) {
       LOGS_DEFAULT(ERROR) << "Load failed with status: " << status.ErrorMessage();
