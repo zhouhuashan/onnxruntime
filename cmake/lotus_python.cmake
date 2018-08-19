@@ -36,6 +36,9 @@ set(lotus_pybind_srcs
 
 #TODO(@chasun): enable cuda and test it
 add_library(lotus_pybind11_state MODULE ${lotus_pybind_srcs})
+if(HAS_CAST_FUNCTION_TYPE)
+target_compile_options(lotus_pybind11_state PRIVATE "-Wno-cast-function-type")
+endif()
 target_include_directories(lotus_pybind11_state PRIVATE ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
 target_include_directories(lotus_pybind11_state PRIVATE ${pybind11_INCLUDE_DIRS})
 set(lotus_pybind11_state_libs

@@ -65,7 +65,7 @@ void Assign_Y_h(const T* Y_buffer_data, Tensor* Y_h, const Tensor* sequence_lens
                        direction * batch_size * hidden_size +
                        batch * hidden_size;
     int64_t Y_h_offset = direction * batch_size * hidden_size + batch * hidden_size;
-    Math::CopyVector<T, CPUMathUtil>(static_cast<const int>(hidden_size), Y_buffer_data + y_offset,
+    Math::CopyVector<T, CPUMathUtil>(static_cast<int>(hidden_size), Y_buffer_data + y_offset,
                                      Y_h->MutableData<T>() + Y_h_offset,
                                      &CPUMathUtil::Instance());
   }

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "core/graph/model.h"
 #include "core/graph/op.h"
-#include "onnx/onnx_pb.h"
+#include "core/graph/onnx_protobuf.h"
 #include "gtest/gtest.h"
 
 using namespace onnx;

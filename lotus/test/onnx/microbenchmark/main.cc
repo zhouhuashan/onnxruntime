@@ -1,13 +1,5 @@
 #include <benchmark/benchmark.h>
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-#include "onnx/onnx_pb.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
+#include <core/graph/onnx_protobuf.h>
 #include <core/common/logging/logging.h>
 #include <core/platform/env.h>
 #include <core/providers/cpu/cpu_execution_provider.h>

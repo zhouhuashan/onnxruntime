@@ -3,16 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <core/platform/env.h>
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-#include "onnx/defs/schema.h"
-#include "onnx/onnx_pb.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
+#include <core/graph/onnx_protobuf.h>
 #include "runner.h"
 
 #include <core/framework/environment.h>

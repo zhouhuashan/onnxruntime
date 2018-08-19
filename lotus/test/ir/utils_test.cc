@@ -1,19 +1,6 @@
-#ifdef _MSC_VER
-#pragma warning(push)
-// 'identifier' : unreferenced formal parameter
-#pragma warning(disable : 4100)
-// 'type' : forcing value to bool 'true' or 'false' (performance warning)
-#pragma warning(disable : 4800)
-#endif
-#include "google/protobuf/util/message_differencer.h"
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-#include "onnx/defs/data_type_utils.h"
-#include "onnx/onnx_pb.h"
 #include "gtest/gtest.h"
+#include "core/graph/onnx_protobuf.h"
 
-using google::protobuf::util::MessageDifferencer;
 using onnx::Utils::DataTypeUtils;
 using namespace onnx;
 

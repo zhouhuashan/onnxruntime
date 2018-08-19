@@ -293,6 +293,10 @@ ${onnx_test_runner_src_dir}/sync_api.h
 ${TEST_SRC_DIR}/proto/tml.proto
 )
 
+if(NOT WIN32)
+  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/tml.pb.cc PROPERTIES COMPILE_FLAGS -Wno-unused-parameter)
+endif()
+
 if(WIN32)
   set(onnx_test_runner_common_srcs ${onnx_test_runner_common_srcs} ${onnx_test_runner_src_dir}/sync_api_win.cc)
   add_library(win_getopt ${onnx_test_runner_src_dir}/getopt.cc ${onnx_test_runner_src_dir}/getopt.h)

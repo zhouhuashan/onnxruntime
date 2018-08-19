@@ -3,6 +3,40 @@
 #include <gsl/span>
 using namespace ::Lotus::Common;
 
+namespace {
+template <typename TCastFrom, typename TCastTo>
+TCastTo Cast(const TCastFrom& from);
+
+template <>
+float Cast<std::string, float>(const std::string& from) {
+  return std::stof(from);
+}
+
+template <>
+int64_t Cast<std::string, int64_t>(const std::string& from) {
+  return std::stoll(from);
+}
+
+template <>
+std::string Cast<std::string, std::string>(const std::string& from) {
+  return from;
+}
+
+template <>
+float Cast<float, float>(const float& from) {
+  return from;
+}
+
+template <>
+int64_t Cast<float, int64_t>(const float& from) {
+  return static_cast<int64_t>(from);
+}
+
+template <>
+std::string Cast<float, std::string>(const float& from) {
+  return std::to_string(from);
+}
+}  // namespace
 namespace Lotus {
 namespace ML {
 
@@ -12,10 +46,10 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
     KernelDefBuilder().TypeConstraint("T1",
                                       std::vector<MLDataType>{DataTypeImpl::GetType<std::map<int64_t, std::string>>(),
                                                               DataTypeImpl::GetType<std::map<int64_t, float>>()})
-                      .TypeConstraint("T2",
-                                      std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(),
-                                                              DataTypeImpl::GetTensorType<int64_t>(),
-                                                              DataTypeImpl::GetTensorType<std::string>()}),
+        .TypeConstraint("T2",
+                        std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(),
+                                                DataTypeImpl::GetTensorType<int64_t>(),
+                                                DataTypeImpl::GetTensorType<std::string>()}),
     CastMap);
 
 Status CastMap::Compute(OpKernelContext* context) const {
@@ -57,9 +91,6 @@ Status CastMap::Compute(OpKernelContext* context) const {
 
   return status;
 }
-
-template <typename TCastFrom, typename TCastTo>
-TCastTo Cast(const TCastFrom& from);
 
 template <typename TFrom, typename TTo>
 Status CastMap::ComputeImpl(OpKernelContext& context, TTo pad_value) const {
@@ -107,41 +138,6 @@ Status CastMap::ComputeImpl(OpKernelContext& context, TTo pad_value) const {
   }
 
   return Status::OK();
-}
-
-template <typename TCastFrom, typename TCastTo>
-TCastTo Cast(const TCastFrom& from) {
-  LOTUS_THROW("Unexpected types to convert between. From=", typeid(TCastFrom).name(), " To=", typeid(TCastTo).name());
-}
-
-template <>
-float Cast<std::string, float>(const std::string& from) {
-  return std::stof(from);
-}
-
-template <>
-int64_t Cast<std::string, int64_t>(const std::string& from) {
-  return std::stoll(from);
-}
-
-template <>
-std::string Cast<std::string, std::string>(const std::string& from) {
-  return from;
-}
-
-template <>
-float Cast<float, float>(const float& from) {
-  return from;
-}
-
-template <>
-int64_t Cast<float, int64_t>(const float& from) {
-  return static_cast<int64_t>(from);
-}
-
-template <>
-std::string Cast<float, std::string>(const float& from) {
-  return std::to_string(from);
 }
 
 }  // namespace ML

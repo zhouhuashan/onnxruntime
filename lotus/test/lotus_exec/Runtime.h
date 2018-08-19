@@ -136,7 +136,7 @@ class WinMLRuntime {
   }
 
   template <typename V>
-  ::Lotus::MLValue ReadTensorForMapStringToScalar(::Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader) {
+  Lotus::MLValue ReadTensorForMapStringToScalar(TestDataReader& inputs_reader) {
     auto vec = inputs_reader.GetSample<V>(-1);
 
     auto data = std::make_unique<std::map<std::string, V>>();
@@ -216,7 +216,7 @@ class WinMLRuntime {
         bool is_map_value_scalar = input.TypeAsProto()->map_type().value_type().tensor_type().shape().dim_size() == 0;
 
         if (is_map_value_scalar) {
-          mlvalue = ReadTensorForMapStringToScalar<int64_t>(TestCPUExecutionProvider().GetAllocator(), inputs_reader);
+          mlvalue = ReadTensorForMapStringToScalar<int64_t>(inputs_reader);
           feed.insert(std::make_pair(input.Name(), mlvalue));
         } else {
           throw DataValidationException("Unsupported input type: " + std::string(*type));
@@ -226,7 +226,7 @@ class WinMLRuntime {
         bool is_map_value_scalar = input.TypeAsProto()->map_type().value_type().tensor_type().shape().dim_size() == 0;
 
         if (is_map_value_scalar) {
-          mlvalue = ReadTensorForMapStringToScalar<float>(TestCPUExecutionProvider().GetAllocator(), inputs_reader);
+          mlvalue = ReadTensorForMapStringToScalar<float>(inputs_reader);
           feed.insert({input.Name(), mlvalue});
         } else {
           throw DataValidationException("Unsupported input type: " + std::string(*type));

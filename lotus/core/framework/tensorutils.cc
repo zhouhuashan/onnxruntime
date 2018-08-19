@@ -7,15 +7,7 @@
 
 #include <algorithm>
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-#include "onnx/onnx_pb.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
+#include "core/graph/onnx_protobuf.h"
 
 #include "gsl/pointers"
 #include "gsl/span"

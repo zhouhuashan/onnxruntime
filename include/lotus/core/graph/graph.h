@@ -9,24 +9,13 @@
 
 #include "gsl/pointers"
 #include "gsl/gsl_util"
-
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-#include "onnx/defs/schema.h"
-#include "onnx/onnx_pb.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-
 #include "core/common/common.h"
 #include "core/common/status.h"
 #include "core/common/const_pointer_container.h"
 #include "core/graph/constants.h"
 #include "core/graph/basic_types.h"
 #include "core/graph/graph_nodes.h"
+#include "core/graph/onnx_protobuf.h"
 
 namespace LotusIR {
 

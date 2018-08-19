@@ -2,16 +2,7 @@
 #include <cmath>
 #include <sstream>
 #include <google/protobuf/text_format.h>
-
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-#include "onnx/onnx_pb.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
+#include "core/graph/onnx_protobuf.h"
 
 #include "core/inc/op_kernel_author.h"
 #include "core/util/math_cpuonly.h"

@@ -7,6 +7,7 @@
 
 #pragma warning(disable : 4100)
 #endif
+#define RNN_UNUSED_PARAMETER LOTUS_ATTRIBUTE_UNUSED = 0
 namespace Lotus {
 namespace Rnn {
 namespace detail {
@@ -17,22 +18,22 @@ inline T Affine(T x, T alpha, T beta) {
 }
 
 template <typename T>
-inline T Relu(T x, T alpha = 0, T beta = 0) {
+inline T Relu(T x, T alpha RNN_UNUSED_PARAMETER, T beta RNN_UNUSED_PARAMETER) {
   return std::max(0.0f, static_cast<float>(x));
 }
 
 template <typename T>
-inline T LeakyRelu(T x, T alpha, T beta = 0) {
+inline T LeakyRelu(T x, T alpha, T beta RNN_UNUSED_PARAMETER) {
   return x >= 0 ? x : alpha * x;
 }
 
 template <typename T>
-inline T ThresholdedRelu(T x, T alpha, T beta = 0) {
+inline T ThresholdedRelu(T x, T alpha, T beta RNN_UNUSED_PARAMETER) {
   return x > alpha ? x : 0;
 }
 
 template <typename T>
-inline T Sigmoid(T x, T alpha = 0, T beta = 0) {
+inline T Sigmoid(T x, T alpha RNN_UNUSED_PARAMETER, T beta RNN_UNUSED_PARAMETER) {
   if (x >= 0) {
     return 1 / (1 + exp(-x));
   } else {
@@ -41,7 +42,7 @@ inline T Sigmoid(T x, T alpha = 0, T beta = 0) {
 }
 
 template <typename T>
-inline T Tanh(T x, T alpha = 0, T beta = 0) {
+inline T Tanh(T x, T alpha RNN_UNUSED_PARAMETER, T beta RNN_UNUSED_PARAMETER) {
   return 2.0f * Sigmoid(2.0f * x) - 1.0f;
 }
 
@@ -56,17 +57,17 @@ inline T HardSigmoid(T x, T alpha, T beta) {
 }
 
 template <typename T>
-inline T Elu(T x, T alpha, T beta = 0) {
+inline T Elu(T x, T alpha, T beta RNN_UNUSED_PARAMETER) {
   return x >= 0 ? x : alpha * (exp(x) - 1);
 }
 
 template <typename T>
-inline T Softsign(T x, T alpha = 0, T beta = 0) {
+inline T Softsign(T x, T alpha RNN_UNUSED_PARAMETER, T beta RNN_UNUSED_PARAMETER) {
   return x / (1 + abs(x));
 }
 
 template <typename T>
-inline T Softplus(T x, T alpha = 0, T beta = 0) {
+inline T Softplus(T x, T alpha RNN_UNUSED_PARAMETER, T beta RNN_UNUSED_PARAMETER) {
   return log(1 + exp(x));
 }
 

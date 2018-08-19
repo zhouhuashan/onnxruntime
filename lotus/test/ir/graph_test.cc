@@ -5,10 +5,15 @@
 #pragma warning(disable : 4100)
 // 'type' : forcing value to bool 'true' or 'false' (performance warning)
 #pragma warning(disable : 4800)
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 #include "google/protobuf/util/message_differencer.h"
 #ifdef _MSC_VER
 #pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
 #endif
 #include "core/graph/graph.h"
 #include "core/graph/model.h"

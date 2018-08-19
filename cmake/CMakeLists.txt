@@ -39,16 +39,6 @@ option(lotus_BUILD_BENCHMARKS "Build Lotus micro-benchmarks" OFF)
 option(lotus_USE_TVM "Build tvm for code-gen" OFF)
 option(lotus_USE_OPENMP "Build with OpenMP support" OFF)
 
-if(lotus_BUILD_BENCHMARKS)
-  if(NOT TARGET benchmark)
-    # We will not need to test benchmark lib itself.
-    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark testing as we don't need it.")
-    # We will not need to install benchmark since we link it statically.
-    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "Disable benchmark install to avoid overwriting vendor install.")
-    add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx/third_party/benchmark EXCLUDE_FROM_ALL)
-  endif()
-endif()
-
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
 include(lotus_cmake_utils.cmake)
@@ -79,6 +69,10 @@ if (MSVC)
     set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "Link protobuf to static runtime libraries" FORCE)
     set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib for gtest" FORCE)
   endif()
+  #Always enable exception handling, even for Windows ARM
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+  #Disable 4100 globally. Too many this kind errors in protobuf
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4100")
 else()
   # Enable OpenMP for Non-Windows only. WinML team disallows use of OpenMP.
   find_package(OpenMP)
@@ -89,12 +83,18 @@ else()
   endif()
   # Enable warning in Linux
   string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra")
-
   check_cxx_compiler_flag(-Wint-in-bool-context HAS_INT_IN_BOOL_CONTEXT)
   if(HAS_INT_IN_BOOL_CONTEXT)
     string(APPEND CMAKE_CXX_FLAGS " -Wno-error=int-in-bool-context")
   endif()
-  string(APPEND CMAKE_CXX_FLAGS " -Wno-error=unused-parameter -Wno-error=reorder -Wno-error=sign-compare -Wno-error=comment")
+  check_cxx_compiler_flag(-Wunused-but-set-variable HAS_UNUSED_BUT_SET_VARIABLE)
+  check_cxx_compiler_flag(-Wunused-parameter HAS_UNUSED_PARAMETER)
+  check_cxx_compiler_flag(-Wcast-function-type HAS_CAST_FUNCTION_TYPE)
+  check_cxx_compiler_flag(-Wparentheses HAS_PARENTHESES)
+  string(APPEND CMAKE_CXX_FLAGS " -Wno-error=reorder -Wno-error=sign-compare -Wno-error=comment")
+  if(HAS_PARENTHESES)
+    string(APPEND CMAKE_CXX_FLAGS " -Wno-parentheses")
+  endif()
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     string(APPEND CMAKE_CXX_FLAGS " -Wno-error=invalid-partial-specialization -Wno-error=missing-braces -Wno-error=inconsistent-missing-override")
   endif()
@@ -103,9 +103,14 @@ else()
   endif()
 endif()
 
-if(WIN32)
-  #Always enable exception handling, even for Windows ARM
-  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+if(lotus_BUILD_BENCHMARKS)
+  if(NOT TARGET benchmark)
+    # We will not need to test benchmark lib itself.
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark testing as we don't need it.")
+    # We will not need to install benchmark since we link it statically.
+    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "Disable benchmark install to avoid overwriting vendor install.")
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/onnx/third_party/benchmark EXCLUDE_FROM_ALL)
+  endif()
 endif()
 
 # External dependencies
@@ -148,7 +153,6 @@ else()
   set_target_properties(libprotobuf-lite PROPERTIES FOLDER "External/Protobuf")
   set_target_properties(libprotoc PROPERTIES FOLDER "External/Protobuf")
   set_target_properties(protoc PROPERTIES FOLDER "External/Protobuf")
-  set_target_properties(js_embed PROPERTIES FOLDER "External/Protobuf")
   add_library(protobuf::libprotobuf ALIAS libprotobuf)
   add_executable(protobuf::protoc ALIAS protoc)
   include(protobuf_function.cmake)

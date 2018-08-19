@@ -1,15 +1,3 @@
-#ifdef _MSC_VER
-#pragma warning(push)
-// 'identifier' : unreferenced formal parameter
-#pragma warning(disable : 4100)
-// 'type' : forcing value to bool 'true' or 'false' (performance warning)
-#pragma warning(disable : 4800)
-#endif
-#include "google/protobuf/util/message_differencer.h"
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 #include <iostream>
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
@@ -31,13 +19,12 @@ class TestOpKernel : public OpKernel {
   }
   Status ComputeAsync(OpKernelContext* context, DoneCallback done) const {
     UNUSED_PARAMETER(context);
+    UNUSED_PARAMETER(done);
     return Status::OK();
   }
 };
 
 TEST(SessionStateTest, AddGetKernelTest) {
-  using google::protobuf::util::MessageDifferencer;
-
   SessionState s;
 
   LotusIR::Model model("graph_1");

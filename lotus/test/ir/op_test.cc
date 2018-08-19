@@ -1,6 +1,6 @@
 #include "core/graph/op.h"
 #include <iostream>
-#include "onnx/onnx_pb.h"
+#include "core/graph/onnx_protobuf.h"
 #include "gtest/gtest.h"
 #include "core/graph/schema_registry.h"
 

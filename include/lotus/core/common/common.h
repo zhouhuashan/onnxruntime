@@ -47,7 +47,14 @@ using Common::Status;
 #ifdef _WIN32
 #define UNUSED_PARAMETER(x) (x)
 #else
-#define UNUSED_PARAMETER(x)
+#define UNUSED_PARAMETER(x) (void)(x)
+#endif
+
+#if (defined(__GNUC__) || defined(__clang__))
+#undef LOTUS_ATTRIBUTE_UNUSED
+#define LOTUS_ATTRIBUTE_UNUSED __attribute__((__unused__))
+#else
+#define LOTUS_ATTRIBUTE_UNUSED
 #endif
 
 std::vector<std::string> GetStackTrace();

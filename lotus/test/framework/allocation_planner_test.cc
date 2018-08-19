@@ -51,6 +51,7 @@ class DummyOpKernel : public OpKernel {
   }
   Status ComputeAsync(OpKernelContext* context, DoneCallback done) const {
     UNUSED_PARAMETER(context);
+    UNUSED_PARAMETER(done);
     return Status::OK();
   }
 };

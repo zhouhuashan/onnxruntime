@@ -1,6 +1,6 @@
 #pragma once
 #include "core/graph/graph.h"
-#include "onnx/onnx_pb.h"
+#include "core/graph/onnx_protobuf.h"
 
 namespace Lotus {
 
