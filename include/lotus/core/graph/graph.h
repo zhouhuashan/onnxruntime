@@ -35,10 +35,6 @@ class GraphBase;
 class Node;
 class OpSignature;
 
-namespace Test {
-struct NodeTestHelper;
-}
-
 // Node argument definition, for both input and output,
 // including arg name, arg type (contains both type and shape).
 //
@@ -310,7 +306,6 @@ class Node {
   // Friend classes should NOT be directly accessing any member variables.
   friend class GraphBase;
   friend class Graph;
-  friend struct Test::NodeTestHelper;
 
   Node(NodeIndex index, GraphBase& graph)
       : index_(index),

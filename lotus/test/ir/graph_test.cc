@@ -14,7 +14,6 @@
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "gtest/gtest.h"
-#include "test/ir/node_helper.h"
 
 #ifdef __GNUC__
 #define LOTUS_UNUSED __attribute__((unused))
@@ -210,10 +209,10 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   Model model("graph_1");
   auto &graph = *(model.MainGraph());
 
-  // Case 1: A normal graph.
+  // A normal graph.
   //                 SouceNode
   //                 /       \
-            //  node_1 (Variable)      node_2 (Variable)
+  //    node_1 (Variable)  node_2 (Variable)
   //                 \       /
   //                 node_3 (Add)
   //                     |
@@ -230,12 +229,12 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
-  inputs.push_back(&input_arg);
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
-  outputs.push_back(&output_arg);
+  auto &input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  inputs.push_back(&input_arg1);
+  auto &output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+  outputs.push_back(&output_arg1);
   expected_node_name_to_input_output_args["node_1"] = {inputs, outputs};
-  auto node_1 = graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
+  graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
   auto &input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
@@ -247,7 +246,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   graph.AddNode("node_2", "Variable_Fake", "node 2", inputs, outputs);
 
   inputs.clear();
-  inputs.push_back(&output_arg);
+  inputs.push_back(&output_arg1);
   inputs.push_back(&output_arg2);
   auto &output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
@@ -305,25 +304,67 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
       EXPECT_EQ(node_name_to_input_output_iter->second.second[i]->Type(), node.OutputDefs()[i]->Type());
     }
   }
+}
 
-  // Case 2 : The graph is not acyclic.  node_1 -> node_3 -> node_4 -> node_1.
-  NodeTestHelper::MutableDefinitions(*node_1).input_defs[0] = &output_arg4;
-  status = graph.Resolve();
+TEST(ResolvingGraphTest, GraphConstruction_CheckIsNotAcyclic) {
+  // A cyclic graph
+  //                 SouceNode
+  //                     |
+  //             --> node_1 (Add)
+  //            ^        |
+  //            | <- node_2 (NoOp)
+
+  LOTUS_OPERATOR_SCHEMA(Add_Fake)
+      .SetDoc("Add two integers.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+  LOTUS_OPERATOR_SCHEMA(NoOp_Fake)
+      .SetDoc("Operator doing nothing.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+
+  std::vector<NodeArg *> inputs;
+  std::vector<NodeArg *> outputs;
+
+  TypeProto tensor_int32;
+  tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+  tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+
+  Model model("graph_1");
+  auto &graph = *(model.MainGraph());
+  auto &input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  auto &output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
+  inputs.push_back(&input_arg1);
+  inputs.push_back(&output_arg2);
+  outputs.push_back(&output_arg1);
+  graph.AddNode("node_1", "Add_Fake", "node 1", inputs, outputs);
+
+  inputs.clear();
+  inputs.push_back(&output_arg1);
+  outputs.clear();
+  outputs.push_back(&output_arg2);
+  graph.AddNode("node_2", "NoOp_Fake", "node 2", inputs, outputs);
+
+  auto status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: the graph is not acyclic.", status.ErrorMessage());
+}
 
-  LotusIR::Model model_2("graph_1");
-  auto &graph_2 = *(model_2.MainGraph());
+TEST(ResolvingGraphTest, GraphConstruction_OnlyInitializer) {
+  LotusIR::Model model("graph");
+  auto &graph = *(model.MainGraph());
 
   onnx::TensorProto weight;
   weight.add_dims(1);
   weight.set_data_type(TensorProto_DataType_STRING);
   weight.add_string_data("test");
   weight.set_name("node_1_in_2");
-  graph_2.AddInitializedTensor(weight);
+  graph.AddInitializedTensor(weight);
 
-  auto status_2 = graph_2.Resolve();
-  EXPECT_TRUE(status_2.IsOK());
+  auto status = graph.Resolve();
+  EXPECT_TRUE(status.IsOK());
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {

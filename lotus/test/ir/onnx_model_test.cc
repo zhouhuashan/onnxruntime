@@ -5,7 +5,6 @@
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "gtest/gtest.h"
-#include "test/ir/node_helper.h"
 
 using namespace Lotus;
 using namespace onnx;
@@ -23,11 +22,8 @@ static void TestResolve(LotusIR::Graph* p_graph) {
   auto& value_info_before = p_graph->GetValueInfo();
 
   // Touch the graph to force Resolve() to recompute.
-#ifdef _WIN32
-  NodeTestHelper::MutableDefinitions(*p_graph->GetNode(0)).input_arg_count;
-#else
-  NodeTestHelper::MutableDefinitions(*p_graph->GetNode(0));
-#endif
+  p_graph->SetGraphResolveNeeded();
+  p_graph->SetGraphProtoSyncNeeded();
   EXPECT_TRUE(p_graph->Resolve().IsOK());
 
   const std::vector<LotusIR::NodeIndex>* nodes_after;
