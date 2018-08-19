@@ -36,7 +36,7 @@ ONNX_OPERATOR_KERNEL_EX(
 
 }  // namespace Cuda
 
-thread_local std::unique_ptr<CUDAExecutionProvider::PerThreadContext> CUDAExecutionProvider::per_thread_context_;
+thread_local std::shared_ptr<CUDAExecutionProvider::PerThreadContext> CUDAExecutionProvider::per_thread_context_;
 thread_local AllocatorPtr CUDAExecutionProvider::per_thread_default_allocator_;
 
 CUDAExecutionProvider::PerThreadContext::PerThreadContext(int device_id) {
@@ -85,7 +85,20 @@ CUDAExecutionProvider::~CUDAExecutionProvider() {
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyIn]));
   CUDA_CALL_THROW(cudaStreamDestroy(streams_[kCudaStreamCopyOut]));
 
-  per_thread_default_allocator_.reset();
+  ReleasePerThreadStuffs();
+}
+
+void CUDAExecutionProvider::ReleasePerThreadStuffs() const {
+  if (per_thread_default_allocator_) {
+    std::lock_guard<std::mutex> lock(default_allocator_pool_mutex_);
+    default_allocator_pool_.push_back(per_thread_default_allocator_);
+    per_thread_default_allocator_.reset();
+  }
+  if (per_thread_context_) {
+    std::lock_guard<std::mutex> lock(context_pool_mutex_);
+    context_pool_.push_back(per_thread_context_);
+    per_thread_context_.reset();
+  }
 }
 
 AllocatorPtr CUDAExecutionProvider::GetAllocator(MemType mem_type) const {
@@ -94,10 +107,16 @@ AllocatorPtr CUDAExecutionProvider::GetAllocator(MemType mem_type) const {
   // cause cacheline to contain dirty data.
   if (mem_type == kMemTypeDefault) {
     if (!per_thread_default_allocator_) {
-      DeviceAllocatorRegistrationInfo default_allocator_info(
-          {kMemTypeDefault,
-           [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
-      per_thread_default_allocator_ = CreateAllocator(default_allocator_info, device_id_);
+      std::lock_guard<std::mutex> lock(default_allocator_pool_mutex_);
+      if (default_allocator_pool_.empty()) {
+        DeviceAllocatorRegistrationInfo default_allocator_info(
+            {kMemTypeDefault,
+             [](int id) { return std::make_unique<CUDAAllocator>(id); }, std::numeric_limits<size_t>::max()});
+        per_thread_default_allocator_ = CreateAllocator(default_allocator_info, device_id_);
+      } else {
+        per_thread_default_allocator_ = default_allocator_pool_.back();
+        default_allocator_pool_.pop_back();
+      }
     }
     return per_thread_default_allocator_;
   } else {
@@ -145,7 +164,15 @@ Status CUDAExecutionProvider::OnRunStart() {
     }
   }
   // start a new per_thread context, store in TLS
-  per_thread_context_ = std::make_unique<PerThreadContext>(device_id_);
+  {
+    std::lock_guard<std::mutex> ctx_lock(context_pool_mutex_);
+    if (context_pool_.empty()) {
+      per_thread_context_ = std::make_shared<PerThreadContext>(device_id_);
+    } else {
+      per_thread_context_ = context_pool_.back();
+      context_pool_.pop_back();
+    }
+  }
   auto& current_deferred_release_event = per_thread_context_->GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event, cudaEventDisableTiming));
   deferred_release_cpu_ptr_.emplace(current_deferred_release_event, DeferredReleaseCPUPtrs());
@@ -157,8 +184,7 @@ Status CUDAExecutionProvider::OnRunEnd() {
   // record deferred release event on default stream, and release per_thread_context
   auto current_deferred_release_event = per_thread_context_->GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventRecord(current_deferred_release_event, nullptr));
-  per_thread_context_.reset();
-  per_thread_default_allocator_.reset();
+  ReleasePerThreadStuffs();
   std::lock_guard<std::mutex> lock(deferred_release_cpu_ptr_mutex_);
   deferred_release_cpu_ptr_[current_deferred_release_event].recorded = true;
   return Status::OK();

@@ -4,6 +4,7 @@
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
 #include "shared_inc/cuda_utils.h"
+#include <deque>
 
 namespace Lotus {
 
@@ -119,10 +120,20 @@ class CUDAExecutionProvider : public IExecutionProvider {
   };
 
   // thread local context during execution
-  static thread_local std::unique_ptr<PerThreadContext> per_thread_context_;
+  static thread_local std::shared_ptr<PerThreadContext> per_thread_context_;
 
   // thread local GPU memory allocator. could be used before execution
   static thread_local AllocatorPtr per_thread_default_allocator_;
+
+  // reuse thread local GPU memory allocator for memory pattern
+  mutable std::deque<AllocatorPtr> default_allocator_pool_;
+  mutable std::mutex default_allocator_pool_mutex_;
+
+  // reuse thread local context
+  mutable std::deque<std::shared_ptr<PerThreadContext>> context_pool_;
+  mutable std::mutex context_pool_mutex_;
+
+  void ReleasePerThreadStuffs() const;
 };
 
 struct KernelCreateInfo;
