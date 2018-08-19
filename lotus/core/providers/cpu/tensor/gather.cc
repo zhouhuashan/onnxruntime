@@ -31,42 +31,31 @@ Status GatherBase::PrepareForCompute(OpKernelContext* context, Prepare& p) const
   return Status::OK();
 }
 
-Status Gather::Compute(OpKernelContext* context) const {
-  Prepare p;
-  LOTUS_RETURN_IF_ERROR(PrepareForCompute(context, p));
+template<typename Tin>
+Status GatherCopyData(const Tensor* indices_tensor, const uint8_t* src_base, uint8_t* dst_base, bool is_string_type,
+               const size_t element_bytes, const int64_t block_size, const int64_t M,
+               const int64_t N, const int64_t data_batch_bytes, const int64_t gathered_batch_bytes,
+               const TensorShape& input_data_shape, const int64_t axis) {
+  const Tin* indices_data = indices_tensor->Data<Tin>();
 
-  const TensorShape& input_data_shape = p.input_tensor->Shape();
-
-  auto is_string_type = p.input_tensor->DataType() == DataTypeImpl::GetType<std::string>();
-  
-  size_t element_bytes = p.input_tensor->DataType()->Size();
-  const int64_t block = input_data_shape.SizeFromDimension(p.axis + 1);
-  const int64_t block_size = block * element_bytes;
-  const int64_t M = input_data_shape.SizeToDimension(p.axis);
-  const int64_t N = p.indices_tensor->Shape().Size();
-  const int64_t data_batch_bytes = input_data_shape.SizeFromDimension(p.axis) * element_bytes;
-  const int64_t gathered_batch_bytes = N * block * element_bytes;
-
-  size_t idx_bytes = p.indices_tensor->DataType()->Size();
-  const uint8_t* idxs_base = static_cast<const uint8_t*>(p.indices_tensor->DataRaw());
-  const uint8_t* src_base = static_cast<const uint8_t*>(p.input_tensor->DataRaw());
-  uint8_t* dst_base = static_cast<uint8_t*>(p.output_tensor->MutableDataRaw());
-
+#ifdef _WIN32
+#pragma omp parallel for
+#endif
   for (int64_t batch = 0; batch < M; ++batch) {
     const int64_t src_offset_batch = batch * data_batch_bytes;
     const int64_t dst_offset_batch = batch * gathered_batch_bytes;
     for (int64_t i = 0; i < N; ++i) {
-      int64_t idx = static_cast<int64_t>(*(idxs_base + i * idx_bytes));
-      if (idx < 0 || idx >= input_data_shape[p.axis]) {
+      Tin idx = indices_data[i];
+      if (idx < 0 || idx >= input_data_shape[axis]) {
         return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "indices element out of data bounds, idx=", idx,
-                                 " data_dim=", input_data_shape[p.axis]);
+                                 " data_dim=", input_data_shape[axis]);
       }
       const int64_t src_offset = src_offset_batch + idx * block_size;
       const int64_t dst_offset = dst_offset_batch + i * block_size;
 
       if (is_string_type) {
-        reinterpret_cast<std::string*>(dst_base)[dst_offset/element_bytes] =
-            reinterpret_cast<const std::string*>(src_base)[src_offset/element_bytes];
+        reinterpret_cast<std::string*>(dst_base)[dst_offset / element_bytes] =
+            reinterpret_cast<const std::string*>(src_base)[src_offset / element_bytes];
       } else {
         memcpy(dst_base + dst_offset, src_base + src_offset, block_size);
       }
@@ -74,6 +63,37 @@ Status Gather::Compute(OpKernelContext* context) const {
   }
 
   return Status::OK();
+}
+
+Status Gather::Compute(OpKernelContext* context) const {
+  Prepare p;
+  LOTUS_RETURN_IF_ERROR(PrepareForCompute(context, p));
+
+  const TensorShape& input_data_shape = p.input_tensor->Shape();
+
+  bool is_string_type = p.input_tensor->DataType() == DataTypeImpl::GetType<std::string>();
+  
+  const size_t element_bytes = p.input_tensor->DataType()->Size();
+  const int64_t block = input_data_shape.SizeFromDimension(p.axis + 1);
+  const int64_t block_size = block * element_bytes;
+  const int64_t M = input_data_shape.SizeToDimension(p.axis);
+  const int64_t N = p.indices_tensor->Shape().Size();
+  const int64_t data_batch_bytes = input_data_shape.SizeFromDimension(p.axis) * element_bytes;
+  const int64_t gathered_batch_bytes = N * block * element_bytes;
+
+  const uint8_t* src_base = static_cast<const uint8_t*>(p.input_tensor->DataRaw());
+  uint8_t* dst_base = static_cast<uint8_t*>(p.output_tensor->MutableDataRaw());
+
+  MLDataType Tind_type = p.indices_tensor->DataType();
+  if (Tind_type == DataTypeImpl::GetType<int32_t>()) {
+    return GatherCopyData<int32_t>(p.indices_tensor, src_base, dst_base, is_string_type, element_bytes,
+                            block_size, M, N, data_batch_bytes, gathered_batch_bytes, input_data_shape, p.axis);
+  } else if (Tind_type == DataTypeImpl::GetType<int64_t>()) {
+    return GatherCopyData<int64_t>(p.indices_tensor, src_base, dst_base, is_string_type, element_bytes,
+                            block_size, M, N, data_batch_bytes, gathered_batch_bytes, input_data_shape, p.axis);
+  }
+
+  return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");
 }
 
 }  // namespace Lotus

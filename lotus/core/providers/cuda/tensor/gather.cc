@@ -1,7 +1,7 @@
 #include "gather.h"
 #include "gather_impl.h"
 #include "core/providers/cpu/tensor/utils.h"
-#include "core//providers/common.h"
+#include "core/providers/common.h"
 
 namespace Lotus {
 namespace Cuda {

@@ -67,10 +67,10 @@ TEST(GatherOpTest, Gather_invalid_index_cpu) {
                        {0.0f, 1.0f, 2.0f, 3.0f,
                         4.0f, 5.0f, 6.0f, 7.0f,
                         8.0f, 9.0f, 10.0f, 11.0f});
-  test.AddInput<int64_t>("indices", {3}, {0LL, 1LL, 3LL});
+  test.AddInput<int32_t>("indices", {3}, {0LL, 1L, 1000L});
   test.AddOutput<float>("output", {1}, {1.0f});
 
-  test.Run(OpTester::ExpectResult::kExpectFailure, "indices element out of data bounds, idx=3 data_dim=3");
+  test.Run(OpTester::ExpectResult::kExpectFailure, "indices element out of data bounds, idx=1000 data_dim=3");
 }
 
 #ifdef USE_CUDA
