@@ -3,6 +3,7 @@
 #include "core/framework/execution_provider.h"
 #include "core/framework/kernel_registry_manager.h"
 #include "core/framework/op_kernel.h"
+#include "core/framework/kernel_registry.h"
 
 namespace Lotus {
 

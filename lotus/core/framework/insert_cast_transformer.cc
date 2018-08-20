@@ -1,6 +1,8 @@
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/data_types.h"
 #include "core/inc/op_kernel_author.h"
+#include "core/framework/kernel_registry.h"
+
 using namespace onnx;
 using namespace ::Lotus::Common;
 namespace Lotus {

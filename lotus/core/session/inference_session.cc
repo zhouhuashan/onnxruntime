@@ -27,6 +27,8 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/session/CustomOpsLoader.h"
 #include "core/session/IOBinding.h"
+#include "core/framework/kernel_registry.h"
+#include "core/graph/graph_transformer_mgr.h"
 
 using namespace onnx;
 namespace Lotus {

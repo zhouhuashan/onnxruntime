@@ -3,6 +3,7 @@
 #include "core/framework/allocator.h"
 #include "core/framework/transformer_memcpy.h"
 #include "core/framework/memcpy.h"
+#include "core/framework/kernel_registry.h"
 
 namespace Lotus {
 namespace MklDnn {

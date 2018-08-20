@@ -24,6 +24,7 @@ void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn);
 class CPUExecutionProvider : public IExecutionProvider {
  public:
   explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info) {
+    UNUSED_PARAMETER(info);
     DeviceAllocatorRegistrationInfo device_info({kMemTypeDefault, [](int) { return std::make_unique<CPUAllocator>(); }, std::numeric_limits<size_t>::max()});
 #ifdef USE_JEMALLOC
     //JEMalloc already has memory pool, so just use device allocator.

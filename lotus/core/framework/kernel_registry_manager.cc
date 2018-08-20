@@ -1,4 +1,5 @@
 #include "core/framework/kernel_registry_manager.h"
+#include "core/framework/kernel_registry.h"
 #include "core/framework/customregistry.h"
 
 using namespace onnx;

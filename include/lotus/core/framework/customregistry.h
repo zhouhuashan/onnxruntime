@@ -5,7 +5,7 @@
 #include "core/graph/schema_registry.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/kernel_def_builder.h"
-#include "core/graph/schema_registry.h"
+#include "core/framework/kernel_registry.h"
 
 namespace Lotus {
 

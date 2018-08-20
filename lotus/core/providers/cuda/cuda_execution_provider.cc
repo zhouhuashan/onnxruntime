@@ -4,6 +4,7 @@
 #include "core/framework/memcpy.h"
 #include "cuda_fence.h"
 #include "cuda_allocator.h"
+#include "core/framework/kernel_registry.h"
 
 using namespace LotusIR;
 using namespace Lotus::Common;
