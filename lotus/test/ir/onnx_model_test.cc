@@ -91,9 +91,9 @@ TEST(ONNXModelsTest1, bvlc_alexnet_1) {
   ASSERT_TRUE(Model::Load("../models/test_bvlc_alexnet/model.onnx", model).IsOK());
 
   // Check the graph input/output/value_info should have the same size as specified in the model file.
-  EXPECT_EQ(model_proto.graph().value_info_size(), model->MainGraph()->GetValueInfo().size());
-  EXPECT_EQ(model_proto.graph().input_size(), model->MainGraph()->GetInputs().size() + model->MainGraph()->GetAllInitializedTensors().size());
-  EXPECT_EQ(model_proto.graph().output_size(), model->MainGraph()->GetOutputs().size());
+  EXPECT_EQ(model_proto.graph().value_info_size(), model->MainGraph().GetValueInfo().size());
+  EXPECT_EQ(model_proto.graph().input_size(), model->MainGraph().GetInputs().size() + model->MainGraph().GetAllInitializedTensors().size());
+  EXPECT_EQ(model_proto.graph().output_size(), model->MainGraph().GetOutputs().size());
   TestResolve(model->MainGraph());
 }
 

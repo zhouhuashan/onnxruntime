@@ -34,9 +34,9 @@ static void BM_ResolveGraph(benchmark::State& state) {
   for (auto _ : state) {
     state.PauseTiming();
     std::shared_ptr<LotusIR::Model> model = std::make_shared<LotusIR::Model>(proto);
-    LotusIR::Graph* graph = model->MainGraph();
+    LotusIR::Graph& graph = model->MainGraph();
     state.ResumeTiming();
-    st = graph->Resolve();
+    st = graph.Resolve();
     if (!st.IsOK()) {
       printf("Resolve graph failed: %s", st.ErrorMessage().c_str());
       abort();
