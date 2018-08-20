@@ -24,7 +24,7 @@ enum class KernelRegistryPriority {
 class KernelRegistryManager {
  public:
   void RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry, KernelRegistryPriority priority);
-  
+
   Status CreateKernel(const LotusIR::Node& node,
                       const IExecutionProvider* execution_provider,
                       const SessionState& session_state,
@@ -33,9 +33,10 @@ class KernelRegistryManager {
   Status SearchKernelRegistry(const LotusIR::Node& node,
                               /*out*/ const KernelCreateInfo** kernel_create_info) const;
 
-  std::vector<const KernelRegistry*> GetAllKernelRegistries() const{
+  // Get all kernel registries. There are no nullptr entries.
+  std::vector<const KernelRegistry*> GetAllKernelRegistries() const {
     std::vector<const KernelRegistry*> result;
-	for (auto& registry : kernel_registries_) {
+    for (auto& registry : kernel_registries_) {
       result.push_back(registry.get());
     }
     return result;

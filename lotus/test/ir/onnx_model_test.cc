@@ -13,24 +13,24 @@ namespace Test {
 // Tests that Resolve() properly clears the state of topological sorted nodes,
 // inputs, outputs and valueInfo.
 // Assumes the graph passed in has been previously resolved.
-static void TestResolve(LotusIR::Graph* p_graph) {
+static void TestResolve(LotusIR::Graph& graph) {
   const std::vector<LotusIR::NodeIndex>* nodes;
-  EXPECT_TRUE(p_graph->GetNodesInTopologicalOrder(&nodes).IsOK());
+  EXPECT_TRUE(graph.GetNodesInTopologicalOrder(&nodes).IsOK());
   auto nodes_before = *nodes;
-  auto& inputs_before = p_graph->GetInputs();
-  auto& outputs_before = p_graph->GetOutputs();
-  auto& value_info_before = p_graph->GetValueInfo();
+  auto& inputs_before = graph.GetInputs();
+  auto& outputs_before = graph.GetOutputs();
+  auto& value_info_before = graph.GetValueInfo();
 
   // Touch the graph to force Resolve() to recompute.
-  p_graph->SetGraphResolveNeeded();
-  p_graph->SetGraphProtoSyncNeeded();
-  EXPECT_TRUE(p_graph->Resolve().IsOK());
+  graph.SetGraphResolveNeeded();
+  graph.SetGraphProtoSyncNeeded();
+  EXPECT_TRUE(graph.Resolve().IsOK());
 
   const std::vector<LotusIR::NodeIndex>* nodes_after;
-  EXPECT_TRUE(p_graph->GetNodesInTopologicalOrder(&nodes_after).IsOK());
-  auto& inputs_after = p_graph->GetInputs();
-  auto& outputs_after = p_graph->GetOutputs();
-  auto& value_info_after = p_graph->GetValueInfo();
+  EXPECT_TRUE(graph.GetNodesInTopologicalOrder(&nodes_after).IsOK());
+  auto& inputs_after = graph.GetInputs();
+  auto& outputs_after = graph.GetOutputs();
+  auto& value_info_after = graph.GetValueInfo();
 
   // Multiple calls to Resolve() should not alter the sorted nodes,
   // inputs, outputs and valueInfo. The internal state should be

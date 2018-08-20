@@ -65,7 +65,7 @@ void ExpectCopy(const LotusIR::Node* source, const std::string copy_op,
 
 TEST(TransformerTest, MemcpyTransformerTest) {
   auto model = std::make_shared<LotusIR::Model>("test");
-  LotusIR::Graph* graph = model->MainGraph();
+  LotusIR::Graph& graph = model->MainGraph();
 
   TypeProto tensor_float_type;
   tensor_float_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
@@ -77,16 +77,16 @@ TEST(TransformerTest, MemcpyTransformerTest) {
       o3_def("O3", &tensor_float_type),
       o4_def("O4", &tensor_float_type);
 
-  auto node1 = graph->AddNode("node1", "MatMul", "cpu operator1", ArgMap{&i1_def, &i2_def}, ArgMap{&o1_def});
+  auto node1 = graph.AddNode("node1", "MatMul", "cpu operator1", ArgMap{&i1_def, &i2_def}, ArgMap{&o1_def});
   node1->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
-  auto node2 = graph->AddNode("node2", "MatMul", "gpu operator1", ArgMap{&o1_def, &i3_def}, ArgMap{&o2_def});
+  auto node2 = graph.AddNode("node2", "MatMul", "gpu operator1", ArgMap{&o1_def, &i3_def}, ArgMap{&o2_def});
   node2->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
-  auto node3 = graph->AddNode("node3", "Clip", "cpu operator2", ArgMap{&o2_def}, ArgMap{&o3_def});
+  auto node3 = graph.AddNode("node3", "Clip", "cpu operator2", ArgMap{&o2_def}, ArgMap{&o3_def});
   node3->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
-  auto node4 = graph->AddNode("node4", "MatMul", "gpu operator2", ArgMap{&o2_def, &o2_def}, ArgMap{&o4_def});
+  auto node4 = graph.AddNode("node4", "MatMul", "gpu operator2", ArgMap{&o2_def, &o2_def}, ArgMap{&o4_def});
   node4->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
 
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   ASSERT_TRUE(status.IsOK());
 
   auto cpu_execution_provider = TestCPUExecutionProvider();
@@ -98,7 +98,7 @@ TEST(TransformerTest, MemcpyTransformerTest) {
   bool modified = transformer.ModifyGraph(test_registry_manager);
   EXPECT_TRUE(modified);
 
-  status = graph->Resolve();
+  status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
 
   // Expect: copy of O1 from cpu to gpu

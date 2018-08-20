@@ -42,24 +42,24 @@ static const std::string MODEL_URI_NO_OPSET = "testdata/mul_1.pb.noopset";
 static void CreateMatMulModel(std::unique_ptr<LotusIR::Model>& p_model, ProviderType provider_type) {
   // Generate the input & output def lists
   p_model = std::make_unique<LotusIR::Model>("test");
-  LotusIR::Graph* p_graph = p_model->MainGraph();
+  LotusIR::Graph& graph = p_model->MainGraph();
 
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
 
   std::vector<LotusIR::NodeArg*> input_defs;
-  auto& input_arg_a = p_graph->GetOrCreateNodeArg("A", &tensor_float);
+  auto& input_arg_a = graph.GetOrCreateNodeArg("A", &tensor_float);
   input_defs.push_back(&input_arg_a);
 
-  auto& input_arg_b = p_graph->GetOrCreateNodeArg("B", &tensor_float);
+  auto& input_arg_b = graph.GetOrCreateNodeArg("B", &tensor_float);
   input_defs.push_back(&input_arg_b);
 
   std::vector<LotusIR::NodeArg*> output_defs;
-  auto& output_arg = p_graph->GetOrCreateNodeArg("Y", &tensor_float);
+  auto& output_arg = graph.GetOrCreateNodeArg("Y", &tensor_float);
   output_defs.push_back(&output_arg);
 
   // Create a simple model
-  auto& node = *p_graph->AddNode("node1", "MatMul", "MatMul", input_defs, output_defs, nullptr, LotusIR::kOnnxDomain);
+  auto& node = *graph.AddNode("node1", "MatMul", "MatMul", input_defs, output_defs, nullptr, LotusIR::kOnnxDomain);
   if (provider_type == kCpuExecutionProvider) {
     node.SetExecutionProviderType(provider_type);
   } else {
@@ -67,7 +67,7 @@ static void CreateMatMulModel(std::unique_ptr<LotusIR::Model>& p_model, Provider
     node.SetExecutionProviderType(provider_type);
 #endif
   }
-  Status status = p_graph->Resolve();
+  Status status = graph.Resolve();
   ASSERT_TRUE(status.IsOK());
 }
 
@@ -279,8 +279,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
   std::shared_ptr<LotusIR::Model> p_model;
   Status st = LotusIR::Model::Load(model_uri, p_model);
   ASSERT_TRUE(st.IsOK());
-  const LotusIR::Graph* p_graph = p_model->MainGraph();
-  ASSERT_TRUE(p_graph != nullptr);
+  const LotusIR::Graph& graph = p_model->MainGraph();
 
   // 1. first test the model meta
   {
@@ -290,15 +289,15 @@ TEST(InferenceSessionTests, ModelMetadata) {
     ASSERT_TRUE(m->custom_metadata_map == p_model->MetaData() &&
                 m->description == p_model->DocString() &&
                 m->domain == p_model->Domain() &&
-                m->graph_name == p_graph->Name() &&
+                m->graph_name == graph.Name() &&
                 m->producer_name == p_model->ProducerName() &&
                 m->version == p_model->ModelVersion());
   }
 
   {
     // 2. test inputs
-    auto& inputs = p_graph->GetInputs();
-    auto weights = p_graph->GetAllInitializedTensors();
+    auto& inputs = graph.GetInputs();
+    auto weights = graph.GetAllInitializedTensors();
 
     // skip the weights
     InputDefList inputs_no_weights;
@@ -323,7 +322,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
     auto retval = session_object.GetOutputs();
     ASSERT_TRUE(retval.first.IsOK());
 
-    auto& outputs = p_graph->GetOutputs();
+    auto& outputs = graph.GetOutputs();
     retval = session_object.GetOutputs();
     ASSERT_TRUE(retval.first.IsOK());
     ASSERT_TRUE(Compare(outputs, *retval.second));

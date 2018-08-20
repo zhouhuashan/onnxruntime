@@ -26,7 +26,7 @@ class SessionState {
   SessionState() = default;
 
   // graph
-  void SetGraph(const LotusIR::Graph* graph);
+  void SetGraph(const LotusIR::Graph& graph);
   const LotusIR::Graph* GetGraph() const;
 
   // kernels

@@ -7,8 +7,8 @@
 using namespace ::Lotus::Common;
 namespace Lotus {
 
-void SessionState::SetGraph(const LotusIR::Graph* graph) {
-  p_graph_ = graph;
+void SessionState::SetGraph(const LotusIR::Graph& graph) {
+  p_graph_ = &graph;
 }
 
 const LotusIR::Graph* SessionState::GetGraph() const {

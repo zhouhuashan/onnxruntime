@@ -7,25 +7,25 @@
 #include <list>
 
 #include "core/common/logging/logging.h"
-#include "core/graph/graph.h"
-#include "core/graph/graph_transformer.h"
-#include "core/graph/model.h"
-#include "core/framework/tensorutils.h"
-#include "core/platform/notification.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/customregistry.h"
 #include "core/framework/executor.h"
 #include "core/framework/execution_frame.h"
+#include "core/framework/graph_partitioner.h"
+#include "core/framework/insert_cast_transformer.h"
 #include "core/framework/kernel_def_builder.h"
+#include "core/framework/mldata_type_utils.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
 #include "core/framework/session_state.h"
 #include "core/framework/tensorprotoutils.h"
-#include "core/framework/insert_cast_transformer.h"
-#include "core/framework/node_placement.h"
-#include "core/framework/mldata_type_utils.h"
+#include "core/framework/tensorutils.h"
 #include "core/framework/transformer_memcpy.h"
-#include "core/session/CustomOpsLoader.h"
+#include "core/graph/graph.h"
+#include "core/graph/graph_transformer.h"
+#include "core/graph/model.h"
+#include "core/platform/notification.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
+#include "core/session/CustomOpsLoader.h"
 #include "core/session/IOBinding.h"
 
 using namespace onnx;
@@ -241,12 +241,12 @@ class InferenceSession::Impl {
                                             std::make_unique<CPUExecutionProvider>(epi));
       }
 
-      LotusIR::Graph* p_graph = model_->MainGraph();
-      session_state_.SetGraph(p_graph);
+      LotusIR::Graph& graph = model_->MainGraph();
+      session_state_.SetGraph(graph);
 
-      LOTUS_RETURN_IF_ERROR(TransformGraph(p_graph));
-      LOTUS_RETURN_IF_ERROR(p_graph->Resolve());
-      LOTUS_RETURN_IF_ERROR(SaveMLValueNameIndexMapping(*p_graph));
+      LOTUS_RETURN_IF_ERROR(TransformGraph(graph));
+      LOTUS_RETURN_IF_ERROR(graph.Resolve());
+      LOTUS_RETURN_IF_ERROR(SaveMLValueNameIndexMapping(graph));
 
       // get execution plan
       if (session_options_.enable_sequential_execution) {
@@ -260,11 +260,11 @@ class InferenceSession::Impl {
         LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
       }
 
-      LOTUS_RETURN_IF_ERROR(SaveInitializedTensors(*p_graph));
-      p_graph->CleanAllInitializedTensors();  // remove weights from the graph now to save memory
+      LOTUS_RETURN_IF_ERROR(SaveInitializedTensors(graph));
+      graph.CleanAllInitializedTensors();  // remove weights from the graph now to save memory
 
-      LOTUS_RETURN_IF_ERROR(SaveKernels(*p_graph));
-      LOTUS_RETURN_IF_ERROR(SaveInputOutputNamesToNodeMapping(*p_graph));
+      LOTUS_RETURN_IF_ERROR(SaveKernels(graph));
+      LOTUS_RETURN_IF_ERROR(SaveInputOutputNamesToNodeMapping(graph));
 
       is_inited_ = true;
 
@@ -811,7 +811,7 @@ class InferenceSession::Impl {
 
   Common::Status SaveModelMetadata(const LotusIR::Model& model) {
     VLOGS(*session_logger_, 1) << "Saving model metadata";
-    const LotusIR::Graph* p_graph = model.MainGraph();
+    const LotusIR::Graph& graph = model.MainGraph();
 
     // save model metadata
     model_metadata_.producer_name = model.ProducerName();
@@ -819,11 +819,11 @@ class InferenceSession::Impl {
     model_metadata_.domain = model.Domain();
     model_metadata_.version = model.ModelVersion();
     model_metadata_.custom_metadata_map = model.MetaData();
-    model_metadata_.graph_name = p_graph->Name();
+    model_metadata_.graph_name = graph.Name();
 
     // save inputs
-    auto& inputs = p_graph->GetInputs();
-    auto& weights = p_graph->GetAllInitializedTensors();
+    auto& inputs = graph.GetInputs();
+    auto& weights = graph.GetAllInitializedTensors();
     input_def_list_.reserve(inputs.size());
     for (const auto& elem : inputs) {
       if (!elem) {
@@ -838,7 +838,7 @@ class InferenceSession::Impl {
     }
 
     // save outputs
-    auto& outputs = p_graph->GetOutputs();
+    auto& outputs = graph.GetOutputs();
     output_def_list_.reserve(outputs.size());
     for (const auto& elem : outputs) {
       if (!elem) {
@@ -913,7 +913,7 @@ class InferenceSession::Impl {
     session_state_.SetLogger(*session_logger_);
   }
 
-  Common::Status TransformGraph(LotusIR::Graph* graph) {
+  Common::Status TransformGraph(LotusIR::Graph& graph) {
     // The transformer order:
     // 1. built-in graph rewriter
     // 2. each execution provider's transformer
@@ -962,10 +962,11 @@ class InferenceSession::Impl {
     }
     // Insert cast node.
     for (auto registry : session_state_.GetKernelRegistryManager().GetAllKernelRegistries()) {
-      insert_cast_transformer_.AddKernelRegistry(registry);
+      insert_cast_transformer_.AddKernelRegistry(*registry);
     }
+
     bool modified = false;
-    LOTUS_RETURN_IF_ERROR(insert_cast_transformer_.Apply(graph, &modified));
+    LOTUS_RETURN_IF_ERROR(insert_cast_transformer_.Apply(graph, modified));
 
     return Common::Status::OK();
   }

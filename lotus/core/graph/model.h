@@ -10,7 +10,7 @@
 
 namespace LotusIR {
 typedef std::unordered_map<std::string, std::string> ModelMetaData;
-using ILotusOpSchemaRegistryList = std::list<std::shared_ptr<ILotusOpSchemaCollection> >;
+using ILotusOpSchemaRegistryList = std::list<std::shared_ptr<ILotusOpSchemaCollection>>;
 
 // A machine learning model representation class.
 // Besides a main <Graph>, it also holds basic information, say,
@@ -20,7 +20,7 @@ class Model {
   static constexpr Version kNoVersion = INT64_MAX;
 
   // Construct model from scratch.
-  explicit Model(const std::string& graph_name,
+  explicit Model(const std::string& graph_name, 
                  bool is_onnx_domain_only = false,
                  const ModelMetaData& model_metadata = ModelMetaData(),
                  const ILotusOpSchemaRegistryList* local_registries = nullptr,
@@ -28,11 +28,13 @@ class Model {
 
   // NOTE: after calling this constructor, <*this> model will
   // hold a copy of <model_proto>.
-  explicit Model(const onnx::ModelProto& model_proto, const ILotusOpSchemaRegistryList* local_registries = nullptr);
+  explicit Model(const onnx::ModelProto& model_proto,
+                 const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   // NOTE: after calling this constructor, <*this> model will
   // own the <model_proto>.
-  explicit Model(std::unique_ptr<onnx::ModelProto> model_proto, const ILotusOpSchemaRegistryList* local_registries = nullptr);
+  explicit Model(std::unique_ptr<onnx::ModelProto> model_proto,
+                 const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   // Get model's IR version.
   // Return <kNoVersion> if not specified.
@@ -71,10 +73,8 @@ class Model {
   const ModelMetaData& MetaData() const noexcept;
 
   // Get model's main graph.
-  // The return pointer is owned by <*this> model.
-  // TODO(Task:131) Model::MainGraph can return reference as the value is never null
-  Graph* MainGraph() noexcept;
-  const Graph* MainGraph() const noexcept;
+  Graph& MainGraph() noexcept;
+  const Graph& MainGraph() const noexcept;
 
   // Get model's serialization proto data.
   onnx::ModelProto ToProto();

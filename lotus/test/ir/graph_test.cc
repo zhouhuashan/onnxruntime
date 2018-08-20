@@ -49,7 +49,7 @@ TEST(GraphTraversalTest, ReverseDFS) {
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
   Model model("graph_1");
-  auto &graph = *(model.MainGraph());
+  auto &graph = model.MainGraph();
 
   // Case 1: A normal graph.
   //                 SouceNode
@@ -144,9 +144,9 @@ TEST(GraphTraversalTest, ReverseDFS) {
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
   Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
 
-  EXPECT_EQ("graph_1", graph->Name());
+  EXPECT_EQ("graph_1", graph.Name());
 
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
@@ -156,20 +156,20 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &output_type);
+  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
-  graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
+  graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   // Case 1: Adding two nodes with same node name should fail.
-  auto node_with_dup_name = graph->AddNode("node_1", "Variable", "node 2", inputs, outputs);
-  auto status = graph->Resolve();
+  auto node_with_dup_name = graph.AddNode("node_1", "Variable", "node 2", inputs, outputs);
+  auto status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ("Error: two nodes with same node name (node_1).", status.ErrorMessage());
-  graph->RemoveNode(node_with_dup_name->Index());
+  graph.RemoveNode(node_with_dup_name->Index());
 
   // Case 2: Adding two nodes with same output arg name should fail.
-  graph->AddNode("node_2", "Variable", "node 2", inputs, outputs);
-  status = graph->Resolve();
+  graph.AddNode("node_2", "Variable", "node 2", inputs, outputs);
+  status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   bool duplicate_error_found = status.ErrorMessage().find("Duplicate") != std::string::npos;
   EXPECT_TRUE(duplicate_error_found);
@@ -177,7 +177,7 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
 
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
@@ -187,11 +187,11 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &output_type);
+  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
   // Case: Adding node refering to non-existing operator should fail.
-  graph->AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
-  auto status = graph->Resolve();
+  graph.AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
+  auto status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   EXPECT_EQ(0, status.ErrorMessage().find_first_of("No Schema registered for OpNotExist"));
 }
@@ -212,7 +212,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
   Model model("graph_1");
-  auto &graph = *(model.MainGraph());
+  auto &graph = model.MainGraph();
 
   // A normal graph.
   //                 SouceNode
@@ -289,9 +289,9 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   // Load the model again to ensure that it's still the right thing.
   //EXPECT_EQ(Model::Load(model_proto2, &model2), Status::OK());
   model2.reset(new Model(model_proto2));
-  Graph *graph2 = model2->MainGraph();
-  for (auto &node : graph2->Nodes()) {
-    if (graph2->IsSourceNode(node.Index()) || graph2->IsSinkNode(node.Index())) {
+  Graph &graph2 = model2->MainGraph();
+  for (auto &node : graph2.Nodes()) {
+    if (graph2.IsSourceNode(node.Index()) || graph2.IsSinkNode(node.Index())) {
       continue;
     }
     auto node_name_to_input_output_iter = expected_node_name_to_input_output_args.find(node.Name());
@@ -337,7 +337,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsNotAcyclic) {
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
   Model model("graph_1");
-  auto &graph = *(model.MainGraph());
+  auto &graph = model.MainGraph();
   auto &input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   auto &output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
@@ -359,7 +359,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsNotAcyclic) {
 
 TEST(ResolvingGraphTest, GraphConstruction_OnlyInitializer) {
   LotusIR::Model model("graph");
-  auto &graph = *(model.MainGraph());
+  auto &graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.add_dims(1);
@@ -388,7 +388,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
       .TypeConstraint("T", {"tensor(int32)", "tensor(float)"}, "input/output types");
 
   Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
 
   // Case 1: A normal graph.
   //                         SourceNode
@@ -405,54 +405,54 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg = graph->GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  auto &input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   inputs.push_back(&input_arg);
-  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   outputs.push_back(&output_arg);
-  graph->AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
+  graph.AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
   inputs.clear();
   inputs.push_back(&input_arg);
-  auto &output_arg2 = graph->GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
+  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg2);
-  graph->AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
+  graph.AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
-  auto &input_arg3 = graph->GetOrCreateNodeArg("node_3_in_1", &tensor_int32);
+  auto &input_arg3 = graph.GetOrCreateNodeArg("node_3_in_1", &tensor_int32);
   inputs.clear();
   inputs.push_back(&input_arg3);
-  auto &output_arg3 = graph->GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
+  auto &output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg3);
-  graph->AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
+  graph.AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
 
   inputs.clear();
   inputs.push_back(&output_arg);
   inputs.push_back(&output_arg2);
   inputs.push_back(&output_arg3);
-  auto &output_arg4 = graph->GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
+  auto &output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg4);
-  auto node_4 = graph->AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
+  auto node_4 = graph.AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
   EXPECT_NE(node_4, nullptr);
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
 
   std::unordered_set<std::string> expected_graph_inputs = {"node_1_in_1", "node_3_in_1"};
-  EXPECT_EQ(2, graph->GetInputs().size());
-  for (auto &graph_input : graph->GetInputs()) {
+  EXPECT_EQ(2, graph.GetInputs().size());
+  for (auto &graph_input : graph.GetInputs()) {
     EXPECT_TRUE(expected_graph_inputs.find(graph_input->Name()) != expected_graph_inputs.end());
   }
-  EXPECT_EQ(1, graph->GetOutputs().size());
-  EXPECT_EQ("node_4_out_1", graph->GetOutputs()[0]->Name());
-  EXPECT_EQ(2, graph->GetInputs().size());
+  EXPECT_EQ(1, graph.GetOutputs().size());
+  EXPECT_EQ("node_4_out_1", graph.GetOutputs()[0]->Name());
+  EXPECT_EQ(2, graph.GetInputs().size());
 
   EXPECT_TRUE(Model::Save(model, "model_x.pb").IsOK());
   std::shared_ptr<Model> loaded_model;
   EXPECT_TRUE(Model::Load("model_x.pb", loaded_model).IsOK());
-  EXPECT_EQ(2, loaded_model->MainGraph()->GetInputs().size());
+  EXPECT_EQ(2, loaded_model->MainGraph().GetInputs().size());
 
-  auto &graph_proto = graph->ToGraphProto();
+  auto &graph_proto = graph.ToGraphProto();
   EXPECT_EQ(2, graph_proto.input_size());
   for (auto &graphProtoInput : graph_proto.input()) {
     EXPECT_TRUE(expected_graph_inputs.find(graphProtoInput.name()) != expected_graph_inputs.end());
@@ -469,16 +469,16 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
   Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
   TypeProto output_type;
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
   TensorShapeProto output_shape;
   output_shape.mutable_dim()->Add()->set_dim_value(1);
   output_shape.mutable_dim()->Add()->set_dim_value(3);
   *(output_type.mutable_tensor_type()->mutable_shape()) = output_shape;
-  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", &output_type);
+  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
-  auto node_1 = graph->AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
+  auto node_1 = graph.AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
   TensorProto t;
   t.set_data_type(TensorProto_DataType_INT64);
   *(t.mutable_int64_data()->Add()) = 1;
@@ -487,7 +487,7 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   *(t.mutable_dims()->Add()) = 1;
   *(t.mutable_dims()->Add()) = 3;
   node_1->AddAttribute(kConstantValue, t);
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
 }
 
@@ -514,13 +514,13 @@ TEST(TypeInferenceTest, TypeAttribute) {
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
   Model model("graph_1");
-  auto graph = model.MainGraph();
-  auto &output_arg = graph->GetOrCreateNodeArg("node_1_out_1", nullptr);
+  auto &graph = model.MainGraph();
+  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", nullptr);
   outputs.push_back(&output_arg);
-  auto node_1 = graph->AddNode("node_1", "RandomNormal", "node 1.", inputs, outputs);
+  auto node_1 = graph.AddNode("node_1", "RandomNormal", "node 1.", inputs, outputs);
   AddAttribute(node_1, "dtype", TensorProto_DataType_FLOAT);
   AddAttribute(node_1, "shape", {2, 3});
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
 }
 
@@ -538,15 +538,15 @@ TEST(TypeInferenceTest, VariadicOutput) {
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   Model model("graph_1");
-  auto graph = model.MainGraph();
-  auto &X = graph->GetOrCreateNodeArg("X", &tensor_type);
+  auto &graph = model.MainGraph();
+  auto &X = graph.GetOrCreateNodeArg("X", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
+  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &Z = graph->GetOrCreateNodeArg("Z", nullptr);
+  auto &Z = graph.GetOrCreateNodeArg("Z", nullptr);
   outputs.push_back(&Z);
-  graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
-  auto status = graph->Resolve();
+  graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
+  auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
   CheckTensorEltType(Y.TypeAsProto(), TensorProto_DataType_FLOAT);
   CheckTensorEltType(Z.TypeAsProto(), TensorProto_DataType_FLOAT);
@@ -555,28 +555,28 @@ TEST(TypeInferenceTest, VariadicOutput) {
 // Test that Graph::Resolve checks initializer value matches the type specified in graph:
 TEST(TypeInferenceTest, InitializerType) {
   Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_INT32);
   weight.add_dims(1);
   weight.add_int32_data(1);
   weight.set_name("W");
-  graph->AddInitializedTensor(weight);
+  graph.AddInitializedTensor(weight);
 
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  auto &X = graph->GetOrCreateNodeArg("W", &tensor_type);
+  auto &X = graph.GetOrCreateNodeArg("W", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
+  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &Z = graph->GetOrCreateNodeArg("Z", nullptr);
+  auto &Z = graph.GetOrCreateNodeArg("Z", nullptr);
   outputs.push_back(&Z);
-  graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
+  graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
 
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   bool type_error_found = status.ErrorMessage().find("Type Error") != std::string::npos;
   EXPECT_TRUE(type_error_found);
@@ -585,29 +585,29 @@ TEST(TypeInferenceTest, InitializerType) {
 // Test that Graph::Resolve checks initializer value matches the shape specified in graph:
 TEST(TypeInferenceTest, InitializerShape) {
   Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_FLOAT);
   weight.add_dims(1);
   weight.add_float_data(1.0f);
   weight.set_name("W");
-  graph->AddInitializedTensor(weight);
+  graph.AddInitializedTensor(weight);
 
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   tensor_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
-  auto &X = graph->GetOrCreateNodeArg("W", &tensor_type);
+  auto &X = graph.GetOrCreateNodeArg("W", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
+  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &Z = graph->GetOrCreateNodeArg("Z", nullptr);
+  auto &Z = graph.GetOrCreateNodeArg("Z", nullptr);
   outputs.push_back(&Z);
-  graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
+  graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
 
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   bool type_error_found = status.ErrorMessage().find("Type Error") != std::string::npos;
   EXPECT_TRUE(type_error_found);
@@ -616,29 +616,29 @@ TEST(TypeInferenceTest, InitializerShape) {
 // Test that Graph::Resolve identifies name-duplication across initializer and node-output-arg
 TEST(NameResolutionTest, DuplicateName) {
   Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_FLOAT);
   weight.add_dims(1);
   weight.add_float_data(1.0f);
   weight.set_name("W");
-  graph->AddInitializedTensor(weight);
+  graph.AddInitializedTensor(weight);
 
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   tensor_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
-  auto &X = graph->GetOrCreateNodeArg("X", &tensor_type);
+  auto &X = graph.GetOrCreateNodeArg("X", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph->GetOrCreateNodeArg("Y", nullptr);
+  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &W = graph->GetOrCreateNodeArg("W", nullptr);
+  auto &W = graph.GetOrCreateNodeArg("W", nullptr);
   outputs.push_back(&W);
-  graph->AddNode("node_1", "Split", "node 1.", inputs, outputs);
+  graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
 
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   EXPECT_FALSE(status.IsOK());
   bool duplicate_error_found = status.ErrorMessage().find("Duplicate") != std::string::npos;
   EXPECT_TRUE(duplicate_error_found);

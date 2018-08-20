@@ -10,7 +10,9 @@
 #include "test/framework/model_builder_utils.h"
 #include "core/framework/allocation_planner.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
+
 using namespace onnx;
+
 namespace Lotus {
 namespace Test {
 
@@ -31,14 +33,14 @@ struct UnaryNode {
   std::vector<LotusIR::NodeArg*> output_args;
   LotusIR::Node* p_node;
 
-  UnaryNode(LotusIR::Graph* graph, const std::string& op,
+  UnaryNode(LotusIR::Graph& graph, const std::string& op,
             LotusIR::NodeArg* p_input_arg, LotusIR::NodeArg* p_output_arg)
       : input_args({p_input_arg}), output_args({p_output_arg}) {
     int num = NodeCounter::Next();
-    p_node = graph->AddNode("node" + std::to_string(num), op, "test op", input_args, output_args);
+    p_node = graph.AddNode("node" + std::to_string(num), op, "test op", input_args, output_args);
   }
 
-  UnaryNode(LotusIR::Graph* graph, LotusIR::NodeArg* p_input_arg, LotusIR::NodeArg* p_output_arg)
+  UnaryNode(LotusIR::Graph& graph, LotusIR::NodeArg* p_input_arg, LotusIR::NodeArg* p_output_arg)
       : UnaryNode(graph, "Transpose", p_input_arg, p_output_arg) {}
 };
 
@@ -138,9 +140,8 @@ class PlannerTest : public ::testing::Test {
     ASSERT_TRUE(state_.GetMLValueIdx(name, out).IsOK());
   }
 
- protected:
   LotusIR::Model model_;
-  LotusIR::Graph* graph_;
+  LotusIR::Graph& graph_;
 
   // some standard components used to build test-cases:
   Type float_type_;
@@ -155,10 +156,10 @@ class PlannerTest : public ::testing::Test {
   SessionState state_;
   std::unique_ptr<IExecutionProvider> provider_;
   ShapeMap shape_map_;
+  SequentialExecutionPlan plan_;
 
  public:
-  PlannerTest() : model_("test") {
-    graph_ = model_.MainGraph();
+  PlannerTest() : model_("test"), graph_{model_.MainGraph()} {
     std_kernel_ = KernelDefBuilder().SetName("Transpose").Build();
     in_place_kernel_ = KernelDefBuilder().SetName("Clip").MayInplace(0, 0).Build();
     CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
@@ -192,7 +193,7 @@ class PlannerTest : public ::testing::Test {
   }
 
   void BindKernel(LotusIR::Node* p_node, ::Lotus::KernelDef& kernel_def) {
-    auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, provider_.get(), session_state_);
+    auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, provider_.get(), state_);
     auto dummy = std::make_unique<DummyOpKernel>(*info);
     op_kernel_infos_.push_back(std::move(info));
     state_.AddKernel(p_node->Index(), std::move(dummy));
@@ -208,10 +209,8 @@ class PlannerTest : public ::testing::Test {
     }
   }
 
-  SequentialExecutionPlan plan_;
-  SessionState session_state_;
   void CreatePlan() {
-    EXPECT_EQ(graph_->Resolve(), Status::OK());
+    EXPECT_EQ(graph_.Resolve(), Status::OK());
     state_.SetGraph(graph_);
 
     int count = 0;
@@ -253,6 +252,11 @@ class PlannerTest : public ::testing::Test {
       plan_result.insert(plan_.to_be_freed[i]);
     EXPECT_EQ(plan_result, expected) << "Freed items incorrect for step " << step_number;
   }
+
+ protected:
+  Graph& GetGraph() { return graph_; }
+  const SequentialExecutionPlan& GetPlan() const { return plan_; }
+  const SessionState& GetState() const { return state_; }
 };
 
 TEST_F(PlannerTest, ChainTest) {
@@ -266,7 +270,7 @@ TEST_F(PlannerTest, ChainTest) {
   tensor.add_float_data(1.0f);
   tensor.set_data_type(TensorProto_DataType_FLOAT);
   tensor.set_name("W");
-  graph_->AddInitializedTensor(tensor);
+  GetGraph().AddInitializedTensor(tensor);
 
   AddNormalNode(W, X);
   AddNormalNode(X, B);
@@ -406,7 +410,7 @@ TEST_F(PlannerTest, PlanOutputTest) {
 
   try {
     std::ostringstream output;
-    output << std::make_pair(&plan_, &state_);
+    output << std::make_pair(&GetPlan(), &GetState());
     auto output_size = output.str().size();
     // Currently, we don't check details of the output, as it may change over time.
     EXPECT_GT(output_size, 0);

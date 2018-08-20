@@ -27,7 +27,7 @@ bool InsertCastTransformer::NeedInsertCast(const LotusIR::Node* node, const Lotu
   return false;
 }
 
-LotusIR::NodeArg* AddCastNode(LotusIR::Graph* graph,
+LotusIR::NodeArg* AddCastNode(LotusIR::Graph& graph,
                               IdGenerator& id_generator,
                               LotusIR::NodeArg* old_arg,
                               TypeProto* new_type,
@@ -40,21 +40,21 @@ LotusIR::NodeArg* AddCastNode(LotusIR::Graph* graph,
   char str[32];
   snprintf(str, 32, "CastDef_%d", id);
 
-  auto* new_arg = &graph->GetOrCreateNodeArg(str, new_type);
+  auto* new_arg = &graph.GetOrCreateNodeArg(str, new_type);
 
   std::vector<LotusIR::NodeArg*> input_defs = {new_on_input ? new_arg : old_arg};
   std::vector<LotusIR::NodeArg*> output_defs = {new_on_input ? old_arg : new_arg};
 
-  auto cast_node = graph->AddNode(str, "Cast", "cast node to cast from float16 to float32 on cpu", input_defs, output_defs);
+  auto cast_node = graph.AddNode(str, "Cast", "cast node to cast from float16 to float32 on cpu", input_defs, output_defs);
   cast_node->AddAttribute("to", to_type);
   cast_node->SetExecutionProviderType(providerType);
   return new_arg;
 }
 
-Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const {
-  LOTUS_RETURN_IF_ERROR(graph->Resolve());
+Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const {
+  LOTUS_RETURN_IF_ERROR(graph.Resolve());
   const std::vector<LotusIR::NodeIndex>* order;
-  LOTUS_RETURN_IF_ERROR(graph->GetNodesInTopologicalOrder(&order));
+  LOTUS_RETURN_IF_ERROR(graph.GetNodesInTopologicalOrder(&order));
   assert(order);
   TypeProto float_16_tensor_proto, float_tensor_proto;
   float_16_tensor_proto.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT16);
@@ -62,10 +62,10 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
   IdGenerator id_generator;
   std::map<LotusIR::NodeArg*, LotusIR::NodeArg*> input_def_updates;
   for (LotusIR::NodeIndex i : *order) {
-    auto node = graph->GetNode(i);
+    auto node = graph.GetNode(i);
     if (!node)
       return Status(LOTUS, INVALID_ARGUMENT);
-    if (graph->IsSinkNode(*node) || graph->IsSourceNode(*node))
+    if (graph.IsSinkNode(*node) || graph.IsSourceNode(*node))
       continue;
 
     auto& inputs = node->InputDefs();
@@ -94,7 +94,7 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
     }
     auto& outputs = node->OutputDefs();
     for (auto output : outputs) {
-      // todo: check is the kernel avaible
+      // todo: check is the kernel available
       // here is based on the assumption that if we cast a cpu op's input from float16 to float
       // then this cpu op's output will become float.
       // not sure is it always correct...
@@ -115,14 +115,14 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
     }
 
     node->ReplaceDefs(replacement_defs);
-    *modified |= casted;
+    modified |= casted;
   }
   //Resolve it to build the edges.
-  LOTUS_RETURN_IF_ERROR(graph->Resolve());
+  LOTUS_RETURN_IF_ERROR(graph.Resolve());
   std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
   std::vector<LotusIR::NodeIndex> removed_nodes;
-  for (auto& node : graph->Nodes()) {
-    if (graph->IsSinkNode(node) || graph->IsSourceNode(node))
+  for (auto& node : graph.Nodes()) {
+    if (graph.IsSinkNode(node) || graph.IsSourceNode(node))
       continue;
     if (node.OpType() == "Cast") {
       // if cast's next node is also cast and next cast's output type equal to cast's input type
@@ -155,10 +155,10 @@ Status InsertCastTransformer::Apply(LotusIR::Graph* graph, bool* modified) const
   }
 
   for (auto i : removed_nodes) {
-    graph->RemoveNode(i);
+    graph.RemoveNode(i);
   }
 
-  *modified |= !removed_nodes.empty();
+  modified |= !removed_nodes.empty();
   return Status::OK();
 }
 }  // namespace Lotus

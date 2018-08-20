@@ -14,12 +14,12 @@ typedef std::vector<LotusIR::NodeArg*> ArgMap;
 
 std::shared_ptr<LotusIR::Model> DummyGraphWithClip() {
   auto model = std::make_shared<LotusIR::Model>("test");
-  LotusIR::Graph* graph = model->MainGraph();
+  LotusIR::Graph& graph = model->MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
 
-  graph->AddNode("node1", "Clip", "clip operator", ArgMap{&input_def}, ArgMap{&output_def});
+  graph.AddNode("node1", "Clip", "clip operator", ArgMap{&input_def}, ArgMap{&output_def});
   return model;
 }
 
@@ -30,15 +30,15 @@ std::unique_ptr<IExecutionProvider> CreateCPUExecutionProvider() {
 
 TEST(ExecutionFrameTest, TensorAllocationTest) {
   LotusIR::Model model("test");
-  LotusIR::Graph* graph = model.MainGraph();
+  LotusIR::Graph& graph = model.MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
 
-  graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
-  LotusIR::Node* node = graph->GetNode(graph->NumberOfNodes() - 1);
+  graph.AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
+  LotusIR::Node* node = graph.GetNode(graph.NumberOfNodes() - 1);
 
-  Status status = graph->Resolve();
+  Status status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
 
   auto cpu_xp = CreateCPUExecutionProvider();
@@ -94,12 +94,12 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
 TEST(ExecutionFrameTest, FeedInDataTest) {
   LotusIR::Model model("test");
-  LotusIR::Graph* graph = model.MainGraph();
+  LotusIR::Graph& graph = model.MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
 
-  graph->AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
+  graph.AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
 
   auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
   auto element_type = DataTypeImpl::GetType<float>();
@@ -142,7 +142,7 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   auto cpu_xp = CreateCPUExecutionProvider();
   auto xp_type = cpu_xp->Type();
   LotusIR::Model model("test");
-  LotusIR::Graph* graph = model.MainGraph();
+  LotusIR::Graph& graph = model.MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   LotusIR::NodeArg input_def1("X1", &tensor_float),
@@ -152,13 +152,13 @@ TEST(ExecutionFrameTest, MemPatternTest) {
       gemm2_out_def("T2", &tensor_float),
       clip_out_def("T3", &tensor_float);
 
-  graph->AddNode("node1", "MatMul", "gemm1", ArgMap{&input_def1, &input_def2}, ArgMap{&gemm1_out_def})->SetExecutionProviderType(xp_type);
+  graph.AddNode("node1", "MatMul", "gemm1", ArgMap{&input_def1, &input_def2}, ArgMap{&gemm1_out_def})->SetExecutionProviderType(xp_type);
 
-  graph->AddNode("node2", "MatMul", "gemm2", ArgMap{&gemm1_out_def, &input_def3}, ArgMap{&gemm2_out_def})->SetExecutionProviderType(xp_type);
+  graph.AddNode("node2", "MatMul", "gemm2", ArgMap{&gemm1_out_def, &input_def3}, ArgMap{&gemm2_out_def})->SetExecutionProviderType(xp_type);
 
-  graph->AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def})->SetExecutionProviderType(xp_type);
+  graph.AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def})->SetExecutionProviderType(xp_type);
 
-  auto status = graph->Resolve();
+  auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
   //1. prepare input
   SessionState state;

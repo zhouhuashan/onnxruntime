@@ -28,7 +28,7 @@ class GraphTransformer {
   // Apply <*this> transformation to a specific graph.
   // Transformation happens in place.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual ::Lotus::Common::Status Apply(Graph* graph, bool* modified) const = 0;
+  virtual ::Lotus::Common::Status Apply(Graph& graph, bool& modified) const = 0;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphTransformer);
@@ -59,7 +59,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
   }
 
   // Apply for all applicable rules against one graph.
-  ::Lotus::Common::Status Apply(Graph*, bool*) const override {
+  ::Lotus::Common::Status Apply(Graph&, bool&) const override {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
@@ -85,7 +85,7 @@ class GraphTransformerManager {
 
   // Apply the list of graph transformers registered on the specified graph
   // up to the given number of steps.
-  ::Lotus::Common::Status ApplyAll(Graph* graph);
+  ::Lotus::Common::Status ApplyAll(Graph& graph);
 
  private:
   GraphTransformerManager() = default;

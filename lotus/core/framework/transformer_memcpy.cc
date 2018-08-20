@@ -31,8 +31,8 @@ bool TransformerMemcpyImpl::ModifyGraph(const KernelRegistryManager& kernel_regi
   bool modified = false;
 
   // find defs that require copy
-  for (auto& node : graph_->Nodes()) {
-    if (graph_->IsSourceNode(node) || graph_->IsSinkNode(node))
+  for (auto& node : graph_.Nodes()) {
+    if (graph_.IsSourceNode(node) || graph_.IsSinkNode(node))
       continue;
     //don't need to do node placement here now, Lotus will do it according to registred kernels.
     ProcessDefs(node, kernel_registries);
@@ -107,19 +107,19 @@ void TransformerMemcpyImpl::AddCopyNode(const LotusIR::NodeArg* arg, bool is_inp
   auto original_arg = const_cast<LotusIR::NodeArg*>(arg);
 
   // create unique name for new def
-  std::string new_def_name = graph_->GenerateNodeArgName(original_arg->Name() + "_" + provider_);
+  std::string new_def_name = graph_.GenerateNodeArgName(original_arg->Name() + "_" + provider_);
 
-  auto* new_arg = &graph_->GetOrCreateNodeArg(new_def_name, original_arg->TypeAsProto());
+  auto* new_arg = &graph_.GetOrCreateNodeArg(new_def_name, original_arg->TypeAsProto());
   auto* src_arg = is_input ? original_arg : new_arg;
   auto* dst_arg = is_input ? new_arg : original_arg;
 
   // create unique name for copy node
-  std::string new_node_name = graph_->GenerateNodeName("Memcpy");
+  std::string new_node_name = graph_.GenerateNodeName("Memcpy");
 
   const auto op_name = is_input ? "MemcpyFromHost" : "MemcpyToHost";
-  auto new_node = graph_->AddNode(new_node_name, op_name, "Copy from/to host memory",
-                                  std::vector<LotusIR::NodeArg*>{src_arg},
-                                  std::vector<LotusIR::NodeArg*>{dst_arg});
+  auto new_node = graph_.AddNode(new_node_name, op_name, "Copy from/to host memory",
+                                 std::vector<LotusIR::NodeArg*>{src_arg},
+                                 std::vector<LotusIR::NodeArg*>{dst_arg});
   new_node->SetExecutionProviderType(provider_);
 
   // only add copy-node here; renaming references happens later
@@ -140,19 +140,19 @@ static const LotusIR::NodeArg* FindNodeArg(const NodeArgSetType& def_set, const 
 // need to stay in different memory locations.
 void TransformerMemcpyImpl::ProcessInitializers() {
   std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacements;
-  for (const auto& pair : graph_->GetAllInitializedTensors()) {
+  for (const auto& pair : graph_.GetAllInitializedTensors()) {
     const auto& name = pair.first;
     const LotusIR::NodeArg* provider_def = FindNodeArg(provider_input_defs_, name);
     const LotusIR::NodeArg* non_provider_def = FindNodeArg(non_provider_input_defs_, name);
     if (provider_def != nullptr && non_provider_def != nullptr) {
-      std::string new_def_name = graph_->GenerateNodeArgName(name);
-      auto& new_def = graph_->GetOrCreateNodeArg(new_def_name, provider_def->TypeAsProto());
+      std::string new_def_name = graph_.GenerateNodeArgName(name);
+      auto& new_def = graph_.GetOrCreateNodeArg(new_def_name, provider_def->TypeAsProto());
 
       const TensorProto* tensor_proto = nullptr;
-      graph_->GetInitializedTensor(name, &tensor_proto);
+      graph_.GetInitializedTensor(name, &tensor_proto);
       TensorProto new_tensor_proto = *tensor_proto;
       *(new_tensor_proto.mutable_name()) = new_def_name;
-      graph_->AddInitializedTensor(new_tensor_proto);
+      graph_.AddInitializedTensor(new_tensor_proto);
 
       replacements.insert(std::make_pair(provider_def, &new_def));
     }

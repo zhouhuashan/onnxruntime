@@ -28,7 +28,7 @@ TEST(SessionStateTest, AddGetKernelTest) {
   SessionState s;
 
   LotusIR::Model model("graph_1");
-  auto graph = model.MainGraph();
+  auto& graph = model.MainGraph();
   std::vector<LotusIR::NodeArg*> inputs;
   std::vector<LotusIR::NodeArg*> outputs;
   TypeProto output_type;
@@ -36,7 +36,7 @@ TEST(SessionStateTest, AddGetKernelTest) {
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
   LotusIR::NodeArg output_arg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
-  LotusIR::Node* p_node = graph->AddNode("node_1", "Variable", "node 1.", inputs, outputs);
+  LotusIR::Node* p_node = graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   KernelDef kernel_def;
   OpKernelInfo p_info(*p_node, kernel_def, nullptr, s);

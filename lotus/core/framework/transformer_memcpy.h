@@ -9,7 +9,7 @@ namespace Lotus {
 // note that GraphTransformer::Apply() is supposed to be stateless, so this cannot derive from GraphTranformer
 class TransformerMemcpyImpl {
  public:
-  TransformerMemcpyImpl(LotusIR::Graph* graph, const std::string& provider)
+  TransformerMemcpyImpl(LotusIR::Graph& graph, const std::string& provider)
       : graph_(graph), provider_(provider) {}
 
   bool ModifyGraph(const KernelRegistryManager& schema_registries);
@@ -42,7 +42,7 @@ class TransformerMemcpyImpl {
   std::set<const LotusIR::NodeArg*, NodeArgCompare> provider_input_defs_;       // all input defs of provider nodes that should be in provider allocator
   std::set<const LotusIR::NodeArg*, NodeArgCompare> provider_output_defs_;      // all output defs of provider nodes that should be in provider allocator
   std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacements_;
-  LotusIR::Graph* graph_;
+  LotusIR::Graph& graph_;
   std::string provider_;
 };
 

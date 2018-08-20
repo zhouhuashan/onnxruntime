@@ -51,11 +51,13 @@ Model::Model(const std::string& graph_name,
     domain_to_version_static = schema_registry->GetLatestOpsetVersions(is_onnx_domain_only);
     p_domain_to_version = &domain_to_version_static;
   }
+
   for (auto domain : *p_domain_to_version) {
     const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
     opset_id_proto->set_domain(domain.first);
     opset_id_proto->set_version(domain.second);
   }
+
   // need to call private ctor so can't use make_shared
   GSL_SUPPRESS(r .11)
   graph_.reset(new Graph(model_proto_->mutable_graph(), *p_domain_to_version, IrVersion(), schema_registry));
@@ -66,7 +68,20 @@ Model::Model(const ModelProto& model_proto, const ILotusOpSchemaRegistryList* lo
 }
 
 Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaRegistryList* local_registries) {
-  assert(nullptr != model_proto);
+  if (!model_proto) {
+    throw std::invalid_argument("ModelProto was null.");
+  }
+
+  if (!model_proto->has_graph()) {
+    throw std::invalid_argument("ModelProto does not have a graph.");
+  }
+
+  if (model_proto->opset_import_size() == 0) {
+    throw std::invalid_argument(
+        "Missing opset in the model. All ModelProtos MUST have at least one entry that"
+        " specifies which version of the ONNX OperatorSet is being imported.");
+  }
+
   model_proto_.reset(model_proto.release());
   for (auto& prop : model_proto_->metadata_props()) {
     model_metadata_[prop.key()] = prop.value();
@@ -80,30 +95,23 @@ Model::Model(std::unique_ptr<ModelProto> model_proto, const ILotusOpSchemaRegist
   }
 
   std::unordered_map<std::string, int> domain_to_version;
-  if (0 == model_proto_->opset_import_size()) {
-    throw std::invalid_argument(
-        "Missing opset in the model. All ModelProtos MUST have at least one entry that"
-        " specifies which version of the ONNX OperatorSet is being imported.");
-  } else {
-    for (auto& opSet : model_proto_->opset_import()) {
-      domain_to_version[opSet.domain()] = gsl::narrow_cast<int>(opSet.version());
-    }
-    auto domain_map = schema_registry->GetLatestOpsetVersions(false);
-    for (auto domain : domain_map) {
-      if (domain_to_version.find(domain.first) == domain_to_version.end()) {
-        domain_to_version[domain.first] = domain.second;
-        const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
-        opset_id_proto->set_domain(domain.first);
-        opset_id_proto->set_version(domain.second);
-      }
+  for (auto& opSet : model_proto_->opset_import()) {
+    domain_to_version[opSet.domain()] = gsl::narrow_cast<int>(opSet.version());
+  }
+
+  auto domain_map = schema_registry->GetLatestOpsetVersions(false);
+  for (auto domain : domain_map) {
+    if (domain_to_version.find(domain.first) == domain_to_version.end()) {
+      domain_to_version[domain.first] = domain.second;
+      const gsl::not_null<OperatorSetIdProto*> opset_id_proto = model_proto_->add_opset_import();
+      opset_id_proto->set_domain(domain.first);
+      opset_id_proto->set_version(domain.second);
     }
   }
 
-  if (model_proto_->has_graph()) {
-    // create instance. need to call private ctor so can't use make_unique
-    GSL_SUPPRESS(r .11)
-    graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), schema_registry));
-  }
+  // create instance. need to call private ctor so can't use make_unique
+  GSL_SUPPRESS(r .11)
+  graph_.reset(new Graph(model_proto_->mutable_graph(), domain_to_version, IrVersion(), schema_registry));
 }
 
 Version Model::IrVersion() const {
@@ -160,12 +168,12 @@ const ModelMetaData& Model::MetaData() const noexcept {
   return model_metadata_;
 }
 
-Graph* Model::MainGraph() noexcept {
-  return graph_.get();
+Graph& Model::MainGraph() noexcept {
+  return *graph_;
 }
 
-const Graph* Model::MainGraph() const noexcept {
-  return graph_.get();
+const Graph& Model::MainGraph() const noexcept {
+  return *graph_;
 }
 
 ModelProto Model::ToProto() {
@@ -201,9 +209,8 @@ Status Model::Load(const ModelProto& model_proto, std::shared_ptr<Model>& model,
     return Status(LOTUS, INVALID_ARGUMENT, "Failed to load model with error: " + std::string(ex.what()));
   }
 
-  if (model->MainGraph() != nullptr) {
-    LOTUS_RETURN_IF_ERROR(model->MainGraph()->Resolve(true));
-  }
+  LOTUS_RETURN_IF_ERROR(model->MainGraph().Resolve(true));
+
   return Status::OK();
 }
 
@@ -221,9 +228,8 @@ Status Model::Load(std::unique_ptr<ModelProto> p_model_proto, std::shared_ptr<Mo
     return Status(LOTUS, INVALID_ARGUMENT, "Failed to load model with error: " + std::string(ex.what()));
   }
 
-  if (model->MainGraph() != nullptr) {
-    LOTUS_RETURN_IF_ERROR(model->MainGraph()->Resolve(true));
-  }
+  LOTUS_RETURN_IF_ERROR(model->MainGraph().Resolve(true));
+
   return Status::OK();
 }
 
@@ -309,9 +315,9 @@ Status Model::LoadFromBytes(int count, void* p_bytes, /*out*/ std::shared_ptr<Mo
   }
 
   p_model = std::make_shared<Model>(std::move(modelProto), local_registries);
-  if (p_model->MainGraph() != nullptr) {
-    LOTUS_RETURN_IF_ERROR(p_model->MainGraph()->Resolve(true));
-  }
+
+  LOTUS_RETURN_IF_ERROR(p_model->MainGraph().Resolve(true));
+
   return Status::OK();
 }
 
@@ -340,9 +346,9 @@ Status Model::Load(int fd, std::shared_ptr<Model>& p_model, const ILotusOpSchema
   }
 
   p_model = std::make_shared<Model>(std::move(model_proto), local_registries);
-  if (p_model->MainGraph() != nullptr) {
-    LOTUS_RETURN_IF_ERROR(p_model->MainGraph()->Resolve(true));
-  }
+
+  LOTUS_RETURN_IF_ERROR(p_model->MainGraph().Resolve(true));
+
   return Status::OK();
 }
 
@@ -351,7 +357,8 @@ Status Model::Save(Model& model, int p_fd) {
     return Status(LOTUS, INVALID_ARGUMENT, "<p_fd> is less than 0.");
   }
 
-  LOTUS_RETURN_IF_ERROR(model.MainGraph()->Resolve());
+  LOTUS_RETURN_IF_ERROR(model.MainGraph().Resolve());
+
   auto model_proto = model.ToProto();
   const bool result = model_proto.SerializeToFileDescriptor(p_fd);
   if (result) {

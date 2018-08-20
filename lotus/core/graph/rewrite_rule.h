@@ -8,7 +8,7 @@ namespace LotusIR {
 // The graph rewrite API for rewrite rules.
 class GraphEditor {
  public:
-  explicit GraphEditor(Graph* graph) noexcept : graph_{graph} {}
+  explicit GraphEditor(Graph& graph) noexcept : graph_{graph} {}
 
   // Add a node in <graph_>.
   Node* AddNode(const std::string& name,
@@ -17,36 +17,36 @@ class GraphEditor {
                 const std::vector<NodeArg*>& input_args,
                 const std::vector<NodeArg*>& output_args,
                 const std::string& domain = "") {
-    return graph_->AddNode(name, op_type, description,
-                           input_args, output_args, nullptr, domain);
+    return graph_.AddNode(name, op_type, description,
+                          input_args, output_args, nullptr, domain);
   }
 
   // Copy an existing node into this graph.
   Node* AddNode(const Node& other) {
-    return graph_->AddNode(other);
+    return graph_.AddNode(other);
   }
 
   // Remove a node from <graph_>.
   bool RemoveNode(NodeIndex node_index) {
-    return graph_->RemoveNode(node_index);
+    return graph_.RemoveNode(node_index);
   }
 
   // Add control edge into <graph_>.
   // The <dst> node does not consume any data output by
   // <src>, but it's designed to be executed behind.
   bool AddControlEdge(NodeIndex src, NodeIndex dst) {
-    return graph_->AddControlEdge(src, dst);
+    return graph_.AddControlEdge(src, dst);
   }
 
   // Resolve <graph_> after each editing.
   ::Lotus::Common::Status Resolve() {
-    return graph_->Resolve();
+    return graph_.Resolve();
   }
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphEditor);
 
-  Graph* graph_;
+  Graph& graph_;
 };
 
 // The base class for rewrite rule. A rewrite rule represents a semantics-preserving
@@ -59,9 +59,9 @@ class GraphEditor {
 class RewriteRule {
  public:
   RewriteRule(const std::string& name, const std::string& desc)
-    : name_(name), desc_(desc) {
+      : name_(name), desc_(desc) {
   }
-    
+
   virtual ~RewriteRule() = default;
 
   // The name of this rewrite rule.
@@ -80,9 +80,9 @@ class RewriteRule {
   // The return value of "modified" indicates if the graph was modified or not.
   virtual ::Lotus::Common::Status Apply(GraphEditor graph_editor, Node* node, bool* modified) = 0;
 
-private:
+ private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RewriteRule);
-  
+
   const std::string name_;
   const std::string desc_;
 };

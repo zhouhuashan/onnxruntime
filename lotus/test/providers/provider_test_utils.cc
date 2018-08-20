@@ -179,18 +179,18 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     }
 
     // Create a simple model
-	std::unordered_map<std::string, int> domain_to_version;
-	domain_to_version[domain_] = opset_version_;
-	auto p_model = std::make_unique<LotusIR::Model>("test", false, ModelMetaData(), nullptr, domain_to_version);
-    LotusIR::Graph* graph = p_model->MainGraph();
-    auto& node = *graph->AddNode("node1", op_, op_, input_defs, output_defs, nullptr, domain_);
+    std::unordered_map<std::string, int> domain_to_version;
+    domain_to_version[domain_] = opset_version_;
+    auto p_model = std::make_unique<LotusIR::Model>("test", false, ModelMetaData(), nullptr, domain_to_version);
+    LotusIR::Graph& graph = p_model->MainGraph();
+    auto& node = *graph.AddNode("node1", op_, op_, input_defs, output_defs, nullptr, domain_);
 
     // Add the attributes if any
     for (auto& add_attribute_fn : add_attribute_funcs_)
       add_attribute_fn(node);
 
     node.SetExecutionProviderType(provider_type);
-    Status status = graph->Resolve();
+    Status status = graph.Resolve();
     //LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     if (!status.IsOK()) {
       if (expect_result == ExpectResult::kExpectFailure) {

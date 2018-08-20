@@ -26,7 +26,7 @@ TEST(OpRegistrationTest, AffineOp) {
 
 TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   Model model("traditionalMl");
-  auto graph = model.MainGraph();
+  auto &graph = model.MainGraph();
 
   // Case: A traditional ml graph.
   //                           SouceNode
@@ -59,7 +59,7 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   NodeArg *output_arg1 = new NodeArg("node_1_out_1", &tensor_float);
   outputs.clear();
   outputs.push_back(output_arg1);
-  graph->AddNode("node_1", "CastMap", "node 1", inputs, outputs, nullptr, kMLDomain);
+  graph.AddNode("node_1", "CastMap", "node 1", inputs, outputs, nullptr, kMLDomain);
 
   inputs.clear();
   inputs.push_back(output_arg1);
@@ -67,8 +67,8 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_float);
   outputs.clear();
   outputs.push_back(output_arg4);
-  graph->AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, nullptr, kMLDomain);
-  auto status = graph->Resolve();
+  graph.AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, nullptr, kMLDomain);
+  auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK());
 
   delete input_arg1;

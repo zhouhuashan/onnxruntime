@@ -11,11 +11,13 @@ ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& f
                                const std::vector<MLValue>& fetches,
                                const ::Lotus::SessionState& session_state)
     : session_state_(session_state), mem_patterns_(nullptr), planner_(nullptr) {
-  Init(session_state.GetGraph(), feeds, output_names, fetches);
+  auto* graph = session_state.GetGraph();
+  LOTUS_ENFORCE(graph);
+  Init(*graph, feeds, output_names, fetches);
 
   // If the session enable memory pattern optimization
   // and we have execution plan generated, try to setup
-  // memory pattern optimizaiton.
+  // memory pattern optimization.
   if (session_state.GetEnableMemoryPattern() &&
       session_state.GetExecutionPlan()) {
     std::vector<TensorShape> input_shapes;
@@ -285,16 +287,14 @@ Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
   return Status::OK();
 }
 
-void ExecutionFrame::Init(const LotusIR::Graph* graph,
+void ExecutionFrame::Init(const LotusIR::Graph& graph,
                           const std::unordered_map<std::string, MLValue>& feeds,
                           const std::vector<std::string>& output_names,
                           const std::vector<MLValue>& fetches) {
-  LOTUS_ENFORCE(graph);
-
   // 1. resize the node_offsets and all_value_ vector
   // We need to use the max index rather than number of nodes as we use Node.Index()
   // when inserting into node_offsets_
-  auto max_node_index = graph->MaxNodeIndex();
+  auto max_node_index = graph.MaxNodeIndex();
   node_offsets_.resize(max_node_index);
 
   all_values_.resize(session_state_.GetMaxMLValueIdx() + 1);
@@ -340,7 +340,7 @@ void ExecutionFrame::Init(const LotusIR::Graph* graph,
   }
 
   // 5. set node args
-  for (auto& node : graph->Nodes()) {
+  for (auto& node : graph.Nodes()) {
     LOTUS_ENFORCE(node.Index() < node_offsets_.size());
     node_offsets_[node.Index()] = static_cast<int>(node_values_.size());
 

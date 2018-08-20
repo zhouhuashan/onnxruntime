@@ -36,11 +36,11 @@ class ShapeInferenceTest : public ::testing::Test {
     std::vector<LotusIR::NodeArg*> input_args({Arg(input)});
     std::vector<LotusIR::NodeArg*> output_args({Arg(output)});
     int num = node_count_++;
-    return model_.MainGraph()->AddNode("node" + std::to_string(num), op, "test op", input_args, output_args);
+    return model_.MainGraph().AddNode("node" + std::to_string(num), op, "test op", input_args, output_args);
   }
 
   void DoShapeInference() {
-    auto status = model_.MainGraph()->Resolve();
+    auto status = model_.MainGraph().Resolve();
     EXPECT_TRUE(status.IsOK()) << "Graph resolve failed: " << status.ErrorMessage();
   }
 

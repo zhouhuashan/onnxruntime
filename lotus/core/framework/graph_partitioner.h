@@ -14,7 +14,7 @@ class GraphPartitioner {
       : kernel_registry_mgr_(kernel_registry_mgr),
         providers_(providers) {}
 
-  Status Partition(LotusIR::Graph* graph) const;
+  Status Partition(LotusIR::Graph& graph) const;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphPartitioner);
