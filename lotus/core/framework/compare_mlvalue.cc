@@ -70,7 +70,9 @@ std::pair<COMPARE_RESULT, std::string> IsResultExactlyMatch(const Tensor& outval
   const T* real_output = outvalue.Data<T>();
   for (size_t di = 0; di != size1; ++di) {
     if (expected_output[di] != real_output[di]) {
-      return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
+      std::ostringstream oss;
+      oss << "expected " << expected_output[di] << ", got " << real_output[di];
+      return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, oss.str());
     }
   }
   return std::make_pair(COMPARE_RESULT::SUCCESS, "");
@@ -224,7 +226,7 @@ bool AreShapesEqual(const TensorShape& real_shape, const ::onnx::TensorShapeProt
   if (len < 0) return false;
   if (real_shape.NumDimensions() != static_cast<size_t>(len)) return false;
   for (int i = 0; i != len; ++i) {
-    if (expected_shape.dim(i).has_dim_param()) {
+    if (!expected_shape.dim(i).has_dim_value()) {
       //symbolic shape, cannot validate it right now
       continue;
     }
