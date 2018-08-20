@@ -12,7 +12,7 @@ namespace Lotus {
 class CustomOpsLoader final {
  public:
   CustomOpsLoader() = default;
-  Common::Status LoadCustomOps(const std::vector<std::string>& dso_list,
+  Common::Status LoadCustomOps(const std::string& dso_file_path,
                                std::shared_ptr<CustomRegistry>& custom_registry);
   ~CustomOpsLoader();
 

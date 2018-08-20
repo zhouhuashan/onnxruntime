@@ -68,12 +68,17 @@ class InferenceSession::Impl {
   }
 
   Common::Status LoadCustomOps(const std::vector<std::string>& dso_list) {
-    std::shared_ptr<CustomRegistry> custom_registry;
-    LOTUS_RETURN_IF_ERROR(custom_ops_loader_.LoadCustomOps(dso_list, custom_registry));
-    if (!custom_registry) {
-      return Status(Common::LOTUS, Common::FAIL, "Null custom_registry after loading custom ops.");
+    if (dso_list.empty()) {
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Empty list of shared libraries in the input.");
     }
-    LOTUS_RETURN_IF_ERROR(RegisterCustomRegistry(custom_registry));
+    for (auto& dso_file_path : dso_list) {
+      std::shared_ptr<CustomRegistry> custom_registry;
+      LOTUS_RETURN_IF_ERROR(custom_ops_loader_.LoadCustomOps(dso_file_path, custom_registry));
+      if (!custom_registry) {
+        return Status(Common::LOTUS, Common::FAIL, "Null custom_registry after loading custom ops.");
+      }
+      LOTUS_RETURN_IF_ERROR(RegisterCustomRegistry(custom_registry));
+    }
     return Status::OK();
   }
 
