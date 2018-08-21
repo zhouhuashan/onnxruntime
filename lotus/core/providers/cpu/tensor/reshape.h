@@ -4,10 +4,10 @@
 #include "core/framework/op_kernel.h"
 #include "gsl/gsl_util"
 #include "reshape_helper.h"
+#include "utils.h"
 
 namespace Lotus {
 
-template <typename T>
 class Reshape final : public OpKernel {
  public:
   Reshape(const OpKernelInfo& info) : OpKernel(info) {
@@ -30,18 +30,13 @@ class Reshape final : public OpKernel {
     ReshapeHelper helper(X_shape, shape);
 
     Tensor* Y = context->Output(0, TensorShape(shape));
-    const T* source = X->Data<T>();
-    T* target = Y->MutableData<T>();
-    //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
-    if (target != source) {
-      memcpy(target, source, X_shape.Size() * sizeof(T));
-    }
+
+    CopyCpuTensor(X, Y);
 
     return Status::OK();
   }
 };
 
-template <typename T>
 class Reshape_1 final : public OpKernel {
  public:
   Reshape_1(const OpKernelInfo& info) : OpKernel(info) {
@@ -57,12 +52,8 @@ class Reshape_1 final : public OpKernel {
     ReshapeHelper helper(X_shape, shape);
 
     Tensor* Y = context->Output(0, TensorShape(shape));
-    const T* source = X->Data<T>();
-    T* target = Y->MutableData<T>();
-    //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
-    if (target != source) {
-      memcpy(target, source, X_shape.Size() * sizeof(T));
-    }
+
+    CopyCpuTensor(X, Y);
 
     return Status::OK();
   }

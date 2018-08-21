@@ -1,4 +1,5 @@
 #include "core/providers/cpu/tensor/unsqueeze.h"
+#include "utils.h"
 using namespace ::Lotus::Common;
 
 namespace Lotus {
@@ -47,22 +48,7 @@ Status Unsqueeze::Compute(OpKernelContext *ctx) const {
   Prepare p;
   LOTUS_RETURN_IF_ERROR(PrepareCompute(ctx, p));
 
-  const void *input = p.input_tensor->DataRaw();
-  void *output = p.output_tensor->MutableDataRaw();
-  if (p.input_tensor == p.output_tensor)
-    return Status::OK();
-
-  auto count = p.input_tensor->Shape().Size();
-  auto element_bytes = p.input_tensor->DataType()->Size();
-
-  auto is_string_type = p.input_tensor->DataType() == DataTypeImpl::GetType<std::string>();
-
-  if (is_string_type) {
-    for (int64_t i = 0; i < count; ++i)
-      static_cast<std::string *>(output)[i] = static_cast<const std::string *>(input)[i];
-  } else {
-    memcpy(output, input, count * element_bytes);
-  }
+  CopyCpuTensor(p.input_tensor, p.output_tensor);
 
   return Status::OK();
 }

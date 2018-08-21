@@ -2,6 +2,7 @@
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
+#include "utils.h"
 
 namespace Lotus {
 
@@ -48,22 +49,8 @@ class Squeeze final : public OpKernel, public SqueezeBase {
     std::vector<int64_t> output_shape = ComputeOutputShape(X_shape.GetDims(), axes_);
 
     Tensor* Y = context->Output(0, TensorShape(output_shape));
-    const void* source = X->DataRaw();
-    void* target = Y->MutableDataRaw();
-    //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
-    if (target != source) {
-      auto count = X->Shape().Size();
-      auto element_bytes = X->DataType()->Size();
 
-      auto is_string_type = X->DataType() == DataTypeImpl::GetType<std::string>();
-
-      if (is_string_type) {
-        for (int64_t i = 0; i < count; ++i)
-          static_cast<std::string*>(target)[i] = static_cast<const std::string*>(source)[i];
-      } else {
-        memcpy(target, source, count * element_bytes);
-      }
-    }
+    CopyCpuTensor(X, Y);
 
     return Status::OK();
   }

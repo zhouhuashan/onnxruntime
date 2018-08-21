@@ -55,16 +55,16 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
                                                           const MLDataType element_type,
                                                           const AllocatorInfo& location,
                                                           const TensorShape& shape,
-                                                          bool try_create_fence) {
+                                                          bool create_fence) {
   LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
-  return AllocateMLValueTensorSelfOwnBufferHelper(mlvalue_index, element_type, location, shape, try_create_fence);
+  return AllocateMLValueTensorSelfOwnBufferHelper(mlvalue_index, element_type, location, shape, create_fence);
 }
 
 Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_index,
                                                                 const MLDataType element_type,
                                                                 const AllocatorInfo& location,
                                                                 const TensorShape& shape,
-                                                                bool try_create_fence) {
+                                                                bool create_fence) {
   if (mlvalue_index < 0)
     return Status(LOTUS, FAIL, "Trying to allocate memory for unused optional inputs/outputs");
 
@@ -83,7 +83,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
   size_t size = gsl::narrow_cast<size_t>(len);
 
   // create fence if needed
-  if (try_create_fence) {
+  if (create_fence) {
     LOTUS_ENFORCE(p_mlvalue->Fence() == nullptr);
     FencePtr f = alloc->CreateFence(&SessionState());
     // it is OK to have fence been nullptr if the execution provider has no async execution,
@@ -163,7 +163,8 @@ Status ExecutionFrame::AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_
                                                               int mlvalue_index_reuse,
                                                               const MLDataType element_type,
                                                               const AllocatorInfo& location,
-                                                              const TensorShape& shape) {
+                                                              const TensorShape& shape,
+                                                              bool create_fence) {
   LOTUS_ENFORCE(mlvalue_index_to_allocate >= 0 && mlvalue_index_to_allocate < all_values_.size());
   MLValue* p_mlvalue = &all_values_[mlvalue_index_to_allocate];
 
@@ -172,6 +173,13 @@ Status ExecutionFrame::AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_
 
   Tensor* reuse_tensor = p_mlvalue_reuse->GetMutable<Tensor>();
   void* reuse_buffer = reuse_tensor->MutableDataRaw();
+
+  // create fence on reused mlvalue if needed
+  // TODO: differentiate reuse and alias, by add AllocKind::kAlias?
+  if (create_fence && p_mlvalue_reuse->Fence() == nullptr) {
+    FencePtr f = GetAllocator(location)->CreateFence(&SessionState());
+    p_mlvalue_reuse->SetFence(f);
+  }
 
   // reused MLValue share the same fence
   p_mlvalue->ShareFenceWith(*p_mlvalue_reuse);
@@ -274,7 +282,8 @@ Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
                                                                    reuse_mlvalue_index,
                                                                    ml_data_type,
                                                                    alloc_info,
-                                                                   parameters.tensor_shape));
+                                                                   parameters.tensor_shape,
+                                                                   per_alloc_plan.create_fence_if_async));
       break;
     }
     default: {

@@ -150,4 +150,19 @@ struct SliceIterator {
   std::vector<int64_t> indices_;  // There is no index for innermost axis since it's a special case
 };
 
+inline void CopyCpuTensor(const Tensor *src, Tensor *tgt) {
+  void *target = tgt->MutableDataRaw();
+  const void *source = src->DataRaw();
+
+  if (target != source) {
+    auto is_string_type = (src->DataType() == DataTypeImpl::GetType<std::string>());
+    if (is_string_type) {
+      for (int64_t i = 0; i < src->Shape().Size(); ++i)
+        static_cast<std::string *>(target)[i] = static_cast<const std::string *>(source)[i];
+    } else {
+      memcpy(target, source, src->Shape().Size() * src->DataType()->Size());
+    }
+  }
+}
+
 }  // namespace Lotus

@@ -61,13 +61,14 @@ class ExecutionFrame {
                                             MLDataType element_type,
                                             const AllocatorInfo& location,
                                             const TensorShape& shape,
-                                            bool try_create_fence = false);
+                                            bool create_fence = false);
 
   Status AllocateMLValueTensorPreAllocateBuffer(int mlvalue_index_to_allocate,
                                                 int mlvalue_index_reuse,
                                                 MLDataType element_type,
                                                 const AllocatorInfo& location,
-                                                const TensorShape& shape);
+                                                const TensorShape& shape,
+                                                bool create_fence = false);
 
   // ?? Cheng: What about non-tensor values??
   // ?? Cheng: There are cases we may not want to use LOTUS_ENFORCE??
@@ -79,7 +80,7 @@ class ExecutionFrame {
                                          MLDataType element_type,
                                          const AllocatorInfo& location,
                                          const TensorShape& shape,
-                                         bool try_create_fence = false);
+                                         bool create_fence = false);
 
   // Create tensor at index mlvalue, with pre-allocate buffer
   // This tensor does not own the buffer.

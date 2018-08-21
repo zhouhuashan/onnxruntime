@@ -9,7 +9,6 @@
 namespace Lotus {
 namespace Cuda {
 
-template <typename T>
 class Reshape final : public CudaKernel {
  public:
   Reshape(const OpKernelInfo& info) : CudaKernel(info) {
@@ -32,8 +31,8 @@ class Reshape final : public CudaKernel {
     ReshapeHelper helper(X_shape, shape);
 
     Tensor* Y = context->Output(0, TensorShape(shape));
-    const T* source = X->Data<T>();
-    T* target = Y->MutableData<T>();
+    const void* source = X->DataRaw();
+    void* target = Y->MutableDataRaw();
     //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
     if (target != source) {
       CopyTensor(*X, *Y);
@@ -43,7 +42,6 @@ class Reshape final : public CudaKernel {
   }
 };
 
-template <typename T>
 class Reshape_1 final : public CudaKernel {
  public:
   Reshape_1(const OpKernelInfo& info) : CudaKernel(info) {
@@ -59,8 +57,8 @@ class Reshape_1 final : public CudaKernel {
     ReshapeHelper helper(X_shape, shape);
 
     Tensor* Y = context->Output(0, TensorShape(shape));
-    const T* source = X->Data<T>();
-    T* target = Y->MutableData<T>();
+    const void* source = X->DataRaw();
+    void* target = Y->MutableDataRaw();
     //If source and target pointers are not equal (non-inplace operation), we need to copy the data.
     if (target != source) {
       CopyTensor(*X, *Y);
