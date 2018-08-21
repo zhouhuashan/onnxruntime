@@ -57,6 +57,9 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--enable_pybind", action='store_true', help="Enable Python Bindings.")
     parser.add_argument("--build_wheel", action='store_true', help="Build Python Wheel. ")
 
+    # Build a shared lib
+    parser.add_argument("--build_shared_lib", action='store_true', help="Build a shared library for the Lotus runtime.")
+    
     # Build options
     parser.add_argument("--cmake_extra_defines", nargs="+",
                         help="Extra definitions to pass to CMake during build system generation. " +
@@ -167,8 +170,9 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-DPYTHON_EXECUTABLE=" + sys.executable,
                  "-Dlotus_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),
-                 "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc and not args.enable_pybind else "OFF"),
+                 "-Dlotus_USE_JEMALLOC=" + ("OFF" if args.use_jemalloc and (not args.enable_pybind and not args.build_shared_lib) else "OFF"),
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
+                 "-Dlotus_BUILD_SHARED_LIB=" + ("ON" if args.build_shared_lib else "OFF"),                  
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
                  "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
                  "-Dlotus_USE_MKLDNN=" + ("ON" if args.use_mkldnn else "OFF"),
@@ -388,7 +392,7 @@ def setup_cuda_vars(args):
 
     return cuda_home, cudnn_home
 
-def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests, enable_tvm = False):
+def run_lotus_tests(args, ctest_path, build_dir, configs, enable_python_tests, enable_tvm = False):
     for config in configs:
         log.info("Running tests for %s configuration", config)
         cwd = get_config_build_dir(build_dir, config)
@@ -401,6 +405,11 @@ def run_lotus_tests(ctest_path, build_dir, configs, enable_python_tests, enable_
                 cwd = os.path.join(cwd, config)
             run_subprocess([sys.executable, 'lotus_test_python.py'], cwd=cwd, dll_path=dll_path)
 
+        # shared lib tests - both simple + custom op
+        if args.build_shared_lib:
+            if is_ubuntu_1604():
+                run_subprocess([cwd+'/lotus_shared_lib_test'], cwd=cwd, dll_path=dll_path)            
+            
 def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, use_cuda):
 
     for config in configs:
@@ -426,7 +435,10 @@ def build_python_wheel(source_dir, build_dir, configs):
 
 def main():
     args = parse_arguments()
-
+    if (args.build_shared_lib and is_windows()):
+        log.error("Shared lib creation not supported on Windows")
+        sys.exit(-1)
+        
     cmake_path = args.cmake_path
     cmake_extra_defines = args.cmake_extra_defines if args.cmake_extra_defines else []
 
@@ -499,7 +511,7 @@ def main():
 
 
     if (args.test):
-        run_lotus_tests(ctest_path, build_dir, configs, args.enable_pybind, args.use_tvm)
+        run_lotus_tests(args, ctest_path, build_dir, configs, args.enable_pybind, args.use_tvm)
 
     # run the onnx tests if requested explicitly.
     # it could be done implicitly by user installing onnx but currently the tests fail so that doesn't work for CI

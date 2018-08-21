@@ -38,6 +38,7 @@ std::vector<path> RetrieveHeaderDependencies(const path& header, const path& inc
   if (!header_stream.good()) return std::move(header_dependencies);
   std::string line;
   while (std::getline(header_stream, line)) {
+    line.erase(line.find_last_not_of(" \r\n\t") + 1);
     std::size_t pos = line.find("#include \"core/");
     if (pos != std::string::npos) {
       header_dependencies.push_back(include_folder_root / line.substr(pos + pos_off, line.length() - pos - pos_off - 1));

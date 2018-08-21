@@ -346,13 +346,26 @@ if(lotus_USE_CUDA)
   set(LOTUS_PROVIDERS_CUDA lotus_providers_cuda)
 endif()
 
-if (lotus_BUILD_UNIT_TESTS)
-  include(lotus_unittests.cmake)
-endif()
-
 if (lotus_ENABLE_PYTHON)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
 endif()
 include(lotus_python.cmake)
 endif()
+
+if (lotus_BUILD_SHARED_LIB)
+if(UNIX)
+  set(CMAKE_SKIP_BUILD_RPATH ON)
+  include(lotus_runtime.cmake)
+endif()
+endif()
+
+# some of the tests rely on the shared libs to be
+# built; hence the ordering
+if (lotus_BUILD_UNIT_TESTS)
+  # we need to make sure this is turned off since it
+  # turned ON by the previous step when building a shared lib
+  set(CMAKE_SKIP_BUILD_RPATH OFF)
+  include(lotus_unittests.cmake)
+endif()
+

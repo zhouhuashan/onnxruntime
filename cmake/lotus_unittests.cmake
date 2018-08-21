@@ -33,13 +33,13 @@ function(AddTest)
     string(APPEND CMAKE_CXX_FLAGS " /EHsc") # exception handling - C++ may throw, extern "C" will not
 
     if (lotus_USE_CUDA)
-        # disable a warning from the CUDA headers about unreferenced local functions
-        if (MSVC)
-            target_compile_options(${_UT_TARGET} PRIVATE /wd4505)
-        endif()
+      # disable a warning from the CUDA headers about unreferenced local functions
+      if (MSVC)
+        target_compile_options(${_UT_TARGET} PRIVATE /wd4505)
+      endif()
     endif()
     if (lotus_USE_TVM)
-        target_compile_options(${_UT_TARGET} PRIVATE /wd4100 /wd4244 /wd4275 /wd4251 /wd4389)
+      target_compile_options(${_UT_TARGET} PRIVATE /wd4100 /wd4244 /wd4275 /wd4251 /wd4389)
     endif()
   endif()
 
@@ -59,82 +59,82 @@ function(AddTest)
   add_test(NAME ${_UT_TARGET}
     COMMAND ${_UT_TARGET} ${TEST_ARGS}
     WORKING_DIRECTORY $<TARGET_FILE_DIR:${_UT_TARGET}>
-  )
+    )
 endfunction(AddTest)
 
 file(GLOB lotus_test_utils_src
-    "${TEST_SRC_DIR}/*.h"
-    "${TEST_SRC_DIR}/*.cc"
-)
+  "${TEST_SRC_DIR}/*.h"
+  "${TEST_SRC_DIR}/*.cc"
+  )
 
 file(GLOB lotus_test_common_src
-    "${TEST_SRC_DIR}/common/*.cc"
-    "${TEST_SRC_DIR}/common/*.h"
-    "${TEST_SRC_DIR}/common/logging/*.cc"
-    "${TEST_SRC_DIR}/common/logging/*.h"
-)
+  "${TEST_SRC_DIR}/common/*.cc"
+  "${TEST_SRC_DIR}/common/*.h"
+  "${TEST_SRC_DIR}/common/logging/*.cc"
+  "${TEST_SRC_DIR}/common/logging/*.h"
+  )
 
 file(GLOB lotus_test_ir_src
-    "${TEST_SRC_DIR}/ir/*.cc"
-    "${TEST_SRC_DIR}/ir/*.h"
-)
+  "${TEST_SRC_DIR}/ir/*.cc"
+  "${TEST_SRC_DIR}/ir/*.h"
+  )
 
 set(lotus_test_framework_src_patterns
-    "${TEST_SRC_DIR}/framework/*.cc"
-    "${TEST_SRC_DIR}/platform/*.cc"
-)
+  "${TEST_SRC_DIR}/framework/*.cc"
+  "${TEST_SRC_DIR}/platform/*.cc"
+  )
 
 if(WIN32)
-    list(APPEND lotus_test_framework_src_patterns
-         "${TEST_SRC_DIR}/platform/windows/*.cc"
-         "${TEST_SRC_DIR}/platform/windows/logging/*.cc" )
+  list(APPEND lotus_test_framework_src_patterns
+    "${TEST_SRC_DIR}/platform/windows/*.cc"
+    "${TEST_SRC_DIR}/platform/windows/logging/*.cc" )
 endif()
 
 if(lotus_USE_CUDA)
-    list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/cuda/*)
-    list(APPEND lotus_test_framework_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+  list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/cuda/*)
+  list(APPEND lotus_test_framework_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
 file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 
 
 file(GLOB_RECURSE lotus_test_providers_src
-    "${TEST_SRC_DIR}/providers/*.h"
-    "${TEST_SRC_DIR}/providers/*.cc"
-    ${TEST_SRC_DIR}/framework/TestAllocatorManager.cc
-    ${TEST_SRC_DIR}/framework/TestAllocatorManager.h
-)
+  "${TEST_SRC_DIR}/providers/*.h"
+  "${TEST_SRC_DIR}/providers/*.cc"
+  ${TEST_SRC_DIR}/framework/TestAllocatorManager.cc
+  ${TEST_SRC_DIR}/framework/TestAllocatorManager.h
+  )
 
 # tests from lowest level library up.
 # the order of libraries should be maintained, with higher libraries being added first in the list
 
 set(lotus_test_common_libs
-    lotus_common
-    gtest
-    gmock
-)
+  lotus_common
+  gtest
+  gmock
+  )
 
 set(lotus_test_ir_libs
-    lotusIR_graph
-    onnx
-    onnx_proto
-    lotus_common
-    protobuf::libprotobuf
-    gtest gmock
-)
+  lotusIR_graph
+  onnx
+  onnx_proto
+  lotus_common
+  protobuf::libprotobuf
+  gtest gmock
+  )
 
 set(lotus_test_framework_libs
-    lotus_session
-    lotus_providers
-    lotus_framework
-    lotus_util
-    lotusIR_graph
-    onnx
-    onnx_proto
-    lotus_common
-    protobuf::libprotobuf
-    gtest gmock
-)
+  lotus_session
+  lotus_providers
+  lotus_framework
+  lotus_util
+  lotusIR_graph
+  onnx
+  onnx_proto
+  lotus_common
+  protobuf::libprotobuf
+  gtest gmock
+  )
 
 if(lotus_USE_CUDA)
   list(APPEND lotus_test_framework_libs lotus_providers_cuda)
@@ -151,19 +151,19 @@ else()
 endif()
 
 set(lotus_test_providers_libs
-    lotus_session
-    ${LOTUS_PROVIDERS_CUDA}
-    ${LOTUS_PROVIDERS_MKLDNN}
-    lotus_providers
-    lotus_framework
-    lotus_util
-    lotusIR_graph
-    onnx
-    onnx_proto
-    lotus_common
-    protobuf::libprotobuf
-    gtest gmock
-)
+  lotus_session
+  ${LOTUS_PROVIDERS_CUDA}
+  ${LOTUS_PROVIDERS_MKLDNN}
+  lotus_providers
+  lotus_framework
+  lotus_util
+  lotusIR_graph
+  onnx
+  onnx_proto
+  lotus_common
+  protobuf::libprotobuf
+  gtest gmock
+  )
 
 
 
@@ -174,12 +174,12 @@ if (lotus_USE_MLAS AND WIN32)
 endif()
 
 if(lotus_USE_CUDA)
-    list(APPEND lotus_test_providers_dependencies lotus_providers_cuda)
-    list(APPEND lotus_test_providers_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+  list(APPEND lotus_test_providers_dependencies lotus_providers_cuda)
+  list(APPEND lotus_test_providers_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
 if(lotus_USE_MKLDNN)
-    list(APPEND lotus_test_providers_dependencies lotus_providers_mkldnn)
+  list(APPEND lotus_test_providers_dependencies lotus_providers_mkldnn)
 endif()
 
 if( NOT WIN32)
@@ -187,85 +187,85 @@ if( NOT WIN32)
 endif()
 
 file(GLOB_RECURSE lotus_test_tvm_src
-    "${LOTUS_ROOT}/test/tvm/*.h"
-    "${LOTUS_ROOT}/test/tvm/*.cc"
-)
+  "${LOTUS_ROOT}/test/tvm/*.h"
+  "${LOTUS_ROOT}/test/tvm/*.cc"
+  )
 
 set(lotus_test_tvm_libs
-    tvm
-    nnvm_compiler
-)
+  tvm
+  nnvm_compiler
+  )
 
 set(lotus_test_tvm_dependencies
-    tvm
-    nnvm_compiler
-)
+  tvm
+  nnvm_compiler
+  )
 
 if (SingleUnitTestProject)
-    set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
-    set(all_libs ${lotus_test_providers_libs})
-    set(all_dependencies ${lotus_test_providers_dependencies} )
+  set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
+  set(all_libs ${lotus_test_providers_libs})
+  set(all_dependencies ${lotus_test_providers_dependencies} )
 
-    if (lotus_USE_TVM)
-        list(APPEND all_tests ${lotus_test_tvm_src})
-        list(APPEND all_libs ${lotus_test_tvm_libs})
-        list(APPEND all_dependencies ${lotus_test_tvm_dependencies})
-    endif()
-    # we can only have one 'main', so remove them all and add back the providers test_main as it sets
-    # up everything we need for all tests
-    file(GLOB_RECURSE test_mains "${TEST_SRC_DIR}/*/test_main.cc")
-    list(REMOVE_ITEM all_tests ${test_mains})
-    list(APPEND all_tests "${TEST_SRC_DIR}/providers/test_main.cc")
+  if (lotus_USE_TVM)
+    list(APPEND all_tests ${lotus_test_tvm_src})
+    list(APPEND all_libs ${lotus_test_tvm_libs})
+    list(APPEND all_dependencies ${lotus_test_tvm_dependencies})
+  endif()
+  # we can only have one 'main', so remove them all and add back the providers test_main as it sets
+  # up everything we need for all tests
+  file(GLOB_RECURSE test_mains "${TEST_SRC_DIR}/*/test_main.cc")
+  list(REMOVE_ITEM all_tests ${test_mains})
+  list(APPEND all_tests "${TEST_SRC_DIR}/providers/test_main.cc")
 
-    # this is only added to lotus_test_framework_libs above, but we use lotus_test_providers_libs for the lotus_test_all target.
-    # for now, add it here. better is probably to have lotus_test_providers_libs use the full lotus_test_framework_libs
-    # list given it's built on top of that library and needs all the same dependencies.
-    if(WIN32)
-        list(APPEND lotus_test_providers_libs Advapi32)
-    endif()
+  # this is only added to lotus_test_framework_libs above, but we use lotus_test_providers_libs for the lotus_test_all target.
+  # for now, add it here. better is probably to have lotus_test_providers_libs use the full lotus_test_framework_libs
+  # list given it's built on top of that library and needs all the same dependencies.
+  if(WIN32)
+    list(APPEND lotus_test_providers_libs Advapi32)
+  endif()
 
-    AddTest(
-        TARGET lotus_test_all
-        SOURCES ${all_tests}
-        LIBS ${all_libs}
-        DEPENDS ${all_dependencies}
+  AddTest(
+    TARGET lotus_test_all
+    SOURCES ${all_tests}
+    LIBS ${all_libs}
+    DEPENDS ${all_dependencies}
     )
 
-    # the default logger tests conflict with the need to have an overall default logger
-    # so skip in this type of
-    target_compile_definitions(lotus_test_all PUBLIC -DSKIP_DEFAULT_LOGGER_TESTS)
+  # the default logger tests conflict with the need to have an overall default logger
+  # so skip in this type of
+  target_compile_definitions(lotus_test_all PUBLIC -DSKIP_DEFAULT_LOGGER_TESTS)
 
-    set(test_data_target lotus_test_all)
+  set(test_data_target lotus_test_all)
 else()
-    AddTest(
-        TARGET lotus_test_common
-        SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
-        LIBS ${lotus_EXTERNAL_DEPENDENCIES}
+  AddTest(
+    TARGET lotus_test_common
+    SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
+    LIBS ${lotus_EXTERNAL_DEPENDENCIES}
     )
 
-    AddTest(
-        TARGET lotus_test_ir
-        SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
-        LIBS ${lotus_test_ir_libs}
-        DEPENDS ${lotus_EXTERNAL_DEPENDENCIES}
+  AddTest(
+    TARGET lotus_test_ir
+    SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
+    LIBS ${lotus_test_ir_libs}
+    DEPENDS ${lotus_EXTERNAL_DEPENDENCIES}
     )
 
-    AddTest(
-        TARGET lotus_test_framework
-        SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
-        LIBS ${lotus_test_framework_libs}
-        # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
-        DEPENDS ${lotus_test_providers_dependencies}
+  AddTest(
+    TARGET lotus_test_framework
+    SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
+    LIBS ${lotus_test_framework_libs}
+    # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
+    DEPENDS ${lotus_test_providers_dependencies}
     )
 
-    AddTest(
-        TARGET lotus_test_providers
-        SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
-        LIBS ${lotus_test_providers_libs}
-        DEPENDS ${lotus_test_providers_dependencies}
+  AddTest(
+    TARGET lotus_test_providers
+    SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
+    LIBS ${lotus_test_providers_libs}
+    DEPENDS ${lotus_test_providers_dependencies}
     )
 
-    set(test_data_target lotus_test_ir)
+  set(test_data_target lotus_test_ir)
 endif()  # SingleUnitTestProject
 
 #
@@ -276,27 +276,27 @@ set(TEST_DATA_DES $<TARGET_FILE_DIR:${test_data_target}>/testdata)
 
 # Copy test data from source to destination.
 add_custom_command(
-    TARGET ${test_data_target} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${TEST_DATA_SRC}
-            ${TEST_DATA_DES})
+  TARGET ${test_data_target} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${TEST_DATA_SRC}
+  ${TEST_DATA_DES})
 
 set(onnx_test_runner_src_dir ${TEST_SRC_DIR}/onnx)
 set(onnx_test_runner_common_srcs
-${onnx_test_runner_src_dir}/TestResultStat.cc
-${onnx_test_runner_src_dir}/TestResultStat.h
-${onnx_test_runner_src_dir}/testenv.h
-${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
-${onnx_test_runner_src_dir}/TestCaseResult.cc
-${onnx_test_runner_src_dir}/TestCaseResult.h
-${onnx_test_runner_src_dir}/testenv.cc
-${onnx_test_runner_src_dir}/runner.h
-${onnx_test_runner_src_dir}/runner.cc
-${onnx_test_runner_src_dir}/TestCase.cc
-${onnx_test_runner_src_dir}/TestCase.h
-${onnx_test_runner_src_dir}/sync_api.h
-${TEST_SRC_DIR}/proto/tml.proto
-)
+  ${onnx_test_runner_src_dir}/TestResultStat.cc
+  ${onnx_test_runner_src_dir}/TestResultStat.h
+  ${onnx_test_runner_src_dir}/testenv.h
+  ${onnx_test_runner_src_dir}/FixedCountFinishCallback.h
+  ${onnx_test_runner_src_dir}/TestCaseResult.cc
+  ${onnx_test_runner_src_dir}/TestCaseResult.h
+  ${onnx_test_runner_src_dir}/testenv.cc
+  ${onnx_test_runner_src_dir}/runner.h
+  ${onnx_test_runner_src_dir}/runner.cc
+  ${onnx_test_runner_src_dir}/TestCase.cc
+  ${onnx_test_runner_src_dir}/TestCase.h
+  ${onnx_test_runner_src_dir}/sync_api.h
+  ${TEST_SRC_DIR}/proto/tml.proto
+  )
 
 if(NOT WIN32)
   set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/tml.pb.cc PROPERTIES COMPILE_FLAGS -Wno-unused-parameter)
@@ -325,20 +325,20 @@ if(lotus_USE_CUDA)
 endif()
 
 set(onnx_test_libs
-    ${FS_STDLIB}
-    lotus_session
-    ${onnx_cuda_test_libs}
-    lotus_providers
-    lotus_framework
-    lotus_util
-    lotusIR_graph
-    onnx
-    onnx_proto
-    lotus_common
-    protobuf::libprotobuf
-    ${MLAS_LIBRARY}
-    ${CMAKE_THREAD_LIBS_INIT}
-)
+  ${FS_STDLIB}
+  lotus_session
+  ${onnx_cuda_test_libs}
+  lotus_providers
+  lotus_framework
+  lotus_util
+  lotusIR_graph
+  onnx
+  onnx_proto
+  lotus_common
+  protobuf::libprotobuf
+  ${MLAS_LIBRARY}
+  ${CMAKE_THREAD_LIBS_INIT}
+  )
 
 if(lotus_USE_MKLDNN)
   list(APPEND onnx_test_libs lotus_providers_mkldnn)
@@ -358,16 +358,16 @@ if (lotus_USE_MKLDNN)
   add_custom_command(
     TARGET ${test_data_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${MKLDNN_LIB_DIR}/${MKLDNN_SHARED_LIB} $<TARGET_FILE_DIR:${test_data_target}>
-  )
+    )
 endif()
 
 if (lotus_USE_MKLML)
   add_custom_command(
     TARGET ${test_data_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${MKLDNN_LIB_DIR}/${MKLML_SHARED_LIB} ${MKLDNN_LIB_DIR}/${IOMP5MD_SHARED_LIB}
-        $<TARGET_FILE_DIR:${test_data_target}>
-  )
+    ${MKLDNN_LIB_DIR}/${MKLML_SHARED_LIB} ${MKLDNN_LIB_DIR}/${IOMP5MD_SHARED_LIB}
+    $<TARGET_FILE_DIR:${test_data_target}>
+    )
 endif()
 
 add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
@@ -402,9 +402,9 @@ endif()
 
 set(lotus_exec_src_dir ${TEST_SRC_DIR}/lotus_exec)
 file(GLOB lotus_exec_src
-    "${lotus_exec_src_dir}/*.cc"
-    "${lotus_exec_src_dir}/*.h"
-)
+  "${lotus_exec_src_dir}/*.cc"
+  "${lotus_exec_src_dir}/*.h"
+  )
 add_executable(lotus_exec ${lotus_exec_src})
 # we need to force these dependencies to build first. just using target_link_libraries isn't sufficient
 add_dependencies(lotus_exec ${lotus_EXTERNAL_DEPENDENCIES})
@@ -412,23 +412,23 @@ target_link_libraries(lotus_exec PRIVATE ${onnx_test_libs})
 set_target_properties(lotus_exec PROPERTIES FOLDER "LotusTest")
 
 add_test(NAME onnx_test_pytorch_converted
-    COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-converted)
+  COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-converted)
 add_test(NAME onnx_test_pytorch_operator
-    COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-operator)
+  COMMAND onnx_test_runner ${PROJECT_SOURCE_DIR}/external/onnx/onnx/backend/test/data/pytorch-operator)
 
 set(lotus_perf_test_src_dir ${TEST_SRC_DIR}/perftest)
 set(lotus_perf_test_src_patterns
-     "${lotus_perf_test_src_dir}/*.cc"
-     "${lotus_perf_test_src_dir}/*.h")
+  "${lotus_perf_test_src_dir}/*.cc"
+  "${lotus_perf_test_src_dir}/*.h")
 
 if(WIN32)
-    list(APPEND lotus_perf_test_src_patterns
-         "${lotus_perf_test_src_dir}/windows/*.cc"
-         "${lotus_perf_test_src_dir}/windows/*.h" )
+  list(APPEND lotus_perf_test_src_patterns
+    "${lotus_perf_test_src_dir}/windows/*.cc"
+    "${lotus_perf_test_src_dir}/windows/*.h" )
 else ()
-    list(APPEND lotus_perf_test_src_patterns
-         "${lotus_perf_test_src_dir}/posix/*.cc"
-         "${lotus_perf_test_src_dir}/posix/*.h" )
+  list(APPEND lotus_perf_test_src_patterns
+    "${lotus_perf_test_src_dir}/posix/*.cc"
+    "${lotus_perf_test_src_dir}/posix/*.h" )
 endif()
 
 file(GLOB lotus_perf_test_src ${lotus_perf_test_src_patterns})
@@ -438,3 +438,36 @@ target_include_directories(lotus_perf_test PUBLIC ${lotusIR_graph_header} ${onnx
 
 target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
 set_target_properties(lotus_perf_test PROPERTIES FOLDER "LotusTest")
+
+# shared lib
+if (lotus_BUILD_SHARED_LIB)
+if (UNIX)
+  # test custom op shared lib
+  file(GLOB lotus_custom_op_shared_lib_test_srcs "${LOTUS_ROOT}/test/custom_op_shared_lib/test_custom_op.cc")
+
+  add_library(lotus_custom_op_shared_lib_test SHARED ${lotus_custom_op_shared_lib_test_srcs})
+  target_include_directories(lotus_custom_op_shared_lib_test PUBLIC "${PROJECT_SOURCE_DIR}/include")
+
+  target_link_libraries(lotus_custom_op_shared_lib_test
+    lotus_runtime
+    )
+  set_target_properties(lotus_custom_op_shared_lib_test PROPERTIES FOLDER "LotusSharedLibTest")
+
+  #################################################################
+  # test inference using shared lib + custom op
+  file(GLOB lotus_shared_lib_test_srcs "${LOTUS_ROOT}/test/shared_lib/test_inference.cc")
+
+  add_executable(lotus_shared_lib_test ${lotus_shared_lib_test_srcs})
+  target_include_directories(lotus_shared_lib_test PUBLIC "${PROJECT_SOURCE_DIR}/include")
+
+  target_link_libraries(lotus_shared_lib_test
+    lotus_runtime
+    onnx
+    onnx_proto
+    )
+  set_target_properties(lotus_shared_lib_test PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")  
+  set_target_properties(lotus_shared_lib_test PROPERTIES FOLDER "LotusSharedLibTest")
+endif()
+endif()
+
+
