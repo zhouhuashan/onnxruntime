@@ -47,7 +47,7 @@ class CudnnConvolutionDescriptor final {
   CudnnConvolutionDescriptor();
   ~CudnnConvolutionDescriptor();
 
-  Status Set(const std::vector<int64_t>& kernel_shape,
+  Status Set(size_t rank,
              const std::vector<int64_t>& pads,
              const std::vector<int64_t>& strides,
              const std::vector<int64_t>& dilations,
