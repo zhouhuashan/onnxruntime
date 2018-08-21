@@ -14,6 +14,7 @@
 #include "core/framework/graph_partitioner.h"
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/kernel_def_builder.h"
+#include "core/framework/ml_value_patterns_planner.h"
 #include "core/framework/mldata_type_utils.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
 #include "core/framework/session_state.h"
@@ -1210,7 +1211,7 @@ class InferenceSession::Impl {
     return session_state_.GetKernelRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
   }
 
-  Common::Status WaitForNotification(Notification* p_executor_done, int64 timeout_in_ms) {
+  Common::Status WaitForNotification(Notification* p_executor_done, int64_t timeout_in_ms) {
     if (timeout_in_ms > 0) {
       LOTUS_NOT_IMPLEMENTED(__FUNCTION__, "timeout_in_ms >0 is not supported");  // TODO
     } else {

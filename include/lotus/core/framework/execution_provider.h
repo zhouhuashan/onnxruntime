@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/common/status.h"
-#include "core/framework/arena.h"
-#include "core/framework/tensor.h"
 #include <unordered_map>
+
+#include "core/common/status.h"
+#include "core/framework/tensor.h"
 
 namespace LotusIR {
 class Graph;

@@ -1,4 +1,6 @@
 #include "core/framework/graph_partitioner.h"
+
+#include "core/framework/kernel_registry_manager.h"
 #include "core/graph/indexed_sub_graph.h"
 
 using namespace ::Lotus::Common;

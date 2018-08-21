@@ -146,6 +146,8 @@ endif()
 
 if(WIN32)
     list(APPEND lotus_test_framework_libs Advapi32)
+else()
+    list(APPEND lotus_test_framework_libs stdc++fs)
 endif()
 
 set(lotus_test_providers_libs
@@ -180,6 +182,9 @@ if(lotus_USE_MKLDNN)
     list(APPEND lotus_test_providers_dependencies lotus_providers_mkldnn)
 endif()
 
+if( NOT WIN32)
+    list(APPEND lotus_test_providers_libs stdc++fs)
+endif()
 
 file(GLOB_RECURSE lotus_test_tvm_src
     "${LOTUS_ROOT}/test/tvm/*.h"

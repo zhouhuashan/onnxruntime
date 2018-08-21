@@ -1,20 +1,19 @@
 #pragma once
 
 #include <vector>
+
 #include "core/common/common.h"
+#include "core/common/logging/logging.h"
 #include "core/common/status.h"
-#include "core/framework/allocatormgr.h"
 #include "core/framework/ml_value.h"
+#include "core/framework/sequential_execution_plan.h"
 #include "core/framework/tensor.h"
 #include "core/graph/graph.h"
-#include "core/framework/sequential_execution_plan.h"
-#include "core/framework/allocation_planner.h"
-#include "core/framework/ml_value_patterns_planner.h"
-#include "core/common/logging/logging.h"
 
 namespace Lotus {
 
 class SessionState;
+class MLValuePatternPlanner;
 struct MemoryPatternGroup;
 
 struct MLValueAllocationParameters {
@@ -55,7 +54,7 @@ class ExecutionFrame {
                  const std::vector<MLValue>& fetches,
                  const SessionState& session_state);
 
-  ~ExecutionFrame() = default;
+  ~ExecutionFrame();
 
   Status AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
                                             MLDataType element_type,

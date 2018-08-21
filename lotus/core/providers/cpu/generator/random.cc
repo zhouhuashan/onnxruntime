@@ -27,7 +27,6 @@ limitations under the License.
 #include <algorithm>
 #include <chrono>
 #include <random>
-#include "core/platform/types.h"
 #include "core/util/math_cpuonly.h"
 #include "core/util/eigen_common_wrapper.h"
 #include "gsl/span"
@@ -184,11 +183,11 @@ static Status MultinomialCompute(OpKernelContext* ctx,
     // END create temporary tensor
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);  // TODO: should this be initialized per batch?
-    for (int64 b = start_row; b < limit_row; ++b) {
+    for (int64_t b = start_row; b < limit_row; ++b) {
       const float* logits_row = &(logits(b, 0));
       // Takes an along-class maximum (for numerical stability).
       float maxx = std::numeric_limits<float>::lowest();
-      for (int64 j = 0; j < num_classes; ++j) {
+      for (int64_t j = 0; j < num_classes; ++j) {
         if (Eigen::numext::isfinite(logits_row[j])) {
           maxx = std::max(maxx, logits_row[j]);
         }
@@ -199,7 +198,7 @@ static Status MultinomialCompute(OpKernelContext* ctx,
       // Note: This isn't normalized.
       cdf = (logits.chip<0>(b).cast<double>() - max_logit).exp();
       double running_total = 0;
-      for (int64 j = 0; j < num_classes; ++j) {
+      for (int64_t j = 0; j < num_classes; ++j) {
         if (Eigen::numext::isfinite(logits_row[j])) {
           running_total += cdf(j);
         }
@@ -208,7 +207,7 @@ static Status MultinomialCompute(OpKernelContext* ctx,
       // Generate each sample.
       const double* cdf_begin = cdf.data();
       const double* cdf_end = cdf.data() + num_classes;
-      for (int64 j = 0; j < num_samples; ++j) {
+      for (int64_t j = 0; j < num_samples; ++j) {
         const double to_find = dist(generator_copy) * running_total;
         auto found_iter = std::upper_bound(cdf_begin, cdf_end, to_find);
         output(b, j) = static_cast<OutputType>(std::distance(cdf_begin, found_iter));

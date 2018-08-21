@@ -1,4 +1,7 @@
 #pragma once
+
+#include <memory>
+
 #include "core/graph/graph.h"
 #include "core/graph/onnx_protobuf.h"
 

@@ -1,5 +1,4 @@
 #include "core/providers/cpu/ml/zipmap.h"
-#include "core/platform/types.h"
 #include "core/util/math_cpuonly.h"
 /**
 https://github.com/onnx/onnx/blob/master/onnx/defs/traditionalml/defs.cc
@@ -65,7 +64,7 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const float* x_data = X.Data<float>();
 
   if (using_strings_) {
-    if (features_per_batch != static_cast<int64>(classlabels_strings_.size())) {
+    if (features_per_batch != static_cast<int64_t>(classlabels_strings_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
                     "Input features_per_batch[" + std::to_string(features_per_batch) +
@@ -84,7 +83,7 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
       (*y_data)[n] = std::move(map1);
     }
   } else {
-    if (features_per_batch != static_cast<int64>(classlabels_int64s_.size())) {
+    if (features_per_batch != static_cast<int64_t>(classlabels_int64s_.size())) {
       return Status(LOTUS,
                     INVALID_ARGUMENT,
                     "Input features_per_batch[" + std::to_string(features_per_batch) +

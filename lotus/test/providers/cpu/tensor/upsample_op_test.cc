@@ -168,15 +168,15 @@ TEST(UpsampleOpTest, UpsampleOpBilinearTest_int32) {
   test.AddAttribute("scales", scales);
 
   const int64_t N = 2, C = 1, H = 2, W = 2;
-  std::vector<int32> X = {1, 3,
+  std::vector<int32_t> X = {1, 3,
                           3, 5,
 
                           3, 5,
                           7, 9};
 
-  test.AddInput<int32>("X", {N, C, H, W}, X);
+  test.AddInput<int32_t>("X", {N, C, H, W}, X);
 
-  std::vector<int32> Y = {
+  std::vector<int32_t> Y = {
       1, 1, 2, 2, 3, 3, 3, 3,
       2, 2, 3, 3, 4, 4, 4, 4,
       3, 3, 4, 4, 5, 5, 5, 5,
@@ -187,7 +187,7 @@ TEST(UpsampleOpTest, UpsampleOpBilinearTest_int32) {
       7, 7, 8, 8, 9, 9, 9, 9,
       7, 7, 8, 8, 9, 9, 9, 9};
 
-  test.AddOutput<int32>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
+  test.AddOutput<int32_t>("Y", {N, C, (int64_t)(H * scales[2]), (int64_t)(W * scales[3])}, Y);
   test.Run();
 }
 

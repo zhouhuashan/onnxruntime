@@ -3,7 +3,6 @@
 #include <memory>
 #include "core/common/common.h"
 #include "core/common/status.h"
-#include "core/framework/allocatormgr.h"
 
 namespace Lotus {
 /**

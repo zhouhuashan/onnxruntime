@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <string>
-#include "core/inc/ml_status.h"
+#include "core/common/ml_status.h"
 
 namespace Lotus {
 namespace Common {

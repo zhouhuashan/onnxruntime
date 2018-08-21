@@ -6,7 +6,7 @@
 #pragma once
 
 #include <cstdint>
-#include "ml_status.h"
+#include "core/common/ml_status.h"
 
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off

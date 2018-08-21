@@ -87,7 +87,7 @@ Status upsampleLiner(const T* input,
     return Status(LOTUS, FAIL, "Upsample: input/output value's dimension mismatch");
   auto n_dim = input_shape.NumDimensions();
   for (size_t i = 0, size = output_shape.Size(); i < size; i++) {
-    std::vector<int64> val1, val2;
+    std::vector<int64_t> val1, val2;
     std::vector<float> d1, d2;
     size_t cur_idx = i;
     //val1, vla2, d1, d2 are in reverse order
@@ -195,7 +195,7 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
   }
 
   std::vector<int64_t> Y_dims;
-  for (auto i = 0; i < dims.size(); i++) {
+  for (std::size_t i = 0; i < dims.size(); i++) {
     Y_dims.push_back(static_cast<int64_t>(scales_[i] * dims[i]));
   }
   Tensor* Y = context->Output(0, Y_dims);

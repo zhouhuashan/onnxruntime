@@ -21,8 +21,6 @@ limitations under the License.
 #include <chrono>              // NOLINT
 #include <condition_variable>  // NOLINT
 
-#include "core/platform/types.h"
-
 namespace Lotus {
 
 class Notification {
@@ -57,8 +55,8 @@ class Notification {
 
  private:
   friend bool WaitForNotificationWithTimeout(Notification* n,
-                                             int64 timeout_in_us);
-  bool WaitForNotificationWithTimeout(int64 timeout_in_us) {
+                                             int64_t timeout_in_us);
+  bool WaitForNotificationWithTimeout(int64_t timeout_in_us) {
     bool notified = HasBeenNotified();
     if (!notified) {
       std::unique_lock<std::mutex> l(mu_);
@@ -77,7 +75,7 @@ class Notification {
 };
 
 inline bool WaitForNotificationWithTimeout(Notification* n,
-                                           int64 timeout_in_us) {
+                                           int64_t timeout_in_us) {
   return n->WaitForNotificationWithTimeout(timeout_in_us);
 }
 

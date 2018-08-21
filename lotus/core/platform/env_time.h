@@ -14,7 +14,6 @@ limitations under the License.
 ==============================================================================*/
 #pragma once
 
-#include "core/platform/types.h"
 #include <ctime>
 #include <cstdint>
 
@@ -51,10 +50,10 @@ class EnvTime {
   static EnvTime* Default();
 
   /// \brief Returns the number of micro-seconds since the Unix epoch.
-  virtual uint64 NowMicros() = 0;
+  virtual uint64_t NowMicros() = 0;
 
   /// \brief Returns the number of seconds since the Unix epoch.
-  virtual uint64 NowSeconds() { return NowMicros() / 1000000L; }
+  virtual uint64_t NowSeconds() { return NowMicros() / 1000000L; }
 };
 
 }  // namespace Lotus

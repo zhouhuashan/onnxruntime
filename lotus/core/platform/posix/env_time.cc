@@ -26,10 +26,10 @@ class PosixEnvTime : public EnvTime {
  public:
   PosixEnvTime() = default;
 
-  uint64 NowMicros() override {
+  uint64_t NowMicros() override {
     struct timeval tv;
     gettimeofday(&tv, nullptr);
-    return static_cast<uint64>(tv.tv_sec) * 1000000 + tv.tv_usec;
+    return static_cast<uint64_t>(tv.tv_sec) * 1000000 + tv.tv_usec;
   }
 };
 

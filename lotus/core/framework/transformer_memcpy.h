@@ -2,6 +2,7 @@
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
+#include "core/framework/kernel_registry_manager.h"
 
 namespace Lotus {
 

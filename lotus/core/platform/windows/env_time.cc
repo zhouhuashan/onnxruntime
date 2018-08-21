@@ -20,7 +20,6 @@ limitations under the License.
 #include <chrono>
 #include <numeric>
 #include <algorithm>
-#include "core/platform/types.h"
 
 namespace Lotus {
 
@@ -41,7 +40,7 @@ class WindowsEnvTime : public EnvTime {
     }
   }
 
-  uint64 NowMicros() override {
+  uint64_t NowMicros() override {
     if (GetSystemTimePreciseAsFileTime_ != NULL) {
       // GetSystemTimePreciseAsFileTime function is only available in latest
       // versions of Windows, so we need to check for its existence here.
@@ -70,7 +69,7 @@ class WindowsEnvTime : public EnvTime {
         .count();
   }
 
-  void SleepForMicroseconds(int64 micros) { Sleep(static_cast<DWORD>(micros) / 1000); }
+  void SleepForMicroseconds(int64_t micros) { Sleep(static_cast<DWORD>(micros) / 1000); }
 
  private:
   typedef VOID(WINAPI* FnGetSystemTimePreciseAsFileTime)(LPFILETIME);

@@ -22,7 +22,6 @@ limitations under the License.
 #include <vector>
 
 #include "core/platform/env.h"
-#include "core/platform/types.h"
 #include "core/common/common.h"
 
 namespace Lotus {
@@ -64,7 +63,7 @@ class PosixEnv : public Env {
     t.f();
   }
 
-  void SleepForMicroseconds(int64 micros) const override {
+  void SleepForMicroseconds(int64_t micros) const override {
     while (micros > 0) {
       timespec sleep_time;
       sleep_time.tv_sec = 0;
@@ -72,8 +71,8 @@ class PosixEnv : public Env {
 
       if (micros >= 1e6) {
         sleep_time.tv_sec =
-            std::min<int64>(micros / 1e6, std::numeric_limits<time_t>::max());
-        micros -= static_cast<int64>(sleep_time.tv_sec) * 1e6;
+            std::min<int64_t>(micros / 1e6, std::numeric_limits<time_t>::max());
+        micros -= static_cast<int64_t>(sleep_time.tv_sec) * 1e6;
       }
       if (micros < 1e6) {
         sleep_time.tv_nsec = 1000 * micros;

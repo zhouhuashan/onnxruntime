@@ -24,7 +24,6 @@ limitations under the License.
 
 #include "core/common/logging/logging.h"
 #include "core/platform/env.h"
-#include "core/platform/types.h"
 
 namespace Lotus {
 
@@ -65,7 +64,7 @@ class WindowsEnv : public Env {
   }
 
  public:
-  void SleepForMicroseconds(int64 micros) const override { Sleep(static_cast<DWORD>(micros) / 1000); }
+  void SleepForMicroseconds(int64_t micros) const override { Sleep(static_cast<DWORD>(micros) / 1000); }
 
   Thread* StartThread(const ThreadOptions&, const std::string&,
                       std::function<void()> fn) const override {

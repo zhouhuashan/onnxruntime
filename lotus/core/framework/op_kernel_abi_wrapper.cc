@@ -6,7 +6,6 @@
 
 #include <limits>
 #include <assert.h>
-#include "core/platform/types.h"
 #include "core/framework/customregistry.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
@@ -1022,13 +1021,13 @@ std::vector<std::string> ConvertTypeConstraintTypes(const MLTypeConstraint& cons
 void AbiCustomRegistry::SetAttributesAndDefaults(OpSchema& schema, const MLSchemaDefinition& abi_schema) {
   // Create a map with default attributes
   std::map<std::string, const MLAttributeNameValue*> default_attributes;
-  for (uint32 attribute_index = 0; attribute_index < abi_schema.default_attribute_count; ++attribute_index) {
+  for (uint32_t attribute_index = 0; attribute_index < abi_schema.default_attribute_count; ++attribute_index) {
     const MLAttributeNameValue& default_attribute = abi_schema.default_attributes[attribute_index];
     default_attributes[default_attribute.name] = &default_attribute;
   }
 
   // Set each attribute along with default values, looked up by name, if available
-  for (uint32 attribute_index = 0; attribute_index < abi_schema.attribute_count; ++attribute_index) {
+  for (uint32_t attribute_index = 0; attribute_index < abi_schema.attribute_count; ++attribute_index) {
     const MLAttribute& attribute = abi_schema.attributes[attribute_index];
     auto default_val = default_attributes.find(attribute.name);
     if (default_val == default_attributes.end()) {
@@ -1097,7 +1096,7 @@ OpSchema AbiCustomRegistry::ConvertOpSchema(const char* domain, const MLSchemaDe
   const char* empty_name = " ";
 
   // Populate inputs
-  for (uint32 input_index = 0; input_index < abi_schema.input_count; ++input_index) {
+  for (uint32_t input_index = 0; input_index < abi_schema.input_count; ++input_index) {
     schema.Input(
         input_index,
         empty_name,
@@ -1107,7 +1106,7 @@ OpSchema AbiCustomRegistry::ConvertOpSchema(const char* domain, const MLSchemaDe
   }
 
   // Populate outputs
-  for (uint32 output_index = 0; output_index < abi_schema.output_count; ++output_index) {
+  for (uint32_t output_index = 0; output_index < abi_schema.output_count; ++output_index) {
     schema.Output(
         output_index,
         empty_name,
@@ -1117,7 +1116,7 @@ OpSchema AbiCustomRegistry::ConvertOpSchema(const char* domain, const MLSchemaDe
   }
 
   // Populate type constraints
-  for (uint32 constraint_index = 0; constraint_index < abi_schema.type_constraint_count; ++constraint_index) {
+  for (uint32_t constraint_index = 0; constraint_index < abi_schema.type_constraint_count; ++constraint_index) {
     schema.TypeConstraint(
         abi_schema.type_constraints[constraint_index].type_label,
         ConvertTypeConstraintTypes(abi_schema.type_constraints[constraint_index]),
@@ -1189,7 +1188,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpSetFromSchema)(
     schema_vector.reserve(schema_count);
 
     // Convert schema to ONNX types and accumulate them in a vector
-    for (uint32 i = 0; i < schema_count; ++i) {
+    for (uint32_t i = 0; i < schema_count; ++i) {
       schema_vector.emplace_back(ConvertOpSchema(opSetId->domain, *schema[i]));
     }
 

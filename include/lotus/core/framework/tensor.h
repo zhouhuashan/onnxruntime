@@ -6,7 +6,7 @@
 
 #include "gsl/span"
 
-#include "core/framework/arena.h"
+#include "core/framework/allocator.h"
 #include "core/framework/data_types.h"
 #include "core/framework/tensor_shape.h"
 

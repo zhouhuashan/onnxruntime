@@ -9,9 +9,7 @@
 #include "core/graph/basic_types.h"
 
 namespace LotusIR {  // forward declarations
-class Model;
 class GraphTransformer;
-class NodeArg;
 }  // namespace LotusIR
 
 namespace onnx {
@@ -20,11 +18,8 @@ class ModelProto;
 
 namespace Lotus {
 class IExecutionProvider;  // forward decl
-class KernelDefBuilder;
 class IOBinding;
 
-class OpKernelInfo;
-class OpKernel;
 class CustomRegistry;
 
 namespace Logging {

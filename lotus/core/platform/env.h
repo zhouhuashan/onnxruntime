@@ -24,7 +24,6 @@ limitations under the License.
 
 #include "core/common/common.h"
 #include "core/platform/env_time.h"
-#include "core/platform/types.h"
 
 #ifndef _WIN32
 #include <sys/types.h>
@@ -72,14 +71,14 @@ class Env {
   virtual int GetNumCpuCores() const = 0;
 
   /// \brief Returns the number of micro-seconds since the Unix epoch.
-  virtual uint64 NowMicros() const { return env_time_->NowMicros(); }
+  virtual uint64_t NowMicros() const { return env_time_->NowMicros(); }
 
   /// \brief Returns the number of seconds since the Unix epoch.
-  virtual uint64 NowSeconds() const { return env_time_->NowSeconds(); }
+  virtual uint64_t NowSeconds() const { return env_time_->NowSeconds(); }
 
   /// Sleeps/delays the thread for the prescribed number of micro-seconds.
   /// On Windows, it's the min time to sleep, not the actual one.
-  virtual void SleepForMicroseconds(int64 micros) const = 0;
+  virtual void SleepForMicroseconds(int64_t micros) const = 0;
 
   /// for use with Eigen::ThreadPool
   virtual EnvThread* CreateThread(std::function<void()> f) const = 0;
