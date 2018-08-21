@@ -8,11 +8,12 @@ namespace Lotus {
 ONNX_CPU_OPERATOR_KERNEL(
     RNN,
     7,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int>()),
+    KernelDefBuilder()
+        .TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
+        .TypeConstraint("T1", DataTypeImpl::GetTensorType<int>()),
     RNN<float>);
 
-// #define DUMP_MATRIXES to provide lots of diagnostic output
+// #define DUMP_MATRIXES to provide diagnostic output
 #if defined(DUMP_MATRIXES)
 #define DumpMatrix(...) ::Lotus::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
@@ -43,9 +44,8 @@ void ApplyActivationToBatches(const Tensor* sequence_lens, const T* h_prev, T* Y
     for (int feature = 0; feature < hidden_size; ++feature) {
       int64_t y_index = batch * hidden_size + feature;
       if (!valid) {
-        // copy from previous time_step.
-        // this will not happen at time_step 0.
-        Y_buffer_data_current_frame[y_index] = h_prev[batch * hidden_size + feature];
+        // copy from previous time_step if available
+        Y_buffer_data_current_frame[y_index] = h_prev ? h_prev[batch * hidden_size + feature] : 0.f;
       } else {
         Y_buffer_data_current_frame[y_index] = activation_func(
             Clip(Y_buffer_data_current_frame[y_index], clip), alpha, beta);
@@ -225,7 +225,11 @@ Status RNN<float>::Compute(OpKernelContext* ctx) const {
                        num_directions, batch_size, seq_length, hidden_size_);
   }
 
-  DumpMatrix("Y", Y_buffer_data, (int)(seq_length * num_directions * batch_size), (int)hidden_size_);
+  if (Y != nullptr)
+    DumpMatrix("Y", Y_buffer_data, (int)(seq_length * num_directions * batch_size), (int)hidden_size_);
+
+  if (Y_h != nullptr)
+    DumpMatrix("Y_h", Y_h->Data<float>(), (int)(num_directions * batch_size), (int)hidden_size_);
 
   return Status::OK();
 }
