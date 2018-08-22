@@ -87,7 +87,7 @@ TEST(TransformerTest, MemcpyTransformerTest) {
   node4->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
 
   auto status = graph.Resolve();
-  ASSERT_TRUE(status.IsOK());
+  ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   auto cpu_execution_provider = TestCPUExecutionProvider();
   KernelRegistryManager test_registry_manager;
@@ -99,7 +99,7 @@ TEST(TransformerTest, MemcpyTransformerTest) {
   EXPECT_TRUE(modified);
 
   status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   // Expect: copy of O1 from cpu to gpu
   ExpectCopy(node1, "MemcpyFromHost", node2, 0);

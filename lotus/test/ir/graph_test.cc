@@ -97,7 +97,7 @@ TEST(GraphTraversalTest, ReverseDFS) {
   outputs.push_back(&output_arg4);
   graph.AddNode("node_4", "NoOp_DFS", "node 4", inputs, outputs);
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   std::vector<const Node *> from;
   from.push_back(graph.SinkNode());
@@ -267,7 +267,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   expected_node_name_to_input_output_args["node_4"] = {inputs, outputs};
   graph.AddNode("node_4", "NoOp_Fake", "node 4", inputs, outputs);
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   EXPECT_TRUE(Model::Save(model, "graph_1.pb").IsOK());
   std::shared_ptr<Model> model2;
@@ -369,7 +369,7 @@ TEST(ResolvingGraphTest, GraphConstruction_OnlyInitializer) {
   graph.AddInitializedTensor(weight);
 
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
@@ -436,7 +436,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   auto node_4 = graph.AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
   EXPECT_NE(node_4, nullptr);
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   std::unordered_set<std::string> expected_graph_inputs = {"node_1_in_1", "node_3_in_1"};
   EXPECT_EQ(2, graph.GetInputs().size());
@@ -488,7 +488,7 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   *(t.mutable_dims()->Add()) = 3;
   node_1->AddAttribute(kConstantValue, t);
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 }
 
 void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, int64_t attr_value) {
@@ -521,7 +521,7 @@ TEST(TypeInferenceTest, TypeAttribute) {
   AddAttribute(node_1, "dtype", TensorProto_DataType_FLOAT);
   AddAttribute(node_1, "shape", {2, 3});
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 }
 
 void CheckTensorEltType(const TypeProto *ptype, TensorProto_DataType elt_type) {
@@ -547,7 +547,7 @@ TEST(TypeInferenceTest, VariadicOutput) {
   outputs.push_back(&Z);
   graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   CheckTensorEltType(Y.TypeAsProto(), TensorProto_DataType_FLOAT);
   CheckTensorEltType(Z.TypeAsProto(), TensorProto_DataType_FLOAT);
 }

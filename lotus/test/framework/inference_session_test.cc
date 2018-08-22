@@ -68,7 +68,7 @@ static void CreateMatMulModel(std::unique_ptr<LotusIR::Model>& p_model, Provider
 #endif
   }
   Status status = graph.Resolve();
-  ASSERT_TRUE(status.IsOK());
+  ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
 }
 
 void VerifyOutputs(const std::vector<MLValue>& fetches,

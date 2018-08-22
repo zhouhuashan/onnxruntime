@@ -22,7 +22,7 @@ void test_unpack_float_tensor(TensorProto_DataType type) {
   float_tensor_proto.set_raw_data(rawdata, len);
   T float_data2[4];
   auto status = TensorUtils::UnpackTensor(float_tensor_proto, float_data2, 4);
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   EXPECT_EQ(1.1f, float_data2[0]);
   EXPECT_EQ(2.2f, float_data2[1]);
   EXPECT_EQ(3.3f, float_data2[2]);
@@ -36,7 +36,7 @@ TEST(TensorParseTest, TensorUtilsTest) {
 
   bool bool_data[1];
   auto status = TensorUtils::UnpackTensor(bool_tensor_proto, bool_data, 1);
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   EXPECT_TRUE(bool_data[0]);
 
   float float_data[1];
@@ -53,7 +53,7 @@ TEST(TensorParseTest, TensorUtilsTest) {
 
   std::string string_data[2];
   status = TensorUtils::UnpackTensor(string_tensor_proto, string_data, 2);
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   EXPECT_EQ("a", string_data[0]);
   EXPECT_EQ("b", string_data[1]);
 

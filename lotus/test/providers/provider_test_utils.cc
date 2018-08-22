@@ -198,7 +198,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
         EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
       } else {
         LOGS_DEFAULT(ERROR) << "Resolve failed with status: " << status.ErrorMessage();
-        EXPECT_TRUE(status.IsOK());
+        EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
       }
     }
     if (!status.IsOK()) {
@@ -233,7 +233,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     std::stringstream s1;
     p_model->ToProto().SerializeToOstream(&s1);
     status = session_object.Load(s1);
-    EXPECT_TRUE(status.IsOK());
+    EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
     if (!status.IsOK()) {
       LOGS_DEFAULT(ERROR) << "Load failed with status: " << status.ErrorMessage();
       return;
@@ -246,7 +246,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
         EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
       } else {
         LOGS_DEFAULT(ERROR) << "Initialize failed with status: " << status.ErrorMessage();
-        EXPECT_TRUE(status.IsOK());
+        EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
       }
     }
     if (!status.IsOK()) {
@@ -268,7 +268,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
         EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
       } else {
         LOGS_DEFAULT(ERROR) << "Run failed with status: " << status.ErrorMessage();
-        EXPECT_TRUE(status.IsOK());
+        EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
       }
       return;
     }

@@ -39,7 +39,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   LotusIR::Node* node = graph.GetNode(graph.NumberOfNodes() - 1);
 
   Status status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   auto cpu_xp = CreateCPUExecutionProvider();
   auto xp_typ = cpu_xp->Type();
@@ -54,7 +54,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
   // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
   status = AllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   state.SetExecutionPlan(std::move(p_seq_exec_plan));
 
   vector<MLValue> outputs;
@@ -69,7 +69,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   TensorShape shape(std::vector<int64_t>{2, 3});
   status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
                                                  state.GetExecutionProvider(xp_typ)->GetAllocator()->Info(), shape);
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   auto tensor = frame.GetMutableValue<Tensor>(0);
   EXPECT_TRUE(tensor);
@@ -84,7 +84,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
       DataTypeImpl::GetType<float>(),
       tensor->Location(),
       shape2);
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   auto tensor2 = frame.GetValue<Tensor>(1);
   EXPECT_TRUE(tensor2);
@@ -159,7 +159,7 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   graph.AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def})->SetExecutionProviderType(xp_type);
 
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   //1. prepare input
   SessionState state;
   state.SetGraph(graph);
@@ -186,7 +186,7 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
   // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
   status = AllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   state.SetExecutionPlan(std::move(p_seq_exec_plan));
 
@@ -200,23 +200,23 @@ TEST(ExecutionFrameTest, MemPatternTest) {
                                                     DataTypeImpl::GetType<float>(),
                                                     cpu_allocator->Info(),
                                                     TensorShape(std::vector<int64_t>{2, 2}));
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   status = frame.AllocateMLValueTensorSelfOwnBuffer(4,
                                                     DataTypeImpl::GetType<float>(),
                                                     cpu_allocator->Info(),
                                                     TensorShape(std::vector<int64_t>{2, 3}));
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   status = frame.AllocateMLValueTensorSelfOwnBuffer(5,
                                                     DataTypeImpl::GetType<float>(),
                                                     cpu_allocator->Info(),
                                                     TensorShape(std::vector<int64_t>{2, 3}));
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   MemoryPatternGroup pattern;
   status = frame.GeneratePatterns(&pattern);
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   EXPECT_EQ(pattern.patterns.size(), pattern.locations.size());
   EXPECT_EQ(pattern.patterns.size(), 1);

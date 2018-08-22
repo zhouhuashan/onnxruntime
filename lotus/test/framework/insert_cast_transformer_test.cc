@@ -30,7 +30,7 @@ TEST(TransformerTest, InsertCastGPUTest) {
   node3->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
 
   auto status = graph.Resolve();
-  ASSERT_TRUE(status.IsOK());
+  ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
   auto cpu_execution_provider = TestCPUExecutionProvider();
   InsertCastTransformer transformer("Test");
   transformer.AddKernelRegistry(*cpu_execution_provider->GetKernelRegistry().get());
@@ -43,7 +43,7 @@ TEST(TransformerTest, InsertCastGPUTest) {
   bool modified = true;
   EXPECT_TRUE(transformer.Apply(graph, modified).IsOK());
   status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   EXPECT_EQ(graph.NumberOfNodes(), 10);
   for (auto it = node1->InputNodesBegin(); it != node1->InputNodesEnd(); it++) {
     EXPECT_EQ((*it)->OpType(), "Cast");
@@ -90,7 +90,7 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
   node3->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
 
   auto status = graph.Resolve();
-  ASSERT_TRUE(status.IsOK());
+  ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   auto cpu_execution_provider = TestCPUExecutionProvider();
   InsertCastTransformer transformer("Test");
@@ -104,7 +104,7 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
   bool modified = true;
   EXPECT_TRUE(transformer.Apply(graph, modified).IsOK());
   status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   EXPECT_EQ(graph.NumberOfNodes(), 9);
   for (auto it = node1->InputNodesBegin(); it != node1->InputNodesEnd(); it++) {
     EXPECT_EQ((*it)->OpType(), "Cast");

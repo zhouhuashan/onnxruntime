@@ -69,7 +69,7 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   outputs.push_back(output_arg4);
   graph.AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, nullptr, kMLDomain);
   auto status = graph.Resolve();
-  EXPECT_TRUE(status.IsOK());
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   delete input_arg1;
   delete output_arg1;
