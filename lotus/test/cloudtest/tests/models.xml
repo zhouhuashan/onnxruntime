@@ -8,7 +8,7 @@
   <ResourceSpec>
     <Resource Image="2016-Datacenter" SKU="Standard_A2_v2"/>
   </ResourceSpec>
-  <Setup TimeoutMins="1">
+  <Setup TimeoutMins="20">
     <BuildFiles>
       <Copy Dest="[WorkingDirectory]\" IsRecursive="true" Src="[BuildRoot]\bin\*"/>
     </BuildFiles>
@@ -16,23 +16,14 @@
       <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\Microsoft.VC141.DebugCRT\*"/>
       <Copy Dest="[WorkingDirectory]\debug" IsRecursive="true" Src="[MyVCRT]\debug\x64\ucrtbased.dll"/>
       <Copy Dest="[WorkingDirectory]\" IsRecursive="true" Src="[MyVCRT]\vcredist_x64.exe"/>
-      <Copy Dest="[WorkingDirectory]\models" IsRecursive="true" Src="[MyVSODrop]\cntk\*"/>
+      <Copy Dest="[WorkingDirectory]\models" IsRecursive="true" Src="[MyVSODrop]\*"/>
     </DataFiles>
     <Scripts>
       <Script Path="[WorkingDirectory]\setup.bat"/>
     </Scripts>
   </Setup>  
-  <TestJob Name="LotusModelTest.Office.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
+  <TestJob Name="LotusModelTest.AllModels.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
     <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.Office.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.HTK_LSTM_Truncated_Distributed.retail" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\retail\onnx_test_runner_vstest.dll" Type="MsTest"/>
-  </TestJob>
-  <TestJob Name="LotusModelTest.HTK_LSTM_Truncated_Distributed.debug" OwnerAliases="chasun" Tags="Suite=Suite0" TimeoutMins="120" Type="SingleBox">
-    <Execution Path="[WorkingDirectory]\debug\onnx_test_runner_vstest.dll" Type="MsTest"/>
   </TestJob>
   <Cleanup TimeoutMins="1"/>
 </TestJobGroup>

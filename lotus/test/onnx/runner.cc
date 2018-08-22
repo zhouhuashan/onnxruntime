@@ -1,8 +1,5 @@
 #include "runner.h"
 
-#ifdef _MSC_VER
-#include <filesystem>
-#endif
 #include <fstream>
 #include <cmath>
 
@@ -224,12 +221,9 @@ Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_c
   return Common::Status::OK();
 }
 
-std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::Lotus::AllocatorPtr allocator) {
+std::vector<ITestCase*> LoadTests(const std::vector<path>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::Lotus::AllocatorPtr allocator) {
   std::vector<ITestCase*> tests;
-  std::vector<path> paths;
-  for (const std::string& s : input_paths) {
-    paths.push_back(s);
-  }
+  std::vector<path> paths(input_paths);
   const path ext_onnx(".onnx");
   while (!paths.empty()) {
     path node_data_root_path = paths.back();
@@ -307,7 +301,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   std::vector<MLValue> p_fetches;
   TIME_SPEC start_time, end_time;
   GetMonotonicTimeCounter(&start_time);
-  status = session->Run(run_options, feeds, output_names, & p_fetches);
+  status = session->Run(run_options, feeds, output_names, &p_fetches);
   GetMonotonicTimeCounter(&end_time);
   AccumulateTimeSpec(&spent_time_, &start_time, &end_time);
   if (!status.IsOK()) {

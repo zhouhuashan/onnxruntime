@@ -24,7 +24,7 @@ How to download sample test data from VSTS drop:
    1) Download drop app from https://aiinfra.artifacts.visualstudio.com/_apis/drop/client/exe
       Unzip the downloaded file and add lib/net45 dir to your PATH
    2) Download the test data by using this command:
-      drop get -a -s https://aiinfra.artifacts.visualstudio.com/DefaultCollection -n Lotus/testdata/onnx/model/12 -d C:\testdata
+      drop get -a -s https://aiinfra.artifacts.visualstudio.com/DefaultCollection -n Lotus/testdata/onnx/model/16 -d C:\testdata
 	  You may change C:\testdata to any directory in your disk.
    Full document: https://www.1eswiki.com/wiki/VSTS_Drop
 

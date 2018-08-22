@@ -1,6 +1,10 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <experimental/filesystem>  // C++-standard header file name
+#ifdef _MSC_VER
+#include <filesystem>
+#endif
 
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
@@ -123,7 +127,7 @@ struct DataTask {
   const size_t task_id;
 };
 
-std::vector<ITestCase*> LoadTests(const std::vector<std::string>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::Lotus::AllocatorPtr allocator);
+std::vector<ITestCase*> LoadTests(const std::vector<std::experimental::filesystem::v1::path>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::Lotus::AllocatorPtr allocator);
 //Do not run this function in the thread pool passed in
 ::Lotus::Common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count, PThreadPool tpool);
 EXECUTE_RESULT StatusCodeToExecuteResult(int input);

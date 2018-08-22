@@ -128,14 +128,14 @@ int main(int argc, char* argv[]) {
     usage();
     return -1;
   }
-  std::vector<std::string> data_dirs;
+  std::vector<path> data_dirs;
   for (int i = 0; i != argc; ++i) {
     path p(argv[i]);
     if (!is_directory(p)) {
       fprintf(stderr, "input dir %s is not a valid directoy\n", argv[i]);
       return -1;
     }
-    data_dirs.emplace_back(argv[i]);
+    data_dirs.emplace_back(p);
   }
   AllocatorPtr cpu_allocator = std::make_shared<::Lotus::CPUAllocator>();
   std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
