@@ -4,22 +4,9 @@
 #include "core/framework/execution_provider.h"
 #include "core/graph/graph_transformer.h"
 #include "core/graph/constants.h"
+#include "core/providers/provider_factories.h"
 
 namespace Lotus {
-// Information needed to construct CPU execution providers.
-struct CPUExecutionProviderInfo {
-  std::string name;
-  bool create_arena;
-
-  explicit CPUExecutionProviderInfo(const char* provider_name, bool use_arena = true)
-      : name(provider_name), create_arena(use_arena) {}
-  CPUExecutionProviderInfo()
-      : CPUExecutionProviderInfo("") {}
-};
-
-struct KernelCreateInfo;
-void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn);
-
 // Logical device representation.
 class CPUExecutionProvider : public IExecutionProvider {
  public:

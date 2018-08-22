@@ -3,16 +3,11 @@
 #include "core/graph/graph_transformer.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
+#include "core/providers/provider_factories.h"
 #include "shared_inc/cuda_utils.h"
 #include <deque>
 
 namespace Lotus {
-
-// Information needed to construct CUDA execution providers.
-struct CUDAExecutionProviderInfo {
-  std::string name;
-  int device_id = 0;
-};
 
 enum CUDAStreamType : int {
   kCudaStreamDefault = 0,
@@ -135,8 +130,5 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   void ReleasePerThreadStuffs() const;
 };
-
-struct KernelCreateInfo;
-void RegisterCudaKernels(std::function<void(KernelCreateInfo&&)> create_fn);
 
 }  // namespace Lotus

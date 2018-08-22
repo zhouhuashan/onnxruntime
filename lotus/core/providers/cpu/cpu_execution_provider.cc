@@ -380,7 +380,7 @@ void RegisterOnnxMLOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
 }
 }  // namespace ML
 
-void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
+static void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
   RegisterOnnxOperatorKernels(create_fn);
   ::Lotus::ML::RegisterOnnxMLOperatorKernels(create_fn);
 }

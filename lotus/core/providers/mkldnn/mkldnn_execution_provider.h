@@ -1,19 +1,15 @@
 #pragma once
+
+#include <memory>
+
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
 #include "core/graph/graph_transformer.h"
+#include "core/providers/provider_factories.h"
 
 namespace Lotus {
 
-struct MKLDNNExecutionProviderInfo {
-  std::string name;
-  bool create_arena;
-
-  MKLDNNExecutionProviderInfo(const char* provider_name, bool use_arena = true)
-      : name(provider_name), create_arena(use_arena) {}
-  MKLDNNExecutionProviderInfo()
-      : MKLDNNExecutionProviderInfo("") {}
-};
+using MKLDNNExecutionProviderInfo = CPUExecutionProviderInfo;
 
 // Logical device representation.
 class MKLDNNExecutionProvider : public IExecutionProvider {
