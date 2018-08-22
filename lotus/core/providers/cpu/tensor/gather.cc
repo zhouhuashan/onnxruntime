@@ -38,18 +38,22 @@ Status GatherCopyData(const Tensor* indices_tensor, const uint8_t* src_base, uin
                const TensorShape& input_data_shape, const int64_t axis) {
   const Tin* indices_data = indices_tensor->Data<Tin>();
 
-#ifdef _WIN32
+  // Check the indices first in case there's a out of bound index.
+  // We can't merge this code in the omp loop below as omp does not allow return in the loop
+  for (int64_t i = 0; i < N; ++i) {
+    Tin idx = indices_data[i];
+    if (idx < 0 || idx >= input_data_shape[axis]) {
+      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "indices element out of data bounds, idx=", idx,
+                               " data_dim=", input_data_shape[axis]);
+    }
+  }
+
 #pragma omp parallel for
-#endif
   for (int64_t batch = 0; batch < M; ++batch) {
     const int64_t src_offset_batch = batch * data_batch_bytes;
     const int64_t dst_offset_batch = batch * gathered_batch_bytes;
     for (int64_t i = 0; i < N; ++i) {
       Tin idx = indices_data[i];
-      if (idx < 0 || idx >= input_data_shape[axis]) {
-        return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "indices element out of data bounds, idx=", idx,
-                                 " data_dim=", input_data_shape[axis]);
-      }
       const int64_t src_offset = src_offset_batch + idx * block_size;
       const int64_t dst_offset = dst_offset_batch + i * block_size;
 
