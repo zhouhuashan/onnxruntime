@@ -43,12 +43,6 @@ function(AddTest)
     endif()
   endif()
 
-  # Add the define for conditionally using the framework Environment class in TestEnvironment
-  if (lotus_framework IN_LIST _UT_LIBS)
-    # message("Adding -DHAVE_FRAMEWORK_LIB for " ${_UT_TARGET})
-    target_compile_definitions(${_UT_TARGET} PUBLIC -DHAVE_FRAMEWORK_LIB)
-  endif()
-
   set(TEST_ARGS)
   if (lotus_GENERATE_TEST_REPORTS)
     # generate a report file next to the test program
@@ -62,10 +56,14 @@ function(AddTest)
     )
 endfunction(AddTest)
 
+#Do not add '${TEST_SRC_DIR}/util/include' to your include directories directly
+#Use lotus_add_include_to_target or target_link_libraries, so that compile definitions
+#can propagate correctly.
+
 file(GLOB lotus_test_utils_src
-  "${TEST_SRC_DIR}/*.h"
-  "${TEST_SRC_DIR}/*.cc"
-  )
+  "${TEST_SRC_DIR}/util/include/*.h"
+  "${TEST_SRC_DIR}/util/*.cc"
+)
 
 file(GLOB lotus_test_common_src
   "${TEST_SRC_DIR}/common/*.cc"
@@ -109,12 +107,14 @@ file(GLOB_RECURSE lotus_test_providers_src
 # the order of libraries should be maintained, with higher libraries being added first in the list
 
 set(lotus_test_common_libs
+  lotus_test_utils
   lotus_common
   gtest
   gmock
   )
 
 set(lotus_test_ir_libs
+  lotus_test_utils
   lotusIR_graph
   onnx
   onnx_proto
@@ -124,6 +124,7 @@ set(lotus_test_ir_libs
   )
 
 set(lotus_test_framework_libs
+  lotus_test_utils_for_framework
   lotus_session
   lotus_providers
   lotus_framework
@@ -151,6 +152,7 @@ else()
 endif()
 
 set(lotus_test_providers_libs
+  lotus_test_utils_for_framework
   lotus_session
   ${LOTUS_PROVIDERS_CUDA}
   ${LOTUS_PROVIDERS_MKLDNN}
@@ -164,7 +166,6 @@ set(lotus_test_providers_libs
   protobuf::libprotobuf
   gtest gmock
   )
-
 
 
 set (lotus_test_providers_dependencies ${lotus_EXTERNAL_DEPENDENCIES})
@@ -201,9 +202,28 @@ set(lotus_test_tvm_dependencies
   nnvm_compiler
   )
 
+
+
+add_library(lotus_test_utils_for_framework ${lotus_test_utils_src})
+lotus_add_include_to_target(lotus_test_utils_for_framework gtest onnx protobuf::libprotobuf)
+add_dependencies(lotus_test_utils_for_framework ${lotus_EXTERNAL_DEPENDENCIES})
+target_include_directories(lotus_test_utils_for_framework PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS})
+# Add the define for conditionally using the framework Environment class in TestEnvironment
+target_compile_definitions(lotus_test_utils_for_framework PUBLIC -DHAVE_FRAMEWORK_LIB)
+
 if (SingleUnitTestProject)
-  set(all_tests ${lotus_test_utils_src} ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
-  set(all_libs ${lotus_test_providers_libs})
+  add_library(lotus_test_utils ALIAS lotus_test_utils_for_framework)
+else()
+  add_library(lotus_test_utils ${lotus_test_utils_src})
+  lotus_add_include_to_target(lotus_test_utils gtest onnx protobuf::libprotobuf)
+  add_dependencies(lotus_test_utils ${lotus_EXTERNAL_DEPENDENCIES})
+  target_include_directories(lotus_test_utils PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS})
+endif()
+
+
+if (SingleUnitTestProject)
+  set(all_tests ${lotus_test_common_src} ${lotus_test_ir_src} ${lotus_test_framework_src} ${lotus_test_providers_src})
+  set(all_libs lotus_test_utils ${lotus_test_providers_libs})
   set(all_dependencies ${lotus_test_providers_dependencies} )
 
   if (lotus_USE_TVM)
@@ -227,9 +247,9 @@ if (SingleUnitTestProject)
   AddTest(
     TARGET lotus_test_all
     SOURCES ${all_tests}
-    LIBS ${all_libs}
+    LIBS ${all_libs} ${lotus_test_common_libs}
     DEPENDS ${all_dependencies}
-    )
+  )
 
   # the default logger tests conflict with the need to have an overall default logger
   # so skip in this type of
@@ -239,31 +259,32 @@ if (SingleUnitTestProject)
 else()
   AddTest(
     TARGET lotus_test_common
-    SOURCES ${lotus_test_utils_src} ${lotus_test_common_src}
-    LIBS ${lotus_EXTERNAL_DEPENDENCIES}
-    )
+    SOURCES ${lotus_test_common_src}
+    LIBS ${lotus_test_common_libs}
+    DEPENDS ${lotus_EXTERNAL_DEPENDENCIES}
+  )
 
   AddTest(
     TARGET lotus_test_ir
-    SOURCES ${lotus_test_utils_src} ${lotus_test_ir_src}
+    SOURCES ${lotus_test_ir_src}
     LIBS ${lotus_test_ir_libs}
     DEPENDS ${lotus_EXTERNAL_DEPENDENCIES}
-    )
+  )
 
   AddTest(
     TARGET lotus_test_framework
-    SOURCES ${lotus_test_utils_src} ${lotus_test_framework_src}
+    SOURCES ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
     # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
     DEPENDS ${lotus_test_providers_dependencies}
-    )
+  )
 
   AddTest(
     TARGET lotus_test_providers
-    SOURCES ${lotus_test_utils_src} ${lotus_test_providers_src}
+    SOURCES ${lotus_test_providers_src}
     LIBS ${lotus_test_providers_libs}
     DEPENDS ${lotus_test_providers_dependencies}
-    )
+  )
 
   set(test_data_target lotus_test_ir)
 endif()  # SingleUnitTestProject
@@ -313,7 +334,7 @@ else()
 endif()
 
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
-lotus_add_include_to_target(onnx_test_runner_common onnx protobuf::libprotobuf)
+lotus_add_include_to_target(onnx_test_runner_common lotus_test_utils onnx protobuf::libprotobuf)
 add_dependencies(onnx_test_runner_common ${lotus_EXTERNAL_DEPENDENCIES})
 target_include_directories(onnx_test_runner_common PRIVATE ${eigen_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
@@ -325,7 +346,7 @@ if(lotus_USE_CUDA)
 endif()
 
 set(onnx_test_libs
-  ${FS_STDLIB}
+  lotus_test_utils
   lotus_session
   ${onnx_cuda_test_libs}
   lotus_providers
@@ -337,8 +358,10 @@ set(onnx_test_libs
   lotus_common
   protobuf::libprotobuf
   ${MLAS_LIBRARY}
+  ${FS_STDLIB}
   ${CMAKE_THREAD_LIBS_INIT}
-  )
+)
+
 
 if(lotus_USE_MKLDNN)
   list(APPEND onnx_test_libs lotus_providers_mkldnn)

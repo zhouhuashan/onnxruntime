@@ -15,13 +15,15 @@
 #include <string>
 #include <vector>
 
+#include "core/graph/onnx_protobuf.h"
 #include "core/common/logging/sinks/clog_sink.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/environment.h"
-#include "core/framework/compare_mlvalue.h"
 #include "core/framework/data_types.h"
 #include "core/session/inference_session.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
+
+#include "test/compare_mlvalue.h"
 
 #if !defined(_MSC_VER)
 #include <sys/stat.h>

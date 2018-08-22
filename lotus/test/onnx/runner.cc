@@ -6,7 +6,6 @@
 #include <core/common/logging/logging.h>
 #include <core/graph/constants.h>
 #include <core/platform/env.h>
-#include <core/framework/compare_mlvalue.h>
 #include <core/framework/tensorprotoutils.h>
 #include <core/providers/cpu/cpu_execution_provider.h>
 #ifdef _WIN32
@@ -15,6 +14,7 @@
 #include <pthread.h>
 #include <unsupported/Eigen/CXX11/ThreadPool>
 #endif
+#include <test/compare_mlvalue.h>
 #include "TestCase.h"
 #include "FixedCountFinishCallback.h"
 using std::experimental::filesystem::v1::directory_iterator;
