@@ -193,7 +193,7 @@ class PlannerTest : public ::testing::Test {
   }
 
   void BindKernel(LotusIR::Node* p_node, ::Lotus::KernelDef& kernel_def) {
-    auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, provider_.get(), state_);
+    auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, *provider_.get(), state_);
     auto dummy = std::make_unique<DummyOpKernel>(*info);
     op_kernel_infos_.push_back(std::move(info));
     state_.AddKernel(p_node->Index(), std::move(dummy));

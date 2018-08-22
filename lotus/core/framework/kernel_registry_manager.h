@@ -6,11 +6,13 @@
 #include "core/graph/graph.h"
 
 namespace Lotus {
+struct KernelCreateInfo;
+class ExecutionProviders;
+class IExecutionProvider;
 class KernelRegistry;
 class OpKernel;
-struct KernelCreateInfo;
-class IExecutionProvider;
 class SessionState;
+
 enum class KernelRegistryPriority {
   HighPriority,
   LowPriority
@@ -23,12 +25,17 @@ enum class KernelRegistryPriority {
 // The 1st and 2nd ones are shared across sessions.
 class KernelRegistryManager {
  public:
+  KernelRegistryManager() = default;
+
+  void RegisterKernels(const ExecutionProviders& execution_providers,
+                       KernelRegistryPriority priority = KernelRegistryPriority::LowPriority);
+
   void RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry, KernelRegistryPriority priority);
 
   Status CreateKernel(const LotusIR::Node& node,
-                      const IExecutionProvider* execution_provider,
+                      const IExecutionProvider& execution_provider,
                       const SessionState& session_state,
-                      /*out*/ std::unique_ptr<OpKernel>* op_kernel) const;
+                      /*out*/ std::unique_ptr<OpKernel>& op_kernel) const;
 
   Status SearchKernelRegistry(const LotusIR::Node& node,
                               /*out*/ const KernelCreateInfo** kernel_create_info) const;
@@ -43,6 +50,8 @@ class KernelRegistryManager {
   }
 
  private:
+  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(KernelRegistryManager);
+
   // This list stores all kernel registries shared across sessions, including common ones and customized ones.
   std::list<std::shared_ptr<KernelRegistry>> kernel_registries_;
 };

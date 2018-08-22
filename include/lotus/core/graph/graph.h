@@ -704,6 +704,9 @@ class Graph : public GraphBase {
 
   ILotusOpSchemaCollectionPtr GetSchemaRegistry() const;
 
+  // Construct a Graph instance for a subgraph. Inherits some properties from the parent graph.
+  Graph(const Graph& model_graph, onnx::GraphProto& subgraph_proto);
+
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
 

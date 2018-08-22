@@ -48,7 +48,7 @@ Common::Status IExecutionProvider::CopyTensor(const Tensor &src,
   return CopyTensor(src, dst);
 }
 
-Common::Status IExecutionProvider::Sync() { return Status::OK(); };
+Common::Status IExecutionProvider::Sync() const { return Status::OK(); };
 
 Common::Status IExecutionProvider::OnRunStart() { return Status::OK(); }
 

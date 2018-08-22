@@ -23,4 +23,8 @@ const AllocatorInfo& CPUAllocator::Info() const {
   return cpuAllocatorInfo;
 }
 
+std::ostream& operator<<(std::ostream& out, const AllocatorInfo& info) {
+  return (out << info.ToString());
+}
+
 }  // namespace Lotus

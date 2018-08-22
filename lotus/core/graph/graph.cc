@@ -472,6 +472,10 @@ Graph::Graph(GraphProto* graph_proto,
   }
 }
 
+Graph::Graph(const Graph& model_graph, onnx::GraphProto& subgraph_proto)
+    : Graph(&subgraph_proto, model_graph.DomainToVersionMap(), model_graph.IrVersion(), model_graph.schema_registry_) {
+}
+
 Status GraphBase::VerifyNoDuplicateName(/*in*/ const std::unordered_set<std::string>& inputs_and_initializers,
                                         /*out*/ std::unordered_map<std::string, Node*>& output_args,
                                         /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index) {
@@ -811,9 +815,9 @@ class InferenceContextImpl : public onnx::InferenceContext {
   }
 
   const TensorProto* getInputData(size_t) const override {
-	// TODO: this interface should be implemented with initializers
-	// so that more accurate shape inference could be done.
-	return nullptr;
+    // TODO: this interface should be implemented with initializers
+    // so that more accurate shape inference could be done.
+    return nullptr;
   }
 
  private:

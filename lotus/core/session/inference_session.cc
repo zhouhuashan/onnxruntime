@@ -1058,7 +1058,7 @@ class InferenceSession::Impl {
     auto execution_plan = session_state_.GetExecutionPlan();
     LOTUS_ENFORCE(execution_plan);  // execution plan must be ready.
 
-    MLValuePatternPlanner planner(session_state_);
+    MLValuePatternPlanner planner(*execution_plan);
     //1. first plan the memory
     const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
     for (const auto& entry : initialized_tensor_set) {
@@ -1181,7 +1181,7 @@ class InferenceSession::Impl {
       }
       // construct and save the kernels
       std::unique_ptr<OpKernel> p_op_kernel;
-      LOTUS_RETURN_IF_ERROR(CreateOpKernel(node, &p_op_kernel));
+      LOTUS_RETURN_IF_ERROR(CreateOpKernel(node, p_op_kernel));
       session_state_.AddKernel(node.Index(), std::move(p_op_kernel));
     }
 
@@ -1189,17 +1189,18 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  Common::Status CreateOpKernel(const LotusIR::Node& node, std::unique_ptr<OpKernel>* p_op_kernel) {
+  Common::Status CreateOpKernel(const LotusIR::Node& node, std::unique_ptr<OpKernel>& p_op_kernel) {
     LotusIR::ProviderType exec_provider_name = node.GetExecutionProviderType();
-    if (exec_provider_name.empty() || !session_state_.GetExecutionProvider(exec_provider_name)) {
+    IExecutionProvider* exec_provider = nullptr;
+    if (exec_provider_name.empty() ||
+        (exec_provider = session_state_.GetExecutionProvider(exec_provider_name)) == nullptr) {
       std::ostringstream error_msg;
       error_msg << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";
       LOGS(*session_logger_, ERROR) << error_msg.str();
       return Common::Status(Common::LOTUS, Common::FAIL, error_msg.str());
     }
 
-    auto exec_provider = session_state_.GetExecutionProvider(exec_provider_name);
-    Common::Status status = CreateOpKernelInternal(node, exec_provider, p_op_kernel);
+    Common::Status status = CreateOpKernelInternal(node, *exec_provider, p_op_kernel);
     if (!status.IsOK()) {
       LOGS(*session_logger_, ERROR) << "Kernel creation failed for node: "
                                     << node.Name() << " with error: " << status.ErrorMessage();
@@ -1207,7 +1208,7 @@ class InferenceSession::Impl {
     return status;
   }
 
-  Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider* exec_provider, std::unique_ptr<OpKernel>* p_op_kernel) {
+  Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider& exec_provider, std::unique_ptr<OpKernel>& p_op_kernel) {
     return session_state_.GetKernelRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
   }
 

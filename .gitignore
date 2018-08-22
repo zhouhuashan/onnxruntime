@@ -17,3 +17,5 @@ gen
 TestResults/
 .idea/
 lotus.egg-info
+.vscode/
+*.code-workspace

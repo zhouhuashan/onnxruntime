@@ -7,14 +7,14 @@
 #include <mutex>
 
 namespace Lotus {
-class SessionSessionState;
+struct SequentialExecutionPlan;
 
 class MLValuePatternPlanner {
  public:
-  explicit MLValuePatternPlanner(const SessionState& session_state);
+  explicit MLValuePatternPlanner(const SequentialExecutionPlan& execution_plan);
 
   Common::Status TraceAllocation(int ml_value_idx, size_t size) {
-    auto location = execution_planner_->allocation_plan[ml_value_idx].location;
+    auto location = execution_planner_.allocation_plan[ml_value_idx].location;
     auto it = planner_map_.find(location);
     if (it == planner_map_.end()) {
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT);
@@ -26,7 +26,7 @@ class MLValuePatternPlanner {
   }
 
   Common::Status TraceFree(int ml_value_index) {
-    auto location = execution_planner_->allocation_plan[ml_value_index].location;
+    auto location = execution_planner_.allocation_plan[ml_value_index].location;
     auto it = planner_map_.find(location);
     if (it == planner_map_.end()) {
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT);
@@ -56,6 +56,6 @@ class MLValuePatternPlanner {
   mutable std::mutex lock_;
   std::map<AllocatorInfo, MemPatternPlanner*> planner_map_;
   std::vector<std::unique_ptr<MemPatternPlanner> > pattern_planners_;
-  const SequentialExecutionPlan* execution_planner_;
+  const SequentialExecutionPlan& execution_planner_;
 };
 }  // namespace Lotus

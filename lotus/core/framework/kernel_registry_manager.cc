@@ -1,14 +1,15 @@
 #include "core/framework/kernel_registry_manager.h"
 #include "core/framework/kernel_registry.h"
 #include "core/framework/customregistry.h"
+#include "core/framework/execution_providers.h"
 
 using namespace onnx;
 using namespace ::Lotus::Common;
 namespace Lotus {
 Status KernelRegistryManager::CreateKernel(const LotusIR::Node& node,
-                                           const IExecutionProvider* execution_provider,
+                                           const IExecutionProvider& execution_provider,
                                            const SessionState& session_state,
-                                           /*out*/ std::unique_ptr<OpKernel>* op_kernel) const {
+                                           /*out*/ std::unique_ptr<OpKernel>& op_kernel) const {
   if (kernel_registries_.empty()) {
     return Status(LOTUS, FAIL, "Kernel not found.");
   }
@@ -22,6 +23,12 @@ Status KernelRegistryManager::CreateKernel(const LotusIR::Node& node,
   }
 
   return status;
+}
+
+void KernelRegistryManager::RegisterKernels(const ExecutionProviders& execution_providers,
+                                            KernelRegistryPriority priority) {
+  for (auto& provider : execution_providers)
+    RegisterKernelRegistry(provider->GetKernelRegistry(), priority);
 }
 
 void KernelRegistryManager::RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry,

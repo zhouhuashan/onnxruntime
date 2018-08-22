@@ -1,12 +1,12 @@
 #include <set>
 #include "core/framework/ml_value_patterns_planner.h"
-#include "core/framework/session_state.h"
+#include "core/framework/sequential_execution_plan.h"
 
 namespace Lotus {
-MLValuePatternPlanner::MLValuePatternPlanner(const SessionState& session_state) {
-  execution_planner_ = session_state.GetExecutionPlan();
+MLValuePatternPlanner::MLValuePatternPlanner(const SequentialExecutionPlan& execution_plan)
+    : execution_planner_{execution_plan} {
   std::set<AllocatorInfo> locations;
-  for (auto& alloc_plan : execution_planner_->allocation_plan) {
+  for (auto& alloc_plan : execution_planner_.allocation_plan) {
     if (locations.find(alloc_plan.location) == locations.end())
       locations.insert(alloc_plan.location);
   }

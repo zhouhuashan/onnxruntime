@@ -72,7 +72,7 @@ public:
   // Blocks until the device has completed all preceding requested tasks.
   // Currently this is primarily used by the IOBinding object to ensure that all
   // inputs have been copied to the device before execution begins.
-  virtual Common::Status Sync();
+  virtual Common::Status Sync() const;
 
   // Called when InferenceSession::Run started
   // NOTE that due to async execution in provider, the actual work of previous

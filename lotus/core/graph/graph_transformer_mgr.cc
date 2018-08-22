@@ -4,7 +4,7 @@ using namespace ::Lotus::Common;
 
 namespace LotusIR {
 
-Status GraphTransformerManager::ApplyAll(Graph& graph) {
+Status GraphTransformerManager::ApplyAll(Graph& graph) const {
   bool changed = false;
   for (unsigned step = 0; step < steps_; ++step) {
     for (auto& transformer : transformers_) {

@@ -1,10 +1,15 @@
 #include <iostream>
+
+#include "core/framework/execution_providers.h"
+#include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 #include "core/graph/model.h"
 #include "core/graph/op.h"
-#include "core/framework/op_kernel.h"
+#include "core/providers/cpu/cpu_execution_provider.h"
+
 #include "gtest/gtest.h"
+
 using namespace onnx;
 using namespace std;
 
@@ -39,7 +44,9 @@ TEST(SessionStateTest, AddGetKernelTest) {
   LotusIR::Node* p_node = graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   KernelDef kernel_def;
-  OpKernelInfo p_info(*p_node, kernel_def, nullptr, s);
+  CPUExecutionProvider execution_provider{CPUExecutionProviderInfo{"CPUExecutionProvider"}};
+
+  OpKernelInfo p_info(*p_node, kernel_def, execution_provider, s);
   unique_ptr<TestOpKernel> p_kernel;
   p_kernel.reset(new TestOpKernel(p_info));
   size_t orig_num_outputs = p_kernel->Node().OutputDefs().size();

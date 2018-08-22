@@ -4,11 +4,14 @@
 #include "core/graph/onnx_protobuf.h"
 #include "core/inc/op_kernel_author.h"
 #include "core/common/logging/logging.h"
+#include "core/framework/op_kernel.h"
 #include "core/framework/tensorutils.h"
 #include "core/framework/tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
+
 using namespace onnx;
 using namespace ::Lotus::Common;
+
 namespace Lotus {
 namespace Utils {
 std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tensor_proto) {
@@ -165,7 +168,7 @@ size_t GetTensorSize(const TensorShape& tensor_shape) {
 
 #define LOTUS_CASE_PROTO_TRACE(X, Y)                         \
   case onnx::TensorProto_DataType::TensorProto_DataType_##X: \
-    size = GetTensorSize<Y>(tensor_shape);               \
+    size = GetTensorSize<Y>(tensor_shape);                   \
     break;
 
 Common::Status TraceTensorAllocFromTensorProto(int mlvalue_index, const onnx::TensorProto& tensor_proto, MLValuePatternPlanner* planner) {

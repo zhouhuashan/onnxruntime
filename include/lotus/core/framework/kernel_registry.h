@@ -18,9 +18,9 @@ class KernelRegistry {
   // itself.
   // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
   Status CreateKernel(const LotusIR::Node& node,
-                      const IExecutionProvider* execution_provider,
+                      const IExecutionProvider& execution_provider,
                       const SessionState& session_state,
-                      std::unique_ptr<OpKernel>* op_kernel) const;
+                      std::unique_ptr<OpKernel>& op_kernel) const;
 
   Status SearchKernelRegistry(const LotusIR::Node& node,
                               /*out*/ const KernelCreateInfo** kernel_create_info) const;

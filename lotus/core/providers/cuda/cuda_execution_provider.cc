@@ -125,7 +125,7 @@ AllocatorPtr CUDAExecutionProvider::GetAllocator(MemType mem_type) const {
   }
 }
 
-Status CUDAExecutionProvider::Sync() {
+Status CUDAExecutionProvider::Sync() const {
   CUDA_RETURN_IF_ERROR(cudaDeviceSynchronize());
   return Status::OK();
 }

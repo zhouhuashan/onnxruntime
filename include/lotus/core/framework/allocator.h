@@ -48,7 +48,7 @@ struct AllocatorInfo {
         type(type) {}
 
   inline bool operator==(const AllocatorInfo& other) const {
-    return name == other.name && mem_type == other.mem_type && type == other.type && id == other.id;
+      return mem_type == other.mem_type && type == other.type && id == other.id && name == other.name;
   }
 
   // To make AllocatorInfo become a valid key in std map
@@ -65,14 +65,17 @@ struct AllocatorInfo {
 
   inline std::string ToString() const {
     std::ostringstream ostr;
-    ostr << "AllocatorInfo: "
-         << " name: " << name
-         << " id: " << id
-         << " mem_type: " << mem_type
-         << " type: " << type;
+    ostr << "AllocatorInfo: ["
+         << " name:" << name
+         << " id:" << id
+         << " mem_type:" << mem_type
+         << " type:" << type
+         << "]";
     return ostr.str();
   }
 };
+
+std::ostream& operator<<(std::ostream& out, const AllocatorInfo& info);
 
 template <typename T>
 using IAllocatorUniquePtr = std::unique_ptr<T, std::function<void(T*)>>;

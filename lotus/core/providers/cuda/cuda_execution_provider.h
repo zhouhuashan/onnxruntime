@@ -28,7 +28,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return LotusIR::kCudaExecutionProvider;
   }
 
-  Status Sync() override;
+  Status Sync() const override;
 
   Status OnRunStart() override;
 

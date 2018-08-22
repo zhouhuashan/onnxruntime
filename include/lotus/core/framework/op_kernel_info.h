@@ -6,6 +6,7 @@
 #include "core/framework/op_node_proto_helper.h"
 #include "core/graph/graph.h"
 #include "gsl/span"
+#include "gsl/gsl_util"
 
 namespace Lotus {
 
@@ -18,7 +19,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
  public:
   explicit OpKernelInfo(const LotusIR::Node& node,
                         const KernelDef& kernel_def,
-                        const IExecutionProvider* execution_provider,
+                        const IExecutionProvider& execution_provider,
                         const SessionState& session_state);
 
   OpKernelInfo(const OpKernelInfo& other);
@@ -41,7 +42,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
   const KernelDef& kernel_def_;
   // For non cpu/cuda case, this pointer should be set so that function kernel
   // will delegate kernel compute call to <execution_provider> compute call.
-  const ::Lotus::IExecutionProvider* execution_provider_;
+  gsl::not_null<const ::Lotus::IExecutionProvider*> execution_provider_; 
   ProtoHelperNodeContext proto_helper_context_;
   const SessionState& session_state_;
 };

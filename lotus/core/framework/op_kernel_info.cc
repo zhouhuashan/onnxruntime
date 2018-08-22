@@ -5,17 +5,17 @@ namespace Lotus {
 
 OpKernelInfo::OpKernelInfo(const LotusIR::Node& node,
                            const KernelDef& kernel_def,
-                           const IExecutionProvider* execution_provider,
+                           const IExecutionProvider& execution_provider,
                            const SessionState& session_state)
     : OpNodeProtoHelper(&proto_helper_context_),
       proto_helper_context_(node),
       node_(node),
       kernel_def_(kernel_def),
-      execution_provider_(execution_provider),
+      execution_provider_(&execution_provider),
       session_state_(session_state) {}
 
 OpKernelInfo::OpKernelInfo(const OpKernelInfo& other)
-    : OpKernelInfo(other.node_, other.kernel_def_, other.execution_provider_, other.session_state_) {}
+    : OpKernelInfo(other.node_, other.kernel_def_, *other.execution_provider_, other.session_state_) {}
 
 const AllocatorInfo& OpKernelInfo::GetAllocatorInfo(MemType mem_type) const {
   return execution_provider_->GetAllocatorMap().at(mem_type)->Info();

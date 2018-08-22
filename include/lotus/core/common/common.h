@@ -38,11 +38,11 @@
 
 namespace Lotus {
 
-using TimePoint = std::chrono::high_resolution_clock::time_point;
+    using TimePoint = std::chrono::high_resolution_clock::time_point;
 
-// Using statements for common classes that we refer to in lotus very often.
-// TODO(Task:137) Remove 'using' statements from header files
-using Common::Status;
+    // Using statements for common classes that we refer to in lotus very often.
+    // TODO(Task:137) Remove 'using' statements from header files
+    using Common::Status;
 
 #ifdef _WIN32
 #define UNUSED_PARAMETER(x) (x)
@@ -56,6 +56,10 @@ using Common::Status;
 #else
 #define LOTUS_ATTRIBUTE_UNUSED
 #endif
+
+// macro to explicitly ignore the return value from a function call so Code Analysis doesn't complain
+#define IGNORE_RETURN_VALUE(fn) \
+    static_cast<void>(fn)
 
 std::vector<std::string> GetStackTrace();
 

@@ -19,7 +19,7 @@ class GraphTransformerManager {
 
   // Apply the list of graph transformers registered on the specified graph
   // up to the given number of steps.
-  ::Lotus::Common::Status ApplyAll(Graph& graph);
+  ::Lotus::Common::Status ApplyAll(Graph& graph) const;
 
  private:
   GraphTransformerManager() = default;
