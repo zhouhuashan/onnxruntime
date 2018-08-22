@@ -4,7 +4,6 @@
 #include "core/common/logging/sinks/clog_sink.h"
 #include "core/framework/environment.h"
 #include "core/framework/ml_value.h"
-#include <assert.h>
 
 using namespace std;
 using namespace Lotus;
@@ -66,12 +65,21 @@ void RunSession(InferenceSession& session_object,
     std::cout << "error in Run() " << st.ErrorMessage() << std::endl;
     exit(1);
   }
-  assert(1 == fetches.size());
+  if (1 != fetches.size()) {
+    std::cout << "output sizes don't match: 1 != " << fetches.size() << std::endl;
+    exit(1);
+  }
   auto& rtensor = fetches.front().Get<Tensor>();
   TensorShape expected_shape(dims_y);
-  assert(expected_shape == rtensor.Shape());
+  if (expected_shape != rtensor.Shape()) {
+    std::cout << "shapes don't match: expected_shape " << expected_shape << " != rtensor.Shape() " << rtensor.Shape() << std::endl;
+    exit(1);
+  }
   const std::vector<float> found(rtensor.Data<float>(), rtensor.Data<float>() + expected_shape.Size());
-  assert(values_y == found);
+  if (values_y != found) {
+    std::cout << "outputs don't match" << std::endl;
+    exit(1);
+  }
   cout << "Run() succeeded\n";
 }
 

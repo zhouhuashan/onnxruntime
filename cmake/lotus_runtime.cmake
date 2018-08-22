@@ -1,4 +1,6 @@
-add_library(lotus_runtime SHARED)
+# have to add an empty source file to satisfy cmake when building a shared lib
+# from archives only
+add_library(lotus_runtime SHARED ${LOTUS_ROOT}/core/framework/empty.cc)
 set(BEGIN_WHOLE_ARCHIVE -Wl,--whole-archive)
 set(END_WHOLE_ARCHIVE -Wl,--no-whole-archive)
 
