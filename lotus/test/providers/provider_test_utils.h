@@ -128,7 +128,7 @@ const VectorOfMapTypeProto<TKey, TVal> s_vec_map_type_proto;
 // See current usage for an example, should be self explanatory
 struct OpTester {
   OpTester(const char* op, int opset_version = 7, const char* domain = LotusIR::kOnnxDomain)
-	  : op_(op), opset_version_(opset_version), domain_(domain) {}
+	  : op_(op), domain_(domain), opset_version_(opset_version) {}
   ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
