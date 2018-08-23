@@ -19,3 +19,7 @@ TestResults/
 lotus.egg-info
 .vscode/
 *.code-workspace
+__pycache__
+lotus_profile*.json
+/docs_python/*.md
+/docs_python/auto_examples/*

@@ -20,6 +20,9 @@ else:
 
 data = [path.join('python', x) for x in libs if path.isfile(path.join('lotus', 'python', x))]
 
+examples_names = ["mul_1.pb"]
+examples = [path.join('python', 'datasets', x) for x in examples_names]
+
 setup(
     name='lotus',
     version='0.1.4',
@@ -28,9 +31,9 @@ setup(
     author='Lotus team',
     author_email='LotusTeam@microsoft.com',
     cmdclass={'bdist_wheel': bdist_wheel},
-    packages=['lotus', 'lotus.python', 'lotus.python.tools'],
+    packages=['lotus', 'lotus.python', 'lotus.python.tools', 'lotus.python.datasets'],
     package_data= {
-        'lotus': data,
+        'lotus': data + examples,
     },
     entry_points= {
         'console_scripts': [

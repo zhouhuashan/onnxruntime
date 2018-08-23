@@ -85,6 +85,12 @@ file(GLOB lotus_python_test_srcs
 file(GLOB lotus_python_tools_srcs
     "${LOTUS_ROOT}/python/tools/*.py"
 )
+file(GLOB lotus_python_datasets_srcs
+    "${LOTUS_ROOT}/python/datasets/*.py"
+)
+file(GLOB lotus_python_datasets_data
+    "${LOTUS_ROOT}/python/datasets/*.pb"
+)
 
 # adjust based on what target/s lotus_unittests.cmake created
 if (SingleUnitTestProject)
@@ -96,6 +102,7 @@ endif()
 add_custom_command(
   TARGET lotus_pybind11_state POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/tools
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/datasets
   COMMAND ${CMAKE_COMMAND} -E copy
       ${LOTUS_ROOT}/__init__.py
       $<TARGET_FILE_DIR:${test_data_target}>/lotus/
@@ -111,6 +118,12 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy
       $<TARGET_FILE:lotus_pybind11_state>
       $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${lotus_python_datasets_srcs}
+      $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/datasets/
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${lotus_python_datasets_data}
+      $<TARGET_FILE_DIR:${test_data_target}>/lotus/python/datasets/
 )
 
 if (lotus_USE_MKLDNN)
