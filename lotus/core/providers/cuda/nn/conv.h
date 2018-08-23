@@ -9,26 +9,6 @@
 namespace Lotus {
 namespace Cuda {
 
-template <typename T>
-class Conv : public CudaKernel, public ConvBase {
- public:
-  Conv(const OpKernelInfo& info) : CudaKernel(info), ConvBase(info) {
-    auto pads_size = pads_.size();
-    LOTUS_ENFORCE(pads_size % 2 == 0);
-    auto rank = pads_size / 2;
-    for (size_t i = 0; i < rank; i++) {
-      LOTUS_ENFORCE(pads_[i] == pads_[i + rank], "cudnn only supports symmetric padding");
-    }
-  }
-
-  Status ComputeInternal(OpKernelContext* context) const override;
-
- private:
-  // cudnn algorithm search is slow, so cache it with input shape
-  // the map is mutable because Compute is const
-  mutable std::map<std::vector<int64_t>, cudnnConvolutionFwdAlgo_t> algo_cache_;
-};
-
 class CudnnFilterDescriptor final {
  public:
   CudnnFilterDescriptor();
@@ -58,6 +38,43 @@ class CudnnConvolutionDescriptor final {
 
  private:
   cudnnConvolutionDescriptor_t desc_;
+};
+
+// cached cudnn descriptors
+template <typename AlgoType>
+struct CudnnConvState {
+  // if x/w dims changed, update algo and cudnnTensors
+  std::vector<int64_t> last_x_dims;
+  std::vector<int64_t> last_w_dims;
+
+  // these would be recomputed if x/w dims change
+  std::vector<int64_t> y_dims;
+  bool found_algo = false;
+  size_t workspace_bytes = 32 * 1024 * 1024;  // initial workspace for algo search
+  AlgoType algo;
+  CudnnTensor x_tensor;
+  CudnnFilterDescriptor filter_desc;
+  CudnnTensor b_tensor;
+  CudnnTensor y_tensor;
+  CudnnConvolutionDescriptor conv_desc;
+};
+
+template <typename T>
+class Conv : public CudaKernel, public ConvBase {
+ public:
+  Conv(const OpKernelInfo& info) : CudaKernel(info), ConvBase(info) {
+    auto pads_size = pads_.size();
+    LOTUS_ENFORCE(pads_size % 2 == 0);
+    auto rank = pads_size / 2;
+    for (size_t i = 0; i < rank; i++) {
+      LOTUS_ENFORCE(pads_[i] == pads_[i + rank], "cudnn only supports symmetric padding");
+    }
+  }
+
+  Status ComputeInternal(OpKernelContext* context) const override;
+
+ private:
+  mutable CudnnConvState<cudnnConvolutionFwdAlgo_t> s_;
 };
 
 }  // namespace Cuda
