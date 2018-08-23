@@ -134,8 +134,7 @@ class InferenceSession {
   /**
     * Register a custom registry for operator schema and kernels.  If you've one to register, 
     * call this before invoking Initialize().
-    * The order of invocation indicates the preference order as well. In other words call this method on your
-    * most preferred registry first followed by the less preferred ones.
+    * The order of invocation indicates the reversed preference order. In other words register your most preferred registry at the end.
     * Calling this API is optional.
     * @return OK if success.
     */
