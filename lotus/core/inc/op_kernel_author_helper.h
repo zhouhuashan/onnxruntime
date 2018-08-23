@@ -256,7 +256,7 @@ class MLOperatorAttributes {
 
 class MLOpKernelInfo : public MLOperatorAttributes {
  public:
-  MLOpKernelInfo(const IMLOpKernelInfo* impl) : impl_(impl), MLOperatorAttributes(impl) {}
+  MLOpKernelInfo(const IMLOpKernelInfo* impl) : MLOperatorAttributes(impl), impl_(impl) {}
 
   // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
   const IMLOpKernelInfo* GetInterface() const noexcept {
