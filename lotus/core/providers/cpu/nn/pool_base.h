@@ -34,7 +34,7 @@ class PoolBase {
         count_include_pad_ = (temp != 0);
       }
 
-      for (int dim = 0; dim < kernel_shape_.size(); ++dim) {
+      for (size_t dim = 0; dim < kernel_shape_.size(); ++dim) {
         LOTUS_ENFORCE(kernel_shape_[dim] > 0);
         LOTUS_ENFORCE(pads_[dim] < kernel_shape_[dim] && pads_[dim + kernel_shape_.size()] < kernel_shape_[dim],
                       "Pad should be smaller than kernel.");
@@ -62,10 +62,11 @@ class PoolBase {
   inline void InferOutputSize(const std::vector<int64_t>& input_dims,
                               std::vector<int64_t>* output_dims,
                               std::vector<int64_t>* pads) const {
+    LOTUS_ENFORCE(input_dims.size() >= 2);
     if (global_pooling_) {
       output_dims->assign(input_dims.size() - 2, 1);
     } else {
-      for (int dim = 0; dim < input_dims.size() - 2; ++dim) {
+      for (size_t dim = 0; dim < input_dims.size() - 2; ++dim) {
         int64_t dim_size = 0;
         ComputeSizeAndPad(static_cast<int>(input_dims[dim + 2]),
                           strides_[dim],
