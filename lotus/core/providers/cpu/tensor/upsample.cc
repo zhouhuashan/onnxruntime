@@ -1,4 +1,6 @@
 #include "core/providers/cpu/tensor/upsample.h"
+#include <math.h>  //for fabs
+
 using namespace ::Lotus::Common;
 using namespace std;
 namespace Lotus {
@@ -146,8 +148,8 @@ void upsampleBilinear(
         float in_y = std::min(y / height_scale, static_cast<float>(input_height - 1));
         const int64_t in_y1 = std::min(static_cast<int64_t>(in_y), input_height - 1);
         const int64_t in_y2 = std::min(in_y1 + 1, input_height - 1);
-        float dy1 = std::abs(in_y - in_y1);
-        float dy2 = std::abs(in_y - in_y2);
+        float dy1 = fabs(in_y - in_y1);
+        float dy2 = fabs(in_y - in_y2);
         if (in_y1 == in_y2) {
           dy1 = 0.5f;
           dy2 = 0.5f;

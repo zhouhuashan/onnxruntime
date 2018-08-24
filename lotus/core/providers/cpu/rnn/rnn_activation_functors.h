@@ -62,8 +62,16 @@ inline T Elu(T x, T alpha, T beta RNN_UNUSED_PARAMETER) {
 }
 
 template <typename T>
-inline T Softsign(T x, T alpha RNN_UNUSED_PARAMETER, T beta RNN_UNUSED_PARAMETER) {
-  return x / (1 + abs(x));
+inline T Softsign(T x, T alpha, T beta);
+
+template <>
+inline float Softsign<float>(float x, float alpha LOTUS_ATTRIBUTE_UNUSED, float beta LOTUS_ATTRIBUTE_UNUSED) {
+  return x / (1 + fabs(x));
+}
+
+template <>
+inline double Softsign<double>(double x, double alpha LOTUS_ATTRIBUTE_UNUSED, double beta LOTUS_ATTRIBUTE_UNUSED) {
+  return x / (1 + fabs(x));
 }
 
 template <typename T>
