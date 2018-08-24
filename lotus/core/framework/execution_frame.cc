@@ -420,8 +420,70 @@ Status ExecutionFrame::GeneratePatterns(MemoryPatternGroup* out) const {
   return planner_->GeneratePatterns(out);
 }
 
+// Return nullptr if index map to an value that is an unused optional input/output
+const MLValue* ExecutionFrame::GetNodeInputOrOutputMLValue(int index) const {
+  LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
+  return node_values_[index] >= 0 ? &all_values_[node_values_[index]] : nullptr;
+}
+
+// Return nullptr if index map to an value that is an unused optional input/output
+MLValue* ExecutionFrame::GetMutableNodeInputOrOutputMLValue(int index) {
+  return const_cast<MLValue*>(GetNodeInputOrOutputMLValue(index));
+}
+
 AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
   return session_state_.GetAllocator(info);
+}
+
+static inline void VerifyShape(const MLValue* p_mlvalue,
+                               const MLValueAllocationParameters& parameters) {
+  if (p_mlvalue->IsTensor()) {
+    const Tensor* tensor = &p_mlvalue->Get<Tensor>();
+    if (tensor->Shape() != parameters.tensor_shape) {
+      LOTUS_THROW("MLValue shape verification failed.");
+    }
+  }
+}
+
+// This method is not thread safe!
+// Return S_OK and nullptr if index map to an value that is an unused optional input/output
+Status ExecutionFrame::GetOrCreateNodeOutputMLValue(int index,
+                                                    const MLValueAllocationParameters& parameters,
+                                                    MLValue*& p_mlvalue) {
+  if (index < 0 || static_cast<size_t>(index) >= node_values_.size()) {
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+                  "Try to access with invalid node value index: " + std::to_string(index));
+  }
+
+  // return nullptr if it is optional
+  if (node_values_[index] < 0) {
+    p_mlvalue = nullptr;
+    return Status::OK();
+  }
+
+  p_mlvalue = &all_values_.at(node_values_[index]);
+
+  if (p_mlvalue->IsAllocated()) {
+    // The ml has already been allocated.
+    // Now only tensor need to be check.
+    VerifyShape(p_mlvalue, parameters);  // TODO find a better way to do this
+    return Status::OK();
+  } else {
+    // It's not allocated, then allocate it with given shape and return.
+    // Perform allocation based on the allocation plan
+    LOTUS_RETURN_IF_ERROR(
+        AllocateAsPerAllocationPlan(node_values_[index], parameters));
+    return Status::OK();
+  }
+}
+
+Status ExecutionFrame::ReleaseMLValue(int mlvalue_idx) {
+  if (mlvalue_idx < 0 || static_cast<size_t>(mlvalue_idx) >= all_values_.size()) {
+    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "invalid index ", mlvalue_idx);
+  }
+  all_values_[mlvalue_idx] = MLValue();
+  TraceFree(mlvalue_idx);
+  return Status::OK();
 }
 
 const SequentialExecutionPlan::AllocPlanPerValue& ExecutionFrame::GetAllocationPlan(int mlvalue_idx) {

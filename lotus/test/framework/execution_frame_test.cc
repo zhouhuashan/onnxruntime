@@ -71,25 +71,27 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
                                                  state.GetExecutionProvider(xp_typ)->GetAllocator()->Info(), shape);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
-  auto tensor = frame.GetMutableValue<Tensor>(0);
-  EXPECT_TRUE(tensor);
-  EXPECT_EQ(tensor->Shape(), shape);
-  EXPECT_EQ(tensor->DataType(), DataTypeImpl::GetType<float>());
+  MLValue* p_ml_value = frame.GetMutableNodeInputOrOutputMLValue(0);
+  Tensor* p_tensor = p_ml_value ? p_ml_value->GetMutable<Tensor>() : nullptr;
+  EXPECT_TRUE(p_tensor);
+  EXPECT_EQ(p_tensor->Shape(), shape);
+  EXPECT_EQ(p_tensor->DataType(), DataTypeImpl::GetType<float>());
 
   //test share memory from tensor
   TensorShape shape2(std::vector<int64_t>{3, 2});
   status = frame.AllocateTensorWithPreAllocateBuffer(
       start_index + 1,
-      tensor->MutableData<float>(),
+      p_tensor->MutableData<float>(),
       DataTypeImpl::GetType<float>(),
-      tensor->Location(),
+      p_tensor->Location(),
       shape2);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
-  auto tensor2 = frame.GetValue<Tensor>(1);
+  const MLValue* p_ml_value_const = frame.GetNodeInputOrOutputMLValue(1);
+  auto tensor2 = p_ml_value_const ? &(p_ml_value_const->Get<Tensor>()) : nullptr;
   EXPECT_TRUE(tensor2);
   EXPECT_EQ(tensor2->Shape(), shape2);
-  EXPECT_EQ(tensor2->Data<float>(), tensor->Data<float>());
+  EXPECT_EQ(tensor2->Data<float>(), p_tensor->Data<float>());
 }
 
 TEST(ExecutionFrameTest, FeedInDataTest) {
@@ -131,11 +133,12 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
                        outputs,
                        state);
 
-  auto tensor = frame.GetMutableValue<Tensor>(0);
-  EXPECT_TRUE(tensor);
-  EXPECT_EQ(tensor->Shape(), shape);
-  EXPECT_EQ(tensor->DataType(), DataTypeImpl::GetType<float>());
-  EXPECT_EQ(tensor->MutableData<float>(), buffer);
+  MLValue* p_ml_value = frame.GetMutableNodeInputOrOutputMLValue(0);
+  Tensor* p_tensor_arg_0 = p_ml_value ? p_ml_value->GetMutable<Tensor>() : nullptr;
+  EXPECT_TRUE(p_tensor_arg_0);
+  EXPECT_EQ(p_tensor_arg_0->Shape(), shape);
+  EXPECT_EQ(p_tensor_arg_0->DataType(), DataTypeImpl::GetType<float>());
+  EXPECT_EQ(p_tensor_arg_0->MutableData<float>(), buffer);
 }
 
 TEST(ExecutionFrameTest, MemPatternTest) {
