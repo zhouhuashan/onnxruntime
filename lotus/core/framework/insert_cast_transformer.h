@@ -21,7 +21,7 @@ class InsertCastTransformer : public LotusIR::GraphTransformer {
   void AddKernelRegistry(const KernelRegistry& kernel) {
     kernels_registries_.push_back(&kernel);
   }
-  
+
   Status Apply(LotusIR::Graph& graph, bool& modified) const override;
 
  private:

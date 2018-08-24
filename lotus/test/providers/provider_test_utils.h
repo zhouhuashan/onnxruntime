@@ -2,6 +2,7 @@
 
 #include "core/common/logging/logging.h"
 #include "core/framework/allocatormgr.h"
+#include "core/framework/customregistry.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
@@ -186,6 +187,12 @@ struct OpTester {
     output_data_.push_back({{name, &s_vec_map_type_proto<TKey, TVal>}, ml_value, optional<float>(), optional<float>()});
   }
 
+  void AddCustomOpRegistry(std::shared_ptr<CustomRegistry> registry) {
+    // need to do some static casting so we can easily use this later
+    custom_schema_registries_.push_back(std::static_pointer_cast<ILotusOpSchemaCollection>(registry));
+    custom_session_registries_.push_back(std::static_pointer_cast<CustomRegistry>(registry));
+  }
+
   void SetOutputAbsErr(const char* name, float v);
   void SetOutputRelErr(const char* name, float v);
 
@@ -254,6 +261,9 @@ struct OpTester {
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
   std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;
+
+  ILotusOpSchemaRegistryList custom_schema_registries_;
+  std::vector<std::shared_ptr<CustomRegistry>> custom_session_registries_;
 #if _DEBUG
   bool run_called_{};
 #endif

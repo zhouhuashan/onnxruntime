@@ -26,7 +26,6 @@ class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegis
   Common::Status RegisterCustomKernel(KernelCreateInfo&);
 
  private:
-
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
 };
 

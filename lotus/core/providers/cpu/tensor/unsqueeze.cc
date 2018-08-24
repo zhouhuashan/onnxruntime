@@ -12,8 +12,8 @@ ONNX_CPU_OPERATOR_KERNEL(
         .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
     Unsqueeze);
 
-Status UnsqueezeBase::PrepareCompute(OpKernelContext *ctx, Prepare &p) const {
-  auto &input_tensor = *ctx->Input<Tensor>(0);
+Status UnsqueezeBase::PrepareCompute(OpKernelContext* ctx, Prepare& p) const {
+  auto& input_tensor = *ctx->Input<Tensor>(0);
 
   // New dimension count is the current dimensions + the number of entries in axes_
   // Initialize output_dims to 0 in each axis initially
@@ -31,7 +31,7 @@ Status UnsqueezeBase::PrepareCompute(OpKernelContext *ctx, Prepare &p) const {
   // Now fill in the zero entries with the existing shape
   {
     auto begin = input_tensor.Shape().GetDims().cbegin();
-    for (auto &axisSize : output_dims) {
+    for (auto& axisSize : output_dims) {
       if (axisSize == 0)
         axisSize = *begin++;
     }
@@ -44,7 +44,7 @@ Status UnsqueezeBase::PrepareCompute(OpKernelContext *ctx, Prepare &p) const {
   return Status::OK();
 }
 
-Status Unsqueeze::Compute(OpKernelContext *ctx) const {
+Status Unsqueeze::Compute(OpKernelContext* ctx) const {
   Prepare p;
   LOTUS_RETURN_IF_ERROR(PrepareCompute(ctx, p));
 

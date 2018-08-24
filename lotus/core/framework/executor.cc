@@ -7,7 +7,7 @@
 #include "core/common/logging/logging.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/session_state.h"
-#include "core/framework/op_kernel.h"
+#include "core/framework/op_kernel_context_impl.h"
 
 namespace Lotus {
 // TODO move to its own file
@@ -51,7 +51,7 @@ class SequentialExecutor : public Executor {
       const std::string& op_name = p_op_kernel->KernelDef().OpName();
       // construct OpKernelContext
       // TODO: log kernel inputs?
-      OpKernelContext op_kernel_context(&root_frame_, p_op_kernel, run_logger_);
+      OpKernelContextImpl op_kernel_context(root_frame_, *p_op_kernel, run_logger_);
       // TODO: log kernel outputs?
 
       auto sync_time_begin = session_state_.Profiler().StartTime();
@@ -63,6 +63,7 @@ class SequentialExecutor : public Executor {
           fence->BeforeUsingAsInput(p_op_kernel->Node().GetExecutionProviderType(), queue_id);
         }
       }
+
       for (int output_index = 0; output_index < op_kernel_context.OutputCount(); ++output_index) {
         Fence_t fence = op_kernel_context.OutputFence(output_index);
         if (fence) {
@@ -148,10 +149,12 @@ class SequentialExecutor : public Executor {
     }
 
     auto idx = 0;
+    auto& name_idx_map = session_state_.GetMLValueNameIdxMap();
+
     for (const auto& oname : output_names) {
       VLOGS(run_logger_, 1) << "Attempting to fetch output with name: " << oname;
       int mlvalue_index;
-      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(oname, &mlvalue_index));
+      LOTUS_RETURN_IF_ERROR(name_idx_map.GetIdx(oname, mlvalue_index));
       const MLValue& output_mlvalue = root_frame_.GetMLValue(mlvalue_index);
       VLOGS(run_logger_, 1) << "Copying fetched MLValue to output vector";
       (*p_fetches)[idx++] = output_mlvalue;

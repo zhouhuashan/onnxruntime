@@ -13,12 +13,12 @@ ONNX_OPERATOR_KERNEL_EX(
         .TypeConstraint("T", DataTypeImpl::AllFixedSizeTensorTypes()),
     Unsqueeze);
 
-Status Unsqueeze::ComputeInternal(OpKernelContext *ctx) const {
+Status Unsqueeze::ComputeInternal(OpKernelContext* ctx) const {
   Prepare p;
   LOTUS_RETURN_IF_ERROR(PrepareCompute(ctx, p));
 
-  const void *input = p.input_tensor->DataRaw();
-  void *output = p.output_tensor->MutableDataRaw();
+  const void* input = p.input_tensor->DataRaw();
+  void* output = p.output_tensor->MutableDataRaw();
   if (input == output)
     return Status::OK();
 

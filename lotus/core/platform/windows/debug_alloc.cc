@@ -33,10 +33,10 @@ constexpr int c_callstack_limit = 16;  // Maximum depth of callstack in leak tra
 #include <DbgHelp.h>
 #pragma comment(lib, "Dbghelp.lib")
 
-_Ret_notnull_ _Post_writable_byte_size_(size) void *operator new(size_t size) { return DebugHeapAlloc(size, 1); }
-_Ret_notnull_ _Post_writable_byte_size_(size) void *operator new[](size_t size) { return DebugHeapAlloc(size, 1); }
-void operator delete(void *p) noexcept { DebugHeapFree(p); }
-void operator delete[](void *p) noexcept { DebugHeapFree(p); }
+_Ret_notnull_ _Post_writable_byte_size_(size) void* operator new(size_t size) { return DebugHeapAlloc(size, 1); }
+_Ret_notnull_ _Post_writable_byte_size_(size) void* operator new[](size_t size) { return DebugHeapAlloc(size, 1); }
+void operator delete(void* p) noexcept { DebugHeapFree(p); }
+void operator delete[](void* p) noexcept { DebugHeapFree(p); }
 
 struct MemoryBlock {
   MemoryBlock(unsigned framesToSkip = 1) noexcept {
@@ -45,7 +45,7 @@ struct MemoryBlock {
       m_pTraces[i] = nullptr;
   }
 
-  void *m_pTraces[c_callstack_limit];
+  void* m_pTraces[c_callstack_limit];
 };
 
 struct SymbolHelper {
@@ -54,7 +54,7 @@ struct SymbolHelper {
     SymInitialize(GetCurrentProcess(), nullptr, true);
   }
 
-  void Lookup(std::string &string, const ULONG_PTR address) {
+  void Lookup(std::string& string, const ULONG_PTR address) {
     char buffer[2048] = {0};
     Symbol symbol;
     if (SymFromAddr(GetCurrentProcess(), address, 0, &symbol) == false) {
@@ -102,7 +102,7 @@ uint64_t g_cumulativeAllocationBytes{};
 #pragma warning(push)
 #pragma warning(disable : 6386)
 
-void *DebugHeapAlloc(size_t size, unsigned framesToSkip) {
+void* DebugHeapAlloc(size_t size, unsigned framesToSkip) {
 #if (VALIDATE_HEAP_EVERY_ALLOC)
   if (HeapValidate(g_heap, 0, nullptr) == 0)
     exit(-1);
@@ -110,33 +110,33 @@ void *DebugHeapAlloc(size_t size, unsigned framesToSkip) {
 
   g_cumulativeAllocationCount++;
   g_cumulativeAllocationBytes += size;
-  void *p = HeapAlloc(g_heap, 0, size + sizeof(MemoryBlock));
+  void* p = HeapAlloc(g_heap, 0, size + sizeof(MemoryBlock));
   if (!p)
     throw std::bad_alloc();
 
   g_allocationCount++;
   new (p) MemoryBlock(framesToSkip + 1);
-  return static_cast<BYTE *>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
+  return static_cast<BYTE*>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
 }
 
-void *DebugHeapReAlloc(void *p, size_t size) {
+void* DebugHeapReAlloc(void* p, size_t size) {
   if (!p)  // Std library will call realloc(nullptr, size)
     return DebugHeapAlloc(size);
 
   g_cumulativeAllocationCount++;
   g_cumulativeAllocationBytes += size;
-  p = static_cast<BYTE *>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
+  p = static_cast<BYTE*>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
   p = HeapReAlloc(g_heap, 0, p, size + sizeof(MemoryBlock));
   if (!p)
     throw std::bad_alloc();
 
-  new (p) MemoryBlock;                                  // Redo the callstack
-  return static_cast<BYTE *>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
+  new (p) MemoryBlock;                                 // Redo the callstack
+  return static_cast<BYTE*>(p) + sizeof(MemoryBlock);  // Adjust outgoing pointer
 }
 
 #pragma warning(pop)  // buffer overrun
 
-void DebugHeapFree(void *p) noexcept {
+void DebugHeapFree(void* p) noexcept {
 #if (VALIDATE_HEAP_EVERY_ALLOC)
   if (HeapValidate(g_heap, 0, nullptr) == 0)
     exit(-1);
@@ -146,17 +146,17 @@ void DebugHeapFree(void *p) noexcept {
     return;
 
   g_allocationCount--;
-  p = static_cast<BYTE *>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
+  p = static_cast<BYTE*>(p) - sizeof(MemoryBlock);  // Adjust incoming pointer
   HeapFree(g_heap, 0, p);
 }
 
 static struct Memory_LeakCheck {
   Memory_LeakCheck() noexcept;
   ~Memory_LeakCheck();
-  Memory_LeakCheck(const Memory_LeakCheck &) = delete;
-  Memory_LeakCheck &operator=(const Memory_LeakCheck &) = delete;
-  Memory_LeakCheck(Memory_LeakCheck &&) = delete;
-  Memory_LeakCheck &operator=(Memory_LeakCheck &&) = delete;
+  Memory_LeakCheck(const Memory_LeakCheck&) = delete;
+  Memory_LeakCheck& operator=(const Memory_LeakCheck&) = delete;
+  Memory_LeakCheck(Memory_LeakCheck&&) = delete;
+  Memory_LeakCheck& operator=(Memory_LeakCheck&&) = delete;
 } g_memory_leak_check;
 
 Memory_LeakCheck::Memory_LeakCheck() noexcept {
@@ -178,14 +178,14 @@ Memory_LeakCheck::~Memory_LeakCheck() {
     if ((entry.wFlags & PROCESS_HEAP_ENTRY_BUSY) == 0)
       continue;
 
-    const MemoryBlock &block = *static_cast<const MemoryBlock *>(entry.lpData);
-    const BYTE *pBlock = static_cast<const BYTE *>(entry.lpData) + sizeof(MemoryBlock);
+    const MemoryBlock& block = *static_cast<const MemoryBlock*>(entry.lpData);
+    const BYTE* pBlock = static_cast<const BYTE*>(entry.lpData) + sizeof(MemoryBlock);
 
     std::string string;
     char buffer[1024];
     _snprintf_s(buffer, _TRUNCATE, "%IX bytes at location 0x%08IX\n", entry.cbData - sizeof(MemoryBlock), UINT_PTR(pBlock));
     string.append(buffer);
-    for (auto &p : block.m_pTraces) {
+    for (auto& p : block.m_pTraces) {
       if (!p) break;
       symbols.Lookup(string, reinterpret_cast<ULONG_PTR>(p));
       string.push_back('\n');

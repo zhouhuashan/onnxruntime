@@ -43,20 +43,20 @@ Category
 // Logging with explicit category
 
 // iostream style logging. Capture log info in Message, and push to the logger in ~Message.
-#define LOGS_CATEGORY(logger, severity, category)                                                        \
+#define LOGS_CATEGORY(logger, severity, category)                                                            \
   if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::SYSTEM)) \
   CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::SYSTEM).Stream()
 
-#define LOGS_USER_CATEGORY(logger, severity, category)                                                 \
+#define LOGS_USER_CATEGORY(logger, severity, category)                                                     \
   if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::USER)) \
   CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::USER).Stream()
 
 // printf style logging. Capture log info in Message, and push to the logger in ~Message.
-#define LOGF_CATEGORY(logger, severity, category, format_str, ...)                                       \
+#define LOGF_CATEGORY(logger, severity, category, format_str, ...)                                           \
   if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::SYSTEM)) \
   CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::SYSTEM).CapturePrintf(format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_CATEGORY(logger, severity, category, format_str, ...)                                \
+#define LOGF_USER_CATEGORY(logger, severity, category, format_str, ...)                                    \
   if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::USER)) \
   CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::USER).CapturePrintf(format_str, ##__VA_ARGS__)
 
@@ -162,11 +162,11 @@ Conditional logging
 #define LOGF_DEFAULT_IF(boolean_expression, severity, format_str, ...) \
   LOGF_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_IF(boolean_expression, logger, severity, format_str, ...)                    \
+#define LOGF_USER_IF(boolean_expression, logger, severity, format_str, ...)                      \
   LOGF_USER_CATEGORY_IF(boolean_expression, logger, severity, ::Lotus::Logging::Category::Lotus, \
                         format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_DEFAULT_IF(boolean_expression, severity, format_str, ...)                    \
+#define LOGF_USER_DEFAULT_IF(boolean_expression, severity, format_str, ...)                      \
   LOGF_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::Lotus::Logging::Category::Lotus, \
                                 format_str, ##__VA_ARGS__)
 
@@ -176,19 +176,19 @@ Debug verbose logging of caller provided level.
 Disabled in Release builds.
 Use the _USER variants for VLOG statements involving user data that may need to be filtered.
 */
-#define VLOGS(logger, level)                                            \
+#define VLOGS(logger, level)                                              \
   if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGS_CATEGORY(logger, VERBOSE, "VLOG" #level)
 
-#define VLOGS_USER(logger, level)                                       \
+#define VLOGS_USER(logger, level)                                         \
   if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGS_USER_CATEGORY(logger, VERBOSE, "VLOG" #level)
 
-#define VLOGF(logger, level, format_str, ...)                           \
+#define VLOGF(logger, level, format_str, ...)                             \
   if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGF_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
 
-#define VLOGF_USER(logger, level, format_str, ...)                      \
+#define VLOGF_USER(logger, level, format_str, ...)                        \
   if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGF_USER_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
 

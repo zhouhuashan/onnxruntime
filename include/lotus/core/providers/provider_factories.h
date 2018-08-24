@@ -11,7 +11,7 @@ struct CPUExecutionProviderInfo {
   std::string name;
   bool create_arena{true};
 
-  explicit CPUExecutionProviderInfo(const std::string &provider_name,
+  explicit CPUExecutionProviderInfo(const std::string& provider_name,
                                     bool use_arena = true)
       : name(provider_name), create_arena(use_arena) {}
   CPUExecutionProviderInfo() = default;
@@ -19,11 +19,11 @@ struct CPUExecutionProviderInfo {
 
 // Create CPU execution provider
 std::unique_ptr<IExecutionProvider>
-CreateBasicCPUExecutionProvider(const CPUExecutionProviderInfo &info);
+CreateBasicCPUExecutionProvider(const CPUExecutionProviderInfo& info);
 
 // Create MKL-DNN execution provider
 std::unique_ptr<IExecutionProvider>
-CreateMKLDNNExecutionProvider(const CPUExecutionProviderInfo &info);
+CreateMKLDNNExecutionProvider(const CPUExecutionProviderInfo& info);
 
 // Information needed to construct CUDA execution providers.
 struct CUDAExecutionProviderInfo {
@@ -33,6 +33,6 @@ struct CUDAExecutionProviderInfo {
 
 // Create cuda execution provider
 std::unique_ptr<IExecutionProvider>
-CreateCUDAExecutionProvider(const CUDAExecutionProviderInfo &info);
+CreateCUDAExecutionProvider(const CUDAExecutionProviderInfo& info);
 
-} // namespace Lotus
+}  // namespace Lotus

@@ -65,8 +65,8 @@ enum class DataType {
 // Internal log categories.
 // Logging interface takes const char* so arbitrary values can also be used.
 struct Category {
-  static const char *Lotus;   ///< General output
-  static const char *System;  ///< Log output regarding interactions with the host system
+  static const char* Lotus;   ///< General output
+  static const char* System;  ///< Log output regarding interactions with the host system
                               // TODO: What other high level categories are meaningful? Model? Optimizer? Execution?
 };
 
@@ -101,7 +101,7 @@ class LoggingManager final {
   */
   LoggingManager(std::unique_ptr<ISink> sink, Severity default_min_severity, bool default_filter_user_data,
                  InstanceType instance_type,
-                 const std::string *default_logger_id = nullptr,
+                 const std::string* default_logger_id = nullptr,
                  int default_max_vlog_level = -1);
 
   /**
@@ -129,7 +129,7 @@ class LoggingManager final {
   Note that the default logger is only valid until the LoggerManager that registered it is destroyed.
   @returns The default logger if available.
   */
-  static const Logger &DefaultLogger();
+  static const Logger& DefaultLogger();
 
   /**
   Logs a FATAL level message and creates an exception that can be thrown with error information.
@@ -139,25 +139,25 @@ class LoggingManager final {
   @param ... The printf arguments.
   @returns A new Logger instance that the caller owns.
   */
-  static std::exception LogFatalAndCreateException(const char *category,
-                                                   const CodeLocation &location,
-                                                   const char *format_str, ...);
+  static std::exception LogFatalAndCreateException(const char* category,
+                                                   const CodeLocation& location,
+                                                   const char* format_str, ...);
 
   /**
   Logs the message using the provided logger id.
   @param logger_id The log identifier.
   @param message The log message.
   */
-  void Log(const std::string &logger_id, const Capture &message) const;
+  void Log(const std::string& logger_id, const Capture& message) const;
 
   ~LoggingManager();
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(LoggingManager);
-  static std::unique_ptr<Logger> &GetDefaultLogger() noexcept;
+  static std::unique_ptr<Logger>& GetDefaultLogger() noexcept;
 
   Timestamp GetTimestamp() const noexcept;
-  void CreateDefaultLogger(const std::string &logger_id);
+  void CreateDefaultLogger(const std::string& logger_id);
 
   std::unique_ptr<ISink> sink_;
   const Severity default_min_severity_;
@@ -165,15 +165,13 @@ class LoggingManager final {
   const int default_max_vlog_level_;
   bool owns_default_logger_;
 
-
-
   struct Epochs {
     const std::chrono::time_point<std::chrono::high_resolution_clock> high_res;
     const std::chrono::time_point<std::chrono::system_clock> system;
     const std::chrono::minutes localtime_offset_from_utc;
   };
 
-  static const Epochs &GetEpochs() noexcept;
+  static const Epochs& GetEpochs() noexcept;
 };
 
 /**
@@ -190,7 +188,7 @@ class Logger {
   @param vlog_level Minimum level for VLOG messages to be created. Note that a severity of kVERBOSE must be provided
                     for VLOG messages to be logged.
   */
-  Logger(const LoggingManager &loggingManager, std::string id,
+  Logger(const LoggingManager& loggingManager, std::string id,
          Severity severity, bool filter_user_data, int vlog_level)
       : logging_manager_{&loggingManager},
         id_{id},
@@ -220,21 +218,21 @@ class Logger {
   Logs the captured message.
   @param message The log message.
   */
-  void Log(const Capture &message) const {
+  void Log(const Capture& message) const {
     logging_manager_->Log(id_, message);
   }
 
  private:
-  const LoggingManager *logging_manager_;
+  const LoggingManager* logging_manager_;
   const std::string id_;
   const Severity min_severity_;
   const bool filter_user_data_;
   const int max_vlog_level_;
 };
 
-inline const Logger &LoggingManager::DefaultLogger() {
+inline const Logger& LoggingManager::DefaultLogger() {
   // fetch the container for the default logger once to void function calls in the future
-  static std::unique_ptr<Logger> &default_logger = GetDefaultLogger();
+  static std::unique_ptr<Logger>& default_logger = GetDefaultLogger();
 
   if (default_logger == nullptr) {
     // fail early for attempted misuse. don't use logging macros as we have no logger.
@@ -245,7 +243,7 @@ inline const Logger &LoggingManager::DefaultLogger() {
 }
 
 inline Timestamp LoggingManager::GetTimestamp() const noexcept {
-  static const Epochs &epochs = GetEpochs();
+  static const Epochs& epochs = GetEpochs();
 
   const auto high_res_now = std::chrono::high_resolution_clock::now();
   return std::chrono::time_point_cast<std::chrono::system_clock::duration>(

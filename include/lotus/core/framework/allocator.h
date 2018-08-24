@@ -48,7 +48,7 @@ struct AllocatorInfo {
         type(type) {}
 
   inline bool operator==(const AllocatorInfo& other) const {
-      return mem_type == other.mem_type && type == other.type && id == other.id && name == other.name;
+    return mem_type == other.mem_type && type == other.type && id == other.id && name == other.name;
   }
 
   // To make AllocatorInfo become a valid key in std map

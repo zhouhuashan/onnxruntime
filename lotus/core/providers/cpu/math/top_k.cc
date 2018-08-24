@@ -27,10 +27,8 @@ namespace Lotus {
 ONNX_CPU_OPERATOR_KERNEL(
     TopK,
     1,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>())
-                      .TypeConstraint("I", DataTypeImpl::GetTensorType<int64_t>()),
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()).TypeConstraint("I", DataTypeImpl::GetTensorType<int64_t>()),
     TopK<float>);
-
 
 static int64_t SizeToDim(size_t k, const vector<int64_t>& dims) {
   LOTUS_ENFORCE(k <= dims.size());

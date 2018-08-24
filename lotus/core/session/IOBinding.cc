@@ -23,7 +23,7 @@ static Common::Status AllocateHelper(const SessionState& session_state,
                                      LotusIR::ProviderType provider_type,
                                      const MLValue& fetched_mlvalue,
                                      MLValue& output_mlvalue) {
-  auto* p_provider = session_state.GetExecutionProvider(provider_type);
+  auto* p_provider = session_state.GetExecutionProviders().Get(provider_type);
   LOTUS_ENFORCE(p_provider);
   auto allocator = p_provider->GetAllocator();
   LOTUS_ENFORCE(allocator != nullptr);
@@ -67,11 +67,13 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
     }
     auto& input_tensor = orig_mlvalue.Get<Tensor>();
     auto& input_tensor_loc = input_tensor.Location();
-    auto* p_input_provider = session_state.GetExecutionProvider(input_tensor_loc);
+    auto& exec_providers = session_state.GetExecutionProviders();
+
+    auto* p_input_provider = exec_providers.Get(input_tensor_loc);
     if (!p_input_provider) {
-      p_input_provider = session_state.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+      p_input_provider = exec_providers.Get(LotusIR::kCpuExecutionProvider);
+      LOTUS_ENFORCE(p_input_provider);
     }
-    LOTUS_ENFORCE(p_input_provider);
 
     auto input_provider_type = p_input_provider->Type();
     if (input_provider_type == required_provider_type && input_tensor_loc.mem_type == kMemTypeDefault) {
@@ -79,11 +81,11 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
       return Status::OK();
     }
 
-    auto* node_provider = session_state.GetExecutionProvider(required_provider_type);
+    auto* node_provider = exec_providers.Get(required_provider_type);
     LOTUS_ENFORCE(node_provider);
     LOTUS_RETURN_IF_ERROR(AllocateHelper(session_state, required_provider_type, orig_mlvalue, new_mlvalue));
     auto* new_tensor = new_mlvalue.GetMutable<Tensor>();
-    auto* node_exec_provider = session_state.GetExecutionProvider(required_provider_type);
+    auto* node_exec_provider = exec_providers.Get(required_provider_type);
     LOTUS_ENFORCE(node_exec_provider);
 
     // our CPU exec provider doesn't support copy from GPU->CPU
@@ -108,10 +110,11 @@ static Common::Status SyncProviders(const SessionState::NameNodeInfoMapType& nod
     }
   }
   for (auto& provider_type : providers) {
-    auto* p_provider = session_state.GetExecutionProvider(provider_type);
+    auto* p_provider = session_state.GetExecutionProviders().Get(provider_type);
     if (!p_provider) {
       continue;
     }
+
     LOTUS_RETURN_IF_ERROR(p_provider->Sync());
   }
   return Status::OK();
@@ -161,7 +164,8 @@ const std::unordered_map<std::string, MLValue>& IOBinding::GetInputs() const {
 }
 
 AllocatorPtr IOBinding::GetCPUAllocator(LotusIR::ProviderType provider_type) const {
-  auto* p_provider = session_state_.GetExecutionProvider(provider_type);
+  auto& exec_providers = session_state_.GetExecutionProviders();
+  auto* p_provider = exec_providers.Get(provider_type);
   LOTUS_ENFORCE(p_provider);
   auto allocator = p_provider->GetAllocator(kMemTypeCPU);
 
@@ -169,7 +173,7 @@ AllocatorPtr IOBinding::GetCPUAllocator(LotusIR::ProviderType provider_type) con
   if (allocator)
     return allocator;
 
-  auto* cpu_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+  auto* cpu_provider = exec_providers.Get(LotusIR::kCpuExecutionProvider);
   return cpu_provider->GetAllocator();
 }
 

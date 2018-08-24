@@ -27,13 +27,13 @@ using namespace ::Lotus::Common;
 using namespace std;
 namespace Lotus {
 namespace ML {
-#define REG_ARRAYFEATUREEXTRACTOR(in_type)                                           \
-ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                   \
-    ArrayFeatureExtractor,                                                           \
-    1,                                                                               \
-    in_type,                                                                         \
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<in_type>()),  \
-    ArrayFeatureExtractorOp<in_type>);
+#define REG_ARRAYFEATUREEXTRACTOR(in_type)                                            \
+  ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                  \
+      ArrayFeatureExtractor,                                                          \
+      1,                                                                              \
+      in_type,                                                                        \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<in_type>()), \
+      ArrayFeatureExtractorOp<in_type>);
 
 REG_ARRAYFEATUREEXTRACTOR(float);
 REG_ARRAYFEATUREEXTRACTOR(double);

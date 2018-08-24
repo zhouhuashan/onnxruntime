@@ -9,7 +9,7 @@
 #include "core/framework/session_state.h"
 
 namespace Lotus {
-namespace Helpers {
+namespace Utils {
 
 const KernelDef* GetKernelDef(const KernelRegistryManager& kernel_registry,
                               const LotusIR::Node& node) {
@@ -29,7 +29,7 @@ const KernelDef* GetKernelDef(const LotusIR::Graph& graph,
   auto node = graph.GetNode(node_id);
   LOTUS_ENFORCE(nullptr != node);
 
-  return Helpers::GetKernelDef(kernel_registry, *node);
+  return GetKernelDef(kernel_registry, *node);
 }
 
 AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const AllocatorInfo& allocator_info) {
@@ -41,10 +41,9 @@ AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const Alloca
   return exec_provider->GetAllocator(allocator_info.mem_type);
 }
 
-/*
 AllocatorPtr GetAllocator(const SessionState& session_state, const AllocatorInfo& allocator_info) {
   return GetAllocator(session_state.GetExecutionProviders(), allocator_info);
-}*/
+}
 
-}  // namespace Helpers
+}  // namespace Utils
 }  // namespace Lotus

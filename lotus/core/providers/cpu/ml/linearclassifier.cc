@@ -10,33 +10,29 @@ const std::vector<MLDataType> linearClassifierOutputConstraints{
 ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     LinearClassifier,
     1,
-	float,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
-                      .TypeConstraint("T2", linearClassifierOutputConstraints),
+    float,
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<float>()).TypeConstraint("T2", linearClassifierOutputConstraints),
     LinearClassifier<float>);
 
 ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     LinearClassifier,
     1,
-	double,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<double>())
-                      .TypeConstraint("T2", linearClassifierOutputConstraints),
+    double,
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<double>()).TypeConstraint("T2", linearClassifierOutputConstraints),
     LinearClassifier<double>);
 
 ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     LinearClassifier,
     1,
     int64_t,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>())
-	                  .TypeConstraint("T2", linearClassifierOutputConstraints),
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()).TypeConstraint("T2", linearClassifierOutputConstraints),
     LinearClassifier<int64_t>);
 
 ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     LinearClassifier,
     1,
     int32_t,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>())
-	                  .TypeConstraint("T2", linearClassifierOutputConstraints),
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()).TypeConstraint("T2", linearClassifierOutputConstraints),
     LinearClassifier<int32_t>);
 
 template <typename T>

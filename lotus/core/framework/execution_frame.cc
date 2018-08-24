@@ -6,6 +6,7 @@
 #include "core/framework/ml_value_patterns_planner.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
+#include "core/framework/utils.h"
 
 using namespace ::Lotus::Common;
 namespace Lotus {
@@ -97,8 +98,8 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
     p_mlvalue->SetFence(f);
   }
 
-  // if we have pre-calcuated memory pattern, and the mlvalue is not output mlvalue
-  // try to alloacted on pre-allocated big chunk.
+  // if we have pre-calculated memory pattern, and the mlvalue is not output mlvalue
+  // try to allocated on pre-allocated big chunk.
   const auto& per_alloc_plan = GetAllocationPlan(mlvalue_index);
   if (mem_patterns_ && per_alloc_plan.alloc_kind != AllocKind::kAllocateOutput) {
     auto pattern = mem_patterns_->GetPatterns(location);
@@ -107,7 +108,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
       // if block not found, fall back to default behavior
       if (block) {
         auto it = buffers_.find(location);
-        // if the block is not correct, log messsage then fall back to default behavior
+        // if the block is not correct, log message then fall back to default behavior
         if (it != buffers_.end() && block->size_ == size) {
           void* buffer = it->second.get();
           auto status = AllocateTensorWithPreAllocateBufferHelper(
@@ -312,7 +313,9 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
   auto max_node_index = graph.MaxNodeIndex();
   node_offsets_.resize(max_node_index);
 
-  all_values_.resize(session_state_.GetMaxMLValueIdx() + 1);
+  auto& mlvalue_idx_map = session_state_.GetMLValueNameIdxMap();
+
+  all_values_.resize(mlvalue_idx_map.MaxIdx() + 1);
 
   // 2. handle the weights.
   for (const auto& entry : session_state_.GetInitializedTensors()) {
@@ -323,7 +326,7 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
   // 3. handle feed in values
   for (const auto& feed : feeds) {
     int mlvalue_idx;
-    Status status = session_state_.GetMLValueIdx(feed.first, &mlvalue_idx);
+    Status status = mlvalue_idx_map.GetIdx(feed.first, mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     // we are sharing the underline tensor/object for MLValue
     all_values_[mlvalue_idx] = feed.second;
@@ -333,7 +336,7 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
   // setup output_indices_, we dont' want to generate mem plan on output tensors.
   for (const auto& oname : output_names) {
     int mlvalue_idx;
-    Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+    Status status = mlvalue_idx_map.GetIdx(oname, mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     output_indices_.push_back(mlvalue_idx);
   }
@@ -347,7 +350,7 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
     auto idx = 0;
     for (const auto& oname : output_names) {
       int mlvalue_idx;
-      Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+      Status status = mlvalue_idx_map.GetIdx(oname, mlvalue_idx);
       LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
       all_values_[mlvalue_idx] = fetches.at(idx++);
       output_indices_.push_back(mlvalue_idx);
@@ -378,7 +381,7 @@ void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
     node_values_.push_back(-1);
   } else {
     int index;
-    Status status = session_state_.GetMLValueIdx(name, &index);
+    Status status = session_state_.GetMLValueNameIdxMap().GetIdx(name, index);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     node_values_.push_back(index);
   }
@@ -420,8 +423,70 @@ Status ExecutionFrame::GeneratePatterns(MemoryPatternGroup* out) const {
   return planner_->GeneratePatterns(out);
 }
 
+// Return nullptr if index map to an value that is an unused optional input/output
+const MLValue* ExecutionFrame::GetNodeInputOrOutputMLValue(int index) const {
+  LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
+  return node_values_[index] >= 0 ? &all_values_[node_values_[index]] : nullptr;
+}
+
+// Return nullptr if index map to an value that is an unused optional input/output
+MLValue* ExecutionFrame::GetMutableNodeInputOrOutputMLValue(int index) {
+  return const_cast<MLValue*>(GetNodeInputOrOutputMLValue(index));
+}
+
 AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
-  return session_state_.GetAllocator(info);
+  return Utils::GetAllocator(session_state_, info);
+}
+
+static inline void VerifyShape(const MLValue* p_mlvalue,
+                               const MLValueAllocationParameters& parameters) {
+  if (p_mlvalue->IsTensor()) {
+    const Tensor* tensor = &p_mlvalue->Get<Tensor>();
+    if (tensor->Shape() != parameters.tensor_shape) {
+      LOTUS_THROW("MLValue shape verification failed.");
+    }
+  }
+}
+
+// This method is not thread safe!
+// Return S_OK and nullptr if index map to an value that is an unused optional input/output
+Status ExecutionFrame::GetOrCreateNodeOutputMLValue(int index,
+                                                    const MLValueAllocationParameters& parameters,
+                                                    MLValue*& p_mlvalue) {
+  if (index < 0 || static_cast<size_t>(index) >= node_values_.size()) {
+    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+                  "Try to access with invalid node value index: " + std::to_string(index));
+  }
+
+  // return nullptr if it is optional
+  if (node_values_[index] < 0) {
+    p_mlvalue = nullptr;
+    return Status::OK();
+  }
+
+  p_mlvalue = &all_values_.at(node_values_[index]);
+
+  if (p_mlvalue->IsAllocated()) {
+    // The ml has already been allocated.
+    // Now only tensor need to be check.
+    VerifyShape(p_mlvalue, parameters);  // TODO find a better way to do this
+    return Status::OK();
+  } else {
+    // It's not allocated, then allocate it with given shape and return.
+    // Perform allocation based on the allocation plan
+    LOTUS_RETURN_IF_ERROR(
+        AllocateAsPerAllocationPlan(node_values_[index], parameters));
+    return Status::OK();
+  }
+}
+
+Status ExecutionFrame::ReleaseMLValue(int mlvalue_idx) {
+  if (mlvalue_idx < 0 || static_cast<size_t>(mlvalue_idx) >= all_values_.size()) {
+    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "invalid index ", mlvalue_idx);
+  }
+  all_values_[mlvalue_idx] = MLValue();
+  TraceFree(mlvalue_idx);
+  return Status::OK();
 }
 
 const SequentialExecutionPlan::AllocPlanPerValue& ExecutionFrame::GetAllocationPlan(int mlvalue_idx) {

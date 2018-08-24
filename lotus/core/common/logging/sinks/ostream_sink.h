@@ -15,15 +15,15 @@ namespace Logging {
 /// <seealso cref="ISink" />
 class OStreamSink : public ISink {
  protected:
-  OStreamSink(std::ostream &stream, bool flush)
+  OStreamSink(std::ostream& stream, bool flush)
       : stream_{&stream}, flush_{flush} {
   }
 
  public:
-  void SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) override;
+  void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override;
 
  private:
-  std::ostream *stream_;
+  std::ostream* stream_;
   const bool flush_;
 };
 }  // namespace Logging

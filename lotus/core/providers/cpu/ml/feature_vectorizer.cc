@@ -25,7 +25,7 @@ static void CopyWithCast(typename gsl::span<const T>::const_iterator begin,
                          gsl::span<float>::iterator out_iter);
 
 Status FeatureVectorizer::Compute(OpKernelContext* context) const {
-  auto input_count = context->NumInputs(0);
+  auto input_count = context->NumVariadicInputs(0);
   LOTUS_ENFORCE(input_count == input_dimensions_.size(),
                 "Number of inputs (", input_count, ") does not match number of inputdimensions values (",
                 input_dimensions_.size(), ").");

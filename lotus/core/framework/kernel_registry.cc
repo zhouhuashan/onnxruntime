@@ -74,7 +74,7 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
   if (node.Domain() != kernel_def.Domain()) {
     std::ostringstream ostr;
     ostr << "Op: " << node.OpType()
-         << " Domain mistmatch: "
+         << " Domain mismatch: "
          << " Expected: " << kernel_def.Domain()
          << " Actual: " << node.Domain();
     error_str = ostr.str();
@@ -234,7 +234,7 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
     // Check if the kernel is ill-formed.
     if (!i->second.status.IsOK()) {
       LOGS_DEFAULT(ERROR) << "Failed to search kernel def for op: " << node.OpType()
-                          << " since it was illformed during registration";
+                          << " since it was ill-formed during registration";
       return i->second.status;
     }
     std::string error_str;
@@ -268,7 +268,7 @@ bool KernelRegistry::CanExecutionProviderCreateKernel(
   for (auto i = range.first; i != range.second; ++i) {
     if (!i->second.status.IsOK()) {
       LOGS_DEFAULT(ERROR) << "Failed to create kernel for op: " << node.OpType()
-                          << " since it was illformed during registration";
+                          << " since it was ill-formed during registration";
       continue;
     }
     std::string error_str;

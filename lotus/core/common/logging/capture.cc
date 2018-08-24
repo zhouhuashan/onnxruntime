@@ -6,7 +6,7 @@
 namespace Lotus {
 namespace Logging {
 
-void Capture::CapturePrintf(msvc_printf_check const char *format, ...) {
+void Capture::CapturePrintf(msvc_printf_check const char* format, ...) {
   va_list arglist;
   va_start(arglist, format);
 
@@ -17,7 +17,7 @@ void Capture::CapturePrintf(msvc_printf_check const char *format, ...) {
 
 // from https://github.com/KjellKod/g3log/blob/master/src/logcapture.cpp LogCapture::capturef
 // License: https://github.com/KjellKod/g3log/blob/master/LICENSE
-void Capture::ProcessPrintf(msvc_printf_check const char *format, va_list args) {
+void Capture::ProcessPrintf(msvc_printf_check const char* format, va_list args) {
   static constexpr auto kTruncatedWarningText = "[...truncated...]";
   static const int kMaxMessageSize = 2048;
   char message_buffer[kMaxMessageSize];

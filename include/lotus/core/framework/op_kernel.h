@@ -3,27 +3,23 @@
 #include <functional>
 
 #include "core/common/exceptions.h"
-#include "core/common/status.h"
 #include "core/common/logging/logging.h"
-#include "core/framework/execution_frame.h"
+#include "core/common/status.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/ml_value.h"
 #include "core/framework/op_kernel_info.h"
-#include "core/framework/tensor.h"
 #include "core/framework/op_node_proto_helper.h"
+#include "core/framework/tensor.h"
 #include "core/graph/constants.h"
 #include "core/graph/graph.h"
-#include "onnx/defs/schema.h"
 #include "gsl/span"
-
-#include <functional>
+#include "onnx/defs/schema.h"
 
 using namespace LotusIR;
 
-class IMLOpKernel;
-
 namespace Lotus {
+class ExecutionFrame;
 class OpKernelContext;
 class OpKernelWrapper;
 
@@ -68,37 +64,25 @@ class OpKernelContext {
                            const OpKernel* kernel,
                            const Logging::Logger& logger);
 
-  ~OpKernelContext() = default;
+  virtual ~OpKernelContext() = default;
 
-  /** 
-  Return the number of inputs for a variadic argument. 
-  @param arg_num The operator argument number. 
-  @returns Number of inputs the argument has. 
+  /**
+  Return the number of inputs for a variadic argument.
+  @param arg_num The operator argument number.
+  @returns Number of inputs the argument has.
   */
-  int NumInputs(size_t arg_num) const {
-    auto& arg_counts = kernel_->Node().InputArgCount();
+  int NumVariadicInputs(size_t arg_num) const;
 
-    LOTUS_ENFORCE(arg_num < arg_counts.size(),
-                  "Invalid arg_num of ", arg_num, ". Num args is ", arg_counts.size());
-
-    return arg_counts[arg_num];
-  }
+  MLDataType InputType(int index) const;
+  MLDataType OutputType(int index) const;
 
   template <typename T>
   const T* Input(int index) const {
     if (index < 0 || static_cast<size_t>(index) >= kernel_->Node().InputDefs().size())
       return nullptr;
 
-    return execution_frame_->GetValue<T>(arg_start_index_ + index);
-  }
-
-  MLDataType InputType(int index) const {
-    return execution_frame_->GetType(arg_start_index_ + index);
-  }
-
-  MLDataType OutputType(int index) const {
-    auto output_arg_index = GetOutputArgIndex(index);
-    return execution_frame_->GetType(output_arg_index);
+    const MLValue* p_ml_value = GetInputMLValue(arg_start_index_ + index);
+    return p_ml_value ? &(p_ml_value->Get<T>()) : nullptr;
   }
 
   // Fetch output (non-tensor) with specified index.
@@ -107,15 +91,9 @@ class OpKernelContext {
     if (index < 0 || static_cast<size_t>(index) >= kernel_->Node().OutputDefs().size())
       return nullptr;
 
-    auto output_arg_index = GetOutputArgIndex(index);
-    MLValueAllocationParameters parameters;
-    T* ret = nullptr;
-    LOTUS_ENFORCE(execution_frame_->GetOrCreateMLValue<T>(output_arg_index, parameters, ret).IsOK());
-    return ret;
-  }
-
-  int GetOutputArgIndex(int index) const {
-    return arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
+    MLValue* p_ml_value = nullptr;
+    LOTUS_ENFORCE(GetorCreateOutputMLValue(index, p_ml_value).IsOK());
+    return p_ml_value ? p_ml_value->GetMutable<T>() : nullptr;
   }
 
   // In the case that memory allocation has not been done for an output tensor,
@@ -135,34 +113,41 @@ class OpKernelContext {
     return static_cast<int>(kernel_->Node().OutputDefs().size());
   }
 
-  Status GetTempSpaceAllocator(AllocatorPtr* output) const {
-    *output = execution_frame_->GetAllocator(kernel_->Allocator(kMemTypeDefault));
-    if (!*output)
-      return Status(Common::LOTUS, Common::FAIL, "TempSpace allocator not found");
-    return Status::OK();
-  }
+  Status GetTempSpaceAllocator(AllocatorPtr* output) const;
 
-  Fence_t InputFence(int index) const {
-    if (index >= InputCount())
-      return nullptr;
+  /**
+  Return the fence of current node's input.
+  @param index The index of the input.
+  @returns Point to the Fence of the input MLValue.
+  It is null if the input MLValue doesn't have fence or the input is optional. 
+  */
+  Fence_t InputFence(int index) const;
 
-    return execution_frame_->GetFence(arg_start_index_ + index);
-  }
-
-  Fence_t OutputFence(int index) const {
-    if (index >= OutputCount())
-      return nullptr;
-
-    return execution_frame_->GetFence(arg_start_index_ + InputCount() + index);
-  }
+  /**
+  Return the fence of current node's output identifed by index.
+  @param index The index of the output.
+  @returns Point to the Fence of the output MLValue.
+  It is null if the output MLValue doesn't have fence or the output is optional. 
+  */
+  Fence_t OutputFence(int index) const;
 
  private:
-  ExecutionFrame* execution_frame_ = nullptr;
-  const OpKernel* kernel_ = nullptr;
-  const Logging::Logger* logger_ = nullptr;
+  const MLValue* GetInputMLValue(int index) const;
+  Status GetorCreateOutputMLValue(int index, MLValue*& value);
+
+  int GetOutputArgIndex(int index) const;
+
+ protected:
+  LotusIR::NodeIndex GetNodeIndex() const;
+  const SessionState& GetSessionState() const;
+
+ private:
+  ExecutionFrame* execution_frame_{nullptr};
+  const OpKernel* kernel_{nullptr};
+  const Logging::Logger* logger_{nullptr};
 
   // The argument starting index in ExecutionFrame.
-  int arg_start_index_ = -1;
+  int arg_start_index_{-1};
 };
 
 // Fetching output tensor without shape is not allowed.

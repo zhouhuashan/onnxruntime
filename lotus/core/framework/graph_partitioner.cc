@@ -1,12 +1,13 @@
 #include "core/framework/graph_partitioner.h"
 
-#include "core/framework/kernel_registry_manager.h"
 #include "core/graph/indexed_sub_graph.h"
+#include "core/framework/kernel_registry_manager.h"
+#include "core/framework/execution_providers.h"
 
 using namespace ::Lotus::Common;
 namespace Lotus {
 Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
-  if (providers_.empty()) {
+  if (providers_.Empty()) {
     return Status(LOTUS, INVALID_ARGUMENT, "No provider specified.");
   }
 

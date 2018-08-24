@@ -36,7 +36,7 @@ TRACELOGGING_DEFINE_PROVIDER(etw_provider_handle, "LotusTraceLoggingProvider",
 // We expect one static instance to be created for the lifetime of the program.
 class EtwRegistrationManager {
  public:
-  static EtwRegistrationManager &Register() {
+  static EtwRegistrationManager& Register() {
     const HRESULT etw_status = ::TraceLoggingRegister(etw_provider_handle);
 
     if (FAILED(etw_status)) {
@@ -63,11 +63,11 @@ class EtwRegistrationManager {
   const HRESULT etw_status_;
 };
 
-void EtwSink::SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) {
+void EtwSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
   UNREFERENCED_PARAMETER(timestamp);
 
   // register on first usage
-  static EtwRegistrationManager &etw_manager = EtwRegistrationManager::Register();
+  static EtwRegistrationManager& etw_manager = EtwRegistrationManager::Register();
 
   // do something (not that meaningful) with etw_manager so it doesn't get optimized out
   // as we want an instance around to do the unregister

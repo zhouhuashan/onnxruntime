@@ -7,5 +7,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     7,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Gemm<float, float, float, float>);
-
 }

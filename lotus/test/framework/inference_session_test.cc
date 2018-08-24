@@ -511,7 +511,7 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
   std::copy(msgs.begin(), msgs.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
   bool have_log_entry_with_vlog_session_msg =
       (std::find_if(msgs.begin(), msgs.end(),
-                    [&run_options](std::string msg) { return msg.find("Adding input argument with name") != string::npos; }) !=
+                    [&run_options](std::string msg) { return msg.find("Added input argument with name") != string::npos; }) !=
        msgs.end());
 
   ASSERT_TRUE(have_log_entry_with_vlog_session_msg);

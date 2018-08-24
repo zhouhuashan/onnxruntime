@@ -16,7 +16,7 @@ class ISink {
   @param logger_id The logger identifier.
   @param message The captured message.
   */
-  void Send(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) {
+  void Send(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
     SendImpl(timestamp, logger_id, message);
   }
 
@@ -26,7 +26,7 @@ class ISink {
   // Make Code Analysis happy by disabling all for now. Enable as needed.
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ISink);
 
-  virtual void SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) = 0;
+  virtual void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) = 0;
 };
 }  // namespace Logging
 }  // namespace Lotus

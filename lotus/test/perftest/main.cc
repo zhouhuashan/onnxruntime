@@ -31,7 +31,12 @@ int main(int argc, char* args[]) {
   }
 
   ::Lotus::PerfTest::PerformanceRunner perf_runner(test_config);
-  perf_runner.Run();
+  status = perf_runner.Run();
+  if (!status.IsOK()) {
+    LOGF_DEFAULT(ERROR, "Run failed:%s", status.ErrorMessage().c_str());
+    return -1;
+  }
+
   perf_runner.SerializeResult();
 
   return 0;

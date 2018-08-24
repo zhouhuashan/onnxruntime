@@ -4,8 +4,8 @@
 
 namespace Lotus {
 
-    const static std::string UpsampleModeNN = "nearest";
-    const static std::string UpsampleModeLinear = "linear";
+const static std::string UpsampleModeNN = "nearest";
+const static std::string UpsampleModeLinear = "linear";
 
 template <typename T>
 class Upsample : public OpKernel {

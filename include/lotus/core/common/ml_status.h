@@ -25,7 +25,7 @@ enum class MLStatus : uint32_t {
   REQUIREMENT_NOT_REGISTERED = 12
 };
 
-inline const char *MLStatusToString(MLStatus status) noexcept {
+inline const char* MLStatusToString(MLStatus status) noexcept {
   switch (status) {
     case MLStatus::OK:
       return "SUCCESS";
@@ -56,4 +56,4 @@ inline const char *MLStatusToString(MLStatus status) noexcept {
   }
 }
 
-} // namespace Lotus
+}  // namespace Lotus

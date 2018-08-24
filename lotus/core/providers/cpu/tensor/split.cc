@@ -11,10 +11,10 @@ ONNX_CPU_OPERATOR_KERNEL(
     Split,
     2,
     KernelDefBuilder().TypeConstraint("T",
-                                       std::vector<MLDataType>{
-                                           DataTypeImpl::GetTensorType<float>(),
-                                           DataTypeImpl::GetTensorType<double>(),
-                                       }),
+                                      std::vector<MLDataType>{
+                                          DataTypeImpl::GetTensorType<float>(),
+                                          DataTypeImpl::GetTensorType<double>(),
+                                      }),
     Split);
 
 Status Split::Compute(OpKernelContext* context) const {

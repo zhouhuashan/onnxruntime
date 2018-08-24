@@ -16,7 +16,7 @@ class MLValueNameIdxMap {
   // If entry already existed the existing index value is returned.
   int Add(const std::string& name) {
     int idx;
-    Common::Status status = GetIdx(name, &idx);
+    Common::Status status = GetIdx(name, idx);
 
     if (!status.IsOK()) {
       idx = mlvalue_max_idx_++;
@@ -26,13 +26,15 @@ class MLValueNameIdxMap {
     return idx;
   }
 
-  Common::Status GetIdx(const std::string& name, int* idx) const {
+  Common::Status GetIdx(const std::string& name, int& idx) const {
+    idx = -1;
+
     auto it = map_.find(name);
     if (it == map_.end()) {
       return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Could not find MLValue with name: ", name);
     }
 
-    *idx = it->second;
+    idx = it->second;
     return Common::Status::OK();
   }
 
@@ -48,7 +50,7 @@ class MLValueNameIdxMap {
   // using std::atomic so each call to Add is guaranteed to get a unique index number.
   // we could use a raw int at the cost of thread safety, but as we populate the map during
   // initialization the performance cost of std::atomic is acceptable.
-  std::atomic<int> mlvalue_max_idx_ = 0;
+  std::atomic<int> mlvalue_max_idx_{0};
   std::unordered_map<std::string, int> map_;
 };
 

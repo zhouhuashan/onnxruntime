@@ -17,70 +17,69 @@ const std::vector<MLDataType> castOpTypeConstraints{
     DataTypeImpl::GetTensorType<int64_t>(),
     DataTypeImpl::GetTensorType<MLFloat16>()};
 
-#define ADD_FROM_CAST_OP(in_type)                                                    \
-  ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                    \
-    Cast,                                                                            \
-    6,                                                                               \
-    in_type,                                                                         \
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())  \
-                      .TypeConstraint("T2", castOpTypeConstraints),                  \
-    Cast<in_type>);                                                                  \
-                                                                                     \
-  template <>                                                                        \
-  Status Cast<in_type>::Compute(OpKernelContext* context) const {                    \
-    const Tensor* X = context->Input<Tensor>(0);                                     \
-    const TensorShape& shape = X->Shape();                                           \
-    Tensor* Y = context->Output(0, TensorShape(shape));                              \
-                                                                                     \
-    switch (to_) {                                                                   \
-      case TensorProto_DataType_BOOL:                                                \
-        CastData<in_type, bool>(X, Y, shape);                                        \
-        break;                                                                       \
-      case TensorProto_DataType_INT16:                                               \
-        CastData<in_type, int16_t>(X, Y, shape);                                     \
-        break;                                                                       \
-      case TensorProto_DataType_INT32:                                               \
-        CastData<in_type, int32_t>(X, Y, shape);                                     \
-        break;                                                                       \
-      case TensorProto_DataType_INT64:                                               \
-        CastData<in_type, int64_t>(X, Y, shape);                                     \
-        break;                                                                       \
-      case TensorProto_DataType_UINT8:                                               \
-        CastData<in_type, uint8_t>(X, Y, shape);                                     \
-        break;                                                                       \
-      case TensorProto_DataType_UINT16:                                              \
-        CastData<in_type, uint16_t>(X, Y, shape);                                    \
-        break;                                                                       \
-      case TensorProto_DataType_UINT32:                                              \
-        CastData<in_type, uint32_t>(X, Y, shape);                                    \
-        break;                                                                       \
-      case TensorProto_DataType_UINT64:                                              \
-        CastData<in_type, uint64_t>(X, Y, shape);                                    \
-        break;                                                                       \
-      case TensorProto_DataType_FLOAT:                                               \
-        CastData<in_type, float>(X, Y, shape);                                       \
-        break;                                                                       \
-      case TensorProto_DataType_DOUBLE:                                              \
-        CastData<in_type, double>(X, Y, shape);                                      \
-        break;                                                                       \
-      case TensorProto_DataType_INT8:                                                \
-        CastData<in_type, int8_t>(X, Y, shape);                                      \
-        break;                                                                       \
-      case TensorProto_DataType_FLOAT16:                                             \
-        if (std::is_same<in_type, float>::value) {                                   \
-          CastData<float, MLFloat16>(X, Y, shape);                                   \
-        } else {                                                                     \
-          CastFloat16Data<in_type, MLFloat16>(X, Y, shape, Info());                  \
-        }                                                                            \
-        break;                                                                       \
-      case TensorProto_DataType_STRING:                                              \
-        LOTUS_THROW("Casting to and from strings is not supported yet."); /*break;*/ \
-      case TensorProto_DataType_UNDEFINED:                                           \
-        LOTUS_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/  \
-      default:                                                                       \
-        LOTUS_THROW("Unexpected 'to' argument value: ", to_);                        \
-    }                                                                                \
-    return Status::OK();                                                             \
+#define ADD_FROM_CAST_OP(in_type)                                                                                                  \
+  ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                                                                  \
+      Cast,                                                                                                                        \
+      6,                                                                                                                           \
+      in_type,                                                                                                                     \
+      KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>()).TypeConstraint("T2", castOpTypeConstraints), \
+      Cast<in_type>);                                                                                                              \
+                                                                                                                                   \
+  template <>                                                                                                                      \
+  Status Cast<in_type>::Compute(OpKernelContext* context) const {                                                                  \
+    const Tensor* X = context->Input<Tensor>(0);                                                                                   \
+    const TensorShape& shape = X->Shape();                                                                                         \
+    Tensor* Y = context->Output(0, TensorShape(shape));                                                                            \
+                                                                                                                                   \
+    switch (to_) {                                                                                                                 \
+      case TensorProto_DataType_BOOL:                                                                                              \
+        CastData<in_type, bool>(X, Y, shape);                                                                                      \
+        break;                                                                                                                     \
+      case TensorProto_DataType_INT16:                                                                                             \
+        CastData<in_type, int16_t>(X, Y, shape);                                                                                   \
+        break;                                                                                                                     \
+      case TensorProto_DataType_INT32:                                                                                             \
+        CastData<in_type, int32_t>(X, Y, shape);                                                                                   \
+        break;                                                                                                                     \
+      case TensorProto_DataType_INT64:                                                                                             \
+        CastData<in_type, int64_t>(X, Y, shape);                                                                                   \
+        break;                                                                                                                     \
+      case TensorProto_DataType_UINT8:                                                                                             \
+        CastData<in_type, uint8_t>(X, Y, shape);                                                                                   \
+        break;                                                                                                                     \
+      case TensorProto_DataType_UINT16:                                                                                            \
+        CastData<in_type, uint16_t>(X, Y, shape);                                                                                  \
+        break;                                                                                                                     \
+      case TensorProto_DataType_UINT32:                                                                                            \
+        CastData<in_type, uint32_t>(X, Y, shape);                                                                                  \
+        break;                                                                                                                     \
+      case TensorProto_DataType_UINT64:                                                                                            \
+        CastData<in_type, uint64_t>(X, Y, shape);                                                                                  \
+        break;                                                                                                                     \
+      case TensorProto_DataType_FLOAT:                                                                                             \
+        CastData<in_type, float>(X, Y, shape);                                                                                     \
+        break;                                                                                                                     \
+      case TensorProto_DataType_DOUBLE:                                                                                            \
+        CastData<in_type, double>(X, Y, shape);                                                                                    \
+        break;                                                                                                                     \
+      case TensorProto_DataType_INT8:                                                                                              \
+        CastData<in_type, int8_t>(X, Y, shape);                                                                                    \
+        break;                                                                                                                     \
+      case TensorProto_DataType_FLOAT16:                                                                                           \
+        if (std::is_same<in_type, float>::value) {                                                                                 \
+          CastData<float, MLFloat16>(X, Y, shape);                                                                                 \
+        } else {                                                                                                                   \
+          CastFloat16Data<in_type, MLFloat16>(X, Y, shape, Info());                                                                \
+        }                                                                                                                          \
+        break;                                                                                                                     \
+      case TensorProto_DataType_STRING:                                                                                            \
+        LOTUS_THROW("Casting to and from strings is not supported yet."); /*break;*/                                               \
+      case TensorProto_DataType_UNDEFINED:                                                                                         \
+        LOTUS_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/                                                \
+      default:                                                                                                                     \
+        LOTUS_THROW("Unexpected 'to' argument value: ", to_);                                                                      \
+    }                                                                                                                              \
+    return Status::OK();                                                                                                           \
   }
 
 ADD_FROM_CAST_OP(uint8_t);
@@ -99,8 +98,7 @@ ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Cast,
     6,
     MLFloat16,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<MLFloat16>())
-                      .TypeConstraint("T2", castOpTypeConstraints),
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<MLFloat16>()).TypeConstraint("T2", castOpTypeConstraints),
     Cast<MLFloat16>);
 
 template <>

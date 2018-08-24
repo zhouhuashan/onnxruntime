@@ -20,7 +20,7 @@ class Model {
   static constexpr Version kNoVersion = INT64_MAX;
 
   // Construct model from scratch.
-  explicit Model(const std::string& graph_name, 
+  explicit Model(const std::string& graph_name,
                  bool is_onnx_domain_only = false,
                  const ModelMetaData& model_metadata = ModelMetaData(),
                  const ILotusOpSchemaRegistryList* local_registries = nullptr,
@@ -84,7 +84,7 @@ class Model {
 
   // TODO(Task:132) Use of shared_ptr<X>* in Load/Save methods is confusing.
   static ::Lotus::Common::Status Load(const std::wstring& file_path, /*out*/ std::shared_ptr<Model>& p_model,
-                                    const ILotusOpSchemaRegistryList* local_registry = nullptr);
+                                      const ILotusOpSchemaRegistryList* local_registry = nullptr);
 #endif
   static ::Lotus::Common::Status Save(Model& model, const std::string& file_path);
 
@@ -93,21 +93,21 @@ class Model {
   static ::Lotus::Common::Status Load(std::istream& model_istream, onnx::ModelProto* p_model_proto);
 
   static ::Lotus::Common::Status Load(const std::string& file_path,
-                                    /*out*/ std::shared_ptr<Model>& p_model,
-                                    const ILotusOpSchemaRegistryList* local_registries = nullptr);
+                                      /*out*/ std::shared_ptr<Model>& p_model,
+                                      const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   static ::Lotus::Common::Status Load(int fd, /*out*/ std::shared_ptr<Model>& p_model,
-                                    const ILotusOpSchemaRegistryList* local_registries = nullptr);
+                                      const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   // 'int' rather than 'size_t' because of a protobuf design choice; let callers handle type checks
   static ::Lotus::Common::Status LoadFromBytes(int count, void* pBytes, /*out*/ std::shared_ptr<Model>& p_model,
-                                             const ILotusOpSchemaRegistryList* local_registries = nullptr);
+                                               const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   static ::Lotus::Common::Status Load(const onnx::ModelProto& model_proto, /*out*/ std::shared_ptr<Model>& p_model,
-                                    const ILotusOpSchemaRegistryList* local_registries = nullptr);
+                                      const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   static ::Lotus::Common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto, /*out*/ std::shared_ptr<Model>& p_model,
-                                    const ILotusOpSchemaRegistryList* local_registries = nullptr);
+                                      const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
  private:
   // Model data.

@@ -18,37 +18,11 @@ struct MemoryPatternGroup;
 
 struct MLValueAllocationParameters {
   TensorShape tensor_shape;
-  //todo: is there any parameter needed for ml types?
+  // todo: is there any parameter needed for ml types?
 };
-
-template <typename T>
-inline void VerifyShape(const T* value,
-                        const MLValue* p_mlvalue,
-                        const MLValueAllocationParameters& parameters) {
-  if (p_mlvalue->IsTensor()) {
-    const Tensor* tensor = static_cast<const Tensor*>(value);
-    if (tensor->Shape() != parameters.tensor_shape) {
-      LOTUS_THROW("MLValue shape verification failed.");
-    }
-  }
-}
-
-template <>
-inline void VerifyShape<VectorMapStringToFloat>(const VectorMapStringToFloat*,
-                                                const MLValue*,
-                                                const MLValueAllocationParameters&) {
-}
-
-template <>
-inline void VerifyShape<VectorMapInt64ToFloat>(const VectorMapInt64ToFloat*,
-                                               const MLValue*,
-                                               const MLValueAllocationParameters&) {
-}
 
 class ExecutionFrame {
  public:
-  using NodeArgValue = MLValue*;
-
   ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                  const std::vector<std::string>& output_names,
                  const std::vector<MLValue>& fetches,
@@ -98,46 +72,25 @@ class ExecutionFrame {
   }
 
   // Index to the first argument of the given node.
-  int GetFirstArgIndex(LotusIR::NodeIndex index) {
+  int GetFirstArgIndex(LotusIR::NodeIndex index) const {
     LOTUS_ENFORCE(index < node_offsets_.size());
     return node_offsets_[index];
   }
 
   // Return nullptr if index map to an value that is an unused optional input/output
-  template <typename T>
-  const T* GetValue(int index) const {
-    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
-    return node_values_[index] >= 0 ? &all_values_[node_values_[index]].Get<T>() : nullptr;
-  }
+  const MLValue* GetNodeInputOrOutputMLValue(int index) const;
+  MLValue* GetMutableNodeInputOrOutputMLValue(int index);
 
-  Fence_t GetFence(int index) const {
-    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
-    return node_values_[index] >= 0 ? all_values_[node_values_[index]].Fence() : nullptr;
-  }
-
-  // Return nullptr if index map to an value that is an unused optional input/output
-  MLDataType GetType(int index) const {
-    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
-    return node_values_[index] >= 0 ? all_values_[node_values_[index]].Type() : nullptr;
-  }
-
-  // Return nullptr if index map to an value that is an unused optional input/output
-  template <typename T>
-  T* GetMutableValue(int index) {
-    LOTUS_ENFORCE(index >= 0 && static_cast<size_t>(index) < node_values_.size());
-    return node_values_[index] >= 0 ? all_values_[node_values_[index]].GetMutable<T>() : nullptr;
-  }
+  // TO DO: make it thread safe
+  // This method is not thread safe!
+  // Return S_OK and nullptr if index map to an value that is an unused optional input/output
+  Status GetOrCreateNodeOutputMLValue(int index,
+                                      const MLValueAllocationParameters& parameters,
+                                      MLValue*& p_mlvalue);
 
   AllocatorPtr GetAllocator(const AllocatorInfo& info);
 
-  Status ReleaseMLValue(int mlvalue_idx) {
-    if (mlvalue_idx < 0 || static_cast<size_t>(mlvalue_idx) >= all_values_.size()) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "invalid index ", mlvalue_idx);
-    }
-    all_values_[mlvalue_idx] = MLValue();
-    TraceFree(mlvalue_idx);
-    return Status::OK();
-  }
+  Status ReleaseMLValue(int mlvalue_idx);
 
   const ::Lotus::SessionState& SessionState() const {
     return session_state_;
@@ -152,7 +105,6 @@ class ExecutionFrame {
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ExecutionFrame);
 
-  friend class OpKernelContext;
   // This method is not thread safe!
   void Release(int offset);
 
@@ -177,37 +129,6 @@ class ExecutionFrame {
                                                    MLDataType element_type,
                                                    const AllocatorInfo& location,
                                                    const TensorShape& shape);
-
-  // This method is not thread safe!
-  // Return S_OK and nullptr if index map to an value that is an unused optional input/output
-  template <typename T>
-  Status GetOrCreateMLValue(int index, const MLValueAllocationParameters& parameters, T*& value) {
-    if (index < 0 || static_cast<size_t>(index) >= node_values_.size()) {
-      return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
-                    "Try to access with invalid node value index: " + std::to_string(index));
-    }
-
-    if (node_values_[index] < 0) {
-      value = nullptr;
-      return Status::OK();
-    }
-
-    auto p_mlvalue = &all_values_.at(node_values_[index]);
-
-    if (p_mlvalue->IsAllocated()) {
-      // The ml has already been allocated.
-      // Now only tensor need to be check.
-      value = p_mlvalue->GetMutable<T>();
-      VerifyShape<T>(value, p_mlvalue, parameters);  // TODO find a better way to do this
-      return Status::OK();
-    } else {
-      // It's not allocated, then allocate it with given shape and return.
-      // Perform allocation based on the allocation plan
-      LOTUS_RETURN_IF_ERROR(AllocateAsPerAllocationPlan(node_values_[index], parameters));
-      value = p_mlvalue->template GetMutable<T>();
-      return Status::OK();
-    }
-  }
 
   void TraceAllocate(int mlvalue_idx, size_t size);
 

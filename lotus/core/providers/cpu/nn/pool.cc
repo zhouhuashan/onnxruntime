@@ -88,8 +88,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   int64_t pooled_depth = kernel_shape.size() > 2 ? output_dims[4] : 1;
 
   switch (kernel_shape.size()) {
-    case 1:
-    {
+    case 1: {
       int64_t x_step = height;
       int64_t y_step = pooled_height;
       const int64_t total_channels = x_shape[0] * channels;
@@ -119,8 +118,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
       break;
     }
 
-    case 2:
-    {
+    case 2: {
       int64_t x_step = height * width;
       int64_t y_step = pooled_height * pooled_width;
       const int64_t total_channels = x_shape[0] * channels;
@@ -158,8 +156,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
 
       break;
     }
-    case 3:
-    {
+    case 3: {
       int64_t x_step = height * width * depth;
       int64_t y_step = pooled_height * pooled_width * pooled_depth;
       const int64_t total_channels = x_shape[0] * channels;

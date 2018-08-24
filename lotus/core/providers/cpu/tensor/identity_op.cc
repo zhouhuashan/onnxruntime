@@ -2,7 +2,7 @@
 #include "core/inc/op_kernel_author.h"
 
 namespace Lotus {
-	
+
 ONNX_CPU_OPERATOR_KERNEL(
     Dropout,
     7,

@@ -35,7 +35,7 @@ class IFence {
   // This should update the write fence of the MLValue
   virtual void AfterUsedAsOutput(int queue_id) = 0;
 };
-using Fence_t = IFence *;
+using Fence_t = IFence*;
 using FencePtr = std::shared_ptr<IFence>;
 
 }  // namespace Lotus

@@ -9,7 +9,7 @@
 // error: ignoring attributes on template argument "Eigen::PacketType<const float, Eigen::DefaultDevice>::type {aka __vector(4) float}" [-Werror=ignored-attributes]
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
-#if __GNUC__>=6
+#if __GNUC__ >= 6
 #pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -17,6 +17,6 @@
 
 #include "unsupported/Eigen/CXX11/Tensor"
 
-#if defined(__GNUC__) && __GNUC__>=6
+#if defined(__GNUC__) && __GNUC__ >= 6
 #pragma GCC diagnostic pop
 #endif

@@ -136,8 +136,8 @@ class SequentialPlannerTestContext : public ISequentialPlannerContext {
 
 class PlannerTest : public ::testing::Test {
  private:
-  void index(const std::string& name, int* out) {
-    ASSERT_TRUE(state_.GetMLValueIdx(name, out).IsOK());
+  void index(const std::string& name, int& out) {
+    ASSERT_TRUE(state_.GetMLValueNameIdxMap().GetIdx(name, out).IsOK());
   }
 
   LotusIR::Model model_;
@@ -153,21 +153,21 @@ class PlannerTest : public ::testing::Test {
   std::vector<std::unique_ptr<UnaryNode>> nodes_;
   std::vector<std::unique_ptr<OpKernelInfo>> op_kernel_infos_;
   std::vector<std::pair<LotusIR::Node*, KernelDef&>> kernel_bindings_;
+  ExecutionProviders execution_providers_;
   SessionState state_;
-  std::unique_ptr<IExecutionProvider> provider_;
   ShapeMap shape_map_;
-  SequentialExecutionPlan plan_;
+  std::unique_ptr<SequentialExecutionPlan> plan_;
 
  public:
-  PlannerTest() : model_("test"), graph_{model_.MainGraph()} {
+  PlannerTest() : model_("test"), graph_{model_.MainGraph()}, state_{execution_providers_} {
     std_kernel_ = KernelDefBuilder().SetName("Transpose").Build();
     in_place_kernel_ = KernelDefBuilder().SetName("Clip").MayInplace(0, 0).Build();
     CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
-    provider_ = std::make_unique<CPUExecutionProvider>(epi);
+    auto execution_provider = std::make_unique<CPUExecutionProvider>(epi);
+    execution_providers_.Add(epi.name, std::move(execution_provider));
   }
 
-  ~PlannerTest() {
-  }
+  ~PlannerTest() = default;
 
   LotusIR::NodeArg* Arg(const std::string& name) {
     auto iter = name_to_arg_.find(name);
@@ -193,7 +193,7 @@ class PlannerTest : public ::testing::Test {
   }
 
   void BindKernel(LotusIR::Node* p_node, ::Lotus::KernelDef& kernel_def) {
-    auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, *provider_.get(), state_);
+    auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, *execution_providers_.Get(*p_node), state_);
     auto dummy = std::make_unique<DummyOpKernel>(*info);
     op_kernel_infos_.push_back(std::move(info));
     state_.AddKernel(p_node->Index(), std::move(dummy));
@@ -213,9 +213,11 @@ class PlannerTest : public ::testing::Test {
     EXPECT_EQ(graph_.Resolve(), Status::OK());
     state_.SetGraph(graph_);
 
+    MLValueNameIdxMap& mlvalue_name_idx_map{state_.GetMLValueNameIdxMap()};
+
     int count = 0;
     for (auto& pair : name_to_arg_) {
-      state_.AddMLValueNameIdx(pair.first, count++);
+      EXPECT_EQ(mlvalue_name_idx_map.Add(pair.first), count++);
     }
 
     for (auto& binding : kernel_bindings_) {
@@ -223,19 +225,24 @@ class PlannerTest : public ::testing::Test {
     }
 
     auto cpu_execution_provider = std::make_unique<CPUExecutionProvider>(CPUExecutionProviderInfo());
-    state_.GetKernelRegistryManager().RegisterKernelRegistry(cpu_execution_provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
-    state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider, std::move(cpu_execution_provider));
+    KernelRegistryManager kernel_registry_manager;
+    kernel_registry_manager.RegisterKernelRegistry(cpu_execution_provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
+
+    ExecutionProviders execution_providers;
+    execution_providers.Add(LotusIR::kCpuExecutionProvider, std::move(cpu_execution_provider));
 
     SequentialPlannerTestContext test_context(&shape_map_);
-    auto status = SequentialPlanner::CreatePlan(state_, test_context, &plan_);
+    auto status = SequentialPlanner::CreatePlan(
+        graph_, execution_providers, kernel_registry_manager, mlvalue_name_idx_map, test_context, plan_);
+
     EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
-    AllocationPlanTestUtility::BasicIntegrityCheck(plan_, name_to_arg_.size());
+    AllocationPlanTestUtility::BasicIntegrityCheck(*plan_, name_to_arg_.size());
   }
 
   void CheckAllocKind(const std::string& name, AllocKind kind) {
     int id;
-    index(name, &id);
-    EXPECT_EQ(plan_.allocation_plan[id].alloc_kind, kind) << "Error in allocation kind for " << name;
+    index(name, id);
+    EXPECT_EQ(plan_->allocation_plan[id].alloc_kind, kind) << "Error in allocation kind for " << name;
   }
 
   void CheckFreed(int step_number, std::initializer_list<std::string> freed_items) {
@@ -243,19 +250,19 @@ class PlannerTest : public ::testing::Test {
     std::unordered_set<int> expected;
     for (auto& name : freed_items) {
       int id;
-      index(name, &id);
+      index(name, id);
       expected.insert(id);
     }
     std::unordered_set<int> plan_result;
-    auto& step_plan = plan_.execution_plan[step_number];
+    auto& step_plan = plan_->execution_plan[step_number];
     for (int i = step_plan.free_from_index; i <= step_plan.free_to_index; ++i)
-      plan_result.insert(plan_.to_be_freed[i]);
+      plan_result.insert(plan_->to_be_freed[i]);
     EXPECT_EQ(plan_result, expected) << "Freed items incorrect for step " << step_number;
   }
 
  protected:
   Graph& GetGraph() { return graph_; }
-  const SequentialExecutionPlan& GetPlan() const { return plan_; }
+  const SequentialExecutionPlan& GetPlan() const { return *plan_; }
   const SessionState& GetState() const { return state_; }
 };
 
