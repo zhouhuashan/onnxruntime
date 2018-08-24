@@ -18,9 +18,9 @@ namespace Cuda {
       Tile<T>);
 
 template <typename T>
-Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const {
-  auto &input_tensor = *ctx->Input<Tensor>(0);
-  auto &repeats_tensor = *ctx->Input<Tensor>(1);
+Status Tile<T>::ComputeInternal(OpKernelContext* ctx) const {
+  auto& input_tensor = *ctx->Input<Tensor>(0);
+  auto& repeats_tensor = *ctx->Input<Tensor>(1);
   size_t rank = input_tensor.Shape().NumDimensions();
 
   if (repeats_tensor.Shape().NumDimensions() != 1)
@@ -29,16 +29,16 @@ Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const {
     return Status(LOTUS, INVALID_ARGUMENT, "'repeat' input tensor must have the same length as the 'input' tensor");
 
   // Calculate the shape of the output tensor
-  auto *repeats = repeats_tensor.Data<int64_t>();
-  const auto &input_shape = input_tensor.Shape().GetDims();
+  auto* repeats = repeats_tensor.Data<int64_t>();
+  const auto& input_shape = input_tensor.Shape().GetDims();
   std::vector<int64_t> output_dims(input_shape);
   for (auto axis = 0; axis < rank; axis++)
     output_dims[axis] *= repeats[axis];
   TensorShape outputShape(output_dims);
-  auto &output_tensor = *ctx->Output(0, outputShape);
+  auto& output_tensor = *ctx->Output(0, outputShape);
 
-  T *output_data = output_tensor.MutableData<T>();
-  const T *input_data = input_tensor.Data<T>();
+  T* output_data = output_tensor.MutableData<T>();
+  const T* input_data = input_tensor.Data<T>();
 
   CudaAsyncBuffer<int64_t> input_strides(this, rank);
   CudaAsyncBuffer<fast_divmod> fdm_input_shape(this, rank);
@@ -59,9 +59,9 @@ Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const {
       rank,
       fdm_input_shape.GpuPtr(),
       input_strides.GpuPtr(),
-      reinterpret_cast<const typename ToCudaType<T>::MappedType *>(input_data),
+      reinterpret_cast<const typename ToCudaType<T>::MappedType*>(input_data),
       fdm_output_strides.GpuPtr(),
-      reinterpret_cast<typename ToCudaType<T>::MappedType *>(output_data),
+      reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_data),
       output_tensor.Shape().Size());
 
   return Status::OK();
@@ -69,7 +69,7 @@ Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const {
 
 #define SPECIALIZED_COMPUTE(T) \
   REGISTER_KERNEL_TYPED(T)     \
-  template Status Tile<T>::ComputeInternal(OpKernelContext *ctx) const;
+  template Status Tile<T>::ComputeInternal(OpKernelContext* ctx) const;
 
 SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)

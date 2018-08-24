@@ -24,7 +24,7 @@ class FunctionInliner : public RewriteRule {
  public:
   FunctionInliner(const std::string& name, const std::string& desc,
                   const Function& function)
-    : RewriteRule(name, desc) {
+      : RewriteRule(name, desc) {
     (function);
   }
 
@@ -44,7 +44,7 @@ class FunctionExtraction : public RewriteRule {
  public:
   FunctionExtraction(const std::string& name, const std::string& desc,
                      const Function& function)
-    : RewriteRule(name, desc) {
+      : RewriteRule(name, desc) {
     (function);
   }
 

@@ -6,11 +6,7 @@ namespace Lotus {
 ONNX_CPU_OPERATOR_KERNEL(
     BatchNormalization,
     7,
-    KernelDefBuilder().TypeConstraint("X", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("scale", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("B", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("mean", DataTypeImpl::GetTensorType<float>())
-                    .TypeConstraint("var", DataTypeImpl::GetTensorType<float>()),
+    KernelDefBuilder().TypeConstraint("X", DataTypeImpl::GetTensorType<float>()).TypeConstraint("scale", DataTypeImpl::GetTensorType<float>()).TypeConstraint("B", DataTypeImpl::GetTensorType<float>()).TypeConstraint("mean", DataTypeImpl::GetTensorType<float>()).TypeConstraint("var", DataTypeImpl::GetTensorType<float>()),
     BatchNorm<float>);
 
 template <>

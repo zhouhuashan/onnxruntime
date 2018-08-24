@@ -17,7 +17,6 @@ ONNX_CPU_OPERATOR_TYPED_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
     Upsample<int32_t>);
 
-
 void upsampleNearest2x(
     int64_t batch_size,
     int64_t num_channels,
@@ -174,10 +173,10 @@ void upsampleBilinear(
           T X12 = Xdata[input_width_mul_y2 + in_x1];
           T X22 = Xdata[input_width_mul_y2 + in_x2];
 
-          Ydata[output_width * y + x] = static_cast<T>( dx2 * dy2 * X11 +
-                                                            dx1 * dy2 * X21 +
-                                                            dx2 * dy1 * X12 +
-                                                            dx1 * dy1 * X22);
+          Ydata[output_width * y + x] = static_cast<T>(dx2 * dy2 * X11 +
+                                                       dx1 * dy2 * X21 +
+                                                       dx2 * dy1 * X12 +
+                                                       dx1 * dy1 * X22);
         }
       }
       Xdata += input_height * input_width;

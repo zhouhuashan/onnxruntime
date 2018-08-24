@@ -27,12 +27,12 @@ class EtwSink : public ISink {
   EtwSink() = default;
   ~EtwSink() = default;
 
-  constexpr static const char *kEventName = "LotusLogEvent";
+  constexpr static const char* kEventName = "LotusLogEvent";
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(EtwSink);
 
-  void SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) override;
+  void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override;
 
   // limit to one instance of an EtwSink being around, so we can control the lifetime of
   // EtwTracingManager to ensure we cleanly unregister it

@@ -5,14 +5,13 @@ using namespace std;
 namespace Lotus {
 namespace ML {
 
-#define REG_NAMED_KERNEL(name, T1, T2)                                                 \
-  ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                   \
-    DictVectorizer,                                                                    \
-    1,                                                                                 \
-    name,                                                                       \
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetType<std::map<T1, T2>>()) \
-                      .TypeConstraint("T2", DataTypeImpl::GetTensorType<T2>()),        \
-    DictVectorizerOp<T1, T2>);
+#define REG_NAMED_KERNEL(name, T1, T2)                                                                                                            \
+  ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                                                                              \
+      DictVectorizer,                                                                                                                             \
+      1,                                                                                                                                          \
+      name,                                                                                                                                       \
+      KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetType<std::map<T1, T2>>()).TypeConstraint("T2", DataTypeImpl::GetTensorType<T2>()), \
+      DictVectorizerOp<T1, T2>);
 
 #define REG_MY_KERNEL(T1, T2) REG_NAMED_KERNEL(T1##_##T2, T1, T2)
 

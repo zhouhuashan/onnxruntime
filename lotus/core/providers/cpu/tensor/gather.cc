@@ -8,10 +8,7 @@ namespace Lotus {
 ONNX_CPU_OPERATOR_KERNEL(
     Gather,
     1,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::AllTensorTypes())
-                      .TypeConstraint("Tind", std::vector<MLDataType>{
-                                               DataTypeImpl::GetTensorType<int32_t>(),
-                                               DataTypeImpl::GetTensorType<int64_t>()}),
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::AllTensorTypes()).TypeConstraint("Tind", std::vector<MLDataType>{DataTypeImpl::GetTensorType<int32_t>(), DataTypeImpl::GetTensorType<int64_t>()}),
     Gather);
 
 Status GatherBase::PrepareForCompute(OpKernelContext* context, Prepare& p) const {
@@ -31,11 +28,11 @@ Status GatherBase::PrepareForCompute(OpKernelContext* context, Prepare& p) const
   return Status::OK();
 }
 
-template<typename Tin>
+template <typename Tin>
 Status GatherCopyData(const Tensor* indices_tensor, const uint8_t* src_base, uint8_t* dst_base, bool is_string_type,
-               const size_t element_bytes, const int64_t block_size, const int64_t M,
-               const int64_t N, const int64_t data_batch_bytes, const int64_t gathered_batch_bytes,
-               const TensorShape& input_data_shape, const int64_t axis) {
+                      const size_t element_bytes, const int64_t block_size, const int64_t M,
+                      const int64_t N, const int64_t data_batch_bytes, const int64_t gathered_batch_bytes,
+                      const TensorShape& input_data_shape, const int64_t axis) {
   const Tin* indices_data = indices_tensor->Data<Tin>();
 
   // Check the indices first in case there's a out of bound index.
@@ -76,7 +73,7 @@ Status Gather::Compute(OpKernelContext* context) const {
   const TensorShape& input_data_shape = p.input_tensor->Shape();
 
   bool is_string_type = p.input_tensor->DataType() == DataTypeImpl::GetType<std::string>();
-  
+
   const size_t element_bytes = p.input_tensor->DataType()->Size();
   const int64_t block = input_data_shape.SizeFromDimension(p.axis + 1);
   const int64_t block_size = block * element_bytes;
@@ -91,10 +88,10 @@ Status Gather::Compute(OpKernelContext* context) const {
   MLDataType Tind_type = p.indices_tensor->DataType();
   if (Tind_type == DataTypeImpl::GetType<int32_t>()) {
     return GatherCopyData<int32_t>(p.indices_tensor, src_base, dst_base, is_string_type, element_bytes,
-                            block_size, M, N, data_batch_bytes, gathered_batch_bytes, input_data_shape, p.axis);
+                                   block_size, M, N, data_batch_bytes, gathered_batch_bytes, input_data_shape, p.axis);
   } else if (Tind_type == DataTypeImpl::GetType<int64_t>()) {
     return GatherCopyData<int64_t>(p.indices_tensor, src_base, dst_base, is_string_type, element_bytes,
-                            block_size, M, N, data_batch_bytes, gathered_batch_bytes, input_data_shape, p.axis);
+                                   block_size, M, N, data_batch_bytes, gathered_batch_bytes, input_data_shape, p.axis);
   }
 
   return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");

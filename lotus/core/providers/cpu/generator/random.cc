@@ -53,29 +53,20 @@ ONNX_CPU_OPERATOR_KERNEL(
 ONNX_CPU_OPERATOR_KERNEL(
     RandomNormalLike,
     1,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
-                      .TypeConstraint("T2", std::vector<MLDataType>{
-                                              DataTypeImpl::GetTensorType<float>(),
-                                              DataTypeImpl::GetTensorType<double>()}),
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::AllTensorTypes()).TypeConstraint("T2", std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()}),
     RandomNormalLike);
 
 ONNX_CPU_OPERATOR_KERNEL(
     RandomUniformLike,
     1,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::AllTensorTypes())
-                      .TypeConstraint("T2", std::vector<MLDataType>{
-                                              DataTypeImpl::GetTensorType<float>(),
-                                              DataTypeImpl::GetTensorType<double>()}),
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::AllTensorTypes()).TypeConstraint("T2", std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()}),
     RandomUniformLike);
 
 // https://github.com/onnx/onnx/blob/master/docs/Operators.md#multinomial
 ONNX_CPU_OPERATOR_KERNEL(
     Multinomial,
     7,
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<float>())
-                      .TypeConstraint("T2", std::vector<MLDataType>{
-                                              DataTypeImpl::GetTensorType<int32_t>(),
-                                              DataTypeImpl::GetTensorType<int64_t>()}),
+    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<float>()).TypeConstraint("T2", std::vector<MLDataType>{DataTypeImpl::GetTensorType<int32_t>(), DataTypeImpl::GetTensorType<int64_t>()}),
     Multinomial);
 
 template <typename T, typename TDistribution>

@@ -17,9 +17,9 @@ namespace Cuda {
       Pad<T>);
 
 template <typename T>
-Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
-  const auto &input_tensor = *ctx->Input<Tensor>(0);
-  auto const &input_shape = input_tensor.Shape();
+Status Pad<T>::ComputeInternal(OpKernelContext* ctx) const {
+  const auto& input_tensor = *ctx->Input<Tensor>(0);
+  auto const& input_shape = input_tensor.Shape();
   auto dimension_count = input_shape.NumDimensions();
 
   CudaAsyncBuffer<int64_t> input_dims(this, input_shape.GetDims());
@@ -42,7 +42,7 @@ Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
     output_dims[i] += lower_pads_span[i] + upper_pads_span[i];
   }
   TensorShape output_shape(output_dims);
-  auto &output_tensor = *ctx->Output(0, output_shape);
+  auto& output_tensor = *ctx->Output(0, output_shape);
   LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
   LOTUS_RETURN_IF_ERROR(input_dims.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
@@ -58,9 +58,9 @@ Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
       upper_pads.GpuPtr(),
       value_,
       static_cast<int>(mode_),
-      reinterpret_cast<const typename ToCudaType<T>::MappedType *>(input_tensor.Data<T>()),
+      reinterpret_cast<const typename ToCudaType<T>::MappedType*>(input_tensor.Data<T>()),
       fdm_output_strides.GpuPtr(),
-      reinterpret_cast<typename ToCudaType<T>::MappedType *>(output_tensor.MutableData<T>()),
+      reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_tensor.MutableData<T>()),
       output_tensor.Shape().Size());
 
   return Status::OK();
@@ -68,7 +68,7 @@ Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const {
 
 #define SPECIALIZED_COMPUTE(T) \
   REGISTER_KERNEL_TYPED(T)     \
-  template Status Pad<T>::ComputeInternal(OpKernelContext *ctx) const;
+  template Status Pad<T>::ComputeInternal(OpKernelContext* ctx) const;
 
 SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)

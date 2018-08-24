@@ -6,7 +6,7 @@ namespace Lotus {
 
 // Create CPU execution provider
 std::unique_ptr<IExecutionProvider>
-CreateBasicCPUExecutionProvider(const CPUExecutionProviderInfo &info) {
+CreateBasicCPUExecutionProvider(const CPUExecutionProviderInfo& info) {
   return std::make_unique<CPUExecutionProvider>(info);
 }
 

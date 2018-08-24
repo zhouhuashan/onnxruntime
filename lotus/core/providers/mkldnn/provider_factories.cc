@@ -5,7 +5,7 @@
 namespace Lotus {
 
 // Create MKL-DNN execution provider
-std::unique_ptr<IExecutionProvider> CreateMKLDNNExecutionProvider(const CPUExecutionProviderInfo &info) {
+std::unique_ptr<IExecutionProvider> CreateMKLDNNExecutionProvider(const CPUExecutionProviderInfo& info) {
   return std::make_unique<MKLDNNExecutionProvider>(info);
 }
 

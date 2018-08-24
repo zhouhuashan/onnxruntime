@@ -10,11 +10,11 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
     CategoryMapper,
     1,
     KernelDefBuilder().TypeConstraint("T1",
-                                    std::vector<MLDataType>{DataTypeImpl::GetTensorType<std::string>(),
-                                                            DataTypeImpl::GetTensorType<int64_t>()})
-                    .TypeConstraint("T2",
-                                    std::vector<MLDataType>{DataTypeImpl::GetTensorType<std::string>(),
-                                                            DataTypeImpl::GetTensorType<int64_t>()}),
+                                      std::vector<MLDataType>{DataTypeImpl::GetTensorType<std::string>(),
+                                                              DataTypeImpl::GetTensorType<int64_t>()})
+        .TypeConstraint("T2",
+                        std::vector<MLDataType>{DataTypeImpl::GetTensorType<std::string>(),
+                                                DataTypeImpl::GetTensorType<int64_t>()}),
     CategoryMapper);
 
 Status CategoryMapper::Compute(OpKernelContext* context) const {

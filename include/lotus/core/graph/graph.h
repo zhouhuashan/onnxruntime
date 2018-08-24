@@ -594,7 +594,7 @@ class GraphBase {
   // Returns the inferred shape+type for every output of the node in
   // output parameter inferredShapes.
   ::Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
-                                                  /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
+                                                    /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_
@@ -740,7 +740,7 @@ class Graph : public GraphBase {
   ::Lotus::Common::Status Resolve(bool no_proto_sync_required);
 
   ::Lotus::Common::Status InferAndVerifyTypeMatch(Node& node,
-                                                const onnx::OpSchema& op);
+                                                  const onnx::OpSchema& op);
 
   // Apply type-inference and type-checking to all inputs and initializers:
   ::Lotus::Common::Status TypeCheckInputsAndInitializers();
@@ -753,7 +753,7 @@ class Graph : public GraphBase {
   // across <*this> graph if needed, and verify type/attribute
   // information match between node and op.
   ::Lotus::Common::Status VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
-                                             const std::unordered_map<std::string, Node*>& output_args);
+                                               const std::unordered_map<std::string, Node*>& output_args);
 
   // Set graph inputs/outputs when resolving a graph..
   ::Lotus::Common::Status SetGraphInputsOutputs();

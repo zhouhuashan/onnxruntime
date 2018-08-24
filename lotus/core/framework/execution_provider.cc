@@ -7,7 +7,7 @@
 
 namespace Lotus {
 
-const AllocatorMap &IExecutionProvider::GetAllocatorMap() const {
+const AllocatorMap& IExecutionProvider::GetAllocatorMap() const {
   return allocators_;
 }
 
@@ -20,10 +20,10 @@ IExecutionProvider::GetAllocator(MemType mem_type) const {
 }
 
 std::vector<std::unique_ptr<IndexedSubGraph>>
-IExecutionProvider::GetCapability(const LotusIR::Graph &graph,
-                                  const std::vector<const KernelRegistry *> &kernel_registries) const {
+IExecutionProvider::GetCapability(const LotusIR::Graph& graph,
+                                  const std::vector<const KernelRegistry*>& kernel_registries) const {
   std::vector<std::unique_ptr<IndexedSubGraph>> result;
-  for (auto &node : graph.Nodes()) {
+  for (auto& node : graph.Nodes()) {
     if (graph.IsSourceNode(node) || graph.IsSinkNode(node)) {
       continue;
     }
@@ -40,8 +40,8 @@ IExecutionProvider::GetCapability(const LotusIR::Graph &graph,
   return result;
 }
 
-Common::Status IExecutionProvider::CopyTensor(const Tensor &src,
-                                              Tensor &dst,
+Common::Status IExecutionProvider::CopyTensor(const Tensor& src,
+                                              Tensor& dst,
                                               int exec_queue_id) const {
   // execution provider may override this to support different exec queues
   LOTUS_ENFORCE(exec_queue_id == 0);

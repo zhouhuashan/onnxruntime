@@ -20,9 +20,9 @@ limitations under the License.
 namespace Lotus {
 
 #ifdef _WIN32
-using TIME_SPEC = int64_t ;
+using TIME_SPEC = int64_t;
 #else
-using TIME_SPEC = timespec ;
+using TIME_SPEC = timespec;
 #endif
 
 //Get a time stamp counter

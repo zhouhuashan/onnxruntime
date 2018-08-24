@@ -4,7 +4,7 @@
 namespace Lotus {
 namespace Logging {
 
-void OStreamSink::SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) {
+void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
   // operator for formatting of timestamp in ISO8601 format including microseconds
   using date::operator<<;
 

@@ -11,9 +11,9 @@
 #include "core/framework/allocator.h"
 
 namespace Lotus {
-  class KernelDefBuilder;
+class KernelDefBuilder;
 
-  typedef std::map<size_t, MemType> MemTypeMap;
+typedef std::map<size_t, MemType> MemTypeMap;
 
 // note that input/output might be on CPU implicitly when the node is from CPU execution provider
 inline bool MemTypeOnCpuExplicitly(const MemTypeMap& mem_type_map, size_t index) {

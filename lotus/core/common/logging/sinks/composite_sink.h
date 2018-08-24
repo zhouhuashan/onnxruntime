@@ -25,14 +25,14 @@ class CompositeSink : public ISink {
   /// </summary>
   /// <param name="sink">The sink.</param>
   /// <returns>This instance to allow chaining.</returns>
-  CompositeSink &AddSink(std::unique_ptr<ISink> sink) {
+  CompositeSink& AddSink(std::unique_ptr<ISink> sink) {
     sinks_.push_back(std::move(sink));
     return *this;
   }
 
  private:
-  void SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) override {
-    for (auto &sink : sinks_) {
+  void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override {
+    for (auto& sink : sinks_) {
       sink->Send(timestamp, logger_id, message);
     }
   }

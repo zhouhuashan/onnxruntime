@@ -6,7 +6,7 @@ namespace Lotus {
 
 // Create cuda execution provider
 std::unique_ptr<IExecutionProvider>
-CreateCUDAExecutionProvider(const CUDAExecutionProviderInfo &info) {
+CreateCUDAExecutionProvider(const CUDAExecutionProviderInfo& info) {
   return std::make_unique<CUDAExecutionProvider>(info);
 }
 

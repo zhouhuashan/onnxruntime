@@ -3,15 +3,13 @@
 namespace Lotus {
 namespace ML {
 
-#define ADD_IN_TYPE_SVM_CLASSIFIER_OP(in_type)                                             \
-ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                         \
-    SVMClassifier,                                                                         \
-    1,                                                                                     \
-    in_type,                                                                               \
-    KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>())        \
-                      .TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(),       \
-                                             DataTypeImpl::GetTensorType<std::string>()}), \
-    SVMClassifier<in_type>);
+#define ADD_IN_TYPE_SVM_CLASSIFIER_OP(in_type)                                                                                                                                                    \
+  ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                                                                                                                              \
+      SVMClassifier,                                                                                                                                                                              \
+      1,                                                                                                                                                                                          \
+      in_type,                                                                                                                                                                                    \
+      KernelDefBuilder().TypeConstraint("T1", DataTypeImpl::GetTensorType<in_type>()).TypeConstraint("T2", {DataTypeImpl::GetTensorType<int64_t>(), DataTypeImpl::GetTensorType<std::string>()}), \
+      SVMClassifier<in_type>);
 
 ADD_IN_TYPE_SVM_CLASSIFIER_OP(float);
 ADD_IN_TYPE_SVM_CLASSIFIER_OP(double);

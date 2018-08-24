@@ -84,34 +84,34 @@ EnvTime* EnvTime::Default() {
 }
 
 bool GetMonotonicTimeCounter(TIME_SPEC* value) {
-	static_assert(sizeof(LARGE_INTEGER) == sizeof(TIME_SPEC),"type mismatch");
-	return QueryPerformanceCounter((LARGE_INTEGER*)value)!=0;
+  static_assert(sizeof(LARGE_INTEGER) == sizeof(TIME_SPEC), "type mismatch");
+  return QueryPerformanceCounter((LARGE_INTEGER*)value) != 0;
 }
 
 static INIT_ONCE g_InitOnce = INIT_ONCE_STATIC_INIT;
 static LARGE_INTEGER freq;
 
 BOOL CALLBACK InitHandleFunction(
-	PINIT_ONCE ,
-	PVOID ,
-	PVOID *) {
-	return QueryPerformanceFrequency(&freq);
+    PINIT_ONCE,
+    PVOID,
+    PVOID*) {
+  return QueryPerformanceFrequency(&freq);
 }
 
 void SetTimeSpecToZero(TIME_SPEC* value) {
-	*value=0;
+  *value = 0;
 }
 
 void AccumulateTimeSpec(TIME_SPEC* base, TIME_SPEC* start, TIME_SPEC* end) {
-	*base += std::max<TIME_SPEC>(0,*end - *start);
+  *base += std::max<TIME_SPEC>(0, *end - *start);
 }
 
 //Return the interval in seconds.
 //If the function fails, the return value is zero
 double TimeSpecToSeconds(TIME_SPEC* value) {
-	BOOL initState = InitOnceExecuteOnce(&g_InitOnce, InitHandleFunction, nullptr, nullptr);
-	if (!initState) return 0;
-	return *value / (double)freq.QuadPart;
+  BOOL initState = InitOnceExecuteOnce(&g_InitOnce, InitHandleFunction, nullptr, nullptr);
+  if (!initState) return 0;
+  return *value / (double)freq.QuadPart;
 }
 
 }  // namespace Lotus

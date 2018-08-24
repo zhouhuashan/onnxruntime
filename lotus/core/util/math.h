@@ -400,7 +400,7 @@ void BiasCHW(
     Provider* provider);
 
 // Todo: should we provide a better copy method signature?
-using TypedCopy = void (*)(const void *, void *, size_t);
+using TypedCopy = void (*)(const void*, void*, size_t);
 
 template <class Provider>
 void CopyMatrix(

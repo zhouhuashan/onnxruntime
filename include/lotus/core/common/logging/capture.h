@@ -25,8 +25,8 @@ class Capture {
   @param dataType Type of the data.
   @param location The file location the log message is coming from.
   */
-  Capture(const Logger &logger, Logging::Severity severity, const char *category,
-          Logging::DataType dataType, const CodeLocation &location)
+  Capture(const Logger& logger, Logging::Severity severity, const char* category,
+          Logging::DataType dataType, const CodeLocation& location)
       : logger_{&logger}, severity_{severity}, category_{category}, data_type_{dataType}, location_{location} {
   }
 
@@ -34,7 +34,7 @@ class Capture {
   The stream that can capture the message via operator<<.
   @returns Output stream.
   */
-  std::ostream &Stream() noexcept {
+  std::ostream& Stream() noexcept {
     return stream_;
   }
 
@@ -54,7 +54,7 @@ class Capture {
   A maximum of 2K of output will be captured currently.
   Non-static method, so 'this' is implicit first arg, and we use format(printf(2,3)
   */
-  void CapturePrintf(msvc_printf_check const char *format, ...) __attribute__((format(printf, 2, 3)));
+  void CapturePrintf(msvc_printf_check const char* format, ...) __attribute__((format(printf, 2, 3)));
 
   /**
   Process a printf style log message.
@@ -66,7 +66,7 @@ class Capture {
   so that something like "One string: %s", "the string" does not consider "the string"
   to be the va_list.
   */
-  void ProcessPrintf(msvc_printf_check const char *format, va_list args);
+  void ProcessPrintf(msvc_printf_check const char* format, va_list args);
 
   Logging::Severity Severity() const noexcept {
     return severity_;
@@ -79,7 +79,7 @@ class Capture {
     }
   }
 
-  const char *Category() const noexcept {
+  const char* Category() const noexcept {
     return category_;
   }
 
@@ -87,7 +87,7 @@ class Capture {
     return data_type_;
   }
 
-  const CodeLocation &Location() const noexcept {
+  const CodeLocation& Location() const noexcept {
     return location_;
   }
 
@@ -100,9 +100,9 @@ class Capture {
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Capture);
 
-  const Logger *logger_;
+  const Logger* logger_;
   const Logging::Severity severity_;
-  const char *category_;
+  const char* category_;
   const Logging::DataType data_type_;
   const CodeLocation location_;
 

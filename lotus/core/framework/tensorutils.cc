@@ -150,7 +150,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
 }
 template <>
 Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
-                                 /*out*/MLFloat16* p_data,
+                                 /*out*/ MLFloat16* p_data,
                                  int64_t expected_size) {
   if (nullptr == p_data) {
     const size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.int32_data_size();

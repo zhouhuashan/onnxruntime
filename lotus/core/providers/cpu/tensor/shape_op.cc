@@ -15,8 +15,7 @@ const std::vector<MLDataType> shapeOpTypeConstraints{
 ONNX_CPU_OPERATOR_KERNEL(
     Shape,
     1,
-    KernelDefBuilder().TypeConstraint("T", shapeOpTypeConstraints)
-                      .TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
+    KernelDefBuilder().TypeConstraint("T", shapeOpTypeConstraints).TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
     Shape);
 
 }  // namespace Lotus

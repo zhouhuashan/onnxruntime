@@ -38,11 +38,11 @@
 
 namespace Lotus {
 
-    using TimePoint = std::chrono::high_resolution_clock::time_point;
+using TimePoint = std::chrono::high_resolution_clock::time_point;
 
-    // Using statements for common classes that we refer to in lotus very often.
-    // TODO(Task:137) Remove 'using' statements from header files
-    using Common::Status;
+// Using statements for common classes that we refer to in lotus very often.
+// TODO(Task:137) Remove 'using' statements from header files
+using Common::Status;
 
 #ifdef _WIN32
 #define UNUSED_PARAMETER(x) (x)
@@ -59,7 +59,7 @@ namespace Lotus {
 
 // macro to explicitly ignore the return value from a function call so Code Analysis doesn't complain
 #define IGNORE_RETURN_VALUE(fn) \
-    static_cast<void>(fn)
+  static_cast<void>(fn)
 
 std::vector<std::string> GetStackTrace();
 
@@ -94,8 +94,8 @@ std::vector<std::string> GetStackTrace();
   ::Lotus::Common::Status(::Lotus::Common::category, ::Lotus::Common::code, ::Lotus::MakeString(__VA_ARGS__))
 
 // Check condition. if not met, return status.
-#define LOTUS_RETURN_IF_NOT(condition, ...)                                                                                     \
-  if (!(condition)) {                                                                                                           \
+#define LOTUS_RETURN_IF_NOT(condition, ...)                                                                                       \
+  if (!(condition)) {                                                                                                             \
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Not satsified: " #condition "\n", WHERE.ToString(), ::Lotus::MakeString(__VA_ARGS__)); \
   }
 

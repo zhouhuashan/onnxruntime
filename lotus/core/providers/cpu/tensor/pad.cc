@@ -14,7 +14,7 @@ ONNX_CPU_OPERATOR_KERNEL(
 
 // This is the general padding method to n-dimensionally do edge or reflection padding (based on the inputDelta values)
 template <typename T>
-static void PadAxis(T *output, T *input, ptrdiff_t input_delta, ptrdiff_t input_pitch, size_t block_size, size_t block_count) {
+static void PadAxis(T* output, T* input, ptrdiff_t input_delta, ptrdiff_t input_pitch, size_t block_size, size_t block_count) {
   for (size_t block_index = 0; block_index < block_count; block_index++) {
     for (size_t i = 0; i < block_size; i++) {
       *output++ = *input;
@@ -27,7 +27,7 @@ static void PadAxis(T *output, T *input, ptrdiff_t input_delta, ptrdiff_t input_
 // These are optimizations of PadAxis. The inner loop is removed since the innermost axis has a blockSize of 1,
 // and inputPitch and inputDelta are just a single value added each iteration.
 template <typename T>
-static void PadInnermostAxis(T *output, T *input, ptrdiff_t input_delta, size_t block_count) {
+static void PadInnermostAxis(T* output, T* input, ptrdiff_t input_delta, size_t block_count) {
   for (size_t block_index = 0; block_index < block_count; block_index++) {
     *output++ = *input;
     input += input_delta;
@@ -36,14 +36,14 @@ static void PadInnermostAxis(T *output, T *input, ptrdiff_t input_delta, size_t 
 
 // For constant padding, there is no input, just a size to write the constant to
 template <typename T>
-static void PadAxisConstant(T *output, T constant, size_t size) {
+static void PadAxisConstant(T* output, T constant, size_t size) {
   for (size_t i = 0; i < size; i++)
     *output++ = constant;
 }
 
 template <>
-Status Pad<float>::Compute(OpKernelContext *ctx) const {
-  auto &input_tensor = *ctx->Input<Tensor>(0);
+Status Pad<float>::Compute(OpKernelContext* ctx) const {
+  auto& input_tensor = *ctx->Input<Tensor>(0);
   std::vector<int64_t> output_dims(input_tensor.Shape().GetDims());
   size_t dimension_count = output_dims.size();
 
@@ -61,8 +61,8 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
   TensorShape output_shape(output_dims);
 
   SliceIterator<float> input(input_tensor, input_starts, input_extents);
-  auto &output_tensor = *ctx->Output(0, output_shape);
-  auto *output = output_tensor.MutableData<float>();
+  auto& output_tensor = *ctx->Output(0, output_shape);
+  auto* output = output_tensor.MutableData<float>();
 
   TensorPitches output_pitches(output_tensor);
   size_t alignSkip = 0;  // Amount to skip to align to where the next input tensor data needs to be written
@@ -82,7 +82,7 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
       while (input_counters) {
         output += alignSkip;
         {
-          float *axisStart = output;
+          float* axisStart = output;
           output = input.CopyInnermostAxis(output);
 
           int64_t prePad = pads_[inner_axis];
@@ -95,7 +95,7 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
         while (input_counters.Increment()) {
           ptrdiff_t inner_pitch = output_pitches[input_counters.Axis()];
-          float *axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
+          float* axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
           int64_t prePad = pads_[input_counters.Axis()];
           int64_t postPad = pads_[input_counters.Axis() + dimension_count];
           PadAxisConstant(axisStart - prePad * inner_pitch, value_, prePad * inner_pitch);
@@ -113,7 +113,7 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
       while (input_counters) {
         output += alignSkip;
         {
-          float *axisStart = output;
+          float* axisStart = output;
           output = input.CopyInnermostAxis(output);
 
           int64_t prePad = pads_[inner_axis];
@@ -126,7 +126,7 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
         while (input_counters.Increment()) {
           ptrdiff_t inner_pitch = output_pitches[input_counters.Axis()];
-          float *axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
+          float* axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
           int64_t prePad = pads_[input_counters.Axis()];
           int64_t postPad = pads_[input_counters.Axis() + dimension_count];
           PadAxis(axisStart - prePad * inner_pitch, axisStart, 1, -inner_pitch, inner_pitch, prePad);
@@ -144,7 +144,7 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
       while (input_counters) {
         output += alignSkip;
         {
-          float *axisStart = output;
+          float* axisStart = output;
           output = input.CopyInnermostAxis(output);
 
           int64_t prePad = pads_[inner_axis];
@@ -157,7 +157,7 @@ Status Pad<float>::Compute(OpKernelContext *ctx) const {
         // Calculate the size of the next block of padding (skipping over the innermost axis since that's already done)
         while (input_counters.Increment()) {
           ptrdiff_t inner_pitch = output_pitches[input_counters.Axis()];
-          float *axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
+          float* axisStart = output - inner_pitch * input_extents[input_counters.Axis()];
           int64_t prePad = pads_[input_counters.Axis()];
           int64_t postPad = pads_[input_counters.Axis() + dimension_count];
           PadAxis(axisStart - prePad * inner_pitch, axisStart + prePad * inner_pitch, 1, -inner_pitch * 2, inner_pitch, prePad);

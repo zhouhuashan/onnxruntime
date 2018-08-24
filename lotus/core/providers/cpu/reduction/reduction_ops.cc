@@ -3,19 +3,19 @@
 using namespace std;
 namespace Lotus {
 
-#define REGISTER_UNARY_ELEMENTWISE_KERNEL(x, sinceVersion)                              \
-  ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                       \
-      x,                                                                                \
-      sinceVersion,                                                                     \
-      float,                                                                            \
-      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),     \
-      x<float>);                                                                        \
-                                                                                        \
-  ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                       \
-      x,                                                                                \
-      sinceVersion,                                                                     \
-      int32_t,                                                                          \
-      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),   \
+#define REGISTER_UNARY_ELEMENTWISE_KERNEL(x, sinceVersion)                            \
+  ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                     \
+      x,                                                                              \
+      sinceVersion,                                                                   \
+      float,                                                                          \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),   \
+      x<float>);                                                                      \
+                                                                                      \
+  ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                     \
+      x,                                                                              \
+      sinceVersion,                                                                   \
+      int32_t,                                                                        \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()), \
       x<int32_t>);
 
 REGISTER_UNARY_ELEMENTWISE_KERNEL(ReduceL1, 1);
@@ -31,14 +31,14 @@ REGISTER_UNARY_ELEMENTWISE_KERNEL(ReduceSumSquare, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(ArgMax, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(ArgMin, 1);
 
-template<typename T>
+template <typename T>
 void PrepareForReduce(OpKernelContext* ctx,
                       std::vector<T>& transposedInputData,
                       Tensor** reducedTensor,
                       int64_t& block_size,
                       int64_t& blocks,
                       const std::vector<int64_t>& axes_,
-                      bool keepdims_)  {
+                      bool keepdims_) {
   const Tensor& input = *ctx->Input<Tensor>(0);
 
   size_t ndim = input.Shape().GetDims().size();

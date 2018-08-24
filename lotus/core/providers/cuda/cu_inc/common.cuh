@@ -11,59 +11,59 @@ namespace Cuda {
 
 // float16 arithmetic is supported after sm5.3 with intrinsics, and cuda does not provide fallback for lower versions
 #if __CUDA_ARCH__ < 530
-__device__ __forceinline__ half operator+(const half &lh, const half &rh) { return half((float)lh + (float)rh); }
-__device__ __forceinline__ half operator-(const half &lh, const half &rh) { return half((float)lh - (float)rh); }
-__device__ __forceinline__ half operator*(const half &lh, const half &rh) { return half((float)lh * (float)rh); }
-__device__ __forceinline__ half operator/(const half &lh, const half &rh) { return half((float)lh / (float)rh); }
+__device__ __forceinline__ half operator+(const half& lh, const half& rh) { return half((float)lh + (float)rh); }
+__device__ __forceinline__ half operator-(const half& lh, const half& rh) { return half((float)lh - (float)rh); }
+__device__ __forceinline__ half operator*(const half& lh, const half& rh) { return half((float)lh * (float)rh); }
+__device__ __forceinline__ half operator/(const half& lh, const half& rh) { return half((float)lh / (float)rh); }
 
-__device__ __forceinline__ half &operator+=(half &lh, const half &rh) {
+__device__ __forceinline__ half& operator+=(half& lh, const half& rh) {
   lh = half((float)lh + (float)rh);
   return lh;
 }
-__device__ __forceinline__ half &operator-=(half &lh, const half &rh) {
+__device__ __forceinline__ half& operator-=(half& lh, const half& rh) {
   lh = half((float)lh - (float)rh);
   return lh;
 }
-__device__ __forceinline__ half &operator*=(half &lh, const half &rh) {
+__device__ __forceinline__ half& operator*=(half& lh, const half& rh) {
   lh = half((float)lh * (float)rh);
   return lh;
 }
-__device__ __forceinline__ half &operator/=(half &lh, const half &rh) {
+__device__ __forceinline__ half& operator/=(half& lh, const half& rh) {
   lh = half((float)lh / (float)rh);
   return lh;
 }
 
 /* Note for increment and decrement we use the raw value 0x3C00 equating to half(1.0f), to avoid the extra conversion */
-__device__ __forceinline__ __half &operator++(__half &h) {
+__device__ __forceinline__ __half& operator++(__half& h) {
   h = half((float)h + 1.0f);
   return h;
 }
-__device__ __forceinline__ __half &operator--(__half &h) {
+__device__ __forceinline__ __half& operator--(__half& h) {
   h = half((float)h - 1.0f);
   return h;
 }
-__device__ __forceinline__ __half operator++(__half &h, int) {
+__device__ __forceinline__ __half operator++(__half& h, int) {
   half ret = h;
   h = half((float)h + 1);
   return ret;
 }
-__device__ __forceinline__ __half operator--(__half &h, int) {
+__device__ __forceinline__ __half operator--(__half& h, int) {
   half ret = h;
   h = half((float)h - 1);
   return ret;
 }
 
 /* Unary plus and inverse operators */
-__device__ __forceinline__ half operator+(const half &h) { return h; }
-__device__ __forceinline__ half operator-(const half &h) { return half(-(float)h); }
+__device__ __forceinline__ half operator+(const half& h) { return h; }
+__device__ __forceinline__ half operator-(const half& h) { return half(-(float)h); }
 
 /* Some basic comparison operations to make it look like a builtin */
-__device__ __forceinline__ bool operator==(const half &lh, const half &rh) { return (float)lh == (float)rh; }
-__device__ __forceinline__ bool operator!=(const half &lh, const half &rh) { return (float)lh != (float)rh; }
-__device__ __forceinline__ bool operator>(const half &lh, const half &rh) { return (float)lh > (float)rh; }
-__device__ __forceinline__ bool operator<(const half &lh, const half &rh) { return (float)lh < (float)rh; }
-__device__ __forceinline__ bool operator>=(const half &lh, const half &rh) { return (float)lh >= (float)rh; }
-__device__ __forceinline__ bool operator<=(const half &lh, const half &rh) { return (float)lh <= (float)rh; }
+__device__ __forceinline__ bool operator==(const half& lh, const half& rh) { return (float)lh == (float)rh; }
+__device__ __forceinline__ bool operator!=(const half& lh, const half& rh) { return (float)lh != (float)rh; }
+__device__ __forceinline__ bool operator>(const half& lh, const half& rh) { return (float)lh > (float)rh; }
+__device__ __forceinline__ bool operator<(const half& lh, const half& rh) { return (float)lh < (float)rh; }
+__device__ __forceinline__ bool operator>=(const half& lh, const half& rh) { return (float)lh >= (float)rh; }
+__device__ __forceinline__ bool operator<=(const half& lh, const half& rh) { return (float)lh <= (float)rh; }
 #endif
 
 template <typename T>
@@ -197,7 +197,7 @@ struct GridDim {
       N = 1;
 
     // get device information
-    const auto &props = GetDeviceProps();
+    const auto& props = GetDeviceProps();
     CUDA_LONG numProcs = props.multiProcessorCount;
     CUDA_LONG warpSize = props.warpSize;
 
@@ -219,7 +219,7 @@ struct GridDim {
     assert(blocks_per_grid_ * threads_per_block_ >= N);
   }
 
-  static const std::vector<cudaDeviceProp> &GetCachedDeviceProps() {
+  static const std::vector<cudaDeviceProp>& GetCachedDeviceProps() {
     std::call_once(s_cachedDevicePropsInitFlag, [=] {
       int numDevices;
       // must wait GPU idle, otherwise cudaGetDeviceProperties might fail
@@ -240,8 +240,8 @@ struct GridDim {
   }
 
   // get device properties of current device
-  static const cudaDeviceProp &GetDeviceProps() {
-    const auto &cachedDevicesProps = GetCachedDeviceProps();
+  static const cudaDeviceProp& GetDeviceProps() {
+    const auto& cachedDevicesProps = GetCachedDeviceProps();
     return cachedDevicesProps[GetCurrentDeviceId()];
   }
 

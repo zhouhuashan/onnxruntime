@@ -33,10 +33,10 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
     Normalizer,
     1,
     KernelDefBuilder().MayInplace(0, 0)  // input is 4 or 8 byte, output is 4 byte
-	                  .TypeConstraint("T", std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(),
-                                                                   DataTypeImpl::GetTensorType<double>(),
-                                                                   DataTypeImpl::GetTensorType<int32_t>(),
-                                                                   DataTypeImpl::GetTensorType<int64_t>()}),
+        .TypeConstraint("T", std::vector<MLDataType>{DataTypeImpl::GetTensorType<float>(),
+                                                     DataTypeImpl::GetTensorType<double>(),
+                                                     DataTypeImpl::GetTensorType<int32_t>(),
+                                                     DataTypeImpl::GetTensorType<int64_t>()}),
     Normalizer);
 
 Status Normalizer::Compute(OpKernelContext* context) const {
