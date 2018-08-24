@@ -20,7 +20,7 @@ using OpName_Domain_Version_Schema_Map = std::unordered_map<
     std::string,
     std::unordered_map<std::string, std::map<ONNX_NAMESPACE::OperatorSetVersion, ONNX_NAMESPACE::OpSchema>>>;
 
-// Lotus schema registry is a supplyment to built-in schema,
+// Lotus schema registry is a supplement to built-in schema,
 // Every schema registry represent a collection of schema deltas from baseline_opset_version to opset_version
 struct SchemaRegistryVersion {
   int baseline_opset_version;
@@ -59,8 +59,8 @@ class ILotusOpSchemaCollection : public ONNX_NAMESPACE::ISchemaRegistry {
 };
 
 // LotusOpSchemaRegistry is used to provide supplement for built-in ONNX schemas.
-// Each LotushOpSchmeaRegistry must register complete opsets delta from a baseline version to max opset version.
-// (Please notice that basline opsets are not include in the delta)
+// Each LotusOpSchemaRegistry must register complete opsets delta from a baseline version to max opset version.
+// (Please notice that baseline opsets are not include in the delta)
 // For example, lotus is build with ONNX 1.2 which is at opset7, to use onnx opset8 and opset9,
 // user could create a LotusOpSchemaRegistry and config it as {baseline_opset_version = 7, opset_version = 9}
 // it means this LotusOpSchemaRegistry contains the complete delta from opset7 to opset9.

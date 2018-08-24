@@ -1,15 +1,18 @@
-#include "allocation_planner.h"
+#include "core/framework/allocation_planner.h"
 #include <list>
 #include <unordered_map>
 #include <algorithm>
 #include <sstream>
 #include "core/common/exceptions.h"
 #include "core/platform/env.h"
-#include "core/framework/kernel_def_builder.h"
-#include "core/framework/session_state.h"
 #include "core/framework/data_types.h"
+#include "core/framework/kernel_def_builder.h"
 #include "core/framework/mldata_type_utils.h"
-using namespace ::Lotus::Common;
+#include "core/framework/op_kernel.h"
+#include "core/framework/session_state.h"
+#include "core/framework/utils.h"
+
+using namespace Lotus::Common;
 using namespace onnx;
 namespace Lotus {
 
@@ -42,21 +45,27 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
   std::unordered_map<int, std::string> index_to_name;
 
   out << "Allocation Plan:\n";
-  for (auto& name_index : session_state.GetMLValueIdxMap()) {
+  auto plan_size = plan.allocation_plan.size();
+
+  for (auto& name_index : session_state.GetMLValueNameIdxMap()) {
     auto index = name_index.second;
     index_to_name[index] = name_index.first;
     out << "(" << index << ") " << name_index.first << " : ";
-    if (0 <= index && index < plan.allocation_plan.size()) {
+    if (0 <= index && index < plan_size) {
       auto& elt_plan = plan.allocation_plan[index];
       out << elt_plan.alloc_kind;
       if (elt_plan.alloc_kind == AllocKind::kReuse) out << " " << elt_plan.reused_buffer;
+
       auto& loc = elt_plan.location;
       out << ", " << loc.ToString();
+
       if (elt_plan.create_fence_if_async) out << ", use fence when async";
-      out << std::endl;
+
     } else {
-      out << "Index out-of-range!" << std::endl;
+      out << "Index out-of-range!";
     }
+
+    out << std::endl;
   }
 
   out << "\nExecution Plan:\n";
@@ -83,10 +92,32 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
 }
 
 class PlannerImpl {
+ public:
+  PlannerImpl(const LotusIR::Graph& graph,
+              const ExecutionProviders& providers,
+              const KernelRegistryManager& kernel_registry,
+              const MLValueNameIdxMap& mlvalue_name_idx_map,
+              const ISequentialPlannerContext& context,
+              SequentialExecutionPlan& plan)
+      : graph_(graph),
+        execution_providers_{providers},
+        kernel_registry_{kernel_registry},
+        mlvalue_name_idx_map_{mlvalue_name_idx_map},
+        context_{context},
+        plan_{plan} {
+  }
+
+  Status CreatePlan();
+
  private:
-  const SessionState* p_session_state_;
-  const ISequentialPlannerContext* p_context_;
-  SequentialExecutionPlan* plan_;
+  const ISequentialPlannerContext& context_;
+  SequentialExecutionPlan& plan_;
+
+  const LotusIR::Graph& graph_;
+  const ExecutionProviders& execution_providers_;
+
+  const KernelRegistryManager& kernel_registry_;
+  const MLValueNameIdxMap& mlvalue_name_idx_map_;
 
   // MLValueInfo: Auxiliary information about an MLValue used only during plan-generation:
   struct MLValueInfo {
@@ -113,7 +144,7 @@ class PlannerImpl {
 
   MLValueIndex Index(const MLValueName& name) {
     MLValueIndex result;
-    auto status = p_session_state_->GetMLValueIdx(name, &result);
+    auto status = mlvalue_name_idx_map_.GetIdx(name, result);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     return result;
   }
@@ -124,7 +155,7 @@ class PlannerImpl {
   MLValueIndex& Buffer(MLValueIndex n) { return ml_value_info_.at(n).reused_buffer_index; }
 
   SequentialExecutionPlan::AllocPlanPerValue& AllocPlan(MLValueIndex n) {
-    return plan_->allocation_plan.at(n);
+    return plan_.allocation_plan.at(n);
   }
 
   SequentialExecutionPlan::AllocPlanPerValue& AllocPlan(const MLValueName& name) {
@@ -157,13 +188,13 @@ class PlannerImpl {
   // Find if there exists some input tensor that we can use in-place for output_arg
   bool FindReusableInput(const LotusIR::Node& node, int output_arg_num, MLValueIndex* reusable_input) {
     auto p_output_arg = node.OutputDefs()[output_arg_num];
-    auto p_opkernelDef = p_session_state_->GetKernelDef(node.Index());
+    auto p_opkernel_def = Utils::GetKernelDef(kernel_registry_, node);
 
     // Note: We expect a KernelDef to be available at this point. If it is not available, the
     // planner would have returned an error status earlier on.
-    LOTUS_ENFORCE(nullptr != p_opkernelDef);
+    LOTUS_ENFORCE(nullptr != p_opkernel_def);
 
-    const std::vector<std::pair<int, int>>& alias_map = p_opkernelDef->Alias();
+    const std::vector<std::pair<int, int>>& alias_map = p_opkernel_def->Alias();
     auto& input_args = node.InputDefs();
     for (auto pair : alias_map) {
       if (pair.second == output_arg_num) {
@@ -178,7 +209,7 @@ class PlannerImpl {
       }
     }
 
-    const std::vector<std::pair<int, int>>& inplace_map = p_opkernelDef->MayInplace();
+    const std::vector<std::pair<int, int>>& inplace_map = p_opkernel_def->MayInplace();
     for (auto pair : inplace_map) {
       if (pair.second == output_arg_num) {
         if ((0 <= pair.first) && (pair.first < input_args.size())) {
@@ -232,7 +263,7 @@ class PlannerImpl {
     return (GetElementSize(ptype1) == GetElementSize(ptype2)) && SameShape(shape1, shape2);
 
     /* TODO: we can improve this if the concrete shapes are known for both as below.
-	   Unclear whether this is worthwhile though.
+       Unclear whether this is worthwhile though.
     if (KnownSize(p_shape1) && KnownSize(p_shape2)) {
       // Comparison of statically-known size
       auto size1 = NumElements(p_shape1) * EltSize(ptype1);
@@ -247,8 +278,8 @@ class PlannerImpl {
 
   bool SameSize(const LotusIR::NodeArg& arg1, const LotusIR::NodeArg& arg2) {
     if ((!arg1.Exists()) || (!arg2.Exists())) return false;
-    auto p_shape1 = p_context_->GetShape(arg1);
-    auto p_shape2 = p_context_->GetShape(arg2);
+    auto p_shape1 = context_.GetShape(arg1);
+    auto p_shape2 = context_.GetShape(arg2);
     // If the shapes are unknown, we conservatively assume they may be of different size.
     if ((nullptr == p_shape1) || (nullptr == p_shape2)) return false;
     return SameSize(*p_shape1, arg1.Type(), *p_shape2, arg2.Type());
@@ -256,7 +287,7 @@ class PlannerImpl {
 
   // Find if freelist contains a buffer of the same size as output_arg
   bool FindReusableTensor(const LotusIR::NodeArg& output_arg, MLValueIndex* reusable_tensor) {
-    auto p_required_buffer_shape = p_context_->GetShape(output_arg);
+    auto p_required_buffer_shape = context_.GetShape(output_arg);
     if (nullptr == p_required_buffer_shape) return false;
     auto required_buffer_type = output_arg.Type();
     auto& required_allocator_info = AllocPlan(output_arg.Name()).location;
@@ -266,7 +297,7 @@ class PlannerImpl {
       auto p_node_arg = ml_value_info_.at(reusable).p_def_site;
       auto& available_allocator_info = AllocPlan(p_node_arg->Name()).location;
       if (!(available_allocator_info == required_allocator_info)) continue;
-      auto p_available_buffer_shape = p_context_->GetShape(*p_node_arg);
+      auto p_available_buffer_shape = context_.GetShape(*p_node_arg);
       if (nullptr != p_available_buffer_shape) {
         auto available_buffer_type = p_node_arg->Type();
         if (SameSize(*p_available_buffer_shape, available_buffer_type,
@@ -285,51 +316,53 @@ class PlannerImpl {
     ml_value_info_.resize(num_ml_values);
 
     // Initialize execution plan:
-    plan_->execution_plan.clear();
-    plan_->execution_plan.reserve(num_graph_nodes);
+    plan_.execution_plan.reserve(num_graph_nodes);
 
     // Initialize allocation plan:
-    plan_->allocation_plan.clear();
-    plan_->allocation_plan.resize(num_ml_values);
+    plan_.allocation_plan.resize(num_ml_values);
   }
 
-  Status ComputeUseCounts(const LotusIR::Graph& graph,
-                          std::vector<SequentialExecutionPlan::NodeExecutionPlan>& execution_plan) {
+  Status ComputeUseCounts() {
     // Note: for every ml-value, its definition must appear before all its uses in a topological sort of a valid model
 
-    for (auto graph_input : graph.GetInputs()) {
+    for (auto graph_input : graph_.GetInputs()) {
       MLValueIndex index = Index(graph_input->Name());
       ProcessDef(index, graph_input);
       UseCount(index)++;  // Models caller's usage post-inference; ensures it will not be reused.
     }
 
     // All initializers should be treated as input
-    for (auto pair : graph.GetAllInitializedTensors()) {
+    for (auto pair : graph_.GetAllInitializedTensors()) {
       const auto& initializer_name = pair.first;
       MLValueIndex index = Index(initializer_name);
-      ProcessDef(index, graph.FindNodeArg(pair.first));
+      ProcessDef(index, graph_.FindNodeArg(pair.first));
       UseCount(initializer_name)++;
     }
 
-    for (SequentialExecutionPlan::NodeExecutionPlan& step : execution_plan) {
-      auto pnode = graph.GetNode(step.node_index);
+    for (SequentialExecutionPlan::NodeExecutionPlan& step : plan_.execution_plan) {
+      auto pnode = graph_.GetNode(step.node_index);
       for (auto node_input : pnode->InputDefs()) {
         if (node_input->Exists())
           UseCount(node_input->Name())++;
       }
       // Identify where each output of this node should be allocated.
       // This is determined by the opkernel bound to the node.
-      auto p_kernelDef = p_session_state_->GetKernelDef(step.node_index);
+      auto p_kernelDef = Utils::GetKernelDef(graph_, kernel_registry_, step.node_index);
       if (nullptr == p_kernelDef) {
         std::ostringstream errormsg;
         errormsg << "No suitable kernel definition found for op " << pnode->OpType();
         if (!pnode->Name().empty()) errormsg << " (node " << pnode->Name() << ")";
         return LOTUS_MAKE_STATUS(LOTUS, FAIL, errormsg.str());
       }
-      auto& default_allocator_info = p_session_state_->GetAllocatorInfo(step.node_index, kMemTypeDefault);
+
+      auto exec_provider = execution_providers_.Get(graph_, step.node_index);
+      LOTUS_ENFORCE(exec_provider);
+
+      auto& default_allocator_info = exec_provider->GetAllocator(kMemTypeDefault)->Info();
       auto& mem_type_allocated_args = p_kernelDef->OutputMemoryType();
       auto& outputs = pnode->OutputDefs();
       auto num_outputs = outputs.size();
+
       for (int i = 0; i < num_outputs; ++i) {
         auto* node_output = outputs[i];
         if (node_output->Exists()) {
@@ -342,7 +375,7 @@ class PlannerImpl {
             if (memory_type_iter == mem_type_allocated_args.end()) {
               AllocPlan(index).location = default_allocator_info;
             } else {
-              AllocPlan(index).location = p_session_state_->GetAllocatorInfo(step.node_index, memory_type_iter->second);
+              AllocPlan(index).location = exec_provider->GetAllocator(memory_type_iter->second)->Info();
             }
           }
         }
@@ -358,16 +391,17 @@ class PlannerImpl {
       }
     }
 
-    for (auto graph_output : graph.GetOutputs()) {
+    for (auto graph_output : graph_.GetOutputs()) {
       UseCount(graph_output->Name())++;  // Models caller's usage post-inference; ensures it will not be reused.
     }
 
     return Status::OK();
   }
 
-  void GeneratePlanForWeights(const LotusIR::Graph& graph) {
-    auto& weights = graph.GetAllInitializedTensors();
-    for (auto& node : graph.Nodes()) {
+  void GeneratePlanForWeights() {
+    auto& weights = graph_.GetAllInitializedTensors();
+
+    for (auto& node : graph_.Nodes()) {
       LotusIR::Node::ForEachWithIndex(
           node.InputDefs(),
           [this, &node, &weights](const LotusIR::NodeArg& def, size_t index) {
@@ -377,14 +411,14 @@ class PlannerImpl {
 
             auto wt_index = Index(def_name);
             SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
-            auto* p_provider = p_session_state_->GetExecutionProvider(node.GetExecutionProviderType());
+            auto* p_provider = execution_providers_.Get(node);
             LOTUS_ENFORCE(p_provider);
 
             thisplan.alloc_kind = AllocKind::kAllocateStatically;
-            auto p_opkernelDef = p_session_state_->GetKernelDef(node.Index());
+            auto p_opkernelDef = Utils::GetKernelDef(kernel_registry_, node);
             if (MemTypeOnCpuExplicitly(p_opkernelDef->InputMemoryType(), index))
               // weights are not output from any node, so it's OK to put its location on CPU provider
-              thisplan.location = p_session_state_->GetExecutionProvider(LotusIR::kCpuExecutionProvider)->GetAllocator()->Info();
+              thisplan.location = execution_providers_.Get(LotusIR::kCpuExecutionProvider)->GetAllocator()->Info();
             else
               thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();
 
@@ -393,27 +427,28 @@ class PlannerImpl {
     }
   }
 
-  void ComputeReusePlan(const LotusIR::Graph& graph,
-                        std::vector<SequentialExecutionPlan::NodeExecutionPlan>& execution_plan) {
+  void ComputeReusePlan() {
+    std::vector<SequentialExecutionPlan::NodeExecutionPlan>& execution_plan{plan_.execution_plan};
+
     // Identify allocation/deallocation plan for every ml-value
 
     // inputs of the graph:
     // An input ml-value's data is owned by the caller (of InferenceSession::Run())
     // It must be allocated by the caller, and will not be reused during inference.
-    for (auto graph_input : graph.GetInputs()) {
+    for (auto graph_input : graph_.GetInputs()) {
       auto input_index = Index(graph_input->Name());
       SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(input_index);
       thisplan.alloc_kind = AllocKind::kPreExisting;
       thisplan.value_type = Utils::GetMLDataType(*graph_input);
     }
 
-    GeneratePlanForWeights(graph);
+    GeneratePlanForWeights();
 
     for (int program_counter = 0; program_counter < execution_plan.size(); ++program_counter) {
       SequentialExecutionPlan::NodeExecutionPlan step = execution_plan[program_counter];
-      auto pnode = graph.GetNode(step.node_index);
+      auto pnode = graph_.GetNode(step.node_index);
       // graph outputs
-      auto& graph_outputs = graph.GetOutputs();
+      auto& graph_outputs = graph_.GetOutputs();
       // determine allocation for outputs of pnode
       int output_arg_num = 0;
       for (auto node_output : pnode->OutputDefs()) {
@@ -462,29 +497,29 @@ class PlannerImpl {
 
   // Convert information in a freelist (about which ml-value becomes free when) into
   // a deallocation plan in the format required in an ExecutionPlan
-  static void GenerateDeallocationPlan(const std::list<FreeBufferInfo>& freelist,
-                                       SequentialExecutionPlan* plan) {
+  void GenerateDeallocationPlan() {
     // Store (indices of) ml-values to be freed in plan->to_be_freed
     // Set plan->execution_plan[n].free_from_index/free_to_index for every n that must free some ml-value.
 
-    plan->to_be_freed.reserve(freelist.size());
+    plan_.to_be_freed.reserve(freelist_.size());
     int prev_dealloc_point = -1;  // when >=0, this indicates previous n that contains deallocations
     int current = 0;              // current index into the to_be_freed vector
 
     // Copy all items from freelist to to_be_freed in reverse order
-    for (auto it = freelist.rbegin(); it != freelist.rend(); ++it) {
-      plan->to_be_freed.push_back(it->ml_value);
+    for (auto it = freelist_.rbegin(), end = freelist_.rend(); it != end; ++it) {
+      plan_.to_be_freed.push_back(it->ml_value);
       //
       if (it->deallocate_point != prev_dealloc_point) {
         if (prev_dealloc_point >= 0)
-          plan->execution_plan[prev_dealloc_point].free_to_index = current - 1;
+          plan_.execution_plan[prev_dealloc_point].free_to_index = current - 1;
         prev_dealloc_point = it->deallocate_point;
-        plan->execution_plan[prev_dealloc_point].free_from_index = current;
+        plan_.execution_plan[prev_dealloc_point].free_from_index = current;
       }
       current++;
     }
+
     if (prev_dealloc_point >= 0)
-      plan->execution_plan[prev_dealloc_point].free_to_index = current - 1;
+      plan_.execution_plan[prev_dealloc_point].free_to_index = current - 1;
   }
 
   bool IsNonTensor(const LotusIR::NodeArg& nodearg) {
@@ -493,53 +528,47 @@ class PlannerImpl {
     auto& type_proto = ONNX_NAMESPACE::Utils::DataTypeUtils::ToTypeProto(ptype);
     return !type_proto.has_tensor_type();
   }
+};  // namespace Lotus
 
- public:
-  Status CreatePlan(const SessionState& session_state, const ISequentialPlannerContext& context, SequentialExecutionPlan* plan) {
-    p_session_state_ = &session_state;
-    p_context_ = &context;
-    plan_ = plan;
+Status PlannerImpl::CreatePlan() {
+  const std::vector<LotusIR::NodeIndex>* p_graph_nodes;
+  LOTUS_RETURN_IF_ERROR(graph_.GetNodesInTopologicalOrder(&p_graph_nodes));
 
-    auto p_graph = p_session_state_->GetGraph();
-    LOTUS_ENFORCE(p_graph);
+  auto num_ml_values = mlvalue_name_idx_map_.MaxIdx() + 1;
 
-    const std::vector<LotusIR::NodeIndex>* p_graph_nodes;
-    LOTUS_RETURN_IF_ERROR(p_graph->GetNodesInTopologicalOrder(&p_graph_nodes));
+  Initialize(p_graph_nodes->size(), num_ml_values);
 
-    auto num_ml_values = session_state.GetMaxMLValueIdx() + 1;
-
-    Initialize(p_graph_nodes->size(), num_ml_values);
-
-    // Determine execution order: we use the default topological sort order for now. We can later
-    // explore more efficient orderings (from a memory usage perspective).
-    for (auto n : *p_graph_nodes) {
-      if (!(p_graph->IsSourceNode(n) || p_graph->IsSinkNode(n)))
-        plan_->execution_plan.emplace_back(n);
-    }
-
-    // compute usecounts for all ml-values
-    LOTUS_RETURN_IF_ERROR(ComputeUseCounts(*p_graph, plan_->execution_plan));
-
-    // determine sharing/reuse among ml-values
-    ComputeReusePlan(*p_graph, plan_->execution_plan);
-
-    // convert information in the freelist_ into a deallocation plan in required format
-    GenerateDeallocationPlan(freelist_, plan_);
-
-    return Status::OK();
+  // Determine execution order: we use the default topological sort order for now. We can later
+  // explore more efficient orderings (from a memory usage perspective).
+  for (auto n : *p_graph_nodes) {
+    if (!(graph_.IsSourceNode(n) || graph_.IsSinkNode(n)))
+      plan_.execution_plan.emplace_back(n);
   }
-};
 
-Status SequentialPlanner::CreatePlan(const SessionState& session_state,
-                                     const ISequentialPlannerContext& context,
-                                     SequentialExecutionPlan* plan) {
-  PlannerImpl planner;
-  return planner.CreatePlan(session_state, context, plan);
+  // compute use counts for all ml-values
+  LOTUS_RETURN_IF_ERROR(ComputeUseCounts());
+
+  // determine sharing/reuse among ml-values
+  ComputeReusePlan();
+
+  // convert information in the freelist_ into a deallocation plan in required format
+  GenerateDeallocationPlan();
+
+  return Status::OK();
 }
 
-Status AllocationPlanner::CreatePlan(const SessionState& session_state,
-                                     SequentialExecutionPlan* plan) {
-  return SequentialPlanner::CreatePlan(session_state, plan);
+Status SequentialPlanner::CreatePlan(const LotusIR::Graph& graph,
+                                     const ExecutionProviders& providers,
+                                     const KernelRegistryManager& kernel_registry,
+                                     const MLValueNameIdxMap& mlvalue_name_idx_map,
+                                     const ISequentialPlannerContext& context,
+                                     std::unique_ptr<SequentialExecutionPlan>& plan) {
+  // allocate/reset here so we know it's clean
+  plan = std::make_unique<SequentialExecutionPlan>();
+
+  PlannerImpl planner(graph, providers, kernel_registry, mlvalue_name_idx_map, context, *plan);
+
+  return planner.CreatePlan();
 }
 
 }  // namespace Lotus

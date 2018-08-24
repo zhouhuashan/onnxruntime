@@ -1,16 +1,18 @@
 #pragma once
 
 #include "core/common/status.h"
-#include "core/framework/execution_provider.h"
 #include "core/framework/alloc_kind.h"
 #include "core/framework/allocator.h"
-#include "core/framework/session_state.h"
 #include "core/framework/sequential_execution_plan.h"
 #include "core/graph/graph.h"
 namespace onnx {
 class TensorShapeProto;
 }
 namespace Lotus {
+
+class ExecutionProviders;
+class KernelRegistryManager;
+class MLValueNameIdxMap;
 
 // ISequentialPlannerContext abstracts how the planner accesses information (such as inferred shape)
 // to do the planning.
@@ -30,21 +32,24 @@ class SequentialPlanner {
  public:
   // This API allows user to provide a custom planner context. Currently, this is used
   // primarily for testing.
-  static Status CreatePlan(const SessionState& session_state,
+
+  static Status CreatePlan(const LotusIR::Graph& graph,
+                           const ExecutionProviders& providers,
+                           const KernelRegistryManager& kernel_registry,
+                           const MLValueNameIdxMap& mlvalue_name_idx_map,
                            const ISequentialPlannerContext& context,
-                           SequentialExecutionPlan* plan);
+                           std::unique_ptr<SequentialExecutionPlan>& plan);
 
-  // This uses a standard planner context and is meant to be the primary API for creating a plan.
-  static Status CreatePlan(const SessionState& session_state, SequentialExecutionPlan* plan) {
+  // This uses a standard planner context and is meant to be the primary API for creating a plan
+  // as the context is primarily used in test scenarios.
+  static Status CreatePlan(const LotusIR::Graph& graph,
+                           const ExecutionProviders& providers,
+                           const KernelRegistryManager& kernel_registry,
+                           const MLValueNameIdxMap& mlvalue_name_idx_map,
+                           std::unique_ptr<SequentialExecutionPlan>& plan) {
     SequentialPlannerContext context;
-    return CreatePlan(session_state, context, plan);
+    return CreatePlan(graph, providers, kernel_registry, mlvalue_name_idx_map, context, plan);
   }
-};
-
-class AllocationPlanner {
- public:
-  static Status CreatePlan(const SessionState& session_state,
-                           SequentialExecutionPlan* plan);
 };
 
 }  // namespace Lotus

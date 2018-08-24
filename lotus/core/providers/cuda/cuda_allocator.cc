@@ -6,8 +6,9 @@
 
 namespace Lotus {
 
-static CUDAExecutionProvider* GetCUDAExecutionProvider(const SessionState* session_state) {
-  return dynamic_cast<CUDAExecutionProvider*>(session_state->GetExecutionProvider(LotusIR::kCudaExecutionProvider));
+static const CUDAExecutionProvider* GetCUDAExecutionProvider(const SessionState* session_state) {
+  return dynamic_cast<const CUDAExecutionProvider*>(
+      session_state->GetExecutionProviders().Get(LotusIR::kCudaExecutionProvider));
 }
 
 void CUDAAllocator::CheckDevice() const {

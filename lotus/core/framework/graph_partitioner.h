@@ -6,13 +6,16 @@
 
 namespace Lotus {
 
+class ExecutionProviders;
+class KernelRegistryManager;
+
 class GraphPartitioner {
  public:
   //The order of providers represents the user preference.
   GraphPartitioner(const KernelRegistryManager& kernel_registry_mgr,
-                   const std::vector<std::unique_ptr<IExecutionProvider>>& providers)
-      : kernel_registry_mgr_(kernel_registry_mgr),
-        providers_(providers) {}
+                   const ExecutionProviders& providers)
+    : kernel_registry_mgr_(kernel_registry_mgr),
+      providers_(providers) {}
 
   Status Partition(LotusIR::Graph& graph) const;
 
@@ -20,6 +23,6 @@ class GraphPartitioner {
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphPartitioner);
 
   const KernelRegistryManager& kernel_registry_mgr_;
-  const std::vector<std::unique_ptr<IExecutionProvider>>& providers_;
+  const ExecutionProviders& providers_;
 };
 }  // namespace Lotus

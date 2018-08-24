@@ -4,26 +4,34 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+#include "gsl/gsl_util"
+
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
 #include "core/common/profiler.h"
 #include "core/framework/allocation_planner.h"
+#include "core/framework/execution_providers.h"
 #include "core/framework/kernel_registry_manager.h"
-#include "core/framework/execution_provider.h"
 #include "core/framework/mem_pattern.h"
 #include "core/framework/ml_value.h"
+#include "core/framework/mlvalue_name_idx_map.h"
 #include "core/graph/graph.h"
 
 namespace Lotus {
-class OpKernel;
+
+class ExecutionProviders;
 class KernelDef;
+class OpKernel;
 struct SequentialExecutionPlan;
 struct MemoryPatternGroup;
+
 // SessionState should be modified by the inference session class only.
 // It is supposed to be passed by const-ref only to all the executors.
 class SessionState {
  public:
-  SessionState() = default;
+  SessionState(const ExecutionProviders& execution_providers)
+      : execution_providers_{execution_providers} {
+  }
 
   // graph
   void SetGraph(const LotusIR::Graph& graph);
@@ -33,27 +41,13 @@ class SessionState {
   // Get kernel for specified node.
   // It should called right before graph execution only.
   const OpKernel* GetKernel(LotusIR::NodeIndex node_id) const;
-  const KernelDef* GetKernelDef(LotusIR::NodeIndex node_id) const;
-  const AllocatorInfo& GetAllocatorInfo(LotusIR::NodeIndex node_id, MemType mem_type) const;
+
   void AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel);
 
-  // exec providers
-  IExecutionProvider* GetExecutionProvider(LotusIR::ProviderType provider_id) const;
+  const ExecutionProviders& GetExecutionProviders() const noexcept { return execution_providers_; }
 
-  IExecutionProvider* GetExecutionProvider(const AllocatorInfo& allocator_info) const;
-
-  void AddExecutionProvider(const std::string& provider_id,
-                            std::unique_ptr<IExecutionProvider> exec_provider);
-  const std::vector<std::unique_ptr<IExecutionProvider>>& GetExecutionProviders() const;
-  // return nullptr if the allocator not found
-  AllocatorPtr GetAllocator(const AllocatorInfo& allocator_info) const;
-
-  // MLValueName idx map
-  void AddMLValueNameIdx(const std::string& name, int idx);
-  Common::Status GetMLValueIdx(const std::string& name, int* idx) const;
-  size_t GetNumMLValues() const;
-  int GetMaxMLValueIdx() const;
-  const std::unordered_map<std::string, int>& GetMLValueIdxMap() const;
+  const MLValueNameIdxMap& GetMLValueNameIdxMap() const noexcept { return mlvalue_name_idx_map_; }
+  MLValueNameIdxMap& GetMLValueNameIdxMap() noexcept { return mlvalue_name_idx_map_; }
 
   // initialized tensors
   /**
@@ -116,9 +110,6 @@ class SessionState {
   */
   bool GetEnableMemoryPattern() const;
 
-  const KernelRegistryManager& GetKernelRegistryManager() const;
-  KernelRegistryManager& GetKernelRegistryManager();
-
   struct NodeInfo {
     NodeInfo(size_t index0, const LotusIR::Node* p_node0, const KernelCreateInfo* kci0)
         : index(index0),
@@ -131,6 +122,7 @@ class SessionState {
     const LotusIR::Node* p_node = nullptr;
     const KernelCreateInfo* kci = nullptr;
   };
+
   using NameNodeInfoMapType = std::unordered_map<std::string, std::vector<NodeInfo>>;
   void AddInputNameToNodeInfoMapping(const std::string& input_name, const NodeInfo& node_info);
   Common::Status GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const;
@@ -138,6 +130,16 @@ class SessionState {
 
   void AddOutputNameToNodeInfoMapping(const std::string& output_name, const NodeInfo& node_info);
   const NameNodeInfoMapType& GetOutputNodeInfoMap() const;
+
+  /// Add a SessionState instance for executing a subgraph in a Node
+  /// @param index Index of Node containing subgraph
+  /// @param attribute_name Name of attribute containing the subgraph GraphProto
+  /// @param session_state SessionState for subgraph execution
+  void AddSubgraphSessionState(LotusIR::NodeIndex index, const std::string& attribute_name,
+                               const SessionState& session_state);
+
+  /// Return SessionState for the given Node index and attribute name if found.
+  const SessionState* GetSubgraphSessionState(LotusIR::NodeIndex index, const std::string& attribute_name) const;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SessionState);
@@ -147,15 +149,8 @@ class SessionState {
   std::unordered_map<LotusIR::NodeIndex, std::unique_ptr<OpKernel>> session_kernels_;
   const LotusIR::Graph* p_graph_ = nullptr;  // owned by the Model inside an InferenceSession
 
-  struct ExecutionProviderSet {
-    std::vector<std::unique_ptr<IExecutionProvider>> exec_providers;
-    std::unordered_map<std::string, size_t> provider_idx_map;  // for fast lookup
-    std::map<AllocatorInfo, size_t> allocator_idx_map;
-  };
-
-  ExecutionProviderSet exec_provider_set_;
-  std::unordered_map<std::string, int> mlvalue_name_idx_map_;
-  int mlvalue_max_idx_ = 0;
+  const ExecutionProviders& execution_providers_;  // owned by InferenceSession
+  MLValueNameIdxMap mlvalue_name_idx_map_;
 
   // initialized tensorset
   std::unordered_map<int, MLValue> initialized_tensors_;  // key is mlvalue_index
@@ -171,14 +166,14 @@ class SessionState {
   // cache for the generated mem_patterns. key is calculated based on input shapes.
   mutable std::map<int64_t, std::unique_ptr<MemoryPatternGroup>> mem_patterns_;
 
-  // <custom_registry_manager_> contains 2 kinds of kernel registries
-  // with priority from high to low as below,
-  // 1. Custom execution provider type specific kernel registries.
-  // 2. Common execution provider type specific kernel registries.
-  // The 1st and 2nd ones are shared across sessions.
-  KernelRegistryManager custom_registry_manager_;
-
   NameNodeInfoMapType input_names_to_nodeinfo_mapping_;
   NameNodeInfoMapType output_names_to_nodeinfo_mapping_;
+
+  // subgraph SessionState. entry for node containing subgraph, with value containing attribute:SessionState pair
+  // as a node may contain multiple subgraphs (e.g. 'If' has one for both the 'then' and 'else' branches).
+  using SubgraphSessionStateMap =
+      std::unordered_map<LotusIR::NodeIndex,
+                         std::unordered_map<std::string, gsl::not_null<const SessionState*>>>;
+  SubgraphSessionStateMap subgraph_session_states_;
 };
 }  // namespace Lotus

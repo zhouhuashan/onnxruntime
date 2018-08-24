@@ -30,7 +30,8 @@ class TestOpKernel : public OpKernel {
 };
 
 TEST(SessionStateTest, AddGetKernelTest) {
-  SessionState s;
+  ExecutionProviders execution_providers;
+  SessionState s{execution_providers};
 
   LotusIR::Model model("graph_1");
   auto& graph = model.MainGraph();

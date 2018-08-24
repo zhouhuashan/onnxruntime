@@ -114,7 +114,7 @@ void LotusOpSchemaRegistry::GetSchemaAndHistory(
       domain_map_it->second.opset_version >= op_set_version) {
     // If the baseline version is not larger than the requested version, initialize
     // the version at which the operator is unchanged to the baseline.  This will
-    // be udpated below if a schema is found.
+    // be updated below if a schema is found.
     if (domain_map_it->second.baseline_opset_version <= op_set_version) {
       assert(domain_map_it->second.baseline_opset_version < domain_map_it->second.opset_version);
       *earliest_opset_where_unchanged = std::max(1, domain_map_it->second.baseline_opset_version);

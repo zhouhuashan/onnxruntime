@@ -6,6 +6,7 @@
 #include "core/framework/ml_value_patterns_planner.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
+#include "core/framework/utils.h"
 
 using namespace ::Lotus::Common;
 namespace Lotus {
@@ -97,8 +98,8 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
     p_mlvalue->SetFence(f);
   }
 
-  // if we have pre-calcuated memory pattern, and the mlvalue is not output mlvalue
-  // try to alloacted on pre-allocated big chunk.
+  // if we have pre-calculated memory pattern, and the mlvalue is not output mlvalue
+  // try to allocated on pre-allocated big chunk.
   const auto& per_alloc_plan = GetAllocationPlan(mlvalue_index);
   if (mem_patterns_ && per_alloc_plan.alloc_kind != AllocKind::kAllocateOutput) {
     auto pattern = mem_patterns_->GetPatterns(location);
@@ -107,7 +108,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
       // if block not found, fall back to default behavior
       if (block) {
         auto it = buffers_.find(location);
-        // if the block is not correct, log messsage then fall back to default behavior
+        // if the block is not correct, log message then fall back to default behavior
         if (it != buffers_.end() && block->size_ == size) {
           void* buffer = it->second.get();
           auto status = AllocateTensorWithPreAllocateBufferHelper(
@@ -312,7 +313,9 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
   auto max_node_index = graph.MaxNodeIndex();
   node_offsets_.resize(max_node_index);
 
-  all_values_.resize(session_state_.GetMaxMLValueIdx() + 1);
+  auto& mlvalue_idx_map = session_state_.GetMLValueNameIdxMap();
+
+  all_values_.resize(mlvalue_idx_map.MaxIdx() + 1);
 
   // 2. handle the weights.
   for (const auto& entry : session_state_.GetInitializedTensors()) {
@@ -323,7 +326,7 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
   // 3. handle feed in values
   for (const auto& feed : feeds) {
     int mlvalue_idx;
-    Status status = session_state_.GetMLValueIdx(feed.first, &mlvalue_idx);
+    Status status = mlvalue_idx_map.GetIdx(feed.first, mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     // we are sharing the underline tensor/object for MLValue
     all_values_[mlvalue_idx] = feed.second;
@@ -333,7 +336,7 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
   // setup output_indices_, we dont' want to generate mem plan on output tensors.
   for (const auto& oname : output_names) {
     int mlvalue_idx;
-    Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+    Status status = mlvalue_idx_map.GetIdx(oname, mlvalue_idx);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     output_indices_.push_back(mlvalue_idx);
   }
@@ -347,7 +350,7 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
     auto idx = 0;
     for (const auto& oname : output_names) {
       int mlvalue_idx;
-      Status status = session_state_.GetMLValueIdx(oname, &mlvalue_idx);
+      Status status = mlvalue_idx_map.GetIdx(oname, mlvalue_idx);
       LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
       all_values_[mlvalue_idx] = fetches.at(idx++);
       output_indices_.push_back(mlvalue_idx);
@@ -378,7 +381,7 @@ void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
     node_values_.push_back(-1);
   } else {
     int index;
-    Status status = session_state_.GetMLValueIdx(name, &index);
+    Status status = session_state_.GetMLValueNameIdxMap().GetIdx(name, index);
     LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     node_values_.push_back(index);
   }
@@ -432,7 +435,7 @@ MLValue* ExecutionFrame::GetMutableNodeInputOrOutputMLValue(int index) {
 }
 
 AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
-  return session_state_.GetAllocator(info);
+  return Utils::GetAllocator(session_state_, info);
 }
 
 static inline void VerifyShape(const MLValue* p_mlvalue,

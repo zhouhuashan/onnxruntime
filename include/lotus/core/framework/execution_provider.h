@@ -31,7 +31,7 @@ class IExecutionProvider {
   // Return a bunch of IndexedSubGraphs <*this> execution provider can run if
   // the sub-graph contains only one node or can fuse to run if the sub-graph
   // contains more than one node. The node indexes contained in sub-graphs may
-  // have overlap, and it's lotus runtime's responsibiity to do the partition
+  // have overlap, and it's lotus runtime's responsibility to do the partition
   // and decide whether a node will be assigned to <*this> execution provider.
   virtual std::vector<std::unique_ptr<IndexedSubGraph>>
   GetCapability(const LotusIR::Graph& graph,
@@ -40,7 +40,7 @@ class IExecutionProvider {
   // Get kernel registry per execution provider type.
   // The KernelRegistry share pointer returned is shared across sessions.
   //
-  // NOTE: this is a tricky but final solution to acheive following goals,
+  // NOTE: this is a tricky but final solution to achieve following goals,
   // 1. The execution provider type based kernel registry should be shared
   // across sessions.
   //    Only one copy of this kind of kernel registry exists in lotus runtime

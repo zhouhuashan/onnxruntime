@@ -43,17 +43,26 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   auto cpu_xp = CreateCPUExecutionProvider();
   auto xp_typ = cpu_xp->Type();
-  SessionState state;
+
+  KernelRegistryManager kernel_registry_manager;
+  kernel_registry_manager.RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
+
+  ExecutionProviders execution_providers;
+  execution_providers.Add(xp_typ, std::move(cpu_xp));
+
+  SessionState state{execution_providers};
   state.SetGraph(graph);
-  state.AddMLValueNameIdx("X", 0);
-  state.AddMLValueNameIdx("Y", 1);
-  std::string provider_type = cpu_xp->Type();
-  state.GetKernelRegistryManager().RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
-  state.AddExecutionProvider(provider_type, std::move(cpu_xp));
-  node->SetExecutionProviderType(provider_type);
-  std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
+
+  MLValueNameIdxMap& mlvalue_name_idx_map{state.GetMLValueNameIdxMap()};
+  mlvalue_name_idx_map.Add("X");
+  mlvalue_name_idx_map.Add("Y");
+
+  node->SetExecutionProviderType(xp_typ);
+
+  std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan;
   // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-  status = AllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
+  status = SequentialPlanner::CreatePlan(graph, execution_providers, kernel_registry_manager, mlvalue_name_idx_map,
+                                         p_seq_exec_plan);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   state.SetExecutionPlan(std::move(p_seq_exec_plan));
 
@@ -68,7 +77,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 
   TensorShape shape(std::vector<int64_t>{2, 3});
   status = frame.AllocateTensorWithSelfOwnBuffer(start_index, DataTypeImpl::GetType<float>(),
-                                                 state.GetExecutionProvider(xp_typ)->GetAllocator()->Info(), shape);
+                                                 execution_providers.Get(xp_typ)->GetAllocator()->Info(), shape);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   MLValue* p_ml_value = frame.GetMutableNodeInputOrOutputMLValue(0);
@@ -108,25 +117,32 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   TensorShape shape({3, 2});
   void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
   //create fake ml value with owned buffer.
-  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(
-      element_type,
-      shape,
-      buffer,
-      cpu_allocator->Info(),
-      cpu_allocator);
+  std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(element_type,
+                                                              shape,
+                                                              buffer,
+                                                              cpu_allocator->Info(),
+                                                              cpu_allocator);
   MLValue value;
   value.Init(p_tensor.release(),
              DataTypeImpl::GetType<Tensor>(),
              DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
-  SessionState state;
-  state.SetGraph(graph);
-  state.AddMLValueNameIdx("X", 0);
-  state.AddMLValueNameIdx("Y", 1);
   auto cpu_xp = CreateCPUExecutionProvider();
-  std::string provider_type = cpu_xp->Type();
-  state.GetKernelRegistryManager().RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
-  state.AddExecutionProvider(provider_type, std::move(cpu_xp));
+  auto xp_typ = cpu_xp->Type();
+
+  KernelRegistryManager kernel_registry_manager;
+  kernel_registry_manager.RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
+
+  ExecutionProviders execution_providers;
+  execution_providers.Add("", std::move(cpu_xp));
+
+  SessionState state{execution_providers};
+  state.SetGraph(graph);
+
+  MLValueNameIdxMap& mlvalue_name_idx_map{state.GetMLValueNameIdxMap()};
+  mlvalue_name_idx_map.Add("X");
+  mlvalue_name_idx_map.Add("Y");
+
   vector<MLValue> outputs;
   ExecutionFrame frame(std::unordered_map<std::string, MLValue>{{"X", value}},
                        std::vector<std::string>{},
@@ -155,26 +171,37 @@ TEST(ExecutionFrameTest, MemPatternTest) {
       gemm2_out_def("T2", &tensor_float),
       clip_out_def("T3", &tensor_float);
 
-  graph.AddNode("node1", "MatMul", "gemm1", ArgMap{&input_def1, &input_def2}, ArgMap{&gemm1_out_def})->SetExecutionProviderType(xp_type);
-
-  graph.AddNode("node2", "MatMul", "gemm2", ArgMap{&gemm1_out_def, &input_def3}, ArgMap{&gemm2_out_def})->SetExecutionProviderType(xp_type);
-
-  graph.AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def})->SetExecutionProviderType(xp_type);
+  graph.AddNode("node1", "MatMul", "gemm1", ArgMap{&input_def1, &input_def2}, ArgMap{&gemm1_out_def})
+      ->SetExecutionProviderType(xp_type);
+  graph.AddNode("node2", "MatMul", "gemm2", ArgMap{&gemm1_out_def, &input_def3}, ArgMap{&gemm2_out_def})
+      ->SetExecutionProviderType(xp_type);
+  graph.AddNode("node3", "Clip", "clip1", ArgMap{&gemm2_out_def}, ArgMap{&clip_out_def})
+      ->SetExecutionProviderType(xp_type);
 
   auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+
+  KernelRegistryManager kernel_registry_manager;
+  kernel_registry_manager.RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
+
+  ExecutionProviders execution_providers;
+  execution_providers.Add(xp_type, std::move(cpu_xp));
+
   //1. prepare input
-  SessionState state;
+  SessionState state{execution_providers};
   state.SetGraph(graph);
-  state.AddMLValueNameIdx("X1", 0);
-  state.AddMLValueNameIdx("X2", 1);
-  state.AddMLValueNameIdx("X3", 2);
-  state.AddMLValueNameIdx("T1", 3);
-  state.AddMLValueNameIdx("T2", 4);
-  state.AddMLValueNameIdx("T3", 5);
-  state.GetKernelRegistryManager().RegisterKernelRegistry(cpu_xp->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
-  state.AddExecutionProvider(xp_type, std::move(cpu_xp));
-  auto cpu_allocator = state.GetExecutionProvider(xp_type)->GetAllocator();
+
+  MLValueNameIdxMap& mlvalue_name_idx_map{state.GetMLValueNameIdxMap()};
+
+  mlvalue_name_idx_map.Add("X1");
+  mlvalue_name_idx_map.Add("X2");
+  mlvalue_name_idx_map.Add("X3");
+  mlvalue_name_idx_map.Add("T1");
+  mlvalue_name_idx_map.Add("T2");
+  mlvalue_name_idx_map.Add("T3");
+
+  auto cpu_allocator = execution_providers.Get(xp_type)->GetAllocator();
+
   MLValue v1, v2, v3;
   CreateMLValue<float>(cpu_allocator,
                        std::vector<int64_t>{1, 2},
@@ -187,8 +214,8 @@ TEST(ExecutionFrameTest, MemPatternTest) {
                        std::vector<float>(6, 1.0f), &v3);
 
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
-  // TODO below line is for testing only. In production use SequentialPlanner::CreatePlan()
-  status = AllocationPlanner::CreatePlan(state, p_seq_exec_plan.get());
+  status = SequentialPlanner::CreatePlan(graph, execution_providers, kernel_registry_manager, mlvalue_name_idx_map,
+                                         p_seq_exec_plan);
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
   state.SetExecutionPlan(std::move(p_seq_exec_plan));

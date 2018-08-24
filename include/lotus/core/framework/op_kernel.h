@@ -64,7 +64,7 @@ class OpKernelContext {
                            const OpKernel* kernel,
                            const Logging::Logger& logger);
 
-  ~OpKernelContext() = default;
+  virtual ~OpKernelContext() = default;
 
   /**
   Return the number of inputs for a variadic argument.
@@ -136,6 +136,10 @@ class OpKernelContext {
   Status GetorCreateOutputMLValue(int index, MLValue*& value);
 
   int GetOutputArgIndex(int index) const;
+
+ protected:
+  LotusIR::NodeIndex GetNodeIndex() const;
+  const SessionState& GetSessionState() const;
 
  private:
   ExecutionFrame* execution_frame_{nullptr};

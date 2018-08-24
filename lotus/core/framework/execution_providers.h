@@ -20,6 +20,7 @@ class ExecutionProviders {
   ExecutionProviders() = default;
 
   Common::Status Add(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
+    // make sure there are no issues before we change any internal data structures
     if (provider_idx_map_.find(provider_id) != provider_idx_map_.end()) {
       auto status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Provider ", provider_id, " has already been registered.");
       LOGS_DEFAULT(ERROR) << status.ErrorMessage();
@@ -46,6 +47,8 @@ class ExecutionProviders {
     }
 
     exec_providers_.push_back(std::move(p_exec_provider));
+
+    return Status::OK();
   }
 
   const IExecutionProvider* Get(const LotusIR::Graph& graph, const LotusIR::NodeIndex& idx) const {

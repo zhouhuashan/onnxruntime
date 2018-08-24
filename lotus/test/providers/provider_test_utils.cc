@@ -178,10 +178,15 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
       output_defs.push_back(&data.def_);
     }
 
+    const ILotusOpSchemaRegistryList* local_schema_registries = custom_schema_registries_.empty()
+                                                                    ? nullptr
+                                                                    : &custom_schema_registries_;
+
     // Create a simple model
     std::unordered_map<std::string, int> domain_to_version;
     domain_to_version[domain_] = opset_version_;
-    auto p_model = std::make_unique<LotusIR::Model>("test", false, ModelMetaData(), nullptr, domain_to_version);
+    auto p_model = std::make_unique<LotusIR::Model>("test", false, ModelMetaData(),
+                                                    local_schema_registries, domain_to_version);
     LotusIR::Graph& graph = p_model->MainGraph();
     auto& node = *graph.AddNode("node1", op_, op_, input_defs, output_defs, nullptr, domain_);
 
@@ -216,6 +221,9 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     so.session_log_verbosity_level = 1;
 
     InferenceSession session_object{so};
+
+    for (auto& custom_session_registry : custom_session_registries_)
+      session_object.RegisterCustomRegistry(custom_session_registry);
 
     if (provider_type == LotusIR::kCudaExecutionProvider) {
 #ifdef USE_CUDA

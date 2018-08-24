@@ -98,4 +98,12 @@ int OpKernelContext::GetOutputArgIndex(int index) const {
   return arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
 }
 
+LotusIR::NodeIndex OpKernelContext::GetNodeIndex() const {
+  return kernel_->Node().Index();
+}
+
+const SessionState& OpKernelContext::GetSessionState() const {
+  return execution_frame_->SessionState();
+}
+
 }  // namespace Lotus

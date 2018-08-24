@@ -7,6 +7,10 @@
 #include <list>
 
 #include "core/common/logging/logging.h"
+#include "core/graph/graph.h"
+#include "core/graph/graph_transformer.h"
+#include "core/graph/graph_transformer_mgr.h"
+#include "core/graph/model.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/customregistry.h"
 #include "core/framework/executor.h"
@@ -14,24 +18,24 @@
 #include "core/framework/graph_partitioner.h"
 #include "core/framework/insert_cast_transformer.h"
 #include "core/framework/kernel_def_builder.h"
+#include "core/framework/kernel_registry.h"
 #include "core/framework/ml_value_patterns_planner.h"
 #include "core/framework/mldata_type_utils.h"
+#include "core/framework/mlvalue_name_idx_map.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
 #include "core/framework/session_state.h"
+#include "core/framework/session_state_initializer.h"
 #include "core/framework/tensorprotoutils.h"
 #include "core/framework/tensorutils.h"
 #include "core/framework/transformer_memcpy.h"
-#include "core/graph/graph.h"
-#include "core/graph/graph_transformer.h"
-#include "core/graph/model.h"
+#include "core/framework/utils.h"
 #include "core/platform/notification.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/session/CustomOpsLoader.h"
 #include "core/session/IOBinding.h"
-#include "core/framework/kernel_registry.h"
-#include "core/graph/graph_transformer_mgr.h"
 
 using namespace onnx;
+
 namespace Lotus {
 
 class InferenceSession::Impl {
@@ -40,7 +44,8 @@ class InferenceSession::Impl {
       : session_options_{session_options},
         graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
         logging_manager_{logging_manager},
-        insert_cast_transformer_("CastFloat16Transformer") {
+        insert_cast_transformer_{"CastFloat16Transformer"},
+        session_state_{execution_providers_} {
     InitLogger(logging_manager);
 
     //env_(Env::Default()) {
@@ -57,9 +62,11 @@ class InferenceSession::Impl {
     if (!p_exec_provider) {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for exec provider");
     }
+
     std::string provider_type = p_exec_provider->Type();
     VLOGS(*session_logger_, 1) << "Adding execution provider of type: " << provider_type;
-    session_state_.AddExecutionProvider(provider_type, std::move(p_exec_provider));
+    execution_providers_.Add(provider_type, std::move(p_exec_provider));
+
     return Status::OK();
   }
 
@@ -85,19 +92,19 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  Common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry) {
+  Common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry>& custom_registry) {
     if (custom_registry == nullptr) {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for custom registry");
     }
 
     // Insert session-level customized kernel registry.
-    session_state_.GetKernelRegistryManager().RegisterKernelRegistry(custom_registry, KernelRegistryPriority::HighPriority);
+    kernel_registry_manager_.RegisterKernelRegistry(custom_registry, KernelRegistryPriority::HighPriority);
     custom_schema_registries_.push_back(custom_registry);
     return Status::OK();
   }
 
-  bool HaslocalSchema() const {
-    return custom_schema_registries_.size() > 0;
+  bool HasLocalSchema() const {
+    return !custom_schema_registries_.empty();
   }
 
   Common::Status Load(const std::string& model_uri) {
@@ -111,7 +118,8 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_uri, p_tmp_model,
+                                                 HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -141,7 +149,8 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model,
+                                                 HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -171,7 +180,8 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(std::move(p_model_proto), p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(std::move(p_model_proto), p_tmp_model,
+                                                 HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -207,7 +217,8 @@ class InferenceSession::Impl {
       }
 
       std::shared_ptr<LotusIR::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model, HaslocalSchema() ? &custom_schema_registries_ : nullptr));
+      LOTUS_RETURN_IF_ERROR(LotusIR::Model::Load(model_proto, p_tmp_model,
+                                                 HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
       LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
@@ -226,8 +237,72 @@ class InferenceSession::Impl {
     return Common::Status::OK();
   }
 
+  // memory allocations for a subgraph that are owned by InferenceSession
+  struct SubgraphMemory {
+    std::unique_ptr<Graph> graph;
+    std::unique_ptr<SessionState> session_state;
+    std::map<AllocatorInfo, BufferUniquePtr> weights_buffers;
+  };
+
+  /// iterate nodes in graph looking for ones with graph attribute/s
+  /// @param graph The graph to iterate
+  /// @param session_state The SessionState instance for 'graph'.
+  /// @remarks We pass in graph and session_state so we can handled nested subgraphs in the future
+  Common::Status InitializeSubgraphSessions(const Graph& graph, SessionState& session_state) {
+    for (auto& node : graph.Nodes()) {
+      if (graph.IsSourceNode(node) || graph.IsSinkNode(node))
+        continue;
+
+      for (auto& attribute : node.GetAttributes()) {
+        auto& name = attribute.first;
+        auto& proto = attribute.second;
+
+        // check if it has a subgraph
+        if (proto.has_g()) {
+          // we need a mutable GraphProto so take a copy of the original one in the Node
+          onnx::GraphProto subgraph_proto{proto.g()};
+
+          SubgraphMemory subgraph_info;
+          // create Graph instance for subgraph
+          subgraph_info.graph = std::make_unique<Graph>(graph, subgraph_proto);
+          LOTUS_RETURN_IF_ERROR(subgraph_info.graph->Resolve());
+
+          // create SessionState for executing subgraph
+          subgraph_info.session_state = std::make_unique<SessionState>(execution_providers_);
+          subgraph_info.session_state->SetGraph(*subgraph_info.graph);
+
+          // setup everything required to execute the subgraph and save it in subgraph_session_state
+          SessionStateInitializer initializer{*subgraph_info.graph, *subgraph_info.session_state,
+                                              execution_providers_, kernel_registry_manager_, *session_logger_};
+
+          LOTUS_RETURN_IF_ERROR(initializer.CreatePlan(graph_transformation_mgr_, insert_cast_transformer_,
+                                                       session_options_.enable_sequential_execution));
+
+          LOTUS_RETURN_IF_ERROR(initializer.InitializeAndSave(session_state_.GetEnableMemoryPattern(),
+                                                              subgraph_info.weights_buffers));
+
+          // add the subgraph SessionState instance to the parent graph SessionState so it can be retrieved
+          // by Compute() via OpKernelContextImpl.
+          session_state.AddSubgraphSessionState(node.Index(), name, *subgraph_info.session_state);
+
+          // save subgraph_info as InferenceSession owns these so they remain valid
+          // for the entire InferenceSession.
+          subgraph_memory_.push_back(std::move(subgraph_info));
+
+          // FUTURE TODO
+          // If we need to handle nested subgraphs, here would be the place to
+          // recursively call InitializeSubgraphSessions with subgraph and subgraph_session_state
+        }
+      }
+    }
+
+    return Status::OK();
+  }
+
   Common::Status Initialize() {
+    Status status = Status::OK();
     auto tp = session_profiler_.StartTime();
+
     try {
       LOGS(*session_logger_, INFO) << "Initializing session.";
       std::lock_guard<std::mutex> l(session_mutex_);
@@ -241,97 +316,57 @@ class InferenceSession::Impl {
         return Common::Status::OK();
       }
 
-      if (!session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)) {
-        // Register default CPUExecutionProvider if user didn't provide it through the Register() calls
+      // Register default CPUExecutionProvider if user didn't provide it through the Register() calls
+      if (!execution_providers_.Get(LotusIR::kCpuExecutionProvider)) {
         LOGS(*session_logger_, INFO) << "Adding default CPU execution provider.";
         CPUExecutionProviderInfo epi{"CPUExecutionProvider", session_options_.enable_cpu_mem_arena};
-        session_state_.AddExecutionProvider(LotusIR::kCpuExecutionProvider,
-                                            std::make_unique<CPUExecutionProvider>(epi));
+        execution_providers_.Add(LotusIR::kCpuExecutionProvider,
+                                 std::make_unique<CPUExecutionProvider>(epi));
       }
 
       LotusIR::Graph& graph = model_->MainGraph();
       session_state_.SetGraph(graph);
 
-      LOTUS_RETURN_IF_ERROR(TransformGraph(graph));
-      LOTUS_RETURN_IF_ERROR(graph.Resolve());
-      LOTUS_RETURN_IF_ERROR(SaveMLValueNameIndexMapping(graph));
+      // Collect the kernel registries from execution provider instances;
+      // There are 2 kinds of kernel registries with priority from high to low as below,
+      // 1. Custom execution provider type specific kernel registries.
+      // 2. Common execution provider type specific kernel registries.
+      // The 1st and 2nd ones are shared across sessions.
+      // The 1st ones should have already been registered via session-level API into KernelRegistryManager.
+      //
+      // Register 2nd registries into KernelRegistryManager.
+      kernel_registry_manager_.RegisterKernels(execution_providers_);
 
-      // get execution plan
-      if (session_options_.enable_sequential_execution) {
-        // Why use a unique_ptr here? the only other ways to avoid using a unique_ptr are
-        // (1) making a copy or (2) passing a ptr to the private session_state var (p_seq_exec_plan) to CreatePlan.
-        // Passing a pointer to a private member variable doesn't seem the right thing to do.
-        std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan = std::make_unique<SequentialExecutionPlan>();
-        LOTUS_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(session_state_, p_seq_exec_plan.get()));
-        session_state_.SetExecutionPlan(std::move(p_seq_exec_plan));
-      } else {
-        LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
-      }
+      insert_cast_transformer_.AddKernelRegistries(kernel_registry_manager_.GetAllKernelRegistries());
 
-      LOTUS_RETURN_IF_ERROR(SaveInitializedTensors(graph));
-      graph.CleanAllInitializedTensors();  // remove weights from the graph now to save memory
+      SessionStateInitializer session_initializer{graph, session_state_, execution_providers_,
+                                                  kernel_registry_manager_, *session_logger_};
 
-      LOTUS_RETURN_IF_ERROR(SaveKernels(graph));
-      LOTUS_RETURN_IF_ERROR(SaveInputOutputNamesToNodeMapping(graph));
+      LOTUS_RETURN_IF_ERROR(session_initializer.CreatePlan(graph_transformation_mgr_, insert_cast_transformer_,
+                                                           session_options_.enable_sequential_execution));
+
+      LOTUS_RETURN_IF_ERROR(session_initializer.InitializeAndSave(session_state_.GetEnableMemoryPattern(),
+                                                                  weights_buffers_));
+
+      // handle any subgraphs
+      InitializeSubgraphSessions(graph, session_state_);
 
       is_inited_ = true;
 
       LOGS(*session_logger_, INFO) << "Session successfully initialized.";
     } catch (const NotImplementedException& ex) {
-      LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
-      return Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "Exception during initialization: " + std::string(ex.what()));
+      status = LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Exception during initialization: ", ex.what());
+      LOGS(*session_logger_, ERROR) << status.ErrorMessage();
     } catch (const std::exception& ex) {
-      LOGS(*session_logger_, ERROR) << "Exception during initialization: " << std::string(ex.what());
-      return Status(Common::LOTUS, Common::FAIL, "Exception during initialization: " + std::string(ex.what()));
+      status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Exception during initialization: ", ex.what());
+      LOGS(*session_logger_, ERROR) << status.ErrorMessage();
     } catch (...) {
-      LOGS(*session_logger_, ERROR) << "Unknown exception in Initialize()";
-      return Status(Common::LOTUS, Common::RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
+      status = LOTUS_MAKE_STATUS(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
+      LOGS(*session_logger_, ERROR) << status.ErrorMessage();
     }
+
     session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "session_initialization", tp);
-    return Status::OK();
-  }
-
-  static bool IsArgNameInInputsOutputs(const std::string& name, const std::vector<const LotusIR::NodeArg*> graph_args) {
-    auto it = std::find_if(std::begin(graph_args), std::end(graph_args), [&name](const LotusIR::NodeArg* arg) {
-      return arg->Name() == name;
-    });
-    return it != graph_args.end();
-  }
-
-  Common::Status SaveInputOutputNamesToNodeMapping(const LotusIR::Graph& graph) {
-    auto& weights_map = graph.GetAllInitializedTensors();
-    auto& graph_inputs = graph.GetInputs();
-    auto& graph_outputs = graph.GetOutputs();
-
-    for (auto& node : graph.Nodes()) {
-      LOTUS_RETURN_IF_ERROR(
-          LotusIR::Node::ForEachWithIndex(
-              node.InputDefs(),
-              [this, &weights_map, &node, &graph_inputs, &graph_outputs](const LotusIR::NodeArg& arg, size_t index) {
-                if (arg.Name().empty() ||
-                    weights_map.count(arg.Name())) {
-                  return Status::OK();
-                }
-
-                // note that KernelCreateInfo may not exist for custom kernel
-                const KernelCreateInfo* kci = nullptr;
-                session_state_.GetKernelRegistryManager().SearchKernelRegistry(node, &kci);
-
-                SessionState::NodeInfo node_info(index, &node, kci);
-
-                if (IsArgNameInInputsOutputs(arg.Name(), graph_inputs)) {
-                  session_state_.AddInputNameToNodeInfoMapping(arg.Name(), node_info);
-                  return Status::OK();
-                }
-                if (IsArgNameInInputsOutputs(arg.Name(), graph_outputs)) {
-                  session_state_.AddOutputNameToNodeInfoMapping(arg.Name(), node_info);
-                  return Status::OK();
-                }
-                return Status::OK();
-              }));
-    }
-
-    return Status::OK();
+    return status;
   }
 
   int GetCurrentNumRuns() const {
@@ -388,8 +423,8 @@ class InferenceSession::Impl {
   Common::Status ValidateInputNames(const NameMLValMap& feeds) {
     if (model_input_names_.size() != feeds.size()) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                               "The number of feeds is not same as the number of the model input, expect ", model_input_names_.size(),
-                               " got ", feeds.size());
+                               "The number of feeds is not same as the number of the model input, expect ",
+                               model_input_names_.size(), " got ", feeds.size());
     }
 
     bool valid = true;
@@ -501,6 +536,7 @@ class InferenceSession::Impl {
     std::set<std::string> seen_outputs;
     const LotusIR::Graph* p_graph = session_state_.GetGraph();
     LOTUS_ENFORCE(p_graph);
+
     std::pair<bool, size_t> found;
     for (auto& node : p_graph->Nodes()) {  // TODO optimize this
       if (seen_outputs.size() == fetches.size()) {
@@ -525,10 +561,11 @@ class InferenceSession::Impl {
           auto& node_provider_type = node.GetExecutionProviderType();
           auto& orig_tensor = orig_mlvalue.Get<Tensor>();
           auto& orig_tensor_loc = orig_tensor.Location();
-          auto* tensor_provider = session_state_.GetExecutionProvider(orig_tensor_loc);
+          auto* tensor_provider = execution_providers_.Get(orig_tensor_loc);
           if (!tensor_provider) {
-            tensor_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+            tensor_provider = execution_providers_.Get(LotusIR::kCpuExecutionProvider);
           }
+
           auto tensor_provider_type = tensor_provider->Type();
           if (node_provider_type == tensor_provider_type) {
             new_fetches[idx] = fetches[idx];
@@ -554,6 +591,9 @@ class InferenceSession::Impl {
     // and hence it doesn't show up in any of the OutputDefs before
     // assume that the weight has already been placed in the appropriate device before
     auto& defs = p_graph->GetOutputs();
+    auto& mlvalue_name_idx_map{session_state_.GetMLValueNameIdxMap()};
+    auto& weights = session_state_.GetInitializedTensors();
+
     for (auto& one_def : defs) {
       if (!one_def->Exists() ||
           one_def->Name().empty() ||
@@ -565,35 +605,39 @@ class InferenceSession::Impl {
       auto& def_name = one_def->Name();
       size_t idx = found.second;
       int mlvalue_idx;
-      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(def_name, &mlvalue_idx));
-      auto& weights = session_state_.GetInitializedTensors();
+      LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(def_name, mlvalue_idx));
       if (!weights.count(mlvalue_idx)) {
         LOGS(*session_logger_, INFO) << "Output with name " << def_name << " is not a weight.";
         continue;
       }
       seen_outputs.insert(def_name);
-      auto weight = session_state_.GetInitializedTensors().at(mlvalue_idx);
+      auto weight = weights.at(mlvalue_idx);
       new_fetches[idx] = weight;
     }
 
     if (seen_outputs.size() != output_names.size())  // make sure we've seen all outputs
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "output size mismatch, expected ", output_names.size(), " got ", seen_outputs.size());
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "output size mismatch, expected ", output_names.size(), " got ",
+                               seen_outputs.size());
+
     return Status::OK();
   }
 
   Common::Status AllocateHelper(LotusIR::ProviderType provider_type,
                                 const MLValue& fetched_mlvalue,
                                 MLValue& output_mlvalue) {
-    auto* p_provider = session_state_.GetExecutionProvider(provider_type);
+    auto* p_provider = execution_providers_.Get(provider_type);
     if (!p_provider)
       return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "invalid provider_type");
+
     auto allocator = p_provider->GetAllocator();
     if (!allocator)
       return Status(Common::LOTUS, Common::FAIL, "invalid allocator");
+
     auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
     void* buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
     if (!buffer)
       return Status(Common::LOTUS, Common::FAIL, "invalid buffer");
+
     std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(fetched_tensor.DataType(),
                                                                 fetched_tensor.Shape(),
                                                                 buffer,
@@ -618,11 +662,12 @@ class InferenceSession::Impl {
 
       auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
       auto& fetched_tensor_location = fetched_tensor.Location();
-      auto* p_fetched_provider = session_state_.GetExecutionProvider(fetched_tensor_location);
+      auto* p_fetched_provider = execution_providers_.Get(fetched_tensor_location);
       if (!p_fetched_provider) {
-        p_fetched_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+        p_fetched_provider = execution_providers_.Get(LotusIR::kCpuExecutionProvider);
+        LOTUS_ENFORCE(p_fetched_provider);
       }
-      LOTUS_ENFORCE(p_fetched_provider);
+
       auto fetched_provider_type = p_fetched_provider->Type();
 
       auto& output_mlvalue = user_fetches[idx];
@@ -639,11 +684,12 @@ class InferenceSession::Impl {
 
       Tensor* p_output_tensor = output_mlvalue.GetMutable<Tensor>();
       auto& output_tensor_loc = p_output_tensor->Location();
-      auto* p_output_provider = session_state_.GetExecutionProvider(output_tensor_loc);
+      auto* p_output_provider = execution_providers_.Get(output_tensor_loc);
       if (!p_output_provider) {
-        p_output_provider = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider);
+        p_output_provider = execution_providers_.Get(LotusIR::kCpuExecutionProvider);
+        LOTUS_ENFORCE(p_output_provider);
       }
-      LOTUS_ENFORCE(p_output_provider);
+
       auto output_provider_type = p_output_provider->Type();
 
       if (output_provider_type == fetched_provider_type) {
@@ -658,6 +704,7 @@ class InferenceSession::Impl {
         LOTUS_RETURN_IF_ERROR(p_output_provider->CopyTensor(fetched_tensor, *p_output_tensor));
       }
     }
+
     return Status::OK();
   }
 
@@ -690,13 +737,14 @@ class InferenceSession::Impl {
 
       // TODO should we add this exec to the list of executors? i guess its not needed now?
 
-      // scope of owned_run_logger is just the call to Execute. If Execute ever becomes async we need a different approach
+      // scope of owned_run_logger is just the call to Execute.
+      // If Execute ever becomes async we need a different approach
       std::unique_ptr<Logging::Logger> owned_run_logger;
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
       // info all execution providers InferenceSession:Run started
       // TODO: only call OnRunStart for all providers in-use
-      for (auto& xp : session_state_.GetExecutionProviders())
+      for (auto& xp : execution_providers_)
         LOTUS_CHECK_AND_SET_RETVAL(xp->OnRunStart());
 
       NameMLValMap copied_feeds;
@@ -723,7 +771,7 @@ class InferenceSession::Impl {
     }
 
     // info all execution providers InferenceSession:Run ended
-    for (auto& xp : session_state_.GetExecutionProviders())
+    for (auto& xp : execution_providers_)
       LOTUS_CHECK_AND_SET_RETVAL(xp->OnRunEnd());
 
     --current_num_runs_;
@@ -779,6 +827,7 @@ class InferenceSession::Impl {
         return Common::Status(Common::LOTUS, Common::FAIL, "Session not initialized.");
       }
     }
+
     *io_binding = std::unique_ptr<IOBinding>(new IOBinding(session_state_));  // private constructor, can't use make_unique
     return Status::OK();
   }
@@ -921,297 +970,6 @@ class InferenceSession::Impl {
     session_state_.SetLogger(*session_logger_);
   }
 
-  Common::Status TransformGraph(LotusIR::Graph& graph) {
-    // The transformer order:
-    // 1. built-in graph rewriter
-    // 2. each execution provider's transformer
-    // 3. do node placement according to kernel definition
-    // 4. insert copy nodes
-    // 5. insert cast nodes.
-
-    // first apply the default/system/basic graph to graph optimizations.
-    LOTUS_RETURN_IF_ERROR(graph_transformation_mgr_.ApplyAll(graph));
-
-    auto& providers = session_state_.GetExecutionProviders();
-
-    // the order of provider types represent the user preference.
-    std::vector<std::string> provider_preference;
-    for (auto& p : providers) {
-      provider_preference.push_back(p->Type());
-    }
-
-    // Collect the kernel registries from execution provider instances;
-    // There're 2 kinds of kernel registries with priority from high to low as below,
-    // 1. Custom execution provider type specific kernel registries.
-    // 2. Common execution provider type specific kernel registries.
-    // The 1st and 2nd ones are shared across sessions.
-    // The 1st ones should have already been registered via session-level API into KernelRegistryManager.
-    //
-    // Register 2nd registries into KernelRegistryManager.
-    for (auto& provider : providers) {
-      session_state_.GetKernelRegistryManager().RegisterKernelRegistry(provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
-    }
-
-    std::vector<const KernelRegistry*> registries;
-    auto custom_registries = session_state_.GetKernelRegistryManager().GetAllKernelRegistries();
-    registries.assign(custom_registries.begin(),
-                      custom_registries.end());
-
-    // Do partitioning based on execution providers' capability.
-    GraphPartitioner partitioner(session_state_.GetKernelRegistryManager(), providers);
-    LOTUS_RETURN_IF_ERROR(partitioner.Partition(graph));
-
-    // Insert copy nodes.
-    for (auto& provider : providers) {
-      if (provider->Type() != LotusIR::kCpuExecutionProvider && provider->Type() != LotusIR::kMklDnnExecutionProvider) {
-        TransformerMemcpyImpl copy_impl(graph, provider->Type());
-        copy_impl.ModifyGraph(session_state_.GetKernelRegistryManager());
-      }
-    }
-    // Insert cast node.
-    for (auto registry : session_state_.GetKernelRegistryManager().GetAllKernelRegistries()) {
-      insert_cast_transformer_.AddKernelRegistry(*registry);
-    }
-
-    bool modified = false;
-    LOTUS_RETURN_IF_ERROR(insert_cast_transformer_.Apply(graph, modified));
-
-    return Common::Status::OK();
-  }
-
-  Common::Status DeserializeTensorProto(const AllocatorInfo& alloc_info, const TensorProto& tensor_proto, MLValue& mlvalue, void* preallocated, size_t preallocated_size) {
-    std::unique_ptr<Tensor> p_tensor;
-    auto alloc_ptr = session_state_.GetAllocator(alloc_info);
-    if (!alloc_ptr) {
-      return Status(Common::LOTUS, Common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
-    }
-
-    if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPUOutput) {
-      // deserilize directly to CPU tensor
-      LOTUS_RETURN_IF_ERROR(::Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr, preallocated, preallocated_size));
-    } else {
-      // deserialize to CPU first for non-CPU allocator, then alloc and copy
-      AllocatorPtr deserialize_alloc_ptr;
-      std::unique_ptr<Tensor> p_deserialize_tensor;
-      deserialize_alloc_ptr = session_state_.GetExecutionProvider(LotusIR::kCpuExecutionProvider)->GetAllocator();
-      LOTUS_RETURN_IF_ERROR(::Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor, deserialize_alloc_ptr));
-
-      if (preallocated && preallocated_size != p_deserialize_tensor->Size())
-        return Status(Common::LOTUS, Common::FAIL, "The buffer planner is not consistent with tensor buffer size");
-
-      IExecutionProvider* provider = session_state_.GetExecutionProvider(alloc_info);
-      LOTUS_ENFORCE(provider != nullptr);
-      p_tensor = std::make_unique<Tensor>(p_deserialize_tensor->DataType(),
-                                          p_deserialize_tensor->Shape(),
-                                          preallocated ? preallocated : static_cast<void*>(alloc_ptr->Alloc(p_deserialize_tensor->Size())),
-                                          alloc_info,
-                                          preallocated ? nullptr : alloc_ptr);  // no deleter for preallocated
-      Status copy_status = provider->CopyTensor(*p_deserialize_tensor, *p_tensor);
-      if (!copy_status.IsOK()) {
-        if (copy_status.ErrorMessage().empty()) {
-          // The windows execution provider does not return any error message today for CopyTensor since it is
-          // not implemented yet. That's the reason we're adding our own error message so that we can debug better.
-          return Status(copy_status.Category(),
-                        copy_status.Code(),
-                        "Failed to copy tensor to execution provider: " + provider->Type());
-        } else {
-          return copy_status;
-        }
-      }
-    }
-
-    mlvalue.Init(p_tensor.release(),
-                 DataTypeImpl::GetType<Tensor>(),
-                 DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
-
-    return Common::Status::OK();
-  }
-
-  Common::Status SaveInitializedTensorsWithSeperateBuffer(const LotusIR::Graph& graph) {
-    LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
-    LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
-
-    auto* p_execution_plan = session_state_.GetExecutionPlan();
-    LOTUS_ENFORCE(p_execution_plan);  // execution plan must be ready.
-
-    const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
-    for (const auto& entry : initialized_tensor_set) {
-      const std::string& name = entry.first;
-      int mlvalue_index;
-      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
-      VLOGS(*session_logger_, 1) << "About to add weight with name: " << name << " and index: " << mlvalue_index;
-      auto& location = p_execution_plan->allocation_plan[mlvalue_index].location;
-      MLValue mlvalue;
-      LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(location, *(entry.second), mlvalue, nullptr, 0));
-      session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
-      VLOGS(*session_logger_, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
-    }
-
-    LOGS(*session_logger_, INFO) << "Done saving initialized tensors";
-    return Common::Status::OK();
-  }
-
-  Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph) {
-    LOGS(*session_logger_, INFO) << "Saving initialized tensors.";
-    LOTUS_ENFORCE(session_state_.GetNumMLValues() > 0);  // assumes MLValue indexes have been populated
-
-    auto execution_plan = session_state_.GetExecutionPlan();
-    LOTUS_ENFORCE(execution_plan);  // execution plan must be ready.
-
-    MLValuePatternPlanner planner(*execution_plan);
-    //1. first plan the memory
-    const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
-    for (const auto& entry : initialized_tensor_set) {
-      const std::string& name = entry.first;
-      int mlvalue_index;
-      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
-
-      const TensorProto& tensor_proto = *(entry.second);
-      LOTUS_RETURN_IF_ERROR(::Lotus::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
-    }
-    //2. allocate weight buffer on different locations
-    MemoryPatternGroup mem_patterns;
-    LOTUS_RETURN_IF_ERROR(planner.GeneratePatterns(&mem_patterns));
-    for (int i = 0; i < mem_patterns.locations.size(); i++) {
-      auto& location = mem_patterns.locations[i];
-      LOTUS_ENFORCE(weights_buffers_.find(location) == weights_buffers_.end());
-      auto alloc = session_state_.GetAllocator(location);
-      if (!alloc)
-        return Status(Common::LOTUS, Common::FAIL, "Failed to get allocator for location: " + location.ToString());
-      void* buffer = mem_patterns.patterns[i].PeakSize() > 0 ? alloc->Alloc(mem_patterns.patterns[i].PeakSize()) : nullptr;
-      weights_buffers_[location] = BufferUniquePtr(buffer, alloc);
-    }
-    //3. create weight tensors based on weights buffer
-    for (const auto& entry : initialized_tensor_set) {
-      const std::string& name = entry.first;
-      int mlvalue_index;
-      LOTUS_RETURN_IF_ERROR(session_state_.GetMLValueIdx(name, &mlvalue_index));
-      const TensorProto& tensor_proto = *(entry.second);
-
-      auto& location = execution_plan->allocation_plan[mlvalue_index].location;
-      auto it = weights_buffers_.find(location);
-      if (it == weights_buffers_.end())
-        return Status(Common::LOTUS, Common::FAIL, "Weight buffer not found");
-
-      auto pattern = mem_patterns.GetPatterns(location);
-      auto block = pattern->GetBlock(mlvalue_index);
-      MLValue mlvalue;
-      // if block is not found, means this mlvalue is not traced
-      // fall back to allocate seperate buffer.
-
-      // if it->second.get() is null, then fall back to the block not found case
-      if (it->second.get() == nullptr) {
-        block = nullptr;
-      }
-      if (!block) {
-        LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(location, tensor_proto, mlvalue, nullptr, 0));
-      } else {
-        LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(location, tensor_proto, mlvalue, (uint8_t*)it->second.get() + block->offset_, block->size_));
-      }
-
-      session_state_.AddInitializedTensor(mlvalue_index, mlvalue);
-      VLOGS(*session_logger_, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
-    }
-
-    LOGS(*session_logger_, INFO) << "Done saving initialized tensors";
-    return Common::Status::OK();
-  }
-
-  Common::Status SaveInitializedTensors(const LotusIR::Graph& graph) {
-    auto execution_plan = session_state_.GetExecutionPlan();
-    // if we enable the meory pattern and already have the execution plan
-    // go with mem pattern approach, which will allocate a big chunk for all
-    // the weights.
-    if (session_state_.GetEnableMemoryPattern() && execution_plan) {
-      return SaveInitializedTensorsWithMemPattern(graph);
-    } else {
-      return SaveInitializedTensorsWithSeperateBuffer(graph);
-    }
-  }
-
-  // This function does the following:
-  // - builds the MLValue name->idx mapping and saves it in the session state
-  Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph) {
-    LOGS(*session_logger_, INFO) << "Saving MLValue mappings.";
-    int curr_idx = 0;
-
-    for (auto& node : graph.Nodes()) {
-      // ignore source and sink nodes
-      if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {
-        continue;
-      }
-
-      // build the MLValue->index map
-      for (gsl::not_null<const LotusIR::NodeArg*> input_def : node.InputDefs()) {
-        VLOGS(*session_logger_, 1)
-            << "Adding input argument with name: " << input_def->Name() << " to MLValueIndex with index: " << curr_idx;
-        if (input_def->Exists()) {
-          session_state_.AddMLValueNameIdx(input_def->Name(), curr_idx++);
-        }
-      }
-
-      for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
-        VLOGS(*session_logger_, 1)
-            << "Adding output argument with name: " << output_def->Name() << " to MLValueIndex with index: " << curr_idx;
-        if (output_def->Exists()) {
-          session_state_.AddMLValueNameIdx(output_def->Name(), curr_idx++);
-        }
-      }
-    }
-
-    // allocate MLValue for graph outputs when coming from initializers
-    for (const auto& output : graph.GetOutputs()) {
-      if (output->Exists()) {
-        session_state_.AddMLValueNameIdx(output->Name(), curr_idx++);
-      }
-    }
-
-    LOGS(*session_logger_, INFO) << "Done saving MLValue mappings.";
-    return Status::OK();
-  }
-
-  // This function does the following:
-  // - constructs the kernels and saves them in the session state
-  Common::Status SaveKernels(const LotusIR::Graph& graph) {
-    LOGS(*session_logger_, INFO) << "Saving kernels.";
-    for (auto& node : graph.Nodes()) {
-      // ignore source and sink nodes
-      if (graph.IsSourceNode(node.Index()) || graph.IsSinkNode(node.Index())) {
-        continue;
-      }
-      // construct and save the kernels
-      std::unique_ptr<OpKernel> p_op_kernel;
-      LOTUS_RETURN_IF_ERROR(CreateOpKernel(node, p_op_kernel));
-      session_state_.AddKernel(node.Index(), std::move(p_op_kernel));
-    }
-
-    LOGS(*session_logger_, INFO) << "Done saving kernels.";
-    return Status::OK();
-  }
-
-  Common::Status CreateOpKernel(const LotusIR::Node& node, std::unique_ptr<OpKernel>& p_op_kernel) {
-    LotusIR::ProviderType exec_provider_name = node.GetExecutionProviderType();
-    IExecutionProvider* exec_provider = nullptr;
-    if (exec_provider_name.empty() ||
-        (exec_provider = session_state_.GetExecutionProvider(exec_provider_name)) == nullptr) {
-      std::ostringstream error_msg;
-      error_msg << "Could not create kernel for node: " << node.Name() << " as there's no execution provider allocated.";
-      LOGS(*session_logger_, ERROR) << error_msg.str();
-      return Common::Status(Common::LOTUS, Common::FAIL, error_msg.str());
-    }
-
-    Common::Status status = CreateOpKernelInternal(node, *exec_provider, p_op_kernel);
-    if (!status.IsOK()) {
-      LOGS(*session_logger_, ERROR) << "Kernel creation failed for node: "
-                                    << node.Name() << " with error: " << status.ErrorMessage();
-    }
-    return status;
-  }
-
-  Common::Status CreateOpKernelInternal(const LotusIR::Node& node, IExecutionProvider& exec_provider, std::unique_ptr<OpKernel>& p_op_kernel) {
-    return session_state_.GetKernelRegistryManager().CreateKernel(node, exec_provider, session_state_, p_op_kernel);
-  }
-
   Common::Status WaitForNotification(Notification* p_executor_done, int64_t timeout_in_ms) {
     if (timeout_in_ms > 0) {
       LOTUS_NOT_IMPLEMENTED(__FUNCTION__, "timeout_in_ms >0 is not supported");  // TODO
@@ -1239,6 +997,11 @@ class InferenceSession::Impl {
 
   // Profiler for this session.
   Profiling::Profiler session_profiler_;
+
+  ExecutionProviders execution_providers_;
+
+  KernelRegistryManager kernel_registry_manager_;
+  std::list<std::shared_ptr<LotusIR::ILotusOpSchemaCollection>> custom_schema_registries_;
 
   // The model served by this inference session instance.
   // Currently this has to be a shared ptr because the Model::Load method
@@ -1279,8 +1042,9 @@ class InferenceSession::Impl {
   std::map<AllocatorInfo, BufferUniquePtr> weights_buffers_;
   InsertCastTransformer insert_cast_transformer_;
 
-  std::list<std::shared_ptr<LotusIR::ILotusOpSchemaCollection>> custom_schema_registries_;
-};
+  // memory allocations for any subgraphs
+  std::vector<SubgraphMemory> subgraph_memory_;
+};  // namespace Lotus
 
 //
 // InferenceSession

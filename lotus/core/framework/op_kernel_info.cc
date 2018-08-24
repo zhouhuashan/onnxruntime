@@ -1,3 +1,4 @@
+#include "core/framework/op_kernel.h"
 #include "core/framework/op_kernel_info.h"
 #include "core/framework/session_state.h"
 
@@ -39,7 +40,7 @@ bool OpKernelInfo::TryGetConstantInput(int input_index, const Tensor** constant_
   }
   auto& input_arg_name = node_.InputDefs()[input_index]->Name();
   int input_arg_index = -1;
-  if (!session_state_.GetMLValueIdx(input_arg_name, &input_arg_index).IsOK()) {
+  if (!session_state_.GetMLValueNameIdxMap().GetIdx(input_arg_name, input_arg_index).IsOK()) {
     return false;
   }
 
