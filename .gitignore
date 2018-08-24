@@ -21,5 +21,6 @@ lotus.egg-info
 *.code-workspace
 __pycache__
 lotus_profile*.json
-/docs_python/*.md
-/docs_python/auto_examples/*
+/docs/python/*.md
+/docs/python/auto_examples/*
+/docs/python/media/*

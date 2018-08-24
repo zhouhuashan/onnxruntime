@@ -14,9 +14,6 @@ to call Lotus from Python.
     api
     auto_examples/index
 
-Indices and tables
-==================
+.. add :ref:`genindex` to show a link to the index.
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+
