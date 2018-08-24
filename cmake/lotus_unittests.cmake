@@ -345,10 +345,15 @@ if(lotus_USE_CUDA)
   set(onnx_cuda_test_libs lotus_providers_cuda ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
+if(lotus_USE_MKLDNN)
+  set(onnx_mkldnn_test_libs lotus_providers_mkldnn)
+endif()
+
 set(onnx_test_libs
   lotus_test_utils
   lotus_session
   ${onnx_cuda_test_libs}
+  ${onnx_mkldnn_test_libs}
   lotus_providers
   lotus_framework
   lotus_util
@@ -362,12 +367,6 @@ set(onnx_test_libs
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
-
-if(lotus_USE_MKLDNN)
-  list(APPEND onnx_test_libs lotus_providers_mkldnn)
-endif()
-
-
 if (lotus_USE_OPENBLAS)
   if (WIN32)
     list(APPEND onnx_test_libs ${lotus_OPENBLAS_HOME}/lib/libopenblas.lib)
@@ -377,7 +376,7 @@ if (lotus_USE_OPENBLAS)
 endif()
 
 if (lotus_USE_MKLDNN)
-  list(APPEND onnx_test_libs lotus_providers_mkldnn mkldnn)
+  list(APPEND onnx_test_libs mkldnn)
   add_custom_command(
     TARGET ${test_data_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${MKLDNN_LIB_DIR}/${MKLDNN_SHARED_LIB} $<TARGET_FILE_DIR:${test_data_target}>

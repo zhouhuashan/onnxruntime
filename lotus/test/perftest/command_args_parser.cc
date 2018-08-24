@@ -24,7 +24,7 @@ namespace PerfTest {
       "Options:\n"
       "\t-m [test_mode]: Specifies the test mode. Value coulde be 'duration' or 'times'.\n"
       "\t\tProvide 'duration' to run the test for a fix duration, and 'times' to repeated for a certain times. Default:'duration'.\n"
-      "\t-e [cpu|cuda]: Specifies the provider 'cpu' or 'cuda'. Default:'cpu'.\n"
+      "\t-e [cpu|cuda|mkldnn]: Specifies the provider 'cpu','cuda','mkldnn'. Default:'cpu'.\n"
       "\t-r [repeated_times]: Specifies the repeated times if running in 'times' test mode.Default:1000.\n"
       "\t-t [seconds_to_run]: Specifies the seconds to run for 'duration' mode. Default:600.\n"
       "\t-p [profile_file]: Specifies the profile name to enable profiling and dump the profile data to the file."
@@ -50,6 +50,8 @@ namespace PerfTest {
           test_config.machine_config.provider_type_name = LotusIR::kCpuExecutionProvider;
         } else if (!strcmp(optarg, "cuda")) {
           test_config.machine_config.provider_type_name = LotusIR::kCudaExecutionProvider;
+        } else if (!strcmp(optarg, "mkldnn")) {
+          test_config.machine_config.provider_type_name = LotusIR::kMklDnnExecutionProvider;
         } else {
           return false;
         }

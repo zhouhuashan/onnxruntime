@@ -1,6 +1,9 @@
 #ifdef USE_CUDA
 #include <core/providers/cuda/cuda_execution_provider.h>  //TODO(@chasun): this is a temp hack
 #endif
+#ifdef USE_MKLDNN
+#include <core/providers/mkldnn/mkldnn_execution_provider.h>
+#endif
 #include "testenv.h"
 
 #include "FixedCountFinishCallback.h"
@@ -37,9 +40,20 @@ TestEnv::~TestEnv() {
     status = sess->RegisterExecutionProvider(std::make_unique<::Lotus::CUDAExecutionProvider>(cuda_epi));
     LOTUS_RETURN_IF_ERROR(status);
 #else
-    LOTUS_THROW("This executable is not built with CUDA");
+    LOTUS_THROW("This executable was not built with CUDA");
 #endif
   }
+
+  if (provider_ == LotusIR::kMklDnnExecutionProvider) {
+#if USE_MKLDNN
+    Lotus::MKLDNNExecutionProviderInfo mkldnn_epi;
+    status = sess->RegisterExecutionProvider(std::make_unique<Lotus::MKLDNNExecutionProvider>(mkldnn_epi));
+    LOTUS_RETURN_IF_ERROR(status);
+#else
+    LOTUS_THROW("This executable was not built with MKLDNN");
+#endif
+  }
+
   status = sess->Load(model_url.string());
   LOTUS_RETURN_IF_ERROR(status);
   LOGS_DEFAULT(INFO) << "successfully loaded model from " << model_url;

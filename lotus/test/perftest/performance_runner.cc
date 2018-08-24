@@ -11,10 +11,9 @@ using namespace std::experimental::filesystem::v1;
 
 namespace Lotus {
 namespace PerfTest {
-void PerformanceRunner::Run() {
+Status PerformanceRunner::Run() {
   if (!Initialize()) {
-    LOGF_DEFAULT(ERROR, "failed to initialize");
-    return;
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "failed to initialize.");
   }
 
   // warm up
@@ -26,14 +25,13 @@ void PerformanceRunner::Run() {
   std::unique_ptr<Utils::ICPUUsage> p_ICPUUsage = Utils::CreateICPUUsage();
   switch (performance_test_config_.run_config.test_mode) {
     case TestMode::kFixDurationMode:
-      RunFixDuration();
+      LOTUS_RETURN_IF_ERROR(RunFixDuration());
       break;
     case TestMode::KFixRepeatedTimesMode:
-      RunRepeatedTimes();
+      LOTUS_RETURN_IF_ERROR(RunRepeatedTimes());
       break;
     default:
-      LOGF_DEFAULT(ERROR, "unknown test mode");
-      return;
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unknown test mode.");
   }
   performance_result_.average_CPU_usage = p_ICPUUsage->GetUsage();
   performance_result_.peak_workingset_size = Utils::GetPeakWorkingSetSize();
@@ -44,6 +42,7 @@ void PerformanceRunner::Run() {
   std::cout << "Total time cost:" << performance_result_.total_time_cost << std::endl
             << "Total iterations:" << performance_result_.time_costs.size() << std::endl
             << "Average time cost:" << performance_result_.total_time_cost / performance_result_.time_costs.size() << std::endl;
+  return Status::OK();
 }
 
 bool PerformanceRunner::Initialize() {
@@ -74,7 +73,14 @@ bool PerformanceRunner::Initialize() {
     LOGF_DEFAULT(ERROR, "Failed to init session and IO binding");
     return false;
   }
-  AllocatorPtr cpu_allocator = io_binding_->GetCPUAllocator(performance_test_config_.machine_config.provider_type_name);
+
+  auto provider_type = performance_test_config_.machine_config.provider_type_name;
+  // Place input tensor on cpu memory if mkldnn provider type to avoid CopyTensor logic in CopyInputAcrossDevices
+  // TODO: find a better way to do this.
+  if (provider_type == LotusIR::kMklDnnExecutionProvider) {
+    provider_type = LotusIR::kCpuExecutionProvider;
+  }
+  AllocatorPtr cpu_allocator = io_binding_->GetCPUAllocator(provider_type);
   test_case->SetAllocator(cpu_allocator);
 
   if (test_case->GetDataCount() <= 0) {

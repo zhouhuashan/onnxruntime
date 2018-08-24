@@ -6,8 +6,10 @@
 #include <algorithm>
 
 // Lotus dependencies
+#include <core/common/common.h>
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/common/logging/logging.h>
+#include <core/common/status.h>
 #include <core/framework/environment.h>
 #include <core/session/inference_session.h>
 #include <core/platform/env.h>
@@ -65,7 +67,7 @@ class PerformanceRunner {
  public:
   PerformanceRunner(const PerformanceTestConfig& test_config) : performance_test_config_(test_config) {}
 
-  void Run();
+  Status Run();
 
   inline const PerformanceResult& GetResult() const { return performance_result_; }
 
@@ -74,9 +76,9 @@ class PerformanceRunner {
  private:
   bool Initialize();
 
-  inline void RunOneIteration(bool isWarmup = false) {
+  inline Status RunOneIteration(bool isWarmup = false) {
     auto start = std::chrono::high_resolution_clock::now();
-    session_object_->Run(*io_binding_);
+    LOTUS_RETURN_IF_ERROR(session_object_->Run(*io_binding_));
     auto end = std::chrono::high_resolution_clock::now();
 
     if (!isWarmup) {
@@ -88,18 +90,21 @@ class PerformanceRunner {
                   << "time_cost:" << performance_result_.time_costs.back() << std::endl;
       }
     }
+    return Status::OK();
   }
 
-  inline void RunFixDuration() {
+  inline Status RunFixDuration() {
     while (performance_result_.total_time_cost < performance_test_config_.run_config.duration_in_seconds) {
-      RunOneIteration();
+      LOTUS_RETURN_IF_ERROR(RunOneIteration());
     }
+    return Status::OK();
   }
 
-  inline void RunRepeatedTimes() {
+  inline Status RunRepeatedTimes() {
     for (size_t ite = 0; ite < performance_test_config_.run_config.repeated_times; ite++) {
-      RunOneIteration();
+      LOTUS_RETURN_IF_ERROR(RunOneIteration());
     }
+    return Status::OK();
   }
 
  private:
