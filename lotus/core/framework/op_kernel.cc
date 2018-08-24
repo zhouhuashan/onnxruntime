@@ -87,7 +87,7 @@ Fence_t OpKernelContext::OutputFence(int index) const {
   return p_ml_value ? p_ml_value->Fence() : nullptr;
 }
 
-Status OpKernelContext::GetorCreateOutputMLValue(int index, MLValue*& p_value) {
+Status OpKernelContext::GetOrCreateOutputMLValue(int index, MLValue*& p_value) {
   auto output_arg_index = GetOutputArgIndex(index);
   MLValueAllocationParameters parameters;
   LOTUS_ENFORCE(execution_frame_->GetOrCreateNodeOutputMLValue(output_arg_index, parameters, p_value).IsOK());
