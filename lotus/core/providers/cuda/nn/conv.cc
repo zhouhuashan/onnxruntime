@@ -27,119 +27,128 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& x_shape = X->Shape();
   const auto& x_dims = x_shape.GetDims();
+  auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
 
   const Tensor* W = context->Input<Tensor>(1);
   const TensorShape& w_shape = W->Shape();
   std::vector<int64_t> w_dims = w_shape.GetDims();
+  auto w_data = reinterpret_cast<const CudaT*>(W->Data<T>());
 
   size_t num_inputs = OpKernel::Node().InputDefs().size();
   bool has_bias = (num_inputs == 3);
-  bool input_dims_changed = (s_.last_x_dims != x_dims);
-  bool w_dims_changed = (s_.last_w_dims != w_dims);
 
-  if (input_dims_changed || w_dims_changed) {
-    if (input_dims_changed)
-      s_.last_x_dims = x_dims;
+  CudaT* y_data = nullptr;
 
-    if (w_dims_changed)
-      s_.last_w_dims = w_dims;
+  {
+    std::lock_guard<std::mutex> lock(s_.mutex);
+    // TODO: add a global cache if need to handle cases for multiple frames running simultaneuously with different batch_size
+    bool input_dims_changed = (s_.last_x_dims != x_dims);
+    bool w_dims_changed = (s_.last_w_dims != w_dims);
+    if (input_dims_changed || w_dims_changed) {
+      if (input_dims_changed)
+        s_.last_x_dims = x_dims;
 
-    const int64_t N = X->Shape()[0];
-    const int64_t M = W->Shape()[0];
+      if (w_dims_changed)
+        s_.last_w_dims = w_dims;
 
-    LOTUS_RETURN_IF_ERROR(ValidateInputShape(X, W));
+      const int64_t N = X->Shape()[0];
+      const int64_t M = W->Shape()[0];
 
-    std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
-    auto rank = kernel_shape.size();
-    std::vector<int64_t> pads(pads_);
-    if (pads.empty()) {
-      pads.resize(rank * 2, 0);
+      LOTUS_RETURN_IF_ERROR(ValidateInputShape(X, W));
+
+      std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
+      auto rank = kernel_shape.size();
+      std::vector<int64_t> pads(pads_);
+      if (pads.empty()) {
+        pads.resize(rank * 2, 0);
+      }
+      std::vector<int64_t> dilations(dilations_);
+      if (dilations.empty()) {
+        dilations.resize(rank, 1);
+      }
+      std::vector<int64_t> strides(strides_);
+      if (strides.empty()) {
+        strides.resize(rank, 1);
+      }
+
+      std::vector<int64_t> y_dims;
+      y_dims.insert(y_dims.begin(), {N, M});
+      InferOutputShape<true>(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims);
+      s_.y_dims = y_dims;
+
+      std::vector<int64_t> x_dims_cudnn = x_dims;
+      std::vector<int64_t> y_dims_cudnn = y_dims;
+      if (rank < 2) {
+        // cudnn only takes 4D or 5D input, so pad dimensions if needed
+        x_dims_cudnn.push_back(1);
+        y_dims_cudnn.push_back(1);
+        w_dims.push_back(1);
+        pads.insert(pads.begin() + rank, 0);
+        pads.insert(pads.end(), 0);
+        kernel_shape.push_back(1);
+        strides.push_back(1);
+        dilations.push_back(1);
+      }
+      LOTUS_RETURN_IF_ERROR(s_.x_tensor.Set(x_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
+      LOTUS_RETURN_IF_ERROR(s_.y_tensor.Set(y_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
+
+      if (w_dims_changed)
+        LOTUS_RETURN_IF_ERROR(s_.filter_desc.Set(w_dims, CudnnTensor::GetDataType<CudaT>()));
+
+      cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION;
+      LOTUS_RETURN_IF_ERROR(s_.conv_desc.Set(kernel_shape.size(), pads, strides, dilations, mode, CudnnTensor::GetDataType<CudaT>()));
+      CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionGroupCount(s_.conv_desc, gsl::narrow_cast<int>(group_)));
+
+      IAllocatorUniquePtr<void> algo_search_workspace = GetScratchBuffer<void>(AlgoSearchWorkspaceSize);
+
+      if (has_bias) {
+        const Tensor* B = context->Input<Tensor>(2);
+        const auto& b_shape = B->Shape();
+        LOTUS_RETURN_IF_NOT(b_shape.NumDimensions() == 1, "bias should be 1D");
+        std::vector<int64_t> b_dims(2 + kernel_shape.size());
+        b_dims[0] = 1;           // N
+        b_dims[1] = b_shape[0];  // C
+        for (int i = 0; i < kernel_shape.size(); i++)
+          b_dims[2 + i] = 1;
+
+        LOTUS_RETURN_IF_ERROR(s_.b_tensor.Set(b_dims, CudnnTensor::GetDataType<CudaT>()));
+      }
+
+      Tensor* Y = context->Output(0, TensorShape(s_.y_dims));
+      y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+
+      cudnnConvolutionFwdAlgoPerf_t perf;
+      int algo_count = 1;
+      CUDNN_RETURN_IF_ERROR(cudnnFindConvolutionForwardAlgorithmEx(
+          CudnnHandle(),
+          s_.x_tensor,
+          x_data,
+          s_.filter_desc,
+          w_data,
+          s_.conv_desc,
+          s_.y_tensor,
+          y_data,
+          1,
+          &algo_count,
+          &perf,
+          algo_search_workspace.get(),
+          AlgoSearchWorkspaceSize));
+      CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionMathType(s_.conv_desc, perf.mathType));
+      s_.algo = perf.algo;
+      s_.workspace_bytes = perf.memory;
     }
-    std::vector<int64_t> dilations(dilations_);
-    if (dilations.empty()) {
-      dilations.resize(rank, 1);
-    }
-    std::vector<int64_t> strides(strides_);
-    if (strides.empty()) {
-      strides.resize(rank, 1);
-    }
+  }
 
-    std::vector<int64_t> y_dims;
-    y_dims.insert(y_dims.begin(), {N, M});
-    InferOutputShape(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims);
-    s_.y_dims = y_dims;
-
-    std::vector<int64_t> x_dims_cudnn = x_dims;
-    std::vector<int64_t> y_dims_cudnn = y_dims;
-    if (rank < 2) {
-      // cudnn only takes 4D or 5D input, so pad dimensions if needed
-      x_dims_cudnn.push_back(1);
-      y_dims_cudnn.push_back(1);
-      w_dims.push_back(1);
-      pads.insert(pads.begin() + rank, 0);
-      pads.insert(pads.end(), 0);
-      kernel_shape.push_back(1);
-      strides.push_back(1);
-      dilations.push_back(1);
-    }
-    LOTUS_RETURN_IF_ERROR(s_.x_tensor.Set(x_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
-    LOTUS_RETURN_IF_ERROR(s_.y_tensor.Set(y_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
-
-    if (w_dims_changed)
-      LOTUS_RETURN_IF_ERROR(s_.filter_desc.Set(w_dims, CudnnTensor::GetDataType<CudaT>()));
-
-    cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION;
-    LOTUS_RETURN_IF_ERROR(s_.conv_desc.Set(kernel_shape.size(), pads, strides, dilations, mode, CudnnTensor::GetDataType<CudaT>()));
-    CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionGroupCount(s_.conv_desc, gsl::narrow_cast<int>(group_)));
-
-    s_.found_algo = false;
-
-    if (has_bias) {
-      const Tensor* B = context->Input<Tensor>(2);
-      const auto& b_shape = B->Shape();
-      LOTUS_RETURN_IF_NOT(b_shape.NumDimensions() == 1, "bias should be 1D");
-      std::vector<int64_t> b_dims(2 + kernel_shape.size());
-      b_dims[0] = 1;           // N
-      b_dims[1] = b_shape[0];  // C
-      for (int i = 0; i < kernel_shape.size(); i++)
-        b_dims[2 + i] = 1;
-
-      LOTUS_RETURN_IF_ERROR(s_.b_tensor.Set(b_dims, CudnnTensor::GetDataType<CudaT>()));
-    }
+  if (!y_data) {
+    Tensor* Y = context->Output(0, TensorShape(s_.y_dims));
+    y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
   }
 
   const auto alpha = Consts<CudaT>::One;
   const auto beta = Consts<CudaT>::Zero;
-  Tensor* Y = context->Output(0, TensorShape(s_.y_dims));
-  auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
-  auto w_data = reinterpret_cast<const CudaT*>(W->Data<T>());
-  auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
 
   IAllocatorUniquePtr<void> workspace = GetScratchBuffer<void>(s_.workspace_bytes);
 
-  if (!s_.found_algo) {
-    cudnnConvolutionFwdAlgoPerf_t perf;
-    int algo_count = 1;
-    CUDNN_RETURN_IF_ERROR(cudnnFindConvolutionForwardAlgorithmEx(
-        CudnnHandle(),
-        s_.x_tensor,
-        x_data,
-        s_.filter_desc,
-        w_data,
-        s_.conv_desc,
-        s_.y_tensor,
-        y_data,
-        1,
-        &algo_count,
-        &perf,
-        workspace.get(),
-        s_.workspace_bytes));
-    CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionMathType(s_.conv_desc, perf.mathType));
-    s_.algo = perf.algo;
-    s_.workspace_bytes = perf.memory;
-    workspace = GetScratchBuffer<void>(s_.workspace_bytes);
-    s_.found_algo = true;
-  }
   CUDNN_RETURN_IF_ERROR(cudnnConvolutionForward(CudnnHandle(),
                                                 &alpha,
                                                 s_.x_tensor,

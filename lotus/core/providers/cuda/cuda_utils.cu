@@ -16,18 +16,14 @@ class ConstantBufferImpl : public IConstantBuffer<T> {
   ConstantBufferImpl(T val) : val_(val) {}
 
   virtual const T* GetBuffer(size_t count) {
-    while (buffer_.size() < count) {
-      std::lock_guard<std::mutex> lock(mutex_);
-      buffer_.resize(count);
-      thrust::fill(buffer_.begin(), buffer_.end(), val_);
-    }
+    buffer_.resize(count);
+    thrust::fill(buffer_.begin(), buffer_.end(), val_);
     return buffer_.data().get();
   }
 
  private:
   thrust::device_vector<T> buffer_;
   T val_;
-  std::mutex mutex_;
 };
 
 std::unique_ptr<IConstantBuffer<float>> CreateConstantOnesF() {

@@ -4,11 +4,14 @@
 #include "core/common/exceptions.h"
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/autopad_type.h"
+#include "core/util/math.h"
 
 namespace Lotus {
 namespace {
+
 // helper function
-inline Status ComputePadAndOutputShape(
+template <bool ForceSymmetricAutoPadding>
+Status ComputePadAndOutputShape(
     const int64_t in_dim,
     const int64_t stride,
     const int64_t kernel,
@@ -34,6 +37,10 @@ inline Status ComputePadAndOutputShape(
         int64_t legacy_target_size = (in_dim + stride - 1) / stride;
         int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
         *out_dim = (in_dim + pad_needed - dkernel) / stride + 1;
+
+        // make sure padding is symmetric
+        if (ForceSymmetricAutoPadding)
+          pad_needed = Math::roundUpPow2<int64_t, 2>(pad_needed);
 
         if (pad_type == AutoPadType::SAME_LOWER) {
           *pad_head = (pad_needed + 1) / 2;
@@ -131,6 +138,7 @@ class ConvBase {
     return Status::OK();
   }
 
+  template <bool ForceSymmetricAutoPadding = false>
   Status InferOutputShape(const TensorShape& input_shape,
                           const std::vector<int64_t>& kernel_shape,
                           const std::vector<int64_t>& strides,
@@ -145,14 +153,15 @@ class ConvBase {
         return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Out of bound access to array");
       }
       int64_t dim_size = 0;
-      LOTUS_RETURN_IF_ERROR(ComputePadAndOutputShape(input_shape[dim],
-                                                     strides[dim],
-                                                     kernel_shape[dim],
-                                                     dilations[dim],
-                                                     auto_pad_,
-                                                     &pads->at(dim),
-                                                     &pads->at(input_shape.NumDimensions() + dim),
-                                                     &dim_size));
+      LOTUS_RETURN_IF_ERROR(ComputePadAndOutputShape<ForceSymmetricAutoPadding>(
+          input_shape[dim],
+          strides[dim],
+          kernel_shape[dim],
+          dilations[dim],
+          auto_pad_,
+          &pads->at(dim),
+          &pads->at(input_shape.NumDimensions() + dim),
+          &dim_size));
       if (dim_size < 0) {
         return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
       }
