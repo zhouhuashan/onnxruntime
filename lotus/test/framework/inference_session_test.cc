@@ -1,4 +1,5 @@
 #include "core/session/inference_session.h"
+#include "core/session/inference_session_winml.h"
 
 #include <algorithm>
 #include <functional>
@@ -566,7 +567,7 @@ TEST(InferenceSessionTests, TestModelProtoInterface) {
 
   so.session_logid = "InferenceSessionTests.TestModelProtoInterface";
 
-  InferenceSession session_object{so};
+  InferenceSessionWinML session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   ModelProto model_proto;
   ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, &model_proto).IsOK());
@@ -583,7 +584,7 @@ TEST(InferenceSessionTests, TestModelProtoInterfaceMultipleLoadFailure) {
 
   so.session_logid = "InferenceSessionTests.TestModelProtoInterfaceMultipleLoadFailure";
 
-  InferenceSession session_object{so};
+  InferenceSessionWinML session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   ModelProto model_proto;
   ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, &model_proto).IsOK());
@@ -721,7 +722,7 @@ TEST(InferenceSessionTests, TestModelProtoUniquePtrInterface) {
 
   so.session_logid = "InferenceSessionTests.TestModelProtoUniquePtrInterface";
 
-  InferenceSession session_object{so};
+  InferenceSessionWinML session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   auto p_model_proto = std::make_unique<ModelProto>();
   ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, p_model_proto.get()).IsOK());
