@@ -57,10 +57,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
   }
 
   const float* GetConstOnes(size_t count) {
-    if (!constant_ones_)
-      constant_ones_ = Cuda::CreateConstantOnesF();
-
-    return constant_ones_->GetBuffer(count);
+    return per_thread_context_->GetConstOnes(count);
   }
 
   void AddDeferredReleaseCPUPtr(void* p);
@@ -77,7 +74,6 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
  private:
   cudaStream_t streams_[kTotalCudaStreams];
-  std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
   int device_id_;
 
   struct DeferredReleaseCPUPtrs {
@@ -104,6 +100,13 @@ class CUDAExecutionProvider : public IExecutionProvider {
       return current_deferred_release_event_;
     }
 
+    const float* GetConstOnes(size_t count) {
+      if (!constant_ones_) {
+        constant_ones_ = Cuda::CreateConstantOnesF();
+      }
+      return constant_ones_->GetBuffer(count);
+    }
+
    private:
     cublasHandle_t cublas_handle_ = nullptr;
     cudnnHandle_t cudnn_handle_ = nullptr;
@@ -112,6 +115,8 @@ class CUDAExecutionProvider : public IExecutionProvider {
     // note that cudaEvent will be assigned at OnRunEnd() when PerThreadContext destory
     // so the ownership is passed to deferred_release_cpu_ptr_
     cudaEvent_t current_deferred_release_event_ = nullptr;
+
+    std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
   };
 
   // thread local context during execution

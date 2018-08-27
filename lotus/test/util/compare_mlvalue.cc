@@ -53,7 +53,7 @@ std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue
   for (size_t di = 0; di != size1; ++di) {
     const double real_value = post_processing ? std::max<double>(0.0, std::min<double>(255.0, real_output[di])) : real_output[di];
     const double diff = fabs(expected_output[di] - real_value);
-    const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(expected_output[di]);
+    const double rtol = per_sample_tolerance + relative_per_sample_tolerance * fabs(expected_output[di]);
     if (diff > rtol) {
       std::ostringstream oss;
       oss << "expected " << expected_output[di] << ", got " << real_value << ", diff: " << diff << ", tol=" << rtol;
@@ -88,7 +88,7 @@ std::pair<COMPARE_RESULT, std::string> CompareFloat16Result(const Tensor& outval
     float real = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(real_output[di].val));
     real = post_processing ? std::max(0.0f, std::min(255.0f, real)) : real;
     const double diff = fabs(expected - real);
-    const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(expected);
+    const double rtol = per_sample_tolerance + relative_per_sample_tolerance * fabs(expected);
     if (diff > rtol) {
       return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, "");
     }
@@ -158,7 +158,7 @@ std::pair<COMPARE_RESULT, std::string> CompareSeqOfMapToFloat(const T& real_outp
       }
       const double real = post_processing ? std::max<double>(0.0, std::min<double>(255.0, real_output_key_value_pair.second)) : real_output_key_value_pair.second;
       const double diff = fabs(expected_key_value_pair->second - real);
-      const double rtol = per_sample_tolerance + relative_per_sample_tolerance * abs(expected_key_value_pair->second);
+      const double rtol = per_sample_tolerance + relative_per_sample_tolerance * fabs(expected_key_value_pair->second);
       if (diff > rtol) {
         std::ostringstream oss;
         oss << "expected " << expected_key_value_pair->second << ", got " << real << ", diff: " << diff << ", tol=" << rtol;

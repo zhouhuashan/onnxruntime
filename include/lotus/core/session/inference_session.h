@@ -104,7 +104,7 @@ class InferenceSession {
   explicit InferenceSession(const SessionOptions& session_options,
                             Logging::LoggingManager* logging_manager = nullptr);
 
-  ~InferenceSession();
+  virtual ~InferenceSession();
 
   /**
     * Register an execution provider. If you've one to register, call this before invoking Initialize().
@@ -153,20 +153,6 @@ class InferenceSession {
     * @return OK if success.
     */
   Common::Status Load(std::istream& model_istream);
-
-  /**
-    * Load an ONNX model.
-    * @param protobuf object corresponding to the model file. model_proto will be copied by the API.
-    * @return OK if success.
-    */
-  Common::Status Load(const onnx::ModelProto& model_proto);
-
-  /**
-    * Load an ONNX model.
-    * @param protobuf object corresponding to the model file. This is primarily supported to support large models.
-    * @return OK if success.
-    */
-  Common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto);
 
   /**
     * Initializes a previously loaded model. Initialization includes but is not
@@ -249,7 +235,7 @@ class InferenceSession {
     */
   std::string EndProfiling();
 
- private:
+ protected:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
 
   class Impl;

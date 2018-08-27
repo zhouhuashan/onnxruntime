@@ -49,14 +49,20 @@ struct CudnnConvState {
 
   // these would be recomputed if x/w dims change
   std::vector<int64_t> y_dims;
-  bool found_algo = false;
-  size_t workspace_bytes = 32 * 1024 * 1024;  // initial workspace for algo search
+  size_t workspace_bytes;
   AlgoType algo;
   CudnnTensor x_tensor;
   CudnnFilterDescriptor filter_desc;
   CudnnTensor b_tensor;
   CudnnTensor y_tensor;
   CudnnConvolutionDescriptor conv_desc;
+
+  // note that conv objects are shared between execution frames, and a lock is needed to avoid multi-thread racing
+  std::mutex mutex;
+};
+
+enum : size_t {
+  AlgoSearchWorkspaceSize = 32 * 1024 * 1024,
 };
 
 template <typename T>

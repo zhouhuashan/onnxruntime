@@ -32,7 +32,7 @@ void* CUDAAllocator::Alloc(size_t size) {
 
 void CUDAAllocator::Free(void* p) {
   CheckDevice();
-  CUDA_CALL_THROW(cudaFree(p));
+  cudaFree(p);  // do not throw error since it's OK for cudaFree to fail during shutdown
 }
 
 const AllocatorInfo& CUDAAllocator::Info() const {

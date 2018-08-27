@@ -1,4 +1,5 @@
 #include "core/session/inference_session.h"
+#include "core/session/inference_session_winml.h"
 
 #include <memory>
 #include <mutex>
@@ -1116,11 +1117,11 @@ Common::Status InferenceSession::RegisterCustomRegistry(std::shared_ptr<CustomRe
   return impl_->RegisterCustomRegistry(custom_registry);
 }
 
-Common::Status InferenceSession::Load(const ModelProto& model_proto) {
+Common::Status InferenceSessionWinML::Load(const ModelProto& model_proto) {
   return impl_->Load(model_proto);
 }
 
-Common::Status InferenceSession::Load(std::unique_ptr<ModelProto> p_model_proto) {
+Common::Status InferenceSessionWinML::Load(std::unique_ptr<ModelProto> p_model_proto) {
   return impl_->Load(std::move(p_model_proto));
 }
 

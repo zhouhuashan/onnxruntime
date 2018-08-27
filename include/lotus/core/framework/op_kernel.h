@@ -92,7 +92,7 @@ class OpKernelContext {
       return nullptr;
 
     MLValue* p_ml_value = nullptr;
-    LOTUS_ENFORCE(GetorCreateOutputMLValue(index, p_ml_value).IsOK());
+    LOTUS_ENFORCE(GetOrCreateOutputMLValue(index, p_ml_value).IsOK());
     return p_ml_value ? p_ml_value->GetMutable<T>() : nullptr;
   }
 
@@ -133,7 +133,7 @@ class OpKernelContext {
 
  private:
   const MLValue* GetInputMLValue(int index) const;
-  Status GetorCreateOutputMLValue(int index, MLValue*& value);
+  Status GetOrCreateOutputMLValue(int index, MLValue*& value);
 
   int GetOutputArgIndex(int index) const;
 
