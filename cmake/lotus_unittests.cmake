@@ -335,7 +335,7 @@ endif()
 
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
 lotus_add_include_to_target(onnx_test_runner_common lotus_test_utils onnx protobuf::libprotobuf)
-add_dependencies(onnx_test_runner_common ${lotus_EXTERNAL_DEPENDENCIES})
+add_dependencies(onnx_test_runner_common eigen ${lotus_EXTERNAL_DEPENDENCIES})
 target_include_directories(onnx_test_runner_common PRIVATE ${eigen_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
