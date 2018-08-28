@@ -243,6 +243,30 @@ class SessionObjectInitializer {
   static SessionObjectInitializer Get() {
     return SessionObjectInitializer();
   }
+
+  static void CheckModel(InferenceSession* sess, Common::Status status) {
+    if (!status.IsOK()) {
+      throw std::runtime_error(status.ToString().c_str());
+    }
+
+#ifdef USE_MKLDNN
+    MKLDNNExecutionProviderInfo epi;
+    status = sess->RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi));
+    if (!status.IsOK()) {
+      throw std::runtime_error(status.ToString().c_str());
+    }
+#endif
+    CPUExecutionProviderInfo cpu_epi;
+    status = sess->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(cpu_epi));
+    if (!status.IsOK()) {
+      throw std::runtime_error(status.ToString().c_str());
+    }
+
+    status = sess->Initialize();
+    if (!status.IsOK()) {
+      throw std::runtime_error(status.ToString().c_str());
+    }
+  }
 };
 
 void addGlobalMethods(py::module& m) {
@@ -320,29 +344,13 @@ including arg name, arg type (contains both type and shape).)pbdoc")
       .def(py::init<SessionOptions, SessionObjectInitializer>())
       .def("load_model", [](InferenceSession* sess, const std::string& path) {
         auto status = sess->Load(path);
-
-        if (!status.IsOK()) {
-          throw std::runtime_error(status.ToString().c_str());
-        }
-
-#ifdef USE_MKLDNN
-        MKLDNNExecutionProviderInfo epi;
-        status = sess->RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi));
-        if (!status.IsOK()) {
-          throw std::runtime_error(status.ToString().c_str());
-        }
-#endif
-        CPUExecutionProviderInfo cpu_epi;
-        status = sess->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(cpu_epi));
-        if (!status.IsOK()) {
-          throw std::runtime_error(status.ToString().c_str());
-        }
-
-        status = sess->Initialize();
-        if (!status.IsOK()) {
-          throw std::runtime_error(status.ToString().c_str());
-        }
-      })
+        SessionObjectInitializer::CheckModel(sess, status);
+      }, R"pbdoc(Loads a model saved in ONNX format.)pbdoc")
+      .def("read_bytes", [](InferenceSession* sess, const py::bytes& serializedModel) {
+        std::istringstream buffer(serializedModel);
+        auto status = sess->Load(buffer);
+        SessionObjectInitializer::CheckModel(sess, status);
+      }, R"pbdoc(Loads a model serialized in ONNX format.)pbdoc")
       .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {

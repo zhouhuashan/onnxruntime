@@ -27,6 +27,23 @@ class TestInferenceSession(unittest.TestCase):
         output_expected = np.array([[1.0, 4.0], [9.0, 16.0], [25.0, 36.0]], dtype=np.float32)
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
+    def testRunModelFromBytes(self):
+        with open("testdata/mul_1.pb", "rb") as f:
+            content = f.read()
+        sess = lotus.InferenceSession(content)
+        x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+        input_name = sess.get_inputs()[0].name
+        self.assertEqual(input_name, "X")
+        input_shape = sess.get_inputs()[0].shape
+        self.assertEqual(input_shape, [3, 2])
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "Y")
+        output_shape = sess.get_outputs()[0].shape
+        self.assertEqual(output_shape, [3, 2])
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([[1.0, 4.0], [9.0, 16.0], [25.0, 36.0]], dtype=np.float32)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
     def testRunModel2(self):
         sess = lotus.InferenceSession("testdata/matmul_1.pb")
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
