@@ -43,7 +43,6 @@ if (lotus_USE_CUDA)
     lotus_add_include_to_target(lotus_providers_cuda onnx protobuf::libprotobuf)
     set_target_properties(lotus_providers_cuda PROPERTIES LINKER_LANGUAGE CUDA)
     set_target_properties(lotus_providers_cuda PROPERTIES FOLDER "Lotus")
-    target_link_libraries(lotus_providers_cuda PRIVATE lotus_framework lotus_common ${lotus_EXTERNAL_LIBRARIES})
     if (WIN32)
         # *.cu cannot use PCH
         foreach(src_file ${lotus_providers_cuda_cc_srcs})
