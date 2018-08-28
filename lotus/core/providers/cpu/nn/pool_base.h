@@ -9,8 +9,8 @@ namespace Lotus {
 class PoolBase {
  protected:
   PoolBase(const OpKernelInfo& info) {
-    const std::string op_name = info.GetKernelDef().OpName();
-    global_pooling_ = (op_name == "GlobalAveragePool" || op_name == "GlobalMaxPool" || op_name == "GlobalLpPool");
+    op_name_ = info.GetKernelDef().OpName();
+    global_pooling_ = (op_name_ == "GlobalAveragePool" || op_name_ == "GlobalMaxPool" || op_name_ == "GlobalLpPool");
 
     if (!global_pooling_) {
       LOTUS_ENFORCE(info.GetAttrs<int64_t>("kernel_shape", kernel_shape_).IsOK(),
@@ -28,7 +28,7 @@ class PoolBase {
         strides_.resize(kernel_shape_.size(), 1);
       }
 
-      if (op_name == "AveragePool") {
+      if (op_name_ == "AveragePool") {
         int64_t temp;
         LOTUS_ENFORCE(info.GetAttr<int64_t>("count_include_pad", &temp).IsOK());
         count_include_pad_ = (temp != 0);
@@ -119,6 +119,7 @@ class PoolBase {
   }
 
  protected:
+  std::string op_name_;
   bool global_pooling_{};
   bool count_include_pad_{};
   std::vector<int64_t> kernel_shape_;
