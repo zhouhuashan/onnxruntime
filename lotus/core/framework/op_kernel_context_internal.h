@@ -9,16 +9,24 @@
 namespace Lotus {
 class SessionState;
 
-class OpKernelContextImpl : public OpKernelContext {
+class OpKernelContextInternal : public OpKernelContext {
  public:
-  explicit OpKernelContextImpl(ExecutionFrame& frame,
-                               const OpKernel& kernel,
-                               const Logging::Logger& logger)
+  explicit OpKernelContextInternal(ExecutionFrame& frame,
+                                   const OpKernel& kernel,
+                                   const Logging::Logger& logger)
       : OpKernelContext(&frame, &kernel, logger) {
   }
 
   const SessionState* SubgraphSessionState(const std::string& attribute_name) {
     return GetSessionState().GetSubgraphSessionState(GetNodeIndex(), attribute_name);
+  }
+
+  const MLValue* GetInputMLValue(int index) const {
+    return OpKernelContext::GetInputMLValue(index);
+  }
+
+  MLValue* GetOutputMLValue(int index) {
+    return OpKernelContext::GetOutputMLValue(index);
   }
 };
 

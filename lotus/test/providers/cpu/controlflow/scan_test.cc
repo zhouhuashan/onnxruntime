@@ -15,19 +15,53 @@ static void CreateSubgraph(Model &model) {
   std::vector<NodeArg *> inputs;
   std::vector<NodeArg *> outputs;
 
-  // dummy node with input of Tensor<float> with shape [1,3] and output of the same
-  // Simple no-op using Identity for initial testing
-  TypeProto tensor_float;
-  tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  tensor_float.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
-  tensor_float.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(3);
+  // subgraph with multiple inputs and outputs to test variadic behaviour.
+  // 2 inputs of 2 that are concatenated and then split into 4 outputs of 1
 
-  auto &input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_float);
-  inputs.push_back(&input_arg);
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_float);
-  outputs.push_back(&output_arg);
+  // Concat node
+  {
+    // input of 2 x {2} tensors
+    TypeProto concat_input_tensor;
+    concat_input_tensor.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+    concat_input_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
 
-  (void)graph.AddNode("node_1", "Identity", "node 1", inputs, outputs);
+    for (int i = 0, num_inputs = 2; i < num_inputs; ++i) {
+      auto &input_arg = graph.GetOrCreateNodeArg("concat_in_" + std::to_string(i), &concat_input_tensor);
+      inputs.push_back(&input_arg);
+    }
+
+    // one output from concatenate of {4} tensor
+    TypeProto concat_output_tensor;
+    concat_output_tensor.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+    concat_output_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(4);
+
+    auto &output_arg = graph.GetOrCreateNodeArg("concat_out_1", &concat_output_tensor);
+    outputs.push_back(&output_arg);
+
+    auto *concat = graph.AddNode("concat", "Concat", "concat 2 inputs", inputs, outputs);
+    concat->AddAttribute("axis", int64_t{0});
+  }
+
+  // Split node
+  {
+    // setup Split to run using the Concat output
+    inputs = outputs;
+    outputs = {};
+
+    // split output of 4 x {1} tensors
+    TypeProto split_output_tensor;
+    split_output_tensor.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
+    split_output_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+
+    for (int i = 0, num_outputs = 4; i < num_outputs; ++i) {
+      auto &output_arg = graph.GetOrCreateNodeArg("split_out_" + std::to_string(i), &split_output_tensor);
+      outputs.push_back(&output_arg);
+    }
+
+    auto *split = graph.AddNode("split", "Split", "split into 4 outputs", inputs, outputs);
+    split->AddAttribute("axis", int64_t{0});
+    split->AddAttribute("split", std::vector<int64_t>{1, 1, 1, 1});
+  }
 
   auto status = graph.Resolve();
 
@@ -70,11 +104,12 @@ TEST(Scan, StepOne) {
   test.AddAttribute("body", proto);
   test.AddAttribute<std::vector<int64_t>>("scan_axes", {0});
 
-  std::vector<int64_t> dims{1, 3};
-  std::vector<float> X_data{1.f, 2.f, 3.f};
-
-  test.AddInput<float>("initial_state_and_scan_inputs", dims, X_data);
-  test.AddOutput<float>("final_state_and_scan_outputs", dims, X_data);
+  test.AddInput<float>("input_0", {2}, {1.f, 2.f});
+  test.AddInput<float>("input_1", {2}, {3.f, 4.f});
+  test.AddOutput<float>("output_0", {1}, {1.f});
+  test.AddOutput<float>("output_1", {1}, {2.f});
+  test.AddOutput<float>("output_2", {1}, {3.f});
+  test.AddOutput<float>("output_3", {1}, {4.f});
 
   test.Run();
 }

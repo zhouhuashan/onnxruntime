@@ -25,5 +25,6 @@ class Scan final : public OpKernel {
   static onnx::OpSchema GetScanOpSchema();
 
  private:
+  Status ComputeImpl() const;
 };
 }  // namespace Lotus

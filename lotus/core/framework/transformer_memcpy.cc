@@ -36,7 +36,7 @@ bool TransformerMemcpyImpl::ModifyGraph(const KernelRegistryManager& kernel_regi
   for (auto& node : graph_.Nodes()) {
     if (graph_.IsSourceNode(node) || graph_.IsSinkNode(node))
       continue;
-    //don't need to do node placement here now, Lotus will do it according to registred kernels.
+    //don't need to do node placement here now, Lotus will do it according to registered kernels.
     ProcessDefs(node, kernel_registries);
   }
 

@@ -14,7 +14,6 @@
 #include "core/graph/model.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/customregistry.h"
-#include "core/framework/executor.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/graph_partitioner.h"
 #include "core/framework/insert_cast_transformer.h"
@@ -24,6 +23,7 @@
 #include "core/framework/mldata_type_utils.h"
 #include "core/framework/mlvalue_name_idx_map.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
+#include "core/framework/sequential_executor.h"
 #include "core/framework/session_state.h"
 #include "core/framework/session_state_initializer.h"
 #include "core/framework/tensorprotoutils.h"
@@ -271,6 +271,7 @@ class InferenceSession::Impl {
           // create SessionState for executing subgraph
           subgraph_info.session_state = std::make_unique<SessionState>(execution_providers_);
           subgraph_info.session_state->SetGraph(*subgraph_info.graph);
+          subgraph_info.session_state->SetProfiler(session_profiler_);
 
           // setup everything required to execute the subgraph and save it in subgraph_session_state
           SessionStateInitializer initializer{*subgraph_info.graph, *subgraph_info.session_state,
@@ -283,7 +284,7 @@ class InferenceSession::Impl {
                                                               subgraph_info.weights_buffers));
 
           // add the subgraph SessionState instance to the parent graph SessionState so it can be retrieved
-          // by Compute() via OpKernelContextImpl.
+          // by Compute() via OpKernelContextInternal.
           session_state.AddSubgraphSessionState(node.Index(), name, *subgraph_info.session_state);
 
           // save subgraph_info as InferenceSession owns these so they remain valid
@@ -754,17 +755,19 @@ class InferenceSession::Impl {
       std::vector<MLValue> new_fetches;
       LOTUS_CHECK_AND_SET_RETVAL(MatchOutputsWithProviders(output_names, *p_fetches, new_fetches));
 
-      std::unique_ptr<Executor> p_exec;
+      std::unique_ptr<IExecutor> p_exec;
+
       if (retval.IsOK()) {
         if (session_options_.enable_sequential_execution) {
-          p_exec = Executor::NewSequentialExecutor(session_state_, copied_feeds, output_names, new_fetches, run_logger);
+          p_exec = std::unique_ptr<IExecutor>(new SequentialExecutor());
         } else {
           LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
         }
       }
 
-      LOTUS_CHECK_AND_SET_RETVAL(p_exec->Execute(run_options, copied_feeds, output_names, &new_fetches));
+      LOTUS_CHECK_AND_SET_RETVAL(p_exec->Execute(session_state_, copied_feeds, output_names, new_fetches, run_logger));
       LOTUS_CHECK_AND_SET_RETVAL(CopyOutputsAcrossDevices(new_fetches, *p_fetches));
+
     } catch (const std::exception& e) {
       retval = Status(Common::LOTUS, Common::FAIL, e.what());
     } catch (...) {
@@ -1012,7 +1015,7 @@ class InferenceSession::Impl {
   std::shared_ptr<LotusIR::Model> model_;
 
   // A set of executors that can run in parallel.
-  std::vector<std::unique_ptr<Executor>> executors_;  // TODO do we need this vector?
+  std::vector<std::unique_ptr<IExecutor>> executors_;  // TODO do we need this vector?
 
   // Immutable state for each op in the model. Shared by all executors.
   SessionState session_state_;

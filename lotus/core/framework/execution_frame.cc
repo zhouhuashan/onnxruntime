@@ -495,5 +495,4 @@ const SequentialExecutionPlan::AllocPlanPerValue& ExecutionFrame::GetAllocationP
   LOTUS_ENFORCE(mlvalue_idx >= 0 && mlvalue_idx < alloc_plan.size());
   return alloc_plan[mlvalue_idx];
 }
-
 }  // namespace Lotus

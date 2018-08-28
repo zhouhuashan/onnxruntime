@@ -78,17 +78,14 @@ class OpKernelContext {
 
   template <typename T>
   const T* Input(int index) const {
-    if (index < 0 || static_cast<size_t>(index) >= kernel_->Node().InputDefs().size())
-      return nullptr;
-
-    const MLValue* p_ml_value = GetInputMLValue(arg_start_index_ + index);
+    const MLValue* p_ml_value = GetInputMLValue(index);
     return p_ml_value ? &(p_ml_value->Get<T>()) : nullptr;
   }
 
   // Fetch output (non-tensor) with specified index.
   template <typename T>
   T* Output(int index) {
-    if (index < 0 || static_cast<size_t>(index) >= kernel_->Node().OutputDefs().size())
+    if (index < 0 || index >= OutputCount())
       return nullptr;
 
     MLValue* p_ml_value = nullptr;
@@ -131,23 +128,26 @@ class OpKernelContext {
   */
   Fence_t OutputFence(int index) const;
 
- private:
-  const MLValue* GetInputMLValue(int index) const;
-  Status GetOrCreateOutputMLValue(int index, MLValue*& value);
-
-  int GetOutputArgIndex(int index) const;
-
  protected:
   LotusIR::NodeIndex GetNodeIndex() const;
   const SessionState& GetSessionState() const;
 
+  const MLValue* GetInputMLValue(int index) const;
+  MLValue* GetOutputMLValue(int index);
+
  private:
+  Status GetOrCreateOutputMLValue(int index, MLValue*& value);
+
+  int GetInputArgIndex(int index) const;
+  int GetOutputArgIndex(int index) const;
+
   ExecutionFrame* execution_frame_{nullptr};
   const OpKernel* kernel_{nullptr};
   const Logging::Logger* logger_{nullptr};
 
   // The argument starting index in ExecutionFrame.
-  int arg_start_index_{-1};
+  int node_input_start_index_{-1};
+  int node_output_start_index_{-1};
 };
 
 // Fetching output tensor without shape is not allowed.

@@ -8,7 +8,7 @@ class ValueInfoProto;
 class TensorProto;
 class TypeProto;
 class AttributeProto;
-};  // namespace onnx
+}  // namespace onnx
 
 namespace LotusIR {
 using NodeIndex = size_t;

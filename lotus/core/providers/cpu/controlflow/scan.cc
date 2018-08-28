@@ -1,7 +1,10 @@
 #include "core/providers/cpu/controlflow/scan.h"
 
-#include "core/framework/op_kernel_context_impl.h"
+#include "core/framework/framework_common.h"
+#include "core/framework/op_kernel_context_internal.h"
+#include "core/framework/sequential_executor.h"
 #include "core/framework/session_state.h"
+#include "core/framework/tensorprotoutils.h"
 
 using namespace onnx;
 using namespace Lotus::Common;
@@ -43,28 +46,78 @@ onnx::OpSchema Scan::GetScanOpSchema() {
 }
 
 Status Scan::Compute(OpKernelContext* ctx) const {
-  auto ctx_impl = static_cast<OpKernelContextImpl*>(ctx);
+  auto ctx_impl = static_cast<OpKernelContextInternal*>(ctx);
   auto* session_state = ctx_impl->SubgraphSessionState("body");
   LOTUS_ENFORCE(session_state, "Subgraph SessionState was not found for 'body' attribute.");
 
+  // these are the num inputs and outputs according to the schema
   auto num_inputs = ctx->InputCount();
   auto num_outputs = ctx->OutputCount();
 
-  LOTUS_ENFORCE(num_inputs > 0 && num_outputs > 0);
+  LOTUS_ENFORCE(num_inputs > 0 && num_outputs >= 0);
 
-  // temporary hack to copy input to output so the operator 'works' end to end
-  auto X = ctx->Input<Tensor>(0);
-  auto Y = ctx->Output(0, X->Shape());
+  auto& graph = *session_state->GetGraph();
+  auto& graph_inputs = graph.GetInputs();
+  auto& graph_outputs = graph.GetOutputs();
 
-  auto input = X->DataAsSpan<float>();
-  auto data = Y->MutableDataAsSpan<float>();
+  auto num_variadic_inputs = ctx->NumVariadicInputs(0);
+  auto num_variadic_outputs = ctx->OutputCount();
 
-  std::copy(input.cbegin(), input.cend(), data.begin());
+  LOTUS_ENFORCE(num_variadic_inputs == graph_inputs.size());
+  LOTUS_ENFORCE(num_variadic_outputs == gsl::narrow_cast<int>(graph_outputs.size()));
 
-  // TODO:
-  // Create Executor and run graph. Need to handle slicing input for each iteration.
-  // auto& exec_plan = *session_state_->GetExecutionPlan();
+  // Rough initial pieces that will handle calling the subgraph once.
+  // TODO: Determine which are loop variables vs inputs/outputs
+  //       Setup shape/type inferencing for subgraph
+  //       Create an ExecutionFrame for each iteration that splices the input/output tensors
+  //       Iterate
 
+  NameMLValMap feeds;
+
+  // iterate the variadic inputs
+  for (int i = 0, end = num_variadic_inputs; i < end; ++i) {
+    auto& input_tensor = *ctx->Input<Tensor>(i);
+    auto data_type = input_tensor.DataType();
+    (void)data_type;
+
+    // the ordering of the Scan inputs should match the ordering of the subgraph inputs
+    auto name = graph_inputs[i]->Name();
+    feeds[name] = *ctx_impl->GetInputMLValue(i);
+  }
+
+  std::vector<MLValue> fetches;
+  std::vector<std::string> output_names;
+
+  fetches.reserve(graph_outputs.size());
+  output_names.reserve(graph_outputs.size());
+
+  for (int i = 0, end = num_variadic_outputs; i < end; ++i) {
+    // TODO: Need to handle shape/type inference for subgraphs.
+    // For now copy shape from subgraph output as we're only doing one iteration so far
+    auto& go = graph_outputs.at(i);
+    TensorShape shape{Lotus::Utils::GetTensorShapeFromTensorShapeProto(*go->Shape())};
+
+    // make sure the output tensor is created so GetOutputMLValue will succeed
+    IGNORE_RETURN_VALUE(ctx->Output(i, shape));
+
+    // the ordering of the Scan outputs should match the ordering of the subgraph outputs
+    auto name = graph_outputs[i]->Name();
+    output_names.push_back(name);
+
+    MLValue* p_mlvalue = ctx_impl->GetOutputMLValue(i);
+    LOTUS_ENFORCE(p_mlvalue, "Output MLValue has not been created for output ", i);
+
+    fetches.push_back(*p_mlvalue);
+  }
+
+  // Create Executor and run graph.
+  SequentialExecutor executor;
+  auto status = executor.Execute(*session_state, feeds, output_names, fetches, ctx->Logger());
+
+  return status;
+}
+
+Status Scan::ComputeImpl() const {
   return Status::OK();
 }
 }  // namespace Lotus

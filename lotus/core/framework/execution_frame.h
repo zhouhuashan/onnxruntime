@@ -71,6 +71,11 @@ class ExecutionFrame {
     return all_values_[mlvalue_index];
   }
 
+  MLValue& GetMutableMLValue(int mlvalue_index) {
+    LOTUS_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
+    return all_values_[mlvalue_index];
+  }
+
   // Index to the first argument of the given node.
   int GetFirstArgIndex(LotusIR::NodeIndex index) const {
     LOTUS_ENFORCE(index < node_offsets_.size());

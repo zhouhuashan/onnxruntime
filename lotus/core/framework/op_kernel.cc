@@ -7,9 +7,23 @@
 using namespace ::Lotus::Common;
 namespace Lotus {
 
+OpKernelContext::OpKernelContext(ExecutionFrame* frame,
+                                 const OpKernel* kernel,
+                                 const Logging::Logger& logger)
+    : execution_frame_(frame),
+      kernel_(kernel),
+      logger_(&logger) {
+  LOTUS_ENFORCE(frame != nullptr, "Execution frame was null");
+  LOTUS_ENFORCE(kernel != nullptr, "OpKernel was null");
+
+  node_input_start_index_ = frame->GetFirstArgIndex(kernel->Node().Index());
+  node_output_start_index_ = node_input_start_index_ + InputCount();
+}
+
 Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
-  if (index >= kernel_->Node().OutputDefs().size())
+  if (index < 0 || static_cast<size_t>(index) >= OutputCount())
     return nullptr;
+
   // In this case, it's assumed that the tensor hasn't been allocated yet,
   // so that it's calling ExecutionFrame to create a tensor in the given position with given shape.
   MLValueAllocationParameters parameters;
@@ -24,26 +38,10 @@ Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
   return p_ml_value ? p_ml_value->GetMutable<Tensor>() : nullptr;
 }
 
-OpKernelContext::OpKernelContext(ExecutionFrame* frame,
-                                 const OpKernel* kernel,
-                                 const Logging::Logger& logger)
-    : execution_frame_(frame),
-      kernel_(kernel),
-      logger_(&logger) {
-  LOTUS_ENFORCE(frame != nullptr, "Execution frame was null");
-  LOTUS_ENFORCE(kernel != nullptr, "OpKernel was null");
-
-  arg_start_index_ = frame->GetFirstArgIndex(kernel->Node().Index());
-}
-
 int OpKernelContext::NumVariadicInputs(size_t arg_num) const {
   auto& arg_counts = kernel_->Node().InputArgCount();
 
-  LOTUS_ENFORCE(arg_num < arg_counts.size(),
-                "Invalid arg_num of ",
-                arg_num,
-                ". Num args is ",
-                arg_counts.size());
+  LOTUS_ENFORCE(arg_num < arg_counts.size(), "Invalid arg_num of ", arg_num, ". Num args is ", arg_counts.size());
 
   return arg_counts[arg_num];
 }
@@ -56,7 +54,8 @@ Status OpKernelContext::GetTempSpaceAllocator(AllocatorPtr* output) const {
 }
 
 MLDataType OpKernelContext::InputType(int index) const {
-  const MLValue* p_ml_value = execution_frame_->GetNodeInputOrOutputMLValue(arg_start_index_ + index);
+  int input_arg_index = GetInputArgIndex(index);
+  const MLValue* p_ml_value = execution_frame_->GetNodeInputOrOutputMLValue(input_arg_index);
   return p_ml_value ? p_ml_value->Type() : nullptr;
 }
 
@@ -66,15 +65,12 @@ MLDataType OpKernelContext::OutputType(int index) const {
   return p_ml_value ? p_ml_value->Type() : nullptr;
 }
 
-const MLValue* OpKernelContext::GetInputMLValue(int index) const {
-  return execution_frame_->GetNodeInputOrOutputMLValue(index);
-}
-
 Fence_t OpKernelContext::InputFence(int index) const {
   if (index >= InputCount())
     return nullptr;
 
-  const MLValue* p_ml_value = execution_frame_->GetNodeInputOrOutputMLValue(arg_start_index_ + index);
+  int input_index = GetInputArgIndex(index);
+  const MLValue* p_ml_value = execution_frame_->GetNodeInputOrOutputMLValue(input_index);
   return p_ml_value ? p_ml_value->Fence() : nullptr;
 }
 
@@ -94,8 +90,12 @@ Status OpKernelContext::GetOrCreateOutputMLValue(int index, MLValue*& p_value) {
   return Status::OK();
 }
 
+int OpKernelContext::GetInputArgIndex(int index) const {
+  return node_input_start_index_ + index;
+}
+
 int OpKernelContext::GetOutputArgIndex(int index) const {
-  return arg_start_index_ + static_cast<int>(kernel_->Node().InputDefs().size()) + index;
+  return node_output_start_index_ + index;
 }
 
 LotusIR::NodeIndex OpKernelContext::GetNodeIndex() const {
@@ -104,6 +104,22 @@ LotusIR::NodeIndex OpKernelContext::GetNodeIndex() const {
 
 const SessionState& OpKernelContext::GetSessionState() const {
   return execution_frame_->SessionState();
+}
+
+const MLValue* OpKernelContext::GetInputMLValue(int index) const {
+  if (index < 0 || index >= InputCount())
+    return nullptr;
+
+  int input_arg_index = GetInputArgIndex(index);
+  return execution_frame_->GetNodeInputOrOutputMLValue(input_arg_index);
+}
+
+MLValue* OpKernelContext::GetOutputMLValue(int index) {
+  if (index < 0 || index >= OutputCount())
+    return nullptr;
+
+  auto output_arg_index = GetOutputArgIndex(index);
+  return execution_frame_->GetMutableNodeInputOrOutputMLValue(output_arg_index);
 }
 
 }  // namespace Lotus
