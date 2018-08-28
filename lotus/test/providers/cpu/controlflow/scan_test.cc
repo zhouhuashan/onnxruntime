@@ -4,7 +4,7 @@
 #include "core/framework/session_state.h"
 #include "core/providers/cpu/controlflow/scan.h"
 #include "core/framework/customregistry.h"
-
+#include "core/graph/function_container.h"
 using namespace onnx;
 namespace Lotus {
 namespace Test {

@@ -1,5 +1,5 @@
 #include "core/graph/model.h"
-
+#include "core/graph/function_container.h"
 #include <memory>
 
 #ifdef _MSC_VER

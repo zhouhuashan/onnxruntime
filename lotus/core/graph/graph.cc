@@ -9,11 +9,14 @@
 #include <stack>
 
 #include "gsl/pointers"
+#include "core/graph/function.h"
 #include "core/graph/graph.h"
+#include "core/graph/indexed_sub_graph.h"
 #include "core/graph/op.h"
 #include "core/common/logging/logging.h"
 #include "onnx/checker.h"
 #include "core/graph/schema_registry.h"
+#include "core/graph/function_container.h"
 using namespace onnx;
 using namespace onnx::Utils;
 using namespace onnx::checker;
@@ -148,6 +151,23 @@ const std::string& Node::Domain() const noexcept {
 
 const OpSchema* Node::Op() const noexcept {
   return op_;
+}
+
+Node::Type Node::NodeType() const noexcept {
+  return node_type_;
+}
+
+void Node::SetNodeType(Node::Type node_type) noexcept {
+  node_type_ = node_type;
+}
+
+const ::Lotus::Function* Node::GetFunctionBody() const noexcept {
+  return func_body_;
+}
+
+void Node::SetFunctionBody(const ::Lotus::Function& func) {
+  func_body_ = &func;
+  op_ = &func.OpSchema();
 }
 
 const std::string& Node::GetExecutionProviderType() const noexcept {
@@ -300,7 +320,7 @@ Status Node::UpdateInputArgCount() {
   }
 
   // op_ is always valid when this is called
-  const onnx::OpSchema& op = *op_;
+  const onnx::OpSchema& op = *Op();
 
   // Verify size of node arg count is same as input number in
   // operator definition.
@@ -410,7 +430,8 @@ Graph::Graph(GraphProto* graph_proto,
     : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version, ir_version),
       graph_proto_{graph_proto},
       graph_type_{Type::Main},
-      schema_registry_(schema_registry) {
+      schema_registry_(schema_registry),
+      function_container_(std::make_unique<FunctionContainer>()) {
   LOTUS_ENFORCE(graph_proto != nullptr, "Expected either name or graph_proto.");
   ArgNameToTypeMap name_to_type_map;
 
@@ -1057,14 +1078,14 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
     node.ToProto(node_proto);
     auto& node_name = node.Name();
     auto& domain = node.Domain();
-    auto maxInclusiveVersion = DomainToVersionMap().find(domain)->second;
 
-    if (!node.op_) {
+    if (!node.Op()) {
       try {
         checker::check_node(node_proto, ctx, lsc);
       } catch (const std::exception& ex) {
         return Status(LOTUS, FAIL, ex.what());
       }
+      auto maxInclusiveVersion = DomainToVersionMap().find(domain)->second;
       node.op_ = schema_registry_->GetSchema(node.OpType(), maxInclusiveVersion, node.Domain());
     }
 
@@ -1730,8 +1751,54 @@ bool GraphBase::ReleaseNode(NodeIndex index) {
   return true;
 }
 
+std::unique_ptr<Node> GraphBase::TransferNode(NodeIndex index) {
+  LOTUS_ENFORCE(index < nodes_.size());
+  if (nodes_[index] != nullptr) {
+    std::unique_ptr<Node> result(std::move(nodes_[index]));
+    nodes_[index] = nullptr;
+    --num_of_nodes_;
+    graph_proto_sync_needed_ = true;
+    graph_resolve_needed_ = true;
+    return result;
+  }
+  return nullptr;
+}
+
 ILotusOpSchemaCollectionPtr Graph::GetSchemaRegistry() const {
   return schema_registry_;
+}
+
+Node* Graph::FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, const std::string& fused_node_name) {
+  LOTUS_ENFORCE(nullptr != sub_graph && nullptr != sub_graph->GetMetaDef());
+
+  auto func_meta_def = sub_graph->GetMetaDef();
+  LOTUS_ENFORCE(nullptr != func_meta_def);
+  std::vector<NodeArg*> input_args, output_args;
+  for (auto& arg_name : func_meta_def->inputs) {
+    input_args.push_back(GetNodeArg(arg_name));
+  }
+  for (auto& arg_name : func_meta_def->outputs) {
+    output_args.push_back(GetNodeArg(arg_name));
+  }
+  auto fused_node = AddNode(fused_node_name,
+                            func_meta_def->name,
+                            func_meta_def->doc_string,
+                            input_args,
+                            output_args,
+                            nullptr,
+                            func_meta_def->domain);
+
+  fused_node->SetNodeType(Node::Type::Fused);
+
+  // Remove nodes fused above.
+  std::vector<std::unique_ptr<Node>> sub_graph_nodes;
+  for (auto node_index : sub_graph->nodes) {
+    sub_graph_nodes.push_back(std::move(TransferNode(node_index)));
+  }
+
+  function_container_->functions_.push_back(std::make_unique<::Lotus::Function>(*this, std::move(sub_graph), sub_graph_nodes));
+  fused_node->SetFunctionBody(*(function_container_->functions_.back().get()));
+  return fused_node;
 }
 
 }  // namespace LotusIR

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "core/graph/graph.h"
+#include "core/graph/basic_types.h"
 #include "core/graph/onnx_protobuf.h"
 
 namespace Lotus {
@@ -19,7 +19,7 @@ struct IndexedSubGraph {
     // Domain of customized Sub-Graph/FunctionProto
     std::string domain;
     // Since version of customized Sub-Graph/FunctionProto.
-    int64_t since_version;
+    int since_version;
     // Status of customized Sub-Graph/FunctionProto.
     onnx::OperatorStatus status;
     // Inputs of customized Sub-Graph/FunctionProto.

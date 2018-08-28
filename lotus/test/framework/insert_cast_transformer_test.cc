@@ -4,6 +4,7 @@
 #include "core/graph/model.h"
 #include "gtest/gtest.h"
 #include "test_utils.h"
+#include "core/graph/function_container.h"
 
 using namespace onnx;
 namespace Lotus {

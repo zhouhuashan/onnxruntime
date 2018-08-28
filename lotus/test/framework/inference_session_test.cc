@@ -10,15 +10,18 @@
 #include "core/common/logging/logging.h"
 #include "core/common/profiler.h"
 #include "core/framework/execution_provider.h"
+#include "core/framework/kernel_registry.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
+#include "core/graph/indexed_sub_graph.h"
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/providers/cpu/math/element_wise_ops.h"
 #include "core/framework/tensorprotoutils.h"
 #include "core/session/IOBinding.h"
+#include "core/graph/function_container.h"
 
 #include "test/capturing_sink.h"
 #include "test/test_environment.h"
@@ -31,6 +34,87 @@ using namespace ::Lotus::Logging;
 using namespace LotusIR;
 
 namespace Lotus {
+class FuseAdd : public OpKernel {
+ public:
+  FuseAdd(const OpKernelInfo& info) : OpKernel(info) {}
+
+  Status Compute(OpKernelContext* context) const override {
+    auto X = context->Input<Tensor>(0);
+    auto Y = context->Input<Tensor>(1);
+    auto Z = context->Input<Tensor>(2);
+    auto& shape = X->Shape();
+    auto M = context->Output(0, shape)->MutableData<float>();
+    for (int i = 0; i < shape.Size(); ++i) {
+      *(M + i) = *(X->Data<float>() + i) + *(Y->Data<float>() + i) + *(Z->Data<float>() + i);
+    }
+    return Status::OK();
+  }
+};
+std::string kFuseTest = "FuseTest";
+std::string kFuseExecutionProvider = "FuseExecutionProvider";
+class ONNX_OPERATOR_KERNEL_CLASS_NAME(kFuseExecutionProvider, kFuseTest, 1, FuseAdd);
+ONNX_OPERATOR_KERNEL_EX(FuseAdd,
+                        kFuseTest,
+                        1,
+                        kFuseExecutionProvider,
+                        KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+                        FuseAdd);
+
+void RegisterOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
+  fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kFuseExecutionProvider, kFuseTest, 1, FuseAdd)>());
+}
+
+class FuseExecutionProvider : public IExecutionProvider {
+ public:
+  explicit FuseExecutionProvider() {
+    DeviceAllocatorRegistrationInfo device_info({kMemTypeDefault, [](int) { return std::make_unique<CPUAllocator>(); }, std::numeric_limits<size_t>::max()});
+    InsertAllocator(kMemTypeDefault,
+                    std::shared_ptr<IArenaAllocator>(
+                        std::make_unique<DummyArena>(device_info.factory(0))));
+  }
+
+  std::vector<std::unique_ptr<IndexedSubGraph>>
+  GetCapability(const LotusIR::Graph& graph,
+                const std::vector<const KernelRegistry*>& /*kernel_registries*/) const override {
+    // Fuse two add into one.
+    std::vector<std::unique_ptr<IndexedSubGraph>> result;
+    result.push_back(std::make_unique<IndexedSubGraph>());
+    for (auto& node : graph.Nodes()) {
+      if (graph.IsSourceNode(node) || graph.IsSinkNode(node)) {
+        continue;
+      }
+      result[0]->nodes.push_back(node.Index());
+    }
+    auto meta_def = std::make_unique<::Lotus::IndexedSubGraph::MetaDef>();
+    meta_def->name = "FuseAdd";
+    meta_def->domain = "FuseTest";
+    meta_def->inputs = {"X", "Y", "Z"};
+    meta_def->outputs = {"M"};
+    meta_def->since_version = 1;
+    meta_def->status = onnx::EXPERIMENTAL;
+    result[0]->SetMetaDef(meta_def);
+    return result;
+  }
+
+  std::shared_ptr<::Lotus::KernelRegistry> GetKernelRegistry() const override {
+    static std::shared_ptr<::Lotus::KernelRegistry> kernel_registry = std::make_shared<::Lotus::KernelRegistry>(RegisterOperatorKernels);
+    return kernel_registry;
+  }
+
+  Common::Status CopyTensor(const Tensor& src, Tensor& dst) const override {
+    UNUSED_PARAMETER(src);
+    UNUSED_PARAMETER(dst);
+    return Status::OK();
+  }
+
+  const void* GetExecutionHandle() const noexcept override {
+    return nullptr;
+  }
+
+  std::string Type() const override {
+    return "FuseExecutionProvider";
+  }
+};
 namespace Test {
 static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg);
 static void VerifyOutputs(const std::vector<MLValue>& fetches,
@@ -781,5 +865,89 @@ TEST(InferenceSessionTests, ModelWithoutOpset) {
     ASSERT_TRUE(retval.ErrorMessage().find("Missing opset in the model") != std::string::npos);
   }
 }
+
+TEST(ExecutionProviderTest, FunctionTest) {
+  LotusIR::Model model("graph_1");
+  auto& graph = model.MainGraph();
+  std::vector<LotusIR::NodeArg*> inputs;
+  std::vector<LotusIR::NodeArg*> outputs;
+
+  // FLOAT tensor.
+  onnx::TypeProto float_tensor;
+  float_tensor.mutable_tensor_type()->set_elem_type(onnx::TensorProto_DataType_FLOAT);
+  float_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(3);
+  float_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
+
+  auto& input_arg_1 = graph.GetOrCreateNodeArg("X", &float_tensor);
+  auto& input_arg_2 = graph.GetOrCreateNodeArg("Y", &float_tensor);
+  inputs.push_back(&input_arg_1);
+  inputs.push_back(&input_arg_2);
+  auto& output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &float_tensor);
+  outputs.push_back(&output_arg);
+  graph.AddNode("node_1", "Add", "node 1.", inputs, outputs);
+
+  auto& input_arg_3 = graph.GetOrCreateNodeArg("Z", &float_tensor);
+  inputs.clear();
+  inputs.push_back(&output_arg);
+  inputs.push_back(&input_arg_3);
+  auto& output_arg_2 = graph.GetOrCreateNodeArg("M", &float_tensor);
+  outputs.clear();
+  outputs.push_back(&output_arg_2);
+  graph.AddNode("node_2", "Add", "node 2.", inputs, outputs);
+
+  auto status = graph.Resolve();
+  ASSERT_TRUE(status.IsOK());
+  std::string model_file_name = "execution_provider_test_graph.onnx";
+  status = LotusIR::Model::Save(model, model_file_name);
+
+  SessionOptions so;
+  so.session_logid = "ExecutionProviderTest.FunctionTest";
+  InferenceSession session_object{so};
+  status = session_object.Load(model_file_name);
+  ASSERT_TRUE(status.IsOK());
+  status = session_object.Initialize();
+  ASSERT_TRUE(status.IsOK());
+
+  RunOptions run_options;
+  run_options.run_tag = so.session_logid;
+
+  std::vector<int64_t> dims_mul_x = {3, 2};
+  std::vector<float> values_mul_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
+  MLValue ml_value_x;
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value_x);
+  MLValue ml_value_y;
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value_y);
+  MLValue ml_value_z;
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value_z);
+  NameMLValMap feeds;
+  feeds.insert(std::make_pair("X", ml_value_x));
+  feeds.insert(std::make_pair("Y", ml_value_y));
+  feeds.insert(std::make_pair("Z", ml_value_z));
+
+  // prepare outputs
+  std::vector<std::string> output_names;
+  output_names.push_back("M");
+  std::vector<MLValue> fetches;
+
+  // prepare expected inputs and outputs
+  std::vector<int64_t> expected_dims_mul_m = {3, 2};
+  std::vector<float> expected_values_mul_m = {3.0f, 6.0f, 9.0f, 12.0f, 15.0f, 18.0f};
+
+  // Now run
+  status = session_object.Run(run_options, feeds, output_names, &fetches);
+  ASSERT_TRUE(status.IsOK());
+  VerifyOutputs(fetches, expected_dims_mul_m, expected_values_mul_m);
+
+  InferenceSession session_object_2{so};
+  session_object_2.RegisterExecutionProvider(std::make_unique<::Lotus::FuseExecutionProvider>());
+  status = session_object_2.Load(model_file_name);
+  ASSERT_TRUE(status.IsOK());
+  status = session_object_2.Initialize();
+  ASSERT_TRUE(status.IsOK());
+  status = session_object_2.Run(run_options, feeds, output_names, &fetches);
+  ASSERT_TRUE(status.IsOK());
+  VerifyOutputs(fetches, expected_dims_mul_m, expected_values_mul_m);
+}
+
 }  // namespace Test
 }  // namespace Lotus

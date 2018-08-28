@@ -19,6 +19,7 @@
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "gtest/gtest.h"
+#include "core/graph/function_container.h"
 
 #ifdef __GNUC__
 #define LOTUS_UNUSED __attribute__((unused))

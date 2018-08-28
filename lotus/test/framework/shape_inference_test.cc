@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 #include "core/graph/model.h"
 #include "test/framework/model_builder_utils.h"
-
+#include "core/graph/function_container.h"
 using namespace onnx;
 using namespace std;
 
