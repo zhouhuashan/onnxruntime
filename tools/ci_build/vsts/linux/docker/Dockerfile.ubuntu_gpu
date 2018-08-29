@@ -1,0 +1,33 @@
+# Tag: nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
+# Created: 2017-11-21T06:34:14.675603521Z
+# Label: com.nvidia.build.id: 41212533
+# Label: com.nvidia.build.ref: e0edb5359ecb7bd3d86f0c9bfa18c2260b741ebb
+# Label: com.nvidia.cuda.version: 9.0.176
+# Label: com.nvidia.cudnn.version: 7.0.4.31
+# Label: com.nvidia.nccl.version: 2.1.2
+# Ubuntu 16.04.5
+FROM nvidia/cuda@sha256:33add9c50ab76b8f3a92187c0418ed600d5bea27690fda40711122fdc28ce2f4
+
+ADD scripts /tmp/scripts
+ENV PATH="/opt/cmake/bin:${PATH}"
+RUN /tmp/scripts/install_ubuntu.sh && /tmp/scripts/install_deps.sh && rm -rf /tmp/scripts
+
+WORKDIR /root
+
+# Allow configure to pick up GDK and CuDNN where it expects it.
+# (Note: $CUDNN_VERSION is defined by NVidia's base image)
+RUN _CUDNN_VERSION=$(echo $CUDNN_VERSION | cut -d. -f1-2) && \
+    mkdir -p /usr/local/cudnn-$_CUDNN_VERSION/cuda/include && \
+    ln -s /usr/include/cudnn.h /usr/local/cudnn-$_CUDNN_VERSION/cuda/include/cudnn.h && \
+    mkdir -p /usr/local/cudnn-$_CUDNN_VERSION/cuda/lib64 && \
+    ln -s /etc/alternatives/libcudnn_so /usr/local/cudnn-$_CUDNN_VERSION/cuda/lib64/libcudnn.so && \
+    ln -s /usr/local/cudnn{-$_CUDNN_VERSION,}
+
+ENV LD_LIBRARY_PATH /usr/local/openblas/lib:$LD_LIBRARY_PATH
+
+ARG BUILD_UID=1000
+ARG BUILD_USER=lotusdev
+RUN adduser --gecos 'LOTUS Build User' --disabled-password $BUILD_USER --uid $BUILD_UID
+USER $BUILD_USER
+WORKDIR /home/$BUILD_USER
+

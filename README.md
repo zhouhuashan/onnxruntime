@@ -8,18 +8,27 @@ Lotus is the runtime for ONNX. Here is the [design document](https://microsoft.s
 |-------------|:------------:|:------------:|------------------------------------|
 |Windows 10   | YES          | YES         |Must use VS 2017 or the latest VS2015|
 |Windows 10 <br/> Subsystem for Linux | YES         | NO        |         |
-|Ubuntu 16.04 | YES          | YES         |                            |
+|Ubuntu 16.x  | YES          | YES         |                            |
+|Ubuntu 17.x  | YES          | YES         |                            |
+|Ubuntu 18.x  | YES          | UNKNOWN     | No CUDA package from Nvidia|
+|Fedora 24    | YES          | YES         |                            |
+|Fedora 25    | YES          | YES         |                            |
+|Fedora 26    | YES          | YES         |                            |
 |Fedora 27    | YES          | YES         |                            |
-|Fedora 28    | YES          | NO          |Cannot build but can run GPU kernels |
-|Centos       | NO           | NO          | GCC is too old             |
+|Fedora 28    | YES          | NO          |Cannot build GPU kernels but can run them |
+
+Red Hat Enterprise Linux and CentOS are not supported.
+Clang 7.x is not supported. You may use Clang 6.x.
+GCC 4.x and below are not supported. If you are using GCC 7.0+, you'll need to upgrade eigen to a newer version before compiling Lotus.
 
 OS/Compiler Matrix:
 
-|             | Supports VC  | Supports GCC |  Supports Clang | 
-|-------------|:------------:|:------------:|:---------------:|
-|Windows 10   | YES          | Not tested   | Not tested      |
-|Linux        | NO           | YES          | YES             |
+|             | Supports VC  | Supports GCC     |  Supports Clang |
+|-------------|:------------:|:----------------:|:---------------:|
+|Windows 10   | YES          | Not tested       | Not tested      |
+|Linux        | NO           | YES(gcc>=5.0)    | YES             |
 
+Lotus python binding only supports Python 3.x. You'd better use python 3.5+.
 
 # Build
 Install cmake-3.10 or better from https://cmake.org/download/.
@@ -51,7 +60,7 @@ ctest -C %CMAKE_BUILD_TYPE%
 use a more specific project like `lotus_test_core_runtime.vcxproj`.
 
 ## Enable Clang tools
-You may also add '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON' to your cmake args, then your build engine(like msbuild/make/ninja) will generate a compile\_commands.json file for you. Please copy this file to the top source directory. Then you can use clang tools like ['clang-rename'](http://clang.llvm.org/extra/clang-rename.html), ['clang-tidy'](http://clang.llvm.org/extra/clang-tidy/) to clean up or refactor your code.
+You may also add '-DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON' to your cmake args, then your build engine(like msbuild/make/ninja) will generate a compile\_commands.json file for you. Please copy this file to the top source directory. Then you can use clang tools like ['clang-rename'](http://clang.llvm.org/extra/clang-rename.html), ['clang-tidy'](http://clang.llvm.org/extra/clang-tidy/) to clean up or refactor your code.
 
 # Source tree structure
 TODO
@@ -66,7 +75,13 @@ We use gtest as framework for unit tests. Test in the same directory are linked
 into 1 exe. More TODO. 
 
 # Integration Tests
-TODO
+To run onnx model tests on Linux,
+
+1. Install docker
+2. (optional) Run "export AZURE\_BLOB\_KEY=<secret_value>". You can get the key by executing "az storage keys list --account-name lotus" if you have Azure CLI 2.0 installed or just ask chasun@microsoft.com for that.
+3.  Run tools/ci\_build/vsts/linux/run\_build.sh.
+
+For Windows, please follow the README file at lotus/test/onnx/README.txt
 
 # Coding guidelines
 Please see [Coding Conventions and Standards](./docs/Coding_Conventions_and_Standards.md)
@@ -155,8 +170,8 @@ Install Docker: `https://docs.docker.com/install/`
 
 ###CPU
 ```
-cd tools/ci_build/vsts/linux/ubuntu16.04
-docker build -t lotus_dev
+cd tools/ci_build/vsts/linux/docker
+docker build -t lotus_dev --build-arg OS_VERSION=16.04 -f Dockerfile.ubuntu .
 docker run --rm -it lotus_dev /bin/bash
 ```
 
@@ -172,15 +187,17 @@ docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi
 
 Then build a docker image. We provided a sample for use:
 ```
-cd tools/ci_build/vsts/linux/fedora27
-docker build . -t cuda_dev
+cd tools/ci_build/vsts/linux/docker
+docker build -t cuda_dev -f Dockerfile.ubuntu_gpu .
 ```
-(TODO: add the notes of how to install CUDNN on Fedora)
 
 Then run it
 ```
-docker run --runtime=nvidia --rm -it cuda_dev /bin/bash
-PATH=$PATH:/usr/local/cuda/bin cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ../cmake -Dlotus_ENABLE_PYTHON=ON -DPYTHON_EXECUTABLE=/usr/bin/python3 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=/usr/local/cuda
+cd ~/src
+git clone https://aiinfra.visualstudio.com/Lotus/_git/Lotus
+docker run --runtime=nvidia -v ~/src/Lotus:/data/lotus --rm -it cuda_dev /bin/bash
+mkdir build
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug /data/lotus/cmake -Dlotus_ENABLE_PYTHON=ON -DPYTHON_EXECUTABLE=/usr/bin/python3 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=/usr/local/cudnn-7.0/cuda
 ninja
 ```
 
