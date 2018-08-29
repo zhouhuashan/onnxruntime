@@ -10,7 +10,6 @@ to call Lotus from Python.
     :caption: Contents:
 
     tutorial
-    manual
     api
     auto_examples/index
 
