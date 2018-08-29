@@ -95,9 +95,15 @@ static const SessionOptions& GetDefaultCPUSessionOptions() {
   return so;
 }
 
-void CreateTensorMLValue(AllocatorPtr alloc,
-                         PyArrayObject* pyObject, MLValue* p_mlvalue) {
+bool PyObjectCheck_Array(PyObject *o) {
+  return PyObject_HasAttrString(o, "__array_finalize__");
+}
+
+void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p_mlvalue) {
   PyArrayObject* darray = PyArray_GETCONTIGUOUS(pyObject);
+  if (darray == NULL) {
+    throw std::runtime_error("The object must be a contiguous array.");
+  }
   bool dref = false;
   try {
     const int npy_type = PyArray_TYPE(darray);
@@ -155,6 +161,127 @@ void CreateTensorMLValue(AllocatorPtr alloc,
   }
 }
 
+void CreateMapMLValue_MapStringToDouble(Py_ssize_t& pos, PyObject*& key,
+                                        PyObject* iterator, PyObject* item, PyObject*& value,
+                                        AllocatorPtr alloc, MLValue* p_mlvalue) {
+  PyObject* pStr;
+  std::string cstr;
+
+  void* buffer = alloc->Alloc(DataTypeImpl::GetType<VectorMapStringToFloat>()->Size());
+  VectorMapStringToFloat* dst = static_cast<VectorMapStringToFloat*>(buffer);
+  int index = 0;
+
+  do {
+    do {
+      pStr = PyObject_Str(key);
+      cstr = py::reinterpret_borrow<py::str>(pStr);
+      Py_XDECREF(pStr);
+
+      if (PyFloat_Check(value)) {
+        (*dst)[index][cstr] = (float)PyFloat_AS_DOUBLE(value);
+      } else if (PyNumber_Check(value)){
+        (*dst)[index][cstr] = (float)PyFloat_AsDouble(value);
+      } else {
+        PyObject* pType = PyObject_Type(value);
+        pStr = PyObject_Str(pType);
+        py::str spyType = py::reinterpret_borrow<py::str>(pStr);
+        std::string sType = spyType;
+        Py_XDECREF(pType);
+        Py_XDECREF(pStr);
+        throw std::runtime_error(std::string("Dictionary must have numbers as value (not ") + sType +
+                                 std::string(")"));
+      }
+
+    } while (PyDict_Next(item, &pos, &key, &value));
+
+    Py_DECREF(item);
+    ++index;
+    item = PyIter_Next(iterator);
+  } while (item != NULL);
+  p_mlvalue->Init(buffer, DataTypeImpl::GetType<VectorMapStringToFloat>(),
+                  DataTypeImpl::GetType<VectorMapStringToFloat>()->GetDeleteFunc());
+}
+
+void CreateMapMLValue(PyObject* iterator, PyObject* item, AllocatorPtr alloc, MLValue* p_mlvalue) {
+  // CreateMapMLValue is called by CreateGenericTerableMLValue which ensures
+  // item is a dictionary, no need to check type again.
+  // Onnxmltools only uses dictionaries with vector as key type.
+  // Lotus converts that into a map<string[1], ...>.
+  // We assumes that two conditions hold or the following code
+  // raises an exception. That also relies on the fact the conversion
+  // from an array of int into string happens the same in onnxmltools
+  // and the following code (meaning option int64_vocabulary is never used).
+
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+
+  if (PyDict_Next(item, &pos, &key, &value)) {
+    if (PyFloat_Check(value)) {
+      CreateMapMLValue_MapStringToDouble(pos, key, value, iterator, item, alloc, p_mlvalue);
+    } else {
+      PyObject* pType = PyObject_Type(value);
+      PyObject* pStr = PyObject_Str(pType);
+      py::str spyType = py::reinterpret_borrow<py::str>(pStr);
+      std::string sType = spyType;
+      Py_XDECREF(pType);
+      Py_XDECREF(pStr);
+      throw std::runtime_error(std::string("Unable convert object of type ") + sType +
+                               std::string(" into a tensor."));
+    }
+  } else {
+    throw std::runtime_error("Size of dictionary is empty, unable to run the prediction.");
+  }
+}
+
+void CreateGenericIterableMLValue(PyObject* iterator, AllocatorPtr alloc, MLValue* p_mlvalue) {
+  PyObject* item;
+  MLValue ml_value;
+  item = PyIter_Next(iterator);
+  if (item == NULL) {
+    throw std::runtime_error("Inputs must not be empty.");
+  }
+  if (PyObjectCheck_Array(item)){
+    PyObject* pType = PyObject_Type(item);
+    PyObject* pStr = PyObject_Str(pType);
+    py::str spyType = py::reinterpret_borrow<py::str>(pStr);
+    std::string sType = spyType;
+    Py_XDECREF(pType);
+    Py_XDECREF(pStr);
+    throw std::runtime_error("Iterable of " + sType + " should be given as array");
+  } else {
+    // We expect a dictionary.
+    if (!PyDict_Check(item)) {
+      throw std::runtime_error("Input must be a list of dictionaries or a single numpy array.");
+    }
+    CreateMapMLValue(iterator, item, alloc, p_mlvalue);
+  }
+  // Should we check this: if (PyErr_Occurred()) { }
+}
+
+void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlvalue) {
+  if (PyObjectCheck_Array(value.ptr())){
+    // The most frequent case: input comes as an array.
+    PyArrayObject* arr = reinterpret_cast<PyArrayObject*>(value.ptr());
+    CreateTensorMLValue(alloc, arr, p_mlvalue);
+  } else {
+    auto iterator = PyObject_GetIter(value.ptr());
+    if (iterator == NULL) {
+      // The pype cannot be handled.
+      PyObject* pType = PyObject_Type(value.ptr());
+      PyObject* pStr = PyObject_Str(pType);
+      py::str spyType = py::reinterpret_borrow<py::str>(pStr);
+      std::string sType = spyType;
+      Py_XDECREF(pType);
+      Py_XDECREF(pStr);
+      throw std::runtime_error(std::string("Unable to handle object of type ") + sType);
+    }
+    // We assume the object is iterable.
+    // iterator should not be NULL due to previous test.
+    CreateGenericIterableMLValue(iterator, alloc, p_mlvalue);
+    Py_DECREF(iterator);
+  }
+}
+
 template <typename T>
 void AddNonTensor(Lotus::MLValue& val, vector<py::object>& pyobjs) {
   pyobjs.push_back(py::cast(val.Get<T>()));
@@ -189,6 +316,10 @@ void AddNonTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
     AddNonTensor<VectorMapStringToFloat>(val, pyobjs);
   } else if (val.Type() == DataTypeImpl::GetType<VectorMapInt64ToFloat>()) {
     AddNonTensor<VectorMapInt64ToFloat>(val, pyobjs);
+  } else if (val.Type() == DataTypeImpl::GetType<VectorMapStringToFloat>()) {
+    AddNonTensor<VectorMapStringToFloat>(val, pyobjs);
+  } else if (val.Type() == DataTypeImpl::GetType<MapStringToFloat>()) {
+    AddNonTensor<MapStringToFloat>(val, pyobjs);
   } else {
     throw std::runtime_error("Output is a non-tensor type which is not supported.");
   }
@@ -243,31 +374,31 @@ class SessionObjectInitializer {
   static SessionObjectInitializer Get() {
     return SessionObjectInitializer();
   }
+};
 
-  static void CheckModel(InferenceSession* sess, Common::Status status) {
-    if (!status.IsOK()) {
-      throw std::runtime_error(status.ToString().c_str());
-    }
+void InitializeSession(InferenceSession* sess, Common::Status status) {
+  if (!status.IsOK()) {
+    throw std::runtime_error(status.ToString().c_str());
+  }
 
 #ifdef USE_MKLDNN
-    MKLDNNExecutionProviderInfo epi;
-    status = sess->RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi));
-    if (!status.IsOK()) {
-      throw std::runtime_error(status.ToString().c_str());
-    }
-#endif
-    CPUExecutionProviderInfo cpu_epi;
-    status = sess->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(cpu_epi));
-    if (!status.IsOK()) {
-      throw std::runtime_error(status.ToString().c_str());
-    }
-
-    status = sess->Initialize();
-    if (!status.IsOK()) {
-      throw std::runtime_error(status.ToString().c_str());
-    }
+  MKLDNNExecutionProviderInfo epi;
+  status = sess->RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi));
+  if (!status.IsOK()) {
+    throw std::runtime_error(status.ToString().c_str());
   }
-};
+#endif
+  CPUExecutionProviderInfo cpu_epi;
+  status = sess->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(cpu_epi));
+  if (!status.IsOK()) {
+    throw std::runtime_error(status.ToString().c_str());
+  }
+
+  status = sess->Initialize();
+  if (!status.IsOK()) {
+    throw std::runtime_error(status.ToString().c_str());
+  }
+}
 
 void addGlobalMethods(py::module& m) {
   m.def("get_session_initializer", &SessionObjectInitializer::Get, "Return a default session object initializer.");
@@ -342,23 +473,29 @@ including arg name, arg type (contains both type and shape).)pbdoc")
   py::class_<InferenceSession>(m, "InferenceSession", R"pbdoc(This is the main class used to run a model)pbdoc")
       .def(py::init<SessionObjectInitializer, SessionObjectInitializer>())
       .def(py::init<SessionOptions, SessionObjectInitializer>())
+#if (!NDEBUG)
+      .def("load_model_no_init", [](InferenceSession* sess, const std::string& path) {
+        auto status = sess->Load(path);
+      },
+           py::arg("verbose") = false, R"pbdoc(Loads a model saved in ONNX format, this is only available in debug mode
+									         to skip the validation and the initialisation in case this one fails.)pbdoc")
+#endif
       .def("load_model", [](InferenceSession* sess, const std::string& path) {
         auto status = sess->Load(path);
-        SessionObjectInitializer::CheckModel(sess, status);
-      }, R"pbdoc(Loads a model saved in ONNX format.)pbdoc")
+        InitializeSession(sess, status);
+      },
+           R"pbdoc(Loads a model saved in ONNX format.)pbdoc")
       .def("read_bytes", [](InferenceSession* sess, const py::bytes& serializedModel) {
         std::istringstream buffer(serializedModel);
         auto status = sess->Load(buffer);
-        SessionObjectInitializer::CheckModel(sess, status);
-      }, R"pbdoc(Loads a model serialized in ONNX format.)pbdoc")
+        InitializeSession(sess, status);
+      },
+           R"pbdoc(Loads a model serialized in ONNX format.)pbdoc")
       .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
           MLValue ml_value;
-          PyArrayObject* arr = reinterpret_cast<PyArrayObject*>(_.second.ptr());
-          // Assumes Feeds are numpy arrays which we create tensors from.
-          // TODO: support non-tensor type feeds.
-          CreateTensorMLValue(GetAllocator(), arr, &ml_value);
+          CreateGenericMLValue(GetAllocator(), _.second, &ml_value);
           feeds.insert(std::make_pair(_.first, ml_value));
         }
 

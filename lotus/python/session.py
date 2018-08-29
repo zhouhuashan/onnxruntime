@@ -34,15 +34,20 @@ class InferenceSession:
         else:
             self._sess = C.InferenceSession(
                 C.get_session_initializer(), C.get_session_initializer())
+
         if isinstance(path_or_bytes, str):
             self._sess.load_model(path_or_bytes)
         elif isinstance(path_or_bytes, bytes):
             self._sess.read_bytes(path_or_bytes)
+        elif isinstance(path_or_bytes, tuple):
+            # to remove, hidden trick
+            self._sess.load_model_no_init(path_or_bytes[0])
         else:
             raise TypeError("Unable to load from type '{0}'".format(type(path_or_bytes)))
         self._inputs_meta = self._sess.inputs_meta
         self._outputs_meta = self._sess.outputs_meta
         self._model_meta = self._sess.model_meta
+        
 
     def get_inputs(self):
         "Return the inputs metadata."
