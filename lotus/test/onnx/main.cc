@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
                                                "maxpool_1d_default", "mean_one_input", "mean_example", "max_two_inputs", "max_one_input", "maxpool_2d_pads", "maxpool_with_argmax_2d_precomputed_strides",
                                                "maxpool_with_argmax_2d_precomputed_pads", "maxpool_3d_default", "maxpool_2d_strides", "maxpool_2d_same_upper", "maxpool_2d_same_lower",
                                                "maxpool_2d_precomputed_strides", "maxpool_2d_precomputed_same_upper", "maxpool_2d_precomputed_pads", "expand_dim_unchanged",
-                                               "convtranspose_1d", "expand_dim_changed", "convtranspose_3d"};
+                                               "convtranspose_1d", "expand_dim_changed", "convtranspose_3d", "expand_shape_model1", "expand_shape_model2", "expand_shape_model3", "expand_shape_model4"};
   int result = 0;
   for (const std::string& s : stat.GetFailedTest()) {
     if (broken_tests.find(s) == broken_tests.end()) {
