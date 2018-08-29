@@ -20,7 +20,7 @@ function(AddTest)
     add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
   endif(_UT_DEPENDS)
 
-  target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${lotus_EXTERNAL_LIBRARIES})
+  target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${lotus_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
   if (lotus_USE_TVM)
     target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${TVM_INCLUDESS})
   else(lotus_USE_TVM)
@@ -90,7 +90,6 @@ endif()
 
 if(lotus_USE_CUDA)
   list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/cuda/*)
-  list(APPEND lotus_test_framework_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
 file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
@@ -99,6 +98,8 @@ file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 file(GLOB_RECURSE lotus_test_providers_src
   "${TEST_SRC_DIR}/providers/*.h"
   "${TEST_SRC_DIR}/providers/*.cc"
+  "${TEST_SRC_DIR}/contrib_ops/*.h"
+  "${TEST_SRC_DIR}/contrib_ops/*.cc"
   ${TEST_SRC_DIR}/framework/TestAllocatorManager.cc
   ${TEST_SRC_DIR}/framework/TestAllocatorManager.h
   )
@@ -176,7 +177,6 @@ endif()
 
 if(lotus_USE_CUDA)
   list(APPEND lotus_test_providers_dependencies lotus_providers_cuda)
-  list(APPEND lotus_test_providers_libs ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
 endif()
 
 if(lotus_USE_MKLDNN)
@@ -342,7 +342,7 @@ set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${LOTUS_ROOT}/core/protobuf TARGET onnx_test_runner_common)
 
 if(lotus_USE_CUDA)
-  set(onnx_cuda_test_libs lotus_providers_cuda ${CUDA_LIBRARIES} ${CUDA_cudart_static_LIBRARY})
+  set(onnx_cuda_test_libs lotus_providers_cuda)
 endif()
 
 if(lotus_USE_MKLDNN)
@@ -361,9 +361,9 @@ set(onnx_test_libs
   onnx
   onnx_proto
   lotus_common
-  protobuf::libprotobuf
   ${MLAS_LIBRARY}
   ${FS_STDLIB}
+  ${lotus_EXTERNAL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
