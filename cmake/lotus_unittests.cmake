@@ -98,6 +98,8 @@ file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 file(GLOB_RECURSE lotus_test_providers_src
   "${TEST_SRC_DIR}/providers/*.h"
   "${TEST_SRC_DIR}/providers/*.cc"
+  "${TEST_SRC_DIR}/contrib_ops/*.h"
+  "${TEST_SRC_DIR}/contrib_ops/*.cc"
   ${TEST_SRC_DIR}/framework/TestAllocatorManager.cc
   ${TEST_SRC_DIR}/framework/TestAllocatorManager.h
   )

@@ -1,6 +1,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/framework/op_kernel.h"
 #include "core/framework/kernel_registry.h"
+#include "contrib_ops/contrib_ops.h"
 
 namespace Lotus {
 
@@ -383,6 +384,7 @@ void RegisterOnnxMLOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
 static void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
   RegisterOnnxOperatorKernels(create_fn);
   ::Lotus::ML::RegisterOnnxMLOperatorKernels(create_fn);
+  ::Lotus::ML::RegisterContribKernels(create_fn);
 }
 
 std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const {

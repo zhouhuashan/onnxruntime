@@ -3,13 +3,20 @@ file(GLOB_RECURSE lotus_providers_srcs
     "${LOTUS_ROOT}/core/providers/cpu/*.cc"
 )
 
+file(GLOB_RECURSE lotus_contrib_ops_srcs
+	"${LOTUS_ROOT}/contrib_ops/*.h"
+    "${LOTUS_ROOT}/contrib_ops/*.cc"
+	"${LOTUS_ROOT}/contrib_ops/cpu/*.h"
+    "${LOTUS_ROOT}/contrib_ops/cpu/*.cc"
+)
+
 file(GLOB lotus_providers_common_srcs
     "${LOTUS_ROOT}/core/providers/*.h"
     "${LOTUS_ROOT}/core/providers/*.cc"
     )
     
 source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_common_srcs} ${lotus_providers_srcs})
-add_library(lotus_providers ${lotus_providers_common_srcs} ${lotus_providers_srcs})
+add_library(lotus_providers ${lotus_providers_common_srcs} ${lotus_providers_srcs} ${lotus_contrib_ops_srcs})
 lotus_add_include_to_target(lotus_providers onnx protobuf::libprotobuf)
 target_include_directories(lotus_providers PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS})
 

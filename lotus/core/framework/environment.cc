@@ -3,6 +3,7 @@
 #include "core/graph/constants.h"
 #include "core/graph/op.h"
 #include "onnx/defs/schema.h"
+#include "contrib_ops/contrib_ops.h"
 
 #ifndef LOTUS_HAVE_ATTRIBUTE
 #ifdef __has_attribute
@@ -65,12 +66,9 @@ Internal copy node
 Internal copy node
 )DOC");
 
-    // Register Microsoft domain ops.
-    status = LotusIR::MsOpRegistry::RegisterMsOps();
-    LOTUS_RETURN_IF_ERROR(status);
-
-    // TODO: Should register microsoft domain kernels here.
-
+    // Register contributed schemas.
+    // The corresponding kernels are registered inside the appropriate execution provider.
+    ML::RegisterContribSchemas();
   } catch (std::exception& ex) {
     status = Status{LOTUS, Common::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
   } catch (...) {

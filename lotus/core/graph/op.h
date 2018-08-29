@@ -52,18 +52,4 @@ class TypeUtils {
   static ::Lotus::Common::Status GetType(const onnx::AttributeProto& attr, AttrType& type);
   static bool IsValidAttribute(const onnx::AttributeProto& attribute);
 };
-
-class MsOpRegistry {
- public:
-  static ::Lotus::Common::Status RegisterMsOps() {
-    // Ms domain ops should be registered here. Example:
-    // LOTUS_RETURN_IF_ERROR(RegisterMsNNOps());
-    return ::Lotus::Common::Status::OK();
-  }
-
- private:
-  // Example to register ms domain ops.
-  // static Status RegisterMsNNOps();
-};
-
 }  // namespace LotusIR
