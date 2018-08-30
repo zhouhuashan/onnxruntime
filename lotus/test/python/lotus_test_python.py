@@ -267,5 +267,40 @@ class TestInferenceSession(unittest.TestCase):
                     self.assertTrue(tag in lines[i])
             self.assertTrue(']' in lines[8])
 
+    def testDictVectorizer(self):
+        sess = lotus.InferenceSession("../testdata/pipeline_vectorize.onnx")
+        input_name = sess.get_inputs()[0].name
+        self.assertEqual(input_name, "float_input")
+        input_shape = sess.get_inputs()[0].shape
+        self.assertEqual(input_shape, [])
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "variable1")
+        output_shape = sess.get_outputs()[0].shape
+        self.assertEqual(output_shape, [1, 1])
+        
+        # Python type
+        x = {0: 25.0, 1: 5.13, 2: 0.0, 3: 0.453, 4: 5.966}
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([[49.752754]], dtype=np.float32)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
+        # numpy type
+        x = {np.int64(k): np.float32(v) for k, v in x.items()}
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([[49.752754]], dtype=np.float32)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+        
+        x = {np.int64(k): np.float64(v) for k, v in x.items()}
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([[49.752754]], dtype=np.float32)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+        
+        x = {np.int32(k): np.float64(v) for k, v in x.items()}
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([[49.752754]], dtype=np.float32)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
+
 if __name__ == '__main__':
+    # TestInferenceSession().testDictVectorizer()
     unittest.main(module=__name__, buffer=True)
