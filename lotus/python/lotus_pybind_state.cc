@@ -1,3 +1,6 @@
+#include <iterator>
+#include <memory>
+
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -11,19 +14,16 @@
 #include "core/common/logging/sinks/cerr_sink.h"
 #include "core/framework/allocatormgr.h"
 #include "core/framework/environment.h"
+#include "core/framework/execution_provider.h"
 #include "core/framework/ml_value.h"
-#include "core/session/inference_session.h"
 #include "core/graph/graph.h"
-#if USE_MKLDNN
-#include "core/providers/mkldnn/mkldnn_execution_provider.h"
-#endif
-#include "core/providers/cpu/cpu_execution_provider.h"
+#include "core/session/inference_session.h"
+#include "core/providers/provider_factories.h"
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4267 4996 4503 4003)
 #endif  // _MSC_VER
 
-#include <iterator>
 using namespace std;
 namespace lotus {
 namespace python {
@@ -325,15 +325,23 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           throw std::runtime_error(status.ToString().c_str());
         }
 
-#ifdef USE_MKLDNN
-        MKLDNNExecutionProviderInfo epi;
-        status = sess->RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi));
+#ifdef USE_CUDA
+        CUDAExecutionProviderInfo cuda_pi;
+        status = sess->RegisterExecutionProvider(CreateCUDAExecutionProvider(cuda_pi));
         if (!status.IsOK()) {
           throw std::runtime_error(status.ToString().c_str());
         }
 #endif
-        CPUExecutionProviderInfo cpu_epi;
-        status = sess->RegisterExecutionProvider(std::make_unique<CPUExecutionProvider>(cpu_epi));
+
+#ifdef USE_MKLDNN
+        CPUExecutionProviderInfo mkldnn_pi;
+        status = sess->RegisterExecutionProvider(CreateMKLDNNExecutionProvider(mkldnn_pi));
+        if (!status.IsOK()) {
+          throw std::runtime_error(status.ToString().c_str());
+        }
+#endif
+        CPUExecutionProviderInfo cpu_pi;
+        status = sess->RegisterExecutionProvider(CreateBasicCPUExecutionProvider(cpu_pi));
         if (!status.IsOK()) {
           throw std::runtime_error(status.ToString().c_str());
         }
