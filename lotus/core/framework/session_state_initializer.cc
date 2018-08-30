@@ -141,7 +141,7 @@ Common::Status TransformGraph(LotusIR::Graph& graph,
 
   // Insert copy nodes.
   for (auto& provider : providers) {
-    if (provider->Type() != LotusIR::kCpuExecutionProvider) {
+    if (provider->Type() != LotusIR::kCpuExecutionProvider && provider->Type() != LotusIR::kMklDnnExecutionProvider) {
       TransformerMemcpyImpl copy_impl(graph, provider->Type());
       copy_impl.ModifyGraph(kernel_registry_manager);
     }

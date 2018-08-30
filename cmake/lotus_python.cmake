@@ -1,7 +1,6 @@
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp 3.5 REQUIRED)
 include(pybind11)
-
-FIND_PACKAGE(PythonLibs)
+FIND_PACKAGE(PythonLibs 3.5 REQUIRED)
 FIND_PACKAGE(NumPy)
 
 if(NOT PYTHON_INCLUDE_DIR)
@@ -31,7 +30,7 @@ endif(NOT NUMPY_INCLUDE_DIR)
 
 # ---[ Python + Numpy
 set(lotus_pybind_srcs
-    ${LOTUS_ROOT}/python/lotus_pybind_state.cc
+    ${LOTUS_ROOT}/python/lotus_pybind*
 )
 
 #TODO(@chasun): enable cuda and test it
@@ -43,6 +42,7 @@ target_include_directories(lotus_pybind11_state PRIVATE ${PYTHON_INCLUDE_DIR} ${
 target_include_directories(lotus_pybind11_state PRIVATE ${pybind11_INCLUDE_DIRS})
 set(lotus_pybind11_state_libs
     lotus_session
+    ${LOTUS_PROVIDERS_CUDA}
     ${LOTUS_PROVIDERS_MKLDNN}
     lotus_providers
     lotus_framework

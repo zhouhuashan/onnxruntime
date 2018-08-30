@@ -58,7 +58,7 @@ if False: # TODO: remove
 
     from onnxmltools import convert_sklearn
     from onnxmltools.utils import save_model
-    from onnxmltools.convert.common.data_types import FloatTensorType, Int64TensorType, DictionaryType
+    from onnxmltools.convert.common.data_types import FloatTensorType, Int64TensorType, DictionaryType, SequenceType
 
     # initial_type = [('float_input', DictionaryType(Int64TensorType([1]), FloatTensorType([])))]
     initial_type = [('float_input', DictionaryType(Int64TensorType([1]), FloatTensorType([])))]
@@ -72,10 +72,9 @@ import lotus
 sess = lotus.InferenceSession("pipeline_vectorize.onnx")
 
 import numpy
-print(dir(numpy.array([[0,1]])))
-
-print("input name='{}' and shape={}".format(sess.get_inputs()[0].name, sess.get_inputs()[0].shape))
-print("output name='{}' and shape={}".format(sess.get_outputs()[0].name, sess.get_outputs()[0].shape))
+inp, out = sess.get_inputs()[0], sess.get_outputs()[0]
+print("input name='{}' and shape={} and type={}".format(inp.name, inp.shape, inp.type))
+print("output name='{}' and shape={} and type={}".format(out.name, out.shape, out.type))
 
 ##################################
 # We compute the predictions and compare them
@@ -85,8 +84,9 @@ input_name = sess.get_inputs()[0].name
 label_name = sess.get_outputs()[0].name
 
 import numpy
-# input()
-pred_onx = sess.run([label_name], {input_name: X_test_dict})[0]
+X_as_list = list(X_test_dict)
+input()
+pred_onx = sess.run([label_name], {input_name: X_as_list[0]})[0]
 print(confusion_matrix(pred, pred_onx))
 
 #####################################
