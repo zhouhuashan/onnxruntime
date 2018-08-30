@@ -80,8 +80,17 @@ print("output name='{}' and shape={} and type={}".format(out.name, out.shape, ou
 input_name = sess.get_inputs()[0].name
 label_name = sess.get_outputs()[0].name
 
-import numpy
-print(list(X_test_dict)[0])
+##############################
+# We could do that...
+
+try:
+    pred_onx = sess.run([label_name], {input_name: X_test_dict})[0]
+except RuntimeError as e:
+    print(e)
+
+#############################
+#  But it fails because, in case of a DictVectorizer,
+# Lotus expects one observation at a time.
 pred_onx = [sess.run([label_name], {input_name: row})[0][0, 0] for row in X_test_dict]
 
 ###############################
@@ -90,5 +99,5 @@ print(r2_score(pred, pred_onx))
 
 #########################
 # Very similar. Lotus uses float instead of doubles,
-# that explains the discrepencies.
+# that explains the small discrepencies.
 
