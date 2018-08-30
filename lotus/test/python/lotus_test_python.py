@@ -285,10 +285,14 @@ class TestInferenceSession(unittest.TestCase):
         sess = lotus.InferenceSession(self.get_name("pipeline_vectorize.onnx"))
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "float_input")
+        input_type = str(sess.get_inputs()[0].type)
+        self.assertEqual(input_type, "map(int64,tensor(float))")
         input_shape = sess.get_inputs()[0].shape
         self.assertEqual(input_shape, [])
         output_name = sess.get_outputs()[0].name
         self.assertEqual(output_name, "variable1")
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, "tensor(float)")
         output_shape = sess.get_outputs()[0].shape
         self.assertEqual(output_shape, [1, 1])
         
