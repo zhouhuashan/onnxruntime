@@ -27,14 +27,15 @@ namespace PerfTest {
       "\t-e [cpu|cuda|mkldnn]: Specifies the provider 'cpu','cuda','mkldnn'. Default:'cpu'.\n"
       "\t-r [repeated_times]: Specifies the repeated times if running in 'times' test mode.Default:1000.\n"
       "\t-t [seconds_to_run]: Specifies the seconds to run for 'duration' mode. Default:600.\n"
-      "\t-p [profile_file]: Specifies the profile name to enable profiling and dump the profile data to the file."
-      "\t-v: Show verbose information."
+      "\t-p [profile_file]: Specifies the profile name to enable profiling and dump the profile data to the file.\n"
+      "\t-v: Show verbose information.\n"
+      "\t-x: Use parallel executor, default: sequential executor.\n"
       "\t-h: help\n");
 }
 
 /*static*/ bool CommandLineParser::ParseArguments(PerformanceTestConfig& test_config, int argc, char* argv[]) {
   int ch;
-  while ((ch = getopt(argc, argv, "m:e:r:t:vh")) != -1) {
+  while ((ch = getopt(argc, argv, "m:e:r:t:xvh")) != -1) {
     switch (ch) {
       case 'm':
         if (!strcmp(optarg, "duration")) {
@@ -70,6 +71,9 @@ namespace PerfTest {
         break;
       case 'v':
         test_config.run_config.f_verbose = true;
+        break;
+      case 'x':
+        test_config.run_config.enable_sequential_execution = false;
         break;
       case '?':
       case 'h':

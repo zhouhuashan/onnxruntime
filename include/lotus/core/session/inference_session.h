@@ -54,6 +54,8 @@ struct SessionOptions {
   // Arena may pre-allocate memory for future usage.
   // set this option to false if you don't want it.
   bool enable_cpu_mem_arena = true;
+
+  int session_thread_pool_size = 0;
 };
 
 /**
