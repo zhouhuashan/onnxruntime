@@ -9,6 +9,7 @@
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
 #include "core/common/profiler.h"
+#include "core/common/task_thread_pool.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/execution_providers.h"
 #include "core/framework/kernel_registry_manager.h"
@@ -141,6 +142,9 @@ class SessionState {
   /// Return SessionState for the given Node index and attribute name if found.
   const SessionState* GetSubgraphSessionState(LotusIR::NodeIndex index, const std::string& attribute_name) const;
 
+  std::shared_ptr<TaskThreadPool> GetThreadPool() const { return thread_pool_; }
+  void SetThreadPool(std::shared_ptr<TaskThreadPool>& p_pool) { thread_pool_ = p_pool; }
+
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SessionState);
 
@@ -175,5 +179,6 @@ class SessionState {
       std::unordered_map<LotusIR::NodeIndex,
                          std::unordered_map<std::string, gsl::not_null<const SessionState*>>>;
   SubgraphSessionStateMap subgraph_session_states_;
+  std::shared_ptr<TaskThreadPool> thread_pool_;
 };
 }  // namespace Lotus

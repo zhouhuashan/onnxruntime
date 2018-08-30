@@ -54,6 +54,9 @@ struct SessionOptions {
   unsigned session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
 
   unsigned max_num_graph_transformation_steps = 5;  // TODO choose a good default here?
+
+  // How many threads in the session thread pool.
+  int session_thread_pool_size = 0;
 };
 
 /**
