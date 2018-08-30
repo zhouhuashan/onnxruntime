@@ -66,6 +66,9 @@ bool PerformanceRunner::Initialize() {
   }
 
   SessionFactory sf(performance_test_config_.machine_config.provider_type_name, true, true);
+  sf.enable_sequential_execution = performance_test_config_.run_config.enable_sequential_execution;
+  sf.session_thread_pool_size = 6;
+
   sf.create(session_object_, test_case->GetModelUrl(), test_case->GetTestCaseName());
 
   // Initialize IO Binding
