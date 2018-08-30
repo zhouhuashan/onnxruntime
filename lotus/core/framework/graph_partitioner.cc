@@ -7,6 +7,33 @@
 #include "core/framework/kernel_registry_manager.h"
 #include "core/framework/execution_providers.h"
 
+// uncomment this line to count non-CUDA ops in ONNX domain
+//#define COUNT_NON_CUDA_OPS
+
+#ifdef COUNT_NON_CUDA_OPS
+class NonCudaOps {
+ public:
+  ~NonCudaOps() {
+    printf("Non-CUDA ops:\n");
+    for (auto i : map_) {
+      printf("%s: %d\n", i.first.c_str(), i.second);
+    }
+  }
+
+  void AddOp(const std::string& name) {
+    if (map_.count(name))
+      map_.at(name)++;
+    else
+      map_.insert({name, 1});
+  }
+
+ private:
+  std::map<std::string, int> map_;
+};
+
+NonCudaOps non_cuda;
+#endif
+
 using namespace ::Lotus::Common;
 namespace Lotus {
 Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
@@ -45,6 +72,13 @@ Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
     if (!graph.IsSourceNode(node) && !graph.IsSinkNode(node) && node.GetExecutionProviderType().empty()) {
       return Status(LOTUS, FAIL, "Partitioning failed. No execution provider is capable of running node (" + node.Name() + ").");
     }
+
+#ifdef COUNT_NON_CUDA_OPS
+    if (node.GetExecutionProviderType() != kCudaExecutionProvider &&
+        node.Domain() != kMLDomain &&
+        node.Domain() != kMSDomain)
+      non_cuda.AddOp(node.OpType());
+#endif
   }
 
   return Status::OK();
