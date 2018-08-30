@@ -183,7 +183,7 @@ void CreateMapMLValue_LoopIntoMap(Py_ssize_t& pos, PyObject*& key, PyObject*& va
 template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
 void CreateMapMLValue_Map(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
                           PyObject* item,
-                          AllocatorPtr alloc, MLValue* p_mlvalue,
+                          AllocatorPtr /*alloc*/, MLValue* p_mlvalue,
                           KeyGetterType keyGetter, ValueGetterType valueGetter) {
   std::unique_ptr<std::map<KeyType, ValueType>> dst;
   dst = std::make_unique<std::map<KeyType, ValueType>>();
@@ -195,7 +195,7 @@ void CreateMapMLValue_Map(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
 template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
 void CreateMapMLValue_VectorMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
                                 PyObject* iterator, PyObject* item,
-                                AllocatorPtr alloc, MLValue* p_mlvalue,
+                                AllocatorPtr /*alloc*/, MLValue* p_mlvalue,
                                 KeyGetterType keyGetter, ValueGetterType valueGetter) {
   std::unique_ptr<std::vector<std::map<KeyType, ValueType>>> dstVector;
   dstVector = std::make_unique<std::vector<std::map<KeyType, ValueType>>>();

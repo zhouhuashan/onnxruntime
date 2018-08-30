@@ -135,9 +135,11 @@ class SessionObjectInitializer {
 };
 
 void InitializeSession(InferenceSession* sess) {
+  Lotus::Common::Status status;
+
 #ifdef USE_CUDA
   CUDAExecutionProviderInfo cuda_pi;
-  auto status = sess->RegisterExecutionProvider(CreateCUDAExecutionProvider(cuda_pi));
+  status = sess->RegisterExecutionProvider(CreateCUDAExecutionProvider(cuda_pi));
   if (!status.IsOK()) {
     throw std::runtime_error(status.ToString().c_str());
   }
@@ -145,13 +147,13 @@ void InitializeSession(InferenceSession* sess) {
 
 #ifdef USE_MKLDNN
   CPUExecutionProviderInfo mkldnn_pi;
-  auto status = sess->RegisterExecutionProvider(CreateMKLDNNExecutionProvider(mkldnn_pi));
+  status = sess->RegisterExecutionProvider(CreateMKLDNNExecutionProvider(mkldnn_pi));
   if (!status.IsOK()) {
     throw std::runtime_error(status.ToString().c_str());
   }
 #endif
   CPUExecutionProviderInfo cpu_pi;
-  auto status = sess->RegisterExecutionProvider(CreateBasicCPUExecutionProvider(cpu_pi));
+  status = sess->RegisterExecutionProvider(CreateBasicCPUExecutionProvider(cpu_pi));
   if (!status.IsOK()) {
     throw std::runtime_error(status.ToString().c_str());
   }
