@@ -268,7 +268,7 @@ class TestInferenceSession(unittest.TestCase):
             self.assertTrue(']' in lines[8])
 
     def testDictVectorizer(self):
-        sess = lotus.InferenceSession("../testdata/pipeline_vectorize.onnx")
+        sess = lotus.InferenceSession("testdata/pipeline_vectorize.onnx")
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "float_input")
         input_shape = sess.get_inputs()[0].shape
@@ -283,6 +283,13 @@ class TestInferenceSession(unittest.TestCase):
         res = sess.run([output_name], {input_name: x})
         output_expected = np.array([[49.752754]], dtype=np.float32)
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+        
+        xwrong = x.copy()
+        xwrong["a"] = 5.6
+        try:
+            res = sess.run([output_name], {input_name: xwrong})
+        except RuntimeError as e:
+            self.assertIn("Unexpected key type  <class 'str'>, it cannot be linked to C type int64_t", str(e))
 
         # numpy type
         x = {np.int64(k): np.float32(v) for k, v in x.items()}
@@ -302,5 +309,4 @@ class TestInferenceSession(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # TestInferenceSession().testDictVectorizer()
     unittest.main(module=__name__, buffer=True)

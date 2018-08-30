@@ -5,7 +5,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL lotus_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
-
 using namespace std;
 namespace lotus {
 namespace python {
@@ -13,7 +12,6 @@ namespace python {
 namespace py = pybind11;
 using namespace Lotus;
 using namespace Lotus::Logging;
-
 
 int LotusTensorToNumpyType(const MLDataType& tensor_type) {
   static std::map<MLDataType, int> type_map{
@@ -134,95 +132,126 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
   }
 }
 
-void CreateMapMLValue_LoopIntoMapInt64ToFloat(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
-                                              PyObject* item, MapInt64ToFloat& current) {
-  long pylong;
-  std::string cstr;
-  do {
-    pylong = PyLong_AsLong(key);
+std::string _get_type_name(int64_t&) { 
+  return std::string("int64_t"); 
+}
 
-    if (PyFloat_Check(value)) {
-      current[pylong] = (float)PyFloat_AS_DOUBLE(value);
-    } else if (PyNumber_Check(value)) {
-      current[pylong] = (float)PyFloat_AsDouble(value);
-    } else {
+std::string _get_type_name(float&) { 
+  return std::string("float"); 
+}
+
+std::string _get_type_name(std::string&) { 
+  return std::string("string"); 
+}
+
+template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
+void CreateMapMLValue_LoopIntoMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+                                  PyObject* item, std::map<KeyType, ValueType>& current,
+                                  KeyGetterType keyGetter, ValueGetterType valueGetter) {
+  KeyType ckey;
+  ValueType cvalue;
+  do {
+    if (!keyGetter(key, ckey)) {
+      PyObject* pType = PyObject_Type(key);
+      auto pStr = PyObject_Str(pType);
+      py::str spyType = py::reinterpret_borrow<py::str>(pStr);
+      std::string sType = spyType;
+      Py_XDECREF(pStr);
+      Py_XDECREF(pType);
+      Py_XDECREF(item);
+      throw std::runtime_error(std::string("Unexpected key type  ") + sType +
+                               std::string(", it cannot be linked to C type ") +
+                               _get_type_name(ckey));
+    }
+
+    if (!valueGetter(value, cvalue)) {
       PyObject* pType = PyObject_Type(value);
       auto pStr = PyObject_Str(pType);
       py::str spyType = py::reinterpret_borrow<py::str>(pStr);
       std::string sType = spyType;
       Py_XDECREF(pStr);
       Py_XDECREF(pType);
-
-      pStr = PyObject_Str(value);
-      spyType = py::reinterpret_borrow<py::str>(pStr);
-      sType += " - ";
-      sType += spyType;
-      Py_XDECREF(pStr);
-
       Py_XDECREF(item);
-      throw std::runtime_error(std::string("Input is a list of dictionaries and they must have numbers as value (not ") + sType +
-                               std::string(")"));
+      throw std::runtime_error(std::string("Unexpected value type  ") + sType +
+                               std::string(", it cannot be linked to C type ") +
+                               _get_type_name(ckey));
     }
-
+    current[ckey] = cvalue;
   } while (PyDict_Next(item, &pos, &key, &value));
 }
 
-void CreateMapMLValue_LoopIntoMapStringToFloat(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
-                                               PyObject * item, MapStringToFloat &current) {
+template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
+void CreateMapMLValue_Map(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+                          PyObject* item,
+                          AllocatorPtr alloc, MLValue* p_mlvalue,
+                          KeyGetterType keyGetter, ValueGetterType valueGetter) {
+  std::unique_ptr<std::map<KeyType, ValueType>> dst;
+  dst = std::make_unique<std::map<KeyType, ValueType>>();
+  CreateMapMLValue_LoopIntoMap(pos, key, value, item, *dst, keyGetter, valueGetter);
+  p_mlvalue->Init(dst.release(), DataTypeImpl::GetType<std::map<KeyType, ValueType>>(),
+                  DataTypeImpl::GetType<std::map<KeyType, ValueType>>()->GetDeleteFunc());
+}
 
-  PyObject* pStr;
-  std::string cstr;
+template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
+void CreateMapMLValue_VectorMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+                                PyObject* iterator, PyObject* item,
+                                AllocatorPtr alloc, MLValue* p_mlvalue,
+                                KeyGetterType keyGetter, ValueGetterType valueGetter) {
+  std::unique_ptr<std::vector<std::map<KeyType, ValueType>>> dstVector;
+  dstVector = std::make_unique<std::vector<std::map<KeyType, ValueType>>>();
+  int index = 0;
   do {
-    pStr = PyObject_Str(key);
-    cstr = py::reinterpret_borrow<py::str>(pStr);
-    Py_XDECREF(pStr);
-
-    if (PyFloat_Check(value)) {
-      current[cstr] = (float)PyFloat_AS_DOUBLE(value);
-    } else if (PyNumber_Check(value)) {
-      current[cstr] = (float)PyFloat_AsDouble(value);
-    } else {
-      PyObject* pType = PyObject_Type(value);
-      pStr = PyObject_Str(pType);
-      py::str spyType = py::reinterpret_borrow<py::str>(pStr);
-      std::string sType = spyType;
-      Py_XDECREF(pStr);
-      Py_XDECREF(pType);
-
-      pStr = PyObject_Str(value);
-      spyType = py::reinterpret_borrow<py::str>(pStr);
-      sType += " - ";
-      sType += spyType;
-      Py_XDECREF(pStr);
-
-      Py_XDECREF(item);
-      throw std::runtime_error(std::string("Input is a list of dictionaries and they must have numbers as value (not ") + sType +
-                               std::string(")"));
-    }
-
-  } while (PyDict_Next(item, &pos, &key, &value));
+    dstVector->push_back(std::map<KeyType, ValueType>());
+    CreateMapMLValue_LoopIntoMap(pos, key, value, item, (*dstVector)[index], keyGetter, valueGetter);
+    Py_DECREF(item);
+    ++index;
+    item = iterator == NULL ? NULL : PyIter_Next(iterator);
+  } while (item != NULL);
+  p_mlvalue->Init(dstVector.release(), DataTypeImpl::GetType<std::vector<std::map<KeyType, ValueType>>>(),
+                  DataTypeImpl::GetType<std::vector<std::map<KeyType, ValueType>>>()->GetDeleteFunc());
 }
 
-void CreateMapMLValue_MapToFloat(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
-                                 PyObject* iterator, PyObject* item,
-                                 AllocatorPtr alloc, MLValue* p_mlvalue) {
+void CreateMapMLValue_AgnosticMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+                                  PyObject* iterator, PyObject* item,
+                                  AllocatorPtr alloc, MLValue* p_mlvalue) {
   // If iterator is NULL, it returns a single MapStringToDouble,
   // if is not NULL, it returns a VectorMapStringToDouble.
+  auto int64Getter = [](PyObject* obj, int64_t& value) -> bool {
+    value = PyLong_AsLong(obj);
+    return !PyErr_Occurred();
+  };
+
+  auto floatGetter = [](PyObject* obj, float& value) -> bool {
+    if (PyFloat_Check(obj)) {
+      value = (float)PyFloat_AS_DOUBLE(obj);
+      return true;
+    } else if (PyNumber_Check(obj)) {
+      value = (float)PyFloat_AsDouble(obj);
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  auto stringGetter = [](PyObject* obj, std::string& value) -> bool {
+    PyObject* pStr = PyObject_Str(obj);
+    if (pStr == NULL) {
+      return false;
+    }
+    value = py::reinterpret_borrow<py::str>(pStr);
+    Py_DECREF(pStr);
+    return true;
+  };
 
   if (iterator == NULL) {
-    if (PyLong_Check(key)){
-      // TODO: write templating function with accessor.
-      std::unique_ptr<MapInt64ToFloat> dst;
-      dst = std::make_unique<MapInt64ToFloat>();
-      CreateMapMLValue_LoopIntoMapInt64ToFloat(pos, key, value, item, *dst);
-      p_mlvalue->Init(dst.release(), DataTypeImpl::GetType<MapInt64ToFloat>(),
-                      DataTypeImpl::GetType<MapInt64ToFloat>()->GetDeleteFunc());
+    if (PyLong_Check(key)) {
+      // Regular Python.
+      CreateMapMLValue_Map<int64_t, float>(pos, key, value, item, alloc, p_mlvalue, int64Getter, floatGetter);
+    } else if (PyNumber_Check(key)){
+      // For numpy type.
+      CreateMapMLValue_Map<int64_t, float>(pos, key, value, item, alloc, p_mlvalue, int64Getter, floatGetter);
     } else if (PyUnicode_Check(key)) {
-      std::unique_ptr<MapStringToFloat> dst;
-      dst = std::make_unique<MapStringToFloat>();
-      CreateMapMLValue_LoopIntoMapStringToFloat(pos, key, value, item, *dst);
-      p_mlvalue->Init(dst.release(), DataTypeImpl::GetType<MapStringToFloat>(),
-                      DataTypeImpl::GetType<MapStringToFloat>()->GetDeleteFunc());
+      CreateMapMLValue_Map<std::string, float>(pos, key, value, item, alloc, p_mlvalue, stringGetter, floatGetter);
     } else {
       PyObject* pType = PyObject_Type(key);
       PyObject* pStr = PyObject_Str(pType);
@@ -231,35 +260,16 @@ void CreateMapMLValue_MapToFloat(Py_ssize_t& pos, PyObject*& key, PyObject*& val
       Py_XDECREF(pType);
       Py_XDECREF(pStr);
       throw std::runtime_error(std::string("Key type must be int or string (not ") + sType +
-                               std::string(" )."));
+                               std::string(")."));
     }
   } else {
-    if (PyLong_Check(value)) {
-      std::unique_ptr<VectorMapInt64ToFloat> dstVector;
-      dstVector = std::make_unique<VectorMapInt64ToFloat>();
-      int index = 0;
-      do {
-        dstVector->push_back(MapInt64ToFloat());
-        CreateMapMLValue_LoopIntoMapInt64ToFloat(pos, key, value, item, (*dstVector)[index]);
-        Py_DECREF(item);
-        ++index;
-        item = iterator == NULL ? NULL : PyIter_Next(iterator);
-      } while (item != NULL);
-      p_mlvalue->Init(dstVector.release(), DataTypeImpl::GetType<VectorMapInt64ToFloat>(),
-                      DataTypeImpl::GetType<VectorMapInt64ToFloat>()->GetDeleteFunc());
-    } else if (PyUnicode_Check(value)) {
-      std::unique_ptr<VectorMapStringToFloat> dstVector;
-      dstVector = std::make_unique<VectorMapStringToFloat>();
-      int index = 0;
-      do {
-        dstVector->push_back(MapStringToFloat());
-        CreateMapMLValue_LoopIntoMapStringToFloat(pos, key, value, item, (*dstVector)[index]);
-        Py_DECREF(item);
-        ++index;
-        item = iterator == NULL ? NULL : PyIter_Next(iterator);
-      } while (item != NULL);
-      p_mlvalue->Init(dstVector.release(), DataTypeImpl::GetType<VectorMapStringToFloat>(),
-                      DataTypeImpl::GetType<VectorMapStringToFloat>()->GetDeleteFunc());
+    if (PyLong_Check(key)) {
+      CreateMapMLValue_VectorMap<int64_t, float>(pos, key, value, iterator, item, alloc, p_mlvalue, int64Getter, floatGetter);
+    } else if (PyNumber_Check(key)) {
+      // For numpy type.
+      CreateMapMLValue_VectorMap<int64_t, float>(pos, key, value, iterator, item, alloc, p_mlvalue, int64Getter, floatGetter);
+    } else if (PyUnicode_Check(key)) {
+      CreateMapMLValue_VectorMap<std::string, float>(pos, key, value, iterator, item, alloc, p_mlvalue, stringGetter, floatGetter);
     } else {
       PyObject* pType = PyObject_Type(value);
       PyObject* pStr = PyObject_Str(pType);
@@ -267,21 +277,22 @@ void CreateMapMLValue_MapToFloat(Py_ssize_t& pos, PyObject*& key, PyObject*& val
       std::string sType = spyType;
       Py_XDECREF(pType);
       Py_XDECREF(pStr);
-      throw std::runtime_error(std::string("Value type must be int or string (not ") + sType +
-                               std::string(" )."));
+      throw std::runtime_error(std::string("Key type must be int or string (not ") + sType +
+                               std::string(")."));
     }
   }
 }
 
-void CreateMapMLValue_VectorMapToFloat(PyObject* iterator, PyObject* item, AllocatorPtr alloc, MLValue* p_mlvalue) {
-  // CreateMapMLValue is called by CreateGenericTerableMLValue which ensures
+void CreateMapMLValue_AgnosticVectorMap(PyObject* iterator, PyObject* item, AllocatorPtr alloc, MLValue* p_mlvalue) {
+  // CreateMapMLValue is called by CreateGenericTerableMLValue 
+  // or CreateGenericMLValue which ensures
   // item is a dictionary, no need to check type again.
-  // Onnxmltools only uses dictionaries with vector as key type.
-  // Lotus converts that into a map<string[1], ...>.
-  // We assumes that two conditions hold or the following code
-  // raises an exception. That also relies on the fact the conversion
-  // from an array of int into string happens the same in onnxmltools
-  // and the following code (meaning option int64_vocabulary is never used).
+  // This functions starts to iterate on the first
+  // element of the dictionary and calls CreateMapMLValue_AgnosticMap
+  // which determines the container type. This type
+  // is based on the first pair of the dictionary
+  // and all the function assumes the key and value type remain the same
+  // for all pairs in the dictionary.
 
   // If iterator is NULL, it returns a single MapStringToDouble,
   // if is not NULL, it returns a VectorMapStringToDouble.
@@ -290,18 +301,7 @@ void CreateMapMLValue_VectorMapToFloat(PyObject* iterator, PyObject* item, Alloc
   Py_ssize_t pos = 0;
 
   if (PyDict_Next(item, &pos, &key, &value)) {
-    if (PyFloat_Check(value)) {
-      CreateMapMLValue_MapToFloat(pos, key, value, iterator, item, alloc, p_mlvalue);
-    } else {
-      PyObject* pType = PyObject_Type(value);
-      PyObject* pStr = PyObject_Str(pType);
-      py::str spyType = py::reinterpret_borrow<py::str>(pStr);
-      std::string sType = spyType;
-      Py_XDECREF(pType);
-      Py_XDECREF(pStr);
-      throw std::runtime_error(std::string("Unable convert object of type ") + sType +
-                               std::string(" into a tensor."));
-    }
+      CreateMapMLValue_AgnosticMap(pos, key, value, iterator, item, alloc, p_mlvalue);
   } else {
     throw std::runtime_error("Size of dictionary is empty, unable to run the prediction.");
   }
@@ -327,7 +327,7 @@ void CreateGenericIterableMLValue(PyObject* iterator, AllocatorPtr alloc, MLValu
     if (!PyDict_Check(item)) {
       throw std::runtime_error("Input must be a list of dictionaries or a single numpy array.");
     }
-    CreateMapMLValue_VectorMapToFloat(iterator, item, alloc, p_mlvalue);
+    CreateMapMLValue_AgnosticVectorMap(iterator, item, alloc, p_mlvalue);
   }
 }
 
@@ -338,7 +338,7 @@ void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlva
     CreateTensorMLValue(alloc, arr, p_mlvalue);
   } else if (PyDict_Check(value.ptr())) {
     // One single input of a DictVectorizer.
-    CreateMapMLValue_VectorMapToFloat((PyObject*)NULL, value.ptr(), alloc, p_mlvalue);
+    CreateMapMLValue_AgnosticVectorMap((PyObject*)NULL, value.ptr(), alloc, p_mlvalue);
   } else {
     // An enumerator of inputs for a DictVectorizer.
     auto iterator = PyObject_GetIter(value.ptr());
