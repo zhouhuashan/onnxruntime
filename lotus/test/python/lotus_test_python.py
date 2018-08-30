@@ -14,9 +14,14 @@ from lotus.python._pybind_state import lotus_ostream_redirect
 class TestInferenceSession(unittest.TestCase):
     
     def get_name(self, name):
+        if os.path.exists(name):
+            return name
         this = os.path.dirname(__file__)
         data = os.path.join(this, "..", "testdata")
-        return os.path.join(data, name)
+        res = os.path.join(data, name)
+        if os.path.exists(res):
+            return res
+        raise FileNotFoundError("Unable to find '{0}' or '{1}'".format(name, res))
 
     def testRunModel(self):
         sess = lotus.InferenceSession(self.get_name("mul_1.pb"))
