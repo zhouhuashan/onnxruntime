@@ -325,6 +325,32 @@ class TestInferenceSession(unittest.TestCase):
         output_expected = np.array([[49.752754]], dtype=np.float32)
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
+    def testLabelEncoder(self):
+        sess = lotus.InferenceSession(self.get_name("LabelEncoder.pb"))
+        input_name = sess.get_inputs()[0].name
+        self.assertEqual(input_name, "input")
+        input_type = str(sess.get_inputs()[0].type)
+        self.assertEqual(input_type, "tensor(string)")
+        input_shape = sess.get_inputs()[0].shape
+        self.assertEqual(input_shape, [1, 1])
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "variable")
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, "tensor(int64)")
+        output_shape = sess.get_outputs()[0].shape
+        self.assertEqual(output_shape, [1, 1])
+        
+        # Python type
+        x = np.array(['4'])
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([3], dtype=np.int64)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
+        x = np.array(['4'], dtype=np.object)
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([3], dtype=np.int64)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
 
 if __name__ == '__main__':
     unittest.main(module=__name__, buffer=True)

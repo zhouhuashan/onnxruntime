@@ -51,7 +51,8 @@ const MLDataType& NumpyToLotusTensorType(int numpy_type) {
                                    : DataTypeImpl::GetType<int64_t>()},
       {NPY_LONGLONG, DataTypeImpl::GetType<int64_t>()},
       {NPY_ULONGLONG, DataTypeImpl::GetType<uint64_t>()},
-      {NPY_UNICODE, DataTypeImpl::GetType<std::string>()}};
+      {NPY_UNICODE, DataTypeImpl::GetType<std::string>()},
+      {NPY_OBJECT, DataTypeImpl::GetType<std::string>()}};
 
   if (numpy_type == NPY_STRING) {
     throw std::runtime_error("Please use np.unicode for strings.");
@@ -91,7 +92,7 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
     auto element_type = NumpyToLotusTensorType(npy_type);
     void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
 
-    if (npy_type != NPY_UNICODE) {
+    if (npy_type != NPY_UNICODE && npy_type != NPY_OBJECT) {
       memcpy(buffer, static_cast<void*>(PyArray_DATA(darray)), element_type->Size() * shape.Size());
     }
 
@@ -109,6 +110,20 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
       for (int i = 0; i < shape.Size(); i++, src += item_size) {
         // Python unicode strings are assumed to be USC-4. Lotus strings are stored as UTF-8.
         dst[i] = PyUnicode_AsUTF8(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, src, num_chars));
+      }
+    }
+    else if (npy_type == NPY_OBJECT) {
+      // Converts object into string.
+      std::string* dst = static_cast<std::string*>(buffer);
+      auto item_size = PyArray_ITEMSIZE(darray);
+      char* src = static_cast<char*>(PyArray_DATA(darray));
+      PyObject* item, *pStr;
+      for (int i = 0; i < shape.Size(); ++i, src += item_size) {
+        // Python unicode strings are assumed to be USC-4. Lotus strings are stored as UTF-8.
+        item = PyArray_GETITEM(darray, src);
+        pStr = PyObject_Str(item);
+        dst[i] = py::reinterpret_borrow<py::str>(pStr);
+        Py_XDECREF(pStr);
       }
     }
 
@@ -337,10 +352,8 @@ void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlva
     PyArrayObject* arr = reinterpret_cast<PyArrayObject*>(value.ptr());
     CreateTensorMLValue(alloc, arr, p_mlvalue);
   } else if (PyDict_Check(value.ptr())) {
-    // One single input of a DictVectorizer.
     CreateMapMLValue_AgnosticVectorMap((PyObject*)NULL, value.ptr(), alloc, p_mlvalue);
   } else {
-    // An enumerator of inputs for a DictVectorizer.
     auto iterator = PyObject_GetIter(value.ptr());
     if (iterator == NULL) {
       // The pype cannot be handled.
