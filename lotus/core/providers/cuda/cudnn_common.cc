@@ -17,9 +17,14 @@ CudnnTensor::~CudnnTensor() {
   }
 }
 
-Status CudnnTensor::Set(const std::vector<int64_t>& input_dims, cudnnDataType_t dataType) {
+Status CudnnTensor::CreateTensorIfNeeded() {
   if (!tensor_)
     CUDNN_RETURN_IF_ERROR(cudnnCreateTensorDescriptor(&tensor_));
+  return Status::OK();
+}
+
+Status CudnnTensor::Set(const std::vector<int64_t>& input_dims, cudnnDataType_t dataType) {
+  LOTUS_RETURN_IF_ERROR(CreateTensorIfNeeded());
 
   int rank = gsl::narrow_cast<int>(input_dims.size());
   TensorPitches pitches(input_dims);
@@ -30,6 +35,12 @@ Status CudnnTensor::Set(const std::vector<int64_t>& input_dims, cudnnDataType_t 
     strides[i] = gsl::narrow_cast<int>(pitches[i]);
   }
   CUDNN_RETURN_IF_ERROR(cudnnSetTensorNdDescriptor(tensor_, dataType, static_cast<int>(rank), dims.data(), strides.data()));
+  return Status::OK();
+}
+
+Status CudnnTensor::Set(const CudnnTensor& x_desc, cudnnBatchNormMode_t mode) {
+  LOTUS_RETURN_IF_ERROR(CreateTensorIfNeeded());
+  CUDNN_RETURN_IF_ERROR(cudnnDeriveBNTensorDescriptor(tensor_, x_desc, mode));
   return Status::OK();
 }
 

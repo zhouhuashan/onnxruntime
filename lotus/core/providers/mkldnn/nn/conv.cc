@@ -246,17 +246,19 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   const int64_t N = X->Shape()[0];
   const int64_t M = W->Shape()[0];
 
-  LOTUS_RETURN_IF_ERROR(ValidateInputShape(X, W));
+  LOTUS_RETURN_IF_ERROR(Lotus::ConvBase::ValidateInputShape(X, W));
 
-  std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
+  std::vector<int64_t> kernel_shape = Lotus::ConvBase::ComputeKernelShape(W->Shape());
 
   // TODO: Support more than 2d kernels
   if (kernel_shape.size() != 2) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "MKLDNN Conv currently supports 2d convolutions.");
+    // Fall Back to CPU implementation.
+    return Lotus::Conv<T>::Compute(context);
   }
   // TODO: support groups
-  if (group_ > 1) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "MKLDNN Conv doesn't yet support group > 1.");
+  if (Lotus::ConvBase::group_ > 1) {
+    // Fall Back to CPU implementation.
+    return Lotus::Conv<T>::Compute(context);
   }
 
   if (kernel_shape.size() + 2 != W->Shape().NumDimensions()) {
@@ -273,15 +275,15 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
     }
   }
 
-  std::vector<int64_t> pads(pads_);
+  std::vector<int64_t> pads(Lotus::ConvBase::pads_);
   if (pads.empty()) {
     pads.resize(kernel_shape.size() * 2, 0);
   }
-  std::vector<int64_t> dilations(dilations_);
+  std::vector<int64_t> dilations(Lotus::ConvBase::dilations_);
   if (dilations.empty()) {
     dilations.resize(kernel_shape.size(), 1);
   }
-  std::vector<int64_t> strides(strides_);
+  std::vector<int64_t> strides(Lotus::ConvBase::strides_);
   if (strides.empty()) {
     strides.resize(kernel_shape.size(), 1);
   }
@@ -289,7 +291,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   std::vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
-  LOTUS_RETURN_IF_ERROR(InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
+  LOTUS_RETURN_IF_ERROR(Lotus::ConvBase::InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
   Tensor* Y = context->Output(0, TensorShape(Y_dims));
   TensorShape output_shape = Y->Shape().Slice(2);
 

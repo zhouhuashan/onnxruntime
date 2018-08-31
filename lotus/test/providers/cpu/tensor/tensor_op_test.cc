@@ -439,7 +439,7 @@ TEST(TensorOpTest, MeanVarianceNormalizationCPUTest) {
   MeanVarianceNormalizationPerChannel(false, true);
 }
 
-TEST(TensorOpTest, ImageScalerCPUTest) {
+TEST(TensorOpTest, ImageScalerTest) {
   const int64_t N = 1, C = 2, H = 2, W = 2;
   std::vector<float> X = {
       1.0f, 3.0f,
@@ -463,7 +463,7 @@ TEST(TensorOpTest, ImageScalerCPUTest) {
   test.AddAttribute("bias", bias);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, H, W}, result);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 }  // namespace Test

@@ -6,7 +6,7 @@
 namespace Lotus {
 namespace Cuda {
 
-#define REGISTER_OP_TYPED(T)                                                    \
+#define REGISTER_KERNEL_TYPED(T)                                                \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                                \
       Conv,                                                                     \
       kOnnxDomain,                                                              \
@@ -16,9 +16,9 @@ namespace Cuda {
       KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
       Conv<float>);
 
-REGISTER_OP_TYPED(float)
-REGISTER_OP_TYPED(double)
-REGISTER_OP_TYPED(MLFloat16)
+REGISTER_KERNEL_TYPED(float)
+REGISTER_KERNEL_TYPED(double)
+REGISTER_KERNEL_TYPED(MLFloat16)
 
 template <typename T>
 Status Conv<T>::ComputeInternal(OpKernelContext* context) const {

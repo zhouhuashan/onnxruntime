@@ -1793,7 +1793,7 @@ Node* Graph::FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, c
   // Remove nodes fused above.
   std::vector<std::unique_ptr<Node>> sub_graph_nodes;
   for (auto node_index : sub_graph->nodes) {
-    sub_graph_nodes.push_back(std::move(TransferNode(node_index)));
+    sub_graph_nodes.emplace_back(TransferNode(node_index));
   }
 
   function_container_->functions_.push_back(std::make_unique<::Lotus::Function>(*this, std::move(sub_graph), sub_graph_nodes));
