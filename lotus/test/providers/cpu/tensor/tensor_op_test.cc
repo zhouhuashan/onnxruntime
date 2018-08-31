@@ -274,7 +274,7 @@ TEST(TensorOpTest, CropBorderOnly) {
   test.AddAttribute("border", border);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, (H - border[2] - border[0]), (W - border[3] - border[1])}, output);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(TensorOpTest, CropBorderAndScale) {
@@ -302,7 +302,7 @@ TEST(TensorOpTest, CropBorderAndScale) {
   test.AddAttribute("scale", scale);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, scale[0], scale[1]}, output);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 std::pair<float, float> MeanStdev(std::vector<float>& v) {
