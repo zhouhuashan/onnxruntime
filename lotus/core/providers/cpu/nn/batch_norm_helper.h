@@ -56,5 +56,22 @@ class BatchNormHelper {
 
     return Common::Status::OK();
   }
+
+  static void NormalizeDims(const TensorShape& x_shape, std::vector<int64_t>& new_dims) {
+    new_dims.clear();
+    auto& orig_dims = x_shape.GetDims();
+    if (orig_dims.size() == 4 /*supported size by CUDA*/ ||
+        orig_dims.size() == 5 /*supported size by CUDA*/) {
+      new_dims = orig_dims;
+      return;
+    }
+
+    auto rank = x_shape.NumDimensions();
+    auto num_samples = rank > 0 ? orig_dims[0] : 1;  // NCHW
+    auto num_channels = rank > 1 ? orig_dims[1] : 1;
+    auto width = rank > 3 ? orig_dims[3] : 1;
+    auto height = rank > 2 ? orig_dims[2] : 1;
+    new_dims = {num_samples, num_channels, height, width};
+  }
 };
 }  // namespace Lotus

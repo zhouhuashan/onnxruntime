@@ -97,32 +97,33 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
 
   CudnnReduceDescriptor reduce_desc;
   LOTUS_RETURN_IF_ERROR(reduce_desc.Set(cudnnReduceOp, CudnnTensor::GetDataType<CudaT>(), ReduceTensorIndices));
-  const auto alpha = Consts<CudaT>::One;
-  const auto beta = Consts<CudaT>::Zero;
+  const auto one = Consts<CudaT>::One;
+  const auto zero = Consts<CudaT>::Zero;
   CudnnTensor input_tensor;
   CudnnTensor output_tensor;
   LOTUS_RETURN_IF_ERROR(input_tensor.Set(input_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
   LOTUS_RETURN_IF_ERROR(output_tensor.Set(output_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
-  size_t indices_bytes = 0;
-  CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
-  auto indices_cuda = GetScratchBuffer<void>(indices_bytes);
   auto workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
 
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_NO_INDICES) {
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
-        CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
-        &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
-        &beta, output_tensor, reinterpret_cast<CudaT*>(Y->MutableData<T>())));
+        CudnnHandle(), reduce_desc, nullptr, 0, workspace_cuda.get(), workspace_bytes,
+        &one, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
+        &zero, output_tensor, reinterpret_cast<CudaT*>(Y->MutableData<T>())));
   } else {
+    size_t indices_bytes = 0;
+    CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
+    auto indices_cuda = GetScratchBuffer<void>(indices_bytes);
+
     // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
     auto output_count = Y->Shape().Size();
     auto temp_output = GetScratchBuffer<CudaT>(output_count);
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
         CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
-        &alpha, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
-        &beta, output_tensor, temp_output.get()));
+        &one, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
+        &zero, output_tensor, temp_output.get()));
     // CUDA reduction index is uint32_t for now, cast it to int64_t according to ONNX spec
     Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda.get()), Y->MutableData<int64_t>(), output_count);
   }

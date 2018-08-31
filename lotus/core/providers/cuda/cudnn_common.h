@@ -1,6 +1,7 @@
 #pragma once
 #include "cuda_common.h"
 #include "core/framework/tensor.h"
+#include <cfloat>
 
 namespace Lotus {
 namespace Cuda {
@@ -11,6 +12,7 @@ class CudnnTensor final {
   ~CudnnTensor();
 
   Status Set(const std::vector<int64_t>& input_dims, cudnnDataType_t dataType);
+  Status Set(const CudnnTensor& x_desc, cudnnBatchNormMode_t mode);
 
   operator cudnnTensorDescriptor_t() const { return tensor_; }
 
@@ -18,6 +20,8 @@ class CudnnTensor final {
   static cudnnDataType_t GetDataType();
 
  private:
+  Status CreateTensorIfNeeded();
+
   cudnnTensorDescriptor_t tensor_;
 };
 
@@ -32,6 +36,15 @@ struct Consts<half> {
   static const float Zero;
   static const float One;
 };
+
+inline double ClampCudnnBatchNormEpsilon(double epsilon) {
+  if (epsilon < CUDNN_BN_MIN_EPSILON) {
+    if (CUDNN_BN_MIN_EPSILON - epsilon > FLT_EPSILON)
+      LOGS_DEFAULT(WARNING) << "Provided epsilon is smaller than CUDNN_BN_MIN_EPSILON. Setting it to CUDNN_BN_MIN_EPSILON";
+    return CUDNN_BN_MIN_EPSILON;
+  }
+  return epsilon;
+}
 
 }  // namespace Cuda
 }  // namespace Lotus
