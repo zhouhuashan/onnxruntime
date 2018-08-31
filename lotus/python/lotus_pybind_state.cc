@@ -74,10 +74,6 @@ void AddNonTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
     AddNonTensor<VectorMapStringToFloat>(val, pyobjs);
   } else if (val.Type() == DataTypeImpl::GetType<VectorMapInt64ToFloat>()) {
     AddNonTensor<VectorMapInt64ToFloat>(val, pyobjs);
-  } else if (val.Type() == DataTypeImpl::GetType<VectorMapStringToFloat>()) {
-    AddNonTensor<VectorMapStringToFloat>(val, pyobjs);
-  } else if (val.Type() == DataTypeImpl::GetType<MapStringToFloat>()) {
-    AddNonTensor<MapStringToFloat>(val, pyobjs);
   } else {
     throw std::runtime_error("Output is a non-tensor type which is not supported.");
   }
