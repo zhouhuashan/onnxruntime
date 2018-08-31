@@ -229,8 +229,8 @@ void CreateMapMLValue_VectorMap(Py_ssize_t& pos, PyObject*& key, PyObject*& valu
 void CreateMapMLValue_AgnosticMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
                                   PyObject* iterator, PyObject* item,
                                   AllocatorPtr alloc, MLValue* p_mlvalue) {
-  // If iterator is NULL, it returns a single MapStringToDouble,
-  // if is not NULL, it returns a VectorMapStringToDouble.
+  // If iterator is NULL, it returns a single Map,
+  // if is not NULL, it returns a VectorMap.
   auto int64Getter = [](PyObject* obj, int64_t& value) -> bool {
     value = PyLong_AsLong(obj);
     return !PyErr_Occurred();
@@ -309,8 +309,8 @@ void CreateMapMLValue_AgnosticVectorMap(PyObject* iterator, PyObject* item, Allo
   // and all the function assumes the key and value type remain the same
   // for all pairs in the dictionary.
 
-  // If iterator is NULL, it returns a single MapStringToDouble,
-  // if is not NULL, it returns a VectorMapStringToDouble.
+  // If iterator is NULL, it returns a single Map,
+  // if is not NULL, it returns a VectorMap.
 
   PyObject *key, *value;
   Py_ssize_t pos = 0;
