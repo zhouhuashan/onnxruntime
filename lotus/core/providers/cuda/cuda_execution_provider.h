@@ -56,8 +56,9 @@ class CUDAExecutionProvider : public IExecutionProvider {
     return streams_[queue_id];
   }
 
-  const float* GetConstOnes(size_t count) {
-    return per_thread_context_->GetConstOnes(count);
+  template <typename T>
+  const T* GetConstOnes(size_t count) {
+    return per_thread_context_->template GetConstOnes<T>(count);
   }
 
   void AddDeferredReleaseCPUPtr(void* p);
@@ -100,11 +101,26 @@ class CUDAExecutionProvider : public IExecutionProvider {
       return current_deferred_release_event_;
     }
 
-    const float* GetConstOnes(size_t count) {
-      if (!constant_ones_) {
-        constant_ones_ = Cuda::CreateConstantOnesF();
+    template <typename T>
+    const T* GetConstOnes(size_t count) {
+      if (std::is_same<T, float>::value) {
+        if (!constant_ones_float_) {
+          constant_ones_float_ = Cuda::CreateConstantOnes<float>();
+        }
+        return reinterpret_cast<const T*>(constant_ones_float_->GetBuffer(count));
+      } else if (std::is_same<T, double>::value) {
+        if (!constant_ones_double_) {
+          constant_ones_double_ = Cuda::CreateConstantOnes<double>();
+        }
+        return reinterpret_cast<const T*>(constant_ones_double_->GetBuffer(count));
+      } else if (std::is_same<T, half>::value) {
+        if (!constant_ones_half_) {
+          constant_ones_half_ = Cuda::CreateConstantOnes<half>();
+        }
+        return reinterpret_cast<const T*>(constant_ones_half_->GetBuffer(count));
+      } else {
+        return nullptr;
       }
-      return constant_ones_->GetBuffer(count);
     }
 
    private:
@@ -116,7 +132,9 @@ class CUDAExecutionProvider : public IExecutionProvider {
     // so the ownership is passed to deferred_release_cpu_ptr_
     cudaEvent_t current_deferred_release_event_ = nullptr;
 
-    std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_;
+    std::unique_ptr<Cuda::IConstantBuffer<float>> constant_ones_float_;
+    std::unique_ptr<Cuda::IConstantBuffer<double>> constant_ones_double_;
+    std::unique_ptr<Cuda::IConstantBuffer<half>> constant_ones_half_;
   };
 
   // thread local context during execution

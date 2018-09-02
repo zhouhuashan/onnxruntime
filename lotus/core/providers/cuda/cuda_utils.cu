@@ -26,9 +26,14 @@ class ConstantBufferImpl : public IConstantBuffer<T> {
   T val_;
 };
 
-std::unique_ptr<IConstantBuffer<float>> CreateConstantOnesF() {
-  return std::make_unique<ConstantBufferImpl<float>>(1.0f);
+template <typename T>
+std::unique_ptr<IConstantBuffer<T>> CreateConstantOnes() {
+  return std::make_unique<ConstantBufferImpl<T>>((T)1);
 }
+
+template std::unique_ptr<IConstantBuffer<float>> CreateConstantOnes<float>();
+template std::unique_ptr<IConstantBuffer<double>> CreateConstantOnes<double>();
+template std::unique_ptr<IConstantBuffer<half>> CreateConstantOnes<half>();
 
 }  // namespace Cuda
 }  // namespace Lotus

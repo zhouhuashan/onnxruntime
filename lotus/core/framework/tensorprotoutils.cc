@@ -49,7 +49,7 @@ Common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
   }
   size_t size_to_allocate = sizeof(T) * gsl::narrow<size_t>(tensor_size);
 
-  if (preallocated && preallocated_size != size_to_allocate)
+  if (preallocated && preallocated_size != Align256(size_to_allocate))
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size, expected ", size_to_allocate, ", got ", preallocated_size);
   //TODO(@chasun): size_to_allocate could be zero. We shouldn't pass zero to alloc->Alloc()
   T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
@@ -76,7 +76,7 @@ Common::Status GetTensorByTypeFromTensorProto<std::string>(const TensorProto& te
   }
   size_t size_to_allocate = sizeof(std::string) * gsl::narrow_cast<size_t>(tensor_size);
 
-  if (preallocated && preallocated_size != size_to_allocate)
+  if (preallocated && preallocated_size != Align256(size_to_allocate))
     return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
   std::string* p_data = static_cast<std::string*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
@@ -113,7 +113,7 @@ Common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
   static_assert(sizeof(MLFloat16) == sizeof(uint16_t), "MLFloat16 must has 16 bit size");
   size_t size_to_allocate = sizeof(MLFloat16) * gsl::narrow_cast<size_t>(tensor_size);
 
-  if (preallocated && preallocated_size != size_to_allocate)
+  if (preallocated && preallocated_size != Align256(size_to_allocate))
     return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
   MLFloat16* p_data = static_cast<MLFloat16*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
@@ -203,7 +203,7 @@ Common::Status TraceTensorAllocFromTensorProto(int mlvalue_index, const onnx::Te
     }
   }
 
-  return planner->TraceAllocation(mlvalue_index, size);
+  return planner->TraceAllocation(mlvalue_index, Align256(size));
 }
 }  // namespace Utils
 }  // namespace Lotus

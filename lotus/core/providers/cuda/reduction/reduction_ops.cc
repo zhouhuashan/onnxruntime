@@ -86,6 +86,15 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
 
   Tensor* Y = ctx->Output(0, TensorShape(squeezed_output_dims));
 
+  IAllocatorUniquePtr<float> temp_X;
+  cudnnDataType_t cudnn_type_X = CudnnTensor::GetDataType<CudaT>();
+  if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_FLATTENED_INDICES && std::is_same<T, MLFloat16>::value) {
+    // ArgMax/ArgMin with FP16 are not supported by cudnn, so convert input to fp32 then call cudnn
+    temp_X = GetScratchBuffer<float>(input_shape.Size());
+    cudnn_type_X = CUDNN_DATA_FLOAT;
+    Impl_Cast<CudaT, float>(reinterpret_cast<const CudaT*>(X.Data<T>()), temp_X.get(), X.Shape().Size());
+  }
+
   // CUDNN requires at least 3D input, so pad 1s if needed
   std::vector<int64_t> input_dims_cudnn = input_dims;
   std::vector<int64_t> output_dims_cudnn = output_dims;
@@ -96,13 +105,13 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
   }
 
   CudnnReduceDescriptor reduce_desc;
-  LOTUS_RETURN_IF_ERROR(reduce_desc.Set(cudnnReduceOp, CudnnTensor::GetDataType<CudaT>(), ReduceTensorIndices));
+  LOTUS_RETURN_IF_ERROR(reduce_desc.Set(cudnnReduceOp, cudnn_type_X, ReduceTensorIndices));
   const auto one = Consts<CudaT>::One;
   const auto zero = Consts<CudaT>::Zero;
   CudnnTensor input_tensor;
   CudnnTensor output_tensor;
-  LOTUS_RETURN_IF_ERROR(input_tensor.Set(input_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
-  LOTUS_RETURN_IF_ERROR(output_tensor.Set(output_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
+  LOTUS_RETURN_IF_ERROR(input_tensor.Set(input_dims_cudnn, cudnn_type_X));
+  LOTUS_RETURN_IF_ERROR(output_tensor.Set(output_dims_cudnn, cudnn_type_X));
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
   auto workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
@@ -119,11 +128,21 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
 
     // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
     auto output_count = Y->Shape().Size();
-    auto temp_output = GetScratchBuffer<CudaT>(output_count);
-    CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
-        CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
-        &one, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
-        &zero, output_tensor, temp_output.get()));
+
+    if (temp_X) {
+      auto temp_output = GetScratchBuffer<float>(output_count);
+      CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
+          CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
+          &one, input_tensor, temp_X.get(),
+          &zero, output_tensor, temp_output.get()));
+    } else {
+      auto temp_output = GetScratchBuffer<CudaT>(output_count);
+      CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
+          CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
+          &one, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
+          &zero, output_tensor, temp_output.get()));
+    }
+
     // CUDA reduction index is uint32_t for now, cast it to int64_t according to ONNX spec
     Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda.get()), Y->MutableData<int64_t>(), output_count);
   }
