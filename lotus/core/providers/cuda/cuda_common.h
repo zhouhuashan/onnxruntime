@@ -7,6 +7,7 @@
 #include "shared_inc/cuda_call.h"
 #include "cuda_execution_provider.h"
 #include "shared_inc/fast_divmod.h"
+#include "core/util/math.h"
 
 namespace Lotus {
 namespace Cuda {
@@ -118,8 +119,9 @@ class CudaKernel : public OpKernel {
     return provider_->PerThreadCudnnHandle();
   }
 
-  inline const float* GetConstOnes(size_t count) const {
-    return provider_->GetConstOnes(count);
+  template <typename T>
+  inline const T* GetConstOnes(size_t count) const {
+    return provider_->template GetConstOnes<T>(count);
   }
 
   inline Status CopyTensor(const Tensor& src, Tensor& dst) const {
@@ -135,12 +137,19 @@ template <typename T>
 class ToCudaType {
  public:
   typedef T MappedType;
+  static MappedType FromFloat(float f) {
+    return static_cast<T>(f);
+  }
 };
 
 template <>
 class ToCudaType<MLFloat16> {
  public:
   typedef half MappedType;
+  static MappedType FromFloat(float f) {
+    uint16_t h = Math::floatToHalf(f);
+    return *reinterpret_cast<MappedType*>(&h);
+  }
 };
 
 inline bool CalculateFdmStrides(gsl::span<fast_divmod> p, const std::vector<int64_t>& dims) {

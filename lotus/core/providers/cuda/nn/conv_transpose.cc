@@ -80,6 +80,10 @@ Status ConvTranspose<T>::ComputeInternal(OpKernelContext* context) const {
 
       y_data = reinterpret_cast<CudaT*>(p.Y->MutableData<T>());
 
+      // set math type to tensor core before algorithm search
+      if (std::is_same<T, MLFloat16>::value)
+        CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionMathType(s_.conv_desc, CUDNN_TENSOR_OP_MATH));
+
       cudnnConvolutionBwdDataAlgoPerf_t perf;
       int algo_count = 1;
       CUDNN_RETURN_IF_ERROR(cudnnFindConvolutionBackwardDataAlgorithmEx(

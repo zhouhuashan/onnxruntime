@@ -7,19 +7,19 @@
 
 namespace Lotus {
 
-template <typename T>
-class Crop final : public OpKernel {
- public:
-  Crop(const OpKernelInfo& info) : OpKernel(info), border_(info.GetAttrsOrDefault<int64_t>("border")), scale_(info.GetAttrsOrDefault<int64_t>("scale")) {
+class CropBase {
+ protected:
+  CropBase(const OpKernelInfo& info)
+      : border_(info.GetAttrsOrDefault<int64_t>("border")),
+        scale_(info.GetAttrsOrDefault<int64_t>("scale")) {
   }
 
-  Common::Status Compute(OpKernelContext* context) const override {
+  Status ValidateInput(const Tensor* X) const {
     if (border_.size() < 4) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
                                "Attribute border needs to be specified with four border elements, got ", border_.size());
     }
 
-    const Tensor* X = context->Input<Tensor>(0);
     const auto dims = X->Shape().GetDims();
 
     if (dims.size() < 4) {
@@ -27,8 +27,6 @@ class Crop final : public OpKernel {
                                "Input is expected to have four dimensions corresponding to [N,C,H,W], got ", dims.size());
     }
 
-    const int64_t N = dims[0];
-    const int64_t C = dims[1];
     const int64_t H = dims[2];
     const int64_t W = dims[3];
 
@@ -64,6 +62,44 @@ class Crop final : public OpKernel {
       }
     }
 
+    return Status::OK();
+  }
+
+  const std::vector<int64_t> border_;  // (leftBorder, topBorder, rightBorder, bottomBorder)
+  const std::vector<int64_t> scale_;   // (height, width)
+};
+
+template <typename T>
+class Crop final : public CropBase, public OpKernel {
+ public:
+  Crop(const OpKernelInfo& info) : CropBase(info), OpKernel(info) {
+  }
+
+  Common::Status Compute(OpKernelContext* context) const override {
+    const Tensor* X = context->Input<Tensor>(0);
+    LOTUS_RETURN_IF_ERROR(ValidateInput(X));
+
+    const auto dims = X->Shape().GetDims();
+    const int64_t N = dims[0];
+    const int64_t C = dims[1];
+    const int64_t H = dims[2];
+    const int64_t W = dims[3];
+
+    // find the cropped region, and copy it to the destination matrix
+    int64_t leftBorder = border_[0],
+            topBorder = border_[1],
+            rightBorder = border_[2],
+            bottomBorder = border_[3];
+
+    int64_t bottomLimit = H - bottomBorder;
+    int64_t rightLimit = W - rightBorder;
+
+    // scale = (height, width)
+    if (!scale_.empty()) {
+      bottomLimit = topBorder + scale_[0];
+      rightLimit = leftBorder + scale_[1];
+    }
+
     Tensor* Y = context->Output(0, TensorShape({N, C, bottomLimit - topBorder, rightLimit - leftBorder}));
     const T* Xdata = X->Data<T>();
     T* Ydata = Y->MutableData<T>();
@@ -90,10 +126,6 @@ class Crop final : public OpKernel {
     }
     return Status::OK();
   }
-
- private:
-  const std::vector<int64_t> border_;  // (leftBorder, topBorder, rightBorder, bottomBorder)
-  const std::vector<int64_t> scale_;   // (height, width)
 };
 
 }  //namespace Lotus

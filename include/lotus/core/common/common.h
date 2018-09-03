@@ -205,4 +205,8 @@ inline std::string GetCurrentTimeString() {
 
 struct null_type {};
 
+inline size_t Align256(size_t v) {
+  return (v + 255) & ~(size_t)255;
+}
+
 }  // namespace Lotus

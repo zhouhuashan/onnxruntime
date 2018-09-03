@@ -2,6 +2,7 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cuda/nn/conv.h"
+#include "core/providers/cuda/shared_inc/fpgeneric.h"
 
 namespace Lotus {
 namespace Cuda {
@@ -14,7 +15,7 @@ namespace Cuda {
       T,                                                                        \
       kCudaExecutionProvider,                                                   \
       KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
-      Conv<float>);
+      Conv<T>);
 
 REGISTER_KERNEL_TYPED(float)
 REGISTER_KERNEL_TYPED(double)
@@ -116,6 +117,10 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
 
       Tensor* Y = context->Output(0, TensorShape(s_.y_dims));
       y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+
+      // set math type to tensor core before algorithm search
+      if (std::is_same<T, MLFloat16>::value)
+        CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionMathType(s_.conv_desc, CUDNN_TENSOR_OP_MATH));
 
       cudnnConvolutionFwdAlgoPerf_t perf;
       int algo_count = 1;

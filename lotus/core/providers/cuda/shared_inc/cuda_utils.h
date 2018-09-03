@@ -24,7 +24,8 @@ class IConstantBuffer {
   virtual const T* GetBuffer(size_t count) = 0;
 };
 
-std::unique_ptr<IConstantBuffer<float>> CreateConstantOnesF();
+template <typename T>
+std::unique_ptr<IConstantBuffer<T>> CreateConstantOnes();
 
 }  // namespace Cuda
 }  // namespace Lotus
