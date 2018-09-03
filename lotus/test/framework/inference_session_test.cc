@@ -394,7 +394,7 @@ TEST(InferenceSessionTests, ModelMetadata) {
       }
     }
 
-    auto retval = session_object.GetInputs();
+    auto retval = session_object.GetModelInputs();
     cout << "weights size: " << weights.size()
          << " inputs.size(): " << inputs.size()
          << " from session: " << retval.second->size() << endl;
@@ -404,11 +404,11 @@ TEST(InferenceSessionTests, ModelMetadata) {
 
   // 3. test outputs
   {
-    auto retval = session_object.GetOutputs();
+    auto retval = session_object.GetModelOutputs();
     ASSERT_TRUE(retval.first.IsOK());
 
     auto& outputs = graph.GetOutputs();
-    retval = session_object.GetOutputs();
+    retval = session_object.GetModelOutputs();
     ASSERT_TRUE(retval.first.IsOK());
     ASSERT_TRUE(Compare(outputs, *retval.second));
   }

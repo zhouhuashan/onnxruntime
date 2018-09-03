@@ -167,7 +167,7 @@ class WinMLRuntime {
       return 0;
 
     bool variable_batch_size = false;
-    auto inputs_pairs = inference_session_->GetInputs();
+    auto inputs_pairs = inference_session_->GetModelInputs();
     if (!inputs_pairs.first.IsOK()) {
       auto error = inputs_pairs.first.ErrorMessage();
       return inputs_pairs.first.Code();
@@ -251,7 +251,7 @@ class WinMLRuntime {
 
     // Create output feed
     std::vector<std::string> output_names;
-    for (auto const& outp : *(inference_session_->GetOutputs().second)) {
+    for (auto const& outp : *(inference_session_->GetModelOutputs().second)) {
       output_names.push_back(outp->Name());
     }
 
@@ -262,7 +262,7 @@ class WinMLRuntime {
     RunOptions run_options;
     ::Lotus::Common::Status result = inference_session_->Run(run_options, feed, output_names, & outputMLValue);
     if (result.IsOK()) {
-      auto outputMeta = inference_session_->GetOutputs().second;
+      auto outputMeta = inference_session_->GetModelOutputs().second;
       // Peel the data off the CPU
       for (unsigned int i = 0; i < output_names.size(); i++) {
         ::Lotus::MLValue& output = outputMLValue[i];

@@ -60,7 +60,7 @@ class InferenceSession::Impl {
   }
 
   Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
-    if (!p_exec_provider) {
+    if (p_exec_provider == nullptr) {
       return Status(Common::LOTUS, Common::FAIL, "Received nullptr for exec provider");
     }
 
@@ -102,10 +102,6 @@ class InferenceSession::Impl {
     kernel_registry_manager_.RegisterKernelRegistry(custom_registry, KernelRegistryPriority::HighPriority);
     custom_schema_registries_.push_back(custom_registry);
     return Status::OK();
-  }
-
-  bool HasLocalSchema() const {
-    return !custom_schema_registries_.empty();
   }
 
   Common::Status Load(const std::string& model_uri) {
@@ -440,13 +436,14 @@ class InferenceSession::Impl {
 
     if (!valid) {
       std::ostringstream ostr;
-      std::for_each(std::begin(model_input_names_), std::end(model_input_names_), [&ostr](const std::string& elem) {
-        ostr << elem << " ";
-      });
-      return Common::Status(Common::LOTUS,
-                            Common::INVALID_ARGUMENT,
+      std::for_each(std::begin(model_input_names_),
+                    std::end(model_input_names_),
+                    [&ostr](const std::string& elem) {
+                      ostr << elem << " ";
+                    });
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                             "Invalid Feed Input Names:" + invalid_names.str() +
-                                " Valid input names are: " + ostr.str());
+                            " Valid input names are: " + ostr.str());
     }
 
     return Status::OK();
@@ -461,11 +458,13 @@ class InferenceSession::Impl {
   Common::Status ValidateOutputs(const std::vector<std::string>& output_names,
                                  const std::vector<MLValue>* p_fetches) {
     if (!p_fetches) {
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Output vector pointer is NULL");
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+                            "Output vector pointer is NULL");
     }
 
     if (output_names.empty()) {
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "At least one output should be requested.");
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+                            "At least one output should be requested.");
     }
 
     if (!p_fetches->empty() &&
@@ -487,13 +486,14 @@ class InferenceSession::Impl {
 
     if (!valid) {
       std::ostringstream ostr;
-      std::for_each(std::begin(model_output_names_), std::end(model_output_names_), [&ostr](const std::string& elem) {
-        ostr << elem << " ";
-      });
-      return Common::Status(Common::LOTUS,
-                            Common::INVALID_ARGUMENT,
+      std::for_each(std::begin(model_output_names_),
+                    std::end(model_output_names_),
+                    [&ostr](const std::string& elem) {
+                      ostr << elem << " ";
+                    });
+      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                             "Invalid Output Names:" + invalid_names.str() +
-                                " Valid output names are: " + ostr.str());
+                            " Valid output names are: " + ostr.str());
     }
 
     // TODO add more validation here like checking shape of the allocated buffers
@@ -518,15 +518,7 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  static std::pair<bool, size_t> Contains(const std::vector<std::string>& output_names, const std::string& name) {
-    auto it = std::find(std::begin(output_names), std::end(output_names), name);
-    if (it == output_names.end()) {
-      return {false, 0};
-    }
-    return {true, it - output_names.begin()};
-  }
-
-  // ensures pre-allocated outputs match the node providers
+  // ensures pre-allocated outputs match the node providers.
   Common::Status MatchOutputsWithProviders(const std::vector<std::string>& output_names,
                                            std::vector<MLValue>& fetches,
                                            std::vector<MLValue>& new_fetches) {
@@ -573,8 +565,8 @@ class InferenceSession::Impl {
             new_fetches[idx] = fetches[idx];
             continue;
           } else {
-            // leave the new_fetches[idx] as it is since it'll get allocated on the appropriate provider by the
-            // op kernel context when requested
+            // leave the new_fetches[idx] as it is since it'll get allocated on the appropriate
+            // provider by the op kernel context when requested.
             continue;
           }
         } else {
@@ -584,13 +576,13 @@ class InferenceSession::Impl {
       }
     }
 
-    // if we've already seen all the outputs requested just return
+    // If we've already seen all the outputs requested just return.
     if (seen_outputs.size() == output_names.size()) {
       return Status::OK();
     }
 
-    // handle the case when a constant is an output but has been folded into a weight
-    // and hence it doesn't show up in any of the OutputDefs before
+    // Handle the case when a constant is an output but has been folded into a weight
+    // and hence it doesn't show up in any of the OutputDefs before.
     // assume that the weight has already been placed in the appropriate device before
     auto& defs = p_graph->GetOutputs();
     auto& mlvalue_name_idx_map{session_state_.GetMLValueNameIdxMap()};
@@ -618,8 +610,8 @@ class InferenceSession::Impl {
     }
 
     if (seen_outputs.size() != output_names.size())  // make sure we've seen all outputs
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "output size mismatch, expected ", output_names.size(), " got ",
-                               seen_outputs.size());
+      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "output size mismatch, expected ", output_names.size(),
+                               " got ", seen_outputs.size());
 
     return Status::OK();
   }
@@ -797,7 +789,7 @@ class InferenceSession::Impl {
     return std::make_pair(Common::Status::OK(), &model_metadata_);
   }
 
-  std::pair<Common::Status, const InputDefList*> GetInputs() const {
+  std::pair<Common::Status, const InputDefList*> GetModelInputs() const {
     {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_model_loaded_) {
@@ -810,7 +802,7 @@ class InferenceSession::Impl {
     return std::make_pair(Common::Status::OK(), &input_def_list_);
   }
 
-  std::pair<Common::Status, const OutputDefList*> GetOutputs() const {
+  std::pair<Common::Status, const OutputDefList*> GetModelOutputs() const {
     {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_model_loaded_) {
@@ -832,7 +824,8 @@ class InferenceSession::Impl {
       }
     }
 
-    *io_binding = std::unique_ptr<IOBinding>(new IOBinding(session_state_));  // private constructor, can't use make_unique
+    // private constructor, can't use make_unique    
+    *io_binding = std::unique_ptr<IOBinding>(new IOBinding(session_state_));
     return Status::OK();
   }
 
@@ -863,6 +856,19 @@ class InferenceSession::Impl {
   }
 
  private:
+  static std::pair<bool, size_t> Contains(const std::vector<std::string>& output_names,
+                                          const std::string& name) {
+    auto it = std::find(std::begin(output_names), std::end(output_names), name);
+    if (it == output_names.end()) {
+      return {false, 0};
+    }
+    return {true, it - output_names.begin()};
+  }
+
+  bool HasLocalSchema() const {
+    return !custom_schema_registries_.empty();
+  }
+
   // assumes model has already been loaded before
   Common::Status DoPostLoadProcessing(LotusIR::Model& model) {
     // TODO add other post load processing here
@@ -1053,7 +1059,8 @@ class InferenceSession::Impl {
 //
 // InferenceSession
 //
-InferenceSession::InferenceSession(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
+InferenceSession::InferenceSession(const SessionOptions& session_options,
+                                   Logging::LoggingManager* logging_manager)
     : impl_(std::make_unique<Impl>(session_options, logging_manager)) {
 }
 
@@ -1088,12 +1095,12 @@ std::pair<Common::Status, const ModelMetadata*> InferenceSession::GetModelMetada
   return impl_->GetModelMetadata();
 }
 
-std::pair<Common::Status, const InputDefList*> InferenceSession::GetInputs() const {
-  return impl_->GetInputs();
+std::pair<Common::Status, const InputDefList*> InferenceSession::GetModelInputs() const {
+  return impl_->GetModelInputs();
 }
 
-std::pair<Common::Status, const OutputDefList*> InferenceSession::GetOutputs() const {
-  return impl_->GetOutputs();
+std::pair<Common::Status, const OutputDefList*> InferenceSession::GetModelOutputs() const {
+  return impl_->GetModelOutputs();
 }
 
 int InferenceSession::GetCurrentNumRuns() {
