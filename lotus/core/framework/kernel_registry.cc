@@ -196,7 +196,7 @@ static std::string ToString(const std::vector<std::string>& error_strs) {
 }
 
 Status KernelRegistry::FindKernel(const LotusIR::Node& node,
-                                            /*out*/ const KernelCreateInfo** kernel_create_info) const {
+                                  /*out*/ const KernelCreateInfo** kernel_create_info) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
@@ -215,9 +215,10 @@ Status KernelRegistry::FindKernel(const LotusIR::Node& node,
     }
   }
 
-  // In the case of CPU execution provider there is no value in creating a function kernel since the
-  // CPU exec provider is going to simply return a fail status any way. This is hardly helpful for debugging issues where
-  // a kernel cannot be found due to user errors for e.g if the node was created incorrectly by the user.
+  // In the case of CPU execution provider there is no value in creating a function
+  // kernel since the CPU exec provider is going to simply return a fail status any
+  // way. This is hardly helpful for debugging issues where a kernel cannot be found
+  // due to user errors for e.g if the node was created incorrectly by the user.
   if (node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider) {
     std::ostringstream ostr;
     ostr << "Failed to find kernel def for op: " << node.OpType()
