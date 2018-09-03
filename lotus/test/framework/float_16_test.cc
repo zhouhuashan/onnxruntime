@@ -24,7 +24,8 @@
 #include "gtest/gtest.h"
 #include "core/graph/schema_registry.h"
 #include "core/framework/customregistry.h"
-#include "Eigen/src/Core/arch/CUDA/Half.h"
+#include "core/util/math.h"
+
 using namespace onnx;
 namespace Lotus {
 namespace Test {
@@ -50,10 +51,9 @@ class MulFP16Kernel {
     }
 
     for (size_t i = 0; i < size; i++) {
-      Y_Data[i].val = Eigen::half_impl::float_to_half_rtne(
-                          Eigen::half_impl::half_to_float(Eigen::half_impl::__half(X_Data[i].val)) *
-                          Eigen::half_impl::half_to_float(Eigen::half_impl::__half(W_Data[i].val)))
-                          .x;
+      Y_Data[i].val = Math::floatToHalf(
+          Math::halfToFloat(X_Data[i].val) *
+          Math::halfToFloat(W_Data[i].val));
     }
 
     return MLStatus::OK;
@@ -163,7 +163,7 @@ TEST(Float16_Tests, Mul_16_Test) {
   std::vector<float> values_x_32 = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
   std::vector<MLFloat16> values_x;
   for (float i : values_x_32) {
-    values_x.push_back(MLFloat16(Eigen::half_impl::float_to_half_rtne(i).x));
+    values_x.push_back(MLFloat16(Math::floatToHalf(i)));
   }
 
   // prepare expected inputs and outputs
@@ -172,7 +172,7 @@ TEST(Float16_Tests, Mul_16_Test) {
   std::vector<float> expected_values_y_32 = {1.0f, 4.0f, 9.0f, 16.0f, 25.0f, 36.0f};
   std::vector<MLFloat16> expected_values_y;
   for (float i : expected_values_y_32) {
-    expected_values_y.push_back(MLFloat16(Eigen::half_impl::float_to_half_rtne(i).x));
+    expected_values_y.push_back(MLFloat16(Math::floatToHalf(i)));
   }
 
   // Now run

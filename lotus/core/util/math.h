@@ -479,5 +479,9 @@ constexpr T roundUpPow2(T a) {
   return (a + (b - 1)) & (~(b - 1));
 }
 
+uint16_t floatToHalf(float f);
+
+float halfToFloat(uint16_t h);
+
 }  // namespace Math
 }  // namespace Lotus

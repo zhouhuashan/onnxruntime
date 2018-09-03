@@ -41,6 +41,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
+#include "Eigen/src/Core/arch/CUDA/Half.h"
 
 #if defined(_MSC_VER)
 #include <process.h>
@@ -1450,6 +1451,14 @@ uint32_t randomNumberSeed() {
   static const uint32_t pid = static_cast<uint32_t>(Env::Default().GetSelfPid());
   return kPrime0 * (seedInput++) + kPrime1 * pid +
          kPrime2 * tv_sec + kPrime3 * tv_usec;
+}
+
+uint16_t floatToHalf(float f) {
+  return Eigen::half_impl::float_to_half_rtne(f).x;
+}
+
+float halfToFloat(uint16_t h) {
+  return Eigen::half_impl::half_to_float(Eigen::half_impl::raw_uint16_to_half(h));
 }
 
 }  // namespace Math

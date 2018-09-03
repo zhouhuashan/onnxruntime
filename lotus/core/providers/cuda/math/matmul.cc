@@ -1,19 +1,29 @@
 #include "matmul.h"
 #include "core/providers/cpu/math/matmul_helper.h"
+#include "core/providers/cuda/shared_inc/fpgeneric.h"
 
 namespace Lotus {
 namespace Cuda {
 
-ONNX_OPERATOR_KERNEL_EX(
-    MatMul,
-    kOnnxDomain,
-    1,
-    kCudaExecutionProvider,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    MatMul<float>);
+#define REGISTER_KERNEL_TYPED(T)                                  \
+  ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
+      MatMul,                                                     \
+      kOnnxDomain,                                                \
+      1,                                                          \
+      T,                                                          \
+      kCudaExecutionProvider,                                     \
+      KernelDefBuilder()                                          \
+          .TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      MatMul<T>);
 
-template <>
-Status MatMul<float>::ComputeInternal(OpKernelContext* ctx) const {
+REGISTER_KERNEL_TYPED(float)
+REGISTER_KERNEL_TYPED(double)
+REGISTER_KERNEL_TYPED(MLFloat16)
+
+template <typename T>
+Status MatMul<T>::ComputeInternal(OpKernelContext* ctx) const {
+  typedef typename ToCudaType<T>::MappedType CudaT;
+
   const Tensor* left_X = ctx->Input<Tensor>(0);
   const Tensor* right_X = ctx->Input<Tensor>(1);
 
@@ -23,53 +33,53 @@ Status MatMul<float>::ComputeInternal(OpKernelContext* ctx) const {
   Tensor* Y = ctx->Output(0, helper.OutputShape());
   LOTUS_RETURN_IF_NOT(Y->Location().name == CUDA, "Output should be allocated on CUDA");
 
-  const float alpha = 1.0f;
-  const float beta = 0.0f;
+  CudaT one = ToCudaType<T>::FromFloat(1.0f);
+  CudaT zero = ToCudaType<T>::FromFloat(0.0f);
 
   if (helper.OutputOffsets().size() == 1) {
-    CUBLAS_RETURN_IF_ERROR(cublasSgemm(
+    CUBLAS_RETURN_IF_ERROR(cublasGemmHelper(
         Base::CublasHandle(),
         CUBLAS_OP_N,
         CUBLAS_OP_N,
         static_cast<int>(helper.N()),
         static_cast<int>(helper.M()),
         static_cast<int>(helper.K()),
-        &alpha,
-        right_X->Data<float>(),
+        &one,
+        reinterpret_cast<const CudaT*>(right_X->Data<T>()),
         static_cast<int>(helper.N()),
-        left_X->Data<float>(),
+        reinterpret_cast<const CudaT*>(left_X->Data<T>()),
         static_cast<int>(helper.K()),
-        &beta,
-        Y->MutableData<float>(),
+        &zero,
+        reinterpret_cast<CudaT*>(Y->MutableData<T>()),
         static_cast<int>(helper.N())));
     return Status::OK();
   }
 
-  CudaAsyncBuffer<const float*> left_arrays(this, helper.LeftOffsets().size());
-  CudaAsyncBuffer<const float*> right_arrays(this, helper.RightOffsets().size());
-  CudaAsyncBuffer<float*> output_arrays(this, helper.OutputOffsets().size());
-  MatMulComputeHelper::OffsetToArrays(left_X->Data<float>(), helper.LeftOffsets(), left_arrays.CpuSpan());
-  MatMulComputeHelper::OffsetToArrays(right_X->Data<float>(), helper.RightOffsets(), right_arrays.CpuSpan());
-  MatMulComputeHelper::OffsetToArrays(Y->MutableData<float>(), helper.OutputOffsets(), output_arrays.CpuSpan());
+  CudaAsyncBuffer<const CudaT*> left_arrays(this, helper.LeftOffsets().size());
+  CudaAsyncBuffer<const CudaT*> right_arrays(this, helper.RightOffsets().size());
+  CudaAsyncBuffer<CudaT*> output_arrays(this, helper.OutputOffsets().size());
+  MatMulComputeHelper::OffsetToArrays(reinterpret_cast<const CudaT*>(left_X->Data<T>()), helper.LeftOffsets(), left_arrays.CpuSpan());
+  MatMulComputeHelper::OffsetToArrays(reinterpret_cast<const CudaT*>(right_X->Data<T>()), helper.RightOffsets(), right_arrays.CpuSpan());
+  MatMulComputeHelper::OffsetToArrays(reinterpret_cast<CudaT*>(Y->MutableData<T>()), helper.OutputOffsets(), output_arrays.CpuSpan());
   LOTUS_RETURN_IF_ERROR(left_arrays.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(right_arrays.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(output_arrays.CopyToGpu());
 
   // note that Lotus MLValue is row major, while cublas is column major,
   // so swap left/right operands
-  CUBLAS_RETURN_IF_ERROR(cublasSgemmBatched(
+  CUBLAS_RETURN_IF_ERROR(cublasGemmBatchedHelper(
       Base::CublasHandle(),
       CUBLAS_OP_N,
       CUBLAS_OP_N,
       static_cast<int>(helper.N()),
       static_cast<int>(helper.M()),
       static_cast<int>(helper.K()),
-      &alpha,
+      &one,
       right_arrays.GpuPtr(),
       static_cast<int>(helper.N()),
       left_arrays.GpuPtr(),
       static_cast<int>(helper.K()),
-      &beta,
+      &zero,
       output_arrays.GpuPtr(),
       static_cast<int>(helper.N()),
       static_cast<int>(helper.OutputOffsets().size())));

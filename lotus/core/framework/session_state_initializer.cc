@@ -222,7 +222,7 @@ Common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
     LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
                                                                  deserialize_alloc_ptr));
 
-    if (preallocated && preallocated_size != p_deserialize_tensor->Size()) {
+    if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
       return Status(Common::LOTUS, Common::FAIL, "The buffer planner is not consistent with tensor buffer size");
     }
 

@@ -29,9 +29,12 @@ if(NOT NUMPY_INCLUDE_DIR)
 endif(NOT NUMPY_INCLUDE_DIR)
 
 # ---[ Python + Numpy
-set(lotus_pybind_srcs
-    ${LOTUS_ROOT}/python/lotus_pybind_state.cc
+set(lotus_pybind_srcs_pattern
+    "${LOTUS_ROOT}/python/*.cc"
+    "${LOTUS_ROOT}/python/*.h"
 )
+
+file(GLOB lotus_pybind_srcs ${lotus_pybind_srcs_pattern})
 
 #TODO(@chasun): enable cuda and test it
 add_library(lotus_pybind11_state MODULE ${lotus_pybind_srcs})
