@@ -17,7 +17,7 @@ Retrieve a model in JSON format
 That's the most simple way.
 """
 
-from lotus.python.datasets import get_example
+from onnx_runtime.python.datasets import get_example
 example1 = get_example("mul_1.pb")
 
 import onnx

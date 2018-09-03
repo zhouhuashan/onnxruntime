@@ -1,11 +1,5 @@
 # @package session
-# Module lotus.python.session
-# TODO: remove this import as we don't support Python 2
-# TODO: switch to 4 characters for indentation, most editors are set up this way.
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+# Module onnx_runtime.python.session
 
 import sys
 import logging
@@ -13,7 +7,7 @@ import ctypes
 import os
 
 logger = logging.getLogger(__name__)
-from lotus.python import _pybind_state as C
+from onnx_runtime.python import _pybind_state as C
 
 
 class InferenceSession:
@@ -65,7 +59,7 @@ class InferenceSession:
         """Compute the predictions.
         :param output_names: name of the outputs
         :param input_feed: dictionary ``{ input_name: input_value }``
-        :param run_options: See :class:`lotus.RunOptions`.
+        :param run_options: See :class:`onnx_runtime.RunOptions`.
 
         ::
 
@@ -92,4 +86,4 @@ if __name__ == "__main__":
     # TODO: remove this piece of code.
     if not 'InferenceSession' in dir(C):
         raise RuntimeError(
-            'Failed to bind the native module -lotus_pybind11_state.pyd.')
+            'Failed to bind the native module -onnx_runtime_pybind11_state.pyd.')

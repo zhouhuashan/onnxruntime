@@ -1,19 +1,19 @@
-#include "lotus_pybind_mlvalue.h"
+#include "onnx_runtime_pybind_mlvalue.h"
 
 #define NO_IMPORT_ARRAY
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#define PY_ARRAY_UNIQUE_SYMBOL lotus_python_ARRAY_API
+#define PY_ARRAY_UNIQUE_SYMBOL onnx_runtime_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
 using namespace std;
-namespace lotus {
+namespace onnx_runtime {
 namespace python {
 
 namespace py = pybind11;
 using namespace Lotus;
 using namespace Lotus::Logging;
 
-int LotusTensorToNumpyType(const MLDataType& tensor_type) {
+int OnnxRuntimeTensorToNumpyType(const MLDataType& tensor_type) {
   static std::map<MLDataType, int> type_map{
       {DataTypeImpl::GetType<bool>(), NPY_BOOL},
       {DataTypeImpl::GetType<float>(), NPY_FLOAT},
@@ -36,7 +36,7 @@ int LotusTensorToNumpyType(const MLDataType& tensor_type) {
   }
 }
 
-const MLDataType& NumpyToLotusTensorType(int numpy_type) {
+const MLDataType& NumpyToOnnxRuntimeTensorType(int numpy_type) {
   static std::map<int, MLDataType> type_map{
       {NPY_BOOL, DataTypeImpl::GetType<bool>()},
       {NPY_FLOAT, DataTypeImpl::GetType<float>()},
@@ -89,7 +89,7 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
     }
 
     TensorShape shape(dims);
-    auto element_type = NumpyToLotusTensorType(npy_type);
+    auto element_type = NumpyToOnnxRuntimeTensorType(npy_type);
     void* buffer = alloc->Alloc(element_type->Size() * shape.Size());
 
     if (npy_type != NPY_UNICODE && npy_type != NPY_OBJECT) {
@@ -108,7 +108,7 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
       auto num_chars = item_size / PyUnicode_4BYTE_KIND;
       char* src = static_cast<char*>(PyArray_DATA(darray));
       for (int i = 0; i < shape.Size(); i++, src += item_size) {
-        // Python unicode strings are assumed to be USC-4. Lotus strings are stored as UTF-8.
+        // Python unicode strings are assumed to be USC-4. Strings are stored as UTF-8.
         dst[i] = PyUnicode_AsUTF8(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, src, num_chars));
       }
     }
@@ -119,7 +119,7 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
       char* src = static_cast<char*>(PyArray_DATA(darray));
       PyObject* item, *pStr;
       for (int i = 0; i < shape.Size(); ++i, src += item_size) {
-        // Python unicode strings are assumed to be USC-4. Lotus strings are stored as UTF-8.
+        // Python unicode strings are assumed to be USC-4. Strings are stored as UTF-8.
         item = PyArray_GETITEM(darray, src);
         pStr = PyObject_Str(item);
         dst[i] = py::reinterpret_borrow<py::str>(pStr);
@@ -378,4 +378,4 @@ void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlva
 }
 
 }  // namespace python
-}  // namespace lotus
+}  // namespace onnx_runtime

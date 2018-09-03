@@ -1,5 +1,5 @@
 import argparse
-import lotus
+import onnx_runtime
 import numpy as np
 import os
 import sys
@@ -25,7 +25,7 @@ integer_dict = {
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Simple Lotus Test Tool.')
+    parser = argparse.ArgumentParser(description='Simple ONNX Runtime Test Tool.')
     parser.add_argument('model_path', help='model path')
     parser.add_argument('num_iters', nargs='?', type=int,
                         default=1000, help='model run iterations. default=1000')
@@ -44,11 +44,11 @@ def main():
 
     sess_options = None
     if args.profile:
-        sess_options = lotus.SessionOptions()
+        sess_options = onnx_runtime.SessionOptions()
         sess_options.enable_profiling = True
         sess_options.profile_file_prefix = os.path.basename(args.model_path)
 
-    sess = lotus.InferenceSession(args.model_path, sess_options)
+    sess = onnx_runtime.InferenceSession(args.model_path, sess_options)
     meta = sess.get_modelmeta()
 
     feeds = {}

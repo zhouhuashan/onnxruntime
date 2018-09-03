@@ -1,7 +1,7 @@
-#include "lotus_pybind_mlvalue.h"
+#include "onnx_runtime_pybind_mlvalue.h"
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#define PY_ARRAY_UNIQUE_SYMBOL lotus_python_ARRAY_API
+#define PY_ARRAY_UNIQUE_SYMBOL onnx_runtime_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
 #include "core/session/inference_session.h"
@@ -23,7 +23,7 @@
 #endif  // _MSC_VER
 
 using namespace std;
-namespace lotus {
+namespace onnx_runtime {
 namespace python {
 
 namespace py = pybind11;
@@ -89,7 +89,7 @@ void AddTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
   }
 
   MLDataType dtype = rtensor.DataType();
-  const int numpy_type = LotusTensorToNumpyType(dtype);
+  const int numpy_type = OnnxRuntimeTensorToNumpyType(dtype);
   py::object obj = py::reinterpret_steal<py::object>(PyArray_SimpleNew(
       shape.NumDimensions(), npy_dims.data(), numpy_type));
 
@@ -166,7 +166,7 @@ void addGlobalMethods(py::module& m) {
 
 void addObjectMethods(py::module& m) {
   // allow unit tests to redirect std::cout and std::cerr to sys.stdout and sys.stderr
-  py::add_ostream_redirect(m, "lotus_ostream_redirect");
+  py::add_ostream_redirect(m, "onnx_runtime_ostream_redirect");
   py::class_<SessionOptions>(m, "SessionOptions", R"pbdoc(Configuration information for a session.)pbdoc")
       .def(py::init())
       .def_readwrite("enable_sequential_execution", &SessionOptions::enable_sequential_execution,
@@ -325,8 +325,8 @@ including arg name, arg type (contains both type and shape).)pbdoc")
       });
 }  //  end of addLotusObjectMethods
 
-PYBIND11_MODULE(lotus_pybind11_state, m) {
-  m.doc() = "pybind11 stateful interface to lotus runtime";
+PYBIND11_MODULE(onnx_runtime_pybind11_state, m) {
+  m.doc() = "pybind11 stateful interface to ONNX runtime";
 
   auto initialize = [&]() {
     // Initialization of the module
@@ -354,4 +354,4 @@ PYBIND11_MODULE(lotus_pybind11_state, m) {
 }
 
 }  // namespace python
-}  // namespace lotus
+}  // namespace onnx_runtime

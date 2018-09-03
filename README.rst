@@ -1,12 +1,53 @@
-Lotus
-=====
+ONNX Runtime
+============
 
-*Lotus* is the runtime for `ONNX <https://onnx.ai/>`_.
-Here is the [design document](https://microsoft.sharepoint.com/:w:/t/ONNX2/EdT4SATkbt1Nv4un1JoBHrYBH65Yt3EKFGHCuo2NTAv4Fg).
+ONNX Runtime is a critical component for platforms that 
+enables high-performance evaluation of trained machine learning (ML)
+models while keeping resource usage low. 
+Building on Microsoft's dedication to the 
+`Open Neural Network Exchange (ONNX) <https://onnx.ai/>`_
+community, it supports traditional ML models as well 
+as Deep Learning algorithms in the ONNX-ML format.
 
-Supported dev environments
---------------------------
+Example
+-------
 
+The following example demonstrates an end-to-end example
+in a very common scenario. A model is trained with *scikit-learn*
+but it has to run very fast in a optimized environment.
+The model is then converted into ONNX format and ONNX Runtime
+replaces *scikit-learn* to compute the predictions.
+
+::
+
+    # Train a model.
+    from sklearn.datasets import load_iris
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForest
+    iris = load_iris()
+    X, y = iris.data, iris.target
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    clr = RandomForest()
+    clr.fit(X_train, y_train)
+
+    # Convert into ONNX format with onnxmltools
+    from onnxmltools import convert_sklearn
+    from onnxmltools.utils import save_model
+    from onnxmltools.convert.common.data_types import FloatTensorType
+    initial_type = [('float_input', FloatTensorType([1, 4]))]
+    onx = convert_sklearn(clr, initial_types=initial_type)
+    save_model(onx, "rf_iris.onnx")
+
+    # Compute the prediction with ONNX Runtime
+    import onnx_runtime
+    import numpy
+    sess = onnx_runtime.InferenceSession("rf_iris.onnx")
+    input_name = sess.get_inputs()[0].name
+    label_name = sess.get_outputs()[0].name
+    pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]   
+
+Supported environments
+----------------------
 
 +--------------------------------+--------------+-------------+--------------------------------------------+
 | OS                             | Supports CPU | Supports GPU| Notes                                      | 
@@ -22,227 +63,3 @@ Supported dev environments
 | Fedora 27                      | YES          | YES         |                                            |
 | Fedora 28                      | YES          | NO          | Cannot build GPU kernels but can run them  |
 +--------------------------------+--------------+-------------+--------------------------------------------+
-
-*Red Hat Enterprise Linux* and *CentOS* are not supported.
-*Clang 7.x* is not supported. You may use *Clang 6.x*.
-*GCC 4.x* and below are not supported. If you are using *GCC 7.0+*, 
-you'll need to upgrade eigen to a newer version before compiling *Lotus*.
-OS/Compiler Matrix:
-
-+-------------+--------------+------------------+-----------------+
-|             | Supports VC  | Supports GCC     |  Supports Clang |
-|=============+==============+==================+=================+
-|Windows 10   | YES          | Not tested       | Not tested      |
-|Linux        | NO           | YES(gcc>=5.0)    | YES             |
-+-------------+--------------+------------------+-----------------+
-
-*Lotus Python Bindings* only supports *Python 3.x*.
-You'd better use *python 3.5+*.
-
-Build
------
-
-1. Install `CMake <https://cmake.org/download/>`_ 3.10 or better.
-2. Checkout the source tree::
-
-   git clone --recursive https://aiinfra.visualstudio.com/_git/Lotus
-   cd Lotus
-
-3. Generate the project files (only needed once)::
-
-    set CMAKE_BUILD_TYPE=Debug
-    mkdir cmake_build
-    cd cmake_build
-    cmake ../cmake -A x64 -T host=x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE%
-
-4. And build it::
-
-    MSBuild /p:Configuration=%CMAKE_BUILD_TYPE% ALL_BUILD.vcxproj
-
-5. Run unit tests::
-
-    ctest -C %CMAKE_BUILD_TYPE%
-
-`ALL_BUILD.vcxproj` will check external dependecies and takes a little longer.
-During development you want to use a more specific project like 
-`lotus_test_core_runtime.vcxproj`.
-
-Enable Clang tools
-------------------
-
-You may also add ``-DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON`` 
-to your cmake args, then your build engine (like *msbuild/make/ninja*) 
-will generate a ``compile\_commands.json`` file for you. 
-Please copy this file to the top source directory. Then you can 
-use *clang* tools like 
-`clang-rename' <http://clang.llvm.org/extra/clang-rename.html>`_, 
-`clang-tidy <http://clang.llvm.org/extra/clang-tidy/>`_ 
-to clean up or refactor your code.
-
-Additional Build Flavors
-------------------------
-
-Windows CUDA Build
-++++++++++++++++++
-
-*Lotus* supports *CUDA* builds.
-You will need to download and install
-`CUDA <https://developer.nvidia.com/cuda-toolkit>`_ and 
-`CUDNN <https://developer.nvidia.com/cudnn>`_.
-
-*Lotus* is built and tested with *CUDA 9.0* and *CUDNN 7.0* 
-using the *Visual Studio 2017 14.11 toolset* (i.e. *Visual Studio 2017 v15.3*).
-*CUDA* versions up to 9.2 and *CUDNN* version 7.1 
-should also work with versions of *Visual Studio 2017* up 
-to and including v15.7, however you may need to explicitly 
-install and use the 14.11 toolset due to *CUDA* and *CUDNN* 
-only being compatible with earlier versions of *Visual Studio 2017*.
-
-To install the *Visual Studio 2017 14.11 toolset*, 
-see `Side-by-side minor version MSVC toolsets in Visual Studio 2017 <https://blogs.msdn.microsoft.com/vcblog/2017/11/15/side-by-side-minor-version-msvc-toolsets-in-visual-studio-2017/>`_.
-
-If using this toolset with a later version of *Visual Studio 2017* 
-you have two options:
-
-1. Setup the Visual Studio environment variables to point to the 14.11 
-   toolset by running vcvarsall.bat prior to running *cmake*
-   - e.g.  if you have *VS2017 Enterprise*, an *x64* build would use the following command::
-   
-        `"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" amd64 -vcvars_ver=14.11`
-
-2. Alternatively if you have *CMake 3.12* or later you can specify 
-   the toolset version in the "-T" parameter by adding ``"version=14.11"``
-   - e.g. use the following with the below *cmake* command
-   ``-T version=14.11,host=x64``.
-
-*CMake* should automatically find the *CUDA* installation. 
-If it does not, or finds a different version to the one you wish to use, 
-specify your root *CUDA* installation directory via the 
-``-DCUDA_TOOLKIT_ROOT_DIR`` *CMake* parameter.  
-
-.. node::
-
-    If you have multiple versions of *CUDA* installed on a 
-    *Windows* machine and are building with Visual Studio, 
-    CMake will use the build files for the highest version of CUDA 
-    it finds in the *BuildCustomization* folder.  
-    e.g. ``C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\BuildCustomizations\``.
-    If you want to build with an earlier version, you must temporarily 
-    remove the 'CUDA x.y.*' files for later versions from this directory.
-
-The path to the 'cuda' folder in the *CUDNN* installation must be provided. 
-The *cuda* folder should contain *bin*, *include* and *lib* directories.
-You can build with::
-
-    mkdir cmake_build_gpu
-    cd cmake_build_gpu    
-    cmake ..\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -A x64 -G "Visual Studio 15 2017" -T host=x64 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=<path to top level 'cuda' directory in CUDNN installation>
-	
-Where the *CUDNN* path would be something like ``C:\cudnn-9.2-windows10-x64-v7.1\cuda``.
-
-MKL
----
-
-To build Lotus with *MKL* support, download MKL from Intel and call cmake the following way::
-
-    mkdir cmake_build_mkl
-    cd cmake_build_mkl
-    cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp" -Dlotus_USE_EIGEN=OFF -Dlotus_USE_MKL=ON -Dlotus_MKL_HOME=%MKL_HOME%
-
-Where `MKL_HOME would` be something like:
-``D:\local\IntelSWTools\compilers_and_libraries\windows\mkl``.
-
-OpenBLAS
-++++++++
-
-To build Lotus with *OpenBLAS* support, download OpenBLAS and compile it for windows.
-Instructions how to build *OpenBLAS* for windows can be found here 
-`How to use OpenBLAS in Microsoft Visual Studio <https://github.com/xianyi/OpenBLAS/wiki/How-to-use-OpenBLAS-in-Microsoft-Visual-Studio#build-openblas-for-universal-windows-platform>`_.
-Once you have the OpenBLAS binaries, call the Lotus cmake like::
-
-    mkdir cmake_build_openblas
-    cd cmake_build_openblas
-    cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp"  -Dlotus_USE_EIGEN=OFF -Dlotus_USE_OPENBLAS=ON -Dlotus_OPENBLAS_HOME=%OPENBLAS_HOME%
-
-Where `OPENBLAS_HOME` would be something like:
-``d:\share\openblas``.
-
-For *Linux* (e.g. *Ubuntu* 16.04), install `libopenblas-dev` package::
-
-    sudo apt-get install libopenblas-dev
-
-AVX, AVX2, OpenMP
-+++++++++++++++++
-
-To pass in additional compiler flags, for example to build 
-with *SIMD* instructions, you can pass in `CXX_FLAGS` from the 
-*cmake* command line, for example to build *eigen* with *avx2* 
-support and *openmp*, you can call *cmake* like::
-
-    cmake .. -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
-
-Build with Docker on Linux
-++++++++++++++++++++++++++
-
-Install `Docker <https://docs.docker.com/install/>`_.
-
-CPU
-+++
-
-::
-
-    cd tools/ci_build/vsts/linux/docker
-    docker build -t lotus_dev --build-arg OS_VERSION=16.04 -f Dockerfile.ubuntu .
-    docker run --rm -it lotus_dev /bin/bash
-
-GPU
-+++
-
-If you need *GPU* support, please also install:
-1. nvidia driver. Before doing this please add ``'nomodeset rd.driver.blacklist=nouveau'``
-   to your linux `kernel boot parameters <https://www.kernel.org/doc/html/v4.17/admin-guide/kernel-parameters.html>`_.
-2. *nvidia-docker2*: `Install doc <https://github.com/NVIDIA/nvidia-docker/wiki/Installation-(version-2.0)>`_.
-
-To test if your nvidia-docker works::
-
-    docker run --runtime=nvidia --rm nvidia/cuda nvidia-smi
-
-Then build a docker image. We provided a sample for use::
-
-    cd tools/ci_build/vsts/linux/docker
-    docker build -t cuda_dev -f Dockerfile.ubuntu_gpu .
-
-Then run it::
-
-    cd ~/src
-    git clone https://aiinfra.visualstudio.com/Lotus/_git/Lotus
-    docker run --runtime=nvidia -v ~/src/Lotus:/data/lotus --rm -it cuda_dev /bin/bash
-    mkdir build
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug /data/lotus/cmake -Dlotus_ENABLE_PYTHON=ON -DPYTHON_EXECUTABLE=/usr/bin/python3 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=/usr/local/cudnn-7.0/cuda
-    ninja
-
-
-Build with Docker (CPU) on Windows
-++++++++++++++++++++++++++++++++++
-
-Register a docker account at `https://www.docker.com/ <https://www.docker.com/>`_.
-Download *Docker* for *Windows*: 
-`Docker Community Edition for Windows <https://store.docker.com/editions/community/docker-ce-desktop-windows>`_.
-
-Install *Docker* for *Windows*. Share local drive to Docker, 
-open `Docker Settings->Shared Drives`, share the disk drive to docker. 
-This is used to mount the local code to docker instance.
-Run powershell command to build docker::
-
-    cd .\Lotus\tools\ci_build\vsts\linux\ubuntu16.04
-    docker login
-    docker build -t lotus-ubuntu16.04 .
-    docker run -it --rm --name lotus-cpu -v [LocalPath]/Git/Lotus:/home/lotusdev/Lotus lotus-ubuntu16.04 /bin/bash
-    source /usr/local/miniconda3/bin/activate lotus-py35
-    python /home/lotusdev/Lotus/tools/ci_build/build.py --build_dir /home/lotusdev/Lotus/build/Linux --config Debug --skip_submodule_sync --enable_pybind
-
-Run command below if the conda environment `lotus-py35` does not exist::
-
-    /usr/local/miniconda3/bin/conda env create --file /home/lotusdev/Lotus/tools/ci_build/vsts/linux/Conda/conda-linux-lotus-py35-environment.yml --name lotus-py35 --quiet --force
-
-

@@ -1,8 +1,8 @@
 """
 .. _l-example-simple-usage:
 
-Load and predict with Lotus and a very simple model
-===================================================
+Load and predict with ONNX Runtime and a very simple model
+==========================================================
 
 This example demonstrates how to load a model and compute
 the output for an input vector. It also shows how to
@@ -12,15 +12,15 @@ Basic usage
 +++++++++++
 """
 
-import lotus
+import onnx_runtime
 import numpy
-from lotus.python.datasets import get_example
+from onnx_runtime.python.datasets import get_example
 
 #########################
 # Let's load a very simple model.
 
 example1 = get_example("mul_1.pb")
-sess = lotus.InferenceSession(example1)
+sess = onnx_runtime.InferenceSession(example1)
 
 #########################
 # Let's see the input name and shape.

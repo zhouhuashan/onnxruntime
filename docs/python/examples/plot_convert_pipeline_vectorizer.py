@@ -1,6 +1,6 @@
 """
-Train, convert and predict with Lotus
-=====================================
+Train, convert and predict with ONNX Runtime
+============================================
 
 This example demonstrates an end to end scenario
 starting with the training of a scikit-learn pipeline
@@ -64,10 +64,10 @@ onx = convert_sklearn(pipe, initial_types=initial_type)
 save_model(onx, "pipeline_vectorize.onnx")
 
 ##################################
-# We load the model with Lotus and look at
+# We load the model with ONNX Runtime and look at
 # its input and output.
-import lotus
-sess = lotus.InferenceSession("pipeline_vectorize.onnx")
+import onnx_runtime
+sess = onnx_runtime.InferenceSession("pipeline_vectorize.onnx")
 
 import numpy
 inp, out = sess.get_inputs()[0], sess.get_outputs()[0]
@@ -75,11 +75,8 @@ print("input name='{}' and shape={} and type={}".format(inp.name, inp.shape, inp
 print("output name='{}' and shape={} and type={}".format(out.name, out.shape, out.type))
 
 ##################################
-# We compute the predictions one by one.
-
-
-##############################
-# We could do that...
+# We compute the predictions.
+# We could do that in one call:
 
 try:
     pred_onx = sess.run([out.name], {inp.name: X_test_dict})[0]
@@ -87,8 +84,8 @@ except RuntimeError as e:
     print(e)
 
 #############################
-#  But it fails because, in case of a DictVectorizer,
-# Lotus expects one observation at a time.
+# But it fails because, in case of a DictVectorizer,
+# ONNX Runtime expects one observation at a time.
 pred_onx = [sess.run([out.name], {inp.name: row})[0][0, 0] for row in X_test_dict]
 
 ###############################
@@ -96,6 +93,6 @@ pred_onx = [sess.run([out.name], {inp.name: row})[0][0, 0] for row in X_test_dic
 print(r2_score(pred, pred_onx))
 
 #########################
-# Very similar. Lotus uses float instead of doubles,
+# Very similar. ONNX Runtime uses float instead of doubles,
 # that explains the small discrepencies.
 

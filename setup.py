@@ -31,25 +31,30 @@ examples = [path.join('python', 'datasets', x) for x in examples_names]
 
 # Description
 README = path.join(getcwd(), "README.rst")
+if not path.exists(README):
+    this = path.dirname(__file__)
+    README = path.join(this, "README.rst")
+if not path.exists(README):
+    raise FileNotFoundError("Unable to find 'README.rst'")
 with open(README) as f:
     long_description = f.read()
 
 # Setup
 setup(
-    name='lotus',
+    name='onnx-runtime',
     version='0.1.4',
     description='Lotus Runtime Python bindings',
     long_description=long_description,
     author='Microsoft Corporation',
     author_email='LotusTeam@microsoft.com',
     cmdclass={'bdist_wheel': bdist_wheel},
-    packages=['lotus', 'lotus.python', 'lotus.python.tools', 'lotus.python.datasets'],
+    packages=['onnx_runtime', 'onnx_runtime.python', 'onnx_runtime.python.tools', 'onnx_runtime.python.datasets'],
     package_data= {
-        'lotus': data + examples,
+        'onnx_runtime': data + examples,
     },
     entry_points= {
         'console_scripts': [
-            'lotus_test = lotus.python.tools.lotus_test:main',
+            'lotus_test = onnx_runtime.python.tools.lotus_test:main',
         ]
     },
     classifiers=[

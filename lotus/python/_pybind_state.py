@@ -1,10 +1,10 @@
 # @package _pybind_state
-# Module lotus.python._pybind_state
+# Module onnx_runtime.python._pybind_state
 import sys
 import os
 import warnings
 
 try:
-    from lotus.python.lotus_pybind11_state import *  # noqa
+    from onnx_runtime.python.onnx_runtime_pybind11_state import *  # noqa
 except ImportError as e:
-    warnings.warn("Cannot load lotus.python. Error: '{0}'".format(str(e)))
+    warnings.warn("Cannot load onnx_runtime.python. Error: '{0}'".format(str(e)))

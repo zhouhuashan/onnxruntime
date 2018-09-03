@@ -7,12 +7,12 @@ import sys
 # Check these extensions were installed.
 import sphinx_gallery.gen_gallery
 # The package should be installed in a virtual environment.
-import lotus
+import onnx_runtime
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Lotus'
+project = 'ONNX Runtime'
 copyright = '2018, Microsoft'
 author = 'Microsoft'
 version = '0.1'
