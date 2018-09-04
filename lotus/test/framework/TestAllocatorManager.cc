@@ -46,18 +46,17 @@ AllocatorManager::AllocatorManager() {
 }
 
 Status AllocatorManager::InitializeAllocators() {
-  Status status = Status::OK();
   auto cpu_alocator = std::make_unique<CPUAllocator>();
-  status = RegisterAllocator(map_, std::move(cpu_alocator), std::numeric_limits<size_t>::max(), true);
+  LOTUS_RETURN_IF_ERROR(RegisterAllocator(map_, std::move(cpu_alocator), std::numeric_limits<size_t>::max(), true));
 #ifdef USE_CUDA
   auto cuda_alocator = std::make_unique<CUDAAllocator>(0);
-  status = RegisterAllocator(map_, std::move(cuda_alocator), std::numeric_limits<size_t>::max(), true);
+  LOTUS_RETURN_IF_ERROR(RegisterAllocator(map_, std::move(cuda_alocator), std::numeric_limits<size_t>::max(), true));
 
   auto cuda_pinned_alocator = std::make_unique<CUDAPinnedAllocator>();
-  status = RegisterAllocator(map_, std::move(cuda_pinned_alocator), std::numeric_limits<size_t>::max(), true);
+  LOTUS_RETURN_IF_ERROR(RegisterAllocator(map_, std::move(cuda_pinned_alocator), std::numeric_limits<size_t>::max(), true));
 #endif  // USE_CUDA
 
-  return status;
+  return Status::OK();
 }
 
 AllocatorManager::~AllocatorManager() {
