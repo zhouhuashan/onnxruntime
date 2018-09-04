@@ -93,7 +93,7 @@ bool PerformanceRunner::Initialize() {
   for (auto feed : feeds) {
     io_binding_->BindInput(feed.first, feed.second);
   }
-  auto outputs = session_object_->GetOutputs();
+  auto outputs = session_object_->GetModelOutputs();
   auto status = outputs.first;
   if (!outputs.first.IsOK()) {
     LOGF_DEFAULT(ERROR, "GetOutputs failed, TestCaseName:%s, ErrorMessage:%s",

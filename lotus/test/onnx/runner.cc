@@ -293,7 +293,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
 
   // Create output feed
   std::vector<std::string> output_names;
-  for (auto const& outp : *(session->GetOutputs().second)) {
+  for (auto const& outp : *(session->GetModelOutputs().second)) {
     output_names.push_back(outp->Name());
   }
 
