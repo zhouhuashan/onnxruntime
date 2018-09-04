@@ -19,11 +19,11 @@ except ImportError:
 
 # Additional binaries
 if platform.system() == 'Linux':
-  libs = ['lotus_pybind11_state.so', 'libmkldnn.so.0', 'libmklml_intel.so', 'libiomp5.so']
+  libs = ['onnx_runtime_pybind11_state.so', 'libmkldnn.so.0', 'libmklml_intel.so', 'libiomp5.so']
 else:
-  libs = ['lotus_pybind11_state.pyd', 'mkldnn.dll', 'mklml.dll', 'libiomp5md.dll']
+  libs = ['onnx_runtime_pybind11_state.pyd', 'mkldnn.dll', 'mklml.dll', 'libiomp5md.dll']
 
-data = [path.join('python', x) for x in libs if path.isfile(path.join('lotus', 'python', x))]
+data = [path.join('python', x) for x in libs if path.isfile(path.join('onnx_runtime', 'python', x))]
 
 # Additional examples
 examples_names = ["mul_1.pb"]
@@ -42,11 +42,11 @@ with open(README) as f:
 # Setup
 setup(
     name='onnx-runtime',
-    version='0.1.4',
-    description='Lotus Runtime Python bindings',
+    version='0.1.0',
+    description='ONNX Runtime Runtime Python bindings',
     long_description=long_description,
     author='Microsoft Corporation',
-    author_email='LotusTeam@microsoft.com',
+    author_email='onnx@microsoft.com',
     cmdclass={'bdist_wheel': bdist_wheel},
     packages=['onnx_runtime', 'onnx_runtime.python', 'onnx_runtime.python.tools', 'onnx_runtime.python.datasets'],
     package_data= {
@@ -54,7 +54,7 @@ setup(
     },
     entry_points= {
         'console_scripts': [
-            'lotus_test = onnx_runtime.python.tools.lotus_test:main',
+            'onnx_runtime_test = onnx_runtime.python.tools.onnx_runtime_test:main',
         ]
     },
     classifiers=[

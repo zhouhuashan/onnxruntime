@@ -7,7 +7,8 @@ models while keeping resource usage low.
 Building on Microsoft's dedication to the 
 `Open Neural Network Exchange (ONNX) <https://onnx.ai/>`_
 community, it supports traditional ML models as well 
-as Deep Learning algorithms in the ONNX-ML format.
+as Deep Learning algorithms in the
+`ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_.
 
 Example
 -------
