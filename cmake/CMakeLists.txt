@@ -210,7 +210,7 @@ set_target_properties(tvm_topi PROPERTIES FOLDER "External/tvm")
 set_target_properties(tvm_runtime PROPERTIES FOLDER "External/tvm")
 set_target_properties(nnvm_compiler PROPERTIES FOLDER "External/tvm")
 
-set(TVM_INCLUDESS ${PROJECT_SOURCE_DIR}/external/tvm/include 
+set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include 
     ${PROJECT_SOURCE_DIR}/external/tvm/dmlc-core/include
     ${PROJECT_SOURCE_DIR}/external/tvm/dlpack/include
     $<TARGET_PROPERTY:tvm,INTERFACE_INCLUDE_DIRECTORIES> 
