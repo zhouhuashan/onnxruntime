@@ -199,6 +199,13 @@ ONNX_CPU_OPERATOR_KERNEL(
 ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Equal,
     7,
+    bool,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
+    Equal<bool>);
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Equal,
+    7,
     int32_t,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int32_t>()),
     Equal<int32_t>);
@@ -206,9 +213,9 @@ ONNX_CPU_OPERATOR_TYPED_KERNEL(
 ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Equal,
     7,
-    bool,
-    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<bool>()),
-    Equal<bool>);
+    int64_t,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()),
+    Equal<int64_t>);
 
 ONNX_CPU_OPERATOR_KERNEL(
     Mean,

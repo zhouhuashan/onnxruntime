@@ -528,6 +528,15 @@ TEST(MathOpTest, Greater) {
   test.Run();
 }
 
+TEST(MathOpTest, Equal_bool) {
+  OpTester test("Equal");
+  std::vector<int64_t> dims{4};
+  test.AddInput<bool>("A", dims, {false, true, false, true});
+  test.AddInput<bool>("B", dims, {false, false, true, true});
+  test.AddOutput<bool>("C", dims, {true, false, false, true});
+  test.Run();
+}
+
 TEST(MathOpTest, Equal_int32) {
   OpTester test("Equal");
   std::vector<int64_t> dims{4};
@@ -537,11 +546,11 @@ TEST(MathOpTest, Equal_int32) {
   test.Run();
 }
 
-TEST(MathOpTest, Equal_bool) {
+TEST(MathOpTest, Equal_int64) {
   OpTester test("Equal");
   std::vector<int64_t> dims{4};
-  test.AddInput<bool>("A", dims, {false, true, false, true});
-  test.AddInput<bool>("B", dims, {false, false, true, true});
+  test.AddInput<int64_t>("A", dims, {1, 0, -1, -1});
+  test.AddInput<int64_t>("B", dims, {1, 1, 2, -1});
   test.AddOutput<bool>("C", dims, {true, false, false, true});
   test.Run();
 }
@@ -587,7 +596,7 @@ TEST(MathOpTest, Affine) {
 }
 
 template <float (&op)(float value)>
-void TrigTest(OpTester &test, std::initializer_list<float> input) {
+void TrigTest(OpTester& test, std::initializer_list<float> input) {
   std::vector<int64_t> dims{static_cast<int64_t>(input.size())};
 
   std::vector<float> output;
