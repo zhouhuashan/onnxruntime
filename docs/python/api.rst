@@ -4,7 +4,7 @@ API
 ===
 
 Summary of public function and classes exposed
-in *onnx-runtime*.
+in *onnxruntime*.
 
 .. contents::
     :local:
@@ -12,18 +12,18 @@ in *onnx-runtime*.
 Examples and datasets
 =====================
 
-.. autofunction:: onnx_runtime.python.datasets.get_example
+.. autofunction:: onnxruntime.python.datasets.get_example
 
 Load and run a model
 ====================
 
-.. autoclass:: onnx_runtime.InferenceSession
+.. autoclass:: onnxruntime.InferenceSession
     :members:
 
-.. autoclass:: onnx_runtime.RunOptions
+.. autoclass:: onnxruntime.RunOptions
     :members:
 
-.. autoclass:: onnx_runtime.SessionOptions
+.. autoclass:: onnxruntime.SessionOptions
     :members:
 
 

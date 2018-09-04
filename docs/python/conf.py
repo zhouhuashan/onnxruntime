@@ -7,7 +7,7 @@ import sys
 # Check these extensions were installed.
 import sphinx_gallery.gen_gallery
 # The package should be installed in a virtual environment.
-import onnx_runtime
+import onnxruntime
 
 
 # -- Project information -----------------------------------------------------

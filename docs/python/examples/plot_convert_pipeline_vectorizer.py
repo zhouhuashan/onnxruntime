@@ -66,8 +66,8 @@ save_model(onx, "pipeline_vectorize.onnx")
 ##################################
 # We load the model with ONNX Runtime and look at
 # its input and output.
-import onnx_runtime
-sess = onnx_runtime.InferenceSession("pipeline_vectorize.onnx")
+import onnxruntime as onnxrt
+sess = onnxrt.InferenceSession("pipeline_vectorize.onnx")
 
 import numpy
 inp, out = sess.get_inputs()[0], sess.get_outputs()[0]

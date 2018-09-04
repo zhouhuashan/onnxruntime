@@ -10,9 +10,9 @@ as Deep Learning algorithms in the
 """
 __version__ = "0.1.0"
 __author__ = "Microsoft"
-__url__ = "https://github.com/onnx/onnx-runtime"
+__url__ = "https://github.com/onnx/onnxruntime"
 
-from onnx_runtime.python.session import InferenceSession
-from onnx_runtime.python._pybind_state import RunOptions
-from onnx_runtime.python._pybind_state import SessionOptions
-from onnx_runtime.python import datasets
+from onnxruntime.python.session import InferenceSession
+from onnxruntime.python._pybind_state import RunOptions
+from onnxruntime.python._pybind_state import SessionOptions
+from onnxruntime.python import datasets

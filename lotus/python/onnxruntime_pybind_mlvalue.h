@@ -12,7 +12,7 @@
 #include "core/framework/ml_value.h"
 
 using namespace std;
-namespace onnx_runtime {
+namespace onnxruntime {
 namespace python {
 
 namespace py = pybind11;

@@ -1,5 +1,5 @@
 import argparse
-import onnx_runtime
+import onnxruntime as onnxrt
 import numpy as np
 import os
 import sys
@@ -44,11 +44,11 @@ def main():
 
     sess_options = None
     if args.profile:
-        sess_options = onnx_runtime.SessionOptions()
+        sess_options = onnxrt.SessionOptions()
         sess_options.enable_profiling = True
         sess_options.profile_file_prefix = os.path.basename(args.model_path)
 
-    sess = onnx_runtime.InferenceSession(args.model_path, sess_options)
+    sess = onnxrt.InferenceSession(args.model_path, sess_options)
     meta = sess.get_modelmeta()
 
     feeds = {}

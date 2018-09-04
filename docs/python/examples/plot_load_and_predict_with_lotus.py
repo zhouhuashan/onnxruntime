@@ -12,15 +12,15 @@ Basic usage
 +++++++++++
 """
 
-import onnx_runtime
+import onnxruntime as onnxrt
 import numpy
-from onnx_runtime.python.datasets import get_example
+from onnxruntime.python.datasets import get_example
 
 #########################
 # Let's load a very simple model.
 
 example1 = get_example("mul_1.pb")
-sess = onnx_runtime.InferenceSession(example1)
+sess = onnxrt.InferenceSession(example1)
 
 #########################
 # Let's see the input name and shape.

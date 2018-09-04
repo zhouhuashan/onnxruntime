@@ -19,11 +19,11 @@ except ImportError:
 
 # Additional binaries
 if platform.system() == 'Linux':
-  libs = ['onnx_runtime_pybind11_state.so', 'libmkldnn.so.0', 'libmklml_intel.so', 'libiomp5.so']
+  libs = ['onnxruntime_pybind11_state.so', 'libmkldnn.so.0', 'libmklml_intel.so', 'libiomp5.so']
 else:
-  libs = ['onnx_runtime_pybind11_state.pyd', 'mkldnn.dll', 'mklml.dll', 'libiomp5md.dll']
+  libs = ['onnxruntime_pybind11_state.pyd', 'mkldnn.dll', 'mklml.dll', 'libiomp5md.dll']
 
-data = [path.join('python', x) for x in libs if path.isfile(path.join('onnx_runtime', 'python', x))]
+data = [path.join('python', x) for x in libs if path.isfile(path.join('onnxruntime', 'python', x))]
 
 # Additional examples
 examples_names = ["mul_1.pb"]
@@ -41,20 +41,20 @@ with open(README) as f:
 
 # Setup
 setup(
-    name='onnx-runtime',
+    name='onnxruntime',
     version='0.1.0',
     description='ONNX Runtime Runtime Python bindings',
     long_description=long_description,
     author='Microsoft Corporation',
     author_email='onnx@microsoft.com',
     cmdclass={'bdist_wheel': bdist_wheel},
-    packages=['onnx_runtime', 'onnx_runtime.python', 'onnx_runtime.python.tools', 'onnx_runtime.python.datasets'],
+    packages=['onnxruntime', 'onnxruntime.python', 'onnxruntime.python.tools', 'onnxruntime.python.datasets'],
     package_data= {
-        'onnx_runtime': data + examples,
+        'onnxruntime': data + examples,
     },
     entry_points= {
         'console_scripts': [
-            'onnx_runtime_test = onnx_runtime.python.tools.onnx_runtime_test:main',
+            'onnxruntime_test = onnxruntime.python.tools.onnxruntime_test:main',
         ]
     },
     classifiers=[

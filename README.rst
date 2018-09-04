@@ -40,9 +40,9 @@ replaces *scikit-learn* to compute the predictions.
     save_model(onx, "rf_iris.onnx")
 
     # Compute the prediction with ONNX Runtime
-    import onnx_runtime
+    import onnxruntime as onnxrt
     import numpy
-    sess = onnx_runtime.InferenceSession("rf_iris.onnx")
+    sess = onnxrt.InferenceSession("rf_iris.onnx")
     input_name = sess.get_inputs()[0].name
     label_name = sess.get_outputs()[0].name
     pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]   

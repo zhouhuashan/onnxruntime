@@ -1,12 +1,12 @@
-#include "onnx_runtime_pybind_mlvalue.h"
+#include "onnxruntime_pybind_mlvalue.h"
 
 #define NO_IMPORT_ARRAY
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#define PY_ARRAY_UNIQUE_SYMBOL onnx_runtime_python_ARRAY_API
+#define PY_ARRAY_UNIQUE_SYMBOL onnxruntime_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
 using namespace std;
-namespace onnx_runtime {
+namespace onnxruntime {
 namespace python {
 
 namespace py = pybind11;
@@ -378,4 +378,4 @@ void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlva
 }
 
 }  // namespace python
-}  // namespace onnx_runtime
+}  // namespace onnxruntime
