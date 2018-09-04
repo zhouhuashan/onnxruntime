@@ -137,21 +137,7 @@ int main(int argc, char* argv[]) {
     }
     data_dirs.emplace_back(p);
   }
-  AllocatorPtr cpu_allocator = std::make_shared<::Lotus::CPUAllocator>();
-  std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
-  TestResultStat stat;
-  SessionFactory sf(provider, true, enable_cpu_mem_arena);
-  TestEnv args(tests, stat, sf);
-  Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
-  if (!st.IsOK()) {
-    fprintf(stderr, "%s\n", st.ErrorMessage().c_str());
-    return -1;
-  }
-  std::string res = stat.ToString();
-  fwrite(res.c_str(), 1, res.size(), stdout);
-  for (ITestCase* l : tests) {
-    delete l;
-  }
+
   std::unordered_set<std::string> broken_tests{"cast_DOUBLE_to_FLOAT", "cast_DOUBLE_to_FLOAT16",
                                                "AvgPool1d", "AvgPool1d_stride", "AvgPool2d", "AvgPool2d_stride", "AvgPool3d", "AvgPool3d_stride",
                                                "AvgPool3d_stride1_pad0_gpu_input", "BatchNorm1d_3d_input_eval", "BatchNorm2d_eval", "BatchNorm2d_momentum_eval",
@@ -166,12 +152,65 @@ int main(int argc, char* argv[]) {
                                                "maxpool_with_argmax_2d_precomputed_pads", "maxpool_3d_default", "maxpool_2d_strides", "maxpool_2d_same_upper", "maxpool_2d_same_lower",
                                                "maxpool_2d_precomputed_strides", "maxpool_2d_precomputed_same_upper", "maxpool_2d_precomputed_pads", "expand_dim_unchanged",
                                                "convtranspose_1d", "expand_dim_changed", "convtranspose_3d", "expand_shape_model1", "expand_shape_model2", "expand_shape_model3", "expand_shape_model4"};
+
+  AllocatorPtr cpu_allocator = std::make_shared<::Lotus::CPUAllocator>();
   int result = 0;
-  for (const std::string& s : stat.GetFailedTest()) {
-    if (broken_tests.find(s) == broken_tests.end()) {
-      fprintf(stderr, "test %s failed, please fix it\n", s.c_str());
-      result = -1;
+
+  // Test with sequential executor.
+  {
+    fprintf(stdout, "\n\nStart testing on Sequential Executor.\n\n");
+    std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
+    TestResultStat stat;
+    SessionFactory sf(provider, true, enable_cpu_mem_arena);
+    sf.enable_sequential_execution = true;
+    TestEnv args(tests, stat, sf);
+    Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
+    if (!st.IsOK()) {
+      fprintf(stderr, "Failed on sequential executor: %s\n", st.ErrorMessage().c_str());
+      return -1;
+    }
+
+    std::string res = stat.ToString();
+    fwrite(res.c_str(), 1, res.size(), stdout);
+    for (ITestCase* l : tests) {
+      delete l;
+    }
+
+    for (const std::string& s : stat.GetFailedTest()) {
+      if (broken_tests.find(s) == broken_tests.end()) {
+        fprintf(stderr, "sequential executor: test %s failed, please fix it\n", s.c_str());
+        result = -1;
+      }
     }
   }
+
+  // Test with parallel executor.
+  {
+    fprintf(stdout, "\n\nStart testing on Parallel Executor.\n\n");
+    std::vector<ITestCase*> tests_pe = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
+    TestResultStat stat_pe;
+    SessionFactory sf(provider, true, enable_cpu_mem_arena);
+    sf.enable_sequential_execution = false;
+    TestEnv args_pe(tests_pe, stat_pe, sf);
+    Status st_pe = RunTests(args_pe, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
+    if (!st_pe.IsOK()) {
+      fprintf(stderr, "Failed on parallel executor: %s\n", st_pe.ErrorMessage().c_str());
+      return -1;
+    }
+
+    std::string res_pe = stat_pe.ToString();
+    fwrite(res_pe.c_str(), 1, res_pe.size(), stdout);
+    for (ITestCase* l : tests_pe) {
+      delete l;
+    }
+
+    for (const std::string& s : stat_pe.GetFailedTest()) {
+      if (broken_tests.find(s) == broken_tests.end()) {
+        fprintf(stderr, "parallel executor: test %s failed, please fix it\n", s.c_str());
+        result = -1;
+      }
+    }
+  }
+
   return result;
 }

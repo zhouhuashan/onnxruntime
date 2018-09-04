@@ -29,7 +29,7 @@ namespace PerfTest {
       "\t-t [seconds_to_run]: Specifies the seconds to run for 'duration' mode. Default:600.\n"
       "\t-p [profile_file]: Specifies the profile name to enable profiling and dump the profile data to the file.\n"
       "\t-v: Show verbose information.\n"
-      "\t-x: Use parallel executor, default: sequential executor.\n"
+      "\t-x: Use parallel executor, default (without -x): sequential executor.\n"
       "\t-h: help\n");
 }
 

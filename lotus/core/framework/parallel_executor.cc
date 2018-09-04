@@ -168,8 +168,7 @@ void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& ses
     }
   }
 
-  out_standings_--;
-  if (out_standings_.load() == 0) {
+  if (--out_standings_ == 0) {
     //std::cout << "all out standing nodes are completed." << std::endl;
     complete_cv_.notify_all();
   }
