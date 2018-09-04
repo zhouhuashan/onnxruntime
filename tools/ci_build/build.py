@@ -162,7 +162,7 @@ def install_python_deps():
 def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home, pb_home, configs, cmake_extra_defines, args, cmake_extra_args):
     log.info("Generating CMake build tree")
     cmake_dir = os.path.join(source_dir, "cmake")
-    # TODO: fix jemalloc build so it does not conflict with lotus shared lib builds. (e.g. onnx_untime_pybind)
+    # TODO: fix jemalloc build so it does not conflict with lotus shared lib builds. (e.g. onnxuntime_pybind)
     # for now, disable jemalloc if pybind is also enabled.
     cmake_args = [cmake_path, cmake_dir,
                  "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if args.enable_onnx_tests else "OFF"),

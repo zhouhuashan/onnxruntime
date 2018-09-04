@@ -1,5 +1,6 @@
 codecov
 numpy
+onnx
 onnxmltools
 pandas
 protobuf

@@ -46,21 +46,3 @@ replaces *scikit-learn* to compute the predictions.
     input_name = sess.get_inputs()[0].name
     label_name = sess.get_outputs()[0].name
     pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]   
-
-Supported environments
-----------------------
-
-+--------------------------------+--------------+-------------+--------------------------------------------+
-| OS                             | Supports CPU | Supports GPU| Notes                                      | 
-|================================+==============+=============+============================================+
-| Windows 10                     | YES          | YES         | Must use VS 2017 or the latest VS2015      |
-| Windows 10 Subsystem for Linux | YES          | NO          |                                            |
-| Ubuntu 16.x                    | YES          | YES         |                                            |
-| Ubuntu 17.x                    | YES          | YES         |                                            |
-| Ubuntu 18.x                    | YES          | UNKNOWN     | No CUDA package from Nvidia                |
-| Fedora 24                      | YES          | YES         |                                            |
-| Fedora 25                      | YES          | YES         |                                            |
-| Fedora 26                      | YES          | YES         |                                            |
-| Fedora 27                      | YES          | YES         |                                            |
-| Fedora 28                      | YES          | NO          | Cannot build GPU kernels but can run them  |
-+--------------------------------+--------------+-------------+--------------------------------------------+

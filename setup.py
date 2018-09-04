@@ -62,8 +62,6 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Operating System :: POSIX :: Linux',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.5',
