@@ -118,7 +118,6 @@ class Graph : public GraphBase {
   // The node which refers to <*this> graph (Function).
   // Node* node_;
 
-  std::unordered_map<std::string, int> name_to_initial_tensorIndex_;
   InitializedTensorSet name_to_initial_tensor_;
   std::vector<int> removed_initializer_indexes_;
 

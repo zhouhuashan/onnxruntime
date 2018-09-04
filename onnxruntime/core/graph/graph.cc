@@ -599,7 +599,6 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
         Node& output_node = *output_arg_iter->second;
 
         node.MutableRelationships().input_nodes.insert(&output_node);
-
         auto new_edge = std::make_unique<Node::EdgeEnd>(output_node, *input_arg);
         node.MutableRelationships().input_edges.insert(new_edge.get());
         owned_edges_.push_back(std::move(new_edge));
@@ -1251,7 +1250,6 @@ void Graph::AddInitializedTensor(const TensorProto& tensor) {
 
   const gsl::not_null<TensorProto*> tensorAdded = graph_proto_->add_initializer();
   *(tensorAdded) = tensor;
-  name_to_initial_tensorIndex_[tensor.name()] = graph_proto_->initializer_size() - 1;
   name_to_initial_tensor_[tensor.name()] = tensorAdded;
 
   SetGraphProtoSyncNeeded();
@@ -1259,10 +1257,8 @@ void Graph::AddInitializedTensor(const TensorProto& tensor) {
 }
 
 void Graph::RemoveInitializedTensor(const std::string& tensor_name) {
-  auto iter = name_to_initial_tensorIndex_.find(tensor_name);
-  if (name_to_initial_tensorIndex_.end() != iter) {
-    removed_initializer_indexes_.push_back(iter->second);
-    name_to_initial_tensorIndex_.erase(tensor_name);
+  auto iter = name_to_initial_tensor_.find(tensor_name);
+  if (name_to_initial_tensor_.end() != iter) {
     name_to_initial_tensor_.erase(tensor_name);
     SetGraphProtoSyncNeeded();
     SetGraphResolveNeeded();
@@ -1279,7 +1275,6 @@ bool Graph::GetInitializedTensor(const std::string& tensor_name, gsl::not_null<c
 }
 
 void Graph::CleanAllInitializedTensors() noexcept {
-  name_to_initial_tensorIndex_.clear();
   name_to_initial_tensor_.clear();
   removed_initializer_indexes_.clear();
 
@@ -1853,6 +1848,7 @@ void Graph::CollectRootNodesAndRefs() {
         !(IsSourceNode(node) || IsSinkNode(node))) {
       root_nodes_.push_back(node.Index());
     }
+
     ONNXRUNTIME_ENFORCE(node.Index() < max_size);
     node_refs_[node.Index()] = node.GetInputEdgesCount();
   }
