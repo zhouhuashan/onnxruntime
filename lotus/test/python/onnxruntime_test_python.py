@@ -4,7 +4,7 @@ import os
 import sys
 import numpy as np
 import onnxruntime as onnxrt
-from onnxrt.python._pybind_state import onnxrt_ostream_redirect
+from onnxruntime.python._pybind_state import onnxruntime_ostream_redirect
 
 class TestInferenceSession(unittest.TestCase):
     
@@ -240,8 +240,8 @@ class TestInferenceSession(unittest.TestCase):
         so = onnxrt.SessionOptions()
         so.session_log_verbosity_level = 1
 
-        # use onnxrt_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
-        with onnxrt_ostream_redirect(stdout=True, stderr=True):
+        # use onnxruntime_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
+        with onnxruntime_ostream_redirect(stdout=True, stderr=True):
           sess = onnxrt.InferenceSession(self.get_name("matmul_1.pb"), sess_options=so)
           output = sys.stderr.getvalue()
           self.assertTrue('[I:Lotus:InferenceSession, inference_session' in output)
@@ -251,8 +251,8 @@ class TestInferenceSession(unittest.TestCase):
         ro.run_log_verbosity_level = 1
         ro.run_tag = "testtag123"
 
-        # use onnxrt_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
-        with onnxrt_ostream_redirect(stdout=True, stderr=True):
+        # use onnxruntime_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
+        with onnxruntime_ostream_redirect(stdout=True, stderr=True):
             sess = onnxrt.InferenceSession(self.get_name("mul_1.pb"))
             x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
             sess.run([], {'X': x}, run_options=ro)
