@@ -36,24 +36,24 @@ struct SessionOptions {
   // enable profiling for this session.
   bool enable_profiling = false;
 
-  // the prefix of the profile file. The current time will be appended to the file name.
-  std::string profile_file_prefix = "lotus_profile_";
-
-  std::string session_logid;                       ///< logger id to use for session output
-  unsigned short session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
-
   // enable the memory pattern optimization.
   // The idea is if the input shapes are the same, we could trace the internal memory allocation
   // and generate a memory pattern for future request. So next time we could just do one allocation
   // with a big chunk for all the internal memory allocation.
   bool enable_mem_pattern = true;
 
-  unsigned max_num_graph_transformation_steps = 5;  // TODO choose a good default here?
-
   // enable the memory arena on CPU
   // Arena may pre-allocate memory for future usage.
   // set this option to false if you don't want it.
   bool enable_cpu_mem_arena = true;
+
+  // the prefix of the profile file. The current time will be appended to the file name.
+  std::string profile_file_prefix = "lotus_profile_";
+
+  std::string session_logid;                 ///< logger id to use for session output
+  unsigned session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
+
+  unsigned max_num_graph_transformation_steps = 5;  // TODO choose a good default here?
 };
 
 /**
@@ -99,7 +99,7 @@ class InferenceSession {
     session_options.session_logid as the logger id in messages.
     If nullptr, the default LoggingManager MUST have been created previously as it will be used
     for logging. This will use the default logger id in messages.
-    See core/common/logging/logging.h for details on how to do that, and how LoggingManager::DefaultLogger works.
+    See core/common/logging/logging.h for details, and how LoggingManager::DefaultLogger works.
     */
   explicit InferenceSession(const SessionOptions& session_options,
                             Logging::LoggingManager* logging_manager = nullptr);
@@ -108,8 +108,8 @@ class InferenceSession {
 
   /**
     * Register an execution provider. If you've one to register, call this before invoking Initialize().
-    * The order of invocation indicates the preference order as well. In other words call this method on your
-    * most preferred execution provider first followed by the less preferred ones.
+    * The order of invocation indicates the preference order as well. In other words call this method 
+    * on your most preferred execution provider first followed by the less preferred ones.
     * Calling this API is optional in which case Lotus will use its internal CPU execution provider.
     * @return OK if success.
     */
@@ -134,7 +134,8 @@ class InferenceSession {
   /**
     * Register a custom registry for operator schema and kernels.  If you've one to register, 
     * call this before invoking Initialize().
-    * The order of invocation indicates the reversed preference order. In other words register your most preferred registry at the end.
+    * The order of invocation indicates the reversed preference order: Register your most 
+    * preferred registry at the end.
     * Calling this API is optional.
     * @return OK if success.
     */
@@ -188,8 +189,8 @@ class InferenceSession {
 
   /**
   * Creates a new binding object for binding inputs and outputs.
-  * @param provider_type specifies the location where the inputs need to be potentially copied. See IOBinding class
-  * for more info.
+  * @param provider_type specifies the location where the inputs need to be potentially copied. 
+  * See IOBinding class for more info.
   */
   Common::Status NewIOBinding(std::unique_ptr<IOBinding>* io_binding);
 
@@ -208,17 +209,17 @@ class InferenceSession {
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
     * @note lifetime of the returned pointer is valid as long as the Session object is live.
     */
-  std::pair<Common::Status, const InputDefList*> GetInputs() const;
+  std::pair<Common::Status, const InputDefList*> GetModelInputs() const;
 
   /**
     * Get all output definitions of the model. Use this to get the name/type/shapes of the outputs.
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
     * @note lifetime of the returned pointer is valid as long as the Session object is live.
     */
-  std::pair<Common::Status, const OutputDefList*> GetOutputs() const;
+  std::pair<Common::Status, const OutputDefList*> GetModelOutputs() const;
 
   /**
-    * Get current num threads running Run.
+    * Get the current number of in-progress concurrent Run calls.
     */
   int GetCurrentNumRuns();
 

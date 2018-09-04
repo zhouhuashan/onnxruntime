@@ -21,8 +21,8 @@ Logging overview and expected usage:
 At program startup:
  * Create one or more ISink instances. If multiple, combine using composite_sink.
  * Create a LoggingManager instance with the sink/s with is_default_instance set to true
-   * Only one instance should be created in this way, and it should remain valid for until the program 
-     no longer needs to produce log output.
+   * Only one instance should be created in this way, and it should remain valid for 
+     until the program no longer needs to produce log output.
 
 You can either use the static default Logger which LoggingManager will create when constructed
 via LoggingManager::DefaultLogger(), or separate Logger instances each with different log ids

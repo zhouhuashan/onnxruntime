@@ -41,15 +41,10 @@ const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::s
   return nullptr;
 }
 
-std::multimap<std::string, KernelCreateInfo> const& KernelRegistry::kernel_creator_fn_map() const {
-  std::call_once(kernelCreationFlag, kernel_reg_fn_, [&](KernelCreateInfo&& info) { RegisterInternal(info); });
-  return *kernel_creator_fn_map_;
-}
-
 std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
-  std::vector<std::string> ret(kernel_creator_fn_map().size());
+  std::vector<std::string> ret(kernel_creator_fn_map_.size());
   size_t i = 0;
-  for (const auto& kvp : kernel_creator_fn_map()) {
+  for (const auto& kvp : kernel_creator_fn_map_) {
     ret[i++] = kvp.first;
   }
   return ret;
@@ -65,7 +60,6 @@ std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
 //
 // Note that this is not intended for type-checking the node against the ONNX
 // type specification of the corresponding op, which is done before this check.
-
 bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
                                      const KernelDef& kernel_def,
                                      std::string& error_str,
@@ -151,17 +145,16 @@ bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
 }
 
 Status KernelRegistry::Register(KernelDefBuilder& kernel_builder,
-                                KernelCreateFn kernel_creator) {
+                                const KernelCreateFn& kernel_creator) {
   KernelCreateInfo create_info(kernel_builder.Build(), kernel_creator);
   return Register(create_info);
 }
 
 Status KernelRegistry::Register(KernelCreateInfo& create_info) {
   auto& op_name = create_info.kernel_def->OpName();
-  auto& map = const_cast<KernelCreateMap&>(kernel_creator_fn_map());
 
   // Check op version conflicts.
-  auto range = map.equal_range(op_name);
+  auto range = kernel_creator_fn_map_.equal_range(op_name);
   for (auto i = range.first; i != range.second; ++i) {
     if (i->second.kernel_def &&
         i->second.status.IsOK() &&
@@ -169,42 +162,18 @@ Status KernelRegistry::Register(KernelCreateInfo& create_info) {
       create_info.status =
           Status(LOTUS, FAIL,
                  "Failed to add kernel for " + op_name +
-                     ": Conflicting with a registered kernel with op versions.");
-      // Because currently we still using static registration, keep the invalid entry in the map now
-      map.emplace(op_name, std::move(create_info));
+                 ": Conflicting with a registered kernel with op versions.");
+      // For invalid entries, we keep them in the map now. Must check for status
+      // when using the entries from the map.
+      kernel_creator_fn_map_.emplace(op_name, std::move(create_info));
       return create_info.status;
     }
   }
 
   // Register the kernel.
   // Ownership of the KernelDef is transferred to the map.
-  map.emplace(op_name, std::move(create_info));
+  kernel_creator_fn_map_.emplace(op_name, std::move(create_info));
   return Status::OK();
-}
-
-void KernelRegistry::RegisterInternal(KernelCreateInfo& create_info) const {
-  auto& op_name = create_info.kernel_def->OpName();
-  auto map = kernel_creator_fn_map_.get();
-
-  // Check op version conflicts.
-  auto range = map->equal_range(op_name);
-  for (auto i = range.first; i != range.second; ++i) {
-    if (i->second.kernel_def &&
-        i->second.status.IsOK() &&
-        i->second.kernel_def->IsConflict(*create_info.kernel_def)) {
-      create_info.status =
-          Status(LOTUS, FAIL,
-                 "Failed to add kernel for " + op_name +
-                     ": Conflicting with a registered kernel with op versions.");
-      // Because currently we still using static registration, keep the invalid entry in the map now
-      map->emplace(op_name, std::move(create_info));
-      return;
-    }
-  }
-
-  // Register the kernel.
-  // Ownership of the KernelDef is transferred to the map.
-  map->emplace(op_name, std::move(create_info));
 }
 
 Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
@@ -212,7 +181,7 @@ Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
                                     const SessionState& session_state,
                                     /*out*/ std::unique_ptr<OpKernel>& op_kernel) const {
   const KernelCreateInfo* kernel_create_info = nullptr;
-  LOTUS_RETURN_IF_ERROR(SearchKernelRegistry(node, &kernel_create_info));
+  LOTUS_RETURN_IF_ERROR(FindKernel(node, &kernel_create_info));
 
   OpKernelInfo kernel_info(node, *kernel_create_info->kernel_def, execution_provider, session_state);
   op_kernel.reset(kernel_create_info->kernel_create_func(kernel_info));
@@ -226,9 +195,9 @@ static std::string ToString(const std::vector<std::string>& error_strs) {
   return ostr.str();
 }
 
-Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
-                                            /*out*/ const KernelCreateInfo** kernel_create_info) const {
-  auto range = kernel_creator_fn_map().equal_range(node.OpType());
+Status KernelRegistry::FindKernel(const LotusIR::Node& node,
+                                  /*out*/ const KernelCreateInfo** kernel_create_info) const {
+  auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     // Check if the kernel is ill-formed.
@@ -246,9 +215,10 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
     }
   }
 
-  // In the case of CPU execution provider there is no value in creating a function kernel since the
-  // CPU exec provider is going to simply return a fail status any way. This is hardly helpful for debugging issues where
-  // a kernel cannot be found due to user errors for e.g if the node was created incorrectly by the user.
+  // In the case of CPU execution provider there is no value in creating a function
+  // kernel since the CPU exec provider is going to simply return a fail status any
+  // way. This is hardly helpful for debugging issues where a kernel cannot be found
+  // due to user errors for e.g if the node was created incorrectly by the user.
   if (node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider) {
     std::ostringstream ostr;
     ostr << "Failed to find kernel def for op: " << node.OpType()
@@ -263,7 +233,7 @@ Status KernelRegistry::SearchKernelRegistry(const LotusIR::Node& node,
 bool KernelRegistry::CanExecutionProviderCreateKernel(
     const LotusIR::Node& node,
     LotusIR::ProviderType exec_provider) const {
-  auto range = kernel_creator_fn_map().equal_range(node.OpType());
+  auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
     if (!i->second.status.IsOK()) {

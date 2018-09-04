@@ -52,7 +52,7 @@ Status KernelRegistryManager::SearchKernelRegistry(const LotusIR::Node& node,
 
   Status status;
   for (auto& registry : kernel_registries_) {
-    status = registry->SearchKernelRegistry(node, kernel_create_info);
+    status = registry->FindKernel(node, kernel_create_info);
     if (status.IsOK()) {
       return status;
     }

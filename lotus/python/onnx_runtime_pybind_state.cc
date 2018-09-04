@@ -300,7 +300,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         return sess->EndProfiling();
       })
       .def_property_readonly("inputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
-        auto res = sess->GetInputs();
+        auto res = sess->GetModelInputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
         } else {
@@ -308,7 +308,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
       })
       .def_property_readonly("outputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
-        auto res = sess->GetOutputs();
+        auto res = sess->GetModelOutputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
         } else {
