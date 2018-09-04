@@ -11,11 +11,11 @@
 #include "core/framework/fence.h"
 
 namespace Lotus {
-#define CPU "Cpu"
-#define CUDA "Cuda"
-#define CUDA_PINNED "CudaPinned"
-#define MKLDNN "MklDnn"
-#define MKLDNN_CPU "MklDnnCpu"
+constexpr const char* CPU = "Cpu";
+constexpr const char* CUDA = "Cuda";
+constexpr const char* CUDA_PINNED = "CudaPinned";
+constexpr const char* MKLDNN = "MklDnn";
+constexpr const char* MKLDNN_CPU = "MklDnnCpu";
 
 // forward declaration
 class SessionState;
