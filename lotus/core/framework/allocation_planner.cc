@@ -465,8 +465,8 @@ class PlannerImpl {
         } else if (FindReusableInput(*pnode, output_arg_num, &reused)) {
           // Reuse one of this node's input buffers as the output buffer (for in-place update)
           Reuse(reused, current);
-        } else if (FindReusableTensor(*node_output, &reused)) {
-          // Reuse an available (dead) buffer for this output
+        } else if (!context_.EnableParallelExecution() && FindReusableTensor(*node_output, &reused)) {
+          // Reuse an available (dead) buffer for this output, this is only for sequential execution.
           Reuse(reused, current);
         } else {
           // otherwise: allocate a new buffer for this output

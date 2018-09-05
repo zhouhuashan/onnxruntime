@@ -87,9 +87,10 @@ Common::Status SessionStateInitializer::CreatePlan(const LotusIR::GraphTransform
 
     session_state_.SetExecutionPlan(std::move(exec_plan));
   } else {
-    // Parallel executor doesn't need a specific plan now, will use the sequential one.
+    // Parallel execution still uses same allocation plan, but has limitation of memory buffer reuse.
+    SequentialPlannerContext context(true /* enable parallel execution */);
     LOTUS_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
-                                                        session_state_.GetMLValueNameIdxMap(), exec_plan));
+                                                        session_state_.GetMLValueNameIdxMap(), context, exec_plan));
 
     session_state_.SetExecutionPlan(std::move(exec_plan));
   }
