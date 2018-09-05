@@ -17,13 +17,12 @@ class IdGenerator {
 };
 
 bool InsertCastTransformer::NeedInsertCast(const LotusIR::Node* node, const LotusIR::NodeArg* input) const {
+  //If the node's input is float16 and currently the node is not assigned to any XP.
+  //we need insert a cast to float, and put the node on CPU for default behavior.
+  //TODO: a better check is to check does the CPU kernel with float exist or not.
   if (input->Type() != nullptr &&
       DataTypeImpl::TypeFromProto(*input->TypeAsProto()) == DataTypeImpl::GetTensorType<MLFloat16>() &&
-      node->GetExecutionProviderType() == LotusIR::kCpuExecutionProvider) {
-    for (auto registry : kernels_registries_) {
-      if (registry->CanExecutionProviderCreateKernel(*node, node->GetExecutionProviderType()))
-        return false;
-    }
+      node->GetExecutionProviderType().empty()) {
     return true;
   }
   return false;
@@ -94,6 +93,12 @@ Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const
         casted = true;
       }
     }
+
+    if (casted && node->GetExecutionProviderType().empty()) {
+      //set current node to CPU execution provider
+      node->SetExecutionProviderType(kCpuExecutionProvider);
+    }
+
     auto& outputs = node->OutputDefs();
     for (auto output : outputs) {
       // todo: check is the kernel available

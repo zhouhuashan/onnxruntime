@@ -92,20 +92,18 @@ Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
     }
   }
 
-  for (auto& node : graph.Nodes()) {
-    if (!graph.IsSourceNode(node) && !graph.IsSinkNode(node) && node.GetExecutionProviderType().empty()) {
-      if(node.Name().empty())
-          return Status(LOTUS, FAIL, "Partitioning failed. No execution provider is capable of running op (" + node.OpType() + ").");
-      return Status(LOTUS, FAIL, "Partitioning failed. No execution provider is capable of running node (" + node.Name() + ").");
-    }
-
+  //For some cases, like fp16 on cpu, right now we don't have any kernel support that.
+  //But we will insert cast op to run the model, so skip the error checking here.
+  //If after graph transform phase, the node still not assigned, we will report error
+  //during kernel creation phase.
 #ifdef COUNT_NON_CUDA_OPS
+  for (auto& node : graph.Nodes()) {
     if (node.GetExecutionProviderType() != kCudaExecutionProvider &&
         node.Domain() != kMLDomain &&
         node.Domain() != kMSDomain)
       non_cuda.AddOp(node.OpType());
-#endif
   }
+#endif
 
   kernel_registry_mgr_.RegisterKernelRegistry(fused_kernel_registry, KernelRegistryPriority::HighPriority);
 

@@ -24,11 +24,9 @@ TEST(TransformerTest, InsertCastGPUTest) {
       o3_def("O3", &tensor_float_16);
 
   auto node1 = graph.AddNode("node1", "MatMul", "cpu operator1", ArgMap{&i1_def, &i2_def}, ArgMap{&o1_def});
-  node1->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
   auto node2 = graph.AddNode("node2", "MatMul", "gpu operator1", ArgMap{&o1_def, &i3_def}, ArgMap{&o2_def});
   node2->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
   auto node3 = graph.AddNode("node3", "Clip", "cpu operator2", ArgMap{&o2_def}, ArgMap{&o3_def});
-  node3->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
 
   auto status = graph.Resolve();
   ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
@@ -42,7 +40,8 @@ TEST(TransformerTest, InsertCastGPUTest) {
 #endif
 
   bool modified = true;
-  EXPECT_TRUE(transformer.Apply(graph, modified).IsOK());
+  status = transformer.Apply(graph, modified);
+  EXPECT_TRUE(status.IsOK());
   status = graph.Resolve();
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   EXPECT_EQ(graph.NumberOfNodes(), 10);
@@ -84,11 +83,8 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
       o3_def("O3", &tensor_float_16);
 
   auto node1 = graph.AddNode("node1", "MatMul", "cpu operator1", ArgMap{&i1_def, &i2_def}, ArgMap{&o1_def});
-  node1->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
   auto node2 = graph.AddNode("node2", "MatMul", "gpu operator1", ArgMap{&o1_def, &i3_def}, ArgMap{&o2_def});
-  node2->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
   auto node3 = graph.AddNode("node3", "Clip", "cpu operator2", ArgMap{&o2_def}, ArgMap{&o3_def});
-  node3->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
 
   auto status = graph.Resolve();
   ASSERT_TRUE(status.IsOK()) << status.ErrorMessage();
