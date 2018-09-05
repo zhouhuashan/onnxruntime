@@ -61,7 +61,7 @@ bool PerformanceRunner::Initialize() {
   std::unique_ptr<ITestCase> test_case(CreateOnnxTestCase(model_name));
 
   if (!test_case->SetModelPath(model_path).IsOK()) {
-    LOGF_DEFAULT(ERROR, "load data from %s failed", model_path.c_str());
+    LOGF_DEFAULT(ERROR, "load model failed");
     return false;
   }
 
