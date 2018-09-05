@@ -34,6 +34,14 @@ class PoolBase {
         count_include_pad_ = (temp != 0);
       }
 
+      if (op_name_ == "MaxPool") {
+        int start, end;
+        info.GetKernelDef().SinceVersion(&start, &end);
+        if (start == 8) {
+          storage_order_ = info.GetAttrOrDefault<int64_t>("storage_order", 0 /*default_value*/);
+        }
+      }
+
       for (size_t dim = 0; dim < kernel_shape_.size(); ++dim) {
         LOTUS_ENFORCE(kernel_shape_[dim] > 0);
         LOTUS_ENFORCE(pads_[dim] < kernel_shape_[dim] && pads_[dim + kernel_shape_.size()] < kernel_shape_[dim],
@@ -122,6 +130,7 @@ class PoolBase {
   std::string op_name_;
   bool global_pooling_{};
   bool count_include_pad_{};
+  int64_t storage_order_{0};  // MaxPool_8 only. 0 is row major, and 1 is column major. Default is 0.
   std::vector<int64_t> kernel_shape_;
   std::vector<int64_t> pads_;
   std::vector<int64_t> strides_;
