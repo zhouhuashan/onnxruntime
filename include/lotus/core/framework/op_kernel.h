@@ -157,8 +157,6 @@ inline Tensor* OpKernelContext::Output<Tensor>(int) {
   return nullptr;
 }
 
-using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
-
 struct KernelCreateInfo {
   std::unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.
   KernelCreateFn kernel_create_func;

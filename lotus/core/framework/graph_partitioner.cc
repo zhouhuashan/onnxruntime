@@ -3,9 +3,10 @@
 #include "core/framework/kernel_registry_manager.h"
 #include "core/graph/function.h"
 #include "core/graph/graph.h"
-#include "core/graph/indexed_sub_graph.h"
+#include "core/framework/computation_capacity.h"
 #include "core/framework/kernel_registry_manager.h"
 #include "core/framework/execution_providers.h"
+#include "core/framework/kernel_registry.h"
 
 // uncomment this line to count non-CUDA ops in ONNX domain
 //#define COUNT_NON_CUDA_OPS
@@ -36,23 +37,39 @@ NonCudaOps non_cuda;
 
 using namespace ::Lotus::Common;
 namespace Lotus {
+
+KernelDefBuilder& BuildFusedKernelDef(KernelDefBuilder& builder, const LotusIR::Node& node) {
+  auto schema = node.Op();
+  builder.SetName(schema->Name())
+      .SetDomain(schema->domain())
+      .SinceVersion(schema->SinceVersion())
+      .Provider(node.GetExecutionProviderType());
+  auto& inputs = node.InputDefs();
+  for (auto input : inputs) {
+    builder.TypeConstraint(input->Name(), DataTypeImpl::TypeFromProto(*input->TypeAsProto()));
+  }
+  return builder;
+}
+
 Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
   if (providers_.Empty()) {
     return Status(LOTUS, INVALID_ARGUMENT, "No provider specified.");
   }
-
+  //fused_kernel_registry is prepareing the kernels created on the fly for fused sub graph.
+  //It is only visiable for current session.
+  std::shared_ptr<KernelRegistry> fused_kernel_registry = std::make_shared<KernelRegistry>();
   // Partitioning <graph> based on provider preference and their capabilities.
   auto kernel_registries = kernel_registry_mgr_.GetAllKernelRegistries();
   for (auto& provider : providers_) {
     auto capability_results = provider->GetCapability(graph, kernel_registries);
     int count = 0;
-    for (auto& sub_graph : capability_results) {
-      if (nullptr == sub_graph) {
+    for (auto& capacity : capability_results) {
+      if (nullptr == capacity || nullptr == capacity->sub_graph_) {
         continue;
       }
-      if (1 == sub_graph->nodes.size()) {
+      if (1 == capacity->sub_graph_->nodes.size()) {
         // The <provider> can run a single node in the <graph>.
-        auto node = graph.GetNode(sub_graph->nodes[0]);
+        auto node = graph.GetNode(capacity->sub_graph_->nodes[0]);
         if (nullptr != node && node->GetExecutionProviderType().empty()) {
           node->SetExecutionProviderType(provider->Type());
         }
@@ -60,10 +77,17 @@ Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
         // The <provider> can run a fused <sub_graph> in the <graph>.
         //
         // Add fused node into <graph>
-        LOTUS_ENFORCE(nullptr != sub_graph->GetMetaDef());
-        std::string node_name = provider->Type() + "_" + sub_graph->GetMetaDef()->name + "_" + std::to_string(count++);
-        auto fused_node = graph.FuseSubGraph(std::move(sub_graph), node_name);
+        LOTUS_ENFORCE(nullptr != capacity->sub_graph_->GetMetaDef());
+        std::string node_name = provider->Type() + "_" + capacity->sub_graph_->GetMetaDef()->name + "_" + std::to_string(count++);
+        auto fused_node = graph.FuseSubGraph(std::move(capacity->sub_graph_), node_name);
         fused_node->SetExecutionProviderType(provider->Type());
+        auto fused_kernel_func = capacity->fuse_kernel_function_;
+        if (fused_kernel_func != nullptr) {
+          // build the kernel definition on the fly, and register it to the fused_kernel_regisitry.
+          KernelDefBuilder builder;
+          BuildFusedKernelDef(builder, *fused_node);
+          fused_kernel_registry->Register(builder, fused_kernel_func);
+        }
       }
     }
   }
@@ -82,6 +106,8 @@ Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
       non_cuda.AddOp(node.OpType());
 #endif
   }
+
+  kernel_registry_mgr_.RegisterKernelRegistry(fused_kernel_registry, KernelRegistryPriority::HighPriority);
 
   return Status::OK();
 }

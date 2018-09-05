@@ -2,6 +2,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/kernel_registry.h"
 #include "contrib_ops/contrib_ops.h"
+#include "core/framework/computation_capacity.h"
 
 namespace Lotus {
 
@@ -392,5 +393,20 @@ static void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn
 std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const {
   static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(RegisterCPUKernels);
   return kernel_registry;
+}
+
+std::vector<std::unique_ptr<ComputationCapacity>>
+CPUExecutionProvider::GetCapability(const LotusIR::Graph& graph,
+	const std::vector<const KernelRegistry*>& kernel_registries) const {
+	std::vector<std::unique_ptr<ComputationCapacity>> result = IExecutionProvider::GetCapability(graph, kernel_registries);
+	
+	for (auto& rule : fuse_rules_) {
+		rule(graph, result);
+	}
+	return result;
+}
+
+void CPUExecutionProvider::InsertFusedRules(FuseRuleFn rule) {
+	fuse_rules_.push_back(rule);
 }
 }  // namespace Lotus

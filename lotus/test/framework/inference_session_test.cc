@@ -14,7 +14,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
-#include "core/graph/indexed_sub_graph.h"
+#include "core/framework/computation_capacity.h"
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
@@ -73,17 +73,17 @@ class FuseExecutionProvider : public IExecutionProvider {
                         std::make_unique<DummyArena>(device_info.factory(0))));
   }
 
-  std::vector<std::unique_ptr<IndexedSubGraph>>
+  std::vector<std::unique_ptr<ComputationCapacity>>
   GetCapability(const LotusIR::Graph& graph,
                 const std::vector<const KernelRegistry*>& /*kernel_registries*/) const override {
     // Fuse two add into one.
-    std::vector<std::unique_ptr<IndexedSubGraph>> result;
-    result.push_back(std::make_unique<IndexedSubGraph>());
+    std::vector<std::unique_ptr<ComputationCapacity>> result;
+	std::unique_ptr<IndexedSubGraph> sub_graph = std::make_unique<IndexedSubGraph>();
     for (auto& node : graph.Nodes()) {
       if (graph.IsSourceNode(node) || graph.IsSinkNode(node)) {
         continue;
       }
-      result[0]->nodes.push_back(node.Index());
+	  sub_graph->nodes.push_back(node.Index());
     }
     auto meta_def = std::make_unique<::Lotus::IndexedSubGraph::MetaDef>();
     meta_def->name = "FuseAdd";
@@ -92,7 +92,8 @@ class FuseExecutionProvider : public IExecutionProvider {
     meta_def->outputs = {"M"};
     meta_def->since_version = 1;
     meta_def->status = onnx::EXPERIMENTAL;
-    result[0]->SetMetaDef(meta_def);
+	sub_graph->SetMetaDef(meta_def);
+	result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
     return result;
   }
 

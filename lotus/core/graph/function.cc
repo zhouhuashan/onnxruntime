@@ -1,12 +1,11 @@
-#include "core/graph/function.h"
+#include "core/graph/function_impl.h"
 #include "core/graph/graph.h"
+#include "core/graph/function_container.h"
+
 namespace Lotus {
-Function::Function(LotusIR::Graph& graph,
-                   std::unique_ptr<IndexedSubGraph> customized_func,
-                   std::vector<std::unique_ptr<LotusIR::Node>>& func_nodes) {
-  for (auto& func_node : func_nodes) {
-    func_nodes_.push_back(std::move(func_node));
-  }
+
+FunctionImpl::FunctionImpl(const LotusIR::Graph& graph,
+                           std::unique_ptr<IndexedSubGraph> customized_func) {
   parent_graph_ = &graph;
   customized_func_body_ = std::move(customized_func);
   auto meta_def = customized_func_body_->GetMetaDef();
@@ -28,10 +27,48 @@ Function::Function(LotusIR::Graph& graph,
     ++i;
   }
   op_schema_->Finalize();
+  //construct body
+  std::unordered_map<std::string, int> domain_to_version;
+  //TODO: set correct domain and version
+  domain_to_version[LotusIR::kOnnxDomain] = 7;
+  body_ = std::make_unique<LotusIR::Model>("fused_function_subgraph", false, LotusIR::ModelMetaData(),
+                                           /*TODO: get custom schema*/ nullptr, domain_to_version);
+
+  auto& sub_graph = body_->MainGraph();
+  //Add node and node args
+  //TODO: for better performance, we could try to transfer the nodes in parent graph to sub-graph directly,
+  //instead of create new nodes.
+  for (auto& node_index : customized_func_body_->nodes) {
+    auto node = parent_graph_->GetNode(node_index);
+    std::vector<LotusIR::NodeArg*> inputs, outputs;
+    for (auto input : node->InputDefs()) {
+      auto& n_input = sub_graph.GetOrCreateNodeArg(input->Name(), input->TypeAsProto());
+      inputs.push_back(&n_input);
+    }
+    for (auto output : node->OutputDefs()) {
+      auto& n_output = sub_graph.GetOrCreateNodeArg(output->Name(), output->TypeAsProto());
+      outputs.push_back(&n_output);
+    }
+    sub_graph.AddNode(node->Name(), node->OpType(), node->Description(), inputs, outputs, &node->GetAttributes(), node->Domain());
+  }
+  //TODO: if we reuse the nodes in parent graph, maybe we don't need to resolve it.
+  LOTUS_ENFORCE(sub_graph.Resolve().IsOK());
 }
 
-const onnx::OpSchema& Function::OpSchema() const {
+const onnx::OpSchema& FunctionImpl::OpSchema() const {
   return *op_schema_;
 }
 
+const LotusIR::GraphBase& FunctionImpl::Body() const {
+  return body_->MainGraph();
+}
+
+const IndexedSubGraph& FunctionImpl::GetIndexedSubGraph() const {
+  return *customized_func_body_;
+}
+
+std::unique_ptr<Function> MakeFunction(const LotusIR::Graph& graph,
+                                       std::unique_ptr<IndexedSubGraph> customized_func) {
+  return std::make_unique<FunctionImpl>(graph, std::move(customized_func));
+}
 }  // namespace Lotus

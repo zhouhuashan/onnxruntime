@@ -217,6 +217,7 @@ set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include
     $<TARGET_PROPERTY:tvm_topi,INTERFACE_INCLUDE_DIRECTORIES> 
     $<TARGET_PROPERTY:nnvm_compiler,INTERFACE_INCLUDE_DIRECTORIES>)
 add_definitions(-DUSE_TVM)
+include(lotus_codegen.cmake)
 endif()
 
 if (lotus_RUN_ONNX_TESTS)

@@ -430,6 +430,14 @@ class GraphBase {
     return nullptr;
   }
 
+  const NodeArg* GetNodeArg(const std::string& name) const {
+    auto iter = node_args_.find(name);
+    if (iter != node_args_.end()) {
+      return iter->second;
+    }
+    return nullptr;
+  }
+
   // Get NodeArg by name, or create NodeArg owned by the graph if not found
   NodeArg& GetOrCreateNodeArg(const std::string& name, const onnx::TypeProto* p_arg_type) {
     auto iter = node_args_.find(name);
@@ -611,10 +619,7 @@ class GraphBase {
   // output parameter inferredShapes.
   ::Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
                                                     /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
-
-  // Transfer node.
-  std::unique_ptr<Node> TransferNode(NodeIndex node_index);
-
+  
  private:
   // need custom versions to handle the unique_ptr's in nodes_
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphBase);

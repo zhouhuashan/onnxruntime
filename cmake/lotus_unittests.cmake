@@ -195,11 +195,13 @@ file(GLOB_RECURSE lotus_test_tvm_src
 set(lotus_test_tvm_libs
   tvm
   nnvm_compiler
+  lotus_codegen_utils
   )
 
 set(lotus_test_tvm_dependencies
   tvm
   nnvm_compiler
+  lotus_codegen_utils
   )
 
 

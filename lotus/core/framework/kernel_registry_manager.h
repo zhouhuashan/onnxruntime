@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include <list>
+#include <mutex>
 #include "core/common/status.h"
 #include "core/graph/graph.h"
 
@@ -54,5 +55,6 @@ class KernelRegistryManager {
 
   // This list stores all kernel registries shared across sessions, including common ones and customized ones.
   std::list<std::shared_ptr<KernelRegistry>> kernel_registries_;
+  mutable std::mutex lock_;
 };
 }  // namespace Lotus

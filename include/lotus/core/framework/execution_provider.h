@@ -10,7 +10,7 @@ class Graph;
 }  // namespace LotusIR
 namespace Lotus {
 
-struct IndexedSubGraph;
+struct ComputationCapacity;
 class KernelRegistry;
 class KernelRegistryManager;
 
@@ -33,7 +33,7 @@ class IExecutionProvider {
   // contains more than one node. The node indexes contained in sub-graphs may
   // have overlap, and it's lotus runtime's responsibility to do the partition
   // and decide whether a node will be assigned to <*this> execution provider.
-  virtual std::vector<std::unique_ptr<IndexedSubGraph>>
+  virtual std::vector<std::unique_ptr<ComputationCapacity>>
   GetCapability(const LotusIR::Graph& graph,
                 const std::vector<const KernelRegistry*>& kernel_registries) const;
 
