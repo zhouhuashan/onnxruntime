@@ -4,7 +4,7 @@ API
 ===
 
 Summary of public function and classes exposed
-in the Lotus binding.
+in *onnxruntime*.
 
 .. contents::
     :local:
@@ -12,18 +12,18 @@ in the Lotus binding.
 Examples and datasets
 =====================
 
-.. autofunction:: lotus.python.datasets.get_example
+.. autofunction:: onnxruntime.python.datasets.get_example
 
 Load and run a model
 ====================
 
-.. autoclass:: lotus.InferenceSession
+.. autoclass:: onnxruntime.InferenceSession
     :members:
 
-.. autoclass:: lotus.RunOptions
+.. autoclass:: onnxruntime.RunOptions
     :members:
 
-.. autoclass:: lotus.SessionOptions
+.. autoclass:: onnxruntime.SessionOptions
     :members:
 
 

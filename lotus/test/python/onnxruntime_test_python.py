@@ -1,15 +1,10 @@
 # -*- coding: UTF-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import unittest
 import os
 import sys
 import numpy as np
-import lotus
-from lotus.python._pybind_state import lotus_ostream_redirect
+import onnxruntime as onnxrt
+from onnxruntime.python._pybind_state import onnxruntime_ostream_redirect
 
 class TestInferenceSession(unittest.TestCase):
     
@@ -27,7 +22,7 @@ class TestInferenceSession(unittest.TestCase):
         raise FileNotFoundError("Unable to find '{0}' or '{1}' or '{2}'".format(name, rel, res))
 
     def testRunModel(self):
-        sess = lotus.InferenceSession(self.get_name("mul_1.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("mul_1.pb"))
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "X")
@@ -44,7 +39,7 @@ class TestInferenceSession(unittest.TestCase):
     def testRunModelFromBytes(self):
         with open(self.get_name("mul_1.pb"), "rb") as f:
             content = f.read()
-        sess = lotus.InferenceSession(content)
+        sess = onnxrt.InferenceSession(content)
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "X")
@@ -59,7 +54,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
     def testRunModel2(self):
-        sess = lotus.InferenceSession(self.get_name("matmul_1.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("matmul_1.pb"))
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "X")
@@ -74,7 +69,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
     def testRunModelSymbolicInput(self):
-        sess = lotus.InferenceSession(self.get_name("matmul_2.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("matmul_2.pb"))
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "X")
@@ -91,7 +86,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
     def testBooleanInputs(self):
-        sess = lotus.InferenceSession(self.get_name("logicaland.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("logicaland.pb"))
         a = np.array([[True, True], [False, False]], dtype=np.bool)
         b = np.array([[True, False], [True, False]], dtype=np.bool)
 
@@ -121,7 +116,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_equal(output_expected, res[0])
 
     def testStringInput1(self):
-        sess = lotus.InferenceSession(self.get_name("identity_string.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("identity_string.pb"))
         x = np.array(['this', 'is', 'identity', 'test'], dtype=np.str).reshape((2,2))
 
         x_name = sess.get_inputs()[0].name
@@ -142,7 +137,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_equal(x, res[0])
 
     def testStringInput2(self):
-        sess = lotus.InferenceSession(self.get_name("identity_string.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("identity_string.pb"))
         x = np.array(['Olá', '你好', '여보세요', 'hello'], dtype=np.unicode).reshape((2,2))
 
         x_name = sess.get_inputs()[0].name
@@ -163,7 +158,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_equal(x, res[0])
 
     def testConvAutoPad(self):
-        sess = lotus.InferenceSession(self.get_name("conv_autopad.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("conv_autopad.pb"))
         x = np.array(25 * [1.0], dtype=np.float32).reshape((1,1,5,5))
 
         x_name = sess.get_inputs()[0].name
@@ -189,7 +184,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_allclose(output_expected, res[0])
 
     def testZipMapStringFloat(self):
-        sess = lotus.InferenceSession(self.get_name("zipmap_stringfloat.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("zipmap_stringfloat.pb"))
         x = np.array([1.0, 0.0, 3.0, 44.0, 23.0, 11.0], dtype=np.float32).reshape((2,3))
 
         x_name = sess.get_inputs()[0].name
@@ -208,7 +203,7 @@ class TestInferenceSession(unittest.TestCase):
         self.assertEqual(output_expected, res[0])
 
     def testZipMapInt64Float(self):
-        sess = lotus.InferenceSession(self.get_name("zipmap_int64float.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("zipmap_int64float.pb"))
         x = np.array([1.0, 0.0, 3.0, 44.0, 23.0, 11.0], dtype=np.float32).reshape((2,3))
 
         x_name = sess.get_inputs()[0].name
@@ -227,14 +222,14 @@ class TestInferenceSession(unittest.TestCase):
 
     def testRaiseWrongNumInputs(self):
         with self.assertRaises(ValueError) as context:
-            sess = lotus.InferenceSession(self.get_name("logicaland.pb"))
+            sess = onnxrt.InferenceSession(self.get_name("logicaland.pb"))
             a = np.array([[True, True], [False, False]], dtype=np.bool)
             res = sess.run([], {'input:0': a})
 
         self.assertTrue('Model requires 2 inputs' in str(context.exception))
 
     def testModelMeta(self):
-        sess = lotus.InferenceSession(self.get_name('squeezenet/model.onnx'))
+        sess = onnxrt.InferenceSession(self.get_name('squeezenet/model.onnx'))
         modelmeta = sess.get_modelmeta()
         self.assertEqual('onnx-caffe2', modelmeta.producer_name)
         self.assertEqual('squeezenet_old', modelmeta.graph_name)
@@ -242,32 +237,32 @@ class TestInferenceSession(unittest.TestCase):
         self.assertEqual('', modelmeta.description)
 
     def testConfigureSessionVerbosityLevel(self):
-        so = lotus.SessionOptions()
+        so = onnxrt.SessionOptions()
         so.session_log_verbosity_level = 1
 
-        # use lotus_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
-        with lotus_ostream_redirect(stdout=True, stderr=True):
-          sess = lotus.InferenceSession(self.get_name("matmul_1.pb"), sess_options=so)
+        # use onnxruntime_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
+        with onnxruntime_ostream_redirect(stdout=True, stderr=True):
+          sess = onnxrt.InferenceSession(self.get_name("matmul_1.pb"), sess_options=so)
           output = sys.stderr.getvalue()
           self.assertTrue('[I:Lotus:InferenceSession, inference_session' in output)
 
     def testConfigureRunVerbosityLevel(self):
-        ro = lotus.RunOptions()
+        ro = onnxrt.RunOptions()
         ro.run_log_verbosity_level = 1
         ro.run_tag = "testtag123"
 
-        # use lotus_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
-        with lotus_ostream_redirect(stdout=True, stderr=True):
-            sess = lotus.InferenceSession(self.get_name("mul_1.pb"))
+        # use onnxruntime_ostream_redirect to redirect c++ stdout/stderr to python sys.stdout and sys.stderr
+        with onnxruntime_ostream_redirect(stdout=True, stderr=True):
+            sess = onnxrt.InferenceSession(self.get_name("mul_1.pb"))
             x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
             sess.run([], {'X': x}, run_options=ro)
             output = sys.stderr.getvalue()
             self.assertTrue('[I:Lotus:testtag123,' in output)
 
     def testProfilerWithSessionOptions(self):
-        so = lotus.SessionOptions()
+        so = onnxrt.SessionOptions()
         so.enable_profiling = True
-        sess = lotus.InferenceSession(self.get_name("mul_1.pb"), sess_options=so)
+        sess = onnxrt.InferenceSession(self.get_name("mul_1.pb"), sess_options=so)
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
         sess.run([], {'X': x})
         profile_file = sess.end_profiling()
@@ -282,7 +277,7 @@ class TestInferenceSession(unittest.TestCase):
             self.assertTrue(']' in lines[8])
 
     def testDictVectorizer(self):
-        sess = lotus.InferenceSession(self.get_name("pipeline_vectorize.onnx"))
+        sess = onnxrt.InferenceSession(self.get_name("pipeline_vectorize.onnx"))
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "float_input")
         input_type = str(sess.get_inputs()[0].type)
@@ -326,7 +321,7 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
     def testLabelEncoder(self):
-        sess = lotus.InferenceSession(self.get_name("LabelEncoder.pb"))
+        sess = onnxrt.InferenceSession(self.get_name("LabelEncoder.pb"))
         input_name = sess.get_inputs()[0].name
         self.assertEqual(input_name, "input")
         input_type = str(sess.get_inputs()[0].type)

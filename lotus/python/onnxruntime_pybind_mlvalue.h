@@ -12,13 +12,13 @@
 #include "core/framework/ml_value.h"
 
 using namespace std;
-namespace lotus {
+namespace onnxruntime {
 namespace python {
 
 namespace py = pybind11;
 using namespace Lotus;
 
-int LotusTensorToNumpyType(const MLDataType& tensor_type);
+int OnnxRuntimeTensorToNumpyType(const MLDataType& tensor_type);
 
 void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlvalue);
 

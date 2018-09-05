@@ -1,6 +1,6 @@
 """
-Train, convert and predict with Lotus
-=====================================
+Train, convert and predict with ONNX Runtime
+============================================
 
 This example demonstrates an end to end scenario
 starting with the training of a machine learned model
@@ -54,11 +54,11 @@ onx = convert_sklearn(clr, initial_types=initial_type)
 save_model(onx, "logreg_iris.onnx")
 
 ##################################
-# We load the model with Lotus and look at
+# We load the model with ONNX Runtime and look at
 # its input and output.
 
-import lotus
-sess = lotus.InferenceSession("logreg_iris.onnx")
+import onnxruntime as onnxrt
+sess = onnxrt.InferenceSession("logreg_iris.onnx")
 
 print("input name='{}' and shape={}".format(sess.get_inputs()[0].name, sess.get_inputs()[0].shape))
 print("output name='{}' and shape={}".format(sess.get_outputs()[0].name, sess.get_outputs()[0].shape))
@@ -88,7 +88,7 @@ prob_sklearn = clr.predict_proba(X_test)
 print(prob_sklearn[:3])
 
 #############################
-# And then with Lotus.
+# And then with ONNX Runtime.
 # The probabilies appear to be 
 
 prob_name = sess.get_outputs()[1].name
@@ -101,17 +101,18 @@ pprint.pprint(prob_rt[0:3])
 # Let's benchmark.
 from timeit import Timer
 
-def speed(inst, number=20, repeat=20):
+def speed(inst, number=10, repeat=20):
     timer = Timer(inst, globals=globals())
     raw = numpy.array(timer.repeat(repeat, number=number))
     ave = raw.sum() / len(raw) / number
     mi, ma = raw.min() / number, raw.max() / number
     print("Average %1.3g min=%1.3g max=%1.3g" % (ave, mi, ma))
+    return ave
 
 print("Execution time for clr.predict")
 speed("clr.predict(X_test)")
 
-print("Execution time for Lotus")
+print("Execution time for ONNX Runtime")
 speed("sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]")
 
 ###############################
@@ -150,7 +151,62 @@ speed("loop(X_test, sess_predict_proba, 100)")
 
 #####################################
 # This second comparison is better as 
-# Lotus, in this experience,
+# ONNX Runtime, in this experience,
 # computes the label and the probabilities
 # in every case.
 
+##########################################
+# Benchmark with RandomForest
+# +++++++++++++++++++++++++++
+#
+# We first train and save a model in ONNX format.
+from sklearn.ensemble import RandomForestClassifier
+rf = RandomForestClassifier()
+rf.fit(X_train, y_train)
+
+initial_type = [('float_input', FloatTensorType([1, 4]))]
+onx = convert_sklearn(rf, initial_types=initial_type)
+save_model(onx, "rf_iris.onnx")
+
+###################################
+# We compare.
+
+sess = onnxrt.InferenceSession("rf_iris.onnx")
+
+def sess_predict_proba_rf(x):
+    return sess.run([prob_name], {input_name: x.astype(numpy.float32)})[0]
+
+print("Execution time for predict_proba")
+speed("loop(X_test, rf.predict_proba, 100)")
+
+print("Execution time for sess_predict_proba")
+speed("loop(X_test, sess_predict_proba_rf, 100)")
+
+##################################
+# Let's see with different number of trees.
+
+measures = []
+
+for n_trees in range(5, 51, 5):   
+    print(n_trees)
+    rf = RandomForestClassifier(n_estimators=n_trees)
+    rf.fit(X_train, y_train)
+    initial_type = [('float_input', FloatTensorType([1, 4]))]
+    onx = convert_sklearn(rf, initial_types=initial_type)
+    save_model(onx, "rf_iris_%d.onnx" % n_trees)
+    sess = onnxrt.InferenceSession("rf_iris_%d.onnx" % n_trees)
+    def sess_predict_proba_loop(x):
+        return sess.run([prob_name], {input_name: x.astype(numpy.float32)})[0]
+    sk = speed("loop(X_test, rf.predict_proba, 100)", number=5, repeat=5)
+    rt = speed("loop(X_test, sess_predict_proba_loop, 100)", number=5, repeat=5)
+    measures.append({'n_trees': n_trees, 'sklearn': sk, 'onnxrt': rt})
+
+from pandas import DataFrame
+df = DataFrame(measures)
+ax = df.plot(x="n_trees", y="sklearn", label="scikit-learn", c="blue", logy=True)
+df.plot(x="n_trees", y="onnxrt", label="onnxruntime",
+                ax=ax, c="green", logy=True)
+ax.set_xlabel("Number of trees")
+ax.set_ylabel("Prediction time (s)")
+ax.set_title("Speed comparison between scikit-learn and ONNX Runtime\nFor a random forest on Iris dataset")
+ax.legend()

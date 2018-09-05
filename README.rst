@@ -1,0 +1,48 @@
+ONNX Runtime
+============
+
+ONNX Runtime is a critical component for platforms that 
+enables high-performance evaluation of trained machine learning (ML)
+models while keeping resource usage low. 
+Building on Microsoft's dedication to the 
+`Open Neural Network Exchange (ONNX) <https://onnx.ai/>`_
+community, it supports traditional ML models as well 
+as Deep Learning algorithms in the
+`ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_.
+
+Example
+-------
+
+The following example demonstrates an end-to-end example
+in a very common scenario. A model is trained with *scikit-learn*
+but it has to run very fast in a optimized environment.
+The model is then converted into ONNX format and ONNX Runtime
+replaces *scikit-learn* to compute the predictions.
+
+::
+
+    # Train a model.
+    from sklearn.datasets import load_iris
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForest
+    iris = load_iris()
+    X, y = iris.data, iris.target
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    clr = RandomForest()
+    clr.fit(X_train, y_train)
+
+    # Convert into ONNX format with onnxmltools
+    from onnxmltools import convert_sklearn
+    from onnxmltools.utils import save_model
+    from onnxmltools.convert.common.data_types import FloatTensorType
+    initial_type = [('float_input', FloatTensorType([1, 4]))]
+    onx = convert_sklearn(clr, initial_types=initial_type)
+    save_model(onx, "rf_iris.onnx")
+
+    # Compute the prediction with ONNX Runtime
+    import onnxruntime as onnxrt
+    import numpy
+    sess = onnxrt.InferenceSession("rf_iris.onnx")
+    input_name = sess.get_inputs()[0].name
+    label_name = sess.get_outputs()[0].name
+    pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]   

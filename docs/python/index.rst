@@ -1,9 +1,15 @@
 
-Lotus Runtime Python bindings
-=============================
+Python Bindings for ONNX Runtime
+================================
 
-Lotus Runtime Python bindings makes it easy
-to call Lotus from Python.
+ONNX Runtime is a critical component for platforms that 
+enables high-performance evaluation of trained machine learning (ML)
+models while keeping resource usage low. 
+Building on Microsoft's dedication to the 
+`Open Neural Network Exchange (ONNX) <https://onnx.ai/>`_
+community, it supports traditional ML models as well 
+as Deep Learning algorithms in the
+`ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_.
 
 .. toctree::
     :maxdepth: 2
@@ -12,7 +18,7 @@ to call Lotus from Python.
     tutorial
     api
     auto_examples/index
-    dev/index
+    license
 
 .. add :ref:`genindex` to show a link to the index.
 
