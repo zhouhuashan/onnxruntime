@@ -28,14 +28,14 @@ std::set<path> RetrieveAllHeaders(const path& include_folder_root) {
       headers.insert(file_entry->path());
     }
   }
-  return std::move(headers);
+  return headers;
 }
 
 std::vector<path> RetrieveHeaderDependencies(const path& header, const path& include_folder_root) {
   std::vector<path> header_dependencies;
   std::ifstream header_stream(header);
   const std::size_t pos_off = 10;  // length of "#include \""
-  if (!header_stream.good()) return std::move(header_dependencies);
+  if (!header_stream.good()) return header_dependencies;
   std::string line;
   while (std::getline(header_stream, line)) {
     line.erase(line.find_last_not_of(" \r\n\t") + 1);
@@ -49,7 +49,7 @@ std::vector<path> RetrieveHeaderDependencies(const path& header, const path& inc
       }
     }
   }
-  return std::move(header_dependencies);
+  return header_dependencies;
 }
 
 TEST(HeaderFiles, EnsureAllPublicHeadersInIncludeFolder) {

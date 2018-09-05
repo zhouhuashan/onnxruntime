@@ -22,7 +22,7 @@ function(AddTest)
 
   target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${lotus_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
   if (lotus_USE_TVM)
-    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${TVM_INCLUDESS})
+    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${TVM_INCLUDES})
   else(lotus_USE_TVM)
     target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR})
   endif()
