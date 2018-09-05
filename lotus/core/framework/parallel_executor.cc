@@ -66,8 +66,6 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
 }
 
 void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& session_state, const Logging::Logger& logger) {
-  auto tp = session_state.Profiler().StartTime();
-
   LOGS(logger, INFO) << "Begin execution";
 
   size_t node_index = p_node_index;
