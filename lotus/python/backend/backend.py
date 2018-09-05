@@ -3,7 +3,7 @@ Implements ONNX's backend API.
 """
 from onnx.checker import check_model
 from onnx.backend.base import Backend
-from onnxruntime import InferenceSession, RunOptions, SessionOptions
+from onnxruntime import InferenceSession, RunOptions, SessionOptions, get_device
 from onnxruntime.backend.backend_rep import OnnxRuntimeBackendRep
 
 
@@ -14,30 +14,40 @@ class OnnxRuntimeBackend(Backend):
     """
     
     @classmethod
-    def is_compatible(cls,
-                      model,  # type: ModelProto
-                      device='CPU',  # type: Text
-                      **kwargs  # type: Any
-                      ):  # type: (...) -> bool
+    def is_compatible(cls, model, device=None, **kwargs):
         """
         Return whether the model is compatible with the backend.
+        
+        :param model: unused
+        :param device: None to use the default device or a string (ex: `'CPU'`)
+        :return: boolean
         """
+        if device is None:
+            device = get_device()
         return cls.supports_device(device)
 
     @classmethod
-    def supports_device(cls, device):  # type: (Text) -> bool
+    def supports_device(cls, device):
         """
-        Checks whether the backend is compiled with particular device support.
+        Check whether the backend is compiled with particular device support.
         In particular it's used in the testing suite.
         """
-        return device == 'CPU'
+        return device == get_device()
 
     @classmethod
-    def prepare(cls,
-                model,
-                device='CPU',  # type: Text
-                **kwargs  # type: Any
-                ):  # type: (...) -> Optional[BackendRep]
+    def prepare(cls, model, device=None, **kwargs):
+        """
+        Load the model and creates a :class:`onnxruntime.InferenceSession`
+        ready to be used as a backend.
+        
+        :param model: ModelProto (returned by `onnx.load`),
+            string for a filename or bytes for a serialized model
+        :param device: requested device for the computation,
+            None means the default one which depends on
+            the compilation settings
+        :param kwargs: see :class:`onnxruntime.SessionOptions`
+        :return: :class:`onnxruntime.InferenceSession`
+        """
         if isinstance(model, OnnxRuntimeBackendRep):
             return model
         elif isinstance(model, InferenceSession):
@@ -48,7 +58,7 @@ class OnnxRuntimeBackend(Backend):
                 if hasattr(options, k):
                     setattr(options, k, v)
             inf = InferenceSession(model, options)
-            if inf.device != device:
+            if device is not None and get_device() != device:
                 raise RuntimeError("Incompatible device expected '{0}', got '{1}'".format(device, inf.device))
             return cls.prepare(inf, device, **kwargs)
         else:
@@ -58,12 +68,19 @@ class OnnxRuntimeBackend(Backend):
             return cls.prepare(bin, device, **kwargs)
 
     @classmethod
-    def run_model(cls,
-                  model,  # type: ModelProto
-                  inputs,  # type: Any
-                  device='CPU',  # type: Text
-                  **kwargs  # type: Any
-                  ):  # type: (...) -> Tuple[Any, ...]
+    def run_model(cls, model, inputs, device=None, **kwargs):
+        """
+        Compute the prediction.
+        
+        :param model: :class:`onnxruntime.InferenceSession` returned
+            by :func:`onnxruntime.backend.prepare`
+        :param inputs: inputs
+        :param device: requested device for the computation,
+            None means the default one which depends on
+            the compilation settings
+        :param kwargs: see :class:`onnxruntime.RunOptions`
+        :return: predictions
+        """
         rep = cls.prepare(model, device, **kwargs)
         options = RunOptions()
         for k, v in kwargs.items():
@@ -72,13 +89,7 @@ class OnnxRuntimeBackend(Backend):
         return rep.run(inputs, options)
 
     @classmethod
-    def run_node(cls,
-                 node,  # type: NodeProto
-                 inputs,  # type: Any
-                 device='CPU',  # type: Text
-                 outputs_info=None,  # type: Optional[Sequence[Tuple[numpy.dtype, Tuple[int, ...]]]]
-                 **kwargs  # type: Dict[Text, Any]
-                 ):  # type: (...) -> Optional[Tuple[Any, ...]]
+    def run_node(cls, node, inputs, device=None, outputs_info=None, **kwargs):
         '''
         This method is not implemented as it is much more efficient
         to run a whole model than every node independently.

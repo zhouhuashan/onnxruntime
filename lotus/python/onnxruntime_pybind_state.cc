@@ -7,7 +7,10 @@
 #include "core/session/inference_session.h"
 #include "core/graph/graph.h"
 #if USE_MKLDNN
+#define BACKEND_DEVICE "MKL"
 #include "core/providers/mkldnn/mkldnn_execution_provider.h"
+#else
+#define BACKEND_DEVICE "CPU"
 #endif
 #include "core/providers/cpu/cpu_execution_provider.h"
 
@@ -162,6 +165,8 @@ void InitializeSession(InferenceSession* sess) {
 
 void addGlobalMethods(py::module& m) {
   m.def("get_session_initializer", &SessionObjectInitializer::Get, "Return a default session object initializer.");
+  m.def("get_device", []() -> std::string { return BACKEND_DEVICE; },
+        "Return the device used to compute the prediction (CPU, MKL)");
 }
 
 void addObjectMethods(py::module& m) {
@@ -233,9 +238,6 @@ including arg name, arg type (contains both type and shape).)pbdoc")
   py::class_<InferenceSession>(m, "InferenceSession", R"pbdoc(This is the main class used to run a model)pbdoc")
       .def(py::init<SessionObjectInitializer, SessionObjectInitializer>())
       .def(py::init<SessionOptions, SessionObjectInitializer>())
-      .def_property_readonly("device", [](InferenceSession* sess) -> std::string {
-          return "CPU";
-      }, R"pbdoc(Return the device used to compute the prediction (CPU, ...))pbdoc")
       .def("load_model", [](InferenceSession* sess, const std::string& path) {
         auto status = sess->Load(path);
         if (!status.IsOK()) {

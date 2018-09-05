@@ -70,8 +70,8 @@ class TestInferenceSession(unittest.TestCase):
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
     def testRunDevice(self):
-        sess = onnxrt.InferenceSession(self.get_name("matmul_1.pb"))
-        self.assertEqual(sess.device, 'CPU')
+        device = onnxrt.get_device()
+        self.assertIn(device, ('CPU', 'GPU', 'MKL'))
 
     def testRunModelSymbolicInput(self):
         sess = onnxrt.InferenceSession(self.get_name("matmul_2.pb"))

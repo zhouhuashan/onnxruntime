@@ -28,8 +28,11 @@ class OnnxRuntimeBackendRep(BackendRep):
             for i, inp in enumerate(self._session.get_inputs()):
                 inps[inp.name] = inputs[i]
             outs = self._session.run(None, inps)
-            output_names = [o.name for o in self._session.get_outputs()]
-            return [outs[name] for name in output_names]
+            if isinstance(outs, list):
+                return outs
+            else:
+                output_names = [o.name for o in self._session.get_outputs()]
+                return [outs[name] for name in output_names]
         else:
             inp = self._session.get_inputs()
             if len(inp) != 1:

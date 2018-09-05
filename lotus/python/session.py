@@ -42,11 +42,6 @@ class InferenceSession:
         self._outputs_meta = self._sess.outputs_meta
         self._model_meta = self._sess.model_meta
 
-    @property
-    def device(self):
-        "Return the device used to compute the prediction."
-        return self._sess.device
-
     def get_inputs(self):
         "Return the inputs metadata."
         return self._inputs_meta

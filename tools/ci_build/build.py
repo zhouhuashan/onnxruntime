@@ -412,6 +412,7 @@ def run_lotus_tests(args, ctest_path, build_dir, configs, enable_python_tests, e
                 onnx_test = False
             if onnx_test:
                 run_subprocess([sys.executable, 'onnxruntime_test_python_backend.py'], cwd=cwd, dll_path=dll_path)
+                run_subprocess([sys.executable, 'onnx_backend_test_series.py'], cwd=cwd, dll_path=dll_path)
 
         # shared lib tests - both simple + custom op
         if args.build_shared_lib:
