@@ -6,6 +6,7 @@ import numpy as np
 import onnxruntime as onnxrt
 from onnxruntime.python._pybind_state import onnxruntime_ostream_redirect
 
+
 class TestInferenceSession(unittest.TestCase):
     
     def get_name(self, name):
@@ -67,6 +68,10 @@ class TestInferenceSession(unittest.TestCase):
         res = sess.run([output_name], {input_name: x})
         output_expected = np.array([[5.0], [11.0], [17.0]], dtype=np.float32)
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
+    def testRunDevice(self):
+        sess = onnxrt.InferenceSession(self.get_name("matmul_1.pb"))
+        self.assertEqual(sess.device, 'CPU')
 
     def testRunModelSymbolicInput(self):
         sess = onnxrt.InferenceSession(self.get_name("matmul_2.pb"))

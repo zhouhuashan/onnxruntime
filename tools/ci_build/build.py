@@ -95,11 +95,11 @@ def get_config_build_dir(build_dir, config):
     return os.path.join(build_dir, config)
 
 def run_subprocess(args, cwd=None, capture=False, dll_path=None):
-    log.debug("Running subprocess: \n%s", args)
+    log.debug("Running subprocess in '{0}'\n{1}".format(cwd or os.getcwd(), args))
     my_env = os.environ.copy()
     if dll_path:
         if is_windows():
-            my_env["PATH"] += os.pathsep +dll_path
+            my_env["PATH"] += os.pathsep + dll_path
         else:
             if "LD_LIBRARY_PATH" in my_env:
                 my_env["LD_LIBRARY_PATH"] += os.pathsep + dll_path
@@ -404,6 +404,14 @@ def run_lotus_tests(args, ctest_path, build_dir, configs, enable_python_tests, e
             if is_windows():
                 cwd = os.path.join(cwd, config)
             run_subprocess([sys.executable, 'onnxruntime_test_python.py'], cwd=cwd, dll_path=dll_path)
+            try:
+                import onnx
+                onnx_test = True
+            except ImportError:
+                warnings.warn("onnx is not installed. Following test cannot be run.")
+                onnx_test = False
+            if onnx_test:
+                run_subprocess([sys.executable, 'onnxruntime_test_python_backend.py'], cwd=cwd, dll_path=dll_path)
 
         # shared lib tests - both simple + custom op
         if args.build_shared_lib:

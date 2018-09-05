@@ -26,7 +26,7 @@ else:
 data = [path.join('python', x) for x in libs if path.isfile(path.join('onnxruntime', 'python', x))]
 
 # Additional examples
-examples_names = ["mul_1.pb"]
+examples_names = ["mul_1.pb", "logreg_iris.onnx"]
 examples = [path.join('python', 'datasets', x) for x in examples_names]
 
 # Description
@@ -48,9 +48,17 @@ setup(
     author='Microsoft Corporation',
     author_email='onnx@microsoft.com',
     cmdclass={'bdist_wheel': bdist_wheel},
-    packages=['onnxruntime', 'onnxruntime.python', 'onnxruntime.python.tools', 'onnxruntime.python.datasets'],
-    package_data= {
+    packages=['onnxruntime',
+              'onnxruntime.python',
+              'onnxruntime.python.tools',
+              'onnxruntime.python.datasets',
+              'onnxruntime.backend',
+              ],
+    package_data={
         'onnxruntime': data + examples,
+    },
+    extras_require={
+        'backend': ['onnx>=1.3.0'],
     },
     entry_points= {
         'console_scripts': [

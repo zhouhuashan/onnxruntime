@@ -233,6 +233,9 @@ including arg name, arg type (contains both type and shape).)pbdoc")
   py::class_<InferenceSession>(m, "InferenceSession", R"pbdoc(This is the main class used to run a model)pbdoc")
       .def(py::init<SessionObjectInitializer, SessionObjectInitializer>())
       .def(py::init<SessionOptions, SessionObjectInitializer>())
+      .def_property_readonly("device", [](InferenceSession* sess) -> std::string {
+          return "CPU";
+      }, R"pbdoc(Return the device used to compute the prediction (CPU, ...))pbdoc")
       .def("load_model", [](InferenceSession* sess, const std::string& path) {
         auto status = sess->Load(path);
         if (!status.IsOK()) {
@@ -240,7 +243,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         InitializeSession(sess);
       },
-           R"pbdoc(Loads a model saved in ONNX format.)pbdoc")
+           R"pbdoc(Load a model saved in ONNX format.)pbdoc")
       .def("read_bytes", [](InferenceSession* sess, const py::bytes& serializedModel) {
         std::istringstream buffer(serializedModel);
         auto status = sess->Load(buffer);
@@ -249,7 +252,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         InitializeSession(sess);
       },
-           R"pbdoc(Loads a model serialized in ONNX format.)pbdoc")
+           R"pbdoc(Load a model serialized in ONNX format.)pbdoc")
       .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
