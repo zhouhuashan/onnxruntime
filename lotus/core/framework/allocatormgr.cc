@@ -14,8 +14,8 @@ AllocatorPtr CreateAllocator(DeviceAllocatorRegistrationInfo info, int device_id
   if (device_allocator->AllowsArena())
     return std::shared_ptr<IArenaAllocator>(
         std::make_unique<BFCArena>(std::move(device_allocator), info.max_mem));
-  else
-    return device_allocator;
+
+  return device_allocator;
 }
 
 DeviceAllocatorRegistry& DeviceAllocatorRegistry::Instance() {

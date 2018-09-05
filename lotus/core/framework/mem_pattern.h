@@ -35,8 +35,8 @@ class MemoryPattern {
     auto it = patterns_.find(ml_value_idx);
     if (it == patterns_.end())
       return nullptr;
-    else
-      return &it->second;
+
+    return &it->second;
   }
 
  private:

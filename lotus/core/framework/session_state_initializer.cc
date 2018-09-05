@@ -218,7 +218,7 @@ Common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
     // deserialize to CPU first for non-CPU allocator, then alloc and copy
     AllocatorPtr deserialize_alloc_ptr;
     std::unique_ptr<Tensor> p_deserialize_tensor;
-    deserialize_alloc_ptr = exec_providers.Get(LotusIR::kCpuExecutionProvider)->GetAllocator();
+    deserialize_alloc_ptr = exec_providers.Get(LotusIR::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
     LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
                                                                  deserialize_alloc_ptr));
 

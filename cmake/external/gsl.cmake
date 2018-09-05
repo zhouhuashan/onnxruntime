@@ -3,7 +3,7 @@ include (ExternalProject)
 set(gsl_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/gsl)
 set(gsl_INCLUDE_DIR ${gsl_ROOT_DIR}/include)
 set(gsl_URL "https://github.com/Microsoft/GSL.git")
-set(gsl_TAG "d846fe50a3f0bb7767c7e087a05f4be95f4da0ec")
+set(gsl_TAG "9c5e21045dd1138750868ed307110778ef4f4bc3")
 
 find_package(Git)
 if(NOT GIT_FOUND)

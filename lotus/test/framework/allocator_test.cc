@@ -6,7 +6,7 @@
 namespace Lotus {
 namespace Test {
 TEST(AllocatorTest, CPUAllocatorTest) {
-  auto cpu_arena = TestCPUExecutionProvider()->GetAllocator();
+  auto cpu_arena = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
 
   EXPECT_EQ(cpu_arena->Info().name, CPU);
   EXPECT_EQ(cpu_arena->Info().id, 0);

@@ -70,6 +70,8 @@ Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
 
   for (auto& node : graph.Nodes()) {
     if (!graph.IsSourceNode(node) && !graph.IsSinkNode(node) && node.GetExecutionProviderType().empty()) {
+      if(node.Name().empty())
+          return Status(LOTUS, FAIL, "Partitioning failed. No execution provider is capable of running op (" + node.OpType() + ").");
       return Status(LOTUS, FAIL, "Partitioning failed. No execution provider is capable of running node (" + node.Name() + ").");
     }
 

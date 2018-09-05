@@ -51,7 +51,7 @@ template <typename SrcType,
 inline void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) {
   auto* p_provider = info.GetExecutionProvider();
   LOTUS_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator();
+  auto allocator = p_provider->GetAllocator(kMemTypeDefault);
   LOTUS_ENFORCE(allocator != nullptr);
   void* buffer = allocator->Alloc(sizeof(float) * shape.Size());
   LOTUS_ENFORCE(buffer);

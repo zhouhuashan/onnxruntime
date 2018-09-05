@@ -443,7 +443,7 @@ class InferenceSession::Impl {
                     });
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                             "Invalid Feed Input Names:" + invalid_names.str() +
-                            " Valid input names are: " + ostr.str());
+                                " Valid input names are: " + ostr.str());
     }
 
     return Status::OK();
@@ -493,7 +493,7 @@ class InferenceSession::Impl {
                     });
       return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT,
                             "Invalid Output Names:" + invalid_names.str() +
-                            " Valid output names are: " + ostr.str());
+                                " Valid output names are: " + ostr.str());
     }
 
     // TODO add more validation here like checking shape of the allocated buffers
@@ -623,7 +623,7 @@ class InferenceSession::Impl {
     if (!p_provider)
       return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "invalid provider_type");
 
-    auto allocator = p_provider->GetAllocator();
+    auto allocator = p_provider->GetAllocator(kMemTypeDefault);
     if (!allocator)
       return Status(Common::LOTUS, Common::FAIL, "invalid allocator");
 
@@ -824,7 +824,7 @@ class InferenceSession::Impl {
       }
     }
 
-    // private constructor, can't use make_unique    
+    // private constructor, can't use make_unique
     *io_binding = std::unique_ptr<IOBinding>(new IOBinding(session_state_));
     return Status::OK();
   }

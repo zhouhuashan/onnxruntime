@@ -86,7 +86,7 @@ TEST(CUDAFenceTests, DISABLED_PartOnCPU) {
 
   EXPECT_TRUE(graph.Resolve().IsOK());
 
-  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
   auto element_type = DataTypeImpl::GetType<float>();
   TensorShape shape({2, 2});
   float data[4] = {-1, 2, 3, -4};
@@ -143,7 +143,7 @@ TEST(CUDAFenceTests, TileWithInitializer) {
 
   EXPECT_TRUE(0 == CountCopyNodes(graph));
 
-  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
   auto element_type = DataTypeImpl::GetType<float>();
   TensorShape shape({2, 2});
   float data[4] = {-1, 2, 3, -4};
@@ -207,7 +207,7 @@ TEST(CUDAFenceTests, TileWithComputedInput) {
 
   EXPECT_TRUE(0 == CountCopyNodes(graph));
 
-  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+  auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
   auto element_type = DataTypeImpl::GetType<float>();
   TensorShape shape({2, 2});
   float data[4] = {-1, 2, 3, -4};

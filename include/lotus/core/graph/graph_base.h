@@ -264,7 +264,7 @@ class Node {
 
   class Relationships {
    public:
-    Relationships() noexcept {};
+    Relationships() = default;
 
     void Clear() noexcept {
       input_edges.clear();
@@ -680,7 +680,7 @@ class GraphBase {
   const std::unordered_map<std::string, int> domain_to_version_;
 
   // Model IR version.
-  Version ir_version_;
+  Version ir_version_{};
 
   int name_generator_ = 0;
 };

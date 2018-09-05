@@ -25,7 +25,7 @@ class IExecutionProvider {
   const AllocatorMap& GetAllocatorMap() const;
 
   // Get allocator with specified MemType
-  virtual AllocatorPtr GetAllocator(MemType mem_type = kMemTypeDefault) const;
+  virtual AllocatorPtr GetAllocator(MemType mem_type) const;
 
   // Get execution provider's capability for the specified <graph>.
   // Return a bunch of IndexedSubGraphs <*this> execution provider can run if

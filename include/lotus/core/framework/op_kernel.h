@@ -58,7 +58,7 @@ class OpKernel {
 
 class OpKernelContext {
  public:
-  typedef std::unordered_map<std::string, size_t> ArgMap;
+  using ArgMap = std::unordered_map<std::string, size_t>;
 
   explicit OpKernelContext(ExecutionFrame* frame,
                            const OpKernel* kernel,

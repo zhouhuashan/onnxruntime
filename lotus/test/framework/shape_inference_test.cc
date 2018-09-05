@@ -22,7 +22,7 @@ class ShapeInferenceTest : public ::testing::Test {
  public:
   ShapeInferenceTest() : model_("Test"), node_count_(0) {}
 
-  void Input(std::string name, Type type) {
+  void Input(const std::string& name, const Type& type) {
     name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, &type.value);
   }
 

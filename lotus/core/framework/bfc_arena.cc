@@ -135,11 +135,10 @@ BFCArena::ChunkHandle BFCArena::AllocateChunk() {
     Chunk* c = ChunkFromHandle(h);
     free_chunks_list_ = c->next;
     return h;
-  } else {
-    ChunkHandle h = chunks_.size();
-    chunks_.resize(h + 1);
-    return h;
   }
+  ChunkHandle h = chunks_.size();
+  chunks_.resize(h + 1);
+  return h;
 }
 
 void BFCArena::DeallocateChunk(ChunkHandle h) {

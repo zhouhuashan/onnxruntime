@@ -418,7 +418,7 @@ class PlannerImpl {
             auto p_opkernelDef = Utils::GetKernelDef(kernel_registry_, node);
             if (MemTypeOnCpuExplicitly(p_opkernelDef->InputMemoryType(), index))
               // weights are not output from any node, so it's OK to put its location on CPU provider
-              thisplan.location = execution_providers_.Get(LotusIR::kCpuExecutionProvider)->GetAllocator()->Info();
+              thisplan.location = execution_providers_.Get(LotusIR::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault)->Info();
             else
               thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();
 

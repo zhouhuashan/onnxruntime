@@ -25,7 +25,7 @@ static Common::Status AllocateHelper(const SessionState& session_state,
                                      MLValue& output_mlvalue) {
   auto* p_provider = session_state.GetExecutionProviders().Get(provider_type);
   LOTUS_ENFORCE(p_provider);
-  auto allocator = p_provider->GetAllocator();
+  auto allocator = p_provider->GetAllocator(kMemTypeDefault);
   LOTUS_ENFORCE(allocator != nullptr);
   auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
   void* buffer = allocator->Alloc(fetched_tensor.Size());
@@ -174,7 +174,7 @@ AllocatorPtr IOBinding::GetCPUAllocator(LotusIR::ProviderType provider_type) con
     return allocator;
 
   auto* cpu_provider = exec_providers.Get(LotusIR::kCpuExecutionProvider);
-  return cpu_provider->GetAllocator();
+  return cpu_provider->GetAllocator(kMemTypeDefault);
 }
 
 }  // namespace Lotus

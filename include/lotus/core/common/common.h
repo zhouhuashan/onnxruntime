@@ -190,7 +190,7 @@ inline long long TimeDiffMicroSeconds(TimePoint start_time, TimePoint end_time) 
 inline std::string GetCurrentTimeString() {
   auto now = std::chrono::system_clock::now();
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
-  std::tm local_tm;
+  std::tm local_tm;  //NOLINT
 
 #ifdef _WIN32
   localtime_s(&local_tm, &in_time_t);
@@ -206,7 +206,7 @@ inline std::string GetCurrentTimeString() {
 struct null_type {};
 
 inline size_t Align256(size_t v) {
-  return (v + 255) & ~(size_t)255;
+  return (v + 255) & ~static_cast<size_t>(255);
 }
 
 }  // namespace Lotus
