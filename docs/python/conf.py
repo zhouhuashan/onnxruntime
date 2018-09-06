@@ -72,4 +72,16 @@ sphinx_gallery_conf = {
 def setup(app):
     # Placeholder to initialize the folder before
     # generating the documentation.
+    
+    # copy third-party license
+    root = os.path.abspath(os.path.dirname(__file__))
+    source = os.path.join(root, "..", "..", "cmake", "external")
+    third = ['googletest', 'protobuf', 'onnx', 'tvm']
+    for th in third:
+        lic = os.path.join(source, third, "LICENSE")
+        if not os.path.exists(lic):
+            raise FileNotFoundError(lic)
+        dst = th + "_LICENSE"
+        print("Copy license of {0}".format(th))
+        shutil.copy(lic, os.path.join(root, dst))
     return app
