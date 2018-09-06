@@ -356,8 +356,8 @@ class InferenceSession::Impl {
       // handle any subgraphs
       InitializeSubgraphSessions(graph, session_state_);
 
-	  // Collect root nodes and refs on the final graph.
-	  graph.CollectRootNodesAndRefs();
+      // Collect root nodes and refs on the final graph.
+      graph.CollectRootNodesAndRefs();
 
       is_inited_ = true;
 

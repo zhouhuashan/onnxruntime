@@ -24,11 +24,11 @@ class ISequentialPlannerContext {
 
 class SequentialPlannerContext : public ISequentialPlannerContext {
  public:
-  SequentialPlannerContext::SequentialPlannerContext()
+  SequentialPlannerContext()
       : m_enable_parallel_execution(false) {
   }
 
-  SequentialPlannerContext::SequentialPlannerContext(bool p_enable_parallel_execution)
+  SequentialPlannerContext(bool p_enable_parallel_execution)
       : m_enable_parallel_execution(p_enable_parallel_execution) {
   }
 
