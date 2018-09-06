@@ -51,6 +51,7 @@ class Graph : public GraphBase {
 
   Node* FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, const std::string& fused_node_name);
 
+  void CollectRootNodesAndRefs();
   const std::vector<NodeIndex>& GetRootNodes() const { return root_nodes_; }
   const std::vector<size_t>& GetNodeRefs() const { return node_refs_; }
 

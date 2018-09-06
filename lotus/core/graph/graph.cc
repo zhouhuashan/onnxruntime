@@ -1177,20 +1177,6 @@ Status Graph::Resolve(bool no_proto_sync_required) {
     GraphProtoSyncNeeded(false);
   }
 
-  auto max_size = MaxNodeIndex();
-  node_refs_.resize(max_size);
-
-  root_nodes_.clear();
-
-  for (auto& node : Nodes()) {
-    if (node.GetRelationships().input_edges.size() == 0 &&
-        !(IsSourceNode(node) || IsSinkNode(node))) {
-      root_nodes_.push_back(node.Index());
-    }
-    LOTUS_ENFORCE(node.Index() < max_size);
-    node_refs_[node.Index()] = node.GetInputEdgesCount();
-  }
-
   return Status::OK();
 }
 
@@ -1813,6 +1799,22 @@ Node* Graph::FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, c
   function_container_->functions_.push_back(std::make_unique<::Lotus::Function>(*this, std::move(sub_graph), sub_graph_nodes));
   fused_node->SetFunctionBody(*(function_container_->functions_.back().get()));
   return fused_node;
+}
+
+void Graph::CollectRootNodesAndRefs() {
+  auto max_size = MaxNodeIndex();
+  node_refs_.resize(max_size);
+
+  root_nodes_.clear();
+
+  for (auto& node : Nodes()) {
+    if (node.GetRelationships().input_edges.size() == 0 &&
+        !(IsSourceNode(node) || IsSinkNode(node))) {
+      root_nodes_.push_back(node.Index());
+    }
+    LOTUS_ENFORCE(node.Index() < max_size);
+    node_refs_[node.Index()] = node.GetInputEdgesCount();
+  }
 }
 
 }  // namespace LotusIR

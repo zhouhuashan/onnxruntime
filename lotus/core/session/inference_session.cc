@@ -58,7 +58,7 @@ class InferenceSession::Impl {
                         : session_options_.session_thread_pool_size;
     thread_pool_.reset(new TaskThreadPool(pool_size));
 
-    session_state_.SetThreadPool(thread_pool_);
+    session_state_.SetThreadPool(thread_pool_.get());
     session_state_.SetEnableMemoryPattern(session_options.enable_mem_pattern);
     session_state_.SetProfiler(session_profiler_);
     if (session_options.enable_profiling) {
@@ -355,6 +355,9 @@ class InferenceSession::Impl {
 
       // handle any subgraphs
       InitializeSubgraphSessions(graph, session_state_);
+
+	  // Collect root nodes and refs on the final graph.
+	  graph.CollectRootNodesAndRefs();
 
       is_inited_ = true;
 
@@ -1048,7 +1051,7 @@ class InferenceSession::Impl {
 
   // Threadpool for this session
   //thread::ThreadPool thread_pool_; // not used for now; will add it later when implementing RunAsync
-  std::shared_ptr<TaskThreadPool> thread_pool_;
+  std::unique_ptr<TaskThreadPool> thread_pool_;
 
   // Number of concurrently running executors
   std::atomic<int> current_num_runs_;
