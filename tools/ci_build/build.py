@@ -426,12 +426,15 @@ def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_
             if use_cuda:
                 run_subprocess([exe, "-e", "cuda"] + test_data_dirs, cwd=cwd)
 
-def build_python_wheel(source_dir, build_dir, configs):
+def build_python_wheel(source_dir, build_dir, configs, use_cuda):
     for config in configs:
         cwd = get_config_build_dir(build_dir, config)
         if is_windows():
             cwd = os.path.join(cwd, config)
-        run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel'], cwd=cwd)
+        if use_cuda:
+            run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel', '--use_cuda'], cwd=cwd)
+        else:
+            run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel'], cwd=cwd)
 
 def main():
     args = parse_arguments()
@@ -519,7 +522,7 @@ def main():
         run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, args.use_cuda)
 
     if args.build_wheel:
-        build_python_wheel(source_dir, build_dir, configs)
+        build_python_wheel(source_dir, build_dir, configs, args.use_cuda)
 
     log.info("Build complete")
 
