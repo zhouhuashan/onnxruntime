@@ -13,7 +13,12 @@ backend_test = onnx.backend.test.BackendTest(c2, __name__)
 # Ran 930 tests in 0.948s OK (skipped=574)
 
 # We should investigate.
-backend_test.exclude(r'(convtranspose)')  # dimension issue
+
+# dimension issue
+# Error message is: Input X must be 4-dimensional. X: {1,1,3}
+# onnxruntime expects a 4-dimension vector for operator ConvTranspose.
+# file lotus/core/providers/cpu/nn/conv_transpose.cc
+backend_test.exclude(r'(convtranspose)')
 
 # Type not supported
 backend_test.exclude(r'(FLOAT16)')

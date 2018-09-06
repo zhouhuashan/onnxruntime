@@ -10,6 +10,8 @@
 #include "core/framework/allocatormgr.h"
 #include "core/framework/environment.h"
 #include "core/framework/ml_value.h"
+#include "core/session/inference_session.h"
+
 
 using namespace std;
 namespace onnxruntime {
@@ -20,7 +22,7 @@ using namespace Lotus;
 
 int OnnxRuntimeTensorToNumpyType(const MLDataType& tensor_type);
 
-void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlvalue);
+void CreateGenericMLValue(AllocatorPtr alloc, const std::string& name_input, py::object& value, MLValue* p_mlvalue);
 
 }
 }

@@ -414,6 +414,15 @@ def run_lotus_tests(args, ctest_path, build_dir, configs, enable_python_tests, e
             if onnx_test:
                 run_subprocess([sys.executable, 'onnxruntime_test_python_backend.py'], cwd=cwd, dll_path=dll_path)
                 run_subprocess([sys.executable, 'onnx_backend_test_series.py'], cwd=cwd, dll_path=dll_path)
+            try:
+                import onnxmltools
+                import keras
+                onnxml_test = True
+            except ImportError:
+                warnings.warn("onnxmltools and keras are not installed. Following test cannot be run.")
+                onnxml_test = False
+            if onnxml_test:
+                run_subprocess([sys.executable, 'onnxruntime_test_python_keras.py'], cwd=cwd, dll_path=dll_path)
 
         # shared lib tests - both simple + custom op
         if args.build_shared_lib:

@@ -4,7 +4,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL onnxruntime_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
-#include "core/session/inference_session.h"
 #include "core/graph/graph.h"
 #if USE_MKLDNN
 #define BACKEND_DEVICE "MKL"
@@ -259,7 +258,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
           MLValue ml_value;
-          CreateGenericMLValue(GetAllocator(), _.second, &ml_value);
+          CreateGenericMLValue(GetAllocator(), _.first, _.second, &ml_value);
           if (PyErr_Occurred()) {
             PyObject *ptype, *pvalue, *ptraceback;
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -287,7 +286,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
 
         if (!status.IsOK()) {
           auto mes = status.ToString();
-          throw std::runtime_error(mes.c_str());
+          throw std::runtime_error(std::string("Method run failed due to: ") + std::string(mes.c_str()));
         }
 
         std::vector<py::object> rfetch;

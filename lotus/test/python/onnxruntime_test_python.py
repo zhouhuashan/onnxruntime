@@ -340,6 +340,12 @@ class TestInferenceSession(unittest.TestCase):
         output_shape = sess.get_outputs()[0].shape
         self.assertEqual(output_shape, [1, 1])
         
+        # Array
+        x = np.array([['4']])
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([[3]], dtype=np.int64)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
         # Python type
         x = np.array(['4'])
         res = sess.run([output_name], {input_name: x})
