@@ -68,7 +68,7 @@ class WinMLRuntime {
   }
 
   ::Lotus::MLValue ReadTensorStrings(::Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
-                                   int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
+                                     int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
     using namespace Lotus;
 
     auto vec = inputs_reader.GetSampleStrings(feature_size, variable_batch_size);
@@ -106,7 +106,7 @@ class WinMLRuntime {
 
   template <typename T>
   ::Lotus::MLValue ReadTensor(::Lotus::AllocatorPtr alloc, TestDataReader& inputs_reader,
-                            int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
+                              int feature_size, std::vector<int64_t> dims, bool variable_batch_size) {
     using namespace Lotus;
 
     auto vec = inputs_reader.GetSample<T>(feature_size, variable_batch_size);
@@ -124,10 +124,10 @@ class WinMLRuntime {
     }
 
     std::unique_ptr<Tensor> p_tensor = std::make_unique<::Lotus::Tensor>(element_type,
-                                                                       shape,
-                                                                       buffer,
-                                                                       location,
-                                                                       alloc);
+                                                                         shape,
+                                                                         buffer,
+                                                                         location,
+                                                                         alloc);
 
     ::Lotus::MLValue result;
     result.Init(p_tensor.release(),
@@ -237,11 +237,11 @@ class WinMLRuntime {
         if (*type == "tensor(double)" || *type == "tensor(float)") {
           // If double is used in the following statement, following error occurs.
           // Tensor type mismatch, caller expects elements to be float while tensor contains double Error from operator
-          mlvalue = ReadTensor<float>(TestCPUExecutionProvider().GetAllocator(), inputs_reader, feature_size, shape, variable_batch_size);
+          mlvalue = ReadTensor<float>(TestCPUExecutionProvider().GetAllocator(kMemTypeDefault), inputs_reader, feature_size, shape, variable_batch_size);
         } else if (*type == "tensor(int64)")
-          mlvalue = ReadTensor<int64_t>(TestCPUExecutionProvider().GetAllocator(), inputs_reader, feature_size, shape, variable_batch_size);
+          mlvalue = ReadTensor<int64_t>(TestCPUExecutionProvider().GetAllocator(kMemTypeDefault), inputs_reader, feature_size, shape, variable_batch_size);
         else if (*type == "tensor(string)")
-          mlvalue = ReadTensorStrings(TestCPUExecutionProvider().GetAllocator(), inputs_reader, feature_size, shape, variable_batch_size);
+          mlvalue = ReadTensorStrings(TestCPUExecutionProvider().GetAllocator(kMemTypeDefault), inputs_reader, feature_size, shape, variable_batch_size);
         else
           throw DataValidationException("Unsupported input type: " + std::string(*type));
 
@@ -260,7 +260,7 @@ class WinMLRuntime {
     // Invoke the net
     std::vector<::Lotus::MLValue> outputMLValue;
     RunOptions run_options;
-    ::Lotus::Common::Status result = inference_session_->Run(run_options, feed, output_names, & outputMLValue);
+    ::Lotus::Common::Status result = inference_session_->Run(run_options, feed, output_names, &outputMLValue);
     if (result.IsOK()) {
       auto outputMeta = inference_session_->GetModelOutputs().second;
       // Peel the data off the CPU

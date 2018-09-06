@@ -264,7 +264,7 @@ class Node {
 
   class Relationships {
    public:
-    Relationships() noexcept {};
+    Relationships() = default;
 
     void Clear() noexcept {
       input_edges.clear();
@@ -423,6 +423,14 @@ class GraphBase {
   int NumberOfNodes() const noexcept { return num_of_nodes_; }
 
   NodeArg* GetNodeArg(const std::string& name) {
+    auto iter = node_args_.find(name);
+    if (iter != node_args_.end()) {
+      return iter->second;
+    }
+    return nullptr;
+  }
+
+  const NodeArg* GetNodeArg(const std::string& name) const {
     auto iter = node_args_.find(name);
     if (iter != node_args_.end()) {
       return iter->second;
@@ -611,10 +619,7 @@ class GraphBase {
   // output parameter inferredShapes.
   ::Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
                                                     /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
-
-  // Transfer node.
-  std::unique_ptr<Node> TransferNode(NodeIndex node_index);
-
+  
  private:
   // need custom versions to handle the unique_ptr's in nodes_
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphBase);
@@ -680,7 +685,7 @@ class GraphBase {
   const std::unordered_map<std::string, int> domain_to_version_;
 
   // Model IR version.
-  Version ir_version_;
+  Version ir_version_{};
 
   int name_generator_ = 0;
 };

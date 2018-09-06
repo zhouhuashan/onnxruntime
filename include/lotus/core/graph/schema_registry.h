@@ -52,7 +52,7 @@ class ILotusOpSchemaCollection : public ONNX_NAMESPACE::ISchemaRegistry {
 
   virtual void GetSchemaAndHistory(
       const std::string& key,
-      const int maxInclusiveVersion,
+      int maxInclusiveVersion,
       const std::string& domain,
       const ONNX_NAMESPACE::OpSchema** latest_schema,
       int* earliest_opset_where_unchanged) const = 0;

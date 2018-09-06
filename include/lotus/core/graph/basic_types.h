@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdint>
 #include <memory>
+#include <functional>
 
 namespace onnx {
 class ValueInfoProto;
@@ -26,3 +27,10 @@ using NodeAttributes = std::unordered_map<std::string, onnx::AttributeProto>;
 class ILotusOpSchemaCollection;
 using ILotusOpSchemaCollectionPtr = std::shared_ptr<ILotusOpSchemaCollection>;
 }  // namespace LotusIR
+
+namespace Lotus {
+class OpKernel;
+class OpKernelInfo;
+
+using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
+}  // namespace Lotus

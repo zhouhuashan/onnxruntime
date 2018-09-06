@@ -26,7 +26,7 @@ namespace Lotus {
 static Common::Status TransformGraph(LotusIR::Graph& graph,
                                      const LotusIR::GraphTransformerManager& graph_transformer_mgr,
                                      const ExecutionProviders& exec_providers,
-                                     const KernelRegistryManager& kernel_registry_manager,
+                                     KernelRegistryManager& kernel_registry_manager,
                                      const InsertCastTransformer& insert_cast_transformer);
 
 static Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph,
@@ -56,7 +56,7 @@ static Common::Status SaveInputOutputNamesToNodeMapping(const LotusIR::Graph& gr
 SessionStateInitializer::SessionStateInitializer(LotusIR::Graph& graph,
                                                  SessionState& session_state,
                                                  const ExecutionProviders& providers,
-                                                 const KernelRegistryManager& kernel_registry_manager,
+                                                 KernelRegistryManager& kernel_registry_manager,
                                                  const Logging::Logger& logger)
     : graph_{graph},
       session_state_{session_state},
@@ -121,7 +121,7 @@ Common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pat
 Common::Status TransformGraph(LotusIR::Graph& graph,
                               const LotusIR::GraphTransformerManager& graph_transformer_mgr,
                               const ExecutionProviders& providers,
-                              const KernelRegistryManager& kernel_registry_manager,
+                              KernelRegistryManager& kernel_registry_manager,
                               const InsertCastTransformer& insert_cast_transformer) {
   // The transformer order:
   // 1. built-in graph rewriter
@@ -218,7 +218,7 @@ Common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
     // deserialize to CPU first for non-CPU allocator, then alloc and copy
     AllocatorPtr deserialize_alloc_ptr;
     std::unique_ptr<Tensor> p_deserialize_tensor;
-    deserialize_alloc_ptr = exec_providers.Get(LotusIR::kCpuExecutionProvider)->GetAllocator();
+    deserialize_alloc_ptr = exec_providers.Get(LotusIR::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
     LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
                                                                  deserialize_alloc_ptr));
 

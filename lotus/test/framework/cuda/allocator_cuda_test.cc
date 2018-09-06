@@ -38,7 +38,7 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
   auto pinned_addr = pinned_allocator->Alloc(size);
   EXPECT_TRUE(pinned_addr);
 
-  const auto& cpu_arena = TestCPUExecutionProvider()->GetAllocator();
+  const auto& cpu_arena = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
   EXPECT_EQ(cpu_arena->Info().name, CPU);
   EXPECT_EQ(cpu_arena->Info().id, 0);
   EXPECT_EQ(cpu_arena->Info().mem_type, kMemTypeDefault);

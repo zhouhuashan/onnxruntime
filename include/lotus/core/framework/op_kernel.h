@@ -58,7 +58,7 @@ class OpKernel {
 
 class OpKernelContext {
  public:
-  typedef std::unordered_map<std::string, size_t> ArgMap;
+  using ArgMap = std::unordered_map<std::string, size_t>;
 
   explicit OpKernelContext(ExecutionFrame* frame,
                            const OpKernel* kernel,
@@ -156,8 +156,6 @@ inline Tensor* OpKernelContext::Output<Tensor>(int) {
   LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
   return nullptr;
 }
-
-using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 struct KernelCreateInfo {
   std::unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.

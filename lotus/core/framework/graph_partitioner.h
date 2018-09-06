@@ -12,7 +12,7 @@ class KernelRegistryManager;
 class GraphPartitioner {
  public:
   //The order of providers represents the user preference.
-  GraphPartitioner(const KernelRegistryManager& kernel_registry_mgr,
+  GraphPartitioner(KernelRegistryManager& kernel_registry_mgr,
                    const ExecutionProviders& providers)
     : kernel_registry_mgr_(kernel_registry_mgr),
       providers_(providers) {}
@@ -22,7 +22,7 @@ class GraphPartitioner {
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphPartitioner);
 
-  const KernelRegistryManager& kernel_registry_mgr_;
+  KernelRegistryManager& kernel_registry_mgr_;
   const ExecutionProviders& providers_;
 };
 }  // namespace Lotus

@@ -1751,19 +1751,6 @@ bool GraphBase::ReleaseNode(NodeIndex index) {
   return true;
 }
 
-std::unique_ptr<Node> GraphBase::TransferNode(NodeIndex index) {
-  LOTUS_ENFORCE(index < nodes_.size());
-  if (nodes_[index] != nullptr) {
-    std::unique_ptr<Node> result(std::move(nodes_[index]));
-    nodes_[index] = nullptr;
-    --num_of_nodes_;
-    graph_proto_sync_needed_ = true;
-    graph_resolve_needed_ = true;
-    return result;
-  }
-  return nullptr;
-}
-
 ILotusOpSchemaCollectionPtr Graph::GetSchemaRegistry() const {
   return schema_registry_;
 }
@@ -1789,15 +1776,14 @@ Node* Graph::FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, c
                             func_meta_def->domain);
 
   fused_node->SetNodeType(Node::Type::Fused);
+  function_container_->functions_.push_back(MakeFunction(*this, std::move(sub_graph)));
+  fused_node->SetFunctionBody(*(function_container_->functions_.back().get()));
 
   // Remove nodes fused above.
-  std::vector<std::unique_ptr<Node>> sub_graph_nodes;
-  for (auto node_index : sub_graph->nodes) {
-    sub_graph_nodes.emplace_back(TransferNode(node_index));
+  auto& sub_graph_ref = function_container_->functions_.back()->GetIndexedSubGraph();
+  for (auto node_index : sub_graph_ref.nodes) {
+    RemoveNode(node_index);
   }
-
-  function_container_->functions_.push_back(std::make_unique<::Lotus::Function>(*this, std::move(sub_graph), sub_graph_nodes));
-  fused_node->SetFunctionBody(*(function_container_->functions_.back().get()));
   return fused_node;
 }
 

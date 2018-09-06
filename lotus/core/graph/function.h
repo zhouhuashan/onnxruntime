@@ -2,9 +2,9 @@
 
 #include "core/common/common.h"
 #include "core/graph/indexed_sub_graph.h"
-#include "core/graph/graph_base.h"
 
 namespace LotusIR {
+class GraphBase;
 class Graph;
 class Node;
 }  // namespace LotusIR
@@ -14,17 +14,14 @@ namespace Lotus {
 // Function representation class.
 class Function {
  public:
-  Function(LotusIR::Graph& graph,
-           std::unique_ptr<IndexedSubGraph> customized_func,
-           std::vector<std::unique_ptr<LotusIR::Node>>& func_nodes);
+  virtual ~Function() {}
+  virtual const onnx::OpSchema& OpSchema() const = 0;
 
-  const onnx::OpSchema& OpSchema() const;
+  virtual const LotusIR::GraphBase& Body() const = 0;
 
- private:
-  LotusIR::Graph* parent_graph_;
-  std::vector<std::unique_ptr<LotusIR::Node>> func_nodes_;
-  std::unique_ptr<IndexedSubGraph> customized_func_body_;
-  std::unique_ptr<onnx::OpSchema> op_schema_;
+  virtual const IndexedSubGraph& GetIndexedSubGraph() const = 0;
 };
 
+std::unique_ptr<Function> MakeFunction(const LotusIR::Graph& graph,
+                                       std::unique_ptr<IndexedSubGraph> customized_func);
 }  // namespace Lotus

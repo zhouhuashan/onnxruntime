@@ -7,6 +7,8 @@
 #include "core/providers/provider_factories.h"
 
 namespace Lotus {
+
+using FuseRuleFn = std::function<void(const LotusIR::Graph&, std::vector<std::unique_ptr<ComputationCapacity>>&)>;
 // Logical device representation.
 class CPUExecutionProvider : public IExecutionProvider {
  public:
@@ -32,6 +34,10 @@ class CPUExecutionProvider : public IExecutionProvider {
     return LotusIR::kCpuExecutionProvider;
   }
 
+  virtual std::vector<std::unique_ptr<ComputationCapacity>>
+	  GetCapability(const LotusIR::Graph& graph,
+		  const std::vector<const KernelRegistry*>& kernel_registries) const override;
+
   Status CopyTensor(const Tensor& src, Tensor& dst) const override {
     LOTUS_ENFORCE(dst.Location().name == CPU);
 
@@ -51,5 +57,10 @@ class CPUExecutionProvider : public IExecutionProvider {
   }
 
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;
+
+  void InsertFusedRules(FuseRuleFn rule);
+
+ protected:
+  std::vector<FuseRuleFn> fuse_rules_;
 };
 }  // namespace Lotus

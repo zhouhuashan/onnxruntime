@@ -178,7 +178,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
 
   const auto data = gsl::make_span(p_data, expected_size);
   for (int i = 0; i < expected_size; i++)
-    data[i] = gsl::narrow_cast<uint16_t>(tensor.int32_data()[i]);
+    data[i] = MLFloat16(gsl::narrow<uint16_t>(tensor.int32_data()[i]));
 
   return Status::OK();
 }

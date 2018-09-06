@@ -332,8 +332,8 @@ const std::vector<MLDataType>& DataTypeImpl::AllTensorTypes() {
 std::ostream& operator<<(std::ostream& out, const MLDataType data_type) {
   if (data_type == nullptr)
     return out << "(null)";
-  else
-    return out << typeid(*data_type).name();
+
+  return out << typeid(*data_type).name();
 }
 
 }  // namespace Lotus

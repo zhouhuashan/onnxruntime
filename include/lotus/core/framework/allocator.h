@@ -55,12 +55,12 @@ struct AllocatorInfo {
   inline bool operator<(const AllocatorInfo& other) const {
     if (type != other.type)
       return type < other.type;
-    else if (mem_type != other.mem_type)
+    if (mem_type != other.mem_type)
       return mem_type < other.mem_type;
-    else if (id != other.id)
+    if (id != other.id)
       return id < other.id;
-    else
-      return name < other.name;
+
+    return name < other.name;
   }
 
   inline std::string ToString() const {

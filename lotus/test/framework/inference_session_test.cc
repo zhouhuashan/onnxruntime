@@ -14,7 +14,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
-#include "core/graph/indexed_sub_graph.h"
+#include "core/framework/computation_capacity.h"
 #include "core/graph/model.h"
 #include "core/graph/op.h"
 #include "core/providers/cpu/cpu_execution_provider.h"
@@ -73,17 +73,17 @@ class FuseExecutionProvider : public IExecutionProvider {
                         std::make_unique<DummyArena>(device_info.factory(0))));
   }
 
-  std::vector<std::unique_ptr<IndexedSubGraph>>
+  std::vector<std::unique_ptr<ComputationCapacity>>
   GetCapability(const LotusIR::Graph& graph,
                 const std::vector<const KernelRegistry*>& /*kernel_registries*/) const override {
     // Fuse two add into one.
-    std::vector<std::unique_ptr<IndexedSubGraph>> result;
-    result.push_back(std::make_unique<IndexedSubGraph>());
+    std::vector<std::unique_ptr<ComputationCapacity>> result;
+	std::unique_ptr<IndexedSubGraph> sub_graph = std::make_unique<IndexedSubGraph>();
     for (auto& node : graph.Nodes()) {
       if (graph.IsSourceNode(node) || graph.IsSinkNode(node)) {
         continue;
       }
-      result[0]->nodes.push_back(node.Index());
+	  sub_graph->nodes.push_back(node.Index());
     }
     auto meta_def = std::make_unique<::Lotus::IndexedSubGraph::MetaDef>();
     meta_def->name = "FuseAdd";
@@ -92,7 +92,8 @@ class FuseExecutionProvider : public IExecutionProvider {
     meta_def->outputs = {"M"};
     meta_def->since_version = 1;
     meta_def->status = onnx::EXPERIMENTAL;
-    result[0]->SetMetaDef(meta_def);
+	sub_graph->SetMetaDef(meta_def);
+	result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
     return result;
   }
 
@@ -174,7 +175,7 @@ void RunModel(InferenceSession& session_object,
   std::vector<int64_t> dims_mul_x = {3, 2};
   std::vector<float> values_mul_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
   MLValue ml_value;
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_mul_x, values_mul_x, &ml_value);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value));
 
@@ -186,7 +187,7 @@ void RunModel(InferenceSession& session_object,
   if (is_preallocate_output_vec) {
     fetches.resize(output_names.size());
     for (auto& elem : fetches) {
-      CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &elem);
+      CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_mul_x, values_mul_x, &elem);
     }
   }
 
@@ -229,7 +230,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
 
   MLValue input_ml_value_B;
   std::vector<int64_t> dims_mul_x_B = {4, 3};
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x_B, values_mul_x, &input_ml_value_B);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_mul_x_B, values_mul_x, &input_ml_value_B);
 
   io_binding->BindInput("A", input_ml_value_A);
   io_binding->BindInput("B", input_ml_value_B);
@@ -239,10 +240,10 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
   MLValue output_ml_value;
   if (is_preallocate_output_vec) {
     if (allocation_provider == kCpuExecutionProvider) {
-      AllocateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), expected_output_dims, &output_ml_value);
+      AllocateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), expected_output_dims, &output_ml_value);
     } else if (allocation_provider == kCudaExecutionProvider) {
 #ifdef USE_CUDA
-      AllocateMLValue<float>(TestCudaExecutionProvider()->GetAllocator(), expected_output_dims, &output_ml_value);
+      AllocateMLValue<float>(TestCudaExecutionProvider()->GetAllocator(kMemTypeDefault), expected_output_dims, &output_ml_value);
 #endif
     } else {
       LOTUS_THROW("Unsupported provider");
@@ -269,7 +270,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
     auto& rtensor = outputs.front().Get<Tensor>();
     auto element_type = rtensor.DataType();
     auto& shape = rtensor.Shape();
-    auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator();
+    auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
     void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
     LOTUS_ENFORCE(buffer);
     std::unique_ptr<Tensor> cpu_tensor = std::make_unique<Tensor>(element_type,
@@ -743,7 +744,7 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
 
   MLValue ml_value1;
   vector<float> v1{2.};
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), {1}, v1, &ml_value1);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), {1}, v1, &ml_value1);
   io_binding->BindOutput("foo", ml_value1);
   ASSERT_TRUE(io_binding->GetOutputs().size() == 1);
   auto span = io_binding->GetOutputs()[0].Get<Tensor>().DataAsSpan<float>();
@@ -754,7 +755,7 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
 
   MLValue ml_value2;
   vector<float> v2{3.};
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), {1}, v2, &ml_value2);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), {1}, v2, &ml_value2);
   io_binding->BindOutput("foo", ml_value2);
   ASSERT_TRUE(io_binding->GetOutputs().size() == 1);
   span = io_binding->GetOutputs()[0].Get<Tensor>().DataAsSpan<float>();
@@ -780,7 +781,7 @@ TEST(InferenceSessionTests, InvalidInputTypeOfTensorElement) {
   std::vector<int64_t> dims_mul_x = {3, 2};
   std::vector<int64_t> values_mul_x = {1, 2, 3, 4, 5, 6};
   MLValue ml_value;
-  CreateMLValue<int64_t>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value);
+  CreateMLValue<int64_t>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_mul_x, values_mul_x, &ml_value);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value));
 
@@ -914,11 +915,11 @@ TEST(ExecutionProviderTest, FunctionTest) {
   std::vector<int64_t> dims_mul_x = {3, 2};
   std::vector<float> values_mul_x = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
   MLValue ml_value_x;
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value_x);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_mul_x, values_mul_x, &ml_value_x);
   MLValue ml_value_y;
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value_y);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_mul_x, values_mul_x, &ml_value_y);
   MLValue ml_value_z;
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(), dims_mul_x, values_mul_x, &ml_value_z);
+  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_mul_x, values_mul_x, &ml_value_z);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value_x));
   feeds.insert(std::make_pair("Y", ml_value_y));

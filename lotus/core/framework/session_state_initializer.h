@@ -24,7 +24,7 @@ class SessionStateInitializer {
   SessionStateInitializer(LotusIR::Graph& graph,
                           SessionState& session_state,
                           const ExecutionProviders& providers,
-                          const KernelRegistryManager& kernel_registry_manager,
+                          KernelRegistryManager& kernel_registry_manager,
                           const Logging::Logger& logger);
 
   // First perform any transformations and create the execution plan
@@ -42,7 +42,7 @@ class SessionStateInitializer {
   SessionState& session_state_;
 
   const ExecutionProviders& execution_providers_;
-  const KernelRegistryManager& kernel_registry_manager_;
+  KernelRegistryManager& kernel_registry_manager_;
   const Logging::Logger& logger_;
 };
 }  // namespace Lotus

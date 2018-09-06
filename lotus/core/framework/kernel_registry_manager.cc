@@ -10,6 +10,7 @@ Status KernelRegistryManager::CreateKernel(const LotusIR::Node& node,
                                            const IExecutionProvider& execution_provider,
                                            const SessionState& session_state,
                                            /*out*/ std::unique_ptr<OpKernel>& op_kernel) const {
+  std::lock_guard<std::mutex> lock(lock_);
   if (kernel_registries_.empty()) {
     return Status(LOTUS, FAIL, "Kernel not found.");
   }
@@ -33,6 +34,7 @@ void KernelRegistryManager::RegisterKernels(const ExecutionProviders& execution_
 
 void KernelRegistryManager::RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry,
                                                    KernelRegistryPriority priority) {
+  std::lock_guard<std::mutex> lock(lock_);
   if (nullptr == kernel_registry) {
     return;
   }
@@ -46,6 +48,7 @@ void KernelRegistryManager::RegisterKernelRegistry(std::shared_ptr<KernelRegistr
 
 Status KernelRegistryManager::SearchKernelRegistry(const LotusIR::Node& node,
                                                    /*out*/ const KernelCreateInfo** kernel_create_info) const {
+  std::lock_guard<std::mutex> lock(lock_);
   if (kernel_registries_.empty()) {
     return Status(LOTUS, FAIL, "Kernel def not found.");
   }

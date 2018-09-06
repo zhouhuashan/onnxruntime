@@ -73,7 +73,7 @@ enum class MLTensorDataType : uint32_t {
 union MLFloat16 {
   uint16_t val;
   
-  MLFloat16(uint16_t x) : val(x) {}
+  explicit MLFloat16(uint16_t x) : val(x) {}
   MLFloat16() : val(0) {}
 };
 
