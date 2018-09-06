@@ -170,7 +170,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-DPYTHON_EXECUTABLE=" + sys.executable,
                  "-Dlotus_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),
-                 "-Dlotus_USE_JEMALLOC=" + ("OFF" if args.use_jemalloc and (not args.enable_pybind and not args.build_shared_lib) else "OFF"),
+                 "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
                  "-Dlotus_BUILD_SHARED_LIB=" + ("ON" if args.build_shared_lib else "OFF"),                  
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
