@@ -4,6 +4,7 @@
 
 import os
 import sys
+import shutil
 # Check these extensions were installed.
 import sphinx_gallery.gen_gallery
 # The package should be installed in a virtual environment.
@@ -78,7 +79,7 @@ def setup(app):
     source = os.path.join(root, "..", "..", "cmake", "external")
     third = ['googletest', 'protobuf', 'onnx', 'tvm']
     for th in third:
-        lic = os.path.join(source, third, "LICENSE")
+        lic = os.path.join(source, th, "LICENSE")
         if not os.path.exists(lic):
             raise FileNotFoundError(lic)
         dst = th + "_LICENSE"

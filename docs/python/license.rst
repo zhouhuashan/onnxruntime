@@ -16,7 +16,7 @@ These license terms are an agreement between you and Microsoft Corporation
 (or one of its affiliates). They apply to the software named above and any 
 Microsoft services or software updates (except to the extent such services 
 or updates are accompanied by new or additional terms, in which case those 
-different terms apply prospectively and do not alter your or Microsoftís 
+different terms apply prospectively and do not alter your or Microsoft‚Äôs 
 rights relating to pre-updated software or services).
 
 **IF YOU COMPLY WITH THESE LICENSE TERMS, YOU HAVE THE RIGHTS BELOW. 
@@ -78,8 +78,8 @@ BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS.**
    on export restrictions, visit http://aka.ms/exporting.
 
 7. **SUPPORT SERVICES**. Microsoft is not obligated under this agreement to provide 
-   any support services for the software. Any support provided is ìas isî,
-   ìwith all faultsî, and without warranty of any kind.
+   any support services for the software. Any support provided is ‚Äúas is‚Äù,
+   ‚Äúwith all faults‚Äù, and without warranty of any kind.
 
 8. **UPDATES**. The software may periodically check for updates, and download 
    and install them for you. You may obtain updates only from Microsoft or 
@@ -143,7 +143,7 @@ BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS.**
        obligations"). In other cases of slight negligence, Microsoft will not 
        be liable for slight negligence.
 
-12. DISCLAIMER OF WARRANTY. THE SOFTWARE IS LICENSED ìAS IS.î YOU BEAR THE 
+12. DISCLAIMER OF WARRANTY. THE SOFTWARE IS LICENSED ‚ÄúAS IS.‚Äù YOU BEAR THE 
     RISK OF USING IT. MICROSOFT GIVES NO EXPRESS WARRANTIES, GUARANTEES, 
     OR CONDITIONS. TO THE EXTENT PERMITTED UNDER APPLICABLE LAWS, 
     MICROSOFT EXCLUDES ALL IMPLIED WARRANTIES, INCLUDING MERCHANTABILITY, 
@@ -171,41 +171,41 @@ or limitation of incidental, consequential, or other damages.
 Please note: As this software is distributed in Canada, some of the clauses 
 in this agreement are provided below in French.
 
-Remarque: Ce logiciel Ètant distribuÈ au Canada, certaines des clauses dans
-ce contrat sont fournies ci-dessous en franÁais.
+Remarque: Ce logiciel √©tant distribu√© au Canada, certaines des clauses dans
+ce contrat sont fournies ci-dessous en fran√ßais.
 
-**EXON…RATION DE GARANTIE**. Le logiciel visÈ par une licence est offert ´ tel quel ª.
-Toute utilisation de ce logiciel est ‡ votre seule risque et pÈril. 
-Microsoft níaccorde aucune autre garantie expresse. Vous pouvez bÈnÈficier
+**EXON√âRATION DE GARANTIE**. Le logiciel vis√© par une licence est offert ¬´ tel quel ¬ª.
+Toute utilisation de ce logiciel est √† votre seule risque et p√©ril. 
+Microsoft n‚Äôaccorde aucune autre garantie expresse. Vous pouvez b√©n√©ficier
 de droits additionnels en vertu du droit local sur la protection des 
 consommateurs, que ce contrat ne peut modifier. La ou elles sont permises 
-par le droit locale, les garanties implicites de qualitÈ marchande, díadÈquation
-‡ un usage particulier et díabsence de contrefaÁon sont exclues.
+par le droit locale, les garanties implicites de qualit√© marchande, d‚Äôad√©quation
+√† un usage particulier et d‚Äôabsence de contrefa√ßon sont exclues.
 
-**LIMITATION DES DOMMAGES-INT…R TS ET EXCLUSION DE RESPONSABILIT… POUR LES DOMMAGES**.
+**LIMITATION DES DOMMAGES-INT√âR√äTS ET EXCLUSION DE RESPONSABILIT√â POUR LES DOMMAGES**.
 Vous pouvez obtenir de Microsoft et de ses fournisseurs une indemnisation en 
-cas de dommages directs uniquement ‡ hauteur de 5,00 $ US. Vous ne pouvez 
-prÈtendre ‡ aucune indemnisation pour les autres dommages, y compris les 
-dommages spÈciaux, indirects ou accessoires et pertes de bÈnÈfices.
+cas de dommages directs uniquement √† hauteur de 5,00 $ US. Vous ne pouvez 
+pr√©tendre √† aucune indemnisation pour les autres dommages, y compris les 
+dommages sp√©ciaux, indirects ou accessoires et pertes de b√©n√©fices.
 
 Cette limitation concerne:
 
-- tout ce qui est reliÈ au logiciel, aux services ou au contenu (y compris le code) 
+- tout ce qui est reli√© au logiciel, aux services ou au contenu (y compris le code) 
   figurant sur des sites Internet tiers ou dans des programmes tiers; et
 
-- les rÈclamations au titre de violation de contrat ou de garantie, ou au titre de 
-  responsabilitÈ stricte, de nÈgligence ou díune autre faute dans la limite autorisÈe
+- les r√©clamations au titre de violation de contrat ou de garantie, ou au titre de 
+  responsabilit√© stricte, de n√©gligence ou d‚Äôune autre faute dans la limite autoris√©e
   par la loi en vigueur.
 
-Elle síapplique Ègalement, mÍme si Microsoft connaissait ou devrait connaÓtre 
-líÈventualitÈ díun tel dommage. Si votre pays níautorise pas líexclusion ou 
-la limitation de responsabilitÈ pour les dommages indirects, accessoires ou
-de quelque nature que ce soit, il se peut que la limitation ou líexclusion 
-ci-dessus ne síappliquera pas ‡ votre Ègard.
+Elle s‚Äôapplique √©galement, m√™me si Microsoft connaissait ou devrait conna√Ætre 
+l‚Äô√©ventualit√© d‚Äôun tel dommage. Si votre pays n‚Äôautorise pas l‚Äôexclusion ou 
+la limitation de responsabilit√© pour les dommages indirects, accessoires ou
+de quelque nature que ce soit, il se peut que la limitation ou l‚Äôexclusion 
+ci-dessus ne s‚Äôappliquera pas √† votre √©gard.
 
-**EFFET JURIDIQUE**. Le prÈsent contrat dÈcrit certains droits juridiques. 
-Vous pourriez avoir díautres droits prÈvus par les lois de votre pays. 
-Le prÈsent contrat ne modifie pas les droits que vous confËrent les lois 
+**EFFET JURIDIQUE**. Le pr√©sent contrat d√©crit certains droits juridiques. 
+Vous pourriez avoir d‚Äôautres droits pr√©vus par les lois de votre pays. 
+Le pr√©sent contrat ne modifie pas les droits que vous conf√®rent les lois 
 de votre pays si celles-ci ne le permettent pas.
 
 Thrid party licenses
