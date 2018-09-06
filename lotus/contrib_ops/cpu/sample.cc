@@ -1,8 +1,6 @@
 #include "sample.h"
 #include "onnx/defs/schema.h"
 
-using namespace onnx;
-
 namespace Lotus {
 namespace ML {
 // These ops are internal-only, so register outside of onnx
