@@ -136,7 +136,7 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   return Status::OK();
 }
 
-#define BINARY_ELEMENTWISE_REGISTER_KERNEL(x, ver, T)                           \
+#define BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(x, ver, T)                     \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                                \
       x,                                                                        \
       kOnnxDomain,                                                              \
@@ -144,6 +144,17 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
       T,                                                                        \
       kCudaExecutionProvider,                                                   \
       KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()), \
+      x<T>);
+
+#define BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(x, startver, endver, T) \
+  ONNX_OPERATOR_VERSIONED_TYPED_KERNEL_EX(                                         \
+      x,                                                                           \
+      kOnnxDomain,                                                                 \
+      startver,                                                                    \
+      endver,                                                                      \
+      T,                                                                           \
+      kCudaExecutionProvider,                                                      \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()),    \
       x<T>);
 
 #define BINARY_ELEMENTWISE_COMPUTE(x, T)                                                                \
@@ -166,8 +177,8 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
     return Status::OK();                                                                                \
   }
 
-#define BINARY_OP_TYPED(name, ver, T)              \
-  BINARY_ELEMENTWISE_REGISTER_KERNEL(name, ver, T) \
+#define BINARY_OP_TYPED(name, ver, T)                    \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, T) \
   BINARY_ELEMENTWISE_COMPUTE(name, T)
 
 // since different ops has different types, we cannot use BINARY_OPS() directly
@@ -196,6 +207,30 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   BINARY_OP_TYPED(name, ver, int32_t)  \
   BINARY_OP_TYPED(name, ver, int64_t)  \
   BINARY_OP_HFD(name, ver)
+
+#define BINARY_OP_REGISTER_HFD(name, ver)                        \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, MLFloat16) \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, float)     \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, double)
+
+#define BINARY_OP_REGISTER_UZILHFD(name, ver)                   \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, uint32_t) \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, uint64_t) \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, int32_t)  \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, int64_t)  \
+  BINARY_OP_REGISTER_HFD(name, ver)
+
+#define BINARY_OP_REGISTER_VERSIONED_HFD(name, startver, endver)                        \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(name, startver, endver, MLFloat16) \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(name, startver, endver, float)     \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(name, startver, endver, double)
+
+#define BINARY_OP_REGISTER_VERSIONED_UZILHFD(name, startver, endver)                   \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(name, startver, endver, uint32_t) \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(name, startver, endver, uint64_t) \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(name, startver, endver, int32_t)  \
+  BINARY_ELEMENTWISE_REGISTER_KERNEL_VERSIONED_TYPED(name, startver, endver, int64_t)  \
+  BINARY_OP_REGISTER_VERSIONED_HFD(name, startver, endver)
 
 BINARY_OP_UZILHFD(Add, 7)
 BINARY_OP_UZILHFD(Sub, 7)
@@ -266,10 +301,7 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
   return Status::OK();
 }
 
-#undef BINARY_ELEMENTWISE_COMPUTE
-#define BINARY_ELEMENTWISE_COMPUTE(name, T) \
-  template Status name<T>::ComputeInternal(OpKernelContext* context) const;
-
-BINARY_OP_UZILHFD(Sum, 6)  // bump up this when upgrading ONNX to current
+BINARY_OP_REGISTER_UZILHFD(Sum, 8)
+BINARY_OP_REGISTER_VERSIONED_UZILHFD(Sum, 6, 7)
 }  // namespace Cuda
 }  // namespace Lotus

@@ -13,5 +13,6 @@ TEST(MLOpTest, SampleOpFloat) {
   test.AddOutput<float>("Y", {N}, expected_output);
   test.Run();
 }
+
 }  // namespace Test
 }  // namespace Lotus

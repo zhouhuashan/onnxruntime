@@ -7,7 +7,13 @@
 from setuptools import setup, find_packages
 from os import path, getcwd
 import platform
+import sys
 
+package_name = 'onnxruntime'
+if '--use_cuda' in sys.argv:
+    package_name = 'onnxruntime-gpu'
+    sys.argv.remove('--use_cuda')
+          
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
     class bdist_wheel(_bdist_wheel):
@@ -41,7 +47,7 @@ with open(README) as f:
 
 # Setup
 setup(
-    name='onnxruntime',
+    name=package_name,
     version='0.1.0',
     description='ONNX Runtime Runtime Python bindings',
     long_description=long_description,

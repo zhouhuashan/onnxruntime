@@ -171,7 +171,7 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-DPYTHON_EXECUTABLE=" + sys.executable,
                  "-Dlotus_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),
-                 "-Dlotus_USE_JEMALLOC=" + ("OFF" if args.use_jemalloc and (not args.enable_pybind and not args.build_shared_lib) else "OFF"),
+                 "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
                  "-Dlotus_BUILD_SHARED_LIB=" + ("ON" if args.build_shared_lib else "OFF"),                  
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
@@ -445,12 +445,15 @@ def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_
             if use_cuda:
                 run_subprocess([exe, "-e", "cuda"] + test_data_dirs, cwd=cwd)
 
-def build_python_wheel(source_dir, build_dir, configs):
+def build_python_wheel(source_dir, build_dir, configs, use_cuda):
     for config in configs:
         cwd = get_config_build_dir(build_dir, config)
         if is_windows():
             cwd = os.path.join(cwd, config)
-        run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel'], cwd=cwd)
+        if use_cuda:
+            run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel', '--use_cuda'], cwd=cwd)
+        else:
+            run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel'], cwd=cwd)
 
 def main():
     args = parse_arguments()
@@ -538,7 +541,7 @@ def main():
         run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, args.use_cuda)
 
     if args.build_wheel:
-        build_python_wheel(source_dir, build_dir, configs)
+        build_python_wheel(source_dir, build_dir, configs, args.use_cuda)
 
     log.info("Build complete")
 
