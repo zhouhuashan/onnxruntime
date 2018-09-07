@@ -6,7 +6,7 @@ namespace Lotus {
 
 class CUDAAllocator : public IDeviceAllocator {
  public:
-  CUDAAllocator(int device_id) : device_id_(device_id) {}
+  CUDAAllocator(int device_id) : device_id_(device_id), info_(CUDA, AllocatorType::kDeviceAllocator, device_id, kMemTypeDefault) {}
   virtual void* Alloc(size_t size) override;
   virtual void Free(void* p) override;
   virtual const AllocatorInfo& Info() const override;
@@ -16,7 +16,8 @@ class CUDAAllocator : public IDeviceAllocator {
   void CheckDevice() const;
 
  private:
-  int device_id_;
+  const int device_id_;
+  const AllocatorInfo info_;
 };
 
 class CUDAPinnedAllocator : public IDeviceAllocator {
