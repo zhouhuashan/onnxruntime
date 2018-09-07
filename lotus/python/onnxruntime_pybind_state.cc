@@ -5,12 +5,40 @@
 #include <numpy/arrayobject.h>
 
 #include "core/graph/graph.h"
+
+#if USE_CUDA
+#define BACKEND_PROC "GPU"
+#else
+#define BACKEND_PROC "CPU"
+#endif
+
+#if USE_OPENMP
+#define BACKEND_OPENMP "-OPENMP"
+#else
+#define BACKEND_OPENMP ""
+#endif
+
 #if USE_MKLDNN
-#define BACKEND_DEVICE "MKL"
+#define BACKEND_MKLDNN "-MKL-DNN"
 #include "core/providers/mkldnn/mkldnn_execution_provider.h"
 #else
-#define BACKEND_DEVICE "CPU"
+#define BACKEND_MKLDNN ""
 #endif
+
+#if USE_MKLML
+#define BACKEND_MKLML "-MKL-ML"
+#else
+#define BACKEND_MKLML ""
+#endif
+
+#if USE_OPENBLAS
+#define BACKEND_OPENBLAS "-OPENBLAS"
+#else
+#define BACKEND_OPENBLAS ""
+#endif
+
+#define BACKEND_DEVICE BACKEND_PROC BACKEND_MKLDNN BACKEND_MKLML BACKEND_OPENBLAS
+
 #include "core/providers/cpu/cpu_execution_provider.h"
 
 #if defined(_MSC_VER)
@@ -18,7 +46,6 @@
 #endif  // _MSC_VER
 
 #include <iterator>
-
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4267 4996 4503 4003)
@@ -165,7 +192,7 @@ void InitializeSession(InferenceSession* sess) {
 void addGlobalMethods(py::module& m) {
   m.def("get_session_initializer", &SessionObjectInitializer::Get, "Return a default session object initializer.");
   m.def("get_device", []() -> std::string { return BACKEND_DEVICE; },
-        "Return the device used to compute the prediction (CPU, MKL)");
+        "Return the device used to compute the prediction (CPU, MKL, ...)");
 }
 
 void addObjectMethods(py::module& m) {

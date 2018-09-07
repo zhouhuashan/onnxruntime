@@ -26,7 +26,7 @@ class TestBackend(unittest.TestCase):
 
     def testRunModel(self):
         name = self.get_name("mul_1.pb")
-        rep = backend.prepare(name, 'CPU')
+        rep = backend.prepare(name)
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
         res = rep.run(x)
         output_expected = np.array([[1.0, 4.0], [9.0, 16.0], [25.0, 36.0]], dtype=np.float32)
@@ -34,7 +34,7 @@ class TestBackend(unittest.TestCase):
 
     def testRunModelNonTensor(self):
         name = self.get_name("pipeline_vectorize.onnx")
-        rep = backend.prepare(name, 'CPU')
+        rep = backend.prepare(name)
         x = {0: 25.0, 1: 5.13, 2: 0.0, 3: 0.453, 4: 5.966}
         res = rep.run(x)
         output_expected = np.array([[49.752754]], dtype=np.float32)
@@ -44,7 +44,7 @@ class TestBackend(unittest.TestCase):
         name = datasets.get_example("logreg_iris.onnx")
         model = load(name)
         
-        rep = backend.prepare(model, 'CPU')
+        rep = backend.prepare(model)
         x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
         res = rep.run(x)
         output_expected = np.array([0, 0, 0], dtype=np.float32)

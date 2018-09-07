@@ -32,7 +32,7 @@ class OnnxRuntimeBackend(Backend):
         Check whether the backend is compiled with particular device support.
         In particular it's used in the testing suite.
         """
-        return device == get_device()
+        return device in get_device()
 
     @classmethod
     def prepare(cls, model, device=None, **kwargs):
@@ -58,8 +58,8 @@ class OnnxRuntimeBackend(Backend):
                 if hasattr(options, k):
                     setattr(options, k, v)
             inf = InferenceSession(model, options)
-            if device is not None and get_device() != device:
-                raise RuntimeError("Incompatible device expected '{0}', got '{1}'".format(device, inf.device))
+            if device is not None and not cls.supports_device(device):
+                raise RuntimeError("Incompatible device expected '{0}', got '{1}'".format(device, get_device()))
             return cls.prepare(inf, device, **kwargs)
         else:
             # type: ModelProto

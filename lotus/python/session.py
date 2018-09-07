@@ -3,7 +3,6 @@
 
 import sys
 import logging
-import ctypes
 import os
 
 logger = logging.getLogger(__name__)
