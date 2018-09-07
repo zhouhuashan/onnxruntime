@@ -8,7 +8,8 @@ if exist %PYTHONPATH%\Lotus\__init__.py goto build_doc:
 python %~dp0\tools\ci_build\build.py --build_dir %~dp0\build\Windows %* --config Release --build_wheel
 
 :build_doc:
-python -c "from sphinx import build_main;build_main(['-j2','-v','-T','-b','html','-d','build/docs/doctrees','docs/python','build/docs/python'])"
+python -c "from sphinx import build_main;build_main(['-j2','-v','-T','-b','md','-d','build/docs/doctrees','docs/python','build/docs/md'])"
+python -c "from sphinx import build_main;build_main(['-j2','-v','-T','-b','html','-d','build/docs/doctrees','docs/python','build/docs/html'])"
 goto end:
 
 :help:

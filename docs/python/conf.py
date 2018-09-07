@@ -8,6 +8,7 @@ import sys
 import sphinx_gallery.gen_gallery
 # The package should be installed in a virtual environment.
 import onnxruntime
+from md_outputter.md_builder import setup as setup_md
 
 
 # -- Project information -----------------------------------------------------
@@ -27,6 +28,7 @@ extensions = [
     'sphinx.ext.viewcode',
     "sphinx.ext.autodoc",
     "sphinx_gallery.gen_gallery",
+    "md_outputter.md_builder",
 ]
 
 templates_path = ['_templates']
