@@ -1,5 +1,8 @@
+#include "core/graph/onnx_protobuf.h"
 #include "core/framework/data_types.h"
 #include "gtest/gtest.h"
+using namespace onnx;
+
 namespace Lotus {
 namespace Test {
 
