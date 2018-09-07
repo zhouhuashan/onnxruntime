@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <condition_variable>
 #include "core/common/common.h"
 #include "core/common/status.h"
 #include "core/common/logging/logging.h"
