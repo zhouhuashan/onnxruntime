@@ -432,7 +432,7 @@ Graph::Graph(GraphProto* graph_proto,
       graph_type_{Type::Main},
       schema_registry_(schema_registry),
       function_container_(std::make_unique<FunctionContainer>()) {
-  LOTUS_ENFORCE(graph_proto != nullptr, "Expected either name or graph_proto.");
+  LOTUS_ENFORCE(graph_proto != nullptr, "graph_proto cannot be null");
   ArgNameToTypeMap name_to_type_map;
 
   // these are all empty unless we received a graph_proto as input
