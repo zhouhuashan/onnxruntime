@@ -64,7 +64,7 @@ setup(
         'onnxruntime': data + examples,
     },
     extras_require={
-        'backend': ['onnx>=1.3.0'],
+        'backend': ['onnx>=1.2.3'],
     },
     entry_points= {
         'console_scripts': [
