@@ -11,7 +11,7 @@ class SampleOp : public OpKernel {
  public:
   explicit SampleOp(const OpKernelInfo& info) : OpKernel(info) {}
 
-  Common::Status Compute(OpKernelContext* context) const override {
+  Status Compute(OpKernelContext* context) const override {
     auto X = context->Input<Tensor>(0);
     auto& dims = X->Shape();
     auto Y = context->Output(0, dims);

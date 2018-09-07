@@ -405,6 +405,31 @@ TEST(MathOpTest, Sum) {
   test.RunOnCpuAndCuda();
 }
 
+TEST(MathOpTest, Sum_8) {
+#ifdef USE_CUDA
+  OpTester test("Sum", 8);
+  std::vector<int64_t> dims{3, 3};
+  test.AddInput<float>("data_0", dims,
+                       { 1.0f, 0.0f, 1.0f,
+                        -1.0f, 1.1f, -100.0f,
+                        -5.4f, 0.01f, -74.0f,
+                       });
+  std::vector<int64_t> dims_1{3};
+  test.AddInput<float>("data_1", dims_1,
+                       {1.0f, 0.0f, 2.0f});
+  std::vector<int64_t> dims_2{3, 1};
+  test.AddInput<float>("data_2", dims_2,
+                       {-3.0f, 3.3f, 64.0f});
+  test.AddOutput<float>("sum", dims,
+                        {-1.0f, -3.0f, 0.0f,
+                         3.3f, 4.4f, -94.7f,
+                         59.6f, 64.01f, -8.0f});
+
+  // TO DO: call RunOnCpuAndCuda after Sum of CPU updated to opset 8
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "Sum is not correct", LotusIR::kCudaExecutionProvider);
+#endif
+}
+
 TEST(MathOpTest, Min) {
   OpTester test("Min");
   std::vector<int64_t> dims{3, 3};

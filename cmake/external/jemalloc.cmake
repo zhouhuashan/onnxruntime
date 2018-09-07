@@ -5,7 +5,7 @@ set(JEMALLOC_BUILD ${CMAKE_CURRENT_BINARY_DIR}/jemalloc/src/jemalloc)
 set(JEMALLOC_INSTALL ${CMAKE_CURRENT_BINARY_DIR}/jemalloc/install)
 
 if(NOT WIN32)
-  set(JEMALLOC_STATIC_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/jemalloc/install/lib/libjemalloc.a)
+  set(JEMALLOC_STATIC_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/jemalloc/install/lib/libjemalloc_pic.a)
 else()
   message( FATAL_ERROR "Jemalloc is not supported on Windows." )
 endif()
