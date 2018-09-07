@@ -9,7 +9,6 @@
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
 #include "core/common/profiler.h"
-#include "core/common/task_thread_pool.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/execution_providers.h"
 #include "core/framework/kernel_registry_manager.h"
@@ -23,6 +22,7 @@ namespace Lotus {
 class ExecutionProviders;
 class KernelDef;
 class OpKernel;
+class TaskThreadPool;
 struct SequentialExecutionPlan;
 struct MemoryPatternGroup;
 

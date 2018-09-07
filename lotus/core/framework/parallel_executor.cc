@@ -5,6 +5,7 @@
 #include <vector>
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
+#include "core/common/task_thread_pool.h"
 #include "core/framework/allocation_planner.h"
 #include "core/framework/execution_frame.h"
 #include "core/framework/session_state.h"
