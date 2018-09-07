@@ -44,10 +44,17 @@ class CUDAExecutionProvider : public IExecutionProvider {
   }
 
   cublasHandle_t PerThreadCublasHandle() {
+    // Assure each thread has its TLS context.
+    if (!per_thread_context_)
+      per_thread_context_ = std::make_shared<PerThreadContext>(device_id_);
     return per_thread_context_->CublasHandle();
   }
 
   cudnnHandle_t PerThreadCudnnHandle() {
+    // Assure each thread has its TLS context.
+    // TODO: improve its performance when calling cuda functions from multiple threads.
+    if (!per_thread_context_)
+      per_thread_context_ = std::make_shared<PerThreadContext>(device_id_);
     return per_thread_context_->CudnnHandle();
   }
 
@@ -58,6 +65,9 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   template <typename T>
   const T* GetConstOnes(size_t count) {
+    // Assure each thread has its TLS context.
+    if (!per_thread_context_)
+      per_thread_context_ = std::make_shared<PerThreadContext>(device_id_);
     return per_thread_context_->template GetConstOnes<T>(count);
   }
 
