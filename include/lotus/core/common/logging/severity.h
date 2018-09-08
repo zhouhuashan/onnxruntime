@@ -13,7 +13,7 @@ enum class Severity {
   kFATAL = 4
 };
 
-const char SEVERITY_PREFIX[] = "VIWEF";
+constexpr const char* SEVERITY_PREFIX = "VIWEF";
 
 }  // namespace Logging
 }  // namespace Lotus
