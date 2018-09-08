@@ -182,6 +182,7 @@ class Node {
   }
 
   using NodeConstIterator = std::set<const Node*>::const_iterator;
+  using EdgeConstIterator = std::set<EdgeEnd*>::const_iterator;
 
   // Functions defined to traverse a Graph as below.
   // Read all input nodes of <*this>.
@@ -196,7 +197,15 @@ class Node {
   // End of output nodes.
   NodeConstIterator OutputNodesEnd() const noexcept { return relationships_.output_nodes.cend(); }
 
+  // Beginning of output ed. Iterator should have no nullptr values.
+  EdgeConstIterator OutputEdgesBegin() const noexcept { return relationships_.output_edges.cbegin(); }
+
+  // End of output nodes.
+  EdgeConstIterator OutputEdgesEnd() const noexcept { return relationships_.output_edges.cend(); }
+
   const std::set<std::string>& ControlInputs() const noexcept { return relationships_.control_inputs; }
+
+  size_t GetInputEdgesCount() const noexcept { return relationships_.input_edges.size(); }
 
   // Add a node attribute with specified attribute name and value.
   void AddAttribute(const std::string& attr_name, const onnx::AttributeProto& value);

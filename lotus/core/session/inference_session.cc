@@ -8,6 +8,7 @@
 #include <list>
 
 #include "core/common/logging/logging.h"
+#include "core/common/task_thread_pool.h"
 #include "core/graph/graph.h"
 #include "core/graph/graph_transformer.h"
 #include "core/graph/graph_transformer_mgr.h"
@@ -24,6 +25,7 @@
 #include "core/framework/mlvalue_name_idx_map.h"
 #include "core/framework/op_kernel_abi_wrapper.h"
 #include "core/framework/sequential_executor.h"
+#include "core/framework/parallel_executor.h"
 #include "core/framework/session_state.h"
 #include "core/framework/session_state_initializer.h"
 #include "core/framework/tensorprotoutils.h"
@@ -51,7 +53,12 @@ class InferenceSession::Impl {
 
     //env_(Env::Default()) {
     //thread_pool_(env_, "Compute", session_options.num_threads) {
+    int pool_size = session_options_.session_thread_pool_size == 0
+                        ? std::thread::hardware_concurrency() / 2
+                        : session_options_.session_thread_pool_size;
+    thread_pool_.reset(new TaskThreadPool(pool_size));
 
+    session_state_.SetThreadPool(thread_pool_.get());
     session_state_.SetEnableMemoryPattern(session_options.enable_mem_pattern);
     session_state_.SetProfiler(session_profiler_);
     if (session_options.enable_profiling) {
@@ -348,6 +355,9 @@ class InferenceSession::Impl {
 
       // handle any subgraphs
       InitializeSubgraphSessions(graph, session_state_);
+
+      // Collect root nodes and refs on the final graph.
+      graph.CollectRootNodesAndRefs();
 
       is_inited_ = true;
 
@@ -753,7 +763,7 @@ class InferenceSession::Impl {
         if (session_options_.enable_sequential_execution) {
           p_exec = std::unique_ptr<IExecutor>(new SequentialExecutor());
         } else {
-          LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
+          p_exec = std::unique_ptr<IExecutor>(new ParallelExecutor());
         }
       }
 
@@ -1041,6 +1051,7 @@ class InferenceSession::Impl {
 
   // Threadpool for this session
   //thread::ThreadPool thread_pool_; // not used for now; will add it later when implementing RunAsync
+  std::unique_ptr<TaskThreadPool> thread_pool_;
 
   // Number of concurrently running executors
   std::atomic<int> current_num_runs_;

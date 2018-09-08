@@ -36,6 +36,7 @@ struct RunConfig{
   size_t repeated_times{1000};
   size_t duration_in_seconds{600};
   bool f_verbose{false};
+  bool enable_sequential_execution{true};
 };
 
 struct PerformanceTestConfig {

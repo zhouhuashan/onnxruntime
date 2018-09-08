@@ -37,6 +37,7 @@ void usage() {
       "\t-r [repeat]: Specifies the number of times to repeat\n"
       "\t-n [test_case_name]: Specifies a single test case to run.\n"
       "\t-e [EXECUTION_PROVIDER]: EXECUTION_PROVIDER could be 'cpu' or 'cuda'. Default: 'cpu'.\n"
+      "\t-x: Use parallel executor, default (without -x): sequential executor.\n"
       "\t-h: help\n");
 }
 
@@ -60,11 +61,12 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> whitelisted_test_cases;
   int concurrent_session_runs = Env::Default().GetNumCpuCores();
   bool enable_cpu_mem_arena = true;
+  bool enable_sequential_execution = true;
   int repeat_count = 1;
   int p_models = Env::Default().GetNumCpuCores();
   {
     int ch;
-    while ((ch = getopt(argc, argv, "Ac:hj:m:n:r:e:")) != -1) {
+    while ((ch = getopt(argc, argv, "Ac:hj:m:n:r:e:x")) != -1) {
       switch (ch) {
         case 'A':
           enable_cpu_mem_arena = false;
@@ -108,6 +110,9 @@ int main(int argc, char* argv[]) {
             return -1;
           }
           break;
+        case 'x':
+          enable_sequential_execution = false;
+          break;
         case '?':
         case 'h':
         default:
@@ -137,21 +142,25 @@ int main(int argc, char* argv[]) {
     }
     data_dirs.emplace_back(p);
   }
+
   AllocatorPtr cpu_allocator = std::make_shared<::Lotus::CPUAllocator>();
   std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
   TestResultStat stat;
   SessionFactory sf(provider, true, enable_cpu_mem_arena);
+  sf.enable_sequential_execution = enable_sequential_execution;
   TestEnv args(tests, stat, sf);
   Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
   if (!st.IsOK()) {
     fprintf(stderr, "%s\n", st.ErrorMessage().c_str());
     return -1;
   }
+
   std::string res = stat.ToString();
   fwrite(res.c_str(), 1, res.size(), stdout);
   for (ITestCase* l : tests) {
     delete l;
   }
+
   std::unordered_set<std::string> broken_tests{"cast_DOUBLE_to_FLOAT", "cast_DOUBLE_to_FLOAT16",
                                                "AvgPool1d", "AvgPool1d_stride", "AvgPool2d", "AvgPool2d_stride", "AvgPool3d", "AvgPool3d_stride",
                                                "AvgPool3d_stride1_pad0_gpu_input", "BatchNorm1d_3d_input_eval", "BatchNorm2d_eval", "BatchNorm2d_momentum_eval",
@@ -166,6 +175,7 @@ int main(int argc, char* argv[]) {
                                                "maxpool_with_argmax_2d_precomputed_pads", "maxpool_3d_default", "maxpool_2d_strides", "maxpool_2d_same_upper", "maxpool_2d_same_lower",
                                                "maxpool_2d_precomputed_strides", "maxpool_2d_precomputed_same_upper", "maxpool_2d_precomputed_pads", "expand_dim_unchanged",
                                                "convtranspose_1d", "expand_dim_changed", "convtranspose_3d", "expand_shape_model1", "expand_shape_model2", "expand_shape_model3", "expand_shape_model4"};
+
   int result = 0;
   for (const std::string& s : stat.GetFailedTest()) {
     if (broken_tests.find(s) == broken_tests.end()) {
@@ -173,5 +183,6 @@ int main(int argc, char* argv[]) {
       result = -1;
     }
   }
+
   return result;
 }

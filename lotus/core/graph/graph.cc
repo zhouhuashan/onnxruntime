@@ -1787,4 +1787,20 @@ Node* Graph::FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, c
   return fused_node;
 }
 
+void Graph::CollectRootNodesAndRefs() {
+  auto max_size = MaxNodeIndex();
+  node_refs_.resize(max_size);
+
+  root_nodes_.clear();
+
+  for (auto& node : Nodes()) {
+    if (node.GetRelationships().input_edges.size() == 0 &&
+        !(IsSourceNode(node) || IsSinkNode(node))) {
+      root_nodes_.push_back(node.Index());
+    }
+    LOTUS_ENFORCE(node.Index() < max_size);
+    node_refs_[node.Index()] = node.GetInputEdgesCount();
+  }
+}
+
 }  // namespace LotusIR

@@ -51,6 +51,10 @@ class Graph : public GraphBase {
 
   Node* FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, const std::string& fused_node_name);
 
+  void CollectRootNodesAndRefs();
+  const std::vector<NodeIndex>& GetRootNodes() const { return root_nodes_; }
+  const std::vector<size_t>& GetNodeRefs() const { return node_refs_; }
+
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
 
@@ -123,5 +127,8 @@ class Graph : public GraphBase {
   ILotusOpSchemaCollectionPtr schema_registry_;
 
   std::unique_ptr<FunctionContainer> function_container_;
+
+  std::vector<NodeIndex> root_nodes_;
+  std::vector<size_t> node_refs_;
 };
 }  // namespace LotusIR

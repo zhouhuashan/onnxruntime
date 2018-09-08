@@ -22,6 +22,7 @@ namespace Lotus {
 class ExecutionProviders;
 class KernelDef;
 class OpKernel;
+class TaskThreadPool;
 struct SequentialExecutionPlan;
 struct MemoryPatternGroup;
 
@@ -141,6 +142,9 @@ class SessionState {
   /// Return SessionState for the given Node index and attribute name if found.
   const SessionState* GetSubgraphSessionState(LotusIR::NodeIndex index, const std::string& attribute_name) const;
 
+  TaskThreadPool* GetThreadPool() const { return thread_pool_; }
+  void SetThreadPool(TaskThreadPool* p_pool) { thread_pool_ = p_pool; }
+
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SessionState);
 
@@ -175,5 +179,6 @@ class SessionState {
       std::unordered_map<LotusIR::NodeIndex,
                          std::unordered_map<std::string, gsl::not_null<const SessionState*>>>;
   SubgraphSessionStateMap subgraph_session_states_;
+  TaskThreadPool* thread_pool_ = nullptr;
 };
 }  // namespace Lotus

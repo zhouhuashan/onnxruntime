@@ -19,20 +19,34 @@ class MLValueNameIdxMap;
 class ISequentialPlannerContext {
  public:
   virtual const onnx::TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const = 0;
+  virtual bool EnableParallelExecution() const { return false; }
 };
 
 class SequentialPlannerContext : public ISequentialPlannerContext {
  public:
+  SequentialPlannerContext()
+      : m_enable_parallel_execution(false) {
+  }
+
+  SequentialPlannerContext(bool p_enable_parallel_execution)
+      : m_enable_parallel_execution(p_enable_parallel_execution) {
+  }
+
   const onnx::TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
     return arg.Shape();
   }
+
+  bool EnableParallelExecution() const override {
+    return m_enable_parallel_execution;
+  }
+
+ private:
+  bool m_enable_parallel_execution;
 };
 
 class SequentialPlanner {
  public:
-  // This API allows user to provide a custom planner context. Currently, this is used
-  // primarily for testing.
-
+  // This API allows user to provide a custom planner context.
   static Status CreatePlan(const LotusIR::Graph& graph,
                            const ExecutionProviders& providers,
                            const KernelRegistryManager& kernel_registry,
