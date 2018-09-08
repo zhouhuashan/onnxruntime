@@ -305,7 +305,7 @@ class MLOpKernelInfo : public MLOperatorAttributes {
 
 class MLShapeInferenceContext : public MLOperatorAttributes {
  public:
-  MLShapeInferenceContext(IMLShapeInferenceContext* impl) : impl_(impl), MLOperatorAttributes(impl) {}
+  MLShapeInferenceContext(IMLShapeInferenceContext* impl) : MLOperatorAttributes(impl), impl_(impl) {}
 
   // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
   const IMLShapeInferenceContext* GetInterface() const noexcept {
@@ -352,7 +352,7 @@ class MLShapeInferenceContext : public MLOperatorAttributes {
 
 class MLTypeInferenceContext : public MLOperatorAttributes {
  public:
-  MLTypeInferenceContext(IMLTypeInferenceContext* impl) : impl_(impl), MLOperatorAttributes(impl) {}
+  MLTypeInferenceContext(IMLTypeInferenceContext* impl) : MLOperatorAttributes(impl),impl_(impl) {}
 
   // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
   const IMLTypeInferenceContext* GetInterface() const noexcept {

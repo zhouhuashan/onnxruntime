@@ -24,7 +24,7 @@ class fast_divmod {
  public:
   fast_divmod(int d = 1) : d_(d), a_(0) { find_magic_numbers(); }
 
-  fast_divmod(const fast_divmod& other) : d_(other.d_), a_(other.a_), s_(other.s_), M_(other.M_){};
+  fast_divmod(const fast_divmod& other) : d_(other.d_), M_(other.M_), s_(other.s_), a_(other.a_){};
 
   __host__ __device__ __inline__ int div(int n) const {
     // get high 32 bits of M * n
