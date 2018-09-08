@@ -79,6 +79,9 @@ else()
   set_target_properties(onnxruntime_pybind11_state PROPERTIES SUFFIX ".so")
 endif()
 
+file(GLOB onnxruntime_backend_srcs
+    "${LOTUS_ROOT}/python/backend/*.py"
+)
 file(GLOB onnxruntime_python_srcs
     "${LOTUS_ROOT}/python/*.py"
 )
@@ -93,6 +96,7 @@ file(GLOB onnxruntime_python_datasets_srcs
 )
 file(GLOB onnxruntime_python_datasets_data
     "${LOTUS_ROOT}/python/datasets/*.pb"
+    "${LOTUS_ROOT}/python/datasets/*.onnx"
 )
 
 # adjust based on what target/s lotus_unittests.cmake created
@@ -104,6 +108,7 @@ endif()
 
 add_custom_command(
   TARGET onnxruntime_pybind11_state POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/backend
   COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/tools
   COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/datasets
   COMMAND ${CMAKE_COMMAND} -E copy
@@ -112,6 +117,9 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy
       ${onnxruntime_python_test_srcs}
       $<TARGET_FILE_DIR:${test_data_target}>
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${onnxruntime_backend_srcs}
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/backend/
   COMMAND ${CMAKE_COMMAND} -E copy
       ${onnxruntime_python_srcs}
       $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/

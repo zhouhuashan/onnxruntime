@@ -69,6 +69,9 @@ Status ConvTransposeBase::PrepareForCompute(OpKernelContext* context, bool has_b
   }
 
   if (input_shape.NumDimensions() != 4) {
+    // This condition is not true for two tests in ONNX tests series:
+    // test_convtranspose_1d_cpu, test_convtranspose_3d_cpu.
+    // TODO: the error message should tell which operator raises it.
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input X must be 4-dimensional.",
                              " X: ", X->Shape().ToString().c_str());
   }

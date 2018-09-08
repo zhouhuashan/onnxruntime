@@ -12,6 +12,5 @@ __version__ = "0.1.0"
 __author__ = "Microsoft"
 
 from onnxruntime.python.session import InferenceSession
-from onnxruntime.python._pybind_state import RunOptions
-from onnxruntime.python._pybind_state import SessionOptions
+from onnxruntime.python._pybind_state import RunOptions, SessionOptions, get_device
 from onnxruntime.python import datasets

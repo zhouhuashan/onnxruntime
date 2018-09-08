@@ -68,7 +68,7 @@ except Exception as e:
     print("{0}: {1}".format(type(e), e))
 
 #########################
-# Then bad names.
+# Bad type.
 
 try:
     x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float64)
@@ -76,15 +76,31 @@ try:
 except Exception as e:
     print("{0}: {1}".format(type(e), e))
 
+#########################
+# Bad name.
+
 try:
-    x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float64)
+    x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float32)
     sess.run([output_name], {"whatever": x})
 except Exception as e:
     print("{0}: {1}".format(type(e), e))
 
+#########################
+# Bad shape (1)
+
 try:
-    x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float64)
+    x = numpy.array([[[1.0, 2.0], [3.0, 4.0]]], dtype=numpy.float32)
     sess.run(output_name, {input_name: x})
 except Exception as e:
     print("{0}: {1}".format(type(e), e))
+
+#########################
+# Bad shape (2)
+
+try:
+    x = numpy.array([1.0, 2.0, 3.0, 4.0], dtype=numpy.float32)
+    sess.run(output_name, {input_name: x})
+except Exception as e:
+    print("{0}: {1}".format(type(e), e))
+
 

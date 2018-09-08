@@ -3,7 +3,6 @@
 
 import sys
 import logging
-import ctypes
 import os
 
 logger = logging.getLogger(__name__)
@@ -41,7 +40,6 @@ class InferenceSession:
         self._inputs_meta = self._sess.inputs_meta
         self._outputs_meta = self._sess.outputs_meta
         self._model_meta = self._sess.model_meta
-        
 
     def get_inputs(self):
         "Return the inputs metadata."
@@ -71,8 +69,7 @@ class InferenceSession:
         num_required_inputs = len(self._inputs_meta)
         num_inputs = len(input_feed)
         if num_inputs != num_required_inputs:
-            raise ValueError("Model requires {} inputs. Input Feed contains {}".format(num_required_inputs,
-                                                                                       num_inputs))
+            raise ValueError("Model requires {} inputs. Input Feed contains {}".format(num_required_inputs, num_inputs))
         if not output_names:
             output_names = [output.name for output in self._outputs_meta]
         return self._sess.run(output_names, input_feed, run_options)

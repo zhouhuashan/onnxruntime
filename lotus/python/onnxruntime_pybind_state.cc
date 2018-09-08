@@ -4,11 +4,41 @@
 #define PY_ARRAY_UNIQUE_SYMBOL onnxruntime_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
-#include "core/session/inference_session.h"
 #include "core/graph/graph.h"
-#if USE_MKLDNN
-#include "core/providers/mkldnn/mkldnn_execution_provider.h"
+
+#if USE_CUDA
+#define BACKEND_PROC "GPU"
+#else
+#define BACKEND_PROC "CPU"
 #endif
+
+#if USE_OPENMP
+#define BACKEND_OPENMP "-OPENMP"
+#else
+#define BACKEND_OPENMP ""
+#endif
+
+#if USE_MKLDNN
+#define BACKEND_MKLDNN "-MKL-DNN"
+#include "core/providers/mkldnn/mkldnn_execution_provider.h"
+#else
+#define BACKEND_MKLDNN ""
+#endif
+
+#if USE_MKLML
+#define BACKEND_MKLML "-MKL-ML"
+#else
+#define BACKEND_MKLML ""
+#endif
+
+#if USE_OPENBLAS
+#define BACKEND_OPENBLAS "-OPENBLAS"
+#else
+#define BACKEND_OPENBLAS ""
+#endif
+
+#define BACKEND_DEVICE BACKEND_PROC BACKEND_MKLDNN BACKEND_MKLML BACKEND_OPENBLAS
+
 #include "core/providers/cpu/cpu_execution_provider.h"
 
 #if defined(_MSC_VER)
@@ -16,7 +46,6 @@
 #endif  // _MSC_VER
 
 #include <iterator>
-
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4267 4996 4503 4003)
@@ -162,6 +191,8 @@ void InitializeSession(InferenceSession* sess) {
 
 void addGlobalMethods(py::module& m) {
   m.def("get_session_initializer", &SessionObjectInitializer::Get, "Return a default session object initializer.");
+  m.def("get_device", []() -> std::string { return BACKEND_DEVICE; },
+        "Return the device used to compute the prediction (CPU, MKL, ...)");
 }
 
 void addObjectMethods(py::module& m) {
@@ -240,7 +271,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         InitializeSession(sess);
       },
-           R"pbdoc(Loads a model saved in ONNX format.)pbdoc")
+           R"pbdoc(Load a model saved in ONNX format.)pbdoc")
       .def("read_bytes", [](InferenceSession* sess, const py::bytes& serializedModel) {
         std::istringstream buffer(serializedModel);
         auto status = sess->Load(buffer);
@@ -249,12 +280,12 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         InitializeSession(sess);
       },
-           R"pbdoc(Loads a model serialized in ONNX format.)pbdoc")
+           R"pbdoc(Load a model serialized in ONNX format.)pbdoc")
       .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
           MLValue ml_value;
-          CreateGenericMLValue(GetAllocator(), _.second, &ml_value);
+          CreateGenericMLValue(GetAllocator(), _.first, _.second, &ml_value);
           if (PyErr_Occurred()) {
             PyObject *ptype, *pvalue, *ptraceback;
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -282,7 +313,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
 
         if (!status.IsOK()) {
           auto mes = status.ToString();
-          throw std::runtime_error(mes.c_str());
+          throw std::runtime_error(std::string("Method run failed due to: ") + std::string(mes.c_str()));
         }
 
         std::vector<py::object> rfetch;
