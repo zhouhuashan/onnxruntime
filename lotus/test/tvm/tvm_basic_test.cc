@@ -33,7 +33,7 @@ tvm::runtime::Module BuildStackVMDefaultModule(tvm::Schedule schedule, tvm::Buil
 template <TVMScheduleCreator S, TVMModuleBuilder M>
 class TVMFuseAddKernels : public TVMKernel<S, M> {
  public:
-  explicit TVMFuseAddKernels(const OpKernelInfo& info) : TVMKernel(info) {}
+  explicit TVMFuseAddKernels(const OpKernelInfo& info) : TVMKernel<S, M>(info) {}
 
  protected:
   virtual const TensorShape& GetOutputShape(OpKernelContext* context, int /*i*/) const override {
