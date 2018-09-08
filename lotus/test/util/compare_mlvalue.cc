@@ -43,24 +43,36 @@ MLDataType ElementTypeFromProto(onnx::TensorProto_DataType type) {
       LOTUS_NOT_IMPLEMENTED(__FUNCTION__, ":tensor type ", type, " is not supported");
   }
 }
+
 template <typename FLOAT_TYPE>
 std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue, const Tensor& expected_value, double per_sample_tolerance,
                                                           double relative_per_sample_tolerance, bool post_processing) {
   const size_t size1 = expected_value.Shape().Size();
   const FLOAT_TYPE* expected_output = expected_value.Data<FLOAT_TYPE>();
   const FLOAT_TYPE* real_output = outvalue.Data<FLOAT_TYPE>();
-
+  std::pair<COMPARE_RESULT, std::string> res = std::make_pair(COMPARE_RESULT::SUCCESS, "");
+  double max_diff = 0;
+  size_t diff_count = 0;
   for (size_t di = 0; di != size1; ++di) {
     const double real_value = post_processing ? std::max<double>(0.0, std::min<double>(255.0, real_output[di])) : real_output[di];
     const double diff = fabs(expected_output[di] - real_value);
     const double rtol = per_sample_tolerance + relative_per_sample_tolerance * fabs(expected_output[di]);
     if (diff > rtol) {
-      std::ostringstream oss;
-      oss << "expected " << expected_output[di] << ", got " << real_value << ", diff: " << diff << ", tol=" << rtol;
-      return std::make_pair(COMPARE_RESULT::RESULT_DIFFERS, oss.str());
+      res.first = COMPARE_RESULT::RESULT_DIFFERS;
+      if (diff > max_diff) {
+        std::ostringstream oss;
+        oss << "expected " << expected_output[di] << ", got " << real_value << ", diff: " << diff << ", tol=" << rtol << ".";
+        res.second = oss.str();
+        max_diff = diff;
+      }
+      ++diff_count;
     }
   }
-  return std::make_pair(COMPARE_RESULT::SUCCESS, "");
+  if (res.first == COMPARE_RESULT::SUCCESS) return res;
+  std::ostringstream oss;
+  oss << res.second << " " << diff_count << " of " << size1 << " differ";
+  res.second = oss.str();
+  return res;
 }
 
 template <typename T>
