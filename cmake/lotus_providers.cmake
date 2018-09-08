@@ -88,4 +88,29 @@ if (lotus_USE_MKLDNN)
     set_target_properties(lotus_providers_mkldnn PROPERTIES LINKER_LANGUAGE CXX)
 endif()
 
+if (lotus_USE_TVM)
+    file(GLOB_RECURSE lotus_providers_nuphar_cc_srcs
+        "${LOTUS_ROOT}/core/providers/nuphar/*.h"
+        "${LOTUS_ROOT}/core/providers/nuphar/*.cc"
+    )
 
+    source_group(TREE ${LOTUS_ROOT}/core FILES ${lotus_providers_nuphar_cc_srcs})
+    add_library(lotus_providers_nuphar ${lotus_providers_nuphar_cc_srcs})
+    lotus_add_include_to_target(lotus_providers_nuphar onnx protobuf::libprotobuf)
+    set_target_properties(lotus_providers_nuphar PROPERTIES FOLDER "Lotus")
+    target_include_directories(lotus_providers_nuphar PRIVATE ${TVM_INCLUDES})
+    set_target_properties(lotus_providers_nuphar PROPERTIES LINKER_LANGUAGE CXX)
+    if (WIN32)
+        # disable warnings from TVM header files
+        if (MSVC)
+            # conversion from 'int' to 'char', possible loss of data
+            target_compile_options(lotus_providers_nuphar PRIVATE /wd4244)
+            # class X needs to have dll-interface to be used by clients of class Y
+            target_compile_options(lotus_providers_nuphar PRIVATE /wd4251)
+            # non dll-interface class X used as base for dll-interface class Y
+            target_compile_options(lotus_providers_nuphar PRIVATE /wd4275)
+            # signed/unsigned mismatch
+            target_compile_options(lotus_providers_nuphar PRIVATE /wd4389)
+        endif()
+    endif()
+endif()
