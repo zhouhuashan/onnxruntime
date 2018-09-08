@@ -9,7 +9,7 @@ namespace Lotus {
 template <typename T>
 class RoiPool : public OpKernel {
  public:
-  RoiPool(OpKernelInfo info) : OpKernel(info) {
+  RoiPool(const OpKernelInfo& info) : OpKernel(info) {
     std::vector<int64_t> pooled_shape;
     LOTUS_ENFORCE(info.GetAttrs<int64_t>("pooled_shape", pooled_shape).IsOK());
     LOTUS_ENFORCE(pooled_shape.size() == 2);
