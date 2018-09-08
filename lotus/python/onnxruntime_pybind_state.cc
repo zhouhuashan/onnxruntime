@@ -56,8 +56,8 @@ namespace onnxruntime {
 namespace python {
 
 namespace py = pybind11;
-using namespace Lotus;
-using namespace Lotus::Logging;
+using namespace onnxruntime;
+using namespace onnxruntime::Logging;
 
 static AllocatorPtr& GetAllocator() {
   static AllocatorPtr alloc = std::make_shared<CPUAllocator>();
@@ -70,10 +70,10 @@ static const SessionOptions& GetDefaultCPUSessionOptions() {
 }
 
 template <typename T>
-void AddNonTensor(Lotus::MLValue& val, vector<py::object>& pyobjs) {
+void AddNonTensor(onnxruntime::MLValue& val, vector<py::object>& pyobjs) {
   pyobjs.push_back(py::cast(val.Get<T>()));
 }
-void AddNonTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
+void AddNonTensorAsPyObj(onnxruntime::MLValue& val, vector<py::object>& pyobjs) {
   // Should be in sync with core/framework/datatypes.h
   if (val.Type() == DataTypeImpl::GetType<MapStringToString>()) {
     AddNonTensor<MapStringToString>(val, pyobjs);
@@ -108,7 +108,7 @@ void AddNonTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
   }
 }
 
-void AddTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
+void AddTensorAsPyObj(onnxruntime::MLValue& val, vector<py::object>& pyobjs) {
   const Tensor& rtensor = val.Get<Tensor>();
   std::vector<npy_intp> npy_dims;
   const TensorShape& shape = rtensor.Shape();
@@ -160,7 +160,7 @@ class SessionObjectInitializer {
 };
 
 void InitializeSession(InferenceSession* sess) {
-  Lotus::Common::Status status;
+  onnxruntime::common::Status status;
 
 #ifdef USE_CUDA
   CUDAExecutionProviderInfo cuda_pi;
@@ -236,13 +236,13 @@ set this option to false if you don't want it.)pbdoc");
       .def_readwrite("version", &ModelMetadata::version)
       .def_readwrite("custom_metadata_map", &ModelMetadata::custom_metadata_map);
 
-  py::class_<LotusIR::NodeArg>(m, "NodeArg", R"pbdoc(Node argument definition, for both input and output,
+  py::class_<onnxruntime::NodeArg>(m, "NodeArg", R"pbdoc(Node argument definition, for both input and output,
 including arg name, arg type (contains both type and shape).)pbdoc")
-      .def_property_readonly("name", &LotusIR::NodeArg::Name)
-      .def_property_readonly("type", [](const LotusIR::NodeArg& na) -> std::string {
+      .def_property_readonly("name", &onnxruntime::NodeArg::Name)
+      .def_property_readonly("type", [](const onnxruntime::NodeArg& na) -> std::string {
         return *(na.Type());
       })
-      .def_property_readonly("shape", [](const LotusIR::NodeArg& na) -> std::vector<py::object> {
+      .def_property_readonly("shape", [](const onnxruntime::NodeArg& na) -> std::vector<py::object> {
         auto shape = na.Shape();
         std::vector<py::object> arr;
         if (shape == nullptr || shape->dim_size() == 0) {
@@ -303,7 +303,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
 
         std::vector<MLValue> fetches;
-        Common::Status status;
+        common::Status status;
 
         if (run_options != nullptr) {
           status = sess->Run(*run_options, feeds, output_names, &fetches);
@@ -330,7 +330,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
       .def("end_profiling", [](InferenceSession* sess) -> std::string {
         return sess->EndProfiling();
       })
-      .def_property_readonly("inputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
+      .def_property_readonly("inputs_meta", [](const InferenceSession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelInputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -338,7 +338,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("outputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
+      .def_property_readonly("outputs_meta", [](const InferenceSession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelOutputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -346,7 +346,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("model_meta", [](const InferenceSession* sess) -> const Lotus::ModelMetadata& {
+      .def_property_readonly("model_meta", [](const InferenceSession* sess) -> const onnxruntime::ModelMetadata& {
         auto res = sess->GetModelMetadata();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());

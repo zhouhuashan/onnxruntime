@@ -2,8 +2,8 @@
 #include "onnx/defs/schema.h"
 #include "sample.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
     ExpandDims,
@@ -15,5 +15,5 @@ ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
         .TypeConstraint("axis", DataTypeImpl::GetTensorType<int64_t>()),
     ExpandDims);
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

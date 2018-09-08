@@ -1,11 +1,11 @@
 #include "sync_api.h"
 #include <core/common/common.h>
 
-using ::Lotus::Common::Status;
+using ::onnxruntime::common::Status;
 Status CreateAndSubmitThreadpoolWork(LOTUS_CALLBACK_FUNCTION callback, void* data, PThreadPool pool) {
   PTP_WORK work = CreateThreadpoolWork(callback, data, pool);
   if (!work) {
-    return Status(::Lotus::Common::LOTUS, ::Lotus::Common::FAIL, "create thread pool task failed");
+    return Status(::onnxruntime::common::LOTUS, ::onnxruntime::common::FAIL, "create thread pool task failed");
   }
   SubmitThreadpoolWork(work);
   return Status::OK();
@@ -22,7 +22,7 @@ Status WaitAndCloseEvent(LOTUS_EVENT finish_event) {
 
 Status CreateLotusEvent(LOTUS_EVENT* out) {
   if (out == nullptr)
-    return Status(::Lotus::Common::LOTUS, ::Lotus::Common::INVALID_ARGUMENT, "");
+    return Status(::onnxruntime::common::LOTUS, ::onnxruntime::common::INVALID_ARGUMENT, "");
   HANDLE finish_event = CreateEvent(
       NULL,   // default security attributes
       TRUE,   // manual-reset event
@@ -37,7 +37,7 @@ Status CreateLotusEvent(LOTUS_EVENT* out) {
 
 Status LotusSetEventWhenCallbackReturns(LOTUS_CALLBACK_INSTANCE pci, LOTUS_EVENT finish_event) {
   if (finish_event == nullptr)
-    return Status(::Lotus::Common::LOTUS, ::Lotus::Common::INVALID_ARGUMENT, "");
+    return Status(::onnxruntime::common::LOTUS, ::onnxruntime::common::INVALID_ARGUMENT, "");
   if (pci)
     SetEventWhenCallbackReturns(pci, finish_event);
   else if (!SetEvent(finish_event)) {

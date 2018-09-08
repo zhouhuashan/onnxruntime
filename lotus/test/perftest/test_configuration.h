@@ -5,7 +5,7 @@
 
 #include "core/graph/constants.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 
 enum class TestMode : std::uint8_t {
@@ -18,19 +18,19 @@ enum class Platform : std::uint8_t {
   kLinux
 };
 
-struct ModelInfo{
+struct ModelInfo {
   std::string model_name;
   std::string model_file_path;
   std::string input_file_path;
   std::string result_file_path;
 };
 
-struct MachineConfig{
+struct MachineConfig {
   Platform platform{Platform::kWindows};
-  std::string provider_type_name{LotusIR::kCpuExecutionProvider};
+  std::string provider_type_name{onnxruntime::kCpuExecutionProvider};
 };
 
-struct RunConfig{
+struct RunConfig {
   std::string profile_file;
   TestMode test_mode{TestMode::kFixDurationMode};
   size_t repeated_times{1000};
@@ -43,8 +43,7 @@ struct PerformanceTestConfig {
   ModelInfo model_info;
   MachineConfig machine_config;
   RunConfig run_config;
-
 };
 
-}  // PerfTest
-}  // Lotus
+}  // namespace PerfTest
+}  // namespace onnxruntime

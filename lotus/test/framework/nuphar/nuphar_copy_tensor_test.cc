@@ -3,7 +3,7 @@
 
 #include "gtest/gtest.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 template<typename T>
@@ -38,4 +38,4 @@ TEST(NupharCopyTensorTests, PrimitiveTypesTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

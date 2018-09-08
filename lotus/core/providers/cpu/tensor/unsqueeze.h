@@ -3,7 +3,7 @@
 #include "core/util/math_cpuonly.h"
 #include "core/framework/tensor.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class UnsqueezeBase {
  protected:
@@ -28,4 +28,4 @@ class Unsqueeze final : public OpKernel, public UnsqueezeBase {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

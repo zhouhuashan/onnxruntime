@@ -15,8 +15,8 @@
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
 using namespace onnx;
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
 template <class T>
 bool InputTensorShapesDefined(const OpNodeProtoHelper<T>& node_info);
@@ -101,7 +101,7 @@ AttributeProto_AttributeType ToProto(MLAttributeType type) {
     return MLTypeTraits<x>::TensorType;     \
   }
 
-MLTensorDataType ToMLTensorDataType(::Lotus::MLDataType type) {
+MLTensorDataType ToMLTensorDataType(::onnxruntime::MLDataType type) {
   if (type == DataTypeImpl::GetType<std::string>())
     return MLTensorDataType::kString;
 
@@ -128,7 +128,7 @@ MLTensorDataType ToMLTensorDataType(::Lotus::MLDataType type) {
     return DataTypeImpl::GetTensorType<x>(); \
   }
 
-::Lotus::MLDataType ToTensorDataType(MLTensorDataType type) {
+::onnxruntime::MLDataType ToTensorDataType(MLTensorDataType type) {
   if (type == MLTensorDataType::kString)
     return DataTypeImpl::GetTensorType<std::string>();
 
@@ -924,7 +924,7 @@ bool AbiOpKernel::InputTensorShapesDefined() const {
   ProtoHelperNodeContext proto_context(Node());
   OpNodeProtoHelper<ProtoHelperNodeContext> info(&proto_context);
 
-  return ::Lotus::InputTensorShapesDefined(info);
+  return ::onnxruntime::InputTensorShapesDefined(info);
 }
 
 EdgeShapes AbiOpKernel::GetInputShapes(OpKernelContext* context) const {
@@ -1192,7 +1192,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpSetFromSchema)(
       schema_vector.emplace_back(ConvertOpSchema(opSetId->domain, *schema[i]));
     }
 
-    // Register the operator set with Lotus
+    // Register the operator set with onnxruntime
     LOTUS_ENFORCE(custom_registry_->RegisterOpSet(schema_vector, opSetId->domain, baseline_version, opSetId->version).IsOK());
 
     return MLStatus::OK;
@@ -1257,7 +1257,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpKernel)(
                                             requires_output_shapes_at_creation,
                                             inference_function,
                                             inference_function_ctx](const OpKernelInfo& info) -> OpKernel* {
-                                             return new ::Lotus::AbiOpKernel(
+                                             return new ::onnxruntime::AbiOpKernel(
                                                  op_kernel_factory,
                                                  info,
                                                  requires_input_shapes_at_creation,
@@ -1325,4 +1325,4 @@ ML_API_IMP(MLKernelInferenceContext::SetOutputTensorShape)(uint32_t output_index
 
   return MLStatus::OK;
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

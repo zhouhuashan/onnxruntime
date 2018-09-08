@@ -4,7 +4,7 @@
 
 #include "core/framework/execution_provider.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // Information needed to construct CPU/MKL-DNN execution providers.
 struct CPUExecutionProviderInfo {
@@ -53,4 +53,4 @@ struct NupharExecutionProviderInfo {
 std::unique_ptr<IExecutionProvider>
 CreateNupharExecutionProvider(const NupharExecutionProviderInfo& info);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

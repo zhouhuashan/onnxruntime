@@ -249,7 +249,7 @@ class TestInferenceSession(unittest.TestCase):
         with onnxruntime_ostream_redirect(stdout=True, stderr=True):
           sess = onnxrt.InferenceSession(self.get_name("matmul_1.pb"), sess_options=so)
           output = sys.stderr.getvalue()
-          self.assertTrue('[I:Lotus:InferenceSession, inference_session' in output)
+          self.assertTrue('[I:onnxruntime:InferenceSession, inference_session' in output)
 
     def testConfigureRunVerbosityLevel(self):
         ro = onnxrt.RunOptions()
@@ -262,7 +262,7 @@ class TestInferenceSession(unittest.TestCase):
             x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
             sess.run([], {'X': x}, run_options=ro)
             output = sys.stderr.getvalue()
-            self.assertTrue('[I:Lotus:testtag123,' in output)
+            self.assertTrue('[I:onnxruntime:testtag123,' in output)
 
     def testProfilerWithSessionOptions(self):
         so = onnxrt.SessionOptions()

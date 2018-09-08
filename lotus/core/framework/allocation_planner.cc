@@ -12,9 +12,9 @@
 #include "core/framework/session_state.h"
 #include "core/framework/utils.h"
 
-using namespace Lotus::Common;
+using namespace onnxruntime::common;
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 
 std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind) {
   switch (alloc_kind) {
@@ -41,7 +41,7 @@ std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind) {
 std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionPlan*, const SessionState*> planinfo) {
   const SequentialExecutionPlan& plan = *planinfo.first;
   const SessionState& session_state = *planinfo.second;
-  const LotusIR::Graph& graph = *session_state.GetGraph();
+  const onnxruntime::Graph& graph = *session_state.GetGraph();
   std::unordered_map<int, std::string> index_to_name;
 
   out << "Allocation Plan:\n";
@@ -93,7 +93,7 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
 
 class PlannerImpl {
  public:
-  PlannerImpl(const LotusIR::Graph& graph,
+  PlannerImpl(const onnxruntime::Graph& graph,
               const ExecutionProviders& providers,
               const KernelRegistryManager& kernel_registry,
               const MLValueNameIdxMap& mlvalue_name_idx_map,
@@ -113,7 +113,7 @@ class PlannerImpl {
   const ISequentialPlannerContext& context_;
   SequentialExecutionPlan& plan_;
 
-  const LotusIR::Graph& graph_;
+  const onnxruntime::Graph& graph_;
   const ExecutionProviders& execution_providers_;
 
   const KernelRegistryManager& kernel_registry_;
@@ -121,9 +121,9 @@ class PlannerImpl {
 
   // MLValueInfo: Auxiliary information about an MLValue used only during plan-generation:
   struct MLValueInfo {
-    const LotusIR::NodeArg* p_def_site;  // the (unique) NodeArg corresponding to the MLValue
-    int usecount = 0;                    // static reference-count
-    MLValueIndex reused_buffer_index;    // index of original buffer to reuse
+    const onnxruntime::NodeArg* p_def_site;  // the (unique) NodeArg corresponding to the MLValue
+    int usecount = 0;                        // static reference-count
+    MLValueIndex reused_buffer_index;        // index of original buffer to reuse
   };
 
   // ml_value_info_ is indexed by an MLValueIndex
@@ -163,7 +163,7 @@ class PlannerImpl {
   }
 
   // Initialize state for a given ml-value at its definition site:
-  void ProcessDef(MLValueIndex id, const LotusIR::NodeArg* p_def_site) {
+  void ProcessDef(MLValueIndex id, const onnxruntime::NodeArg* p_def_site) {
     MLValueInfo& info = ml_value_info_.at(id);
     info.usecount = 0;
     info.reused_buffer_index = id;  // initially, no reuse; the ml-value uses its own buffer
@@ -186,7 +186,7 @@ class PlannerImpl {
   }
 
   // Find if there exists some input tensor that we can use in-place for output_arg
-  bool FindReusableInput(const LotusIR::Node& node, int output_arg_num, MLValueIndex* reusable_input) {
+  bool FindReusableInput(const onnxruntime::Node& node, int output_arg_num, MLValueIndex* reusable_input) {
     auto p_output_arg = node.OutputDefs()[output_arg_num];
     auto p_opkernel_def = Utils::GetKernelDef(kernel_registry_, node);
 
@@ -276,7 +276,7 @@ class PlannerImpl {
     */
   }
 
-  bool SameSize(const LotusIR::NodeArg& arg1, const LotusIR::NodeArg& arg2) {
+  bool SameSize(const onnxruntime::NodeArg& arg1, const onnxruntime::NodeArg& arg2) {
     if ((!arg1.Exists()) || (!arg2.Exists())) return false;
     auto p_shape1 = context_.GetShape(arg1);
     auto p_shape2 = context_.GetShape(arg2);
@@ -286,7 +286,7 @@ class PlannerImpl {
   }
 
   // Find if freelist contains a buffer of the same size as output_arg
-  bool FindReusableTensor(const LotusIR::NodeArg& output_arg, MLValueIndex* reusable_tensor) {
+  bool FindReusableTensor(const onnxruntime::NodeArg& output_arg, MLValueIndex* reusable_tensor) {
     auto p_required_buffer_shape = context_.GetShape(output_arg);
     if (nullptr == p_required_buffer_shape) return false;
     auto required_buffer_type = output_arg.Type();
@@ -384,7 +384,7 @@ class PlannerImpl {
       // note that the input arg may come from an execution provider (i.e. CPU) that does not support async,
       // in which case create_fence_if_async would be ignored when creating MLValue
       if (p_kernelDef->ExecQueueId() != 0) {
-        pnode->ForEachDef([this](const LotusIR::NodeArg* arg, bool /*is_input*/) {
+        pnode->ForEachDef([this](const onnxruntime::NodeArg* arg, bool /*is_input*/) {
           MLValueIndex index = Index(arg->Name());
           AllocPlan(index).create_fence_if_async = true;
         });
@@ -402,9 +402,9 @@ class PlannerImpl {
     auto& weights = graph_.GetAllInitializedTensors();
 
     for (auto& node : graph_.Nodes()) {
-      LotusIR::Node::ForEachWithIndex(
+      onnxruntime::Node::ForEachWithIndex(
           node.InputDefs(),
-          [this, &node, &weights](const LotusIR::NodeArg& def, size_t index) {
+          [this, &node, &weights](const onnxruntime::NodeArg& def, size_t index) {
             auto& def_name = def.Name();
             if (!weights.count(def_name))
               return Status::OK();
@@ -418,7 +418,7 @@ class PlannerImpl {
             auto p_opkernelDef = Utils::GetKernelDef(kernel_registry_, node);
             if (MemTypeOnCpuExplicitly(p_opkernelDef->InputMemoryType(), index))
               // weights are not output from any node, so it's OK to put its location on CPU provider
-              thisplan.location = execution_providers_.Get(LotusIR::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault)->Info();
+              thisplan.location = execution_providers_.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault)->Info();
             else
               thisplan.location = p_provider->GetAllocator(kMemTypeDefault)->Info();
 
@@ -522,16 +522,16 @@ class PlannerImpl {
       plan_.execution_plan[prev_dealloc_point].free_to_index = current - 1;
   }
 
-  bool IsNonTensor(const LotusIR::NodeArg& nodearg) {
+  bool IsNonTensor(const onnxruntime::NodeArg& nodearg) {
     // TODO: unclear why we should go through a string-representation of type
     auto ptype = nodearg.Type();
     auto& type_proto = ONNX_NAMESPACE::Utils::DataTypeUtils::ToTypeProto(ptype);
     return !type_proto.has_tensor_type();
   }
-};  // namespace Lotus
+};  // namespace onnxruntime
 
 Status PlannerImpl::CreatePlan() {
-  const std::vector<LotusIR::NodeIndex>* p_graph_nodes;
+  const std::vector<onnxruntime::NodeIndex>* p_graph_nodes;
   LOTUS_RETURN_IF_ERROR(graph_.GetNodesInTopologicalOrder(&p_graph_nodes));
 
   auto num_ml_values = mlvalue_name_idx_map_.MaxIdx() + 1;
@@ -557,7 +557,7 @@ Status PlannerImpl::CreatePlan() {
   return Status::OK();
 }
 
-Status SequentialPlanner::CreatePlan(const LotusIR::Graph& graph,
+Status SequentialPlanner::CreatePlan(const onnxruntime::Graph& graph,
                                      const ExecutionProviders& providers,
                                      const KernelRegistryManager& kernel_registry,
                                      const MLValueNameIdxMap& mlvalue_name_idx_map,
@@ -571,4 +571,4 @@ Status SequentialPlanner::CreatePlan(const LotusIR::Graph& graph,
   return planner.CreatePlan();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

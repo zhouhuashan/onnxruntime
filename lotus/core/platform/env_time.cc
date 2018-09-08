@@ -14,8 +14,8 @@ limitations under the License.
 ==============================================================================*/
 #include "core/platform/env_time.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 EnvTime::EnvTime() = default;
 
-}  // namespace Lotus
+}  // namespace onnxruntime

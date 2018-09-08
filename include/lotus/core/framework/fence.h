@@ -3,7 +3,7 @@
 #include "core/common/common.h"
 #include "core/graph/basic_types.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 /*
 We use a simple fence mechanism for async compute. Assumptions in this fence mechanism:
@@ -21,11 +21,11 @@ class IFence {
 
   // Called by executor before MLValue is used as input in a compute kernel in provider_type and exec queue_id
   // This should wait in the specified provider's exec queue for previous write to MLValue to finish
-  virtual void BeforeUsingAsInput(LotusIR::ProviderType provider_type, int queue_id) = 0;
+  virtual void BeforeUsingAsInput(onnxruntime::ProviderType provider_type, int queue_id) = 0;
 
   // Called by executor before MLValue is used as output in a compute kernel in provider_type and exec queue_id
   // This should wait in the specified provider's exec queue for previous read to MLValue to finish
-  virtual void BeforeUsingAsOutput(LotusIR::ProviderType provider_type, int queue_id) = 0;
+  virtual void BeforeUsingAsOutput(onnxruntime::ProviderType provider_type, int queue_id) = 0;
 
   // Called by executor after MLValue is used as input in a compute kernel in provider_type and exec queue_id
   // This should update the read fence of the MLValue
@@ -38,4 +38,4 @@ class IFence {
 using Fence_t = IFence*;
 using FencePtr = std::shared_ptr<IFence>;
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(RoIPoolTest, MaxRoiPool) {
@@ -38,4 +38,4 @@ TEST(RoIPoolTest, MaxRoiPool) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -4,9 +4,9 @@
 #include "core/common/common.h"
 #include "core/common/status.h"
 
-namespace Lotus {
+namespace onnxruntime {
 /**
-Provides the runtime environment for Lotus.    
+Provides the runtime environment for onnxruntime.    
 Create one instance for the duration of execution.
 */
 class Environment {
@@ -28,4 +28,4 @@ class Environment {
   Environment() = default;
   Status Initialize();
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

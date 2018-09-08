@@ -3,7 +3,7 @@
 #include <tvm/tvm.h>
 #include "core/framework/allocator.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class NupharAllocator : public IDeviceAllocator {
  public:
@@ -16,4 +16,4 @@ class NupharAllocator : public IDeviceAllocator {
   const TVMContext tvm_ctx_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -4,7 +4,7 @@
 
 #include "core/common/logging/logging.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 class ISink {
  public:
@@ -29,4 +29,4 @@ class ISink {
   virtual void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) = 0;
 };
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

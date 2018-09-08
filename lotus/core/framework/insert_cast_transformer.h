@@ -4,11 +4,11 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
-class InsertCastTransformer : public LotusIR::GraphTransformer {
+namespace onnxruntime {
+class InsertCastTransformer : public onnxruntime::GraphTransformer {
  public:
   InsertCastTransformer(const std::string& name)
-      : LotusIR::GraphTransformer(name, "Transformer to insert cast node that casts float16 to float for cpu nodes") {
+      : onnxruntime::GraphTransformer(name, "Transformer to insert cast node that casts float16 to float for cpu nodes") {
   }
 
   void AddKernelRegistries(const std::vector<const KernelRegistry*>& kernels) {
@@ -22,11 +22,11 @@ class InsertCastTransformer : public LotusIR::GraphTransformer {
     kernels_registries_.push_back(&kernel);
   }
 
-  Status Apply(LotusIR::Graph& graph, bool& modified) const override;
+  Status Apply(onnxruntime::Graph& graph, bool& modified) const override;
 
  private:
-  bool NeedInsertCast(const LotusIR::Node* node, const LotusIR::NodeArg* input) const;
+  bool NeedInsertCast(const onnxruntime::Node* node, const onnxruntime::NodeArg* input) const;
 
   std::vector<const KernelRegistry*> kernels_registries_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

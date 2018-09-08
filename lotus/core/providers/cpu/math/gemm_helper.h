@@ -1,7 +1,7 @@
 #pragma once
 #include "core/common/common.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class GemmHelper {
  public:
@@ -35,7 +35,7 @@ class GemmHelper {
                                   " N:" + std::to_string(N_));
 
     if (!IsValidBroadcast(bias, M_, N_))
-      status_ = Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
+      status_ = common::Status(common::LOTUS, common::INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
 
     LOTUS_ENFORCE(M_ > 0 && N_ > 0 && K_ > 0);
   }
@@ -66,4 +66,4 @@ class GemmHelper {
   Status status_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 void TransposeTest(std::vector<int64_t>& input_shape,
@@ -103,4 +103,4 @@ TEST(TransposeOpTest, ThreeDim) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

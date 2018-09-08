@@ -27,7 +27,7 @@
 #include "core/util/math.h"
 
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 class MulFP16Kernel {
@@ -65,9 +65,9 @@ class MulFP16Kernel {
 KernelDefBuilder MulFP16KernelDef() {
   KernelDefBuilder def;
   def.SetName("Mul16")
-      .SetDomain(LotusIR::kOnnxDomain)
+      .SetDomain(onnxruntime::kOnnxDomain)
       .SinceVersion(6)
-      .Provider(LotusIR::kCpuExecutionProvider)
+      .Provider(onnxruntime::kCpuExecutionProvider)
       .TypeConstraint("T", DataTypeImpl::GetTensorType<MLFloat16>());
   return def;
 }
@@ -79,7 +79,7 @@ MLStatus CreateABIMulFP16Kernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel*
 // Creates a kernel implementing the built-in OpKernel type.  This wraps
 // the ABI kernel as an implementation detail.
 OpKernel* CreateMulFP16Kernel(const OpKernelInfo& kernel_info) {
-  return new ::Lotus::AbiOpKernel(CreateABIMulFP16Kernel, kernel_info, false, false, nullptr, nullptr);
+  return new ::onnxruntime::AbiOpKernel(CreateABIMulFP16Kernel, kernel_info, false, false, nullptr, nullptr);
 }
 
 onnx::OpSchema GetMulFP16Schema() {
@@ -122,7 +122,7 @@ void RunSession(InferenceSession& session_object,
   std::vector<MLValue> fetches;
 
   // Now run
-  Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
+  common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
   std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
   EXPECT_TRUE(st.IsOK());
   ASSERT_EQ(1, fetches.size());
@@ -146,7 +146,7 @@ TEST(Float16_Tests, Mul_16_Test) {
   auto mulfp16_schema = GetMulFP16Schema();
   std::vector<OpSchema> schemas = {mulfp16_schema};
 
-  EXPECT_TRUE(registry->RegisterOpSet(schemas, LotusIR::kOnnxDomain, 5, 7).IsOK());
+  EXPECT_TRUE(registry->RegisterOpSet(schemas, onnxruntime::kOnnxDomain, 5, 7).IsOK());
 
   auto def = MulFP16KernelDef();
   //Register a foo kernel which is doing Add, but bind to Mul.
@@ -179,4 +179,4 @@ TEST(Float16_Tests, Mul_16_Test) {
   RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

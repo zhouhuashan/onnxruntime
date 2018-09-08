@@ -4,7 +4,7 @@
 #include "cuda_runtime.h"
 #include "core/providers/cuda/cuda_allocator.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 TEST(AllocatorTest, CUDAAllocatorTest) {
   int cuda_device_id = 0;
@@ -65,4 +65,4 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
   pinned_allocator->Free(pinned_addr);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

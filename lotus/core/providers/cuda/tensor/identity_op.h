@@ -3,8 +3,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cuda/cuda_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <bool is_dropout>
 class IdentityOp final : public CudaKernel {
@@ -33,5 +33,5 @@ class IdentityOp final : public CudaKernel {
   }
 };
 
-}  // namespace Cuda
-}  //namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

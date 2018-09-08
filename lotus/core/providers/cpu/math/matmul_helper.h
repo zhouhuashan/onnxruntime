@@ -2,7 +2,7 @@
 #include "core/common/common.h"
 #include "core/framework/tensor.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class MatMulComputeHelper {
  public:
@@ -252,4 +252,4 @@ class MatMulComputeHelper {
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

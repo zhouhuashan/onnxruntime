@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/shape_op.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 const std::vector<MLDataType> shapeOpTypeConstraints{
     DataTypeImpl::GetTensorType<bool>(),
@@ -18,4 +18,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", shapeOpTypeConstraints).TypeConstraint("T1", DataTypeImpl::GetTensorType<int64_t>()),
     Shape);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

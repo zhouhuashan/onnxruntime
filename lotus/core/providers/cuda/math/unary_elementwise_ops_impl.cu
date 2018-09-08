@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cu_inc/common.cuh"
 #include "core/providers/cuda/cu_inc/unary_elementwise_impl.cuh"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define OP(name, expr)                                     \
   template <typename T>                                    \
@@ -136,5 +136,5 @@ SPECIALIZED_CAST_FROM(uint32_t)
 SPECIALIZED_CAST_FROM(uint64_t)
 SPECIALIZED_CAST_FROM(bool)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

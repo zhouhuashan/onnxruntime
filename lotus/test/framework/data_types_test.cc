@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 using namespace onnx;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 template <TensorProto_DataType T>
@@ -105,4 +105,4 @@ TEST(DataTypeTest, VectorMapInt64ToFloatTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

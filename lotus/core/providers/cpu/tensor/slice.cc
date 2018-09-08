@@ -1,8 +1,8 @@
 #include "core/providers/cpu/tensor/slice.h"
 #include "core/providers/cpu/tensor/utils.h"
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Slice,
@@ -75,4 +75,4 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

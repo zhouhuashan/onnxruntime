@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class Clip final : public OpKernel {
@@ -29,4 +29,4 @@ class Clip final : public OpKernel {
   T min_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

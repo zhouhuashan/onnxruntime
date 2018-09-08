@@ -9,7 +9,7 @@
 #include "core/providers/nuphar/nuphar_execution_provider.h"
 #endif  // USE_TVM
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 IExecutionProvider* TestCPUExecutionProvider();
 
@@ -62,4 +62,4 @@ void AllocateMLValue(AllocatorPtr alloc,
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

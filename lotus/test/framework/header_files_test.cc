@@ -8,7 +8,7 @@
 
 using namespace std::experimental::filesystem::v1;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 std::set<path> RetrieveAllHeaders(const path& include_folder_root) {
@@ -65,4 +65,4 @@ TEST(HeaderFiles, EnsureAllPublicHeadersInIncludeFolder) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

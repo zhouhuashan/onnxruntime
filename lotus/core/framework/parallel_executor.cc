@@ -11,7 +11,7 @@
 #include "core/framework/session_state.h"
 #include "core/framework/op_kernel_context_internal.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 Status ParallelExecutor::Execute(const SessionState& session_state,
                                  const NameMLValMap& feeds,
@@ -209,4 +209,4 @@ Status ParallelExecutor::FetchOutput(const MLValueNameIdxMap& name_idx_map,
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

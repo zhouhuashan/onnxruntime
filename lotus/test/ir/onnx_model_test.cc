@@ -6,15 +6,15 @@
 #include "core/graph/op.h"
 #include "gtest/gtest.h"
 
-using namespace Lotus;
+using namespace onnxruntime;
 using namespace onnx;
-namespace LotusIR {
+namespace onnxruntime {
 namespace Test {
 // Tests that Resolve() properly clears the state of topological sorted nodes,
 // inputs, outputs and valueInfo.
 // Assumes the graph passed in has been previously resolved.
-static void TestResolve(LotusIR::Graph& graph) {
-  const std::vector<LotusIR::NodeIndex>* nodes;
+static void TestResolve(onnxruntime::Graph& graph) {
+  const std::vector<onnxruntime::NodeIndex>* nodes;
   EXPECT_TRUE(graph.GetNodesInTopologicalOrder(&nodes).IsOK());
   auto nodes_before = *nodes;
   auto& inputs_before = graph.GetInputs();
@@ -26,7 +26,7 @@ static void TestResolve(LotusIR::Graph& graph) {
   graph.SetGraphProtoSyncNeeded();
   EXPECT_TRUE(graph.Resolve().IsOK());
 
-  const std::vector<LotusIR::NodeIndex>* nodes_after;
+  const std::vector<onnxruntime::NodeIndex>* nodes_after;
   EXPECT_TRUE(graph.GetNodesInTopologicalOrder(&nodes_after).IsOK());
   auto& inputs_after = graph.GetInputs();
   auto& outputs_after = graph.GetOutputs();
@@ -57,14 +57,14 @@ TEST(ONNXModelsTest, squeeze_net) {
 TEST(ONNXModelsTest, non_existing_model) {
   // NOTE: this requires the current directory to be where LotusIR_UT.exe is located
   std::shared_ptr<Model> model;
-  Common::Status st = Model::Load("./testdata/non_existing_model_XXXXXX/model.onnx", model);
+  common::Status st = Model::Load("./testdata/non_existing_model_XXXXXX/model.onnx", model);
   ASSERT_FALSE(st.IsOK());
-  ASSERT_EQ(st.Code(), Common::NO_SUCHFILE);
+  ASSERT_EQ(st.Code(), common::NO_SUCHFILE);
 #ifdef _WIN32
   // wstring version
   std::shared_ptr<Model> model2;
   ASSERT_FALSE(Model::Load(L"./testdata/non_existing_model_XXXXXX/model.onnx", model2).IsOK());
-  ASSERT_EQ(st.Code(), Common::NO_SUCHFILE);
+  ASSERT_EQ(st.Code(), common::NO_SUCHFILE);
 #endif
 }
 
@@ -143,4 +143,4 @@ INSTANTIATE_TEST_CASE_P(ONNXModelsTests,
 
 #endif
 }  // namespace Test
-}  // namespace LotusIR
+}  // namespace onnxruntime

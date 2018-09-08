@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/autopad_type.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class RoiPool : public OpKernel {
@@ -31,4 +31,4 @@ class RoiPool : public OpKernel {
   int64_t pooled_height_, pooled_width_;
   float spatial_scale_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

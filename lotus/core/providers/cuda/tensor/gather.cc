@@ -3,8 +3,8 @@
 #include "core/providers/cpu/tensor/utils.h"
 #include "core/providers/common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 ONNX_OPERATOR_KERNEL_EX(
     Gather,
     kOnnxDomain,
@@ -84,5 +84,5 @@ Status Gather::ComputeInternal(OpKernelContext* context) const {
   return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

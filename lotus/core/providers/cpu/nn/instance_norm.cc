@@ -1,9 +1,9 @@
 #include "core/providers/cpu/nn/instance_norm.h"
 #include "core/providers/cpu/nn/instance_norm_helper.h"
 #include "core/util/math_cpuonly.h"
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     InstanceNormalization,
@@ -38,4 +38,4 @@ Status InstanceNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const 
 
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

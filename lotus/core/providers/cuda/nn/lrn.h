@@ -3,8 +3,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cuda/cudnn_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class CudnnLRNDescriptor final {
  public:
@@ -27,5 +27,5 @@ class LRN : public CudaKernel {
   CudnnLRNDescriptor norm_desc_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

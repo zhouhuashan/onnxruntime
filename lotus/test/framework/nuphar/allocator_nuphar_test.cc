@@ -5,7 +5,7 @@
 
 #include "gtest/gtest.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 TEST(AllocatorTest, NupharAllocatorTest) {
   int device_id = 0;
@@ -32,4 +32,4 @@ TEST(AllocatorTest, NupharAllocatorTest) {
   nuphar_arena->Free(addr);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

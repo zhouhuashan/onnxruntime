@@ -19,7 +19,7 @@
 
 #include "core/providers/cpu/nn/conv_base.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class Conv : public OpKernel, public ConvBase {
@@ -30,4 +30,4 @@ class Conv : public OpKernel, public ConvBase {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

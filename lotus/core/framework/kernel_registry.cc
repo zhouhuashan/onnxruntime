@@ -1,12 +1,12 @@
 #include "core/framework/kernel_registry.h"
 
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
 // Find the type that name is bound to in the given node.
 // "name" can represent either a type parameter or an input/output parameter.
 // Returns null if a match is not found.
-const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::string& name) {
+const ::onnx::TypeProto* FindTypeBinding(const onnxruntime::Node& node, const std::string& name) {
   const onnx::OpSchema& op_schema = *node.Op();
   // search inputs:
   const size_t len = node.InputArgCount().size();
@@ -17,7 +17,7 @@ const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::s
     if ((param.GetTypeStr() == name) || (param.GetName() == name)) {
       // return type of any corresponding actual parameter, if present
       for (int i = 0, end = node.InputArgCount()[formal_index]; i < end; ++i) {
-        const LotusIR::NodeArg* arg = node.InputDefs()[actual_index + i];
+        const onnxruntime::NodeArg* arg = node.InputDefs()[actual_index + i];
         if (!arg->Exists()) continue;  // a missing optional argument
         return arg->TypeAsProto();
       }
@@ -29,7 +29,7 @@ const ::onnx::TypeProto* FindTypeBinding(const LotusIR::Node& node, const std::s
   auto num_actual_outputs = actual_outputs.size();
   auto last_formal = op_schema.outputs().size() - 1;
   for (size_t i = 0; i != num_actual_outputs; ++i) {
-    const LotusIR::NodeArg* arg = actual_outputs[i];
+    const onnxruntime::NodeArg* arg = actual_outputs[i];
     if (!arg->Exists()) continue;
     auto& formal = op_schema.outputs()[std::min(i, last_formal)];
     auto formal_typestr = formal.GetTypeStr();  // for easier debugging
@@ -54,16 +54,16 @@ std::vector<std::string> KernelRegistry::GetAllRegisteredOpNames() const {
 // type-constraints of the given kernel. This serves two purposes: first, to
 // select the right kernel implementation based on the types of the arguments
 // when we have multiple kernels, e.g., Clip<float> and Clip<int>; second, to
-// accommodate (and check) mapping of ONNX (specification) type to the Lotus
+// accommodate (and check) mapping of ONNX (specification) type to the onnxruntime
 // implementation type (e.g., if we want to implement ONNX's float16 as a regular
-// float in Lotus). (The second, however, requires a globally uniform mapping.)
+// float in onnxruntime). (The second, however, requires a globally uniform mapping.)
 //
 // Note that this is not intended for type-checking the node against the ONNX
 // type specification of the corresponding op, which is done before this check.
-bool KernelRegistry::VerifyKernelDef(const LotusIR::Node& node,
+bool KernelRegistry::VerifyKernelDef(const onnxruntime::Node& node,
                                      const KernelDef& kernel_def,
                                      std::string& error_str,
-                                     LotusIR::ProviderType exec_provider) {
+                                     onnxruntime::ProviderType exec_provider) {
   // check if domain matches
   if (node.Domain() != kernel_def.Domain()) {
     std::ostringstream ostr;
@@ -162,7 +162,7 @@ Status KernelRegistry::Register(KernelCreateInfo& create_info) {
       create_info.status =
           Status(LOTUS, FAIL,
                  "Failed to add kernel for " + op_name +
-                 ": Conflicting with a registered kernel with op versions.");
+                     ": Conflicting with a registered kernel with op versions.");
       // For invalid entries, we keep them in the map now. Must check for status
       // when using the entries from the map.
       kernel_creator_fn_map_.emplace(op_name, std::move(create_info));
@@ -176,7 +176,7 @@ Status KernelRegistry::Register(KernelCreateInfo& create_info) {
   return Status::OK();
 }
 
-Status KernelRegistry::CreateKernel(const LotusIR::Node& node,
+Status KernelRegistry::CreateKernel(const onnxruntime::Node& node,
                                     const IExecutionProvider& execution_provider,
                                     const SessionState& session_state,
                                     /*out*/ std::unique_ptr<OpKernel>& op_kernel) const {
@@ -195,7 +195,7 @@ static std::string ToString(const std::vector<std::string>& error_strs) {
   return ostr.str();
 }
 
-Status KernelRegistry::FindKernel(const LotusIR::Node& node,
+Status KernelRegistry::FindKernel(const onnxruntime::Node& node,
                                   /*out*/ const KernelCreateInfo** kernel_create_info) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   std::vector<std::string> error_strs;
@@ -219,7 +219,7 @@ Status KernelRegistry::FindKernel(const LotusIR::Node& node,
   // kernel since the CPU exec provider is going to simply return a fail status any
   // way. This is hardly helpful for debugging issues where a kernel cannot be found
   // due to user errors for e.g if the node was created incorrectly by the user.
-  if (node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider) {
+  if (node.GetExecutionProviderType() == onnxruntime::kCpuExecutionProvider) {
     std::ostringstream ostr;
     ostr << "Failed to find kernel def for op: " << node.OpType()
          << " on CPU execution provider"
@@ -231,8 +231,8 @@ Status KernelRegistry::FindKernel(const LotusIR::Node& node,
 }
 
 bool KernelRegistry::CanExecutionProviderCreateKernel(
-    const LotusIR::Node& node,
-    LotusIR::ProviderType exec_provider) const {
+    const onnxruntime::Node& node,
+    onnxruntime::ProviderType exec_provider) const {
   auto range = kernel_creator_fn_map_.equal_range(node.OpType());
   std::vector<std::string> error_strs;
   for (auto i = range.first; i != range.second; ++i) {
@@ -253,4 +253,4 @@ bool KernelRegistry::CanExecutionProviderCreateKernel(
   return false;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

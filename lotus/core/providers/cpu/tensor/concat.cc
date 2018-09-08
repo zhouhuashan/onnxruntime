@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/concat.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Concat,
@@ -96,4 +96,4 @@ Status Concat::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

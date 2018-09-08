@@ -5,7 +5,7 @@
 #include <vector>
 #include <algorithm>
 
-// Lotus dependencies
+// onnxruntime dependencies
 #include <core/common/common.h>
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/common/logging/logging.h>
@@ -17,7 +17,7 @@
 
 #include "test_configuration.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 
 struct PerformanceResult {
@@ -111,8 +111,8 @@ class PerformanceRunner {
   PerformanceResult performance_result_;
   PerformanceTestConfig performance_test_config_;
 
-  std::shared_ptr<::Lotus::InferenceSession> session_object_;
+  std::shared_ptr<::onnxruntime::InferenceSession> session_object_;
   std::unique_ptr<IOBinding> io_binding_;
 };
 }  // namespace PerfTest
-}  // namespace Lotus
+}  // namespace onnxruntime

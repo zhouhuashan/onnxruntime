@@ -20,9 +20,9 @@
 using namespace onnx;
 using namespace onnx::Utils;
 using namespace onnx::checker;
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace LotusIR {
+namespace onnxruntime {
 
 #define NO_CHANGE_ON_SYNC_FLAG(...)                  \
   do {                                               \
@@ -161,11 +161,11 @@ void Node::SetNodeType(Node::Type node_type) noexcept {
   node_type_ = node_type;
 }
 
-const ::Lotus::Function* Node::GetFunctionBody() const noexcept {
+const ::onnxruntime::Function* Node::GetFunctionBody() const noexcept {
   return func_body_;
 }
 
-void Node::SetFunctionBody(const ::Lotus::Function& func) {
+void Node::SetFunctionBody(const ::onnxruntime::Function& func) {
   func_body_ = &func;
   op_ = &func.OpSchema();
 }
@@ -174,7 +174,7 @@ const std::string& Node::GetExecutionProviderType() const noexcept {
   return execution_provider_type_;
 }
 
-void Node::SetExecutionProviderType(LotusIR::ProviderType execution_provider_type) {
+void Node::SetExecutionProviderType(onnxruntime::ProviderType execution_provider_type) {
   execution_provider_type_ = execution_provider_type;
 }
 
@@ -366,40 +366,40 @@ const NodeAttributes& Node::GetAttributes() const noexcept {
   return attributes_;
 }
 
-void Node::ForEachDef(std::function<void(const LotusIR::NodeArg*, bool is_input)> func) const {
-  for (const gsl::not_null<const LotusIR::NodeArg*> arg : InputDefs()) {
+void Node::ForEachDef(std::function<void(const onnxruntime::NodeArg*, bool is_input)> func) const {
+  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : InputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg, true);
   }
-  for (const gsl::not_null<const LotusIR::NodeArg*> arg : OutputDefs()) {
+  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : OutputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg, false);
   }
 };
 
-void Node::ForEachInputDef(std::function<void(const LotusIR::NodeArg*)> func) const {
-  for (const gsl::not_null<const LotusIR::NodeArg*> arg : InputDefs()) {
+void Node::ForEachInputDef(std::function<void(const onnxruntime::NodeArg*)> func) const {
+  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : InputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg);
   }
 };
 
-void Node::ForEachOutputDef(std::function<void(const LotusIR::NodeArg*)> func) const {
-  for (const gsl::not_null<const LotusIR::NodeArg*> arg : OutputDefs()) {
+void Node::ForEachOutputDef(std::function<void(const onnxruntime::NodeArg*)> func) const {
+  for (const gsl::not_null<const onnxruntime::NodeArg*> arg : OutputDefs()) {
     if (!arg->Exists())
       continue;
     func(&*arg);
   }
 };
 
-void Node::ReplaceDefs(const std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements) {
+void Node::ReplaceDefs(const std::map<const onnxruntime::NodeArg*, onnxruntime::NodeArg*>& replacements) {
   std::vector<std::vector<NodeArg*>*> all_defs = {&definitions_.input_defs, &definitions_.output_defs};
 
   for (auto pair : replacements)
-    for (const gsl::not_null<std::vector<LotusIR::NodeArg*>*> defs : all_defs)
+    for (const gsl::not_null<std::vector<onnxruntime::NodeArg*>*> defs : all_defs)
       for (auto& def : *defs)
         if (def == pair.first)
           def = pair.second;
@@ -681,7 +681,7 @@ void GraphBase::ReverseDFSFrom(const std::vector<const Node*>& from,
         sorted_nodes.push_back((*iter));
       }
       std::sort(sorted_nodes.begin(), sorted_nodes.end(), comp);
-      for (gsl::not_null<const LotusIR::Node*> in : sorted_nodes) {
+      for (gsl::not_null<const onnxruntime::Node*> in : sorted_nodes) {
         const NodeIndex idx = in->Index();
         if (!visited[idx]) {
           stack.emplace_back(in, false);
@@ -794,7 +794,7 @@ bool FullyDefinedType(const TypeProto& type_proto) {
 }
 
 // An implementation of the InferenceContext interface required by operator-specific
-// shape inference for Lotus graphs.
+// shape inference for onnxruntime graphs.
 class InferenceContextImpl : public onnx::InferenceContext {
  public:
   InferenceContextImpl(Node& node, std::vector<TypeProto>& inferred_shapes) noexcept
@@ -850,7 +850,7 @@ class InferenceContextImpl : public onnx::InferenceContext {
 
 // A wrapper for invoking ONNX-defined shape+type inference for a single node.
 // Returns inferred shape+type for every output of the node in output parameter inferredShapes.
-Status GraphBase::InferOutputTypesAndShapes(LotusIR::Node& node, std::vector<TypeProto>& inferred_shapes) {
+Status GraphBase::InferOutputTypesAndShapes(onnxruntime::Node& node, std::vector<TypeProto>& inferred_shapes) {
   inferred_shapes.clear();
   inferred_shapes.resize(node.OutputDefs().size());
   auto schema = node.Op();
@@ -998,10 +998,10 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   }
 
   return Status::OK();
-}  // namespace LotusIR
+}  // namespace onnxruntime
 
 // Apply type-inference and type-checking to all inputs and initializers:
-::Lotus::Common::Status Graph::TypeCheckInputsAndInitializers() {
+::onnxruntime::common::Status Graph::TypeCheckInputsAndInitializers() {
   // Check that the type of every input is specified:
   for (auto* graph_input : GetInputs()) {
     if (nullptr == graph_input->Type()) {
@@ -1011,7 +1011,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   }
 
   // Note: The ONNX spec requires every initializer to be included in the graph input,
-  // but Lotus relaxes this requirement for various reasons.
+  // but onnxruntime relaxes this requirement for various reasons.
 
   // Infer/check type and shape for all initializers from their values
   for (auto& initializer_pair : name_to_initial_tensor_) {
@@ -1140,7 +1140,7 @@ Status Graph::VerifyInputAndInitializerNames(/*OUT*/ std::unordered_set<std::str
     GSL_SUPPRESS(es .84)
     inputs_and_initializers.insert(initializer_pair.first);
     // Initializers are expected to be included in inputs (according to ONNX spec).
-    // Lotus relaxes this constraint. No duplicate-name check here.
+    // onnxruntime relaxes this constraint. No duplicate-name check here.
   }
   return Status::OK();
 }
@@ -1182,7 +1182,7 @@ Status Graph::Resolve(bool no_proto_sync_required) {
 
 Status GraphBase::GetNodesInTopologicalOrder(gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const {
   if (graph_resolve_needed_) {
-    return Status(::Lotus::Common::LOTUS, ::Lotus::Common::FAIL,
+    return Status(::onnxruntime::common::LOTUS, ::onnxruntime::common::FAIL,
                   "Resolve() must be called before using the graph as modifications have been made to it.");
   }
 
@@ -1513,15 +1513,15 @@ void Graph::SyncGraphInputsOutputs() {
   graph_proto_->clear_output();
   graph_proto_->clear_value_info();
 
-  for (const gsl::not_null<const LotusIR::NodeArg*> input_arg : GetInputs()) {
+  for (const gsl::not_null<const onnxruntime::NodeArg*> input_arg : GetInputs()) {
     *(graph_proto_->mutable_input()->Add()) = input_arg->ToProto();
   }
 
-  for (const gsl::not_null<const LotusIR::NodeArg*> output_arg : GetOutputs()) {
+  for (const gsl::not_null<const onnxruntime::NodeArg*> output_arg : GetOutputs()) {
     *(graph_proto_->mutable_output()->Add()) = output_arg->ToProto();
   }
 
-  for (const gsl::not_null<const LotusIR::NodeArg*> value_info : value_info_) {
+  for (const gsl::not_null<const onnxruntime::NodeArg*> value_info : value_info_) {
     *(graph_proto_->mutable_value_info()->Add()) = value_info->ToProto();
   }
 }
@@ -1530,7 +1530,7 @@ void Graph::CleanUnusedInitializers() {
   std::vector<std::string> unused_names;
   std::set<const NodeArg*> input_args;
   for (const auto& node : Nodes()) {
-    node.ForEachInputDef([&input_args](const LotusIR::NodeArg* def) { GSL_SUPPRESS(es .84)
+    node.ForEachInputDef([&input_args](const onnxruntime::NodeArg* def) { GSL_SUPPRESS(es .84)
                                                                       input_args.insert(def); });
   }
 
@@ -1755,7 +1755,7 @@ ILotusOpSchemaCollectionPtr Graph::GetSchemaRegistry() const {
   return schema_registry_;
 }
 
-Node* Graph::FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, const std::string& fused_node_name) {
+Node* Graph::FuseSubGraph(std::unique_ptr<::onnxruntime::IndexedSubGraph> sub_graph, const std::string& fused_node_name) {
   LOTUS_ENFORCE(nullptr != sub_graph && nullptr != sub_graph->GetMetaDef());
 
   auto func_meta_def = sub_graph->GetMetaDef();
@@ -1803,4 +1803,4 @@ void Graph::CollectRootNodesAndRefs() {
   }
 }
 
-}  // namespace LotusIR
+}  // namespace onnxruntime

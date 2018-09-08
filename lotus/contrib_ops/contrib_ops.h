@@ -3,8 +3,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/kernel_registry.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 #define ONNX_CONTRIB_OPERATOR_SCHEMA(name) \
   ONNX_CONTRIB_OPERATOR_SCHEMA_UNIQ_HELPER(__COUNTER__, name)
 #define ONNX_CONTRIB_OPERATOR_SCHEMA_UNIQ_HELPER(Counter, name) \
@@ -16,5 +16,5 @@ namespace ML {
 
 void RegisterContribSchemas();
 void RegisterContribKernels(std::function<void(KernelCreateInfo&&)> create_fn);
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

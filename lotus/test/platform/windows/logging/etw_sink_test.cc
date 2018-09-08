@@ -8,10 +8,10 @@
 
 #include "test/common/logging/helpers.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
-using namespace ::Lotus::Logging;
+using namespace ::onnxruntime::Logging;
 
 /// <summary>
 /// Test usage of the ETW sinks does not fail.
@@ -41,7 +41,7 @@ TEST(LoggingTests, TestEtwSink) {
 /// across multiple sinks.
 /// </summary>
 TEST(LoggingTests, TestEtwSinkCtor) {
-  CompositeSink *sinks = new CompositeSink();
+  CompositeSink* sinks = new CompositeSink();
   sinks->AddSink(std::unique_ptr<ISink>(new EtwSink()))
       .AddSink(std::unique_ptr<ISink>(new EtwSink()));
 
@@ -56,5 +56,5 @@ TEST(LoggingTests, TestEtwSinkCtor) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

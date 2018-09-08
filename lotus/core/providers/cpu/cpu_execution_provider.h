@@ -6,9 +6,9 @@
 #include "core/graph/constants.h"
 #include "core/providers/provider_factories.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
-using FuseRuleFn = std::function<void(const LotusIR::Graph&, std::vector<std::unique_ptr<ComputationCapacity>>&)>;
+using FuseRuleFn = std::function<void(const onnxruntime::Graph&, std::vector<std::unique_ptr<ComputationCapacity>>&)>;
 // Logical device representation.
 class CPUExecutionProvider : public IExecutionProvider {
  public:
@@ -31,12 +31,12 @@ class CPUExecutionProvider : public IExecutionProvider {
   }
 
   std::string Type() const override {
-    return LotusIR::kCpuExecutionProvider;
+    return onnxruntime::kCpuExecutionProvider;
   }
 
   virtual std::vector<std::unique_ptr<ComputationCapacity>>
-	  GetCapability(const LotusIR::Graph& graph,
-		  const std::vector<const KernelRegistry*>& kernel_registries) const override;
+  GetCapability(const onnxruntime::Graph& graph,
+                const std::vector<const KernelRegistry*>& kernel_registries) const override;
 
   Status CopyTensor(const Tensor& src, Tensor& dst) const override {
     LOTUS_ENFORCE(dst.Location().name == CPU);
@@ -63,4 +63,4 @@ class CPUExecutionProvider : public IExecutionProvider {
  protected:
   std::vector<FuseRuleFn> fuse_rules_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

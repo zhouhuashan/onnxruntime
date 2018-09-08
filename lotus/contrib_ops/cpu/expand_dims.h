@@ -5,8 +5,8 @@
 #include "core/framework/tensor.h"
 #include "core/providers/cpu/tensor/utils.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 /*
 Given a tensor input, this operation inserts a dimension of 1 at the dimension index axis 
 of X's shape. The dimension index axis starts at zero; if you specify a negative number
@@ -41,5 +41,5 @@ class ExpandDims final : public OpKernel {
   }
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

@@ -3,15 +3,15 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
-static void RunTest(const std::vector<float> &x_vals,
-                    const std::vector<float> &expected_vals,
-                    const std::vector<int64_t> &dimensions,
+static void RunTest(const std::vector<float>& x_vals,
+                    const std::vector<float>& expected_vals,
+                    const std::vector<int64_t>& dimensions,
                     int64_t axis = 1,
                     OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
-                    const std::string &error_msg = "") {
+                    const std::string& error_msg = "") {
   OpTester tester("LogSoftmax");
 
   if (axis != 1) {
@@ -189,4 +189,4 @@ TEST(LogSoftmaxOperator, InvalidAxis) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

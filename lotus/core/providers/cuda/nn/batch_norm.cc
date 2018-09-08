@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cpu/nn/batch_norm_helper.h"
 using namespace std;
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                     \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                     \
@@ -81,5 +81,5 @@ SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)
 SPECIALIZED_COMPUTE(MLFloat16)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

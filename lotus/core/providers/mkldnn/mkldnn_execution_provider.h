@@ -7,7 +7,7 @@
 #include "core/graph/graph_transformer.h"
 #include "core/providers/provider_factories.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 using MKLDNNExecutionProviderInfo = CPUExecutionProviderInfo;
 
@@ -18,7 +18,7 @@ class MKLDNNExecutionProvider : public IExecutionProvider {
   virtual ~MKLDNNExecutionProvider();
 
   std::string Type() const override {
-    return LotusIR::kMklDnnExecutionProvider;
+    return onnxruntime::kMklDnnExecutionProvider;
   }
 
   Status CopyTensor(const Tensor& src, Tensor& dst) const override;
@@ -30,4 +30,4 @@ class MKLDNNExecutionProvider : public IExecutionProvider {
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

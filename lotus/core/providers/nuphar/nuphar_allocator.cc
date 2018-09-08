@@ -3,7 +3,7 @@
 #include "nuphar_allocator.h"
 #include "core/codegen_utils/tvm_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 void* NupharAllocator::Alloc(size_t size) {
   if (size == 0)
@@ -29,4 +29,4 @@ const AllocatorInfo& NupharAllocator::Info() const {
   return tvm_allocator_info;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

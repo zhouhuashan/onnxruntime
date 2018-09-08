@@ -5,7 +5,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/kernel_registry.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 const AllocatorMap& IExecutionProvider::GetAllocatorMap() const {
   return allocators_;
@@ -20,7 +20,7 @@ IExecutionProvider::GetAllocator(MemType mem_type) const {
 }
 
 std::vector<std::unique_ptr<ComputationCapacity>>
-IExecutionProvider::GetCapability(const LotusIR::Graph& graph,
+IExecutionProvider::GetCapability(const onnxruntime::Graph& graph,
                                   const std::vector<const KernelRegistry*>& kernel_registries) const {
   std::vector<std::unique_ptr<ComputationCapacity>> result;
   for (auto& node : graph.Nodes()) {
@@ -32,7 +32,7 @@ IExecutionProvider::GetCapability(const LotusIR::Graph& graph,
       if (registry->CanExecutionProviderCreateKernel(node, Type())) {
         std::unique_ptr<IndexedSubGraph> sub_graph = std::make_unique<IndexedSubGraph>();
         sub_graph->nodes.push_back(node.Index());
-		result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
+        result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
       }
     }
   }
@@ -40,7 +40,7 @@ IExecutionProvider::GetCapability(const LotusIR::Graph& graph,
   return result;
 }
 
-Common::Status IExecutionProvider::CopyTensor(const Tensor& src,
+common::Status IExecutionProvider::CopyTensor(const Tensor& src,
                                               Tensor& dst,
                                               int exec_queue_id) const {
   // execution provider may override this to support different exec queues
@@ -48,14 +48,14 @@ Common::Status IExecutionProvider::CopyTensor(const Tensor& src,
   return CopyTensor(src, dst);
 }
 
-Common::Status IExecutionProvider::Sync() const { return Status::OK(); };
+common::Status IExecutionProvider::Sync() const { return Status::OK(); };
 
-Common::Status IExecutionProvider::OnRunStart() { return Status::OK(); }
+common::Status IExecutionProvider::OnRunStart() { return Status::OK(); }
 
-Common::Status IExecutionProvider::OnRunEnd() { return Status::OK(); }
+common::Status IExecutionProvider::OnRunEnd() { return Status::OK(); }
 
 void IExecutionProvider::InsertAllocator(MemType mem_type,
                                          AllocatorPtr allocator) {
   allocators_.insert({mem_type, allocator});
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

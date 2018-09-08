@@ -1,7 +1,7 @@
 #include "core/framework/tensor.h"
 #include "core/framework/allocatormgr.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 
 Tensor::Tensor(MLDataType p_type,
                const TensorShape& shape,
@@ -111,4 +111,4 @@ Tensor& Tensor::ShallowCopy(const Tensor& other) {
   return *this;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

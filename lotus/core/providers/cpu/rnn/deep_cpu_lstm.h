@@ -6,7 +6,7 @@
 #include "core/common/task_thread_pool.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 /// The class represents DeepCPU implementation of a long short term memory (LSTM) operator.
 /// For details, refer to http://aka.ms/dl-optimization/.
@@ -82,4 +82,4 @@ class DeepCpuLstmOp final : public OpKernel {
   mutable TaskThreadPool ttp_{std::thread::hardware_concurrency()};
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

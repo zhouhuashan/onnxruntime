@@ -7,16 +7,16 @@
 #include "core/graph/function_container.h"
 
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
-typedef std::vector<LotusIR::NodeArg*> ArgMap;
+typedef std::vector<onnxruntime::NodeArg*> ArgMap;
 TEST(TransformerTest, InsertCastGPUTest) {
-  auto model = std::make_shared<LotusIR::Model>("test");
-  LotusIR::Graph& graph = model->MainGraph();
+  auto model = std::make_shared<onnxruntime::Model>("test");
+  onnxruntime::Graph& graph = model->MainGraph();
 
   TypeProto tensor_float_16;
   tensor_float_16.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT16);
-  LotusIR::NodeArg i1_def("I1", &tensor_float_16),
+  onnxruntime::NodeArg i1_def("I1", &tensor_float_16),
       i2_def("I2", &tensor_float_16),
       i3_def("I3", &tensor_float_16),
       o1_def("O1", &tensor_float_16),
@@ -25,7 +25,7 @@ TEST(TransformerTest, InsertCastGPUTest) {
 
   auto node1 = graph.AddNode("node1", "MatMul", "cpu operator1", ArgMap{&i1_def, &i2_def}, ArgMap{&o1_def});
   auto node2 = graph.AddNode("node2", "MatMul", "gpu operator1", ArgMap{&o1_def, &i3_def}, ArgMap{&o2_def});
-  node2->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  node2->SetExecutionProviderType(onnxruntime::kCudaExecutionProvider);
   auto node3 = graph.AddNode("node3", "Clip", "cpu operator2", ArgMap{&o2_def}, ArgMap{&o3_def});
 
   auto status = graph.Resolve();
@@ -70,12 +70,12 @@ TEST(TransformerTest, InsertCastGPUTest) {
 }
 
 TEST(TransformerTest, InsertCastAllCPUTest) {
-  auto model = std::make_shared<LotusIR::Model>("test");
-  LotusIR::Graph& graph = model->MainGraph();
+  auto model = std::make_shared<onnxruntime::Model>("test");
+  onnxruntime::Graph& graph = model->MainGraph();
 
   TypeProto tensor_float_16;
   tensor_float_16.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT16);
-  LotusIR::NodeArg i1_def("I1", &tensor_float_16),
+  onnxruntime::NodeArg i1_def("I1", &tensor_float_16),
       i2_def("I2", &tensor_float_16),
       i3_def("I3", &tensor_float_16),
       o1_def("O1", &tensor_float_16),
@@ -122,4 +122,4 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
   }
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -2,7 +2,7 @@
 
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 constexpr const char* UpsampleModeNN = "nearest";
 constexpr const char* UpsampleModeLinear = "linear";
@@ -47,4 +47,4 @@ class Upsample : public OpKernel {
     }
   }
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

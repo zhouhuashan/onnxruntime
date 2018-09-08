@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class SqueezeBase {
  protected:
@@ -56,4 +56,4 @@ class Squeeze final : public OpKernel, public SqueezeBase {
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

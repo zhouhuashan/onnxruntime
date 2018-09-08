@@ -1,6 +1,6 @@
 #include "core/framework/bfc_arena.h"
 
-namespace Lotus {
+namespace onnxruntime {
 BFCArena::BFCArena(std::unique_ptr<IDeviceAllocator> resource_allocator,
                    size_t total_memory)
     : device_allocator_(std::move(resource_allocator)),
@@ -547,4 +547,4 @@ void BFCArena::DumpMemoryLog(size_t num_bytes) {
   LOGS_DEFAULT(INFO) << "Stats: \n"
                      << stats_.DebugString();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

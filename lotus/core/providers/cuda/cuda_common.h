@@ -9,15 +9,15 @@
 #include "shared_inc/fast_divmod.h"
 #include "core/util/math.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
-#define CUDA_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDA_CALL(expr) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
-#define CUBLAS_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUBLAS_CALL(expr) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
-#define CUSPARSE_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUSPARSE_CALL(expr) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
-#define CURAND_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CURAND_CALL(expr) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
-#define CUDNN_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDNN_CALL(expr) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
-#define CUDNN2_RETURN_IF_ERROR(expr, m) LOTUS_RETURN_IF_ERROR(CUDNN_CALL2(expr, m) ? Common::Status::OK() : Common::Status(Common::LOTUS, Common::FAIL))
+#define CUDA_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDA_CALL(expr) ? common::Status::OK() : common::Status(common::LOTUS, common::FAIL))
+#define CUBLAS_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUBLAS_CALL(expr) ? common::Status::OK() : common::Status(common::LOTUS, common::FAIL))
+#define CUSPARSE_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUSPARSE_CALL(expr) ? common::Status::OK() : common::Status(common::LOTUS, common::FAIL))
+#define CURAND_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CURAND_CALL(expr) ? common::Status::OK() : common::Status(common::LOTUS, common::FAIL))
+#define CUDNN_RETURN_IF_ERROR(expr) LOTUS_RETURN_IF_ERROR(CUDNN_CALL(expr) ? common::Status::OK() : common::Status(common::LOTUS, common::FAIL))
+#define CUDNN2_RETURN_IF_ERROR(expr, m) LOTUS_RETURN_IF_ERROR(CUDNN_CALL2(expr, m) ? common::Status::OK() : common::Status(common::LOTUS, common::FAIL))
 
 // -----------------------------------------------------------------------
 // Base class for CUDA kernels
@@ -166,5 +166,5 @@ inline bool CalculateFdmStrides(gsl::span<fast_divmod> p, const std::vector<int6
   return true;
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

@@ -8,7 +8,7 @@
 #include "core/util/math_cpuonly.h"
 #include "Eigen/src/Core/arch/CUDA/Half.h"
 
-using namespace Lotus;
+using namespace onnxruntime;
 
 namespace {
 MLDataType ElementTypeFromProto(onnx::TensorProto_DataType type) {
@@ -251,7 +251,7 @@ bool AreShapesEqual(const TensorShape& real_shape, const ::onnx::TensorShapeProt
 
 }  // namespace
 
-namespace Lotus {
+namespace onnxruntime {
 std::pair<COMPARE_RESULT, std::string> CompareMLValue(const MLValue& o, const MLValue& expected_mlvalue, double per_sample_tolerance, double relative_per_sample_tolerance,
                                                       bool post_processing) {
   if (o.IsTensor() != expected_mlvalue.IsTensor() || o.Type() != expected_mlvalue.Type()) {
@@ -313,4 +313,4 @@ std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const onnx::ValueInfoProt
   }
   return std::make_pair(COMPARE_RESULT::SUCCESS, "");
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

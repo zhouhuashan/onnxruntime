@@ -2,7 +2,7 @@
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     ConvTranspose,
@@ -275,4 +275,4 @@ Status ConvTranspose<T>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

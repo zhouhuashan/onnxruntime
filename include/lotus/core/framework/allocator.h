@@ -10,7 +10,7 @@
 #include "core/common/status.h"
 #include "core/framework/fence.h"
 
-namespace Lotus {
+namespace onnxruntime {
 constexpr const char* CPU = "Cpu";
 constexpr const char* CUDA = "Cuda";
 constexpr const char* CUDA_PINNED = "CudaPinned";
@@ -134,4 +134,4 @@ class CPUAllocator : public IDeviceAllocator {
 
 using AllocatorPtr = std::shared_ptr<IAllocator>;
 
-}  // namespace Lotus
+}  // namespace onnxruntime

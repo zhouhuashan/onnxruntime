@@ -2,8 +2,8 @@
 
 using namespace std;
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 #define REG_NAMED_KERNEL(name, T1, T2)                                                                                                            \
   ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                                                                              \
@@ -26,6 +26,6 @@ REG_MY_INT64_KERNEL(string);
 REG_MY_INT64_KERNEL(float);
 REG_MY_INT64_KERNEL(double);
 
-}  // namespace ML
+}  // namespace ml
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -5,7 +5,7 @@
 
 #include "core/common/common.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class MLValueNameIdxMap {
  public:
   using const_iterator = typename std::unordered_map<std::string, int>::const_iterator;
@@ -16,7 +16,7 @@ class MLValueNameIdxMap {
   // If entry already existed the existing index value is returned.
   int Add(const std::string& name) {
     int idx;
-    Common::Status status = GetIdx(name, idx);
+    common::Status status = GetIdx(name, idx);
 
     if (!status.IsOK()) {
       idx = mlvalue_max_idx_++;
@@ -26,7 +26,7 @@ class MLValueNameIdxMap {
     return idx;
   }
 
-  Common::Status GetIdx(const std::string& name, int& idx) const {
+  common::Status GetIdx(const std::string& name, int& idx) const {
     idx = -1;
 
     auto it = map_.find(name);
@@ -35,7 +35,7 @@ class MLValueNameIdxMap {
     }
 
     idx = it->second;
-    return Common::Status::OK();
+    return common::Status::OK();
   }
 
   size_t Size() const { return map_.size(); };
@@ -54,4 +54,4 @@ class MLValueNameIdxMap {
   std::unordered_map<std::string, int> map_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

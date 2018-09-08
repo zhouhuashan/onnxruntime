@@ -3,7 +3,7 @@
 #include "nuphar_execution_provider.h"
 #include "core/codegen_utils/tvm_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 namespace nuphar {
 
@@ -31,8 +31,8 @@ Status NupharExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const
 }
 
 std::shared_ptr<KernelRegistry> NupharExecutionProvider::GetKernelRegistry() const {
-  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(Lotus::nuphar::RegisterNupharKernels);
+  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(onnxruntime::nuphar::RegisterNupharKernels);
   return kernel_registry;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MLOpTest, DictVectorizerStringInput) {
-  OpTester test("DictVectorizer", 1, LotusIR::kMLDomain);
+  OpTester test("DictVectorizer", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("string_vocabulary", std::vector<std::string>{"a", "b", "c", "d"});
 
@@ -23,7 +23,7 @@ TEST(MLOpTest, DictVectorizerStringInput) {
 }
 
 TEST(MLOpTest, DictVectorizerInt64Input) {
-  OpTester test("DictVectorizer", 1, LotusIR::kMLDomain);
+  OpTester test("DictVectorizer", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("int64_vocabulary", std::vector<int64_t>{1, 2, 3, 4});
 
@@ -40,4 +40,4 @@ TEST(MLOpTest, DictVectorizerInt64Input) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

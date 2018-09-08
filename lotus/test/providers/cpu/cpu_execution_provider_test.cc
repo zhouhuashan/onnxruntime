@@ -1,7 +1,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "gtest/gtest.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 TEST(CPUExecutionProviderTest, MetadataTest) {
   CPUExecutionProviderInfo info;
@@ -10,4 +10,4 @@ TEST(CPUExecutionProviderTest, MetadataTest) {
   EXPECT_EQ(provider->GetAllocator(kMemTypeDefault)->Info().name, CPU);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

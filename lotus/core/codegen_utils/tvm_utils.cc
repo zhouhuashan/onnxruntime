@@ -1,6 +1,6 @@
 #include "tvm_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace tvm_codegen {
 
 #define RETURN_DLDATATYPE_IF_MATCH(type, type_code) \
@@ -26,4 +26,4 @@ DLDataType ToTvmDLDataType(MLDataType ml_type) {
 }
 
 }  // namespace tvm_codegen
-}  // namespace Lotus
+}  // namespace onnxruntime

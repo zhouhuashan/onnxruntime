@@ -4,7 +4,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <bool allow_multi_axes>
 class ReduceKernelBase {
@@ -139,6 +139,6 @@ class ArgMin final : public ReduceKernel<false> {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime
 
 #endif  // !CORE_PROVIDERS_CPU_REDUCTION_OPS_H

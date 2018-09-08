@@ -1,7 +1,7 @@
 #pragma once
 #include "core/providers/cuda/shared_inc/fast_divmod.h"
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 void InstanceNormImpl(
@@ -17,5 +17,5 @@ void InstanceNormImpl(
     T* output_data,
     size_t count);
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

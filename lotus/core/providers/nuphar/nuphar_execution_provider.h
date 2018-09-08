@@ -8,7 +8,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/provider_factories.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class NupharExecutionProvider : public IExecutionProvider {
  public:
@@ -45,4 +45,4 @@ class NupharExecutionProvider : public IExecutionProvider {
   TVMContext tvm_ctx_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

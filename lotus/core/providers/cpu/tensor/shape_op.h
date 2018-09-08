@@ -5,7 +5,7 @@
 
 #include "gsl/gsl_util"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Shape final : public OpKernel {
  public:
@@ -26,4 +26,4 @@ class Shape final : public OpKernel {
     return Status::OK();
   }
 };
-}  //namespace Lotus
+}  //namespace onnxruntime

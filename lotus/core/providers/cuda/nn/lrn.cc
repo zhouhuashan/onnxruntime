@@ -1,7 +1,7 @@
 #include "lrn.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                                \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                                \
@@ -90,5 +90,5 @@ Status CudnnLRNDescriptor::Set(uint32_t N, double alpha, double beta, double K) 
   return Status::OK();
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

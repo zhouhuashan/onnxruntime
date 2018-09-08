@@ -1,15 +1,15 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 using ShapeAndData = std::pair<const std::vector<int64_t>, const std::vector<float>>;
 using ExpectResult = OpTester::ExpectResult;
 
-void RunTest(int64_t axis, const std::vector<int64_t> split_sizes, const ShapeAndData &input,
-             const std::vector<ShapeAndData> &outputs,
-             bool expect_failure = false, const std::string &err_msg = {}) {
+void RunTest(int64_t axis, const std::vector<int64_t> split_sizes, const ShapeAndData& input,
+             const std::vector<ShapeAndData>& outputs,
+             bool expect_failure = false, const std::string& err_msg = {}) {
   OpTester test("Split");
 
   test.AddAttribute("axis", axis);
@@ -20,11 +20,11 @@ void RunTest(int64_t axis, const std::vector<int64_t> split_sizes, const ShapeAn
   test.AddInput<float>("input", input.first, input.second);
 
   int i = 0;
-  for (auto &output : outputs) {
-    auto &shape = output.first;
-    auto &data = output.second;
+  for (auto& output : outputs) {
+    auto& shape = output.first;
+    auto& data = output.second;
     std::ostringstream oss;
-    oss<<"output"<<i++;
+    oss << "output" << i++;
     test.AddOutput<float>(oss.str().c_str(), shape, data);
   }
 
@@ -333,7 +333,7 @@ def SplitAxis0():
     # 2 outputs, split of 2, 4
     print("Split into 2 sizes 2 and 4, Axis=0")
     # numpy split is slightly different in that the values are indices rather than sizes
-    # so a Lotus split of sizes 2, 4 for input of size 6 equates to just the index 2 (:2, 3:)
+    # so a onnxruntime split of sizes 2, 4 for input of size 6 equates to just the index 2 (:2, 3:)
     # see https://docs.scipy.org/doc/numpy/reference/generated/numpy.split.html
     print(np.split(input, [2]))
 
@@ -378,4 +378,4 @@ SplitMiddleDimension()
 
 */
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

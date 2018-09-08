@@ -15,7 +15,7 @@
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class Tensor;
 class OpKernelContext;
 
@@ -23,7 +23,7 @@ namespace Rnn {
 namespace detail {
 
 // Retrieve optional input from the context. Returns nullptr if input doesn't exist, or if it has no data in it.
-const ::Lotus::Tensor* OptionalInput(const OpKernelContext& context, int index);
+const ::onnxruntime::Tensor* OptionalInput(const OpKernelContext& context, int index);
 
 enum Direction {
   kForward = 0,
@@ -153,7 +153,7 @@ void ComputeGemm(const int M,
   LOTUS_ENFORCE(B + (K * ldb - (ldb - N)) <= B_end);
   LOTUS_ENFORCE(C + (M * ldc - (ldc - N)) <= C_end);
 
-  ::Lotus::Math::GemmEx<float, CPUMathUtil>(
+  ::onnxruntime::Math::GemmEx<float, CPUMathUtil>(
       CblasNoTrans, CblasNoTrans,
       M, N, K, alpha,
       &*A, lda,
@@ -199,7 +199,7 @@ T* SafeRawPointer(typename gsl::span<T> span, size_t offset, size_t size) {
 
 template <typename TLambda>
 void ExecuteLambdaInParallel(const std::string& name, TLambda lambda, int max, int step,
-                             TaskThreadPool& ttp, const ::Lotus::Logging::Logger& logger) {
+                             TaskThreadPool& ttp, const ::onnxruntime::Logging::Logger& logger) {
   // #define NOTHREADS to execute the lambdas directly and in order if you need to do that to debug
 
 #ifdef NOTHREADS
@@ -316,4 +316,4 @@ inline void elementwise_sum2(const float* src1, const float* src2, float* dest, 
 }  // namespace deepcpu
 }  // namespace detail
 }  // namespace Rnn
-}  // namespace Lotus
+}  // namespace onnxruntime

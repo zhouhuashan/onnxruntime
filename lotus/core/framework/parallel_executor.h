@@ -11,7 +11,7 @@
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class ExecutionFrame;
 
@@ -19,7 +19,7 @@ class ParallelExecutor : public IExecutor {
  public:
   ParallelExecutor() = default;
 
-  Common::Status Execute(const SessionState& session_state,
+  common::Status Execute(const SessionState& session_state,
                          const NameMLValMap& feeds,
                          const std::vector<std::string>& output_names,
                          std::vector<MLValue>& fetches,
@@ -45,4 +45,4 @@ class ParallelExecutor : public IExecutor {
   std::mutex complete_mutex_;
   std::condition_variable complete_cv_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

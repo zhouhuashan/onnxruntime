@@ -7,7 +7,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 /// The class represents GRU operator using DeepCPU implementation for
 /// fast inference computation on CPU machines.
@@ -74,4 +74,4 @@ class DeepCpuGruOp final : public OpKernel {
   Status ComputeImpl(OpKernelContext& context) const;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

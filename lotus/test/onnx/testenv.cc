@@ -27,31 +27,31 @@ TestEnv::~TestEnv() {
   delete finished;
 }
 
-::Lotus::Common::Status SessionFactory::create(std::shared_ptr<::Lotus::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
-  ::Lotus::SessionOptions so;
+::onnxruntime::common::Status SessionFactory::create(std::shared_ptr<::onnxruntime::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
+  ::onnxruntime::SessionOptions so;
   so.session_logid = logid;
   so.enable_cpu_mem_arena = enable_cpu_mem_arena_;
   so.enable_mem_pattern = enable_mem_pattern_;
   so.enable_sequential_execution = enable_sequential_execution;
   so.session_thread_pool_size = session_thread_pool_size;
-  sess.reset(new ::Lotus::InferenceSession(so));
+  sess.reset(new ::onnxruntime::InferenceSession(so));
 
-  ::Lotus::Common::Status status;
-  if (provider_ == LotusIR::kCudaExecutionProvider) {
+  ::onnxruntime::common::Status status;
+  if (provider_ == onnxruntime::kCudaExecutionProvider) {
 #if USE_CUDA
-    ::Lotus::CUDAExecutionProviderInfo cuda_epi;
+    ::onnxruntime::CUDAExecutionProviderInfo cuda_epi;
     cuda_epi.device_id = 0;
-    status = sess->RegisterExecutionProvider(std::make_unique<::Lotus::CUDAExecutionProvider>(cuda_epi));
+    status = sess->RegisterExecutionProvider(std::make_unique<::onnxruntime::CUDAExecutionProvider>(cuda_epi));
     LOTUS_RETURN_IF_ERROR(status);
 #else
     LOTUS_THROW("This executable was not built with CUDA");
 #endif
   }
 
-  if (provider_ == LotusIR::kMklDnnExecutionProvider) {
+  if (provider_ == onnxruntime::kMklDnnExecutionProvider) {
 #if USE_MKLDNN
-    Lotus::MKLDNNExecutionProviderInfo mkldnn_epi;
-    status = sess->RegisterExecutionProvider(std::make_unique<Lotus::MKLDNNExecutionProvider>(mkldnn_epi));
+    onnxruntime::MKLDNNExecutionProviderInfo mkldnn_epi;
+    status = sess->RegisterExecutionProvider(std::make_unique<onnxruntime::MKLDNNExecutionProvider>(mkldnn_epi));
     LOTUS_RETURN_IF_ERROR(status);
 #else
     LOTUS_THROW("This executable was not built with MKLDNN");

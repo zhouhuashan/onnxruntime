@@ -24,61 +24,61 @@
 
 using namespace std;
 using namespace onnx;
-using namespace Lotus::Logging;
+using namespace onnxruntime::Logging;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
-typedef std::vector<LotusIR::NodeArg*> ArgMap;
+typedef std::vector<onnxruntime::NodeArg*> ArgMap;
 
-size_t CountCopyNodes(const LotusIR::Graph& graph) {
+size_t CountCopyNodes(const onnxruntime::Graph& graph) {
   size_t num_copy_nodes = 0;
   for (auto& p : graph.Nodes())
     num_copy_nodes += (p.OpType().substr(0, 6) == "Memcpy");
   return num_copy_nodes;
 }
 
-static Common::Status LoadInferenceSessionFromModel(InferenceSession& session, LotusIR::Model& model) {
+static common::Status LoadInferenceSessionFromModel(InferenceSession& session, onnxruntime::Model& model) {
   std::stringstream s1;
   model.ToProto().SerializeToOstream(&s1);
   return session.Load(s1);
 }
 
-#define CREATE_INITIALIZER_FUNC(T, PROTO_DATATYPE, PROTO_ADD_DATA)                                      \
-  LotusIR::NodeArg& CreateInitializer(LotusIR::Graph& graph, const std::string& name,                   \
-                                      const std::vector<int64_t>& shape, const std::vector<T>& value) { \
-    onnx::TensorProto tensor_proto;                                                                     \
-    for (auto dim : shape) tensor_proto.add_dims(dim);                                                  \
-    tensor_proto.set_data_type(PROTO_DATATYPE);                                                         \
-    for (auto v : value) tensor_proto.PROTO_ADD_DATA(v);                                                \
-    tensor_proto.set_name(name);                                                                        \
-    graph.AddInitializedTensor(tensor_proto);                                                           \
-    TypeProto type_proto;                                                                               \
-    type_proto.mutable_tensor_type()->set_elem_type(PROTO_DATATYPE);                                    \
-    return graph.GetOrCreateNodeArg(name, &type_proto);                                                 \
+#define CREATE_INITIALIZER_FUNC(T, PROTO_DATATYPE, PROTO_ADD_DATA)                                          \
+  onnxruntime::NodeArg& CreateInitializer(onnxruntime::Graph& graph, const std::string& name,               \
+                                          const std::vector<int64_t>& shape, const std::vector<T>& value) { \
+    onnx::TensorProto tensor_proto;                                                                         \
+    for (auto dim : shape) tensor_proto.add_dims(dim);                                                      \
+    tensor_proto.set_data_type(PROTO_DATATYPE);                                                             \
+    for (auto v : value) tensor_proto.PROTO_ADD_DATA(v);                                                    \
+    tensor_proto.set_name(name);                                                                            \
+    graph.AddInitializedTensor(tensor_proto);                                                               \
+    TypeProto type_proto;                                                                                   \
+    type_proto.mutable_tensor_type()->set_elem_type(PROTO_DATATYPE);                                        \
+    return graph.GetOrCreateNodeArg(name, &type_proto);                                                     \
   }
 
 CREATE_INITIALIZER_FUNC(float, TensorProto_DataType_FLOAT, add_float_data)
 CREATE_INITIALIZER_FUNC(int64_t, TensorProto_DataType_INT64, add_int64_data)
 // TO DO: Figure out a way to enable it again
 TEST(CUDAFenceTests, DISABLED_PartOnCPU) {
-  std::unique_ptr<LotusIR::Model> model = std::make_unique<LotusIR::Model>("test");
-  LotusIR::Graph& graph = model->MainGraph();
+  std::unique_ptr<onnxruntime::Model> model = std::make_unique<onnxruntime::Model>("test");
+  onnxruntime::Graph& graph = model->MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg x1_def("X1", &tensor_float);
-  LotusIR::NodeArg y_def("Y", &tensor_float);
-  LotusIR::NodeArg z_def("Z", &tensor_float);
-  LotusIR::NodeArg out_def("Out", &tensor_float);
+  onnxruntime::NodeArg x1_def("X1", &tensor_float);
+  onnxruntime::NodeArg y_def("Y", &tensor_float);
+  onnxruntime::NodeArg z_def("Z", &tensor_float);
+  onnxruntime::NodeArg out_def("Out", &tensor_float);
 
   auto& w_def = CreateInitializer(graph, "W", std::vector<int64_t>({2, 2}), std::vector<float>({-1, 2, 3, -4}));
 
   auto p_node = graph.AddNode("node1", "MatMul", "MatMul operator", ArgMap{&w_def, &x1_def}, ArgMap{&y_def});
-  p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  p_node->SetExecutionProviderType(onnxruntime::kCudaExecutionProvider);
   p_node = graph.AddNode("node2", "Add", "Add operator", ArgMap{&y_def, &w_def}, ArgMap{&z_def});
-  p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
+  p_node->SetExecutionProviderType(onnxruntime::kCpuExecutionProvider);
   p_node = graph.AddNode("node3", "Add", "Add operator", ArgMap{&y_def, &z_def}, ArgMap{&out_def});
-  p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
+  p_node->SetExecutionProviderType(onnxruntime::kCpuExecutionProvider);
 
   // add and then delete a node to test node iteration against nullptr
   p_node = graph.AddNode("node_to_delete", "Add", "Add operator", ArgMap{&y_def, &z_def}, ArgMap{&out_def});
@@ -129,16 +129,16 @@ TEST(CUDAFenceTests, DISABLED_PartOnCPU) {
 }
 
 TEST(CUDAFenceTests, TileWithInitializer) {
-  std::unique_ptr<LotusIR::Model> model = std::make_unique<LotusIR::Model>("test");
-  LotusIR::Graph& graph = model->MainGraph();
+  std::unique_ptr<onnxruntime::Model> model = std::make_unique<onnxruntime::Model>("test");
+  onnxruntime::Graph& graph = model->MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg x1_def("X1", &tensor_float);
-  LotusIR::NodeArg y_def("Y", &tensor_float);
+  onnxruntime::NodeArg x1_def("X1", &tensor_float);
+  onnxruntime::NodeArg y_def("Y", &tensor_float);
   auto& tile_repeat_def = CreateInitializer(graph, "tile_repeat", std::vector<int64_t>({2}), std::vector<int64_t>({1, 2}));
 
   auto p_node = graph.AddNode("node1", "Tile", "Tile operator", ArgMap{&x1_def, &tile_repeat_def}, ArgMap{&y_def});
-  p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  p_node->SetExecutionProviderType(onnxruntime::kCudaExecutionProvider);
   EXPECT_TRUE(graph.Resolve().IsOK());
 
   EXPECT_TRUE(0 == CountCopyNodes(graph));
@@ -185,24 +185,24 @@ TEST(CUDAFenceTests, TileWithInitializer) {
 }
 
 TEST(CUDAFenceTests, TileWithComputedInput) {
-  std::unique_ptr<LotusIR::Model> model = std::make_unique<LotusIR::Model>("test");
-  LotusIR::Graph& graph = model->MainGraph();
+  std::unique_ptr<onnxruntime::Model> model = std::make_unique<onnxruntime::Model>("test");
+  onnxruntime::Graph& graph = model->MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   TypeProto tensor_int64;
   tensor_int64.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
-  LotusIR::NodeArg x1_def("X1", &tensor_float);
-  LotusIR::NodeArg y_def("Y", &tensor_float);
-  LotusIR::NodeArg s_def("S", &tensor_int64);
-  LotusIR::NodeArg out_def("Out", &tensor_float);
+  onnxruntime::NodeArg x1_def("X1", &tensor_float);
+  onnxruntime::NodeArg y_def("Y", &tensor_float);
+  onnxruntime::NodeArg s_def("S", &tensor_int64);
+  onnxruntime::NodeArg out_def("Out", &tensor_float);
   auto& w_def = CreateInitializer(graph, "W", std::vector<int64_t>({2, 2}), std::vector<float>({-1, 2, 3, -4}));
 
   auto p_node = graph.AddNode("node1", "MatMul", "MatMul operator", ArgMap{&x1_def, &w_def}, ArgMap{&y_def});
-  p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  p_node->SetExecutionProviderType(onnxruntime::kCudaExecutionProvider);
   p_node = graph.AddNode("node2", "Shape", "Shape operator", ArgMap{&y_def}, ArgMap{&s_def});
-  p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
+  p_node->SetExecutionProviderType(onnxruntime::kCpuExecutionProvider);
   p_node = graph.AddNode("node3", "Tile", "Tile operator", ArgMap{&y_def, &s_def}, ArgMap{&out_def});
-  p_node->SetExecutionProviderType(LotusIR::kCudaExecutionProvider);
+  p_node->SetExecutionProviderType(onnxruntime::kCudaExecutionProvider);
   EXPECT_TRUE(graph.Resolve().IsOK());
 
   EXPECT_TRUE(0 == CountCopyNodes(graph));
@@ -249,4 +249,4 @@ TEST(CUDAFenceTests, TileWithComputedInput) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

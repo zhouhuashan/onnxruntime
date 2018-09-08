@@ -4,7 +4,7 @@
 #include "core/graph/graph.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class ExecutionProviders;
 class KernelRegistryManager;
@@ -14,10 +14,10 @@ class GraphPartitioner {
   //The order of providers represents the user preference.
   GraphPartitioner(KernelRegistryManager& kernel_registry_mgr,
                    const ExecutionProviders& providers)
-    : kernel_registry_mgr_(kernel_registry_mgr),
-      providers_(providers) {}
+      : kernel_registry_mgr_(kernel_registry_mgr),
+        providers_(providers) {}
 
-  Status Partition(LotusIR::Graph& graph) const;
+  Status Partition(onnxruntime::Graph& graph) const;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphPartitioner);
@@ -25,4 +25,4 @@ class GraphPartitioner {
   KernelRegistryManager& kernel_registry_mgr_;
   const ExecutionProviders& providers_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

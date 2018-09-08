@@ -18,7 +18,7 @@
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <>
 Status LRN<float>::Compute(OpKernelContext* context) const {
@@ -93,4 +93,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     LRN<float>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,5 +1,5 @@
 #include "test_utils.h"
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 IExecutionProvider* TestCPUExecutionProvider() {
   static CPUExecutionProviderInfo info;
@@ -23,4 +23,4 @@ IExecutionProvider* TestNupharExecutionProvider() {
 }
 #endif  // USE_TVM
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

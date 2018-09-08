@@ -4,7 +4,7 @@
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 ONNX_CPU_OPERATOR_KERNEL(
     RNN,
     7,
@@ -15,7 +15,7 @@ ONNX_CPU_OPERATOR_KERNEL(
 
 // #define DUMP_MATRIXES to provide diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::Lotus::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
@@ -233,4 +233,4 @@ Status RNN<float>::Compute(OpKernelContext* ctx) const {
 
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

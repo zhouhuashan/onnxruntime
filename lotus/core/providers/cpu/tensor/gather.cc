@@ -3,7 +3,7 @@
 #include "core/inc/op_kernel_author.h"
 #include "core/common/common.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Gather,
@@ -97,4 +97,4 @@ Status Gather::Compute(OpKernelContext* context) const {
   return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

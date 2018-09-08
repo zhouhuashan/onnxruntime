@@ -5,18 +5,18 @@
 #include "core/common/logging/logging.h"
 #include "core/framework/op_kernel.h"
 
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
-void SessionState::SetGraph(const LotusIR::Graph& graph) {
+void SessionState::SetGraph(const onnxruntime::Graph& graph) {
   p_graph_ = &graph;
 }
 
-const LotusIR::Graph* SessionState::GetGraph() const {
+const onnxruntime::Graph* SessionState::GetGraph() const {
   return p_graph_;
 }
 
-const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
+const OpKernel* SessionState::GetKernel(onnxruntime::NodeIndex node_id) const {
   if (session_kernels_.count(node_id) == 0) {
     return nullptr;
   }
@@ -24,7 +24,7 @@ const OpKernel* SessionState::GetKernel(LotusIR::NodeIndex node_id) const {
   return session_kernels_.find(node_id)->second.get();
 }
 
-void SessionState::AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel) {
+void SessionState::AddKernel(onnxruntime::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel) {
   // assumes vector is already resize()'ed to the number of nodes in the graph
   session_kernels_[node_id] = std::move(p_kernel);
 }
@@ -61,7 +61,7 @@ void SessionState::SetProfiler(Profiling::Profiler& profiler) {
   profiler_ = &profiler;
 }
 
-::Lotus::Profiling::Profiler& SessionState::Profiler() const {
+::onnxruntime::Profiling::Profiler& SessionState::Profiler() const {
   return *profiler_;
 }
 
@@ -109,7 +109,7 @@ void SessionState::AddInputNameToNodeInfoMapping(const std::string& input_name, 
   input_names_to_nodeinfo_mapping_[input_name].push_back(node_info);
 }
 
-Common::Status SessionState::GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const {
+common::Status SessionState::GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const {
   if (!input_names_to_nodeinfo_mapping_.count(input_name)) {
     return Status(LOTUS, FAIL, "Failed to find input name in the mapping");
   }
@@ -129,7 +129,7 @@ const SessionState::NameNodeInfoMapType& SessionState::GetOutputNodeInfoMap() co
   return output_names_to_nodeinfo_mapping_;
 }
 
-void SessionState::AddSubgraphSessionState(LotusIR::NodeIndex index,
+void SessionState::AddSubgraphSessionState(onnxruntime::NodeIndex index,
                                            const std::string& attribute_name,
                                            const SessionState& session_state) {
   auto entry = subgraph_session_states_.find(index);
@@ -144,7 +144,7 @@ void SessionState::AddSubgraphSessionState(LotusIR::NodeIndex index,
   subgraph_session_states_[index].insert({attribute_name, &session_state});
 }
 
-const SessionState* SessionState::GetSubgraphSessionState(LotusIR::NodeIndex index,
+const SessionState* SessionState::GetSubgraphSessionState(onnxruntime::NodeIndex index,
                                                           const std::string& attribute_name) const {
   const SessionState* session_state = nullptr;
 
@@ -161,4 +161,4 @@ const SessionState* SessionState::GetSubgraphSessionState(LotusIR::NodeIndex ind
   return session_state;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

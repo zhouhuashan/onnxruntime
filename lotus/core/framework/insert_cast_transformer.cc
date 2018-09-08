@@ -4,8 +4,8 @@
 #include "core/framework/kernel_registry.h"
 
 using namespace onnx;
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 class IdGenerator {
  public:
   int Next() {
@@ -16,7 +16,7 @@ class IdGenerator {
   int id = 0;
 };
 
-bool InsertCastTransformer::NeedInsertCast(const LotusIR::Node* node, const LotusIR::NodeArg* input) const {
+bool InsertCastTransformer::NeedInsertCast(const onnxruntime::Node* node, const onnxruntime::NodeArg* input) const {
   //If the node's input is float16 and currently the node is not assigned to any XP.
   //we need insert a cast to float, and put the node on CPU for default behavior.
   //TODO: a better check is to check does the CPU kernel with float exist or not.
@@ -28,13 +28,13 @@ bool InsertCastTransformer::NeedInsertCast(const LotusIR::Node* node, const Lotu
   return false;
 }
 
-LotusIR::NodeArg* AddCastNode(LotusIR::Graph& graph,
-                              IdGenerator& id_generator,
-                              LotusIR::NodeArg* old_arg,
-                              TypeProto* new_type,
-                              bool new_on_input,
-                              int64_t to_type,
-                              LotusIR::ProviderType providerType) {
+onnxruntime::NodeArg* AddCastNode(onnxruntime::Graph& graph,
+                                  IdGenerator& id_generator,
+                                  onnxruntime::NodeArg* old_arg,
+                                  TypeProto* new_type,
+                                  bool new_on_input,
+                                  int64_t to_type,
+                                  onnxruntime::ProviderType providerType) {
   //insert cast op to cast input
   int id = id_generator.Next();
 
@@ -43,8 +43,8 @@ LotusIR::NodeArg* AddCastNode(LotusIR::Graph& graph,
 
   auto* new_arg = &graph.GetOrCreateNodeArg(str, new_type);
 
-  std::vector<LotusIR::NodeArg*> input_defs = {new_on_input ? new_arg : old_arg};
-  std::vector<LotusIR::NodeArg*> output_defs = {new_on_input ? old_arg : new_arg};
+  std::vector<onnxruntime::NodeArg*> input_defs = {new_on_input ? new_arg : old_arg};
+  std::vector<onnxruntime::NodeArg*> output_defs = {new_on_input ? old_arg : new_arg};
 
   auto cast_node = graph.AddNode(str, "Cast", "cast node to cast from float16 to float32 on cpu", input_defs, output_defs);
   cast_node->AddAttribute("to", to_type);
@@ -52,17 +52,17 @@ LotusIR::NodeArg* AddCastNode(LotusIR::Graph& graph,
   return new_arg;
 }
 
-Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const {
+Status InsertCastTransformer::Apply(onnxruntime::Graph& graph, bool& modified) const {
   LOTUS_RETURN_IF_ERROR(graph.Resolve());
-  const std::vector<LotusIR::NodeIndex>* order;
+  const std::vector<onnxruntime::NodeIndex>* order;
   LOTUS_RETURN_IF_ERROR(graph.GetNodesInTopologicalOrder(&order));
   assert(order);
   TypeProto float_16_tensor_proto, float_tensor_proto;
   float_16_tensor_proto.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT16);
   float_tensor_proto.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   IdGenerator id_generator;
-  std::map<LotusIR::NodeArg*, LotusIR::NodeArg*> input_def_updates;
-  for (LotusIR::NodeIndex i : *order) {
+  std::map<onnxruntime::NodeArg*, onnxruntime::NodeArg*> input_def_updates;
+  for (onnxruntime::NodeIndex i : *order) {
     auto node = graph.GetNode(i);
     if (!node)
       return Status(LOTUS, INVALID_ARGUMENT);
@@ -70,11 +70,11 @@ Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const
       continue;
 
     auto& inputs = node->InputDefs();
-    std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
+    std::map<const onnxruntime::NodeArg*, onnxruntime::NodeArg*> replacement_defs;
     bool casted = false;
     for (auto input : inputs) {
       if (NeedInsertCast(node, input)) {
-        auto src_arg = const_cast<LotusIR::NodeArg*>(input);
+        auto src_arg = const_cast<onnxruntime::NodeArg*>(input);
         if (input_def_updates.count(src_arg)) {
           replacement_defs[src_arg] = input_def_updates[src_arg];
         } else {
@@ -86,7 +86,7 @@ Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const
                                      false,
                                      static_cast<int64_t>(TensorProto_DataType_FLOAT),
                                      //right now we only cast for cpu cases.
-                                     LotusIR::kCpuExecutionProvider);
+                                     onnxruntime::kCpuExecutionProvider);
           replacement_defs[src_arg] = dst_arg;
           input_def_updates[src_arg] = dst_arg;
         }
@@ -109,14 +109,14 @@ Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const
           DataTypeImpl::TypeFromProto(*output->TypeAsProto()) == DataTypeImpl::GetTensorType<MLFloat16>() &&
           casted) {
         //insert cast op to cast output back to float16
-        auto dst_arg = const_cast<LotusIR::NodeArg*>(output);
+        auto dst_arg = const_cast<onnxruntime::NodeArg*>(output);
         auto src_arg = AddCastNode(graph,
                                    id_generator,
                                    dst_arg,
                                    &float_tensor_proto,
                                    true,
                                    static_cast<int64_t>(TensorProto_DataType_FLOAT16),
-                                   LotusIR::kCpuExecutionProvider);
+                                   onnxruntime::kCpuExecutionProvider);
         replacement_defs[dst_arg] = src_arg;
       }
     }
@@ -126,8 +126,8 @@ Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const
   }
   //Resolve it to build the edges.
   LOTUS_RETURN_IF_ERROR(graph.Resolve());
-  std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacement_defs;
-  std::vector<LotusIR::NodeIndex> removed_nodes;
+  std::map<const onnxruntime::NodeArg*, onnxruntime::NodeArg*> replacement_defs;
+  std::vector<onnxruntime::NodeIndex> removed_nodes;
   for (auto& node : graph.Nodes()) {
     if (graph.IsSinkNode(node) || graph.IsSourceNode(node))
       continue;
@@ -146,9 +146,9 @@ Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const
           if (src_type == dst_type1 && src_type1 == dst_type) {
             //node *it's output's follower could be linked with node's input.
             replacement_defs.clear();
-            replacement_defs[const_cast<LotusIR::NodeArg*>((*it)->OutputDefs()[0])] = const_cast<LotusIR::NodeArg*>(input);
+            replacement_defs[const_cast<onnxruntime::NodeArg*>((*it)->OutputDefs()[0])] = const_cast<onnxruntime::NodeArg*>(input);
             for (auto next_it = (*it)->OutputNodesBegin(); next_it != (*it)->OutputNodesEnd(); next_it++) {
-              const_cast<LotusIR::Node*>((*next_it))->ReplaceDefs(replacement_defs);
+              const_cast<onnxruntime::Node*>((*next_it))->ReplaceDefs(replacement_defs);
             }
             removed_nodes.push_back((*it)->Index());
             child_removed++;
@@ -168,4 +168,4 @@ Status InsertCastTransformer::Apply(LotusIR::Graph& graph, bool& modified) const
   modified |= !removed_nodes.empty();
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

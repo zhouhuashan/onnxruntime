@@ -1,9 +1,9 @@
 #include "core/graph/record.h"
 #include "gtest/gtest.h"
 
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 TEST(RecordTest, CommonDataStructureTest) {
   Record<std::string> string_record;
@@ -40,4 +40,4 @@ TEST(RecordTest, CommonDataStructureTest) {
   EXPECT_EQ(2.0f, value3);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

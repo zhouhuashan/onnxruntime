@@ -11,7 +11,7 @@ class TypeProto;
 class AttributeProto;
 }  // namespace onnx
 
-namespace LotusIR {
+namespace onnxruntime {
 using NodeIndex = size_t;
 using Version = int64_t;
 using NodeArgInfo = onnx::ValueInfoProto;
@@ -26,11 +26,11 @@ using ProviderType = const std::string&;
 using NodeAttributes = std::unordered_map<std::string, onnx::AttributeProto>;
 class ILotusOpSchemaCollection;
 using ILotusOpSchemaCollectionPtr = std::shared_ptr<ILotusOpSchemaCollection>;
-}  // namespace LotusIR
+}  // namespace onnxruntime
 
-namespace Lotus {
+namespace onnxruntime {
 class OpKernel;
 class OpKernelInfo;
 
 using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
-}  // namespace Lotus
+}  // namespace onnxruntime

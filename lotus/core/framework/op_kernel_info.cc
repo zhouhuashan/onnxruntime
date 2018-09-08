@@ -2,9 +2,9 @@
 #include "core/framework/op_kernel_info.h"
 #include "core/framework/session_state.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
-OpKernelInfo::OpKernelInfo(const LotusIR::Node& node,
+OpKernelInfo::OpKernelInfo(const onnxruntime::Node& node,
                            const KernelDef& kernel_def,
                            const IExecutionProvider& execution_provider,
                            const SessionState& session_state)
@@ -30,7 +30,7 @@ const IExecutionProvider* OpKernelInfo::GetExecutionProvider() const noexcept {
   return execution_provider_;
 }
 
-const LotusIR::Node& OpKernelInfo::node() const noexcept {
+const onnxruntime::Node& OpKernelInfo::node() const noexcept {
   return node_;
 }
 
@@ -56,4 +56,4 @@ bool OpKernelInfo::TryGetConstantInput(int input_index, const Tensor** constant_
   *constant_input_value = &iter->second.Get<Tensor>();
   return true;
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

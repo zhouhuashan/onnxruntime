@@ -6,7 +6,7 @@
 
 #include "core/common/common.h"
 
-namespace LotusIR {
+namespace onnxruntime {
 constexpr const char* kNoOp = "NoOp";
 constexpr const char* kConstant = "Constant";
 constexpr const char* kFunctionOp = "_kFunctionOp";
@@ -19,4 +19,5 @@ constexpr const char* kCpuExecutionProvider = "CPUExecutionProvider";
 constexpr const char* kCudaExecutionProvider = "CUDAExecutionProvider";
 constexpr const char* kMklDnnExecutionProvider = "MKLDNNExecutionProvider";
 constexpr const char* kNupharExecutionProvider = "NupharExecutionProvider";
-}  // namespace LotusIR
+}  // namespace onnxruntime
+

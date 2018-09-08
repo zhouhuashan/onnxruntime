@@ -3,7 +3,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class MatMul final : public OpKernel {
@@ -15,4 +15,4 @@ class MatMul final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cuda/shared_inc/fpgeneric.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                  \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
@@ -105,5 +105,5 @@ Status Gemm<T>::ComputeInternal(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

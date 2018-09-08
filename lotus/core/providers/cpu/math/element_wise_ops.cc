@@ -1,6 +1,6 @@
 #include "core/providers/cpu/math/element_wise_ops.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Add,
@@ -956,4 +956,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     PRelu<float>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

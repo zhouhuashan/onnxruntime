@@ -8,8 +8,8 @@
 #include <cuda_runtime.h>
 #include <cmath>
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 __host__ __device__ __inline__ int mulhi(const int M, const int n) {
 #ifdef __CUDA_ARCH__
@@ -127,5 +127,5 @@ class fast_divmod {
   }
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

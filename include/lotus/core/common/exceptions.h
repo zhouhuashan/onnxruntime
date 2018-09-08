@@ -10,7 +10,7 @@
 #include "core/common/common.h"
 #include "core/common/code_location.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class NotImplementedException : public std::logic_error {
  public:
@@ -65,4 +65,4 @@ class LotusException : public std::exception {
   std::string what_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

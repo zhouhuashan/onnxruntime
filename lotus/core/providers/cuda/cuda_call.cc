@@ -9,9 +9,9 @@
 #include <string.h>
 #endif
 
-namespace Lotus {
+namespace onnxruntime {
 
-using namespace Common;
+using namespace common;
 
 template <typename ERRTYPE>
 const char* CudaErrString(ERRTYPE x) {
@@ -108,4 +108,4 @@ template bool CudaCall<cublasStatus_t, true>(cublasStatus_t retCode, const char*
 template bool CudaCall<cudnnStatus_t, false>(cudnnStatus_t retCode, const char* exprString, const char* libName, cudnnStatus_t successCode, const char* msg);
 template bool CudaCall<cudnnStatus_t, true>(cudnnStatus_t retCode, const char* exprString, const char* libName, cudnnStatus_t successCode, const char* msg);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

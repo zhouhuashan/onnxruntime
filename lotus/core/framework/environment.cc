@@ -23,9 +23,9 @@
 #else
 #define LOTUS_ATTRIBUTE_UNUSED
 #endif
-namespace Lotus {
+namespace onnxruntime {
 
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 using namespace onnx;
 
 std::once_flag schemaRegistrationOnceFlag;
@@ -36,7 +36,7 @@ Status Environment::Initialize() {
   try {
     // Register Microsoft domain with min/max op_set version as 1/1.
     std::call_once(schemaRegistrationOnceFlag, []() {
-      onnx::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(LotusIR::kMSDomain, 1, 1);
+      onnx::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(onnxruntime::kMSDomain, 1, 1);
     });
 
     // Register MemCpy schema;
@@ -68,11 +68,11 @@ Internal copy node
 
     // Register contributed schemas.
     // The corresponding kernels are registered inside the appropriate execution provider.
-    ML::RegisterContribSchemas();
+    ml::RegisterContribSchemas();
   } catch (std::exception& ex) {
-    status = Status{LOTUS, Common::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
+    status = Status{LOTUS, common::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
   } catch (...) {
-    status = Status{LOTUS, Common::RUNTIME_EXCEPTION};
+    status = Status{LOTUS, common::RUNTIME_EXCEPTION};
   }
 
   return status;
@@ -82,4 +82,4 @@ Environment::~Environment() {
   ::google::protobuf::ShutdownProtobufLibrary();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

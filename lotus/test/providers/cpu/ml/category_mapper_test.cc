@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 template <typename TInput, typename TOutput>
 static void RunTest(const std::vector<int64_t>& dims, const std::vector<TInput>& input, const std::vector<TOutput>& output) {
-  OpTester test("CategoryMapper", 1, LotusIR::kMLDomain);
+  OpTester test("CategoryMapper", 1, onnxruntime::kMLDomain);
 
   static const std::vector<std::string> categories = {"Three", "Two", "One"};
   static const std::vector<int64_t> indexes = {3, 2, 1};
@@ -41,4 +41,4 @@ TEST(CategoryMapper, IntToString) {
   RunTest(dims, input, output);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

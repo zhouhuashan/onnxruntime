@@ -3,7 +3,7 @@
 #include "gsl/span"
 #include "gsl/gsl_util"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 
 void Capture::CapturePrintf(msvc_printf_check const char* format, ...) {
@@ -45,4 +45,4 @@ Capture::~Capture() {
   }
 }
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

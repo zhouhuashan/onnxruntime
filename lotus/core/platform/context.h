@@ -15,7 +15,7 @@ limitations under the License.
 
 #pragma once
 
-namespace Lotus {
+namespace onnxruntime {
 
 enum class ContextKind {
   // Initial state with default (empty) values.
@@ -40,4 +40,4 @@ class WithContext {
   explicit WithContext(const Context&) noexcept {}
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

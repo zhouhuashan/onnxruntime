@@ -3,7 +3,7 @@
 #include "core/framework/allocation_planner.h"
 #include <list>
 
-namespace Lotus {
+namespace onnxruntime {
 // MemPatternPlanner is used to trace allocation/free steps
 // in a single iteration, record the pattern and cached for
 // future request if they have the same input shape.
@@ -77,4 +77,4 @@ class MemPatternPlanner {
   size_t buffer_size{0};
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

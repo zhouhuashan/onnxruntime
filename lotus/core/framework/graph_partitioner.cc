@@ -35,10 +35,10 @@ class NonCudaOps {
 NonCudaOps non_cuda;
 #endif
 
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
-KernelDefBuilder& BuildFusedKernelDef(KernelDefBuilder& builder, const LotusIR::Node& node) {
+KernelDefBuilder& BuildFusedKernelDef(KernelDefBuilder& builder, const onnxruntime::Node& node) {
   auto schema = node.Op();
   builder.SetName(schema->Name())
       .SetDomain(schema->domain())
@@ -51,7 +51,7 @@ KernelDefBuilder& BuildFusedKernelDef(KernelDefBuilder& builder, const LotusIR::
   return builder;
 }
 
-Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
+Status GraphPartitioner::Partition(onnxruntime::Graph& graph) const {
   if (providers_.Empty()) {
     return Status(LOTUS, INVALID_ARGUMENT, "No provider specified.");
   }
@@ -109,4 +109,4 @@ Status GraphPartitioner::Partition(LotusIR::Graph& graph) const {
 
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

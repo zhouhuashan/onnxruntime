@@ -1,7 +1,7 @@
 #include "activations.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_ACTIVATION_KERNEL(x, ver, T)                    \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                 \
@@ -55,5 +55,5 @@ UNARY_ACTIVATION_OP_HFD(Softsign, 1);
 UNARY_ACTIVATION_OP_HFD(Tanh, 6);
 UNARY_ACTIVATION_OP_HFD(ThresholdedRelu, 1);
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

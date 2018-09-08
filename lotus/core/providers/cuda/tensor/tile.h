@@ -2,8 +2,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cuda/cuda_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 template <typename T>
 struct Tile final : CudaKernel {
   Tile(const OpKernelInfo& info) : CudaKernel(info) {
@@ -11,5 +11,5 @@ struct Tile final : CudaKernel {
 
   Status ComputeInternal(OpKernelContext* context) const override;
 };
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

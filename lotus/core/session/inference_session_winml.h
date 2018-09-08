@@ -3,7 +3,7 @@
 #include "core/common/status.h"
 #include "core/session/inference_session.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class InferenceSessionWinML : public InferenceSession {
  public:
@@ -28,17 +28,17 @@ class InferenceSessionWinML : public InferenceSession {
     * @param protobuf object corresponding to the model file. model_proto will be copied by the API.
     * @return OK if success.
     */
-  Common::Status Load(const onnx::ModelProto& model_proto);
+  common::Status Load(const onnx::ModelProto& model_proto);
 
   /**
     * Load an ONNX model.
     * @param protobuf object corresponding to the model file. This is primarily supported to support large models.
     * @return OK if success.
     */
-  Common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto);
+  common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto);
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSessionWinML);
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -4,7 +4,7 @@
 #include "onnx/defs/data_type_utils.h"
 
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 template <>
 MLDataType DataTypeImpl::GetType<Tensor>() {
   return TensorTypeBase::Type();
@@ -265,11 +265,11 @@ MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
           }
         }
         default:
-          throw ::Lotus::NotImplementedException("type is not supported");
+          throw ::onnxruntime::NotImplementedException("type is not supported");
       }
     }
     default:
-      throw ::Lotus::NotImplementedException(::Lotus::MakeString("Onnx type: ", proto.value_case(), " is not supported."));
+      throw ::onnxruntime::NotImplementedException(::onnxruntime::MakeString("Onnx type: ", proto.value_case(), " is not supported."));
   }
 }
 
@@ -336,4 +336,4 @@ std::ostream& operator<<(std::ostream& out, const MLDataType data_type) {
   return out << typeid(*data_type).name();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

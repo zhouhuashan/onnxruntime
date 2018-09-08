@@ -8,8 +8,8 @@
 #include "onnx/defs/schema.h"
 #include "gsl/span"
 using namespace onnx;
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
 #define DEFINE_GET_ATTR(IMPL_T, T, type)                                                       \
   template <>                                                                                  \
@@ -86,7 +86,7 @@ size_t ProtoHelperNodeContext::getNumOutputs() const {
 }
 
 const AttributeProto* ProtoHelperNodeContext::getAttribute(const std::string& name) const {
-  const LotusIR::NodeAttributes& attributes = node_.GetAttributes();
+  const onnxruntime::NodeAttributes& attributes = node_.GetAttributes();
   auto it = attributes.find(name);
   if (it != attributes.end()) {
     return &it->second;
@@ -143,4 +143,4 @@ bool OpNodeProtoHelper<Impl_t>::HasPrimitiveAttribute(AttributeProto_AttributeTy
 template class OpNodeProtoHelper<ProtoHelperNodeContext>;
 template class OpNodeProtoHelper<InferenceContext>;
 
-}  // namespace Lotus
+}  // namespace onnxruntime

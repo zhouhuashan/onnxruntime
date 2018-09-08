@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(UpsampleOpTest, UpsampleOpNearestTest) {
@@ -169,10 +169,10 @@ TEST(UpsampleOpTest, UpsampleOpBilinearTest_int32) {
 
   const int64_t N = 2, C = 1, H = 2, W = 2;
   std::vector<int32_t> X = {1, 3,
-                          3, 5,
+                            3, 5,
 
-                          3, 5,
-                          7, 9};
+                            3, 5,
+                            7, 9};
 
   test.AddInput<int32_t>("X", {N, C, H, W}, X);
 
@@ -213,4 +213,4 @@ TEST(UpsampleOpTest, UpsampleOpNearestTest_1D) {
   test.Run();
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

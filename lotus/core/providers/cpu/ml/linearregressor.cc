@@ -1,7 +1,7 @@
 #include "core/providers/cpu/ml/linearregressor.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     LinearRegressor,
@@ -21,7 +21,7 @@ template <>
 Status LinearRegressor<float>::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+    return Status(common::LOTUS, common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 
@@ -49,11 +49,11 @@ Status LinearRegressor<float>::Compute(OpKernelContext* ctx) const {
       }
       scores.push_back(weight);
     }
-    ::Lotus::ML::write_scores(scores, post_transform_, yindex, Y, -1);
+    ::onnxruntime::ml::write_scores(scores, post_transform_, yindex, Y, -1);
     yindex += scores.size();
   }
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

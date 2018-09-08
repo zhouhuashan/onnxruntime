@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-namespace Lotus {
+namespace onnxruntime {
 
 enum class MLStatus : uint32_t {
   OK = 0,
@@ -56,4 +56,4 @@ inline const char* MLStatusToString(MLStatus status) noexcept {
   }
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,7 +1,7 @@
 #include "core/providers/cpu/tensor/cast_op.h"
 #include <sstream>
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 
 const std::vector<MLDataType> castOpTypeConstraints{
     DataTypeImpl::GetTensorType<bool>(),
@@ -155,4 +155,4 @@ Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  //namespace Lotus
+}  //namespace onnxruntime

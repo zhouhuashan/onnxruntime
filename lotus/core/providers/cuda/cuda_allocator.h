@@ -2,7 +2,7 @@
 
 #include "core/framework/allocator.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class CUDAAllocator : public IDeviceAllocator {
  public:
@@ -28,4 +28,4 @@ class CUDAPinnedAllocator : public IDeviceAllocator {
   virtual FencePtr CreateFence(const SessionState* session_state) override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

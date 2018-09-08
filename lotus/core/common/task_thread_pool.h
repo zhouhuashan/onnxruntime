@@ -56,7 +56,7 @@ Example of that usage:
 #include "core/common/common.h"
 #include "core/common/logging/logging.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class TaskThreadPool {
  private:
@@ -200,4 +200,4 @@ class TaskThreadPool {
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

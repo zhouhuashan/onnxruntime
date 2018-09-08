@@ -11,7 +11,7 @@
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
 
-namespace Lotus {
+namespace onnxruntime {
 
 // TODO - calling convention
 #if defined(__GNUC__)
@@ -440,4 +440,4 @@ class IMLOperatorRegistry {
       IMLOpKernelCreateFn op_kernel_factory) const noexcept = 0;
 };
 
-} // namespace Lotus
+} // namespace onnxruntime

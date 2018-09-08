@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/size.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 Status Size::Compute(OpKernelContext* ctx) const {
   const Tensor& input_tensor = *ctx->Input<Tensor>(0);
@@ -20,7 +20,7 @@ Status Size::Compute(OpKernelContext* ctx) const {
 // TODO: we should not have to add the TypeConstraint below, since it is meant to be in
 // addition to the ONNX specification. But the registration doesn't seem to work if we
 // omit this.
-// TODO: Both Lotus and ONNX lists of types seem somewhat incomplete and incomparable.
+// TODO: Both onnxruntime and ONNX lists of types seem somewhat incomplete and incomparable.
 
 ONNX_CPU_OPERATOR_KERNEL(
     Size,
@@ -38,4 +38,4 @@ ONNX_CPU_OPERATOR_KERNEL(
                                                                DataTypeImpl::GetTensorType<bool>()})),
     Size);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

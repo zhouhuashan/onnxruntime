@@ -7,7 +7,7 @@
 #include "core/framework/data_types.h"
 #include "core/framework/tensor.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class MLValue {
  public:
   MLValue() : data_(nullptr) {}
@@ -59,4 +59,4 @@ class MLValue {
   MLDataType type_{nullptr};
   FencePtr fence_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

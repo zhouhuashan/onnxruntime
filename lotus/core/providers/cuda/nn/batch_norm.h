@@ -3,8 +3,8 @@
 #include "gsl/gsl_util"
 #include "core/providers/cuda/cudnn_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class BatchNorm final : public CudaKernel {
@@ -35,5 +35,5 @@ class BatchNorm final : public CudaKernel {
   cudnnBatchNormMode_t cudnn_batch_norm_mode_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

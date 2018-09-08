@@ -1,7 +1,7 @@
 #include "mkldnn_allocator.h"
 #include "core/framework/allocatormgr.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 const AllocatorInfo& MKLDNNAllocator::Info() const {
   static AllocatorInfo mkl_allocator_info(MKLDNN, AllocatorType::kDeviceAllocator);
@@ -12,4 +12,4 @@ const AllocatorInfo& MKLDNNCPUAllocator::Info() const {
   static AllocatorInfo mkl_cpu_allocator_info(MKLDNN_CPU, AllocatorType::kDeviceAllocator);
   return mkl_cpu_allocator_info;
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

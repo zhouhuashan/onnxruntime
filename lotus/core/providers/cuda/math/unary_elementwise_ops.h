@@ -1,8 +1,8 @@
 #pragma once
 #include "core/providers/cuda/cuda_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 struct UnaryElementwisePreparation {
   const Tensor* input_tensor = nullptr;
@@ -13,7 +13,7 @@ class UnaryElementwise : public CudaKernel {
  protected:
   UnaryElementwise(const OpKernelInfo& info) : CudaKernel(info) {}
   Status ComputeInternal(OpKernelContext*) const override {
-    return Status(Common::LOTUS, Common::FAIL);  // should not reach here
+    return Status(common::LOTUS, common::FAIL);  // should not reach here
   }
   Status Prepare(OpKernelContext* context, UnaryElementwisePreparation* p) const;
 };
@@ -74,5 +74,5 @@ class Exp final : public UnaryElementwise {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

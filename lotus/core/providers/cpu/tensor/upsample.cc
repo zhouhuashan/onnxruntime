@@ -1,9 +1,9 @@
 #include "core/providers/cpu/tensor/upsample.h"
 #include <math.h>  //for fabs
 
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_TYPED_KERNEL(
     Upsample,
@@ -223,4 +223,4 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
   }
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

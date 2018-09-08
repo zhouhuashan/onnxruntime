@@ -2,7 +2,7 @@
 
 #include "core/common/common.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 /**
 Handle a potentially negative axis. Enforces negative axis is valid.
@@ -17,4 +17,4 @@ inline int64_t HandleNegativeAxis(int64_t axis, int64_t tensor_rank) {
   return axis = axis < 0 ? axis + tensor_rank : axis;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

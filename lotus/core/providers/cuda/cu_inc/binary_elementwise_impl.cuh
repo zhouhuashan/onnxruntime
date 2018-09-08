@@ -3,8 +3,8 @@
 #include "core/providers/cuda/shared_inc/cuda_utils.h"
 #include "common.cuh"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 // broadcast by computing output coordinate from offset, using fast_divmod
 template <typename T, typename FuncT, bool lhs_need_compute, bool rhs_need_compute>
@@ -192,5 +192,5 @@ void BinaryElementWiseImpl(
   }
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

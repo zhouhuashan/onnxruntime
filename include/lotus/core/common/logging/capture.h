@@ -6,7 +6,7 @@
 #include "core/common/code_location.h"
 #include "core/common/logging/severity.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 
 class Logger;
@@ -109,4 +109,4 @@ class Capture {
   std::ostringstream stream_;
 };
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

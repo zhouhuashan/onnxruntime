@@ -1,17 +1,17 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 // cast from map<int64_t,TFrom> to Tensor<TCastTo>
 template <typename TFrom, typename TCastTo>
-static void RunTest(const std::map<int64_t, TFrom> &input,
-                    const std::vector<TCastTo> &output,
-                    const std::string &cast_to,
+static void RunTest(const std::map<int64_t, TFrom>& input,
+                    const std::vector<TCastTo>& output,
+                    const std::string& cast_to,
                     int64_t max_map = -1,
                     OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
-  OpTester test("CastMap", 1, LotusIR::kMLDomain);
+  OpTester test("CastMap", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("cast_to", cast_to);
 
@@ -101,11 +101,11 @@ Miscellaneous tests
 */
 
 // cast from map<int64_t,TFrom> to Tensor<TCastTo>
-void RunBadAttributeTest(const std::string &cast_to,
-                         const std::string &map_form,
+void RunBadAttributeTest(const std::string& cast_to,
+                         const std::string& map_form,
                          int64_t max_map = -1,
                          OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
-  OpTester test("CastMap", 1, LotusIR::kMLDomain);
+  OpTester test("CastMap", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("cast_to", cast_to);
   test.AddAttribute("map_form", map_form);
@@ -143,4 +143,4 @@ TEST(CastMap, InvalidIndexInMap) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

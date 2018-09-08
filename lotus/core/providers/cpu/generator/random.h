@@ -6,7 +6,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class RandomNormal final : public OpKernel {
  public:
@@ -168,4 +168,4 @@ class Multinomial final : public OpKernel {
   std::default_random_engine generator_;
   onnx::TensorProto::DataType output_dtype_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

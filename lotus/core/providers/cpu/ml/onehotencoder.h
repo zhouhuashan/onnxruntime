@@ -2,13 +2,13 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 template <typename T>
 class OneHotEncoderOp final : public OpKernel {
  public:
   explicit OneHotEncoderOp(const OpKernelInfo& info);
-  Common::Status Compute(OpKernelContext* context) const override;
+  common::Status Compute(OpKernelContext* context) const override;
 
  private:
   std::unordered_map<int64_t, size_t> cats_int64s_;
@@ -16,5 +16,5 @@ class OneHotEncoderOp final : public OpKernel {
   int64_t zeros_;
   int64_t num_categories_;
 };
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

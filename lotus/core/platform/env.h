@@ -30,7 +30,7 @@ limitations under the License.
 #include <unistd.h>
 #endif
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Thread;
 
@@ -41,7 +41,7 @@ using PIDType = unsigned long;
 using PIDType = pid_t;
 #endif
 
-/// \brief An interface used by the Lotus implementation to
+/// \brief An interface used by the onnxruntime implementation to
 /// access operating system functionality like the filesystem etc.
 ///
 /// Callers may wish to provide a custom Env object to get fine grain
@@ -95,29 +95,29 @@ class Env {
   virtual Thread* StartThread(const ThreadOptions& thread_options,
                               const std::string& name,
                               std::function<void()> fn) const = 0;
-  virtual Common::Status FileExists(const char* fname) const = 0;
+  virtual common::Status FileExists(const char* fname) const = 0;
 #ifdef _WIN32
-  virtual Common::Status FileExists(const wchar_t* fname) const = 0;
+  virtual common::Status FileExists(const wchar_t* fname) const = 0;
 #endif
   /// File size must less than 2GB.
   /// No support for non-regular files(e.g. socket, pipe, "/proc/*")
-  virtual Common::Status ReadFileAsString(const char* fname, std::string* out) const = 0;
+  virtual common::Status ReadFileAsString(const char* fname, std::string* out) const = 0;
 #ifdef _WIN32
-  virtual Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const = 0;
+  virtual common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const = 0;
 #endif
 
 #ifdef _WIN32
   //Mainly for use with protobuf library
-  virtual Common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
   //Mainly for use with protobuf library
-  virtual Common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
 #endif
   //Mainly for use with protobuf library
-  virtual Common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
   //Mainly for use with protobuf library
-  virtual Common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
+  virtual common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const = 0;
   //Mainly for use with protobuf library
-  virtual Common::Status FileClose(int fd) const = 0;
+  virtual common::Status FileClose(int fd) const = 0;
   //This functions is always successful. It can't fail.
   virtual PIDType GetSelfPid() const = 0;
 
@@ -132,9 +132,9 @@ class Env {
   // Otherwise returns nullptr in "*handle" and an error status from the
   // function.
   // TODO(@chasun): rename LoadLibrary to something else. LoadLibrary is already defined in Windows.h
-  virtual Common::Status LoadLibrary(const std::string& library_filename, void** handle) const = 0;
+  virtual common::Status LoadLibrary(const std::string& library_filename, void** handle) const = 0;
 
-  virtual Common::Status UnloadLibrary(void* handle) const = 0;
+  virtual common::Status UnloadLibrary(void* handle) const = 0;
 
   // \brief Get a pointer to a symbol from a dynamic library.
   //
@@ -142,7 +142,7 @@ class Env {
   // On success, store a pointer to the located symbol in "*symbol" and return
   // OK from the function. Otherwise, returns nullptr in "*symbol" and an error
   // status from the function.
-  virtual Common::Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const = 0;
+  virtual common::Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const = 0;
 
   // \brief build the name of dynamic library.
   //
@@ -159,7 +159,7 @@ class Env {
   EnvTime* env_time_ = EnvTime::Default();
 };
 
-/// Represents a thread used to run a Lotus function.
+/// Represents a thread used to run a onnxruntime function.
 class Thread {
  public:
   Thread() noexcept = default;
@@ -182,4 +182,4 @@ struct ThreadOptions {
   size_t guard_size = 0;  // 0: use system default value
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -15,10 +15,10 @@ limitations under the License.
 
 #include "core/platform/env.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 Env::Env() = default;
 
 Thread::~Thread() = default;
 
-}  // namespace Lotus
+}  // namespace onnxruntime

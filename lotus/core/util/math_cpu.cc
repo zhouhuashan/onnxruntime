@@ -59,7 +59,7 @@
 #include "mkldnn.h"
 #endif
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Math {
 
 #ifdef max
@@ -543,7 +543,7 @@ DEFINE_SIMPLE_BINARY_FUNCTION(Div, /)
 #undef DEFINE_FLOAT_BINARY_FUNCTION
 
 ////////////////////////////////////////////////////////////////////////////////
-// Common math functions being used in Caffe that do not have a BLAS or MKL
+// common math functions being used in Caffe that do not have a BLAS or MKL
 // equivalent. For all these functions, we will simply implement them either via
 // Eigen or via custom code.
 ////////////////////////////////////////////////////////////////////////////////
@@ -1462,4 +1462,4 @@ float halfToFloat(uint16_t h) {
 }
 
 }  // namespace Math
-}  // namespace Lotus
+}  // namespace onnxruntime

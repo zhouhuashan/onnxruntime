@@ -1,7 +1,7 @@
 #pragma once
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 // This macro simplifies coding to add a new op with following steps:
 // 1. Add a new entry in UNARY_OPS() list
@@ -38,5 +38,5 @@ void Impl_Cast(
     OutT* output_data,
     size_t count);
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

@@ -129,7 +129,7 @@ Equations (Default: f=Sigmoid, g=Tanh):
     .TypeConstraint("T1", { "tensor(int32)" }, "Constrain seq_lens to integer tensor.");
 */
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     GRU,
@@ -250,7 +250,7 @@ class UniDirectionalGru {
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::Lotus::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
@@ -1246,4 +1246,4 @@ void UniDirectionalGru<T>::SetNumThreads() {
   LOTUS_ENFORCE(hidden_num_threads_ >= 1);
 }
 }  // namespace detail
-}  // namespace Lotus
+}  // namespace onnxruntime

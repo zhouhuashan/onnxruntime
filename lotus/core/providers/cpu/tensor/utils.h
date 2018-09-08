@@ -1,6 +1,6 @@
 #pragma once
 #include "gsl/gsl_algorithm"
-namespace Lotus {
+namespace onnxruntime {
 
 struct TensorPitches : std::vector<int64_t> {
   TensorPitches(const Tensor& tensor, size_t rank = 0) : TensorPitches(tensor.Shape(), rank) {}
@@ -165,4 +165,4 @@ inline void CopyCpuTensor(const Tensor* src, Tensor* tgt) {
   }
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

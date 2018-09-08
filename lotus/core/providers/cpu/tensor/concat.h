@@ -5,7 +5,7 @@
 #include "core/util/math_cpuonly.h"
 #include "core/framework/tensor.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class ConcatBase {
  protected:
@@ -38,4 +38,4 @@ class Concat final : public OpKernel, public ConcatBase {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

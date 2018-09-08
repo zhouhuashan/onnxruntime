@@ -23,10 +23,10 @@ ONNX_OPERATOR_SCHEMA(ArrayFeatureExtractor)
          "tensor(string)"},
         "allowed types.");
 */
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 using namespace std;
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 #define REG_ARRAYFEATUREEXTRACTOR(in_type)                                            \
   ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                  \
       ArrayFeatureExtractor,                                                          \
@@ -47,7 +47,7 @@ ArrayFeatureExtractorOp<T>::ArrayFeatureExtractorOp(const OpKernelInfo& info)
 }
 
 template <typename T>
-Common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) const {
+common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   const vector<int64_t>& x_dims = x_shape.GetDims();
@@ -90,5 +90,5 @@ Common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) con
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

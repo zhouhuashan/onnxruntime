@@ -5,7 +5,7 @@
 #include "gsl/gsl_util"
 #include "core/providers/cpu/tensor/utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Flatten final : public OpKernel {
  public:
@@ -28,4 +28,4 @@ class Flatten final : public OpKernel {
  private:
   int64_t axis_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

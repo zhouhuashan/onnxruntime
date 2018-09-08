@@ -24,7 +24,7 @@
 #include "sync_api.h"
 
 using namespace std::experimental::filesystem::v1;
-using namespace Lotus;
+using namespace onnxruntime;
 
 namespace {
 void usage() {
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Error creating environment: %s \n", status.ErrorMessage().c_str());
     return -1;
   }
-  std::string provider = LotusIR::kCpuExecutionProvider;
+  std::string provider = onnxruntime::kCpuExecutionProvider;
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
   int concurrent_session_runs = Env::Default().GetNumCpuCores();
@@ -102,9 +102,9 @@ int main(int argc, char* argv[]) {
           break;
         case 'e':
           if (!strcmp(optarg, "cpu")) {
-            provider = LotusIR::kCpuExecutionProvider;
+            provider = onnxruntime::kCpuExecutionProvider;
           } else if (!strcmp(optarg, "cuda")) {
-            provider = LotusIR::kCudaExecutionProvider;
+            provider = onnxruntime::kCudaExecutionProvider;
           } else {
             usage();
             return -1;
@@ -142,8 +142,7 @@ int main(int argc, char* argv[]) {
     }
     data_dirs.emplace_back(p);
   }
-
-  AllocatorPtr cpu_allocator = std::make_shared<::Lotus::CPUAllocator>();
+  AllocatorPtr cpu_allocator = std::make_shared<::onnxruntime::CPUAllocator>();
   std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
   TestResultStat stat;
   SessionFactory sf(provider, true, enable_cpu_mem_arena);

@@ -1,8 +1,8 @@
 #include "core/providers/cpu/nn/pool.h"
 #include <cmath>
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace Lotus {
+namespace onnxruntime {
 
 class AveragePool {
  public:
@@ -372,7 +372,7 @@ Status Pool<float, MaxPool<8 /*VERSION*/>>::Compute(OpKernelContext* context) co
   }
 
   return Status::OK();
-}  // namespace Lotus
+}  // namespace onnxruntime
 
 ONNX_CPU_OPERATOR_KERNEL(
     AveragePool,
@@ -417,4 +417,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Pool<float, MaxPool<1 /*VERSION*/>>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(TensorOpTest, Unsqueeze_1) {
@@ -59,4 +59,4 @@ TEST(TensorOpTest, Unsqueeze_OutOfRange) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -6,7 +6,7 @@
 #include "core/providers/cpu/rnn/deep_cpu_gru.h"
 #include "test/providers/provider_test_utils.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 static void RunGruTest(const std::vector<float>& X_data,
@@ -452,33 +452,33 @@ void DeepCpuGruOpTestContext::RunTest(const std::vector<float>& X,
                                       const std::vector<float>& expected_Y,
                                       const std::vector<float>& expected_Y_h) {
   // run with and without output_sequence
-  ::Lotus::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
-                          expected_Y, expected_Y_h,
-                          input_size_, batch_size, hidden_dim_, seq_length,
-                          use_bias_ ? &gru_bias_ : nullptr,
-                          initial_h,
-                          &sequence_lens,
-                          direction_,
-                          9999999999.f,
-                          /*output_sequence*/ true,
-                          false,
-                          activation_func_names_,
-                          alphas_,
-                          betas_);
+  ::onnxruntime::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
+                                  expected_Y, expected_Y_h,
+                                  input_size_, batch_size, hidden_dim_, seq_length,
+                                  use_bias_ ? &gru_bias_ : nullptr,
+                                  initial_h,
+                                  &sequence_lens,
+                                  direction_,
+                                  9999999999.f,
+                                  /*output_sequence*/ true,
+                                  false,
+                                  activation_func_names_,
+                                  alphas_,
+                                  betas_);
 
-  ::Lotus::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
-                          expected_Y, expected_Y_h,
-                          input_size_, batch_size, hidden_dim_, seq_length,
-                          use_bias_ ? &gru_bias_ : nullptr,
-                          initial_h,
-                          &sequence_lens,
-                          direction_,
-                          9999999999.f,
-                          /*output_sequence*/ false,
-                          false,
-                          activation_func_names_,
-                          alphas_,
-                          betas_);
+  ::onnxruntime::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
+                                  expected_Y, expected_Y_h,
+                                  input_size_, batch_size, hidden_dim_, seq_length,
+                                  use_bias_ ? &gru_bias_ : nullptr,
+                                  initial_h,
+                                  &sequence_lens,
+                                  direction_,
+                                  9999999999.f,
+                                  /*output_sequence*/ false,
+                                  false,
+                                  activation_func_names_,
+                                  alphas_,
+                                  betas_);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpForwardBasic) {
@@ -748,4 +748,4 @@ TEST(GRUTest, LotusRT_TestGRUPositiveActivationAlphaBeta) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

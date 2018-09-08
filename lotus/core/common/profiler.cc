@@ -1,10 +1,10 @@
 #include "profiler.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Profiling {
 using namespace std::chrono;
 
-::Lotus::TimePoint Profiling::Profiler::StartTime() const {
+::onnxruntime::TimePoint Profiling::Profiler::StartTime() const {
   return std::chrono::high_resolution_clock::now();
 }
 
@@ -81,4 +81,4 @@ void ProfilerSyncGpu() {
 }
 
 }  // namespace Profiling
-}  // namespace Lotus
+}  // namespace onnxruntime

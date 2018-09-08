@@ -6,7 +6,7 @@
 #include "core/common/status.h"
 #include "core/graph/graph.h"
 
-namespace Lotus {
+namespace onnxruntime {
 struct KernelCreateInfo;
 class ExecutionProviders;
 class IExecutionProvider;
@@ -22,7 +22,7 @@ enum class KernelRegistryPriority {
 // Kernel registries' manager.
 // There're 2 kinds of kernel registries with priority from high to low as below,
 // 1. Custom execution provider type specific kernel registries.
-// 2. Common execution provider type specific kernel registries.
+// 2. common execution provider type specific kernel registries.
 // The 1st and 2nd ones are shared across sessions.
 class KernelRegistryManager {
  public:
@@ -33,12 +33,12 @@ class KernelRegistryManager {
 
   void RegisterKernelRegistry(std::shared_ptr<KernelRegistry> kernel_registry, KernelRegistryPriority priority);
 
-  Status CreateKernel(const LotusIR::Node& node,
+  Status CreateKernel(const onnxruntime::Node& node,
                       const IExecutionProvider& execution_provider,
                       const SessionState& session_state,
                       /*out*/ std::unique_ptr<OpKernel>& op_kernel) const;
 
-  Status SearchKernelRegistry(const LotusIR::Node& node,
+  Status SearchKernelRegistry(const onnxruntime::Node& node,
                               /*out*/ const KernelCreateInfo** kernel_create_info) const;
 
   // Get all kernel registries. There are no nullptr entries.
@@ -57,4 +57,4 @@ class KernelRegistryManager {
   std::list<std::shared_ptr<KernelRegistry>> kernel_registries_;
   mutable std::mutex lock_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

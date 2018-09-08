@@ -2,18 +2,18 @@
 
 #include <memory>
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
-namespace Utils{
+namespace Utils {
 
 size_t GetPeakWorkingSetSize();
 
-class ICPUUsage{
+class ICPUUsage {
  public:
   virtual ~ICPUUsage() = default;
 
   virtual short GetUsage() const = 0;
-  
+
   virtual void Reset() = 0;
 };
 
@@ -21,4 +21,4 @@ std::unique_ptr<ICPUUsage> CreateICPUUsage();
 
 }  // namespace Utils
 }  // namespace PerfTest
-}  // namespace Lotus
+}  // namespace onnxruntime

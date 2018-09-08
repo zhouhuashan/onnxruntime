@@ -46,7 +46,7 @@ A sink can do further filter as needed.
 
 */
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 
 using Timestamp = std::chrono::time_point<std::chrono::system_clock>;
@@ -65,9 +65,9 @@ enum class DataType {
 // Internal log categories.
 // Logging interface takes const char* so arbitrary values can also be used.
 struct Category {
-  static const char* Lotus;   ///< General output
-  static const char* System;  ///< Log output regarding interactions with the host system
-                              // TODO: What other high level categories are meaningful? Model? Optimizer? Execution?
+  static const char* onnxruntime;  ///< General output
+  static const char* System;       ///< Log output regarding interactions with the host system
+                                   // TODO: What other high level categories are meaningful? Model? Optimizer? Execution?
 };
 
 class ISink;
@@ -261,4 +261,4 @@ Return the current process id.
 unsigned int GetProcessId();
 
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

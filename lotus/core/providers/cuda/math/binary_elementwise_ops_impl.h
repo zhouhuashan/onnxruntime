@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include "core/providers/cuda/shared_inc/cuda_utils.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 // These macros simplifies coding. To add a new op with following steps:
 // 1. Add a new entry in BINARY_OPS() list
@@ -24,7 +24,7 @@ namespace Cuda {
   BINARY_OP_NAME_EXPR(Xor, (a ^ b))    \
   BINARY_OP_NAME_EXPR(PRelu, (a > (T)0 ? a : a * b))
 
-// NOTE that cu files are compiled with nvcc and should not refer to any Lotus headers
+// NOTE that cu files are compiled with nvcc and should not refer to any onnxruntime headers
 // so struct BinaryElementwisePreparation cannot be used here
 
 #define BINARY_ELEMENTWISE_IMPL_DECLARATION(name) \
@@ -45,5 +45,5 @@ namespace Cuda {
 BINARY_OPS()
 #undef BINARY_OP_NAME_EXPR
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

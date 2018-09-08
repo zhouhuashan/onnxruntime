@@ -20,7 +20,7 @@
 
 class IMLOpKernel;
 
-namespace Lotus {
+namespace onnxruntime {
 
 // A set of wrappers with common signatures for use with both OpKernelInfo
 // (as its base class) and InferenceContext.  Used by ABI kernels for both
@@ -105,7 +105,7 @@ class OpNodeProtoHelper {
 // the same signatures as InferenceContext other than const-ness.
 class ProtoHelperNodeContext {
  public:
-  ProtoHelperNodeContext(const LotusIR::Node& node) : node_(node) {}
+  ProtoHelperNodeContext(const onnxruntime::Node& node) : node_(node) {}
   ProtoHelperNodeContext() = delete;
 
   const onnx::AttributeProto* getAttribute(const std::string& name) const;
@@ -115,7 +115,7 @@ class ProtoHelperNodeContext {
   const onnx::TypeProto* getOutputType(size_t index) const;
 
  private:
-  const LotusIR::Node& node_;
+  const onnxruntime::Node& node_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

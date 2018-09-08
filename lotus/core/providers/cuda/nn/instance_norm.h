@@ -2,8 +2,8 @@
 
 #include "core/providers/cuda/cudnn_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class InstanceNorm final : public CudaKernel {
@@ -15,5 +15,5 @@ class InstanceNorm final : public CudaKernel {
   double epsilon_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

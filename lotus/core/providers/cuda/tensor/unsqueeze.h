@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/tensor/unsqueeze.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class Unsqueeze final : public UnsqueezeBase, public CudaKernel {
  public:
@@ -12,5 +12,5 @@ class Unsqueeze final : public UnsqueezeBase, public CudaKernel {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

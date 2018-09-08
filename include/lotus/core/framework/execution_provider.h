@@ -5,10 +5,10 @@
 #include "core/common/status.h"
 #include "core/framework/tensor.h"
 
-namespace LotusIR {
+namespace onnxruntime {
 class Graph;
-}  // namespace LotusIR
-namespace Lotus {
+}  // namespace onnxruntime
+namespace onnxruntime {
 
 struct ComputationCapacity;
 class KernelRegistry;
@@ -34,7 +34,7 @@ class IExecutionProvider {
   // have overlap, and it's lotus runtime's responsibility to do the partition
   // and decide whether a node will be assigned to <*this> execution provider.
   virtual std::vector<std::unique_ptr<ComputationCapacity>>
-  GetCapability(const LotusIR::Graph& graph,
+  GetCapability(const onnxruntime::Graph& graph,
                 const std::vector<const KernelRegistry*>& kernel_registries) const;
 
   // Get kernel registry per execution provider type.
@@ -47,15 +47,15 @@ class IExecutionProvider {
   //    with multiple sessions/models.
   // 2. Adding an execution provider into lotus does not need to touch lotus
   // frameowrk/session code.
-  // 3. Lotus runtime (framework/session) does not depend on any specific
+  // 3. onnxruntime runtime (framework/session) does not depend on any specific
   // execution provider lib.
   virtual std::shared_ptr<KernelRegistry> GetKernelRegistry() const = 0;
 
   // Copy tensor between execution providers
-  virtual Common::Status CopyTensor(const Tensor& src, Tensor& dst) const = 0;
+  virtual common::Status CopyTensor(const Tensor& src, Tensor& dst) const = 0;
 
   // Copy tensor between execution providers on specified exec queue
-  virtual Common::Status CopyTensor(const Tensor& src, Tensor& dst,
+  virtual common::Status CopyTensor(const Tensor& src, Tensor& dst,
                                     int exec_queue_id) const;
 
   // Returns an opaque handle whose exact type varies based on the provider
@@ -72,23 +72,23 @@ class IExecutionProvider {
   // Blocks until the device has completed all preceding requested tasks.
   // Currently this is primarily used by the IOBinding object to ensure that all
   // inputs have been copied to the device before execution begins.
-  virtual Common::Status Sync() const;
+  virtual common::Status Sync() const;
 
   // Called when InferenceSession::Run started
   // NOTE that due to async execution in provider, the actual work of previous
   // Run may not be finished on device This function should be regarded as the
   // point after which a new Run would start to submit commands from CPU
-  virtual Common::Status OnRunStart();
+  virtual common::Status OnRunStart();
 
   // Called when InferenceSession::Run ended
   // NOTE that due to async execution in provider, the actual work of this Run
   // may not be finished on device This function should be regarded as the point
   // that all commands of current Run has been submmited by CPU
-  virtual Common::Status OnRunEnd();
+  virtual common::Status OnRunEnd();
 
   void InsertAllocator(MemType mem_type, AllocatorPtr allocator);
 
  private:
   AllocatorMap allocators_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

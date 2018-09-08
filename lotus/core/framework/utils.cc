@@ -8,11 +8,11 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Utils {
 
 const KernelDef* GetKernelDef(const KernelRegistryManager& kernel_registry,
-                              const LotusIR::Node& node) {
+                              const onnxruntime::Node& node) {
   const KernelCreateInfo* kernel_create_info = nullptr;
   const KernelDef* kernel_def = nullptr;
 
@@ -23,9 +23,9 @@ const KernelDef* GetKernelDef(const KernelRegistryManager& kernel_registry,
   return kernel_def;
 }
 
-const KernelDef* GetKernelDef(const LotusIR::Graph& graph,
+const KernelDef* GetKernelDef(const onnxruntime::Graph& graph,
                               const KernelRegistryManager& kernel_registry,
-                              const LotusIR::NodeIndex node_id) {
+                              const onnxruntime::NodeIndex node_id) {
   auto node = graph.GetNode(node_id);
   LOTUS_ENFORCE(nullptr != node);
 
@@ -46,4 +46,4 @@ AllocatorPtr GetAllocator(const SessionState& session_state, const AllocatorInfo
 }
 
 }  // namespace Utils
-}  // namespace Lotus
+}  // namespace onnxruntime

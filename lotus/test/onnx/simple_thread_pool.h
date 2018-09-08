@@ -11,7 +11,7 @@
 #include <unsupported/Eigen/CXX11/ThreadPool>
 
 //@chasun: copied from Eigen, with just one tiny modification: remove the default vaule of the constructor of SimpleThreadPoolTempl
-namespace Lotus {
+namespace onnxruntime {
 
 // The implementation of the ThreadPool type ensures that the Schedule method
 // runs the functions it is provided in FIFO order when the scheduling is done
@@ -148,4 +148,4 @@ class SimpleThreadPoolTempl : public Eigen::ThreadPoolInterface {
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

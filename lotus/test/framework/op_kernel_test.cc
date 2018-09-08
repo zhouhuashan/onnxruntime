@@ -9,10 +9,9 @@
 #include "test_utils.h"
 using namespace std;
 using namespace onnx;
-using namespace ::Lotus::Logging;
-using namespace LotusIR;
+using namespace ::onnxruntime::Logging;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 class XPUExecutionProvider : public IExecutionProvider {
@@ -20,7 +19,7 @@ class XPUExecutionProvider : public IExecutionProvider {
   XPUExecutionProvider() = default;
 
   std::string Type() const override {
-    return LotusIR::kCpuExecutionProvider;
+    return onnxruntime::kCpuExecutionProvider;
   }
 
   Status CopyTensor(const Tensor& src, Tensor& dst) const override {
@@ -36,4 +35,4 @@ class XPUExecutionProvider : public IExecutionProvider {
 };
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

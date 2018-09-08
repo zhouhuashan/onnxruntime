@@ -6,7 +6,7 @@
 #include "core/providers/cpu/rnn/deep_cpu_lstm.h"
 #include "test/providers/provider_test_utils.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 // copy the contents of the container to the end so the original values are duplicated
@@ -603,35 +603,35 @@ class LstmOpContext2x1x2x2 {
                float clip = 9999.f,
                bool input_forget = false) {
     // run with and without output_sequence to test UniDirectionalLstm handling when Y isn't returned
-    ::Lotus::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
-                             expected_Y, expected_Y_h, expected_Y_c,
-                             input_size_, batch_size, hidden_size_, seq_length,
-                             use_bias ? &bias_ : nullptr,
-                             use_peepholes ? &peephole_weights_ : nullptr,
-                             initial_h, initial_c,
-                             sequence_lens,
-                             direction_,
-                             clip,
-                             /*output_sequence*/ true,
-                             input_forget,
-                             activation_func_names_,
-                             activation_alphas_,
-                             activation_betas_);
+    ::onnxruntime::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
+                                     expected_Y, expected_Y_h, expected_Y_c,
+                                     input_size_, batch_size, hidden_size_, seq_length,
+                                     use_bias ? &bias_ : nullptr,
+                                     use_peepholes ? &peephole_weights_ : nullptr,
+                                     initial_h, initial_c,
+                                     sequence_lens,
+                                     direction_,
+                                     clip,
+                                     /*output_sequence*/ true,
+                                     input_forget,
+                                     activation_func_names_,
+                                     activation_alphas_,
+                                     activation_betas_);
 
-    ::Lotus::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
-                             expected_Y, expected_Y_h, expected_Y_c,
-                             input_size_, batch_size, hidden_size_, seq_length,
-                             use_bias ? &bias_ : nullptr,
-                             use_peepholes ? &peephole_weights_ : nullptr,
-                             initial_h, initial_c,
-                             sequence_lens,
-                             direction_,
-                             clip,
-                             /*output_sequence*/ false,
-                             input_forget,
-                             activation_func_names_,
-                             activation_alphas_,
-                             activation_betas_);
+    ::onnxruntime::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
+                                     expected_Y, expected_Y_h, expected_Y_c,
+                                     input_size_, batch_size, hidden_size_, seq_length,
+                                     use_bias ? &bias_ : nullptr,
+                                     use_peepholes ? &peephole_weights_ : nullptr,
+                                     initial_h, initial_c,
+                                     sequence_lens,
+                                     direction_,
+                                     clip,
+                                     /*output_sequence*/ false,
+                                     input_forget,
+                                     activation_func_names_,
+                                     activation_alphas_,
+                                     activation_betas_);
   }
 
  private:
@@ -949,4 +949,4 @@ TEST(LSTMTest, LotusRT_TestLSTMOutputWrite) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

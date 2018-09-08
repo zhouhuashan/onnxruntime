@@ -14,8 +14,7 @@ namespace onnxruntime {
 namespace python {
 
 namespace py = pybind11;
-using namespace Lotus;
-using namespace Lotus::Logging;
+using namespace onnxruntime::Logging;
 
 int OnnxRuntimeTensorToNumpyType(const MLDataType& tensor_type) {
   static std::map<MLDataType, int> type_map{

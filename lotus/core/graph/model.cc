@@ -19,10 +19,10 @@
 #include "core/platform/env.h"
 #include "core/graph/schema_registry.h"
 using namespace onnx;
-using namespace Lotus;
-using namespace ::Lotus::Common;
+using namespace onnxruntime;
+using namespace ::onnxruntime::common;
 
-namespace LotusIR {
+namespace onnxruntime {
 Model::Model(const std::string& graph_name,
              bool is_onnx_domain_only,
              const ModelMetaData& model_metadata,
@@ -152,7 +152,7 @@ Version Model::ModelVersion() const {
   return kNoVersion;
 }
 
-void Model::SetModelversion(LotusIR::Version version) {
+void Model::SetModelversion(onnxruntime::Version version) {
   model_proto_->set_model_version(version);
 }
 
@@ -238,7 +238,7 @@ static Status LoadModel(const T& file_path, std::shared_ptr<Model>& p_model, con
   int fd;
   Status status = Env::Default().FileOpenRd(file_path, &fd);
   if (!status.IsOK()) {
-    if (status.Category() == Common::SYSTEM) {
+    if (status.Category() == common::SYSTEM) {
       switch (status.Code()) {
         case ENOENT:
           return LOTUS_MAKE_STATUS(LOTUS, NO_SUCHFILE, "Load model failed. File doesn't exist");
@@ -367,4 +367,4 @@ Status Model::Save(Model& model, int p_fd) {
     return Status(LOTUS, INVALID_PROTOBUF, "Protobuf serialization failed.");
   }
 }
-}  // namespace LotusIR
+}  // namespace onnxruntime

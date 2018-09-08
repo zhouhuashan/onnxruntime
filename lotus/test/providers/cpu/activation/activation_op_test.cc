@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 void TestUnaryElementwiseOp(const char* szOp, std::vector<float>& input_vals,
@@ -214,4 +214,4 @@ TEST(ActivationOpTest, Softsign) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

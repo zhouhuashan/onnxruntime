@@ -1,6 +1,6 @@
 #include "core/providers/cpu/activation/activations.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 #define REGISTER_UNARY_ELEMENTWISE_KERNEL_ALIAS(alias, x, sinceVersion)                              \
   ONNX_CPU_OPERATOR_KERNEL(                                                                          \
@@ -26,4 +26,4 @@ REGISTER_UNARY_ELEMENTWISE_KERNEL(Softsign, 1);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(Tanh, 6);
 REGISTER_UNARY_ELEMENTWISE_KERNEL(ThresholdedRelu, 1);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

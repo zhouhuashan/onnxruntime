@@ -8,13 +8,13 @@
 #include "core/framework/session_state.h"
 #include "core/framework/utils.h"
 
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
 ExecutionFrame::ExecutionFrame(const std::unordered_map<std::string, MLValue>& feeds,
                                const std::vector<std::string>& output_names,
                                const std::vector<MLValue>& fetches,
-                               const ::Lotus::SessionState& session_state)
+                               const ::onnxruntime::SessionState& session_state)
     : session_state_(session_state), mem_patterns_(nullptr), planner_(nullptr) {
   auto* graph = session_state.GetGraph();
   LOTUS_ENFORCE(graph);
@@ -303,7 +303,7 @@ Status ExecutionFrame::AllocateAsPerAllocationPlan(int mlvalue_index,
   return Status::OK();
 }
 
-void ExecutionFrame::Init(const LotusIR::Graph& graph,
+void ExecutionFrame::Init(const onnxruntime::Graph& graph,
                           const std::unordered_map<std::string, MLValue>& feeds,
                           const std::vector<std::string>& output_names,
                           const std::vector<MLValue>& fetches) {
@@ -372,7 +372,7 @@ void ExecutionFrame::Init(const LotusIR::Graph& graph,
   }
 }
 
-void ExecutionFrame::SetupNodeArg(const LotusIR::NodeArg* arg) {
+void ExecutionFrame::SetupNodeArg(const onnxruntime::NodeArg* arg) {
   LOTUS_ENFORCE(arg);
   auto& name = arg->Name();
   //if the arg's name is empty, it is an not needed optional input/output
@@ -454,7 +454,7 @@ Status ExecutionFrame::GetOrCreateNodeOutputMLValue(int index,
                                                     const MLValueAllocationParameters& parameters,
                                                     MLValue*& p_mlvalue) {
   if (index < 0 || static_cast<size_t>(index) >= node_values_.size()) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+    return Status(common::LOTUS, common::INVALID_ARGUMENT,
                   "Try to access with invalid node value index: " + std::to_string(index));
   }
 
@@ -495,4 +495,4 @@ const SequentialExecutionPlan::AllocPlanPerValue& ExecutionFrame::GetAllocationP
   LOTUS_ENFORCE(mlvalue_idx >= 0 && mlvalue_idx < alloc_plan.size());
   return alloc_plan[mlvalue_idx];
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

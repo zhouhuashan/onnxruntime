@@ -15,7 +15,7 @@
 
 #include "test_configuration.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 
 /*static*/ void CommandLineParser::ShowUsage() {
@@ -48,11 +48,11 @@ namespace PerfTest {
         break;
       case 'e':
         if (!strcmp(optarg, "cpu")) {
-          test_config.machine_config.provider_type_name = LotusIR::kCpuExecutionProvider;
+          test_config.machine_config.provider_type_name = onnxruntime::kCpuExecutionProvider;
         } else if (!strcmp(optarg, "cuda")) {
-          test_config.machine_config.provider_type_name = LotusIR::kCudaExecutionProvider;
+          test_config.machine_config.provider_type_name = onnxruntime::kCudaExecutionProvider;
         } else if (!strcmp(optarg, "mkldnn")) {
-          test_config.machine_config.provider_type_name = LotusIR::kMklDnnExecutionProvider;
+          test_config.machine_config.provider_type_name = onnxruntime::kMklDnnExecutionProvider;
         } else {
           return false;
         }
@@ -94,4 +94,4 @@ namespace PerfTest {
 }
 
 }  // namespace PerfTest
-}  // namespace Lotus
+}  // namespace onnxruntime

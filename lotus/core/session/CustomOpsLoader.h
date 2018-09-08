@@ -8,11 +8,11 @@
 #include "core/framework/customregistry.h"
 #include "core/framework/custom_ops_author.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class CustomOpsLoader final {
  public:
   CustomOpsLoader() = default;
-  Common::Status LoadCustomOps(const std::string& dso_file_path,
+  common::Status LoadCustomOps(const std::string& dso_file_path,
                                std::shared_ptr<CustomRegistry>& custom_registry);
   ~CustomOpsLoader();
 
@@ -31,4 +31,4 @@ class CustomOpsLoader final {
 
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomOpsLoader);
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

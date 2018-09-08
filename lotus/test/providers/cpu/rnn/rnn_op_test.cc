@@ -2,11 +2,11 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 // test input data is generated from CNTK with shape of [batch_size, seq_length, input_size]
-// Lotus takes input of shape [seq_length, batch_size, input_size)
+// onnxruntime takes input of shape [seq_length, batch_size, input_size)
 template <typename T>
 void MemoryLayoutTransposeRNNInputCNTKToLotus(const T* X_data_cntk, T* X_data_onnx, int64_t seq_length, int64_t batch_size, int64_t input_size) {
   for (int seq = 0; seq < seq_length; seq++) {
@@ -20,7 +20,7 @@ void MemoryLayoutTransposeRNNInputCNTKToLotus(const T* X_data_cntk, T* X_data_on
 }
 
 // test output data is generated from CNTK with shape of [batch_size, seq_length, num_directions, hidden_size].
-// Lotus takes output of shape [seq_length, num_directions, batch_size, hidden_size)
+// onnxruntime takes output of shape [seq_length, num_directions, batch_size, hidden_size)
 template <typename T>
 void MemoryLayoutTransposeRNNOutputCNTKToLotus(const T* X_data_cntk, T* X_data_onnx,
                                                int64_t seq_length, int64_t num_directions, int64_t batch_size, int64_t hidden_size) {
@@ -781,4 +781,4 @@ TEST(RNNTest, RNN_bidirectional_with_sequence_lens) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -2,8 +2,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/pool_base.h"
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 
 enum PoolType {
   MaxPool,
@@ -19,5 +19,5 @@ class Pool final : public OpKernel, public PoolBase {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace MklDnn
-}  // namespace Lotus
+}  // namespace mkl_dnn
+}  // namespace onnxruntime
