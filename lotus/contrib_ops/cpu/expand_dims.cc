@@ -12,7 +12,7 @@ ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
     KernelDefBuilder()
         .Alias(0, 0)
         .TypeConstraint("T", DataTypeImpl::AllTensorTypes())
-        .TypeConstraint("axis", DataTypeImpl::GetTensorType<int64_t>()),
+        .TypeConstraint("axis", DataTypeImpl::GetTensorType<int32_t>()),
     ExpandDims);
 
 }  // namespace ml

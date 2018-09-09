@@ -22,7 +22,7 @@ Sample echo operator.)DOC");
       .SetDomain(kMSDomain)
       .SinceVersion(1)
       .Input(0, "X", "input", "T")
-      .Input(1, "axis", "Specified axis to insert a dimension", "tensor(int64)")
+      .Input(1, "axis", "Specified axis to insert a dimension", "tensor(int32)")
       .Output(0, "Y", "output", "T")
       .TypeConstraint(
           "T",
