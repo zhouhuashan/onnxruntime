@@ -26,3 +26,4 @@ lotus_profile*.json
 /docs/python/media/*
 /docs/python/examples/*.onnx
 /docs/python/examples/graph.*
+/docs/python/*_LICENSE
