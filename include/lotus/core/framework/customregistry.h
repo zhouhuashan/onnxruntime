@@ -7,9 +7,9 @@
 #include "core/framework/kernel_def_builder.h"
 #include "core/framework/kernel_registry.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
-class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegistry {
+class CustomRegistry : public KernelRegistry, public onnxruntime::LotusOpSchemaRegistry {
  public:
   CustomRegistry() = default;
   ~CustomRegistry() override = default;
@@ -21,12 +21,12 @@ class CustomRegistry : public KernelRegistry, public LotusIR::LotusOpSchemaRegis
     * Call this before invoking Initialize().
     * @return OK if success.
     */
-  Common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
+  common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
-  Common::Status RegisterCustomKernel(KernelCreateInfo&);
+  common::Status RegisterCustomKernel(KernelCreateInfo&);
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -26,8 +26,8 @@ ONNX_OPERATOR_SCHEMA(Normalizer)
         std::string("MAX"));
 */
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     Normalizer,
@@ -183,5 +183,5 @@ void Normalizer::Normalize(OpKernelContext* context) const {
   }
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

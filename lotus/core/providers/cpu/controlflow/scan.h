@@ -5,7 +5,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class SessionState;
 
 class Scan final : public OpKernel {
@@ -27,4 +27,4 @@ class Scan final : public OpKernel {
  private:
   Status ComputeImpl() const;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

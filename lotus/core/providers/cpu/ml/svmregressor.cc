@@ -1,7 +1,7 @@
 #include "core/providers/cpu/ml/svmregressor.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     SVMRegressor,
@@ -72,5 +72,5 @@ Status SVMRegressor<T>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

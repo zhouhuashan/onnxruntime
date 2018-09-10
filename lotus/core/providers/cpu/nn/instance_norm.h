@@ -2,7 +2,7 @@
 
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class InstanceNorm final : public OpKernel {
@@ -16,4 +16,4 @@ class InstanceNorm final : public OpKernel {
  private:
   float epsilon_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

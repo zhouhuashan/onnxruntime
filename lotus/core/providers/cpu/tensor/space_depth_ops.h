@@ -2,7 +2,7 @@
 
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class SpaceDepthBase : public OpKernel {
  public:
@@ -33,4 +33,4 @@ class DepthToSpace final : public SpaceDepthBase {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  //namespace Lotus
+}  //namespace onnxruntime

@@ -21,7 +21,7 @@ limitations under the License.
 #include <chrono>              // NOLINT
 #include <condition_variable>  // NOLINT
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Notification {
  public:
@@ -79,6 +79,6 @@ inline bool WaitForNotificationWithTimeout(Notification* n,
   return n->WaitForNotificationWithTimeout(timeout_in_us);
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime
 
 #endif  // LOTUS_CORE_PLATFORM_NOTIFICATION_H_

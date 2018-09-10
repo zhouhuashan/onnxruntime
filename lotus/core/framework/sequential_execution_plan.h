@@ -4,7 +4,7 @@
 #include "core/framework/alloc_kind.h"
 #include "core/framework/data_types.h"
 
-namespace Lotus {
+namespace onnxruntime {
 // Every ml-value has a unique name and is assigned a unique integral number.
 // While we use names at static-planning time, the goal is that at runtime
 // (that is, at inference time), there is no need to refer to names, and only
@@ -47,7 +47,7 @@ struct SequentialExecutionPlan {
   // NodeExecutionPlan: represents execution data for a single node
   struct NodeExecutionPlan {
     // node to be executed;
-    LotusIR::NodeIndex node_index;
+    onnxruntime::NodeIndex node_index;
 
     // ml-values to be freed after node execution:
     // for (auto i = free_from_index; i <= free_to_index; i++)
@@ -55,7 +55,7 @@ struct SequentialExecutionPlan {
     int free_from_index;
     int free_to_index;
 
-    explicit NodeExecutionPlan(LotusIR::NodeIndex index) : node_index(index), free_from_index(1), free_to_index(0) {}
+    explicit NodeExecutionPlan(onnxruntime::NodeIndex index) : node_index(index), free_from_index(1), free_to_index(0) {}
   };
 
   // Execution_plan: represents the nodes in the sequential order to be executed
@@ -67,4 +67,4 @@ struct SequentialExecutionPlan {
 
 // Output details of an execution plan:
 std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionPlan*, const SessionState*> planinfo);
-}  // namespace Lotus
+}  // namespace onnxruntime

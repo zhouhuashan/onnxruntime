@@ -30,10 +30,9 @@
 
 using namespace std;
 using namespace onnx;
-using namespace ::Lotus::Logging;
-using namespace LotusIR;
+using namespace ::onnxruntime::Logging;
 
-namespace Lotus {
+namespace onnxruntime {
 class FuseAdd : public OpKernel {
  public:
   FuseAdd(const OpKernelInfo& info) : OpKernel(info) {}
@@ -74,35 +73,35 @@ class FuseExecutionProvider : public IExecutionProvider {
   }
 
   std::vector<std::unique_ptr<ComputationCapacity>>
-  GetCapability(const LotusIR::Graph& graph,
+  GetCapability(const onnxruntime::Graph& graph,
                 const std::vector<const KernelRegistry*>& /*kernel_registries*/) const override {
     // Fuse two add into one.
     std::vector<std::unique_ptr<ComputationCapacity>> result;
-	std::unique_ptr<IndexedSubGraph> sub_graph = std::make_unique<IndexedSubGraph>();
+    std::unique_ptr<IndexedSubGraph> sub_graph = std::make_unique<IndexedSubGraph>();
     for (auto& node : graph.Nodes()) {
       if (graph.IsSourceNode(node) || graph.IsSinkNode(node)) {
         continue;
       }
-	  sub_graph->nodes.push_back(node.Index());
+      sub_graph->nodes.push_back(node.Index());
     }
-    auto meta_def = std::make_unique<::Lotus::IndexedSubGraph::MetaDef>();
+    auto meta_def = std::make_unique<::onnxruntime::IndexedSubGraph::MetaDef>();
     meta_def->name = "FuseAdd";
     meta_def->domain = "FuseTest";
     meta_def->inputs = {"X", "Y", "Z"};
     meta_def->outputs = {"M"};
     meta_def->since_version = 1;
     meta_def->status = onnx::EXPERIMENTAL;
-	sub_graph->SetMetaDef(meta_def);
-	result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
+    sub_graph->SetMetaDef(meta_def);
+    result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
     return result;
   }
 
-  std::shared_ptr<::Lotus::KernelRegistry> GetKernelRegistry() const override {
-    static std::shared_ptr<::Lotus::KernelRegistry> kernel_registry = std::make_shared<::Lotus::KernelRegistry>(RegisterOperatorKernels);
+  std::shared_ptr<::onnxruntime::KernelRegistry> GetKernelRegistry() const override {
+    static std::shared_ptr<::onnxruntime::KernelRegistry> kernel_registry = std::make_shared<::onnxruntime::KernelRegistry>(RegisterOperatorKernels);
     return kernel_registry;
   }
 
-  Common::Status CopyTensor(const Tensor& src, Tensor& dst) const override {
+  common::Status CopyTensor(const Tensor& src, Tensor& dst) const override {
     UNUSED_PARAMETER(src);
     UNUSED_PARAMETER(dst);
     return Status::OK();
@@ -125,27 +124,27 @@ static const std::string MODEL_URI = "testdata/mul_1.pb";
 static const std::string MODEL_URI_NO_OPSET = "testdata/mul_1.pb.noopset";
 //static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx"; // TODO enable this after we've weights?
 
-static void CreateMatMulModel(std::unique_ptr<LotusIR::Model>& p_model, ProviderType provider_type) {
+static void CreateMatMulModel(std::unique_ptr<onnxruntime::Model>& p_model, ProviderType provider_type) {
   // Generate the input & output def lists
-  p_model = std::make_unique<LotusIR::Model>("test");
-  LotusIR::Graph& graph = p_model->MainGraph();
+  p_model = std::make_unique<onnxruntime::Model>("test");
+  onnxruntime::Graph& graph = p_model->MainGraph();
 
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
 
-  std::vector<LotusIR::NodeArg*> input_defs;
+  std::vector<onnxruntime::NodeArg*> input_defs;
   auto& input_arg_a = graph.GetOrCreateNodeArg("A", &tensor_float);
   input_defs.push_back(&input_arg_a);
 
   auto& input_arg_b = graph.GetOrCreateNodeArg("B", &tensor_float);
   input_defs.push_back(&input_arg_b);
 
-  std::vector<LotusIR::NodeArg*> output_defs;
+  std::vector<onnxruntime::NodeArg*> output_defs;
   auto& output_arg = graph.GetOrCreateNodeArg("Y", &tensor_float);
   output_defs.push_back(&output_arg);
 
   // Create a simple model
-  auto& node = *graph.AddNode("node1", "MatMul", "MatMul", input_defs, output_defs, nullptr, LotusIR::kOnnxDomain);
+  auto& node = *graph.AddNode("node1", "MatMul", "MatMul", input_defs, output_defs, nullptr, onnxruntime::kOnnxDomain);
   if (provider_type == kCpuExecutionProvider) {
     node.SetExecutionProviderType(provider_type);
   } else {
@@ -196,7 +195,7 @@ void RunModel(InferenceSession& session_object,
   std::vector<float> expected_values_mul_y = {1.0f, 4.0f, 9.0f, 16.0f, 25.0f, 36.0f};
 
   // Now run
-  Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
+  common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
   if (!st.IsOK()) {
     std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
   }
@@ -332,8 +331,8 @@ static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg) {
   }
 
   for (auto i = 0; i < f_arg.size(); ++i) {
-    const LotusIR::NodeArg* x = f_arg[i];
-    const LotusIR::NodeArg* y = s_arg[i];
+    const onnxruntime::NodeArg* x = f_arg[i];
+    const onnxruntime::NodeArg* y = s_arg[i];
     if ((x->Shape() == nullptr) ^ (y->Shape() == nullptr)) {
       return false;
     } else {
@@ -362,10 +361,10 @@ TEST(InferenceSessionTests, ModelMetadata) {
   string model_uri = "testdata/squeezenet/model.onnx";
   ASSERT_TRUE(session_object.Load(model_uri).IsOK());
 
-  std::shared_ptr<LotusIR::Model> p_model;
-  Status st = LotusIR::Model::Load(model_uri, p_model);
+  std::shared_ptr<onnxruntime::Model> p_model;
+  Status st = onnxruntime::Model::Load(model_uri, p_model);
   ASSERT_TRUE(st.IsOK());
-  const LotusIR::Graph& graph = p_model->MainGraph();
+  const onnxruntime::Graph& graph = p_model->MainGraph();
 
   // 1. first test the model meta
   {
@@ -655,7 +654,7 @@ TEST(InferenceSessionTests, TestModelProtoInterface) {
   InferenceSessionWinML session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   ModelProto model_proto;
-  ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, &model_proto).IsOK());
+  ASSERT_TRUE(onnxruntime::Model::Load(model_file_stream, &model_proto).IsOK());
   ASSERT_TRUE(session_object.Load(model_proto).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -672,7 +671,7 @@ TEST(InferenceSessionTests, TestModelProtoInterfaceMultipleLoadFailure) {
   InferenceSessionWinML session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   ModelProto model_proto;
-  ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, &model_proto).IsOK());
+  ASSERT_TRUE(onnxruntime::Model::Load(model_file_stream, &model_proto).IsOK());
   ASSERT_TRUE(session_object.Load(model_proto).IsOK());
   ASSERT_FALSE(session_object.Load(model_proto).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
@@ -795,7 +794,7 @@ TEST(InferenceSessionTests, InvalidInputTypeOfTensorElement) {
   std::vector<float> expected_values_mul_y = {1.0f, 4.0f, 9.0f, 16.0f, 25.0f, 36.0f};
 
   // Now run
-  Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
+  common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
   if (!st.IsOK()) {
     std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
   }
@@ -810,7 +809,7 @@ TEST(InferenceSessionTests, TestModelProtoUniquePtrInterface) {
   InferenceSessionWinML session_object{so};
   std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
   auto p_model_proto = std::make_unique<ModelProto>();
-  ASSERT_TRUE(LotusIR::Model::Load(model_file_stream, p_model_proto.get()).IsOK());
+  ASSERT_TRUE(onnxruntime::Model::Load(model_file_stream, p_model_proto.get()).IsOK());
   ASSERT_TRUE(session_object.Load(std::move(p_model_proto)).IsOK());
   ASSERT_TRUE(session_object.Initialize().IsOK());
 
@@ -868,10 +867,10 @@ TEST(InferenceSessionTests, ModelWithoutOpset) {
 }
 
 TEST(ExecutionProviderTest, FunctionTest) {
-  LotusIR::Model model("graph_1");
+  onnxruntime::Model model("graph_1");
   auto& graph = model.MainGraph();
-  std::vector<LotusIR::NodeArg*> inputs;
-  std::vector<LotusIR::NodeArg*> outputs;
+  std::vector<onnxruntime::NodeArg*> inputs;
+  std::vector<onnxruntime::NodeArg*> outputs;
 
   // FLOAT tensor.
   onnx::TypeProto float_tensor;
@@ -899,7 +898,7 @@ TEST(ExecutionProviderTest, FunctionTest) {
   auto status = graph.Resolve();
   ASSERT_TRUE(status.IsOK());
   std::string model_file_name = "execution_provider_test_graph.onnx";
-  status = LotusIR::Model::Save(model, model_file_name);
+  status = onnxruntime::Model::Save(model, model_file_name);
 
   SessionOptions so;
   so.session_logid = "ExecutionProviderTest.FunctionTest";
@@ -940,7 +939,7 @@ TEST(ExecutionProviderTest, FunctionTest) {
   VerifyOutputs(fetches, expected_dims_mul_m, expected_values_mul_m);
 
   InferenceSession session_object_2{so};
-  session_object_2.RegisterExecutionProvider(std::make_unique<::Lotus::FuseExecutionProvider>());
+  session_object_2.RegisterExecutionProvider(std::make_unique<::onnxruntime::FuseExecutionProvider>());
   status = session_object_2.Load(model_file_name);
   ASSERT_TRUE(status.IsOK());
   status = session_object_2.Initialize();
@@ -951,4 +950,4 @@ TEST(ExecutionProviderTest, FunctionTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -5,8 +5,8 @@
 #include "core/providers/mkldnn/mkldnn_common.h"
 #include "core/providers/mkldnn/nn/conv.h"
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 
 namespace {
 // Struct which encapsulates parameters for MKLDNN Conv2d primitive.
@@ -246,19 +246,19 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   const int64_t N = X->Shape()[0];
   const int64_t M = W->Shape()[0];
 
-  LOTUS_RETURN_IF_ERROR(Lotus::ConvBase::ValidateInputShape(X, W));
+  LOTUS_RETURN_IF_ERROR(onnxruntime::ConvBase::ValidateInputShape(X, W));
 
-  std::vector<int64_t> kernel_shape = Lotus::ConvBase::ComputeKernelShape(W->Shape());
+  std::vector<int64_t> kernel_shape = onnxruntime::ConvBase::ComputeKernelShape(W->Shape());
 
   // TODO: Support more than 2d kernels
   if (kernel_shape.size() != 2) {
     // Fall Back to CPU implementation.
-    return Lotus::Conv<T>::Compute(context);
+    return onnxruntime::Conv<T>::Compute(context);
   }
   // TODO: support groups
-  if (Lotus::ConvBase::group_ > 1) {
+  if (onnxruntime::ConvBase::group_ > 1) {
     // Fall Back to CPU implementation.
-    return Lotus::Conv<T>::Compute(context);
+    return onnxruntime::Conv<T>::Compute(context);
   }
 
   if (kernel_shape.size() + 2 != W->Shape().NumDimensions()) {
@@ -275,15 +275,15 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
     }
   }
 
-  std::vector<int64_t> pads(Lotus::ConvBase::pads_);
+  std::vector<int64_t> pads(onnxruntime::ConvBase::pads_);
   if (pads.empty()) {
     pads.resize(kernel_shape.size() * 2, 0);
   }
-  std::vector<int64_t> dilations(Lotus::ConvBase::dilations_);
+  std::vector<int64_t> dilations(onnxruntime::ConvBase::dilations_);
   if (dilations.empty()) {
     dilations.resize(kernel_shape.size(), 1);
   }
-  std::vector<int64_t> strides(Lotus::ConvBase::strides_);
+  std::vector<int64_t> strides(onnxruntime::ConvBase::strides_);
   if (strides.empty()) {
     strides.resize(kernel_shape.size(), 1);
   }
@@ -291,7 +291,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   std::vector<int64_t> Y_dims;
   Y_dims.insert(Y_dims.begin(), {N, M});
   TensorShape input_shape = X->Shape().Slice(2);
-  LOTUS_RETURN_IF_ERROR(Lotus::ConvBase::InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
+  LOTUS_RETURN_IF_ERROR(onnxruntime::ConvBase::InferOutputShape(input_shape, kernel_shape, strides, dilations, &pads, &Y_dims));
   Tensor* Y = context->Output(0, TensorShape(Y_dims));
   TensorShape output_shape = Y->Shape().Slice(2);
 
@@ -393,5 +393,5 @@ ONNX_OPERATOR_KERNEL_EX(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Conv<float>);
 
-}  // namespace MklDnn
-}  // namespace Lotus
+}  // namespace mkl_dnn
+}  // namespace onnxruntime

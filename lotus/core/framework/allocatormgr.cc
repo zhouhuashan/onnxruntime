@@ -5,9 +5,9 @@
 #include <unordered_map>
 #include <limits>
 
-namespace Lotus {
+namespace onnxruntime {
 
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
 AllocatorPtr CreateAllocator(DeviceAllocatorRegistrationInfo info, int device_id) {
   auto device_allocator = std::unique_ptr<IDeviceAllocator>(info.factory(device_id));
@@ -23,4 +23,4 @@ DeviceAllocatorRegistry& DeviceAllocatorRegistry::Instance() {
   return s_instance;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

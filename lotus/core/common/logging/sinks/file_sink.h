@@ -3,7 +3,7 @@
 #include <fstream>
 #include "core/common/logging/sinks/ostream_sink.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 /// <summary>
 /// ISink that writes to a file.
@@ -45,4 +45,4 @@ class FileSink : public OStreamSink {
   bool filter_user_data_;
 };
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

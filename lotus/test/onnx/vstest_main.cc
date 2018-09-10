@@ -14,30 +14,30 @@
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using std::experimental::filesystem::v1::path;
 
-static std::unique_ptr<::Lotus::Environment> env;
-::Lotus::Logging::LoggingManager* default_logger;
+static std::unique_ptr<::onnxruntime::Environment> env;
+::onnxruntime::Logging::LoggingManager* default_logger;
 static std::string logger_id("onnx_test_runner");
 
 TEST_MODULE_INITIALIZE(ModuleInitialize) {
-  Logger::WriteMessage("Initialize Lotus");
-  default_logger = new ::Lotus::Logging::LoggingManager{std::unique_ptr<::Lotus::Logging::ISink>{new VsTestSink{}},
-                                                        ::Lotus::Logging::Severity::kWARNING, false,
-                                                        ::Lotus::Logging::LoggingManager::InstanceType::Default,
-                                                        &logger_id};
-  auto status = ::Lotus::Environment::Create(env);
+  Logger::WriteMessage("Initialize onnxruntime");
+  default_logger = new ::onnxruntime::Logging::LoggingManager{std::unique_ptr<::onnxruntime::Logging::ISink>{new VsTestSink{}},
+                                                              ::onnxruntime::Logging::Severity::kWARNING, false,
+                                                              ::onnxruntime::Logging::LoggingManager::InstanceType::Default,
+                                                              &logger_id};
+  auto status = ::onnxruntime::Environment::Create(env);
   if (!status.IsOK()) {
     Logger::WriteMessage(status.ErrorMessage().c_str());
-    Logger::WriteMessage("Create ::Lotus::Environment failed");
+    Logger::WriteMessage("Create ::onnxruntime::Environment failed");
     abort();
   }
-  Logger::WriteMessage("Initialize Lotus finished");
+  Logger::WriteMessage("Initialize onnxruntime finished");
 }
 
 TEST_MODULE_CLEANUP(ModuleCleanup) {
-  Logger::WriteMessage("Cleanup Lotus");
+  Logger::WriteMessage("Cleanup onnxruntime");
   env.reset();
   delete default_logger;
-  Logger::WriteMessage("Cleanup Lotus finished");
+  Logger::WriteMessage("Cleanup onnxruntime finished");
 }
 
 static void run(SessionFactory& sf, const wchar_t* test_folder) {
@@ -47,23 +47,23 @@ static void run(SessionFactory& sf, const wchar_t* test_folder) {
     //Current working directory is the one who contains 'onnx_test_runner_vstest.dll'
     //We want debug build and release build share the same test data files, so it should
     //be one level up.
-    ::Lotus::AllocatorPtr cpu_allocator(new ::Lotus::CPUAllocator());
+    ::onnxruntime::AllocatorPtr cpu_allocator(new ::onnxruntime::CPUAllocator());
     std::wstring test_folder_full_path(L"..\\models\\");
     test_folder_full_path.append(test_folder);
     path p1(test_folder_full_path);
     std::vector<ITestCase*> tests = LoadTests({p1}, {}, cpu_allocator);
     Assert::AreEqual((size_t)1, tests.size());
-    int p_models = ::Lotus::Env::Default().GetNumCpuCores();
+    int p_models = ::onnxruntime::Env::Default().GetNumCpuCores();
     if (tests[0]->GetTestCaseName() == "coreml_FNS-Candy_ImageNet") {
       p_models = 2;
     }
     snprintf(buf, sizeof(buf), "running test %s with %d cores", tests[0]->GetTestCaseName().c_str(), p_models);
     Logger::WriteMessage(buf);
     LOTUS_EVENT finish_event;
-    ::Lotus::Status status = CreateLotusEvent(&finish_event);
+    ::onnxruntime::Status status = CreateLotusEvent(&finish_event);
     Assert::IsTrue(status.IsOK());
     Assert::IsNotNull(finish_event);
-    RunSingleTestCase(tests[0], sf, p_models, 1, GetDefaultThreadPool(::Lotus::Env::Default()), nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
+    RunSingleTestCase(tests[0], sf, p_models, 1, GetDefaultThreadPool(::onnxruntime::Env::Default()), nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       res = result->GetExcutionResult();
       return LotusSetEventWhenCallbackReturns(pci, finish_event);
     });

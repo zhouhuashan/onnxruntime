@@ -25,7 +25,7 @@
 #include "core/graph/schema_registry.h"
 #include "core/framework/customregistry.h"
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 // Checks test attributes set on ABI kernels can be queried with correct values
@@ -199,9 +199,9 @@ onnx::OpSchema GetOptionalOpSchema() {
 KernelDefBuilder FooKernelDef(const char* schema_name) {
   KernelDefBuilder def;
   def.SetName(schema_name)
-      .SetDomain(LotusIR::kOnnxDomain)
+      .SetDomain(onnxruntime::kOnnxDomain)
       .SinceVersion(7)
-      .Provider(LotusIR::kCpuExecutionProvider)
+      .Provider(onnxruntime::kCpuExecutionProvider)
       .TypeConstraint("T", DataTypeImpl::GetTensorType<float>());
   return def;
 }
@@ -220,9 +220,9 @@ MLStatus CreateABIOptionalKernel(const IMLOpKernelInfo& kernel_info, IMLOpKernel
 KernelDefBuilder OptionalKernelDef() {
   KernelDefBuilder def;
   def.SetName("OptionalOp")
-      .SetDomain(LotusIR::kOnnxDomain)
+      .SetDomain(onnxruntime::kOnnxDomain)
       .SinceVersion(6)
-      .Provider(LotusIR::kCpuExecutionProvider)
+      .Provider(onnxruntime::kCpuExecutionProvider)
       .TypeConstraint("T", DataTypeImpl::GetTensorType<float>());
   return def;
 }
@@ -235,11 +235,11 @@ MLStatus CreateTruncatedABIFooKernel(const IMLOpKernelInfo& kernel_info, IMLOpKe
 // Creates a Foo kernel implementing the built-in OpKernel type.  This wraps
 // the ABI kernel as an implementation detail.
 OpKernel* CreateFooKernel(const OpKernelInfo& kernel_info) {
-  return new ::Lotus::AbiOpKernel(CreateABIFooKernel, kernel_info, false, false, nullptr, nullptr);
+  return new ::onnxruntime::AbiOpKernel(CreateABIFooKernel, kernel_info, false, false, nullptr, nullptr);
 }
 
 OpKernel* CreateOptionalOpKernel(const OpKernelInfo& kernel_info) {
-  return new ::Lotus::AbiOpKernel(CreateABIOptionalKernel, kernel_info, false, false, nullptr, nullptr);
+  return new ::onnxruntime::AbiOpKernel(CreateABIOptionalKernel, kernel_info, false, false, nullptr, nullptr);
 }
 static const std::string MUL_MODEL_URI = "testdata/mul_1.pb";
 static const std::string FOO_MODEL_URI = "testdata/foo_1.pb";
@@ -265,7 +265,7 @@ void RunSession(InferenceSession& session_object,
   std::vector<MLValue> fetches;
 
   // Now run
-  Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
+  common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
   std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
   EXPECT_TRUE(st.IsOK());
   ASSERT_EQ(1, fetches.size());
@@ -328,10 +328,10 @@ TEST(CustomKernelTests, CustomABIKernelWithBuildInSchema) {
   MLTypeConstraint constraint = {"T", &floatTensorType, 1};
 
   MLOpKernelDefinition def = {
-      LotusIR::kOnnxDomain,
+      onnxruntime::kOnnxDomain,
       "Mul",
       7,
-      LotusIR::kCpuExecutionProvider,
+      onnxruntime::kCpuExecutionProvider,
       &constraint,
       1,
       nullptr,
@@ -373,7 +373,7 @@ TEST(CustomKernelTests, CustomKernelWithCustomSchema) {
   //register foo schema
   auto foo_schema = GetFooSchema();
   std::vector<OpSchema> schemas = {foo_schema};
-  EXPECT_TRUE(registry->RegisterOpSet(schemas, LotusIR::kOnnxDomain, 5, 7).IsOK());
+  EXPECT_TRUE(registry->RegisterOpSet(schemas, onnxruntime::kOnnxDomain, 5, 7).IsOK());
   auto def = FooKernelDef("Foo");
   //Register a foo kernel which is doing Add, but bind to Mul.
   EXPECT_TRUE(registry->RegisterCustomKernel(def, CreateFooKernel).IsOK());
@@ -539,10 +539,10 @@ TEST(CustomKernelTests, CustomABIKernelWithCustomABISchema) {
     MLTypeConstraint kernel_constraint = {"T", &floatTensorType, 1};
 
     MLOpKernelDefinition kernel_def = {
-        LotusIR::kOnnxDomain,
+        onnxruntime::kOnnxDomain,
         "Foo",
         7,
-        LotusIR::kCpuExecutionProvider,
+        onnxruntime::kCpuExecutionProvider,
         &kernel_constraint,
         1,
         nullptr,
@@ -593,7 +593,7 @@ TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
 
   std::shared_ptr<CustomRegistry> registry = std::make_shared<CustomRegistry>();
 
-  EXPECT_TRUE(registry->RegisterOpSet(schemas, LotusIR::kOnnxDomain, 5, 7).IsOK());
+  EXPECT_TRUE(registry->RegisterOpSet(schemas, onnxruntime::kOnnxDomain, 5, 7).IsOK());
   auto def = OptionalKernelDef();
   //Register a foo kernel which is doing Add, but bind to Mul.
   EXPECT_TRUE(registry->RegisterCustomKernel(def, CreateOptionalOpKernel).IsOK());
@@ -619,4 +619,4 @@ TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
   RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

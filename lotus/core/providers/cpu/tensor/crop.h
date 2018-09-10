@@ -5,7 +5,7 @@
 
 #include "gsl/gsl_util"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class CropBase {
  protected:
@@ -75,7 +75,7 @@ class Crop final : public CropBase, public OpKernel {
   Crop(const OpKernelInfo& info) : CropBase(info), OpKernel(info) {
   }
 
-  Common::Status Compute(OpKernelContext* context) const override {
+  common::Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
     LOTUS_RETURN_IF_ERROR(ValidateInput(X));
 
@@ -128,4 +128,4 @@ class Crop final : public CropBase, public OpKernel {
   }
 };
 
-}  //namespace Lotus
+}  //namespace onnxruntime

@@ -1,7 +1,7 @@
 #include "core/providers/cpu/ml/svmclassifier.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 #define ADD_IN_TYPE_SVM_CLASSIFIER_OP(in_type)                                                                                                                                                    \
   ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                                                                                                                              \
@@ -252,5 +252,5 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

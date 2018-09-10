@@ -2,10 +2,10 @@
 #include <tvm/tvm.h>
 #include <tvm/build_module.h>
 #include "core/codegen_utils/tvm_compiler.h"
-namespace Lotus {
+namespace onnxruntime {
 
-TVMGraph::TensorDescriptor::TensorDescriptor(MLDataType type, LotusIR::ProviderType execution_provider_type, tvm::Tensor tvm_tensor) : tvm_tensor_(tvm_tensor) {
-  if (execution_provider_type == LotusIR::kCpuExecutionProvider) {
+TVMGraph::TensorDescriptor::TensorDescriptor(MLDataType type, onnxruntime::ProviderType execution_provider_type, tvm::Tensor tvm_tensor) : tvm_tensor_(tvm_tensor) {
+  if (execution_provider_type == onnxruntime::kCpuExecutionProvider) {
     ctx_.device_type = DLDeviceType::kDLCPU;
     ctx_.device_id = 0;
   } else {
@@ -33,7 +33,7 @@ class IdGenerator {
 };
 
 // This is a special compiler step for the test case that sum two 1-D tensors
-static void Compiler1DAddToTVM(const LotusIR::Node& node, std::unordered_map<const LotusIR::NodeArg*, TVMGraph::TensorDescriptor>& tvm_tensors, LotusIR::ProviderType execution_provider_type, IdGenerator& generator) {
+static void Compiler1DAddToTVM(const onnxruntime::Node& node, std::unordered_map<const onnxruntime::NodeArg*, TVMGraph::TensorDescriptor>& tvm_tensors, onnxruntime::ProviderType execution_provider_type, IdGenerator& generator) {
   LOTUS_ENFORCE(node.OpType() == "Add");
   tvm::Array<tvm::Expr> shape;
   shape.push_back(tvm::var("n1"));
@@ -65,9 +65,9 @@ static void Compiler1DAddToTVM(const LotusIR::Node& node, std::unordered_map<con
                    "T" + std::to_string(generator.GetNext())));
 }
 
-TVMGraph CompilerToTVM(const LotusIR::GraphBase& graph, LotusIR::ProviderType execution_provider_type) {
+TVMGraph CompilerToTVM(const onnxruntime::GraphBase& graph, onnxruntime::ProviderType execution_provider_type) {
   TVMGraph result;
-  std::unordered_map<const LotusIR::NodeArg*, TVMGraph::TensorDescriptor> tvm_tensors;
+  std::unordered_map<const onnxruntime::NodeArg*, TVMGraph::TensorDescriptor> tvm_tensors;
   IdGenerator generator;
   for (auto& node : graph.Nodes()) {
     if (graph.IsSinkNode(node) || graph.IsSourceNode(node)) {
@@ -84,4 +84,4 @@ TVMGraph CompilerToTVM(const LotusIR::GraphBase& graph, LotusIR::ProviderType ex
   result.outputs_.push_back(tvm_tensors[output]);
   return result;
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

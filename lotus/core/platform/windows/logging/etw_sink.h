@@ -19,7 +19,7 @@
 #include "core/common/logging/capture.h"
 #include "core/common/logging/isink.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 
 class EtwSink : public ISink {
@@ -39,6 +39,6 @@ class EtwSink : public ISink {
   static std::atomic_flag have_instance_;
 };
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime
 
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

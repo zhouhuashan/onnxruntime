@@ -3,7 +3,7 @@
 #include "core/graph/function.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // TVMScheduleCreator is the function that create a tvm schedule based on given TVM graph.
 // Different hardware may have different schedule strategy.
@@ -19,8 +19,8 @@ class TVMKernel : public OpKernel {
     auto& node = info.node();
     LOTUS_ENFORCE(node.NodeType() == Node::Type::Fused);
     auto func = node.GetFunctionBody();
-    const LotusIR::GraphBase& func_body = func->Body();
-    //1. compiler the Lotus Graph to tvm graph. This step is common for all hardware, and provided by Lotus framework.
+    const onnxruntime::GraphBase& func_body = func->Body();
+    //1. compiler the onnxruntime Graph to tvm graph. This step is common for all hardware, and provided by onnxruntime framework.
     tvm_graph_ = CompilerToTVM(func_body, node.GetExecutionProviderType());
     //2. create schedule for tvm graph, this step is depends on the execution provider/hardware.
     auto s = S(tvm_graph_);
@@ -99,10 +99,10 @@ class TVMKernel : public OpKernel {
     try {
       evaluate_func_.CallPacked(tvm_args, &rvalue);
     } catch (std::exception ex) {
-      return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "TVM run failed.");
+      return Status(onnxruntime::common::LOTUS, onnxruntime::common::FAIL, "TVM run failed.");
     }
     if (rvalue.type_code() != kNull) {
-      return Status(Lotus::Common::LOTUS, Lotus::Common::FAIL, "TVM return not null");  // TODO: get error code.
+      return Status(onnxruntime::common::LOTUS, onnxruntime::common::FAIL, "TVM return not null");  // TODO: get error code.
     } else {
       return Status::OK();
     }
@@ -120,4 +120,4 @@ class TVMKernel : public OpKernel {
   DLTensor* dl_tensors_;
   int* tvm_type_codes_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

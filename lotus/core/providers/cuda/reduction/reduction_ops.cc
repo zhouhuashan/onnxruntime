@@ -2,9 +2,9 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cuda/math/unary_elementwise_ops_impl.h"
-using namespace Lotus::Common;
-namespace Lotus {
-namespace Cuda {
+using namespace onnxruntime::common;
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_KERNEL_TYPED(name, T)                                          \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                                \
@@ -165,5 +165,5 @@ REGISTER_KERNEL_HFD(ReduceMin)
 REGISTER_KERNEL_HFD(ReduceProd)
 REGISTER_KERNEL_HFD(ReduceSum)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

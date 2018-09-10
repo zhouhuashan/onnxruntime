@@ -24,10 +24,10 @@ ONNX_OPERATOR_SCHEMA(Scaler)
   AttributeProto::FLOATS,
   OPTIONAL);
 */
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 using namespace std;
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
     Scaler,
@@ -67,7 +67,7 @@ ScalerOp<T>::ScalerOp(const OpKernelInfo& info) : OpKernel(info),
 }
 
 template <typename T>
-Common::Status ScalerOp<T>::Compute(OpKernelContext* context) const {
+common::Status ScalerOp<T>::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   Tensor* Y = context->Output(0, x_shape);
@@ -96,5 +96,5 @@ Common::Status ScalerOp<T>::Compute(OpKernelContext* context) const {
   }
   return Status::OK();
 }
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

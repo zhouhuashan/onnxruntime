@@ -6,9 +6,9 @@
 #include "core/framework/ml_value.h"
 
 using namespace std;
-using namespace Lotus;
-using namespace Lotus::Common;
-using namespace Lotus::Logging;
+using namespace onnxruntime;
+using namespace onnxruntime::common;
+using namespace onnxruntime::Logging;
 
 static const std::string MODEL_URI = "testdata/mul_1.pb";
 static const std::string CUSTOM_OP_MODEL_URI = "testdata/foo_1.pb";
@@ -60,7 +60,7 @@ void RunSession(InferenceSession& session_object,
   std::vector<MLValue> fetches;
 
   // Now run
-  Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
+  common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
   if (!st.IsOK()) {
     std::cout << "error in Run() " << st.ErrorMessage() << std::endl;
     exit(1);

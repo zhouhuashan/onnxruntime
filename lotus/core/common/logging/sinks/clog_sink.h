@@ -3,7 +3,7 @@
 #include <iostream>
 #include "core/common/logging/sinks/ostream_sink.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 /// <summary>
 /// A std::clog based ISink
@@ -15,4 +15,4 @@ class CLogSink : public OStreamSink {
   }
 };
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

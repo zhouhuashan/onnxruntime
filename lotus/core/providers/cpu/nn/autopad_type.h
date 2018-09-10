@@ -3,7 +3,7 @@
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 enum class AutoPadType {
   NOTSET = 0,
@@ -27,4 +27,4 @@ inline AutoPadType StringToAutoPadType(const std::string& str) {
     LOTUS_ENFORCE(false, "Unknown AutoPadType String");
   }
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

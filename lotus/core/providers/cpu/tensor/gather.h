@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/common.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class GatherBase {
  protected:
@@ -31,4 +31,4 @@ class Gather final : public OpKernel, public GatherBase {
 
   Status Compute(OpKernelContext* context) const override;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

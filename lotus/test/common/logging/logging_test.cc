@@ -8,8 +8,8 @@
 
 #include "test/common/logging/helpers.h"
 
-using namespace Lotus;
-using namespace ::Lotus::Logging;
+using namespace onnxruntime;
+using namespace ::onnxruntime::Logging;
 using InstanceType = LoggingManager::InstanceType;
 
 // if we pull in the whole 'testing' namespace we get warnings from date.h as both use '_' in places.
@@ -26,12 +26,12 @@ static std::string default_logger_id{"TestFixtureDefaultLogger"};
 class LoggingTestsFixture : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
-  // logger uses kWARNING so we can test filtering of kVERBOSE output,
-  // and filters user data so that can also be tested
+    // logger uses kWARNING so we can test filtering of kVERBOSE output,
+    // and filters user data so that can also be tested
 #if !defined(SKIP_DEFAULT_LOGGER_TESTS)
     const bool filter_user_data = false;
     default_logging_manager_ = std::make_unique<LoggingManager>(
-        std::unique_ptr<ISink>{new CLogSink{}}, Severity::kWARNING, filter_user_data,
+        std::unique_ptr<ISink>{new CLogSink {}}, Severity::kWARNING, filter_user_data,
         InstanceType::Default, &default_logger_id, /*default_max_vlog_level*/ -1);
 #endif
   }
@@ -60,7 +60,7 @@ TEST_F(LoggingTestsFixture, TestWhereMacro) {
 
   std::cout << function << std::endl;
 
-  MockSink *sink_ptr = new MockSink();
+  MockSink* sink_ptr = new MockSink();
 
   EXPECT_CALL(*sink_ptr, SendImpl(testing::_, HasSubstr(logid),
                                   Property(&Capture::Location,
@@ -86,7 +86,7 @@ TEST_F(LoggingTestsFixture, TestDefaultFiltering) {
   const Severity min_log_level = Severity::kWARNING;
   const bool filter_user_data = true;
 
-  MockSink *sink_ptr = new MockSink();
+  MockSink* sink_ptr = new MockSink();
 
   EXPECT_CALL(*sink_ptr, SendImpl(testing::_, HasSubstr(logid), testing::_))  // Property(&Capture::Severity, Ge(min_log_level))))
       .Times(1)
@@ -116,7 +116,7 @@ TEST_F(LoggingTestsFixture, TestLoggerFiltering) {
   const bool default_filter_user_data = true;
   const int default_max_vlog_level = -1;
 
-  MockSink *sink_ptr = new MockSink();
+  MockSink* sink_ptr = new MockSink();
 
   int num_expected_calls = 2;
 #ifdef _DEBUG
@@ -162,7 +162,7 @@ TEST_F(LoggingTestsFixture, TestConditionalMacros) {
   const Severity min_log_level = Severity::kVERBOSE;
   const bool filter_user_data = false;
 
-  MockSink *sink_ptr = new MockSink();
+  MockSink* sink_ptr = new MockSink();
 
   // two logging calls that are true using default logger which won't hit our MockSink
 
@@ -196,7 +196,7 @@ TEST_F(LoggingTestsFixture, TestConditionalMacros) {
 TEST_F(LoggingTestsFixture, TestVLog) {
   const std::string logid{"TestVLog"};
 
-  MockSink *sink_ptr = new MockSink();
+  MockSink* sink_ptr = new MockSink();
 
   // we only get the non-default calls from below in this sink
   EXPECT_CALL(*sink_ptr, SendImpl(testing::_, HasSubstr(logid), testing::_))

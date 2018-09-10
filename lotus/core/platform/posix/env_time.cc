@@ -18,7 +18,7 @@ limitations under the License.
 #include <cstring>
 #include "core/platform/env_time.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 namespace {
 
@@ -79,4 +79,4 @@ double TimeSpecToSeconds(TIME_SPEC* value) {
   return value->tv_sec + value->tv_nsec / (double)1000000000;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

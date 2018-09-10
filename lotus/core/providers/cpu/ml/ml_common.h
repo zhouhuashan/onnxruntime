@@ -3,8 +3,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
-namespace ML {  // name space for onnx.ml operators
+namespace onnxruntime {
+namespace ml {  // name space for onnx.ml operators
 
 enum class OUTPUT_MODE {
   TOPCLASS,
@@ -321,5 +321,5 @@ static inline void write_scores(std::vector<float>& scores, POST_EVAL_TRANSFORM 
   }
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

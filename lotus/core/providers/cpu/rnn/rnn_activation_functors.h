@@ -8,7 +8,7 @@
 #pragma warning(disable : 4100)
 #endif
 #define RNN_UNUSED_PARAMETER LOTUS_ATTRIBUTE_UNUSED = 0
-namespace Lotus {
+namespace onnxruntime {
 namespace Rnn {
 namespace detail {
 
@@ -106,4 +106,4 @@ std::function<T(T, T, T)> GetFuncByName(const std::string& name, const std::stri
 
 }  // namespace detail
 }  // namespace Rnn
-}  // namespace Lotus
+}  // namespace onnxruntime

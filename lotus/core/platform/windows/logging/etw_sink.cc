@@ -19,7 +19,7 @@
 #include <TraceLoggingProvider.h>
 #include <evntrace.h>
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 
 namespace {
@@ -124,6 +124,6 @@ void EtwSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id,
 #undef TRACE_LOG_WRITE
 }
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime
 
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

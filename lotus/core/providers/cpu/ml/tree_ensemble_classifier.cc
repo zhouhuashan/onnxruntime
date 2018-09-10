@@ -114,10 +114,10 @@ std::string("NONE"))
 AttributeProto::FLOATS,
 OPTIONAL);
 */
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 using namespace std;
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 #define ADD_IN_TYPE_TREE_ENSEMBLE_CLASSIFIER_OP(in_type)                                                                                                                                          \
   ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                                                                                                                                              \
@@ -291,7 +291,7 @@ void TreeEnsembleClassifier<T>::Initialize() {
 }
 
 template <typename T>
-Common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) const {
+common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   vector<int64_t> x_dims = x_shape.GetDims();
@@ -429,7 +429,7 @@ Common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
 }
 
 template <typename T>
-Common::Status TreeEnsembleClassifier<T>::ProcessTreeNode(std::unordered_map<int64_t, float>& classes,
+common::Status TreeEnsembleClassifier<T>::ProcessTreeNode(std::unordered_map<int64_t, float>& classes,
                                                           int64_t treeindex,
                                                           const T* x_data,
                                                           int64_t feature_base) const {
@@ -507,5 +507,5 @@ Common::Status TreeEnsembleClassifier<T>::ProcessTreeNode(std::unordered_map<int
   }
   return Status::OK();
 }
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

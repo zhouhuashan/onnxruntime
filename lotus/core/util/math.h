@@ -33,7 +33,7 @@ extern "C" {
 #include "core/framework/data_types.h"
 #include "core/framework/tensor.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 enum StorageOrder {
   UNKNOWN = 0,
@@ -484,4 +484,4 @@ uint16_t floatToHalf(float f);
 float halfToFloat(uint16_t h);
 
 }  // namespace Math
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -7,7 +7,7 @@
 #include "core/util/eigen_common_wrapper.h"
 #include <array>
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     SpaceToDepth,
@@ -87,4 +87,4 @@ Status DepthToSpace<float>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

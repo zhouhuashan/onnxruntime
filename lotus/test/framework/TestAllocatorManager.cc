@@ -4,7 +4,7 @@
 #include "core/providers/cuda/cuda_allocator.h"
 #endif  //  USE_CUDA
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena) {
@@ -25,7 +25,7 @@ static Status RegisterAllocator(std::unordered_map<std::string, AllocatorPtr>& m
 
   auto status = Status::OK();
   if (map.find(allocator_id) != map.end())
-    status = Status(Common::LOTUS, Common::FAIL, "allocator already exists");
+    status = Status(common::LOTUS, common::FAIL, "allocator already exists");
   else {
     if (use_arena)
       map[allocator_id] = std::make_shared<DummyArena>(std::move(allocator));
@@ -69,4 +69,4 @@ AllocatorPtr AllocatorManager::GetAllocator(const std::string& name, const int i
   return entry->second;
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

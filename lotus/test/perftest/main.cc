@@ -1,4 +1,4 @@
-// Lotus dependencies
+// onnxruntime dependencies
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/common/logging/logging.h>
 #include <core/framework/environment.h>
@@ -7,8 +7,7 @@
 #include "command_args_parser.h"
 #include "performance_runner.h"
 
-using namespace LotusIR;
-using namespace Lotus;
+using namespace onnxruntime;
 
 int main(int argc, char* args[]) {
   std::string default_logger_id{"Default"};
@@ -24,13 +23,13 @@ int main(int argc, char* args[]) {
     return -1;
   }
 
-  ::Lotus::PerfTest::PerformanceTestConfig test_config;
-  if (!::Lotus::PerfTest::CommandLineParser::ParseArguments(test_config, argc, args)) {
-    ::Lotus::PerfTest::CommandLineParser::ShowUsage();
+  ::onnxruntime::PerfTest::PerformanceTestConfig test_config;
+  if (!::onnxruntime::PerfTest::CommandLineParser::ParseArguments(test_config, argc, args)) {
+    ::onnxruntime::PerfTest::CommandLineParser::ShowUsage();
     return -1;
   }
 
-  ::Lotus::PerfTest::PerformanceRunner perf_runner(test_config);
+  ::onnxruntime::PerfTest::PerformanceRunner perf_runner(test_config);
   status = perf_runner.Run();
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "Run failed:%s", status.ErrorMessage().c_str());

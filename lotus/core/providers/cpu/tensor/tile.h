@@ -2,7 +2,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 struct Tile final : OpKernel {
@@ -14,4 +14,4 @@ struct Tile final : OpKernel {
  private:
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

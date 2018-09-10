@@ -7,7 +7,7 @@
 namespace onnx {
 class ValueInfoProto;
 }
-namespace Lotus {
+namespace onnxruntime {
 enum class COMPARE_RESULT {
   SUCCESS,
   RESULT_DIFFERS,
@@ -20,4 +20,4 @@ std::pair<COMPARE_RESULT, std::string> CompareMLValue(const MLValue& real, const
 
 //verify if the 'value' matches the 'expected' ValueInfoProto. 'value' is a model output
 std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const onnx::ValueInfoProto& expected, const MLValue& value);
-}  // namespace Lotus
+}  // namespace onnxruntime

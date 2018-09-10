@@ -4,8 +4,8 @@
 #include <string>
 #include "core/common/ml_status.h"
 
-namespace Lotus {
-namespace Common {
+namespace onnxruntime {
+namespace common {
 
 enum StatusCategory {
   NONE = 0,
@@ -96,5 +96,5 @@ inline std::ostream& operator<<(std::ostream& out, const Status& status) {
   return out << status.ToString();
 }
 
-}  // namespace Common
-}  // namespace Lotus
+}  // namespace common
+}  // namespace onnxruntime

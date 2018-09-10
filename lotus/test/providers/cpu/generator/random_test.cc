@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <random>
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(Random, RandomNormal2DDouble) {
@@ -27,7 +27,7 @@ TEST(Random, RandomNormal2DDouble) {
 
   std::vector<double> expected_output(TensorShape(dims).Size());
   std::for_each(expected_output.begin(), expected_output.end(),
-                [&generator, &distribution](double &value) { value = distribution(generator); });
+                [&generator, &distribution](double& value) { value = distribution(generator); });
 
   test.AddOutput<double>("Y", dims, expected_output);
   test.Run();
@@ -61,7 +61,7 @@ void RunRandomNormalLike3DFloat(bool infer_dtype = false) {
 
   std::vector<float> expected_output(TensorShape(dims).Size());
   std::for_each(expected_output.begin(), expected_output.end(),
-                [&generator, &distribution](float &value) { value = distribution(generator); });
+                [&generator, &distribution](float& value) { value = distribution(generator); });
 
   test.AddOutput<float>("Y", dims, expected_output);
 
@@ -97,7 +97,7 @@ TEST(Random, RandomUniform1DFloat) {
 
   std::vector<float> expected_output(TensorShape(dims).Size());
   std::for_each(expected_output.begin(), expected_output.end(),
-                [&generator, &distribution](float &value) { value = distribution(generator); });
+                [&generator, &distribution](float& value) { value = distribution(generator); });
 
   test.AddOutput<float>("Y", dims, expected_output);
 
@@ -129,7 +129,7 @@ void RunRandomUniformLikeTest(bool infer_dtype = false) {
 
   std::vector<double> expected_output(TensorShape(dims).Size());
   std::for_each(expected_output.begin(), expected_output.end(),
-                [&generator, &distribution](double &value) { value = distribution(generator); });
+                [&generator, &distribution](double& value) { value = distribution(generator); });
 
   test.AddOutput<double>("Y", dims, expected_output);
 
@@ -301,4 +301,4 @@ TEST(Random, MultinomialInvalidDtype) {
   test.Run(OpTester::ExpectResult::kExpectFailure, "Output type must be int32 or int64");
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

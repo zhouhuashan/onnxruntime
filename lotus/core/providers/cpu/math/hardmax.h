@@ -5,7 +5,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 template <typename T>
 class Hardmax final : public OpKernel {
  public:
@@ -26,4 +26,4 @@ class Hardmax final : public OpKernel {
  private:
   int axis_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

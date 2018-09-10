@@ -1,9 +1,9 @@
 #include "binary_elementwise_ops.h"
 #include "core/providers/cpu/tensor/utils.h"
 #include "binary_elementwise_ops_impl.h"
-using namespace Lotus::Common;
-namespace Lotus {
-namespace Cuda {
+using namespace onnxruntime::common;
+namespace onnxruntime {
+namespace cuda {
 
 template <>
 Status BinaryElementwise<ShouldNotBroadcast>::Prepare(OpKernelContext* context, BinaryElementwisePreparation* p) const {
@@ -303,5 +303,5 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
 
 BINARY_OP_REGISTER_UZILHFD(Sum, 8)
 BINARY_OP_REGISTER_VERSIONED_UZILHFD(Sum, 6, 7)
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

@@ -16,9 +16,7 @@
 #include "gsl/span"
 #include "onnx/defs/schema.h"
 
-using namespace LotusIR;
-
-namespace Lotus {
+namespace onnxruntime {
 class ExecutionFrame;
 class OpKernelContext;
 class OpKernelWrapper;
@@ -30,11 +28,11 @@ class OpKernel {
   explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {}
   virtual ~OpKernel() = default;
 
-  const LotusIR::Node& Node() const {
+  const onnxruntime::Node& Node() const {
     return op_kernel_info_.node();
   }
 
-  const ::Lotus::KernelDef& KernelDef() const {
+  const ::onnxruntime::KernelDef& KernelDef() const {
     return op_kernel_info_.GetKernelDef();
   }
 
@@ -129,7 +127,7 @@ class OpKernelContext {
   Fence_t OutputFence(int index) const;
 
  protected:
-  LotusIR::NodeIndex GetNodeIndex() const;
+  onnxruntime::NodeIndex GetNodeIndex() const;
   const SessionState& GetSessionState() const;
 
   const MLValue* GetInputMLValue(int index) const;
@@ -178,20 +176,20 @@ using KernelCreateMap = std::multimap<std::string, KernelCreateInfo>;
 template <typename T>
 KernelCreateInfo BuildKernel();
 
-namespace ML {
+namespace ml {
 template <typename T>
 KernelCreateInfo BuildKernel();
-}  // namespace ML
+}  // namespace ml
 
-namespace Cuda {
+namespace cuda {
 template <typename T>
 KernelCreateInfo BuildKernel();
-}  // namespace Cuda
+}  // namespace cuda
 
-namespace MklDnn {
+namespace mkl_dnn {
 template <typename T>
 KernelCreateInfo BuildKernel();
-}  // namespace MklDnn
+}  // namespace mkl_dnn
 
 // Naming convention for operator kernel classes
 #define ONNX_OPERATOR_KERNEL_CLASS_NAME(provider, domain, ver, name) \
@@ -292,4 +290,4 @@ KernelCreateInfo BuildKernel();
         [](const OpKernelInfo& info) -> OpKernel* { return new __VA_ARGS__(info); });                              \
   }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

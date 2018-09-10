@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/tensor/concat.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class Concat final : public CudaKernel, public ConcatBase {
  public:
@@ -12,5 +12,5 @@ class Concat final : public CudaKernel, public ConcatBase {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

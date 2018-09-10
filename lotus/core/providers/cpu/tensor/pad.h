@@ -1,7 +1,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class PadBase {
  protected:
@@ -52,4 +52,4 @@ struct Pad final : public OpKernel, public PadBase {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

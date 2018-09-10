@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/autopad_type.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class PoolBase {
  protected:
@@ -150,4 +150,4 @@ class PoolBase {
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

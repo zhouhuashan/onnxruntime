@@ -4,8 +4,8 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 template <typename AttrType, typename TargetType>
 class DictVectorizerOp final : public OpKernel {
  public:
@@ -14,7 +14,7 @@ class DictVectorizerOp final : public OpKernel {
     //We must support that, otherwise some tests will be break.
     LOTUS_ENFORCE(info.GetAttrs(std::is_same<AttrType, std::string>::value ? "string_vocabulary" : "int64_vocabulary", vocabulary_).IsOK());
   }
-  Common::Status Compute(OpKernelContext* ctx) const override {
+  common::Status Compute(OpKernelContext* ctx) const override {
     auto map = ctx->Input<std::map<AttrType, TargetType> >(0);
     std::vector<int64_t> dims{1, static_cast<int64_t>(vocabulary_.size())};
     auto Y = ctx->Output(0, TensorShape(dims));
@@ -34,6 +34,6 @@ class DictVectorizerOp final : public OpKernel {
   std::vector<AttrType> vocabulary_;
 };
 
-}  // namespace ML
+}  // namespace ml
 
-}  // namespace Lotus
+}  // namespace onnxruntime

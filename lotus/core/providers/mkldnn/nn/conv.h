@@ -2,17 +2,17 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/conv.h"
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 template <typename T>
-class Conv final : public Lotus::Conv<T> {
+class Conv final : public onnxruntime::Conv<T> {
  public:
-  Conv(const OpKernelInfo& info) : Lotus::Conv<T>(info) {
+  Conv(const OpKernelInfo& info) : onnxruntime::Conv<T>(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 
  private:
 };
-}  // namespace MklDnn
-}  // namespace Lotus
+}  // namespace mkl_dnn
+}  // namespace onnxruntime

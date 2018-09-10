@@ -6,6 +6,7 @@ import numpy as np
 import onnxruntime as onnxrt
 from onnxruntime.python._pybind_state import onnxruntime_ostream_redirect
 
+
 class TestInferenceSession(unittest.TestCase):
     
     def get_name(self, name):
@@ -67,6 +68,10 @@ class TestInferenceSession(unittest.TestCase):
         res = sess.run([output_name], {input_name: x})
         output_expected = np.array([[5.0], [11.0], [17.0]], dtype=np.float32)
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
+    def testRunDevice(self):
+        device = onnxrt.get_device()
+        self.assertTrue('CPU' in device or 'GPU' in device)
 
     def testRunModelSymbolicInput(self):
         sess = onnxrt.InferenceSession(self.get_name("matmul_2.pb"))
@@ -244,7 +249,7 @@ class TestInferenceSession(unittest.TestCase):
         with onnxruntime_ostream_redirect(stdout=True, stderr=True):
           sess = onnxrt.InferenceSession(self.get_name("matmul_1.pb"), sess_options=so)
           output = sys.stderr.getvalue()
-          self.assertTrue('[I:Lotus:InferenceSession, inference_session' in output)
+          self.assertTrue('[I:onnxruntime:InferenceSession, inference_session' in output)
 
     def testConfigureRunVerbosityLevel(self):
         ro = onnxrt.RunOptions()
@@ -257,7 +262,7 @@ class TestInferenceSession(unittest.TestCase):
             x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
             sess.run([], {'X': x}, run_options=ro)
             output = sys.stderr.getvalue()
-            self.assertTrue('[I:Lotus:testtag123,' in output)
+            self.assertTrue('[I:onnxruntime:testtag123,' in output)
 
     def testProfilerWithSessionOptions(self):
         so = onnxrt.SessionOptions()
@@ -335,6 +340,12 @@ class TestInferenceSession(unittest.TestCase):
         output_shape = sess.get_outputs()[0].shape
         self.assertEqual(output_shape, [1, 1])
         
+        # Array
+        x = np.array([['4']])
+        res = sess.run([output_name], {input_name: x})
+        output_expected = np.array([[3]], dtype=np.int64)
+        np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
+
         # Python type
         x = np.array(['4'])
         res = sess.run([output_name], {input_name: x})

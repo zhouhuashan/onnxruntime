@@ -17,11 +17,12 @@
 #include "core/framework/mlvalue_name_idx_map.h"
 #include "core/graph/graph.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class ExecutionProviders;
 class KernelDef;
 class OpKernel;
+class TaskThreadPool;
 struct SequentialExecutionPlan;
 struct MemoryPatternGroup;
 
@@ -34,15 +35,15 @@ class SessionState {
   }
 
   // graph
-  void SetGraph(const LotusIR::Graph& graph);
-  const LotusIR::Graph* GetGraph() const;
+  void SetGraph(const onnxruntime::Graph& graph);
+  const onnxruntime::Graph* GetGraph() const;
 
   // kernels
   // Get kernel for specified node.
   // It should called right before graph execution only.
-  const OpKernel* GetKernel(LotusIR::NodeIndex node_id) const;
+  const OpKernel* GetKernel(onnxruntime::NodeIndex node_id) const;
 
-  void AddKernel(LotusIR::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel);
+  void AddKernel(onnxruntime::NodeIndex node_id, std::unique_ptr<OpKernel> p_kernel);
 
   const ExecutionProviders& GetExecutionProviders() const noexcept { return execution_providers_; }
 
@@ -111,7 +112,7 @@ class SessionState {
   bool GetEnableMemoryPattern() const;
 
   struct NodeInfo {
-    NodeInfo(size_t index0, const LotusIR::Node* p_node0, const KernelCreateInfo* kci0)
+    NodeInfo(size_t index0, const onnxruntime::Node* p_node0, const KernelCreateInfo* kci0)
         : index(index0),
           p_node(p_node0),
           kci(kci0) {
@@ -119,13 +120,13 @@ class SessionState {
     NodeInfo() = default;
 
     size_t index;
-    const LotusIR::Node* p_node = nullptr;
+    const onnxruntime::Node* p_node = nullptr;
     const KernelCreateInfo* kci = nullptr;
   };
 
   using NameNodeInfoMapType = std::unordered_map<std::string, std::vector<NodeInfo>>;
   void AddInputNameToNodeInfoMapping(const std::string& input_name, const NodeInfo& node_info);
-  Common::Status GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const;
+  common::Status GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const;
   const NameNodeInfoMapType& GetInputNodeInfoMap() const;
 
   void AddOutputNameToNodeInfoMapping(const std::string& output_name, const NodeInfo& node_info);
@@ -135,19 +136,22 @@ class SessionState {
   /// @param index Index of Node containing subgraph
   /// @param attribute_name Name of attribute containing the subgraph GraphProto
   /// @param session_state SessionState for subgraph execution
-  void AddSubgraphSessionState(LotusIR::NodeIndex index, const std::string& attribute_name,
+  void AddSubgraphSessionState(onnxruntime::NodeIndex index, const std::string& attribute_name,
                                const SessionState& session_state);
 
   /// Return SessionState for the given Node index and attribute name if found.
-  const SessionState* GetSubgraphSessionState(LotusIR::NodeIndex index, const std::string& attribute_name) const;
+  const SessionState* GetSubgraphSessionState(onnxruntime::NodeIndex index, const std::string& attribute_name) const;
+
+  TaskThreadPool* GetThreadPool() const { return thread_pool_; }
+  void SetThreadPool(TaskThreadPool* p_pool) { thread_pool_ = p_pool; }
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SessionState);
 
   // cache of the constructed kernels to avoid spending construction
   // time per executor
-  std::unordered_map<LotusIR::NodeIndex, std::unique_ptr<OpKernel>> session_kernels_;
-  const LotusIR::Graph* p_graph_ = nullptr;  // owned by the Model inside an InferenceSession
+  std::unordered_map<onnxruntime::NodeIndex, std::unique_ptr<OpKernel>> session_kernels_;
+  const onnxruntime::Graph* p_graph_ = nullptr;  // owned by the Model inside an InferenceSession
 
   const ExecutionProviders& execution_providers_;  // owned by InferenceSession
   MLValueNameIdxMap mlvalue_name_idx_map_;
@@ -172,8 +176,9 @@ class SessionState {
   // subgraph SessionState. entry for node containing subgraph, with value containing attribute:SessionState pair
   // as a node may contain multiple subgraphs (e.g. 'If' has one for both the 'then' and 'else' branches).
   using SubgraphSessionStateMap =
-      std::unordered_map<LotusIR::NodeIndex,
+      std::unordered_map<onnxruntime::NodeIndex,
                          std::unordered_map<std::string, gsl::not_null<const SessionState*>>>;
   SubgraphSessionStateMap subgraph_session_states_;
+  TaskThreadPool* thread_pool_ = nullptr;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

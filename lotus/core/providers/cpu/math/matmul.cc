@@ -4,7 +4,7 @@
 #include "core/util/math_cpuonly.h"
 #include "matmul_helper.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     MatMul,
@@ -41,4 +41,4 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

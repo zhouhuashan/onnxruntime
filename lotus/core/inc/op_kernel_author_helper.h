@@ -13,12 +13,12 @@
 
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
-namespace Lotus {
+namespace onnxruntime {
 using MLConstStringParam = const char*;
 
 class MLOpKernelContext;
 
-// TODO - Consider using this directly in Lotus and merging error handling
+// TODO - Consider using this directly in onnxruntime and merging error handling
 class MLStatusException : public std::exception {
  public:
   MLStatusException(const MLStatus& status) : status_(status) {
@@ -305,7 +305,7 @@ class MLOpKernelInfo : public MLOperatorAttributes {
 
 class MLShapeInferenceContext : public MLOperatorAttributes {
  public:
-  MLShapeInferenceContext(IMLShapeInferenceContext* impl) : impl_(impl), MLOperatorAttributes(impl) {}
+  MLShapeInferenceContext(IMLShapeInferenceContext* impl) : MLOperatorAttributes(impl), impl_(impl) {}
 
   // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
   const IMLShapeInferenceContext* GetInterface() const noexcept {
@@ -352,7 +352,7 @@ class MLShapeInferenceContext : public MLOperatorAttributes {
 
 class MLTypeInferenceContext : public MLOperatorAttributes {
  public:
-  MLTypeInferenceContext(IMLTypeInferenceContext* impl) : impl_(impl), MLOperatorAttributes(impl) {}
+  MLTypeInferenceContext(IMLTypeInferenceContext* impl) : MLOperatorAttributes(impl),impl_(impl) {}
 
   // For cases of interop where the caller needs to pass the unwrapped class across a boundary.
   const IMLTypeInferenceContext* GetInterface() const noexcept {
@@ -587,4 +587,4 @@ class MLOpKernel : public IMLOpKernel, public T {
   using T::Compute;
 };
 
-} // namespace Lotus
+} // namespace onnxruntime

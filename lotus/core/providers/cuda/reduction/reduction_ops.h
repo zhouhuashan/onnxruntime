@@ -2,8 +2,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/reduction/reduction_ops.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <bool allow_multi_axes>
 class ReduceKernel : public CudaKernel, public ReduceKernelBase<allow_multi_axes> {
@@ -107,5 +107,5 @@ class ReduceSum final : public ReduceKernel<true> {
   }
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

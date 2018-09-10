@@ -10,7 +10,7 @@
 #include "core/framework/data_types.h"
 #include "core/framework/allocator.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class KernelDefBuilder;
 
 typedef std::map<size_t, MemType> MemTypeMap;
@@ -36,7 +36,7 @@ class KernelDef {
     *end = op_since_version_end_;
   }
 
-  LotusIR::ProviderType Provider() const {
+  onnxruntime::ProviderType Provider() const {
     return provider_type_;
   }
 
@@ -60,7 +60,7 @@ class KernelDef {
     return output_memory_type_args_;
   }
 
-  // legacy interface for winml, should not be used in Lotus
+  // legacy interface for winml, should not be used in onnxruntime
   const MemTypeMap& MemoryType() const {
     return output_memory_type_args_;
   }
@@ -84,7 +84,7 @@ class KernelDef {
   int op_since_version_end_ = INT_MAX;
 
   // The operator domain supported by <*this> kernel.
-  // Default to 'LotusIR::kOnnxDomain'.
+  // Default to 'onnxruntime::kOnnxDomain'.
   // Please note the behavior of std::string("") and std::string() are different
   std::string op_domain_;
 
@@ -132,7 +132,7 @@ class KernelDefBuilder {
 
   // The start and end version should be set accordingly per version range for
   // each domain registered in OpSchemaRegistry::DomainToVersionRange in
-  // \Lotus\lotus\core\graph\op.h as below.
+  // \onnxruntime\lotus\core\graph\op.h as below.
   // Key: domain. Value: <lowest version, highest version> pair.
   // std::unordered_map<std::string, std::pair<int, int>> map_;
   KernelDefBuilder& SinceVersion(int since_version_start, int since_version_end) {
@@ -142,7 +142,7 @@ class KernelDefBuilder {
   }
 
   // The execution provider type of the kernel.
-  KernelDefBuilder& Provider(LotusIR::ProviderType provider_type) {
+  KernelDefBuilder& Provider(onnxruntime::ProviderType provider_type) {
     kernel_def_->provider_type_ = provider_type;
     return *this;
   }
@@ -208,7 +208,7 @@ class KernelDefBuilder {
     return *this;
   }
 
-  // legacy interface for winml, should not be used in Lotus
+  // legacy interface for winml, should not be used in onnxruntime
   template <MemType T>
   KernelDefBuilder& MemoryType(int output_index) {
     kernel_def_->output_memory_type_args_.insert(std::make_pair(output_index, T));
@@ -231,4 +231,4 @@ class KernelDefBuilder {
   std::unique_ptr<KernelDef> kernel_def_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

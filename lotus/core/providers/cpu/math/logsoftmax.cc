@@ -5,7 +5,7 @@
 #include "core/providers/cpu/math/softmax_shared.h"
 #include "core/util/math.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <>
 Status LogSoftmax<float>::Compute(OpKernelContext* ctx) const {
@@ -38,4 +38,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     LogSoftmax<float>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

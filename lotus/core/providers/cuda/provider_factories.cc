@@ -2,7 +2,7 @@
 
 #include "core/providers/cuda/cuda_execution_provider.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // Create cuda execution provider
 std::unique_ptr<IExecutionProvider>
@@ -10,4 +10,4 @@ CreateCUDAExecutionProvider(const CUDAExecutionProviderInfo& info) {
   return std::make_unique<CUDAExecutionProvider>(info);
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

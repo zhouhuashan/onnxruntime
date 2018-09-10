@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <sstream>
 
-namespace Lotus {
+namespace onnxruntime {
 
 void* CPUAllocator::Alloc(size_t size) {
   if (size <= 0)
@@ -27,4 +27,4 @@ std::ostream& operator<<(std::ostream& out, const AllocatorInfo& info) {
   return (out << info.ToString());
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

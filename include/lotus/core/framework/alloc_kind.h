@@ -1,8 +1,8 @@
 #pragma once
 #include <iosfwd>
 
-namespace Lotus {
-// The ML-Values fall into the following categories with respect to their
+namespace onnxruntime {
+// The ml-Values fall into the following categories with respect to their
 // memory management:
 //   - inference inputs: owned (allocated and freed) by caller, and is by
 //     default read-only by the runtime.
@@ -27,4 +27,4 @@ enum class AllocKind {
 };
 
 std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind);
-}  // namespace Lotus
+}  // namespace onnxruntime

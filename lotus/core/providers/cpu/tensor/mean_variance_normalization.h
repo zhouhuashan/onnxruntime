@@ -5,7 +5,7 @@
 #include "core/util/math_cpuonly.h"
 
 #include "gsl/gsl_util"
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class MeanVarianceNormalization final : public OpKernel {
@@ -20,7 +20,7 @@ class MeanVarianceNormalization final : public OpKernel {
     const auto dims = X->Shape().GetDims();
 
     if (dims.size() < 4) {
-      return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+      return Status(common::LOTUS, common::INVALID_ARGUMENT,
                     "Input is expected to have four dimensions corresponding to [N,C,H,W]");
     }
 
@@ -91,4 +91,4 @@ class MeanVarianceNormalization final : public OpKernel {
   int64_t normalize_variance_;
 };
 
-}  //namespace Lotus
+}  //namespace onnxruntime

@@ -21,7 +21,7 @@ limitations under the License.
 #include <numeric>
 #include <algorithm>
 
-namespace Lotus {
+namespace onnxruntime {
 
 namespace {
 
@@ -114,4 +114,4 @@ double TimeSpecToSeconds(TIME_SPEC* value) {
   return *value / (double)freq.QuadPart;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

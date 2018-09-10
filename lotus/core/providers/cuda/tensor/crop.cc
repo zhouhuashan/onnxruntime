@@ -1,8 +1,8 @@
 #include "crop.h"
 #include "crop_impl.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                  \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
@@ -65,5 +65,5 @@ Status Crop<T>::ComputeInternal(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

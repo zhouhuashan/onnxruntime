@@ -15,9 +15,9 @@
 #include "core/providers/mkldnn/mkldnn_execution_provider.h"
 #endif
 
-using namespace ::Lotus::Logging;
+using namespace ::onnxruntime::Logging;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 // Check functions for tensor types
@@ -125,8 +125,8 @@ OpTester::~OpTester() {
 #endif
 }
 
-void OpTester::FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>&,
-                                       const std::vector<LotusIR::NodeArg*>& output_defs,
+void OpTester::FillFeedsAndOutputNames(const std::vector<onnxruntime::NodeArg*>&,
+                                       const std::vector<onnxruntime::NodeArg*>& output_defs,
                                        std::unordered_map<std::string, MLValue>& feeds,
                                        std::vector<std::string>& output_names) {
   for (auto& output : output_defs) {
@@ -162,14 +162,14 @@ void OpTester::SetOutputRelErr(const char* name, float v) {
   it->relative_error_ = optional<float>(v);
 }
 
-void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string, LotusIR::ProviderType provider_type) {
+void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string, onnxruntime::ProviderType provider_type) {
   try {
 #if _DEBUG
     run_called_ = true;
 #endif
     // Generate the input & output def lists
-    std::vector<LotusIR::NodeArg*> input_defs;
-    std::vector<LotusIR::NodeArg*> output_defs;
+    std::vector<onnxruntime::NodeArg*> input_defs;
+    std::vector<onnxruntime::NodeArg*> output_defs;
 
     for (auto& data : input_data_) {
       input_defs.push_back(&data.def_);
@@ -186,9 +186,9 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     // Create a simple model
     std::unordered_map<std::string, int> domain_to_version;
     domain_to_version[domain_] = opset_version_;
-    auto p_model = std::make_unique<LotusIR::Model>("test", false, ModelMetaData(),
-                                                    local_schema_registries, domain_to_version);
-    LotusIR::Graph& graph = p_model->MainGraph();
+    auto p_model = std::make_unique<onnxruntime::Model>("test", false, ModelMetaData(),
+                                                        local_schema_registries, domain_to_version);
+    onnxruntime::Graph& graph = p_model->MainGraph();
     auto& node = *graph.AddNode("node1", op_, op_, input_defs, output_defs, nullptr, domain_);
 
     // Add the attributes if any
@@ -226,13 +226,13 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     for (auto& custom_session_registry : custom_session_registries_)
       session_object.RegisterCustomRegistry(custom_session_registry);
 
-    if (provider_type == LotusIR::kCudaExecutionProvider) {
+    if (provider_type == onnxruntime::kCudaExecutionProvider) {
 #ifdef USE_CUDA
       CUDAExecutionProviderInfo epi;
       epi.device_id = 0;
       EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(epi)).IsOK());
 #endif
-    } else if (provider_type == LotusIR::kMklDnnExecutionProvider) {
+    } else if (provider_type == onnxruntime::kMklDnnExecutionProvider) {
 #ifdef USE_MKLDNN
       MKLDNNExecutionProviderInfo epi;
       EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi)).IsOK());
@@ -288,7 +288,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     for (auto& expected_data : output_data_) {
       MLValue& mlvalue = fetches[idx];
       if (mlvalue.Fence())
-        mlvalue.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, 0);
+        mlvalue.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, 0);
 
       if (expected_data.def_.Exists()) {  // optional outputs won't exist
         if (expected_data.data_.IsTensor()) {
@@ -311,15 +311,15 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
 }
 
 void OpTester::RunOnCpuAndCuda(ExpectResult expect_result, const std::string& expected_failure_string) {
-  Run(expect_result, expected_failure_string, LotusIR::kCpuExecutionProvider);
+  Run(expect_result, expected_failure_string, onnxruntime::kCpuExecutionProvider);
 #ifdef USE_CUDA
-  Run(expect_result, expected_failure_string, LotusIR::kCudaExecutionProvider);
+  Run(expect_result, expected_failure_string, onnxruntime::kCudaExecutionProvider);
 #endif
 }
 
 void OpTester::RunOnMklDnn(ExpectResult expect_result, const std::string& expected_failure_string) {
 #ifdef USE_MKLDNN
-  Run(expect_result, expected_failure_string, LotusIR::kMklDnnExecutionProvider);
+  Run(expect_result, expected_failure_string, onnxruntime::kMklDnnExecutionProvider);
 #else
   UNUSED_PARAMETER(expect_result);
   UNUSED_PARAMETER(expected_failure_string);
@@ -327,4 +327,4 @@ void OpTester::RunOnMklDnn(ExpectResult expect_result, const std::string& expect
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

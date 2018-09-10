@@ -1,6 +1,6 @@
 #include "core/providers/cpu/nn/conv_impl.h"
 
-namespace Lotus {
+namespace onnxruntime {
 ONNX_CPU_OPERATOR_KERNEL(
     Conv,
     1,

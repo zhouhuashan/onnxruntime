@@ -1,7 +1,7 @@
 #include "core/providers/cpu/ml/cast_map.h"
 #include <algorithm>
 #include <gsl/span>
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
 namespace {
 template <typename TCastFrom, typename TCastTo>
@@ -37,8 +37,8 @@ std::string Cast<float, std::string>(const float& from) {
   return std::to_string(from);
 }
 }  // namespace
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     CastMap,
@@ -140,5 +140,5 @@ Status CastMap::ComputeImpl(OpKernelContext& context, TTo pad_value) const {
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

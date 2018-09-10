@@ -10,7 +10,7 @@
 #include "core/framework/tensor.h"
 #include "core/graph/graph.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class SessionState;
 class MLValuePatternPlanner;
@@ -77,7 +77,7 @@ class ExecutionFrame {
   }
 
   // Index to the first argument of the given node.
-  int GetFirstArgIndex(LotusIR::NodeIndex index) const {
+  int GetFirstArgIndex(onnxruntime::NodeIndex index) const {
     LOTUS_ENFORCE(index < node_offsets_.size());
     return node_offsets_[index];
   }
@@ -97,7 +97,7 @@ class ExecutionFrame {
 
   Status ReleaseMLValue(int mlvalue_idx);
 
-  const ::Lotus::SessionState& SessionState() const {
+  const ::onnxruntime::SessionState& SessionState() const {
     return session_state_;
   }
 
@@ -113,7 +113,7 @@ class ExecutionFrame {
   // This method is not thread safe!
   void Release(int offset);
 
-  Common::Status AllocateAsPerAllocationPlan(int mlvalue_index,
+  common::Status AllocateAsPerAllocationPlan(int mlvalue_index,
                                              const MLValueAllocationParameters& parameters);
 
   Status AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_index,
@@ -122,12 +122,12 @@ class ExecutionFrame {
                                                   const TensorShape& shape,
                                                   bool create_fence);
 
-  void Init(const LotusIR::Graph& graph,
+  void Init(const onnxruntime::Graph& graph,
             const std::unordered_map<std::string, MLValue>& feeds,
             const std::vector<std::string>& output_names,
             const std::vector<MLValue>& fetches);
 
-  void SetupNodeArg(const LotusIR::NodeArg* arg);
+  void SetupNodeArg(const onnxruntime::NodeArg* arg);
 
   Status AllocateTensorWithPreAllocateBufferHelper(MLValue* p_mlvalue,
                                                    void* pBuffer,
@@ -159,7 +159,7 @@ class ExecutionFrame {
 
   std::unordered_map<std::string, int> value_name_to_index_;
 
-  const ::Lotus::SessionState& session_state_;
+  const ::onnxruntime::SessionState& session_state_;
 
   // If we already have cached memory pattern on these input shapes
   // Use this mem pattern that create a big chunk for all the internal
@@ -177,4 +177,4 @@ class ExecutionFrame {
   // Big chunks on different locations that will be used by mem_pattern.
   std::map<AllocatorInfo, BufferUniquePtr> buffers_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,7 +1,7 @@
 #include "core/providers/cpu/nn/lp_norm.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 ONNX_CPU_OPERATOR_KERNEL(
     LpNormalization,
     1,
@@ -65,4 +65,4 @@ Status LpNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
 
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,12 +1,12 @@
 #include "core/framework/customregistry.h"
-namespace Lotus {
+namespace onnxruntime {
 
-Common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator) {
+common::Status CustomRegistry::RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator) {
   return Register(kernel_def_builder, kernel_creator);
 }
 
-Common::Status CustomRegistry::RegisterCustomKernel(KernelCreateInfo& create_info) {
+common::Status CustomRegistry::RegisterCustomKernel(KernelCreateInfo& create_info) {
   return Register(create_info);
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

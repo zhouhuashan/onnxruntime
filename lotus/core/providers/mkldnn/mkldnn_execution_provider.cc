@@ -5,8 +5,8 @@
 #include "core/framework/memcpy.h"
 #include "core/framework/kernel_registry.h"
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 
 ONNX_OPERATOR_KERNEL_EX(
     MemcpyFromHost,
@@ -24,7 +24,7 @@ ONNX_OPERATOR_KERNEL_EX(
     KernelDefBuilder().OutputMemoryType<kMemTypeCPUOutput>(0).TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
     Memcpy);
 
-}  // namespace MklDnn
+}  // namespace mkl_dnn
 
 MKLDNNExecutionProvider::MKLDNNExecutionProvider(const MKLDNNExecutionProviderInfo& /*info*/) {
   DeviceAllocatorRegistrationInfo default_allocator_info({kMemTypeDefault,
@@ -56,7 +56,7 @@ Status MKLDNNExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const
   return Status::OK();
 }
 
-namespace MklDnn {
+namespace mkl_dnn {
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kMklDnnExecutionProvider, kOnnxDomain, 1, Conv);
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kMklDnnExecutionProvider, kOnnxDomain, 7, Gemm);
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kMklDnnExecutionProvider, kOnnxDomain, 1, MemcpyFromHost);
@@ -79,10 +79,10 @@ void RegisterMKLDNNKernels(std::function<void(KernelCreateInfo&&)> fn) {
   //fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kMklDnnExecutionProvider, kOnnxDomain, 8, float, MaxPool)>());
   //fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kMklDnnExecutionProvider, kOnnxDomain, 1, float, GlobalMaxPool)>());
 }
-}  // namespace MklDnn
+}  // namespace mkl_dnn
 
 std::shared_ptr<KernelRegistry> MKLDNNExecutionProvider::GetKernelRegistry() const {
-  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(Lotus::MklDnn::RegisterMKLDNNKernels);
+  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(onnxruntime::mkl_dnn::RegisterMKLDNNKernels);
   return kernel_registry;
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

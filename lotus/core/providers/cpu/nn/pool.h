@@ -2,7 +2,7 @@
 
 #include "core/providers/cpu/nn/pool_base.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class LpPool;
 
@@ -36,4 +36,4 @@ class Pool final : public OpKernel, public PoolBase {
   PoolProcessContext pool_context_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

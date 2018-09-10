@@ -3,17 +3,17 @@
 #include "test/providers/provider_test_utils.h"
 #include "test/providers/cpu/reduction/reduction_test_cases.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 template <typename OutT>
-void TestReduceOp(const std::string &op,
-                  const std::vector<int64_t> &input_dims,
-                  const std::vector<float> &data,
-                  const std::vector<int64_t> &axes,
+void TestReduceOp(const std::string& op,
+                  const std::vector<int64_t>& input_dims,
+                  const std::vector<float>& data,
+                  const std::vector<int64_t>& axes,
                   int64_t keepdims,
-                  const std::vector<int64_t> &expected_dims,
-                  const std::vector<OutT> &expected_data)
+                  const std::vector<int64_t>& expected_dims,
+                  const std::vector<OutT>& expected_data)
 
 {
   OpTester test(op.c_str());
@@ -30,12 +30,12 @@ void TestReduceOp(const std::string &op,
 }
 
 TEST(ReductionOpTest, ReductionVariationTest) {
-  const std::vector<float> &input_data = testcases.input_data;
-  const std::vector<int64_t> &input_dims = testcases.input_dims;
-  OpAttributesResultMap &opAttributesResultMap = testcases.map_op_attribute_expected;
+  const std::vector<float>& input_data = testcases.input_data;
+  const std::vector<int64_t>& input_dims = testcases.input_dims;
+  OpAttributesResultMap& opAttributesResultMap = testcases.map_op_attribute_expected;
 
   for (auto a : opAttributesResultMap) {
-    const ReductionAttribute &attributes = std::get<0>(a.second);
+    const ReductionAttribute& attributes = std::get<0>(a.second);
     const std::vector<int64_t> expected_dims = std::get<1>(a.second);
     if (a.first.compare("ArgMax") == 0 || a.first.compare("ArgMin") == 0) {
       std::vector<int64_t> expected_values;
@@ -121,14 +121,14 @@ TEST(ReductionOpTest, ReduceL1_int32) {
   OpTester test("ReduceL1");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {1, 2, 1}, {33, 45});
   test.Run();
 }
@@ -205,14 +205,14 @@ TEST(ReductionOpTest, ReduceL2_int32) {
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)0);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {2}, {15, 20});
   test.Run();
 }
@@ -308,14 +308,14 @@ TEST(ReductionOpTest, ReduceLogSumExp_int32) {
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {1, 2, 1}, {10, 12});
   test.Run();
 }
@@ -392,14 +392,14 @@ TEST(ReductionOpTest, ReduceMax_int32) {
   test.AddAttribute("axes", std::vector<int64_t>{1, 2});
   test.AddAttribute("keepdims", (int64_t)1);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {3, 1, 1}, {4, 8, 12});
   test.Run();
 }
@@ -476,14 +476,14 @@ TEST(ReductionOpTest, ReduceMean_int32) {
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {10, 20,
-                        30, 40,
+                         {10, 20,
+                          30, 40,
 
-                        50, 60,
-                        70, 80,
+                          50, 60,
+                          70, 80,
 
-                        90, 100,
-                        110, 120});
+                          90, 100,
+                          110, 120});
   test.AddOutput<int32_t>("reduced", {1, 2, 1}, {55, 75});
   test.Run();
 }
@@ -560,14 +560,14 @@ TEST(ReductionOpTest, ReduceMin_int32) {
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {1, 2, 1}, {1, 3});
   test.Run();
 }
@@ -594,14 +594,14 @@ TEST(ReductionOpTest, ReduceSum_int32) {
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {1, 2, 1}, {33, 45});
   test.Run();
 }
@@ -672,14 +672,14 @@ TEST(ReductionOpTest, ReduceSumSquare_int32) {
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddAttribute("keepdims", (int64_t)1);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {1, 2, 1}, {247, 403});
   test.Run();
 }
@@ -803,14 +803,14 @@ TEST(ReductionOpTest, ReduceProd_int32) {
   OpTester test("ReduceProd");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int32_t>("reduced", {1, 2, 1}, {5400, 88704});
   test.Run();
 }
@@ -840,14 +840,14 @@ TEST(ReductionOpTest, ArgMax_int32) {
   test.AddAttribute("axis", (int64_t)1);
   test.AddAttribute("keepdims", (int64_t)1);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
+                         {1, 2,
+                          3, 4,
 
-                        5, 6,
-                        7, 8,
+                          5, 6,
+                          7, 8,
 
-                        9, 10,
-                        11, 12});
+                          9, 10,
+                          11, 12});
   test.AddOutput<int64_t>("reduced", {3, 1, 2},
                           {1, 1,
                            1, 1,
@@ -892,14 +892,14 @@ TEST(ReductionOpTest, ArgMin_int32) {
   test.AddAttribute("axis", (int64_t)0);
   test.AddAttribute("keepdims", (int64_t)0);
   test.AddInput<int32_t>("data", {3, 2, 2},
-                       {1, 2,
-                        3, 4,
-                         
-                        5, 6,
-                        7, 8,
-                         
-                        9, 10,
-                        11, 12});
+                         {1, 2,
+                          3, 4,
+
+                          5, 6,
+                          7, 8,
+
+                          9, 10,
+                          11, 12});
   test.AddOutput<int64_t>("reduced", {2, 2},
                           {0, 0,
                            0, 0});
@@ -907,4 +907,4 @@ TEST(ReductionOpTest, ArgMin_int32) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

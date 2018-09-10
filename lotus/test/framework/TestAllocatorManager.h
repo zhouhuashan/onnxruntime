@@ -1,11 +1,11 @@
 #pragma once
 #include "core/framework/arena.h"
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 class AllocatorManager {
  public:
   // the allocator manager is a just for onnx runner to allocate space for input/output tensors.
-  // Lotus session will use the allocator owned by execution provider.
+  // onnxruntime session will use the allocator owned by execution provider.
   static AllocatorManager& Instance();
 
   /**
@@ -24,4 +24,4 @@ class AllocatorManager {
   std::unordered_map<std::string, AllocatorPtr> map_;
 };
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

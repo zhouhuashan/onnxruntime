@@ -8,33 +8,33 @@
 using namespace onnx;
 using namespace std;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 using namespace ModelBuilder;
 
 class ShapeInferenceTest : public ::testing::Test {
  protected:
-  LotusIR::Model model_;
+  onnxruntime::Model model_;
   int node_count_;
-  std::unordered_map<string, std::unique_ptr<LotusIR::NodeArg>> name_to_arg_;
+  std::unordered_map<string, std::unique_ptr<onnxruntime::NodeArg>> name_to_arg_;
 
  public:
   ShapeInferenceTest() : model_("Test"), node_count_(0) {}
 
   void Input(const std::string& name, const Type& type) {
-    name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, &type.value);
+    name_to_arg_[name] = std::make_unique<onnxruntime::NodeArg>(name, &type.value);
   }
 
-  LotusIR::NodeArg* Arg(const std::string& name) {
+  onnxruntime::NodeArg* Arg(const std::string& name) {
     if (name_to_arg_.count(name) == 0)
-      name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, nullptr);
+      name_to_arg_[name] = std::make_unique<onnxruntime::NodeArg>(name, nullptr);
     return name_to_arg_[name].get();
   }
 
-  LotusIR::Node* Node(const std::string& op, const std::string& input, const std::string& output) {
-    std::vector<LotusIR::NodeArg*> input_args({Arg(input)});
-    std::vector<LotusIR::NodeArg*> output_args({Arg(output)});
+  onnxruntime::Node* Node(const std::string& op, const std::string& input, const std::string& output) {
+    std::vector<onnxruntime::NodeArg*> input_args({Arg(input)});
+    std::vector<onnxruntime::NodeArg*> output_args({Arg(output)});
     int num = node_count_++;
     return model_.MainGraph().AddNode("node" + std::to_string(num), op, "test op", input_args, output_args);
   }
@@ -44,11 +44,11 @@ class ShapeInferenceTest : public ::testing::Test {
     EXPECT_TRUE(status.IsOK()) << "Graph resolve failed: " << status.ErrorMessage();
   }
 
-  const TensorShapeProto* InputShape(LotusIR::Node* node, int arg_num = 0) {
+  const TensorShapeProto* InputShape(onnxruntime::Node* node, int arg_num = 0) {
     return node->InputDefs()[arg_num]->Shape();
   }
 
-  const TensorShapeProto* OutputShape(LotusIR::Node* node, int arg_num = 0) {
+  const TensorShapeProto* OutputShape(onnxruntime::Node* node, int arg_num = 0) {
     return node->OutputDefs()[arg_num]->Shape();
   }
 
@@ -101,4 +101,4 @@ TEST_F(ShapeInferenceTest, BasicTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -5,7 +5,7 @@
 #include "core/common/common.h"
 #include "core/framework/allocator.h"
 
-namespace Lotus {
+namespace onnxruntime {
 // The interface for arena which manage memory allocations
 // Arena will hold a pool of pre-allocate memories and manage their lifecycle.
 // Need an underline IResourceAllocator to allocate memories.
@@ -71,4 +71,4 @@ class DummyArena : public IArenaAllocator {
   std::unique_ptr<IDeviceAllocator> allocator_;
   AllocatorInfo info_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

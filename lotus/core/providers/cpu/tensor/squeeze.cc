@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/squeeze.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Squeeze,
@@ -10,4 +10,4 @@ ONNX_CPU_OPERATOR_KERNEL(
         .Alias(0, 0),
     Squeeze);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

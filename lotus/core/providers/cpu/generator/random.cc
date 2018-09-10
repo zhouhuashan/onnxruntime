@@ -31,8 +31,8 @@ limitations under the License.
 #include "core/util/eigen_common_wrapper.h"
 #include "gsl/span"
 using namespace onnx;
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     RandomNormal,
@@ -357,4 +357,4 @@ void GenerateData(std::default_random_engine generator, TDistribution distributi
   std::for_each(out.begin(), out.end(), [&generator, &distribution](T& value) { value = distribution(generator); });
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

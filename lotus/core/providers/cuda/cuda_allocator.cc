@@ -4,11 +4,11 @@
 #include "core/framework/session_state.h"
 #include "cuda_fence.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 static const CUDAExecutionProvider* GetCUDAExecutionProvider(const SessionState* session_state) {
   return dynamic_cast<const CUDAExecutionProvider*>(
-      session_state->GetExecutionProviders().Get(LotusIR::kCudaExecutionProvider));
+      session_state->GetExecutionProviders().Get(onnxruntime::kCudaExecutionProvider));
 }
 
 void CUDAAllocator::CheckDevice() const {
@@ -36,8 +36,7 @@ void CUDAAllocator::Free(void* p) {
 }
 
 const AllocatorInfo& CUDAAllocator::Info() const {
-  static AllocatorInfo cuda_allocator_info(CUDA, AllocatorType::kDeviceAllocator, device_id_, kMemTypeDefault);
-  return cuda_allocator_info;
+  return info_;
 }
 
 FencePtr CUDAAllocator::CreateFence(const SessionState* session_state) {
@@ -65,4 +64,4 @@ FencePtr CUDAPinnedAllocator::CreateFence(const SessionState* session_state) {
   return std::make_shared<CUDAFence>(GetCUDAExecutionProvider(session_state));
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

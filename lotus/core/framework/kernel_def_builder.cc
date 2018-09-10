@@ -1,6 +1,6 @@
 #include "core/framework/kernel_def_builder.h"
 
-namespace Lotus {
+namespace onnxruntime {
 bool KernelDef::IsConflict(const KernelDef& other) const {
   if (op_name_ != other.OpName() || provider_type_ != other.Provider())
     return false;
@@ -58,4 +58,4 @@ bool KernelDef::IsConflict(const KernelDef& other) const {
 
   return true;
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -6,12 +6,11 @@
 #include "cuda_allocator.h"
 #include "core/framework/kernel_registry.h"
 
-using namespace LotusIR;
-using namespace Lotus::Common;
+using namespace onnxruntime::common;
 
-namespace Lotus {
+namespace onnxruntime {
 
-namespace Cuda {
+namespace cuda {
 
 ONNX_OPERATOR_KERNEL_EX(
     MemcpyFromHost,
@@ -35,7 +34,7 @@ ONNX_OPERATOR_KERNEL_EX(
         .TypeConstraint("T", DataTypeImpl::AllFixedSizeTensorTypes()),
     Memcpy);
 
-}  // namespace Cuda
+}  // namespace cuda
 
 thread_local std::shared_ptr<CUDAExecutionProvider::PerThreadContext> CUDAExecutionProvider::per_thread_context_;
 thread_local AllocatorPtr CUDAExecutionProvider::per_thread_default_allocator_;
@@ -237,7 +236,7 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst, int exe
   return Status::OK();
 }
 
-namespace Cuda {
+namespace cuda {
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCudaExecutionProvider, kOnnxDomain, 1, MemcpyFromHost);
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCudaExecutionProvider, kOnnxDomain, 1, MemcpyToHost);
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCudaExecutionProvider, kOnnxDomain, 4, Concat);
@@ -704,11 +703,11 @@ static void RegisterCudaKernels(std::function<void(KernelCreateInfo&&)> fn) {
   fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCudaExecutionProvider, kOnnxDomain, 6, MLFloat16, InstanceNormalization)>());
 }
 
-}  // namespace Cuda
+}  // namespace cuda
 
 std::shared_ptr<KernelRegistry> CUDAExecutionProvider::GetKernelRegistry() const {
-  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(Lotus::Cuda::RegisterCudaKernels);
+  static std::shared_ptr<KernelRegistry> kernel_registry = std::make_shared<KernelRegistry>(onnxruntime::cuda::RegisterCudaKernels);
   return kernel_registry;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

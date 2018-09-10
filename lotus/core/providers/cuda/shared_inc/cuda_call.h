@@ -1,7 +1,7 @@
 #pragma once
 #include "core/providers/cuda/cuda_pch.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // -----------------------------------------------------------------------
 // Error handling
@@ -24,4 +24,4 @@ bool CudaCall(ERRTYPE retCode, const char* exprString, const char* libName, ERRT
 #define CUDNN_CALL_THROW(expr) (CudaCall<cudnnStatus_t, true>((expr), #expr, "CUDNN", CUDNN_STATUS_SUCCESS))
 #define CUDNN_CALL_THROW2(expr, m) (CudaCall<cudnnStatus_t, true>((expr), #expr, "CUDNN", CUDNN_STATUS_SUCCESS, m))
 
-}  // namespace Lotus
+}  // namespace onnxruntime

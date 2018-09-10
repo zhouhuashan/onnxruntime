@@ -3,13 +3,13 @@
 #ifdef _MSC_VER
 #include <filesystem>
 #endif
-#include "core/graph/graph.h"  //for LotusIR::NodeArg
+#include "core/graph/graph.h"  //for onnxruntime::NodeArg
 #include "runner.h"
 #include "utils.h"
 
 using namespace std::experimental::filesystem::v1;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 Status PerformanceRunner::Run() {
   if (!Initialize()) {
@@ -66,6 +66,9 @@ bool PerformanceRunner::Initialize() {
   }
 
   SessionFactory sf(performance_test_config_.machine_config.provider_type_name, true, true);
+  sf.enable_sequential_execution = performance_test_config_.run_config.enable_sequential_execution;
+  sf.session_thread_pool_size = 6;
+
   sf.create(session_object_, test_case->GetModelUrl(), test_case->GetTestCaseName());
 
   // Initialize IO Binding
@@ -77,8 +80,8 @@ bool PerformanceRunner::Initialize() {
   auto provider_type = performance_test_config_.machine_config.provider_type_name;
   // Place input tensor on cpu memory if mkldnn provider type to avoid CopyTensor logic in CopyInputAcrossDevices
   // TODO: find a better way to do this.
-  if (provider_type == LotusIR::kMklDnnExecutionProvider) {
-    provider_type = LotusIR::kCpuExecutionProvider;
+  if (provider_type == onnxruntime::kMklDnnExecutionProvider) {
+    provider_type = onnxruntime::kCpuExecutionProvider;
   }
   AllocatorPtr cpu_allocator = io_binding_->GetCPUAllocator(provider_type);
   test_case->SetAllocator(cpu_allocator);
@@ -88,7 +91,7 @@ bool PerformanceRunner::Initialize() {
     return false;
   }
 
-  std::unordered_map<std::string, ::Lotus::MLValue> feeds;
+  std::unordered_map<std::string, ::onnxruntime::MLValue> feeds;
   test_case->LoadInputData(0 /* id */, feeds);
   for (auto feed : feeds) {
     io_binding_->BindInput(feed.first, feed.second);
@@ -114,4 +117,4 @@ bool PerformanceRunner::Initialize() {
 
 }  // namespace PerfTest
 
-}  // namespace Lotus
+}  // namespace onnxruntime

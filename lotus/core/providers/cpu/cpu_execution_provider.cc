@@ -4,7 +4,7 @@
 #include "contrib_ops/contrib_ops.h"
 #include "core/framework/computation_capacity.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // Forward declarations of op kernels
 class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 6, Clip);
@@ -295,8 +295,8 @@ void RegisterOnnxOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
   fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kOnnxDomain, 7, int32_t, Upsample)>());
 }
 
-// Forward declarations of ML op kernels
-namespace ML {
+// Forward declarations of ml op kernels
+namespace ml {
 class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMLDomain, 1, float, ArrayFeatureExtractor);
 class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMLDomain, 1, double, ArrayFeatureExtractor);
 class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMLDomain, 1, int32_t, ArrayFeatureExtractor);
@@ -384,12 +384,12 @@ void RegisterOnnxMLOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
   fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMLDomain, 1, TreeEnsembleRegressor)>());
   fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMLDomain, 1, ZipMap)>());
 }
-}  // namespace ML
+}  // namespace ml
 
 static void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
   RegisterOnnxOperatorKernels(create_fn);
-  ::Lotus::ML::RegisterOnnxMLOperatorKernels(create_fn);
-  ::Lotus::ML::RegisterContribKernels(create_fn);
+  ::onnxruntime::ml::RegisterOnnxMLOperatorKernels(create_fn);
+  ::onnxruntime::ml::RegisterContribKernels(create_fn);
 }
 
 std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const {
@@ -398,17 +398,17 @@ std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const 
 }
 
 std::vector<std::unique_ptr<ComputationCapacity>>
-CPUExecutionProvider::GetCapability(const LotusIR::Graph& graph,
-	const std::vector<const KernelRegistry*>& kernel_registries) const {
-	std::vector<std::unique_ptr<ComputationCapacity>> result = IExecutionProvider::GetCapability(graph, kernel_registries);
-	
-	for (auto& rule : fuse_rules_) {
-		rule(graph, result);
-	}
-	return result;
+CPUExecutionProvider::GetCapability(const onnxruntime::Graph& graph,
+                                    const std::vector<const KernelRegistry*>& kernel_registries) const {
+  std::vector<std::unique_ptr<ComputationCapacity>> result = IExecutionProvider::GetCapability(graph, kernel_registries);
+
+  for (auto& rule : fuse_rules_) {
+    rule(graph, result);
+  }
+  return result;
 }
 
 void CPUExecutionProvider::InsertFusedRules(FuseRuleFn rule) {
-	fuse_rules_.push_back(rule);
+  fuse_rules_.push_back(rule);
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

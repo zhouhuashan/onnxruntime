@@ -7,6 +7,7 @@ set(END_WHOLE_ARCHIVE -Wl,--no-whole-archive)
 set(lotus_runtime_libs 
   lotus_session
   ${LOTUS_PROVIDERS_MKLDNN}
+  ${LOTUS_PROVIDERS_NUPHAR}
   lotus_providers
   lotus_framework
   lotus_util

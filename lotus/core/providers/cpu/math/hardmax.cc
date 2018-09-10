@@ -2,7 +2,7 @@
 #include "core/util/math_cpuonly.h"
 #include "core/util/math.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <>
 Status Hardmax<float>::Compute(OpKernelContext* ctx) const {
@@ -19,7 +19,7 @@ Status Hardmax<float>::Compute(OpKernelContext* ctx) const {
     ss << "Hardmax inputs N, D and N * D must be < " << INT32_MAX << ". N=" << tmpN << ", D=" << tmpD;
     std::string msg = ss.str();
 
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT, msg);
+    return Status(common::LOTUS, common::INVALID_ARGUMENT, msg);
   }
 
   const int N = gsl::narrow_cast<int>(tmpN);
@@ -51,4 +51,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Hardmax<float>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

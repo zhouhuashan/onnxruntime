@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(FeatureVectorizer, BasicFunctionality) {
-  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{3, 2, 1, 4});
 
@@ -27,7 +27,7 @@ TEST(FeatureVectorizer, BasicFunctionality) {
 }
 
 TEST(FeatureVectorizer, HandleInputDimensionMismatch) {
-  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{2, 3});
 
@@ -44,7 +44,7 @@ TEST(FeatureVectorizer, HandleInputDimensionMismatch) {
 
 // test with batch size of 2.
 TEST(FeatureVectorizer, Batch) {
-  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{2, 2});
 
@@ -63,7 +63,7 @@ TEST(FeatureVectorizer, Batch) {
 
 // test with batch size of 2.
 TEST(FeatureVectorizer, BatchWith3DInput) {
-  OpTester test("FeatureVectorizer", 1, LotusIR::kMLDomain);
+  OpTester test("FeatureVectorizer", 1, onnxruntime::kMLDomain);
 
   test.AddAttribute("inputdimensions", std::vector<int64_t>{2, 4});
 
@@ -83,4 +83,4 @@ TEST(FeatureVectorizer, BatchWith3DInput) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

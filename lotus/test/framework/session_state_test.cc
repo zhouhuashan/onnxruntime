@@ -13,7 +13,7 @@
 using namespace onnx;
 using namespace std;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 class TestOpKernel : public OpKernel {
  public:
@@ -33,16 +33,16 @@ TEST(SessionStateTest, AddGetKernelTest) {
   ExecutionProviders execution_providers;
   SessionState s{execution_providers};
 
-  LotusIR::Model model("graph_1");
+  onnxruntime::Model model("graph_1");
   auto& graph = model.MainGraph();
-  std::vector<LotusIR::NodeArg*> inputs;
-  std::vector<LotusIR::NodeArg*> outputs;
+  std::vector<onnxruntime::NodeArg*> inputs;
+  std::vector<onnxruntime::NodeArg*> outputs;
   TypeProto output_type;
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
-  LotusIR::NodeArg output_arg("node_1_out_1", &output_type);
+  onnxruntime::NodeArg output_arg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
-  LotusIR::Node* p_node = graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
+  onnxruntime::Node* p_node = graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
   KernelDef kernel_def;
   CPUExecutionProvider execution_provider{CPUExecutionProviderInfo{"CPUExecutionProvider"}};
@@ -60,4 +60,4 @@ TEST(SessionStateTest, AddGetKernelTest) {
   EXPECT_EQ(orig_num_outputs, test_kernel->Node().OutputDefs().size());
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

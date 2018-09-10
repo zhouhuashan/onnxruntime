@@ -2,9 +2,9 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cuda/nn/pool.h"
-using namespace Lotus::Common;
-namespace Lotus {
-namespace Cuda {
+using namespace onnxruntime::common;
+namespace onnxruntime {
+namespace cuda {
 
 #define POOLING_KERNEL(op_name, data_type, pool_type, since_version)                    \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                                        \
@@ -126,7 +126,7 @@ Status Pool<T, type>::ComputeInternal(OpKernelContext* context) const {
   LOTUS_RETURN_IF_ERROR(y_tensor.Set(y_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
 
   cudnnPoolingMode_t mode = CUDNN_POOLING_MAX;
-  if (type == Lotus::Cuda::PoolType::AveragePool) {
+  if (type == onnxruntime::cuda::PoolType::AveragePool) {
     mode = count_include_pad_ ? CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING : CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING;
   }
   CudnnPoolingDescriptor pooling_desc;
@@ -137,5 +137,5 @@ Status Pool<T, type>::ComputeInternal(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

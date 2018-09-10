@@ -6,7 +6,7 @@
 #include "simple_thread_pool.h"
 #include "lotus_event.h"
 
-using Lotus::Common::Status;
+using onnxruntime::common::Status;
 
 //this can be passed to one of the following functions:
 //LotusSetEventWhenCallbackReturns
@@ -16,12 +16,12 @@ class LotusCallbackInstance {
 
  public:
   void AddEvent(LOTUS_EVENT event);
-  Lotus::Common::Status SignalAllEvents();
+  onnxruntime::common::Status SignalAllEvents();
 };
 
 Status WaitAndCloseEvent(LOTUS_EVENT finish_event) {
   if (finish_event == nullptr)
-    return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "");
+    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "");
   pthread_mutex_lock(&finish_event->finish_event_mutex);
   while (!finish_event->finished) {
     pthread_cond_wait(&finish_event->finish_event_data, &finish_event->finish_event_mutex);
@@ -33,9 +33,9 @@ Status WaitAndCloseEvent(LOTUS_EVENT finish_event) {
 
 Status CreateAndSubmitThreadpoolWork(LOTUS_CALLBACK_FUNCTION callback, void* data, PThreadPool pool) {
   if (callback == nullptr)
-    return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "callback cannot be NULL");
+    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "callback cannot be NULL");
   if (pool == nullptr)
-    return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "pool cannot be NULL");
+    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "pool cannot be NULL");
   pool->Schedule([=]() {
     LotusCallbackInstance instance;
     callback(&instance, data, nullptr);
@@ -48,11 +48,11 @@ Status CreateAndSubmitThreadpoolWork(LOTUS_CALLBACK_FUNCTION callback, void* dat
   return Status::OK();
 }
 
-using DefaultThreadPoolType = Lotus::SimpleThreadPoolTempl<Lotus::Env>;
+using DefaultThreadPoolType = onnxruntime::SimpleThreadPoolTempl<onnxruntime::Env>;
 static std::unique_ptr<DefaultThreadPoolType> default_pool;
 static std::once_flag default_pool_init;
 
-PThreadPool GetDefaultThreadPool(const Lotus::Env& env) {
+PThreadPool GetDefaultThreadPool(const onnxruntime::Env& env) {
   std::call_once(default_pool_init, [&env] {
     int core_num = env.GetNumCpuCores();
     default_pool.reset(new DefaultThreadPoolType(core_num, env));
@@ -62,7 +62,7 @@ PThreadPool GetDefaultThreadPool(const Lotus::Env& env) {
 
 Status LotusSetEventWhenCallbackReturns(LOTUS_CALLBACK_INSTANCE pci, LOTUS_EVENT finish_event) {
   if (finish_event == nullptr)
-    return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "");
+    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "");
 
   if (pci == nullptr) {
     if (pthread_mutex_lock(&finish_event->finish_event_mutex)) {
@@ -101,7 +101,7 @@ Status LotusCallbackInstance::SignalAllEvents() {
 
 Status CreateLotusEvent(LOTUS_EVENT* out) {
   if (out == nullptr)
-    return Status(Lotus::Common::LOTUS, Lotus::Common::INVALID_ARGUMENT, "");
+    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "");
   *out = new LotusEvent();
   return Status::OK();
 }

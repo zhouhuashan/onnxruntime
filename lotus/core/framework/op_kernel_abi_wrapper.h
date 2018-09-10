@@ -10,7 +10,7 @@
 // Disable formatting, which is incorrect for ML_API macros
 // clang-format off
 
-namespace Lotus {
+namespace onnxruntime {
 
 // Encapsulation of shapes across different edges of an operator.  Non-tensor
 // edges and unused edges have an empty array of dimensions.
@@ -295,4 +295,4 @@ class AbiCustomRegistry : public IMLOperatorRegistry {
   std::shared_ptr<CustomRegistry> custom_registry_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

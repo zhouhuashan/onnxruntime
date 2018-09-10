@@ -4,7 +4,7 @@
 #include "core/providers/cpu/tensor/pad.h"
 #include "core/providers/cpu/tensor/utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Pad,
@@ -171,4 +171,4 @@ Status Pad<float>::Compute(OpKernelContext* ctx) const {
 
   return Status::OK();
 }
-};  // namespace Lotus
+};  // namespace onnxruntime

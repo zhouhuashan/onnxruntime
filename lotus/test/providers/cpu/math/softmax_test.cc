@@ -3,15 +3,15 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
-static void RunTest(const std::vector<float> &x_vals,
-                    const std::vector<float> &expected_vals,
-                    const std::vector<int64_t> &dimensions,
+static void RunTest(const std::vector<float>& x_vals,
+                    const std::vector<float>& expected_vals,
+                    const std::vector<int64_t>& dimensions,
                     int64_t axis = 1,
                     OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
-                    const std::string &error_msg = "") {
+                    const std::string& error_msg = "") {
   OpTester test("Softmax");
 
   if (axis != 1) {
@@ -185,28 +185,28 @@ TEST(SoftmaxOperator, InvalidAxis) {
 }
 
 TEST(SoftmaxOperator, TestInputTooLarge) {
-  float *ignored = nullptr;
+  float* ignored = nullptr;
 
   // N > INT32_MAX
   int64_t N = int64_t(INT32_MAX) + 1;
   int64_t D = 1;
   auto status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
-  EXPECT_EQ(status.Code(), Common::INVALID_ARGUMENT);
+  EXPECT_EQ(status.Code(), common::INVALID_ARGUMENT);
 
   // D > INT32_MAX
   N = 1;
   D = int64_t(INT32_MAX) + 1;
   status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
-  EXPECT_EQ(status.Code(), Common::INVALID_ARGUMENT);
+  EXPECT_EQ(status.Code(), common::INVALID_ARGUMENT);
 
   // N * D > INT32_MAX
   N = int64_t(INT32_MAX) / 2;
   D = 3;
   status = SoftmaxCPU(N, D, ignored, ignored, ignored, ignored, true, ignored);
-  EXPECT_EQ(status.Code(), Common::INVALID_ARGUMENT);
+  EXPECT_EQ(status.Code(), common::INVALID_ARGUMENT);
 
   /*
-    Common::Status SoftmaxCPU(const int64_t N,
+    common::Status SoftmaxCPU(const int64_t N,
                               const int64_t D,
                               const float* Xdata,
                               float* Ydata,
@@ -222,8 +222,8 @@ TEST(SoftmaxOperator, TestInputTooLarge) {
             ss << "SoftmaxCPU inputs N, D and N * D must be < " << INT32_MAX << ". N=" << N << ", D=" << D;
             std::string msg = ss.str();
 
-            return Status(Common::LOTUS, Common::INVALID_ARGUMENT, msg);
+            return Status(common::LOTUS, common::INVALID_ARGUMENT, msg);
         }*/
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

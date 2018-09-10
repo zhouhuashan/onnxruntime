@@ -6,7 +6,7 @@
 #include "core/common/exceptions.h"
 #include "core/graph/onnx_protobuf.h"
 
-namespace Lotus {
+namespace onnxruntime {
 //maps
 using MapStringToString = std::map<std::string, std::string>;
 using MapStringToInt64 = std::map<std::string, int64_t>;
@@ -225,4 +225,4 @@ class NonOnnxType : public DataTypeImpl {
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return NonOnnxType<TYPE>::Type();        \
   }
-}  // namespace Lotus
+}  // namespace onnxruntime

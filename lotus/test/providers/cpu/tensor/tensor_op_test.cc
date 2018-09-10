@@ -5,7 +5,7 @@
 #include "core/util/math.h"
 
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 using ExpectResult = OpTester::ExpectResult;
@@ -469,4 +469,4 @@ TEST(TensorOpTest, ImageScalerTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -5,7 +5,7 @@
 #include "core/util/math_cpuonly.h"
 #include "gsl/gsl_util"
 
-namespace Lotus {
+namespace onnxruntime {
 template <typename T>
 class TopK final : public OpKernel {
  public:
@@ -26,4 +26,4 @@ class TopK final : public OpKernel {
   int axis_;
   unsigned k_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

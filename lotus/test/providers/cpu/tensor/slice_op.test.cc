@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(TensorOpTest, Slice1D) {
@@ -99,4 +99,4 @@ TEST(TensorOpTest, Slice3D) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

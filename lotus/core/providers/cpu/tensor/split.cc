@@ -5,7 +5,7 @@
 
 #include "gsl/gsl_util"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Split,
@@ -90,7 +90,7 @@ Status Split::ComputeImpl(OpKernelContext& context, const Tensor& input) const {
     Tensor* output = context.Output(i, TensorShape{output_dimensions});
     T* output_data = output->MutableData<T>();
 
-    ::Lotus::Math::CopyMatrix<CPUMathUtil>(
+    ::onnxruntime::Math::CopyMatrix<CPUMathUtil>(
         sizeof(T),
         before_dims,                                          // M
         split_size * after_dims_excluding_split,              // N
@@ -106,4 +106,4 @@ Status Split::ComputeImpl(OpKernelContext& context, const Tensor& input) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

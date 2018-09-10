@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cuda/shared_inc/fast_divmod.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 struct BinaryElementwisePreparation {
   const Tensor* lhs_tensor = nullptr;
@@ -45,7 +45,7 @@ class BinaryElementwise : public CudaKernel {
 
   BinaryElementwise(const OpKernelInfo& info) : CudaKernel(info) {}
   Status ComputeInternal(OpKernelContext*) const override {
-    return Status(Common::LOTUS, Common::FAIL);  // should not reach here
+    return Status(common::LOTUS, common::FAIL);  // should not reach here
   }
   Status Prepare(OpKernelContext* context, BinaryElementwisePreparation* p) const;
 };
@@ -126,5 +126,5 @@ class Sum final : public CudaKernel {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

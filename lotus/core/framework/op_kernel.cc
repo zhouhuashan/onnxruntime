@@ -4,8 +4,8 @@
 #include "core/graph/op.h"
 #include "op_kernel_abi_wrapper.h"
 #include "core/common/logging/logging.h"
-using namespace ::Lotus::Common;
-namespace Lotus {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
 OpKernelContext::OpKernelContext(ExecutionFrame* frame,
                                  const OpKernel* kernel,
@@ -49,7 +49,7 @@ int OpKernelContext::NumVariadicInputs(size_t arg_num) const {
 Status OpKernelContext::GetTempSpaceAllocator(AllocatorPtr* output) const {
   *output = execution_frame_->GetAllocator(kernel_->Allocator(kMemTypeDefault));
   if (!*output)
-    return Status(Common::LOTUS, Common::FAIL, "TempSpace allocator not found");
+    return Status(common::LOTUS, common::FAIL, "TempSpace allocator not found");
   return Status::OK();
 }
 
@@ -98,7 +98,7 @@ int OpKernelContext::GetOutputArgIndex(int index) const {
   return node_output_start_index_ + index;
 }
 
-LotusIR::NodeIndex OpKernelContext::GetNodeIndex() const {
+onnxruntime::NodeIndex OpKernelContext::GetNodeIndex() const {
   return kernel_->Node().Index();
 }
 
@@ -122,4 +122,4 @@ MLValue* OpKernelContext::GetOutputMLValue(int index) {
   return execution_frame_->GetMutableNodeInputOrOutputMLValue(output_arg_index);
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

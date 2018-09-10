@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(SqueezeOpTest, Squeeze_1) {
@@ -69,4 +69,4 @@ TEST(SqueezeOpTest, BadAxes) {
   test.RunOnCpuAndCuda(OpTester::ExpectResult::kExpectFailure, "Dimension of input 0 must be 1 instead of 3");
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

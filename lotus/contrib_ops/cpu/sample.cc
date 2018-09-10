@@ -1,8 +1,8 @@
 #include "sample.h"
 #include "onnx/defs/schema.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 // These ops are internal-only, so register outside of onnx
 ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
     SampleOp,
@@ -10,5 +10,5 @@ ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
     float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()).MayInplace(0, 0),
     SampleOp<float>);
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

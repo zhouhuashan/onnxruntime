@@ -5,14 +5,14 @@
 
 #include "date/date.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
-using namespace ::Lotus::Logging;
+using namespace ::onnxruntime::Logging;
 
 class CapturingSink : public Logging::ISink {
  public:
-  void SendImpl(const Timestamp &timestamp, const std::string &logger_id, const Capture &message) override {
+  void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override {
     // operator for formatting of timestamp in ISO8601 format including microseconds
     using date::operator<<;
     std::ostringstream msg;
@@ -23,7 +23,7 @@ class CapturingSink : public Logging::ISink {
     messages_.push_back(msg.str());
   }
 
-  const std::vector<std::string> &Messages() const {
+  const std::vector<std::string>& Messages() const {
     return messages_;
   }
 
@@ -31,4 +31,4 @@ class CapturingSink : public Logging::ISink {
   std::vector<std::string> messages_;
 };
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

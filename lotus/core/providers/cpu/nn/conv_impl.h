@@ -26,7 +26,7 @@
 #include <mlas.h>
 #endif
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 Status Conv<T>::Compute(OpKernelContext* context) const {
@@ -305,4 +305,4 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
 }
 #endif
 
-}  // namespace Lotus
+}  // namespace onnxruntime

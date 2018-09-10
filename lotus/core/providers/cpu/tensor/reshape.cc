@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/reshape.h"
 #include "core/inc/op_kernel_author.h"
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Reshape,
@@ -20,4 +20,4 @@ ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
         .TypeConstraint("T", DataTypeImpl::AllTensorTypes()),
     Reshape_1);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,7 +1,7 @@
 #include "core/framework/mem_pattern_planner.h"
 #include "gtest/gtest.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 TEST(MemPatternPlannerTest, TraceAllocaitonTest) {
   MemPatternPlanner planner;
@@ -32,4 +32,4 @@ TEST(MemPatternPlannerTest, TraceAllocaitonTest) {
   EXPECT_EQ(pattern.GetBlock(6)->offset_, 1024);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

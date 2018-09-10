@@ -4,8 +4,8 @@
 
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 // https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md#ai.onnx.ml.FeatureVectorizer
 class FeatureVectorizer final : public OpKernel {
@@ -24,5 +24,5 @@ class FeatureVectorizer final : public OpKernel {
   int64_t total_dimensions_;
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

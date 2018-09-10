@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include "core/providers/cuda/shared_inc/cuda_utils.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 void TileImpl(
@@ -15,5 +15,5 @@ void TileImpl(
     T* output_data,
     const size_t N);
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

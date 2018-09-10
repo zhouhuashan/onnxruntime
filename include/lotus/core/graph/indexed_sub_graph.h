@@ -5,7 +5,7 @@
 #include "core/graph/basic_types.h"
 #include "core/graph/onnx_protobuf.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class OpKernel;
 class OpKernelInfo;
@@ -36,13 +36,13 @@ struct IndexedSubGraph {
 
   // Nodes covered by <*this> sub-graph.
   // The indexes are from parent graph.
-  std::vector<LotusIR::NodeIndex> nodes;
+  std::vector<onnxruntime::NodeIndex> nodes;
 
   // Meta definition needed for customizing <*this>
   // sub-graph as a FunctionProto, which could be serialized/saved
   // to a model file. It's needed IF AND ONLY IF there're multiple
   // indexes contained in <nodes> above.
-  
+
   void SetMetaDef(std::unique_ptr<MetaDef>& meta_def_) {
     meta_def = std::move(meta_def_);
   }
@@ -50,10 +50,10 @@ struct IndexedSubGraph {
   const MetaDef* GetMetaDef() const {
     return meta_def.get();
   }
-  
+
  private:
   // Sub-graph meta definition.
   std::unique_ptr<MetaDef> meta_def;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

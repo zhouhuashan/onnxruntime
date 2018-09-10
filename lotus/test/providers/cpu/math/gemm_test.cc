@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MathOpTest, GemmNoTrans) {
@@ -167,4 +167,4 @@ TEST(MathOpTest, GemmFalseBroadcast) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

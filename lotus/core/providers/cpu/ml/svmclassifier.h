@@ -5,8 +5,8 @@
 #include "core/util/math_cpuonly.h"
 #include "ml_common.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 // stuffs shared by SVMClassifier and SVMRegressor
 template <typename T>
@@ -90,5 +90,5 @@ class SVMClassifier final : public OpKernel, private SVMCommon<T> {
   SVM_TYPE mode_;  //how are we computing SVM? 0=LibSVC, 1=LibLinear
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

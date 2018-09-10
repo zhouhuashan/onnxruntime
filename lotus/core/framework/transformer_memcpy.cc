@@ -2,7 +2,7 @@
 #include "core/framework/kernel_registry_manager.h"
 
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 
 /*
 
@@ -36,7 +36,7 @@ bool TransformerMemcpyImpl::ModifyGraph(const KernelRegistryManager& kernel_regi
   for (auto& node : graph_.Nodes()) {
     if (graph_.IsSourceNode(node) || graph_.IsSinkNode(node))
       continue;
-    //don't need to do node placement here now, Lotus will do it according to registered kernels.
+    //don't need to do node placement here now, onnxruntime will do it according to registered kernels.
     ProcessDefs(node, kernel_registries);
   }
 
@@ -62,7 +62,7 @@ bool TransformerMemcpyImpl::ModifyGraph(const KernelRegistryManager& kernel_regi
   return modified;
 }
 
-void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node, const KernelRegistryManager& kernel_registries) {
+void TransformerMemcpyImpl::ProcessDefs(onnxruntime::Node& node, const KernelRegistryManager& kernel_registries) {
   if (node.GetExecutionProviderType() == provider_) {
     provider_nodes_.insert(&node);
     // note KernelCreateInfo might be nullptr for custom kernel
@@ -70,9 +70,9 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node, const KernelRegistr
     kernel_registries.SearchKernelRegistry(node, &kci);
     const auto* input_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
-    LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(
+    LOTUS_ENFORCE(onnxruntime::Node::ForEachWithIndex(
                       node.InputDefs(),
-                      [this, &input_mem_types](const LotusIR::NodeArg& arg, size_t index) {
+                      [this, &input_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
                         if (input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index))
                           non_provider_input_defs_.insert(&arg);
                         else
@@ -80,9 +80,9 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node, const KernelRegistr
                         return Status::OK();
                       })
                       .IsOK());
-    LOTUS_ENFORCE(LotusIR::Node::ForEachWithIndex(
+    LOTUS_ENFORCE(onnxruntime::Node::ForEachWithIndex(
                       node.OutputDefs(),
-                      [this, &output_mem_types](const LotusIR::NodeArg& arg, size_t index) {
+                      [this, &output_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
                         if (output_mem_types && MemTypeOnCpuExplicitly(*output_mem_types, index))
                           non_provider_output_defs_.insert(&arg);
                         else
@@ -92,8 +92,8 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node, const KernelRegistr
                       .IsOK());
   } else {
     // TODO: copy between devices? i.e. multiple GPUs
-    LOTUS_ENFORCE(node.GetExecutionProviderType() == LotusIR::kCpuExecutionProvider || node.GetExecutionProviderType().empty());
-    node.ForEachDef([this](const LotusIR::NodeArg* arg, bool is_input) {
+    LOTUS_ENFORCE(node.GetExecutionProviderType() == onnxruntime::kCpuExecutionProvider || node.GetExecutionProviderType().empty());
+    node.ForEachDef([this](const onnxruntime::NodeArg* arg, bool is_input) {
       if (is_input)
         non_provider_input_defs_.insert(arg);
       else
@@ -102,11 +102,11 @@ void TransformerMemcpyImpl::ProcessDefs(LotusIR::Node& node, const KernelRegistr
   }
 }
 
-void TransformerMemcpyImpl::AddCopyNode(const LotusIR::NodeArg* arg, bool is_input) {
+void TransformerMemcpyImpl::AddCopyNode(const onnxruntime::NodeArg* arg, bool is_input) {
   // TODO: eliminate the const-cast.
   // The current graph API seems to only allow us to get a "const NodeArg*", but
   // then we need to pass in a "NodeArg*" when we create a new node.
-  auto original_arg = const_cast<LotusIR::NodeArg*>(arg);
+  auto original_arg = const_cast<onnxruntime::NodeArg*>(arg);
 
   // create unique name for new def
   std::string new_def_name = graph_.GenerateNodeArgName(original_arg->Name() + "_" + provider_);
@@ -120,8 +120,8 @@ void TransformerMemcpyImpl::AddCopyNode(const LotusIR::NodeArg* arg, bool is_inp
 
   const auto op_name = is_input ? "MemcpyFromHost" : "MemcpyToHost";
   auto new_node = graph_.AddNode(new_node_name, op_name, "Copy from/to host memory",
-                                 std::vector<LotusIR::NodeArg*>{src_arg},
-                                 std::vector<LotusIR::NodeArg*>{dst_arg});
+                                 std::vector<onnxruntime::NodeArg*>{src_arg},
+                                 std::vector<onnxruntime::NodeArg*>{dst_arg});
   new_node->SetExecutionProviderType(provider_);
 
   // only add copy-node here; renaming references happens later
@@ -129,7 +129,7 @@ void TransformerMemcpyImpl::AddCopyNode(const LotusIR::NodeArg* arg, bool is_inp
 }
 
 template <typename NodeArgSetType>
-static const LotusIR::NodeArg* FindNodeArg(const NodeArgSetType& def_set, const std::string& name) {
+static const onnxruntime::NodeArg* FindNodeArg(const NodeArgSetType& def_set, const std::string& name) {
   NodeArg def(name, nullptr);
   auto it = def_set.find(&def);  // this works since we use name to compare NodeArg
   if (it != def_set.end())
@@ -141,11 +141,11 @@ static const LotusIR::NodeArg* FindNodeArg(const NodeArgSetType& def_set, const 
 // to ensure that provider nodes and non-provider nodes don't share initializers, as they
 // need to stay in different memory locations.
 void TransformerMemcpyImpl::ProcessInitializers() {
-  std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*> replacements;
+  std::map<const onnxruntime::NodeArg*, onnxruntime::NodeArg*> replacements;
   for (const auto& pair : graph_.GetAllInitializedTensors()) {
     const auto& name = pair.first;
-    const LotusIR::NodeArg* provider_def = FindNodeArg(provider_input_defs_, name);
-    const LotusIR::NodeArg* non_provider_def = FindNodeArg(non_provider_input_defs_, name);
+    const onnxruntime::NodeArg* provider_def = FindNodeArg(provider_input_defs_, name);
+    const onnxruntime::NodeArg* non_provider_def = FindNodeArg(non_provider_input_defs_, name);
     if (provider_def != nullptr && non_provider_def != nullptr) {
       std::string new_def_name = graph_.GenerateNodeArgName(name);
       auto& new_def = graph_.GetOrCreateNodeArg(new_def_name, provider_def->TypeAsProto());
@@ -165,4 +165,4 @@ void TransformerMemcpyImpl::ProcessInitializers() {
   }
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

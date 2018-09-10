@@ -3,8 +3,8 @@
 #include "core/framework/tensor.h"
 #include <cfloat>
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class CudnnTensor final {
  public:
@@ -46,5 +46,5 @@ inline double ClampCudnnBatchNormEpsilon(double epsilon) {
   return epsilon;
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

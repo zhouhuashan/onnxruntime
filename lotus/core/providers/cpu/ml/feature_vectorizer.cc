@@ -2,8 +2,8 @@
 
 #include <gsl/span>
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     FeatureVectorizer,
@@ -76,7 +76,7 @@ Status FeatureVectorizer::Compute(OpKernelContext* context) const {
   }
 
   return Status::OK();
-}  // namespace ML
+}  // namespace ml
 
 template <typename T>
 static void VectorizeTensor(const Tensor& input_tensor, int64_t feature_size, int64_t sum_input_dimensions,
@@ -121,5 +121,5 @@ static void CopyWithCast(typename gsl::span<const T>::const_iterator begin,
                 });
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

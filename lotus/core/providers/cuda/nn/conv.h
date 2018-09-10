@@ -6,8 +6,8 @@
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cpu/nn/conv_base.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class CudnnFilterDescriptor final {
  public:
@@ -83,5 +83,5 @@ class Conv : public CudaKernel, public ConvBase {
   mutable CudnnConvState<cudnnConvolutionFwdAlgo_t> s_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

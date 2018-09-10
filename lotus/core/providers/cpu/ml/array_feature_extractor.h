@@ -2,13 +2,13 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 template <typename T>
 class ArrayFeatureExtractorOp final : public OpKernel {
  public:
   explicit ArrayFeatureExtractorOp(const OpKernelInfo& info);
-  Common::Status Compute(OpKernelContext* context) const override;
+  common::Status Compute(OpKernelContext* context) const override;
 };
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

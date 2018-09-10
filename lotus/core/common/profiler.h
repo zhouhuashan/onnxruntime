@@ -3,7 +3,7 @@
 #include <fstream>
 #include "core/common/logging/logging.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 namespace Profiling {
 
@@ -96,4 +96,4 @@ class Profiler {
 };
 
 }  // namespace Profiling
-}  // namespace Lotus
+}  // namespace onnxruntime

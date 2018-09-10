@@ -4,7 +4,7 @@
 #include "core/framework/tensor.h"
 #include "gsl/gsl_util"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // Verify and convert unknown dim during reshape
 class ReshapeHelper {
@@ -42,4 +42,4 @@ class ReshapeHelper {
   }
 };
 
-}  //namespace Lotus
+}  //namespace onnxruntime

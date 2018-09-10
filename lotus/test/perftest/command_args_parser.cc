@@ -15,7 +15,7 @@
 
 #include "test_configuration.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 
 /*static*/ void CommandLineParser::ShowUsage() {
@@ -27,14 +27,15 @@ namespace PerfTest {
       "\t-e [cpu|cuda|mkldnn]: Specifies the provider 'cpu','cuda','mkldnn'. Default:'cpu'.\n"
       "\t-r [repeated_times]: Specifies the repeated times if running in 'times' test mode.Default:1000.\n"
       "\t-t [seconds_to_run]: Specifies the seconds to run for 'duration' mode. Default:600.\n"
-      "\t-p [profile_file]: Specifies the profile name to enable profiling and dump the profile data to the file."
-      "\t-v: Show verbose information."
+      "\t-p [profile_file]: Specifies the profile name to enable profiling and dump the profile data to the file.\n"
+      "\t-v: Show verbose information.\n"
+      "\t-x: Use parallel executor, default (without -x): sequential executor.\n"
       "\t-h: help\n");
 }
 
 /*static*/ bool CommandLineParser::ParseArguments(PerformanceTestConfig& test_config, int argc, char* argv[]) {
   int ch;
-  while ((ch = getopt(argc, argv, "m:e:r:t:vh")) != -1) {
+  while ((ch = getopt(argc, argv, "m:e:r:t:xvh")) != -1) {
     switch (ch) {
       case 'm':
         if (!strcmp(optarg, "duration")) {
@@ -47,11 +48,11 @@ namespace PerfTest {
         break;
       case 'e':
         if (!strcmp(optarg, "cpu")) {
-          test_config.machine_config.provider_type_name = LotusIR::kCpuExecutionProvider;
+          test_config.machine_config.provider_type_name = onnxruntime::kCpuExecutionProvider;
         } else if (!strcmp(optarg, "cuda")) {
-          test_config.machine_config.provider_type_name = LotusIR::kCudaExecutionProvider;
+          test_config.machine_config.provider_type_name = onnxruntime::kCudaExecutionProvider;
         } else if (!strcmp(optarg, "mkldnn")) {
-          test_config.machine_config.provider_type_name = LotusIR::kMklDnnExecutionProvider;
+          test_config.machine_config.provider_type_name = onnxruntime::kMklDnnExecutionProvider;
         } else {
           return false;
         }
@@ -70,6 +71,9 @@ namespace PerfTest {
         break;
       case 'v':
         test_config.run_config.f_verbose = true;
+        break;
+      case 'x':
+        test_config.run_config.enable_sequential_execution = false;
         break;
       case '?':
       case 'h':
@@ -90,4 +94,4 @@ namespace PerfTest {
 }
 
 }  // namespace PerfTest
-}  // namespace Lotus
+}  // namespace onnxruntime

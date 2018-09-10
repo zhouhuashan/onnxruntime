@@ -7,11 +7,11 @@
 
 #include "test/common/logging/helpers.h"
 
-using namespace ::Lotus::Logging;
+using namespace ::onnxruntime::Logging;
 using InstanceType = LoggingManager::InstanceType;
 
 namespace {
-void CheckStringInFile(const std::string &filename, const std::string &look_for) {
+void CheckStringInFile(const std::string& filename, const std::string& look_for) {
   std::ifstream ifs{filename};
   std::string content(std::istreambuf_iterator<char>{ifs},
                       std::istreambuf_iterator<char>{});
@@ -19,7 +19,7 @@ void CheckStringInFile(const std::string &filename, const std::string &look_for)
   EXPECT_NE(content.find(look_for), std::string::npos);
 }
 
-void DeleteFile(const std::string &filename) {
+void DeleteFile(const std::string& filename) {
   int result = std::remove(filename.c_str());
   EXPECT_EQ(result, 0);
 }
@@ -126,14 +126,14 @@ TEST(LoggingTests, TestCompositeSink) {
   const std::string logid{"TestCompositeSink"};
   const Severity min_log_level = Severity::kWARNING;
 
-  MockSink *sink_ptr1 = new MockSink();
-  MockSink *sink_ptr2 = new MockSink();
+  MockSink* sink_ptr1 = new MockSink();
+  MockSink* sink_ptr2 = new MockSink();
 
   // both should be called for a single log statement
   EXPECT_CALL(*sink_ptr1, SendImpl(testing::_, testing::_, testing::_)).Times(1);
   EXPECT_CALL(*sink_ptr2, SendImpl(testing::_, testing::_, testing::_)).Times(1);
 
-  CompositeSink *sink = new CompositeSink();
+  CompositeSink* sink = new CompositeSink();
   sink->AddSink(std::unique_ptr<ISink>{sink_ptr1}).AddSink(std::unique_ptr<ISink>{sink_ptr2});
   LoggingManager manager{std::unique_ptr<ISink>(sink), min_log_level, false, InstanceType::Temporal};
 

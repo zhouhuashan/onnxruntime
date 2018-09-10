@@ -4,12 +4,12 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/autopad_type.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class RoiPool : public OpKernel {
  public:
-  RoiPool(OpKernelInfo info) : OpKernel(info) {
+  RoiPool(const OpKernelInfo& info) : OpKernel(info) {
     std::vector<int64_t> pooled_shape;
     LOTUS_ENFORCE(info.GetAttrs<int64_t>("pooled_shape", pooled_shape).IsOK());
     LOTUS_ENFORCE(pooled_shape.size() == 2);
@@ -31,4 +31,4 @@ class RoiPool : public OpKernel {
   int64_t pooled_height_, pooled_width_;
   float spatial_scale_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

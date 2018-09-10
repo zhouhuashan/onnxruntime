@@ -7,14 +7,14 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 using namespace ::testing;
 //TVM is not working with StackTrace now.
 #ifndef USE_TVM
 TEST(StacktraceTests, BasicTests) {
-  auto result = ::Lotus::GetStackTrace();
+  auto result = ::onnxruntime::GetStackTrace();
 
   // if we are running code coverage the Windows CaptureStackBackTrace function only returns a single
   // frame that is unknown. adjust for that.
@@ -45,5 +45,5 @@ TEST(StacktraceTests, BasicTests) {
 }
 #endif
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime
 #endif

@@ -6,8 +6,8 @@
 #include "gsl/gsl_util"
 #include "core/providers/cpu/tensor/reshape_helper.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class Reshape final : public CudaKernel {
  public:
@@ -71,5 +71,5 @@ class Reshape_1 final : public CudaKernel {
   std::vector<int64_t> shape_;
 };
 
-}  // namespace Cuda
-}  //namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

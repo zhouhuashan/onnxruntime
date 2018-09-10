@@ -28,8 +28,8 @@ inline cublasStatus_t cublasGemmHelper(cublasHandle_t handle, cublasOperation_t 
   // This does true FP16 computation which is slow for non-Volta GPUs
   //return cublasHgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
   // This does pseudo FP16 computation (input/output in fp16, computation in fp32)
-  float h_a = Lotus::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(alpha));
-  float h_b = Lotus::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(beta));
+  float h_a = onnxruntime::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(alpha));
+  float h_b = onnxruntime::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(beta));
   cublasSetMathMode(handle, CUBLAS_TENSOR_OP_MATH);
   return cublasGemmEx(handle, transa, transb, m, n, k, &h_a, A, CUDA_R_16F, lda, B, CUDA_R_16F, ldb, &h_b, C, CUDA_R_16F, ldc, CUDA_R_32F, CUBLAS_GEMM_DFALT);
 }
@@ -54,7 +54,7 @@ inline cublasStatus_t cublasAxpyHelper(cublasHandle_t handle, int n, const doubl
   return cublasDaxpy(handle, n, alpha, x, incx, y, incy);
 }
 inline cublasStatus_t cublasAxpyHelper(cublasHandle_t handle, int n, const half* alpha, const half* x, int incx, half* y, int incy) {
-  float tmp_alpha = Lotus::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(alpha));
+  float tmp_alpha = onnxruntime::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(alpha));
   return cublasAxpyEx(handle, n, (void*)&tmp_alpha, CUDA_R_32F, (void*)x, CUDA_R_16F, incx, (void*)y, CUDA_R_16F, incy, CUDA_R_32F);
 }
 
@@ -205,7 +205,7 @@ inline cublasStatus_t cublasScalHelper(cublasHandle_t handle, int n, const doubl
   return cublasDscal(handle, n, alpha, x, incx);
 }
 inline cublasStatus_t cublasScalHelper(cublasHandle_t handle, int n, const half* alpha, half* x, int incx) {
-  float tmp_alpha = Lotus::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(alpha));
+  float tmp_alpha = onnxruntime::Math::halfToFloat(*reinterpret_cast<const uint16_t*>(alpha));
   return cublasScalEx(handle, n, (void*)&tmp_alpha, CUDA_R_32F, (void*)x, CUDA_R_16F, incx, CUDA_R_32F);
 }
 inline cublasStatus_t cublasScalHelper(cublasHandle_t, int, const char*, char*, int) {

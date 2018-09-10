@@ -24,7 +24,7 @@
 #include "core/framework/tensor.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class BatchNorm final : public OpKernel {
@@ -42,4 +42,4 @@ class BatchNorm final : public OpKernel {
   float epsilon_ = 1e-5f;
   int64_t is_test_;  // ignored in this implementation since we're doing inferencing only.
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

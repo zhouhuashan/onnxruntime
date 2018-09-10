@@ -15,12 +15,12 @@
 #include <deque>
 #include "sstream"
 
-namespace LotusIR {
+namespace onnxruntime {
 using OpName_Domain_Version_Schema_Map = std::unordered_map<
     std::string,
     std::unordered_map<std::string, std::map<ONNX_NAMESPACE::OperatorSetVersion, ONNX_NAMESPACE::OpSchema>>>;
 
-// Lotus schema registry is a supplement to built-in schema,
+// onnxruntime schema registry is a supplement to built-in schema,
 // Every schema registry represent a collection of schema deltas from baseline_opset_version to opset_version
 struct SchemaRegistryVersion {
   int baseline_opset_version;
@@ -68,7 +68,7 @@ class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
  public:
   LotusOpSchemaRegistry() = default;
 
-  ::Lotus::Common::Status SetBaselineAndOpsetVersionForDomain(
+  ::onnxruntime::common::Status SetBaselineAndOpsetVersionForDomain(
       const std::string& domain,
       int baseline_opset_version,
       int opset_version);
@@ -76,7 +76,7 @@ class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
   Domain_To_Version_Map GetLatestOpsetVersions(bool is_onnx_only) const override;
 
   // LotusOpSchemaRegistry must register complete delta for a opset.
-  ::Lotus::Common::Status RegisterOpSet(
+  ::onnxruntime::common::Status RegisterOpSet(
       std::vector<ONNX_NAMESPACE::OpSchema>& schemas,
       const std::string& domain,
       int baseline_opset_version,
@@ -107,9 +107,9 @@ class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
   }
 
  private:
-  ::Lotus::Common::Status RegisterOpSchema(ONNX_NAMESPACE::OpSchema&& op_schema);
+  ::onnxruntime::common::Status RegisterOpSchema(ONNX_NAMESPACE::OpSchema&& op_schema);
 
-  ::Lotus::Common::Status RegisterOpSchemaInternal(ONNX_NAMESPACE::OpSchema&& op_schema);
+  ::onnxruntime::common::Status RegisterOpSchemaInternal(ONNX_NAMESPACE::OpSchema&& op_schema);
 
   std::mutex mutex_;
 
@@ -120,7 +120,7 @@ class LotusOpSchemaRegistry : public ILotusOpSchemaCollection {
 // SchemaRegistryManager provides a view based on built-in ONNX schema and a list of LotusOpSchemaRegistry as supplement.
 // User need to make sure the customized schema registry is valid, otherwise the behavior is undefined.
 // We may add more consistent check later.
-class SchemaRegistryManager : public LotusIR::ILotusOpSchemaCollection {
+class SchemaRegistryManager : public onnxruntime::ILotusOpSchemaCollection {
  public:
   // The schema registry priority is the reverse of register order.
   void RegisterRegistry(std::shared_ptr<ILotusOpSchemaCollection> registry);
@@ -138,4 +138,4 @@ class SchemaRegistryManager : public LotusIR::ILotusOpSchemaCollection {
   std::deque<std::shared_ptr<ILotusOpSchemaCollection>> registries;
 };
 
-}  // namespace LotusIR
+}  // namespace onnxruntime

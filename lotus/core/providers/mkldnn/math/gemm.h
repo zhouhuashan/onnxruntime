@@ -1,8 +1,8 @@
 #pragma once
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 template <typename T>
 class Gemm final : public OpKernel {
  public:
@@ -26,5 +26,5 @@ class Gemm final : public OpKernel {
   float alpha_;
   float beta_;
 };
-}  // namespace MklDnn
-}  // namespace Lotus
+}  // namespace mkl_dnn
+}  // namespace onnxruntime

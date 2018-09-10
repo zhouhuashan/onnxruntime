@@ -14,7 +14,7 @@ using namespace onnx;
 
 #define LOTUS_OPERATOR_SCHEMA LOTUS_UNUSED ONNX_OPERATOR_SCHEMA
 
-namespace LotusIR {
+namespace onnxruntime {
 namespace Test {
 TEST(FormalParamTest, Success) {
   OpSchema::FormalParameter p("input", "desc: integer input", "tensor(int32)");
@@ -51,7 +51,7 @@ ONNX_NAMESPACE::OpSchema CreateTestSchema(const char* name, const char* domain, 
 }
 
 TEST(OpRegistrationTest, OpsetRegTest) {
-  std::shared_ptr<LotusIR::LotusOpSchemaRegistry> registry = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> registry = std::make_shared<LotusOpSchemaRegistry>();
 
   // Register op-set version 1 with baseline version 0
   std::vector<ONNX_NAMESPACE::OpSchema> schema = {CreateTestSchema("Op1", "Domain1", 1), CreateTestSchema("Op2", "Domain1", 1)};
@@ -73,7 +73,7 @@ TEST(OpRegistrationTest, OpsetRegTest) {
   EXPECT_FALSE(registry->RegisterOpSet(schemaV2, "Domain1", 1, 2).IsOK());
 
   // Registering an op-set with schema in a different domain than the op-set will fail
-  std::shared_ptr<LotusIR::LotusOpSchemaRegistry> temp_reg = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> temp_reg = std::make_shared<LotusOpSchemaRegistry>();
   EXPECT_FALSE(temp_reg->RegisterOpSet(schema, "WrongDomain", 0, 1).IsOK());
 
   // Registering a second op-set in a different domain should succeed
@@ -87,7 +87,7 @@ TEST(OpRegistrationTest, OpsetRegTest) {
   EXPECT_FALSE(registry->RegisterOpSet(schema, "Domain1", 0, 1).IsOK());
 
   // Create a second registry, combined with the first through a manager
-  std::shared_ptr<LotusIR::LotusOpSchemaRegistry> registry2 = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> registry2 = std::make_shared<LotusOpSchemaRegistry>();
   SchemaRegistryManager manager;
   manager.RegisterRegistry(registry);
   manager.RegisterRegistry(registry2);
@@ -104,7 +104,7 @@ TEST(OpRegistrationTest, OpsetRegTest) {
 
   // Add a new operator set which is verion 5, with a baseline of version 4, meaning that
   // there is a gap at version 3.
-  std::shared_ptr<LotusIR::LotusOpSchemaRegistry> registryV5 = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> registryV5 = std::make_shared<LotusOpSchemaRegistry>();
   manager.RegisterRegistry(registryV5);
   std::vector<ONNX_NAMESPACE::OpSchema> schemaV5 = {
       CreateTestSchema("Op3", "Domain1", 4),
@@ -246,4 +246,4 @@ TEST(OpRegistrationTest, AttributeDefaultValueListTest) {
 }
 
 }  // namespace Test
-}  // namespace LotusIR
+}  // namespace onnxruntime

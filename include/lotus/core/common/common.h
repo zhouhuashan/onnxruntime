@@ -36,13 +36,13 @@
 #include "core/common/exceptions.h"
 #include "core/common/status.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 using TimePoint = std::chrono::high_resolution_clock::time_point;
 
 // Using statements for common classes that we refer to in lotus very often.
 // TODO(Task:137) Remove 'using' statements from header files
-using Common::Status;
+using common::Status;
 
 #ifdef _WIN32
 #define UNUSED_PARAMETER(x) (x)
@@ -71,32 +71,32 @@ std::vector<std::string> GetStackTrace();
 
 // Capture where a message is coming from. Use __FUNCTION__ rather than the much longer __PRETTY_FUNCTION__
 #define WHERE \
-  ::Lotus::CodeLocation(__FILE__, __LINE__, __FUNCTION__)
+  ::onnxruntime::CodeLocation(__FILE__, __LINE__, __FUNCTION__)
 
 #define WHERE_WITH_STACK \
-  ::Lotus::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__, ::Lotus::GetStackTrace())
+  ::onnxruntime::CodeLocation(__FILE__, __LINE__, __PRETTY_FUNCTION__, ::onnxruntime::GetStackTrace())
 
 // Throw an exception with optional message.
 // NOTE: The arguments get streamed into a string via ostringstream::operator<<
 // DO NOT use a printf format string, as that will not work as you expect.
-#define LOTUS_THROW(...) throw ::Lotus::LotusException(WHERE_WITH_STACK, ::Lotus::MakeString(__VA_ARGS__))
+#define LOTUS_THROW(...) throw ::onnxruntime::LotusException(WHERE_WITH_STACK, ::onnxruntime::MakeString(__VA_ARGS__))
 
 // Just in order to mark things as not implemented. Do not use in final code.
-#define LOTUS_NOT_IMPLEMENTED(...) throw ::Lotus::NotImplementedException(::Lotus::MakeString(__VA_ARGS__))
+#define LOTUS_NOT_IMPLEMENTED(...) throw ::onnxruntime::NotImplementedException(::onnxruntime::MakeString(__VA_ARGS__))
 
 // Check condition.
 // NOTE: The arguments get streamed into a string via ostringstream::operator<<
 // DO NOT use a printf format string, as that will not work as you expect.
 #define LOTUS_ENFORCE(condition, ...) \
-  if (!(condition)) throw ::Lotus::LotusException(WHERE_WITH_STACK, #condition, ::Lotus::MakeString(__VA_ARGS__))
+  if (!(condition)) throw ::onnxruntime::LotusException(WHERE_WITH_STACK, #condition, ::onnxruntime::MakeString(__VA_ARGS__))
 
 #define LOTUS_MAKE_STATUS(category, code, ...) \
-  ::Lotus::Common::Status(::Lotus::Common::category, ::Lotus::Common::code, ::Lotus::MakeString(__VA_ARGS__))
+  ::onnxruntime::common::Status(::onnxruntime::common::category, ::onnxruntime::common::code, ::onnxruntime::MakeString(__VA_ARGS__))
 
 // Check condition. if not met, return status.
-#define LOTUS_RETURN_IF_NOT(condition, ...)                                                                                       \
-  if (!(condition)) {                                                                                                             \
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Not satsified: " #condition "\n", WHERE.ToString(), ::Lotus::MakeString(__VA_ARGS__)); \
+#define LOTUS_RETURN_IF_NOT(condition, ...)                                                                                             \
+  if (!(condition)) {                                                                                                                   \
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Not satsified: " #condition "\n", WHERE.ToString(), ::onnxruntime::MakeString(__VA_ARGS__)); \
   }
 
 // Macros to disable the copy and/or move ctor and assignment methods
@@ -158,14 +158,14 @@ inline void MakeStringInternal(std::ostringstream& ss, const T& t) noexcept {
 
 template <typename T, typename... Args>
 inline void MakeStringInternal(std::ostringstream& ss, const T& t, const Args&... args) noexcept {
-  ::Lotus::MakeStringInternal(ss, t);
-  ::Lotus::MakeStringInternal(ss, args...);
+  ::onnxruntime::MakeStringInternal(ss, t);
+  ::onnxruntime::MakeStringInternal(ss, args...);
 }
 
 template <typename... Args>
 std::string MakeString(const Args&... args) {
   std::ostringstream ss;
-  ::Lotus::MakeStringInternal(ss, args...);
+  ::onnxruntime::MakeStringInternal(ss, args...);
   return std::string(ss.str());
 }
 
@@ -209,4 +209,4 @@ inline size_t Align256(size_t v) {
   return (v + 255) & ~static_cast<size_t>(255);
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

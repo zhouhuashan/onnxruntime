@@ -8,15 +8,15 @@
 #include "core/framework/framework_common.h"
 #include "core/graph/basic_types.h"
 
-namespace LotusIR {  // forward declarations
+namespace onnxruntime {  // forward declarations
 class GraphTransformer;
-}  // namespace LotusIR
+}  // namespace onnxruntime
 
 namespace onnx {
 class ModelProto;
 }  // namespace onnx
 
-namespace Lotus {
+namespace onnxruntime {
 class IExecutionProvider;  // forward decl
 class IOBinding;
 
@@ -54,6 +54,9 @@ struct SessionOptions {
   unsigned session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
 
   unsigned max_num_graph_transformation_steps = 5;  // TODO choose a good default here?
+
+  // How many threads in the session thread pool.
+  int session_thread_pool_size = 0;
 };
 
 /**
@@ -75,8 +78,8 @@ struct ModelMetadata {
   *  ProviderOption po{"CPUExecutionProvider", epi};
   *  SessionOptions so(vector<ProviderOption>{po});
   *  InferenceSession session_object{so};
-  *  Common::Status status = session_object.Load(MODEL_URI);
-  *  Common::Status status = session_object.Initialize();
+  *  common::Status status = session_object.Load(MODEL_URI);
+  *  common::Status status = session_object.Initialize();
   *
   *  NameMLValMap feeds;
   *  feeds.insert({});
@@ -85,7 +88,7 @@ struct ModelMetadata {
   *  output_names.insert(...);
   *  ...
   *  std::vector<MLValue> fetches;
-  *  Common::Status status = session_object.Run(run_options, feeds, output_names, &fetches);
+  *  common::Status status = session_object.Run(run_options, feeds, output_names, &fetches);
   *  process the output here...
   */
 
@@ -110,17 +113,17 @@ class InferenceSession {
     * Register an execution provider. If you've one to register, call this before invoking Initialize().
     * The order of invocation indicates the preference order as well. In other words call this method 
     * on your most preferred execution provider first followed by the less preferred ones.
-    * Calling this API is optional in which case Lotus will use its internal CPU execution provider.
+    * Calling this API is optional in which case onnxruntime will use its internal CPU execution provider.
     * @return OK if success.
     */
-  Common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider);
+  common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider);
 
   /**
     * Register a graph transformer. If you've one to register, call this before invoking Initialize().
     * Calling this API is optional.
     * @return OK if success.
     */
-  Common::Status RegisterGraphTransformer(std::unique_ptr<LotusIR::GraphTransformer> p_graph_transformer);
+  common::Status RegisterGraphTransformer(std::unique_ptr<onnxruntime::GraphTransformer> p_graph_transformer);
 
   /**
   * Load custom ops implemented in a dynamically linked shared library.
@@ -129,7 +132,7 @@ class InferenceSession {
   * TODO add sample code
   * @return OK if success
   */
-  Common::Status LoadCustomOps(const std::vector<std::string>& dso_list);
+  common::Status LoadCustomOps(const std::vector<std::string>& dso_list);
 
   /**
     * Register a custom registry for operator schema and kernels.  If you've one to register, 
@@ -139,21 +142,21 @@ class InferenceSession {
     * Calling this API is optional.
     * @return OK if success.
     */
-  Common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry);
+  common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry> custom_registry);
 
   /**
     * Load an ONNX model.
     * @param model_uri absolute path of the model file.
     * @return OK if success.
     */
-  Common::Status Load(const std::string& model_uri);
+  common::Status Load(const std::string& model_uri);
 
   /**
     * Load an ONNX model.
     * @param istream object of the model.
     * @return OK if success.
     */
-  Common::Status Load(std::istream& model_istream);
+  common::Status Load(std::istream& model_istream);
 
   /**
     * Initializes a previously loaded model. Initialization includes but is not
@@ -161,7 +164,7 @@ class InferenceSession {
     * This method assumes that a method has been loaded previously.
     * @return OK if success
     */
-  Common::Status Initialize();
+  common::Status Initialize();
 
   /**
     * Run a pre-loaded and pre-intialized model.
@@ -173,7 +176,7 @@ class InferenceSession {
     *        This should not be changed during execution of this function.
     * @return OK if success.
     */
-  Common::Status Run(const NameMLValMap& feeds,
+  common::Status Run(const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches);
 
@@ -182,7 +185,7 @@ class InferenceSession {
     * for details.
     * @param run_options use this to tune the Run call to your needs.
     */
-  Common::Status Run(const RunOptions& run_options,
+  common::Status Run(const RunOptions& run_options,
                      const NameMLValMap& feeds,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>* p_fetches);
@@ -192,16 +195,16 @@ class InferenceSession {
   * @param provider_type specifies the location where the inputs need to be potentially copied. 
   * See IOBinding class for more info.
   */
-  Common::Status NewIOBinding(std::unique_ptr<IOBinding>* io_binding);
+  common::Status NewIOBinding(std::unique_ptr<IOBinding>* io_binding);
 
-  Common::Status Run(const RunOptions& run_options, IOBinding& io_binding);
-  Common::Status Run(IOBinding& io_binding);
+  common::Status Run(const RunOptions& run_options, IOBinding& io_binding);
+  common::Status Run(IOBinding& io_binding);
 
   /**
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
     * @note lifetime of the returned pointer is valid as long as the Session object is live.
     */
-  std::pair<Common::Status, const ModelMetadata*> GetModelMetadata() const;
+  std::pair<common::Status, const ModelMetadata*> GetModelMetadata() const;
 
   /**
     * Get all input definitions of the model. This does not include weights. Use this
@@ -209,14 +212,14 @@ class InferenceSession {
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
     * @note lifetime of the returned pointer is valid as long as the Session object is live.
     */
-  std::pair<Common::Status, const InputDefList*> GetModelInputs() const;
+  std::pair<common::Status, const InputDefList*> GetModelInputs() const;
 
   /**
     * Get all output definitions of the model. Use this to get the name/type/shapes of the outputs.
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
     * @note lifetime of the returned pointer is valid as long as the Session object is live.
     */
-  std::pair<Common::Status, const OutputDefList*> GetModelOutputs() const;
+  std::pair<common::Status, const OutputDefList*> GetModelOutputs() const;
 
   /**
     * Get the current number of in-progress concurrent Run calls.
@@ -242,4 +245,4 @@ class InferenceSession {
   class Impl;
   std::unique_ptr<Impl> impl_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

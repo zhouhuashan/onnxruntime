@@ -1,7 +1,7 @@
 #include "core/providers/cpu/nn/roi_pool.h"
 #include <cmath>
 
-namespace Lotus {
+namespace onnxruntime {
 ONNX_CPU_OPERATOR_KERNEL(
     MaxRoiPool,
     1,
@@ -97,4 +97,4 @@ Status RoiPool<float>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

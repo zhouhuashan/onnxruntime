@@ -4,8 +4,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/ml/ml_common.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 class CategoryMapper final : public OpKernel {
  public:
@@ -45,5 +45,5 @@ class CategoryMapper final : public OpKernel {
   int64_t default_int_;
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

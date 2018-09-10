@@ -6,7 +6,7 @@ GTEST_API_ int main(int argc, char** argv) {
   int status = 0;
 
   try {
-    ::Lotus::Test::TestEnvironment test_environment{argc, argv};
+    ::onnxruntime::Test::TestEnvironment test_environment{argc, argv};
 
     status = RUN_ALL_TESTS();
   } catch (const std::exception& ex) {

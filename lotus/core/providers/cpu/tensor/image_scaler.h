@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class ImageScaler final : public OpKernel {
@@ -47,4 +47,4 @@ class ImageScaler final : public OpKernel {
   std::vector<float> bias_;
 };
 
-}  //namespace Lotus
+}  //namespace onnxruntime

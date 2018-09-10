@@ -3,7 +3,7 @@
 #include "core/common/common.h"
 #include "core/framework/arena.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 using DeviceAllocatorFactory = std::function<std::unique_ptr<IDeviceAllocator>(int)>;
 
@@ -36,4 +36,4 @@ class DeviceAllocatorRegistry {
   std::map<std::string, DeviceAllocatorRegistrationInfo> device_allocator_registrations_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

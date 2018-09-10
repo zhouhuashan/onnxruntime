@@ -6,7 +6,7 @@
 #include "core/util/math_cpuonly.h"
 #include "gemm_helper.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T_X,
           typename T_W,
@@ -111,4 +111,4 @@ class Gemm final : public OpKernel {
   float beta_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

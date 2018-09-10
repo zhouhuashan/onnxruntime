@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 template <typename T>
 void TestHelper(const std::vector<T>& classes,
                 const std::string& type,
                 const vector<int64_t>& input_dims,
                 OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
-  OpTester test("ZipMap", 1, LotusIR::kMLDomain);
+  OpTester test("ZipMap", 1, onnxruntime::kMLDomain);
 
   std::vector<float> input{1.f, 0.f, 3.f, 44.f, 23.f, 11.3f};
 
@@ -69,4 +69,4 @@ TEST(MLOpTest, ZipMapOpInt64FloatStrideLessThanNumLabels) {
   TestHelper<int64_t>({10, 20, 30}, "int64_t", {3, 2}, OpTester::ExpectResult::kExpectFailure);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

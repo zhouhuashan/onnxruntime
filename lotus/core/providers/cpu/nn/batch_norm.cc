@@ -1,7 +1,7 @@
 #include "core/providers/cpu/nn/batch_norm.h"
 #include "core/providers/cpu/nn/batch_norm_helper.h"
 
-namespace Lotus {
+namespace onnxruntime {
 // spec: https://github.com/onnx/onnx/blob/master/docs/Operators.md#BatchNormalization
 ONNX_CPU_OPERATOR_KERNEL(
     BatchNormalization,
@@ -57,4 +57,4 @@ Status BatchNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
 
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

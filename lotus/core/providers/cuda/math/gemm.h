@@ -2,8 +2,8 @@
 
 #include "core/providers/cuda/cuda_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 template <typename T>
 class Gemm final : public CudaKernel {
   using Base = CudaKernel;
@@ -29,5 +29,5 @@ class Gemm final : public CudaKernel {
   float alpha_;
   float beta_;
 };
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

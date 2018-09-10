@@ -10,7 +10,7 @@
 #endif
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <bool is_dropout>
 class IdentityOp final : public OpKernel {
@@ -46,4 +46,4 @@ class IdentityOp final : public OpKernel {
   }
 };
 
-}  //namespace Lotus
+}  //namespace onnxruntime

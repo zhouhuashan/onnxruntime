@@ -3,17 +3,17 @@
 #include "core/framework/op_kernel.h"
 #include "ml_common.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 template <typename T>
 class TreeEnsembleClassifier final : public OpKernel {
  public:
   explicit TreeEnsembleClassifier(const OpKernelInfo& info);
-  Common::Status Compute(OpKernelContext* context) const override;
+  common::Status Compute(OpKernelContext* context) const override;
 
  private:
   void Initialize();
-  Common::Status ProcessTreeNode(std::unordered_map<int64_t, float>& classes,
+  common::Status ProcessTreeNode(std::unordered_map<int64_t, float>& classes,
                                  int64_t treeindex,
                                  const T* x_data,
                                  int64_t feature_base) const;
@@ -49,5 +49,5 @@ class TreeEnsembleClassifier final : public OpKernel {
   POST_EVAL_TRANSFORM post_transform_;
   bool weights_are_all_positive_;
 };
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

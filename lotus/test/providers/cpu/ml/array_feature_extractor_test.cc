@@ -2,11 +2,11 @@
 #include "test/providers/provider_test_utils.h"
 #include "gsl/gsl"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MLOpTest, ArrayFeatureExtractorTest) {
-  OpTester test("ArrayFeatureExtractor", 1, LotusIR::kMLDomain);
+  OpTester test("ArrayFeatureExtractor", 1, onnxruntime::kMLDomain);
   const int N = 3;
   const std::vector<float> X = {0.8f, -1.5f, 2.0f, 3.8f, -4.0f, 5.0f,
                                 6.8f, -7.5f, 8.0f, 9.8f, -9.0f, 4.0f,
@@ -34,4 +34,4 @@ TEST(MLOpTest, ArrayFeatureExtractorTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

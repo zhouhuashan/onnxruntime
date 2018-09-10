@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MLOpTest, LinearClassifierMulticlass) {
-  OpTester test("LinearClassifier", 1, LotusIR::kMLDomain);
+  OpTester test("LinearClassifier", 1, onnxruntime::kMLDomain);
 
   std::vector<float> coefficients = {-0.22562418f, 0.34188559f, 0.68346153f, -0.68051993f, -0.1975279f, 0.03748541f};
   std::vector<int64_t> classes = {1, 2, 3};
@@ -30,7 +30,7 @@ TEST(MLOpTest, LinearClassifierMulticlass) {
 }
 
 TEST(MLOpTest, LinearClassifierMulticlassProb) {
-  OpTester test("LinearClassifier", 1, LotusIR::kMLDomain);
+  OpTester test("LinearClassifier", 1, onnxruntime::kMLDomain);
 
   std::vector<float> coefficients = {-0.22562418f, 0.34188559f, 0.68346153f, -0.68051993f, -0.1975279f, 0.03748541f};
   std::vector<int64_t> classes = {1, 2, 3};
@@ -53,7 +53,7 @@ TEST(MLOpTest, LinearClassifierMulticlassProb) {
 }
 
 TEST(MLOpTest, LinearClassifierMulticlassProbSigmoid) {
-  OpTester test("LinearClassifier", 1, LotusIR::kMLDomain);
+  OpTester test("LinearClassifier", 1, onnxruntime::kMLDomain);
 
   std::vector<float> coefficients = {-0.22562418f, 0.34188559f, 0.68346153f, -0.68051993f, -0.1975279f, 0.03748541f};
   std::vector<int64_t> classes = {1, 2, 3};
@@ -78,7 +78,7 @@ TEST(MLOpTest, LinearClassifierMulticlassProbSigmoid) {
 }
 
 TEST(MLOpTest, LinearClassifierBinary) {
-  OpTester test("LinearClassifier", 1, LotusIR::kMLDomain);
+  OpTester test("LinearClassifier", 1, onnxruntime::kMLDomain);
 
   std::vector<float> coefficients = {0.00085401f, -0.00314063f};
   std::vector<float> X = {1.f, 0.f, 3.f, 44.f, 23.f, 11.3f};
@@ -96,7 +96,7 @@ TEST(MLOpTest, LinearClassifierBinary) {
 }
 
 TEST(MLOpTest, LinearClassifierBinaryWithLabels) {
-  OpTester test("LinearClassifier", 1, LotusIR::kMLDomain);
+  OpTester test("LinearClassifier", 1, onnxruntime::kMLDomain);
 
   std::vector<float> coefficients = {0.00085401f, -0.00314063f};
   std::vector<float> X = {1.f, 0.f, 3.f, 44.f, 23.f, 11.3f};
@@ -116,7 +116,7 @@ TEST(MLOpTest, LinearClassifierBinaryWithLabels) {
 }
 
 TEST(MLOpTest, LinearClassifierMulticlassInt64Input) {
-  OpTester test("LinearClassifier", 1, LotusIR::kMLDomain);
+  OpTester test("LinearClassifier", 1, onnxruntime::kMLDomain);
 
   std::vector<float> coefficients = {-0.22562418f, 0.34188559f, 0.68346153f, -0.68051993f, -0.1975279f, 0.03748541f};
   std::vector<int64_t> classes = {1, 2, 3};
@@ -141,4 +141,4 @@ TEST(MLOpTest, LinearClassifierMulticlassInt64Input) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

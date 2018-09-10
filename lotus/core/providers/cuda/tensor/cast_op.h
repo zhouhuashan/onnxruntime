@@ -2,8 +2,8 @@
 
 #include "core/providers/cuda/cuda_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename SrcT>
 class Cast final : public CudaKernel {
@@ -21,5 +21,5 @@ class Cast final : public CudaKernel {
   onnx::TensorProto_DataType to_;
 };
 
-}  // namespace Cuda
-}  //namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

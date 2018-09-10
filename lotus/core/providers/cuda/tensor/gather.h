@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/tensor/gather.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class Gather final : public CudaKernel, public GatherBase {
  public:
@@ -12,5 +12,5 @@ class Gather final : public CudaKernel, public GatherBase {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

@@ -2,12 +2,12 @@
 
 #include "core/graph/graph_base.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class Function;
 struct IndexedSubGraph;
-}  // namespace Lotus
+}  // namespace onnxruntime
 
-namespace LotusIR {
+namespace onnxruntime {
 struct FunctionContainer;
 // A graph representation class.
 class Graph : public GraphBase {
@@ -22,7 +22,7 @@ class Graph : public GraphBase {
   // 2. Check & Setup inner nodes' dependency.
   // 3. Cleanup function definition lists.
   // Returns resolving status.
-  ::Lotus::Common::Status Resolve() override;
+  ::onnxruntime::common::Status Resolve() override;
 
   // Getter and Setter for graph name.
   const std::string& Name() const noexcept override;
@@ -49,7 +49,11 @@ class Graph : public GraphBase {
   // Construct a Graph instance for a subgraph. Inherits some properties from the parent graph.
   Graph(const Graph& model_graph, onnx::GraphProto& subgraph_proto);
 
-  Node* FuseSubGraph(std::unique_ptr<::Lotus::IndexedSubGraph> sub_graph, const std::string& fused_node_name);
+  Node* FuseSubGraph(std::unique_ptr<::onnxruntime::IndexedSubGraph> sub_graph, const std::string& fused_node_name);
+
+  void CollectRootNodesAndRefs();
+  const std::vector<NodeIndex>& GetRootNodes() const { return root_nodes_; }
+  const std::vector<size_t>& GetNodeRefs() const { return node_refs_; }
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
@@ -74,26 +78,26 @@ class Graph : public GraphBase {
     Sub = 2,
   };
 
-  ::Lotus::Common::Status Resolve(bool no_proto_sync_required);
+  ::onnxruntime::common::Status Resolve(bool no_proto_sync_required);
 
-  ::Lotus::Common::Status InferAndVerifyTypeMatch(Node& node,
-                                                  const onnx::OpSchema& op);
+  ::onnxruntime::common::Status InferAndVerifyTypeMatch(Node& node,
+                                                        const onnx::OpSchema& op);
 
   // Apply type-inference and type-checking to all inputs and initializers:
-  ::Lotus::Common::Status TypeCheckInputsAndInitializers();
+  ::onnxruntime::common::Status TypeCheckInputsAndInitializers();
 
   // Compute set of input and initializer names and checking for duplicate names
-  ::Lotus::Common::Status VerifyInputAndInitializerNames(
+  ::onnxruntime::common::Status VerifyInputAndInitializerNames(
       /*OUT*/ std::unordered_set<std::string>& inputs_and_initializers);
 
   // Given nodes in topological order, infer and set type information
   // across <*this> graph if needed, and verify type/attribute
   // information match between node and op.
-  ::Lotus::Common::Status VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
-                                               const std::unordered_map<std::string, Node*>& output_args);
+  ::onnxruntime::common::Status VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
+                                                     const std::unordered_map<std::string, Node*>& output_args);
 
   // Set graph inputs/outputs when resolving a graph..
-  ::Lotus::Common::Status SetGraphInputsOutputs();
+  ::onnxruntime::common::Status SetGraphInputsOutputs();
 
   // Sync graph inputs/outputs when serializing to proto.
   void SyncGraphInputsOutputs();
@@ -123,5 +127,8 @@ class Graph : public GraphBase {
   ILotusOpSchemaCollectionPtr schema_registry_;
 
   std::unique_ptr<FunctionContainer> function_container_;
+
+  std::vector<NodeIndex> root_nodes_;
+  std::vector<size_t> node_refs_;
 };
-}  // namespace LotusIR
+}  // namespace onnxruntime

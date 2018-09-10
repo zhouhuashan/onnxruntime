@@ -1,10 +1,10 @@
 #include "image_scaler.h"
 #include "image_scaler_impl.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
-#define REGISTER_KERNEL_TYPED(T)                                      \
+#define REGISTER_KERNEL_TYPED(T)                                  \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
       ImageScaler,                                                \
       kOnnxDomain,                                                \
@@ -58,5 +58,5 @@ Status ImageScaler<T>::ComputeInternal(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

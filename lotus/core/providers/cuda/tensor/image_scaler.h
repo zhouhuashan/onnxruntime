@@ -4,8 +4,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cuda/cudnn_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class ImageScaler final : public CudaKernel {
@@ -19,5 +19,5 @@ class ImageScaler final : public CudaKernel {
   IAllocatorUniquePtr<float> b_data_;  // gpu copy of bias
 };
 
-}  // namespace Cuda
-}  //namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

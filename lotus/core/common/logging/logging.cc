@@ -12,9 +12,9 @@
 #include <sys/syscall.h>
 #endif
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
-const char* Category::Lotus = "Lotus";
+const char* Category::onnxruntime = "onnxruntime";
 const char* Category::System = "System";
 
 using namespace std::chrono;
@@ -176,8 +176,8 @@ std::exception LoggingManager::LogFatalAndCreateException(const char* category,
 
   // create Capture in separate scope so it gets destructed (leading to log output) before we throw.
   {
-    ::Lotus::Logging::Capture c{::Lotus::Logging::LoggingManager::DefaultLogger(),
-                                ::Lotus::Logging::Severity::kFATAL, category, ::Lotus::Logging::DataType::SYSTEM, location};
+    ::onnxruntime::Logging::Capture c{::onnxruntime::Logging::LoggingManager::DefaultLogger(),
+                                      ::onnxruntime::Logging::Severity::kFATAL, category, ::onnxruntime::Logging::DataType::SYSTEM, location};
     va_list args;
     va_start(args, format_str);
 
@@ -210,4 +210,4 @@ unsigned int GetProcessId() {
 }
 
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

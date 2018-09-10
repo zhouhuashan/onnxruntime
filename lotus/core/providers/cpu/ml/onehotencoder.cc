@@ -27,10 +27,10 @@ to int64s and the cats_int64s category list will be used for the lookups.
 AttributeProto::INT,
 OPTIONAL);
 */
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 using namespace std;
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 #define REG_KERNEL(TYPE)                                                           \
   ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(                                               \
@@ -65,7 +65,7 @@ OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), 
 }
 
 template <typename T>
-Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
+common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& input_shape = X->Shape();
   LOTUS_ENFORCE(input_shape.NumDimensions() <= 2);
@@ -90,7 +90,7 @@ Common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
 }
 
 template <>
-Common::Status OneHotEncoderOp<std::string>::Compute(OpKernelContext* context) const {
+common::Status OneHotEncoderOp<std::string>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& input_shape = X->Shape();
   LOTUS_ENFORCE(input_shape.NumDimensions() <= 2);
@@ -113,5 +113,5 @@ Common::Status OneHotEncoderOp<std::string>::Compute(OpKernelContext* context) c
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

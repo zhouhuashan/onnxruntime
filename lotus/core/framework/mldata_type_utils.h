@@ -4,8 +4,8 @@
 #include "core/graph/graph.h"
 #include "onnx/defs/data_type_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Utils {
-MLDataType GetMLDataType(const LotusIR::NodeArg& arg);
+MLDataType GetMLDataType(const onnxruntime::NodeArg& arg);
 }  // namespace Utils
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -3,7 +3,7 @@
 #include "test_utils.h"
 #include "gtest/gtest.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 TEST(AllocatorTest, CPUAllocatorTest) {
   auto cpu_arena = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
@@ -71,4 +71,4 @@ TEST(AllocatorTest, MakeUniquePtrTest) {
   void_ptr = nullptr;
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

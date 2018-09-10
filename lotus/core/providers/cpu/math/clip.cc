@@ -1,6 +1,6 @@
 #include "core/providers/cpu/math/clip.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Clip,
@@ -8,4 +8,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().MayInplace(0, 0).TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Clip<float>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

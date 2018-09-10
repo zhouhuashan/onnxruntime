@@ -143,7 +143,7 @@ Equations (Default: f=Sigmoid, g=Tanh, h=Tanh):
 
 */
 
-namespace Lotus {
+namespace onnxruntime {
 
 /* LSTM operator */
 ONNX_CPU_OPERATOR_KERNEL(
@@ -317,7 +317,7 @@ DeepCpuLstmOp::Compute(OpKernelContext* context) const {
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::Lotus::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
@@ -1292,4 +1292,4 @@ void UniDirectionalLstm<T>::SetNumThreads() {
 }
 
 }  // namespace detail
-}  // namespace Lotus
+}  // namespace onnxruntime

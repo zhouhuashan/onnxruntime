@@ -2,7 +2,7 @@
 
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class KernelRegistry {
  public:
   KernelRegistry() = default;
@@ -24,29 +24,28 @@ class KernelRegistry {
   // for its clients unless the factory is managing the lifecycle of the pointer
   // itself.
   // TODO(Task:132) Make usage of unique_ptr/shared_ptr as out param consistent
-  Status CreateKernel(const LotusIR::Node& node,
+  Status CreateKernel(const onnxruntime::Node& node,
                       const IExecutionProvider& execution_provider,
                       const SessionState& session_state,
                       std::unique_ptr<OpKernel>& op_kernel) const;
 
-  Status FindKernel(const LotusIR::Node& node,
+  Status FindKernel(const onnxruntime::Node& node,
                     /*out*/ const KernelCreateInfo** kernel_create_info) const;
 
   // Check if an execution provider can create kernel for a node.
-  bool CanExecutionProviderCreateKernel(const LotusIR::Node& node,
-                                        LotusIR::ProviderType exec_provider) const;
+  bool CanExecutionProviderCreateKernel(const onnxruntime::Node& node,
+                                        onnxruntime::ProviderType exec_provider) const;
 
  private:
   // Check if the node's input/outpuData/attributes are compatible with this
   // kernel_def, If so, the kernel defined by the kernel_def is used to
   // execute this node. exec_provider is used to match kernel when node has no provider
-  static bool VerifyKernelDef(const LotusIR::Node& node,
+  static bool VerifyKernelDef(const onnxruntime::Node& node,
                               const KernelDef& kernel_def,
                               std::string& error_str,
-                              LotusIR::ProviderType exec_provider = "");
+                              onnxruntime::ProviderType exec_provider = "");
 
   // Kernel create function map from op name to kernel creation info.
   KernelCreateMap kernel_creator_fn_map_;
 };
-}  // namespace Lotus
-
+}  // namespace onnxruntime

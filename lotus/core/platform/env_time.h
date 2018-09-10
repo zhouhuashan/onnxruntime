@@ -17,7 +17,7 @@ limitations under the License.
 #include <ctime>
 #include <cstdint>
 
-namespace Lotus {
+namespace onnxruntime {
 
 #ifdef _WIN32
 using TIME_SPEC = int64_t;
@@ -36,7 +36,7 @@ void AccumulateTimeSpec(TIME_SPEC* base, TIME_SPEC* start, TIME_SPEC* end);
 //If the function fails, the return value is zero
 double TimeSpecToSeconds(TIME_SPEC* value);
 
-/// \brief An interface used by the Lotus implementation to
+/// \brief An interface used by the onnxruntime implementation to
 /// access timer related operations.
 class EnvTime {
  public:
@@ -56,4 +56,4 @@ class EnvTime {
   virtual uint64_t NowSeconds() { return NowMicros() / 1000000L; }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

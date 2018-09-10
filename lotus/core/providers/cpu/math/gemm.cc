@@ -1,6 +1,6 @@
 #include "core/providers/cpu/math/gemm.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Gemm,

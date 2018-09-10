@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <psapi.h>
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 namespace Utils {
 
@@ -29,9 +29,9 @@ static std::uint64_t SubtractFILETIME(const FILETIME& ft_a, const FILETIME& ft_b
   return a.QuadPart - b.QuadPart;
 }
 
-class CPUUsage : public ICPUUsage{
+class CPUUsage : public ICPUUsage {
  public:
-  CPUUsage(){
+  CPUUsage() {
     Reset();
   }
 
@@ -57,6 +57,7 @@ class CPUUsage : public ICPUUsage{
     GetSystemTimes(&sys_idle_ft, &sys_kernel_ft_, &sys_user_ft_);
     GetProcessTimes(GetCurrentProcess(), &proc_creation_ft, &proc_exit_ft, &proc_kernel_ft_, &proc_user_ft_);
   }
+
  private:
   //system total times
   FILETIME sys_kernel_ft_;
@@ -67,11 +68,10 @@ class CPUUsage : public ICPUUsage{
   FILETIME proc_user_ft_;
 };
 
-
-std::unique_ptr<ICPUUsage> CreateICPUUsage(){
+std::unique_ptr<ICPUUsage> CreateICPUUsage() {
   return std::make_unique<CPUUsage>();
 }
 
 }  // namespace Utils
 }  // namespace PerfTest
-}  // namespace Lotus
+}  // namespace onnxruntime

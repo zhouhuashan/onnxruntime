@@ -5,8 +5,8 @@
 #include "core/util/math_cpuonly.h"
 #include "ml_common.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 template <typename T>
 class LinearRegressor final : public OpKernel {
@@ -21,5 +21,5 @@ class LinearRegressor final : public OpKernel {
   POST_EVAL_TRANSFORM post_transform_;
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

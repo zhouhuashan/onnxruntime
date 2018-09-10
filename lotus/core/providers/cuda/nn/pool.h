@@ -5,8 +5,8 @@
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cpu/nn/pool_base.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 enum PoolType {
   MaxPool,
@@ -20,5 +20,5 @@ class Pool final : public CudaKernel, public PoolBase {
 
   Status ComputeInternal(OpKernelContext* context) const override;
 };
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

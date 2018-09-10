@@ -1,7 +1,7 @@
 #include "ostream_sink.h"
 #include "date/date.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 
 void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
@@ -27,4 +27,4 @@ void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger
   }
 }
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -5,8 +5,8 @@
 #include "core/util/math_cpuonly.h"
 #include "ml_common.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 template <typename T>
 class LinearClassifier final : public OpKernel {
@@ -25,5 +25,5 @@ class LinearClassifier final : public OpKernel {
   std::vector<int64_t> classlabels_ints_;
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

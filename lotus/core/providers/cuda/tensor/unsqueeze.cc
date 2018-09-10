@@ -1,7 +1,7 @@
 #include "core/providers/cuda/tensor/unsqueeze.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 ONNX_OPERATOR_KERNEL_EX(
     Unsqueeze,
@@ -29,5 +29,5 @@ Status Unsqueeze::ComputeInternal(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

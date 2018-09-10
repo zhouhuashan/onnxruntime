@@ -19,7 +19,7 @@
 
 #include "core/providers/cpu/nn/conv_base.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class ConvTransposeBase : public ConvBase {
  protected:
@@ -68,4 +68,4 @@ class ConvTranspose : public OpKernel, public ConvTransposeBase {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

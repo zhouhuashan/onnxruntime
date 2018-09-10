@@ -2,8 +2,8 @@
 #include "core/providers/cpu/math/matmul_helper.h"
 #include "core/providers/cuda/shared_inc/fpgeneric.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                  \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
@@ -65,7 +65,7 @@ Status MatMul<T>::ComputeInternal(OpKernelContext* ctx) const {
   LOTUS_RETURN_IF_ERROR(right_arrays.CopyToGpu());
   LOTUS_RETURN_IF_ERROR(output_arrays.CopyToGpu());
 
-  // note that Lotus MLValue is row major, while cublas is column major,
+  // note that onnxruntime MLValue is row major, while cublas is column major,
   // so swap left/right operands
   CUBLAS_RETURN_IF_ERROR(cublasGemmBatchedHelper(
       Base::CublasHandle(),
@@ -87,5 +87,5 @@ Status MatMul<T>::ComputeInternal(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime
