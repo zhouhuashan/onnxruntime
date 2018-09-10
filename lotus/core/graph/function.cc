@@ -2,9 +2,9 @@
 #include "core/graph/graph.h"
 #include "core/graph/function_container.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
-FunctionImpl::FunctionImpl(const LotusIR::Graph& graph,
+FunctionImpl::FunctionImpl(const onnxruntime::Graph& graph,
                            std::unique_ptr<IndexedSubGraph> customized_func) {
   parent_graph_ = &graph;
   customized_func_body_ = std::move(customized_func);
@@ -30,9 +30,9 @@ FunctionImpl::FunctionImpl(const LotusIR::Graph& graph,
   //construct body
   std::unordered_map<std::string, int> domain_to_version;
   //TODO: set correct domain and version
-  domain_to_version[LotusIR::kOnnxDomain] = 7;
-  body_ = std::make_unique<LotusIR::Model>("fused_function_subgraph", false, LotusIR::ModelMetaData(),
-                                           /*TODO: get custom schema*/ nullptr, domain_to_version);
+  domain_to_version[onnxruntime::kOnnxDomain] = 7;
+  body_ = std::make_unique<onnxruntime::Model>("fused_function_subgraph", false, onnxruntime::ModelMetaData(),
+                                               /*TODO: get custom schema*/ nullptr, domain_to_version);
 
   auto& sub_graph = body_->MainGraph();
   //Add node and node args
@@ -40,7 +40,7 @@ FunctionImpl::FunctionImpl(const LotusIR::Graph& graph,
   //instead of create new nodes.
   for (auto& node_index : customized_func_body_->nodes) {
     auto node = parent_graph_->GetNode(node_index);
-    std::vector<LotusIR::NodeArg*> inputs, outputs;
+    std::vector<onnxruntime::NodeArg*> inputs, outputs;
     for (auto input : node->InputDefs()) {
       auto& n_input = sub_graph.GetOrCreateNodeArg(input->Name(), input->TypeAsProto());
       inputs.push_back(&n_input);
@@ -59,7 +59,7 @@ const onnx::OpSchema& FunctionImpl::OpSchema() const {
   return *op_schema_;
 }
 
-const LotusIR::GraphBase& FunctionImpl::Body() const {
+const onnxruntime::GraphBase& FunctionImpl::Body() const {
   return body_->MainGraph();
 }
 
@@ -67,8 +67,8 @@ const IndexedSubGraph& FunctionImpl::GetIndexedSubGraph() const {
   return *customized_func_body_;
 }
 
-std::unique_ptr<Function> MakeFunction(const LotusIR::Graph& graph,
+std::unique_ptr<Function> MakeFunction(const onnxruntime::Graph& graph,
                                        std::unique_ptr<IndexedSubGraph> customized_func) {
   return std::make_unique<FunctionImpl>(graph, std::move(customized_func));
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

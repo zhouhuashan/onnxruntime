@@ -20,7 +20,7 @@
 #include "core/util/math.h"
 #include <gtest/gtest.h>
 #include "core/util/math_cpuonly.h"
-namespace Lotus {
+namespace onnxruntime {
 
 #define VECTOR_HEAD(x) x.size() > 0 ? &x[0] : NULL
 
@@ -186,4 +186,4 @@ TEST(MathTest, GemvTrans) {
   }
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

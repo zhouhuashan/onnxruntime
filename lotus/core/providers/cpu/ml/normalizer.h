@@ -6,8 +6,8 @@
 
 #include "gsl/span"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 class Normalizer final : public OpKernel {
  public:
@@ -27,5 +27,5 @@ class Normalizer final : public OpKernel {
   NORMALIZE normalization_;
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

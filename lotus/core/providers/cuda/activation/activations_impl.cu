@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cu_inc/common.cuh"
 #include "core/providers/cuda/cu_inc/unary_elementwise_impl.cuh"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 struct OP_Affine : public CtxAffine {
@@ -126,5 +126,5 @@ struct OP_ThresholdedRelu : public CtxThresholdedRelu {
 UNARY_ACTIVATION_OPS()
 #undef UNARY_ACTIVATION_OP_NAME
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

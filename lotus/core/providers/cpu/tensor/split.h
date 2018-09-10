@@ -5,7 +5,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Split final : public OpKernel {
  public:
@@ -33,4 +33,4 @@ class Split final : public OpKernel {
   int64_t split_size_sum_ = 0;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

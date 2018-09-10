@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class Add final : public OpKernel {
@@ -256,4 +256,4 @@ class PRelu final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

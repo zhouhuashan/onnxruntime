@@ -10,7 +10,7 @@
 #include <core/framework/kernel_def_builder.h>
 #include <unordered_map>
 
-using namespace Lotus;
+using namespace onnxruntime;
 
 static void BM_CPUAllocator(benchmark::State& state) {
   AllocatorPtr cpu_allocator = std::make_shared<CPUAllocator>();
@@ -23,8 +23,8 @@ static void BM_CPUAllocator(benchmark::State& state) {
 BENCHMARK(BM_CPUAllocator)->Arg(4)->Arg(sizeof(Tensor));
 
 static void BM_ResolveGraph(benchmark::State& state) {
-  std::shared_ptr<LotusIR::Model> model_copy;
-  auto st = LotusIR::Model::Load("../models/test_tiny_yolov2/model.onnx", model_copy);
+  std::shared_ptr<onnxruntime::Model> model_copy;
+  auto st = onnxruntime::Model::Load("../models/test_tiny_yolov2/model.onnx", model_copy);
   if (!st.IsOK()) {
     printf("Parse model failed: %s", st.ErrorMessage().c_str());
     abort();
@@ -33,8 +33,8 @@ static void BM_ResolveGraph(benchmark::State& state) {
   model_copy.reset();
   for (auto _ : state) {
     state.PauseTiming();
-    std::shared_ptr<LotusIR::Model> model = std::make_shared<LotusIR::Model>(proto);
-    LotusIR::Graph& graph = model->MainGraph();
+    std::shared_ptr<onnxruntime::Model> model = std::make_shared<onnxruntime::Model>(proto);
+    onnxruntime::Graph& graph = model->MainGraph();
     state.ResumeTiming();
     st = graph.Resolve();
     if (!st.IsOK()) {

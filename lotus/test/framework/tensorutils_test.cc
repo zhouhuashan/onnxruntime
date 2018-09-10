@@ -2,10 +2,10 @@
 #include "core/graph/onnx_protobuf.h"
 #include "gtest/gtest.h"
 
-using namespace ::Lotus::Utils;
+using namespace ::onnxruntime::Utils;
 using namespace onnx;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 //T must be float for double, and it must match with the 'type' argument
@@ -61,4 +61,4 @@ TEST(TensorParseTest, TensorUtilsTest) {
   EXPECT_FALSE(status.IsOK());
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

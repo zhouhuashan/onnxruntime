@@ -5,8 +5,8 @@
 #include "core/providers/cuda/math/binary_elementwise_ops.h"
 #include "activations_impl.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define MAKE_FUNC_CTX_ALPHA()           \
   inline CtxAlpha MakeFuncCtx() const { \
@@ -221,5 +221,5 @@ class ThresholdedRelu final : public UnaryElementwise {
   float alpha_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

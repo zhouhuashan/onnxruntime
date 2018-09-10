@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MLOpTest, LinearRegressorUniTarget) {
@@ -22,7 +22,7 @@ TEST(MLOpTest, LinearRegressorUniTarget) {
     array([[32.], [14.], [-166.]])
   */
 
-  OpTester test("LinearRegressor", 1, LotusIR::kMLDomain);
+  OpTester test("LinearRegressor", 1, onnxruntime::kMLDomain);
   std::vector<float> coefficients = {-9.00000000f, -1.99600736e-16f};
   std::vector<float> intercepts = {41.0000000f};
   test.AddAttribute("intercepts", intercepts);
@@ -50,7 +50,7 @@ TEST(MLOpTest, LinearRegressorMultiTarget) {
     array([[   1.,   32.], [   3.,   14.], [  23., -166.]])
   */
 
-  OpTester test("LinearRegressor", 1, LotusIR::kMLDomain);
+  OpTester test("LinearRegressor", 1, onnxruntime::kMLDomain);
   std::vector<float> coefficients = {1.00000000f, -2.49500920e-17f, -9.00000000f, -1.99600736e-16f};
   std::vector<float> intercepts = {2.22044605e-16f, 41.0000000f};
   test.AddAttribute("intercepts", intercepts);
@@ -64,4 +64,4 @@ TEST(MLOpTest, LinearRegressorMultiTarget) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

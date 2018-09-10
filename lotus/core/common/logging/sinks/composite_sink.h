@@ -6,7 +6,7 @@
 #include "core/common/logging/isink.h"
 #include "core/common/logging/logging.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 /// <summary>
 /// Class that abstracts multiple ISink instances being written to.
@@ -40,4 +40,4 @@ class CompositeSink : public ISink {
   std::vector<std::unique_ptr<ISink>> sinks_;
 };
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

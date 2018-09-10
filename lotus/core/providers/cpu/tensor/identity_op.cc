@@ -1,7 +1,7 @@
 #include "core/providers/cpu/tensor/identity_op.h"
 #include "core/inc/op_kernel_author.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Dropout,
@@ -15,4 +15,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::AllTensorTypes()).Alias(0, 0),
     IdentityOp<false>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

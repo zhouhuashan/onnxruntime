@@ -92,6 +92,10 @@ if(lotus_USE_CUDA)
   list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/cuda/*)
 endif()
 
+if(lotus_USE_TVM)
+  list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/nuphar/*)
+endif()
+
 file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 
 
@@ -146,6 +150,10 @@ if(lotus_USE_MKLDNN)
   list(APPEND lotus_test_framework_libs lotus_providers_mkldnn)
 endif()
 
+if(lotus_USE_TVM)
+  list(APPEND lotus_test_framework_libs lotus_providers_nuphar)
+endif()
+
 if(WIN32)
     list(APPEND lotus_test_framework_libs Advapi32)
 else()
@@ -157,6 +165,7 @@ set(lotus_test_providers_libs
   lotus_session
   ${LOTUS_PROVIDERS_CUDA}
   ${LOTUS_PROVIDERS_MKLDNN}
+  ${LOTUS_PROVIDERS_NUPHAR}
   lotus_providers
   lotus_framework
   lotus_util
@@ -181,6 +190,10 @@ endif()
 
 if(lotus_USE_MKLDNN)
   list(APPEND lotus_test_providers_dependencies lotus_providers_mkldnn)
+endif()
+
+if(lotus_USE_TVM)
+  list(APPEND lotus_test_providers_dependencies lotus_providers_nuphar)
 endif()
 
 if( NOT WIN32)

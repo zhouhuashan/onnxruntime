@@ -22,7 +22,7 @@ class FixedCountFinishCallbackImpl {
     LOTUS_ENFORCE(CreateLotusEvent(&finish_event_).IsOK());
   }
 
-  ::Lotus::Common::Status fail(LOTUS_CALLBACK_INSTANCE pci) {
+  ::onnxruntime::common::Status fail(LOTUS_CALLBACK_INSTANCE pci) {
     {
       std::lock_guard<std::mutex> g(m_);
       failed = true;
@@ -31,7 +31,7 @@ class FixedCountFinishCallbackImpl {
     return LotusSetEventWhenCallbackReturns(pci, finish_event_);
   }
 
-  ::Lotus::Common::Status onFinished(size_t task_index, std::shared_ptr<T> result, LOTUS_CALLBACK_INSTANCE pci) {
+  ::onnxruntime::common::Status onFinished(size_t task_index, std::shared_ptr<T> result, LOTUS_CALLBACK_INSTANCE pci) {
     int v;
     {
       std::lock_guard<std::mutex> g(m_);
@@ -41,7 +41,7 @@ class FixedCountFinishCallbackImpl {
     if (v == 0) {
       return LotusSetEventWhenCallbackReturns(pci, finish_event_);
     }
-    return ::Lotus::Common::Status::OK();
+    return ::onnxruntime::common::Status::OK();
   }
 
   bool shouldStop() {

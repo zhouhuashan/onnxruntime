@@ -1,7 +1,7 @@
 #include "core/providers/cpu/reduction/reduction_ops.h"
 #include "core/util/math_cpuonly.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 
 #define REGISTER_UNARY_ELEMENTWISE_KERNEL(x, sinceVersion)                            \
   ONNX_CPU_OPERATOR_TYPED_KERNEL(                                                     \
@@ -375,4 +375,4 @@ Status ArgMin<T>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

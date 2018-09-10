@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include <cstdlib>
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 static void CheckStats(BFCArena* a, int64_t num_allocs, int64_t bytes_in_use,
                        int64_t max_bytes_in_use, int64_t max_alloc_size) {
@@ -232,4 +232,4 @@ TEST(BFCArenaTest, TestReserve) {
   EXPECT_EQ(stats.total_allocated_bytes, 1048576);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

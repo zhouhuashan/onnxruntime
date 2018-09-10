@@ -1,6 +1,6 @@
 #include "memcpy.h"
 using namespace onnx;
-namespace Lotus {
+namespace onnxruntime {
 
 Memcpy::Memcpy(const OpKernelInfo& info)
     : OpKernel(info) {
@@ -14,4 +14,4 @@ Status Memcpy::Compute(OpKernelContext* ctx) const {
   return retval;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

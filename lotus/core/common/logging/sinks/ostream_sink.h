@@ -7,7 +7,7 @@
 #include "core/common/logging/capture.h"
 #include "core/common/logging/isink.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Logging {
 /// <summary>
 /// A std::ostream based ISink
@@ -27,4 +27,4 @@ class OStreamSink : public ISink {
   const bool flush_;
 };
 }  // namespace Logging
-}  // namespace Lotus
+}  // namespace onnxruntime

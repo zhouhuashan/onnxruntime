@@ -17,11 +17,11 @@
 #include "gsl/gsl_util"
 #include "gsl/pointers"
 
-namespace Lotus {
+namespace onnxruntime {
 class Function;
-}  // namespace Lotus
+}  // namespace onnxruntime
 
-namespace LotusIR {
+namespace onnxruntime {
 
 class Graph;
 class GraphBase;
@@ -151,22 +151,22 @@ class Node {
   Node::Type NodeType() const noexcept;
   // Get function body if the node type is fused.
   // The function body is owned by <*this> node's parent graph.
-  const ::Lotus::Function* GetFunctionBody() const noexcept;
+  const ::onnxruntime::Function* GetFunctionBody() const noexcept;
 
   // Get node description.
   const std::string& Description() const noexcept;
 
   // Iterate through Input/OutputDefs() with index, note the loop early terminates with error.
-  static ::Lotus::Common::Status ForEachWithIndex(
+  static ::onnxruntime::common::Status ForEachWithIndex(
       const ConstPointerContainer<std::vector<NodeArg*>>& nodeArgVec,
-      std::function<::Lotus::Common::Status(const NodeArg& arg, size_t index)> func) {
+      std::function<::onnxruntime::common::Status(const NodeArg& arg, size_t index)> func) {
     for (size_t index = 0; index < nodeArgVec.size(); ++index) {
       auto arg = nodeArgVec[index];
       if (!arg->Exists())
         continue;
       LOTUS_RETURN_IF_ERROR(func(*arg, index));
     }
-    return ::Lotus::Common::Status::OK();
+    return ::onnxruntime::common::Status::OK();
   }
 
   // read only access. requires special wrapper to apply const to the NodeArg
@@ -182,6 +182,7 @@ class Node {
   }
 
   using NodeConstIterator = std::set<const Node*>::const_iterator;
+  using EdgeConstIterator = std::set<EdgeEnd*>::const_iterator;
 
   // Functions defined to traverse a Graph as below.
   // Read all input nodes of <*this>.
@@ -196,7 +197,15 @@ class Node {
   // End of output nodes.
   NodeConstIterator OutputNodesEnd() const noexcept { return relationships_.output_nodes.cend(); }
 
+  // Beginning of output ed. Iterator should have no nullptr values.
+  EdgeConstIterator OutputEdgesBegin() const noexcept { return relationships_.output_edges.cbegin(); }
+
+  // End of output nodes.
+  EdgeConstIterator OutputEdgesEnd() const noexcept { return relationships_.output_edges.cend(); }
+
   const std::set<std::string>& ControlInputs() const noexcept { return relationships_.control_inputs; }
+
+  size_t GetInputEdgesCount() const noexcept { return relationships_.input_edges.size(); }
 
   // Add a node attribute with specified attribute name and value.
   void AddAttribute(const std::string& attr_name, const onnx::AttributeProto& value);
@@ -229,16 +238,16 @@ class Node {
   void ToProto(onnx::NodeProto& proto) const;
 
   // iterate through all input/output defs
-  void ForEachDef(std::function<void(const LotusIR::NodeArg*, bool is_input)> func) const;
+  void ForEachDef(std::function<void(const onnxruntime::NodeArg*, bool is_input)> func) const;
 
   // iterate through all input defs
-  void ForEachInputDef(std::function<void(const LotusIR::NodeArg*)> func) const;
+  void ForEachInputDef(std::function<void(const onnxruntime::NodeArg*)> func) const;
 
   // iterate through all output defs
-  void ForEachOutputDef(std::function<void(const LotusIR::NodeArg*)> func) const;
+  void ForEachOutputDef(std::function<void(const onnxruntime::NodeArg*)> func) const;
 
   // Replaces defs
-  void ReplaceDefs(const std::map<const LotusIR::NodeArg*, LotusIR::NodeArg*>& replacements);
+  void ReplaceDefs(const std::map<const onnxruntime::NodeArg*, onnxruntime::NodeArg*>& replacements);
 
   // Node definitions. Really a struct but we want to prevent accidental copies.
   class Definitions {
@@ -330,10 +339,10 @@ class Node {
   const Definitions& GetDefinitions() const noexcept { return definitions_; }
   const Relationships& GetRelationships() const noexcept { return relationships_; }
   void SetNodeType(Node::Type node_type) noexcept;
-  void SetFunctionBody(const ::Lotus::Function& func);
+  void SetFunctionBody(const ::onnxruntime::Function& func);
 
   // validate and update the input arg count
-  ::Lotus::Common::Status UpdateInputArgCount();
+  ::onnxruntime::common::Status UpdateInputArgCount();
 
   // Node index. Default to impossible value rather than 0.
   NodeIndex index_ = std::numeric_limits<NodeIndex>::max();
@@ -350,7 +359,7 @@ class Node {
   // OperatorSchema that <*this> node refers to.
   const onnx::OpSchema* op_ = nullptr;
   Node::Type node_type_ = Node::Type::Primitive;
-  const ::Lotus::Function* func_body_ = nullptr;
+  const ::onnxruntime::Function* func_body_ = nullptr;
 
   // Node doc string.
   std::string description_;
@@ -389,7 +398,7 @@ class GraphBase {
   // 2. Check & Setup inner nodes' dependency.
   // 3. Cleanup function definition lists.
   // Returns resolving status.
-  virtual ::Lotus::Common::Status Resolve() = 0;
+  virtual ::onnxruntime::common::Status Resolve() = 0;
 
   // Getter and Setter for graph name.
   virtual const std::string& Name() const noexcept = 0;
@@ -497,7 +506,7 @@ class GraphBase {
   const Node* SourceNode() const;
   const Node* SinkNode() const;
 
-  ::Lotus::Common::Status GetNodesInTopologicalOrder(/*out*/ gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const;
+  ::onnxruntime::common::Status GetNodesInTopologicalOrder(/*out*/ gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const;
 
   // Mark Graph as needing Resolve() to be called
   GraphBase& SetGraphResolveNeeded() noexcept {
@@ -596,11 +605,11 @@ class GraphBase {
 
   // Build and verify node connection (edges).
   // Verify NodeArg name/type/shape matching correctly.
-  ::Lotus::Common::Status BuildConnections(
+  ::onnxruntime::common::Status BuildConnections(
       const std::unordered_map<std::string, Node*>& output_args,
       const std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
-  ::Lotus::Common::Status VerifyNoDuplicateName(
+  ::onnxruntime::common::Status VerifyNoDuplicateName(
       /*in*/ const std::unordered_set<std::string>& inputs_and_initializers,
       /*out*/ std::unordered_map<std::string, Node*>& output_args,
       /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index);
@@ -610,16 +619,16 @@ class GraphBase {
   // edge.
   // <nodes_in_topological_order> returns nodes' indexes in toplogical
   // order if <Status> returned is "OK", otherwise it's undefined.
-  ::Lotus::Common::Status CheckIsAcyclic(
+  ::onnxruntime::common::Status CheckIsAcyclic(
       /*out*/ std::vector<NodeIndex>& nodes_in_topological_order) const;
 
   // Apply shape/type inference to a single node. This is a wrapper for
   // invoking ONNX-defined shape+type inference for a single node.
   // Returns the inferred shape+type for every output of the node in
   // output parameter inferredShapes.
-  ::Lotus::Common::Status InferOutputTypesAndShapes(LotusIR::Node& node,
-                                                    /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
-  
+  ::onnxruntime::common::Status InferOutputTypesAndShapes(onnxruntime::Node& node,
+                                                          /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
+
  private:
   // need custom versions to handle the unique_ptr's in nodes_
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphBase);
@@ -690,4 +699,4 @@ class GraphBase {
   int name_generator_ = 0;
 };
 
-}  // namespace LotusIR
+}  // namespace onnxruntime

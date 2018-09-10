@@ -1,9 +1,9 @@
 #include "core/providers/cuda/tensor/tile.h"
 #include "core/providers/cpu/tensor/utils.h"
 #include "tile_impl.h"
-using namespace Lotus::Common;
-namespace Lotus {
-namespace Cuda {
+using namespace onnxruntime::common;
+namespace onnxruntime {
+namespace cuda {
 
 #define REGISTER_KERNEL_TYPED(T)                                  \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                  \
@@ -75,5 +75,5 @@ SPECIALIZED_COMPUTE(float)
 SPECIALIZED_COMPUTE(double)
 SPECIALIZED_COMPUTE(MLFloat16)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

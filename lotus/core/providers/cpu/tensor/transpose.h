@@ -4,7 +4,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class TransposeBase {
  protected:
@@ -65,4 +65,4 @@ class Transpose final : public OpKernel, public TransposeBase {
 
   Status Compute(OpKernelContext* context) const override;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

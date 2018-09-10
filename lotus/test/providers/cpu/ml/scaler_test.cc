@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 template <typename T>
 void TestScalar() {
-  OpTester test("Scaler", 1, LotusIR::kMLDomain);
+  OpTester test("Scaler", 1, onnxruntime::kMLDomain);
   vector<float> scale{3.f, -4.f, 3.0f};
   vector<float> offset{4.8f, -0.5f, 77.0f};
   test.AddAttribute("scale", scale);
@@ -33,7 +33,7 @@ TEST(MLOpTest, ScalerOp) {
 }
 
 TEST(MLOpTest, ScalerOpScaleOffsetSize1) {
-  OpTester test("Scaler", 1, LotusIR::kMLDomain);
+  OpTester test("Scaler", 1, onnxruntime::kMLDomain);
   vector<float> scale{3.f};
   vector<float> offset{4.8f};
   test.AddAttribute("scale", scale);
@@ -53,4 +53,4 @@ TEST(MLOpTest, ScalerOpScaleOffsetSize1) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -6,7 +6,7 @@
 #include "core/common/exceptions.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 template <typename T>
 class RNN : public OpKernel {
   const std::set<std::string> allowed_activations{"Relu", "Tanh", "Sigmoid", "Affine", "LeakyRelu", "ThresholdedRelu", "ScaledTanh", "HardSigmoid", "Elu", "Softsign", "Softplus"};
@@ -61,4 +61,4 @@ class RNN : public OpKernel {
   // const std::string default_activation = "Tanh";
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

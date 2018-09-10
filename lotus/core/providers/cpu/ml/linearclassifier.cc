@@ -1,7 +1,7 @@
 #include "core/providers/cpu/ml/linearclassifier.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 const std::vector<MLDataType> linearClassifierOutputConstraints{
     DataTypeImpl::GetTensorType<std::string>(),
@@ -53,7 +53,7 @@ template <typename T>
 Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+    return Status(common::LOTUS, common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 
@@ -134,16 +134,16 @@ Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
     }
     //write float values
     if (add_second_class && maxweight > 0) {
-      ::Lotus::ML::write_scores(scores, post_transform_, zindex, Z, 0);
+      ::onnxruntime::ml::write_scores(scores, post_transform_, zindex, Z, 0);
     } else if (add_second_class) {
-      ::Lotus::ML::write_scores(scores, post_transform_, zindex, Z, 1);
+      ::onnxruntime::ml::write_scores(scores, post_transform_, zindex, Z, 1);
     } else {
-      ::Lotus::ML::write_scores(scores, post_transform_, zindex, Z, -1);
+      ::onnxruntime::ml::write_scores(scores, post_transform_, zindex, Z, -1);
     }
     zindex += scores.size();
   }  //for each point
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

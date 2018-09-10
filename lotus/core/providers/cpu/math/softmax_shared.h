@@ -2,7 +2,7 @@
 
 #include "core/common/status.h"
 
-namespace Lotus {
+namespace onnxruntime {
 /**
 Calculate Softmax using CPU memory.
 @param N Number of rows
@@ -14,7 +14,7 @@ Calculate Softmax using CPU memory.
 @param logarithmic If true, compute LogSoftmax. If false compute Softmax.
 @param rowmax Storage for calculation of maximum in each row. Size must be >= N.
 */
-Common::Status SoftmaxCPU(const int64_t N,
+common::Status SoftmaxCPU(const int64_t N,
                           const int64_t D,
                           const float* Xdata,
                           float* Ydata,
@@ -22,4 +22,4 @@ Common::Status SoftmaxCPU(const int64_t N,
                           const float* sum_multiplier,
                           bool logarithmic,
                           float* rowmax);
-}  // namespace Lotus
+}  // namespace onnxruntime

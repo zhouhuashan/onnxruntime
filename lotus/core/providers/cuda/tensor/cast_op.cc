@@ -2,9 +2,9 @@
 #include "core/providers/cuda/math/unary_elementwise_ops_impl.h"
 
 using namespace onnx;
-using namespace Lotus::Common;
-namespace Lotus {
-namespace Cuda {
+using namespace onnxruntime::common;
+namespace onnxruntime {
+namespace cuda {
 
 const std::vector<MLDataType> castOpTypeConstraints{
     DataTypeImpl::GetTensorType<MLFloat16>(),
@@ -89,5 +89,5 @@ SPECIALIZE_IMPL(uint32_t)
 SPECIALIZE_IMPL(uint64_t)
 SPECIALIZE_IMPL(bool)
 
-}  // namespace Cuda
-}  //namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

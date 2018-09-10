@@ -18,7 +18,7 @@
 #include "gtest/gtest.h"
 #include <gsl/gsl_byte>
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 // unfortunately std::optional is in C++17 so use a miniversion of it
 template <typename T>
@@ -128,8 +128,8 @@ const VectorOfMapTypeProto<TKey, TVal> s_vec_map_type_proto;
 // for new output types, add a new specialization for Check<>
 // See current usage for an example, should be self explanatory
 struct OpTester {
-  OpTester(const char* op, int opset_version = 7, const char* domain = LotusIR::kOnnxDomain)
-	  : op_(op), domain_(domain), opset_version_(opset_version) {}
+  OpTester(const char* op, int opset_version = 7, const char* domain = onnxruntime::kOnnxDomain)
+      : op_(op), domain_(domain), opset_version_(opset_version) {}
   ~OpTester();
 
   // We have an initializer_list and vector version of the Add functions because std::vector is specialized for
@@ -200,7 +200,7 @@ struct OpTester {
   void AddAttribute(std::string name, T value) {
     // Generate a the proper AddAttribute call for later
     add_attribute_funcs_.emplace_back(
-        [name = std::move(name), value = std::move(value)](LotusIR::Node& node) { node.AddAttribute(name, value); });
+        [name = std::move(name), value = std::move(value)](onnxruntime::Node& node) { node.AddAttribute(name, value); });
   }
 
   enum class ExpectResult {
@@ -208,20 +208,20 @@ struct OpTester {
     kExpectFailure
   };
 
-  void Run(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "", LotusIR::ProviderType provider_type = LotusIR::kCpuExecutionProvider);
+  void Run(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "", onnxruntime::ProviderType provider_type = onnxruntime::kCpuExecutionProvider);
   void RunOnCpuAndCuda(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
   void RunOnMklDnn(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
 
   struct Data {
-    LotusIR::NodeArg def_;
+    onnxruntime::NodeArg def_;
     MLValue data_;
     optional<float> relative_error_;
     optional<float> absolute_error_;
   };
 
  private:
-  void FillFeedsAndOutputNames(const std::vector<LotusIR::NodeArg*>& input_defs,
-                               const std::vector<LotusIR::NodeArg*>& output_defs,
+  void FillFeedsAndOutputNames(const std::vector<onnxruntime::NodeArg*>& input_defs,
+                               const std::vector<onnxruntime::NodeArg*>& output_defs,
                                std::unordered_map<std::string, MLValue>& feeds,
                                std::vector<std::string>& output_names);
 
@@ -233,7 +233,7 @@ struct OpTester {
       TensorShape shape{dims};
       LOTUS_ENFORCE(shape.Size() == values_count, values_count, " input values doesn't match tensor size of ", shape.Size());
 
-      auto allocator = ::Lotus::Test::AllocatorManager::Instance().GetAllocator(CPU);
+      auto allocator = ::onnxruntime::Test::AllocatorManager::Instance().GetAllocator(CPU);
       auto size_in_bytes = values_count * sizeof(T);
       void* buffer = allocator->Alloc(size_in_bytes);
       auto p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
@@ -260,7 +260,7 @@ struct OpTester {
   int opset_version_;
   std::vector<Data> input_data_;
   std::vector<Data> output_data_;
-  std::vector<std::function<void(LotusIR::Node& node)>> add_attribute_funcs_;
+  std::vector<std::function<void(onnxruntime::Node& node)>> add_attribute_funcs_;
 
   ILotusOpSchemaRegistryList custom_schema_registries_;
   std::vector<std::shared_ptr<CustomRegistry>> custom_session_registries_;
@@ -281,4 +281,4 @@ void ExpectThrow(OpTester& test, const std::string& error_msg) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace LotusIR {
+namespace onnxruntime {
 
 class Node;
 
@@ -99,4 +99,4 @@ class GraphNodes {
   TNodesContainer& nodes_;
 };
 
-}  // namespace LotusIR
+}  // namespace onnxruntime

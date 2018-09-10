@@ -25,7 +25,7 @@ limitations under the License.
 #include "core/common/logging/logging.h"
 #include "core/platform/env.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 namespace {
 
@@ -43,23 +43,23 @@ class StdThread : public Thread {
 class WindowsEnv : public Env {
  private:
   template <typename T, typename F>
-  static Common::Status FileExists_(T fname, F f) {
+  static common::Status FileExists_(T fname, F f) {
     if (!fname)
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
+      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "file name is nullptr");
     struct _stat st;
     int ret = f(fname, &st);
     if (ret == 0) {
       if (st.st_mode & _S_IFREG)
-        return Common::Status::OK();
+        return common::Status::OK();
       return LOTUS_MAKE_STATUS(LOTUS, FAIL, fname, "is not a regular file");
     }
     switch (errno) {
       case ENOENT:
-        return Common::Status(Common::LOTUS, Common::NO_SUCHFILE, "");
+        return common::Status(common::LOTUS, common::NO_SUCHFILE, "");
       case EINVAL:
-        return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "");
+        return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "");
       default:
-        return Common::Status(Common::LOTUS, Common::FAIL, "unknown error inside FileExists");
+        return common::Status(common::LOTUS, common::FAIL, "unknown error inside FileExists");
     }
   }
 
@@ -115,55 +115,55 @@ class WindowsEnv : public Env {
     t.f();
   }
 
-  Common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+  common::Status FileOpenRd(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
     _wsopen_s(p_fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
     if (0 > *p_fd) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+  common::Status FileOpenWr(const std::wstring& path, /*out*/ gsl::not_null<int*> p_fd) const override {
     _wsopen_s(p_fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
     if (0 > *p_fd) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+  common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
     _sopen_s(p_fd, path.c_str(), _O_RDONLY | _O_SEQUENTIAL | _O_BINARY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
     if (0 > *p_fd) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+  common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
     _sopen_s(p_fd, path.c_str(), _O_CREAT | _O_SEQUENTIAL | _O_BINARY | _O_WRONLY, _SH_DENYWR, _S_IREAD | _S_IWRITE);
     if (0 > *p_fd) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileClose(int fd) const override {
+  common::Status FileClose(int fd) const override {
     int ret = _close(fd);
     if (0 != ret) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileExists(const char* fname) const override {
+  common::Status FileExists(const char* fname) const override {
     return FileExists_(fname, _stat);
   }
-  Common::Status FileExists(const wchar_t* fname) const override {
+  common::Status FileExists(const wchar_t* fname) const override {
     return FileExists_(fname, _wstat);
   }
-  Common::Status ReadFileAsString(const char* fname, std::string* out) const override {
+  common::Status ReadFileAsString(const char* fname, std::string* out) const override {
     if (!fname)
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
+      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "file name is nullptr");
     size_t flen = strlen(fname);
     if (flen >= std::numeric_limits<int>::max()) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "input path too long");
@@ -177,41 +177,41 @@ class WindowsEnv : public Env {
     return ReadFileAsString(wStreamName.c_str(), out);
   }
 
-  Common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override {
+  common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override {
     if (!fname)
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "file name is nullptr");
+      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "file name is nullptr");
     if (!out) {
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "'out' cannot be NULL");
+      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "'out' cannot be NULL");
     }
     char errbuf[512];
     HANDLE hFile = CreateFileW(fname, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
       int err = GetLastError();
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d open file %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
-      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+      return common::Status(common::LOTUS, common::FAIL, errbuf);
     }
     LARGE_INTEGER filesize;
     if (!GetFileSizeEx(hFile, &filesize)) {
       int err = GetLastError();
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d GetFileSizeEx %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
       CloseHandle(hFile);
-      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+      return common::Status(common::LOTUS, common::FAIL, errbuf);
     }
     out->resize(filesize.QuadPart, '\0');
     if (filesize.QuadPart > std::numeric_limits<DWORD>::max()) {
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d READ file %ls fail, file size too long", __FILE__, (int)__LINE__, fname);
       CloseHandle(hFile);
       //we can support that with a while loop
-      return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, errbuf);
+      return common::Status(common::LOTUS, common::NOT_IMPLEMENTED, errbuf);
     }
     if (!ReadFile(hFile, (void*)out->data(), (DWORD)filesize.QuadPart, nullptr, nullptr)) {
       int err = GetLastError();
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d ReadFileEx %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
       CloseHandle(hFile);
-      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+      return common::Status(common::LOTUS, common::FAIL, errbuf);
     }
     CloseHandle(hFile);
-    return Common::Status::OK();
+    return common::Status::OK();
   }
 
   virtual Status LoadLibrary(const std::string& library_filename, void** handle) const override {
@@ -220,7 +220,7 @@ class WindowsEnv : public Env {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
-  virtual Common::Status UnloadLibrary(void* handle) const override {
+  virtual common::Status UnloadLibrary(void* handle) const override {
     UNUSED_PARAMETER(handle);
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
@@ -265,4 +265,4 @@ const Env& Env::Default() {
 }
 #endif
 
-}  // namespace Lotus
+}  // namespace onnxruntime

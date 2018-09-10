@@ -7,7 +7,7 @@
 
 using namespace onnx;
 
-namespace LotusIR {
+namespace onnxruntime {
 namespace Test {
 TEST(OpRegistrationTest, AffineOp) {
   auto op = OpSchemaRegistry::Schema("Affine");
@@ -27,7 +27,7 @@ TEST(OpRegistrationTest, AffineOp) {
 
 TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   Model model("traditionalMl");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   // Case: A traditional ml graph.
   //                           SouceNode
@@ -39,8 +39,8 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   //                              |
   //                           SinkNode
 
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
 
   // Type: tensor(float)
   TypeProto tensor_float;
@@ -54,10 +54,10 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   map_value_type->set_elem_type(TensorProto::FLOAT);
   map_value_type->mutable_shape();
 
-  NodeArg *input_arg1 = new NodeArg("node_1_in_1", &map_int64_float);
+  NodeArg* input_arg1 = new NodeArg("node_1_in_1", &map_int64_float);
   inputs.clear();
   inputs.push_back(input_arg1);
-  NodeArg *output_arg1 = new NodeArg("node_1_out_1", &tensor_float);
+  NodeArg* output_arg1 = new NodeArg("node_1_out_1", &tensor_float);
   outputs.clear();
   outputs.push_back(output_arg1);
   graph.AddNode("node_1", "CastMap", "node 1", inputs, outputs, nullptr, kMLDomain);
@@ -65,7 +65,7 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   inputs.clear();
   inputs.push_back(output_arg1);
 
-  NodeArg *output_arg4 = new NodeArg("node_4_out_1", &tensor_float);
+  NodeArg* output_arg4 = new NodeArg("node_4_out_1", &tensor_float);
   outputs.clear();
   outputs.push_back(output_arg4);
   graph.AddNode("node_4", "FeatureVectorizer", "node 4", inputs, outputs, nullptr, kMLDomain);
@@ -77,4 +77,4 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   delete output_arg4;
 }
 }  // namespace Test
-}  // namespace LotusIR
+}  // namespace onnxruntime

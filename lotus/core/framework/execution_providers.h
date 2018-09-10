@@ -10,7 +10,7 @@
 #include "core/graph/graph.h"
 #include "core/common/logging/logging.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 /**
 Class for managing lookup of the execution providers in a session.
@@ -19,7 +19,7 @@ class ExecutionProviders {
  public:
   ExecutionProviders() = default;
 
-  Common::Status Add(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
+  common::Status Add(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
     // make sure there are no issues before we change any internal data structures
     if (provider_idx_map_.find(provider_id) != provider_idx_map_.end()) {
       auto status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Provider ", provider_id, " has already been registered.");
@@ -51,18 +51,18 @@ class ExecutionProviders {
     return Status::OK();
   }
 
-  const IExecutionProvider* Get(const LotusIR::Graph& graph, const LotusIR::NodeIndex& idx) const {
+  const IExecutionProvider* Get(const onnxruntime::Graph& graph, const onnxruntime::NodeIndex& idx) const {
     auto node = graph.GetNode(idx);
     LOTUS_ENFORCE(node != nullptr, "Node with id ", idx, " was not found in graph.");
 
     return Get(*node);
   }
 
-  const IExecutionProvider* Get(const LotusIR::Node& node) const {
+  const IExecutionProvider* Get(const onnxruntime::Node& node) const {
     return Get(node.GetExecutionProviderType());
   }
 
-  const IExecutionProvider* Get(LotusIR::ProviderType provider_id) const {
+  const IExecutionProvider* Get(onnxruntime::ProviderType provider_id) const {
     auto it = provider_idx_map_.find(provider_id);
     if (it == provider_idx_map_.end()) {
       return nullptr;
@@ -95,4 +95,4 @@ class ExecutionProviders {
   // and as this isn't performance critical it's not worth the maintenance overhead of adding one.
   std::map<AllocatorInfo, size_t> allocator_idx_map_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

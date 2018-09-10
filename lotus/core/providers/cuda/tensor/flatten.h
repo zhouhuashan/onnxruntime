@@ -2,8 +2,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cuda/cuda_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 class Flatten final : public CudaKernel {
  public:
@@ -17,5 +17,5 @@ class Flatten final : public CudaKernel {
   int64_t axis_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

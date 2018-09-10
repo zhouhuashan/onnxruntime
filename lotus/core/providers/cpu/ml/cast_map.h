@@ -4,8 +4,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/ml/ml_common.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 class CastMap final : public OpKernel {
  public:
@@ -36,5 +36,5 @@ class CastMap final : public OpKernel {
   int64_t max_map_;
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

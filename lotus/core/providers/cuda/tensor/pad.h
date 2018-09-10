@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/tensor/pad.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class Pad final : public PadBase, public CudaKernel {
@@ -14,5 +14,5 @@ class Pad final : public PadBase, public CudaKernel {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

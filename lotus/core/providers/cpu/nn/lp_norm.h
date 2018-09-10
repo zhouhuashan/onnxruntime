@@ -19,7 +19,7 @@
 
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class LpNorm final : public OpKernel {
@@ -36,4 +36,4 @@ class LpNorm final : public OpKernel {
   int64_t axis_;
   int64_t p_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

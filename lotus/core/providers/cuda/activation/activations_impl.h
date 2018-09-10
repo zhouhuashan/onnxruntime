@@ -1,7 +1,7 @@
 #pragma once
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 struct CtxAlpha {
   float alpha;
@@ -61,5 +61,5 @@ typedef CtxAlpha CtxThresholdedRelu;
 UNARY_ACTIVATION_OPS()
 #undef UNARY_ACTIVATION_OP_NAME
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

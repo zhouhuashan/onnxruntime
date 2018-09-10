@@ -3,7 +3,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Memcpy final : public OpKernel {
  public:
@@ -15,4 +15,4 @@ class Memcpy final : public OpKernel {
   const IExecutionProvider* provider_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

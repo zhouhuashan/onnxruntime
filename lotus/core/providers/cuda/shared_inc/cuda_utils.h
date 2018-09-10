@@ -1,13 +1,13 @@
-// for things shared between nvcc and Lotus
-// as currently nvcc cannot compile all Lotus headers
+// for things shared between nvcc and onnxruntime
+// as currently nvcc cannot compile all onnxruntime headers
 
 #pragma once
 #include <memory>
 #include <vector>
 #include "fast_divmod.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 enum class SimpleBroadcast : size_t {
   NoBroadcast = (size_t)-1,
@@ -27,5 +27,5 @@ class IConstantBuffer {
 template <typename T>
 std::unique_ptr<IConstantBuffer<T>> CreateConstantOnes();
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

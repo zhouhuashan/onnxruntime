@@ -6,8 +6,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/tensor/transpose.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class Transpose final : public CudaKernel, public TransposeBase {
@@ -17,5 +17,5 @@ class Transpose final : public CudaKernel, public TransposeBase {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

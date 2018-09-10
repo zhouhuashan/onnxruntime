@@ -28,7 +28,7 @@ limitations under the License.
 #include <intrin.h>
 #endif
 
-namespace Lotus {
+namespace onnxruntime {
 // Runtime statistics collected by an allocator.
 struct AllocatorStats {
   int64_t num_allocs;             // Number of allocations.
@@ -473,4 +473,4 @@ class BFCArena : public IArenaAllocator {
 
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(BFCArena);
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

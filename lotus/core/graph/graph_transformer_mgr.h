@@ -2,7 +2,7 @@
 
 #include "core/graph/graph_transformer.h"
 
-namespace LotusIR {
+namespace onnxruntime {
 // Manages a list of graph transformers. It is initialized with a list of graph
 // transformers. Each inference session can further register additional ones.
 class GraphTransformerManager {
@@ -12,14 +12,14 @@ class GraphTransformerManager {
   }
 
   // Register a graph transformer.
-  ::Lotus::Common::Status Register(std::unique_ptr<GraphTransformer> transformer) {
+  ::onnxruntime::common::Status Register(std::unique_ptr<GraphTransformer> transformer) {
     transformers_.push_back(std::move(transformer));
-    return ::Lotus::Common::Status::OK();
+    return ::onnxruntime::common::Status::OK();
   }
 
   // Apply the list of graph transformers registered on the specified graph
   // up to the given number of steps.
-  ::Lotus::Common::Status ApplyAll(Graph& graph) const;
+  ::onnxruntime::common::Status ApplyAll(Graph& graph) const;
 
  private:
   GraphTransformerManager() = default;
@@ -28,4 +28,4 @@ class GraphTransformerManager {
   std::vector<std::unique_ptr<GraphTransformer>> transformers_;
   const unsigned steps_;
 };
-}  // namespace LotusIR
+}  // namespace onnxruntime

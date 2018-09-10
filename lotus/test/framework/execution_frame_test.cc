@@ -10,16 +10,16 @@
 using namespace onnx;
 using namespace std;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
-typedef std::vector<LotusIR::NodeArg*> ArgMap;
+typedef std::vector<onnxruntime::NodeArg*> ArgMap;
 
-std::shared_ptr<LotusIR::Model> DummyGraphWithClip() {
-  auto model = std::make_shared<LotusIR::Model>("test");
-  LotusIR::Graph& graph = model->MainGraph();
+std::shared_ptr<onnxruntime::Model> DummyGraphWithClip() {
+  auto model = std::make_shared<onnxruntime::Model>("test");
+  onnxruntime::Graph& graph = model->MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
+  onnxruntime::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
 
   graph.AddNode("node1", "Clip", "clip operator", ArgMap{&input_def}, ArgMap{&output_def});
   return model;
@@ -31,14 +31,14 @@ std::unique_ptr<IExecutionProvider> CreateCPUExecutionProvider() {
 }
 
 TEST(ExecutionFrameTest, TensorAllocationTest) {
-  LotusIR::Model model("test");
-  LotusIR::Graph& graph = model.MainGraph();
+  onnxruntime::Model model("test");
+  onnxruntime::Graph& graph = model.MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
+  onnxruntime::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
 
   graph.AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
-  LotusIR::Node* node = graph.GetNode(graph.NumberOfNodes() - 1);
+  onnxruntime::Node* node = graph.GetNode(graph.NumberOfNodes() - 1);
 
   Status status = graph.Resolve();
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
@@ -106,11 +106,11 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
 }
 
 TEST(ExecutionFrameTest, FeedInDataTest) {
-  LotusIR::Model model("test");
-  LotusIR::Graph& graph = model.MainGraph();
+  onnxruntime::Model model("test");
+  onnxruntime::Graph& graph = model.MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
+  onnxruntime::NodeArg input_def("X", &tensor_float), output_def("Y", &tensor_float);
 
   graph.AddNode("node1", "Clip", "Clip operator", ArgMap{&input_def}, ArgMap{&output_def});
 
@@ -162,11 +162,11 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
 TEST(ExecutionFrameTest, MemPatternTest) {
   auto cpu_xp = CreateCPUExecutionProvider();
   auto xp_type = cpu_xp->Type();
-  LotusIR::Model model("test");
-  LotusIR::Graph& graph = model.MainGraph();
+  onnxruntime::Model model("test");
+  onnxruntime::Graph& graph = model.MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  LotusIR::NodeArg input_def1("X1", &tensor_float),
+  onnxruntime::NodeArg input_def1("X1", &tensor_float),
       input_def2("X2", &tensor_float),
       input_def3("X3", &tensor_float),
       gemm1_out_def("T1", &tensor_float),
@@ -258,4 +258,4 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   EXPECT_EQ(p->GetBlock(4)->offset_, sizeof(float) * 4);
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace Lotus {
+namespace onnxruntime {
 /**
 CodeLocation captures information on where in the source code a message came from.
 */
@@ -51,4 +51,4 @@ struct CodeLocation {
   const std::vector<std::string> stacktrace;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

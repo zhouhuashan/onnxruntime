@@ -1,10 +1,10 @@
 #include "core/providers/cuda/cu_inc/common.cuh"
 #include "pad_impl.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
-// PadMode enum from core/providers/cpu/tensor/pad.h, cannot use that header because of nvcc/Lotus incompatibility
+// PadMode enum from core/providers/cpu/tensor/pad.h, cannot use that header because of nvcc/onnxruntime incompatibility
 enum class PadMode : int {
   Constant = 0,
   Reflect,
@@ -104,5 +104,5 @@ SPECIALIZED_IMPL(float)
 SPECIALIZED_IMPL(double)
 SPECIALIZED_IMPL(half)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

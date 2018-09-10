@@ -2,7 +2,7 @@
 #include "core/framework/ml_value_patterns_planner.h"
 #include "core/framework/sequential_execution_plan.h"
 
-namespace Lotus {
+namespace onnxruntime {
 MLValuePatternPlanner::MLValuePatternPlanner(const SequentialExecutionPlan& execution_plan)
     : execution_planner_{execution_plan} {
   std::set<AllocatorInfo> locations;
@@ -15,4 +15,4 @@ MLValuePatternPlanner::MLValuePatternPlanner(const SequentialExecutionPlan& exec
     planner_map_[location] = pattern_planners_.back().get();
   }
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

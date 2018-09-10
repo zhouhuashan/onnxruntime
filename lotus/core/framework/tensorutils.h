@@ -9,7 +9,7 @@
 namespace onnx {
 class TensorProto;
 }
-namespace Lotus {
+namespace onnxruntime {
 namespace Utils {
 class TensorUtils {
  public:
@@ -20,4 +20,4 @@ class TensorUtils {
 
 };  // namespace Utils
 }  // namespace Utils
-}  // namespace Lotus
+}  // namespace onnxruntime

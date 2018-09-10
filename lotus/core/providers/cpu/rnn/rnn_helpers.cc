@@ -14,11 +14,11 @@
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Rnn {
 namespace detail {
 
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
 const Tensor* OptionalInput(const OpKernelContext& context, int index) {
   const Tensor* result = context.Input<Tensor>(index);
@@ -888,4 +888,4 @@ GruOutputGateFuncPtr GruOutputGateFuncByName(const std::string& func) {
 }  // namespace deepcpu
 }  // namespace detail
 }  // namespace Rnn
-}  // namespace Lotus
+}  // namespace onnxruntime

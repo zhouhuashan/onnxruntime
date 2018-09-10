@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/tensor/crop.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class Crop final : public CropBase, public CudaKernel {
@@ -15,5 +15,5 @@ class Crop final : public CropBase, public CudaKernel {
   Status ComputeInternal(OpKernelContext* context) const override;
 };
 
-}  // namespace Cuda
-}  //namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

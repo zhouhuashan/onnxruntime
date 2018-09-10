@@ -1,7 +1,7 @@
 #include "identity_op.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 ONNX_OPERATOR_KERNEL_EX(
     Dropout,
     kOnnxDomain,
@@ -21,5 +21,5 @@ ONNX_OPERATOR_KERNEL_EX(
         .TypeConstraint("T", DataTypeImpl::AllFixedSizeTensorTypes())
         .Alias(0, 0),
     IdentityOp<false>);
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

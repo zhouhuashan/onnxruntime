@@ -6,7 +6,7 @@
 #include "core/providers/cpu/nn/autopad_type.h"
 #include "core/util/math.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace {
 
 // helper function
@@ -50,7 +50,7 @@ Status ComputePadAndOutputShape(
         *pad_tail = pad_needed - *pad_head;
       } break;
       default:
-        return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "pad type not supported.");
+        return Status(common::LOTUS, common::INVALID_ARGUMENT, "pad type not supported.");
     }
   }
   return Status::OK();
@@ -163,7 +163,7 @@ class ConvBase {
           &pads->at(input_shape.NumDimensions() + dim),
           &dim_size));
       if (dim_size < 0) {
-        return Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
+        return Status(common::LOTUS, common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
       }
       output_shape->push_back(dim_size);
     }
@@ -181,4 +181,4 @@ class ConvBase {
   std::vector<int64_t> kernel_shape_;  // must use ComputeKernelShape(...), instead of kernel_shape_
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -3,16 +3,16 @@
 #include "core/framework/op_kernel.h"
 #include "ml_common.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 template <typename T>
 class TreeEnsembleRegressor final : public OpKernel {
  public:
   explicit TreeEnsembleRegressor(const OpKernelInfo& info);
-  Common::Status Compute(OpKernelContext* context) const override;
+  common::Status Compute(OpKernelContext* context) const override;
 
  private:
-  Common::Status ProcessTreeNode(std::unordered_map<int64_t, float>& classes, int64_t treeindex, const T* Xdata, int64_t feature_base) const;
+  common::Status ProcessTreeNode(std::unordered_map<int64_t, float>& classes, int64_t treeindex, const T* Xdata, int64_t feature_base) const;
 
   std::vector<int64_t> nodes_treeids_;
   std::vector<int64_t> nodes_nodeids_;
@@ -31,8 +31,8 @@ class TreeEnsembleRegressor final : public OpKernel {
 
   std::vector<float> base_values_;
   int64_t n_targets_;
-  ::Lotus::ML::POST_EVAL_TRANSFORM transform_;
-  ::Lotus::ML::AGGREGATE_FUNCTION aggregate_function_;
+  ::onnxruntime::ml::POST_EVAL_TRANSFORM transform_;
+  ::onnxruntime::ml::AGGREGATE_FUNCTION aggregate_function_;
   std::vector<std::tuple<int64_t, int64_t, int64_t, float>> leafnode_data_;
   std::unordered_map<int64_t, size_t> leafdata_map_;
   std::vector<int64_t> roots_;
@@ -40,5 +40,5 @@ class TreeEnsembleRegressor final : public OpKernel {
   int64_t max_tree_depth_;
   const int64_t four_billion_ = 4000000000L;
 };
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

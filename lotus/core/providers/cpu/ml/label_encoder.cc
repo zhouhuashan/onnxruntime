@@ -1,10 +1,10 @@
 #include "core/providers/cpu/ml/label_encoder.h"
 #include <algorithm>
 #include <gsl/span>
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     LabelEncoder,
@@ -62,5 +62,5 @@ Status LabelEncoder::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

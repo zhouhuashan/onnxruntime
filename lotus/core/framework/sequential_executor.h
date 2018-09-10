@@ -10,12 +10,12 @@
 #include "core/framework/session_state.h"
 #include "core/graph/graph.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class SequentialExecutor : public IExecutor {
  public:
   SequentialExecutor() = default;
 
-  Common::Status Execute(const SessionState& session_state,
+  common::Status Execute(const SessionState& session_state,
                          const NameMLValMap& feeds,
                          const std::vector<std::string>& output_names,
                          std::vector<MLValue>& fetches,
@@ -24,4 +24,4 @@ class SequentialExecutor : public IExecutor {
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SequentialExecutor);
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

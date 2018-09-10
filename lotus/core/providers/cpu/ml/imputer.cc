@@ -38,10 +38,10 @@ OPTIONAL)
 AttributeProto::INT,
 static_cast<int64_t>(0));
 */
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     Imputer,
@@ -62,7 +62,7 @@ ImputerOp::ImputerOp(const OpKernelInfo& info) : OpKernel(info),
 }
 
 template <typename T>
-Common::Status ComputeByType(OpKernelContext* context,
+common::Status ComputeByType(OpKernelContext* context,
                              T replaced_value,
                              const std::vector<T>& imputed_values) {
   if (imputed_values.empty()) {
@@ -107,7 +107,7 @@ Common::Status ComputeByType(OpKernelContext* context,
   return Status::OK();
 }
 
-Common::Status ImputerOp::Compute(OpKernelContext* context) const {
+common::Status ImputerOp::Compute(OpKernelContext* context) const {
   auto input_type = context->Input<Tensor>(0)->DataType();
   if (input_type == DataTypeImpl::GetType<float>()) {
     return ComputeByType<float>(context, replaced_value_float_, imputed_values_float_);
@@ -117,5 +117,5 @@ Common::Status ImputerOp::Compute(OpKernelContext* context) const {
     return Status(LOTUS, INVALID_ARGUMENT, "Invalid type");
   }
 }
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

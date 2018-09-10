@@ -3,16 +3,16 @@
 #include "TestCaseResult.h"
 #include <CppUnitTest.h>
 
-class VsTestSink : public Lotus::Logging::ISink {
+class VsTestSink : public onnxruntime::Logging::ISink {
  public:
-  void SendImpl(const Lotus::Logging::Timestamp &timestamp, const std::string &logger_id_, const Lotus::Logging::Capture &message) override;
+  void SendImpl(const onnxruntime::Logging::Timestamp& timestamp, const std::string& logger_id_, const onnxruntime::Logging::Capture& message) override;
 };
 
 namespace Microsoft {
 namespace VisualStudio {
 namespace CppUnitTestFramework {
 template <>
-std::wstring ToString<>(const EXECUTE_RESULT &q) {
+std::wstring ToString<>(const EXECUTE_RESULT& q) {
   switch (q) {
     case EXECUTE_RESULT::SUCCESS:
       return L"SUCCESS";

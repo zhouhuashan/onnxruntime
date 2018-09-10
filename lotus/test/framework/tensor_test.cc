@@ -7,7 +7,7 @@
 
 #include <sstream>
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 template <typename T>
 void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
@@ -214,4 +214,4 @@ TEST(TensorTest, Int64PtrConstructor) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

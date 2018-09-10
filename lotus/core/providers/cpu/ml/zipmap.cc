@@ -21,10 +21,10 @@ The order of the input and attributes determines the key-value mapping.
 .Attr("classlabels_strings", "keys if using string keys", AttributeProto::STRINGS, OPTIONAL)
 .Attr("classlabels_int64s", "keys if using int keys", AttributeProto::INTS, OPTIONAL);
 */
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 using namespace std;
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 ONNX_CPU_OPERATOR_ML_KERNEL(
     ZipMap,
     1,
@@ -41,7 +41,7 @@ ZipMapOp::ZipMapOp(const OpKernelInfo& info)
   using_strings_ = !classlabels_strings_.empty();
 }
 
-Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
+common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   const vector<int64_t> x_dims = x_shape.GetDims();
@@ -102,7 +102,7 @@ Common::Status ZipMapOp::Compute(OpKernelContext* context) const {
       (*y_data)[n] = std::move(map2);
     }
   }
-  return Common::Status::OK();
+  return common::Status::OK();
 }
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

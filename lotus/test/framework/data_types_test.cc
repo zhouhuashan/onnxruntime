@@ -1,6 +1,9 @@
+#include "core/graph/onnx_protobuf.h"
 #include "core/framework/data_types.h"
 #include "gtest/gtest.h"
-namespace Lotus {
+using namespace onnx;
+
+namespace onnxruntime {
 namespace Test {
 
 template <TensorProto_DataType T>
@@ -102,4 +105,4 @@ TEST(DataTypeTest, VectorMapInt64ToFloatTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

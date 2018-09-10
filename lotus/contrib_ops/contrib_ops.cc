@@ -1,7 +1,7 @@
 #include "contrib_ops/contrib_ops.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 void RegisterContribSchemas() {
   ONNX_CONTRIB_OPERATOR_SCHEMA(SampleOp)
       .SetDomain(kMSDomain)
@@ -22,7 +22,7 @@ Sample echo operator.)DOC");
       .SetDomain(kMSDomain)
       .SinceVersion(1)
       .Input(0, "X", "input", "T")
-      .Input(1, "axis", "Specified axis to insert a dimension", "tensor(int64)")
+      .Input(1, "axis", "Specified axis to insert a dimension", "tensor(int32)")
       .Output(0, "Y", "output", "T")
       .TypeConstraint(
           "T",
@@ -42,5 +42,5 @@ void RegisterContribKernels(std::function<void(KernelCreateInfo&&)> fn) {
 
   fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, float, ExpandDims)>());
 }
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

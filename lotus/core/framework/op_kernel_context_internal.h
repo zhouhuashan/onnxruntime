@@ -3,10 +3,10 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/session_state.h"
 
-// Lotus internal OpKernelContext derived class to provide additional
+// onnxruntime internal OpKernelContext derived class to provide additional
 // APIs that aren't desirable to add to the public OpKernelContext API
 
-namespace Lotus {
+namespace onnxruntime {
 class SessionState;
 
 class OpKernelContextInternal : public OpKernelContext {
@@ -30,4 +30,4 @@ class OpKernelContextInternal : public OpKernelContext {
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

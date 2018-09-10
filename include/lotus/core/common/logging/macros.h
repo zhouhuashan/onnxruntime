@@ -2,7 +2,7 @@
 // NOTE: Don't include this file directly. Include logging.h
 
 #define CREATE_MESSAGE(logger, severity, category, datatype) \
-  ::Lotus::Logging::Capture(logger, ::Lotus::Logging::Severity::k##severity, category, datatype, WHERE)
+  ::onnxruntime::Logging::Capture(logger, ::onnxruntime::Logging::Severity::k##severity, category, datatype, WHERE)
 
 /*
 Both printf and stream style logging are supported.
@@ -34,7 +34,7 @@ DataType
   be filtered from output. LoggingManager applies this filtering.
 
 Category
-  Default category is ::Lotus::Logging::Category::Lotus.
+  Default category is ::onnxruntime::Logging::Category::onnxruntime.
 
   If you wish to provide a different category, use variants with CATEGORY in the macro name
 
@@ -43,37 +43,37 @@ Category
 // Logging with explicit category
 
 // iostream style logging. Capture log info in Message, and push to the logger in ~Message.
-#define LOGS_CATEGORY(logger, severity, category)                                                            \
-  if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::SYSTEM)) \
-  CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::SYSTEM).Stream()
+#define LOGS_CATEGORY(logger, severity, category)                                                                        \
+  if ((logger).OutputIsEnabled(::onnxruntime::Logging::Severity::k##severity, ::onnxruntime::Logging::DataType::SYSTEM)) \
+  CREATE_MESSAGE(logger, severity, category, ::onnxruntime::Logging::DataType::SYSTEM).Stream()
 
-#define LOGS_USER_CATEGORY(logger, severity, category)                                                     \
-  if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::USER)) \
-  CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::USER).Stream()
+#define LOGS_USER_CATEGORY(logger, severity, category)                                                                 \
+  if ((logger).OutputIsEnabled(::onnxruntime::Logging::Severity::k##severity, ::onnxruntime::Logging::DataType::USER)) \
+  CREATE_MESSAGE(logger, severity, category, ::onnxruntime::Logging::DataType::USER).Stream()
 
 // printf style logging. Capture log info in Message, and push to the logger in ~Message.
-#define LOGF_CATEGORY(logger, severity, category, format_str, ...)                                           \
-  if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::SYSTEM)) \
-  CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::SYSTEM).CapturePrintf(format_str, ##__VA_ARGS__)
+#define LOGF_CATEGORY(logger, severity, category, format_str, ...)                                                       \
+  if ((logger).OutputIsEnabled(::onnxruntime::Logging::Severity::k##severity, ::onnxruntime::Logging::DataType::SYSTEM)) \
+  CREATE_MESSAGE(logger, severity, category, ::onnxruntime::Logging::DataType::SYSTEM).CapturePrintf(format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_CATEGORY(logger, severity, category, format_str, ...)                                    \
-  if ((logger).OutputIsEnabled(::Lotus::Logging::Severity::k##severity, ::Lotus::Logging::DataType::USER)) \
-  CREATE_MESSAGE(logger, severity, category, ::Lotus::Logging::DataType::USER).CapturePrintf(format_str, ##__VA_ARGS__)
+#define LOGF_USER_CATEGORY(logger, severity, category, format_str, ...)                                                \
+  if ((logger).OutputIsEnabled(::onnxruntime::Logging::Severity::k##severity, ::onnxruntime::Logging::DataType::USER)) \
+  CREATE_MESSAGE(logger, severity, category, ::onnxruntime::Logging::DataType::USER).CapturePrintf(format_str, ##__VA_ARGS__)
 
-// Logging with category of "Lotus"
+// Logging with category of "onnxruntime"
 
 #define LOGS(logger, severity) \
-  LOGS_CATEGORY(logger, severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_CATEGORY(logger, severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 #define LOGS_USER(logger, severity) \
-  LOGS_USER_CATEGORY(logger, severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_USER_CATEGORY(logger, severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 // printf style logging. Capture log info in Message, and push to the logger in ~Message.
 #define LOGF(logger, severity, format_str, ...) \
-  LOGF_CATEGORY(logger, severity, ::Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+  LOGF_CATEGORY(logger, severity, ::onnxruntime::Logging::Category::onnxruntime, format_str, ##__VA_ARGS__)
 
 #define LOGF_USER(logger, severity, format_str, ...) \
-  LOGF_USER_CATEGORY(logger, severity, ::Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+  LOGF_USER_CATEGORY(logger, severity, ::onnxruntime::Logging::Category::onnxruntime, format_str, ##__VA_ARGS__)
 
 /*
 
@@ -85,30 +85,30 @@ A LoggingManager instance must be currently valid for the default logger to be a
 // Logging with explicit category
 
 #define LOGS_DEFAULT_CATEGORY(severity, category) \
-  LOGS_CATEGORY(::Lotus::Logging::LoggingManager::DefaultLogger(), severity, category)
+  LOGS_CATEGORY(::onnxruntime::Logging::LoggingManager::DefaultLogger(), severity, category)
 
 #define LOGS_USER_DEFAULT_CATEGORY(severity, category) \
-  LOGS_USER_CATEGORY(::Lotus::Logging::LoggingManager::DefaultLogger(), severity, category)
+  LOGS_USER_CATEGORY(::onnxruntime::Logging::LoggingManager::DefaultLogger(), severity, category)
 
 #define LOGF_DEFAULT_CATEGORY(severity, category, format_str, ...) \
-  LOGF_CATEGORY(::Lotus::Logging::LoggingManager::DefaultLogger(), severity, category, format_str, ##__VA_ARGS__)
+  LOGF_CATEGORY(::onnxruntime::Logging::LoggingManager::DefaultLogger(), severity, category, format_str, ##__VA_ARGS__)
 
 #define LOGF_USER_DEFAULT_CATEGORY(severity, category, format_str, ...) \
-  LOGF_USER_CATEGORY(::Lotus::Logging::LoggingManager::DefaultLogger(), severity, category, format_str, ##__VA_ARGS__)
+  LOGF_USER_CATEGORY(::onnxruntime::Logging::LoggingManager::DefaultLogger(), severity, category, format_str, ##__VA_ARGS__)
 
-// Logging with category of "Lotus"
+// Logging with category of "onnxruntime"
 
 #define LOGS_DEFAULT(severity) \
-  LOGS_DEFAULT_CATEGORY(severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_DEFAULT_CATEGORY(severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 #define LOGS_USER_DEFAULT(severity) \
-  LOGS_USER_DEFAULT_CATEGORY(severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_USER_DEFAULT_CATEGORY(severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 #define LOGF_DEFAULT(severity, format_str, ...) \
-  LOGF_DEFAULT_CATEGORY(severity, ::Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+  LOGF_DEFAULT_CATEGORY(severity, ::onnxruntime::Logging::Category::onnxruntime, format_str, ##__VA_ARGS__)
 
 #define LOGF_USER_DEFAULT(severity, format_str, ...) \
-  LOGF_USER_DEFAULT_CATEGORY(severity, ::Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+  LOGF_USER_DEFAULT_CATEGORY(severity, ::onnxruntime::Logging::Category::onnxruntime, format_str, ##__VA_ARGS__)
 
 /*
 
@@ -142,32 +142,32 @@ Conditional logging
 #define LOGF_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, category, format_str, ...) \
   if ((boolean_expression) == true) LOGF_USER_DEFAULT_CATEGORY(severity, category, format_str, ##__VA_ARGS__)
 
-// Logging with category of "Lotus"
+// Logging with category of "onnxruntime"
 
 #define LOGS_IF(boolean_expression, logger, severity) \
-  LOGS_CATEGORY_IF(boolean_expression, logger, severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_CATEGORY_IF(boolean_expression, logger, severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 #define LOGS_DEFAULT_IF(boolean_expression, severity) \
-  LOGS_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 #define LOGS_USER_IF(boolean_expression, logger, severity) \
-  LOGS_USER_CATEGORY_IF(boolean_expression, logger, severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_USER_CATEGORY_IF(boolean_expression, logger, severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 #define LOGS_USER_DEFAULT_IF(boolean_expression, severity) \
-  LOGS_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::Lotus::Logging::Category::Lotus)
+  LOGS_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::onnxruntime::Logging::Category::onnxruntime)
 
 #define LOGF_IF(boolean_expression, logger, severity, format_str, ...) \
-  LOGF_CATEGORY_IF(boolean_expression, logger, severity, ::Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+  LOGF_CATEGORY_IF(boolean_expression, logger, severity, ::onnxruntime::Logging::Category::onnxruntime, format_str, ##__VA_ARGS__)
 
 #define LOGF_DEFAULT_IF(boolean_expression, severity, format_str, ...) \
-  LOGF_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::Lotus::Logging::Category::Lotus, format_str, ##__VA_ARGS__)
+  LOGF_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::onnxruntime::Logging::Category::onnxruntime, format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_IF(boolean_expression, logger, severity, format_str, ...)                      \
-  LOGF_USER_CATEGORY_IF(boolean_expression, logger, severity, ::Lotus::Logging::Category::Lotus, \
+#define LOGF_USER_IF(boolean_expression, logger, severity, format_str, ...)                                  \
+  LOGF_USER_CATEGORY_IF(boolean_expression, logger, severity, ::onnxruntime::Logging::Category::onnxruntime, \
                         format_str, ##__VA_ARGS__)
 
-#define LOGF_USER_DEFAULT_IF(boolean_expression, severity, format_str, ...)                      \
-  LOGF_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::Lotus::Logging::Category::Lotus, \
+#define LOGF_USER_DEFAULT_IF(boolean_expression, severity, format_str, ...)                                  \
+  LOGF_USER_DEFAULT_CATEGORY_IF(boolean_expression, severity, ::onnxruntime::Logging::Category::onnxruntime, \
                                 format_str, ##__VA_ARGS__)
 
 /*
@@ -176,31 +176,31 @@ Debug verbose logging of caller provided level.
 Disabled in Release builds.
 Use the _USER variants for VLOG statements involving user data that may need to be filtered.
 */
-#define VLOGS(logger, level)                                              \
-  if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+#define VLOGS(logger, level)                                                    \
+  if (::onnxruntime::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGS_CATEGORY(logger, VERBOSE, "VLOG" #level)
 
-#define VLOGS_USER(logger, level)                                         \
-  if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+#define VLOGS_USER(logger, level)                                               \
+  if (::onnxruntime::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGS_USER_CATEGORY(logger, VERBOSE, "VLOG" #level)
 
-#define VLOGF(logger, level, format_str, ...)                             \
-  if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+#define VLOGF(logger, level, format_str, ...)                                   \
+  if (::onnxruntime::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGF_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
 
-#define VLOGF_USER(logger, level, format_str, ...)                        \
-  if (::Lotus::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
+#define VLOGF_USER(logger, level, format_str, ...)                              \
+  if (::onnxruntime::Logging::vlog_enabled && level <= (logger).VLOGMaxLevel()) \
   LOGF_USER_CATEGORY(logger, VERBOSE, "VLOG" #level, format_str, ##__VA_ARGS__)
 
 // Default logger variants
 #define VLOGS_DEFAULT(level) \
-  VLOGS(::Lotus::Logging::LoggingManager::DefaultLogger(), level)
+  VLOGS(::onnxruntime::Logging::LoggingManager::DefaultLogger(), level)
 
 #define VLOGS_USER_DEFAULT(level) \
-  VLOGS_USER(::Lotus::Logging::LoggingManager::DefaultLogger(), level)
+  VLOGS_USER(::onnxruntime::Logging::LoggingManager::DefaultLogger(), level)
 
 #define VLOGF_DEFAULT(level, format_str, ...) \
-  VLOGF(::Lotus::Logging::LoggingManager::DefaultLogger(), level, format_str, ##__VA_ARGS__)
+  VLOGF(::onnxruntime::Logging::LoggingManager::DefaultLogger(), level, format_str, ##__VA_ARGS__)
 
 #define VLOGF_USER_DEFAULT(level, format_str, ...) \
-  VLOGF_USER(::Lotus::Logging::LoggingManager::DefaultLogger(), level, format_str, ##__VA_ARGS__)
+  VLOGF_USER(::onnxruntime::Logging::LoggingManager::DefaultLogger(), level, format_str, ##__VA_ARGS__)

@@ -8,7 +8,7 @@
 namespace onnx {
 class TensorShapeProto;
 }
-namespace Lotus {
+namespace onnxruntime {
 
 class ExecutionProviders;
 class KernelRegistryManager;
@@ -18,22 +18,36 @@ class MLValueNameIdxMap;
 // to do the planning.
 class ISequentialPlannerContext {
  public:
-  virtual const onnx::TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const = 0;
+  virtual const onnx::TensorShapeProto* GetShape(const onnxruntime::NodeArg& arg) const = 0;
+  virtual bool EnableParallelExecution() const { return false; }
 };
 
 class SequentialPlannerContext : public ISequentialPlannerContext {
  public:
-  const onnx::TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
+  SequentialPlannerContext()
+      : m_enable_parallel_execution(false) {
+  }
+
+  SequentialPlannerContext(bool p_enable_parallel_execution)
+      : m_enable_parallel_execution(p_enable_parallel_execution) {
+  }
+
+  const onnx::TensorShapeProto* GetShape(const onnxruntime::NodeArg& arg) const override {
     return arg.Shape();
   }
+
+  bool EnableParallelExecution() const override {
+    return m_enable_parallel_execution;
+  }
+
+ private:
+  bool m_enable_parallel_execution;
 };
 
 class SequentialPlanner {
  public:
-  // This API allows user to provide a custom planner context. Currently, this is used
-  // primarily for testing.
-
-  static Status CreatePlan(const LotusIR::Graph& graph,
+  // This API allows user to provide a custom planner context.
+  static Status CreatePlan(const onnxruntime::Graph& graph,
                            const ExecutionProviders& providers,
                            const KernelRegistryManager& kernel_registry,
                            const MLValueNameIdxMap& mlvalue_name_idx_map,
@@ -42,7 +56,7 @@ class SequentialPlanner {
 
   // This uses a standard planner context and is meant to be the primary API for creating a plan
   // as the context is primarily used in test scenarios.
-  static Status CreatePlan(const LotusIR::Graph& graph,
+  static Status CreatePlan(const onnxruntime::Graph& graph,
                            const ExecutionProviders& providers,
                            const KernelRegistryManager& kernel_registry,
                            const MLValueNameIdxMap& mlvalue_name_idx_map,
@@ -52,4 +66,4 @@ class SequentialPlanner {
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

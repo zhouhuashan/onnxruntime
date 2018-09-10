@@ -6,7 +6,7 @@
 #include "reshape_helper.h"
 #include "utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Reshape final : public OpKernel {
  public:
@@ -62,4 +62,4 @@ class Reshape_1 final : public OpKernel {
   std::vector<int64_t> shape_;
 };
 
-}  //namespace Lotus
+}  //namespace onnxruntime

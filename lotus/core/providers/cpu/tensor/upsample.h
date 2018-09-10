@@ -2,10 +2,10 @@
 
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
-const static std::string UpsampleModeNN = "nearest";
-const static std::string UpsampleModeLinear = "linear";
+constexpr const char* UpsampleModeNN = "nearest";
+constexpr const char* UpsampleModeLinear = "linear";
 
 template <typename T>
 class Upsample : public OpKernel {
@@ -37,9 +37,9 @@ class Upsample : public OpKernel {
   std::vector<float> scales_;
 
   UpsampleMode StringToUpsampleMode(const std::string& mode) {
-    if (mode == UpsampleModeNN) {
+    if (strcmp(mode.c_str(), UpsampleModeNN) == 0) {
       return UpsampleMode::NN;
-    } else if (mode == UpsampleModeLinear) {
+    } else if (strcmp(mode.c_str(), UpsampleModeLinear) == 0) {
       return UpsampleMode::LINEAR;
     } else {
       LOTUS_THROW("mode attribute is " + mode + ". It can only be " +
@@ -47,4 +47,4 @@ class Upsample : public OpKernel {
     }
   }
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

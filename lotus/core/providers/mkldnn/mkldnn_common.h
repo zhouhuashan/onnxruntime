@@ -3,8 +3,8 @@
 #include "mkldnn.hpp"
 #include <unordered_map>
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 
 template <typename T>
 static mkldnn::memory::data_type MklDnnType();
@@ -168,5 +168,5 @@ static void DoReorder(const MemoryReorderParams& params) {
   mkldnn::stream(mkldnn::stream::kind::eager).submit(net).wait();
 }
 
-}  // namespace MklDnn
-}  // namespace Lotus
+}  // namespace mkl_dnn
+}  // namespace onnxruntime

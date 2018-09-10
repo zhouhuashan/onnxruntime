@@ -2,7 +2,7 @@
 #include "test/providers/provider_test_utils.h"
 #include "core/providers/cpu/tensor/space_depth_ops.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(TensorOpTest, SpaceToDepthTest_1) {
@@ -143,4 +143,4 @@ TEST(TensorOpTest, DepthToSpaceTest_2) {
   test.Run();
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -20,8 +20,8 @@
 using std::experimental::filesystem::v1::directory_iterator;
 using std::experimental::filesystem::v1::is_directory;
 using std::experimental::filesystem::v1::path;
-using namespace Lotus;
-using ::Lotus::Common::Status;
+using namespace onnxruntime;
+using ::onnxruntime::common::Status;
 
 void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE pci, void* context, LOTUS_WORK work) {
   LotusCloseThreadpoolWork(work);
@@ -82,7 +82,7 @@ void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT, LOTUS_CALLBACK_INSTANCE
   }
 }
 
-PTestRunner::PTestRunner(std::shared_ptr<::Lotus::InferenceSession> session1,
+PTestRunner::PTestRunner(std::shared_ptr<::onnxruntime::InferenceSession> session1,
                          ITestCase* c, PThreadPool tpool,
                          TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), next_test_to_run(0), finished(0), tpool_(tpool) {
 }
@@ -133,7 +133,7 @@ static Status ParallelRunTests(TestEnv& env, int p_models, size_t current_runs, 
   }
   bool ret = env.finished->wait();
   if (!ret) {
-    return Status(::Lotus::Common::LOTUS, ::Lotus::Common::FAIL, "ParallelRunTests failed");
+    return Status(::onnxruntime::common::LOTUS, ::onnxruntime::common::FAIL, "ParallelRunTests failed");
   }
   LOGF_DEFAULT(ERROR, "Running tests finished. Generating report");
   return Status::OK();
@@ -218,10 +218,10 @@ Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_c
       }
     }
   }
-  return Common::Status::OK();
+  return common::Status::OK();
 }
 
-std::vector<ITestCase*> LoadTests(const std::vector<path>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::Lotus::AllocatorPtr allocator) {
+std::vector<ITestCase*> LoadTests(const std::vector<path>& input_paths, const std::vector<std::string>& whitelisted_test_cases, ::onnxruntime::AllocatorPtr allocator) {
   std::vector<ITestCase*> tests;
   std::vector<path> paths(input_paths);
   const path ext_onnx(".onnx");
@@ -256,12 +256,12 @@ std::vector<ITestCase*> LoadTests(const std::vector<path>& input_paths, const st
   return tests;
 }
 
-SeqTestRunner::SeqTestRunner(std::shared_ptr<::Lotus::InferenceSession> session1,
+SeqTestRunner::SeqTestRunner(std::shared_ptr<::onnxruntime::InferenceSession> session1,
                              ITestCase* c, size_t repeat_count,
                              TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), repeat_count_(repeat_count) {
 }
 
-DataRunner::DataRunner(std::shared_ptr<::Lotus::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1) : test_case_name_(test_case_name1), c_(c), session(session1), on_finished(on_finished1) {
+DataRunner::DataRunner(std::shared_ptr<::onnxruntime::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1) : test_case_name_(test_case_name1), c_(c), session(session1), on_finished(on_finished1) {
   std::string s;
   c->GetNodeName(&s);
   result = std::make_shared<TestCaseResult>(c->GetDataCount(), EXECUTE_RESULT::UNKNOWN_ERROR, s);
@@ -283,9 +283,9 @@ void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store
 }
 
 EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
-  std::unordered_map<std::string, ::Lotus::MLValue> feeds;
-  std::vector<::Lotus::MLValue> output_values;
-  Common::Status status = c_->LoadInputData(task_id, feeds);
+  std::unordered_map<std::string, ::onnxruntime::MLValue> feeds;
+  std::vector<::onnxruntime::MLValue> output_values;
+  common::Status status = c_->LoadInputData(task_id, feeds);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
@@ -336,7 +336,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     //this is the default value for provider sync.Currently only one execution queue for CPU.
     int queue_id = 0;
     if (o.Fence())
-      o.Fence()->BeforeUsingAsInput(LotusIR::kCpuExecutionProvider, queue_id);
+      o.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, queue_id);
     const onnx::ValueInfoProto& v = c_->GetOutputInfoFromModel(i);
     std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), per_sample_tolerance, relative_per_sample_tolerance, post_procesing);
     COMPARE_RESULT compare_result = ret.first;
@@ -408,7 +408,7 @@ void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurr
       ret = std::make_shared<TestCaseResult>(data_count, StatusCodeToExecuteResult(status.Code()), node_name);
       goto end;
     }
-    std::shared_ptr<::Lotus::InferenceSession> session_object;
+    std::shared_ptr<::onnxruntime::InferenceSession> session_object;
     try {
       status = sf.create(session_object, info->GetModelUrl(), info->GetTestCaseName());
       if (!status.IsOK()) {
@@ -416,7 +416,7 @@ void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurr
         ret = std::make_shared<TestCaseResult>(data_count, StatusCodeToExecuteResult(status.Code()), node_name);
         goto end;
       }
-    } catch (::Lotus::NotImplementedException& ex) {
+    } catch (::onnxruntime::NotImplementedException& ex) {
       LOGF_DEFAULT(ERROR, "load model %s failed:%s\n", info->GetTestCaseName().c_str(), ex.what());
       ret = std::make_shared<TestCaseResult>(data_count, EXECUTE_RESULT::NOT_SUPPORT, node_name);
       goto end;
@@ -440,11 +440,11 @@ end:
 
 EXECUTE_RESULT StatusCodeToExecuteResult(int input) {
   switch (input) {
-    case Common::NOT_IMPLEMENTED:
+    case common::NOT_IMPLEMENTED:
       return EXECUTE_RESULT::NOT_SUPPORT;
-    case Common::INVALID_GRAPH:
+    case common::INVALID_GRAPH:
       return EXECUTE_RESULT::INVALID_GRAPH;
-    case Common::INVALID_ARGUMENT:
+    case common::INVALID_ARGUMENT:
       return EXECUTE_RESULT::INVALID_ARGUMENT;
     default:
       return EXECUTE_RESULT::UNKNOWN_ERROR;

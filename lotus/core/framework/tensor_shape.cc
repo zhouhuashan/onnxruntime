@@ -1,7 +1,7 @@
 #include "core/framework/tensor_shape.h"
 #include <iostream>
 #include "core/common/common.h"
-namespace Lotus {
+namespace onnxruntime {
 
 TensorShape::TensorShape() {}
 
@@ -91,7 +91,7 @@ int64_t TensorShape::SizeHelper(size_t start, size_t end) const {
 }
 
 // operator<< to nicely output to a stream
-std::ostream& operator<<(std::ostream& out, const ::Lotus::TensorShape& shape) {
+std::ostream& operator<<(std::ostream& out, const ::onnxruntime::TensorShape& shape) {
   return (out << shape.ToString());
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

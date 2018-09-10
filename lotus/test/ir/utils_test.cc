@@ -4,7 +4,7 @@
 using onnx::Utils::DataTypeUtils;
 using namespace onnx;
 
-namespace LotusIR {
+namespace onnxruntime {
 namespace Test {
 
 TEST(OpUtilsTest, TestPTYPE) {
@@ -53,4 +53,4 @@ TEST(OpUtilsTest, TestPTYPE) {
   EXPECT_EQ(t6.sequence_type().elem_type().tensor_type().elem_type(), TensorProto_DataType::TensorProto_DataType_INT32);
 }
 }  // namespace Test
-}  // namespace LotusIR
+}  // namespace onnxruntime

@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MLOpTest, BinarizerOp) {
-  OpTester test("Binarizer", 1, LotusIR::kMLDomain);
+  OpTester test("Binarizer", 1, onnxruntime::kMLDomain);
   float threshold = 0.3f;
   test.AddAttribute("threshold", threshold);
   vector<float> input{0.8f, -0.5f, 0.2f, 0.8f, -1.0f, 0.1f};
@@ -23,4 +23,4 @@ TEST(MLOpTest, BinarizerOp) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

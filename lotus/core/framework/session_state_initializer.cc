@@ -21,21 +21,21 @@
 #include "core/framework/transformer_memcpy.h"
 #include "core/framework/utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
-static Common::Status TransformGraph(LotusIR::Graph& graph,
-                                     const LotusIR::GraphTransformerManager& graph_transformer_mgr,
+static common::Status TransformGraph(onnxruntime::Graph& graph,
+                                     const onnxruntime::GraphTransformerManager& graph_transformer_mgr,
                                      const ExecutionProviders& exec_providers,
                                      KernelRegistryManager& kernel_registry_manager,
                                      const InsertCastTransformer& insert_cast_transformer);
 
-static Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph,
+static common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
                                                   MLValueNameIdxMap& mlvalue_name_idx_map,
                                                   const Logging::Logger& logger);
 
-using SaveTensorFunc = std::function<void(int idx, const Lotus::MLValue&)>;
+using SaveTensorFunc = std::function<void(int idx, const onnxruntime::MLValue&)>;
 
-static Common::Status SaveInitializedTensors(const LotusIR::Graph& graph,
+static common::Status SaveInitializedTensors(const onnxruntime::Graph& graph,
                                              bool enable_memory_pattern,
                                              const SequentialExecutionPlan& execution_plan,
                                              const ExecutionProviders& exec_providers,
@@ -44,16 +44,16 @@ static Common::Status SaveInitializedTensors(const LotusIR::Graph& graph,
                                              SaveTensorFunc save_tensor_func,
                                              const Logging::Logger& logger);
 
-static Common::Status SaveKernels(const ExecutionProviders& execution_providers,
+static common::Status SaveKernels(const ExecutionProviders& execution_providers,
                                   SessionState& session_state,
                                   const KernelRegistryManager& custom_registry_manager,
                                   const Logging::Logger& logger);
 
-static Common::Status SaveInputOutputNamesToNodeMapping(const LotusIR::Graph& graph,
+static common::Status SaveInputOutputNamesToNodeMapping(const onnxruntime::Graph& graph,
                                                         const KernelRegistryManager& custom_registry_manager,
                                                         SessionState& session_state);
 
-SessionStateInitializer::SessionStateInitializer(LotusIR::Graph& graph,
+SessionStateInitializer::SessionStateInitializer(onnxruntime::Graph& graph,
                                                  SessionState& session_state,
                                                  const ExecutionProviders& providers,
                                                  KernelRegistryManager& kernel_registry_manager,
@@ -65,7 +65,7 @@ SessionStateInitializer::SessionStateInitializer(LotusIR::Graph& graph,
       logger_{logger} {
 }
 
-Common::Status SessionStateInitializer::CreatePlan(const LotusIR::GraphTransformerManager& graph_transformation_manager,
+common::Status SessionStateInitializer::CreatePlan(const onnxruntime::GraphTransformerManager& graph_transformation_manager,
                                                    const InsertCastTransformer& insert_cast_transformer,
                                                    bool enable_sequential_execution) {
   LOTUS_RETURN_IF_ERROR(TransformGraph(graph_, graph_transformation_manager,
@@ -87,13 +87,18 @@ Common::Status SessionStateInitializer::CreatePlan(const LotusIR::GraphTransform
 
     session_state_.SetExecutionPlan(std::move(exec_plan));
   } else {
-    LOTUS_NOT_IMPLEMENTED("non sequential execution is not implemented");
+    // Parallel execution still uses same allocation plan, but has limitation of memory buffer reuse.
+    SequentialPlannerContext context(true /* enable parallel execution */);
+    LOTUS_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
+                                                        session_state_.GetMLValueNameIdxMap(), context, exec_plan));
+
+    session_state_.SetExecutionPlan(std::move(exec_plan));
   }
 
   return Status::OK();
 }
 
-Common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pattern,
+common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pattern,
                                                           std::map<AllocatorInfo, BufferUniquePtr>& weights_buffers) {
   const auto* exec_plan_ptr = session_state_.GetExecutionPlan();
   LOTUS_ENFORCE(exec_plan_ptr, "Execution plan was not found in SessionState. CreatePlan must be called first.");
@@ -102,7 +107,7 @@ Common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pat
   const auto& mlvalue_name_idx_map{session_state_.GetMLValueNameIdxMap()};
 
   // lambda to save initialized tensors into SessionState directly
-  auto add_initialized_tensor = [this](int idx, const Lotus::MLValue& value) {
+  auto add_initialized_tensor = [this](int idx, const onnxruntime::MLValue& value) {
     session_state_.AddInitializedTensor(idx, value);
   };
 
@@ -118,8 +123,8 @@ Common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pat
   return Status::OK();
 }
 
-Common::Status TransformGraph(LotusIR::Graph& graph,
-                              const LotusIR::GraphTransformerManager& graph_transformer_mgr,
+common::Status TransformGraph(onnxruntime::Graph& graph,
+                              const onnxruntime::GraphTransformerManager& graph_transformer_mgr,
                               const ExecutionProviders& providers,
                               KernelRegistryManager& kernel_registry_manager,
                               const InsertCastTransformer& insert_cast_transformer) {
@@ -141,7 +146,7 @@ Common::Status TransformGraph(LotusIR::Graph& graph,
 
   // Insert copy nodes.
   for (auto& provider : providers) {
-    if (provider->Type() != LotusIR::kCpuExecutionProvider && provider->Type() != LotusIR::kMklDnnExecutionProvider) {
+    if (provider->Type() != onnxruntime::kCpuExecutionProvider && provider->Type() != onnxruntime::kMklDnnExecutionProvider) {
       TransformerMemcpyImpl copy_impl(graph, provider->Type());
       copy_impl.ModifyGraph(kernel_registry_manager);
     }
@@ -153,11 +158,11 @@ Common::Status TransformGraph(LotusIR::Graph& graph,
 
   LOTUS_RETURN_IF_ERROR(graph.Resolve());
 
-  return Common::Status::OK();
+  return common::Status::OK();
 }
 
 // Build the MLValue name->idx mapping
-Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph,
+common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
                                            MLValueNameIdxMap& mlvalue_name_idx_map,
                                            const Logging::Logger& logger) {
   LOGS(logger, INFO) << "SaveMLValueNameIndexMapping";
@@ -170,7 +175,7 @@ Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph,
     }
 
     // build the MLValue->index map
-    for (gsl::not_null<const LotusIR::NodeArg*> input_def : node.InputDefs()) {
+    for (gsl::not_null<const onnxruntime::NodeArg*> input_def : node.InputDefs()) {
       if (input_def->Exists()) {
         idx = mlvalue_name_idx_map.Add(input_def->Name());
         VLOGS(logger, 1)
@@ -178,7 +183,7 @@ Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph,
       }
     }
 
-    for (gsl::not_null<const LotusIR::NodeArg*> output_def : node.OutputDefs()) {
+    for (gsl::not_null<const onnxruntime::NodeArg*> output_def : node.OutputDefs()) {
       if (output_def->Exists()) {
         mlvalue_name_idx_map.Add(output_def->Name());
         VLOGS(logger, 1)
@@ -200,30 +205,30 @@ Common::Status SaveMLValueNameIndexMapping(const LotusIR::Graph& graph,
   return Status::OK();
 }
 
-Common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
+common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
                                       const AllocatorInfo& alloc_info,
                                       const ExecutionProviders& exec_providers,
                                       MLValue& mlvalue, void* preallocated, size_t preallocated_size) {
   std::unique_ptr<Tensor> p_tensor;
   auto alloc_ptr = Utils::GetAllocator(exec_providers, alloc_info);
   if (!alloc_ptr) {
-    return Status(Common::LOTUS, Common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
+    return Status(common::LOTUS, common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
   }
 
   if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPUOutput) {
     // deserialize directly to CPU tensor
-    LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr,
-                                                                 preallocated, preallocated_size));
+    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr,
+                                                                       preallocated, preallocated_size));
   } else {
     // deserialize to CPU first for non-CPU allocator, then alloc and copy
     AllocatorPtr deserialize_alloc_ptr;
     std::unique_ptr<Tensor> p_deserialize_tensor;
-    deserialize_alloc_ptr = exec_providers.Get(LotusIR::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
-    LOTUS_RETURN_IF_ERROR(Lotus::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
-                                                                 deserialize_alloc_ptr));
+    deserialize_alloc_ptr = exec_providers.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
+    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
+                                                                       deserialize_alloc_ptr));
 
     if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
-      return Status(Common::LOTUS, Common::FAIL, "The buffer planner is not consistent with tensor buffer size");
+      return Status(common::LOTUS, common::FAIL, "The buffer planner is not consistent with tensor buffer size");
     }
 
     const IExecutionProvider* provider = exec_providers.Get(alloc_info);
@@ -253,10 +258,10 @@ Common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
                DataTypeImpl::GetType<Tensor>(),
                DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 
-  return Common::Status::OK();
+  return common::Status::OK();
 }
 
-Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph,
+common::Status SaveInitializedTensorsWithMemPattern(const onnxruntime::Graph& graph,
                                                     const SequentialExecutionPlan& execution_plan,
                                                     const ExecutionProviders& exec_providers,
                                                     const MLValueNameIdxMap& mlvalue_name_idx_map,
@@ -270,14 +275,14 @@ Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph,
   MLValuePatternPlanner planner(execution_plan);
 
   //1. first plan the memory
-  const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
+  const onnxruntime::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
   for (const auto& entry : initialized_tensor_set) {
     const std::string& name = entry.first;
     int mlvalue_index;
     LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
 
     const onnx::TensorProto& tensor_proto = *(entry.second);
-    LOTUS_RETURN_IF_ERROR(Lotus::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
+    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
   }
 
   //2. allocate weight buffer on different locations
@@ -290,7 +295,7 @@ Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph,
 
     auto alloc = Utils::GetAllocator(exec_providers, location);
     if (!alloc)
-      return Status(Common::LOTUS, Common::FAIL, "Failed to get allocator for location: " + location.ToString());
+      return Status(common::LOTUS, common::FAIL, "Failed to get allocator for location: " + location.ToString());
 
     void* buffer = mem_patterns.patterns[i].PeakSize() > 0 ? alloc->Alloc(mem_patterns.patterns[i].PeakSize())
                                                            : nullptr;
@@ -307,7 +312,7 @@ Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph,
     auto& location = execution_plan.allocation_plan[mlvalue_index].location;
     auto it = weights_buffers.find(location);
     if (it == weights_buffers.end())
-      return Status(Common::LOTUS, Common::FAIL, "Weight buffer not found");
+      return Status(common::LOTUS, common::FAIL, "Weight buffer not found");
 
     auto pattern = mem_patterns.GetPatterns(location);
     auto block = pattern->GetBlock(mlvalue_index);
@@ -333,10 +338,10 @@ Common::Status SaveInitializedTensorsWithMemPattern(const LotusIR::Graph& graph,
   }
 
   LOGS(logger, INFO) << "Done saving initialized tensors";
-  return Common::Status::OK();
+  return common::Status::OK();
 }
 
-Common::Status SaveInitializedTensorsWithSeperateBuffer(const LotusIR::Graph& graph,
+common::Status SaveInitializedTensorsWithSeperateBuffer(const onnxruntime::Graph& graph,
                                                         const SequentialExecutionPlan& execution_plan,
                                                         const ExecutionProviders& exec_providers,
                                                         const MLValueNameIdxMap& mlvalue_name_idx_map,
@@ -346,7 +351,7 @@ Common::Status SaveInitializedTensorsWithSeperateBuffer(const LotusIR::Graph& gr
 
   LOTUS_ENFORCE(mlvalue_name_idx_map.MaxIdx() > 0, "MLValue indexes should have been populated.");
 
-  const LotusIR::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
+  const onnxruntime::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
   for (const auto& entry : initialized_tensor_set) {
     const std::string& name = entry.first;
     int mlvalue_index;
@@ -360,10 +365,10 @@ Common::Status SaveInitializedTensorsWithSeperateBuffer(const LotusIR::Graph& gr
   }
 
   LOGS(logger, INFO) << "Done saving initialized tensors";
-  return Common::Status::OK();
+  return common::Status::OK();
 }
 
-Common::Status SaveInitializedTensors(const LotusIR::Graph& graph,
+common::Status SaveInitializedTensors(const onnxruntime::Graph& graph,
                                       bool enable_memory_pattern,
                                       const SequentialExecutionPlan& execution_plan,
                                       const ExecutionProviders& exec_providers,
@@ -383,7 +388,7 @@ Common::Status SaveInitializedTensors(const LotusIR::Graph& graph,
   }
 }
 
-static Common::Status CreateOpKernelInternal(const LotusIR::Node& node,
+static common::Status CreateOpKernelInternal(const onnxruntime::Node& node,
                                              const IExecutionProvider& exec_provider,
                                              const SessionState& session_state,
                                              const KernelRegistryManager& custom_registry_manager,
@@ -391,13 +396,13 @@ static Common::Status CreateOpKernelInternal(const LotusIR::Node& node,
   return custom_registry_manager.CreateKernel(node, exec_provider, session_state, op_kernel);
 }
 
-static Common::Status CreateOpKernel(const LotusIR::Node& node,
+static common::Status CreateOpKernel(const onnxruntime::Node& node,
                                      const ExecutionProviders& execution_providers,
                                      const SessionState& session_state,
                                      const KernelRegistryManager& custom_registry_manager,
                                      std::unique_ptr<OpKernel>& op_kernel,
                                      const Logging::Logger& logger) {
-  LotusIR::ProviderType exec_provider_name = node.GetExecutionProviderType();
+  onnxruntime::ProviderType exec_provider_name = node.GetExecutionProviderType();
 
   const IExecutionProvider* exec_provider = nullptr;
   if (exec_provider_name.empty() || (exec_provider = execution_providers.Get(exec_provider_name)) == nullptr) {
@@ -406,7 +411,7 @@ static Common::Status CreateOpKernel(const LotusIR::Node& node,
     LOGS(logger, ERROR) << status.ErrorMessage();
   }
 
-  Common::Status status = CreateOpKernelInternal(node, *exec_provider, session_state, custom_registry_manager,
+  common::Status status = CreateOpKernelInternal(node, *exec_provider, session_state, custom_registry_manager,
                                                  op_kernel);
 
   if (!status.IsOK()) {
@@ -417,13 +422,13 @@ static Common::Status CreateOpKernel(const LotusIR::Node& node,
   return status;
 }
 
-Common::Status SaveKernels(const ExecutionProviders& execution_providers,
+common::Status SaveKernels(const ExecutionProviders& execution_providers,
                            SessionState& session_state,
                            const KernelRegistryManager& custom_registry_manager,
                            const Logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving kernels.";
 
-  const LotusIR::Graph& graph{*session_state.GetGraph()};
+  const onnxruntime::Graph& graph{*session_state.GetGraph()};
 
   for (auto& node : graph.Nodes()) {
     // ignore source and sink nodes
@@ -442,14 +447,14 @@ Common::Status SaveKernels(const ExecutionProviders& execution_providers,
 }
 
 static bool IsArgNameInInputsOutputs(const std::string& name,
-                                     const std::vector<const LotusIR::NodeArg*> graph_args) {
-  auto it = std::find_if(std::begin(graph_args), std::end(graph_args), [&name](const LotusIR::NodeArg* arg) {
+                                     const std::vector<const onnxruntime::NodeArg*> graph_args) {
+  auto it = std::find_if(std::begin(graph_args), std::end(graph_args), [&name](const onnxruntime::NodeArg* arg) {
     return arg->Name() == name;
   });
   return it != graph_args.end();
 }
 
-Common::Status SaveInputOutputNamesToNodeMapping(const LotusIR::Graph& graph,
+common::Status SaveInputOutputNamesToNodeMapping(const onnxruntime::Graph& graph,
                                                  const KernelRegistryManager& custom_registry_manager,
                                                  SessionState& session_state) {
   auto& weights_map = graph.GetAllInitializedTensors();
@@ -458,9 +463,9 @@ Common::Status SaveInputOutputNamesToNodeMapping(const LotusIR::Graph& graph,
 
   for (auto& node : graph.Nodes()) {
     LOTUS_RETURN_IF_ERROR(
-        LotusIR::Node::ForEachWithIndex(
+        onnxruntime::Node::ForEachWithIndex(
             node.InputDefs(),
-            [&](const LotusIR::NodeArg& arg, size_t index) {
+            [&](const onnxruntime::NodeArg& arg, size_t index) {
               if (arg.Name().empty() || weights_map.count(arg.Name())) {
                 return Status::OK();
               }
@@ -487,4 +492,4 @@ Common::Status SaveInputOutputNamesToNodeMapping(const LotusIR::Graph& graph,
 
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

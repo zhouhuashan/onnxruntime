@@ -24,7 +24,7 @@ limitations under the License.
 #include "core/platform/env.h"
 #include "core/common/common.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 namespace {
 
@@ -93,48 +93,48 @@ class PosixEnv : public Env {
     return getpid();
   }
 
-  Common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+  common::Status FileOpenRd(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
     *p_fd = open(path.c_str(), O_RDONLY);
     if (0 > *p_fd) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
+  common::Status FileOpenWr(const std::string& path, /*out*/ gsl::not_null<int*> p_fd) const override {
     *p_fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (0 > *p_fd) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileClose(int fd) const override {
+  common::Status FileClose(int fd) const override {
     int ret = close(fd);
     if (0 != ret) {
-      return Common::Status(Common::SYSTEM, errno);
+      return common::Status(common::SYSTEM, errno);
     }
     return Status::OK();
   }
 
-  Common::Status FileExists(const char* /*fname*/) const override {
-    return Common::Status(Common::LOTUS, Common::NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
+  common::Status FileExists(const char* /*fname*/) const override {
+    return common::Status(common::LOTUS, common::NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
   }
-  Common::Status ReadFileAsString(const char* fname, std::string* out) const override {
+  common::Status ReadFileAsString(const char* fname, std::string* out) const override {
     if (!out) {
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "'out' cannot be NULL");
+      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "'out' cannot be NULL");
     }
     char errbuf[512];
     int fd = open(fname, O_RDONLY);
     if (fd < 0) {
       snprintf(errbuf, sizeof(errbuf), "%s:%d open file %s fail, errcode = %d", __FILE__, __LINE__, fname, errno);
-      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+      return common::Status(common::LOTUS, common::FAIL, errbuf);
     }
     struct stat stbuf;
     if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
       close(fd);
       snprintf(errbuf, sizeof(errbuf), "%s:%d read file %s fail", __FILE__, __LINE__, fname);
-      return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+      return common::Status(common::LOTUS, common::FAIL, errbuf);
     }
     if (stbuf.st_size == 0) {
       out->clear();
@@ -150,48 +150,48 @@ class PosixEnv : public Env {
                  __LINE__,
                  fname,
                  errno);
-        return Common::Status(Common::LOTUS, Common::FAIL, errbuf);
+        return common::Status(common::LOTUS, common::FAIL, errbuf);
       }
       close(fd);
     }
-    return Common::Status::OK();
+    return common::Status::OK();
   }
 
-  virtual Common::Status LoadLibrary(const std::string& library_filename, void** handle) const override {
+  virtual common::Status LoadLibrary(const std::string& library_filename, void** handle) const override {
     char* error_str = dlerror();  // clear any old error_str
     *handle = dlopen(library_filename.c_str(), RTLD_NOW | RTLD_LOCAL);
     error_str = dlerror();
     if (!*handle) {
-      return Common::Status(Common::LOTUS, Common::FAIL,
+      return common::Status(common::LOTUS, common::FAIL,
                             "Failed to load library " + library_filename + " with error: " + error_str);
     }
-    return Common::Status::OK();
+    return common::Status::OK();
   }
 
-  virtual Common::Status UnloadLibrary(void* handle) const override {
+  virtual common::Status UnloadLibrary(void* handle) const override {
     if (!handle) {
-      return Common::Status(Common::LOTUS, Common::FAIL, "Got null library handle");
+      return common::Status(common::LOTUS, common::FAIL, "Got null library handle");
     }
     char* error_str = dlerror();  // clear any old error_str
     int retval = dlclose(handle);
     error_str = dlerror();
     if (retval != 0) {
-      return Common::Status(Common::LOTUS, Common::FAIL,
+      return common::Status(common::LOTUS, common::FAIL,
                             "Failed to unload library with error: " + std::string(error_str));
     }
-    return Common::Status::OK();
+    return common::Status::OK();
   }
 
-  virtual Common::Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const override {
+  virtual common::Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const override {
     char* error_str = dlerror();  // clear any old error str
     *symbol = dlsym(handle, symbol_name.c_str());
     error_str = dlerror();
     if (error_str) {
-      return Common::Status(Common::LOTUS, Common::FAIL,
+      return common::Status(common::LOTUS, common::FAIL,
                             "Failed to get symbol " + symbol_name + " with error: " + error_str);
     }
     // it's possible to get a NULL symbol in our case when Schemas are not custom.
-    return Common::Status::OK();
+    return common::Status::OK();
   }
 
   virtual std::string FormatLibraryFileName(const std::string& name, const std::string& version) const override {
@@ -218,4 +218,4 @@ const Env& Env::Default() {
 }
 #endif
 
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -46,7 +46,7 @@ static void UnpackTensorWithRawData(const onnx::TensorProto& tensor, /*out*/ T* 
   }
 }
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Utils {
 #define DEFINE_UNPACK_TENSOR(T, Type, field_name, field_size)                                                   \
   template <>                                                                                                   \
@@ -56,20 +56,20 @@ namespace Utils {
       if (size == 0)                                                                                            \
         return Status::OK();                                                                                    \
       else                                                                                                      \
-        return Status(Common::LOTUS, Common::INVALID_ARGUMENT);                                                 \
+        return Status(common::LOTUS, common::INVALID_ARGUMENT);                                                 \
     }                                                                                                           \
     if (nullptr == p_data || Type != tensor.data_type()) {                                                      \
-      return Status(Common::LOTUS, Common::INVALID_ARGUMENT);                                                   \
+      return Status(common::LOTUS, common::INVALID_ARGUMENT);                                                   \
     }                                                                                                           \
     if (tensor.has_raw_data()) {                                                                                \
       if (tensor.raw_data().size() != ((expected_size) * sizeof(T)))                                            \
-        return Status(Common::LOTUS, Common::FAIL,                                                              \
+        return Status(common::LOTUS, common::FAIL,                                                              \
                       "UnpackTensor: the pre-allocated size does not match the raw data size");                 \
       UnpackTensorWithRawData(tensor, p_data);                                                                  \
       return Status::OK();                                                                                      \
     }                                                                                                           \
     if (tensor.field_size() != expected_size)                                                                   \
-      return Status(Common::LOTUS, Common::FAIL,                                                                \
+      return Status(common::LOTUS, common::FAIL,                                                                \
                     "UnpackTensor: the pre-allocated size does not match the size in proto");                   \
     const auto span = gsl::make_span(p_data, expected_size);                                                    \
     auto& data = tensor.field_name();                                                                           \
@@ -98,14 +98,14 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
     if (tensor.string_data_size() == 0)
       return Status::OK();
     else
-      return Status(Common::LOTUS, Common::INVALID_ARGUMENT);
+      return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
   if (onnx::TensorProto_DataType_STRING != tensor.data_type()) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT);
+    return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
 
   if (tensor.string_data_size() != expected_size)
-    return Status(Common::LOTUS, Common::FAIL,
+    return Status(common::LOTUS, common::FAIL,
                   "UnpackTensor: the pre-allocate size does not match the size in proto");
 
   const auto data = gsl::make_span(p_data, expected_size);
@@ -124,15 +124,15 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
     if (size == 0)
       return Status::OK();
     else
-      return Status(Common::LOTUS, Common::INVALID_ARGUMENT);
+      return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
   if (onnx::TensorProto_DataType_BOOL != tensor.data_type()) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT);
+    return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
 
   if (tensor.has_raw_data()) {
     if (tensor.raw_data().size() != (expected_size) * sizeof(bool))
-      return Status(Common::LOTUS, Common::FAIL,
+      return Status(common::LOTUS, common::FAIL,
                     "UnpackTensor: the pre-allocate size does not match the raw data size");
 
     UnpackTensorWithRawData(tensor, p_data);
@@ -140,7 +140,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
   }
 
   if (tensor.int32_data_size() != expected_size)
-    return Status(Common::LOTUS, Common::FAIL,
+    return Status(common::LOTUS, common::FAIL,
                   "UnpackTensor: the pre-allocate size does not match the size in proto");
 
   const auto data = gsl::make_span(p_data, expected_size);
@@ -157,15 +157,15 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
     if (size == 0)
       return Status::OK();
     else
-      return Status(Common::LOTUS, Common::INVALID_ARGUMENT);
+      return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
   if (onnx::TensorProto_DataType_FLOAT16 != tensor.data_type()) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT);
+    return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
 
   if (tensor.has_raw_data()) {
     if (tensor.raw_data().size() != (expected_size) * sizeof(uint16_t))
-      return Status(Common::LOTUS, Common::FAIL,
+      return Status(common::LOTUS, common::FAIL,
                     "UnpackTensor: the pre-allocate size does not match the raw data size");
 
     UnpackTensorWithRawData(tensor, p_data);
@@ -173,7 +173,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
   }
 
   if (tensor.int32_data_size() != expected_size)
-    return Status(Common::LOTUS, Common::FAIL,
+    return Status(common::LOTUS, common::FAIL,
                   "UnpackTensor: the pre-allocate size does not match the size in proto");
 
   const auto data = gsl::make_span(p_data, expected_size);
@@ -183,4 +183,4 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
   return Status::OK();
 }
 }  // namespace Utils
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -2,11 +2,11 @@
 
 #include "core/providers/mkldnn/mkldnn_execution_provider.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // Create MKL-DNN execution provider
 std::unique_ptr<IExecutionProvider> CreateMKLDNNExecutionProvider(const CPUExecutionProviderInfo& info) {
   return std::make_unique<MKLDNNExecutionProvider>(info);
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

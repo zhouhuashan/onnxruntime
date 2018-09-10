@@ -5,7 +5,7 @@
 #include <string>
 #include <cstring>
 
-namespace Lotus {
+namespace onnxruntime {
 
 // TODO - Use a custom STL allocator to avoid heap allocations in the common case.
 // We use negative numbers for unknown symbolic dimension. Each negative
@@ -102,6 +102,6 @@ class TensorShape : private std::vector<int64_t> {
   }
 };
 // operator<< to nicely output to a stream
-std::ostream& operator<<(std::ostream& out, const ::Lotus::TensorShape& shape);
+std::ostream& operator<<(std::ostream& out, const ::onnxruntime::TensorShape& shape);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

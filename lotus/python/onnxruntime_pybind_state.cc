@@ -4,11 +4,41 @@
 #define PY_ARRAY_UNIQUE_SYMBOL onnxruntime_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
-#include "core/session/inference_session.h"
 #include "core/graph/graph.h"
-#if USE_MKLDNN
-#include "core/providers/mkldnn/mkldnn_execution_provider.h"
+
+#if USE_CUDA
+#define BACKEND_PROC "GPU"
+#else
+#define BACKEND_PROC "CPU"
 #endif
+
+#if USE_OPENMP
+#define BACKEND_OPENMP "-OPENMP"
+#else
+#define BACKEND_OPENMP ""
+#endif
+
+#if USE_MKLDNN
+#define BACKEND_MKLDNN "-MKL-DNN"
+#include "core/providers/mkldnn/mkldnn_execution_provider.h"
+#else
+#define BACKEND_MKLDNN ""
+#endif
+
+#if USE_MKLML
+#define BACKEND_MKLML "-MKL-ML"
+#else
+#define BACKEND_MKLML ""
+#endif
+
+#if USE_OPENBLAS
+#define BACKEND_OPENBLAS "-OPENBLAS"
+#else
+#define BACKEND_OPENBLAS ""
+#endif
+
+#define BACKEND_DEVICE BACKEND_PROC BACKEND_MKLDNN BACKEND_MKLML BACKEND_OPENBLAS
+
 #include "core/providers/cpu/cpu_execution_provider.h"
 
 #if defined(_MSC_VER)
@@ -16,7 +46,6 @@
 #endif  // _MSC_VER
 
 #include <iterator>
-
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4267 4996 4503 4003)
@@ -27,8 +56,8 @@ namespace onnxruntime {
 namespace python {
 
 namespace py = pybind11;
-using namespace Lotus;
-using namespace Lotus::Logging;
+using namespace onnxruntime;
+using namespace onnxruntime::Logging;
 
 static AllocatorPtr& GetAllocator() {
   static AllocatorPtr alloc = std::make_shared<CPUAllocator>();
@@ -41,10 +70,10 @@ static const SessionOptions& GetDefaultCPUSessionOptions() {
 }
 
 template <typename T>
-void AddNonTensor(Lotus::MLValue& val, vector<py::object>& pyobjs) {
+void AddNonTensor(onnxruntime::MLValue& val, vector<py::object>& pyobjs) {
   pyobjs.push_back(py::cast(val.Get<T>()));
 }
-void AddNonTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
+void AddNonTensorAsPyObj(onnxruntime::MLValue& val, vector<py::object>& pyobjs) {
   // Should be in sync with core/framework/datatypes.h
   if (val.Type() == DataTypeImpl::GetType<MapStringToString>()) {
     AddNonTensor<MapStringToString>(val, pyobjs);
@@ -79,7 +108,7 @@ void AddNonTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
   }
 }
 
-void AddTensorAsPyObj(Lotus::MLValue& val, vector<py::object>& pyobjs) {
+void AddTensorAsPyObj(onnxruntime::MLValue& val, vector<py::object>& pyobjs) {
   const Tensor& rtensor = val.Get<Tensor>();
   std::vector<npy_intp> npy_dims;
   const TensorShape& shape = rtensor.Shape();
@@ -131,7 +160,7 @@ class SessionObjectInitializer {
 };
 
 void InitializeSession(InferenceSession* sess) {
-  Lotus::Common::Status status;
+  onnxruntime::common::Status status;
 
 #ifdef USE_CUDA
   CUDAExecutionProviderInfo cuda_pi;
@@ -162,6 +191,8 @@ void InitializeSession(InferenceSession* sess) {
 
 void addGlobalMethods(py::module& m) {
   m.def("get_session_initializer", &SessionObjectInitializer::Get, "Return a default session object initializer.");
+  m.def("get_device", []() -> std::string { return BACKEND_DEVICE; },
+        "Return the device used to compute the prediction (CPU, MKL, ...)");
 }
 
 void addObjectMethods(py::module& m) {
@@ -205,13 +236,13 @@ set this option to false if you don't want it.)pbdoc");
       .def_readwrite("version", &ModelMetadata::version)
       .def_readwrite("custom_metadata_map", &ModelMetadata::custom_metadata_map);
 
-  py::class_<LotusIR::NodeArg>(m, "NodeArg", R"pbdoc(Node argument definition, for both input and output,
+  py::class_<onnxruntime::NodeArg>(m, "NodeArg", R"pbdoc(Node argument definition, for both input and output,
 including arg name, arg type (contains both type and shape).)pbdoc")
-      .def_property_readonly("name", &LotusIR::NodeArg::Name)
-      .def_property_readonly("type", [](const LotusIR::NodeArg& na) -> std::string {
+      .def_property_readonly("name", &onnxruntime::NodeArg::Name)
+      .def_property_readonly("type", [](const onnxruntime::NodeArg& na) -> std::string {
         return *(na.Type());
       })
-      .def_property_readonly("shape", [](const LotusIR::NodeArg& na) -> std::vector<py::object> {
+      .def_property_readonly("shape", [](const onnxruntime::NodeArg& na) -> std::vector<py::object> {
         auto shape = na.Shape();
         std::vector<py::object> arr;
         if (shape == nullptr || shape->dim_size() == 0) {
@@ -240,7 +271,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         InitializeSession(sess);
       },
-           R"pbdoc(Loads a model saved in ONNX format.)pbdoc")
+           R"pbdoc(Load a model saved in ONNX format.)pbdoc")
       .def("read_bytes", [](InferenceSession* sess, const py::bytes& serializedModel) {
         std::istringstream buffer(serializedModel);
         auto status = sess->Load(buffer);
@@ -249,12 +280,12 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
         InitializeSession(sess);
       },
-           R"pbdoc(Loads a model serialized in ONNX format.)pbdoc")
+           R"pbdoc(Load a model serialized in ONNX format.)pbdoc")
       .def("run", [](InferenceSession* sess, std::vector<std::string> output_names, std::map<std::string, py::object> pyfeeds, RunOptions* run_options = nullptr) -> std::vector<py::object> {
         NameMLValMap feeds;
         for (auto _ : pyfeeds) {
           MLValue ml_value;
-          CreateGenericMLValue(GetAllocator(), _.second, &ml_value);
+          CreateGenericMLValue(GetAllocator(), _.first, _.second, &ml_value);
           if (PyErr_Occurred()) {
             PyObject *ptype, *pvalue, *ptraceback;
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -272,7 +303,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         }
 
         std::vector<MLValue> fetches;
-        Common::Status status;
+        common::Status status;
 
         if (run_options != nullptr) {
           status = sess->Run(*run_options, feeds, output_names, &fetches);
@@ -282,7 +313,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
 
         if (!status.IsOK()) {
           auto mes = status.ToString();
-          throw std::runtime_error(mes.c_str());
+          throw std::runtime_error(std::string("Method run failed due to: ") + std::string(mes.c_str()));
         }
 
         std::vector<py::object> rfetch;
@@ -299,7 +330,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
       .def("end_profiling", [](InferenceSession* sess) -> std::string {
         return sess->EndProfiling();
       })
-      .def_property_readonly("inputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
+      .def_property_readonly("inputs_meta", [](const InferenceSession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelInputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -307,7 +338,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("outputs_meta", [](const InferenceSession* sess) -> const std::vector<const LotusIR::NodeArg*>& {
+      .def_property_readonly("outputs_meta", [](const InferenceSession* sess) -> const std::vector<const onnxruntime::NodeArg*>& {
         auto res = sess->GetModelOutputs();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());
@@ -315,7 +346,7 @@ including arg name, arg type (contains both type and shape).)pbdoc")
           return *(res.second);
         }
       })
-      .def_property_readonly("model_meta", [](const InferenceSession* sess) -> const Lotus::ModelMetadata& {
+      .def_property_readonly("model_meta", [](const InferenceSession* sess) -> const onnxruntime::ModelMetadata& {
         auto res = sess->GetModelMetadata();
         if (!res.first.IsOK()) {
           throw std::runtime_error(res.first.ToString().c_str());

@@ -12,10 +12,19 @@ in *onnxruntime*.
 Examples and datasets
 =====================
 
+The package contains a few models stored in ONNX format
+used in the documentation. They don't need to be downloaded
+as they are installed with the package.
+
 .. autofunction:: onnxruntime.python.datasets.get_example
 
 Load and run a model
 ====================
+
+*onnxruntime* reads a model saved in ONNX format but
+uses its own internal structure to hold the model in memory.
+The main class *InferenceSession* wraps these functionalities
+in a single place.
 
 .. autoclass:: onnxruntime.InferenceSession
     :members:
@@ -26,6 +35,17 @@ Load and run a model
 .. autoclass:: onnxruntime.SessionOptions
     :members:
 
+Backend
+=======
 
+The runtime is also available through the 
+`ONNX backend API <https://github.com/onnx/onnx/blob/master/docs/ImplementingAnOnnxBackend.md>`_
+with the following functions.
 
+.. autofunction:: onnxruntime.backend.is_compatible
 
+.. autofunction:: onnxruntime.backend.prepare
+
+.. autofunction:: onnxruntime.backend.run
+
+.. autofunction:: onnxruntime.backend.supports_device

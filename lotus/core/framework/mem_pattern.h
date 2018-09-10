@@ -2,7 +2,7 @@
 #include "core/common/common.h"
 #include "core/framework/allocation_planner.h"
 
-namespace Lotus {
+namespace onnxruntime {
 struct MemoryBlock {
   size_t offset_{0};
   size_t size_{0};
@@ -59,4 +59,4 @@ struct MemoryPatternGroup {
     return nullptr;
   }
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

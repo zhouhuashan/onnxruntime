@@ -4,10 +4,10 @@
 #include "core/framework/tensor.h"
 #include <sstream>
 
-namespace Lotus {
+namespace onnxruntime {
 class BatchNormHelper {
  public:
-  static Common::Status ValidateInputs(const Tensor* X,
+  static common::Status ValidateInputs(const Tensor* X,
                                        const Tensor* scale,
                                        const Tensor* B,
                                        const Tensor* mean,
@@ -21,7 +21,7 @@ class BatchNormHelper {
     //constexpr int kMaxCudaNumDims = 5;
 
     if (X->Shape().GetDims().empty()) {
-      return Common::Status(Common::LOTUS, Common::INVALID_ARGUMENT, "Invalid input X: Empty dimensions");
+      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "Invalid input X: Empty dimensions");
     }
 
     int64_t num_channels = X->Shape().GetDims()[1];
@@ -54,7 +54,7 @@ class BatchNormHelper {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Invalid input var: 0th dimension != ", num_channels);
     }
 
-    return Common::Status::OK();
+    return common::Status::OK();
   }
 
   static void NormalizeDims(const TensorShape& x_shape, std::vector<int64_t>& new_dims) {
@@ -74,4 +74,4 @@ class BatchNormHelper {
     new_dims = {num_samples, num_channels, height, width};
   }
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

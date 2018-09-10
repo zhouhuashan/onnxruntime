@@ -1,8 +1,8 @@
 #include "core/graph/graph_transformer_mgr.h"
-using namespace Lotus;
-using namespace ::Lotus::Common;
+using namespace onnxruntime;
+using namespace ::onnxruntime::common;
 
-namespace LotusIR {
+namespace onnxruntime {
 
 Status GraphTransformerManager::ApplyAll(Graph& graph) const {
   bool changed = false;
@@ -18,4 +18,4 @@ Status GraphTransformerManager::ApplyAll(Graph& graph) const {
   return Status::OK();
 }
 
-}  // namespace LotusIR
+}  // namespace onnxruntime

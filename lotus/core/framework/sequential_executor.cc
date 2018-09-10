@@ -10,7 +10,7 @@
 #include "core/framework/session_state.h"
 #include "core/framework/op_kernel_context_internal.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 static Status FetchOutput(const MLValueNameIdxMap& name_idx_map,
                           ExecutionFrame& frame,
@@ -181,4 +181,4 @@ static Status ReleaseNodeMLValues(ExecutionFrame& frame,
 
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

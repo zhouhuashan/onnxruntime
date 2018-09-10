@@ -9,11 +9,11 @@
 #include "core/common/logging/capture.h"
 #include "core/common/logging/isink.h"
 
-class MockSink : public ::Lotus::Logging::ISink {
+class MockSink : public ::onnxruntime::Logging::ISink {
  public:
-  MOCK_METHOD3(SendImpl, void(const ::Lotus::Logging::Timestamp &timestamp,
-                              const std::string &logger_id,
-                              const ::Lotus::Logging::Capture &message));
+  MOCK_METHOD3(SendImpl, void(const ::onnxruntime::Logging::Timestamp& timestamp,
+                              const std::string& logger_id,
+                              const ::onnxruntime::Logging::Capture& message));
 };
 
 // The ACTION*() macros trigger warning C4100 (unreferenced formal
@@ -33,7 +33,7 @@ ACTION(PrintArgs) {
   //                  arg0                          arg1                        arg2
   std::cout << arg1 << "@" << arg0 << " "
             << arg2.SeverityPrefix() << ":" << arg2.Category() << ":"
-            << arg2.Location().ToString(::Lotus::CodeLocation::kFilenameAndPath) << " " << arg2.Message() << std::endl;
+            << arg2.Location().ToString(::onnxruntime::CodeLocation::kFilenameAndPath) << " " << arg2.Message() << std::endl;
 };
 
 #ifdef _MSC_VER

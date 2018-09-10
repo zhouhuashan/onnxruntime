@@ -3,11 +3,11 @@
 #include "core/framework/session_state.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 IOBinding::IOBinding(const SessionState& session_state) : session_state_(session_state) {
 }
 
-Common::Status IOBinding::BindInput(const std::string& name, const MLValue& ml_value) {
+common::Status IOBinding::BindInput(const std::string& name, const MLValue& ml_value) {
   if (!ml_value.IsTensor()) {
     feeds_[name] = ml_value;
     return Status::OK();
@@ -19,8 +19,8 @@ Common::Status IOBinding::BindInput(const std::string& name, const MLValue& ml_v
   return Status::OK();
 }
 
-static Common::Status AllocateHelper(const SessionState& session_state,
-                                     LotusIR::ProviderType provider_type,
+static common::Status AllocateHelper(const SessionState& session_state,
+                                     onnxruntime::ProviderType provider_type,
                                      const MLValue& fetched_mlvalue,
                                      MLValue& output_mlvalue) {
   auto* p_provider = session_state.GetExecutionProviders().Get(provider_type);
@@ -44,7 +44,7 @@ static Common::Status AllocateHelper(const SessionState& session_state,
 
 // TODO should we handle the case of one input name feeding 2 nodes placed on different
 // devices.
-Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_state,
+common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_state,
                                                     const std::string& input_name,
                                                     const MLValue& orig_mlvalue,
                                                     MLValue& new_mlvalue) {
@@ -59,7 +59,7 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
 
     // node may declare input_mem_type to be on CPU explicitly
     bool node_input_on_cpu = node_input_mem_types && MemTypeOnCpuExplicitly(*node_input_mem_types, index);
-    auto& required_provider_type = node_input_on_cpu ? LotusIR::kCpuExecutionProvider : node.GetExecutionProviderType();
+    auto& required_provider_type = node_input_on_cpu ? onnxruntime::kCpuExecutionProvider : node.GetExecutionProviderType();
     if (!orig_mlvalue.IsTensor()) {
       // copying not supported for non-tensor types
       new_mlvalue = orig_mlvalue;
@@ -71,7 +71,7 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
 
     auto* p_input_provider = exec_providers.Get(input_tensor_loc);
     if (!p_input_provider) {
-      p_input_provider = exec_providers.Get(LotusIR::kCpuExecutionProvider);
+      p_input_provider = exec_providers.Get(onnxruntime::kCpuExecutionProvider);
       LOTUS_ENFORCE(p_input_provider);
     }
 
@@ -89,7 +89,7 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
     LOTUS_ENFORCE(node_exec_provider);
 
     // our CPU exec provider doesn't support copy from GPU->CPU
-    if (required_provider_type != LotusIR::kCpuExecutionProvider) {
+    if (required_provider_type != onnxruntime::kCpuExecutionProvider) {
       LOTUS_RETURN_IF_ERROR(node_exec_provider->CopyTensor(input_tensor, *new_tensor));
     } else {
       LOTUS_RETURN_IF_ERROR(p_input_provider->CopyTensor(input_tensor, *new_tensor));
@@ -99,12 +99,12 @@ Common::Status IOBinding::CopyOneInputAcrossDevices(const SessionState& session_
   return Status::OK();
 }
 
-static Common::Status SyncProviders(const SessionState::NameNodeInfoMapType& node_info_map,
+static common::Status SyncProviders(const SessionState::NameNodeInfoMapType& node_info_map,
                                     const SessionState& session_state) {
   std::set<std::string> providers;
   for (auto& pair : node_info_map) {
     for (auto& node_info : pair.second) {
-      if (node_info.p_node->GetExecutionProviderType() != LotusIR::kCpuExecutionProvider) {
+      if (node_info.p_node->GetExecutionProviderType() != onnxruntime::kCpuExecutionProvider) {
         providers.insert(node_info.p_node->GetExecutionProviderType());
       }
     }
@@ -120,12 +120,12 @@ static Common::Status SyncProviders(const SessionState::NameNodeInfoMapType& nod
   return Status::OK();
 }
 
-Common::Status IOBinding::SynchronizeInputs() {
+common::Status IOBinding::SynchronizeInputs() {
   LOTUS_RETURN_IF_ERROR(SyncProviders(session_state_.GetInputNodeInfoMap(), session_state_));
   return Status::OK();
 }
 
-Common::Status IOBinding::SynchronizeOutputs() {
+common::Status IOBinding::SynchronizeOutputs() {
   LOTUS_RETURN_IF_ERROR(SyncProviders(session_state_.GetOutputNodeInfoMap(), session_state_));
   return Status::OK();
 }
@@ -139,7 +139,7 @@ static std::pair<bool, size_t> Contains(const std::vector<std::string>& output_n
   }
 }
 
-Common::Status IOBinding::BindOutput(const std::string& name, const MLValue& ml_value) {
+common::Status IOBinding::BindOutput(const std::string& name, const MLValue& ml_value) {
   auto rc = Contains(output_names_, name);
   if (rc.first) {
     outputs_[rc.second] = ml_value;
@@ -163,7 +163,7 @@ const std::unordered_map<std::string, MLValue>& IOBinding::GetInputs() const {
   return feeds_;
 }
 
-AllocatorPtr IOBinding::GetCPUAllocator(LotusIR::ProviderType provider_type) const {
+AllocatorPtr IOBinding::GetCPUAllocator(onnxruntime::ProviderType provider_type) const {
   auto& exec_providers = session_state_.GetExecutionProviders();
   auto* p_provider = exec_providers.Get(provider_type);
   LOTUS_ENFORCE(p_provider);
@@ -173,8 +173,8 @@ AllocatorPtr IOBinding::GetCPUAllocator(LotusIR::ProviderType provider_type) con
   if (allocator)
     return allocator;
 
-  auto* cpu_provider = exec_providers.Get(LotusIR::kCpuExecutionProvider);
+  auto* cpu_provider = exec_providers.Get(onnxruntime::kCpuExecutionProvider);
   return cpu_provider->GetAllocator(kMemTypeDefault);
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

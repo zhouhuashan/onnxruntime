@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 struct ReductionAttribute {
   std::vector<int64_t> axes_;
@@ -20,4 +20,4 @@ struct ReductionTestCases {
 #include "reduction_test_cases.inl"
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

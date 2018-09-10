@@ -22,7 +22,7 @@
 #include "core/util/math_cpuonly.h"
 #include <queue>
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 // spec https://github.com/onnx/onnx/blob/master/docs/Operators.md#TopK
 ONNX_CPU_OPERATOR_KERNEL(
     TopK,
@@ -71,7 +71,7 @@ Status TopK<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   if (in_dims.back() < k_) {
     ostringstream err_msg;
     err_msg << "k argment [" << k_ << "] should not be greater than last dim [" << in_dims.back() << "]";
-    return Status(Common::LOTUS, Common::FAIL, err_msg.str());
+    return Status(common::LOTUS, common::FAIL, err_msg.str());
   }
 
   vector<int64_t> linear_shape = {SizeToDim(in_dims.size() - 1, in_dims),
@@ -130,4 +130,4 @@ Status TopK<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   Indices->Reshape(out_dims);
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

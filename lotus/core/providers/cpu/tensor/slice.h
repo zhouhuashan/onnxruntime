@@ -2,7 +2,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 struct Slice final : OpKernel {
@@ -21,6 +21,6 @@ struct Slice final : OpKernel {
   std::vector<int64_t> axes_;
   bool has_axes_;
   std::vector<int64_t> starts_, ends_;
-};  // namespace Lotus
+};  // namespace onnxruntime
 
-}  // namespace Lotus
+}  // namespace onnxruntime

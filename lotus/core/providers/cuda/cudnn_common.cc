@@ -3,8 +3,8 @@
 #include "shared_inc/cuda_call.h"
 #include "core/providers/cpu/tensor/utils.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 CudnnTensor::CudnnTensor()
     : tensor_(nullptr) {
@@ -76,5 +76,5 @@ const float Consts<half>::Zero = 0;
 
 const float Consts<half>::One = 1;
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

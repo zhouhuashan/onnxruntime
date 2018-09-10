@@ -4,9 +4,9 @@
 #include "gsl/gsl_algorithm"
 #include "core/providers/cpu/tensor/tile.h"
 #include "core/providers/cpu/tensor/utils.h"
-using namespace ::Lotus::Common;
+using namespace ::onnxruntime::common;
 
-namespace Lotus {
+namespace onnxruntime {
 
 ONNX_CPU_OPERATOR_KERNEL(
     Tile,
@@ -61,4 +61,4 @@ Status Tile<float>::Compute(OpKernelContext* ctx) const {
   }
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

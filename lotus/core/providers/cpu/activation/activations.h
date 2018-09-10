@@ -4,7 +4,7 @@
 #include "core/framework/op_kernel.h"
 #include "core/util/math_cpuonly.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 #define EIGEN_X ConstEigenVectorArrayMap<T>(X->Data<T>(), X->Shape().Size())
 #define EIGEN_X_VAR(var) ConstEigenVectorArrayMap<T> var(X->Data<T>(), X->Shape().Size())
@@ -198,4 +198,4 @@ class ThresholdedRelu final : public OpKernel {
   const float alpha_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

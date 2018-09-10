@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MathOpTest, Add_int32) {
@@ -410,9 +410,16 @@ TEST(MathOpTest, Sum_8) {
   OpTester test("Sum", 8);
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("data_0", dims,
-                       { 1.0f, 0.0f, 1.0f,
-                        -1.0f, 1.1f, -100.0f,
-                        -5.4f, 0.01f, -74.0f,
+                       {
+                           1.0f,
+                           0.0f,
+                           1.0f,
+                           -1.0f,
+                           1.1f,
+                           -100.0f,
+                           -5.4f,
+                           0.01f,
+                           -74.0f,
                        });
   std::vector<int64_t> dims_1{3};
   test.AddInput<float>("data_1", dims_1,
@@ -426,7 +433,7 @@ TEST(MathOpTest, Sum_8) {
                          59.6f, 64.01f, -8.0f});
 
   // TO DO: call RunOnCpuAndCuda after Sum of CPU updated to opset 8
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "Sum is not correct", LotusIR::kCudaExecutionProvider);
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "Sum is not correct", onnxruntime::kCudaExecutionProvider);
 #endif
 }
 
@@ -664,4 +671,4 @@ TEST(MathOpTest, Atan) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -3,8 +3,8 @@
 #include "core/providers/cuda/cu_inc/common.cuh"
 #include "core/providers/cuda/cu_inc/binary_elementwise_impl.cuh"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 #define OP(name, expr)                                   \
   template <class T>                                     \
@@ -79,5 +79,5 @@ SPECIALIZED_BINARY_ELEMENTWISE_IMPL(Or, bool)
 SPECIALIZED_BINARY_ELEMENTWISE_IMPL(Xor, bool)
 SPECIALIZED_BINARY_ELEMENTWISE_IMPL_HFD(PRelu)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

@@ -21,8 +21,8 @@ AttributeProto::FLOAT,
 OPTIONAL);
 */
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 ONNX_CPU_OPERATOR_ML_KERNEL(
     Binarizer,
     1,
@@ -34,7 +34,7 @@ BinarizerOp<T>::BinarizerOp(const OpKernelInfo& info)
     : OpKernel(info), threshold_(info.GetAttrOrDefault<float>("threshold", 1.0f)) {}
 
 template <typename T>
-Common::Status BinarizerOp<T>::Compute(OpKernelContext* context) const {
+common::Status BinarizerOp<T>::Compute(OpKernelContext* context) const {
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   Tensor* Y = context->Output(0, x_shape);
@@ -42,18 +42,18 @@ Common::Status BinarizerOp<T>::Compute(OpKernelContext* context) const {
   T* y_data = Y->MutableData<T>();
   size_t x_size = x_shape.Size();
 
-  Common::Status status = Common::Status::OK();
+  common::Status status = common::Status::OK();
   for (size_t i = 0; i < x_size; ++i) {
     T x_val = x_data[i];
     T& y_val = y_data[i];
 
     float tmp = static_cast<float>(x_val);  // this cast is necessary because isnan doesn't work otherwise.
     if (std::isnan(tmp)) {
-      return Common::Status(Common::LOTUS, Common::FAIL, "Input data with index: " + std::to_string(i) + " is NaN");
+      return common::Status(common::LOTUS, common::FAIL, "Input data with index: " + std::to_string(i) + " is NaN");
     }
     y_val = x_val > threshold_ ? static_cast<T>(1) : static_cast<T>(0);
   }
   return status;
 }
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

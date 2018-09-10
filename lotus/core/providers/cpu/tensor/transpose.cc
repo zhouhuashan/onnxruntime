@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/transpose.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 /* A permutation [a,b,c,...] indicates that 
    - The 0-th dimension of the output corresponds to the a-th dimension of input
@@ -142,4 +142,4 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Transpose<float>);
 
-}  // namespace Lotus
+}  // namespace onnxruntime

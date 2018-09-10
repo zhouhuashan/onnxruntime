@@ -6,10 +6,10 @@
 #include "core/common/logging/severity.h"
 #include <vector>
 
-using namespace ::Lotus::Common;
-using namespace ::Lotus::Logging;
+using namespace ::onnxruntime::common;
+using namespace ::onnxruntime::Logging;
 
-namespace Lotus {
+namespace onnxruntime {
 CustomOpsLoader::~CustomOpsLoader() {
   typedef void (*FreeKernelsContainerFn)(KernelsContainer*);
   typedef void (*FreeSchemasContainerFn)(SchemasContainer*);
@@ -130,4 +130,4 @@ Status CustomOpsLoader::LoadCustomOps(const std::string& dso_file_path,
     return Status(LOTUS, FAIL, "Caught exception while loading custom ops with message: " + std::string(ex.what()));
   }
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -2,18 +2,18 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 static void RunTest(int64_t k,
-                    const std::vector<float> &input_vals,
-                    const std::vector<int64_t> &input_dimensions,
-                    const std::vector<float> &expected_vals,
-                    const std::vector<int64_t> &expected_indices,
-                    const std::vector<int64_t> &expected_dimensions,
+                    const std::vector<float>& input_vals,
+                    const std::vector<int64_t>& input_dimensions,
+                    const std::vector<float>& expected_vals,
+                    const std::vector<int64_t>& expected_indices,
+                    const std::vector<int64_t>& expected_dimensions,
                     int64_t axis = 1,
                     OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
-                    const std::string &expected_err_str = "") {
+                    const std::string& expected_err_str = "") {
   OpTester test("TopK");
   test.AddAttribute("k", k);
   if (axis != 1) {
@@ -80,4 +80,4 @@ TEST(TopKOperator, InvalidK) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

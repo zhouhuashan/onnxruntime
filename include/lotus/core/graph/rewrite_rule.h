@@ -3,7 +3,7 @@
 #include "core/graph/graph.h"
 #include "core/common/common.h"
 
-namespace LotusIR {
+namespace onnxruntime {
 
 // The graph rewrite API for rewrite rules.
 class GraphEditor {
@@ -39,7 +39,7 @@ class GraphEditor {
   }
 
   // Resolve <graph_> after each editing.
-  ::Lotus::Common::Status Resolve() {
+  ::onnxruntime::common::Status Resolve() {
     return graph_.Resolve();
   }
 
@@ -78,7 +78,7 @@ class RewriteRule {
   // The transformation happens in-place. The return-value of node may be different
   // from the input-value due to rewriting.
   // The return value of "modified" indicates if the graph was modified or not.
-  virtual ::Lotus::Common::Status Apply(GraphEditor graph_editor, Node* node, bool* modified) = 0;
+  virtual ::onnxruntime::common::Status Apply(GraphEditor graph_editor, Node* node, bool* modified) = 0;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RewriteRule);
@@ -86,4 +86,4 @@ class RewriteRule {
   const std::string name_;
   const std::string desc_;
 };
-}  // namespace LotusIR
+}  // namespace onnxruntime

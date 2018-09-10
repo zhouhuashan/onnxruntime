@@ -3,8 +3,8 @@
 #include "gsl/gsl_util"
 #include "core/providers/cuda/cuda_common.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class Softmax final : public CudaKernel {
@@ -19,5 +19,5 @@ class Softmax final : public CudaKernel {
   int64_t axis_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

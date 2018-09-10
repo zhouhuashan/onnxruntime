@@ -7,7 +7,7 @@
 
 using namespace std;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 using InputDataMap = unordered_map<string, vector<float>>;
@@ -510,4 +510,4 @@ TEST(BatchNormTest, InvalidVarDim) {
                 "Invalid input var");
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

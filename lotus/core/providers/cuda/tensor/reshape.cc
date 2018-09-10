@@ -1,7 +1,7 @@
 #include "reshape.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 ONNX_OPERATOR_KERNEL_EX(
     Reshape,
@@ -26,5 +26,5 @@ ONNX_OPERATOR_VERSIONED_KERNEL_EX(
         .TypeConstraint("T", DataTypeImpl::AllFixedSizeTensorTypes()),
     Reshape_1);
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

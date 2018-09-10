@@ -3,8 +3,8 @@
 #include "core/util/math_cpuonly.h"
 #include "mkldnn.h"
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 
 ONNX_OPERATOR_KERNEL_EX(
     Gemm,
@@ -89,5 +89,5 @@ Status Gemm<float>::Compute(OpKernelContext* ctx) const {
   }
 }
 
-}  // namespace MklDnn
-}  // namespace Lotus
+}  // namespace mkl_dnn
+}  // namespace onnxruntime

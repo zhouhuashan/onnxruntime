@@ -10,7 +10,7 @@
 #include "core/session/inference_session.h"
 #include "core/common/logging/logging.h"
 
-namespace Lotus {
+namespace onnxruntime {
 class SessionState;
 /**
   * Input/Output binding.
@@ -41,7 +41,7 @@ class IOBinding {
     * copy it to the desired location. This copy may or may not be async. It depends on the exec provider.
     * For copying it leverages IExecutionProvider::CopyTensor().
     */
-  Common::Status BindInput(const std::string& name, const MLValue& ml_value);
+  common::Status BindInput(const std::string& name, const MLValue& ml_value);
 
   /**
     * If the BindInput calls are async this function acts as a barrier to ensure all inputs are fully copied
@@ -50,12 +50,12 @@ class IOBinding {
     * This is a blocking call and is a wrapper over IExecutionProvider::Sync().
     * Call InferenceSession::Run() only after calling this method or else you'll end up wasting cycles inside Run().
     */
-  Common::Status SynchronizeInputs();
-  Common::Status SynchronizeOutputs();
+  common::Status SynchronizeInputs();
+  common::Status SynchronizeOutputs();
   /**
     * This simply provides the names and optionally allocated output containers.
     */
-  Common::Status BindOutput(const std::string& name, const MLValue& ml_value);
+  common::Status BindOutput(const std::string& name, const MLValue& ml_value);
 
   /**
     * This simply collects the outputs obtained after calling Run() inside the @param outputs.
@@ -68,7 +68,7 @@ class IOBinding {
   /**
     * Get a CPU allocator from provider for async copy later if the provider supports that
     */
-  AllocatorPtr GetCPUAllocator(LotusIR::ProviderType provider_type) const;
+  AllocatorPtr GetCPUAllocator(onnxruntime::ProviderType provider_type) const;
 
  private:
   friend InferenceSession;
@@ -79,11 +79,11 @@ class IOBinding {
   std::vector<std::string> output_names_;
   std::vector<MLValue> outputs_;
 
-  static Common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
+  static common::Status CopyOneInputAcrossDevices(const SessionState& session_state,
                                                   const std::string& input_name,
                                                   const MLValue& orig_mlvalue,
                                                   MLValue& new_mlvalue);
 
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(IOBinding);
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

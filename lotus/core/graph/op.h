@@ -14,7 +14,7 @@
 #include "core/common/status.h"
 #include "core/graph/constants.h"
 
-namespace LotusIR {
+namespace onnxruntime {
 using AttrType = onnx::AttributeProto_AttributeType;
 using NodeAttributes = std::unordered_map<std::string, onnx::AttributeProto>;
 
@@ -49,7 +49,7 @@ static constexpr const char* kAttrTypeStrings[] =
 class TypeUtils {
  public:
   // Get attribute type given attribute proto data.
-  static ::Lotus::Common::Status GetType(const onnx::AttributeProto& attr, AttrType& type);
+  static ::onnxruntime::common::Status GetType(const onnx::AttributeProto& attr, AttrType& type);
   static bool IsValidAttribute(const onnx::AttributeProto& attribute);
 };
-}  // namespace LotusIR
+}  // namespace onnxruntime

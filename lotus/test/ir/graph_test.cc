@@ -30,7 +30,7 @@
 #define LOTUS_OPERATOR_SCHEMA LOTUS_UNUSED ONNX_OPERATOR_SCHEMA
 
 using namespace onnx;
-namespace LotusIR {
+namespace onnxruntime {
 namespace Test {
 using google::protobuf::util::MessageDifferencer;
 
@@ -50,7 +50,7 @@ TEST(GraphTraversalTest, ReverseDFS) {
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   // Case 1: A normal graph.
   //                 SouceNode
@@ -62,23 +62,23 @@ TEST(GraphTraversalTest, ReverseDFS) {
   //                 node_4 (NoOp)
   //                     |
   //                  SinkNode
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
 
   TypeProto tensor_int32;
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  auto& input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   inputs.push_back(&input_arg);
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+  auto& output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   outputs.push_back(&output_arg);
   graph.AddNode("node_1", "Variable_DFS", "node 1", inputs, outputs);
 
-  auto &input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
+  auto& input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
   inputs.push_back(&input_arg2);
-  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
+  auto& output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg2);
   graph.AddNode("node_2", "Variable_DFS", "node 2", inputs, outputs);
@@ -86,38 +86,38 @@ TEST(GraphTraversalTest, ReverseDFS) {
   inputs.clear();
   inputs.push_back(&output_arg);
   inputs.push_back(&output_arg2);
-  auto &output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
+  auto& output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg3);
   graph.AddNode("node_3", "Add_DFS", "node 3", inputs, outputs);
 
   inputs.clear();
   inputs.push_back(&output_arg3);
-  auto &output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
+  auto& output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg4);
   graph.AddNode("node_4", "NoOp_DFS", "node 4", inputs, outputs);
   auto status = graph.Resolve();
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 
-  std::vector<const Node *> from;
+  std::vector<const Node*> from;
   from.push_back(graph.SinkNode());
 
   std::vector<std::string> enter_leave_sequence;
 
   struct NodeCompareName {
-    bool operator()(const Node *n1, const Node *n2) const {
+    bool operator()(const Node* n1, const Node* n2) const {
       return n1->Name() < n2->Name();
     }
   };
 
   graph.ReverseDFSFrom(from,
-                       [&enter_leave_sequence](const Node *n) {
+                       [&enter_leave_sequence](const Node* n) {
                          std::string s("enter:");
                          s += n->Name();
                          enter_leave_sequence.push_back(s);
                        },
-                       [&enter_leave_sequence](const Node *n) {
+                       [&enter_leave_sequence](const Node* n) {
                          std::string s("leave:");
                          s += n->Name();
                          enter_leave_sequence.push_back(s);
@@ -145,19 +145,19 @@ TEST(GraphTraversalTest, ReverseDFS) {
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   EXPECT_EQ("graph_1", graph.Name());
 
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
 
   // INT32 vector.
   TypeProto output_type;
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
+  auto& output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
   graph.AddNode("node_1", "Variable", "node 1.", inputs, outputs);
 
@@ -178,17 +178,17 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNoDuplicateName) {
 
 TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
 
   // INT32 vector.
   TypeProto output_type;
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   output_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
+  auto& output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
   // Case: Adding node refering to non-existing operator should fail.
   graph.AddNode("node_1", "OpNotExist", "node 1", inputs, outputs);
@@ -213,7 +213,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   // A normal graph.
   //                 SouceNode
@@ -225,27 +225,27 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   //                 node_4 (NoOp)
   //                     |
   //                  SinkNode
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
 
-  std::unordered_map<std::string, std::pair<std::vector<NodeArg *>, std::vector<NodeArg *>>>
+  std::unordered_map<std::string, std::pair<std::vector<NodeArg*>, std::vector<NodeArg*>>>
       expected_node_name_to_input_output_args;
 
   TypeProto tensor_int32;
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  auto& input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   inputs.push_back(&input_arg1);
-  auto &output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+  auto& output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   outputs.push_back(&output_arg1);
   expected_node_name_to_input_output_args["node_1"] = {inputs, outputs};
   graph.AddNode("node_1", "Variable_Fake", "node 1", inputs, outputs);
 
-  auto &input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
+  auto& input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
   inputs.clear();
   inputs.push_back(&input_arg2);
-  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
+  auto& output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg2);
   expected_node_name_to_input_output_args["node_2"] = {inputs, outputs};
@@ -254,7 +254,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   inputs.clear();
   inputs.push_back(&output_arg1);
   inputs.push_back(&output_arg2);
-  auto &output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
+  auto& output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg3);
   expected_node_name_to_input_output_args["node_3"] = {inputs, outputs};
@@ -262,7 +262,7 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
 
   inputs.clear();
   inputs.push_back(&output_arg3);
-  auto &output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
+  auto& output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg4);
   expected_node_name_to_input_output_args["node_4"] = {inputs, outputs};
@@ -290,8 +290,8 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   // Load the model again to ensure that it's still the right thing.
   //EXPECT_EQ(Model::Load(model_proto2, &model2), Status::OK());
   model2.reset(new Model(model_proto2));
-  Graph &graph2 = model2->MainGraph();
-  for (auto &node : graph2.Nodes()) {
+  Graph& graph2 = model2->MainGraph();
+  for (auto& node : graph2.Nodes()) {
     if (graph2.IsSourceNode(node.Index()) || graph2.IsSinkNode(node.Index())) {
       continue;
     }
@@ -330,18 +330,18 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsNotAcyclic) {
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
 
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
 
   TypeProto tensor_int32;
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
   Model model("graph_1");
-  auto &graph = model.MainGraph();
-  auto &input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
-  auto &output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
-  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
+  auto& graph = model.MainGraph();
+  auto& input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  auto& output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+  auto& output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   inputs.push_back(&input_arg1);
   inputs.push_back(&output_arg2);
   outputs.push_back(&output_arg1);
@@ -359,8 +359,8 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsNotAcyclic) {
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_OnlyInitializer) {
-  LotusIR::Model model("graph");
-  auto &graph = model.MainGraph();
+  onnxruntime::Model model("graph");
+  auto& graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.add_dims(1);
@@ -389,7 +389,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
       .TypeConstraint("T", {"tensor(int32)", "tensor(float)"}, "input/output types");
 
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   // Case 1: A normal graph.
   //                         SourceNode
@@ -399,30 +399,30 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   //                        node_4 (Max)
   //                             |
   //                          SinkNode
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
 
   TypeProto tensor_int32;
   tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
   tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
 
-  auto &input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  auto& input_arg = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
   inputs.push_back(&input_arg);
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+  auto& output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
   outputs.push_back(&output_arg);
   graph.AddNode("node_1", "Variable2_Fake", "node 1", inputs, outputs);
 
   inputs.clear();
   inputs.push_back(&input_arg);
-  auto &output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
+  auto& output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg2);
   graph.AddNode("node_2", "Variable2_Fake", "node 2", inputs, outputs);
 
-  auto &input_arg3 = graph.GetOrCreateNodeArg("node_3_in_1", &tensor_int32);
+  auto& input_arg3 = graph.GetOrCreateNodeArg("node_3_in_1", &tensor_int32);
   inputs.clear();
   inputs.push_back(&input_arg3);
-  auto &output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
+  auto& output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg3);
   graph.AddNode("node_3", "Variable2_Fake", "node 3", inputs, outputs);
@@ -431,7 +431,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   inputs.push_back(&output_arg);
   inputs.push_back(&output_arg2);
   inputs.push_back(&output_arg3);
-  auto &output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
+  auto& output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
   outputs.clear();
   outputs.push_back(&output_arg4);
   auto node_4 = graph.AddNode("node_4", "Max_Fake", "node 4", inputs, outputs);
@@ -441,7 +441,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
 
   std::unordered_set<std::string> expected_graph_inputs = {"node_1_in_1", "node_3_in_1"};
   EXPECT_EQ(2, graph.GetInputs().size());
-  for (auto &graph_input : graph.GetInputs()) {
+  for (auto& graph_input : graph.GetInputs()) {
     EXPECT_TRUE(expected_graph_inputs.find(graph_input->Name()) != expected_graph_inputs.end());
   }
   EXPECT_EQ(1, graph.GetOutputs().size());
@@ -453,9 +453,9 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
   EXPECT_TRUE(Model::Load("model_x.pb", loaded_model).IsOK());
   EXPECT_EQ(2, loaded_model->MainGraph().GetInputs().size());
 
-  auto &graph_proto = graph.ToGraphProto();
+  auto& graph_proto = graph.ToGraphProto();
   EXPECT_EQ(2, graph_proto.input_size());
-  for (auto &graphProtoInput : graph_proto.input()) {
+  for (auto& graphProtoInput : graph_proto.input()) {
     EXPECT_TRUE(expected_graph_inputs.find(graphProtoInput.name()) != expected_graph_inputs.end());
   }
   EXPECT_EQ(1, graph_proto.output_size());
@@ -467,17 +467,17 @@ TEST(TestAddAttribute, AddTensorAttribute) {
       .SetDoc("Constant Op.")
       .Attr(kConstantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR)
       .Output(0, "output_1", "docstr for output_1.", "tensor(int64)");
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
   TypeProto output_type;
   output_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT64);
   TensorShapeProto output_shape;
   output_shape.mutable_dim()->Add()->set_dim_value(1);
   output_shape.mutable_dim()->Add()->set_dim_value(3);
   *(output_type.mutable_tensor_type()->mutable_shape()) = output_shape;
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
+  auto& output_arg = graph.GetOrCreateNodeArg("node_1_out_1", &output_type);
   outputs.push_back(&output_arg);
   auto node_1 = graph.AddNode("node_1", "__Constant", "node 1.", inputs, outputs);
   TensorProto t;
@@ -492,7 +492,7 @@ TEST(TestAddAttribute, AddTensorAttribute) {
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 }
 
-void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, int64_t attr_value) {
+void AddAttribute(onnxruntime::Node* p_node, const std::string& attr_name, int64_t attr_value) {
   AttributeProto attr;
   attr.set_name(attr_name);
   attr.set_type(AttributeProto_AttributeType_INT);
@@ -500,7 +500,7 @@ void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, int64_t a
   p_node->AddAttribute(attr_name, attr);
 }
 
-void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, std::initializer_list<int64_t> attr_value) {
+void AddAttribute(onnxruntime::Node* p_node, const std::string& attr_name, std::initializer_list<int64_t> attr_value) {
   AttributeProto attr;
   attr.set_name(attr_name);
   attr.set_type(AttributeProto_AttributeType_INTS);
@@ -512,11 +512,11 @@ void AddAttribute(LotusIR::Node *p_node, const std::string &attr_name, std::init
 
 // Test that output type can be inferred for ops with a type-attribute
 TEST(TypeInferenceTest, TypeAttribute) {
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
   Model model("graph_1");
-  auto &graph = model.MainGraph();
-  auto &output_arg = graph.GetOrCreateNodeArg("node_1_out_1", nullptr);
+  auto& graph = model.MainGraph();
+  auto& output_arg = graph.GetOrCreateNodeArg("node_1_out_1", nullptr);
   outputs.push_back(&output_arg);
   auto node_1 = graph.AddNode("node_1", "RandomNormal", "node 1.", inputs, outputs);
   AddAttribute(node_1, "dtype", TensorProto_DataType_FLOAT);
@@ -525,7 +525,7 @@ TEST(TypeInferenceTest, TypeAttribute) {
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
 }
 
-void CheckTensorEltType(const TypeProto *ptype, TensorProto_DataType elt_type) {
+void CheckTensorEltType(const TypeProto* ptype, TensorProto_DataType elt_type) {
   EXPECT_NE(ptype, nullptr);
   EXPECT_TRUE(ptype->has_tensor_type());
   EXPECT_TRUE(ptype->tensor_type().has_elem_type());
@@ -534,17 +534,17 @@ void CheckTensorEltType(const TypeProto *ptype, TensorProto_DataType elt_type) {
 
 // Test that output type can be inferred for ops with variadic outputs
 TEST(TypeInferenceTest, VariadicOutput) {
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   Model model("graph_1");
-  auto &graph = model.MainGraph();
-  auto &X = graph.GetOrCreateNodeArg("X", &tensor_type);
+  auto& graph = model.MainGraph();
+  auto& X = graph.GetOrCreateNodeArg("X", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
+  auto& Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &Z = graph.GetOrCreateNodeArg("Z", nullptr);
+  auto& Z = graph.GetOrCreateNodeArg("Z", nullptr);
   outputs.push_back(&Z);
   graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
   auto status = graph.Resolve();
@@ -556,7 +556,7 @@ TEST(TypeInferenceTest, VariadicOutput) {
 // Test that Graph::Resolve checks initializer value matches the type specified in graph:
 TEST(TypeInferenceTest, InitializerType) {
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_INT32);
@@ -565,15 +565,15 @@ TEST(TypeInferenceTest, InitializerType) {
   weight.set_name("W");
   graph.AddInitializedTensor(weight);
 
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
-  auto &X = graph.GetOrCreateNodeArg("W", &tensor_type);
+  auto& X = graph.GetOrCreateNodeArg("W", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
+  auto& Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &Z = graph.GetOrCreateNodeArg("Z", nullptr);
+  auto& Z = graph.GetOrCreateNodeArg("Z", nullptr);
   outputs.push_back(&Z);
   graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
 
@@ -586,7 +586,7 @@ TEST(TypeInferenceTest, InitializerType) {
 // Test that Graph::Resolve checks initializer value matches the shape specified in graph:
 TEST(TypeInferenceTest, InitializerShape) {
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_FLOAT);
@@ -595,16 +595,16 @@ TEST(TypeInferenceTest, InitializerShape) {
   weight.set_name("W");
   graph.AddInitializedTensor(weight);
 
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   tensor_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
-  auto &X = graph.GetOrCreateNodeArg("W", &tensor_type);
+  auto& X = graph.GetOrCreateNodeArg("W", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
+  auto& Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &Z = graph.GetOrCreateNodeArg("Z", nullptr);
+  auto& Z = graph.GetOrCreateNodeArg("Z", nullptr);
   outputs.push_back(&Z);
   graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
 
@@ -617,7 +617,7 @@ TEST(TypeInferenceTest, InitializerShape) {
 // Test that Graph::Resolve identifies name-duplication across initializer and node-output-arg
 TEST(NameResolutionTest, DuplicateName) {
   Model model("graph_1");
-  auto &graph = model.MainGraph();
+  auto& graph = model.MainGraph();
 
   onnx::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_FLOAT);
@@ -626,16 +626,16 @@ TEST(NameResolutionTest, DuplicateName) {
   weight.set_name("W");
   graph.AddInitializedTensor(weight);
 
-  std::vector<NodeArg *> inputs;
-  std::vector<NodeArg *> outputs;
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
   TypeProto tensor_type;
   tensor_type.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
   tensor_type.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
-  auto &X = graph.GetOrCreateNodeArg("X", &tensor_type);
+  auto& X = graph.GetOrCreateNodeArg("X", &tensor_type);
   inputs.push_back(&X);
-  auto &Y = graph.GetOrCreateNodeArg("Y", nullptr);
+  auto& Y = graph.GetOrCreateNodeArg("Y", nullptr);
   outputs.push_back(&Y);
-  auto &W = graph.GetOrCreateNodeArg("W", nullptr);
+  auto& W = graph.GetOrCreateNodeArg("W", nullptr);
   outputs.push_back(&W);
   graph.AddNode("node_1", "Split", "node 1.", inputs, outputs);
 
@@ -646,4 +646,4 @@ TEST(NameResolutionTest, DuplicateName) {
 }
 
 }  // namespace Test
-}  // namespace LotusIR
+}  // namespace onnxruntime

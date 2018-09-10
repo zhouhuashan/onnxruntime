@@ -9,7 +9,7 @@
 #include "core/common/logging/logging.h"
 #include "gsl/span"
 
-namespace Lotus {
+namespace onnxruntime {
 
 namespace detail {
 class CaptureStackTrace {
@@ -143,4 +143,4 @@ std::string CaptureStackTrace::Lookup(void* address_in) const {
 #endif
 #endif
 }  // namespace detail
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -4,9 +4,9 @@
 #include "core/framework/execution_providers.h"
 
 using namespace onnx;
-using namespace ::Lotus::Common;
-namespace Lotus {
-Status KernelRegistryManager::CreateKernel(const LotusIR::Node& node,
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
+Status KernelRegistryManager::CreateKernel(const onnxruntime::Node& node,
                                            const IExecutionProvider& execution_provider,
                                            const SessionState& session_state,
                                            /*out*/ std::unique_ptr<OpKernel>& op_kernel) const {
@@ -46,7 +46,7 @@ void KernelRegistryManager::RegisterKernelRegistry(std::shared_ptr<KernelRegistr
   }
 }
 
-Status KernelRegistryManager::SearchKernelRegistry(const LotusIR::Node& node,
+Status KernelRegistryManager::SearchKernelRegistry(const onnxruntime::Node& node,
                                                    /*out*/ const KernelCreateInfo** kernel_create_info) const {
   std::lock_guard<std::mutex> lock(lock_);
   if (kernel_registries_.empty()) {
@@ -64,4 +64,4 @@ Status KernelRegistryManager::SearchKernelRegistry(const LotusIR::Node& node,
   return status;
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

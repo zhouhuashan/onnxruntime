@@ -10,7 +10,7 @@
 #include "core/framework/data_types.h"
 #include "core/framework/tensor_shape.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 // TODO: Do we need this class or is IAllocator::MakeUniquePtr sufficient/better
 class BufferDeleter {
@@ -166,4 +166,4 @@ class Tensor final {
   int64_t byte_offset_;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

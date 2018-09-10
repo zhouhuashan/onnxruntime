@@ -1,7 +1,7 @@
 #include "core/providers/cpu/ml/treeregressor.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 ONNX_CPU_OPERATOR_ML_KERNEL(
     TreeEnsembleRegressor,
@@ -25,8 +25,8 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
       target_ids_(info.GetAttrsOrDefault<int64_t>("target_ids")),
       target_weights_(info.GetAttrsOrDefault<float>("target_weights")),
       base_values_(info.GetAttrsOrDefault<float>("base_values")),
-      aggregate_function_(::Lotus::ML::MakeAggregateFunction(info.GetAttrOrDefault<std::string>("aggregate_function", "SUM"))),
-      transform_(::Lotus::ML::MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
+      aggregate_function_(::onnxruntime::ml::MakeAggregateFunction(info.GetAttrOrDefault<std::string>("aggregate_function", "SUM"))),
+      transform_(::onnxruntime::ml::MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
   LOTUS_ENFORCE(info.GetAttr<int64_t>("n_targets", &n_targets_).IsOK());
 
   //update nodeids to start at 0
@@ -56,7 +56,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
   std::vector<std::string> modes = info.GetAttrsOrDefault<std::string>("nodes_modes");
 
   for (const auto& mode : modes) {
-    nodes_modes_.push_back(::Lotus::ML::MakeTreeNodeMode(mode));
+    nodes_modes_.push_back(::onnxruntime::ml::MakeTreeNodeMode(mode));
   }
 
   size_t nodes_id_size = nodes_nodeids_.size();
@@ -115,7 +115,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
   }
   //all true nodes aren't roots
   for (size_t i = 0; i < nodes_truenodeids_.size(); i++) {
-    if (nodes_modes_[i] == ::Lotus::ML::NODE_MODE::LEAF) continue;
+    if (nodes_modes_[i] == ::onnxruntime::ml::NODE_MODE::LEAF) continue;
     //they must be in the same tree
     int64_t id = nodes_treeids_[i] * offset_ + nodes_truenodeids_[i];
     it = parents.find(id);
@@ -124,7 +124,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
   }
   //all false nodes aren't roots
   for (size_t i = 0; i < nodes_falsenodeids_.size(); i++) {
-    if (nodes_modes_[i] == ::Lotus::ML::NODE_MODE::LEAF) continue;
+    if (nodes_modes_[i] == ::onnxruntime::ml::NODE_MODE::LEAF) continue;
     //they must be in the same tree
     int64_t id = nodes_treeids_[i] * offset_ + nodes_falsenodeids_[i];
     it = parents.find(id);
@@ -143,12 +143,12 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
 }
 
 template <typename T>
-Common::Status TreeEnsembleRegressor<T>::ProcessTreeNode(std::unordered_map<int64_t, float>& classes, int64_t treeindex, const T* Xdata, int64_t feature_base) const {
+common::Status TreeEnsembleRegressor<T>::ProcessTreeNode(std::unordered_map<int64_t, float>& classes, int64_t treeindex, const T* Xdata, int64_t feature_base) const {
   //walk down tree to the leaf
-  ::Lotus::ML::NODE_MODE mode = static_cast<::Lotus::ML::NODE_MODE>(nodes_modes_[treeindex]);
+  ::onnxruntime::ml::NODE_MODE mode = static_cast<::onnxruntime::ml::NODE_MODE>(nodes_modes_[treeindex]);
   int64_t loopcount = 0;
   int64_t root = treeindex;
-  while (mode != ::Lotus::ML::NODE_MODE::LEAF) {
+  while (mode != ::onnxruntime::ml::NODE_MODE::LEAF) {
     T val = Xdata[feature_base + nodes_featureids_[treeindex]];
     bool tracktrue = true;
     if (missing_tracks_true_.size() != nodes_truenodeids_.size()) {
@@ -157,26 +157,26 @@ Common::Status TreeEnsembleRegressor<T>::ProcessTreeNode(std::unordered_map<int6
       tracktrue = (missing_tracks_true_[treeindex] != 0) && std::isnan(val);
     }
     float threshold = nodes_values_[treeindex];
-    if (mode == ::Lotus::ML::NODE_MODE::BRANCH_LEQ) {
+    if (mode == ::onnxruntime::ml::NODE_MODE::BRANCH_LEQ) {
       treeindex = val <= threshold || tracktrue ? nodes_truenodeids_[treeindex] : nodes_falsenodeids_[treeindex];
-    } else if (mode == ::Lotus::ML::NODE_MODE::BRANCH_LT) {
+    } else if (mode == ::onnxruntime::ml::NODE_MODE::BRANCH_LT) {
       treeindex = val < threshold || tracktrue ? nodes_truenodeids_[treeindex] : nodes_falsenodeids_[treeindex];
-    } else if (mode == ::Lotus::ML::NODE_MODE::BRANCH_GTE) {
+    } else if (mode == ::onnxruntime::ml::NODE_MODE::BRANCH_GTE) {
       treeindex = val >= threshold || tracktrue ? nodes_truenodeids_[treeindex] : nodes_falsenodeids_[treeindex];
-    } else if (mode == ::Lotus::ML::NODE_MODE::BRANCH_GT) {
+    } else if (mode == ::onnxruntime::ml::NODE_MODE::BRANCH_GT) {
       treeindex = val > threshold || tracktrue ? nodes_truenodeids_[treeindex] : nodes_falsenodeids_[treeindex];
-    } else if (mode == ::Lotus::ML::NODE_MODE::BRANCH_EQ) {
+    } else if (mode == ::onnxruntime::ml::NODE_MODE::BRANCH_EQ) {
       treeindex = val == threshold || tracktrue ? nodes_truenodeids_[treeindex] : nodes_falsenodeids_[treeindex];
-    } else if (mode == ::Lotus::ML::NODE_MODE::BRANCH_NEQ) {
+    } else if (mode == ::onnxruntime::ml::NODE_MODE::BRANCH_NEQ) {
       treeindex = val != threshold || tracktrue ? nodes_truenodeids_[treeindex] : nodes_falsenodeids_[treeindex];
     }
 
     if (treeindex < 0) {
-      return Common::Status(Common::LOTUS, Common::RUNTIME_EXCEPTION,
+      return common::Status(common::LOTUS, common::RUNTIME_EXCEPTION,
                             "treeindex evaluated to a negative value, which should not happen.");
     }
     treeindex = treeindex + root;
-    mode = (::Lotus::ML::NODE_MODE)nodes_modes_[treeindex];
+    mode = (::onnxruntime::ml::NODE_MODE)nodes_modes_[treeindex];
     loopcount++;
     if (loopcount > max_tree_depth_) break;
   }
@@ -206,14 +206,14 @@ Common::Status TreeEnsembleRegressor<T>::ProcessTreeNode(std::unordered_map<int6
       nodeid = std::get<1>(leafnode_data_[index]);
     }
   }
-  return Common::Status::OK();
+  return common::Status::OK();
 }
 
 template <typename T>
-Common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const {
+common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(Common::LOTUS, Common::INVALID_ARGUMENT,
+    return Status(common::LOTUS, common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 
@@ -240,26 +240,26 @@ Common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const
       auto it_scores = scores.find(j);
       float val = base_values_.size() == (size_t)n_targets_ ? base_values_[j] : 0.f;
       if (it_scores != scores.end()) {
-        if (aggregate_function_ == ::Lotus::ML::AGGREGATE_FUNCTION::AVERAGE) {
+        if (aggregate_function_ == ::onnxruntime::ml::AGGREGATE_FUNCTION::AVERAGE) {
           val += scores[j] / roots_.size();
-        } else if (aggregate_function_ == ::Lotus::ML::AGGREGATE_FUNCTION::SUM) {
+        } else if (aggregate_function_ == ::onnxruntime::ml::AGGREGATE_FUNCTION::SUM) {
           val += scores[j];
-        } else if (aggregate_function_ == ::Lotus::ML::AGGREGATE_FUNCTION::MIN) {
+        } else if (aggregate_function_ == ::onnxruntime::ml::AGGREGATE_FUNCTION::MIN) {
           if (scores[j] < val) val = scores[j];
-        } else if (aggregate_function_ == ::Lotus::ML::AGGREGATE_FUNCTION::MAX) {
+        } else if (aggregate_function_ == ::onnxruntime::ml::AGGREGATE_FUNCTION::MAX) {
           if (scores[j] > val) val = scores[j];
         }
       }
       outputs.push_back(val);
     }
-    if (transform_ == ::Lotus::ML::POST_EVAL_TRANSFORM::LOGISTIC) {
+    if (transform_ == ::onnxruntime::ml::POST_EVAL_TRANSFORM::LOGISTIC) {
       for (float& output : outputs) {
-        output = ::Lotus::ML::ml_logit(output);
+        output = ::onnxruntime::ml::ml_logit(output);
       }
-    } else if (transform_ == ::Lotus::ML::POST_EVAL_TRANSFORM::SOFTMAX) {
-      ::Lotus::ML::compute_softmax(outputs);
-    } else if (transform_ == ::Lotus::ML::POST_EVAL_TRANSFORM::SOFTMAX_ZERO) {
-      ::Lotus::ML::compute_softmax_zero(outputs);
+    } else if (transform_ == ::onnxruntime::ml::POST_EVAL_TRANSFORM::SOFTMAX) {
+      ::onnxruntime::ml::compute_softmax(outputs);
+    } else if (transform_ == ::onnxruntime::ml::POST_EVAL_TRANSFORM::SOFTMAX_ZERO) {
+      ::onnxruntime::ml::compute_softmax_zero(outputs);
     }
     for (float output : outputs) {
       Y->MutableData<float>()[write_index] = output;
@@ -269,5 +269,5 @@ Common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const
   return Status::OK();
 }
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

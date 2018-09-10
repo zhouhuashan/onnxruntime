@@ -1,8 +1,8 @@
 #include "core/providers/cuda/cu_inc/common.cuh"
 #include "image_scaler_impl.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 __global__ void _CropKernel(
@@ -46,5 +46,5 @@ SPECIALIZED_IMPL(float)
 SPECIALIZED_IMPL(double)
 SPECIALIZED_IMPL(half)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

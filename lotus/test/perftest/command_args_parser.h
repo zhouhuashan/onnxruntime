@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 
 struct PerformanceTestConfig;
@@ -13,4 +13,4 @@ class CommandLineParser {
 };
 
 }  // namespace PerfTest
-}  // namespace Lotus
+}  // namespace onnxruntime

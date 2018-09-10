@@ -3,7 +3,7 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 class Size final : public OpKernel {
  public:
@@ -12,4 +12,4 @@ class Size final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

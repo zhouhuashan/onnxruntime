@@ -4,8 +4,8 @@
 #include "core/providers/cpu/nn/conv_transpose.h"
 #include "conv.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T>
 class ConvTranspose : public CudaKernel, public ConvTransposeBase {
@@ -17,5 +17,5 @@ class ConvTranspose : public CudaKernel, public ConvTransposeBase {
   mutable CudnnConvState<cudnnConvolutionBwdDataAlgo_t> s_;
 };
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

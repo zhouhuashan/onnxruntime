@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(GatherOpTest, Gather_axis0) {
@@ -84,12 +84,12 @@ TEST(GatherOpTest, Gather_invalid_index_gpu) {
                         8.0f, 9.0f, 10.0f, 11.0f});
   test.AddInput<int32_t>("indices", {3}, {0LL, 1LL, 1000LL});
   test.AddOutput<float>("output", {3, 4},
-                       {0.0f, 1.0f, 2.0f, 3.0f,
-                        4.0f, 5.0f, 6.0f, 7.0f,
-                        0.0f, 0.0f, 0.0f, 0.0f});
+                        {0.0f, 1.0f, 2.0f, 3.0f,
+                         4.0f, 5.0f, 6.0f, 7.0f,
+                         0.0f, 0.0f, 0.0f, 0.0f});
 
   //On GPU, just set the value to 0 instead of report error.
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "", LotusIR::kCudaExecutionProvider);
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", onnxruntime::kCudaExecutionProvider);
 }
 #endif
 
@@ -170,16 +170,16 @@ TEST(GatherOpTest, Gather_axis1_indices2d_int32) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1LL);
   test.AddInput<int32_t>("data", {3, 3},
-                          {0, 1, 2,
-                           10, 11, 12,
-                           20, 21, 22});
+                         {0, 1, 2,
+                          10, 11, 12,
+                          20, 21, 22});
   test.AddInput<int32_t>("indices", {2, 2},
                          {1, 0,
                           2, 1});
   test.AddOutput<int32_t>("output", {3, 2, 2},
-                           {1, 0, 2, 1,
-                            11, 10, 12, 11,
-                            21, 20, 22, 21});
+                          {1, 0, 2, 1,
+                           11, 10, 12, 11,
+                           21, 20, 22, 21});
   test.RunOnCpuAndCuda();
 }
 
@@ -187,16 +187,16 @@ TEST(GatherOpTest, Gather_axis1_indices2d_uint32) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1LL);
   test.AddInput<uint32_t>("data", {3, 3},
-                         {0, 1, 2,
-                          10, 11, 12,
-                          20, 21, 22});
+                          {0, 1, 2,
+                           10, 11, 12,
+                           20, 21, 22});
   test.AddInput<int32_t>("indices", {2, 2},
                          {1, 0,
                           2, 1});
   test.AddOutput<uint32_t>("output", {3, 2, 2},
-                          {1, 0, 2, 1,
-                           11, 10, 12, 11,
-                           21, 20, 22, 21});
+                           {1, 0, 2, 1,
+                            11, 10, 12, 11,
+                            21, 20, 22, 21});
   test.RunOnCpuAndCuda();
 }
 
@@ -204,16 +204,16 @@ TEST(GatherOpTest, Gather_axis1_indices2d_int16) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1LL);
   test.AddInput<int16_t>("data", {3, 3},
-                          {0, 1, 2,
-                           10, 11, 12,
-                           20, 21, 22});
+                         {0, 1, 2,
+                          10, 11, 12,
+                          20, 21, 22});
   test.AddInput<int32_t>("indices", {2, 2},
-                          {1, 0,
-                           2, 1});
+                         {1, 0,
+                          2, 1});
   test.AddOutput<int16_t>("output", {3, 2, 2},
-                           {1, 0, 2, 1,
-                            11, 10, 12, 11,
-                            21, 20, 22, 21});
+                          {1, 0, 2, 1,
+                           11, 10, 12, 11,
+                           21, 20, 22, 21});
   test.RunOnCpuAndCuda();
 }
 
@@ -221,16 +221,16 @@ TEST(GatherOpTest, Gather_axis1_indices2d_uint16) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1LL);
   test.AddInput<uint16_t>("data", {3, 3},
-                         {0, 1, 2,
-                          10, 11, 12,
-                          20, 21, 22});
+                          {0, 1, 2,
+                           10, 11, 12,
+                           20, 21, 22});
   test.AddInput<int32_t>("indices", {2, 2},
                          {1, 0,
                           2, 1});
   test.AddOutput<uint16_t>("output", {3, 2, 2},
-                          {1, 0, 2, 1,
-                           11, 10, 12, 11,
-                           21, 20, 22, 21});
+                           {1, 0, 2, 1,
+                            11, 10, 12, 11,
+                            21, 20, 22, 21});
   test.RunOnCpuAndCuda();
 }
 
@@ -238,16 +238,16 @@ TEST(GatherOpTest, Gather_axis1_indices2d_int8) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1LL);
   test.AddInput<int8_t>("data", {3, 3},
-                          {0, 1, 2,
-                           10, 11, 12,
-                           20, 21, 22});
+                        {0, 1, 2,
+                         10, 11, 12,
+                         20, 21, 22});
   test.AddInput<int32_t>("indices", {2, 2},
-                          {1, 0,
-                           2, 1});
+                         {1, 0,
+                          2, 1});
   test.AddOutput<int8_t>("output", {3, 2, 2},
-                           {1, 0, 2, 1,
-                            11, 10, 12, 11,
-                            21, 20, 22, 21});
+                         {1, 0, 2, 1,
+                          11, 10, 12, 11,
+                          21, 20, 22, 21});
   test.RunOnCpuAndCuda();
 }
 
@@ -255,16 +255,16 @@ TEST(GatherOpTest, Gather_axis1_indices2d_string) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1LL);
   test.AddInput<std::string>("data", {3, 3},
-                        {"0", "1", "2",
-                         "10", "11", "12",
-                         "20", "21", "22"});
+                             {"0", "1", "2",
+                              "10", "11", "12",
+                              "20", "21", "22"});
   test.AddInput<int32_t>("indices", {2, 2},
                          {1, 0,
                           2, 1});
   test.AddOutput<std::string>("output", {3, 2, 2},
-                         {"1", "0", "2", "1",
-                          "11", "10", "12", "11",
-                          "21", "20", "22", "21"});
+                              {"1", "0", "2", "1",
+                               "11", "10", "12", "11",
+                               "21", "20", "22", "21"});
   test.Run();
 }
 
@@ -272,16 +272,16 @@ TEST(GatherOpTest, Gather_axis1_indices2d_bool) {
   OpTester test("Gather");
   test.AddAttribute<int64_t>("axis", 1LL);
   test.AddInput<bool>("data", {3, 3},
-                        {true, false, true,
-                         true, true, false,
-                         false, true, false});
+                      {true, false, true,
+                       true, true, false,
+                       false, true, false});
   test.AddInput<int32_t>("indices", {2, 2},
-                          {1, 0,
-                           2, 1});
+                         {1, 0,
+                          2, 1});
   test.AddOutput<bool>("output", {3, 2, 2},
-                         {false, true, true, false,
-                          true, true, false, true,
-                          true, false, false, true});
+                       {false, true, true, false,
+                        true, true, false, true,
+                        true, false, false, true});
   test.RunOnCpuAndCuda();
 }
 
@@ -292,7 +292,7 @@ TEST(GatherOpTest, Gather_perf) {
 
   std::vector<int32_t> indices(800, 5);
 
-  std::vector<int32_t> output(800*100, 1);
+  std::vector<int32_t> output(800 * 100, 1);
 
   test.AddInput<int32_t>("data", {50000, 100}, input);
   test.AddInput<int32_t>("indices", {800, 1}, indices);
@@ -300,4 +300,4 @@ TEST(GatherOpTest, Gather_perf) {
   test.RunOnCpuAndCuda();
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

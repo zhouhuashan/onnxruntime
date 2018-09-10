@@ -3,21 +3,21 @@
 #include "core/graph/function.h"
 #include "core/graph/rewrite_rule.h"
 
-namespace LotusIR {
+namespace onnxruntime {
 class Node;
-}  // namespace LotusIR
+}  // namespace onnxruntime
 
-namespace Lotus {
+namespace onnxruntime {
 
 // A function-inlining rewrite-rule.
-class FunctionInliner : public LotusIR::RewriteRule {
+class FunctionInliner : public onnxruntime::RewriteRule {
  public:
   FunctionInliner(const std::string& name, const std::string& desc)
       : RewriteRule(name, desc) {}
 
-  Status Apply(LotusIR::GraphEditor /*graph_editor*/, LotusIR::Node* /*node*/, bool* /*modified*/) override {
+  Status Apply(onnxruntime::GraphEditor /*graph_editor*/, onnxruntime::Node* /*node*/, bool* /*modified*/) override {
     return Status::OK();
   }
 };
 
-}  // namespace Lotus
+}  // namespace onnxruntime

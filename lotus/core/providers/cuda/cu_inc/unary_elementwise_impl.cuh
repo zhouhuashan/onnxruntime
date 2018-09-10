@@ -3,8 +3,8 @@
 #include "core/providers/cuda/shared_inc/cuda_utils.h"
 #include "common.cuh"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename InT, typename OutT, typename FuncT>
 __global__ void _UnaryElementWise(
@@ -31,5 +31,5 @@ void UnaryElementWiseImpl(
       N);
 }
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

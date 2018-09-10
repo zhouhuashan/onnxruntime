@@ -1,7 +1,7 @@
 #include "cuda_common.h"
 #include "cuda_fence.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 CUDAFence::CUDAFence(const CUDAExecutionProvider* provider) : provider_(provider) {
   // NOTE: cudaEventBlockingSync may leads to longer wait time because of thread yield/switching in kernel
@@ -16,8 +16,8 @@ CUDAFence::~CUDAFence() {
   CUDA_CALL_THROW(cudaEventDestroy(write_event_));
 }
 
-void CUDAFence::BeforeUsingAsInput(LotusIR::ProviderType provider_type, int async_queue_id) {
-  if (provider_type == LotusIR::kCudaExecutionProvider) {
+void CUDAFence::BeforeUsingAsInput(onnxruntime::ProviderType provider_type, int async_queue_id) {
+  if (provider_type == onnxruntime::kCudaExecutionProvider) {
     // sync in GPU, the call is non-blocking on CPU
     CUDA_CALL_THROW(cudaStreamWaitEvent(provider_->GetStream(async_queue_id), write_event_, 0));
   } else {
@@ -26,8 +26,8 @@ void CUDAFence::BeforeUsingAsInput(LotusIR::ProviderType provider_type, int asyn
   }
 }
 
-void CUDAFence::BeforeUsingAsOutput(LotusIR::ProviderType provider_type, int queue_id) {
-  if (provider_type == LotusIR::kCudaExecutionProvider) {
+void CUDAFence::BeforeUsingAsOutput(onnxruntime::ProviderType provider_type, int queue_id) {
+  if (provider_type == onnxruntime::kCudaExecutionProvider) {
     // sync in GPU, the call is non-blocking on CPU
     cudaStream_t stream = provider_->GetStream(queue_id);
     CUDA_CALL_THROW(cudaStreamWaitEvent(stream, read_event_, 0));
@@ -51,4 +51,4 @@ void CUDAFence::AfterUsedAsOutput(int queue_id) {
   CUDA_CALL_THROW(cudaEventRecord(write_event_, stream));
 }
 
-}  // namespace Lotus
+}  // namespace onnxruntime

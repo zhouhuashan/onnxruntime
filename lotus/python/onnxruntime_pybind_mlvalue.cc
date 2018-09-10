@@ -5,13 +5,16 @@
 #define PY_ARRAY_UNIQUE_SYMBOL onnxruntime_python_ARRAY_API
 #include <numpy/arrayobject.h>
 
+#include "core/graph/graph_base.h"
+#include "core/framework/tensor_shape.h"
+#include "core/framework/tensor.h"
+
 using namespace std;
 namespace onnxruntime {
 namespace python {
 
 namespace py = pybind11;
-using namespace Lotus;
-using namespace Lotus::Logging;
+using namespace onnxruntime::Logging;
 
 int OnnxRuntimeTensorToNumpyType(const MLDataType& tensor_type) {
   static std::map<MLDataType, int> type_map{
@@ -71,10 +74,10 @@ bool PyObjectCheck_Array(PyObject* o) {
   return PyObject_HasAttrString(o, "__array_finalize__");
 }
 
-void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p_mlvalue) {
+void CreateTensorMLValue(AllocatorPtr alloc, const std::string& name_input, PyArrayObject* pyObject, MLValue* p_mlvalue) {
   PyArrayObject* darray = PyArray_GETCONTIGUOUS(pyObject);
   if (darray == NULL) {
-    throw std::runtime_error("The object must be a contiguous array.");
+    throw std::runtime_error(std::string("The object must be a contiguous array for input '") + name_input + std::string("'."));
   }
   bool dref = false;
   try {
@@ -83,9 +86,9 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
     // numpy requires long int as its dims.
     int ndim = PyArray_NDIM(darray);
     npy_intp* npy_dims = PyArray_DIMS(darray);
-    std::vector<int64_t> dims;
+    std::vector<int64_t> dims(ndim);
     for (int i = 0; i < ndim; ++i) {
-      dims.push_back(npy_dims[i]);
+      dims[i] = npy_dims[i];
     }
 
     TensorShape shape(dims);
@@ -111,13 +114,12 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
         // Python unicode strings are assumed to be USC-4. Strings are stored as UTF-8.
         dst[i] = PyUnicode_AsUTF8(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, src, num_chars));
       }
-    }
-    else if (npy_type == NPY_OBJECT) {
+    } else if (npy_type == NPY_OBJECT) {
       // Converts object into string.
       std::string* dst = static_cast<std::string*>(buffer);
       auto item_size = PyArray_ITEMSIZE(darray);
       char* src = static_cast<char*>(PyArray_DATA(darray));
-      PyObject* item, *pStr;
+      PyObject *item, *pStr;
       for (int i = 0; i < shape.Size(); ++i, src += item_size) {
         // Python unicode strings are assumed to be USC-4. Strings are stored as UTF-8.
         item = PyArray_GETITEM(darray, src);
@@ -147,20 +149,20 @@ void CreateTensorMLValue(AllocatorPtr alloc, PyArrayObject* pyObject, MLValue* p
   }
 }
 
-std::string _get_type_name(int64_t&) { 
-  return std::string("int64_t"); 
+std::string _get_type_name(int64_t&) {
+  return std::string("int64_t");
 }
 
-std::string _get_type_name(float&) { 
-  return std::string("float"); 
+std::string _get_type_name(float&) {
+  return std::string("float");
 }
 
-std::string _get_type_name(std::string&) { 
-  return std::string("string"); 
+std::string _get_type_name(std::string&) {
+  return std::string("string");
 }
 
 template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
-void CreateMapMLValue_LoopIntoMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+void CreateMapMLValue_LoopIntoMap(Py_ssize_t& pos, PyObject*& key, const std::string& name_input, PyObject*& value,
                                   PyObject* item, std::map<KeyType, ValueType>& current,
                                   KeyGetterType keyGetter, ValueGetterType valueGetter) {
   KeyType ckey;
@@ -176,7 +178,8 @@ void CreateMapMLValue_LoopIntoMap(Py_ssize_t& pos, PyObject*& key, PyObject*& va
       Py_XDECREF(item);
       throw std::runtime_error(std::string("Unexpected key type  ") + sType +
                                std::string(", it cannot be linked to C type ") +
-                               _get_type_name(ckey));
+                               _get_type_name(ckey) + std::string(" for input '") +
+                               name_input + std::string("'."));
     }
 
     if (!valueGetter(value, cvalue)) {
@@ -189,26 +192,27 @@ void CreateMapMLValue_LoopIntoMap(Py_ssize_t& pos, PyObject*& key, PyObject*& va
       Py_XDECREF(item);
       throw std::runtime_error(std::string("Unexpected value type  ") + sType +
                                std::string(", it cannot be linked to C type ") +
-                               _get_type_name(ckey));
+                               _get_type_name(ckey) + std::string(" for input '") +
+                               name_input + std::string("'."));
     }
     current[ckey] = cvalue;
   } while (PyDict_Next(item, &pos, &key, &value));
 }
 
 template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
-void CreateMapMLValue_Map(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+void CreateMapMLValue_Map(Py_ssize_t& pos, PyObject*& key, const std::string& name_input, PyObject*& value,
                           PyObject* item,
                           AllocatorPtr /*alloc*/, MLValue* p_mlvalue,
                           KeyGetterType keyGetter, ValueGetterType valueGetter) {
   std::unique_ptr<std::map<KeyType, ValueType>> dst;
   dst = std::make_unique<std::map<KeyType, ValueType>>();
-  CreateMapMLValue_LoopIntoMap(pos, key, value, item, *dst, keyGetter, valueGetter);
+  CreateMapMLValue_LoopIntoMap(pos, key, name_input, value, item, *dst, keyGetter, valueGetter);
   p_mlvalue->Init(dst.release(), DataTypeImpl::GetType<std::map<KeyType, ValueType>>(),
                   DataTypeImpl::GetType<std::map<KeyType, ValueType>>()->GetDeleteFunc());
 }
 
 template <typename KeyType, typename ValueType, typename KeyGetterType, typename ValueGetterType>
-void CreateMapMLValue_VectorMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+void CreateMapMLValue_VectorMap(Py_ssize_t& pos, PyObject*& key, const std::string& name_input, PyObject*& value,
                                 PyObject* iterator, PyObject* item,
                                 AllocatorPtr /*alloc*/, MLValue* p_mlvalue,
                                 KeyGetterType keyGetter, ValueGetterType valueGetter) {
@@ -217,7 +221,7 @@ void CreateMapMLValue_VectorMap(Py_ssize_t& pos, PyObject*& key, PyObject*& valu
   int index = 0;
   do {
     dstVector->push_back(std::map<KeyType, ValueType>());
-    CreateMapMLValue_LoopIntoMap(pos, key, value, item, (*dstVector)[index], keyGetter, valueGetter);
+    CreateMapMLValue_LoopIntoMap(pos, key, name_input, value, item, (*dstVector)[index], keyGetter, valueGetter);
     Py_DECREF(item);
     ++index;
     item = iterator == NULL ? NULL : PyIter_Next(iterator);
@@ -226,7 +230,7 @@ void CreateMapMLValue_VectorMap(Py_ssize_t& pos, PyObject*& key, PyObject*& valu
                   DataTypeImpl::GetType<std::vector<std::map<KeyType, ValueType>>>()->GetDeleteFunc());
 }
 
-void CreateMapMLValue_AgnosticMap(Py_ssize_t& pos, PyObject*& key, PyObject*& value,
+void CreateMapMLValue_AgnosticMap(Py_ssize_t& pos, PyObject*& key, const std::string& name_input, PyObject*& value,
                                   PyObject* iterator, PyObject* item,
                                   AllocatorPtr alloc, MLValue* p_mlvalue) {
   // If iterator is NULL, it returns a single Map,
@@ -261,12 +265,12 @@ void CreateMapMLValue_AgnosticMap(Py_ssize_t& pos, PyObject*& key, PyObject*& va
   if (iterator == NULL) {
     if (PyLong_Check(key)) {
       // Regular Python.
-      CreateMapMLValue_Map<int64_t, float>(pos, key, value, item, alloc, p_mlvalue, int64Getter, floatGetter);
-    } else if (PyNumber_Check(key)){
+      CreateMapMLValue_Map<int64_t, float>(pos, key, name_input, value, item, alloc, p_mlvalue, int64Getter, floatGetter);
+    } else if (PyNumber_Check(key)) {
       // For numpy type.
-      CreateMapMLValue_Map<int64_t, float>(pos, key, value, item, alloc, p_mlvalue, int64Getter, floatGetter);
+      CreateMapMLValue_Map<int64_t, float>(pos, key, name_input, value, item, alloc, p_mlvalue, int64Getter, floatGetter);
     } else if (PyUnicode_Check(key)) {
-      CreateMapMLValue_Map<std::string, float>(pos, key, value, item, alloc, p_mlvalue, stringGetter, floatGetter);
+      CreateMapMLValue_Map<std::string, float>(pos, key, name_input, value, item, alloc, p_mlvalue, stringGetter, floatGetter);
     } else {
       PyObject* pType = PyObject_Type(key);
       PyObject* pStr = PyObject_Str(pType);
@@ -275,16 +279,16 @@ void CreateMapMLValue_AgnosticMap(Py_ssize_t& pos, PyObject*& key, PyObject*& va
       Py_XDECREF(pType);
       Py_XDECREF(pStr);
       throw std::runtime_error(std::string("Key type must be int or string (not ") + sType +
-                               std::string(")."));
+                               std::string(") for input '") + name_input + std::string("'."));
     }
   } else {
     if (PyLong_Check(key)) {
-      CreateMapMLValue_VectorMap<int64_t, float>(pos, key, value, iterator, item, alloc, p_mlvalue, int64Getter, floatGetter);
+      CreateMapMLValue_VectorMap<int64_t, float>(pos, key, name_input, value, iterator, item, alloc, p_mlvalue, int64Getter, floatGetter);
     } else if (PyNumber_Check(key)) {
       // For numpy type.
-      CreateMapMLValue_VectorMap<int64_t, float>(pos, key, value, iterator, item, alloc, p_mlvalue, int64Getter, floatGetter);
+      CreateMapMLValue_VectorMap<int64_t, float>(pos, key, name_input, value, iterator, item, alloc, p_mlvalue, int64Getter, floatGetter);
     } else if (PyUnicode_Check(key)) {
-      CreateMapMLValue_VectorMap<std::string, float>(pos, key, value, iterator, item, alloc, p_mlvalue, stringGetter, floatGetter);
+      CreateMapMLValue_VectorMap<std::string, float>(pos, key, name_input, value, iterator, item, alloc, p_mlvalue, stringGetter, floatGetter);
     } else {
       PyObject* pType = PyObject_Type(value);
       PyObject* pStr = PyObject_Str(pType);
@@ -293,13 +297,13 @@ void CreateMapMLValue_AgnosticMap(Py_ssize_t& pos, PyObject*& key, PyObject*& va
       Py_XDECREF(pType);
       Py_XDECREF(pStr);
       throw std::runtime_error(std::string("Key type must be int or string (not ") + sType +
-                               std::string(")."));
+                               std::string(") for input '") + name_input + std::string("'."));
     }
   }
 }
 
-void CreateMapMLValue_AgnosticVectorMap(PyObject* iterator, PyObject* item, AllocatorPtr alloc, MLValue* p_mlvalue) {
-  // CreateMapMLValue is called by CreateGenericTerableMLValue 
+void CreateMapMLValue_AgnosticVectorMap(PyObject* iterator, PyObject* item, AllocatorPtr alloc, const std::string& name_input, MLValue* p_mlvalue) {
+  // CreateMapMLValue is called by CreateGenericTerableMLValue
   // or CreateGenericMLValue which ensures
   // item is a dictionary, no need to check type again.
   // This functions starts to iterate on the first
@@ -316,13 +320,13 @@ void CreateMapMLValue_AgnosticVectorMap(PyObject* iterator, PyObject* item, Allo
   Py_ssize_t pos = 0;
 
   if (PyDict_Next(item, &pos, &key, &value)) {
-      CreateMapMLValue_AgnosticMap(pos, key, value, iterator, item, alloc, p_mlvalue);
+    CreateMapMLValue_AgnosticMap(pos, key, name_input, value, iterator, item, alloc, p_mlvalue);
   } else {
     throw std::runtime_error("Size of dictionary is empty, unable to run the prediction.");
   }
 }
 
-void CreateGenericIterableMLValue(PyObject* iterator, AllocatorPtr alloc, MLValue* p_mlvalue) {
+void CreateGenericIterableMLValue(PyObject* iterator, AllocatorPtr alloc, const std::string& name_input, MLValue* p_mlvalue) {
   PyObject* item;
   MLValue ml_value;
   item = PyIter_Next(iterator);
@@ -336,23 +340,25 @@ void CreateGenericIterableMLValue(PyObject* iterator, AllocatorPtr alloc, MLValu
     std::string sType = spyType;
     Py_XDECREF(pType);
     Py_XDECREF(pStr);
-    throw std::runtime_error("Iterable of " + sType + " should be given as array");
+    throw std::runtime_error("Iterable of " + sType + " should be given as array for input '" +
+                             name_input + std::string("'."));
   } else {
     // We expect a dictionary.
     if (!PyDict_Check(item)) {
-      throw std::runtime_error("Input must be a list of dictionaries or a single numpy array.");
+      throw std::runtime_error("Input must be a list of dictionaries or a single numpy array for input '" +
+                               name_input + std::string("'."));
     }
-    CreateMapMLValue_AgnosticVectorMap(iterator, item, alloc, p_mlvalue);
+    CreateMapMLValue_AgnosticVectorMap(iterator, item, alloc, name_input, p_mlvalue);
   }
 }
 
-void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlvalue) {
+void CreateGenericMLValue(AllocatorPtr alloc, const std::string& name_input, py::object& value, MLValue* p_mlvalue) {
   if (PyObjectCheck_Array(value.ptr())) {
     // The most frequent case: input comes as an array.
     PyArrayObject* arr = reinterpret_cast<PyArrayObject*>(value.ptr());
-    CreateTensorMLValue(alloc, arr, p_mlvalue);
+    CreateTensorMLValue(alloc, name_input, arr, p_mlvalue);
   } else if (PyDict_Check(value.ptr())) {
-    CreateMapMLValue_AgnosticVectorMap((PyObject*)NULL, value.ptr(), alloc, p_mlvalue);
+    CreateMapMLValue_AgnosticVectorMap((PyObject*)NULL, value.ptr(), alloc, name_input, p_mlvalue);
   } else {
     auto iterator = PyObject_GetIter(value.ptr());
     if (iterator == NULL) {
@@ -368,7 +374,7 @@ void CreateGenericMLValue(AllocatorPtr alloc, py::object& value, MLValue* p_mlva
     // We assume the object is iterable.
     // iterator should not be NULL due to previous test.
     try {
-      CreateGenericIterableMLValue(iterator, alloc, p_mlvalue);
+      CreateGenericIterableMLValue(iterator, alloc, name_input, p_mlvalue);
     } catch (std::runtime_error e) {
       Py_DECREF(iterator);
       throw;

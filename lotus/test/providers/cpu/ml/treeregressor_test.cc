@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MLOpTest, TreeRegressorMultiTarget) {
-  OpTester test("TreeEnsembleRegressor", 1, LotusIR::kMLDomain);
+  OpTester test("TreeEnsembleRegressor", 1, onnxruntime::kMLDomain);
 
   //tree
   std::vector<int64_t> lefts = {1, 2, -1, -1, -1, 1, -1, 3, -1, -1, 1, -1, -1};
@@ -48,4 +48,4 @@ TEST(MLOpTest, TreeRegressorMultiTarget) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,13 +1,13 @@
 #pragma once
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 
 class ZipMapOp final : public OpKernel {
  public:
   explicit ZipMapOp(const OpKernelInfo& info);
-  Common::Status Compute(OpKernelContext* context) const override;
+  common::Status Compute(OpKernelContext* context) const override;
 
  private:
   bool using_strings_;
@@ -15,5 +15,5 @@ class ZipMapOp final : public OpKernel {
   std::vector<std::string> classlabels_strings_;
 };
 
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

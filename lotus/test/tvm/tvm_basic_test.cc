@@ -11,7 +11,7 @@
 #include "test/test_environment.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 tvm::Schedule DefaultTVMScheduleGenerator(const TVMGraph& tvm_graph) {
   std::vector<tvm::Operation> args;
@@ -33,7 +33,7 @@ tvm::runtime::Module BuildStackVMDefaultModule(tvm::Schedule schedule, tvm::Buil
 template <TVMScheduleCreator S, TVMModuleBuilder M>
 class TVMFuseAddKernels : public TVMKernel<S, M> {
  public:
-  explicit TVMFuseAddKernels(const OpKernelInfo& info) : TVMKernel(info) {}
+  explicit TVMFuseAddKernels(const OpKernelInfo& info) : TVMKernel<S, M>(info) {}
 
  protected:
   virtual const TensorShape& GetOutputShape(OpKernelContext* context, int /*i*/) const override {
@@ -67,8 +67,8 @@ class UnionSet {
   std::vector<int> farthers_;
 };
 
-void FuseAdd(const LotusIR::Graph& graph, std::vector<std::unique_ptr<ComputationCapacity>>& capacities) {
-  std::vector<LotusIR::NodeIndex> add_nodes;
+void FuseAdd(const onnxruntime::Graph& graph, std::vector<std::unique_ptr<ComputationCapacity>>& capacities) {
+  std::vector<onnxruntime::NodeIndex> add_nodes;
   for (auto& node : graph.Nodes()) {
     if (graph.IsSinkNode(node) || graph.IsSourceNode(node)) {
       continue;
@@ -89,7 +89,7 @@ void FuseAdd(const LotusIR::Graph& graph, std::vector<std::unique_ptr<Computatio
     }
   }
 
-  std::vector<std::vector<LotusIR::NodeIndex>> groups;
+  std::vector<std::vector<onnxruntime::NodeIndex>> groups;
   groups.resize(add_nodes.size());
   for (int i = 0; i < set.farthers_.size(); ++i) {
     groups[set.get(i)].push_back(add_nodes[i]);
@@ -98,7 +98,7 @@ void FuseAdd(const LotusIR::Graph& graph, std::vector<std::unique_ptr<Computatio
   for (auto& group : groups) {
     if (group.size() > 1) {
       std::unique_ptr<IndexedSubGraph> sub_graph = std::make_unique<IndexedSubGraph>();
-      std::set<const LotusIR::NodeArg*> fused_inputs, fused_outputs;
+      std::set<const onnxruntime::NodeArg*> fused_inputs, fused_outputs;
       for (auto index : group) {
         sub_graph->nodes.push_back(index);
         auto node = graph.GetNode(index);
@@ -120,7 +120,7 @@ void FuseAdd(const LotusIR::Graph& graph, std::vector<std::unique_ptr<Computatio
         }
       }
 
-      auto meta_def = std::make_unique<::Lotus::IndexedSubGraph::MetaDef>();
+      auto meta_def = std::make_unique<::onnxruntime::IndexedSubGraph::MetaDef>();
       meta_def->name = "TVMFuseAdd";
       meta_def->domain = "FuseTest";
       for (auto input : fused_inputs) {
@@ -162,7 +162,7 @@ static void RunSession(InferenceSession& session_object,
   std::vector<MLValue> fetches;
 
   // Now run
-  Common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
+  common::Status st = session_object.Run(run_options, feeds, output_names, &fetches);
   std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
   EXPECT_TRUE(st.IsOK());
   ASSERT_EQ(1, fetches.size());
@@ -212,7 +212,7 @@ TEST(TVMTest, Fuse_Add_Test) {
 }
 }  // namespace Test
 
-}  // namespace Lotus
+}  // namespace onnxruntime
 
 TEST(TVMTest, Basic) {
   using namespace tvm;

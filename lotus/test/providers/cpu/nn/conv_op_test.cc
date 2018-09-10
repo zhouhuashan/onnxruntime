@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 using namespace std;
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 namespace {
@@ -523,4 +523,4 @@ TEST(ConvTest, Conv2D_group) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

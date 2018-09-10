@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MLOpTest, SVMRegressorSVC) {
-  OpTester test("SVMRegressor", 1, LotusIR::kMLDomain);
+  OpTester test("SVMRegressor", 1, onnxruntime::kMLDomain);
 
   std::vector<float> dual_coefficients = {-1.54236563f, 0.53485162f, -1.5170623f, 0.69771864f, 1.82685767f};
   std::vector<float> support_vectors = {0.f, 0.5f, 32.f, 1.f, 1.5f, 1.f, 2.f, 2.9f, -32.f, 12.f, 12.9f, -312.f, 43.f, 413.3f, -114.f};
@@ -30,7 +30,7 @@ TEST(MLOpTest, SVMRegressorSVC) {
 }
 
 TEST(MLOpTest, SVMRegressorNuSVC) {
-  OpTester test("SVMRegressor", 1, LotusIR::kMLDomain);
+  OpTester test("SVMRegressor", 1, onnxruntime::kMLDomain);
 
   std::vector<float> dual_coefficients = {-1.7902966f, 1.05962596f, -1.54324389f, -0.43658884f, 0.79025169f, 1.92025169f};
   std::vector<float> support_vectors = {0.f, 0.5f, 32.f, 1.f, 1.5f, 1.f, 2.f, 2.9f, -32.f, 3.f, 13.3f, -11.f, 12.f, 12.9f, -312.f, 43.f, 413.3f, -114.f};
@@ -55,7 +55,7 @@ TEST(MLOpTest, SVMRegressorNuSVC) {
 }
 
 TEST(MLOpTest, SVMRegressorNuSVCPolyKernel) {
-  OpTester test("SVMRegressor", 1, LotusIR::kMLDomain);
+  OpTester test("SVMRegressor", 1, onnxruntime::kMLDomain);
 
   std::vector<float> dual_coefficients = {-2.74322388e+01f, 5.81893108e+01f, -1.00000000e+02f, 6.91693781e+01f, 7.62161261e-02f, -2.66618042e-03f};
   std::vector<float> support_vectors = {0.f, 0.5f, 32.f, 1.f, 1.5f, 1.f, 2.f, 2.9f, -32.f, 3.f, 13.3f, -11.f, 12.f, 12.9f, -312.f, 43.f, 413.3f, -114.f};
@@ -80,7 +80,7 @@ TEST(MLOpTest, SVMRegressorNuSVCPolyKernel) {
 }
 
 TEST(MLOpTest, SVMRegressorLinear) {
-  OpTester test("SVMRegressor", 1, LotusIR::kMLDomain);
+  OpTester test("SVMRegressor", 1, onnxruntime::kMLDomain);
   std::vector<float> coefficients = {0.28290501f, -0.0266512f, 0.01674867f};
   std::vector<float> rho = {1.24032312f};
   std::vector<float> kernel_params = {0.001f, 0.f, 3.f};  //gamma, coef0, degree
@@ -102,4 +102,4 @@ TEST(MLOpTest, SVMRegressorLinear) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -1,6 +1,6 @@
 #include "core/providers/cpu/nn/flatten.h"
 
-namespace Lotus {
+namespace onnxruntime {
 ONNX_CPU_OPERATOR_KERNEL(
     Flatten,
     1,

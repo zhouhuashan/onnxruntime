@@ -4,8 +4,8 @@
 #include "core/framework/op_kernel.h"
 #include "core/framework/tensor.h"
 
-namespace Lotus {
-namespace ML {
+namespace onnxruntime {
+namespace ml {
 template <typename T>
 class SampleOp : public OpKernel {
  public:
@@ -25,5 +25,5 @@ class SampleOp : public OpKernel {
     return Status::OK();
   }
 };
-}  // namespace ML
-}  // namespace Lotus
+}  // namespace ml
+}  // namespace onnxruntime

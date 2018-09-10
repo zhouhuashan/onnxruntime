@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 class FlattenOpTest : public testing::Test {
@@ -52,4 +52,4 @@ TEST_F(FlattenOpTest, Flatten_axis4) {
   test_.RunOnCpuAndCuda();
 }
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

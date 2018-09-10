@@ -1,8 +1,8 @@
 #include "unary_elementwise_ops.h"
 #include "unary_elementwise_ops_impl.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 Status UnaryElementwise::Prepare(OpKernelContext* context, UnaryElementwisePreparation* p) const {
   p->input_tensor = context->Input<Tensor>(0);
@@ -79,5 +79,5 @@ UNARY_OP_HFD(Sqrt, 6)
 UNARY_OP_HFD(Log, 6)
 UNARY_OP_HFD(Exp, 6)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

@@ -1,8 +1,8 @@
 #include "core/providers/cuda/cu_inc/common.cuh"
 #include "gather_impl.h"
 
-namespace Lotus {
-namespace Cuda {
+namespace onnxruntime {
+namespace cuda {
 
 template <typename T, typename Tin>
 __global__ void _GatherKernel(
@@ -61,5 +61,5 @@ SPECIALIZED_IMPL(float)
 SPECIALIZED_IMPL(double)
 SPECIALIZED_IMPL(bool)
 
-}  // namespace Cuda
-}  // namespace Lotus
+}  // namespace cuda
+}  // namespace onnxruntime

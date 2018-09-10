@@ -7,7 +7,7 @@
 
 #include "core/platform/env.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace PerfTest {
 namespace Utils {
 
@@ -35,7 +35,7 @@ class CPUUsage : public ICPUUsage {
      else {
        clock_t proc_total_clock_diff = (time_sample.tms_stime - proc_sys_clock_start_) + (time_sample.tms_utime - proc_user_clock_start_);
        clock_t total_clock_diff = total_clock_now - total_clock_start_;
-       return static_cast<short>( 100.0 * proc_total_clock_diff / total_clock_diff / Lotus::Env::Default().GetNumCpuCores() );
+       return static_cast<short>( 100.0 * proc_total_clock_diff / total_clock_diff / onnxruntime::Env::Default().GetNumCpuCores() );
      }
   }
 
@@ -57,4 +57,4 @@ std::unique_ptr<ICPUUsage> CreateICPUUsage() {
 
 }  // namespace Utils
 }  // namespace PerfTest
-}  // namespace Lotus
+}  // namespace onnxruntime

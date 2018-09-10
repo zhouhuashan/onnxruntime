@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test/providers/provider_test_utils.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 TEST(MathOpTest, Concat1D_string) {
@@ -163,4 +163,4 @@ TEST(MathOpTest, Concat3D_3) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

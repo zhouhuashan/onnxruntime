@@ -7,9 +7,9 @@
 #include "core/framework/tensorprotoutils.h"
 
 using namespace onnx;
-using namespace Lotus::Common;
+using namespace onnxruntime::common;
 
-namespace Lotus {
+namespace onnxruntime {
 
 onnx::OpSchema Scan::GetScanOpSchema() {
   // Preliminary definition
@@ -95,7 +95,7 @@ Status Scan::Compute(OpKernelContext* ctx) const {
     // TODO: Need to handle shape/type inference for subgraphs.
     // For now copy shape from subgraph output as we're only doing one iteration so far
     auto& go = graph_outputs.at(i);
-    TensorShape shape{Lotus::Utils::GetTensorShapeFromTensorShapeProto(*go->Shape())};
+    TensorShape shape{onnxruntime::Utils::GetTensorShapeFromTensorShapeProto(*go->Shape())};
 
     // make sure the output tensor is created so GetOutputMLValue will succeed
     IGNORE_RETURN_VALUE(ctx->Output(i, shape));
@@ -120,4 +120,4 @@ Status Scan::Compute(OpKernelContext* ctx) const {
 Status Scan::ComputeImpl() const {
   return Status::OK();
 }
-}  // namespace Lotus
+}  // namespace onnxruntime

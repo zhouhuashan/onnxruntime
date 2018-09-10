@@ -3,8 +3,8 @@
 #include "core/graph/op.h"
 
 using namespace onnx;
-using namespace ::Lotus::Common;
-namespace LotusIR {
+using namespace ::onnxruntime::common;
+namespace onnxruntime {
 
 bool TypeUtils::IsValidAttribute(const AttributeProto& attr) {
   if (attr.name().empty()) {
@@ -64,4 +64,4 @@ Status TypeUtils::GetType(const AttributeProto& attr, AttrType& type) {
   }
   return Status::OK();
 }
-}  // namespace LotusIR
+}  // namespace onnxruntime

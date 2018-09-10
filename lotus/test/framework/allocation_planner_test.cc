@@ -14,7 +14,7 @@
 
 using namespace onnx;
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 namespace ModelBuilder {
@@ -30,18 +30,18 @@ class NodeCounter {
 int NodeCounter::node_count_ = 0;
 
 struct UnaryNode {
-  std::vector<LotusIR::NodeArg*> input_args;
-  std::vector<LotusIR::NodeArg*> output_args;
-  LotusIR::Node* p_node;
+  std::vector<onnxruntime::NodeArg*> input_args;
+  std::vector<onnxruntime::NodeArg*> output_args;
+  onnxruntime::Node* p_node;
 
-  UnaryNode(LotusIR::Graph& graph, const std::string& op,
-            LotusIR::NodeArg* p_input_arg, LotusIR::NodeArg* p_output_arg)
+  UnaryNode(onnxruntime::Graph& graph, const std::string& op,
+            onnxruntime::NodeArg* p_input_arg, onnxruntime::NodeArg* p_output_arg)
       : input_args({p_input_arg}), output_args({p_output_arg}) {
     int num = NodeCounter::Next();
     p_node = graph.AddNode("node" + std::to_string(num), op, "test op", input_args, output_args);
   }
 
-  UnaryNode(LotusIR::Graph& graph, LotusIR::NodeArg* p_input_arg, LotusIR::NodeArg* p_output_arg)
+  UnaryNode(onnxruntime::Graph& graph, onnxruntime::NodeArg* p_input_arg, onnxruntime::NodeArg* p_output_arg)
       : UnaryNode(graph, "Transpose", p_input_arg, p_output_arg) {}
 };
 
@@ -120,13 +120,13 @@ class AllocationPlanTestUtility {
   }
 };
 
-typedef std::unordered_map<const LotusIR::NodeArg*, TensorShapeProto*> ShapeMap;
+typedef std::unordered_map<const onnxruntime::NodeArg*, TensorShapeProto*> ShapeMap;
 
 class SequentialPlannerTestContext : public ISequentialPlannerContext {
  public:
   SequentialPlannerTestContext(ShapeMap* shape_map) : shape_map_(shape_map) {}
 
-  virtual TensorShapeProto* GetShape(const LotusIR::NodeArg& arg) const override {
+  virtual TensorShapeProto* GetShape(const onnxruntime::NodeArg& arg) const override {
     auto iter = shape_map_->find(&arg);
     return (shape_map_->end() != iter) ? iter->second : nullptr;
   }
@@ -141,19 +141,19 @@ class PlannerTest : public ::testing::Test {
     ASSERT_TRUE(state_.GetMLValueNameIdxMap().GetIdx(name, out).IsOK());
   }
 
-  LotusIR::Model model_;
-  LotusIR::Graph& graph_;
+  onnxruntime::Model model_;
+  onnxruntime::Graph& graph_;
 
   // some standard components used to build test-cases:
   Type float_type_;
 
-  std::unique_ptr<::Lotus::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
-  std::unique_ptr<::Lotus::KernelDef> in_place_kernel_;  // a unary kernel with in-place
+  std::unique_ptr<::onnxruntime::KernelDef> std_kernel_;       // a unary kernel with no-aliasing and no-in-place
+  std::unique_ptr<::onnxruntime::KernelDef> in_place_kernel_;  // a unary kernel with in-place
 
-  std::unordered_map<std::string, std::unique_ptr<LotusIR::NodeArg>> name_to_arg_;
+  std::unordered_map<std::string, std::unique_ptr<onnxruntime::NodeArg>> name_to_arg_;
   std::vector<std::unique_ptr<UnaryNode>> nodes_;
   std::vector<std::unique_ptr<OpKernelInfo>> op_kernel_infos_;
-  std::vector<std::pair<LotusIR::Node*, KernelDef&>> kernel_bindings_;
+  std::vector<std::pair<onnxruntime::Node*, KernelDef&>> kernel_bindings_;
   ExecutionProviders execution_providers_;
   SessionState state_;
   ShapeMap shape_map_;
@@ -170,30 +170,30 @@ class PlannerTest : public ::testing::Test {
 
   ~PlannerTest() = default;
 
-  LotusIR::NodeArg* Arg(const std::string& name) {
+  onnxruntime::NodeArg* Arg(const std::string& name) {
     auto iter = name_to_arg_.find(name);
     if (name_to_arg_.end() != iter) return iter->second.get();
-    return (name_to_arg_[name] = std::make_unique<LotusIR::NodeArg>(name, &float_type_.value)).get();
+    return (name_to_arg_[name] = std::make_unique<onnxruntime::NodeArg>(name, &float_type_.value)).get();
   }
 
-  LotusIR::Node* AddNode(::Lotus::KernelDef& kernel_def, std::string& input, std::string& output) {
+  onnxruntime::Node* AddNode(::onnxruntime::KernelDef& kernel_def, std::string& input, std::string& output) {
     auto node = std::make_unique<UnaryNode>(graph_, kernel_def.OpName(), Arg(input), Arg(output));
     auto* p_node = node->p_node;
-    p_node->SetExecutionProviderType(LotusIR::kCpuExecutionProvider);
+    p_node->SetExecutionProviderType(onnxruntime::kCpuExecutionProvider);
     nodes_.push_back(std::move(node));
     kernel_bindings_.emplace_back(p_node, kernel_def);
     return p_node;
   }
 
-  LotusIR::Node* AddNormalNode(std::string& input, std::string& output) {
+  onnxruntime::Node* AddNormalNode(std::string& input, std::string& output) {
     return AddNode(*std_kernel_, input, output);
   }
 
-  LotusIR::Node* AddInplaceNode(std::string& input, std::string& output) {
+  onnxruntime::Node* AddInplaceNode(std::string& input, std::string& output) {
     return AddNode(*in_place_kernel_, input, output);
   }
 
-  void BindKernel(LotusIR::Node* p_node, ::Lotus::KernelDef& kernel_def) {
+  void BindKernel(onnxruntime::Node* p_node, ::onnxruntime::KernelDef& kernel_def) {
     auto info = std::make_unique<OpKernelInfo>(*p_node, kernel_def, *execution_providers_.Get(*p_node), state_);
     auto dummy = std::make_unique<DummyOpKernel>(*info);
     op_kernel_infos_.push_back(std::move(info));
@@ -230,7 +230,7 @@ class PlannerTest : public ::testing::Test {
     kernel_registry_manager.RegisterKernelRegistry(cpu_execution_provider->GetKernelRegistry(), KernelRegistryPriority::LowPriority);
 
     ExecutionProviders execution_providers;
-    execution_providers.Add(LotusIR::kCpuExecutionProvider, std::move(cpu_execution_provider));
+    execution_providers.Add(onnxruntime::kCpuExecutionProvider, std::move(cpu_execution_provider));
 
     SequentialPlannerTestContext test_context(&shape_map_);
     auto status = SequentialPlanner::CreatePlan(
@@ -428,4 +428,4 @@ TEST_F(PlannerTest, PlanOutputTest) {
 }
 
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

@@ -17,7 +17,7 @@ using LOTUS_WORK = PTP_WORK;
 using PThreadPool = PTP_CALLBACK_ENVIRON;
 using LOTUS_CALLBACK_FUNCTION = PTP_WORK_CALLBACK;
 #define LotusCloseThreadpoolWork CloseThreadpoolWork
-inline PThreadPool GetDefaultThreadPool(const ::Lotus::Env&) {
+inline PThreadPool GetDefaultThreadPool(const ::onnxruntime::Env&) {
   return nullptr;
 }
 #else
@@ -38,12 +38,12 @@ inline void LotusCloseThreadpoolWork(LOTUS_WORK) {}
 #endif
 
 //The returned value will be used with CreateAndSubmitThreadpoolWork function
-PThreadPool GetDefaultThreadPool(const ::Lotus::Env& env);
+PThreadPool GetDefaultThreadPool(const ::onnxruntime::Env& env);
 //On Windows, the last parameter can be null, in that case it will use the default thread pool.
 //On Linux, there is no per process default thread pool. You have to pass a non-null pointer.
 //Caller must delete the data pointer if this function returns a non-ok status. Otherwise, the ownership is transferred
-::Lotus::Common::Status CreateAndSubmitThreadpoolWork(LOTUS_CALLBACK_FUNCTION callback, void* data, PThreadPool pool);
-::Lotus::Common::Status CreateLotusEvent(LOTUS_EVENT* out);
+::onnxruntime::common::Status CreateAndSubmitThreadpoolWork(LOTUS_CALLBACK_FUNCTION callback, void* data, PThreadPool pool);
+::onnxruntime::common::Status CreateLotusEvent(LOTUS_EVENT* out);
 //pci is a pointer, can be NULL. If pci is NULL, signal the event immediately
-::Lotus::Common::Status LotusSetEventWhenCallbackReturns(LOTUS_CALLBACK_INSTANCE pci, LOTUS_EVENT finish_event);
-::Lotus::Common::Status WaitAndCloseEvent(LOTUS_EVENT finish_event);
+::onnxruntime::common::Status LotusSetEventWhenCallbackReturns(LOTUS_CALLBACK_INSTANCE pci, LOTUS_EVENT finish_event);
+::onnxruntime::common::Status WaitAndCloseEvent(LOTUS_EVENT finish_event);

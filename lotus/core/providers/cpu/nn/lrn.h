@@ -6,7 +6,7 @@
 #include "core/common/exceptions.h"
 #include "core/framework/op_kernel.h"
 
-namespace Lotus {
+namespace onnxruntime {
 
 template <typename T>
 class LRN : public OpKernel {
@@ -35,4 +35,4 @@ class LRN : public OpKernel {
   float bias_;
   int size_;
 };
-}  // namespace Lotus
+}  // namespace onnxruntime

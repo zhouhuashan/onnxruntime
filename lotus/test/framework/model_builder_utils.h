@@ -1,6 +1,6 @@
 #include "core/graph/model.h"
 
-namespace Lotus {
+namespace onnxruntime {
 namespace Test {
 
 namespace ModelBuilder {
@@ -58,4 +58,4 @@ struct Type {
 
 }  // namespace ModelBuilder
 }  // namespace Test
-}  // namespace Lotus
+}  // namespace onnxruntime

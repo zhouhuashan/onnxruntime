@@ -5,8 +5,8 @@
 #include "core/providers/mkldnn/mkldnn_common.h"
 #include "core/providers/mkldnn/nn/pool.h"
 
-namespace Lotus {
-namespace MklDnn {
+namespace onnxruntime {
+namespace mkl_dnn {
 
 #define POOLING_KERNEL(op_name, data_type, pool_type, since_version)                    \
   ONNX_OPERATOR_TYPED_KERNEL_EX(                                                        \
@@ -145,11 +145,11 @@ class PoolPrimitive : public PrimitiveBase {
       }
     }
     context_.fwd_desc.reset(new mkldnn::pooling_forward::desc(
-          mkldnn::prop_kind::forward_inference, algo,
-          *context_.src_md, *context_.dst_md,
-          params.strides, params.kernel,
-          params.padding_left, params.padding_right,
-          mkldnn::padding_kind::zero));
+        mkldnn::prop_kind::forward_inference, algo,
+        *context_.src_md, *context_.dst_md,
+        params.strides, params.kernel,
+        params.padding_left, params.padding_right,
+        mkldnn::padding_kind::zero));
 
     context_.fwd_primitive_desc.reset(new mkldnn::pooling_forward::primitive_desc(
         *context_.fwd_desc, cpu_engine_));
@@ -198,7 +198,7 @@ class PoolPrimitivePool : public PrimitivePool<T> {
     return pool;
   }
 };
-}
+}  // namespace
 
 template <typename T, PoolType type>
 Status Pool<T, type>::Compute(OpKernelContext* context) const {
@@ -248,5 +248,5 @@ Status Pool<T, type>::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
-}  // namespace MklDnn
-}  // namespace Lotus
+}  // namespace mkl_dnn
+}  // namespace onnxruntime
