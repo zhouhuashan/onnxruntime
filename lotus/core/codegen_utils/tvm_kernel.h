@@ -20,8 +20,8 @@ class TVMKernel : public OpKernel {
     LOTUS_ENFORCE(node.NodeType() == Node::Type::Fused);
     auto func = node.GetFunctionBody();
     const onnxruntime::GraphBase& func_body = func->Body();
-    //1. compiler the onnxruntime Graph to tvm graph. This step is common for all hardware, and provided by onnxruntime framework.
-    tvm_graph_ = CompilerToTVM(func_body, node.GetExecutionProviderType());
+    //1. compile the onnxruntime Graph to tvm graph. This step is common for all hardware, and provided by onnxruntime framework.
+    tvm_graph_ = CompileToTVM(func_body, node.GetExecutionProviderType());
     //2. create schedule for tvm graph, this step is depends on the execution provider/hardware.
     auto s = S(tvm_graph_);
     //3. Build module

@@ -33,7 +33,7 @@ class IdGenerator {
 };
 
 // This is a special compiler step for the test case that sum two 1-D tensors
-static void Compiler1DAddToTVM(const onnxruntime::Node& node, std::unordered_map<const onnxruntime::NodeArg*, TVMGraph::TensorDescriptor>& tvm_tensors, onnxruntime::ProviderType execution_provider_type, IdGenerator& generator) {
+static void Compile1DAddToTVM(const onnxruntime::Node& node, std::unordered_map<const onnxruntime::NodeArg*, TVMGraph::TensorDescriptor>& tvm_tensors, onnxruntime::ProviderType execution_provider_type, IdGenerator& generator) {
   LOTUS_ENFORCE(node.OpType() == "Add");
   tvm::Array<tvm::Expr> shape;
   shape.push_back(tvm::var("n1"));
@@ -65,7 +65,7 @@ static void Compiler1DAddToTVM(const onnxruntime::Node& node, std::unordered_map
                    "T" + std::to_string(generator.GetNext())));
 }
 
-TVMGraph CompilerToTVM(const onnxruntime::GraphBase& graph, onnxruntime::ProviderType execution_provider_type) {
+TVMGraph CompileToTVM(const onnxruntime::GraphBase& graph, onnxruntime::ProviderType execution_provider_type) {
   TVMGraph result;
   std::unordered_map<const onnxruntime::NodeArg*, TVMGraph::TensorDescriptor> tvm_tensors;
   IdGenerator generator;
@@ -73,7 +73,7 @@ TVMGraph CompilerToTVM(const onnxruntime::GraphBase& graph, onnxruntime::Provide
     if (graph.IsSinkNode(node) || graph.IsSourceNode(node)) {
       continue;
     }
-    Compiler1DAddToTVM(node, tvm_tensors, execution_provider_type, generator);
+    Compile1DAddToTVM(node, tvm_tensors, execution_provider_type, generator);
   }
 
   for (auto& input : graph.GetInputs()) {
