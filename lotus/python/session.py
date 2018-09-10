@@ -2,10 +2,8 @@
 # Module onnxruntime.python.session
 
 import sys
-import logging
 import os
 
-logger = logging.getLogger(__name__)
 from onnxruntime.python import _pybind_state as C
 
 
@@ -15,7 +13,6 @@ class InferenceSession:
     See example :ref:`l-example-simple-usage`
     for a simple sample of usage.
     """
-
     def __init__(self, path_or_bytes, sess_options=None):
         """
         :param path_or_bytes: filename or serialized model in a byte string
@@ -54,7 +51,9 @@ class InferenceSession:
         return self._model_meta
 
     def run(self, output_names, input_feed, run_options=None):
-        """Compute the predictions.
+        """
+        Compute the predictions.
+
         :param output_names: name of the outputs
         :param input_feed: dictionary ``{ input_name: input_value }``
         :param run_options: See :class:`onnxruntime.RunOptions`.
@@ -77,10 +76,3 @@ class InferenceSession:
     def end_profiling(self):
         "End profiling and return results."
         return self._sess.end_profiling()
-
-
-if __name__ == "__main__":
-    # TODO: remove this piece of code.
-    if not 'InferenceSession' in dir(C):
-        raise RuntimeError(
-            'Failed to bind the native module -onnxruntime_pybind11_state.pyd.')
