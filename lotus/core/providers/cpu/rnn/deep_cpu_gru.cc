@@ -515,9 +515,9 @@ UniDirectionalGru<T>::UniDirectionalGru(AllocatorPtr allocator,
 
       // replicate what we just wrote to the start of the output span so we have batch_size_ copies
       auto values = output.cbegin();
-      (void)RepeatVectorToConstructArray(values, values + hidden_size_,
-                                         output.begin() + hidden_size_,  // skip the first batch
-                                         batch_size_ - 1);               // and replicate batch size - 1 times
+      IGNORE_RETURN_VALUE(RepeatVectorToConstructArray(values, values + hidden_size_,
+                                                       output.begin() + hidden_size_,  // skip the first batch
+                                                       batch_size_ - 1));              // and replicate batch size - 1 times
     };
 
     // we can always combine the z and r weights
@@ -527,8 +527,8 @@ UniDirectionalGru<T>::UniDirectionalGru(AllocatorPtr allocator,
     // how we treat the h weight depends on whether linear_before_reset_ is set
     if (linear_before_reset_) {
       // need to replicate Wb[o] and Rb[o] separately
-      (void)RepeatVectorToConstructArray(bias_Wo.cbegin(), bias_Wo.cend(), batched_bias_Wh_.begin(), batch_size_);
-      (void)RepeatVectorToConstructArray(bias_Ro.cbegin(), bias_Ro.cend(), batched_bias_Rh_.begin(), batch_size_);
+      IGNORE_RETURN_VALUE(RepeatVectorToConstructArray(bias_Wo.cbegin(), bias_Wo.cend(), batched_bias_Wh_.begin(), batch_size_));
+      IGNORE_RETURN_VALUE(RepeatVectorToConstructArray(bias_Ro.cbegin(), bias_Ro.cend(), batched_bias_Rh_.begin(), batch_size_));
     } else {
       combine_and_replicate(bias_Wo, bias_Ro, batched_bias_WRh_);
     }

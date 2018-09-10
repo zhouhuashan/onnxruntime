@@ -1,7 +1,15 @@
 #include "core/framework/data_types.h"
 #include "core/framework/tensor.h"
 #include "core/inc/op_kernel_author.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 #include "onnx/defs/data_type_utils.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 using namespace onnx;
 namespace onnxruntime {
@@ -12,6 +20,11 @@ MLDataType DataTypeImpl::GetType<Tensor>() {
 
 size_t TensorTypeBase::Size() const {
   return sizeof(Tensor);
+}
+
+template <typename T>
+static void Delete(void* p) {
+  delete static_cast<T*>(p);
 }
 
 DeleteFunc TensorTypeBase::GetDeleteFunc() const {

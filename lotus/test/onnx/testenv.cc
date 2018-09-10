@@ -1,33 +1,25 @@
-#ifdef USE_CUDA
-#include <core/providers/cuda/cuda_execution_provider.h>  //TODO(@chasun): this is a temp hack
-#endif
-#ifdef USE_MKLDNN
-#include <core/providers/mkldnn/mkldnn_execution_provider.h>
-#endif
 #include "testenv.h"
-
 #include "FixedCountFinishCallback.h"
-
+#include <core/common/logging/logging.h>
 #include <core/graph/constants.h>
 #include <core/framework/allocator.h>
-#include <core/common/logging/logging.h>
-
+#include <core/providers/provider_factories.h>
 #include <experimental/filesystem>
 #ifdef _MSC_VER
 #include <filesystem>
 #endif
 
 using namespace std::experimental::filesystem::v1;
-
+using onnxruntime::Status;
 TestEnv::TestEnv(const std::vector<ITestCase*>& tests1, TestResultStat& stat1, SessionFactory& sf1)
-    : next_test_to_run(0), tests(tests1), stat(stat1), finished(new FixedCountFinishCallback(static_cast<int>(tests1.size()))), sf(sf1) {
+    : tests(tests1), next_test_to_run(0), stat(stat1), finished(new FixedCountFinishCallback(static_cast<int>(tests1.size()))), sf(sf1) {
 }
 
 TestEnv::~TestEnv() {
   delete finished;
 }
 
-::onnxruntime::common::Status SessionFactory::create(std::shared_ptr<::onnxruntime::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
+Status SessionFactory::create(std::shared_ptr<::onnxruntime::InferenceSession>& sess, const path& model_url, const std::string& logid) const {
   ::onnxruntime::SessionOptions so;
   so.session_logid = logid;
   so.enable_cpu_mem_arena = enable_cpu_mem_arena_;
@@ -36,27 +28,27 @@ TestEnv::~TestEnv() {
   so.session_thread_pool_size = session_thread_pool_size;
   sess.reset(new ::onnxruntime::InferenceSession(so));
 
-  ::onnxruntime::common::Status status;
-  if (provider_ == onnxruntime::kCudaExecutionProvider) {
-#if USE_CUDA
-    ::onnxruntime::CUDAExecutionProviderInfo cuda_epi;
-    cuda_epi.device_id = 0;
-    status = sess->RegisterExecutionProvider(std::make_unique<::onnxruntime::CUDAExecutionProvider>(cuda_epi));
-    LOTUS_RETURN_IF_ERROR(status);
+  Status status;
+  for (const std::string& provider : providers_) {
+    if (provider == onnxruntime::kCudaExecutionProvider) {
+#ifdef USE_CUDA
+      onnxruntime::CUDAExecutionProviderInfo cuda_pi;
+      cuda_pi.device_id = 0;
+      LOTUS_RETURN_IF_ERROR(sess->RegisterExecutionProvider(::onnxruntime::CreateCUDAExecutionProvider(cuda_pi)));
 #else
-    LOTUS_THROW("This executable was not built with CUDA");
+      LOTUS_THROW("This executable was not built with CUDA");
 #endif
+    }
+    //TODO: add more
   }
-
-  if (provider_ == onnxruntime::kMklDnnExecutionProvider) {
-#if USE_MKLDNN
-    onnxruntime::MKLDNNExecutionProviderInfo mkldnn_epi;
-    status = sess->RegisterExecutionProvider(std::make_unique<onnxruntime::MKLDNNExecutionProvider>(mkldnn_epi));
-    LOTUS_RETURN_IF_ERROR(status);
-#else
-    LOTUS_THROW("This executable was not built with MKLDNN");
+#ifdef USE_MKLDNN
+  ::onnxruntime::CPUExecutionProviderInfo mkldnn_pi;
+  mkldnn_pi.create_arena = enable_cpu_mem_arena_;
+  LOTUS_RETURN_IF_ERROR(sess->RegisterExecutionProvider(::onnxruntime::CreateMKLDNNExecutionProvider(mkldnn_pi)));
 #endif
-  }
+  ::onnxruntime::CPUExecutionProviderInfo cpu_pi;
+  cpu_pi.create_arena = enable_cpu_mem_arena_;
+  status = sess->RegisterExecutionProvider(::onnxruntime::CreateBasicCPUExecutionProvider(cpu_pi));
 
   status = sess->Load(model_url.string());
   LOTUS_RETURN_IF_ERROR(status);

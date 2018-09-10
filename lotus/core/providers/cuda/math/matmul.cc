@@ -31,7 +31,7 @@ Status MatMul<T>::ComputeInternal(OpKernelContext* ctx) const {
   LOTUS_RETURN_IF_ERROR(helper.Compute(left_X->Shape(), right_X->Shape()));
 
   Tensor* Y = ctx->Output(0, helper.OutputShape());
-  LOTUS_RETURN_IF_NOT(Y->Location().name == CUDA, "Output should be allocated on CUDA");
+  LOTUS_RETURN_IF_NOT(strcmp(Y->Location().name, CUDA) == 0, "Output should be allocated on CUDA");
 
   CudaT one = ToCudaType<T>::FromFloat(1.0f);
   CudaT zero = ToCudaType<T>::FromFloat(0.0f);

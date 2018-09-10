@@ -23,7 +23,7 @@ TEST(MLOpTest, ArrayFeatureExtractorTest) {
   vector<float> expected_output;
   for (int i = 0; i < N; ++i) {
     auto offset = i * kCols;
-    for (int j = 0; j < Y.size(); ++j) {
+    for (size_t j = 0; j < Y.size(); ++j) {
       expected_output.push_back(X[offset + Y[j]]);
     }
   }

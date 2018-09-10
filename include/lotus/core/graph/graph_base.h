@@ -151,22 +151,22 @@ class Node {
   Node::Type NodeType() const noexcept;
   // Get function body if the node type is fused.
   // The function body is owned by <*this> node's parent graph.
-  const ::onnxruntime::Function* GetFunctionBody() const noexcept;
+  const Function* GetFunctionBody() const noexcept;
 
   // Get node description.
   const std::string& Description() const noexcept;
 
   // Iterate through Input/OutputDefs() with index, note the loop early terminates with error.
-  static ::onnxruntime::common::Status ForEachWithIndex(
+  static common::Status ForEachWithIndex(
       const ConstPointerContainer<std::vector<NodeArg*>>& nodeArgVec,
-      std::function<::onnxruntime::common::Status(const NodeArg& arg, size_t index)> func) {
+      std::function<common::Status(const NodeArg& arg, size_t index)> func) {
     for (size_t index = 0; index < nodeArgVec.size(); ++index) {
       auto arg = nodeArgVec[index];
       if (!arg->Exists())
         continue;
       LOTUS_RETURN_IF_ERROR(func(*arg, index));
     }
-    return ::onnxruntime::common::Status::OK();
+    return common::Status::OK();
   }
 
   // read only access. requires special wrapper to apply const to the NodeArg
@@ -270,7 +270,10 @@ class Node {
    private:
     LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Definitions);
   };
-
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 26439)
+#endif
   class Relationships {
    public:
     Relationships() = default;
@@ -339,10 +342,10 @@ class Node {
   const Definitions& GetDefinitions() const noexcept { return definitions_; }
   const Relationships& GetRelationships() const noexcept { return relationships_; }
   void SetNodeType(Node::Type node_type) noexcept;
-  void SetFunctionBody(const ::onnxruntime::Function& func);
+  void SetFunctionBody(const Function& func);
 
   // validate and update the input arg count
-  ::onnxruntime::common::Status UpdateInputArgCount();
+  common::Status UpdateInputArgCount();
 
   // Node index. Default to impossible value rather than 0.
   NodeIndex index_ = std::numeric_limits<NodeIndex>::max();
@@ -359,7 +362,7 @@ class Node {
   // OperatorSchema that <*this> node refers to.
   const onnx::OpSchema* op_ = nullptr;
   Node::Type node_type_ = Node::Type::Primitive;
-  const ::onnxruntime::Function* func_body_ = nullptr;
+  const Function* func_body_ = nullptr;
 
   // Node doc string.
   std::string description_;
@@ -379,6 +382,9 @@ class Node {
 
   GraphBase* graph_;
 };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 // TODO: Graph base class.
 // It should cover the common things between function and graph.
@@ -398,7 +404,7 @@ class GraphBase {
   // 2. Check & Setup inner nodes' dependency.
   // 3. Cleanup function definition lists.
   // Returns resolving status.
-  virtual ::onnxruntime::common::Status Resolve() = 0;
+  virtual common::Status Resolve() = 0;
 
   // Getter and Setter for graph name.
   virtual const std::string& Name() const noexcept = 0;
@@ -506,7 +512,7 @@ class GraphBase {
   const Node* SourceNode() const;
   const Node* SinkNode() const;
 
-  ::onnxruntime::common::Status GetNodesInTopologicalOrder(/*out*/ gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const;
+  common::Status GetNodesInTopologicalOrder(/*out*/ gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const;
 
   // Mark Graph as needing Resolve() to be called
   GraphBase& SetGraphResolveNeeded() noexcept {
@@ -605,11 +611,11 @@ class GraphBase {
 
   // Build and verify node connection (edges).
   // Verify NodeArg name/type/shape matching correctly.
-  ::onnxruntime::common::Status BuildConnections(
+  common::Status BuildConnections(
       const std::unordered_map<std::string, Node*>& output_args,
       const std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
-  ::onnxruntime::common::Status VerifyNoDuplicateName(
+  common::Status VerifyNoDuplicateName(
       /*in*/ const std::unordered_set<std::string>& inputs_and_initializers,
       /*out*/ std::unordered_map<std::string, Node*>& output_args,
       /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index);
@@ -619,15 +625,15 @@ class GraphBase {
   // edge.
   // <nodes_in_topological_order> returns nodes' indexes in toplogical
   // order if <Status> returned is "OK", otherwise it's undefined.
-  ::onnxruntime::common::Status CheckIsAcyclic(
+  common::Status CheckIsAcyclic(
       /*out*/ std::vector<NodeIndex>& nodes_in_topological_order) const;
 
   // Apply shape/type inference to a single node. This is a wrapper for
   // invoking ONNX-defined shape+type inference for a single node.
   // Returns the inferred shape+type for every output of the node in
   // output parameter inferredShapes.
-  ::onnxruntime::common::Status InferOutputTypesAndShapes(onnxruntime::Node& node,
-                                                          /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
+  common::Status InferOutputTypesAndShapes(onnxruntime::Node& node,
+                                           /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_

@@ -4,7 +4,6 @@
 #include "TestResultStat.h"
 #include <core/common/common.h>
 #include <core/session/inference_session.h>
-#include "test/framework/TestAllocatorManager.h"
 
 #include <experimental/filesystem>
 #ifdef _MSC_VER
@@ -19,12 +18,12 @@ using FixedCountFinishCallback = FixedCountFinishCallbackImpl<TestCaseResult>;
 
 class SessionFactory {
  private:
-  const std::string provider_;
+  const std::vector<std::string> providers_;
   bool enable_mem_pattern_ = true;
   bool enable_cpu_mem_arena_ = true;
 
  public:
-  SessionFactory(const std::string& provider, bool enable_mem_pattern, bool enable_cpu_mem_arena) : provider_(provider), enable_mem_pattern_(enable_mem_pattern), enable_cpu_mem_arena_(enable_cpu_mem_arena) {}
+  SessionFactory(std::vector<std::string> providers, bool enable_mem_pattern, bool enable_cpu_mem_arena) : providers_(std::move(providers)), enable_mem_pattern_(enable_mem_pattern), enable_cpu_mem_arena_(enable_cpu_mem_arena) {}
   //Create an initialized session from a given model url
   ::onnxruntime::common::Status create(std::shared_ptr<::onnxruntime::InferenceSession>& sess, const std::experimental::filesystem::v1::path& model_url, const std::string& logid) const;
 

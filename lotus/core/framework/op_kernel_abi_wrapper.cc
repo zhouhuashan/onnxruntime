@@ -283,11 +283,11 @@ OpKernelInfoWrapper::OpKernelInfoWrapper(
     const EdgeShapes* input_shape_overrides,
     const EdgeShapes* inferred_output_shapes,
     bool allow_input_shape_query,
-    bool allow_output_shape_query) : impl_(kernel_info),
+    bool allow_output_shape_query) : OpNodeInfoWrapper(kernel_info, input_shape_overrides),
                                      inferred_output_shapes_(inferred_output_shapes),
                                      allow_input_shape_query_(allow_input_shape_query),
-                                     allow_output_shape_query_(allow_output_shape_query),
-                                     OpNodeInfoWrapper(kernel_info, input_shape_overrides) {
+                                     allow_output_shape_query_(allow_output_shape_query),				     impl_(kernel_info)
+                                      {
   assert(allow_input_shape_query || !allow_output_shape_query);
 
   // The input may be exposed using non-overridden sizes.  Exposing output shapes requires
@@ -664,7 +664,7 @@ ML_API_IMP_(MLTensorDataType, TensorWrapper::GetTensorDataType)() const noexcept
 
 ML_API_IMP_(bool, TensorWrapper::IsCPUData)() const noexcept {
   // tells DML whether this tensor is in CPU memory
-  return impl_->Location().name == CPU ||
+  return strcmp(impl_->Location().name, CPU) ==0 ||
       impl_->Location().mem_type == kMemTypeCPUInput ||
       impl_->Location().mem_type == kMemTypeCPUOutput;
 }
@@ -929,8 +929,9 @@ bool AbiOpKernel::InputTensorShapesDefined() const {
 
 EdgeShapes AbiOpKernel::GetInputShapes(OpKernelContext* context) const {
   EdgeShapes ret(context->InputCount());
-
-  for (int i = 0; i < ret.EdgeCount(); ++i) {    
+  //TODO: check before cast
+  int end = static_cast<int>(ret.EdgeCount());
+  for (int i = 0; i < end; ++i) {
     if (context->InputType(i)->IsTensorType()) {
       // The tensor is null if unused
       const Tensor* tensor = context->Input<Tensor>(i);
@@ -963,7 +964,7 @@ void AbiOpKernel::InferAndVerifyOutputSizes(const EdgeShapes* input_shapes, Edge
 
     if (tensor_type.has_shape()) {
       const auto& shape = tensor_type.shape();
-      ML_CHECK_BOOL(shape.dim_size() == output_shapes.GetShape(output_index).size());
+      ML_CHECK_BOOL(static_cast<size_t>(shape.dim_size()) == output_shapes.GetShape(output_index).size());
 
       for (uint32_t output_dim = 0; output_dim < output_shapes.GetShape(output_index).size(); ++output_dim) {
         if (shape.dim(output_dim).has_dim_value()) {

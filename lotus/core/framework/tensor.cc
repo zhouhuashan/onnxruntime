@@ -38,12 +38,12 @@ void Tensor::Init(MLDataType p_type,
 }
 
 Tensor::Tensor(Tensor&& other)
-    : dtype_(other.dtype_),
+    : p_data_(other.p_data_),
+      buffer_deleter_(other.buffer_deleter_),
       shape_(other.shape_),
+      dtype_(other.dtype_),
       alloc_info_(other.alloc_info_),
-      byte_offset_(other.byte_offset_),
-      p_data_(other.p_data_),
-      buffer_deleter_(other.buffer_deleter_) {
+      byte_offset_(other.byte_offset_) {
   other.dtype_ = DataTypeImpl::GetType<float>();
   other.shape_ = TensorShape(vector<int64_t>(1, 0));
   other.p_data_ = nullptr;
@@ -70,7 +70,7 @@ Tensor& Tensor::operator=(Tensor&& other) {
 }
 
 Tensor::Tensor(const Tensor& src)
-    : dtype_(src.dtype_), alloc_info_(src.alloc_info_), shape_(src.shape_), byte_offset_(src.byte_offset_) {
+    : shape_(src.shape_), dtype_(src.dtype_), alloc_info_(src.alloc_info_), byte_offset_(src.byte_offset_) {
   // it may be better to refactor it a little bit to make it a compile error
   // but right now just keep it simple first.
   LOTUS_ENFORCE(src.buffer_deleter_ == nullptr,

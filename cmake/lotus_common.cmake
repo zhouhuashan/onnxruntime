@@ -37,7 +37,7 @@ add_library(lotus_common ${lotus_common_src})
 if(NOT WIN32)
 	target_link_libraries(lotus_common dl)
 endif()
-target_include_directories(lotus_common PRIVATE ${date_INCLUDE_DIR})
+target_include_directories(lotus_common PRIVATE ${LOTUS_ROOT} ${date_INCLUDE_DIR})
 # logging uses date. threadpool uses eigen
 add_dependencies(lotus_common date eigen gsl)
 

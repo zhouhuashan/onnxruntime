@@ -3,20 +3,47 @@
 #include <memory>
 
 #include "core/platform/env.h"
-#include "core/graph/model.h"
 #include "core/framework/tensorprotoutils.h"
 #include <google/protobuf/util/delimited_message_util.h>
 #include <google/protobuf/text_format.h>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#else
+#pragma warning(push)
+#pragma warning(disable : 4018) /*'expression' : signed/unsigned mismatch */
+#pragma warning(disable : 4065) /*switch statement contains 'default' but no 'case' labels*/
+#pragma warning(disable : 4100)
+#pragma warning(disable : 4146) /*unary minus operator applied to unsigned type, result still unsigned*/
+#pragma warning(disable : 4244) /*'conversion' conversion from 'type1' to 'type2', possible loss of data*/
+#pragma warning(disable : 4251) /*'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'*/
+#pragma warning(disable : 4267) /*'var' : conversion from 'size_t' to 'type', possible loss of data*/
+#pragma warning(disable : 4305) /*'identifier' : truncation from 'type1' to 'type2'*/
+#pragma warning(disable : 4307) /*'operator' : integral constant overflow*/
+#pragma warning(disable : 4309) /*'conversion' : truncation of constant value*/
+#pragma warning(disable : 4334) /*'operator' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)*/
+#pragma warning(disable : 4355) /*'this' : used in base member initializer list*/
+#pragma warning(disable : 4506) /*no definition for inline function 'function'*/
+#pragma warning(disable : 4800) /*'type' : forcing value to bool 'true' or 'false' (performance warning)*/
+#pragma warning(disable : 4996) /*The compiler encountered a deprecated declaration.*/
+#endif
 #include "tml.pb.h"
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#else
+#pragma warning(pop)
+#endif
 
 using namespace std::experimental::filesystem::v1;
 
 using namespace onnxruntime;
-using namespace ::onnxruntime::common;
+using namespace onnxruntime::common;
+
 namespace {
 template <typename InputType, typename OutputType>
-common::Status ConvertVector(const InputType& data, OutputType** vec) {
+Status ConvertVector(const InputType& data, OutputType** vec) {
   //void* p = allocator->Alloc(sizeof(OutputType));
   //if (p == nullptr)
   //	return Status(LOTUS, FAIL, "out of memory");
@@ -35,24 +62,16 @@ common::Status ConvertVector(const InputType& data, OutputType** vec) {
 }
 
 template <typename InputType, typename OutputType>
-common::Status Convert(const InputType& tensor_proto, OutputType** p_tensor, AllocatorPtr allocator);
+Status Convert(const InputType& tensor_proto, OutputType** p_tensor);
 
 template <>
-common::Status Convert(const onnx::TensorProto& tensor_proto, Tensor** out, AllocatorPtr allocator) {
-  std::unique_ptr<Tensor> p_tensor;
-  auto st = ::onnxruntime::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, allocator);
-  if (st.IsOK()) *out = p_tensor.release();
-  return st;
+Status Convert(const google::protobuf::RepeatedPtrField<proto::MapInt64ToFloat>& data, VectorMapInt64ToFloat** vec) {
+  return ConvertVector<google::protobuf::RepeatedPtrField<proto::MapInt64ToFloat>, VectorMapInt64ToFloat>(data, vec);
 }
 
 template <>
-common::Status Convert(const google::protobuf::RepeatedPtrField<::onnxruntime::proto::MapInt64ToFloat>& data, VectorMapInt64ToFloat** vec, AllocatorPtr) {
-  return ConvertVector<google::protobuf::RepeatedPtrField<::onnxruntime::proto::MapInt64ToFloat>, VectorMapInt64ToFloat>(data, vec);
-}
-
-template <>
-common::Status Convert(const google::protobuf::RepeatedPtrField<::onnxruntime::proto::MapStringToFloat>& data, VectorMapStringToFloat** vec, AllocatorPtr) {
-  return ConvertVector<google::protobuf::RepeatedPtrField<::onnxruntime::proto::MapStringToFloat>, VectorMapStringToFloat>(data, vec);
+Status Convert(const google::protobuf::RepeatedPtrField<proto::MapStringToFloat>& data, VectorMapStringToFloat** vec) {
+  return ConvertVector<google::protobuf::RepeatedPtrField<proto::MapStringToFloat>, VectorMapStringToFloat>(data, vec);
 }
 
 template <typename InputType, typename OutputType>
@@ -65,61 +84,60 @@ void ConvertMap(const InputType& data, OutputType** out) {
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<std::string, std::string>& data, MapStringToString** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<std::string, std::string>& data, MapStringToString** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<std::string, int64_t>& data, MapStringToInt64** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<std::string, int64_t>& data, MapStringToInt64** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<std::string, float>& data, MapStringToFloat** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<std::string, float>& data, MapStringToFloat** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<std::string, double>& data, MapStringToDouble** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<std::string, double>& data, MapStringToDouble** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<int64_t, std::string>& data, MapInt64ToString** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<int64_t, std::string>& data, MapInt64ToString** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<int64_t, int64_t>& data, MapInt64ToInt64** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<int64_t, int64_t>& data, MapInt64ToInt64** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<int64_t, float>& data, MapInt64ToFloat** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<int64_t, float>& data, MapInt64ToFloat** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 
 template <>
-common::Status Convert(const google::protobuf::Map<int64_t, double>& data, MapInt64ToDouble** out, AllocatorPtr) {
+Status Convert(const google::protobuf::Map<int64_t, double>& data, MapInt64ToDouble** out) {
   ConvertMap(data, out);
   return Status::OK();
 }
 template <typename InputType, typename OutputType>
-Status ProtoToMLValue(const InputType& input, std::unique_ptr<::onnxruntime::MLValue>& value, AllocatorPtr allocator) {
+Status RichTypeProtoToMLValue(const InputType& input, MLValue& value) {
   OutputType* tensor = nullptr;
-  common::Status st = Convert(input, &tensor, allocator);
+  Status st = Convert(input, &tensor);
   if (!st.IsOK()) return st;
-  value = std::make_unique<::onnxruntime::MLValue>();
-  value->Init(tensor,
-              DataTypeImpl::GetType<OutputType>(),
-              DataTypeImpl::GetType<OutputType>()->GetDeleteFunc());
+  value.Init(tensor,
+             DataTypeImpl::GetType<OutputType>(),
+             DataTypeImpl::GetType<OutputType>()->GetDeleteFunc());
   return Status::OK();
 }
 
@@ -137,7 +155,7 @@ static int ExtractFileNo(const std::string& name) {
   return static_cast<int>(ret);
 }
 
-static common::Status SortTensorFileNames(std::vector<path>& input_pb_files) {
+static Status SortTensorFileNames(std::vector<path>& input_pb_files) {
   if (input_pb_files.size() <= 1) return Status::OK();
   std::sort(input_pb_files.begin(), input_pb_files.end(), [](const path& left, const path& right) -> bool {
     std::string leftname = left.filename().string();
@@ -157,7 +175,7 @@ static common::Status SortTensorFileNames(std::vector<path>& input_pb_files) {
 
 //Doesn't support file size >2 GB
 template <typename FUNC>
-Status LoopDataFile(const path& outputs_pb, ::onnxruntime::AllocatorPtr allocator, FUNC func) {
+Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator, FUNC func) {
   std::string content;
   //TODO: mmap is better
   LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
@@ -165,52 +183,66 @@ Status LoopDataFile(const path& outputs_pb, ::onnxruntime::AllocatorPtr allocato
   bool clean_eof = false;
   Status st;
   int item_id = 1;
-  for (::onnxruntime::proto::TraditionalMLData data; google::protobuf::util::ParseDelimitedFromCodedStream(&data, &coded_input, &clean_eof); ++item_id, data.Clear()) {
-    std::unique_ptr<::onnxruntime::MLValue> value;
+  for (proto::TraditionalMLData data; google::protobuf::util::ParseDelimitedFromCodedStream(&data, &coded_input, &clean_eof); ++item_id, data.Clear()) {
+    MLValue value;
     switch (data.values_case()) {
-      case ::onnxruntime::proto::TraditionalMLData::kVectorMapStringToFloat:
-        st = ProtoToMLValue<decltype(data.vector_map_string_to_float().v()), VectorMapStringToFloat>(data.vector_map_string_to_float().v(), value, allocator);
+      case proto::TraditionalMLData::kVectorMapStringToFloat:
+        st = RichTypeProtoToMLValue<decltype(data.vector_map_string_to_float().v()), VectorMapStringToFloat>(data.vector_map_string_to_float().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kVectorMapInt64ToFloat:
-        st = ProtoToMLValue<decltype(data.vector_map_int64_to_float().v()), VectorMapInt64ToFloat>(data.vector_map_int64_to_float().v(), value, allocator);
+      case proto::TraditionalMLData::kVectorMapInt64ToFloat:
+        st = RichTypeProtoToMLValue<decltype(data.vector_map_int64_to_float().v()), VectorMapInt64ToFloat>(data.vector_map_int64_to_float().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapStringToString:
-        st = ProtoToMLValue<decltype(data.map_string_to_string().v()), MapStringToString>(data.map_string_to_string().v(), value, allocator);
+      case proto::TraditionalMLData::kMapStringToString:
+        st = RichTypeProtoToMLValue<decltype(data.map_string_to_string().v()), MapStringToString>(data.map_string_to_string().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapStringToInt64:
-        st = ProtoToMLValue<decltype(data.map_string_to_int64().v()), MapStringToInt64>(data.map_string_to_int64().v(), value, allocator);
+      case proto::TraditionalMLData::kMapStringToInt64:
+        st = RichTypeProtoToMLValue<decltype(data.map_string_to_int64().v()), MapStringToInt64>(data.map_string_to_int64().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapStringToFloat:
-        st = ProtoToMLValue<decltype(data.map_string_to_float().v()), MapStringToFloat>(data.map_string_to_float().v(), value, allocator);
+      case proto::TraditionalMLData::kMapStringToFloat:
+        st = RichTypeProtoToMLValue<decltype(data.map_string_to_float().v()), MapStringToFloat>(data.map_string_to_float().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapStringToDouble:
-        st = ProtoToMLValue<decltype(data.map_string_to_double().v()), MapStringToDouble>(data.map_string_to_double().v(), value, allocator);
+      case proto::TraditionalMLData::kMapStringToDouble:
+        st = RichTypeProtoToMLValue<decltype(data.map_string_to_double().v()), MapStringToDouble>(data.map_string_to_double().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapInt64ToString:
-        st = ProtoToMLValue<decltype(data.map_int64_to_string().v()), MapInt64ToString>(data.map_int64_to_string().v(), value, allocator);
+      case proto::TraditionalMLData::kMapInt64ToString:
+        st = RichTypeProtoToMLValue<decltype(data.map_int64_to_string().v()), MapInt64ToString>(data.map_int64_to_string().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapInt64ToInt64:
-        st = ProtoToMLValue<decltype(data.map_int64_to_int64().v()), MapInt64ToInt64>(data.map_int64_to_int64().v(), value, allocator);
+      case proto::TraditionalMLData::kMapInt64ToInt64:
+        st = RichTypeProtoToMLValue<decltype(data.map_int64_to_int64().v()), MapInt64ToInt64>(data.map_int64_to_int64().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapInt64ToFloat:
-        st = ProtoToMLValue<decltype(data.map_int64_to_float().v()), MapInt64ToFloat>(data.map_int64_to_float().v(), value, allocator);
+      case proto::TraditionalMLData::kMapInt64ToFloat:
+        st = RichTypeProtoToMLValue<decltype(data.map_int64_to_float().v()), MapInt64ToFloat>(data.map_int64_to_float().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kMapInt64ToDouble:
-        st = ProtoToMLValue<decltype(data.map_int64_to_double().v()), MapInt64ToDouble>(data.map_int64_to_double().v(), value, allocator);
+      case proto::TraditionalMLData::kMapInt64ToDouble:
+        st = RichTypeProtoToMLValue<decltype(data.map_int64_to_double().v()), MapInt64ToDouble>(data.map_int64_to_double().v(), value);
         break;
-      case ::onnxruntime::proto::TraditionalMLData::kTensor:
-        st = ProtoToMLValue<onnx::TensorProto, ::onnxruntime::Tensor>(data.tensor(), value, allocator);
+      case proto::TraditionalMLData::kTensor:
+        st = Utils::TensorProtoToMLValue(data.tensor(), allocator, nullptr, 0, value);
         break;
       default:
         st = Status(LOTUS, NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
     }
     if (!st.IsOK()) break;
-    st = func(data.name(), value.get(), data.debug_info());
+    st = func(data.name(), &value, data.debug_info());
     if (!st.IsOK()) break;
   }
   if (!st.IsOK()) return LOTUS_MAKE_STATUS(LOTUS, FAIL, "load the ", item_id, "-th item in file '", outputs_pb.string(), "' failed,", st.ErrorMessage());
   if (!clean_eof) {
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "parse input file '", outputs_pb.string(), "' failed, clean_eof==false");
+  }
+  return Status::OK();
+}
+
+Status loadModel(std::istream& model_istream, onnx::ModelProto* p_model_proto) {
+  if (!model_istream.good()) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Invalid istream object.");
+  }
+  if (!p_model_proto) {
+    return Status(LOTUS, INVALID_ARGUMENT, "Null model_proto ptr.");
+  }
+  const bool result = p_model_proto->ParseFromIstream(&model_istream);
+  if (!result) {
+    return Status(LOTUS, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
   }
   return Status::OK();
 }
@@ -222,7 +254,7 @@ Status loadModelFile(const std::string& model_url, onnx::ModelProto* model_pb) {
     oss << "open file " << model_url << " failed";
     return Status(LOTUS, NO_SUCHFILE, oss.str());
   }
-  return onnxruntime::Model::Load(input, model_pb);
+  return loadModel(input, model_pb);
 }
 
 template <typename T>
@@ -233,11 +265,6 @@ static void RepeatedPtrFieldToVector(const ::google::protobuf::RepeatedPtrField<
 }
 }  // namespace
 
-class DataLoader {
- public:
-  virtual ::onnxruntime::common::Status Load(const std::experimental::filesystem::v1::path& p, std::unique_ptr<::onnxruntime::MLValue>& value) const = 0;
-  virtual ~DataLoader() {}
-};
 /**
    * test_case_dir must have contents of:
    * model.onnx
@@ -248,16 +275,15 @@ class DataLoader {
    */
 class OnnxTestCase : public ITestCase {
  private:
-  std::unordered_map<std::string, DataLoader*> loaders_;
   std::string test_case_name_;
   std::experimental::filesystem::v1::path model_url_;
-  ::onnxruntime::AllocatorPtr allocator_;
+  AllocatorPtr allocator_;
   std::vector<std::string> debuginfo_strings;
   std::mutex m_;
   std::vector<onnx::ValueInfoProto> input_value_info_;
   std::vector<onnx::ValueInfoProto> output_value_info_;
 
-  ::onnxruntime::common::Status FromPbFiles(const std::vector<std::experimental::filesystem::v1::path>& files, std::vector<::onnxruntime::MLValue>& output_values);
+  Status FromPbFiles(const std::vector<std::experimental::filesystem::v1::path>& files, std::vector<MLValue>& output_values);
   std::vector<std::experimental::filesystem::v1::path> test_data_dirs_;
 
   std::string GetDatasetDebugInfoString(size_t dataset_id) override {
@@ -268,29 +294,24 @@ class OnnxTestCase : public ITestCase {
   }
   //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
   // for https://github.com/onnx/onnx/issues/679
-  ::onnxruntime::common::Status ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, ::onnxruntime::MLValue>& out);
+  Status ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out);
   std::string node_name_;
   std::once_flag model_parsed_;
   std::once_flag config_parsed_;
   double per_sample_tolerance_;
   double relative_per_sample_tolerance_;
   bool post_processing_;
-  ::onnxruntime::common::Status ParseModel();
-  ::onnxruntime::common::Status ParseConfig();
+  Status ParseModel();
+  Status ParseConfig();
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OnnxTestCase);
 
  public:
-  OnnxTestCase(const ::onnxruntime::AllocatorPtr&, const std::string& test_case_name);
+  OnnxTestCase(const AllocatorPtr&, const std::string& test_case_name);
   explicit OnnxTestCase(const std::string& test_case_name) : test_case_name_(test_case_name) {}
-  ~OnnxTestCase() {
-    for (auto& ivp : loaders_) {
-      delete ivp.second;
-    }
-  }
-  void SetAllocator(const ::onnxruntime::AllocatorPtr&) override;
-  ::onnxruntime::common::Status GetPerSampleTolerance(double* value) override;
-  ::onnxruntime::common::Status GetRelativePerSampleTolerance(double* value) override;
-  ::onnxruntime::common::Status GetPostProcessing(bool* value) override;
+  void SetAllocator(const AllocatorPtr&) override;
+  Status GetPerSampleTolerance(double* value) override;
+  Status GetRelativePerSampleTolerance(double* value) override;
+  Status GetPostProcessing(bool* value) override;
 
   const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
     return output_value_info_[i];
@@ -298,12 +319,12 @@ class OnnxTestCase : public ITestCase {
   size_t GetDataCount() const override {
     return test_data_dirs_.size();
   }
-  ::onnxruntime::common::Status GetNodeName(std::string* out) override {
-    ::onnxruntime::common::Status st = ParseModel();
+  Status GetNodeName(std::string* out) override {
+    Status st = ParseModel();
     if (st.IsOK()) *out = node_name_;
     return st;
   }
-  ::onnxruntime::common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) override;
+  Status SetModelPath(const std::experimental::filesystem::v1::path& path) override;
 
   const std::experimental::filesystem::v1::path& GetModelUrl() const override {
     return model_url_;
@@ -311,11 +332,11 @@ class OnnxTestCase : public ITestCase {
   const std::string& GetTestCaseName() const override {
     return test_case_name_;
   }
-  ::onnxruntime::common::Status LoadInputData(size_t id, std::unordered_map<std::string, ::onnxruntime::MLValue>& feeds) override;
-  ::onnxruntime::common::Status LoadOutputData(size_t id, std::vector<::onnxruntime::MLValue>& output_values) override;
+  Status LoadInputData(size_t id, std::unordered_map<std::string, MLValue>& feeds) override;
+  Status LoadOutputData(size_t id, std::vector<MLValue>& output_values) override;
 };
 
-ITestCase* CreateOnnxTestCase(const ::onnxruntime::AllocatorPtr& ptr, const std::string& test_case_name) {
+ITestCase* CreateOnnxTestCase(const AllocatorPtr& ptr, const std::string& test_case_name) {
   return new OnnxTestCase(ptr, test_case_name);
 }
 ITestCase* CreateOnnxTestCase(const std::string& test_case_name) {
@@ -361,7 +382,7 @@ Status OnnxTestCase::ParseConfig() {
       return;
     }
     //parse model
-    ::onnxruntime::proto::TestCaseConfig config_pb;
+    onnxruntime::proto::TestCaseConfig config_pb;
     std::string body;
     st = Env::Default().ReadFileAsString(config_path.c_str(), &body);
     if (!st.IsOK()) {
@@ -409,7 +430,7 @@ Status OnnxTestCase::SetModelPath(const path& m) {
 }
 
 //load tensors from disk
-static common::Status LoadTensors(const std::vector<path>& pb_files, std::vector<onnx::TensorProto>* input_pbs) {
+static Status LoadTensors(const std::vector<path>& pb_files, std::vector<onnx::TensorProto>* input_pbs) {
   for (size_t i = 0; i != pb_files.size(); ++i) {
     onnx::TensorProto tensor;
     std::ifstream input(pb_files.at(i), std::ios::in | std::ios::binary);
@@ -424,7 +445,7 @@ static common::Status LoadTensors(const std::vector<path>& pb_files, std::vector
   return Status::OK();
 }
 
-Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, ::onnxruntime::MLValue>& feeds) {
+Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, MLValue>& feeds) {
   if (id >= test_data_dirs_.size())
     return Status(LOTUS, INVALID_ARGUMENT, "out of bound");
 
@@ -436,7 +457,7 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, ::
   if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
     std::ostringstream oss;
     oss << debuginfo_strings[id];
-    st = LoopDataFile(inputs_pb, allocator_, [&feeds, &oss](const std::string& name, ::onnxruntime::MLValue* value, const std::string& debug_info) {
+    st = LoopDataFile(inputs_pb, allocator_, [&feeds, &oss](const std::string& name, MLValue* value, const std::string& debug_info) {
       if (!debug_info.empty()) {
         oss << ":" << debug_info;
       }
@@ -474,15 +495,12 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, ::
   return Status::OK();
 }
 
-class TensorDataLoder : public DataLoader {
- private:
-  ::onnxruntime::AllocatorPtr allocator_;
-
- public:
-  TensorDataLoder(const ::onnxruntime::AllocatorPtr& allocator) : allocator_(allocator) {
-  }
-
-  Status Load(const path& f, std::unique_ptr<::onnxruntime::MLValue>& value) const override {
+Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<MLValue>& output_values) {
+  for (const path& f : files) {
+    if (!f.has_extension()) return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "unknown file type, path = ", f);
+    std::string s = f.extension().string();
+    if (s != ".pb")
+      continue;
     onnx::TensorProto tensor;
     {
       std::ifstream input(f, std::ios::in | std::ios::binary);
@@ -493,38 +511,23 @@ class TensorDataLoder : public DataLoader {
         return Status(LOTUS, FAIL, "parse file failed");
       }
     }
-    auto status = ProtoToMLValue<onnx::TensorProto, ::onnxruntime::Tensor>(tensor, value, allocator_);
-    if (!status.IsOK()) return status;
-    return Status::OK();
-  }
-};
-
-Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<::onnxruntime::MLValue>& output_values) {
-  for (const path& f : files) {
-    if (!f.has_extension()) return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "unknown file type, path = ", f);
-    std::string s = f.extension().string();
-    if (s.empty() || s[0] != '.')
-      return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "file has no extension, path = ", f);
-    auto iter = loaders_.find(s.substr(1));
-    if (iter == loaders_.end()) {
-      return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "unknown file extension, path = ", f);
-    }
-    std::unique_ptr<::onnxruntime::MLValue> v;
-    LOTUS_RETURN_IF_ERROR(iter->second->Load(f, v));
-    output_values.emplace_back(*v.get());
+    MLValue value;
+    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::TensorProtoToMLValue(tensor, allocator_, nullptr, 0, value));
+    output_values.emplace_back(value);
   }
   return Status::OK();
 }
 
-Status OnnxTestCase::LoadOutputData(size_t id, std::vector<::onnxruntime::MLValue>& output_values) {
+Status OnnxTestCase::LoadOutputData(size_t id, std::vector<MLValue>& output_values) {
   if (id >= test_data_dirs_.size())
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name_, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs_.size());
   Status st = ParseModel();
   if (!st.IsOK())
     return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
   path outputs_pb = test_data_dirs_[id] / "outputs.pb";
+  output_values.clear();
   if (std::experimental::filesystem::exists(outputs_pb)) {  //has an all-in-one output file
-    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, ::onnxruntime::MLValue* value, const std::string&) {
+    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, MLValue* value, const std::string&) {
       output_values.push_back(*value);
       return Status::OK();
     });
@@ -546,7 +549,7 @@ Status OnnxTestCase::LoadOutputData(size_t id, std::vector<::onnxruntime::MLValu
   return Status::OK();
 }
 
-Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, ::onnxruntime::MLValue>& out) {
+Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out) {
   int len = static_cast<int>(input_value_info_.size());
   bool has_valid_names = true;
   //"0","1",...
@@ -611,20 +614,17 @@ Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pb
   for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
     std::string name = var_names[input_index];
     const onnx::TensorProto& input = input_pbs[input_index];
-    std::unique_ptr<::onnxruntime::MLValue> v1;
-    auto status = ProtoToMLValue<onnx::TensorProto, ::onnxruntime::Tensor>(input, v1, allocator_);
-    LOTUS_RETURN_IF_ERROR(status);
-    out.insert(std::make_pair(name, *v1.get()));
+    MLValue v1;
+    LOTUS_RETURN_IF_ERROR(Utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
+    out.insert(std::make_pair(name, v1));
   }
   return Status::OK();
 }
 
-OnnxTestCase::OnnxTestCase(const ::onnxruntime::AllocatorPtr& allocator, const std::string& test_case_name) : test_case_name_(test_case_name) {
+OnnxTestCase::OnnxTestCase(const AllocatorPtr& allocator, const std::string& test_case_name) : test_case_name_(test_case_name) {
   SetAllocator(allocator);
 }
 
-void OnnxTestCase::SetAllocator(const ::onnxruntime::AllocatorPtr& allocator) {
+void OnnxTestCase::SetAllocator(const AllocatorPtr& allocator) {
   allocator_ = allocator;
-  loaders_["pb"] = new TensorDataLoder(allocator);
-  //TODO: add more
 }

@@ -182,5 +182,45 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
 
   return Status::OK();
 }
+
+#define LOTUS_CASE_PROTO_TRACE(X, Y)                         \
+  case onnx::TensorProto_DataType::TensorProto_DataType_##X: \
+    size *= sizeof(Y);                                       \
+    break;
+
+common::Status GetSizeInBytesFromTensorProto(const onnx::TensorProto& tensor_proto, size_t* out) {
+  const auto& dims = tensor_proto.dims();
+  int64_t size = 1;
+  for (int i = 0; i < dims.size(); ++i) {
+    if (dims[i] < 0) {
+      size = -1;
+      break;
+    }
+    size *= dims[i];
+  }
+  //If 'size' is too big, size*sizeof(T) could overflow. Then Allocator may allocate less memory than needed
+  //Here max(sizeof(T)) is 8. 63 - 8 = 55.
+  if (size < 0 || size >= (1LL << 55)) return common::Status(common::LOTUS, common::FAIL, "Invalid TensorProto");
+  switch (tensor_proto.data_type()) {
+    LOTUS_CASE_PROTO_TRACE(FLOAT, float);
+    LOTUS_CASE_PROTO_TRACE(DOUBLE, double);
+    LOTUS_CASE_PROTO_TRACE(BOOL, bool);
+    LOTUS_CASE_PROTO_TRACE(INT8, int8_t);
+    LOTUS_CASE_PROTO_TRACE(INT16, int16_t);
+    LOTUS_CASE_PROTO_TRACE(INT32, int32_t);
+    LOTUS_CASE_PROTO_TRACE(INT64, int64_t);
+    LOTUS_CASE_PROTO_TRACE(UINT8, uint8_t);
+    LOTUS_CASE_PROTO_TRACE(UINT16, uint16_t);
+    LOTUS_CASE_PROTO_TRACE(UINT32, uint32_t);
+    LOTUS_CASE_PROTO_TRACE(UINT64, uint64_t);
+    LOTUS_CASE_PROTO_TRACE(FLOAT16, MLFloat16);
+    case onnx::TensorProto_DataType::TensorProto_DataType_STRING:
+    default:
+      return common::Status(common::LOTUS, common::NOT_IMPLEMENTED);
+  }
+  *out = size;
+  return Status::OK();
+}
+
 }  // namespace Utils
 }  // namespace onnxruntime

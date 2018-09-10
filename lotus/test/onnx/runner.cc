@@ -7,7 +7,7 @@
 #include <core/graph/constants.h>
 #include <core/platform/env.h>
 #include <core/framework/tensorprotoutils.h>
-#include <core/providers/cpu/cpu_execution_provider.h>
+
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -284,7 +284,6 @@ void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store
 
 EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   std::unordered_map<std::string, ::onnxruntime::MLValue> feeds;
-  std::vector<::onnxruntime::MLValue> output_values;
   common::Status status = c_->LoadInputData(task_id, feeds);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
@@ -308,6 +307,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name_.c_str(), status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
   }
+  std::vector<::onnxruntime::MLValue> output_values;
   //TODO: if there are no output value files, just skip the validation
   status = c_->LoadOutputData(task_id, output_values);
   if (!status.IsOK()) {

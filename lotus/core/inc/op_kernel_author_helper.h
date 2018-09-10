@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "op_kernel_author.h"
+#include "core/inc/op_kernel_author.h"
 #include <limits>
 #include <string>
 #include <vector>

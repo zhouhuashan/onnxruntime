@@ -1,6 +1,5 @@
 #include <core/framework/environment.h>
 #include <core/graph/constants.h>
-#include <core/graph/model.h>
 #include <core/framework/allocator.h>
 #include <core/common/logging/logging.h>
 #include <core/common/logging/sinks/clog_sink.h>
@@ -56,7 +55,8 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Error creating environment: %s \n", status.ErrorMessage().c_str());
     return -1;
   }
-  std::string provider = onnxruntime::kCpuExecutionProvider;
+
+  std::vector<std::string> providers{onnxruntime::kCpuExecutionProvider};
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
   int concurrent_session_runs = Env::Default().GetNumCpuCores();
@@ -102,9 +102,9 @@ int main(int argc, char* argv[]) {
           break;
         case 'e':
           if (!strcmp(optarg, "cpu")) {
-            provider = onnxruntime::kCpuExecutionProvider;
+            providers.push_back(onnxruntime::kCpuExecutionProvider);
           } else if (!strcmp(optarg, "cuda")) {
-            provider = onnxruntime::kCudaExecutionProvider;
+            providers.push_back(onnxruntime::kCudaExecutionProvider);
           } else {
             usage();
             return -1;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
   AllocatorPtr cpu_allocator = std::make_shared<::onnxruntime::CPUAllocator>();
   std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
   TestResultStat stat;
-  SessionFactory sf(provider, true, enable_cpu_mem_arena);
+  SessionFactory sf(providers, true, enable_cpu_mem_arena);
   sf.enable_sequential_execution = enable_sequential_execution;
   TestEnv args(tests, stat, sf);
   Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));

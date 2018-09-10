@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <cstring>
 #include <type_traits>
 
 #include "core/common/common.h"
@@ -35,20 +36,23 @@ enum MemType : int {                // TODO use enum class
 
 struct AllocatorInfo {
   // use string for name, so we could have customized allocator in execution provider.
-  std::string name;
+  const char* name;
   int id;
   MemType mem_type;
   AllocatorType type;
 
- public:
-  AllocatorInfo(const std::string& name, AllocatorType type, int id1 = 0, MemType mem_type1 = kMemTypeDefault)
-      : name(name),
+  constexpr AllocatorInfo(const char* name1, AllocatorType type, int id1 = 0, MemType mem_type1 = kMemTypeDefault)
+#if (defined(__GNUC__) || defined(__clang__))
+      __attribute__((nonnull))
+#endif
+      : name(name1),
         id(id1),
         mem_type(mem_type1),
-        type(type) {}
+        type(type) {
+  }
 
   inline bool operator==(const AllocatorInfo& other) const {
-    return mem_type == other.mem_type && type == other.type && id == other.id && name == other.name;
+    return mem_type == other.mem_type && type == other.type && id == other.id && strcmp(name, other.name) == 0;
   }
 
   // To make AllocatorInfo become a valid key in std map
@@ -60,7 +64,7 @@ struct AllocatorInfo {
     if (id != other.id)
       return id < other.id;
 
-    return name < other.name;
+    return strcmp(name, other.name) < 0;
   }
 
   inline std::string ToString() const {

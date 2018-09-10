@@ -125,7 +125,7 @@ cublasStatus_t cublasTransposeHelper(cublasHandle_t, cublasOperation_t, cublasOp
   return CUBLAS_STATUS_SUCCESS;
 }
 
-cublasStatus_t cublasCopyHelper(cublasHandle_t handle, int n, const half* x, int incx, half* y, int incy) {
+cublasStatus_t cublasCopyHelper(cublasHandle_t, int n, const half* x, int incx, half* y, int incy) {
   dim3 dimGrid((unsigned int)(n + COPY_BLOCK_DIM - 1) / COPY_BLOCK_DIM, 1, 1);
   dim3 dimBlock(COPY_BLOCK_DIM, 1, 1);
   CopyVectorHalf<<<dimGrid, dimBlock>>>(x, incx, y, incy, n);

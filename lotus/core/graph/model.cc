@@ -253,12 +253,12 @@ static Status LoadModel(const T& file_path, std::shared_ptr<Model>& p_model, con
     status = Model::Load(fd, p_model, local_registries);
   } catch (std::exception& ex) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return Status(LOTUS, FAIL, ex.what());
   }
   if (!status.IsOK()) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return status;
   }
   return Env::Default().FileClose(fd);
@@ -273,12 +273,12 @@ static Status SaveModel(Model& model, const T& file_path) {
     status = Model::Save(model, fd);
   } catch (std::exception& ex) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return Status(LOTUS, FAIL, ex.what());
   }
   if (!status.IsOK()) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return status;
   }
   return Env::Default().FileClose(fd);

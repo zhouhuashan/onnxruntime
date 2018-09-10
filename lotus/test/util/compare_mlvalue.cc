@@ -5,7 +5,7 @@
 #include "core/graph/onnx_protobuf.h"
 
 #include "core/inc/op_kernel_author.h"
-#include "core/util/math_cpuonly.h"
+#include "Eigen/Core"
 #include "Eigen/src/Core/arch/CUDA/Half.h"
 
 using namespace onnxruntime;

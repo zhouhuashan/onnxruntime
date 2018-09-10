@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <limits.h>
 
 #include "core/common/common.h"
 #include "core/graph/basic_types.h"

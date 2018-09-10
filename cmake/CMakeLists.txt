@@ -38,6 +38,7 @@ option(lotus_USE_PREINSTALLED_EIGEN "Use pre-installed EIGEN. Need to provide ei
 option(lotus_BUILD_BENCHMARKS "Build Lotus micro-benchmarks" OFF)
 option(lotus_USE_TVM "Build tvm for code-gen" OFF)
 option(lotus_USE_OPENMP "Build with OpenMP support" OFF)
+option(lotus_BUILD_SHARED_LIB "Build a shared library" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
@@ -256,8 +257,15 @@ if (WIN32)
         )
     endif()
 
-    # compile warning level 4
-    string(APPEND CMAKE_CXX_FLAGS " /W4")
+    # set compile warning level to 3 on CUDA build but 4 on CPU-only build
+    if(lotus_USE_CUDA)
+        #CMake hardcoded /W3 in its 'Windows-NVIDIA-CUDA.cmake'. We'd better keep consistent with it.
+        #Change it to /W4 will result build failure
+        string(APPEND CMAKE_CXX_FLAGS " /W3")
+    else()
+        string(APPEND CMAKE_CXX_FLAGS " /W4")
+    endif()
+
 
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
       # treat warnings as errors
@@ -297,7 +305,6 @@ if (lotus_USE_JEMALLOC)
 endif()
 
 include_directories(
-    ${LOTUS_ROOT}
     ${LOTUS_INCLUDE_DIR}
     ${gsl_INCLUDE_DIR}
 )
@@ -324,7 +331,7 @@ if (lotus_USE_CUDA)
     add_definitions(-DUSE_CUDA=1)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 14)
-    find_package(CUDA 9.0)
+    find_package(CUDA 9.0 REQUIRED)
     include(cub)
     set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
       ${CUDA_curand_LIBRARY} ${CUDA_cupti_LIBRARY} ${CUDA_cusolver_LIBRARY})
@@ -341,6 +348,9 @@ if (lotus_USE_CUDA)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_60,code=sm_60") # P series
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_70,code=sm_70") # V series
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --default-stream per-thread")
+    if (NOT WIN32)
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
+    endif()
 endif()
 
 include(lotus_common.cmake)

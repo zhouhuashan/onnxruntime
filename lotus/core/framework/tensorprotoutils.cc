@@ -1,4 +1,4 @@
-#include "tensorprotoutils.h"
+#include "core/framework/tensorprotoutils.h"
 
 #include <memory>
 #include "core/graph/onnx_protobuf.h"
@@ -127,6 +127,16 @@ common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
   return common::Status::OK();
 }
 
+Status TensorProtoToMLValue(const onnx::TensorProto& input, AllocatorPtr allocator, void* preallocated,
+                            size_t preallocated_size, MLValue& value) {
+  std::unique_ptr<Tensor> p_tensor;
+  LOTUS_RETURN_IF_ERROR(GetTensorFromTensorProto(input, &p_tensor, allocator, preallocated, preallocated_size));
+  value.Init(p_tensor.release(),
+             DataTypeImpl::GetType<Tensor>(),
+             DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
+  return Status::OK();
+}
+
 #define LOTUS_CASE_PROTO(X, Y)                               \
   case onnx::TensorProto_DataType::TensorProto_DataType_##X: \
     return GetTensorByTypeFromTensorProto<Y>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
@@ -159,51 +169,6 @@ common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
       return common::Status(common::LOTUS, common::INVALID_ARGUMENT, ostr.str());
     }
   }
-}
-
-template <typename T>
-size_t GetTensorSize(const TensorShape& tensor_shape) {
-  return sizeof(T) * tensor_shape.Size();
-}
-
-#define LOTUS_CASE_PROTO_TRACE(X, Y)                         \
-  case onnx::TensorProto_DataType::TensorProto_DataType_##X: \
-    size = GetTensorSize<Y>(tensor_shape);                   \
-    break;
-
-common::Status TraceTensorAllocFromTensorProto(int mlvalue_index, const onnx::TensorProto& tensor_proto, MLValuePatternPlanner* planner) {
-  if (!planner)
-    return Status(LOTUS, INVALID_ARGUMENT);
-
-  std::vector<int64_t> tensor_shape_vec = GetTensorShapeFromTensorProto(tensor_proto);
-  TensorShape tensor_shape{tensor_shape_vec};
-  int64_t size = 0;
-  switch (tensor_proto.data_type()) {
-    LOTUS_CASE_PROTO_TRACE(FLOAT, float);
-    LOTUS_CASE_PROTO_TRACE(DOUBLE, double);
-    LOTUS_CASE_PROTO_TRACE(BOOL, bool);
-    LOTUS_CASE_PROTO_TRACE(INT8, int8_t);
-    LOTUS_CASE_PROTO_TRACE(INT16, int16_t);
-    LOTUS_CASE_PROTO_TRACE(INT32, int32_t);
-    LOTUS_CASE_PROTO_TRACE(INT64, int64_t);
-    LOTUS_CASE_PROTO_TRACE(UINT8, uint8_t);
-    LOTUS_CASE_PROTO_TRACE(UINT16, uint16_t);
-    LOTUS_CASE_PROTO_TRACE(UINT32, uint32_t);
-    LOTUS_CASE_PROTO_TRACE(UINT64, uint64_t);
-    LOTUS_CASE_PROTO_TRACE(FLOAT16, MLFloat16);
-    case onnx::TensorProto_DataType::TensorProto_DataType_STRING: {
-      //string tensor size is not predictable, don't plan on this.
-      LOGS_DEFAULT(WARNING) << "Can't plan on string tensors.";
-      return Status::OK();
-    }
-    default: {
-      std::ostringstream ostr;
-      ostr << "Initialized tensor with unexpected type: " << tensor_proto.data_type();
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, ostr.str());
-    }
-  }
-
-  return planner->TraceAllocation(mlvalue_index, Align256(size));
 }
 }  // namespace Utils
 }  // namespace onnxruntime

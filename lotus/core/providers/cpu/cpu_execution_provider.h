@@ -13,9 +13,9 @@ using FuseRuleFn = std::function<void(const onnxruntime::Graph&, std::vector<std
 class CPUExecutionProvider : public IExecutionProvider {
  public:
   explicit CPUExecutionProvider(const CPUExecutionProviderInfo& info) {
-    UNUSED_PARAMETER(info);
     DeviceAllocatorRegistrationInfo device_info({kMemTypeDefault, [](int) { return std::make_unique<CPUAllocator>(); }, std::numeric_limits<size_t>::max()});
 #ifdef USE_JEMALLOC
+    UNUSED_PARAMETER(info);
     //JEMalloc already has memory pool, so just use device allocator.
     InsertAllocator(kMemTypeDefault,
                     std::shared_ptr<IArenaAllocator>(
@@ -39,11 +39,11 @@ class CPUExecutionProvider : public IExecutionProvider {
                 const std::vector<const KernelRegistry*>& kernel_registries) const override;
 
   Status CopyTensor(const Tensor& src, Tensor& dst) const override {
-    LOTUS_ENFORCE(dst.Location().name == CPU);
+    LOTUS_ENFORCE(strcmp(dst.Location().name, CPU) == 0);
 
     // Todo: support copy with different devices.
-    if (src.Location().name != CPU)
-      LOTUS_NOT_IMPLEMENTED("copy to ", src.Location().name, " is not implemented");
+    if (strcmp(src.Location().name, CPU) != 0)
+      LOTUS_NOT_IMPLEMENTED("copy from ", src.Location().name, " is not implemented");
 
     // no really copy needed if is copy to cpu.
     dst.ShallowCopy(src);

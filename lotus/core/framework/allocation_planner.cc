@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
     auto index = name_index.second;
     index_to_name[index] = name_index.first;
     out << "(" << index << ") " << name_index.first << " : ";
-    if (0 <= index && index < plan_size) {
+    if (0 <= index && static_cast<size_t>(index) < plan_size) {
       auto& elt_plan = plan.allocation_plan[index];
       out << elt_plan.alloc_kind;
       if (elt_plan.alloc_kind == AllocKind::kReuse) out << " " << elt_plan.reused_buffer;
@@ -69,7 +69,7 @@ std::ostream& operator<<(std::ostream& out, std::pair<const SequentialExecutionP
   }
 
   out << "\nExecution Plan:\n";
-  for (int i = 0; i < plan.execution_plan.size(); ++i) {
+  for (size_t i = 0; i < plan.execution_plan.size(); ++i) {
     auto& step = plan.execution_plan[i];
     auto& node = *graph.GetNode(step.node_index);
     out << "[" << i << "] ";
@@ -99,12 +99,12 @@ class PlannerImpl {
               const MLValueNameIdxMap& mlvalue_name_idx_map,
               const ISequentialPlannerContext& context,
               SequentialExecutionPlan& plan)
-      : graph_(graph),
+      : context_{context},
+        plan_{plan},
+        graph_(graph),
         execution_providers_{providers},
         kernel_registry_{kernel_registry},
-        mlvalue_name_idx_map_{mlvalue_name_idx_map},
-        context_{context},
-        plan_{plan} {
+        mlvalue_name_idx_map_{mlvalue_name_idx_map} {
   }
 
   Status CreatePlan();
@@ -135,8 +135,8 @@ class PlannerImpl {
     MLValueIndex ml_value;
     // deallocate_point is an index into the execution-plan; thus, ml_value becomes free after
     // this step in the execution-plan is completed.
-    int deallocate_point;
-    FreeBufferInfo(MLValueIndex mlvalue, int dealloc_point) : ml_value(mlvalue), deallocate_point(dealloc_point) {}
+    size_t deallocate_point;
+    FreeBufferInfo(MLValueIndex mlvalue, size_t dealloc_point) : ml_value(mlvalue), deallocate_point(dealloc_point) {}
   };
   // freelist_ : a list of ml-values whose buffers are free to be reused, sorted by when
   // they became free (more recently freed earlier in the list).
@@ -199,7 +199,7 @@ class PlannerImpl {
     for (auto pair : alias_map) {
       if (pair.second == output_arg_num) {
         // we _must_ reuse this input to satisfy aliasing requirement: (e.g., for reshape)
-        if ((0 <= pair.first) && (pair.first < input_args.size())) {
+        if ((0 <= pair.first) && (static_cast<size_t>(pair.first) < input_args.size())) {
           auto p_input_arg = input_args[pair.first];
           if (p_input_arg->Exists()) {
             *reusable_input = Index(p_input_arg->Name());
@@ -212,7 +212,7 @@ class PlannerImpl {
     const std::vector<std::pair<int, int>>& inplace_map = p_opkernel_def->MayInplace();
     for (auto pair : inplace_map) {
       if (pair.second == output_arg_num) {
-        if ((0 <= pair.first) && (pair.first < input_args.size())) {
+        if ((0 <= pair.first) && (static_cast<size_t>(pair.first) < input_args.size())) {
           auto p_input_arg = input_args[pair.first];
           if (p_input_arg->Exists()) {
             auto input_arg_index = Index(p_input_arg->Name());
@@ -363,12 +363,12 @@ class PlannerImpl {
       auto& outputs = pnode->OutputDefs();
       auto num_outputs = outputs.size();
 
-      for (int i = 0; i < num_outputs; ++i) {
+      for (size_t i = 0; i < num_outputs; ++i) {
         auto* node_output = outputs[i];
         if (node_output->Exists()) {
           MLValueIndex index = Index(node_output->Name());
           ProcessDef(index, node_output);
-          if (default_allocator_info.name != CPU) {
+          if (strcmp(default_allocator_info.name, CPU) != 0) {
             // By default, outputs of this node are allocated on the default device allocator,
             // except for outputs marked for allocation in MemoryType:
             auto memory_type_iter = mem_type_allocated_args.find(i);
@@ -444,7 +444,7 @@ class PlannerImpl {
 
     GeneratePlanForWeights();
 
-    for (int program_counter = 0; program_counter < execution_plan.size(); ++program_counter) {
+    for (size_t program_counter = 0; program_counter < execution_plan.size(); ++program_counter) {
       SequentialExecutionPlan::NodeExecutionPlan step = execution_plan[program_counter];
       auto pnode = graph_.GetNode(step.node_index);
       // graph outputs
@@ -502,23 +502,26 @@ class PlannerImpl {
     // Set plan->execution_plan[n].free_from_index/free_to_index for every n that must free some ml-value.
 
     plan_.to_be_freed.reserve(freelist_.size());
-    int prev_dealloc_point = -1;  // when >=0, this indicates previous n that contains deallocations
-    int current = 0;              // current index into the to_be_freed vector
+    bool has_prev_dealloc_point = false;
+    size_t prev_dealloc_point = 0;
+    //TODO: should be size_t
+    int current = 0;  // current index into the to_be_freed vector
 
     // Copy all items from freelist to to_be_freed in reverse order
     for (auto it = freelist_.rbegin(), end = freelist_.rend(); it != end; ++it) {
       plan_.to_be_freed.push_back(it->ml_value);
       //
       if (it->deallocate_point != prev_dealloc_point) {
-        if (prev_dealloc_point >= 0)
+        if (has_prev_dealloc_point)
           plan_.execution_plan[prev_dealloc_point].free_to_index = current - 1;
         prev_dealloc_point = it->deallocate_point;
+        has_prev_dealloc_point = true;
         plan_.execution_plan[prev_dealloc_point].free_from_index = current;
       }
       current++;
     }
 
-    if (prev_dealloc_point >= 0)
+    if (has_prev_dealloc_point)
       plan_.execution_plan[prev_dealloc_point].free_to_index = current - 1;
   }
 

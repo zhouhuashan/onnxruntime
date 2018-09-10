@@ -15,7 +15,7 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
 
   size_t size = 1024;
 
-  EXPECT_EQ(cuda_arena->Info().name, CUDA);
+  EXPECT_STREQ(cuda_arena->Info().name, CUDA);
   EXPECT_EQ(cuda_arena->Info().id, cuda_device_id);
   EXPECT_EQ(cuda_arena->Info().mem_type, kMemTypeDefault);
   EXPECT_EQ(cuda_arena->Info().type, AllocatorType::kArenaAllocator);
@@ -29,7 +29,7 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
 
   auto pinned_allocator = CreateAllocator(pinned_allocator_info);
 
-  EXPECT_EQ(pinned_allocator->Info().name, CUDA_PINNED);
+  EXPECT_STREQ(pinned_allocator->Info().name, CUDA_PINNED);
   EXPECT_EQ(pinned_allocator->Info().id, 0);
   EXPECT_EQ(pinned_allocator->Info().mem_type, kMemTypeCPUOutput);
   EXPECT_EQ(pinned_allocator->Info().type, AllocatorType::kArenaAllocator);
@@ -39,7 +39,7 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
   EXPECT_TRUE(pinned_addr);
 
   const auto& cpu_arena = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
-  EXPECT_EQ(cpu_arena->Info().name, CPU);
+  EXPECT_STREQ(cpu_arena->Info().name, CPU);
   EXPECT_EQ(cpu_arena->Info().id, 0);
   EXPECT_EQ(cpu_arena->Info().mem_type, kMemTypeDefault);
   EXPECT_EQ(cpu_arena->Info().type, AllocatorType::kArenaAllocator);

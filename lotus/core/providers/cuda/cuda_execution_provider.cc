@@ -199,9 +199,9 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst, int exe
     return Status(LOTUS, FAIL, "Tensor size mismatch");
   }
 
-  if (src.Location().name != CUDA && src.Location().name != CUDA_PINNED &&
-      dst.Location().name != CUDA && dst.Location().name != CUDA_PINNED) {
-    return Status(LOTUS, FAIL, "Unsupported tensor location: src_location is: " + src.Location().name + " and dst_location is: " + dst.Location().name);
+  if (strcmp(src.Location().name, CUDA) != 0 && strcmp(src.Location().name, CUDA_PINNED) != 0 &&
+      strcmp(dst.Location().name, CUDA) != 0 && strcmp(dst.Location().name, CUDA_PINNED) != 0) {
+    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Unsupported tensor location: src_location is: ", src.Location().name, " and dst_location is: ", dst.Location().name);
   }
 
   size_t bytes = src.DataType()->Size() * src.Shape().Size();
@@ -209,19 +209,19 @@ Status CUDAExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst, int exe
   const void* src_data = src.DataRaw();
   void* dst_data = dst.MutableDataRaw();
 
-  if (dst.Location().name == CUDA) {
-    if (src.Location().name == CUDA_PINNED) {
+  if (strcmp(dst.Location().name, CUDA) == 0) {
+    if (strcmp(src.Location().name, CUDA_PINNED) == 0) {
       // copy from pinned memory to GPU, this is non-blocking
       CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyHostToDevice, streams_[exec_queue_id]));
-    } else if (src.Location().name == CUDA) {
+    } else if (strcmp(src.Location().name, CUDA) == 0) {
       // copying between GPU, this is non-blocking
       CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyDeviceToDevice, streams_[kCudaStreamDefault]));
     } else {
       // copy from other CPU memory to GPU, this is blocking
       CUDA_RETURN_IF_ERROR(cudaMemcpy(dst_data, src_data, bytes, cudaMemcpyHostToDevice));
     }
-  } else if (src.Location().name == CUDA) {
-    if (dst.Location().name == CUDA_PINNED) {
+  } else if (strcmp(src.Location().name, CUDA) == 0) {
+    if (strcmp(dst.Location().name, CUDA_PINNED) == 0) {
       // copying from GPU to pinned memory, this is non-blocking
       CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(dst_data, src_data, bytes, cudaMemcpyDeviceToHost, streams_[exec_queue_id]));
     } else {
