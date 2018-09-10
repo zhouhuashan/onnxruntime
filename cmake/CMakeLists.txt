@@ -218,6 +218,16 @@ set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include
     $<TARGET_PROPERTY:nnvm_compiler,INTERFACE_INCLUDE_DIRECTORIES>)
 add_definitions(-DUSE_TVM)
 include(lotus_codegen.cmake)
+
+if (WIN32 AND MSVC)
+    # wd4100: identifier' : unreferenced formal parameter
+    # wd4244: conversion from 'int' to 'char', possible loss of data
+    # wd4251: class X needs to have dll-interface to be used by clients of class Y
+    # wd4275: non dll-interface class X used as base for dll-interface class Y
+    # wd4389: signed/unsigned mismatch
+    set(DISABLE_WARNINGS_FOR_TVM "/wd4100" "/wd4244" "/wd4275" "/wd4251" "/wd4389")
+endif()
+
 endif()
 
 if (lotus_RUN_ONNX_TESTS)

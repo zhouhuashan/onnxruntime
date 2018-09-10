@@ -39,7 +39,7 @@ function(AddTest)
       endif()
     endif()
     if (lotus_USE_TVM)
-      target_compile_options(${_UT_TARGET} PRIVATE /wd4100 /wd4244 /wd4275 /wd4251 /wd4389)
+      target_compile_options(${_UT_TARGET} PRIVATE $DISABLE_WARNINGS_FOR_TVM)
     endif()
   endif()
 
