@@ -10,7 +10,7 @@ License of onnxruntime
 
 **MICROSOFT SOFTWARE LICENSE TERMS**
 
-**LOTUS RUNTIME (PREVIEW)**
+**ONNX RUNTIME (PREVIEW)**
 
 These license terms are an agreement between you and Microsoft Corporation 
 (or one of its affiliates). They apply to the software named above and any 
