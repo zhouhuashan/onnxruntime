@@ -39,7 +39,7 @@ function(AddTest)
       endif()
     endif()
     if (lotus_USE_TVM)
-      target_compile_options(${_UT_TARGET} PRIVATE $DISABLE_WARNINGS_FOR_TVM)
+        target_compile_options(${_UT_TARGET} PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
     endif()
   endif()
 
