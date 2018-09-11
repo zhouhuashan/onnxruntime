@@ -4,9 +4,9 @@ file(GLOB_RECURSE lotus_providers_srcs
 )
 
 file(GLOB_RECURSE lotus_contrib_ops_srcs
-	"${LOTUS_ROOT}/contrib_ops/*.h"
+    "${LOTUS_ROOT}/contrib_ops/*.h"
     "${LOTUS_ROOT}/contrib_ops/*.cc"
-	"${LOTUS_ROOT}/contrib_ops/cpu/*.h"
+    "${LOTUS_ROOT}/contrib_ops/cpu/*.h"
     "${LOTUS_ROOT}/contrib_ops/cpu/*.cc"
 )
 
@@ -93,7 +93,7 @@ if (lotus_USE_TVM)
     add_library(lotus_providers_nuphar ${lotus_providers_nuphar_cc_srcs})
     lotus_add_include_to_target(lotus_providers_nuphar onnx protobuf::libprotobuf)
     set_target_properties(lotus_providers_nuphar PROPERTIES FOLDER "Lotus")
-    target_include_directories(lotus_providers_nuphar PRIVATE ${TVM_INCLUDES})
+    target_include_directories(lotus_providers_nuphar PRIVATE ${LOTUS_ROOT} ${TVM_INCLUDES})
     set_target_properties(lotus_providers_nuphar PROPERTIES LINKER_LANGUAGE CXX)
     target_compile_options(lotus_providers_nuphar PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
 endif()
