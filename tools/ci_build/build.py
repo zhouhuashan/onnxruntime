@@ -442,6 +442,8 @@ def build_python_wheel(source_dir, build_dir, configs, use_cuda):
             run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel', '--use_cuda'], cwd=cwd)
         else:
             run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel'], cwd=cwd)
+        if is_ubuntu_1604():
+            run_subprocess([os.path.join(source_dir, 'rename_manylinux.sh')], cwd=cwd+'/dist')
 
 def main():
     args = parse_arguments()
