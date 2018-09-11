@@ -17,7 +17,7 @@ function(AddTest)
   set_target_properties(${_UT_TARGET} PROPERTIES FOLDER "LotusTest")
 
   if (_UT_DEPENDS)
-    add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
+    add_dependencies(${_UT_TARGET} ${_UT_DEPENDS} eigen)
   endif(_UT_DEPENDS)
 
   target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${lotus_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
@@ -221,7 +221,7 @@ set(lotus_test_tvm_dependencies
 
 add_library(lotus_test_utils_for_framework ${lotus_test_utils_src})
 lotus_add_include_to_target(lotus_test_utils_for_framework gtest onnx protobuf::libprotobuf)
-add_dependencies(lotus_test_utils_for_framework ${lotus_EXTERNAL_DEPENDENCIES})
+add_dependencies(lotus_test_utils_for_framework ${lotus_EXTERNAL_DEPENDENCIES} eigen)
 target_include_directories(lotus_test_utils_for_framework PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS})
 # Add the define for conditionally using the framework Environment class in TestEnvironment
 target_compile_definitions(lotus_test_utils_for_framework PUBLIC -DHAVE_FRAMEWORK_LIB)
@@ -231,7 +231,7 @@ if (SingleUnitTestProject)
 else()
   add_library(lotus_test_utils ${lotus_test_utils_src})
   lotus_add_include_to_target(lotus_test_utils gtest onnx protobuf::libprotobuf)
-  add_dependencies(lotus_test_utils ${lotus_EXTERNAL_DEPENDENCIES})
+  add_dependencies(lotus_test_utils ${lotus_EXTERNAL_DEPENDENCIES} eigen)
   target_include_directories(lotus_test_utils PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS})
 endif()
 

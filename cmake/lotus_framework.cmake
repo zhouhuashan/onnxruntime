@@ -21,7 +21,7 @@ if(lotus_USE_CUDA)
   set_target_properties(lotus_framework PROPERTIES LINKER_LANGUAGE CUDA)
 endif()
 # need onnx to build to create headers that this project includes
-add_dependencies(lotus_framework ${lotus_EXTERNAL_DEPENDENCIES})
+add_dependencies(lotus_framework ${lotus_EXTERNAL_DEPENDENCIES} eigen)
 
 if (WIN32)
     # Add Code Analysis properties to enable C++ Core checks. Have to do it via a props file include. 
