@@ -317,6 +317,13 @@ void OpTester::RunOnCpuAndCuda(ExpectResult expect_result, const std::string& ex
 #endif
 }
 
+void OpTester::RunOnCpuAndCudaWithTVM(ExpectResult expect_result, const std::string& expected_failure_string) {
+  Run(expect_result, expected_failure_string, onnxruntime::kCpuExecutionProvider);
+#if defined(USE_CUDA) && defined(USE_TVM)
+  Run(expect_result, expected_failure_string, onnxruntime::kCudaExecutionProvider);
+#endif
+}
+
 void OpTester::RunOnMklDnn(ExpectResult expect_result, const std::string& expected_failure_string) {
 #ifdef USE_MKLDNN
   Run(expect_result, expected_failure_string, onnxruntime::kMklDnnExecutionProvider);

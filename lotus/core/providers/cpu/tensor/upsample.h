@@ -7,10 +7,9 @@ namespace onnxruntime {
 constexpr const char* UpsampleModeNN = "nearest";
 constexpr const char* UpsampleModeLinear = "linear";
 
-template <typename T>
-class Upsample : public OpKernel {
- public:
-  Upsample(OpKernelInfo info) : OpKernel(info) {
+class UpsampleBase {
+ protected:
+  UpsampleBase(OpKernelInfo info) {
     std::string mode;
     LOTUS_ENFORCE(info.GetAttr<std::string>("mode", &mode).IsOK());
 
@@ -22,11 +21,6 @@ class Upsample : public OpKernel {
     }
   }
 
-  ~Upsample() override = default;
-
-  Status Compute(OpKernelContext* context) const override;
-
- protected:
   enum class UpsampleMode {
     NN = 0,      // nearest neighbour
     LINEAR = 1,  // linear interpolation
@@ -47,4 +41,14 @@ class Upsample : public OpKernel {
     }
   }
 };
+
+template <typename T>
+class Upsample : public UpsampleBase, public OpKernel {
+ public:
+  Upsample(OpKernelInfo info) : UpsampleBase(info), OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
 }  // namespace onnxruntime

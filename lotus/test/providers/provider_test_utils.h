@@ -210,6 +210,7 @@ struct OpTester {
 
   void Run(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "", onnxruntime::ProviderType provider_type = onnxruntime::kCpuExecutionProvider);
   void RunOnCpuAndCuda(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
+  void RunOnCpuAndCudaWithTVM(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
   void RunOnMklDnn(ExpectResult expect_result = ExpectResult::kExpectSuccess, const std::string& expected_failure_string = "");
 
   struct Data {

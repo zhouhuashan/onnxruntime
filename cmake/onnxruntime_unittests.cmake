@@ -23,7 +23,7 @@ function(AddTest)
   target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${lotus_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
   if (lotus_USE_TVM)
     target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${LOTUS_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${lotus_CUDNN_HOME}/include ${TVM_INCLUDES})
-  else(lotus_USE_TVM)
+  else()
     target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${LOTUS_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${lotus_CUDNN_HOME}/include)
   endif()
 
@@ -39,7 +39,7 @@ function(AddTest)
       endif()
     endif()
     if (lotus_USE_TVM)
-        target_compile_options(${_UT_TARGET} PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
+      target_compile_options(${_UT_TARGET} PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
     endif()
   endif()
 
@@ -205,20 +205,6 @@ file(GLOB_RECURSE lotus_test_tvm_src
   "${LOTUS_ROOT}/test/tvm/*.cc"
   )
 
-set(lotus_test_tvm_libs
-  tvm
-  nnvm_compiler
-  onnxruntime_codegen_utils
-  )
-
-set(lotus_test_tvm_dependencies
-  tvm
-  nnvm_compiler
-  onnxruntime_codegen_utils
-  )
-
-
-
 add_library(lotus_test_utils_for_framework ${lotus_test_utils_src})
 lotus_add_include_to_target(lotus_test_utils_for_framework gtest onnx protobuf::libprotobuf)
 add_dependencies(lotus_test_utils_for_framework ${lotus_EXTERNAL_DEPENDENCIES} eigen)
@@ -243,8 +229,8 @@ if (SingleUnitTestProject)
 
   if (lotus_USE_TVM)
     list(APPEND all_tests ${lotus_test_tvm_src})
-    list(APPEND all_libs ${lotus_test_tvm_libs})
-    list(APPEND all_dependencies ${lotus_test_tvm_dependencies})
+    list(APPEND all_libs ${onnxruntime_tvm_libs})
+    list(APPEND all_dependencies ${onnxruntime_tvm_dependencies})
   endif()
   # we can only have one 'main', so remove them all and add back the providers test_main as it sets
   # up everything we need for all tests
@@ -368,6 +354,7 @@ set(onnx_test_libs
   lotus_test_utils
   onnxruntime_session
   ${onnx_cuda_test_libs}
+  ${onnxruntime_tvm_libs}
   ${onnx_mkldnn_test_libs}
   onnxruntime_providers
   onnxruntime_framework
