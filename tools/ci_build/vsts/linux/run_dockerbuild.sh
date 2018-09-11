@@ -25,10 +25,10 @@ echo "bc=$BUILD_CONFIG bo=$BUILD_OS bd=$BUILD_DEVICE bdir=$BUILD_DIR bex=$BUILD_
 
 cd $SCRIPT_DIR/docker
 if [ $BUILD_DEVICE = "gpu" ]; then
-    IMAGE="ubuntu16.04"
+    IMAGE="ubuntu16.04-cuda9.0-cudnn7.0"
     docker build -t "lotus-$IMAGE" -f Dockerfile.ubuntu_gpu .
 else
-    IMAGE="ubuntu16.04-cuda9.0-cudnn7.0"
+    IMAGE="ubuntu16.04"
     docker build -t "lotus-$IMAGE" --build-arg OS_VERSION=16.04 -f Dockerfile.ubuntu .
 fi
 

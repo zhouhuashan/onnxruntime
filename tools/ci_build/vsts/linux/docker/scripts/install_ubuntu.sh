@@ -25,6 +25,7 @@ apt-get update && apt-get install -y --no-install-recommends \
         aria2 \
         bzip2 \
         unzip \
+        zip \
         rsync libunwind8 \
         python3-setuptools python3-numpy python3-wheel python python3-pip
 
