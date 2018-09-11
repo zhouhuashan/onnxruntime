@@ -50,18 +50,18 @@
         <file src="@@DebugBinaryRoot@@/external/onnx/Debug/onnx.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnx.lib" />
 		<file src="@@DebugBinaryRoot@@/external/onnx/Debug/onnx_proto.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnx_proto.lib" />
 		<file src="@@DebugBinaryRoot@@/external/protobuf/cmake/Debug/libprotobufd.lib" target="lib/native/debug/@@MSBuildArchitecture@@/libprotobufd.lib" />
-		<file src="@@DebugBinaryRoot@@/Debug/lotusIR_graph.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotusIR_graph.lib" />
-		<file src="@@DebugBinaryRoot@@/Debug/lotus_common.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotus_common.lib" />
-		<file src="@@DebugBinaryRoot@@/Debug/lotus_framework.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotus_framework.lib" />
-		<file src="@@DebugBinaryRoot@@/Debug/lotus_providers.lib" target="lib/native/debug/@@MSBuildArchitecture@@/lotus_providers.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/onnxruntime_graph.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnxruntime_graph.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/onnxruntime_common.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnxruntime_common.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/onnxruntime_framework.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnxruntime_framework.lib" />
+		<file src="@@DebugBinaryRoot@@/Debug/onnxruntime_providers.lib" target="lib/native/debug/@@MSBuildArchitecture@@/onnxruntime_providers.lib" />
 		
 		<file src="@@ReleaseBinaryRoot@@/external/onnx/Release/onnx.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnx.lib" />
 		<file src="@@ReleaseBinaryRoot@@/external/onnx/Release/onnx_proto.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnx_proto.lib" />
 		<file src="@@ReleaseBinaryRoot@@/external/protobuf/cmake/Release/libprotobuf.lib" target="lib/native/retail/@@MSBuildArchitecture@@/libprotobuf.lib" />
-		<file src="@@ReleaseBinaryRoot@@/Release/lotusIR_graph.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotusIR_graph.lib" />
-		<file src="@@ReleaseBinaryRoot@@/Release/lotus_common.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotus_common.lib" />
-		<file src="@@ReleaseBinaryRoot@@/Release/lotus_framework.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotus_framework.lib" />
-		<file src="@@ReleaseBinaryRoot@@/Release/lotus_providers.lib" target="lib/native/retail/@@MSBuildArchitecture@@/lotus_providers.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/onnxruntime_graph.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnxruntime_graph.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/onnxruntime_common.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnxruntime_common.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/onnxruntime_framework.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnxruntime_framework.lib" />
+		<file src="@@ReleaseBinaryRoot@@/Release/onnxruntime_providers.lib" target="lib/native/retail/@@MSBuildArchitecture@@/onnxruntime_providers.lib" />
 		
 		<!-- headers -->
 		<file src="@@SrcRoot@@\lotus\core\common\*.h" target="build\native\include\core\common" />

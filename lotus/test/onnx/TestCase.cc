@@ -233,7 +233,7 @@ Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator, FUNC func) {
   return Status::OK();
 }
 
-Status loadModel(std::istream& model_istream, onnx::ModelProto* p_model_proto) {
+Status loadModel(std::istream& model_istream, ONNX_NAMESPACE::ModelProto* p_model_proto) {
   if (!model_istream.good()) {
     return Status(LOTUS, INVALID_ARGUMENT, "Invalid istream object.");
   }
@@ -247,7 +247,7 @@ Status loadModel(std::istream& model_istream, onnx::ModelProto* p_model_proto) {
   return Status::OK();
 }
 
-Status loadModelFile(const std::string& model_url, onnx::ModelProto* model_pb) {
+Status loadModelFile(const std::string& model_url, ONNX_NAMESPACE::ModelProto* model_pb) {
   std::ifstream input(model_url, std::ios::in | std::ios::binary);
   if (!input) {
     std::ostringstream oss;
@@ -294,7 +294,7 @@ class OnnxTestCase : public ITestCase {
   }
   //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
   // for https://github.com/onnx/onnx/issues/679
-  Status ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out);
+  Status ConvertInput(const std::vector<ONNX_NAMESPACE::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out);
   std::string node_name_;
   std::once_flag model_parsed_;
   std::once_flag config_parsed_;
@@ -430,7 +430,7 @@ Status OnnxTestCase::SetModelPath(const path& m) {
 }
 
 //load tensors from disk
-static Status LoadTensors(const std::vector<path>& pb_files, std::vector<onnx::TensorProto>* input_pbs) {
+static Status LoadTensors(const std::vector<path>& pb_files, std::vector<ONNX_NAMESPACE::TensorProto>* input_pbs) {
   for (size_t i = 0; i != pb_files.size(); ++i) {
     ONNX_NAMESPACE::TensorProto tensor;
     std::ifstream input(pb_files.at(i), std::ios::in | std::ios::binary);
@@ -501,7 +501,7 @@ Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<MLV
     std::string s = f.extension().string();
     if (s != ".pb")
       continue;
-    onnx::TensorProto tensor;
+    ONNX_NAMESPACE::TensorProto tensor;
     {
       std::ifstream input(f, std::ios::in | std::ios::binary);
       if (!input) {
@@ -549,7 +549,7 @@ Status OnnxTestCase::LoadOutputData(size_t id, std::vector<MLValue>& output_valu
   return Status::OK();
 }
 
-Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out) {
+Status OnnxTestCase::ConvertInput(const std::vector<ONNX_NAMESPACE::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out) {
   int len = static_cast<int>(input_value_info_.size());
   bool has_valid_names = true;
   //"0","1",...
@@ -613,7 +613,7 @@ Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pb
   }
   for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
     std::string name = var_names[input_index];
-    const onnx::TensorProto& input = input_pbs[input_index];
+    const ONNX_NAMESPACE::TensorProto& input = input_pbs[input_index];
     MLValue v1;
     LOTUS_RETURN_IF_ERROR(Utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
     out.insert(std::make_pair(name, v1));

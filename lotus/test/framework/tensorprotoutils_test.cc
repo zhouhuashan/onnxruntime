@@ -1,6 +1,6 @@
 #include "core/platform/env.h"
 #include "core/framework/tensor.h"
-#include "core/framework/tensorprotoutils.h"
+#include "core/graph/onnx_protobuf.h"
 
 #include "gtest/gtest.h"
 

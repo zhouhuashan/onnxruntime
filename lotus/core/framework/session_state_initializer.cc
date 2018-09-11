@@ -259,7 +259,7 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
   return common::Status::OK();
 }
 
-static common::Status PlanTensor(MLValuePatternPlanner& planner, const MLValueNameIdxMap& mlvalue_name_idx_map, const std::string& name, const onnx::TensorProto& tensor_proto) {
+static common::Status PlanTensor(MLValuePatternPlanner& planner, const MLValueNameIdxMap& mlvalue_name_idx_map, const std::string& name, const ONNX_NAMESPACE::TensorProto& tensor_proto) {
   int mlvalue_index;
   LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
   size_t len;

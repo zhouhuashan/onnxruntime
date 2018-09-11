@@ -633,7 +633,7 @@ class GraphBase {
   // Returns the inferred shape+type for every output of the node in
   // output parameter inferredShapes.
   common::Status InferOutputTypesAndShapes(onnxruntime::Node& node,
-                                           /*out*/ std::vector<onnx::TypeProto>& inferred_shapes);
+                                           /*out*/ std::vector<ONNX_NAMESPACE::TypeProto>& inferred_shapes);
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_

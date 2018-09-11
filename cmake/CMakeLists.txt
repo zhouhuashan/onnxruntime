@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Project
-project(Lotus C CXX)
+project(onnxruntime C CXX)
 include(CheckCXXCompilerFlag)
 
 # Set C++14 as standard for the whole project
@@ -42,7 +42,7 @@ option(lotus_BUILD_SHARED_LIB "Build a shared library" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
-include(lotus_cmake_utils.cmake)
+include(onnxruntime_cmake_utils.cmake)
 
 if (MSVC)
   if (lotus_MSVC_STATIC_RUNTIME)
@@ -228,7 +228,7 @@ if (WIN32 AND MSVC)
     set(DISABLED_WARNINGS_FOR_TVM "/wd4100" "/wd4244" "/wd4275" "/wd4251" "/wd4389")
 endif()
 
-include(lotus_codegen.cmake)
+include(onnxruntime_codegen.cmake)
 endif()
 
 if (lotus_RUN_ONNX_TESTS)
@@ -353,33 +353,33 @@ if (lotus_USE_CUDA)
     endif()
 endif()
 
-include(lotus_common.cmake)
-include(lotusIR_graph.cmake)
-include(lotus_framework.cmake)
-include(lotus_providers.cmake)
-include(lotus_session.cmake)
+include(onnxruntime_common.cmake)
+include(onnxruntime_graph.cmake)
+include(onnxruntime_framework.cmake)
+include(onnxruntime_providers.cmake)
+include(onnxruntime_session.cmake)
 
 if(lotus_USE_MKLDNN)
-  set(LOTUS_PROVIDERS_MKLDNN lotus_providers_mkldnn)
+  set(LOTUS_PROVIDERS_MKLDNN onnxruntime_providers_mkldnn)
 endif()
 if(lotus_USE_CUDA)
-  set(LOTUS_PROVIDERS_CUDA lotus_providers_cuda)
+  set(LOTUS_PROVIDERS_CUDA onnxruntime_providers_cuda)
 endif()
 if(lotus_USE_TVM)
-  set(LOTUS_PROVIDERS_NUPHAR lotus_providers_nuphar)
+  set(LOTUS_PROVIDERS_NUPHAR onnxruntime_providers_nuphar)
 endif()
 
 if (lotus_ENABLE_PYTHON)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
 endif()
-include(lotus_python.cmake)
+include(onnxruntime_python.cmake)
 endif()
 
 if (lotus_BUILD_SHARED_LIB)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
-  include(lotus_runtime.cmake)
+  include(onnxruntime.cmake)
 endif()
 endif()
 
@@ -389,6 +389,6 @@ if (lotus_BUILD_UNIT_TESTS)
   # we need to make sure this is turned off since it
   # turned ON by the previous step when building a shared lib
   set(CMAKE_SKIP_BUILD_RPATH OFF)
-  include(lotus_unittests.cmake)
+  include(onnxruntime_unittests.cmake)
 endif()
 

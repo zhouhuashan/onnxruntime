@@ -113,45 +113,45 @@ file(GLOB_RECURSE lotus_test_providers_src
 
 set(lotus_test_common_libs
   lotus_test_utils
-  lotus_common
+  onnxruntime_common
   gtest
   gmock
   )
 
 set(lotus_test_ir_libs
   lotus_test_utils
-  lotusIR_graph
+  onnxruntime_graph
   onnx
   onnx_proto
-  lotus_common
+  onnxruntime_common
   protobuf::libprotobuf
   gtest gmock
   )
 
 set(lotus_test_framework_libs
   lotus_test_utils_for_framework
-  lotus_session
-  lotus_providers
-  lotus_framework
-  lotus_util
-  lotusIR_graph
+  onnxruntime_session
+  onnxruntime_providers
+  onnxruntime_framework
+  onnxruntime_util
+  onnxruntime_graph
   onnx
   onnx_proto
-  lotus_common
+  onnxruntime_common
   protobuf::libprotobuf
   gtest gmock
   )
 
 if(lotus_USE_CUDA)
-  list(APPEND lotus_test_framework_libs lotus_providers_cuda)
+  list(APPEND lotus_test_framework_libs onnxruntime_providers_cuda)
 endif()
 
 if(lotus_USE_MKLDNN)
-  list(APPEND lotus_test_framework_libs lotus_providers_mkldnn)
+  list(APPEND lotus_test_framework_libs onnxruntime_providers_mkldnn)
 endif()
 
 if(lotus_USE_TVM)
-  list(APPEND lotus_test_framework_libs lotus_providers_nuphar)
+  list(APPEND lotus_test_framework_libs onnxruntime_providers_nuphar)
 endif()
 
 if(WIN32)
@@ -162,17 +162,17 @@ endif()
 
 set(lotus_test_providers_libs
   lotus_test_utils_for_framework
-  lotus_session
+  onnxruntime_session
   ${LOTUS_PROVIDERS_CUDA}
   ${LOTUS_PROVIDERS_MKLDNN}
   ${LOTUS_PROVIDERS_NUPHAR}
-  lotus_providers
-  lotus_framework
-  lotus_util
-  lotusIR_graph
+  onnxruntime_providers
+  onnxruntime_framework
+  onnxruntime_util
+  onnxruntime_graph
   onnx
   onnx_proto
-  lotus_common
+  onnxruntime_common
   protobuf::libprotobuf
   gtest gmock
   )
@@ -185,15 +185,15 @@ if (lotus_USE_MLAS AND WIN32)
 endif()
 
 if(lotus_USE_CUDA)
-  list(APPEND lotus_test_providers_dependencies lotus_providers_cuda)
+  list(APPEND lotus_test_providers_dependencies onnxruntime_providers_cuda)
 endif()
 
 if(lotus_USE_MKLDNN)
-  list(APPEND lotus_test_providers_dependencies lotus_providers_mkldnn)
+  list(APPEND lotus_test_providers_dependencies onnxruntime_providers_mkldnn)
 endif()
 
 if(lotus_USE_TVM)
-  list(APPEND lotus_test_providers_dependencies lotus_providers_nuphar)
+  list(APPEND lotus_test_providers_dependencies onnxruntime_providers_nuphar)
 endif()
 
 if( NOT WIN32)
@@ -208,13 +208,13 @@ file(GLOB_RECURSE lotus_test_tvm_src
 set(lotus_test_tvm_libs
   tvm
   nnvm_compiler
-  lotus_codegen_utils
+  onnxruntime_codegen_utils
   )
 
 set(lotus_test_tvm_dependencies
   tvm
   nnvm_compiler
-  lotus_codegen_utils
+  onnxruntime_codegen_utils
   )
 
 
@@ -290,7 +290,7 @@ else()
     TARGET lotus_test_framework
     SOURCES ${lotus_test_framework_src}
     LIBS ${lotus_test_framework_libs}
-    # code smell! see if CPUExecutionProvider should move to framework so lotus_providers isn't needed.
+    # code smell! see if CPUExecutionProvider should move to framework so onnxruntime_providers isn't needed.
     DEPENDS ${lotus_test_providers_dependencies}
   )
 
@@ -354,28 +354,28 @@ add_dependencies(onnx_test_runner_common eigen ${lotus_EXTERNAL_DEPENDENCIES})
 target_include_directories(onnx_test_runner_common PRIVATE ${eigen_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx)
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
-lotus_protobuf_generate(APPEND_PATH IMPORT_DIRS ${LOTUS_ROOT}/core/protobuf TARGET onnx_test_runner_common)
+onnxruntime_protobuf_generate(APPEND_PATH IMPORT_DIRS ${LOTUS_ROOT}/core/protobuf TARGET onnx_test_runner_common)
 
 if(lotus_USE_CUDA)
-  set(onnx_cuda_test_libs lotus_providers_cuda)
+  set(onnx_cuda_test_libs onnxruntime_providers_cuda)
 endif()
 
 if(lotus_USE_MKLDNN)
-  set(onnx_mkldnn_test_libs lotus_providers_mkldnn)
+  set(onnx_mkldnn_test_libs onnxruntime_providers_mkldnn)
 endif()
 
 set(onnx_test_libs
   lotus_test_utils
-  lotus_session
+  onnxruntime_session
   ${onnx_cuda_test_libs}
   ${onnx_mkldnn_test_libs}
-  lotus_providers
-  lotus_framework
-  lotus_util
-  lotusIR_graph
+  onnxruntime_providers
+  onnxruntime_framework
+  onnxruntime_util
+  onnxruntime_graph
   onnx
   onnx_proto
-  lotus_common
+  onnxruntime_common
   ${MLAS_LIBRARY}
   ${FS_STDLIB}
   ${lotus_EXTERNAL_LIBRARIES}
@@ -413,7 +413,7 @@ set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(lotus_BUILD_BENCHMARKS)
   add_executable(lotus_benchmark ${TEST_SRC_DIR}/onnx/microbenchmark/main.cc ${TEST_SRC_DIR}/onnx/microbenchmark/modeltest.cc)
-  target_include_directories(lotus_benchmark PRIVATE ${LOTUS_ROOT} ${lotusIR_graph_header} benchmark)
+  target_include_directories(lotus_benchmark PRIVATE ${LOTUS_ROOT} ${onnxruntime_graph_header} benchmark)
   target_compile_options(lotus_benchmark PRIVATE "/wd4141")
   if (lotus_USE_MLAS AND WIN32)
     target_include_directories(lotus_benchmark PRIVATE ${MLAS_INC})
@@ -472,7 +472,7 @@ endif()
 file(GLOB lotus_perf_test_src ${lotus_perf_test_src_patterns})
 
 add_executable(lotus_perf_test ${lotus_perf_test_src})
-target_include_directories(lotus_perf_test PRIVATE ${LOTUS_ROOT} ${lotusIR_graph_header} ${onnx_test_runner_src_dir} ${lotus_exec_src_dir})
+target_include_directories(lotus_perf_test PRIVATE ${LOTUS_ROOT} ${onnxruntime_graph_header} ${onnx_test_runner_src_dir} ${lotus_exec_src_dir})
 
 target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
 set_target_properties(lotus_perf_test PROPERTIES FOLDER "LotusTest")
@@ -487,7 +487,7 @@ if (UNIX)
   target_include_directories(lotus_custom_op_shared_lib_test PUBLIC "${PROJECT_SOURCE_DIR}/include")
 
   target_link_libraries(lotus_custom_op_shared_lib_test
-    lotus_runtime
+    onnxruntime
     )
   set_target_properties(lotus_custom_op_shared_lib_test PROPERTIES FOLDER "LotusSharedLibTest")
 
@@ -499,7 +499,7 @@ if (UNIX)
   target_include_directories(lotus_shared_lib_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
   target_link_libraries(lotus_shared_lib_test
-    lotus_runtime
+    onnxruntime
     onnx
     onnx_proto
     )

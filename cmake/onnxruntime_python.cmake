@@ -44,16 +44,16 @@ endif()
 target_include_directories(onnxruntime_pybind11_state PRIVATE ${LOTUS_ROOT} ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
 target_include_directories(onnxruntime_pybind11_state PRIVATE ${pybind11_INCLUDE_DIRS})
 set(onnxruntime_pybind11_state_libs
-    lotus_session
+    onnxruntime_session
     ${LOTUS_PROVIDERS_CUDA}
     ${LOTUS_PROVIDERS_MKLDNN}
-    lotus_providers
-    lotus_framework
-    lotus_util
-    lotusIR_graph
+    onnxruntime_providers
+    onnxruntime_framework
+    onnxruntime_util
+    onnxruntime_graph
     onnx
     onnx_proto
-    lotus_common
+    onnxruntime_common
 )
 
 set(onnxruntime_pybind11_state_dependencies
@@ -99,7 +99,7 @@ file(GLOB onnxruntime_python_datasets_data
     "${LOTUS_ROOT}/python/datasets/*.onnx"
 )
 
-# adjust based on what target/s lotus_unittests.cmake created
+# adjust based on what target/s onnxruntime_unittests.cmake created
 if (SingleUnitTestProject)
   set(test_data_target lotus_test_all)
 else()

@@ -184,11 +184,11 @@ Status TensorUtils::UnpackTensor(const ONNX_NAMESPACE::TensorProto& tensor,
 }
 
 #define LOTUS_CASE_PROTO_TRACE(X, Y)                         \
-  case onnx::TensorProto_DataType::TensorProto_DataType_##X: \
+  case ONNX_NAMESPACE::TensorProto_DataType::TensorProto_DataType_##X: \
     size *= sizeof(Y);                                       \
     break;
 
-common::Status GetSizeInBytesFromTensorProto(const onnx::TensorProto& tensor_proto, size_t* out) {
+common::Status GetSizeInBytesFromTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto, size_t* out) {
   const auto& dims = tensor_proto.dims();
   int64_t size = 1;
   for (int i = 0; i < dims.size(); ++i) {
@@ -214,7 +214,7 @@ common::Status GetSizeInBytesFromTensorProto(const onnx::TensorProto& tensor_pro
     LOTUS_CASE_PROTO_TRACE(UINT32, uint32_t);
     LOTUS_CASE_PROTO_TRACE(UINT64, uint64_t);
     LOTUS_CASE_PROTO_TRACE(FLOAT16, MLFloat16);
-    case onnx::TensorProto_DataType::TensorProto_DataType_STRING:
+    case ONNX_NAMESPACE::TensorProto_DataType::TensorProto_DataType_STRING:
     default:
       return common::Status(common::LOTUS, common::NOT_IMPLEMENTED);
   }

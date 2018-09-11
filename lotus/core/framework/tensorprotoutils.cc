@@ -127,7 +127,7 @@ common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
   return common::Status::OK();
 }
 
-Status TensorProtoToMLValue(const onnx::TensorProto& input, AllocatorPtr allocator, void* preallocated,
+Status TensorProtoToMLValue(const ONNX_NAMESPACE::TensorProto& input, AllocatorPtr allocator, void* preallocated,
                             size_t preallocated_size, MLValue& value) {
   std::unique_ptr<Tensor> p_tensor;
   LOTUS_RETURN_IF_ERROR(GetTensorFromTensorProto(input, &p_tensor, allocator, preallocated, preallocated_size));

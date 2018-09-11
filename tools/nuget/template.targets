@@ -9,13 +9,13 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\..\lib\native\debug\amd64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>onnx.lib;onnx_proto.lib;libprotobufd.lib;lotusIR_graph.lib;lotus_common.lib;/WHOLEARCHIVE:lotus_framework.lib;/WHOLEARCHIVE:lotus_providers.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onnx.lib;onnx_proto.lib;libprotobufd.lib;onnxruntime_graph.lib;onnxruntime_common.lib;/WHOLEARCHIVE:onnxruntime_framework.lib;/WHOLEARCHIVE:onnxruntime_providers.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\..\lib\native\retail\amd64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>onnx.lib;onnx_proto.lib;libprotobuf.lib;lotusIR_graph.lib;lotus_common.lib;/WHOLEARCHIVE:lotus_framework.lib;/WHOLEARCHIVE:lotus_providers.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onnx.lib;onnx_proto.lib;libprotobuf.lib;onnxruntime_graph.lib;onnxruntime_common.lib;/WHOLEARCHIVE:onnxruntime_framework.lib;/WHOLEARCHIVE:onnxruntime_providers.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
