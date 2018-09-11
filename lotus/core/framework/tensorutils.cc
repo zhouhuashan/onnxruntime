@@ -21,7 +21,7 @@ inline bool IsLittleEndianOrder() noexcept {
 }
 
 template <typename T>
-static void UnpackTensorWithRawData(const onnx::TensorProto& tensor, /*out*/ T* p_data) {
+static void UnpackTensorWithRawData(const ONNX_NAMESPACE::TensorProto& tensor, /*out*/ T* p_data) {
   // allow this low level routine to be somewhat unsafe. assuming it's thoroughly tested and valid
   GSL_SUPPRESS(type)       // type.1 reinterpret-cast; type.4 C-style casts; type.5 'T result;' is uninitialized;
   GSL_SUPPRESS(bounds .1)  // pointer arithmetic
@@ -50,7 +50,7 @@ namespace onnxruntime {
 namespace Utils {
 #define DEFINE_UNPACK_TENSOR(T, Type, field_name, field_size)                                                   \
   template <>                                                                                                   \
-  Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor, /*out*/ T* p_data, int64_t expected_size) { \
+  Status TensorUtils::UnpackTensor(const ONNX_NAMESPACE::TensorProto& tensor, /*out*/ T* p_data, int64_t expected_size) { \
     if (nullptr == p_data) {                                                                                    \
       const size_t size = tensor.has_raw_data() ? tensor.raw_data().size() : tensor.field_size();               \
       if (size == 0)                                                                                            \
@@ -79,19 +79,19 @@ namespace Utils {
 
 //TODO: uint32 uint64 complex64 complex128
 //TODO: int16_t/uint16_t/float16 is confusing right now
-DEFINE_UNPACK_TENSOR(float, onnx::TensorProto_DataType_FLOAT, float_data, float_data_size)
-DEFINE_UNPACK_TENSOR(double, onnx::TensorProto_DataType_DOUBLE, double_data, double_data_size);
-DEFINE_UNPACK_TENSOR(uint8_t, onnx::TensorProto_DataType_UINT8, int32_data, int32_data_size)
-DEFINE_UNPACK_TENSOR(int8_t, onnx::TensorProto_DataType_INT8, int32_data, int32_data_size)
-DEFINE_UNPACK_TENSOR(int16_t, onnx::TensorProto_DataType_INT16, int32_data, int32_data_size)
-DEFINE_UNPACK_TENSOR(uint16_t, onnx::TensorProto_DataType_UINT16, int32_data, int32_data_size)
-DEFINE_UNPACK_TENSOR(int32_t, onnx::TensorProto_DataType_INT32, int32_data, int32_data_size)
-DEFINE_UNPACK_TENSOR(int64_t, onnx::TensorProto_DataType_INT64, int64_data, int64_data_size)
-DEFINE_UNPACK_TENSOR(uint64_t, onnx::TensorProto_DataType_UINT64, uint64_data, uint64_data_size)
-DEFINE_UNPACK_TENSOR(uint32_t, onnx::TensorProto_DataType_UINT32, uint64_data, uint64_data_size)
+DEFINE_UNPACK_TENSOR(float, ONNX_NAMESPACE::TensorProto_DataType_FLOAT, float_data, float_data_size)
+DEFINE_UNPACK_TENSOR(double, ONNX_NAMESPACE::TensorProto_DataType_DOUBLE, double_data, double_data_size);
+DEFINE_UNPACK_TENSOR(uint8_t, ONNX_NAMESPACE::TensorProto_DataType_UINT8, int32_data, int32_data_size)
+DEFINE_UNPACK_TENSOR(int8_t, ONNX_NAMESPACE::TensorProto_DataType_INT8, int32_data, int32_data_size)
+DEFINE_UNPACK_TENSOR(int16_t, ONNX_NAMESPACE::TensorProto_DataType_INT16, int32_data, int32_data_size)
+DEFINE_UNPACK_TENSOR(uint16_t, ONNX_NAMESPACE::TensorProto_DataType_UINT16, int32_data, int32_data_size)
+DEFINE_UNPACK_TENSOR(int32_t, ONNX_NAMESPACE::TensorProto_DataType_INT32, int32_data, int32_data_size)
+DEFINE_UNPACK_TENSOR(int64_t, ONNX_NAMESPACE::TensorProto_DataType_INT64, int64_data, int64_data_size)
+DEFINE_UNPACK_TENSOR(uint64_t, ONNX_NAMESPACE::TensorProto_DataType_UINT64, uint64_data, uint64_data_size)
+DEFINE_UNPACK_TENSOR(uint32_t, ONNX_NAMESPACE::TensorProto_DataType_UINT32, uint64_data, uint64_data_size)
 
 template <>
-Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
+Status TensorUtils::UnpackTensor(const ONNX_NAMESPACE::TensorProto& tensor,
                                  /*out*/ std::string* p_data,
                                  int64_t expected_size) {
   if (nullptr == p_data) {
@@ -100,7 +100,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
     else
       return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
-  if (onnx::TensorProto_DataType_STRING != tensor.data_type()) {
+  if (ONNX_NAMESPACE::TensorProto_DataType_STRING != tensor.data_type()) {
     return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
 
@@ -116,7 +116,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
   return Status::OK();
 }
 template <>
-Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
+Status TensorUtils::UnpackTensor(const ONNX_NAMESPACE::TensorProto& tensor,
                                  /*out*/ bool* p_data,
                                  int64_t expected_size) {
   if (nullptr == p_data) {
@@ -126,7 +126,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
     else
       return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
-  if (onnx::TensorProto_DataType_BOOL != tensor.data_type()) {
+  if (ONNX_NAMESPACE::TensorProto_DataType_BOOL != tensor.data_type()) {
     return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
 
@@ -149,7 +149,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
   return Status::OK();
 }
 template <>
-Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
+Status TensorUtils::UnpackTensor(const ONNX_NAMESPACE::TensorProto& tensor,
                                  /*out*/ MLFloat16* p_data,
                                  int64_t expected_size) {
   if (nullptr == p_data) {
@@ -159,7 +159,7 @@ Status TensorUtils::UnpackTensor(const onnx::TensorProto& tensor,
     else
       return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
-  if (onnx::TensorProto_DataType_FLOAT16 != tensor.data_type()) {
+  if (ONNX_NAMESPACE::TensorProto_DataType_FLOAT16 != tensor.data_type()) {
     return Status(common::LOTUS, common::INVALID_ARGUMENT);
   }
 

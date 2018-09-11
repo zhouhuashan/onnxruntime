@@ -37,63 +37,63 @@ class optional {
   T value_;
 };
 
-// Function templates to translate C++ types into onnx::TensorProto_DataTypes
+// Function templates to translate C++ types into ONNX_NAMESPACE::TensorProto_DataTypes
 template <typename T>
-constexpr onnx::TensorProto_DataType TypeToDataType();
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType();
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<float>() { return onnx::TensorProto_DataType_FLOAT; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<float>() { return ONNX_NAMESPACE::TensorProto_DataType_FLOAT; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<double>() { return onnx::TensorProto_DataType_DOUBLE; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<double>() { return ONNX_NAMESPACE::TensorProto_DataType_DOUBLE; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<int32_t>() { return onnx::TensorProto_DataType_INT32; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<int32_t>() { return ONNX_NAMESPACE::TensorProto_DataType_INT32; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<int64_t>() { return onnx::TensorProto_DataType_INT64; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<int64_t>() { return ONNX_NAMESPACE::TensorProto_DataType_INT64; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<bool>() { return onnx::TensorProto_DataType_BOOL; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<bool>() { return ONNX_NAMESPACE::TensorProto_DataType_BOOL; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<int8_t>() { return onnx::TensorProto_DataType_INT8; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<int8_t>() { return ONNX_NAMESPACE::TensorProto_DataType_INT8; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<int16_t>() { return onnx::TensorProto_DataType_INT16; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<int16_t>() { return ONNX_NAMESPACE::TensorProto_DataType_INT16; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<uint8_t>() { return onnx::TensorProto_DataType_UINT8; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<uint8_t>() { return ONNX_NAMESPACE::TensorProto_DataType_UINT8; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<uint16_t>() { return onnx::TensorProto_DataType_UINT16; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<uint16_t>() { return ONNX_NAMESPACE::TensorProto_DataType_UINT16; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<uint32_t>() { return onnx::TensorProto_DataType_UINT32; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<uint32_t>() { return ONNX_NAMESPACE::TensorProto_DataType_UINT32; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<uint64_t>() { return onnx::TensorProto_DataType_UINT64; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<uint64_t>() { return ONNX_NAMESPACE::TensorProto_DataType_UINT64; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<std::string>() { return onnx::TensorProto_DataType_STRING; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<std::string>() { return ONNX_NAMESPACE::TensorProto_DataType_STRING; }
 
 template <>
-constexpr onnx::TensorProto_DataType TypeToDataType<MLFloat16>() { return onnx::TensorProto_DataType_FLOAT16; }
+constexpr ONNX_NAMESPACE::TensorProto_DataType TypeToDataType<MLFloat16>() { return ONNX_NAMESPACE::TensorProto_DataType_FLOAT16; }
 
 template <typename T>
-struct TTypeProto : onnx::TypeProto {
+struct TTypeProto : ONNX_NAMESPACE::TypeProto {
   TTypeProto() {
     mutable_tensor_type()->set_elem_type(TypeToDataType<T>());
   }
 };
 
-// Variable template for onnx::TensorProto_DataTypes, s_type_proto<float>, etc..
+// Variable template for ONNX_NAMESPACE::TensorProto_DataTypes, s_type_proto<float>, etc..
 template <typename T>
 const TTypeProto<T> s_type_proto;
 
 //TypeProto for map<TKey, TVal>
 template <typename TKey, typename TVal>
-struct MTypeProto : onnx::TypeProto {
+struct MTypeProto : ONNX_NAMESPACE::TypeProto {
   MTypeProto() {
     mutable_map_type()->set_key_type(TypeToDataType<TKey>());
     mutable_map_type()->mutable_value_type()->mutable_tensor_type()->set_elem_type(TypeToDataType<TVal>());
@@ -106,7 +106,7 @@ const MTypeProto<TKey, TVal> s_map_type_proto;
 
 //TypeProto for vector<map<TKey, TVal>>
 template <typename TKey, typename TVal>
-struct VectorOfMapTypeProto : onnx::TypeProto {
+struct VectorOfMapTypeProto : ONNX_NAMESPACE::TypeProto {
   VectorOfMapTypeProto() {
     auto* map_type = mutable_sequence_type()->mutable_elem_type()->mutable_map_type();
     map_type->set_key_type(TypeToDataType<TKey>());

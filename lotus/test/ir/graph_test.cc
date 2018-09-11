@@ -29,7 +29,7 @@
 
 #define LOTUS_OPERATOR_SCHEMA LOTUS_UNUSED ONNX_OPERATOR_SCHEMA
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 using google::protobuf::util::MessageDifferencer;
@@ -362,7 +362,7 @@ TEST(ResolvingGraphTest, GraphConstruction_OnlyInitializer) {
   onnxruntime::Model model("graph");
   auto& graph = model.MainGraph();
 
-  onnx::TensorProto weight;
+  ONNX_NAMESPACE::TensorProto weight;
   weight.add_dims(1);
   weight.set_data_type(TensorProto_DataType_STRING);
   weight.add_string_data("test");
@@ -558,7 +558,7 @@ TEST(TypeInferenceTest, InitializerType) {
   Model model("graph_1");
   auto& graph = model.MainGraph();
 
-  onnx::TensorProto weight;
+  ONNX_NAMESPACE::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_INT32);
   weight.add_dims(1);
   weight.add_int32_data(1);
@@ -588,7 +588,7 @@ TEST(TypeInferenceTest, InitializerShape) {
   Model model("graph_1");
   auto& graph = model.MainGraph();
 
-  onnx::TensorProto weight;
+  ONNX_NAMESPACE::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_FLOAT);
   weight.add_dims(1);
   weight.add_float_data(1.0f);
@@ -619,7 +619,7 @@ TEST(NameResolutionTest, DuplicateName) {
   Model model("graph_1");
   auto& graph = model.MainGraph();
 
-  onnx::TensorProto weight;
+  ONNX_NAMESPACE::TensorProto weight;
   weight.set_data_type(TensorProto_DataType_FLOAT);
   weight.add_dims(1);
   weight.add_float_data(1.0f);

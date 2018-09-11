@@ -50,7 +50,7 @@ class NodeArg {
   // optional. This is called when loading a <Graph> from <GraphProto>
   // normally.
   NodeArg(const std::string& name,
-          const onnx::TypeProto* p_arg_type);
+          const ONNX_NAMESPACE::TypeProto* p_arg_type);
 
   NodeArg(NodeArg&& other) = default;
 
@@ -58,17 +58,17 @@ class NodeArg {
   const std::string& Name() const noexcept;
 
   // Get node arg type.
-  onnx::DataType Type() const noexcept;
-  const onnx::TypeProto* TypeAsProto() const noexcept;
+  ONNX_NAMESPACE::DataType Type() const noexcept;
+  const ONNX_NAMESPACE::TypeProto* TypeAsProto() const noexcept;
 
   // Get node arg shape.
   // Return null pointer if there's no shape specified.
-  const onnx::TensorShapeProto* Shape() const;
+  const ONNX_NAMESPACE::TensorShapeProto* Shape() const;
 
   // Set node arg shape.
   // Shape could only be set after setting type since shape information
   // now is part of TypeProto.
-  void SetShape(const onnx::TensorShapeProto& shape);
+  void SetShape(const ONNX_NAMESPACE::TensorShapeProto& shape);
 
   // Get node arg info proto.
   const NodeArgInfo& ToProto() const noexcept { return node_arg_info_; }
@@ -82,13 +82,13 @@ class NodeArg {
   LOTUS_DISALLOW_COPY_AND_ASSIGN(NodeArg);
   friend class Graph;
 
-  void SetType(onnx::DataType p_type);
-  void SetType(const onnx::TypeProto& type_proto);
+  void SetType(ONNX_NAMESPACE::DataType p_type);
+  void SetType(const ONNX_NAMESPACE::TypeProto& type_proto);
 
   NodeArg& operator=(NodeArg&& other) = delete;
 
   // Node arg PType.
-  onnx::DataType type_;
+  ONNX_NAMESPACE::DataType type_;
 
   // Node arg name, type and shape.
   NodeArgInfo node_arg_info_;
@@ -147,7 +147,7 @@ class Node {
 
   // Get the OperatorSchema this node refers to. ValidateOpType() must have been called previously.
   // May be null in the future.
-  const onnx::OpSchema* Op() const noexcept;
+  const ONNX_NAMESPACE::OpSchema* Op() const noexcept;
   Node::Type NodeType() const noexcept;
   // Get function body if the node type is fused.
   // The function body is owned by <*this> node's parent graph.
@@ -208,7 +208,7 @@ class Node {
   size_t GetInputEdgesCount() const noexcept { return relationships_.input_edges.size(); }
 
   // Add a node attribute with specified attribute name and value.
-  void AddAttribute(const std::string& attr_name, const onnx::AttributeProto& value);
+  void AddAttribute(const std::string& attr_name, const ONNX_NAMESPACE::AttributeProto& value);
 
 #define ADD_ATTR_INTERFACES(TypeName)                                     \
   void AddAttribute(const std::string& attr_name, const TypeName& value); \
@@ -218,8 +218,8 @@ class Node {
   ADD_ATTR_INTERFACES(int64_t)
   ADD_ATTR_INTERFACES(float)
   ADD_ATTR_INTERFACES(std::string)
-  ADD_ATTR_INTERFACES(onnx::TensorProto)
-  ADD_ATTR_INTERFACES(onnx::GraphProto)
+  ADD_ATTR_INTERFACES(ONNX_NAMESPACE::TensorProto)
+  ADD_ATTR_INTERFACES(ONNX_NAMESPACE::GraphProto)
 
   // Clear specified node attribute.
   bool ClearAttribute(const std::string& attr_name);
@@ -235,7 +235,7 @@ class Node {
   void SetExecutionProviderType(ProviderType execution_provider_type);
 
   // Get the corresponding <NodeProto>.
-  void ToProto(onnx::NodeProto& proto) const;
+  void ToProto(ONNX_NAMESPACE::NodeProto& proto) const;
 
   // iterate through all input/output defs
   void ForEachDef(std::function<void(const onnxruntime::NodeArg*, bool is_input)> func) const;
@@ -360,7 +360,7 @@ class Node {
   std::string domain_;
 
   // OperatorSchema that <*this> node refers to.
-  const onnx::OpSchema* op_ = nullptr;
+  const ONNX_NAMESPACE::OpSchema* op_ = nullptr;
   Node::Type node_type_ = Node::Type::Primitive;
   const Function* func_body_ = nullptr;
 
@@ -454,7 +454,7 @@ class GraphBase {
   }
 
   // Get NodeArg by name, or create NodeArg owned by the graph if not found
-  NodeArg& GetOrCreateNodeArg(const std::string& name, const onnx::TypeProto* p_arg_type) {
+  NodeArg& GetOrCreateNodeArg(const std::string& name, const ONNX_NAMESPACE::TypeProto* p_arg_type) {
     auto iter = node_args_.find(name);
     if (iter != node_args_.end())
       return *(iter->second);
@@ -565,7 +565,7 @@ class GraphBase {
   void AddSourceSinkNodes();
 
   // Add node with specified <node_proto>.
-  Node* AddNode(const onnx::NodeProto& node_proto,
+  Node* AddNode(const ONNX_NAMESPACE::NodeProto& node_proto,
                 const ArgNameToTypeMap& name_to_type);
 
   NodeIndex SourceNodeIndex() const noexcept { return source_node_index_; }

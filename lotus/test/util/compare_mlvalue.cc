@@ -11,33 +11,33 @@
 using namespace onnxruntime;
 
 namespace {
-MLDataType ElementTypeFromProto(onnx::TensorProto_DataType type) {
+MLDataType ElementTypeFromProto(ONNX_NAMESPACE::TensorProto_DataType type) {
   switch (type) {
-    case onnx::TensorProto_DataType_FLOAT:
+    case ONNX_NAMESPACE::TensorProto_DataType_FLOAT:
       return DataTypeImpl::GetType<float>();
-    case onnx::TensorProto_DataType_BOOL:
+    case ONNX_NAMESPACE::TensorProto_DataType_BOOL:
       return DataTypeImpl::GetType<bool>();
-    case onnx::TensorProto_DataType_INT32:
+    case ONNX_NAMESPACE::TensorProto_DataType_INT32:
       return DataTypeImpl::GetType<int>();
-    case onnx::TensorProto_DataType_DOUBLE:
+    case ONNX_NAMESPACE::TensorProto_DataType_DOUBLE:
       return DataTypeImpl::GetType<double>();
-    case onnx::TensorProto_DataType_STRING:
+    case ONNX_NAMESPACE::TensorProto_DataType_STRING:
       return DataTypeImpl::GetType<std::string>();
-    case onnx::TensorProto_DataType_INT8:
+    case ONNX_NAMESPACE::TensorProto_DataType_INT8:
       return DataTypeImpl::GetType<int8_t>();
-    case onnx::TensorProto_DataType_UINT8:
+    case ONNX_NAMESPACE::TensorProto_DataType_UINT8:
       return DataTypeImpl::GetType<uint8_t>();
-    case onnx::TensorProto_DataType_UINT16:
+    case ONNX_NAMESPACE::TensorProto_DataType_UINT16:
       return DataTypeImpl::GetType<uint16_t>();
-    case onnx::TensorProto_DataType_INT16:
+    case ONNX_NAMESPACE::TensorProto_DataType_INT16:
       return DataTypeImpl::GetType<int16_t>();
-    case onnx::TensorProto_DataType_INT64:
+    case ONNX_NAMESPACE::TensorProto_DataType_INT64:
       return DataTypeImpl::GetType<int64_t>();
-    case onnx::TensorProto_DataType_UINT32:
+    case ONNX_NAMESPACE::TensorProto_DataType_UINT32:
       return DataTypeImpl::GetType<uint32_t>();
-    case onnx::TensorProto_DataType_UINT64:
+    case ONNX_NAMESPACE::TensorProto_DataType_UINT64:
       return DataTypeImpl::GetType<uint64_t>();
-    case onnx::TensorProto_DataType_FLOAT16:
+    case ONNX_NAMESPACE::TensorProto_DataType_FLOAT16:
       return DataTypeImpl::GetType<MLFloat16>();
     default:
       LOTUS_NOT_IMPLEMENTED(__FUNCTION__, ":tensor type ", type, " is not supported");
@@ -232,7 +232,7 @@ const char* ElementTypeToString(MLDataType type) {
 }
 
 //The expected_shape could contain unknown dimensions, but the real_shape cannot
-bool AreShapesEqual(const TensorShape& real_shape, const ::onnx::TensorShapeProto& expected_shape) {
+bool AreShapesEqual(const TensorShape& real_shape, const ::ONNX_NAMESPACE::TensorShapeProto& expected_shape) {
   const int len = expected_shape.dim_size();
   //because real_shape.NumDimensions() cannot be negative
   if (len < 0) return false;
@@ -278,13 +278,13 @@ std::pair<COMPARE_RESULT, std::string> CompareMLValue(const MLValue& o, const ML
   return CompareTwoTensors(outvalue, expected_tensor, per_sample_tolerance, relative_per_sample_tolerance, post_processing);
 }
 
-std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const onnx::ValueInfoProto& v, const MLValue& o) {
+std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const ONNX_NAMESPACE::ValueInfoProto& v, const MLValue& o) {
   if (v.has_type()) {
     if (v.type().has_tensor_type()) {
       if (o.Type() != DataTypeImpl::GetType<Tensor>()) {
         return std::make_pair(COMPARE_RESULT::TYPE_MISMATCH, "");
       }
-      ::onnx::TypeProto_Tensor t = v.type().tensor_type();
+      ::ONNX_NAMESPACE::TypeProto_Tensor t = v.type().tensor_type();
       //below code doesn't work
       //if (((TensorTypeBase*)o.Type())->GetElementType() != DataTypeImpl::ElementTypeFromProto(t.elem_type())) {
       //	return COMPARE_RESULT::TYPE_MISMATCH;

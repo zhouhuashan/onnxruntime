@@ -29,7 +29,7 @@
 #include "gtest/gtest.h"
 
 using namespace std;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::Logging;
 
 namespace onnxruntime {
@@ -90,7 +90,7 @@ class FuseExecutionProvider : public IExecutionProvider {
     meta_def->inputs = {"X", "Y", "Z"};
     meta_def->outputs = {"M"};
     meta_def->since_version = 1;
-    meta_def->status = onnx::EXPERIMENTAL;
+    meta_def->status = ONNX_NAMESPACE::EXPERIMENTAL;
     sub_graph->SetMetaDef(meta_def);
     result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
     return result;
@@ -870,8 +870,8 @@ TEST(ExecutionProviderTest, FunctionTest) {
   std::vector<onnxruntime::NodeArg*> outputs;
 
   // FLOAT tensor.
-  onnx::TypeProto float_tensor;
-  float_tensor.mutable_tensor_type()->set_elem_type(onnx::TensorProto_DataType_FLOAT);
+  ONNX_NAMESPACE::TypeProto float_tensor;
+  float_tensor.mutable_tensor_type()->set_elem_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
   float_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(3);
   float_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
 

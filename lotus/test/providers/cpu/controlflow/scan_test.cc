@@ -5,7 +5,7 @@
 #include "core/providers/cpu/controlflow/scan.h"
 #include "core/framework/customregistry.h"
 #include "core/graph/function_container.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 
@@ -82,7 +82,7 @@ static KernelDefBuilder ScanKernelDef() {
 
 TEST(Scan, StepOne) {
   auto op_registry = std::make_shared<CustomRegistry>();
-  std::vector<onnx::OpSchema> schemas{Scan::GetScanOpSchema()};
+  std::vector<ONNX_NAMESPACE::OpSchema> schemas{Scan::GetScanOpSchema()};
   auto kernel_def_builder = ScanKernelDef();
 
   op_registry->RegisterOpSet(schemas, onnxruntime::kOnnxDomain, 7, 8);

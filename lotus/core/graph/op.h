@@ -15,8 +15,8 @@
 #include "core/graph/constants.h"
 
 namespace onnxruntime {
-using AttrType = onnx::AttributeProto_AttributeType;
-using NodeAttributes = std::unordered_map<std::string, onnx::AttributeProto>;
+using AttrType = ONNX_NAMESPACE::AttributeProto_AttributeType;
+using NodeAttributes = std::unordered_map<std::string, ONNX_NAMESPACE::AttributeProto>;
 
 // This string array should exactly match the AttrType defined above.
 /*
@@ -49,7 +49,7 @@ static constexpr const char* kAttrTypeStrings[] =
 class TypeUtils {
  public:
   // Get attribute type given attribute proto data.
-  static ::onnxruntime::common::Status GetType(const onnx::AttributeProto& attr, AttrType& type);
-  static bool IsValidAttribute(const onnx::AttributeProto& attribute);
+  static ::onnxruntime::common::Status GetType(const ONNX_NAMESPACE::AttributeProto& attr, AttrType& type);
+  static bool IsValidAttribute(const ONNX_NAMESPACE::AttributeProto& attribute);
 };
 }  // namespace onnxruntime

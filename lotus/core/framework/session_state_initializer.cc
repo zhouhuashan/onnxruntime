@@ -205,7 +205,7 @@ common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
   return Status::OK();
 }
 
-common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
+common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto,
                                       const AllocatorInfo& alloc_info,
                                       const ExecutionProviders& exec_providers,
                                       MLValue& mlvalue, void* preallocated, size_t preallocated_size) {
@@ -311,7 +311,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
     const std::string& name = entry.first;
     int mlvalue_index;
     LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
-    const onnx::TensorProto& tensor_proto = *(entry.second);
+    const ONNX_NAMESPACE::TensorProto& tensor_proto = *(entry.second);
 
     auto& location = execution_plan.allocation_plan[mlvalue_index].location;
     auto it = weights_buffers.find(location);

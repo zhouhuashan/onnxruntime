@@ -12,7 +12,7 @@
 #include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/graph/function_container.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
 namespace Test {
@@ -273,7 +273,7 @@ TEST_F(PlannerTest, ChainTest) {
 
   // graph structure:
 
-  onnx::TensorProto tensor;
+  ONNX_NAMESPACE::TensorProto tensor;
   tensor.add_dims(1);
   tensor.add_float_data(1.0f);
   tensor.set_data_type(TensorProto_DataType_FLOAT);

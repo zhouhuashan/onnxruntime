@@ -6,8 +6,8 @@ namespace onnxruntime {
 // Find the type that name is bound to in the given node.
 // "name" can represent either a type parameter or an input/output parameter.
 // Returns null if a match is not found.
-const ::onnx::TypeProto* FindTypeBinding(const onnxruntime::Node& node, const std::string& name) {
-  const onnx::OpSchema& op_schema = *node.Op();
+const ::ONNX_NAMESPACE::TypeProto* FindTypeBinding(const onnxruntime::Node& node, const std::string& name) {
+  const ONNX_NAMESPACE::OpSchema& op_schema = *node.Op();
   // search inputs:
   const size_t len = node.InputArgCount().size();
   LOTUS_ENFORCE(len <= op_schema.inputs().size());
@@ -122,7 +122,7 @@ bool KernelRegistry::VerifyKernelDef(const onnxruntime::Node& node,
   for (auto& constraint : kernel_type_constraints) {
     const std::string& name = constraint.first;
     const std::vector<MLDataType>& allowed_types = constraint.second;
-    const ::onnx::TypeProto* actual_type = FindTypeBinding(node, name);
+    const ::ONNX_NAMESPACE::TypeProto* actual_type = FindTypeBinding(node, name);
 
     // If actual_type is null, this represents a type-constraint on a
     // missing optional parameter, which can be skipped.

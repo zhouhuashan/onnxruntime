@@ -14,7 +14,7 @@ TEST(TensorProtoUtilsTest, test1) {
   std::string tensorbinary;
   common::Status st = Env::Default().ReadFileAsString(filename, &tensorbinary);
   ASSERT_TRUE(st.IsOK());
-  onnx::TensorProto proto;
+  ONNX_NAMESPACE::TensorProto proto;
   ASSERT_TRUE(proto.ParseFromString(tensorbinary));
   std::unique_ptr<Tensor> tensor;
   ::onnxruntime::AllocatorPtr cpu_allocator = std::make_shared<::onnxruntime::CPUAllocator>();

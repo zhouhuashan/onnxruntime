@@ -17,9 +17,9 @@
 #include "onnx/checker.h"
 #include "core/graph/schema_registry.h"
 #include "core/graph/function_container.h"
-using namespace onnx;
-using namespace onnx::Utils;
-using namespace onnx::checker;
+using namespace ONNX_NAMESPACE;
+using namespace ONNX_NAMESPACE::Utils;
+using namespace ONNX_NAMESPACE::checker;
 using namespace ::onnxruntime::common;
 
 namespace onnxruntime {
@@ -320,7 +320,7 @@ Status Node::UpdateInputArgCount() {
   }
 
   // op_ is always valid when this is called
-  const onnx::OpSchema& op = *Op();
+  const ONNX_NAMESPACE::OpSchema& op = *Op();
 
   // Verify size of node arg count is same as input number in
   // operator definition.
@@ -493,7 +493,7 @@ Graph::Graph(GraphProto* graph_proto,
   }
 }
 
-Graph::Graph(const Graph& model_graph, onnx::GraphProto& subgraph_proto)
+Graph::Graph(const Graph& model_graph, ONNX_NAMESPACE::GraphProto& subgraph_proto)
     : Graph(&subgraph_proto, model_graph.DomainToVersionMap(), model_graph.IrVersion(), model_graph.schema_registry_) {
 }
 
@@ -795,7 +795,7 @@ bool FullyDefinedType(const TypeProto& type_proto) {
 
 // An implementation of the InferenceContext interface required by operator-specific
 // shape inference for onnxruntime graphs.
-class InferenceContextImpl : public onnx::InferenceContext {
+class InferenceContextImpl : public ONNX_NAMESPACE::InferenceContext {
  public:
   InferenceContextImpl(Node& node, std::vector<TypeProto>& inferred_shapes) noexcept
       : node_(node),

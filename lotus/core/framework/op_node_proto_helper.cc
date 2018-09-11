@@ -7,7 +7,7 @@
 #include "core/framework/op_kernel.h"
 #include "onnx/defs/schema.h"
 #include "gsl/span"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 

@@ -1,7 +1,7 @@
 #include "transformer_memcpy.h"
 #include "core/framework/kernel_registry_manager.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 
 /*

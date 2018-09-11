@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 #include "core/graph/schema_registry.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 
 #ifdef __GNUC__
 #define LOTUS_UNUSED __attribute__((unused))
@@ -47,7 +47,7 @@ TEST(OpRegistrationTest, OpRegTest) {
 }
 
 ONNX_NAMESPACE::OpSchema CreateTestSchema(const char* name, const char* domain, int sinceVersion) {
-  return onnx::OpSchema().SetName(name).SinceVersion(sinceVersion).SetDomain(domain).Output(0, "output_1", "docstr for output", "tensor(int32)");
+  return ONNX_NAMESPACE::OpSchema().SetName(name).SinceVersion(sinceVersion).SetDomain(domain).Output(0, "output_1", "docstr for output", "tensor(int32)");
 }
 
 TEST(OpRegistrationTest, OpsetRegTest) {

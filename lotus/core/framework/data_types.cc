@@ -11,7 +11,7 @@
 #pragma GCC diagnostic pop
 #endif
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 template <>
 MLDataType DataTypeImpl::GetType<Tensor>() {
@@ -96,7 +96,7 @@ bool TensorType<MLFloat16>::IsCompatible(const TypeProto& type_proto) const {
   return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_FLOAT16;
 }
 
-static bool IsTensorTypeScalar(const onnx::TypeProto_Tensor& tensor_type_proto) {
+static bool IsTensorTypeScalar(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_type_proto) {
   int sz = tensor_type_proto.shape().dim_size();
   return sz == 0 || sz == 1;
 }
@@ -144,7 +144,7 @@ LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapInt64ToFloat,
                                    type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().has_elem_type() &&
                                    type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().elem_type() == TensorProto_DataType_FLOAT);
 
-MLDataType DataTypeImpl::TypeFromProto(const onnx::TypeProto& proto) {
+MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
   switch (proto.value_case()) {
     case TypeProto::ValueCase::kTensorType: {
       auto tensor_type = proto.tensor_type();

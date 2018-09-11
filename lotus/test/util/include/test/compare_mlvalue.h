@@ -4,7 +4,7 @@
 #include <core/framework/ml_value.h>
 #include <string>
 
-namespace onnx {
+namespace ONNX_NAMESPACE {
 class ValueInfoProto;
 }
 namespace onnxruntime {
@@ -19,5 +19,5 @@ std::pair<COMPARE_RESULT, std::string> CompareMLValue(const MLValue& real, const
                                                       double relative_per_sample_tolerance, bool post_processing);
 
 //verify if the 'value' matches the 'expected' ValueInfoProto. 'value' is a model output
-std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const onnx::ValueInfoProto& expected, const MLValue& value);
+std::pair<COMPARE_RESULT, std::string> VerifyValueInfo(const ONNX_NAMESPACE::ValueInfoProto& expected, const MLValue& value);
 }  // namespace onnxruntime

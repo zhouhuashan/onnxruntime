@@ -337,7 +337,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     int queue_id = 0;
     if (o.Fence())
       o.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, queue_id);
-    const onnx::ValueInfoProto& v = c_->GetOutputInfoFromModel(i);
+    const ONNX_NAMESPACE::ValueInfoProto& v = c_->GetOutputInfoFromModel(i);
     std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), per_sample_tolerance, relative_per_sample_tolerance, post_procesing);
     COMPARE_RESULT compare_result = ret.first;
     if (compare_result == COMPARE_RESULT::SUCCESS) {

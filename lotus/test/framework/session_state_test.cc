@@ -10,7 +10,7 @@
 #include "core/graph/function_container.h"
 #include "gtest/gtest.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace std;
 
 namespace onnxruntime {

@@ -7,10 +7,10 @@
 #include "core/framework/allocator.h"
 #include "core/framework/ml_value.h"
 
-namespace onnx {
+namespace ONNX_NAMESPACE {
 class TensorProto;
 class TensorShapeProto;
-}  // namespace onnx
+}  // namespace ONNX_NAMESPACE
 
 namespace onnxruntime {
 class Tensor;

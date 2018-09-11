@@ -1,6 +1,6 @@
 #include "core/providers/cpu/tensor/cast_op.h"
 #include <sstream>
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 
 const std::vector<MLDataType> castOpTypeConstraints{

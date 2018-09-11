@@ -13,7 +13,7 @@
 #include "core/framework/utils.h"
 
 using namespace onnxruntime::common;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 
 std::ostream& operator<<(std::ostream& out, AllocKind alloc_kind) {

@@ -7,7 +7,7 @@
 
 namespace onnxruntime {
 using namespace ::onnxruntime::common;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 
 std::once_flag schemaRegistrationOnceFlag;
 
@@ -17,7 +17,7 @@ Status Environment::Initialize() {
   try {
     // Register Microsoft domain with min/max op_set version as 1/1.
     std::call_once(schemaRegistrationOnceFlag, []() {
-      onnx::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(onnxruntime::kMSDomain, 1, 1);
+      ONNX_NAMESPACE::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(onnxruntime::kMSDomain, 1, 1);
     });
 
     // Register MemCpy schema;

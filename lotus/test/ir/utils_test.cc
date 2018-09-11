@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "core/graph/onnx_protobuf.h"
 
-using onnx::Utils::DataTypeUtils;
-using namespace onnx;
+using ONNX_NAMESPACE::Utils::DataTypeUtils;
+using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
 namespace Test {

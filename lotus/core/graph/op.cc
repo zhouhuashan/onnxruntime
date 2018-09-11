@@ -2,7 +2,7 @@
 #include "core/graph/constants.h"
 #include "core/graph/op.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 

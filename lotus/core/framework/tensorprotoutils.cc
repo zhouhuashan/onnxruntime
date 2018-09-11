@@ -9,12 +9,12 @@
 #include "core/framework/tensor.h"
 #include "core/framework/ml_value_patterns_planner.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 
 namespace onnxruntime {
 namespace Utils {
-std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tensor_proto) {
+std::vector<int64_t> GetTensorShapeFromTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto) {
   const auto& dims = tensor_proto.dims();
   std::vector<int64_t> tensor_shape_vec(dims.size());
   for (int i = 0; i < dims.size(); ++i) {
@@ -24,7 +24,7 @@ std::vector<int64_t> GetTensorShapeFromTensorProto(const onnx::TensorProto& tens
   return tensor_shape_vec;
 }
 
-std::vector<int64_t> GetTensorShapeFromTensorShapeProto(const onnx::TensorShapeProto& tensor_shape_proto) {
+std::vector<int64_t> GetTensorShapeFromTensorShapeProto(const ONNX_NAMESPACE::TensorShapeProto& tensor_shape_proto) {
   const auto& dims = tensor_shape_proto.dim();
   std::vector<int64_t> tensor_shape_vec(dims.size());
   for (int i = 0; i < dims.size(); ++i) {
@@ -138,7 +138,7 @@ Status TensorProtoToMLValue(const onnx::TensorProto& input, AllocatorPtr allocat
 }
 
 #define LOTUS_CASE_PROTO(X, Y)                               \
-  case onnx::TensorProto_DataType::TensorProto_DataType_##X: \
+  case ONNX_NAMESPACE::TensorProto_DataType::TensorProto_DataType_##X: \
     return GetTensorByTypeFromTensorProto<Y>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
 
 common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,

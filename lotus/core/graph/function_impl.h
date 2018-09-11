@@ -16,7 +16,7 @@ class FunctionImpl : public Function {
   FunctionImpl(const onnxruntime::Graph& graph,
                std::unique_ptr<IndexedSubGraph> customized_func);
 
-  virtual const onnx::OpSchema& OpSchema() const override;
+  virtual const ONNX_NAMESPACE::OpSchema& OpSchema() const override;
 
   virtual const onnxruntime::GraphBase& Body() const override;
 
@@ -25,7 +25,7 @@ class FunctionImpl : public Function {
  private:
   const onnxruntime::Graph* parent_graph_;
   std::unique_ptr<IndexedSubGraph> customized_func_body_;
-  std::unique_ptr<onnx::OpSchema> op_schema_;
+  std::unique_ptr<ONNX_NAMESPACE::OpSchema> op_schema_;
   std::unique_ptr<onnxruntime::Model> body_;
 };
 

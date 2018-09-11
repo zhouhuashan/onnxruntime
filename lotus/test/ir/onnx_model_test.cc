@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 using namespace onnxruntime;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 // Tests that Resolve() properly clears the state of topological sorted nodes,

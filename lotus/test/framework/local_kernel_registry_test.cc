@@ -24,7 +24,7 @@
 #include "gtest/gtest.h"
 #include "core/graph/schema_registry.h"
 #include "core/framework/customregistry.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 
@@ -151,8 +151,8 @@ class OptionalOpKernel {
   }
 };
 
-onnx::OpSchema GetFooSchema() {
-  onnx::OpSchema schema("Foo", "unknown", 0);
+ONNX_NAMESPACE::OpSchema GetFooSchema() {
+  ONNX_NAMESPACE::OpSchema schema("Foo", "unknown", 0);
   schema.Input(0,
                "A",
                "First operand, should share the type with the second operand.",
@@ -172,8 +172,8 @@ onnx::OpSchema GetFooSchema() {
   return schema;
 }
 
-onnx::OpSchema GetOptionalOpSchema() {
-  onnx::OpSchema schema("OptionalOp", "unknown", 0);
+ONNX_NAMESPACE::OpSchema GetOptionalOpSchema() {
+  ONNX_NAMESPACE::OpSchema schema("OptionalOp", "unknown", 0);
   schema.Input(0,
                "X",
                "First operand, should share the type with the second operand.",

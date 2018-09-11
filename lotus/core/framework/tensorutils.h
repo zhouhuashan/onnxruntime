@@ -6,7 +6,7 @@
 #include "core/common/common.h"
 #include "core/common/status.h"
 
-namespace onnx {
+namespace ONNX_NAMESPACE {
 class TensorProto;
 }
 namespace onnxruntime {
@@ -18,7 +18,7 @@ common::Status GetSizeInBytesFromTensorProto(const onnx::TensorProto& tensor_pro
 class TensorUtils {
  public:
   template <typename T>
-  static Status UnpackTensor(const onnx::TensorProto& tensor,
+  static Status UnpackTensor(const ONNX_NAMESPACE::TensorProto& tensor,
                              /*out*/ T* p_data,
                              int64_t expected_size);
 

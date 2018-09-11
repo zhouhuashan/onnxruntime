@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <random>
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 

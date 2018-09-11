@@ -23,7 +23,7 @@ struct IndexedSubGraph {
     // Since version of customized Sub-Graph/FunctionProto.
     int since_version;
     // Status of customized Sub-Graph/FunctionProto.
-    onnx::OperatorStatus status;
+    ONNX_NAMESPACE::OperatorStatus status;
     // Inputs of customized Sub-Graph/FunctionProto.
     std::vector<std::string> inputs;
     // Outputs of customized Sub-Graph/FunctionProto.

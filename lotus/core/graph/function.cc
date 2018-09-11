@@ -9,7 +9,7 @@ FunctionImpl::FunctionImpl(const onnxruntime::Graph& graph,
   parent_graph_ = &graph;
   customized_func_body_ = std::move(customized_func);
   auto meta_def = customized_func_body_->GetMetaDef();
-  op_schema_ = std::make_unique<onnx::OpSchema>();
+  op_schema_ = std::make_unique<ONNX_NAMESPACE::OpSchema>();
   op_schema_->SetName(meta_def->name);
   op_schema_->SetDomain(meta_def->domain);
   op_schema_->SetDoc(meta_def->doc_string);
@@ -55,7 +55,7 @@ FunctionImpl::FunctionImpl(const onnxruntime::Graph& graph,
   LOTUS_ENFORCE(sub_graph.Resolve().IsOK());
 }
 
-const onnx::OpSchema& FunctionImpl::OpSchema() const {
+const ONNX_NAMESPACE::OpSchema& FunctionImpl::OpSchema() const {
   return *op_schema_;
 }
 

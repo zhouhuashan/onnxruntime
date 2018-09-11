@@ -132,7 +132,7 @@ void FuseAdd(const onnxruntime::Graph& graph, std::vector<std::unique_ptr<Comput
       }
 
       meta_def->since_version = 1;
-      meta_def->status = onnx::EXPERIMENTAL;
+      meta_def->status = ONNX_NAMESPACE::EXPERIMENTAL;
       sub_graph->SetMetaDef(meta_def);
       //TODO:set fuse kernel func;
       capacities.push_back(

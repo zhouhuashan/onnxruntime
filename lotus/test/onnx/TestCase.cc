@@ -280,8 +280,8 @@ class OnnxTestCase : public ITestCase {
   AllocatorPtr allocator_;
   std::vector<std::string> debuginfo_strings;
   std::mutex m_;
-  std::vector<onnx::ValueInfoProto> input_value_info_;
-  std::vector<onnx::ValueInfoProto> output_value_info_;
+  std::vector<ONNX_NAMESPACE::ValueInfoProto> input_value_info_;
+  std::vector<ONNX_NAMESPACE::ValueInfoProto> output_value_info_;
 
   Status FromPbFiles(const std::vector<std::experimental::filesystem::v1::path>& files, std::vector<MLValue>& output_values);
   std::vector<std::experimental::filesystem::v1::path> test_data_dirs_;
@@ -313,7 +313,7 @@ class OnnxTestCase : public ITestCase {
   Status GetRelativePerSampleTolerance(double* value) override;
   Status GetPostProcessing(bool* value) override;
 
-  const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
+  const ONNX_NAMESPACE::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
     return output_value_info_[i];
   }
   size_t GetDataCount() const override {
@@ -403,10 +403,10 @@ Status OnnxTestCase::ParseModel() {
   Status st = Status::OK();
   std::call_once(model_parsed_, [this, &st]() {
     //parse model
-    onnx::ModelProto model_pb;
+    ONNX_NAMESPACE::ModelProto model_pb;
     st = loadModelFile(model_url_.string(), &model_pb);
     if (!st.IsOK()) return;
-    const onnx::GraphProto& graph = model_pb.graph();
+    const ONNX_NAMESPACE::GraphProto& graph = model_pb.graph();
     if (graph.node().size() == 1) {
       node_name_ = graph.node()[0].op_type();
     }
@@ -432,7 +432,7 @@ Status OnnxTestCase::SetModelPath(const path& m) {
 //load tensors from disk
 static Status LoadTensors(const std::vector<path>& pb_files, std::vector<onnx::TensorProto>* input_pbs) {
   for (size_t i = 0; i != pb_files.size(); ++i) {
-    onnx::TensorProto tensor;
+    ONNX_NAMESPACE::TensorProto tensor;
     std::ifstream input(pb_files.at(i), std::ios::in | std::ios::binary);
     if (!input) {
       return LOTUS_MAKE_STATUS(LOTUS, FAIL, "open file '", pb_files.at(i), "' failed");
@@ -489,7 +489,7 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, ML
   }
   LOTUS_RETURN_IF_ERROR(SortTensorFileNames(input_pb_files));
 
-  std::vector<onnx::TensorProto> input_pbs;
+  std::vector<ONNX_NAMESPACE::TensorProto> input_pbs;
   LOTUS_RETURN_IF_ERROR(LoadTensors(input_pb_files, &input_pbs));
   LOTUS_RETURN_IF_ERROR(ConvertInput(input_pbs, feeds));
   return Status::OK();
@@ -582,13 +582,13 @@ Status OnnxTestCase::ConvertInput(const std::vector<onnx::TensorProto>& input_pb
         snprintf(buf, sizeof(buf), "%d", i);
         snprintf(buf2, sizeof(buf2), "data_%d", i);
         snprintf(buf3, sizeof(buf3), "gpu_0/data_%d", i);
-        if (use_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf](const onnx::ValueInfoProto& info) {
+        if (use_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf](const ONNX_NAMESPACE::ValueInfoProto& info) {
                                   return info.name() == buf;
                                 }) == input_value_info_.end()) use_number_names = false;
-        if (use_data_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf2](const onnx::ValueInfoProto& info) {
+        if (use_data_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf2](const ONNX_NAMESPACE::ValueInfoProto& info) {
                                        return info.name() == buf2;
                                      }) == input_value_info_.end()) use_data_number_names = false;
-        if (use_data_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf3](const onnx::ValueInfoProto& info) {
+        if (use_data_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf3](const ONNX_NAMESPACE::ValueInfoProto& info) {
                                        return info.name() == buf3;
                                      }) == input_value_info_.end()) use_gpu_data_number_names = false;
       }

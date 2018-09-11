@@ -3,7 +3,7 @@
 #include "core/inc/op_kernel_author.h"
 #include "core/framework/kernel_registry.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 class IdGenerator {

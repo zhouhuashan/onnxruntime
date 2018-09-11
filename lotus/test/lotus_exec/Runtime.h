@@ -177,7 +177,7 @@ class WinMLRuntime {
     for (size_t index = 0, end = inputs.size(); index < end; ++index) {
       MLValue mlvalue;
       const onnxruntime::NodeArg& input = *(inputs[index]);
-      const onnx::TensorShapeProto* input_shape = input.Shape();
+      const ONNX_NAMESPACE::TensorShapeProto* input_shape = input.Shape();
       if (input.Name().empty())
         continue;
 
@@ -271,7 +271,7 @@ class WinMLRuntime {
         if (output.IsTensor()) {
           ctensor = &output.Get<Tensor>();
 
-          onnx::ValueInfoProto expected_output_info = (*outputMeta)[i]->ToProto();
+          ONNX_NAMESPACE::ValueInfoProto expected_output_info = (*outputMeta)[i]->ToProto();
           std::pair<COMPARE_RESULT, std::string> ret = VerifyValueInfo(expected_output_info, output);
           COMPARE_RESULT compare_result = ret.first;
           compare_result = ret.first;

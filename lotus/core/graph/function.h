@@ -15,7 +15,7 @@ namespace onnxruntime {
 class Function {
  public:
   virtual ~Function() {}
-  virtual const onnx::OpSchema& OpSchema() const = 0;
+  virtual const ONNX_NAMESPACE::OpSchema& OpSchema() const = 0;
 
   virtual const onnxruntime::GraphBase& Body() const = 0;
 

@@ -12,9 +12,9 @@ namespace onnxruntime {  // forward declarations
 class GraphTransformer;
 }  // namespace onnxruntime
 
-namespace onnx {
+namespace ONNX_NAMESPACE {
 class ModelProto;
-}  // namespace onnx
+}  // namespace ONNX_NAMESPACE
 
 namespace onnxruntime {
 class IExecutionProvider;  // forward decl

@@ -6,14 +6,14 @@
 #include "core/framework/session_state.h"
 #include "core/framework/tensorprotoutils.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace onnxruntime::common;
 
 namespace onnxruntime {
 
-onnx::OpSchema Scan::GetScanOpSchema() {
+ONNX_NAMESPACE::OpSchema Scan::GetScanOpSchema() {
   // Preliminary definition
-  onnx::OpSchema schema("Scan", __FILE__, __LINE__);
+  ONNX_NAMESPACE::OpSchema schema("Scan", __FILE__, __LINE__);
   schema.SetSupportLevel(OpSchema::SupportType::EXPERIMENTAL)
       .SetDoc("<insert scan loop doc>")
       .Input(0,

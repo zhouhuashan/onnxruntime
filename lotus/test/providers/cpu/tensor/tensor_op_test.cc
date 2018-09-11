@@ -4,7 +4,7 @@
 #include "core/providers/cpu/tensor/crop.h"
 #include "core/util/math.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 
