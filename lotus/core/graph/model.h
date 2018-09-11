@@ -28,12 +28,12 @@ class Model {
 
   // NOTE: after calling this constructor, <*this> model will
   // hold a copy of <model_proto>.
-  explicit Model(const onnx::ModelProto& model_proto,
+  explicit Model(const ONNX_NAMESPACE::ModelProto& model_proto,
                  const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   // NOTE: after calling this constructor, <*this> model will
   // own the <model_proto>.
-  explicit Model(std::unique_ptr<onnx::ModelProto> model_proto,
+  explicit Model(std::unique_ptr<ONNX_NAMESPACE::ModelProto> model_proto,
                  const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
   // Get model's IR version.
@@ -77,7 +77,7 @@ class Model {
   const Graph& MainGraph() const noexcept;
 
   // Get model's serialization proto data.
-  onnx::ModelProto ToProto();
+  ONNX_NAMESPACE::ModelProto ToProto();
 
 #ifdef _WIN32
   static ::onnxruntime::common::Status Save(Model& model, const std::wstring& file_path);
@@ -90,7 +90,7 @@ class Model {
 
   static ::onnxruntime::common::Status Save(Model& model, int fd);
 
-  static ::onnxruntime::common::Status Load(std::istream& model_istream, onnx::ModelProto* p_model_proto);
+  static ::onnxruntime::common::Status Load(std::istream& model_istream, ONNX_NAMESPACE::ModelProto* p_model_proto);
 
   static ::onnxruntime::common::Status Load(const std::string& file_path,
                                             /*out*/ std::shared_ptr<Model>& p_model,
@@ -103,15 +103,15 @@ class Model {
   static ::onnxruntime::common::Status LoadFromBytes(int count, void* pBytes, /*out*/ std::shared_ptr<Model>& p_model,
                                                      const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
-  static ::onnxruntime::common::Status Load(const onnx::ModelProto& model_proto, /*out*/ std::shared_ptr<Model>& p_model,
+  static ::onnxruntime::common::Status Load(const ONNX_NAMESPACE::ModelProto& model_proto, /*out*/ std::shared_ptr<Model>& p_model,
                                             const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
-  static ::onnxruntime::common::Status Load(std::unique_ptr<onnx::ModelProto> p_model_proto, /*out*/ std::shared_ptr<Model>& p_model,
+  static ::onnxruntime::common::Status Load(std::unique_ptr<ONNX_NAMESPACE::ModelProto> p_model_proto, /*out*/ std::shared_ptr<Model>& p_model,
                                             const ILotusOpSchemaRegistryList* local_registries = nullptr);
 
  private:
   // Model data.
-  std::unique_ptr<onnx::ModelProto> model_proto_;
+  std::unique_ptr<ONNX_NAMESPACE::ModelProto> model_proto_;
 
   // This is a duplication of <model_proto_.metadata_props()>.
   // It gives better accessibility.

@@ -5,7 +5,7 @@
 #include "core/graph/model.h"
 #include "test/framework/model_builder_utils.h"
 #include "core/graph/function_container.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace std;
 
 namespace onnxruntime {
@@ -82,14 +82,14 @@ TEST_F(ShapeInferenceTest, BasicTest) {
   auto p_node = Node("Cast", "X1", "Y1");
   //AttributeProto squeezed_axes;
   //squeezed_axes.set_name("axes");
-  //squeezed_axes.set_type(onnx::AttributeProto_AttributeType_INTS);
+  //squeezed_axes.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_INTS);
   //squeezed_axes.add_ints(0);
   //p_node->AddAttribute("axes", squeezed_axes);
   AttributeProto cast_to;
   cast_to.set_name("to");
-  cast_to.set_type(onnx::AttributeProto_AttributeType_INT);
-  cast_to.set_i(onnx::TensorProto_DataType_INT32);
-  //cast_to.set_type(onnx::AttributeProto_AttributeType_STRING);
+  cast_to.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_INT);
+  cast_to.set_i(ONNX_NAMESPACE::TensorProto_DataType_INT32);
+  //cast_to.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_STRING);
   //cast_to.set_s("INT16");
   p_node->AddAttribute("to", cast_to);
 

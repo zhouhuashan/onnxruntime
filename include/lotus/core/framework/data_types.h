@@ -1,11 +1,15 @@
 #pragma once
 
 #include <string>
+#include <stdint.h>
+#include <unordered_map>
+#include <map>
 
 #include "core/common/common.h"
 #include "core/common/exceptions.h"
-#include "core/graph/onnx_protobuf.h"
-
+namespace ONNX_NAMESPACE {
+class TypeProto;
+}
 namespace onnxruntime {
 //maps
 using MapStringToString = std::map<std::string, std::string>;
@@ -29,13 +33,9 @@ class DataTypeImpl;
 class TensorTypeBase;
 // DataTypeImpl pointer as unique DataTypeImpl identifier.
 using MLDataType = const DataTypeImpl*;
-using DeleteFunc = std::function<void(void*)>;
+// be used with class MLValue
+using DeleteFunc = void (*)(void*);
 using CreateFunc = std::function<void*()>;
-
-template <typename T>
-static void Delete(void* p) {
-  delete static_cast<T*>(p);
-}
 
 class DataTypeImpl {
  public:
@@ -48,7 +48,7 @@ class DataTypeImpl {
   // able to represent multiple type protos, for example, "float" could match float16, float.
   // 3) After sub-class having the implementation of this function in-place, we should either
   // change the return value from true to false here or make this function as a pure virtual function.
-  virtual bool IsCompatible(const onnx::TypeProto& type_proto) const = 0;
+  virtual bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const = 0;
   virtual size_t Size() const = 0;
 
   virtual DeleteFunc GetDeleteFunc() const = 0;
@@ -70,7 +70,7 @@ class DataTypeImpl {
   template <typename T>
   static MLDataType GetTensorType();
 
-  static MLDataType TypeFromProto(const onnx::TypeProto& proto);
+  static MLDataType TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto);
 
   static const std::vector<MLDataType>& AllTensorTypes();
   static const std::vector<MLDataType>& AllFixedSizeTensorTypes();
@@ -101,7 +101,7 @@ class TensorTypeBase : public DataTypeImpl {
     // should never reach here.
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
-  bool IsCompatible(const onnx::TypeProto& /*type_proto*/) const override {
+  bool IsCompatible(const ONNX_NAMESPACE::TypeProto& /*type_proto*/) const override {
     LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
@@ -119,7 +119,7 @@ struct TensorType : public TensorTypeBase {
   MLDataType GetElementType() const override {
     return DataTypeImpl::GetType<elemT>();
   }
-  bool IsCompatible(const onnx::TypeProto& type_proto) const override;
+  bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override;
 
  private:
   TensorType() = default;
@@ -139,6 +139,11 @@ class NonTensorTypeBase : public DataTypeImpl {
 
 template <typename T>
 class NonTensorType : public NonTensorTypeBase {
+ private:
+  static void Delete(void* p) {
+    delete static_cast<T*>(p);
+  }
+
  public:
   static MLDataType Type() {
     static NonTensorType non_tensor_type;
@@ -154,10 +159,10 @@ class NonTensorType : public NonTensorTypeBase {
   }
 
   DeleteFunc GetDeleteFunc() const override {
-    return &Delete<T>;
+    return &Delete;
   }
 
-  bool IsCompatible(const onnx::TypeProto& type_proto) const override;
+  bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override;
 
  private:
   NonTensorType() = default;
@@ -165,8 +170,13 @@ class NonTensorType : public NonTensorTypeBase {
 
 template <typename T>
 class NonOnnxType : public DataTypeImpl {
+ private:
+  static void Delete(void* p) {
+    delete static_cast<T*>(p);
+  }
+
  public:
-  bool IsCompatible(const onnx::TypeProto&) const override {
+  bool IsCompatible(const ONNX_NAMESPACE::TypeProto&) const override {
     return false;
   }
 
@@ -180,7 +190,7 @@ class NonOnnxType : public DataTypeImpl {
   }
 
   DeleteFunc GetDeleteFunc() const override {
-    return &Delete<T>;
+    return &Delete;
   }
 
  private:
@@ -225,4 +235,4 @@ class NonOnnxType : public DataTypeImpl {
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return NonOnnxType<TYPE>::Type();        \
   }
-}  // namespace onnxruntime
+}  // namespace ONNX_NAMESPACEruntime

@@ -41,10 +41,10 @@ MKLDNNExecutionProvider::~MKLDNNExecutionProvider() {
 
 Status MKLDNNExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   // Support CPU <-> MKLDNN for now
-  if (!(src.Location().name == MKLDNN && dst.Location().name == CPU) &&
-      !(src.Location().name == CPU && dst.Location().name == MKLDNN) &&
-      !(src.Location().name == MKLDNN && dst.Location().name == MKLDNN_CPU)) {
-    LOTUS_NOT_IMPLEMENTED(src.Location().name + " copy to ", dst.Location().name, " is not implemented");
+  if (!(strcmp(src.Location().name, MKLDNN) == 0 && strcmp(dst.Location().name, CPU) == 0) &&
+      !(strcmp(src.Location().name, CPU) == 0 && strcmp(dst.Location().name, MKLDNN) == 0) &&
+      !(strcmp(src.Location().name, MKLDNN) == 0 && strcmp(dst.Location().name, MKLDNN_CPU) == 0)) {
+    LOTUS_NOT_IMPLEMENTED(src.Location().name, " copy to ", dst.Location().name, " is not implemented");
   }
 
   // Todo: Copy for now. May optimize later to avoid copy.

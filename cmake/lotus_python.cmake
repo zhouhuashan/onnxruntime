@@ -41,7 +41,7 @@ add_library(onnxruntime_pybind11_state MODULE ${onnxruntime_pybind_srcs})
 if(HAS_CAST_FUNCTION_TYPE)
 target_compile_options(onnxruntime_pybind11_state PRIVATE "-Wno-cast-function-type")
 endif()
-target_include_directories(onnxruntime_pybind11_state PRIVATE ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
+target_include_directories(onnxruntime_pybind11_state PRIVATE ${LOTUS_ROOT} ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
 target_include_directories(onnxruntime_pybind11_state PRIVATE ${pybind11_INCLUDE_DIRS})
 set(onnxruntime_pybind11_state_libs
     lotus_session

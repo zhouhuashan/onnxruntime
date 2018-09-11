@@ -375,7 +375,7 @@ void CreateGenericMLValue(AllocatorPtr alloc, const std::string& name_input, py:
     // iterator should not be NULL due to previous test.
     try {
       CreateGenericIterableMLValue(iterator, alloc, name_input, p_mlvalue);
-    } catch (std::runtime_error e) {
+    } catch (const std::runtime_error&) {
       Py_DECREF(iterator);
       throw;
     }

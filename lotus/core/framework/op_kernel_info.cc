@@ -9,8 +9,8 @@ OpKernelInfo::OpKernelInfo(const onnxruntime::Node& node,
                            const IExecutionProvider& execution_provider,
                            const SessionState& session_state)
     : OpNodeProtoHelper(&proto_helper_context_),
-      proto_helper_context_(node),
       node_(node),
+      proto_helper_context_(node),
       kernel_def_(kernel_def),
       execution_provider_(&execution_provider),
       session_state_(session_state) {}

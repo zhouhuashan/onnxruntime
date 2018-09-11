@@ -26,7 +26,7 @@
 #include "core/framework/customregistry.h"
 #include "core/util/math.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 
@@ -82,8 +82,8 @@ OpKernel* CreateMulFP16Kernel(const OpKernelInfo& kernel_info) {
   return new ::onnxruntime::AbiOpKernel(CreateABIMulFP16Kernel, kernel_info, false, false, nullptr, nullptr);
 }
 
-onnx::OpSchema GetMulFP16Schema() {
-  onnx::OpSchema schema("Mul16", "unknown", 0);
+ONNX_NAMESPACE::OpSchema GetMulFP16Schema() {
+  ONNX_NAMESPACE::OpSchema schema("Mul16", "unknown", 0);
   schema.Input(0,
                "A",
                "First operand, should share the type with the second operand.",

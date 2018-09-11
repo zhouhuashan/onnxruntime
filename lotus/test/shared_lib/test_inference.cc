@@ -1,5 +1,4 @@
 #include "core/session/inference_session.h"
-#include "core/providers/cpu/cpu_execution_provider.h"
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
 #include "core/framework/environment.h"
@@ -12,12 +11,6 @@ using namespace onnxruntime::Logging;
 
 static const std::string MODEL_URI = "testdata/mul_1.pb";
 static const std::string CUSTOM_OP_MODEL_URI = "testdata/foo_1.pb";
-
-IExecutionProvider* TestCPUExecutionProvider() {
-  static CPUExecutionProviderInfo info;
-  static CPUExecutionProvider cpu_provider(info);
-  return &cpu_provider;
-}
 
 template <typename T>
 void CreateMLValue(AllocatorPtr alloc,
@@ -44,13 +37,14 @@ void CreateMLValue(AllocatorPtr alloc,
 
 void RunSession(InferenceSession& session_object,
                 RunOptions& run_options,
+                AllocatorPtr alloc,
                 const std::vector<int64_t>& dims_x,
                 const std::vector<float>& values_x,
                 const std::vector<int64_t>& dims_y,
                 const std::vector<float>& values_y) {
   // prepare inputs
   MLValue ml_value;
-  CreateMLValue<float>(TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault), dims_x, values_x, &ml_value);
+  CreateMLValue<float>(alloc, dims_x, values_x, &ml_value);
   NameMLValMap feeds;
   feeds.insert(std::make_pair("X", ml_value));
 
@@ -130,9 +124,9 @@ void TestInference(const std::string& model_uri,
 
   RunOptions run_options;
   run_options.run_tag = so.session_logid;
-
+  AllocatorPtr cpu_allocator = std::make_shared<::onnxruntime::CPUAllocator>();
   // Now run
-  RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);
+  RunSession(session_object, run_options, cpu_allocator, dims_x, values_x, expected_dims_y, expected_values_y);
 }
 
 int main() {

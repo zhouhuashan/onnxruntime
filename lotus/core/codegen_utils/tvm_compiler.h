@@ -25,9 +25,9 @@ struct TVMGraph {
   std::vector<TensorDescriptor> outputs_;
 };
 
-//TODO: compiler a onnxruntime graph to tvm's tensor expression is a common logic for all hardwares
+//TODO: compile a onnxruntime graph to tvm's tensor expression is a common logic for all hardwares
 //onnxruntime framework should provide this functionality to executionp providers.
 //We will need to register how to compiler it for each node. A detail design is needed.
 //Here for testing we just provide the functionality that compile add 1D tensors.
-TVMGraph CompilerToTVM(const onnxruntime::GraphBase& graph, onnxruntime::ProviderType execution_provider_type);
+TVMGraph CompileToTVM(const onnxruntime::GraphBase& graph, onnxruntime::ProviderType execution_provider_type);
 }  // namespace onnxruntime

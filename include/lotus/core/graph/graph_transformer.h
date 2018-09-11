@@ -53,7 +53,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
   // should be stored globally. Otherwise, there will be multiple addresses/pointers
   // for the same operator or function. To avoid this, we may use OpSignature ID
   // as the key, which should be name_domain_version.
-  ::onnxruntime::common::Status Register(const onnx::OpSchema* op, std::unique_ptr<RewriteRule> rule) {
+  ::onnxruntime::common::Status Register(const ONNX_NAMESPACE::OpSchema* op, std::unique_ptr<RewriteRule> rule) {
     op_to_rules_[op].push_back(std::move(rule));
     return ::onnxruntime::common::Status::OK();
   }
@@ -64,7 +64,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
   }
 
  private:
-  using RewriteRuleSet = std::unordered_map<const onnx::OpSchema*, std::vector<std::unique_ptr<RewriteRule>>>;
+  using RewriteRuleSet = std::unordered_map<const ONNX_NAMESPACE::OpSchema*, std::vector<std::unique_ptr<RewriteRule>>>;
 
   RewriteRuleSet op_to_rules_;
 };

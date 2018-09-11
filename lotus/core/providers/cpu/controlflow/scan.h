@@ -15,14 +15,14 @@ class Scan final : public OpKernel {
     // The GraphProto is processed by InferenceSession in order to setup a SessionState instance
     // with the necessary infrastructure to execute the subgraph.
     // This is available via Info().GetSubgraphSessionState("attribute_name") when Compute is called.
-    onnx::GraphProto proto;
-    LOTUS_ENFORCE(info.GetAttr<onnx::GraphProto>("body", &proto).IsOK());
+    ONNX_NAMESPACE::GraphProto proto;
+    LOTUS_ENFORCE(info.GetAttr<ONNX_NAMESPACE::GraphProto>("body", &proto).IsOK());
     (void)proto;
   }
 
   Status Compute(OpKernelContext* ctx) const override;
 
-  static onnx::OpSchema GetScanOpSchema();
+  static ONNX_NAMESPACE::OpSchema GetScanOpSchema();
 
  private:
   Status ComputeImpl() const;

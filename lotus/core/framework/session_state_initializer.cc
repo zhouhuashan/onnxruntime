@@ -205,55 +205,53 @@ common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
   return Status::OK();
 }
 
-common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
+common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto,
                                       const AllocatorInfo& alloc_info,
                                       const ExecutionProviders& exec_providers,
                                       MLValue& mlvalue, void* preallocated, size_t preallocated_size) {
-  std::unique_ptr<Tensor> p_tensor;
   auto alloc_ptr = Utils::GetAllocator(exec_providers, alloc_info);
   if (!alloc_ptr) {
     return Status(common::LOTUS, common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
   }
 
-  if (alloc_info.name == CPU || alloc_info.mem_type == kMemTypeCPUOutput) {
+  if (strcmp(alloc_info.name, CPU) == 0 || alloc_info.mem_type == kMemTypeCPUOutput) {
     // deserialize directly to CPU tensor
-    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::GetTensorFromTensorProto(tensor_proto, &p_tensor, alloc_ptr,
-                                                                       preallocated, preallocated_size));
-  } else {
-    // deserialize to CPU first for non-CPU allocator, then alloc and copy
-    AllocatorPtr deserialize_alloc_ptr;
-    std::unique_ptr<Tensor> p_deserialize_tensor;
-    deserialize_alloc_ptr = exec_providers.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
-    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
-                                                                       deserialize_alloc_ptr));
-
-    if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
-      return Status(common::LOTUS, common::FAIL, "The buffer planner is not consistent with tensor buffer size");
-    }
-
-    const IExecutionProvider* provider = exec_providers.Get(alloc_info);
-    LOTUS_ENFORCE(provider != nullptr);
-    p_tensor = std::make_unique<Tensor>(
-        p_deserialize_tensor->DataType(),
-        p_deserialize_tensor->Shape(),
-        preallocated ? preallocated : static_cast<void*>(alloc_ptr->Alloc(p_deserialize_tensor->Size())),
-        alloc_info,
-        preallocated ? nullptr : alloc_ptr);  // no deleter for preallocated
-
-    Status copy_status = provider->CopyTensor(*p_deserialize_tensor, *p_tensor);
-    if (!copy_status.IsOK()) {
-      if (copy_status.ErrorMessage().empty()) {
-        // The windows execution provider does not return any error message today for CopyTensor since it is
-        // not implemented yet. That's the reason we're adding our own error message so that we can debug better.
-        return Status(copy_status.Category(),
-                      copy_status.Code(),
-                      "Failed to copy tensor to execution provider: " + provider->Type());
-      } else {
-        return copy_status;
-      }
-    }
+    return Utils::TensorProtoToMLValue(tensor_proto, alloc_ptr, preallocated, preallocated_size, mlvalue);
   }
 
+  std::unique_ptr<Tensor> p_tensor;
+  // deserialize to CPU first for non-CPU allocator, then alloc and copy
+  AllocatorPtr deserialize_alloc_ptr;
+  std::unique_ptr<Tensor> p_deserialize_tensor;
+  deserialize_alloc_ptr = exec_providers.Get(kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
+  LOTUS_RETURN_IF_ERROR(Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
+                                                        deserialize_alloc_ptr));
+
+  if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
+    return Status(common::LOTUS, common::FAIL, "The buffer planner is not consistent with tensor buffer size");
+  }
+
+  const IExecutionProvider* provider = exec_providers.Get(alloc_info);
+  LOTUS_ENFORCE(provider != nullptr);
+  p_tensor = std::make_unique<Tensor>(
+      p_deserialize_tensor->DataType(),
+      p_deserialize_tensor->Shape(),
+      preallocated ? preallocated : static_cast<void*>(alloc_ptr->Alloc(p_deserialize_tensor->Size())),
+      alloc_info,
+      preallocated ? nullptr : alloc_ptr);  // no deleter for preallocated
+
+  Status copy_status = provider->CopyTensor(*p_deserialize_tensor, *p_tensor);
+  if (!copy_status.IsOK()) {
+    if (copy_status.ErrorMessage().empty()) {
+      // The windows execution provider does not return any error message today for CopyTensor since it is
+      // not implemented yet. That's the reason we're adding our own error message so that we can debug better.
+      return Status(copy_status.Category(),
+                    copy_status.Code(),
+                    "Failed to copy tensor to execution provider: " + provider->Type());
+    } else {
+      return copy_status;
+    }
+  }
   mlvalue.Init(p_tensor.release(),
                DataTypeImpl::GetType<Tensor>(),
                DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
@@ -261,7 +259,17 @@ common::Status DeserializeTensorProto(const onnx::TensorProto& tensor_proto,
   return common::Status::OK();
 }
 
-common::Status SaveInitializedTensorsWithMemPattern(const onnxruntime::Graph& graph,
+static common::Status PlanTensor(MLValuePatternPlanner& planner, const MLValueNameIdxMap& mlvalue_name_idx_map, const std::string& name, const onnx::TensorProto& tensor_proto) {
+  int mlvalue_index;
+  LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
+  size_t len;
+  Status st = Utils::GetSizeInBytesFromTensorProto(tensor_proto, &len);
+  if (st.Code() == common::NOT_IMPLEMENTED) return Status::OK();
+  if (!st.IsOK()) return st;
+  return planner.TraceAllocation(mlvalue_index, Align256(len));
+}
+
+common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
                                                     const SequentialExecutionPlan& execution_plan,
                                                     const ExecutionProviders& exec_providers,
                                                     const MLValueNameIdxMap& mlvalue_name_idx_map,
@@ -277,18 +285,14 @@ common::Status SaveInitializedTensorsWithMemPattern(const onnxruntime::Graph& gr
   //1. first plan the memory
   const onnxruntime::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
   for (const auto& entry : initialized_tensor_set) {
-    const std::string& name = entry.first;
-    int mlvalue_index;
-    LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
-
-    const onnx::TensorProto& tensor_proto = *(entry.second);
-    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::TraceTensorAllocFromTensorProto(mlvalue_index, tensor_proto, &planner));
+    //string/complex64/complex128 tensors will be skipped
+    LOTUS_RETURN_IF_ERROR(PlanTensor(planner, mlvalue_name_idx_map, entry.first, *entry.second));
   }
 
   //2. allocate weight buffer on different locations
   MemoryPatternGroup mem_patterns;
   LOTUS_RETURN_IF_ERROR(planner.GeneratePatterns(&mem_patterns));
-  for (int i = 0; i < mem_patterns.locations.size(); i++) {
+  for (size_t i = 0; i < mem_patterns.locations.size(); i++) {
     auto& location = mem_patterns.locations[i];
     LOTUS_ENFORCE(weights_buffers.find(location) == weights_buffers.end(),
                   "Existing entry in weights buffer for ", location.name);
@@ -307,7 +311,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const onnxruntime::Graph& gr
     const std::string& name = entry.first;
     int mlvalue_index;
     LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
-    const onnx::TensorProto& tensor_proto = *(entry.second);
+    const ONNX_NAMESPACE::TensorProto& tensor_proto = *(entry.second);
 
     auto& location = execution_plan.allocation_plan[mlvalue_index].location;
     auto it = weights_buffers.find(location);

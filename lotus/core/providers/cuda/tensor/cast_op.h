@@ -12,13 +12,13 @@ class Cast final : public CudaKernel {
     int64_t to;
     Status status = info.GetAttr("to", &to);
     LOTUS_ENFORCE(status.IsOK(), "Attribute to is not set.");
-    to_ = gsl::narrow_cast<onnx::TensorProto_DataType>(to);
+    to_ = gsl::narrow_cast<ONNX_NAMESPACE::TensorProto_DataType>(to);
   }
 
   Status ComputeInternal(OpKernelContext* context) const override;
 
  private:
-  onnx::TensorProto_DataType to_;
+  ONNX_NAMESPACE::TensorProto_DataType to_;
 };
 
 }  // namespace cuda

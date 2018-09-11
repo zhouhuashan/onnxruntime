@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 #include "test_utils.h"
 #include "core/graph/function_container.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 namespace Test {
 

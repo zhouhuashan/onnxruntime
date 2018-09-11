@@ -18,7 +18,7 @@
 
 #include "core/platform/env.h"
 #include "core/graph/schema_registry.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace onnxruntime;
 using namespace ::onnxruntime::common;
 
@@ -29,7 +29,7 @@ Model::Model(const std::string& graph_name,
              const ILotusOpSchemaRegistryList* local_registries,
              const std::unordered_map<std::string, int>& domain_to_version) {
   model_proto_ = std::make_unique<ModelProto>();
-  model_proto_->set_ir_version(onnx::Version::IR_VERSION);
+  model_proto_->set_ir_version(ONNX_NAMESPACE::Version::IR_VERSION);
   model_proto_->mutable_graph()->set_name(graph_name);
   model_metadata_ = model_metadata;
   for (auto& metadata : model_metadata_) {
@@ -253,12 +253,12 @@ static Status LoadModel(const T& file_path, std::shared_ptr<Model>& p_model, con
     status = Model::Load(fd, p_model, local_registries);
   } catch (std::exception& ex) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return Status(LOTUS, FAIL, ex.what());
   }
   if (!status.IsOK()) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return status;
   }
   return Env::Default().FileClose(fd);
@@ -273,12 +273,12 @@ static Status SaveModel(Model& model, const T& file_path) {
     status = Model::Save(model, fd);
   } catch (std::exception& ex) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return Status(LOTUS, FAIL, ex.what());
   }
   if (!status.IsOK()) {
     GSL_SUPPRESS(es .84)
-    (void)Env::Default().FileClose(fd);
+    IGNORE_RETURN_VALUE(Env::Default().FileClose(fd));
     return status;
   }
   return Env::Default().FileClose(fd);

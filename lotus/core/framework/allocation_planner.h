@@ -5,7 +5,7 @@
 #include "core/framework/allocator.h"
 #include "core/framework/sequential_execution_plan.h"
 #include "core/graph/graph.h"
-namespace onnx {
+namespace ONNX_NAMESPACE {
 class TensorShapeProto;
 }
 namespace onnxruntime {
@@ -18,7 +18,7 @@ class MLValueNameIdxMap;
 // to do the planning.
 class ISequentialPlannerContext {
  public:
-  virtual const onnx::TensorShapeProto* GetShape(const onnxruntime::NodeArg& arg) const = 0;
+  virtual const ONNX_NAMESPACE::TensorShapeProto* GetShape(const onnxruntime::NodeArg& arg) const = 0;
   virtual bool EnableParallelExecution() const { return false; }
 };
 
@@ -32,7 +32,7 @@ class SequentialPlannerContext : public ISequentialPlannerContext {
       : m_enable_parallel_execution(p_enable_parallel_execution) {
   }
 
-  const onnx::TensorShapeProto* GetShape(const onnxruntime::NodeArg& arg) const override {
+  const ONNX_NAMESPACE::TensorShapeProto* GetShape(const onnxruntime::NodeArg& arg) const override {
     return arg.Shape();
   }
 

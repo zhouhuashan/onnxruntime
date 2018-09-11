@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 
 using namespace ::onnxruntime::Utils;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
 namespace Test {

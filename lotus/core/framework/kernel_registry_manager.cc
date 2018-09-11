@@ -3,7 +3,7 @@
 #include "core/framework/customregistry.h"
 #include "core/framework/execution_providers.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 Status KernelRegistryManager::CreateKernel(const onnxruntime::Node& node,

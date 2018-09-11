@@ -62,10 +62,10 @@ class OpNodeProtoHelper {
   template <typename T>
   LOTUS_MUST_USE_RESULT Status GetAttrs(const std::string& name, gsl::span<T> values) const;
 
-  uint32_t GetPrimitiveAttrElementCount(onnx::AttributeProto_AttributeType type,
+  uint32_t GetPrimitiveAttrElementCount(ONNX_NAMESPACE::AttributeProto_AttributeType type,
                                         const std::string& name) const noexcept;
 
-  bool HasPrimitiveAttribute(onnx::AttributeProto_AttributeType type,
+  bool HasPrimitiveAttribute(ONNX_NAMESPACE::AttributeProto_AttributeType type,
                              const std::string& name) const noexcept;
 
   uint32_t GetInputCount() const {
@@ -76,22 +76,22 @@ class OpNodeProtoHelper {
     return gsl::narrow_cast<uint32_t>(impl_->getNumOutputs());
   }
 
-  const onnx::TypeProto* GetInputType(size_t index) const {
+  const ONNX_NAMESPACE::TypeProto* GetInputType(size_t index) const {
     return impl_->getInputType(index);
   }
 
-  const onnx::TypeProto* GetOutputType(size_t index) const {
+  const ONNX_NAMESPACE::TypeProto* GetOutputType(size_t index) const {
     // Work around lack of a const method from the onnx InferenceContext interface
     return const_cast<Impl_t*>(impl_)->getOutputType(index);
   }
 
   // Try to query an attribute, returning nullptr if it doesn't exist
-  const onnx::AttributeProto* TryGetAttribute(const std::string& name) const {
+  const ONNX_NAMESPACE::AttributeProto* TryGetAttribute(const std::string& name) const {
     return impl_->getAttribute(name);
   }
 
-  const onnx::AttributeProto* GetAttribute(const std::string& name) const {
-    const onnx::AttributeProto* attr = TryGetAttribute(name);
+  const ONNX_NAMESPACE::AttributeProto* GetAttribute(const std::string& name) const {
+    const ONNX_NAMESPACE::AttributeProto* attr = TryGetAttribute(name);
     LOTUS_ENFORCE(attr != nullptr);
     return attr;
   }
@@ -108,11 +108,11 @@ class ProtoHelperNodeContext {
   ProtoHelperNodeContext(const onnxruntime::Node& node) : node_(node) {}
   ProtoHelperNodeContext() = delete;
 
-  const onnx::AttributeProto* getAttribute(const std::string& name) const;
+  const ONNX_NAMESPACE::AttributeProto* getAttribute(const std::string& name) const;
   size_t getNumInputs() const;
-  const onnx::TypeProto* getInputType(size_t index) const;
+  const ONNX_NAMESPACE::TypeProto* getInputType(size_t index) const;
   size_t getNumOutputs() const;
-  const onnx::TypeProto* getOutputType(size_t index) const;
+  const ONNX_NAMESPACE::TypeProto* getOutputType(size_t index) const;
 
  private:
   const onnxruntime::Node& node_;

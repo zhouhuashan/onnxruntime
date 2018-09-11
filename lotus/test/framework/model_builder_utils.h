@@ -7,7 +7,7 @@ namespace ModelBuilder {
 
 // Shape: a wrapper to build a TensorShapeProto
 struct Shape {
-  onnx::TensorShapeProto value;
+  ONNX_NAMESPACE::TensorShapeProto value;
 
   // construct a shape with given constant dimensions
   Shape(std::initializer_list<int> dims) {
@@ -28,16 +28,16 @@ struct Shape {
 
 // Type: a wrapper to build a TypeProto
 struct Type {
-  onnx::TypeProto value;
+  ONNX_NAMESPACE::TypeProto value;
 
   // construct a float-tensor-type
   Type() {
-    value.mutable_tensor_type()->set_elem_type(onnx::TensorProto_DataType_FLOAT);
+    value.mutable_tensor_type()->set_elem_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
   }
 
   // construct a float-tensor-type with given constant dimensions
   Type(std::initializer_list<int> dims) {
-    value.mutable_tensor_type()->set_elem_type(onnx::TensorProto_DataType_FLOAT);
+    value.mutable_tensor_type()->set_elem_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
     auto p_shape = value.mutable_tensor_type()->mutable_shape();
     for (auto d : dims) {
       auto dim = p_shape->add_dim();
@@ -47,7 +47,7 @@ struct Type {
 
   // construct a float-tensor-type with given symbolic dimensions
   Type(std::initializer_list<std::string> symbolic_dims) {
-    value.mutable_tensor_type()->set_elem_type(onnx::TensorProto_DataType_FLOAT);
+    value.mutable_tensor_type()->set_elem_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
     auto p_shape = value.mutable_tensor_type()->mutable_shape();
     for (auto d : symbolic_dims) {
       auto dim = p_shape->add_dim();

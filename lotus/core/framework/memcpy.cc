@@ -1,5 +1,5 @@
 #include "memcpy.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
 
 Memcpy::Memcpy(const OpKernelInfo& info)

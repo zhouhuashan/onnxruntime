@@ -1,7 +1,7 @@
 #include "core/graph/onnx_protobuf.h"
 #include "core/framework/data_types.h"
 #include "gtest/gtest.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
 namespace Test {

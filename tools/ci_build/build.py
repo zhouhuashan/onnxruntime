@@ -239,30 +239,18 @@ def build_targets(cmake_path, build_dir, configs, parallel):
 
         run_subprocess(cmd_args)
 
+#TODO: remove this function. Get the test data from docker image
+#As we need to test Lotus via different onnx versions, it's not practical to build onnx multiple times for each PR
 def install_onnx_linux(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args):
     "Install ONNX and create test data."
-    #dep_packages = ['typing_extensions','typing','six','protobuf','setuptools', 'numpy', 'pytest_runner']
-    #TODO: replace it with conda install
-    #run_subprocess([sys.executable, '-m', 'pip', 'install', '--upgrade'] + dep_packages)
-    pb_config = None
     pb_src_dir = os.path.join(source_dir, 'cmake', 'external', 'protobuf')
-    if 'Release' in configs:
-        pb_config = 'Release'
-        release_build_dir = get_config_build_dir(build_dir, pb_config)
-    elif 'RelWithDebInfo' in configs:
-        pb_config = 'RelWithDebInfo'
-        release_build_dir = get_config_build_dir(build_dir, pb_config)
-    else:
-        # make a protobuf release build
-        pb_config = 'Release'
-        release_build_dir = get_config_build_dir(build_dir, pb_config)
-        pb_build_dir = os.path.join(release_build_dir, 'external', 'protobuf','cmake')
-        os.makedirs(pb_build_dir, exist_ok=True)
-        run_subprocess([cmake_path, os.path.join(pb_src_dir, 'cmake'), '-Dprotobuf_BUILD_TESTS=OFF','-DCMAKE_POSITION_INDEPENDENT_CODE=ON'] + cmake_extra_args,
+    # make a protobuf release build
+    pb_build_dir = get_config_build_dir(build_dir, 'pb')
+    os.makedirs(pb_build_dir, exist_ok=True)
+    run_subprocess([cmake_path, os.path.join(pb_src_dir, 'cmake'), '-DCMAKE_BUILD_TYPE=Release', '-Dprotobuf_BUILD_TESTS=OFF','-DCMAKE_POSITION_INDEPENDENT_CODE=ON'] + cmake_extra_args,
                     cwd=pb_build_dir)
-    pb_build_path = os.path.join(release_build_dir, 'external', 'protobuf','cmake')
-    install_dir = os.path.join(release_build_dir, 'install')
-    run_subprocess(['make','install','DESTDIR=%s' % install_dir], cwd=pb_build_path)
+    install_dir = os.path.join(pb_build_dir, 'install')
+    run_subprocess(['make','install','-j', str(multiprocessing.cpu_count()), 'DESTDIR=%s' % install_dir], cwd=pb_build_dir)
     os.environ["PATH"] = os.path.join(install_dir, 'usr/local/bin') + os.pathsep + os.environ["PATH"]
     onnx_src = os.path.join(source_dir, 'cmake', 'external', 'onnx')
     run_subprocess([sys.executable, 'setup.py', 'install','--user'], cwd=onnx_src)
@@ -297,7 +285,7 @@ def install_onnx_win(build_dir, source_dir, configs, cmake_path, lotus_onnx_test
             cwd=pb_build_dir)
         run_subprocess([cmake_path,
                         "--build", pb_build_dir,
-                        "--config", pb_config])
+                        "--config", pb_config, '--', "/maxcpucount:%d" % multiprocessing.cpu_count()])
         pb_bin_path = os.path.join(pb_build_dir, pb_config)
 
     # Add protoc to PATH
@@ -454,6 +442,8 @@ def build_python_wheel(source_dir, build_dir, configs, use_cuda):
             run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel', '--use_cuda'], cwd=cwd)
         else:
             run_subprocess([sys.executable, os.path.join(source_dir, 'setup.py'), 'bdist_wheel'], cwd=cwd)
+        if is_ubuntu_1604():
+            run_subprocess([os.path.join(source_dir, 'rename_manylinux.sh')], cwd=cwd+'/dist')
 
 def main():
     args = parse_arguments()

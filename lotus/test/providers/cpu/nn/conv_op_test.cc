@@ -36,7 +36,7 @@ void TestConvOp(const ConvOpAttributes& attributes,
 
   LOTUS_ENFORCE(inputs.size() <= 3, "Our name array is only setup to handle 3 inputs");
   const char* szNames[] = {"X", "W", "B"};
-  for (int i = 0; i < inputs.size(); i++) {
+  for (size_t i = 0; i < inputs.size(); i++) {
     test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);
   }
   test.AddOutput<float>("Y", expected_output_shape, expected_output);
@@ -519,7 +519,7 @@ TEST(ConvTest, Conv2D_group) {
   vector<int64_t> Y_shape = {1, 2, 3, 3};
   auto expected_vals = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 18.0f, 20.0f, 22.0f, 24.0f, 26.0f, 28.0f, 30.0f, 32.0f, 34.0f};
 
-  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);  // Conv2d with group not yet optimized for MKLDNN XP
+  TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
 }
 
 }  // namespace Test

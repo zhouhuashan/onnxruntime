@@ -237,12 +237,12 @@ class AbiOpKernel : public OpKernel {
   EdgeShapes inferred_output_shapes_;
 };
 
-class MLSchemaInferenceContext final : public OpNodeInfoWrapper<onnx::InferenceContext, IMLShapeInferenceContext, IMLTypeInferenceContext> {
+class MLSchemaInferenceContext final : public OpNodeInfoWrapper<ONNX_NAMESPACE::InferenceContext, IMLShapeInferenceContext, IMLTypeInferenceContext> {
  public:
   MLSchemaInferenceContext() = delete;
-  MLSchemaInferenceContext(OpNodeProtoHelper<onnx::InferenceContext>* info, onnx::InferenceContext* ctx) : OpNodeInfoWrapper(info, nullptr), context_(ctx) {}
+  MLSchemaInferenceContext(OpNodeProtoHelper<ONNX_NAMESPACE::InferenceContext>* info, ONNX_NAMESPACE::InferenceContext* ctx) : OpNodeInfoWrapper(info, nullptr), context_(ctx) {}
 
-  onnx::InferenceContext* GetContext() const {
+  ONNX_NAMESPACE::InferenceContext* GetContext() const {
     return context_;
   }
 
@@ -250,7 +250,7 @@ class MLSchemaInferenceContext final : public OpNodeInfoWrapper<onnx::InferenceC
   ML_API_IMP(SetOutputTensorShape)(uint32_t output_index, uint32_t dimension_count, const int64_t* dimensions) noexcept override;
 
  private:
-  onnx::InferenceContext* context_ = nullptr;
+  ONNX_NAMESPACE::InferenceContext* context_ = nullptr;
 };
 
 class MLKernelInferenceContext final : public OpNodeInfoWrapper<ProtoHelperNodeContext, IMLShapeInferenceContext, null_type> {
@@ -287,10 +287,10 @@ class AbiCustomRegistry : public IMLOperatorRegistry {
   }
 
  private:
-  static onnx::OpSchema ConvertOpSchema(const char* domain, const MLSchemaDefinition& abi_schema);
+  static ONNX_NAMESPACE::OpSchema ConvertOpSchema(const char* domain, const MLSchemaDefinition& abi_schema);
   static std::string ConvertFormalParameterType(const MLFormalParameter& formal_parameter);
-  static onnx::OpSchema::FormalParameterOption ConvertFormalParameterOption(MLFormalParameterOptions options);
-  static void SetAttributesAndDefaults(onnx::OpSchema& schema, const MLSchemaDefinition& abi_schema);
+  static ONNX_NAMESPACE::OpSchema::FormalParameterOption ConvertFormalParameterOption(MLFormalParameterOptions options);
+  static void SetAttributesAndDefaults(ONNX_NAMESPACE::OpSchema& schema, const MLSchemaDefinition& abi_schema);
 
   std::shared_ptr<CustomRegistry> custom_registry_;
 };

@@ -23,7 +23,7 @@
 #include "gtest/gtest.h"
 
 using namespace std;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace onnxruntime::Logging;
 
 namespace onnxruntime {
@@ -47,7 +47,7 @@ static common::Status LoadInferenceSessionFromModel(InferenceSession& session, o
 #define CREATE_INITIALIZER_FUNC(T, PROTO_DATATYPE, PROTO_ADD_DATA)                                          \
   onnxruntime::NodeArg& CreateInitializer(onnxruntime::Graph& graph, const std::string& name,               \
                                           const std::vector<int64_t>& shape, const std::vector<T>& value) { \
-    onnx::TensorProto tensor_proto;                                                                         \
+    ONNX_NAMESPACE::TensorProto tensor_proto;                                                                         \
     for (auto dim : shape) tensor_proto.add_dims(dim);                                                      \
     tensor_proto.set_data_type(PROTO_DATATYPE);                                                             \
     for (auto v : value) tensor_proto.PROTO_ADD_DATA(v);                                                    \

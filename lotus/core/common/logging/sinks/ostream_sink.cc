@@ -1,4 +1,4 @@
-#include "ostream_sink.h"
+#include "core/common/logging/sinks/ostream_sink.h"
 #include "date/date.h"
 
 namespace onnxruntime {

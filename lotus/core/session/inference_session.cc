@@ -37,7 +37,7 @@
 #include "core/session/CustomOpsLoader.h"
 #include "core/session/IOBinding.h"
 #include "core/graph/function_container.h"
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
 
@@ -264,7 +264,7 @@ class InferenceSession::Impl {
         // check if it has a subgraph
         if (proto.has_g()) {
           // we need a mutable GraphProto so take a copy of the original one in the Node
-          onnx::GraphProto subgraph_proto{proto.g()};
+          ONNX_NAMESPACE::GraphProto subgraph_proto{proto.g()};
 
           SubgraphMemory subgraph_info;
           // create Graph instance for subgraph

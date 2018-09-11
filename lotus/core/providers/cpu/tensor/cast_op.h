@@ -73,7 +73,7 @@ class Cast final : public OpKernel {
     int64_t to;
     Status status = info.GetAttr("to", &to);
     LOTUS_ENFORCE(status.IsOK(), "Attribute to is not set.");
-    to_ = gsl::narrow_cast<onnx::TensorProto_DataType>(to);
+    to_ = gsl::narrow_cast<ONNX_NAMESPACE::TensorProto_DataType>(to);
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -91,7 +91,7 @@ class Cast final : public OpKernel {
     ::onnxruntime::CastFloat16Data<SrcType, DstType>(in, out, shape, info);
   }
 
-  onnx::TensorProto_DataType to_;
+  ONNX_NAMESPACE::TensorProto_DataType to_;
 };
 
 }  //namespace onnxruntime

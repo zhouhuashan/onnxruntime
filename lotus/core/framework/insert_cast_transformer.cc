@@ -3,7 +3,7 @@
 #include "core/inc/op_kernel_author.h"
 #include "core/framework/kernel_registry.h"
 
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 class IdGenerator {
@@ -122,7 +122,7 @@ Status InsertCastTransformer::Apply(onnxruntime::Graph& graph, bool& modified) c
     }
 
     node->ReplaceDefs(replacement_defs);
-    modified |= casted;
+    modified = modified || casted;
   }
   //Resolve it to build the edges.
   LOTUS_RETURN_IF_ERROR(graph.Resolve());
@@ -165,7 +165,7 @@ Status InsertCastTransformer::Apply(onnxruntime::Graph& graph, bool& modified) c
     graph.RemoveNode(i);
   }
 
-  modified |= !removed_nodes.empty();
+  modified = modified || !removed_nodes.empty();
   return Status::OK();
 }
 }  // namespace onnxruntime

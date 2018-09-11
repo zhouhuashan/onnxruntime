@@ -65,7 +65,7 @@ bool PerformanceRunner::Initialize() {
     return false;
   }
 
-  SessionFactory sf(performance_test_config_.machine_config.provider_type_name, true, true);
+  SessionFactory sf({performance_test_config_.machine_config.provider_type_name}, true, true);
   sf.enable_sequential_execution = performance_test_config_.run_config.enable_sequential_execution;
   sf.session_thread_pool_size = 6;
 

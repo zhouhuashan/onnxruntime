@@ -21,7 +21,7 @@ OpKernelContext::OpKernelContext(ExecutionFrame* frame,
 }
 
 Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
-  if (index < 0 || static_cast<size_t>(index) >= OutputCount())
+  if (index < 0 || index >= OutputCount())
     return nullptr;
 
   // In this case, it's assumed that the tensor hasn't been allocated yet,

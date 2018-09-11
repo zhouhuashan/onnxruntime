@@ -5,7 +5,7 @@
 using namespace onnxruntime;
 using namespace onnxruntime::common;
 using namespace ONNX_NAMESPACE;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 
 class FooKernel : public OpKernel {
  public:
@@ -49,7 +49,7 @@ SchemasContainer* GetAllSchemas() {
   sc->baseline_opset_version = 5;
   sc->opset_version = 7;
 
-  onnx::OpSchema schema("Foo", "unknown", 0);
+  ONNX_NAMESPACE::OpSchema schema("Foo", "unknown", 0);
   schema.Input(0,
                "A",
                "First operand, should share the type with the second operand.",

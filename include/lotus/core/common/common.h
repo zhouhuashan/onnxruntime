@@ -50,7 +50,19 @@ using common::Status;
 #define UNUSED_PARAMETER(x) (void)(x)
 #endif
 
-#if (defined(__GNUC__) || defined(__clang__))
+#ifndef LOTUS_HAVE_ATTRIBUTE
+#ifdef __has_attribute
+#define LOTUS_HAVE_ATTRIBUTE(x) __has_attribute(x)
+#else
+#define LOTUS_HAVE_ATTRIBUTE(x) 0
+#endif
+#endif
+
+// LOTUS_ATTRIBUTE_UNUSED
+//
+// Prevents the compiler from complaining about or optimizing away variables
+// that appear unused on Linux
+#if LOTUS_HAVE_ATTRIBUTE(unused) || (defined(__GNUC__) && !defined(__clang__))
 #undef LOTUS_ATTRIBUTE_UNUSED
 #define LOTUS_ATTRIBUTE_UNUSED __attribute__((__unused__))
 #else

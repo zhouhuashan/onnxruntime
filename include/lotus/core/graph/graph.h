@@ -32,9 +32,9 @@ class Graph : public GraphBase {
   void SetDescription(const std::string& description) override;
 
   // Add/Remove/Get initial tensors for some graph inputs.
-  void AddInitializedTensor(const onnx::TensorProto& tensor_proto);
+  void AddInitializedTensor(const ONNX_NAMESPACE::TensorProto& tensor_proto);
   void RemoveInitializedTensor(const std::string& tensor_name);
-  bool GetInitializedTensor(const std::string& tensor_name, gsl::not_null<const onnx::TensorProto**> value) const;
+  bool GetInitializedTensor(const std::string& tensor_name, gsl::not_null<const ONNX_NAMESPACE::TensorProto**> value) const;
   const InitializedTensorSet& GetAllInitializedTensors() const noexcept;
   void CleanAllInitializedTensors() noexcept;
 
@@ -42,12 +42,12 @@ class Graph : public GraphBase {
   const std::vector<const NodeArg*>& GetValueInfo() const noexcept;
 
   // Serialize the <Graph> into <GraphProto>.
-  const onnx::GraphProto& ToGraphProto();
+  const ONNX_NAMESPACE::GraphProto& ToGraphProto();
 
   ILotusOpSchemaCollectionPtr GetSchemaRegistry() const;
 
   // Construct a Graph instance for a subgraph. Inherits some properties from the parent graph.
-  Graph(const Graph& model_graph, onnx::GraphProto& subgraph_proto);
+  Graph(const Graph& model_graph, ONNX_NAMESPACE::GraphProto& subgraph_proto);
 
   Node* FuseSubGraph(std::unique_ptr<::onnxruntime::IndexedSubGraph> sub_graph, const std::string& fused_node_name);
 
@@ -64,7 +64,7 @@ class Graph : public GraphBase {
 
   // Constructor: Given a <GraphProto> loaded from model file, construct
   // a <Graph> object.
-  Graph(onnx::GraphProto* graph_proto,
+  Graph(ONNX_NAMESPACE::GraphProto* graph_proto,
         const std::unordered_map<std::string, int>& domain_to_version,
         Version ir_version,
         ILotusOpSchemaCollectionPtr schema_registry);
@@ -81,7 +81,7 @@ class Graph : public GraphBase {
   ::onnxruntime::common::Status Resolve(bool no_proto_sync_required);
 
   ::onnxruntime::common::Status InferAndVerifyTypeMatch(Node& node,
-                                                        const onnx::OpSchema& op);
+                                                        const ONNX_NAMESPACE::OpSchema& op);
 
   // Apply type-inference and type-checking to all inputs and initializers:
   ::onnxruntime::common::Status TypeCheckInputsAndInitializers();
@@ -110,7 +110,7 @@ class Graph : public GraphBase {
   // functions in <Graph> will also be fed into <graph_proto_> so that
   // it's consistent with <*this> graph.
   // This pointer is owned by parent model.
-  onnx::GraphProto* graph_proto_;
+  ONNX_NAMESPACE::GraphProto* graph_proto_;
 
   // The node which refers to <*this> graph (Function).
   // Node* node_;

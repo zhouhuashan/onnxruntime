@@ -29,7 +29,7 @@
 #include "gtest/gtest.h"
 
 using namespace std;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::Logging;
 
 namespace onnxruntime {
@@ -90,7 +90,7 @@ class FuseExecutionProvider : public IExecutionProvider {
     meta_def->inputs = {"X", "Y", "Z"};
     meta_def->outputs = {"M"};
     meta_def->since_version = 1;
-    meta_def->status = onnx::EXPERIMENTAL;
+    meta_def->status = ONNX_NAMESPACE::EXPERIMENTAL;
     sub_graph->SetMetaDef(meta_def);
     result.push_back(std::make_unique<ComputationCapacity>(std::move(sub_graph), nullptr));
     return result;
@@ -330,24 +330,21 @@ static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg) {
     return false;
   }
 
-  for (auto i = 0; i < f_arg.size(); ++i) {
+  for (size_t i = 0; i < f_arg.size(); ++i) {
     const onnxruntime::NodeArg* x = f_arg[i];
     const onnxruntime::NodeArg* y = s_arg[i];
     if ((x->Shape() == nullptr) ^ (y->Shape() == nullptr)) {
       return false;
-    } else {
-      if (!x->Shape()) {
-        continue;
-      } else {
-        vector<int64_t> x_shape = Utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
-        vector<int64_t> y_shape = Utils::GetTensorShapeFromTensorShapeProto(*y->Shape());
-        if (x->Name() == y->Name() && x_shape == y_shape && *x->Type() == *y->Type()) {
-          continue;
-        } else {
-          return false;
-        }
-      }
     }
+    if (!x->Shape()) {
+      continue;
+    }
+    vector<int64_t> x_shape = Utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
+    vector<int64_t> y_shape = Utils::GetTensorShapeFromTensorShapeProto(*y->Shape());
+    if (x->Name() == y->Name() && x_shape == y_shape && *x->Type() == *y->Type()) {
+      continue;
+    }
+    return false;
   }
 
   return true;
@@ -748,7 +745,7 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
   ASSERT_TRUE(io_binding->GetOutputs().size() == 1);
   auto span = io_binding->GetOutputs()[0].Get<Tensor>().DataAsSpan<float>();
   ASSERT_TRUE(static_cast<size_t>(span.size()) == v1.size());
-  for (int i = 0; i < v1.size(); ++i) {
+  for (size_t i = 0; i < v1.size(); ++i) {
     ASSERT_TRUE(v1[i] == span[i]);
   }
 
@@ -759,7 +756,7 @@ TEST(InferenceSessionTests, TestIOBindingReuse) {
   ASSERT_TRUE(io_binding->GetOutputs().size() == 1);
   span = io_binding->GetOutputs()[0].Get<Tensor>().DataAsSpan<float>();
   ASSERT_TRUE(static_cast<size_t>(span.size()) == v2.size());
-  for (int i = 0; i < v2.size(); ++i) {
+  for (size_t i = 0; i < v2.size(); ++i) {
     ASSERT_TRUE(v2[i] == span[i]);
   }
 }
@@ -873,8 +870,8 @@ TEST(ExecutionProviderTest, FunctionTest) {
   std::vector<onnxruntime::NodeArg*> outputs;
 
   // FLOAT tensor.
-  onnx::TypeProto float_tensor;
-  float_tensor.mutable_tensor_type()->set_elem_type(onnx::TensorProto_DataType_FLOAT);
+  ONNX_NAMESPACE::TypeProto float_tensor;
+  float_tensor.mutable_tensor_type()->set_elem_type(ONNX_NAMESPACE::TensorProto_DataType_FLOAT);
   float_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(3);
   float_tensor.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(2);
 

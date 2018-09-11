@@ -63,7 +63,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBuffer(int mlvalue_index,
                                                           const AllocatorInfo& location,
                                                           const TensorShape& shape,
                                                           bool create_fence) {
-  LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index < all_values_.size());
+  LOTUS_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
   return AllocateMLValueTensorSelfOwnBufferHelper(mlvalue_index, element_type, location, shape, create_fence);
 }
 
@@ -396,7 +396,6 @@ void ExecutionFrame::TraceFree(int mlvalue_idx) {
     const auto& per_alloc_plan = alloc_plan.at(mlvalue_idx);
 
     // only trace tensors
-    auto alloc_info = per_alloc_plan.location;
     auto ml_type = per_alloc_plan.value_type;
     if (ml_type->IsTensorType()) {
       // tensors

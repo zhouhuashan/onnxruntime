@@ -32,7 +32,7 @@ Domain_To_Version_Map LotusOpSchemaRegistry::GetLatestOpsetVersions(bool is_onnx
 }
 
 ::onnxruntime::common::Status LotusOpSchemaRegistry::RegisterOpSet(
-    std::vector<onnx::OpSchema>& schemas,
+    std::vector<ONNX_NAMESPACE::OpSchema>& schemas,
     const std::string& domain,
     int baseline_opset_version,
     int opset_version) {
@@ -174,7 +174,7 @@ Domain_To_Version_Map SchemaRegistryManager::GetLatestOpsetVersions(bool is_onnx
 
   // check the ONNX schema registry
   auto& onnx_domain_version_map =
-      onnx::OpSchemaRegistry::DomainToVersionRange::Instance().Map();
+      ONNX_NAMESPACE::OpSchemaRegistry::DomainToVersionRange::Instance().Map();
 
   for (auto domain : onnx_domain_version_map) {
     if (is_onnx_only && domain.first.compare(kOnnxDomain) != 0)
@@ -236,7 +236,7 @@ void SchemaRegistryManager::GetSchemaAndHistory(
   }
 
   // if not found in registered custom schema registry, search in ONNX schema registry
-  *latest_schema = onnx::OpSchemaRegistry::Schema(key, version, domain);
+  *latest_schema = ONNX_NAMESPACE::OpSchemaRegistry::Schema(key, version, domain);
   if (*latest_schema != nullptr) {
     *earliest_opset_where_unchanged = (*latest_schema)->SinceVersion();
   }

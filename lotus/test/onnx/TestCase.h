@@ -7,7 +7,7 @@
 #include <filesystem>
 #endif
 
-namespace onnx {
+namespace ONNX_NAMESPACE {
 class ValueInfoProto;
 }
 
@@ -27,7 +27,7 @@ class ITestCase {
   virtual ::onnxruntime::common::Status GetNodeName(std::string* out) = 0;
   //The number of input/output pairs
   virtual size_t GetDataCount() const = 0;
-  virtual const onnx::ValueInfoProto& GetOutputInfoFromModel(size_t i) const = 0;
+  virtual const ONNX_NAMESPACE::ValueInfoProto& GetOutputInfoFromModel(size_t i) const = 0;
   virtual ~ITestCase() {}
   virtual ::onnxruntime::common::Status GetPerSampleTolerance(double* value) = 0;
   virtual ::onnxruntime::common::Status GetRelativePerSampleTolerance(double* value) = 0;

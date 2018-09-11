@@ -17,14 +17,14 @@ function(AddTest)
   set_target_properties(${_UT_TARGET} PROPERTIES FOLDER "LotusTest")
 
   if (_UT_DEPENDS)
-    add_dependencies(${_UT_TARGET} ${_UT_DEPENDS})
+    add_dependencies(${_UT_TARGET} ${_UT_DEPENDS} eigen)
   endif(_UT_DEPENDS)
 
   target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${lotus_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
   if (lotus_USE_TVM)
-    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${TVM_INCLUDES})
+    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${LOTUS_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${lotus_CUDNN_HOME}/include ${TVM_INCLUDES})
   else(lotus_USE_TVM)
-    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR})
+    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${LOTUS_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${lotus_CUDNN_HOME}/include)
   endif()
 
   if (WIN32)
@@ -39,7 +39,7 @@ function(AddTest)
       endif()
     endif()
     if (lotus_USE_TVM)
-      target_compile_options(${_UT_TARGET} PRIVATE /wd4100 /wd4244 /wd4275 /wd4251 /wd4389)
+        target_compile_options(${_UT_TARGET} PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
     endif()
   endif()
 
@@ -221,7 +221,7 @@ set(lotus_test_tvm_dependencies
 
 add_library(lotus_test_utils_for_framework ${lotus_test_utils_src})
 lotus_add_include_to_target(lotus_test_utils_for_framework gtest onnx protobuf::libprotobuf)
-add_dependencies(lotus_test_utils_for_framework ${lotus_EXTERNAL_DEPENDENCIES})
+add_dependencies(lotus_test_utils_for_framework ${lotus_EXTERNAL_DEPENDENCIES} eigen)
 target_include_directories(lotus_test_utils_for_framework PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS})
 # Add the define for conditionally using the framework Environment class in TestEnvironment
 target_compile_definitions(lotus_test_utils_for_framework PUBLIC -DHAVE_FRAMEWORK_LIB)
@@ -231,7 +231,7 @@ if (SingleUnitTestProject)
 else()
   add_library(lotus_test_utils ${lotus_test_utils_src})
   lotus_add_include_to_target(lotus_test_utils gtest onnx protobuf::libprotobuf)
-  add_dependencies(lotus_test_utils ${lotus_EXTERNAL_DEPENDENCIES})
+  add_dependencies(lotus_test_utils ${lotus_EXTERNAL_DEPENDENCIES} eigen)
   target_include_directories(lotus_test_utils PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS})
 endif()
 
@@ -413,7 +413,7 @@ set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(lotus_BUILD_BENCHMARKS)
   add_executable(lotus_benchmark ${TEST_SRC_DIR}/onnx/microbenchmark/main.cc ${TEST_SRC_DIR}/onnx/microbenchmark/modeltest.cc)
-  target_include_directories(lotus_benchmark PUBLIC ${lotusIR_graph_header} benchmark)
+  target_include_directories(lotus_benchmark PRIVATE ${LOTUS_ROOT} ${lotusIR_graph_header} benchmark)
   target_compile_options(lotus_benchmark PRIVATE "/wd4141")
   if (lotus_USE_MLAS AND WIN32)
     target_include_directories(lotus_benchmark PRIVATE ${MLAS_INC})
@@ -431,7 +431,7 @@ if(WIN32)
   if(NOT ${CMAKE_GENERATOR_PLATFORM} MATCHES "ARM")
     add_library(onnx_test_runner_vstest SHARED ${onnx_test_runner_src_dir}/vstest_logger.cc ${onnx_test_runner_src_dir}/vstest_main.cc)
     target_compile_options(onnx_test_runner_vstest PRIVATE ${DISABLED_WARNINGS_FOR_PROTOBUF})
-    target_include_directories(onnx_test_runner_vstest PRIVATE ${date_INCLUDE_DIR})
+    target_include_directories(onnx_test_runner_vstest PRIVATE ${LOTUS_ROOT} ${date_INCLUDE_DIR})
     target_link_libraries(onnx_test_runner_vstest PRIVATE ${onnx_test_libs} onnx_test_runner_common)
     set_target_properties(onnx_test_runner_vstest PROPERTIES FOLDER "LotusTest")
   endif()
@@ -443,6 +443,7 @@ file(GLOB lotus_exec_src
   "${lotus_exec_src_dir}/*.h"
   )
 add_executable(lotus_exec ${lotus_exec_src})
+target_include_directories(lotus_exec PRIVATE ${LOTUS_ROOT})
 # we need to force these dependencies to build first. just using target_link_libraries isn't sufficient
 add_dependencies(lotus_exec ${lotus_EXTERNAL_DEPENDENCIES})
 target_link_libraries(lotus_exec PRIVATE ${onnx_test_libs})
@@ -471,7 +472,7 @@ endif()
 file(GLOB lotus_perf_test_src ${lotus_perf_test_src_patterns})
 
 add_executable(lotus_perf_test ${lotus_perf_test_src})
-target_include_directories(lotus_perf_test PUBLIC ${lotusIR_graph_header} ${onnx_test_runner_src_dir} ${lotus_exec_src_dir})
+target_include_directories(lotus_perf_test PRIVATE ${LOTUS_ROOT} ${lotusIR_graph_header} ${onnx_test_runner_src_dir} ${lotus_exec_src_dir})
 
 target_link_libraries(lotus_perf_test PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
 set_target_properties(lotus_perf_test PROPERTIES FOLDER "LotusTest")
@@ -495,7 +496,7 @@ if (UNIX)
   file(GLOB lotus_shared_lib_test_srcs "${LOTUS_ROOT}/test/shared_lib/test_inference.cc")
 
   add_executable(lotus_shared_lib_test ${lotus_shared_lib_test_srcs})
-  target_include_directories(lotus_shared_lib_test PUBLIC "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(lotus_shared_lib_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
   target_link_libraries(lotus_shared_lib_test
     lotus_runtime

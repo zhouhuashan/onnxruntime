@@ -19,7 +19,7 @@ void CPUAllocator::Free(void* p) {
 }
 
 const AllocatorInfo& CPUAllocator::Info() const {
-  static AllocatorInfo cpuAllocatorInfo(CPU, AllocatorType::kDeviceAllocator);
+  static constexpr AllocatorInfo cpuAllocatorInfo(CPU, AllocatorType::kDeviceAllocator);
   return cpuAllocatorInfo;
 }
 

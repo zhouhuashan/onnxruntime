@@ -245,6 +245,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   const Tensor* B = num_inputs == 3 ? context->Input<Tensor>(2) : nullptr;
   const int64_t N = X->Shape()[0];
   const int64_t M = W->Shape()[0];
+  const int group_mkl = static_cast<int>(onnxruntime::ConvBase::group_);
 
   LOTUS_RETURN_IF_ERROR(onnxruntime::ConvBase::ValidateInputShape(X, W));
 
@@ -252,11 +253,6 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
 
   // TODO: Support more than 2d kernels
   if (kernel_shape.size() != 2) {
-    // Fall Back to CPU implementation.
-    return onnxruntime::Conv<T>::Compute(context);
-  }
-  // TODO: support groups
-  if (onnxruntime::ConvBase::group_ > 1) {
     // Fall Back to CPU implementation.
     return onnxruntime::Conv<T>::Compute(context);
   }
@@ -296,7 +292,18 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   TensorShape output_shape = Y->Shape().Slice(2);
 
   mkldnn::memory::dims src_dims_mkl(X->Shape().GetDims().begin(), X->Shape().GetDims().end());
-  mkldnn::memory::dims filter_dims_mkl(W->Shape().GetDims().begin(), W->Shape().GetDims().end());
+  mkldnn::memory::dims filter_dims_mkl;
+  if (group_mkl == 1) {
+    filter_dims_mkl.assign(W->Shape().GetDims().begin(), W->Shape().GetDims().end());
+  } else {
+    filter_dims_mkl.assign({
+        group_mkl,
+        static_cast<int>(W->Shape()[0] / group_mkl),
+        static_cast<int>(W->Shape()[1]),
+        static_cast<int>(W->Shape()[2]),
+        static_cast<int>(W->Shape()[3]),
+    });
+  }
   mkldnn::memory::dims strides_mkl(strides.begin(), strides.end());
   mkldnn::memory::dims dilations_mkl(dilations.begin(), dilations.end());
   // mkldnn dilations start from 0 so we need to subtract 1 from each dim.
@@ -334,9 +341,9 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
     mkldnn::engine& cpu_engine = GetEngine();
 
     // Per ONNX spec,
-    // X (src) is NCHW, W (filter) is OIHW, and Y (dst) is NCHW
+    // X (src) is NCHW, W (filter) is OIHW/GOIHW, and Y (dst) is NCHW
     auto src_md = mkldnn::memory::desc(src_dims_mkl, MklDnnType<T>(), mkldnn::memory::format::nchw);
-    auto filter_md = mkldnn::memory::desc(filter_dims_mkl, MklDnnType<T>(), mkldnn::memory::format::oihw);
+    auto filter_format = group_mkl == 1 ? mkldnn::memory::format::oihw : mkldnn::memory::format::goihw;
     auto dst_md = mkldnn::memory::desc(dst_dims_mkl, MklDnnType<T>(), mkldnn::memory::format::nchw);
 
     // Reorder src memory layout if necessary.
@@ -351,8 +358,11 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
     }
 
     // Reorder filter memory layout if necessary.
-    if (filter_md.data.format != conv2d_primitive->GetFilterMemoryFormat()) {
-      auto pd = mkldnn::memory::primitive_desc(filter_md, cpu_engine);
+    if (filter_format != conv2d_primitive->GetFilterMemoryFormat()) {
+      auto pd = mkldnn::memory::primitive_desc(mkldnn::memory::desc(filter_dims_mkl,
+                                                                    MklDnnType<T>(),
+                                                                    filter_format),
+                                               cpu_engine);
       mkldnn::memory src = mkldnn::memory(pd, (void*)filter_data);
       filter_reorder_buffer = IAllocator::MakeUniquePtr<void>(alloc, sizeof(T) * W->Shape().Size());
       mkldnn::memory dst = mkldnn::memory(conv_fwd_pd->weights_primitive_desc(), filter_reorder_buffer.get());

@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 #include "test_utils.h"
 using namespace std;
-using namespace onnx;
+using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::Logging;
 
 namespace onnxruntime {
