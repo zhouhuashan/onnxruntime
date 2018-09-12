@@ -204,6 +204,9 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
         config_build_dir = get_config_build_dir(build_dir, config)
         os.makedirs(config_build_dir, exist_ok=True)
 
+        if args.use_tvm:
+            os.environ["PATH"] += os.pathsep + os.path.join(config_build_dir, "external", "tvm", config)
+
         run_subprocess(cmake_args  + ["-DCMAKE_BUILD_TYPE={}".format(config)], cwd=config_build_dir)
 
 def clean_targets(cmake_path, build_dir, configs):

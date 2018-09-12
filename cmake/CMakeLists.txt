@@ -1,8 +1,8 @@
 # Minimum CMake required
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 
 # Project
-project(Lotus C CXX)
+project(onnxruntime C CXX)
 include(CheckCXXCompilerFlag)
 
 # Set C++14 as standard for the whole project
@@ -42,7 +42,7 @@ option(lotus_BUILD_SHARED_LIB "Build a shared library" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
-include(lotus_cmake_utils.cmake)
+include(onnxruntime_cmake_utils.cmake)
 
 if (MSVC)
   if (lotus_MSVC_STATIC_RUNTIME)
@@ -162,8 +162,8 @@ if (lotus_SPLIT_UNIT_TEST_PROJECTS)
 endif()
 
 set(REPO_ROOT ${PROJECT_SOURCE_DIR}/..)
-set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
-set(LOTUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/lotus)
+set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../onnxruntime)
+set(LOTUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/onnxruntime)
 
 include(date)
 
@@ -205,30 +205,43 @@ set(lotus_EXTERNAL_DEPENDENCIES gsl onnx_proto)
 
 # TVM
 if (lotus_USE_TVM)
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/tvm EXCLUDE_FROM_ALL)
-set_target_properties(tvm PROPERTIES FOLDER "External/tvm")
-set_target_properties(tvm_topi PROPERTIES FOLDER "External/tvm")
-set_target_properties(tvm_runtime PROPERTIES FOLDER "External/tvm")
-set_target_properties(nnvm_compiler PROPERTIES FOLDER "External/tvm")
+  if (lotus_USE_CUDA)
+    set(USE_CUDA ON)
+  endif()
+  add_subdirectory(${PROJECT_SOURCE_DIR}/external/tvm EXCLUDE_FROM_ALL)
+  set_target_properties(tvm PROPERTIES FOLDER "External/tvm")
+  set_target_properties(tvm_topi PROPERTIES FOLDER "External/tvm")
+  set_target_properties(tvm_runtime PROPERTIES FOLDER "External/tvm")
+  set_target_properties(nnvm_compiler PROPERTIES FOLDER "External/tvm")
 
-set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include 
+  set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include 
     ${PROJECT_SOURCE_DIR}/external/tvm/dmlc-core/include
     ${PROJECT_SOURCE_DIR}/external/tvm/dlpack/include
     $<TARGET_PROPERTY:tvm,INTERFACE_INCLUDE_DIRECTORIES> 
     $<TARGET_PROPERTY:tvm_topi,INTERFACE_INCLUDE_DIRECTORIES> 
     $<TARGET_PROPERTY:nnvm_compiler,INTERFACE_INCLUDE_DIRECTORIES>)
-add_definitions(-DUSE_TVM)
+  add_definitions(-DUSE_TVM)
 
-if (WIN32 AND MSVC)
+  if (WIN32 AND MSVC)
     # wd4100: identifier' : unreferenced formal parameter
     # wd4244: conversion from 'int' to 'char', possible loss of data
     # wd4251: class X needs to have dll-interface to be used by clients of class Y
     # wd4275: non dll-interface class X used as base for dll-interface class Y
     # wd4389: signed/unsigned mismatch
     set(DISABLED_WARNINGS_FOR_TVM "/wd4100" "/wd4244" "/wd4275" "/wd4251" "/wd4389")
-endif()
+  endif()
 
-include(lotus_codegen.cmake)
+  include(onnxruntime_codegen.cmake)
+
+  set(onnxruntime_tvm_libs
+    tvm
+    nnvm_compiler
+    onnxruntime_codegen_utils)
+
+  set(onnxruntime_tvm_dependencies
+    tvm
+    nnvm_compiler
+    onnxruntime_codegen_utils)
 endif()
 
 if (lotus_RUN_ONNX_TESTS)
@@ -328,58 +341,59 @@ if (lotus_USE_OPENBLAS)
 endif()
 
 if (lotus_USE_CUDA)
-    add_definitions(-DUSE_CUDA=1)
-    enable_language(CUDA)
-    set(CMAKE_CUDA_STANDARD 14)
-    find_package(CUDA 9.0 REQUIRED)
-    include(cub)
-    set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
-      ${CUDA_curand_LIBRARY} ${CUDA_cupti_LIBRARY} ${CUDA_cusolver_LIBRARY})
-    if (WIN32)
-      list(APPEND CUDA_LIBRARIES ${lotus_CUDNN_HOME}/lib/x64/cudnn.lib)
-    else()
-      list(APPEND CUDA_LIBRARIES ${lotus_CUDNN_HOME}/lib64/libcudnn.so ${CUDA_TOOLKIT_TARGET_DIR}/lib64/libculibos.a)
-    endif()
-    list(APPEND lotus_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
-    list(APPEND lotus_EXTERNAL_DEPENDENCIES cub)
-    
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_30,code=sm_30") # K series
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_50,code=sm_50") # M series
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_60,code=sm_60") # P series
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_70,code=sm_70") # V series
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --default-stream per-thread")
-    if (NOT WIN32)
-      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
-    endif()
+  add_definitions(-DUSE_CUDA=1)
+  enable_language(CUDA)
+  set(CMAKE_CUDA_STANDARD 14)
+  find_package(CUDA 9.0 REQUIRED)
+  file(TO_CMAKE_PATH ${lotus_CUDNN_HOME} lotus_CUDNN_HOME)
+  include(cub)
+  set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
+    ${CUDA_curand_LIBRARY} ${CUDA_cupti_LIBRARY} ${CUDA_cusolver_LIBRARY})
+  if (WIN32)
+    list(APPEND CUDA_LIBRARIES ${lotus_CUDNN_HOME}/lib/x64/cudnn.lib)
+  else()
+    list(APPEND CUDA_LIBRARIES ${lotus_CUDNN_HOME}/lib64/libcudnn.so ${CUDA_TOOLKIT_TARGET_DIR}/lib64/libculibos.a)
+  endif()
+  list(APPEND lotus_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
+  list(APPEND lotus_EXTERNAL_DEPENDENCIES cub)
+  
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_30,code=sm_30") # K series
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_50,code=sm_50") # M series
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_60,code=sm_60") # P series
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_70,code=sm_70") # V series
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --default-stream per-thread")
+  if (NOT WIN32)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options -fPIC")
+  endif()
 endif()
 
-include(lotus_common.cmake)
-include(lotusIR_graph.cmake)
-include(lotus_framework.cmake)
-include(lotus_providers.cmake)
-include(lotus_session.cmake)
+include(onnxruntime_common.cmake)
+include(onnxruntime_graph.cmake)
+include(onnxruntime_framework.cmake)
+include(onnxruntime_providers.cmake)
+include(onnxruntime_session.cmake)
 
 if(lotus_USE_MKLDNN)
-  set(LOTUS_PROVIDERS_MKLDNN lotus_providers_mkldnn)
+  set(LOTUS_PROVIDERS_MKLDNN onnxruntime_providers_mkldnn)
 endif()
 if(lotus_USE_CUDA)
-  set(LOTUS_PROVIDERS_CUDA lotus_providers_cuda)
+  set(LOTUS_PROVIDERS_CUDA onnxruntime_providers_cuda)
 endif()
 if(lotus_USE_TVM)
-  set(LOTUS_PROVIDERS_NUPHAR lotus_providers_nuphar)
+  set(LOTUS_PROVIDERS_NUPHAR onnxruntime_providers_nuphar)
 endif()
 
 if (lotus_ENABLE_PYTHON)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
 endif()
-include(lotus_python.cmake)
+include(onnxruntime_python.cmake)
 endif()
 
 if (lotus_BUILD_SHARED_LIB)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
-  include(lotus_runtime.cmake)
+  include(onnxruntime.cmake)
 endif()
 endif()
 
@@ -389,6 +403,6 @@ if (lotus_BUILD_UNIT_TESTS)
   # we need to make sure this is turned off since it
   # turned ON by the previous step when building a shared lib
   set(CMAKE_SKIP_BUILD_RPATH OFF)
-  include(lotus_unittests.cmake)
+  include(onnxruntime_unittests.cmake)
 endif()
 

@@ -3,7 +3,7 @@ import sys
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Lotus create nuget spec script",
+    parser = argparse.ArgumentParser(description="Onnxruntime create nuget spec script",
                                      usage='')
     # Main arguments
     parser.add_argument("--source_dir", required=True, help="Path to the source directory.")
@@ -31,10 +31,10 @@ def generate_targets(source_dir):
 def main():
     args = parse_arguments()
     nuspec = generate_nuspec(args.source_dir, args.debug_binary_root, args.release_binary_root, 'amd64')
-    with open('lotus.nuspec', 'wt') as f:
+    with open('onnxruntime.nuspec', 'wt') as f:
         f.write(nuspec)
     targets = generate_targets(args.source_dir)
-    with open('lotus.targets', 'wt') as f:
+    with open('onnxruntime.targets', 'wt') as f:
         f.write(targets)
 
 if __name__ == "__main__":
