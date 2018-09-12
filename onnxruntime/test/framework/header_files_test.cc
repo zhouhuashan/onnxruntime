@@ -53,7 +53,7 @@ std::vector<path> RetrieveHeaderDependencies(const path& header, const path& inc
 }
 
 TEST(HeaderFiles, EnsureAllPublicHeadersInIncludeFolder) {
-  path include_folder_path(path(__FILE__).parent_path().parent_path().parent_path().parent_path() / "include" / "lotus");
+  path include_folder_path(path(__FILE__).parent_path().parent_path().parent_path().parent_path() / "include" / "onnxruntime");
   std::set<path> headers(RetrieveAllHeaders(include_folder_path));
 
   for (auto header_iterator = headers.begin(); header_iterator != headers.end(); header_iterator++) {

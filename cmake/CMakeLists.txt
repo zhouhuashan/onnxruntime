@@ -162,8 +162,8 @@ if (lotus_SPLIT_UNIT_TEST_PROJECTS)
 endif()
 
 set(REPO_ROOT ${PROJECT_SOURCE_DIR}/..)
-set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../lotus)
-set(LOTUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/lotus)
+set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../onnxruntime)
+set(LOTUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/onnxruntime)
 
 include(date)
 

@@ -10,7 +10,7 @@ for an example.
 
 Example of creating a shared lib using g++:
 ```g++ -std=c++14 -shared test_custom_op.cc -o test_custom_op.so -fPIC
--I. -Iinclude/lotus -L. -llotus_runtime -DONNX_ML -DONNX_NAMESPACE=onnx```
+-I. -Iinclude/onnxruntime -L. -lonnxruntime -DONNX_ML -DONNX_NAMESPACE=onnx```
 
 *Note*: Lotus is compiled with gcc4. On gcc version >=5: gcc uses the new C++
 ABI since version 5. 

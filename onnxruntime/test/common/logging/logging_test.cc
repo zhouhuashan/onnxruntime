@@ -65,7 +65,7 @@ TEST_F(LoggingTestsFixture, TestWhereMacro) {
   EXPECT_CALL(*sink_ptr, SendImpl(testing::_, HasSubstr(logid),
                                   Property(&Capture::Location,
                                            AllOf(Field(&CodeLocation::line_num, Eq(std::ref(log_line))),
-                                                 Field(&CodeLocation::file_and_path, HasSubstr("lotus")),            // path
+                                                 Field(&CodeLocation::file_and_path, HasSubstr("onnxruntime")),            // path
                                                  Field(&CodeLocation::file_and_path, HasSubstr("logging_test.cc")),  // filename
                                                  Field(&CodeLocation::function, HasSubstr(function))))))
       .WillRepeatedly(PrintArgs());
