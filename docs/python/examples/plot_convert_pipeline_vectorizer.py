@@ -93,6 +93,6 @@ pred_onx = [sess.run([out.name], {inp.name: row})[0][0, 0] for row in X_test_dic
 print(r2_score(pred, pred_onx))
 
 #########################
-# Very similar. ONNX Runtime uses float instead of doubles,
+# Very similar. *ONNX Runtime* uses floats instead of doubles,
 # that explains the small discrepencies.
 

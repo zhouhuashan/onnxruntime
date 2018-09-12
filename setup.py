@@ -1,7 +1,5 @@
 #-------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License. See License.txt in the project root for
-# license information.
 #--------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
@@ -55,10 +53,10 @@ setup(
     author_email='onnx@microsoft.com',
     cmdclass={'bdist_wheel': bdist_wheel},
     packages=['onnxruntime',
-              'onnxruntime.python',
-              'onnxruntime.python.tools',
-              'onnxruntime.python.datasets',
               'onnxruntime.backend',
+              'onnxruntime.capi',
+              'onnxruntime.datasets',
+              'onnxruntime.tools',
               ],
     package_data={
         'onnxruntime': data + examples,

@@ -242,6 +242,31 @@ including arg name, arg type (contains both type and shape).)pbdoc")
       .def_property_readonly("type", [](const onnxruntime::NodeArg& na) -> std::string {
         return *(na.Type());
       })
+      .def("__str__", [](const onnxruntime::NodeArg& na) -> std::string {
+        std::ostringstream res;
+        res << "NodeArg(name='" << na.Name() << "', type='" << *(na.Type()) << "', shape=";
+        auto shape = na.Shape();
+        std::vector<py::object> arr;
+        if (shape == nullptr || shape->dim_size() == 0) {
+          res << "[]";
+        } else {
+          res << "[";
+          for (int i = 0; i < shape->dim_size(); ++i) {
+            if (shape->dim(i).has_dim_value()) {
+              res << shape->dim(i).dim_value();
+            } else if (shape->dim(i).has_dim_param()) {
+              res << "None";
+            }
+            if (i < shape->dim_size() - 1) {
+              res << ", ";
+            }
+          }
+          res << "]";
+        }
+        res << ")";
+
+        return std::string(res.str());
+      })
       .def_property_readonly("shape", [](const onnxruntime::NodeArg& na) -> std::vector<py::object> {
         auto shape = na.Shape();
         std::vector<py::object> arr;

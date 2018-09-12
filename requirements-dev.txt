@@ -1,4 +1,5 @@
 codecov
+jinja2
 numpy
 onnx
 onnxmltools

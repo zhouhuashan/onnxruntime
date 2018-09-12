@@ -331,7 +331,7 @@ void CreateGenericIterableMLValue(PyObject* iterator, AllocatorPtr alloc, const 
   MLValue ml_value;
   item = PyIter_Next(iterator);
   if (item == NULL) {
-    throw std::runtime_error("Inputs must not be empty.");
+    throw std::runtime_error("Input '" + name_input + "' must not be empty.");
   }
   if (PyObjectCheck_Array(item)) {
     PyObject* pType = PyObject_Type(item);

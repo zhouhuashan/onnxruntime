@@ -14,7 +14,7 @@ Basic usage
 
 import onnxruntime as onnxrt
 import numpy
-from onnxruntime.python.datasets import get_example
+from onnxruntime.datasets import get_example
 
 #########################
 # Let's load a very simple model.

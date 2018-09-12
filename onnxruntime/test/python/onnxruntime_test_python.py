@@ -4,7 +4,7 @@ import os
 import sys
 import numpy as np
 import onnxruntime as onnxrt
-from onnxruntime.python._pybind_state import onnxruntime_ostream_redirect
+from onnxruntime.capi._pybind_state import onnxruntime_ostream_redirect
 
 
 class TestInferenceSession(unittest.TestCase):

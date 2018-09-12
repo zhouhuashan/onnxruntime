@@ -11,7 +11,7 @@ logistic regression model trained with
 *scikit-learn* and converted with *onnxmltools*.
 """
 
-from onnxruntime.python.datasets import get_example
+from onnxruntime.datasets import get_example
 example = get_example("logreg_iris.onnx")
 
 import onnx

@@ -1,3 +1,6 @@
+#-------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+#--------------------------------------------------------------------------
 """
 *ONNX Runtime* is a critical component for platforms that 
 enables high-performance evaluation of trained machine learning (ML)
@@ -11,6 +14,5 @@ as Deep Learning algorithms in the
 __version__ = "0.1.0"
 __author__ = "Microsoft"
 
-from onnxruntime.python.session import InferenceSession
-from onnxruntime.python._pybind_state import RunOptions, SessionOptions, get_device
-from onnxruntime.python import datasets
+from onnxruntime.capi.session import InferenceSession
+from onnxruntime.capi._pybind_state import RunOptions, SessionOptions, get_device
