@@ -20,7 +20,19 @@
 
 #pragma once
 
+// external/eigen/Eigen/src/Core/AssignEvaluator.h:86:63:
+// error: enum constant in boolean context [-Werror=int-in-bool-context]
+#if defined(__GNUC__) && __GNUC__>=7
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wint-in-bool-context"
+#endif
+
 #include "Eigen/Core"
+
+#if defined(__GNUC__) && __GNUC__>=7
+#pragma GCC diagnostic pop
+#endif
+
 #include "Eigen/Dense"
 
 // check if we're using a GEMM implementation that does its own parallelization.
