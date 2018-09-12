@@ -294,7 +294,8 @@ class OnnxTestCase : public ITestCase {
   }
   //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
   // for https://github.com/onnx/onnx/issues/679
-  Status ConvertInput(const std::vector<ONNX_NAMESPACE::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out);
+  ::onnxruntime::common::Status ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs, 
+      const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out);
   std::string node_name_;
   std::once_flag model_parsed_;
   std::once_flag config_parsed_;
@@ -332,8 +333,7 @@ class OnnxTestCase : public ITestCase {
   const std::string& GetTestCaseName() const override {
     return test_case_name_;
   }
-  Status LoadInputData(size_t id, std::unordered_map<std::string, MLValue>& feeds) override;
-  Status LoadOutputData(size_t id, std::vector<MLValue>& output_values) override;
+  ::onnxruntime::common::Status LoadTestData(size_t id, onnxruntime::NameMLValMap& name_data_map, bool is_input) override;
 };
 
 ITestCase* CreateOnnxTestCase(const AllocatorPtr& ptr, const std::string& test_case_name) {
@@ -445,7 +445,7 @@ static Status LoadTensors(const std::vector<path>& pb_files, std::vector<ONNX_NA
   return Status::OK();
 }
 
-Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, MLValue>& feeds) {
+Status OnnxTestCase::LoadTestData(size_t id, onnxruntime::NameMLValMap& name_data_map, bool is_input) {
   if (id >= test_data_dirs_.size())
     return Status(LOTUS, INVALID_ARGUMENT, "out of bound");
 
@@ -453,19 +453,19 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, ML
   if (!st.IsOK())
     return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
 
-  path inputs_pb = test_data_dirs_[id] / "inputs.pb";
-  if (std::experimental::filesystem::exists(inputs_pb)) {  //has an all-in-one input file
+  path test_data_pb = test_data_dirs_[id] / (is_input ? "inputs.pb" : "outputs.pb");
+  if (std::experimental::filesystem::exists(test_data_pb)) {  //has an all-in-one input file
     std::ostringstream oss;
     oss << debuginfo_strings[id];
-    st = LoopDataFile(inputs_pb, allocator_, [&feeds, &oss](const std::string& name, MLValue* value, const std::string& debug_info) {
+    st = LoopDataFile(test_data_pb, allocator_, [&name_data_map, &oss](const std::string& name, ::onnxruntime::MLValue* value, const std::string& debug_info) {
       if (!debug_info.empty()) {
         oss << ":" << debug_info;
       }
       if (name.empty())
         return Status(LOTUS, FAIL, "name is empty");
-      auto pv = feeds.insert(std::make_pair(name, *value));
+      auto pv = name_data_map.insert(std::make_pair(name, *value));
       if (!pv.second)
-        return Status(LOTUS, FAIL, "duplicated input name");
+        return Status(LOTUS, FAIL, "duplicated test data name");
       return Status::OK();
     });
     {
@@ -475,7 +475,7 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, ML
     return st;
   }
 
-  std::vector<path> input_pb_files;
+  std::vector<path> test_data_pb_files;
   const path pb(".pb");
 
   for (directory_iterator pb_file(test_data_dirs_[id]), end3; pb_file != end3; ++pb_file) {
@@ -483,15 +483,16 @@ Status OnnxTestCase::LoadInputData(size_t id, std::unordered_map<std::string, ML
     if (!is_regular_file(f)) continue;
     if (f.extension() != pb) continue;
     std::string filename = f.filename().string();
-    if (!filename.compare(0, 6, "input_")) {
-      input_pb_files.push_back(f);
+    std::string file_prefix = is_input ? "input_" : "output_";
+    if (!filename.compare(0, file_prefix.length(), file_prefix.c_str())) {
+      test_data_pb_files.push_back(f);
     }
   }
-  LOTUS_RETURN_IF_ERROR(SortTensorFileNames(input_pb_files));
+  LOTUS_RETURN_IF_ERROR(SortTensorFileNames(test_data_pb_files));
 
-  std::vector<ONNX_NAMESPACE::TensorProto> input_pbs;
-  LOTUS_RETURN_IF_ERROR(LoadTensors(input_pb_files, &input_pbs));
-  LOTUS_RETURN_IF_ERROR(ConvertInput(input_pbs, feeds));
+  std::vector<onnx::TensorProto> test_data_pbs;
+  LOTUS_RETURN_IF_ERROR(LoadTensors(test_data_pb_files, &test_data_pbs));
+  LOTUS_RETURN_IF_ERROR(ConvertTestData(test_data_pbs, is_input? input_value_info_ : output_value_info_, name_data_map));
   return Status::OK();
 }
 
@@ -518,39 +519,9 @@ Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<MLV
   return Status::OK();
 }
 
-Status OnnxTestCase::LoadOutputData(size_t id, std::vector<MLValue>& output_values) {
-  if (id >= test_data_dirs_.size())
-    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, test_case_name_, ":Attempt to load output data from directory id of ", id, ". Num data dirs :", test_data_dirs_.size());
-  Status st = ParseModel();
-  if (!st.IsOK())
-    return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
-  path outputs_pb = test_data_dirs_[id] / "outputs.pb";
-  output_values.clear();
-  if (std::experimental::filesystem::exists(outputs_pb)) {  //has an all-in-one output file
-    return LoopDataFile(outputs_pb, allocator_, [&output_values](const std::string&, MLValue* value, const std::string&) {
-      output_values.push_back(*value);
-      return Status::OK();
-    });
-  }
-  std::vector<path> output_pb_files;
-  const path pb(".pb");
-  const path tpb(".tpb");
-  for (directory_iterator pb_file(test_data_dirs_[id]), end3; pb_file != end3; ++pb_file) {
-    path f = *pb_file;
-    if (!is_regular_file(f)) continue;
-    if (f.extension() != pb && f.extension() != tpb) continue;
-    std::string filename = f.filename().string();
-    if (!filename.compare(0, 7, "output_")) {
-      output_pb_files.push_back(f);
-    }
-  }
-  SortTensorFileNames(output_pb_files);
-  LOTUS_RETURN_IF_ERROR(FromPbFiles(output_pb_files, output_values));
-  return Status::OK();
-}
-
-Status OnnxTestCase::ConvertInput(const std::vector<ONNX_NAMESPACE::TensorProto>& input_pbs, std::unordered_map<std::string, MLValue>& out) {
-  int len = static_cast<int>(input_value_info_.size());
+Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs, 
+    const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out) {
+  int len = static_cast<int>(value_info.size());
   bool has_valid_names = true;
   //"0","1",...
   bool use_number_names = true;
@@ -559,9 +530,9 @@ Status OnnxTestCase::ConvertInput(const std::vector<ONNX_NAMESPACE::TensorProto>
   //"gpu_0/data_0","gpu_0/data_1",...
   bool use_gpu_data_number_names = true;
 
-  std::vector<std::string> var_names(input_pbs.size());
-  for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
-    std::string name = input_pbs[input_index].name();
+  std::vector<std::string> var_names(test_data_pbs.size());
+  for (size_t input_index = 0; input_index != test_data_pbs.size(); ++input_index) {
+    std::string name = test_data_pbs[input_index].name();
     if (name.empty()) {
       has_valid_names = false;
       break;
@@ -569,31 +540,31 @@ Status OnnxTestCase::ConvertInput(const std::vector<ONNX_NAMESPACE::TensorProto>
     var_names[input_index] = name;
   }
   if (!has_valid_names) {
-    if (len == input_pbs.size()) {
+    if (len == test_data_pbs.size()) {
       for (int i = 0; i != len; ++i) {
-        std::string vname = input_value_info_[i].name();
+        std::string vname = value_info[i].name();
         var_names[i] = vname;
       }
     } else {
       char buf[64];
       char buf2[64];
       char buf3[64];
-      for (int i = 0; i != input_pbs.size(); ++i) {
+      for (int i = 0; i != test_data_pbs.size(); ++i) {
         snprintf(buf, sizeof(buf), "%d", i);
         snprintf(buf2, sizeof(buf2), "data_%d", i);
         snprintf(buf3, sizeof(buf3), "gpu_0/data_%d", i);
-        if (use_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf](const ONNX_NAMESPACE::ValueInfoProto& info) {
+        if (use_number_names && std::find_if(value_info.begin(), value_info.end(), [buf](const onnx::ValueInfoProto& info) {
                                   return info.name() == buf;
-                                }) == input_value_info_.end()) use_number_names = false;
-        if (use_data_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf2](const ONNX_NAMESPACE::ValueInfoProto& info) {
+                                }) == value_info.end()) use_number_names = false;
+        if (use_data_number_names && std::find_if(value_info.begin(), value_info.end(), [buf2](const onnx::ValueInfoProto& info) {
                                        return info.name() == buf2;
-                                     }) == input_value_info_.end()) use_data_number_names = false;
-        if (use_data_number_names && std::find_if(input_value_info_.begin(), input_value_info_.end(), [buf3](const ONNX_NAMESPACE::ValueInfoProto& info) {
+                                     }) == value_info.end()) use_data_number_names = false;
+        if (use_data_number_names && std::find_if(value_info.begin(), value_info.end(), [buf3](const onnx::ValueInfoProto& info) {
                                        return info.name() == buf3;
-                                     }) == input_value_info_.end()) use_gpu_data_number_names = false;
+                                     }) == value_info.end()) use_gpu_data_number_names = false;
       }
     }
-    for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
+    for (size_t input_index = 0; input_index != test_data_pbs.size(); ++input_index) {
       std::string name = var_names[input_index];
       char buf[64];
       if (name.empty()) {
@@ -611,9 +582,9 @@ Status OnnxTestCase::ConvertInput(const std::vector<ONNX_NAMESPACE::TensorProto>
       }
     }
   }
-  for (size_t input_index = 0; input_index != input_pbs.size(); ++input_index) {
+  for (size_t input_index = 0; input_index != test_data_pbs.size(); ++input_index) {
     std::string name = var_names[input_index];
-    const ONNX_NAMESPACE::TensorProto& input = input_pbs[input_index];
+    const onnx::TensorProto& input = test_data_pbs[input_index];
     MLValue v1;
     LOTUS_RETURN_IF_ERROR(Utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
     out.insert(std::make_pair(name, v1));

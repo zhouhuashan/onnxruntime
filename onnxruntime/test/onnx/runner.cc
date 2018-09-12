@@ -283,8 +283,9 @@ void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store
 }
 
 EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
-  std::unordered_map<std::string, ::onnxruntime::MLValue> feeds;
-  common::Status status = c_->LoadInputData(task_id, feeds);
+  NameMLValMap feeds;
+  NameMLValMap output_values;
+  common::Status status = c_->LoadTestData(task_id, feeds, true);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
@@ -307,9 +308,9 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     LOGF_DEFAULT(ERROR, "%s:%s\n", test_case_name_.c_str(), status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
   }
-  std::vector<::onnxruntime::MLValue> output_values;
+
   //TODO: if there are no output value files, just skip the validation
-  status = c_->LoadOutputData(task_id, output_values);
+  status = c_->LoadTestData(task_id, output_values, false);
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
@@ -330,18 +331,34 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
     LOGF_DEFAULT(ERROR, "%s", status.ErrorMessage().c_str());
     return StatusCodeToExecuteResult(status.Code());
   }
+
+  NameMLValMap name_fetch_output_map;
+  std::unordered_map<std::string, const onnx::ValueInfoProto *> name_output_value_info_proto;
+  int i = 0;
+  for (auto &output_name : output_names)
+  {
+      // p_fetches is filled in the order of output_names.
+      name_fetch_output_map[output_name] = p_fetches.at(i);
+      const onnx::ValueInfoProto &infoProto = c_->GetOutputInfoFromModel(i);
+      name_output_value_info_proto.insert(std::make_pair(infoProto.name(), &infoProto));
+      i++;
+  }
+
   EXECUTE_RESULT res = EXECUTE_RESULT::SUCCESS;
-  for (size_t i = 0; i != output_values.size(); ++i) {
-    const MLValue& o = p_fetches.at(i);
+  for (auto &output : output_values) {
+    const MLValue &expected_output_value = output.second;
+    const std::string& output_name = output.first;
+
+    const MLValue& actual_output_value = name_fetch_output_map[output_name];
     //this is the default value for provider sync.Currently only one execution queue for CPU.
     int queue_id = 0;
-    if (o.Fence())
-      o.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, queue_id);
-    const ONNX_NAMESPACE::ValueInfoProto& v = c_->GetOutputInfoFromModel(i);
-    std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(o, output_values.at(i), per_sample_tolerance, relative_per_sample_tolerance, post_procesing);
+    if (actual_output_value.Fence())
+        actual_output_value.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, queue_id);
+    std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(actual_output_value, expected_output_value, per_sample_tolerance, relative_per_sample_tolerance, post_procesing);
     COMPARE_RESULT compare_result = ret.first;
     if (compare_result == COMPARE_RESULT::SUCCESS) {
-      ret = VerifyValueInfo(v, o);
+      const onnx::ValueInfoProto& v = *name_output_value_info_proto[output_name];
+      ret = VerifyValueInfo(v, actual_output_value);
       compare_result = ret.first;
       if (compare_result != COMPARE_RESULT::SUCCESS) {
         switch (compare_result) {

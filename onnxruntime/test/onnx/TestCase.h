@@ -2,6 +2,7 @@
 #include <vector>
 #include <mutex>
 #include <core/framework/ml_value.h>
+#include <core/framework/framework_common.h>
 #include <experimental/filesystem>
 #ifdef _MSC_VER
 #include <filesystem>
@@ -17,8 +18,7 @@ class ITestCase {
  public:
   //must be called before calling the other functions
   virtual ::onnxruntime::common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) = 0;
-  virtual ::onnxruntime::common::Status LoadInputData(size_t id, std::unordered_map<std::string, ::onnxruntime::MLValue>& feeds) = 0;
-  virtual ::onnxruntime::common::Status LoadOutputData(size_t id, std::vector<::onnxruntime::MLValue>& output_values) = 0;
+  virtual ::onnxruntime::common::Status LoadTestData(size_t id, onnxruntime::NameMLValMap& name_data_map, bool is_input) = 0;
   virtual const std::experimental::filesystem::v1::path& GetModelUrl() const = 0;
   virtual const std::string& GetTestCaseName() const = 0;
   virtual void SetAllocator(const ::onnxruntime::AllocatorPtr&) = 0;

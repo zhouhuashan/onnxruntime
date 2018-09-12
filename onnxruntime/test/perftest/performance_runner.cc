@@ -92,7 +92,7 @@ bool PerformanceRunner::Initialize() {
   }
 
   std::unordered_map<std::string, ::onnxruntime::MLValue> feeds;
-  test_case->LoadInputData(0 /* id */, feeds);
+  test_case->LoadTestData(0 /* id */, feeds, true);
   for (auto feed : feeds) {
     io_binding_->BindInput(feed.first, feed.second);
   }
