@@ -6,6 +6,7 @@
 #include <tvm/runtime/ndarray.h>
 #include <topi/elemwise.h>
 #include <topi/nn/upsampling.h>
+#include <topi/cuda/injective.h>
 #include <algorithm>
 
 using namespace onnxruntime::common;
@@ -105,25 +106,18 @@ Status Upsample<T>::ComputeInternal(OpKernelContext* context) const {
         tvm_Y = topi::nn::upsampling(tvm_X, out_hw, "NCHW", "NEAREST_NEIGHBOR");
         break;
       case UpsampleMode::LINEAR:
-        return Status(LOTUS, FAIL, "Not supported yet");
-        // currently there's a bug in TVM for bilinear upsampling
-        //tvm_Y = topi::nn::upsampling(tvm_X, out_hw, "NCHW", "BILINEAR");
+        tvm_Y = topi::nn::upsampling(tvm_X, out_hw, "NCHW", "BILINEAR");
         break;
       default:
         return Status(LOTUS, FAIL, "Upsample: unexpected mode");
     }
 
-    auto S = tvm::create_schedule({tvm_Y->op});
-    tvm::IterVar fx, bx, tx;
-    S[tvm_Y].fuse(tvm_Y->op.as<tvm::ComputeOpNode>()->axis, &fx);
-    S[tvm_Y].split(fx, 64, &bx, &tx);
-    S[tvm_Y].bind(bx, tvm::thread_axis(tvm::Range(), "blockIdx.x"));
-    S[tvm_Y].bind(tx, tvm::thread_axis(tvm::Range(), "threadIdx.x"));
+    auto target = tvm::target::cuda();
+    auto S = topi::cuda::schedule_injective(target, {tvm_Y});
 
     auto args = tvm::Array<tvm::Tensor>({tvm_X, tvm_Y});
     std::unordered_map<tvm::Tensor, tvm::Buffer> binds;
     auto config = tvm::build_config();
-    auto target = tvm::target::cuda();
     auto lowered = tvm::lower(S, args, "upsample", binds, config);
     auto module = tvm::build(lowered, target, tvm::target::stackvm(), config);
     s_->func = module.GetFunction("upsample");
