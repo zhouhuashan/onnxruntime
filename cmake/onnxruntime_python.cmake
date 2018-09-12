@@ -109,8 +109,9 @@ endif()
 add_custom_command(
   TARGET onnxruntime_pybind11_state POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/backend
-  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/tools
-  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/datasets
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/capi
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/datasets
+  COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/tools
   COMMAND ${CMAKE_COMMAND} -E copy
       ${LOTUS_ROOT}/__init__.py
       $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/
@@ -122,19 +123,19 @@ add_custom_command(
       $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/backend/
   COMMAND ${CMAKE_COMMAND} -E copy
       ${onnxruntime_python_srcs}
-      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/
-  COMMAND ${CMAKE_COMMAND} -E copy
-      ${onnxruntime_python_tools_srcs}
-      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/tools/
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/capi/
   COMMAND ${CMAKE_COMMAND} -E copy
       $<TARGET_FILE:onnxruntime_pybind11_state>
-      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/capi/
   COMMAND ${CMAKE_COMMAND} -E copy
       ${onnxruntime_python_datasets_srcs}
-      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/datasets/
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/datasets/
   COMMAND ${CMAKE_COMMAND} -E copy
       ${onnxruntime_python_datasets_data}
-      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/datasets/
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/datasets/
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${onnxruntime_python_tools_srcs}
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/tools/
 )
 
 if (lotus_USE_MKLDNN)
@@ -142,7 +143,7 @@ if (lotus_USE_MKLDNN)
     TARGET onnxruntime_pybind11_state POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         ${MKLDNN_LIB_DIR}/${MKLDNN_SHARED_LIB}
-        $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/
+        $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/capi/
   )
 endif()
 if (lotus_USE_MKLML)
@@ -150,6 +151,6 @@ if (lotus_USE_MKLML)
     TARGET onnxruntime_pybind11_state POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         ${MKLDNN_LIB_DIR}/${MKLML_SHARED_LIB} ${MKLDNN_LIB_DIR}/${IOMP5MD_SHARED_LIB}
-        $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/python/
+        $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/capi/
   )
 endif()

@@ -9,6 +9,16 @@ in *onnxruntime*.
 .. contents::
     :local:
 
+Device
+======
+
+The package is compiled for a specific device, GPU or CPU.
+The CPU comes with several available optimisations
+such as MKL (Math Kernel Libary). The following function
+indicates the chosen option:
+
+.. autofunction:: onnxruntime.get_device
+
 Examples and datasets
 =====================
 
@@ -16,7 +26,7 @@ The package contains a few models stored in ONNX format
 used in the documentation. They don't need to be downloaded
 as they are installed with the package.
 
-.. autofunction:: onnxruntime.python.datasets.get_example
+.. autofunction:: onnxruntime.datasets.get_example
 
 Load and run a model
 ====================

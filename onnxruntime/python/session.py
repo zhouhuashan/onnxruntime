@@ -1,10 +1,11 @@
-# @package session
-# Module onnxruntime.python.session
+#-------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+#--------------------------------------------------------------------------
 
 import sys
 import os
 
-from onnxruntime.python import _pybind_state as C
+from onnxruntime.capi import _pybind_state as C
 
 
 class InferenceSession:
