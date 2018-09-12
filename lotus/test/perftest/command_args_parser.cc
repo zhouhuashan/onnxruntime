@@ -28,6 +28,7 @@ namespace PerfTest {
       "\t-r [repeated_times]: Specifies the repeated times if running in 'times' test mode.Default:1000.\n"
       "\t-t [seconds_to_run]: Specifies the seconds to run for 'duration' mode. Default:600.\n"
       "\t-p [profile_file]: Specifies the profile name to enable profiling and dump the profile data to the file.\n"
+      "\t-s: Show statistics result, like P75, P90.\n"
       "\t-v: Show verbose information.\n"
       "\t-x: Use parallel executor, default (without -x): sequential executor.\n"
       "\t-h: help\n");
@@ -68,6 +69,9 @@ namespace PerfTest {
         if (test_config.run_config.repeated_times <= 0) {
           return false;
         }
+        break;
+      case 's':
+        test_config.run_config.f_dump_statistics = true;
         break;
       case 'v':
         test_config.run_config.f_verbose = true;

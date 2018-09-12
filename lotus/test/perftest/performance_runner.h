@@ -27,7 +27,7 @@ struct PerformanceResult {
   std::vector<double> time_costs;
   std::string model_name;
 
-  void DumpToFile(const std::string& path) const {
+  void DumpToFile(const std::string& path, bool f_include_statistics = false) const {
     std::ofstream outfile;
     outfile.open(path, std::ofstream::out | std::ofstream::app);
     if (!outfile.good()) {
@@ -39,7 +39,7 @@ struct PerformanceResult {
       outfile << model_name << "," << time_costs[runs] << "," << peak_workingset_size << "," << average_CPU_usage << "," << runs << std::endl;
     }
 
-    if (time_costs.size() > 0) {
+    if (time_costs.size() > 0 && f_include_statistics) {
       std::vector<double> sorted_time = time_costs;
 
       size_t total = sorted_time.size();
@@ -71,7 +71,7 @@ class PerformanceRunner {
 
   inline const PerformanceResult& GetResult() const { return performance_result_; }
 
-  inline void SerializeResult() const { performance_result_.DumpToFile(performance_test_config_.model_info.result_file_path); }
+  inline void SerializeResult() const { performance_result_.DumpToFile(performance_test_config_.model_info.result_file_path, performance_test_config_.run_config.f_dump_statistics); }
 
  private:
   bool Initialize();
