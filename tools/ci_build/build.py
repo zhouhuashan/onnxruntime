@@ -503,6 +503,7 @@ def main():
     if (args.update):
         if is_ubuntu_1604():
             install_ubuntu_deps(args)
+            install_python_deps()
         if (args.enable_pybind and is_windows()):
             install_python_deps()
         if (not args.skip_submodule_sync):
