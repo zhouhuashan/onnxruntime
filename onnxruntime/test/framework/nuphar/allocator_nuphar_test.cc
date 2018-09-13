@@ -19,7 +19,7 @@ TEST(AllocatorTest, NupharAllocatorTest) {
 
   auto nuphar_arena = CreateAllocator(allocator_info, device_id);
 
-  EXPECT_EQ(nuphar_arena->Info().name, TVM_STACKVM);
+  EXPECT_STREQ(nuphar_arena->Info().name, TVM_STACKVM);
   EXPECT_EQ(nuphar_arena->Info().id, device_id);
   EXPECT_EQ(nuphar_arena->Info().mem_type, kMemTypeDefault);
   EXPECT_EQ(nuphar_arena->Info().type, AllocatorType::kArenaAllocator);
