@@ -784,5 +784,39 @@ TEST(MathOpTest, Atan) {
   TrigTest<std::atan>(test, {-10.0f, -5.0f, 0.0f, 5.0f, 10.0f});
 }
 
+TEST(MathOpTest, Expand_8_3x3) {
+  OpTester test("Expand", 8);
+  test.AddInput<float>("data_0", {1}, {1.0f});
+  test.AddInput<int64_t>("data_1", {2}, {3, 3});
+  test.AddOutput<float>("result", {3, 3},
+                        {1.0f, 1.0f, 1.0f,
+                         1.0f, 1.0f, 1.0f,
+                         1.0f, 1.0f, 1.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Expand_8_3x1) {
+  OpTester test("Expand", 8);
+  test.AddInput<float>("data_0", {3}, {1.0f, 2.0f, 3.0f});
+  test.AddInput<int64_t>("data_1", {2}, {3, 1});
+  test.AddOutput<float>("result", {3, 3},
+                        {1.0f, 2.0f, 3.0f,
+                         1.0f, 2.0f, 3.0f,
+                         1.0f, 2.0f, 3.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Expand_8_1x3) {
+  OpTester test("Expand", 8);
+  test.AddInput<float>("data_0", {3, 1}, {1.0f, 2.0f, 3.0f});
+  test.AddInput<int64_t>("data_1", {2}, {1, 3});
+  test.AddOutput<float>("result", {3, 3},
+                        {1.0f, 1.0f, 1.0f,
+                         2.0f, 2.0f, 2.0f,
+                         3.0f, 3.0f, 3.0f});
+  test.Run();
+}
+
 }  // namespace Test
+
 }  // namespace onnxruntime
