@@ -136,27 +136,54 @@ class Log final : public OpKernel {
 };
 
 template <typename T>
-class Sum final : public OpKernel {
+class Sum_6 final : public OpKernel {
  public:
-  Sum(const OpKernelInfo& info) : OpKernel(info) {
+  Sum_6(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Min final : public OpKernel {
+class Sum_8 final : public OpKernel {
  public:
-  Min(const OpKernelInfo& info) : OpKernel(info) {
+  Sum_8(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
 };
 
 template <typename T>
-class Max final : public OpKernel {
+class Min_6 final : public OpKernel {
  public:
-  Max(const OpKernelInfo& info) : OpKernel(info) {
+  Min_6(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Min_8 final : public OpKernel {
+ public:
+  Min_8(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Max_6 final : public OpKernel {
+ public:
+  Max_6(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Max_8 final : public OpKernel {
+ public:
+  Max_8(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -222,9 +249,18 @@ class Greater final : public OpKernel {
 };
 
 template <typename T>
-class Mean final : public OpKernel {
+class Mean_6 final : public OpKernel {
  public:
-  Mean(const OpKernelInfo& info) : OpKernel(info) {
+  Mean_6(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Mean_8 final : public OpKernel {
+ public:
+  Mean_8(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;

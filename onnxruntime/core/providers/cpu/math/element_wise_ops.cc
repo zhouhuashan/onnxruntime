@@ -142,23 +142,41 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Log<float>);
 
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
+    Sum,
+    6, 7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Sum_6<float>);
+
 ONNX_CPU_OPERATOR_KERNEL(
     Sum,
-    6,
+    8,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    Sum<float>);
+    Sum_8<float>);
+
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
+    Min,
+    6, 7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Min_6<float>);
 
 ONNX_CPU_OPERATOR_KERNEL(
     Min,
-    6,
+    8,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    Min<float>);
+    Min_8<float>);
+
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
+    Max,
+    6, 7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Max_6<float>);
 
 ONNX_CPU_OPERATOR_KERNEL(
     Max,
-    6,
+    8,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    Max<float>);
+    Max_8<float>);
 
 ONNX_CPU_OPERATOR_KERNEL(
     Not,
@@ -217,11 +235,17 @@ ONNX_CPU_OPERATOR_TYPED_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<int64_t>()),
     Equal<int64_t>);
 
+ONNX_CPU_OPERATOR_VERSIONED_KERNEL(
+    Mean,
+    6, 7,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Mean_6<float>);
+
 ONNX_CPU_OPERATOR_KERNEL(
     Mean,
-    6,
+    8,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
-    Mean<float>);
+    Mean_8<float>);
 
 ONNX_CPU_OPERATOR_KERNEL(
     Affine,
@@ -385,15 +409,15 @@ struct Broadcaster {
   std::vector<int64_t> output_shape_;
 };
 
-template <typename T, typename TOutput = T>
+template <typename T>
 struct TBroadcaster {
-  TBroadcaster(OpKernelContext& context)
-      : input_tensor0_(*context.Input<Tensor>(0)),
-        input_tensor1_(*context.Input<Tensor>(1)),
-        output_tensor_(*context.Output(0, TensorShape(broadcaster_.output_shape_))) {
+  TBroadcaster(const Tensor& input0, const Tensor& input1)
+      : input_tensor0_(input0),
+        input_tensor1_(input1) {
   }
 
-  operator bool() const { return output_ != output_end_; }
+  TensorShape GetOutputShape() const { return TensorShape(broadcaster_.output_shape_); }
+  size_t GetSpanSize() const { return span_size_; }
 
   bool IsInput0Scalar() const { return broadcaster_.iterator1_.deltas_.front() == 0; }
   bool IsInput1Scalar() const { return broadcaster_.iterator2_.deltas_.front() == 0; }
@@ -403,115 +427,175 @@ struct TBroadcaster {
 
   gsl::span<const T> NextSpan0() { return gsl::span<const T>(Next0(), span_size_); }
   gsl::span<const T> NextSpan1() { return gsl::span<const T>(Next1(), span_size_); }
-  gsl::span<TOutput> NextSpanOutput() { return gsl::span<TOutput>(NextOutput(), span_size_); }
 
   ConstEigenVectorMap<T> NextEigen0() { return ConstEigenVectorMap<T>(Next0(), span_size_); }
   ConstEigenVectorMap<T> NextEigen1() { return ConstEigenVectorMap<T>(Next1(), span_size_); }
-  EigenVectorMap<TOutput> NextEigenOutput() { return EigenVectorMap<TOutput>(NextOutput(), span_size_); }
 
  private:
   const T* Next0() { return input0_ + broadcaster_.iterator1_.AdvanceBy(span_size_); }
   const T* Next1() { return input1_ + broadcaster_.iterator2_.AdvanceBy(span_size_); }
-
-  TOutput* NextOutput() {
-    TOutput* output = output_;
-    output_ += span_size_;
-    return output;
-  }
 
   const Tensor& input_tensor0_;
   const Tensor& input_tensor1_;
   Broadcaster broadcaster_{input_tensor0_.Shape().GetDims(), input_tensor1_.Shape().GetDims()};
   size_t span_size_{broadcaster_.GetSpanSize()};
 
-  Tensor& output_tensor_;
-
   const T* input0_{input_tensor0_.Data<T>()};
   const T* input1_{input_tensor1_.Data<T>()};
-  TOutput* output_{output_tensor_.MutableData<TOutput>()};
-  const TOutput* output_end_{output_ + output_tensor_.Shape().Size()};
 };
 
-template <typename T, typename TOutput, typename Op>
-void Loop(T scalar1, gsl::span<const T> input2, gsl::span<TOutput> output, Op op) {
-  for (auto i = 0; i < output.size(); i++)
-    output[i] = op(scalar1, input2[i]);
+template <typename T>
+struct TBroadcastOutput {
+  template <typename TInput>
+  TBroadcastOutput(TBroadcaster<TInput>& broadcaster, Tensor& tensor)
+      : span_size_(broadcaster.GetSpanSize()) {
+    output_ = tensor.MutableData<T>();
+    output_end_ = output_ + tensor.Shape().Size();
+  }
+
+  operator bool() const {
+    return output_ != output_end_;
+  }
+
+  EigenVectorMap<T> NextEigenOutput() {
+    return EigenVectorMap<T>(NextOutput(), span_size_);
+  }
+  gsl::span<T> NextSpanOutput() {
+    return gsl::span<T>(NextOutput(), span_size_);
+  }
+
+ private:
+  T* NextOutput() {
+    T* output = output_;
+    output_ += span_size_;
+    return output;
+  }
+
+  T* output_;
+  const T* output_end_;
+  size_t span_size_;
+};
+
+template <typename T>
+struct TensorAllocator {
+  TensorAllocator(OpKernelContext& context) {
+    LOTUS_ENFORCE(context.GetTempSpaceAllocator(&allocator_).IsOK());
+  }
+
+  std::unique_ptr<Tensor> Allocate(const TensorShape& shape) {
+    return std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
+                                    shape,
+                                    allocator_->Alloc(sizeof(T) * shape.Size()),
+                                    allocator_->Info(),
+                                    allocator_);
+  }
+
+ private:
+  AllocatorPtr allocator_;
+};
+
+// Broadcast loop for when using eigen, functions are in this form:
+// Input0Scalar: [](EigenVectorMap<T> output, T input0, ConstEigenVectorMap<T> input1)
+// Input1Scalar: [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, T input1)
+// General     : [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1)
+template <typename TBroadcaster, typename Output, typename Input0Scalar, typename Input1Scalar, typename General>
+void BroadcastLoop(TBroadcaster& bc, Output& output, Input0Scalar input0scalar, Input1Scalar input1scalar, General general) {
+  if (bc.IsInput0Scalar()) {
+    while (output)
+      input0scalar(output.NextEigenOutput(), bc.NextScalar0(), bc.NextEigen1());
+  } else if (bc.IsInput1Scalar()) {
+    while (output)
+      input1scalar(output.NextEigenOutput(), bc.NextEigen0(), bc.NextScalar1());
+  } else {
+    while (output)
+      general(output.NextEigenOutput(), bc.NextEigen0(), bc.NextEigen1());
+  }
 }
 
-template <typename T, typename TOutput, typename Op>
-void Loop(gsl::span<const T> input1, T scalar2, gsl::span<TOutput> output, Op op) {
-  for (auto i = 0; i < output.size(); i++)
-    output[i] = op(input1[i], scalar2);
+template <typename TInput, typename TOutput, typename Input0Scalar, typename Input1Scalar, typename General>
+Status BroadcastTwo(OpKernelContext& context, Input0Scalar input0scalar, Input1Scalar input1scalar, General general) {
+  TBroadcaster<TInput> bc(*context.Input<Tensor>(0), *context.Input<Tensor>(1));
+  TBroadcastOutput<TOutput> output(bc, *context.Output(0, bc.GetOutputShape()));
+  BroadcastLoop(bc, output, input0scalar, input1scalar, general);
+
+  return Status::OK();
+}
+
+template <typename TInput, typename TOutput, typename Input0Scalar, typename Input1Scalar, typename General>
+Status BroadcastVariadic(const Node& node, OpKernelContext& context, Input0Scalar input0scalar, Input1Scalar input1scalar, General general) {
+  auto input_count = node.InputArgCount().front();
+  LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
+
+  // One item is trivial, just copy across and exit
+  if (input_count == 1) {
+    EigenMap<TOutput>(*context.Output(0, context.Input<Tensor>(0)->Shape())) = EigenMap<TInput>(*context.Input<Tensor>(0));
+    return Status::OK();
+  }
+
+  std::unique_ptr<Tensor> tempInput;
+  std::unique_ptr<Tensor> tempOutput;
+
+  TensorAllocator<TOutput> tensorAllocator(context);
+
+  // For more than 2 tensors, we sum the first two into a temporary tensor, then sum the next with the temporary tensor
+  for (int i = 0; i < input_count - 1; i++) {
+    auto& tensor0 = tempInput ? *tempInput : *context.Input<Tensor>(0);
+    auto& tensor1 = *context.Input<Tensor>(i + 1);
+
+    TBroadcaster<TInput> bc(tensor0, tensor1);
+
+    // Create a temporary output for all but the last iteration, which goes to the real output
+    Tensor* p_output{};
+    if (i == input_count - 2)
+      p_output = context.Output(0, bc.GetOutputShape());
+    else {
+      tempOutput = tensorAllocator.Allocate(bc.GetOutputShape());
+      p_output = tempOutput.get();
+    }
+
+    TBroadcastOutput<TOutput> output(bc, *p_output);
+
+    BroadcastLoop(bc, output, input0scalar, input1scalar, general);
+
+    tempInput = std::move(tempOutput);
+  }
+  return Status::OK();
 }
 
 template <typename T>
 Status Add<T>::Compute(OpKernelContext* context) const {
-  TBroadcaster<T> bc(*context);
-
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextScalar0() + bc.NextEigen1().array();
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().array() + bc.NextScalar1();
-  } else {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0() + bc.NextEigen1();
-  }
-  return Status::OK();
+  return BroadcastTwo<T, T>(
+      *context,
+      [](EigenVectorMap<T> output, T input0, ConstEigenVectorMap<T> input1) { output = input0 + input1.array(); },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, T input1) { output = input0.array() + input1; },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1) { output = input0 + input1; });
 }
 
 template <typename T>
 Status Sub<T>::Compute(OpKernelContext* context) const {
-  TBroadcaster<T> bc(*context);
-
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextScalar0() - bc.NextEigen1().array();
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().array() - bc.NextScalar1();
-  } else {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0() - bc.NextEigen1();
-  }
-
-  return Status::OK();
+  return BroadcastTwo<T, T>(
+      *context,
+      [](EigenVectorMap<T> output, T input0, ConstEigenVectorMap<T> input1) { output = input0 - input1.array(); },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, T input1) { output = input0.array() - input1; },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1) { output = input0 - input1; });
 }
 
 template <typename T>
 Status Mul<T>::Compute(OpKernelContext* context) const {
-  TBroadcaster<T> bc(*context);
-
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextScalar0() * bc.NextEigen1().array();
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().array() * bc.NextScalar1();
-  } else {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().cwiseProduct(bc.NextEigen1());
-  }
-  return Status::OK();
+  return BroadcastTwo<T, T>(
+      *context,
+      [](EigenVectorMap<T> output, T input0, ConstEigenVectorMap<T> input1) { output = input0 * input1.array(); },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, T input1) { output = input0.array() * input1; },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1) { output = input0.cwiseProduct(input1); });
 }
 
 template <typename T>
 Status Div<T>::Compute(OpKernelContext* context) const {
-  TBroadcaster<T> bc(*context);
-
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextScalar0() / bc.NextEigen1().array();
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().array() / bc.NextScalar1();
-  } else {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().cwiseQuotient(bc.NextEigen1());
-  }
-
-  return Status::OK();
+  return BroadcastTwo<T, T>(
+      *context,
+      [](EigenVectorMap<T> output, T input0, ConstEigenVectorMap<T> input1) { output = input0 / input1.array(); },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, T input1) { output = input0.array() / input1; },
+      [](EigenVectorMap<T> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1) { output = input0.cwiseQuotient(input1); });
 }
 
 template <>
@@ -556,22 +640,11 @@ Status Sqrt<float>::Compute(OpKernelContext* ctx) const {
 
 template <>
 Status Pow<float>::Compute(OpKernelContext* context) const {
-  TBroadcaster<float> bc(*context);
-
-  if (bc.IsInput0Scalar()) {
-    while (bc) {
-      float scalar = bc.NextScalar0();
-      bc.NextEigenOutput() = EigenVectorMap<float>(&scalar, 1).array().pow(bc.NextEigen1().array());
-    }
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().array().pow(bc.NextScalar1());
-  } else {
-    while (bc)
-      bc.NextEigenOutput() = bc.NextEigen0().array().pow(bc.NextEigen1().array());
-  }
-
-  return Status::OK();
+  return BroadcastTwo<float, float>(
+      *context,
+      [](EigenVectorMap<float> output, float input0, ConstEigenVectorMap<float> input1) { output = Eigen::pow(input0, input1.array()); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, float input1) { output = Eigen::pow(input0.array(), input1); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, ConstEigenVectorMap<float> input1) { output = Eigen::pow(input0.array(), input1.array()); });
 }
 
 template <>
@@ -595,7 +668,7 @@ Status Log<float>::Compute(OpKernelContext* ctx) const {
 }
 
 template <>
-Status Sum<float>::Compute(OpKernelContext* ctx) const {
+Status Sum_6<float>::Compute(OpKernelContext* ctx) const {
   auto input_count = Node().InputArgCount().front();
   LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
@@ -620,7 +693,16 @@ Status Sum<float>::Compute(OpKernelContext* ctx) const {
 }
 
 template <>
-Status Min<float>::Compute(OpKernelContext* ctx) const {
+Status Sum_8<float>::Compute(OpKernelContext* context) const {
+  return BroadcastVariadic<float, float>(
+      Node(), *context,
+      [](EigenVectorMap<float> output, float input0, ConstEigenVectorMap<float> input1) { output = input0 + input1.array(); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, float input1) { output = input0.array() + input1; },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, ConstEigenVectorMap<float> input1) { output = input0 + input1; });
+}
+
+template <>
+Status Min_6<float>::Compute(OpKernelContext* ctx) const {
   auto inputCount = Node().InputArgCount().front();
   LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
@@ -638,7 +720,16 @@ Status Min<float>::Compute(OpKernelContext* ctx) const {
 }
 
 template <>
-Status Max<float>::Compute(OpKernelContext* ctx) const {
+Status Min_8<float>::Compute(OpKernelContext* context) const {
+  return BroadcastVariadic<float, float>(
+      Node(), *context,
+      [](EigenVectorMap<float> output, float input0, ConstEigenVectorMap<float> input1) { output = input1.array().min(input0); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, float input1) { output = input0.array().min(input1); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, ConstEigenVectorMap<float> input1) { output = input0.array().min(input1.array()); });
+}
+
+template <>
+Status Max_6<float>::Compute(OpKernelContext* ctx) const {
   auto inputCount = Node().InputArgCount().front();
   LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
@@ -655,6 +746,15 @@ Status Max<float>::Compute(OpKernelContext* ctx) const {
   return Status::OK();
 }
 
+template <>
+Status Max_8<float>::Compute(OpKernelContext* context) const {
+  return BroadcastVariadic<float, float>(
+      Node(), *context,
+      [](EigenVectorMap<float> output, float input0, ConstEigenVectorMap<float> input1) { output = input1.array().max(input0); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, float input1) { output = input0.array().max(input1); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, ConstEigenVectorMap<float> input1) { output = input0.array().max(input1.array()); });
+}
+
 Status Not::Compute(OpKernelContext* context) const {
   auto& input = *context->Input<Tensor>(0);
   auto& output = *context->Output(0, input.Shape());
@@ -664,112 +764,91 @@ Status Not::Compute(OpKernelContext* context) const {
 }
 
 Status And::Compute(OpKernelContext* context) const {
-  auto op = [](bool a, bool b) { return a && b; };
-
-  TBroadcaster<bool> bc(*context);
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
-  } else {
-    while (bc)
-      bc.NextEigenOutput().array() = bc.NextEigen0().array() && bc.NextEigen1().array();
-  }
-  return Status::OK();
+  // The scalar cases are special cased, since 'X && true = X' and 'X && false = false'
+  return BroadcastTwo<bool, bool>(
+      *context,
+      [](EigenVectorMap<bool> output, bool input0, ConstEigenVectorMap<bool> input1) {
+        if (input0)
+          output = input1;
+        else
+          output.array() = false;
+      },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<bool> input0, bool input1) {
+        if (input1)
+          output = input0;
+        else
+          output.array() = false;
+      },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<bool> input0, ConstEigenVectorMap<bool> input1) { output = input0.array() && input1.array(); });
 }
 
 Status Or::Compute(OpKernelContext* context) const {
-  auto op = [](bool a, bool b) { return a || b; };
-
-  TBroadcaster<bool> bc(*context);
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
-  } else {
-    while (bc)
-      bc.NextEigenOutput().array() = bc.NextEigen0().array() || bc.NextEigen1().array();
-  }
-  return Status::OK();
+  // The scalar cases are special cased, since 'X || true = true' and 'X || false = X'
+  return BroadcastTwo<bool, bool>(
+      *context,
+      [](EigenVectorMap<bool> output, bool input0, ConstEigenVectorMap<bool> input1) {
+        if (input0)
+          output.array() = true;
+        else
+          output = input1;
+      },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<bool> input0, bool input1) {
+        if (input1)
+          output.array() = true;
+        else
+          output = input0;
+      },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<bool> input0, ConstEigenVectorMap<bool> input1) { output = input0.array() || input1.array(); });
 }
 
 Status Xor::Compute(OpKernelContext* context) const {
-  auto op = [](bool a, bool b) { return (a ^ b) != 0; };
-
-  TBroadcaster<bool> bc(*context);
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
-  } else {
-    while (bc)
-      bc.NextEigenOutput().array() = bc.NextEigen0().array() ^ bc.NextEigen1().array();
-  }
-  return Status::OK();
+  // The scalar cases are special cased, since 'X ^ true = !X' and 'X ^ false = X'
+  return BroadcastTwo<bool, bool>(
+      *context,
+      [](EigenVectorMap<bool> output, bool input0, ConstEigenVectorMap<bool> input1) {
+        if (input0)
+          output.array() = !input1.array();
+        else
+          output = input1;
+      },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<bool> input0, bool input1) {
+        if (input1)
+          output.array() = !input0.array();
+        else
+          output = input0;
+      },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<bool> input0, ConstEigenVectorMap<bool> input1) { output = input0.array() ^ input1.array(); });
 }
 
 template <typename T>
 Status Equal<T>::Compute(OpKernelContext* context) const {
-  auto op = [](auto a, auto b) { return a == b; };
+  return BroadcastTwo<T, bool>(
+      *context,
+      [](EigenVectorMap<bool> output, T input0, ConstEigenVectorMap<T> input1) { output = input1.array() == input0; },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<T> input0, T input1) { output = input0.array() == input1; },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1) { output = input0.array() == input1.array(); });
+}
 
-  TBroadcaster<T, bool> bc(*context);
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
-  } else {
-    while (bc)
-      bc.NextEigenOutput().array() = bc.NextEigen0().array() == bc.NextEigen1().array();
-  }
-  return Status::OK();
+template <typename T>
+Status Less<T>::Compute(OpKernelContext* context) const {
+  return BroadcastTwo<T, bool>(
+      *context,
+      [](EigenVectorMap<bool> output, T input0, ConstEigenVectorMap<T> input1) { output = input1.array() > input0; },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<T> input0, T input1) { output = input0.array() < input1; },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1) { output = input0.array() < input1.array(); });
+}
+
+template <typename T>
+Status Greater<T>::Compute(OpKernelContext* context) const {
+  return BroadcastTwo<T, bool>(
+      *context,
+      [](EigenVectorMap<bool> output, T input0, ConstEigenVectorMap<T> input1) { output = input1.array() < input0; },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<T> input0, T input1) { output = input0.array() > input1; },
+      [](EigenVectorMap<bool> output, ConstEigenVectorMap<T> input0, ConstEigenVectorMap<T> input1) { output = input0.array() > input1.array(); });
 }
 
 template <>
-Status Less<float>::Compute(OpKernelContext* context) const {
-  auto op = [](auto a, auto b) { return a < b; };
-
-  TBroadcaster<float, bool> bc(*context);
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
-  } else {
-    while (bc)
-      bc.NextEigenOutput().array() = bc.NextEigen0().array() < bc.NextEigen1().array();
-  }
-  return Status::OK();
-}
-
-template <>
-Status Greater<float>::Compute(OpKernelContext* context) const {
-  auto op = [](auto a, auto b) { return a > b; };
-
-  TBroadcaster<float, bool> bc(*context);
-  if (bc.IsInput0Scalar()) {
-    while (bc)
-      Loop(bc.NextScalar0(), bc.NextSpan1(), bc.NextSpanOutput(), op);
-  } else if (bc.IsInput1Scalar()) {
-    while (bc)
-      Loop(bc.NextSpan0(), bc.NextScalar1(), bc.NextSpanOutput(), op);
-  } else {
-    while (bc)
-      bc.NextEigenOutput().array() = bc.NextEigen0().array() > bc.NextEigen1().array();
-  }
-  return Status::OK();
-}
-
-template <>
-Status Mean<float>::Compute(OpKernelContext* ctx) const {
+Status Mean_6<float>::Compute(OpKernelContext* ctx) const {
   auto inputCount = Node().InputArgCount().front();
   LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
@@ -794,6 +873,22 @@ Status Mean<float>::Compute(OpKernelContext* ctx) const {
   float weight = 1.0f / static_cast<float>(inputCount);
   mean = mean * weight;
 
+  return Status::OK();
+}
+
+template <>
+Status Mean_8<float>::Compute(OpKernelContext* context) const {
+  // Do a sum exactly the same as in Sum_8
+  Status status = BroadcastVariadic<float, float>(
+      Node(), *context,
+      [](EigenVectorMap<float> output, float input0, ConstEigenVectorMap<float> input1) { output = input0 + input1.array(); },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, float input1) { output = input0.array() + input1; },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, ConstEigenVectorMap<float> input1) { output = input0 + input1; });
+  if (!status.IsOK())
+    return status;
+
+  // Now divide by the input count to get the mean
+  EigenMap<float>(*context->Output<Tensor>(0)) *= 1.0f / static_cast<float>(Node().InputArgCount().front());
   return Status::OK();
 }
 
@@ -927,27 +1022,20 @@ ONNX_CPU_OPERATOR_KERNEL(
 
 template <>
 Status PRelu<float>::Compute(OpKernelContext* context) const {
-  TBroadcaster<float> bc(*context);
-
-  if (bc.IsInput0Scalar()) {
-    while (bc) {
-      if (bc.NextScalar0() > 0)
-        bc.NextEigenOutput().setConstant(bc.NextScalar0());
-      else
-        bc.NextEigenOutput() = bc.NextScalar0() * bc.NextEigen1().array();
-    }
-  } else if (bc.IsInput1Scalar()) {
-    while (bc) {
-      const auto& vec0 = bc.NextEigen0();
-      bc.NextEigenOutput() = (vec0.array() > 0).select(vec0, vec0 * bc.NextScalar1());
-    }
-  } else {
-    while (bc) {
-      const auto& vec0 = bc.NextEigen0();
-      bc.NextEigenOutput() = (vec0.array() > 0).select(vec0, vec0.cwiseProduct(bc.NextEigen1()));
-    }
-  }
-  return Status::OK();
+  return BroadcastTwo<float, float>(
+      *context,
+      [](EigenVectorMap<float> output, float input0, ConstEigenVectorMap<float> input1) {
+        if (input0 > 0)
+          output.array() = input0;
+        else
+          output = input0 * input1.array();
+      },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, float input1) {
+        output = (input0.array() > 0).select(input0, input0 * input1);
+      },
+      [](EigenVectorMap<float> output, ConstEigenVectorMap<float> input0, ConstEigenVectorMap<float> input1) {
+        output = (input0.array() > 0).select(input0, input0.cwiseProduct(input1));
+      });
 }
 
 ONNX_CPU_OPERATOR_KERNEL(

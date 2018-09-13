@@ -148,12 +148,15 @@ class OpKernelContext {
   int node_output_start_index_{-1};
 };
 
-// Fetching output tensor without shape is not allowed.
+// Fetching output tensor without shape is not allowed except when it already exists
 template <>
-inline Tensor* OpKernelContext::Output<Tensor>(int) {
-  LOTUS_ENFORCE(false, "Please fetch output tensor with specified shape.");
-  return nullptr;
+inline Tensor* OpKernelContext::Output<Tensor>(int index) {
+  MLValue* p_ml_value = GetOutputMLValue(index);
+  LOTUS_ENFORCE(p_ml_value, "Please fetch output tensor with specified shape.");
+  return p_ml_value->GetMutable<Tensor>();
 }
+
+using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 
 struct KernelCreateInfo {
   std::unique_ptr<KernelDef> kernel_def;  // Owned and stored in the global kernel registry.

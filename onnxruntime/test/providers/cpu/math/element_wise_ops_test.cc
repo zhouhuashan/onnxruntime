@@ -348,7 +348,17 @@ TEST(MathOpTest, Pow) {
   test.RunOnCpuAndCuda();
 }
 
-TEST(MathOpTest, Pow_Broadcast_Scalar) {
+TEST(MathOpTest, Pow_Broadcast_Scalar0) {
+  OpTester test("Pow");
+
+  std::vector<int64_t> dims{3};
+  test.AddInput<float>("X", {}, {2.0f});
+  test.AddInput<float>("Y", dims, {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("Z", dims, {2.0f, 4.0f, 8.0f});
+  test.RunOnCpuAndCuda();
+}
+
+TEST(MathOpTest, Pow_Broadcast_Scalar1) {
   OpTester test("Pow");
 
   std::vector<int64_t> dims{3};
@@ -383,8 +393,8 @@ TEST(MathOpTest, Log) {
   test.RunOnCpuAndCuda();
 }
 
-TEST(MathOpTest, Sum) {
-  OpTester test("Sum");
+TEST(MathOpTest, Sum_6) {
+  OpTester test("Sum", 6);
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("data_0", dims,
                        {1.0f, 0.0f, 1.0f,
@@ -405,8 +415,27 @@ TEST(MathOpTest, Sum) {
   test.RunOnCpuAndCuda();
 }
 
-TEST(MathOpTest, Sum_8) {
-#ifdef USE_CUDA
+TEST(MathOpTest, Sum_8_Test1) {
+  OpTester test("Sum", 8);
+  test.AddInput<float>("data_0", {3}, {1.0f, 2.0f, 3.0f});
+  test.AddInput<float>("data_1", {3, 1}, {10.0f, 20.0f, 30.0f});
+  test.AddInput<float>("data_2", {3, 1, 1}, {100.0f, 200.0f, 300.0f});
+  test.AddOutput<float>("sum", {3, 3, 3},
+                        {111.0f, 112.0f, 113.0f,
+                         121.0f, 122.0f, 123.0f,
+                         131.0f, 132.0f, 133.0f,
+
+                         211.0f, 212.0f, 213.0f,
+                         221.0f, 222.0f, 223.0f,
+                         231.0f, 232.0f, 233.0f,
+
+                         311.0f, 312.0f, 313.0f,
+                         321.0f, 322.0f, 323.0f,
+                         331.0f, 332.0f, 333.0f});
+  test.RunOnCpuAndCuda();
+}
+
+TEST(MathOpTest, Sum_8_Test2) {
   OpTester test("Sum", 8);
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("data_0", dims,
@@ -432,13 +461,11 @@ TEST(MathOpTest, Sum_8) {
                          3.3f, 4.4f, -94.7f,
                          59.6f, 64.01f, -8.0f});
 
-  // TO DO: call RunOnCpuAndCuda after Sum of CPU updated to opset 8
-  test.Run(OpTester::ExpectResult::kExpectSuccess, "Sum is not correct", onnxruntime::kCudaExecutionProvider);
-#endif
+  test.RunOnCpuAndCuda(OpTester::ExpectResult::kExpectSuccess, "Sum is not correct");
 }
 
-TEST(MathOpTest, Min) {
-  OpTester test("Min");
+TEST(MathOpTest, Min_6) {
+  OpTester test("Min", 6);
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("data_0", dims,
                        {1.0f, 0.0f, 1.0f,
@@ -459,8 +486,30 @@ TEST(MathOpTest, Min) {
   test.Run();
 }
 
-TEST(MathOpTest, Max) {
-  OpTester test("Max");
+TEST(MathOpTest, Min_8) {
+  OpTester test("Min", 8);
+  std::vector<int64_t> dims{3, 3};
+  test.AddInput<float>("data_0", dims,
+                       {1.0f, 0.0f, 1.0f,
+                        -1.0f, 1.1f, -100.0f,
+                        -5.4f, 0.01f, -10'000.0f});
+  test.AddInput<float>("data_1", dims,
+                       {1.0f, 0.0f, 2.0f,
+                        -2.0f, 2.2f, 64.0f,
+                        -1.0f, 0.02f, 0.1f});
+  test.AddInput<float>("data_3", dims,
+                       {1.0f, 0.0f, 3.0f,
+                        -3.0f, 3.3f, 64.0f,
+                        5.4f, 0.03f, 10'000.0f});
+  test.AddOutput<float>("min", dims,
+                        {1.0f, 0.0f, 1.0f,
+                         -3.0f, 1.1f, -100.0f,
+                         -5.4f, 0.01f, -10'000.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Max_6) {
+  OpTester test("Max", 6);
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("data_0", dims,
                        {1.0f, 0.0f, 1.0f,
@@ -474,10 +523,27 @@ TEST(MathOpTest, Max) {
                        {1.0f, 0.0f, 3.0f,
                         -3.0f, 3.3f, 64.0f,
                         5.4f, 0.03f, 10'000.0f});
-  test.AddOutput<float>("sum", dims,
+  test.AddOutput<float>("max", dims,
                         {1.0f, 0.0f, 3.0f,
                          -1.0f, 3.3f, 64.0f,
                          5.4f, 0.03f, 10'000.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Max_8) {
+  OpTester test("Max", 8);
+  test.AddInput<float>("data_0", {1, 3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddInput<float>("data_2", {3, 3},
+                       {10.0f, 20.0f, 30.0f,
+                        40.0f, 50.0f, 60.0f,
+                        70.0f, 80.0f, 90.0f});
+  test.AddInput<float>("data_1", {3, 1},
+                       {-1.0f, -2.0f, 300.0f});
+  test.AddOutput<float>("max", {3, 3},
+                        {10.0f, 20.0f, 30.0f,
+                         40.0f, 50.0f, 60.0f,
+                         300.0f, 300.0f, 300.0f});
   test.Run();
 }
 
@@ -551,6 +617,22 @@ TEST(MathOpTest, Less) {
   test.Run();
 }
 
+TEST(MathOpTest, Less_Scalar0) {
+  OpTester test("Less");
+  test.AddInput<float>("A", {1}, {1.0f});
+  test.AddInput<float>("B", {4}, {1.0f, 1.5f, 2.0f, -1.0f});
+  test.AddOutput<bool>("C", {4}, {false, true, true, false});
+  test.Run();
+}
+
+TEST(MathOpTest, Less_Scalar1) {
+  OpTester test("Less");
+  test.AddInput<float>("A", {4}, {1.0f, 0.5f, 2.0f, -1.0f});
+  test.AddInput<float>("B", {1}, {1.0f});
+  test.AddOutput<bool>("C", {4}, {false, true, false, true});
+  test.Run();
+}
+
 TEST(MathOpTest, Greater) {
   OpTester test("Greater");
   std::vector<int64_t> dims{4};
@@ -566,6 +648,22 @@ TEST(MathOpTest, Equal_bool) {
   test.AddInput<bool>("A", dims, {false, true, false, true});
   test.AddInput<bool>("B", dims, {false, false, true, true});
   test.AddOutput<bool>("C", dims, {true, false, false, true});
+  test.Run();
+}
+
+TEST(MathOpTest, Equal_bool_scalar0) {
+  OpTester test("Equal");
+  test.AddInput<bool>("A", {1}, {false});
+  test.AddInput<bool>("B", {4}, {false, false, true, true});
+  test.AddOutput<bool>("C", {4}, {true, true, false, false});
+  test.Run();
+}
+
+TEST(MathOpTest, Equal_bool_scalar1) {
+  OpTester test("Equal");
+  test.AddInput<bool>("A", {4}, {false, false, true, true});
+  test.AddInput<bool>("B", {1}, {false});
+  test.AddOutput<bool>("C", {4}, {true, true, false, false});
   test.Run();
 }
 
@@ -587,8 +685,8 @@ TEST(MathOpTest, Equal_int64) {
   test.Run();
 }
 
-TEST(MathOpTest, Mean) {
-  OpTester test("Mean");
+TEST(MathOpTest, Mean_6) {
+  OpTester test("Mean", 6);
   std::vector<int64_t> dims{3, 3};
   test.AddInput<float>("data_0", dims,
                        {1.0f, 0.0f, 1.0f,
@@ -606,6 +704,22 @@ TEST(MathOpTest, Mean) {
                         {1.0f, 0.0f, 2.0f,
                          -2.0f, 2.2f, 10.0f,
                          -3.0f, 0.02f, -4.0f});
+  test.Run();
+}
+
+TEST(MathOpTest, Mean_8) {
+  OpTester test("Mean", 8);
+  test.AddInput<float>("data_0", {1}, {1.0f});
+  test.AddInput<float>("data_1", {3, 1},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddInput<float>("data_3", {3, 3},
+                       {10.0f, 20.0f, 30.0f,
+                        40.0f, 50.0f, 60.0f,
+                        70.0f, 80.0f, 90.0f});
+  test.AddOutput<float>("mean", {3, 3},
+                        {12.0f / 3.0f, 22.0f / 3.0f, 32.0f / 3.0f,
+                         43.0f / 3.0f, 53.0f / 3.0f, 63.0f / 3.0f,
+                         74.0f / 3.0f, 84.0f / 3.0f, 94.0f / 3.0f});
   test.Run();
 }
 
