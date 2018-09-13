@@ -27,11 +27,11 @@ if platform.system() == 'Linux':
 else:
   libs = ['onnxruntime_pybind11_state.pyd', 'mkldnn.dll', 'mklml.dll', 'libiomp5md.dll']
 
-data = [path.join('python', x) for x in libs if path.isfile(path.join('onnxruntime', 'python', x))]
+data = [path.join('capi', x) for x in libs if path.isfile(path.join('onnxruntime', 'capi', x))]
 
 # Additional examples
 examples_names = ["mul_1.pb", "logreg_iris.onnx"]
-examples = [path.join('python', 'datasets', x) for x in examples_names]
+examples = [path.join('datasets', x) for x in examples_names]
 
 # Description
 README = path.join(getcwd(), "README.rst")
@@ -66,7 +66,7 @@ setup(
     },
     entry_points= {
         'console_scripts': [
-            'onnxruntime_test = onnxruntime.python.tools.onnxruntime_test:main',
+            'onnxruntime_test = onnxruntime.tools.onnxruntime_test:main',
         ]
     },
     classifiers=[
