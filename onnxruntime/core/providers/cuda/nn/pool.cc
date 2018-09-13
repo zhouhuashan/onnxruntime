@@ -1,7 +1,8 @@
+#include "core/providers/cuda/nn/pool.h"
 
 #include "core/providers/common.h"
 #include "core/providers/cuda/cudnn_common.h"
-#include "core/providers/cuda/nn/pool.h"
+#include "core/providers/cuda/nn/max_pool_with_index.h"
 using namespace onnxruntime::common;
 namespace onnxruntime {
 namespace cuda {
@@ -16,15 +17,29 @@ namespace cuda {
       KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<data_type>()), \
       Pool<data_type, pool_type>);
 
+#define POOLING_KERNEL_VERSIONED(op_name, data_type, pool_type, since_version, end_version)                                                         \
+  ONNX_OPERATOR_VERSIONED_TYPED_KERNEL_EX(                                                                                                          \
+      op_name,                                                                                                                                      \
+      kOnnxDomain,                                                                                                                                  \
+      since_version,                                                                                                                                \
+      end_version,                                                                                                                                  \
+      data_type,                                                                                                                                    \
+      kCudaExecutionProvider,                                                                                                                       \
+      KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<data_type>()).TypeConstraint("I", DataTypeImpl::GetTensorType<int64_t>()), \
+      Pool<data_type, pool_type>);
+
 POOLING_KERNEL(AveragePool, float, AveragePool, 7)
 POOLING_KERNEL(AveragePool, double, AveragePool, 7)
 POOLING_KERNEL(AveragePool, MLFloat16, AveragePool, 7)
 POOLING_KERNEL(GlobalAveragePool, float, AveragePool, 1)
 POOLING_KERNEL(GlobalAveragePool, double, AveragePool, 1)
 POOLING_KERNEL(GlobalAveragePool, MLFloat16, AveragePool, 1)
-POOLING_KERNEL(MaxPool, float, MaxPool, 1)
-POOLING_KERNEL(MaxPool, double, MaxPool, 1)
-POOLING_KERNEL(MaxPool, MLFloat16, MaxPool, 1)
+POOLING_KERNEL_VERSIONED(MaxPool, float, MaxPool, 1, 7)
+POOLING_KERNEL_VERSIONED(MaxPool, double, MaxPool, 1, 7)
+POOLING_KERNEL_VERSIONED(MaxPool, MLFloat16, MaxPool, 1, 7)
+POOLING_KERNEL(MaxPool, float, MaxPool_8, 8)
+POOLING_KERNEL(MaxPool, double, MaxPool_8, 8)
+POOLING_KERNEL(MaxPool, MLFloat16, MaxPool_8, 8)
 POOLING_KERNEL(GlobalMaxPool, float, MaxPool, 1)
 POOLING_KERNEL(GlobalMaxPool, double, MaxPool, 1)
 POOLING_KERNEL(GlobalMaxPool, MLFloat16, MaxPool, 1)
@@ -105,6 +120,24 @@ Status Pool<T, type>::ComputeInternal(OpKernelContext* context) const {
 
   auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
   auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+
+  if (type == onnxruntime::cuda::PoolType::MaxPool_8) {
+    Tensor* I = context->Output(1, TensorShape(y_dims));
+    if (nullptr != I) {
+      auto i_data = I->MutableData<int64_t>();
+      MaxPoolWithIndex<CudaT>(
+          x_shape,
+          TensorShape(y_dims),
+          kernel_shape,
+          strides,
+          pads,
+          storage_order_,
+          x_data,
+          y_data,
+          i_data);
+      return Status::OK();
+    }
+  }
 
   std::vector<int64_t> x_dims_cudnn = x_dims;
   std::vector<int64_t> y_dims_cudnn = y_dims;

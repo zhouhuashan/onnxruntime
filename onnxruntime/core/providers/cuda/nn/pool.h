@@ -10,7 +10,8 @@ namespace cuda {
 
 enum PoolType {
   MaxPool,
-  AveragePool
+  AveragePool,
+  MaxPool_8 // MaxPool of opset 8
 };
 
 template <typename T, PoolType type>

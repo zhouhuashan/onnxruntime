@@ -96,7 +96,7 @@ static void MaxPool_8_WithIndexTest(int64_t storage_order) {
   test.AddOutput<float>("Y", expected_dims, expected_vals);
   storage_order == 0 ? test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_row)
                      : test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_col);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(PoolTest, MaxPool_8_With_Index) {
@@ -140,7 +140,7 @@ static void MaxPool1D_8_WithIndexTest(int64_t storage_order) {
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
   test.AddOutput<int64_t>("Indices", expected_dims, expected_indices);
-  test.Run();
+  test.RunOnCpuAndCuda();
 }
 
 TEST(PoolTest, MaxPool1D_8_With_Index) {
