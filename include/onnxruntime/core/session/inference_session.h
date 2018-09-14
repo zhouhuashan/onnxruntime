@@ -243,6 +243,21 @@ class InferenceSession {
   std::string EndProfiling();
 
  protected:
+  /**
+    * Load an ONNX model.
+    * @param protobuf object corresponding to the model file. model_proto will be copied by the API.
+    * @return OK if success.
+    */
+  common::Status Load(const ONNX_NAMESPACE::ModelProto& model_proto);
+
+  /**
+    * Load an ONNX model.
+    * @param protobuf object corresponding to the model file. This is primarily to support large models.
+    * @return OK if success.
+    */
+  common::Status Load(std::unique_ptr<ONNX_NAMESPACE::ModelProto> p_model_proto);
+
+ private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
 
   class Impl;

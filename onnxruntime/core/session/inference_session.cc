@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 #include "core/session/inference_session.h"
-#include "core/session/inference_session_winml.h"
 
 #include <memory>
 #include <mutex>
@@ -1141,11 +1140,11 @@ common::Status InferenceSession::RegisterCustomRegistry(std::shared_ptr<CustomRe
   return impl_->RegisterCustomRegistry(custom_registry);
 }
 
-common::Status InferenceSessionWinML::Load(const ModelProto& model_proto) {
+common::Status InferenceSession::Load(const ModelProto& model_proto) {
   return impl_->Load(model_proto);
 }
 
-common::Status InferenceSessionWinML::Load(std::unique_ptr<ModelProto> p_model_proto) {
+common::Status InferenceSession::Load(std::unique_ptr<ModelProto> p_model_proto) {
   return impl_->Load(std::move(p_model_proto));
 }
 
