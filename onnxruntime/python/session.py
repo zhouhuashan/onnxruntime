@@ -75,5 +75,11 @@ class InferenceSession:
         return self._sess.run(output_names, input_feed, run_options)
 
     def end_profiling(self):
-        "End profiling and return results."
+        """
+        End profiling and return results in a file.
+
+        The results are stored in a filename if the option
+        :meth:`onnxruntime.SessionOptions.enable_profiling`
+        is switched on. See :ref:`l-example-profiling`.
+        """
         return self._sess.end_profiling()

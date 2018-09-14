@@ -51,7 +51,7 @@ struct SessionOptions {
   bool enable_cpu_mem_arena = true;
 
   // the prefix of the profile file. The current time will be appended to the file name.
-  std::string profile_file_prefix = "lotus_profile_";
+  std::string profile_file_prefix = "onnxruntime_profile_";
 
   std::string session_logid;                 ///< logger id to use for session output
   unsigned session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc

@@ -450,7 +450,7 @@ TEST(InferenceSessionTests, CheckRunProfilerWithSessionOptions) {
 
   so.session_logid = "CheckRunProfiler";
   so.enable_profiling = true;
-  so.profile_file_prefix = "lotus_profile_test";
+  so.profile_file_prefix = "onnxprofile_profile_test";
 
   InferenceSession session_object(so);
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
@@ -498,7 +498,7 @@ TEST(InferenceSessionTests, CheckRunProfilerWithStartProfile) {
   RunOptions run_options;
   run_options.run_tag = "RunTag";
 
-  session_object.StartProfiling("lotus_profile_custom");
+  session_object.StartProfiling("onnxruntime_profile_custom");
   RunModel(session_object, run_options);
   std::string profile_file = session_object.EndProfiling();
 
