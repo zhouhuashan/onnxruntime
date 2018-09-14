@@ -9,7 +9,6 @@ import shutil
 import sphinx_gallery.gen_gallery
 # The package should be installed in a virtual environment.
 import onnxruntime
-import md_outputter.md_outputter
 
 
 # -- Project information -----------------------------------------------------
@@ -29,7 +28,9 @@ extensions = [
     'sphinx.ext.viewcode',
     "sphinx.ext.autodoc",
     "sphinx_gallery.gen_gallery",
-    "md_outputter.md_outputter",
+    'sphinx.ext.autodoc',
+    "docfx_yaml.md_outputter",
+    "docfx_yaml.extension",
 ]
 
 templates_path = ['_templates']
@@ -40,7 +41,7 @@ source_parsers = {
 
 source_suffix = ['.rst', '.md']
 
-master_doc = 'index'
+master_doc = 'main'
 language = "en"
 exclude_patterns = []
 pygments_style = 'sphinx'
