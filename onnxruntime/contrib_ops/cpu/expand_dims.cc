@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "expand_dims.h"
 #include "onnx/defs/schema.h"
 #include "sample.h"

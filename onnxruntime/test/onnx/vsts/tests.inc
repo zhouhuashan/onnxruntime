@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 TEST_METHOD(test_HTK_LSTM_Truncated_Distributed) {
   SessionFactory sf({::onnxruntime::kCpuExecutionProvider}, true, true);
   run(sf, L"cntk\\test_HTK_LSTM_Truncated_Distributed");

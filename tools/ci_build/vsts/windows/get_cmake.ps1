@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # downloads CMake and puts it in the given output directory
 Param(
     [Parameter(Mandatory=$True)]

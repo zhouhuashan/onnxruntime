@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 file(GLOB_RECURSE onnxruntime_codegen_srcs  
     "${LOTUS_ROOT}/core/codegen_utils/*.h"
     "${LOTUS_ROOT}/core/codegen_utils/*.cc"

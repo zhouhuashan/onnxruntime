@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "binary_elementwise_ops.h"
 #include "core/providers/cpu/tensor/utils.h"
 #include "binary_elementwise_ops_impl.h"

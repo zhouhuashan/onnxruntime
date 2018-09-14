@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 // example custom op
 
 #include "core/framework/custom_ops_author.h"

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 file(GLOB_RECURSE onnxruntime_framework_srcs
     "${LOTUS_INCLUDE_DIR}/core/framework/*.h"    
     "${LOTUS_ROOT}/core/framework/*.h"

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/graph/function_impl.h"
 #include "core/graph/graph.h"
 #include "core/graph/function_container.h"

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/common/logging/sinks/ostream_sink.h"
 #include "date/date.h"
 

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <memory>
 #include "core/platform/env.h"

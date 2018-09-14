@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "mkldnn_allocator.h"
 #include "mkldnn_execution_provider.h"
 #include "core/framework/allocator.h"

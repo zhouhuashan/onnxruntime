@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/platform/env.h"
 #include "core/framework/tensor.h"
 #include "core/graph/onnx_protobuf.h"

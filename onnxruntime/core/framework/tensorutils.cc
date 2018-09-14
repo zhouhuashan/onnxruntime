@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #ifdef _WIN32
 //std::copy only works for the same type(input/output must have the same type)
 //TODO(@chasun): remove std::copy from DEFINE_UNPACK_TENSOR

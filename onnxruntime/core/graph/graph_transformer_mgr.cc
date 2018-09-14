@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/graph/graph_transformer_mgr.h"
 using namespace onnxruntime;
 using namespace ::onnxruntime::common;

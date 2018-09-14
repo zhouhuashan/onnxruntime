@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cuda/cu_inc/common.cuh"
 #include "image_scaler_impl.h"
 

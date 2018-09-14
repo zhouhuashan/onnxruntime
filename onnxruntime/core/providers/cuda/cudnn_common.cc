@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "cudnn_common.h"
 #include "gsl/gsl_util"
 #include "shared_inc/cuda_call.h"

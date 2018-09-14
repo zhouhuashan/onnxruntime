@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 find_package(PythonInterp 3.5 REQUIRED)
 include(pybind11)
 FIND_PACKAGE(PythonLibs 3.5 REQUIRED)

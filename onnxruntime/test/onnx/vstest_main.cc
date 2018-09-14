@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include <CppUnitTest.h>
 #include <direct.h>
 #include <stdlib.h>

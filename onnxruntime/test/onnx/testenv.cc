@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "testenv.h"
 #include "FixedCountFinishCallback.h"
 #include <core/common/logging/logging.h>

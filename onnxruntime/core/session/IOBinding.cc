@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/session/IOBinding.h"
 #include "core/common/logging/logging.h"
 #include "core/framework/session_state.h"

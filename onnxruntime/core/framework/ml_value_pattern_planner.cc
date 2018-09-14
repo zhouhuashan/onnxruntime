@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include <set>
 #include "core/framework/ml_value_patterns_planner.h"
 #include "core/framework/sequential_execution_plan.h"

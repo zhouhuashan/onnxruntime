@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/common/exceptions.h"
 #include "core/common/status.h"
 #include "core/common/logging/logging.h"

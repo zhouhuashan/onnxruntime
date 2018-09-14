@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "onnxruntime_pybind_mlvalue.h"
 
 #define NO_IMPORT_ARRAY

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "gtest/gtest.h"
 #include "core/codegen_utils/tvm_kernel.h"
 #include "tvm/runtime/ndarray.h"

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/tensor/space_depth_ops.h"
 
 // warning raised from Eigen Tensor code.

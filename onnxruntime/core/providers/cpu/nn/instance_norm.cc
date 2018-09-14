@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/nn/instance_norm.h"
 #include "core/providers/cpu/nn/instance_norm_helper.h"
 #include "core/util/math_cpuonly.h"

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # have to add an empty source file to satisfy cmake when building a shared lib
 # from archives only
 add_library(onnxruntime SHARED ${LOTUS_ROOT}/core/framework/empty.cc)

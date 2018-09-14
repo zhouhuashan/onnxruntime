@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 // onnxruntime dependencies
 #include <core/common/logging/sinks/clog_sink.h>
 #include <core/common/logging/logging.h>

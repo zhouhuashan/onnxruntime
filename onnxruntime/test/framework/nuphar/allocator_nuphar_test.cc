@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/codegen_utils/tvm_utils.h"
 #include "core/framework/allocatormgr.h"
 #include "core/providers/nuphar/nuphar_allocator.h"

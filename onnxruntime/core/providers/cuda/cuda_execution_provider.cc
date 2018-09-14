@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "cuda_common.h"
 #include "cuda_execution_provider.h"
 #include "core/framework/transformer_memcpy.h"

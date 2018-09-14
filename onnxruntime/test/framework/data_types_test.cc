@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/graph/onnx_protobuf.h"
 #include "core/framework/data_types.h"
 #include "gtest/gtest.h"

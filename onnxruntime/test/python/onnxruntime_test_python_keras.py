@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # -*- coding: UTF-8 -*-
 # Taken from https://github.com/onnx/onnxmltools/blob/master/tests/end2end/test_custom_op.py.
 import unittest

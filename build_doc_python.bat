@@ -1,3 +1,6 @@
+:: Copyright (c) Microsoft Corporation. All rights reserved.
+:: Licensed under the MIT License.
+
 @echo off
 set "%1%" == "help" goto help:
 set PYTHONPATH=%~dp0\build\Windows\Release\Release

@@ -1,3 +1,6 @@
+:: Copyright (c) Microsoft Corporation. All rights reserved.
+:: Licensed under the MIT License.
+
 rem This will setup the VC env vars to use the 14.11 (VS2017 ver15.3) toolchain which is supported by CUDA 9.2 prior to running build.py.
 rem It currently defaults to amd64 but that could be made configurable if that would be useful to developers running this locally.
 @echo off

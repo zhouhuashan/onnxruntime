@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "performance_runner.h"
 #include <experimental/filesystem>
 #ifdef _MSC_VER

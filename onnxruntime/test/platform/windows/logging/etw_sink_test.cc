@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/platform/windows/logging/etw_sink.h"
 
 #ifdef LOTUS_ETW_TRACE_LOGGING_SUPPORTED

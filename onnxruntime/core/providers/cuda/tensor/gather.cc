@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "gather.h"
 #include "gather_impl.h"
 #include "core/providers/cpu/tensor/utils.h"

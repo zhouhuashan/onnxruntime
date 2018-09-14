@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/ml/label_encoder.h"
 #include <algorithm>
 #include <gsl/span>

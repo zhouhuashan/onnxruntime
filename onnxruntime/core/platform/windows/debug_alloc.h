@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 #if defined(_DEBUG)
 // TVM need to run with shared CRT, so won't work with debug heap alloc

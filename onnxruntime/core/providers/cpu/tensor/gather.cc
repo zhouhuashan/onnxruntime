@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Gather
 #include "core/providers/cpu/tensor/gather.h"
 #include "core/inc/op_kernel_author.h"

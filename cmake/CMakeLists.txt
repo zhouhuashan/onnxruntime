@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # Minimum CMake required
 cmake_minimum_required(VERSION 3.11)
 

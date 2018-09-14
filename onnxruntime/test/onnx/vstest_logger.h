@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include <string>
 #include "core/common/logging/isink.h"
 #include "TestCaseResult.h"

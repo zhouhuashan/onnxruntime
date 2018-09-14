@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 // This is the exact cblas.h header file, placed here purely in order to get
 // the enums.
 
