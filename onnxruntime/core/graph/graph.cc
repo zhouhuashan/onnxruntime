@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #ifdef _WIN32
 // disable some warnings from protobuf to pass Windows build
 #pragma warning(disable : 4244)

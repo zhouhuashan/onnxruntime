@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/nuphar/nuphar_allocator.h"
 #include "test/framework/test_utils.h"
 

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 #include "core/codegen_utils/tvm_compiler.h"
 #include "core/graph/function.h"

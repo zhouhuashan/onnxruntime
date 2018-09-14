@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
@@ -9,6 +12,9 @@ import shutil
 import sphinx_gallery.gen_gallery
 # The package should be installed in a virtual environment.
 import onnxruntime
+# The documentation requires two extensions available at:
+# https://github.com/xadupre/sphinx-docfx-yaml
+# https://github.com/xadupre/sphinx-docfx-markdown
 
 
 # -- Project information -----------------------------------------------------
@@ -29,8 +35,8 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx_gallery.gen_gallery",
     'sphinx.ext.autodoc',
-    "docfx_yaml.md_outputter",
     "docfx_yaml.extension",
+    "docfx_markdown",
 ]
 
 templates_path = ['_templates']

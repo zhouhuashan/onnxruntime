@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/nn/conv_transpose.h"
 #include "core/util/math.h"
 #include "core/util/math_cpuonly.h"

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/tensor/cast_op.h"
 #include <sstream>
 using namespace ONNX_NAMESPACE;

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/framework/tensorutils.h"
 #include "core/graph/onnx_protobuf.h"
 #include "gtest/gtest.h"

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 function(add_whole_archive_flag lib output_var)
   if(MSVC)
     # In MSVC, we will add whole archive in default.

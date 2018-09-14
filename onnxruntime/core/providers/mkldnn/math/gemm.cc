@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "gemm.h"
 #include "core/providers/cpu/math/gemm_helper.h"
 #include "core/util/math_cpuonly.h"

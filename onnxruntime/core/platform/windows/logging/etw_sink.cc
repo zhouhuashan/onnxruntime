@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 // EtwSink.h must come before the windows includes
 #include "core/platform/windows/logging/etw_sink.h"
 

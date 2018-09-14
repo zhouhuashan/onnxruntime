@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 #include "core/framework/tensor.h"
 #include "cuda_execution_provider.h"

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "sync_api.h"
 #include <mutex>
 #include <unsupported/Eigen/CXX11/ThreadPool>

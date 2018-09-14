@@ -83,8 +83,8 @@ To run onnx model tests on Linux,
 
 For Windows, please follow the README file at lotus/test/onnx/README.txt
 
-# Coding guidelines
-Please see [Coding Conventions and Standards](./docs/Coding_Conventions_and_Standards.md)
+# Contribution guidelines
+Please see [CONTRIBUTING.md]
 
 # Checkin procedure
 ```
@@ -224,4 +224,10 @@ Run command below if the conda environment `lotus-py35` does not exist
 /usr/local/miniconda3/bin/conda env create --file /home/lotusdev/Lotus/tools/ci_build/vsts/linux/Conda/conda-linux-lotus-py35-environment.yml --name lotus-py35 --quiet --force
 ```
 
+# Code of Conduct
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
+or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
+# License
+See [LICENSE]

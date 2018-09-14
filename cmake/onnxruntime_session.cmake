@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 file(GLOB onnxruntime_session_srcs
     "${LOTUS_INCLUDE_DIR}/core/session/*.h"
     "${LOTUS_ROOT}/core/session/*.h"

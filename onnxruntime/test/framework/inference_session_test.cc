@@ -1,5 +1,7 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/session/inference_session.h"
-#include "core/session/inference_session_winml.h"
 
 #include <algorithm>
 #include <functional>
@@ -448,7 +450,7 @@ TEST(InferenceSessionTests, CheckRunProfilerWithSessionOptions) {
 
   so.session_logid = "CheckRunProfiler";
   so.enable_profiling = true;
-  so.profile_file_prefix = "lotus_profile_test";
+  so.profile_file_prefix = "onnxprofile_profile_test";
 
   InferenceSession session_object(so);
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
@@ -496,7 +498,7 @@ TEST(InferenceSessionTests, CheckRunProfilerWithStartProfile) {
   RunOptions run_options;
   run_options.run_tag = "RunTag";
 
-  session_object.StartProfiling("lotus_profile_custom");
+  session_object.StartProfiling("onnxruntime_profile_custom");
   RunModel(session_object, run_options);
   std::string profile_file = session_object.EndProfiling();
 
@@ -643,42 +645,6 @@ TEST(InferenceSessionTests, TestRegisterExecutionProvider) {
   RunModel(session_object, run_options);
 }
 
-TEST(InferenceSessionTests, TestModelProtoInterface) {
-  SessionOptions so;
-
-  so.session_logid = "InferenceSessionTests.TestModelProtoInterface";
-
-  InferenceSessionWinML session_object{so};
-  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
-  ModelProto model_proto;
-  ASSERT_TRUE(onnxruntime::Model::Load(model_file_stream, &model_proto).IsOK());
-  ASSERT_TRUE(session_object.Load(model_proto).IsOK());
-  ASSERT_TRUE(session_object.Initialize().IsOK());
-
-  RunOptions run_options;
-  run_options.run_tag = "InferenceSessionTests.TestModelProtoInterface";
-  RunModel(session_object, run_options);
-}
-
-TEST(InferenceSessionTests, TestModelProtoInterfaceMultipleLoadFailure) {
-  SessionOptions so;
-
-  so.session_logid = "InferenceSessionTests.TestModelProtoInterfaceMultipleLoadFailure";
-
-  InferenceSessionWinML session_object{so};
-  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
-  ModelProto model_proto;
-  ASSERT_TRUE(onnxruntime::Model::Load(model_file_stream, &model_proto).IsOK());
-  ASSERT_TRUE(session_object.Load(model_proto).IsOK());
-  ASSERT_FALSE(session_object.Load(model_proto).IsOK());
-  ASSERT_TRUE(session_object.Initialize().IsOK());
-  ASSERT_TRUE(session_object.Initialize().IsOK());
-
-  RunOptions run_options;
-  run_options.run_tag = "InferenceSessionTests.TestModelProtoInterfaceMultipleLoadFailure";
-  RunModel(session_object, run_options);
-}
-
 static void TestBindHelper(const std::string& log_str,
                            ProviderType bind_provider_type,
                            ProviderType run_provider_type,
@@ -796,23 +762,6 @@ TEST(InferenceSessionTests, InvalidInputTypeOfTensorElement) {
     std::cout << "Run returned status: " << st.ErrorMessage() << std::endl;
   }
   ASSERT_TRUE(!st.IsOK());
-}
-
-TEST(InferenceSessionTests, TestModelProtoUniquePtrInterface) {
-  SessionOptions so;
-
-  so.session_logid = "InferenceSessionTests.TestModelProtoUniquePtrInterface";
-
-  InferenceSessionWinML session_object{so};
-  std::ifstream model_file_stream(MODEL_URI, ios::in | ios::binary);
-  auto p_model_proto = std::make_unique<ModelProto>();
-  ASSERT_TRUE(onnxruntime::Model::Load(model_file_stream, p_model_proto.get()).IsOK());
-  ASSERT_TRUE(session_object.Load(std::move(p_model_proto)).IsOK());
-  ASSERT_TRUE(session_object.Initialize().IsOK());
-
-  RunOptions run_options;
-  run_options.run_tag = so.session_logid;
-  RunModel(session_object, run_options);
 }
 
 #ifdef USE_CUDA

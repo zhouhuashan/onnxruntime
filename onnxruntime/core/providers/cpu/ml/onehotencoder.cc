@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/ml/onehotencoder.h"
 /**
 https://github.com/onnx/onnx/blob/master/onnx/defs/traditionalml/defs.cc

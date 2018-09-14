@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/graph/graph.h"
 #include "core/framework/computation_capacity.h"
 #include "core/framework/execution_provider.h"

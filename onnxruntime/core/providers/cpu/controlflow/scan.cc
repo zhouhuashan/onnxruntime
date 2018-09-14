@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/controlflow/scan.h"
 
 #include "core/framework/framework_common.h"

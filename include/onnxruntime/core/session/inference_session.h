@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include <string>
@@ -48,7 +51,7 @@ struct SessionOptions {
   bool enable_cpu_mem_arena = true;
 
   // the prefix of the profile file. The current time will be appended to the file name.
-  std::string profile_file_prefix = "lotus_profile_";
+  std::string profile_file_prefix = "onnxruntime_profile_";
 
   std::string session_logid;                 ///< logger id to use for session output
   unsigned session_log_verbosity_level = 0;  ///< applies to session load, initialization, etc
@@ -240,6 +243,21 @@ class InferenceSession {
   std::string EndProfiling();
 
  protected:
+  /**
+    * Load an ONNX model.
+    * @param protobuf object corresponding to the model file. model_proto will be copied by the API.
+    * @return OK if success.
+    */
+  common::Status Load(const ONNX_NAMESPACE::ModelProto& model_proto);
+
+  /**
+    * Load an ONNX model.
+    * @param protobuf object corresponding to the model file. This is primarily to support large models.
+    * @return OK if success.
+    */
+  common::Status Load(std::unique_ptr<ONNX_NAMESPACE::ModelProto> p_model_proto);
+
+ private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
 
   class Impl;

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include <core/framework/environment.h>
 #include <core/graph/constants.h>
 #include <core/framework/allocator.h>

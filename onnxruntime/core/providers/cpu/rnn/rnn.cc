@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/rnn/rnn.h"
 #include "core/providers/cpu/rnn/rnn_activation_functors.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"

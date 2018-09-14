@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include <iostream>
 #ifdef _MSC_VER
 #pragma warning(push)

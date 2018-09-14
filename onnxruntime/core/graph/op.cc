@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include <cstring>
 #include "core/graph/constants.h"
 #include "core/graph/op.h"

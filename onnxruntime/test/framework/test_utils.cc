@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "test_utils.h"
 namespace onnxruntime {
 namespace Test {

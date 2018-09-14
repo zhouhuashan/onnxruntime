@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/framework/allocatormgr.h"
 #include "core/framework/execution_provider.h"
 #include "core/providers/cpu/cpu_execution_provider.h"

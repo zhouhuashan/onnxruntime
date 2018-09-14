@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 // Thrust code needs to be compiled with nvcc
 #include <memory>
 #include <mutex>

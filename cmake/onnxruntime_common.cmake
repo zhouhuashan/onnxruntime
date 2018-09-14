@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 set(onnxruntime_common_src_patterns
     "${LOTUS_INCLUDE_DIR}/core/common/*.h"    
     "${LOTUS_INCLUDE_DIR}/core/common/logging/*.h"    

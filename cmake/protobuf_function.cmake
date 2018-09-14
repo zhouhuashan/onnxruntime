@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 function(onnxruntime_protobuf_generate)
   include(CMakeParseArguments)
   if(EXISTS "${ONNX_CUSTOM_PROTOC_EXECUTABLE}")

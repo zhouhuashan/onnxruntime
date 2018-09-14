@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/providers/cpu/math/element_wise_ops.h"
 
 namespace onnxruntime {
@@ -446,9 +449,8 @@ struct TBroadcaster {
 
 template <typename T>
 struct TBroadcastOutput {
-  template <typename TInput>
-  TBroadcastOutput(TBroadcaster<TInput>& broadcaster, Tensor& tensor)
-      : span_size_(broadcaster.GetSpanSize()) {
+  TBroadcastOutput(size_t span_size, Tensor& tensor)
+      : span_size_(span_size) {
     output_ = tensor.MutableData<T>();
     output_end_ = output_ + tensor.Shape().Size();
   }
@@ -460,6 +462,7 @@ struct TBroadcastOutput {
   EigenVectorMap<T> NextEigenOutput() {
     return EigenVectorMap<T>(NextOutput(), span_size_);
   }
+
   gsl::span<T> NextSpanOutput() {
     return gsl::span<T>(NextOutput(), span_size_);
   }
@@ -515,7 +518,7 @@ void BroadcastLoop(TBroadcaster& bc, Output& output, Input0Scalar input0scalar, 
 template <typename TInput, typename TOutput, typename Input0Scalar, typename Input1Scalar, typename General>
 Status BroadcastTwo(OpKernelContext& context, Input0Scalar input0scalar, Input1Scalar input1scalar, General general) {
   TBroadcaster<TInput> bc(*context.Input<Tensor>(0), *context.Input<Tensor>(1));
-  TBroadcastOutput<TOutput> output(bc, *context.Output(0, bc.GetOutputShape()));
+  TBroadcastOutput<TOutput> output(bc.GetSpanSize(), *context.Output(0, bc.GetOutputShape()));
   BroadcastLoop(bc, output, input0scalar, input1scalar, general);
 
   return Status::OK();
@@ -553,7 +556,7 @@ Status BroadcastVariadic(const Node& node, OpKernelContext& context, Input0Scala
       p_output = tempOutput.get();
     }
 
-    TBroadcastOutput<TOutput> output(bc, *p_output);
+    TBroadcastOutput<TOutput> output(bc.GetSpanSize(), *p_output);
 
     BroadcastLoop(bc, output, input0scalar, input1scalar, general);
 
@@ -1043,5 +1046,64 @@ ONNX_CPU_OPERATOR_KERNEL(
     7,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     PRelu<float>);
+
+// This is a special case version of TBroadcaster just for Expand that only has a shape as the second parameter
+template <typename T>
+struct TBroadcasterExpand {
+  TBroadcasterExpand(const Tensor& input, const std::vector<int64_t>& shape)
+      : input_tensor_(input),
+        broadcaster_(input.Shape().GetDims(), shape) {
+  }
+
+  TensorShape GetOutputShape() const { return TensorShape(broadcaster_.output_shape_); }
+  size_t GetSpanSize() const { return span_size_; }
+
+  bool IsInput0Scalar() const { return broadcaster_.iterator1_.deltas_.front() == 0; }
+
+  T NextScalar() { return *Next(); }
+
+  ConstEigenVectorMap<T> NextEigen() { return ConstEigenVectorMap<T>(Next(), span_size_); }
+
+ private:
+  const T* Next() { return input_ + broadcaster_.iterator1_.AdvanceBy(span_size_); }
+
+  const Tensor& input_tensor_;
+  Broadcaster broadcaster_;
+  size_t span_size_{broadcaster_.GetSpanSize()};
+
+  const T* input_{input_tensor_.Data<T>()};
+};
+
+template <typename T>
+Status Expand_8<T>::Compute(OpKernelContext* context) const {
+  auto& tensor_shape = *context->Input<Tensor>(1);
+  LOTUS_ENFORCE(tensor_shape.Shape().GetDims().size() == 1, "Shape must be 1 dimensional as it's tensor data is a shape");
+
+  // Turn the shape tensor data into an actual shape
+  const int64_t* p_shape = tensor_shape.Data<int64_t>();
+  std::vector<int64_t> shape{p_shape, p_shape + tensor_shape.Shape().Size()};
+
+  TBroadcasterExpand<T> bc(*context->Input<Tensor>(0), shape);
+  TBroadcastOutput<T> output(bc.GetSpanSize(), *context->Output(0, bc.GetOutputShape()));
+
+  // This doesn't use BroadcastLoop since there is no second tensor, just duplicating the first
+  if (bc.IsInput0Scalar()) {
+    // Input0 being a scalar is the only special case here, since we're duplicating a single value
+    while (output)
+      output.NextEigenOutput().array() = bc.NextScalar();
+  } else {
+    // Input1 being a scalar doesn't matter (as there's no actual input1). We're still duplicating Input0 in the same sized chunks
+    while (output)
+      output.NextEigenOutput() = bc.NextEigen();
+  }
+  return Status::OK();
+}
+
+ONNX_CPU_OPERATOR_TYPED_KERNEL(
+    Expand,
+    8,
+    float,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Expand_8<float>);
 
 }  // namespace onnxruntime

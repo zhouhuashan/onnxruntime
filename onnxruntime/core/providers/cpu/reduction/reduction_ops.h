@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #ifndef CORE_PROVIDERS_CPU_REDUCTION_OPS_H
 #define CORE_PROVIDERS_CPU_REDUCTION_OPS_H
 

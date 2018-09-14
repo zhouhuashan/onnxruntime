@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # downloads GoogleTestAdapter and puts it in the given output directory
 Param(
     [Parameter(Mandatory=$true, HelpMessage="Target output directory to copy GoogleTestAdapter nupkg folder to. Must exist.")][string]$outputDirectory

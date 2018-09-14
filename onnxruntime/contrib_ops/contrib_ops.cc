@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "contrib_ops/contrib_ops.h"
 
 namespace onnxruntime {

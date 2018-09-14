@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 //TODO(@chasun): move compare_mlvalue.{h,cc} to test dir
 

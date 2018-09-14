@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/session/CustomOpsLoader.h"
 
 #include "core/framework/custom_ops_author.h"

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include "core/common/common.h"
@@ -287,6 +290,15 @@ template <typename T>
 class PRelu final : public OpKernel {
  public:
   PRelu(const OpKernelInfo& info) : OpKernel(info) {
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+};
+
+template <typename T>
+class Expand_8 final : public OpKernel {
+ public:
+  Expand_8(const OpKernelInfo& info) : OpKernel(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;

@@ -1,4 +1,7 @@
-﻿#pragma once
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+#pragma once
 
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cpu/tensor/crop.h"

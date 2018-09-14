@@ -1,5 +1,7 @@
-#include "core/providers/cuda/nn/pool.h"
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
+#include "core/providers/cuda/nn/pool.h"
 #include "core/providers/common.h"
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cuda/nn/max_pool_with_index.h"
