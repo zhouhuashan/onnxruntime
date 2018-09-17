@@ -86,6 +86,8 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--eigen_path", help="Path to pre-installed eigen.")
     parser.add_argument("--use_tvm", action="store_true", help="Build with tvm")
     parser.add_argument("--use_openmp", action='store_true', help="Build with OpenMP.")
+    parser.add_argument("--use_llvm", action="store_true", help="Build tvm with llvm")
+    parser.add_argument("--llvm_path", help="Path to llvm dir")
     return parser.parse_args()
 
 def is_windows():
@@ -182,8 +184,12 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Dlotus_USE_MKLDNN=" + ("ON" if args.use_mkldnn else "OFF"),
                  "-Dlotus_USE_MKLML=" + ("ON" if args.use_mklml else "OFF"),
                  "-Dlotus_USE_OPENMP=" + ("ON" if args.use_openmp else "OFF"),
-                 "-Dlotus_USE_TVM=" + ("ON" if args.use_tvm else "OFF")
+                 "-Dlotus_USE_TVM=" + ("ON" if args.use_tvm else "OFF"),
+                 "-Dlotus_USE_LLVM=" + ("ON" if args.use_llvm else "OFF")
                  ]
+
+    if args.use_llvm:
+        cmake_args += ["-DLLVM_DIR=%s" % args.llvm_path]
 
     if args.use_cuda and not is_windows():
         nvml_stub_path = cuda_home + "/lib64/stubs"

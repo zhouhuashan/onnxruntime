@@ -238,7 +238,11 @@ TEST(TVMTest, Basic) {
   auto args = Array<Tensor>({A, B, D, E});
   std::unordered_map<Tensor, Buffer> binds;
   auto config = build_config();
+#ifdef USE_TVM_WITH_LLVM
+  auto target = target::llvm();
+#else
   auto target = target::stackvm();
+#endif
   auto lowered = lower(s, args, "func", binds, config);
   auto module = build(lowered, target, Target(), config);
   auto func = module.GetFunction("func");
