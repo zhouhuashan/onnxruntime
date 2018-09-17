@@ -11,15 +11,30 @@ community, it supports traditional ML models as well
 as Deep Learning algorithms in the
 `ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_.
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Contents:
+.. only:: html
 
-    tutorial
-    api
-    auto_examples/index
-    license
+    .. toctree::
+        :maxdepth: 2
+        :caption: Contents:
 
-.. add :ref:`genindex` to show a link to the index.
+        tutorial
+        api
+        auto_examples/index
+        license
+        
+    :ref:`genindex`
+
+.. only:: md
+
+    .. toctree::
+        :maxdepth: 2
+        :caption: Contents:
+
+        tutorial
+        api
+        examples_md
+        license
+
+
 
 

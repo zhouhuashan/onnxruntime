@@ -36,7 +36,13 @@ uses its own internal structure to hold the model in memory.
 The main class *InferenceSession* wraps these functionalities
 in a single place.
 
+.. autoclass:: onnxruntime.ModelMetadata
+    :members:
+
 .. autoclass:: onnxruntime.InferenceSession
+    :members:
+
+.. autoclass:: onnxruntime.NodeArg
     :members:
 
 .. autoclass:: onnxruntime.RunOptions

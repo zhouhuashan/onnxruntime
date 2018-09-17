@@ -77,6 +77,10 @@ sphinx_gallery_conf = {
      'gallery_dirs': 'auto_examples',
 }
 
+# -- markdown options -----------------------------------------------------------
+
+md_image_dest = "media"
+
 # -- Setup actions -----------------------------------------------------------
 
 def setup(app):
@@ -95,3 +99,4 @@ def setup(app):
         print("Copy license of {0}".format(th))
         shutil.copy(lic, os.path.join(root, dst))
     return app
+

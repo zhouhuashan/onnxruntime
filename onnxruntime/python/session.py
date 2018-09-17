@@ -40,15 +40,15 @@ class InferenceSession:
         self._model_meta = self._sess.model_meta
 
     def get_inputs(self):
-        "Return the inputs metadata."
+        "Return the inputs metadata as a list of :class:`onnxruntime.NodeArg`."
         return self._inputs_meta
 
     def get_outputs(self):
-        "Return the outputs metadata."
+        "Return the outputs metadata as a list of :class:`onnxruntime.NodeArg`."
         return self._outputs_meta
 
     def get_modelmeta(self):
-        "Return the metadata."
+        "Return the metadata. See :class:`onnxruntime.ModelMetadata`."
         return self._model_meta
 
     def run(self, output_names, input_feed, run_options=None):
