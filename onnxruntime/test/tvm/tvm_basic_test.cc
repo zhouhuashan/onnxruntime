@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 #include "gtest/gtest.h"
-#include "core/codegen_utils/tvm_kernel.h"
-#include "tvm/runtime/ndarray.h"
+#include <tvm/runtime/ndarray.h>
+#include "core/codegen/tvm/tvm_kernel.h"
 #include "core/framework/execution_provider.h"
 #include "core/framework/computation_capacity.h"
 #include "core/graph/graph.h"

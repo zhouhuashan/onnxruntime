@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 #pragma once
-#include "core/codegen_utils/tvm_compiler.h"
+#include "core/codegen/tvm/tvm_compiler.h"
 #include "core/graph/function.h"
 #include "core/framework/op_kernel.h"
 

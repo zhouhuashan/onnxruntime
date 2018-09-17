@@ -4,7 +4,7 @@
 #pragma once
 #include <tvm/tvm.h>
 #include <tvm/build_module.h>
-#include "core/codegen_utils/tvm_compiler.h"
+#include "core/codegen/tvm/tvm_compiler.h"
 namespace onnxruntime {
 
 TVMGraph::TensorDescriptor::TensorDescriptor(MLDataType type, onnxruntime::ProviderType execution_provider_type, tvm::Tensor tvm_tensor) : tvm_tensor_(tvm_tensor) {

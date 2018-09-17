@@ -244,12 +244,12 @@ if (lotus_USE_TVM)
   set(onnxruntime_tvm_libs
     tvm
     nnvm_compiler
-    onnxruntime_codegen_utils)
+    onnxruntime_codegen_tvm)
 
   set(onnxruntime_tvm_dependencies
     tvm
     nnvm_compiler
-    onnxruntime_codegen_utils)
+    onnxruntime_codegen_tvm)
 endif()
 
 if (lotus_RUN_ONNX_TESTS)

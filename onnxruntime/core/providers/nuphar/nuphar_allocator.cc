@@ -4,7 +4,7 @@
 #include <tvm/runtime/device_api.h>
 
 #include "nuphar_allocator.h"
-#include "core/codegen_utils/tvm_utils.h"
+#include "core/codegen/tvm/tvm_utils.h"
 
 namespace onnxruntime {
 
