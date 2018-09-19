@@ -19,7 +19,6 @@ as Deep Learning algorithms in the
         tutorial
         api
         auto_examples/index
-        license
         
     :ref:`genindex`
 
@@ -32,8 +31,6 @@ as Deep Learning algorithms in the
         tutorial
         api
         examples_md
-        license
-
 
 
 
