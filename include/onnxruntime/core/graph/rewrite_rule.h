@@ -77,16 +77,26 @@ class RewriteRule {
     return desc_;
   }
 
-  // Apply the rewrite rule to a specific node.
-  // The transformation happens in-place. The return-value of node may be different
-  // from the input-value due to rewriting.
-  // The return value of "modified" indicates if the graph was modified or not.
-  virtual ::onnxruntime::common::Status Apply(GraphEditor graph_editor, Node* node, bool* modified) = 0;
+  // If the condition of the rule is satisfied, apply the rule.
+  ::onnxruntime::common::Status CheckConditionAndApply(GraphEditor* graph_editor, Node* node, bool* modified) {
+    return SatisfyCondition(*node) ? Apply(graph_editor, node, modified) : Status::OK();
+  }
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RewriteRule);
 
   const std::string name_;
   const std::string desc_;
+
+  // The rewrite rule is applied if the condition function returns true. This can include
+  // a more complex pattern matching (conditions on the ascending or descending nodes of the
+  // node for which this rule was triggered) or some other properties of the nodes.
+  virtual bool SatisfyCondition(const Node& node) = 0;
+
+  // Apply the rewrite rule to a specific node.
+  // The transformation happens in-place. The return-value of node may be different
+  // from the input-value due to rewriting.
+  // The return value of "modified" indicates if the graph was modified or not.
+  virtual ::onnxruntime::common::Status Apply(GraphEditor* graph_editor, Node* node, bool* modified) = 0;
 };
 }  // namespace onnxruntime
