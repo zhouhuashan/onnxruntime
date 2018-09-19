@@ -5,7 +5,7 @@ Tutorial
 
 ONNX Runtime provides an easy way to run machine learned models with high performance on CPU or GPU without dependencies on the training framework. Machine learning frameworks are usually optimized for batch training rather than for prediction, which is a more common scenario in applications, sites, and services. At a high level, you can:
 1. Train a model using your favorite framework.
-2. Convert or export the model into ONNX format. See 'ONNX Tutorials <https://github.com/onnx/tutorials>' for more details.
+2. Convert or export the model into ONNX format. See 'ONNX Tutorials <https://github.com/onnx/tutorials>'_ for more details.
 3. Load and run the model using ONNX Runtime.
 
 
@@ -34,10 +34,10 @@ We'll use the famous iris datasets.
 Step 2: Convert the model into ONNX format
 ++++++++++++++++++++++++++++++++++++++++++
 
-'ONNX <https://github.com/onnx/onnx>' is a format to describe the machine learned model.
-It defines a set of commonly used operators to compose models. There are 'tools <https://github.com/onnx/tutorials>'
+'ONNX <https://github.com/onnx/onnx>'_ is a format to describe the machine learned model.
+It defines a set of commonly used operators to compose models. There are 'tools <https://github.com/onnx/tutorials>'_
 to convert other model formats into ONNX. Here we will use
-`ONNXMLTools <https://github.com/onnx/onnxmltools>`.
+`ONNXMLTools <https://github.com/onnx/onnxmltools>`_.
 
 ::
 
