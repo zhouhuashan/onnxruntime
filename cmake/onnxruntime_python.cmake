@@ -119,6 +119,12 @@ add_custom_command(
       ${LOTUS_ROOT}/__init__.py
       $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/
   COMMAND ${CMAKE_COMMAND} -E copy
+      ${REPO_ROOT}/ThirdPartyNotices.txt
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/
+  COMMAND ${CMAKE_COMMAND} -E copy
+      ${REPO_ROOT}/ONNXRuntime_EndUserLicenseAgreement.docx
+      $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/
+  COMMAND ${CMAKE_COMMAND} -E copy
       ${onnxruntime_python_test_srcs}
       $<TARGET_FILE_DIR:${test_data_target}>
   COMMAND ${CMAKE_COMMAND} -E copy
