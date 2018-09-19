@@ -33,6 +33,9 @@ data = [path.join('capi', x) for x in libs if path.isfile(path.join('onnxruntime
 examples_names = ["mul_1.pb", "logreg_iris.onnx"]
 examples = [path.join('datasets', x) for x in examples_names]
 
+# Extra files such as EULA and ThirdPartyNotices
+extra = ["ONNXRuntime_EndUserLicenseAgreement.docx", "ThirdPartyNotices.txt"]
+
 # Description
 README = path.join(getcwd(), "README.rst")
 if not path.exists(README):
@@ -46,7 +49,7 @@ with open(README) as f:
 # Setup
 setup(
     name=package_name,
-    version='0.1.0',
+    version='0.1.1',
     description='ONNX Runtime Runtime Python bindings',
     long_description=long_description,
     author='Microsoft Corporation',
@@ -59,7 +62,7 @@ setup(
               'onnxruntime.tools',
               ],
     package_data={
-        'onnxruntime': data + examples,
+        'onnxruntime': data + examples + extra,
     },
     extras_require={
         'backend': ['onnx>=1.2.3'],
