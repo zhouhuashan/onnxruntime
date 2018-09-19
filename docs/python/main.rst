@@ -1,9 +1,8 @@
 
-Python Bindings for ONNX Runtime
+Python Bindings for ONNX Runtime (Preview)
 ================================
 
-ONNX Runtime is a critical component for platforms that 
-enables high-performance evaluation of trained machine learning (ML)
+ONNX Runtime (Preview) enables high-performance evaluation of trained machine learning (ML)
 models while keeping resource usage low. 
 Building on Microsoft's dedication to the 
 `Open Neural Network Exchange (ONNX) <https://onnx.ai/>`_
