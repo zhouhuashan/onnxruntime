@@ -1,6 +1,6 @@
 
 ===
-API
+API Summary
 ===
 
 Summary of public function and classes exposed
