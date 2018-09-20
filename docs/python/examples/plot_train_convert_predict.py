@@ -60,8 +60,8 @@ save_model(onx, "logreg_iris.onnx")
 # We load the model with ONNX Runtime and look at
 # its input and output.
 
-import onnxruntime as onnxrt
-sess = onnxrt.InferenceSession("logreg_iris.onnx")
+import onnxruntime as rt
+sess = rt.InferenceSession("logreg_iris.onnx")
 
 print("input name='{}' and shape={}".format(sess.get_inputs()[0].name, sess.get_inputs()[0].shape))
 print("output name='{}' and shape={}".format(sess.get_outputs()[0].name, sess.get_outputs()[0].shape))
@@ -174,7 +174,7 @@ save_model(onx, "rf_iris.onnx")
 ###################################
 # We compare.
 
-sess = onnxrt.InferenceSession("rf_iris.onnx")
+sess = rt.InferenceSession("rf_iris.onnx")
 
 def sess_predict_proba_rf(x):
     return sess.run([prob_name], {input_name: x.astype(numpy.float32)})[0]
@@ -197,17 +197,17 @@ for n_trees in range(5, 51, 5):
     initial_type = [('float_input', FloatTensorType([1, 4]))]
     onx = convert_sklearn(rf, initial_types=initial_type)
     save_model(onx, "rf_iris_%d.onnx" % n_trees)
-    sess = onnxrt.InferenceSession("rf_iris_%d.onnx" % n_trees)
+    sess = rt.InferenceSession("rf_iris_%d.onnx" % n_trees)
     def sess_predict_proba_loop(x):
         return sess.run([prob_name], {input_name: x.astype(numpy.float32)})[0]
-    sk = speed("loop(X_test, rf.predict_proba, 100)", number=5, repeat=5)
-    rt = speed("loop(X_test, sess_predict_proba_loop, 100)", number=5, repeat=5)
-    measures.append({'n_trees': n_trees, 'sklearn': sk, 'onnxrt': rt})
+    tsk = speed("loop(X_test, rf.predict_proba, 100)", number=5, repeat=5)
+    trt = speed("loop(X_test, sess_predict_proba_loop, 100)", number=5, repeat=5)
+    measures.append({'n_trees': n_trees, 'sklearn': tsk, 'rt': trt})
 
 from pandas import DataFrame
 df = DataFrame(measures)
 ax = df.plot(x="n_trees", y="sklearn", label="scikit-learn", c="blue", logy=True)
-df.plot(x="n_trees", y="onnxrt", label="onnxruntime",
+df.plot(x="n_trees", y="rt", label="onnxruntime",
                 ax=ax, c="green", logy=True)
 ax.set_xlabel("Number of trees")
 ax.set_ylabel("Prediction time (s)")

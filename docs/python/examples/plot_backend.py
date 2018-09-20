@@ -2,10 +2,13 @@
 # Licensed under the MIT License.
 
 """
-onnxruntime Backend for ONNX
-============================
 
-*onnxruntime* extends the 
+.. _l-example-backend-api:
+
+ONNX Runtime Backend for ONNX
+=============================
+
+*ONNX Runtime* extends the 
 `onnx backend API <https://github.com/onnx/onnx/blob/master/docs/ImplementingAnOnnxBackend.md>`_
 to run predictions using this runtime.
 Let's use the API to compute the prediction
@@ -40,3 +43,8 @@ x = np.array([[-1.0, -2.0]], dtype=np.float32)
 label, proba = rep.run(x)
 print("label={}".format(label))
 print("probabilities={}".format(proba))
+
+#######################################
+# The backend API is implemented by other frameworks
+# and makes it easier to switch between multiple runtimes
+# with the same API.

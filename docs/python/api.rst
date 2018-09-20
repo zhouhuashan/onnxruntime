@@ -1,10 +1,10 @@
 
-===
+===========
 API Summary
-===
+===========
 
-Summary of public function and classes exposed
-in *onnxruntime*.
+Summary of public functions and classes exposed
+in *ONNX Runtime*.
 
 .. contents::
     :local:
@@ -13,7 +13,7 @@ Device
 ======
 
 The package is compiled for a specific device, GPU or CPU.
-The CPU includes optimizations
+The CPU implementation includes optimizations
 such as MKL (Math Kernel Libary). The following function
 indicates the chosen option:
 
@@ -31,7 +31,7 @@ as they are installed with the package.
 Load and run a model
 ====================
 
-*onnxruntime* reads a model saved in ONNX format.
+*ONNX Runtime* reads a model saved in ONNX format.
 The main class *InferenceSession* wraps these functionalities
 in a single place.
 
@@ -54,9 +54,11 @@ Backend
 =======
 
 In addition to the regular API which is optimized for performance and usability, 
-*onnxruntime* also implements the `ONNX backend API <https://github.com/onnx/onnx/blob/master/docs/ImplementingAnOnnxBackend.md>`_ for verification of ONNX specification conformance. 
+*ONNX Runtime* also implements the
+`ONNX backend API <https://github.com/onnx/onnx/blob/master/docs/ImplementingAnOnnxBackend.md>`_
+for verification of *ONNX* specification conformance.
+The following functions are supported:
 
-The following functions are supported: 
 .. autofunction:: onnxruntime.backend.is_compatible
 
 .. autofunction:: onnxruntime.backend.prepare

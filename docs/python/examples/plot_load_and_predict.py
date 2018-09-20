@@ -15,7 +15,7 @@ Basic usage
 +++++++++++
 """
 
-import onnxruntime as onnxrt
+import onnxruntime as rt
 import numpy
 from onnxruntime.datasets import get_example
 
@@ -23,7 +23,7 @@ from onnxruntime.datasets import get_example
 # Let's load a very simple model.
 
 example1 = get_example("mul_1.pb")
-sess = onnxrt.InferenceSession(example1)
+sess = rt.InferenceSession(example1)
 
 #########################
 # Let's see the input name and shape.

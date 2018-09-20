@@ -29,7 +29,7 @@ print("producer_name={}".format(model.producer_name))
 print("producer_version={}".format(model.producer_version))
 
 #############################
-# With *onnxruntime*:
+# With *ONNX Runtime*:
 
 from onnxruntime import InferenceSession
 sess = InferenceSession(example)

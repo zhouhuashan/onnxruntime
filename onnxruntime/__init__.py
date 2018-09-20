@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 #--------------------------------------------------------------------------
 """
-*ONNX Runtime* is a critical component for platforms that 
+ONNX Runtime (Preview)
 enables high-performance evaluation of trained machine learning (ML)
 models while keeping resource usage low. 
 Building on Microsoft's dedication to the 
@@ -11,7 +11,7 @@ community, it supports traditional ML models as well
 as Deep Learning algorithms in the
 `ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_.
 """
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Microsoft"
 
 from onnxruntime.capi import onnxruntime_validation

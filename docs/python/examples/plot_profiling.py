@@ -8,11 +8,11 @@
 Profile the execution of a simple model
 =======================================
 
-*onnxruntime* can profile the execution of the model.
+*ONNX Runtime* can profile the execution of the model.
 This example shows how to interpret the results.
 """
 
-import onnxruntime as onnxrt
+import onnxruntime as rt
 import numpy
 from onnxruntime.datasets import get_example
 
@@ -20,7 +20,7 @@ from onnxruntime.datasets import get_example
 # Let's load a very simple model and compute some prediction.
 
 example1 = get_example("mul_1.pb")
-sess = onnxrt.InferenceSession(example1)
+sess = rt.InferenceSession(example1)
 input_name = sess.get_inputs()[0].name
 
 x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float32)
@@ -31,9 +31,9 @@ print(res)
 # We need to enable to profiling
 # before running the predictions.
 
-options = onnxrt.SessionOptions()
+options = rt.SessionOptions()
 options.enable_profiling = True
-sess_profile = onnxrt.InferenceSession(example1, options)
+sess_profile = rt.InferenceSession(example1, options)
 input_name = sess.get_inputs()[0].name
 
 x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float32)

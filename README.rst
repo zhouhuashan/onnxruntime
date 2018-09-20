@@ -1,7 +1,7 @@
-ONNX Runtime
-============
+ONNX Runtime (Preview)
+======================
 
-ONNX Runtime is a critical component for platforms that 
+ONNX Runtime (Preview)
 enables high-performance evaluation of trained machine learning (ML)
 models while keeping resource usage low. 
 Building on Microsoft's dedication to the 
@@ -9,6 +9,8 @@ Building on Microsoft's dedication to the
 community, it supports traditional ML models as well 
 as Deep Learning algorithms in the
 `ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_.
+Documentation is available at
+`Python Bindings for ONNX Runtime <https://docs.microsoft.com/en-us/python/api/overview/azure/onnxruntime/intro>`_.
 
 Example
 -------
@@ -40,9 +42,9 @@ replaces *scikit-learn* to compute the predictions.
     save_model(onx, "rf_iris.onnx")
 
     # Compute the prediction with ONNX Runtime
-    import onnxruntime as onnxrt
+    import onnxruntime as rt
     import numpy
-    sess = onnxrt.InferenceSession("rf_iris.onnx")
+    sess = rt.InferenceSession("rf_iris.onnx")
     input_name = sess.get_inputs()[0].name
     label_name = sess.get_outputs()[0].name
     pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]   

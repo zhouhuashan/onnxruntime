@@ -46,6 +46,7 @@ if not path.exists(README):
 with open(README) as f:
     long_description = f.read()
 
+
 # Setup
 setup(
     name=package_name,
@@ -55,6 +56,7 @@ setup(
     author='Microsoft Corporation',
     author_email='onnx@microsoft.com',
     cmdclass={'bdist_wheel': bdist_wheel},
+    license="Microsoft Software License Terms",
     packages=['onnxruntime',
               'onnxruntime.backend',
               'onnxruntime.capi',

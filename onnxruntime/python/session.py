@@ -11,8 +11,6 @@ from onnxruntime.capi import _pybind_state as C
 class InferenceSession:
     """
     This is the main class used to run a model.
-    See example :ref:`l-example-simple-usage`
-    for a simple sample of usage.
     """
     def __init__(self, path_or_bytes, sess_options=None):
         """
@@ -62,9 +60,6 @@ class InferenceSession:
         ::
 
             sess.run([output_name], {input_name: x})
-
-        See :ref:`l-example-simple-usage`
-        for a complete example of usage.
         """
         num_required_inputs = len(self._inputs_meta)
         num_inputs = len(input_feed)
@@ -79,7 +74,6 @@ class InferenceSession:
         End profiling and return results in a file.
 
         The results are stored in a filename if the option
-        :meth:`onnxruntime.SessionOptions.enable_profiling`
-        is switched on. See :ref:`l-example-profiling`.
+        :meth:`onnxruntime.SessionOptions.enable_profiling`.
         """
         return self._sess.end_profiling()

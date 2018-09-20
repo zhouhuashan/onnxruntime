@@ -1,6 +1,6 @@
 
 Python Bindings for ONNX Runtime (Preview)
-================================
+==========================================
 
 ONNX Runtime (Preview) enables high-performance evaluation of trained machine learning (ML)
 models while keeping resource usage low. 
@@ -31,12 +31,14 @@ as Deep Learning algorithms in the
         api
         examples_md
 
-    The core library is implemented in C++.
-*onnxruntime* is available on 
+The core library is implemented in C++.
+*ONNX Runtime* is available on 
 PyPi for Linux Ubuntu 16.04, Python 3.5+ for both
-'CPU <https://pypi.org/project/onnxruntime/>`_ and 'GPU <https://pypi.org/project/onnxruntime-gpu/>`_. This example demonstrates a simple 
- prediction for an
-`ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_ model:
+`CPU <https://pypi.org/project/onnxruntime/>`_ and
+`GPU <https://pypi.org/project/onnxruntime-gpu/>`_.
+This example demonstrates a simple prediction for an
+`ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_
+model:
 
 ::
 

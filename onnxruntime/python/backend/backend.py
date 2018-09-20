@@ -12,15 +12,20 @@ from onnxruntime.backend.backend_rep import OnnxRuntimeBackendRep
 
 class OnnxRuntimeBackend(Backend):
     """
-    Implements ONNX's backend API with
-    *onnxruntime*.
+    Implements
+    `ONNX's backend API <https://github.com/onnx/onnx/blob/master/docs/ImplementingAnOnnxBackend.md>`_
+    with *ONNX Runtime*.
+    The backend is mostly used when you need to switch between
+    multiple runtimes with the same API.
+    `Importing models from ONNX to Caffe2 <https://github.com/onnx/tutorials/blob/master/tutorials/OnnxCaffe2Import.ipynb>`_
+    shows how to use *caffe2* as a backend for a converted model.
     """
-    
+
     @classmethod
     def is_compatible(cls, model, device=None, **kwargs):
         """
         Return whether the model is compatible with the backend.
-        
+
         :param model: unused
         :param device: None to use the default device or a string (ex: `'CPU'`)
         :return: boolean

@@ -6,7 +6,7 @@ import sys
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Onnxruntime create nuget spec script",
+    parser = argparse.ArgumentParser(description="ONNX Runtime create nuget spec script",
                                      usage='')
     # Main arguments
     parser.add_argument("--source_dir", required=True, help="Path to the source directory.")
