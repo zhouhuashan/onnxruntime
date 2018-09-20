@@ -36,7 +36,7 @@ Status TopDownRuleBasedTransformer::Apply(Graph& graph, bool& modified) const {
     }
     const std::vector<std::unique_ptr<RewriteRule>>& rules = GetRewriteRules(node->OpType());
     for (const auto& rule : rules) {
-      rule->CheckConditionAndApply(&graph_editor, node, &modified);
+      LOTUS_RETURN_IF_ERROR(rule->CheckConditionAndApply(&graph_editor, node, &modified));
     }
   }
 
