@@ -8,7 +8,7 @@ namespace tvm_codegen {
 
 #define RETURN_DLDATATYPE_IF_MATCH(type, type_code) \
 if (ml_type == DataTypeImpl::GetType<type>()) {  \
-  return {type_code, sizeof(ml_type) * 8, 1};       \
+  return {type_code, sizeof(type) * 8, 1};       \
 }
 
 // DLDataType: {DLDataTypeCode, bits, lanes}
