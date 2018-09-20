@@ -751,8 +751,11 @@ Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_or
 
     ancestor_nodes.insert(current);
 
-    // check children
-    for (auto iter = node->InputNodesBegin(); iter != node->InputNodesEnd(); ++iter) {
+    // check children. use reverse order as we're going to push them onto the stack
+    // and doing it this way maintains their original order as we process the stack
+    for (auto iter = std::make_reverse_iterator(node->InputNodesEnd()),
+              end = std::make_reverse_iterator(node->InputNodesBegin());
+         iter != end; ++iter) {
       const NodeIndex idx = (*iter)->Index();
       if (ancestor_nodes.end() != ancestor_nodes.find(idx)) {
         Status status(LOTUS, FAIL, "Error: the graph is not acyclic.");
