@@ -56,8 +56,8 @@ We will use ONNX Runtime to compute the predictions for this machine learning mo
 
 ::
 
-    import onnxruntime as onnxrt
-    sess = onnxrt.InferenceSession("logreg_iris.onnx")
+    import onnxruntime as rt
+    sess = rt.InferenceSession("logreg_iris.onnx")
     input_name = sess.get_inputs()[0].name
     
     pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]
