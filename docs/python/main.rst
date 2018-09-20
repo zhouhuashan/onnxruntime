@@ -13,8 +13,7 @@ as Deep Learning algorithms in the
 .. only:: html
 
     .. toctree::
-        :maxdepth: 2
-        :caption: Contents:
+        :maxdepth: 1
 
         tutorial
         api
@@ -25,12 +24,26 @@ as Deep Learning algorithms in the
 .. only:: md
 
     .. toctree::
-        :maxdepth: 2
+        :maxdepth: 1
         :caption: Contents:
 
         tutorial
         api
         examples_md
+
+    The core library is implemented in C++.
+*onnxruntime* is available on 
+PyPi for Linux Ubuntu 16.04, Python 3.5+ for both
+'CPU <https://pypi.org/project/onnxruntime/>`_ and 'GPU <https://pypi.org/project/onnxruntime-gpu/>`_. This example demonstrates a simple 
+ prediction for an
+`ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_ model:
+
+::
+
+    import onnxruntime as rt
+    sess = rt.InferenceSession("model.onnx")
+    input_name = sess.get_inputs()[0].name
+    pred_onnx = sess.run(None, {input_name: X})
 
 
 
