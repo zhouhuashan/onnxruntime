@@ -3,33 +3,21 @@
 Tutorial
 ========
 
-*onnxruntime* provide a natural backend for *onnx*
-available optimized for CPU or GPU devices.
-It provides an easy way to run machine learned models
-with no dependencies. Machine learning framework are
-optimized for batch training and not necessarily
-one off prediction which is the typical scenario
-in many websites. *onnxruntime* addresses this
-situation. The scenario is usually the following:
+ONNX Runtime provides an easy way to run machine learned models with high performance on CPU or GPU without dependencies on the training framework. Machine learning frameworks are usually optimized for batch training rather than for prediction, which is a more common scenario in applications, sites, and services. At a high level, you can:
+1. Train a model using your favorite framework.
+2. Convert or export the model into ONNX format. See 'ONNX Tutorials <https://github.com/onnx/tutorials>'_ for more details.
+3. Load and run the model using ONNX Runtime.
 
-1. A model is trained with you favorite framework and
-   is composed of a single pipeline.
-2. A tool converts this pipeline into ONNX format,
-   *onnmltools*, *winmltools*, *coremltools* or any
-   specific extension for deep learning,
-   such as *onnx-torch*, *onnx-tensorflow*.
-3. The model is loaded with *onnxruntime*
-   and available to be run for new predictions.
 
 
 In this tutorial, we will briefly create a 
 pipeline with *scikit-learn*, convert it into
 ONNX format and run the first predictions.
 
-Step 1: create a machine learning pipeline
+Step 1: Train a Machine Learning model
 ++++++++++++++++++++++++++++++++++++++++++
 
-We use the famous iris datasets.
+We'll use the famous iris datasets.
 
 ::
 
@@ -43,15 +31,13 @@ We use the famous iris datasets.
     clr = LogisticRegression()
     clr.fit(X_train, y_train)
 
-Step 2: convert the model into ONNX format
+Step 2: Convert the model into ONNX format
 ++++++++++++++++++++++++++++++++++++++++++
 
-*ONNX* is the format used to describe the machine learned model.
-It provides a list of many mathematical functions used
-in most of the models. A tree is a function, a random forest
-is a sum of tree functions... Fortunately, there exists a tool
-to convert many kinds of models into ONNX:
-`onnxmltools <https://github.com/onnx/onnxmltools>`_.
+'ONNX <https://github.com/onnx/onnx>'_ is a format to describe the machine learned model.
+It defines a set of commonly used operators to compose models. There are 'tools <https://github.com/onnx/tutorials>'_
+to convert other model formats into ONNX. Here we will use
+`ONNXMLTools <https://github.com/onnx/onnxmltools>`_.
 
 ::
 
@@ -63,27 +49,18 @@ to convert many kinds of models into ONNX:
     onx = convert_sklearn(clr, initial_types=initial_type)
     save_model(onx, "logreg_iris.onnx")
 
-Step 3: compute the predictions
+Step 3: Compute the predictions
 +++++++++++++++++++++++++++++++
 
-The machine learning library used to train the model
-cannot be used to compute the predictions with this new
-format. It requires a dedicated runtime, it is also 
-is usually optimized for a specific device
-and can be available in other languages than *python*.
-*onnxruntime* is optimized for CPU, GPU, available in
-*python* and *C*.
+We will use ONNX Runtime to compute the predictions for this machine learning model.
 
 ::
 
-    import onnxruntime as onnxrt
-    sess = onnxrt.InferenceSession("logreg_iris.onnx")
+    import onnxruntime as rt
+    sess = rt.InferenceSession("logreg_iris.onnx")
     input_name = sess.get_inputs()[0].name
     
     pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]
 
-*onnxruntime* requires the inputs to be converted
-into *float* which allows faster computations in CPU and GPU.
-That might create some discrepencies between the predictions
-with the original model but they should be small.
+
 
