@@ -19,6 +19,8 @@ file(GLOB onnxruntime_providers_common_srcs
 )
     
 source_group(TREE ${LOTUS_ROOT}/core FILES ${onnxruntime_providers_common_srcs} ${onnxruntime_providers_srcs})
+# add using LOTUS_ROOT so they show up under the 'contrib_ops' folder in Visual Studio
+source_group(TREE ${LOTUS_ROOT} FILES ${lotus_contrib_ops_srcs})
 add_library(onnxruntime_providers ${onnxruntime_providers_common_srcs} ${onnxruntime_providers_srcs} ${lotus_contrib_ops_srcs})
 lotus_add_include_to_target(onnxruntime_providers onnx protobuf::libprotobuf)
 target_include_directories(onnxruntime_providers PRIVATE ${MLAS_INC} ${LOTUS_ROOT} ${eigen_INCLUDE_DIRS})
