@@ -177,8 +177,8 @@ static Status SortTensorFileNames(std::vector<path>& input_pb_files) {
 }
 
 //Doesn't support file size >2 GB
-template <typename FUNC>
-Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator, FUNC func) {
+Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
+  const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& name_data_map, std::ostringstream &oss) {
   std::string content;
   //TODO: mmap is better
   LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
@@ -226,8 +226,19 @@ Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator, FUNC func) {
         st = Status(LOTUS, NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
     }
     if (!st.IsOK()) break;
-    st = func(data.name(), &value, data.debug_info());
-    if (!st.IsOK()) break;
+    if (!data.debug_info().empty()) {
+      oss << ":" << data.debug_info();
+    }
+    std::string value_name = data.name();
+    if (value_name.empty())
+      value_name = value_info[name_data_map.size()].name();
+
+    auto pv = name_data_map.insert(std::make_pair(value_name, value));
+    if (!pv.second)
+    {
+      st = Status(LOTUS, FAIL, "duplicated test data name");
+      break;
+    }
   }
   if (!st.IsOK()) return LOTUS_MAKE_STATUS(LOTUS, FAIL, "load the ", item_id, "-th item in file '", outputs_pb.string(), "' failed,", st.ErrorMessage());
   if (!clean_eof) {
@@ -460,17 +471,7 @@ Status OnnxTestCase::LoadTestData(size_t id, onnxruntime::NameMLValMap& name_dat
   if (std::experimental::filesystem::exists(test_data_pb)) {  //has an all-in-one input file
     std::ostringstream oss;
     oss << debuginfo_strings[id];
-    st = LoopDataFile(test_data_pb, allocator_, [&name_data_map, &oss](const std::string& name, ::onnxruntime::MLValue* value, const std::string& debug_info) {
-      if (!debug_info.empty()) {
-        oss << ":" << debug_info;
-      }
-      if (name.empty())
-        return Status(LOTUS, FAIL, "name is empty");
-      auto pv = name_data_map.insert(std::make_pair(name, *value));
-      if (!pv.second)
-        return Status(LOTUS, FAIL, "duplicated test data name");
-      return Status::OK();
-    });
+    st = LoopDataFile(test_data_pb, allocator_, is_input ? input_value_info_ : output_value_info_, name_data_map, oss);
     {
       std::lock_guard<std::mutex> l(m_);
       debuginfo_strings[id] = oss.str();
