@@ -10,7 +10,7 @@ community, it supports traditional ML models as well
 as Deep Learning algorithms in the
 `ONNX-ML format <https://github.com/onnx/onnx/blob/master/docs/IR.md>`_.
 Documentation is available at
-`Python Bindings for ONNX Runtime <https://docs.microsoft.com/en-us/python/api/overview/azure/onnxruntime/intro>`_.
+`Python Bindings for ONNX Runtime <https://aka.ms/onnxruntime-python>`_.
 
 Example
 -------

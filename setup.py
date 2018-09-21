@@ -50,7 +50,7 @@ with open(README) as f:
 # Setup
 setup(
     name=package_name,
-    version='0.1.1',
+    version='0.1.2',
     description='ONNX Runtime Runtime Python bindings',
     long_description=long_description,
     author='Microsoft Corporation',
