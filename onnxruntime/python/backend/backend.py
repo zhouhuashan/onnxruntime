@@ -81,7 +81,7 @@ class OnnxRuntimeBackend(Backend):
         Compute the prediction.
         
         :param model: :class:`onnxruntime.InferenceSession` returned
-            by :meth:`prepare <onnxruntime.backend.OnnxRuntimeBackend.prepare>`
+            by function *prepare* from module :mod:`onnxruntime.backend`
         :param inputs: inputs
         :param device: requested device for the computation,
             None means the default one which depends on
