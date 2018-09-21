@@ -116,7 +116,7 @@ class Node {
   // An edge end. It could be input or output edge end of a node.
   // For node's input edge end, it's the source end, as the destination
   // end is the node itself.
-  // For node's ouput edge end, it's the destination end, as the source
+  // For node's output edge end, it's the destination end, as the source
   // end is the node itself.
   class EdgeEnd {
    public:
@@ -200,7 +200,7 @@ class Node {
   // End of output nodes.
   NodeConstIterator OutputNodesEnd() const noexcept { return relationships_.output_nodes.cend(); }
 
-  // Beginning of output ed. Iterator should have no nullptr values.
+  // Beginning of output edge. Iterator should have no nullptr values.
   EdgeConstIterator OutputEdgesBegin() const noexcept { return relationships_.output_edges.cbegin(); }
 
   // End of output nodes.

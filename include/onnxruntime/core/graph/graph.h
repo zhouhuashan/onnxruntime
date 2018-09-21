@@ -58,6 +58,8 @@ class Graph : public GraphBase {
   const std::vector<NodeIndex>& GetRootNodes() const { return root_nodes_; }
   const std::vector<size_t>& GetNodeRefs() const { return node_refs_; }
 
+  ~Graph();
+
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
 

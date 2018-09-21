@@ -142,7 +142,7 @@ Status ExecutionFrame::AllocateMLValueTensorSelfOwnBufferHelper(int mlvalue_inde
 
   // trace the memory allocation.
   // don't trace the memory allocation on string tensors, as it need
-  // placement new, we don't suppport it in memory pattern optimizaiton.
+  // placement new, we don't support it in memory pattern optimization.
   if (element_type != DataTypeImpl::GetType<std::string>())
     TraceAllocate(mlvalue_index, size);
 
@@ -444,9 +444,10 @@ static inline void VerifyShape(const MLValue* p_mlvalue,
                                const MLValueAllocationParameters& parameters) {
   if (p_mlvalue->IsTensor()) {
     const Tensor* tensor = &p_mlvalue->Get<Tensor>();
-    if (tensor->Shape() != parameters.tensor_shape) {
-      LOTUS_THROW("MLValue shape verification failed.");
-    }
+
+    LOTUS_ENFORCE(tensor->Shape() == parameters.tensor_shape,
+                  "MLValue shape verification failed. Current shape:", tensor->Shape(),
+                  " Requested shape:", parameters.tensor_shape);
   }
 }
 
@@ -476,8 +477,7 @@ Status ExecutionFrame::GetOrCreateNodeOutputMLValue(int index,
   } else {
     // It's not allocated, then allocate it with given shape and return.
     // Perform allocation based on the allocation plan
-    LOTUS_RETURN_IF_ERROR(
-        AllocateAsPerAllocationPlan(node_values_[index], parameters));
+    LOTUS_RETURN_IF_ERROR(AllocateAsPerAllocationPlan(node_values_[index], parameters));
     return Status::OK();
   }
 }

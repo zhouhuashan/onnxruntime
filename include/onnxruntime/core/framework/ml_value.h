@@ -16,6 +16,10 @@ class MLValue {
   MLValue() : data_(nullptr) {}
   virtual ~MLValue() = default;
 
+  MLValue(void* pData, MLDataType type, DeleteFunc deleter) {
+    Init(pData, type, deleter);
+  }
+
   void Init(void* pData, MLDataType type, DeleteFunc deleter) {
     data_.reset(pData, deleter);
     type_ = type;

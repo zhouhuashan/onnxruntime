@@ -21,13 +21,31 @@ class Scan final : public OpKernel {
     ONNX_NAMESPACE::GraphProto proto;
     LOTUS_ENFORCE(info.GetAttr<ONNX_NAMESPACE::GraphProto>("body", &proto).IsOK());
     (void)proto;
+
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("num_scan_inputs", &num_scan_inputs_).IsOK());
+
+    if (info.GetAttrs<int64_t>("directions", directions_).IsOK()) {
+      LOTUS_ENFORCE(gsl::narrow_cast<int64_t>(directions_.size()) == num_scan_inputs_,
+                    "Number of entries in 'directions' was ", directions_.size(),
+                    ". Must match 'num_scan_inputs' of ", num_scan_inputs_);
+      LOTUS_ENFORCE(std::all_of(directions_.cbegin(), directions_.cend(),
+                                [](int64_t i) { return i == static_cast<int64_t>(Direction::kForward) ||
+                                                       i == static_cast<int64_t>(Direction::kReverse); }),
+                    "Invalid values in 'directions'. 0 == forward. 1 == reverse. Values were ",
+                    directions_);
+    } else {
+      // default to forward
+      directions_ = std::vector<int64_t>(num_scan_inputs_, static_cast<int64_t>(Direction::kForward));
+    }
   }
 
   Status Compute(OpKernelContext* ctx) const override;
 
-  static ONNX_NAMESPACE::OpSchema GetScanOpSchema();
+  enum class Direction { kForward = 0,
+                         kReverse = 1 };
 
  private:
-  Status ComputeImpl() const;
+  int64_t num_scan_inputs_;
+  std::vector<int64_t> directions_;
 };
 }  // namespace onnxruntime
