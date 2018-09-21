@@ -81,7 +81,7 @@ sphinx_gallery_conf = {
 
 md_image_dest = "media"
 md_link_replace = {
-    '#onnxruntimesessionoptionsenable-profiling': '#class-onnxruntimesessionoptions',
+    '#onnxruntimesessionoptionsenable-profiling)': '#class-onnxruntimesessionoptions)',
 }
 
 # -- Setup actions -----------------------------------------------------------
