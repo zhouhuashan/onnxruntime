@@ -12,7 +12,7 @@ Param(
 "SourceRoot=$SourceRoot"
 "BuildRoot=$BuildRoot"
 
-$sources = Join-Path $SourceRoot "lotus\core" 
+$sources = Join-Path $SourceRoot "onnxruntime\core" 
 $buildDir = Join-Path $BuildRoot "Debug"
 
 function RunTest([string]$test_cmd, [string[]]$export_types, [string[]]$inputs)
