@@ -176,7 +176,11 @@ int main(int argc, char* argv[]) {
                                                "maxpool_1d_default", "mean_one_input", "mean_example", "max_two_inputs", "max_one_input", "maxpool_2d_pads", "maxpool_with_argmax_2d_precomputed_strides",
                                                "maxpool_with_argmax_2d_precomputed_pads", "maxpool_3d_default", "maxpool_2d_strides", "maxpool_2d_same_upper", "maxpool_2d_same_lower",
                                                "maxpool_2d_precomputed_strides", "maxpool_2d_precomputed_same_upper", "maxpool_2d_precomputed_pads", "expand_dim_unchanged",
-                                               "convtranspose_1d", "expand_dim_changed", "convtranspose_3d", "expand_shape_model1", "expand_shape_model2", "expand_shape_model3", "expand_shape_model4"};
+                                               "convtranspose_1d", "expand_dim_changed", "convtranspose_3d", "expand_shape_model1", "expand_shape_model2", "expand_shape_model3", "expand_shape_model4", "less",
+                                               "constantlike_ones_with_input", "constantlike_zeros_without_input_dtype", "dynamic_slice", "dynamic_slice_end_out_of_bounds", "less_bcast", "dynamic_slice_default_axes",
+                                               "dynamic_slice_start_out_of_bounds", "greater", "constantlike_threes_with_shape_and_dtype", "greater_bcast", "dynamic_slice_neg"
+                                               };
+
 
   int result = 0;
   for (const std::string& s : stat.GetFailedTest()) {

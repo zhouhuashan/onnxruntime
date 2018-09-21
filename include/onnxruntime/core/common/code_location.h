@@ -18,7 +18,7 @@ struct CodeLocation {
     @param func Usually the value of __PRETTY_FUNCTION__ or __FUNCTION__
     */
   CodeLocation(const char* file_path, const int line, const char* func)
-      : file_and_path{file_path}, line_num{line}, function{func} {
+    : file_and_path{file_path}, line_num{line}, function{func} {
   }
 
   /**
@@ -28,7 +28,7 @@ struct CodeLocation {
   @param stacktrace Stacktrace from source of message.
   */
   CodeLocation(const char* file_path, const int line, const char* func, const std::vector<std::string>& stacktrace)
-      : file_and_path{file_path}, line_num{line}, function{func}, stacktrace(stacktrace) {
+    : file_and_path{file_path}, line_num{line}, function{func}, stacktrace(stacktrace) {
   }
 
   std::string FileNoPath() const {

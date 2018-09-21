@@ -5,7 +5,8 @@ add_library(onnx_proto ${LOTUS_ROOT}/core/protobuf/onnx-ml.proto ${LOTUS_ROOT}/c
 target_include_directories(onnx_proto PUBLIC $<TARGET_PROPERTY:protobuf::libprotobuf,INTERFACE_INCLUDE_DIRECTORIES> "${CMAKE_CURRENT_BINARY_DIR}/..")
 onnxruntime_protobuf_generate(APPEND_PATH IMPORT_DIRS TARGET onnx_proto)
 
-
+# Cpp Tests were added and they require googletest
+# since we have our own copy, try using that
 set(ONNX_SOURCE_ROOT ${PROJECT_SOURCE_DIR}/external/onnx)
 file(GLOB_RECURSE onnx_src
     "${ONNX_SOURCE_ROOT}/onnx/*.h"
@@ -15,6 +16,7 @@ file(GLOB_RECURSE onnx_src
 file(GLOB_RECURSE onnx_exclude_src
     "${ONNX_SOURCE_ROOT}/onnx/py_utils.h"
     "${ONNX_SOURCE_ROOT}/onnx/proto_utils.h"
+    "${ONNX_SOURCE_ROOT}/onnx/backend/test/cpp/*"
     "${ONNX_SOURCE_ROOT}/onnx/test/*"
     "${ONNX_SOURCE_ROOT}/onnx/cpp2py_export.cc"
 )

@@ -4,6 +4,8 @@
 #include "core/framework/data_types.h"
 #include "core/framework/tensor.h"
 #include "core/inc/op_kernel_author.h"
+#include "core/graph/onnx_protobuf.h"
+
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
@@ -21,6 +23,290 @@ MLDataType DataTypeImpl::GetType<Tensor>() {
   return TensorTypeBase::Type();
 }
 
+static bool IsTensorTypeScalar(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_type_proto) {
+  int sz = tensor_type_proto.shape().dim_size();
+  return sz == 0 || sz == 1;
+}
+
+namespace data_types_internal {
+
+template<typename T>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType();
+
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<float>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_FLOAT;
+}
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<uint8_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_UINT8;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<int8_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_INT8;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<uint16_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_UINT16;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<int16_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_INT16;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<int32_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_INT32;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<int64_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_INT64;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<std::string>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_STRING;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<bool>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_BOOL;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<MLFloat16>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_FLOAT16;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<double>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_DOUBLE;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<uint32_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_UINT32;
+};
+template <>
+constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<uint64_t>() {
+  return ONNX_NAMESPACE::TensorProto_DataType_UINT64;
+};
+
+template<typename T>
+struct TensorContainedTypeSetter<T> {
+  static void SetTensorElementType(ONNX_NAMESPACE::TypeProto& proto) {
+    proto.mutable_tensor_type()->set_elem_type(ToTensorDataType<T>());
+  }
+  static void SetMapKeyType(ONNX_NAMESPACE::TypeProto& proto) {
+    proto.mutable_map_type()->set_key_type(ToTensorDataType<T>());
+  }
+};
+
+// Pre-instantiate
+template struct
+    TensorContainedTypeSetter<float>;
+template struct
+    TensorContainedTypeSetter<uint8_t>;
+template struct
+    TensorContainedTypeSetter<int8_t>;
+template struct
+    TensorContainedTypeSetter<uint16_t>;
+template struct
+    TensorContainedTypeSetter<int16_t>;
+template struct
+    TensorContainedTypeSetter<int32_t>;
+template struct
+    TensorContainedTypeSetter<int64_t>;
+template struct
+    TensorContainedTypeSetter<std::string>;
+template struct
+    TensorContainedTypeSetter<bool>;
+template struct
+    TensorContainedTypeSetter<MLFloat16>;
+template struct
+    TensorContainedTypeSetter<double>;
+template struct
+    TensorContainedTypeSetter<uint32_t>;
+template struct
+    TensorContainedTypeSetter<uint64_t>;
+
+void CopyMutableMapValue(const ONNX_NAMESPACE::TypeProto& value_proto,
+                         ONNX_NAMESPACE::TypeProto& map_proto) {
+  map_proto.mutable_map_type()->mutable_value_type()->CopyFrom(value_proto);
+}
+
+void CopyMutableSeqElement(const ONNX_NAMESPACE::TypeProto& elem_proto,
+                           ONNX_NAMESPACE::TypeProto& proto) {
+  proto.mutable_sequence_type()->mutable_elem_type()->CopyFrom(elem_proto);
+}
+
+void AssignOpaqueDomainName(const char* domain, const char* name,
+                            ONNX_NAMESPACE::TypeProto& proto) {
+  auto* mutable_opaque = proto.mutable_opaque_type();
+  mutable_opaque->mutable_domain()->assign(domain);
+  mutable_opaque->mutable_name()->assign(name);
+}
+
+void AddOpaqueParameter(const ONNX_NAMESPACE::TypeProto& param_proto,
+                        ONNX_NAMESPACE::TypeProto& proto) {
+  proto.mutable_opaque_type()->add_parameters()->CopyFrom(param_proto);
+}
+
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_proto,
+                  const ONNX_NAMESPACE::TypeProto_Tensor& type_proto);
+
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Map& map_proto,
+                  const ONNX_NAMESPACE::TypeProto_Map& type_proto);
+
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Sequence& sequence_proto,
+                  const ONNX_NAMESPACE::TypeProto_Sequence& type_proto);
+
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Opaque& opaque_proto,
+                  const ONNX_NAMESPACE::TypeProto_Opaque& type_proto);
+
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_proto,
+                  const ONNX_NAMESPACE::TypeProto_Tensor& type_proto) {
+  if (!(type_proto.has_elem_type() &&
+        type_proto.elem_type() == tensor_proto.elem_type())) {
+    return false;
+  }
+  return true;
+  /* Currently all Tensors with all kinds of shapes
+     are mapped into the same MLDataType (same element type)
+     so we omit shape from IsCompatible consideration
+     */
+}
+
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Map& map_proto,
+                  const ONNX_NAMESPACE::TypeProto_Map& type_proto) {
+  if (!(type_proto.has_key_type() &&
+        type_proto.key_type() == map_proto.key_type())) {
+    return false;
+  }
+  const auto& lhs = map_proto;
+  const auto& rhs = type_proto;
+  bool result = true;
+  if (lhs.key_type() == rhs.key_type() &&
+      lhs.value_type().value_case() == rhs.value_type().value_case()) {
+    switch (lhs.value_type().value_case()) {
+      case TypeProto::ValueCase::kTensorType:
+        result = IsCompatible(lhs.value_type().tensor_type(), rhs.value_type().tensor_type());
+        break;
+      case TypeProto::ValueCase::kSequenceType:
+        result = IsCompatible(lhs.value_type().sequence_type(), rhs.value_type().sequence_type());
+        break;
+      case TypeProto::ValueCase::kMapType:
+        result = IsCompatible(lhs.value_type().map_type(), rhs.value_type().map_type());
+        break;
+      case TypeProto::ValueCase::kOpaqueType:
+        result = IsCompatible(lhs.value_type().opaque_type(), rhs.value_type().opaque_type());
+        break;
+      default:
+        LOTUS_ENFORCE(false);
+        break;
+    }
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Sequence& sequence_proto,
+                  const ONNX_NAMESPACE::TypeProto_Sequence& type_proto) {
+  bool result = true;
+  const auto& lhs = sequence_proto;
+  const auto& rhs = type_proto;
+  if (rhs.has_elem_type() &&
+      lhs.elem_type().value_case() == rhs.elem_type().value_case()) {
+    switch (lhs.elem_type().value_case()) {
+      case TypeProto::ValueCase::kTensorType:
+        result = IsCompatible(lhs.elem_type().tensor_type(), rhs.elem_type().tensor_type());
+        break;
+      case TypeProto::ValueCase::kSequenceType:
+        result = IsCompatible(lhs.elem_type().sequence_type(), rhs.elem_type().sequence_type());
+        break;
+      case TypeProto::ValueCase::kMapType:
+        result = IsCompatible(lhs.elem_type().map_type(), rhs.elem_type().map_type());
+        break;
+      case TypeProto::ValueCase::kOpaqueType:
+        result = IsCompatible(lhs.elem_type().opaque_type(), rhs.elem_type().opaque_type());
+        break;
+      default:
+        LOTUS_ENFORCE(false);
+        break;
+    }
+  } else {
+    result = false;
+  }
+  return result;
+}
+bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Opaque& opaque_proto, const ONNX_NAMESPACE::TypeProto_Opaque& type_proto) {
+  const auto& lhs = opaque_proto;
+  const auto& rhs = type_proto;
+  if (!rhs.has_domain() && !lhs.domain().empty()) {
+    return false;
+  }
+  if (rhs.has_domain() && lhs.domain() != rhs.domain()) {
+    return false;
+  }
+  if (!rhs.has_name() && !lhs.name().empty()) {
+    return false;
+  }
+  if (rhs.has_name() && lhs.name() != rhs.name()) {
+    return false;
+  }
+  bool result = true;
+  if (lhs.parameters_size() == rhs.parameters_size()) {
+    for (int i = 0; i < rhs.parameters_size() && result; ++i) {
+      const auto& lparam = lhs.parameters(i);
+      const auto& rparam = rhs.parameters(i);
+      if (lparam.value_case() == rparam.value_case()) {
+        switch (lparam.value_case()) {
+          case TypeProto::ValueCase::kTensorType:
+            result = IsCompatible(lparam.tensor_type(), rparam.tensor_type());
+            break;
+          case TypeProto::ValueCase::kSequenceType:
+            result = IsCompatible(lparam.sequence_type(), rparam.sequence_type());
+            break;
+          case TypeProto::ValueCase::kMapType:
+            result = IsCompatible(lparam.map_type(), rparam.map_type());
+            break;
+          case TypeProto::ValueCase::kOpaqueType:
+            result = IsCompatible(lparam.opaque_type(), rparam.opaque_type());
+            break;
+          default:
+            LOTUS_ENFORCE(false);
+            break;
+        }
+      } else {
+        result = false;
+      }
+    }
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+struct TypeProtoImpl {
+  const TypeProto* GetProto() const {
+    return &proto_;
+  }
+  TypeProto& mutable_type_proto() {
+    return proto_;
+  }
+  TypeProto proto_;
+};
+
+}  // namespace data_types_internal
+
+/// TensorTypeBase
+struct TensorTypeBase::Impl : public data_types_internal::TypeProtoImpl {
+};
+
+const ONNX_NAMESPACE::TypeProto* TensorTypeBase::GetTypeProto() const {
+  return impl_->GetProto();
+}
+
+TensorTypeBase::TensorTypeBase() : impl_(new Impl()) {}
+TensorTypeBase::~TensorTypeBase() {
+  delete impl_;
+}
+
 size_t TensorTypeBase::Size() const {
   return sizeof(Tensor);
 }
@@ -34,74 +320,82 @@ DeleteFunc TensorTypeBase::GetDeleteFunc() const {
   return &Delete<Tensor>;
 }
 
-template <>
-bool TensorType<float>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_FLOAT;
+ONNX_NAMESPACE::TypeProto& TensorTypeBase::mutable_type_proto() {
+  return impl_->mutable_type_proto();
 }
 
-template <>
-bool TensorType<double>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_DOUBLE;
+bool TensorTypeBase::IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
+  const auto* thisProto = GetTypeProto();
+  if (&type_proto == thisProto) {
+    return true;
+  }
+  if (type_proto.value_case() != TypeProto::ValueCase::kTensorType) {
+    return false;
+  }
+
+  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kTensorType);
+  LOTUS_ENFORCE(thisProto->tensor_type().has_elem_type());
+
+  return data_types_internal::IsCompatible(thisProto->tensor_type(), type_proto.tensor_type());
 }
 
-template <>
-bool TensorType<std::string>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_STRING;
+/// NoTensorTypeBase
+struct NonTensorTypeBase::Impl : public data_types_internal::TypeProtoImpl {};
+
+NonTensorTypeBase::NonTensorTypeBase() : impl_(new Impl()) {
 }
 
-template <>
-bool TensorType<int32_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT32;
+NonTensorTypeBase::~NonTensorTypeBase() {
+  delete impl_;
 }
 
-template <>
-bool TensorType<bool>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_BOOL;
+ONNX_NAMESPACE::TypeProto& NonTensorTypeBase::mutable_type_proto() {
+  return impl_->mutable_type_proto();
 }
 
-template <>
-bool TensorType<int8_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT8;
+const ONNX_NAMESPACE::TypeProto* NonTensorTypeBase::GetTypeProto() const {
+  return impl_->GetProto();
 }
 
-template <>
-bool TensorType<int16_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT16;
+bool NonTensorTypeBase::IsMapCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
+  const auto* thisProto = impl_->GetProto();
+  if (&type_proto == thisProto) {
+    return true;
+  }
+  if (type_proto.value_case() != TypeProto::ValueCase::kMapType) {
+    return false;
+  }
+  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kMapType);
+  LOTUS_ENFORCE(thisProto->map_type().has_key_type());
+  LOTUS_ENFORCE(thisProto->map_type().has_value_type());
+  return data_types_internal::IsCompatible(thisProto->map_type(), type_proto.map_type());
 }
 
-template <>
-bool TensorType<uint8_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT8;
+bool NonTensorTypeBase::IsSequenceCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
+  const auto* thisProto = impl_->GetProto();
+  if (&type_proto == thisProto) {
+    return true;
+  }
+  if (type_proto.value_case() != TypeProto::ValueCase::kSequenceType) {
+    return false;
+  }
+  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kSequenceType);
+  LOTUS_ENFORCE(thisProto->sequence_type().has_elem_type());
+  return data_types_internal::IsCompatible(thisProto->sequence_type(), type_proto.sequence_type());
 }
 
-template <>
-bool TensorType<uint16_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT16;
-}
-
-template <>
-bool TensorType<uint32_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT32;
-}
-
-template <>
-bool TensorType<int64_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_INT64;
-}
-
-template <>
-bool TensorType<uint64_t>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_UINT64;
-}
-
-template <>
-bool TensorType<MLFloat16>::IsCompatible(const TypeProto& type_proto) const {
-  return type_proto.value_case() == TypeProto::ValueCase::kTensorType && type_proto.tensor_type().has_elem_type() && type_proto.tensor_type().elem_type() == TensorProto_DataType_FLOAT16;
-}
-
-static bool IsTensorTypeScalar(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_type_proto) {
-  int sz = tensor_type_proto.shape().dim_size();
-  return sz == 0 || sz == 1;
+bool NonTensorTypeBase::IsOpaqueCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
+  const auto* thisProto = impl_->GetProto();
+  if (&type_proto == thisProto) {
+    return true;
+  }
+  if (type_proto.value_case() != TypeProto::ValueCase::kOpaqueType) {
+    return false;
+  }
+  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kOpaqueType);
+  LOTUS_ENFORCE(thisProto->opaque_type().has_domain());
+  LOTUS_ENFORCE(thisProto->opaque_type().has_name());
+  return data_types_internal::IsCompatible(thisProto->opaque_type(), type_proto.opaque_type());
 }
 
 LOTUS_REGISTER_TENSOR_TYPE(int32_t);
@@ -118,34 +412,22 @@ LOTUS_REGISTER_TENSOR_TYPE(uint32_t);
 LOTUS_REGISTER_TENSOR_TYPE(uint64_t);
 LOTUS_REGISTER_TENSOR_TYPE(MLFloat16);
 
-LOTUS_REGISTER_MAP(MapStringToString, TensorProto_DataType_STRING, TensorProto_DataType_STRING);
-LOTUS_REGISTER_MAP(MapStringToInt64, TensorProto_DataType_STRING, TensorProto_DataType_INT64);
-LOTUS_REGISTER_MAP(MapStringToFloat, TensorProto_DataType_STRING, TensorProto_DataType_FLOAT);
-LOTUS_REGISTER_MAP(MapStringToDouble, TensorProto_DataType_STRING, TensorProto_DataType_DOUBLE);
-LOTUS_REGISTER_MAP(MapInt64ToString, TensorProto_DataType_INT64, TensorProto_DataType_STRING);
-LOTUS_REGISTER_MAP(MapInt64ToInt64, TensorProto_DataType_INT64, TensorProto_DataType_INT64);
-LOTUS_REGISTER_MAP(MapInt64ToFloat, TensorProto_DataType_INT64, TensorProto_DataType_FLOAT);
-LOTUS_REGISTER_MAP(MapInt64ToDouble, TensorProto_DataType_INT64, TensorProto_DataType_DOUBLE);
-LOTUS_REGISTER_SEQ(VectorString, TensorProto_DataType_STRING);
-LOTUS_REGISTER_SEQ(VectorFloat, TensorProto_DataType_FLOAT);
-LOTUS_REGISTER_SEQ(VectorInt64, TensorProto_DataType_INT64);
-LOTUS_REGISTER_SEQ(VectorDouble, TensorProto_DataType_DOUBLE);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapStringToFloat,
-                               type_proto.value_case() == TypeProto::ValueCase::kSequenceType &&
-                                   type_proto.sequence_type().elem_type().value_case() == TypeProto::ValueCase::kMapType &&
-                                   type_proto.sequence_type().elem_type().map_type().key_type() == TensorProto_DataType_STRING &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().value_case() == TypeProto::ValueCase::kTensorType &&
-                                   IsTensorTypeScalar(type_proto.sequence_type().elem_type().map_type().value_type().tensor_type()) &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().has_elem_type() &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().elem_type() == TensorProto_DataType_FLOAT);
-LOTUS_REGISTER_NON_TENSOR_TYPE(VectorMapInt64ToFloat,
-                               type_proto.value_case() == TypeProto::ValueCase::kSequenceType &&
-                                   type_proto.sequence_type().elem_type().value_case() == TypeProto::ValueCase::kMapType &&
-                                   type_proto.sequence_type().elem_type().map_type().key_type() == TensorProto_DataType_INT64 &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().value_case() == TypeProto::ValueCase::kTensorType &&
-                                   IsTensorTypeScalar(type_proto.sequence_type().elem_type().map_type().value_type().tensor_type()) &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().has_elem_type() &&
-                                   type_proto.sequence_type().elem_type().map_type().value_type().tensor_type().elem_type() == TensorProto_DataType_FLOAT);
+LOTUS_REGISTER_MAP(MapStringToString);
+LOTUS_REGISTER_MAP(MapStringToInt64);
+LOTUS_REGISTER_MAP(MapStringToFloat);
+LOTUS_REGISTER_MAP(MapStringToDouble);
+LOTUS_REGISTER_MAP(MapInt64ToString);
+LOTUS_REGISTER_MAP(MapInt64ToInt64);
+LOTUS_REGISTER_MAP(MapInt64ToFloat);
+LOTUS_REGISTER_MAP(MapInt64ToDouble);
+
+LOTUS_REGISTER_SEQ(VectorString);
+LOTUS_REGISTER_SEQ(VectorFloat);
+LOTUS_REGISTER_SEQ(VectorInt64);
+LOTUS_REGISTER_SEQ(VectorDouble);
+
+LOTUS_REGISTER_SEQ(VectorMapStringToFloat);
+LOTUS_REGISTER_SEQ(VectorMapInt64ToFloat);
 
 MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
   switch (proto.value_case()) {
