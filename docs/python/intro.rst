@@ -16,7 +16,7 @@ as Deep Learning algorithms in the
         :maxdepth: 1
 
         tutorial
-        api
+        api_summary
         auto_examples/index
         
     :ref:`genindex`
@@ -28,7 +28,7 @@ as Deep Learning algorithms in the
         :caption: Contents:
 
         tutorial
-        api
+        api_summary
         examples_md
 
 The core library is implemented in C++.
