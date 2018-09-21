@@ -80,6 +80,9 @@ sphinx_gallery_conf = {
 # -- markdown options -----------------------------------------------------------
 
 md_image_dest = "media"
+md_link_replace = {
+    '#onnxruntimesessionoptionsenable-profiling': '#class-onnxruntimesessionoptions',
+}
 
 # -- Setup actions -----------------------------------------------------------
 
