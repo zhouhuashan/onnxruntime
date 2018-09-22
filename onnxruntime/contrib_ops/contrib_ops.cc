@@ -3,8 +3,19 @@
 
 #include "contrib_ops/contrib_ops.h"
 
+#include "core/graph/constants.h"
+#include "core/graph/op.h"
+#include "onnx/defs/schema.h"
+
+#include "./cpu/attnlstm/attn_lstm_schema_defs.h"
+
 namespace onnxruntime {
 namespace ml {
+
+using ::ONNX_NAMESPACE::AttributeProto;
+using ::ONNX_NAMESPACE::OPTIONAL;
+using ::ONNX_NAMESPACE::OpSchema;
+
 void RegisterContribSchemas() {
   ONNX_CONTRIB_OPERATOR_SCHEMA(SampleOp)
       .SetDomain(kMSDomain)
@@ -33,10 +44,13 @@ Sample echo operator.)DOC");
           "Constrain to any tensor type. If the dtype attribute is not provided this must be a valid output type.")
       .TypeAndShapeInferenceFunction(ONNX_NAMESPACE::propagateShapeAndTypeFromFirstInput)
       .SetDoc(R"DOC(ExpandDims echo operator.)DOC");
+
+  ONNX_CONTRIB_OPERATOR_SCHEMA_ELSEWHERE(AttnLSTM, RegisterAttnLSTMContribOpSchema);
 }
 
 class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, float, SampleOp);
 class ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, float, ExpandDims);
+class ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, AttnLSTM);
 
 void RegisterContribKernels(std::function<void(KernelCreateInfo&&)> fn) {
   fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, float, SampleOp)>());
@@ -44,6 +58,7 @@ void RegisterContribKernels(std::function<void(KernelCreateInfo&&)> fn) {
   // add more kernels here
 
   fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, float, ExpandDims)>());
+  fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, AttnLSTM)>());
 }
 }  // namespace ml
 }  // namespace onnxruntime
