@@ -164,6 +164,72 @@ class TestInferenceSession(unittest.TestCase):
 
         res = sess.run([output_name], {x_name: x})
         np.testing.assert_equal(x, res[0])
+        
+    def testInputBytes(self):
+        sess = onnxrt.InferenceSession(self.get_name("identity_string.pb"))
+        x = np.array([b'this', b'is', b'identity', b'test']).reshape((2,2))
+
+        x_name = sess.get_inputs()[0].name
+        self.assertEqual(x_name, "input:0")
+        x_shape = sess.get_inputs()[0].shape
+        self.assertEqual(x_shape, [2, 2])
+        x_type = sess.get_inputs()[0].type
+        self.assertEqual(x_type, 'tensor(string)')
+
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "output:0")
+        output_shape = sess.get_outputs()[0].shape
+        self.assertEqual(output_shape, [2, 2])
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, 'tensor(string)')
+
+        res = sess.run([output_name], {x_name: x})
+        np.testing.assert_equal(x, res[0].astype('|S8'))        
+
+    def testInputObject(self):
+        sess = onnxrt.InferenceSession(self.get_name("identity_string.pb"))
+        x = np.array(['this', 'is', 'identity', 'test'], object).reshape((2,2))
+
+        x_name = sess.get_inputs()[0].name
+        self.assertEqual(x_name, "input:0")
+        x_shape = sess.get_inputs()[0].shape
+        self.assertEqual(x_shape, [2, 2])
+        x_type = sess.get_inputs()[0].type
+        self.assertEqual(x_type, 'tensor(string)')
+
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "output:0")
+        output_shape = sess.get_outputs()[0].shape
+        self.assertEqual(output_shape, [2, 2])
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, 'tensor(string)')
+
+        res = sess.run([output_name], {x_name: x})
+        np.testing.assert_equal(x, res[0])        
+
+    def testInputVoid(self):
+        sess = onnxrt.InferenceSession(self.get_name("identity_string.pb"))
+        x = np.array([b'this', b'is', b'identity', b'test'], np.void).reshape((2,2))
+
+        x_name = sess.get_inputs()[0].name
+        self.assertEqual(x_name, "input:0")
+        x_shape = sess.get_inputs()[0].shape
+        self.assertEqual(x_shape, [2, 2])
+        x_type = sess.get_inputs()[0].type
+        self.assertEqual(x_type, 'tensor(string)')
+
+        output_name = sess.get_outputs()[0].name
+        self.assertEqual(output_name, "output:0")
+        output_shape = sess.get_outputs()[0].shape
+        self.assertEqual(output_shape, [2, 2])
+        output_type = sess.get_outputs()[0].type
+        self.assertEqual(output_type, 'tensor(string)')
+
+        res = sess.run([output_name], {x_name: x})
+        
+        expr = np.array([['this\x00\x00\x00\x00', 'is\x00\x00\x00\x00\x00\x00'],
+                         ['identity', 'test\x00\x00\x00\x00']], dtype=object)
+        np.testing.assert_equal(expr, res[0])
 
     def testConvAutoPad(self):
         sess = onnxrt.InferenceSession(self.get_name("conv_autopad.pb"))
@@ -360,6 +426,32 @@ class TestInferenceSession(unittest.TestCase):
         output_expected = np.array([3], dtype=np.int64)
         np.testing.assert_allclose(output_expected, res[0], rtol=1e-05, atol=1e-08)
 
+    def test_run_model_mlnet(self):
+        sess = onnxrt.InferenceSession(self.get_name("mlnet_encoder.onnx"))
+        names = [_.name for _ in sess.get_outputs()]
+        self.assertEqual(['C00', 'C12'], names)
+        c0 = np.array([5.], dtype=np.float32).reshape(1, 1);
+        
+        c1 = np.array([b'A\0A\0', b"B\0B\0", b"C\0C\0"], np.void).reshape(1, 3)
+        res = sess.run(None, {'C0': c0, 'C1': c1})
+        mat = res[1]
+        total = mat.sum()
+        self.assertEqual(total, 2)
+        self.assertEqual(list(mat.ravel()), 
+                         list(np.array([[[0., 0., 0., 0.], [1., 0., 0., 0.], [0., 0., 1., 0.]]]).ravel()))
+        
+        # In memory, the size of each element is fixed and equal to the 
+        # longest element. We cannot use bytes because numpy is trimming
+        # every final 0 for strings and bytes before creating the array
+        # (to save space). It does not have this behaviour for void
+        # but as a result, numpy does not know anymore the size
+        # of each element, they all have the same size.
+        c1 = np.array([b'A\0A\0\0', b"B\0B\0", b"C\0C\0"], np.void).reshape(1, 3)
+        res = sess.run(None, {'C0': c0, 'C1': c1})
+        mat = res[1]
+        total = mat.sum()
+        self.assertEqual(total, 0)
 
+        
 if __name__ == '__main__':
     unittest.main(module=__name__, buffer=True)
