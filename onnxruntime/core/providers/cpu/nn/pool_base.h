@@ -9,6 +9,92 @@
 
 namespace onnxruntime {
 
+enum class PoolType : uint8_t {
+  kMaxPool,
+  kAveragePool,
+  kLpPool
+};
+
+class LpPool;
+
+class PoolProcessContext {
+ private:
+  int64_t p_;
+
+ public:
+  friend class LpPool;
+  PoolProcessContext() {}
+  void init(const OpKernelInfo& info) {
+    LOTUS_ENFORCE(info.GetAttr<int64_t>("p", &p_).IsOK());
+  }
+};
+
+class AveragePool {
+ public:
+  static float Initialize() {
+    return 0.0;
+  }
+
+  template <typename T>
+  static void Process(const T& x_data, T& y_data, const PoolProcessContext& /*cxt*/) {
+    y_data += x_data;
+  }
+
+  template <typename T>
+  static void Finalize(const int64_t size, T& y_data, const PoolProcessContext& /*cxt*/) {
+    y_data /= size;
+  }
+
+  static const PoolType type = PoolType::kAveragePool;
+};
+
+template <int VERSION>
+class MaxPool;
+
+template <>
+class MaxPool<1 /*VERSION*/> {
+ public:
+  static float Initialize() {
+    return std::numeric_limits<float>::lowest();
+  }
+
+  template <typename T>
+  static void Process(const T& x_data, T& y_data, const PoolProcessContext& /*cxt*/) {
+    if (x_data > y_data) {
+      y_data = x_data;
+    }
+  }
+
+  template <typename T>
+  static void Finalize(const int64_t /*size*/, T& /*y_data*/, const PoolProcessContext& /*cxt*/) {}
+
+  static const PoolType type = PoolType::kMaxPool;
+};
+
+template <>
+class MaxPool<8 /*VERSION*/> {
+public:
+  static const PoolType type = PoolType::kMaxPool;
+};
+
+class LpPool {
+ public:
+  static float Initialize() {
+    return 0.0f;
+  }
+
+  template <typename T>
+  static void Process(const T& x_data, T& y_data, const PoolProcessContext& cxt) {
+    y_data += static_cast<T>(std::pow(std::abs(x_data), cxt.p_));
+  }
+
+  template <typename T>
+  static void Finalize(const int64_t /*size*/, T& y_data, const PoolProcessContext& cxt) {
+    y_data = static_cast<T>(std::pow(y_data, 1.0f / cxt.p_));
+  }
+  static const PoolType type = PoolType::kLpPool;
+};
+
 class PoolBase {
  protected:
   PoolBase(const OpKernelInfo& info) {

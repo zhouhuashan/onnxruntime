@@ -3,20 +3,15 @@
 
 #pragma once
 #include "core/framework/op_kernel.h"
-#include "core/providers/cpu/nn/pool_base.h"
+#include "core/providers/cpu/nn/pool.h"
 
 namespace onnxruntime {
 namespace mkl_dnn {
 
-enum PoolType {
-  MaxPool,
-  AveragePool
-};
-
-template <typename T, PoolType type>
-class Pool final : public OpKernel, public PoolBase {
+template <typename T, typename PoolType>
+class Pool final : public onnxruntime::Pool<T, PoolType> {
  public:
-  Pool(const OpKernelInfo& info) : OpKernel(info), PoolBase(info) {
+  Pool(const OpKernelInfo& info) : onnxruntime::Pool<T, PoolType>(info) {
   }
 
   Status Compute(OpKernelContext* context) const override;

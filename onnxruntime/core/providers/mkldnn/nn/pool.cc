@@ -5,6 +5,7 @@
 #pragma warning(disable : 4244)
 #endif
 
+#include "core/common/cpuid_info.h"
 #include "core/providers/mkldnn/mkldnn_common.h"
 #include "core/providers/mkldnn/nn/pool.h"
 #include "core/providers/mkldnn/mkldnn_fwd.h"
@@ -24,9 +25,9 @@ namespace mkl_dnn {
 
 POOLING_KERNEL(AveragePool, float, AveragePool, 7)
 POOLING_KERNEL(GlobalAveragePool, float, AveragePool, 1)
-POOLING_KERNEL(MaxPool, float, MaxPool, 1)
-POOLING_KERNEL(MaxPool, float, MaxPool, 8)
-POOLING_KERNEL(GlobalMaxPool, float, MaxPool, 1)
+POOLING_KERNEL(MaxPool, float, MaxPool<1>, 1)
+POOLING_KERNEL(MaxPool, float, MaxPool<8>, 8)
+POOLING_KERNEL(GlobalMaxPool, float, MaxPool<1>, 1)
 
 namespace {
 // Struct which encapsulates parameters for MKLDNN Pool primitive.
@@ -70,7 +71,7 @@ struct PoolParams {
   }
 };
 
-template <typename T, PoolType type>
+template <typename T, typename PoolType>
 class PoolPrimitive : public PrimitiveBase {
  public:
   explicit PoolPrimitive(const PoolParams& params)
@@ -136,13 +137,22 @@ class PoolPrimitive : public PrimitiveBase {
   };
 
   void Initialize(const PoolParams& params) {
+    bool is_2D = params.src_dims.size() == 4 ? true : false;
+    mkldnn::memory::format fmt = mkldnn::memory::format::any;
+    if (CPUIDInfo::GetCPUIDInfo().HasAVX512f()) {
+      fmt = is_2D ? mkldnn::memory::format::nChw16c : mkldnn::memory::format::nCdhw16c;
+    } else if (CPUIDInfo::GetCPUIDInfo().HasAVX2() && (params.src_dims[1] % 8 == 0)) {
+      fmt = is_2D ? mkldnn::memory::format::nChw8c : mkldnn::memory::format::ncdhw;
+    } else {
+      fmt = is_2D ? mkldnn::memory::format::nchw : mkldnn::memory::format::ncdhw;
+    }
     context_.src_md.reset(new mkldnn::memory::desc(
-        {params.src_dims}, MklDnnType<T>(), mkldnn::memory::format::nchw));
+        {params.src_dims}, MklDnnType<T>(), fmt));
     context_.dst_md.reset(new mkldnn::memory::desc(
-        {params.dst_dims}, MklDnnType<T>(), mkldnn::memory::format::nchw));
+        {params.dst_dims}, MklDnnType<T>(), mkldnn::memory::format::any));
 
     mkldnn::algorithm algo = mkldnn::algorithm::pooling_max;
-    if (type == AveragePool) {
+    if (PoolType::type == onnxruntime::PoolType::kAveragePool) {
       algo = mkldnn::algorithm::pooling_avg_exclude_padding;
       if (params.count_include_pad) {
         algo = mkldnn::algorithm::pooling_avg_include_padding;
@@ -179,16 +189,16 @@ class PoolPrimitive : public PrimitiveBase {
 
 // Pool which allows for reuse of MKLDNN Pool primitives which are expensive to instantiate.
 // To address thread safety, the primitives are stored in a map on thread local storage.
-template <typename T, PoolType type>
+template <typename T, typename PoolType>
 class PoolPrimitivePool : public PrimitivePool<T> {
  public:
-  static PoolPrimitive<T, type>* Get(const PoolParams& params) {
-    PoolPrimitive<T, type>* primitive = dynamic_cast<PoolPrimitive<T, type>*>(
-        PoolPrimitivePool<T, type>::GetInstance().GetPrimitive(params.ToString()));
+  static PoolPrimitive<T, PoolType>* Get(const PoolParams& params) {
+    PoolPrimitive<T, PoolType>* primitive = dynamic_cast<PoolPrimitive<T, PoolType>*>(
+        PoolPrimitivePool<T, PoolType>::GetInstance().GetPrimitive(params.ToString()));
     if (primitive == nullptr) {
-      auto pool_primitive = std::make_unique<PoolPrimitive<T, type>>(params);
+      auto pool_primitive = std::make_unique<PoolPrimitive<T, PoolType>>(params);
       primitive = pool_primitive.get();
-      PoolPrimitivePool<T, type>::GetInstance().SetPrimitive(params.ToString(), std::move(pool_primitive));
+      PoolPrimitivePool<T, PoolType>::GetInstance().SetPrimitive(params.ToString(), std::move(pool_primitive));
     }
     return primitive;
   }
@@ -204,8 +214,8 @@ class PoolPrimitivePool : public PrimitivePool<T> {
 };
 }  // namespace
 
-template <typename T, PoolType type>
-Status Pool<T, type>::Compute(OpKernelContext* context) const {
+template <typename T, typename PoolType>
+Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& x_shape = X->Shape();
   const auto& x_dims = x_shape.GetDims();
@@ -214,13 +224,18 @@ Status Pool<T, type>::Compute(OpKernelContext* context) const {
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input dimension cannot be less than 3.");
   }
 
-  std::vector<int64_t> kernel_shape = kernel_shape_;
-  std::vector<int64_t> pads = pads_;
-  std::vector<int64_t> strides = strides_;
+  if (x_shape.NumDimensions() == 3) {
+    // Fall Back to CPU implementation.
+    return onnxruntime::Pool<T, PoolType>::Compute(context);
+  }
 
-  if (global_pooling_) {
+  std::vector<int64_t> kernel_shape = this->kernel_shape_;
+  std::vector<int64_t> pads = this->pads_;
+  std::vector<int64_t> strides = this->strides_;
+
+  if (this->global_pooling_) {
     kernel_shape.assign(x_dims.begin() + 2, x_dims.end());
-    pads.assign(kernel_shape.size(), 0);
+    pads.assign(kernel_shape.size()*2, 0);
     strides.assign(kernel_shape.size(), 1);
   }
 
@@ -234,17 +249,57 @@ Status Pool<T, type>::Compute(OpKernelContext* context) const {
   mkldnn::memory::dims dst_dims_mkl(y_dims.begin(), y_dims.end());
   mkldnn::memory::dims kernel_mkl(kernel_shape.begin(), kernel_shape.end());
   mkldnn::memory::dims strides_mkl(strides.begin(), strides.end());
-  mkldnn::memory::dims padding_left_mkl(pads.begin(), pads.begin() + 2);
-  mkldnn::memory::dims padding_right_mkl(pads.begin() + 2, pads.end());
+  mkldnn::memory::dims padding_left_mkl(pads.begin(), pads.begin() + (pads.size()/2));
+  mkldnn::memory::dims padding_right_mkl(pads.begin() + (pads.size() / 2), pads.end());
+
+  AllocatorPtr alloc;
+  LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
+  IAllocatorUniquePtr<void> src_reorder_buffer;
+  IAllocatorUniquePtr<void> dst_reorder_buffer;
 
   try {
-    PoolParams pool_params(op_name_,
+    PoolParams pool_params(this->op_name_,
                            src_dims_mkl, dst_dims_mkl,
                            kernel_mkl, strides_mkl,
                            padding_left_mkl, padding_right_mkl,
-                           count_include_pad_);
-    PoolPrimitive<T, type>* pool_primitive = PoolPrimitivePool<T, type>::Get(pool_params);
+                           this->count_include_pad_);
+    PoolPrimitive<T, PoolType>* pool_primitive = PoolPrimitivePool<T, PoolType>::Get(pool_params);
+    std::shared_ptr<mkldnn::pooling_forward::primitive_desc> fwd_primitive_desc = pool_primitive->GetPrimitiveDesc();
+
+    mkldnn::engine& cpu_engine = GetEngine();
+    mkldnn::memory::format mem_format = src_dims_mkl.size() == 5 ? mkldnn::memory::format::ncdhw :
+		                                                           mkldnn::memory::format::nchw;
+    // Per ONNX spec, X (src) is NCHW and Y (dst) is NCHW
+    auto src_md = mkldnn::memory::desc(src_dims_mkl, MklDnnType<T>(), mem_format);
+    auto dst_md = mkldnn::memory::desc(dst_dims_mkl, MklDnnType<T>(), mem_format);
+
+    // Reorder src memory layout if necessary.
+    if (src_md.data.format != pool_primitive->GetSrcMemoryFormat()) {
+      auto pd = mkldnn::memory::primitive_desc(src_md, cpu_engine);
+      mkldnn::memory src = mkldnn::memory(pd, (void*)src_data);
+      src_reorder_buffer = IAllocator::MakeUniquePtr<void>(alloc, sizeof(T) * X->Shape().Size());
+      mkldnn::memory dst = mkldnn::memory(fwd_primitive_desc->src_primitive_desc(), src_reorder_buffer.get());
+      MemoryReorderParams params(src, dst);
+      DoReorder<T>(params);
+      src_data = static_cast<T*>(dst.get_data_handle());
+    }
+
+    // Allocate dst buffer if reorder is necessary
+    if (dst_md.data.format != pool_primitive->GetDstMemoryFormat()) {
+      dst_reorder_buffer = IAllocator::MakeUniquePtr<void>(alloc, sizeof(T) * Y->Shape().Size());
+      dst_data = static_cast<T*>(dst_reorder_buffer.get());
+    }
+
     pool_primitive->Compute(src_data, dst_data);
+
+    // Reorder dst memory layout if necessary
+    if (dst_md.data.format != pool_primitive->GetDstMemoryFormat()) {
+      mkldnn::memory src = mkldnn::memory(fwd_primitive_desc->dst_primitive_desc(), (void*)dst_data);
+      auto pd = mkldnn::memory::primitive_desc(dst_md, cpu_engine);
+      mkldnn::memory dst = mkldnn::memory(pd, Y->template MutableData<T>());
+      MemoryReorderParams params(src, dst);
+      DoReorder<T>(params);
+    }
   } catch (mkldnn::error& e) {
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Status: ", e.status, ", message: ", e.message.c_str());
   }
