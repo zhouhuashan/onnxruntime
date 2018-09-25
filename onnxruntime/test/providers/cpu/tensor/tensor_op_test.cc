@@ -430,7 +430,7 @@ void MeanVarianceNormalizationPerChannel(bool across_channels, bool normalize_va
   test.Run();
 }
 
-TEST(TensorOpTest, MeanVarianceNormalizationCPUTest) {
+TEST(DISABLED_TensorOpTest, MeanVarianceNormalizationCPUTest) {
   // across_channels: true, normalize_variance: true
   MeanVarianceNormalizationAcrossChannels(true, true);
 
