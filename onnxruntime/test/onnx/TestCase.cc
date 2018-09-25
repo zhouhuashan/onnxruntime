@@ -391,6 +391,9 @@ Status OnnxTestCase::ParseConfig() {
     if (!st.IsOK()) {
       per_sample_tolerance_ = 1e-3;
       relative_per_sample_tolerance_ = 1e-5;
+#ifdef USE_CUDA
+      relative_per_sample_tolerance_ = 0.003;
+#endif
       post_processing_ = false;
       st = Status::OK();
       return;
