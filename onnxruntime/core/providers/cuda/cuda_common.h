@@ -11,6 +11,7 @@
 #include "cuda_execution_provider.h"
 #include "shared_inc/fast_divmod.h"
 #include "core/util/math.h"
+#include "cuda_fwd.h"
 
 namespace onnxruntime {
 namespace cuda {

@@ -5,6 +5,7 @@
 #include "core/providers/cpu/math/gemm_helper.h"
 #include "core/util/math_cpuonly.h"
 #include "mkldnn.h"
+#include "core/providers/mkldnn/mkldnn_fwd.h"
 
 namespace onnxruntime {
 namespace mkl_dnn {
