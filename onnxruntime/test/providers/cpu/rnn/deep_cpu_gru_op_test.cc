@@ -12,7 +12,8 @@ using namespace std;
 namespace onnxruntime {
 namespace Test {
 
-static void RunGruTest(const std::vector<float>& X_data,
+static void RunGruTest(bool run_on_gpu, 
+                       const std::vector<float>& X_data,
                        const std::vector<float>& W_data,
                        const std::vector<float>& R_data,
                        const std::vector<float>& Y_data,
@@ -91,10 +92,15 @@ static void RunGruTest(const std::vector<float>& X_data,
     test.AddMissingOptionalOutput<float>();
   }
 
-  test.Run();
+  if (run_on_gpu) {
+    test.RunOnCpuAndCuda();
+  } else {
+    test.Run();
+  }
 }
 
-void DefaultActivationsSimpleWeightsNoBias(std::string direction,
+void DefaultActivationsSimpleWeightsNoBias(bool run_on_gpu,
+                                           std::string direction,
                                            const std::vector<float>& Y_data,
                                            const std::vector<float>& Y_h_data) {
   int64_t seq_length = 2;
@@ -119,13 +125,13 @@ void DefaultActivationsSimpleWeightsNoBias(std::string direction,
 
   std::vector<float> R_data(num_directions * 3 * hidden_size * hidden_size, 0.1f);
 
-  RunGruTest(X_data, W_data, R_data, Y_data, Y_h_data, input_size, batch_size, hidden_size, seq_length,
+  RunGruTest(run_on_gpu, X_data, W_data, R_data, Y_data, Y_h_data, input_size, batch_size, hidden_size, seq_length,
              nullptr, nullptr, nullptr, direction);
 
   // if Y_h_data is empty that tests Y_h not being returned. we need to have at least one output or
   // the node will get removed, so only test with output_sequence == false (no Y as output) if Y_h is not optional
   if (!Y_h_data.empty())
-    RunGruTest(X_data, W_data, R_data, Y_data, Y_h_data, input_size, batch_size, hidden_size, seq_length,
+    RunGruTest(run_on_gpu, X_data, W_data, R_data, Y_data, Y_h_data, input_size, batch_size, hidden_size, seq_length,
                nullptr, nullptr, nullptr, direction, 999.f, /* output_sequence*/ false);
 }
 
@@ -141,10 +147,11 @@ TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsNoBiasTwoRows) {
       0.6027093f, 0.5083023f, 0.44950223f,
       0.5754369f, 0.45485455f, 0.3747841f};
 
-  DefaultActivationsSimpleWeightsNoBias("forward", Y_data, Y_h_data);
+  bool run_on_gpu = true;
+  DefaultActivationsSimpleWeightsNoBias(run_on_gpu, "forward", Y_data, Y_h_data);
 
   // test Y_h not being returned
-  DefaultActivationsSimpleWeightsNoBias("forward", Y_data, {});
+  DefaultActivationsSimpleWeightsNoBias(run_on_gpu, "forward", Y_data, {});
 }
 
 TEST(GRUTest, ReverseDefaultActivationsSimpleWeightsNoBiasTwoRows) {
@@ -159,7 +166,8 @@ TEST(GRUTest, ReverseDefaultActivationsSimpleWeightsNoBiasTwoRows) {
       0.6082785f, 0.50623393f, 0.4426924f,
       0.5803454f, 0.4527356f, 0.36886263f};
 
-  DefaultActivationsSimpleWeightsNoBias("reverse", Y_data, Y_h_data);
+  bool run_on_gpu = false;  // cudnn implementation only support linear_before_reset = true
+  DefaultActivationsSimpleWeightsNoBias(run_on_gpu, "reverse", Y_data, Y_h_data);
 }
 
 TEST(GRUTest, BidirectionalDefaultActivationsSimpleWeightsNoBiasTwoRows) {
@@ -189,10 +197,12 @@ TEST(GRUTest, BidirectionalDefaultActivationsSimpleWeightsNoBiasTwoRows) {
       0.6082785f, 0.50623393f, 0.4426924f,
       0.5803454f, 0.4527356f, 0.36886263f};
 
-  DefaultActivationsSimpleWeightsNoBias("bidirectional", Y_data, Y_h_data);
+  bool run_on_gpu = true;
+  DefaultActivationsSimpleWeightsNoBias(run_on_gpu, "bidirectional", Y_data, Y_h_data);
 }
 
-void DefaultActivationsSimpleWeightsWithBias(std::string direction,
+void DefaultActivationsSimpleWeightsWithBias(bool run_on_gpu,
+                                             std::string direction,
                                              const std::vector<float>& Y_data,
                                              bool linear_before_reset = false,
                                              bool one_row = false) {
@@ -236,7 +246,7 @@ void DefaultActivationsSimpleWeightsWithBias(std::string direction,
 
   std::vector<float> R_data(num_directions * 3 * hidden_size * hidden_size, 0.1f);
 
-  RunGruTest(X_data, W_data, R_data, Y_data, {}, input_size, batch_size, hidden_size, seq_length,
+  RunGruTest(run_on_gpu, X_data, W_data, R_data, Y_data, {}, input_size, batch_size, hidden_size, seq_length,
              &B_data, nullptr, nullptr, direction, 999.f, /* output_sequence*/ true, linear_before_reset);
 }  // namespace Test
 
@@ -248,7 +258,8 @@ TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallel) {
       0.22688604f, -0.19698407f, 0.14017843f,
       0.33386092f, -0.15799662f, 0.2381169f};
 
-  DefaultActivationsSimpleWeightsWithBias("forward", Y_data);
+  bool run_on_gpu = false;
+  DefaultActivationsSimpleWeightsWithBias(run_on_gpu, "forward", Y_data);
 }
 
 TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset) {
@@ -259,8 +270,9 @@ TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearB
       0.19538902f, -0.19016478f, -0.05644283f,
       0.30856851f, -0.15190377f, 0.05999807f};
 
+  bool run_on_gpu = true;
   const bool linear_before_reset = true;
-  DefaultActivationsSimpleWeightsWithBias("forward", Y_data, linear_before_reset);
+  DefaultActivationsSimpleWeightsWithBias(run_on_gpu, "forward", Y_data, linear_before_reset);
 }
 
 TEST(GRUTest, ReverseDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearBeforeReset) {
@@ -271,8 +283,9 @@ TEST(GRUTest, ReverseDefaultActivationsSimpleWeightsWithBiasBatchParallelLinearB
       0.12252139f, -0.12032216f, -0.05064924f,
       0.21249877f, -0.08884402f, 0.04751285f};
 
+  bool run_on_gpu = false;
   const bool linear_before_reset = true;
-  DefaultActivationsSimpleWeightsWithBias("reverse", Y_data, linear_before_reset);
+  DefaultActivationsSimpleWeightsWithBias(run_on_gpu, "reverse", Y_data, linear_before_reset);
 }
 
 // test forward !batch_parallel_ path with linear_before_reset
@@ -281,9 +294,10 @@ TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset) {
       0.15024948f, -0.11097029f, -0.02121867f,
       0.19538902f, -0.19016478f, -0.05644283f};
 
+  bool run_on_gpu = true;
   const bool linear_before_reset = true;
   const bool one_row = true;
-  DefaultActivationsSimpleWeightsWithBias("forward", Y_data, linear_before_reset, one_row);
+  DefaultActivationsSimpleWeightsWithBias(run_on_gpu, "forward", Y_data, linear_before_reset, one_row);
 }
 
 // test reverse !batch_parallel_ path with linear_before_reset
@@ -292,9 +306,10 @@ TEST(GRUTest, ReverseDefaultActivationsSimpleWeightsWithBiasLinearBeforeReset) {
       0.20910699f, -0.18880953f, -0.04005555f,
       0.12252139f, -0.12032216f, -0.05064924f};
 
+  bool run_on_gpu = false;
   const bool linear_before_reset = true;
   const bool one_row = true;
-  DefaultActivationsSimpleWeightsWithBias("reverse", Y_data, linear_before_reset, one_row);
+  DefaultActivationsSimpleWeightsWithBias(run_on_gpu, "reverse", Y_data, linear_before_reset, one_row);
 }
 
 /*******************
@@ -312,7 +327,8 @@ class DeepCpuGruOpTestContext {
 
   ~DeepCpuGruOpTestContext() = default;
 
-  void RunTest(const std::vector<float>& X,
+  void RunTest(bool run_on_gpu, 
+               const std::vector<float>& X,
                const int batch,
                const int seq_length,
                const std::vector<int>& sequence_length,
@@ -447,7 +463,8 @@ DeepCpuGruOpTestContext::DeepCpuGruOpTestContext(const std::string direction,
   }
 }
 
-void DeepCpuGruOpTestContext::RunTest(const std::vector<float>& X,
+void DeepCpuGruOpTestContext::RunTest(bool run_on_gpu,
+                                      const std::vector<float>& X,
                                       const int batch_size,
                                       const int seq_length,
                                       const std::vector<int>& sequence_lens,
@@ -455,7 +472,7 @@ void DeepCpuGruOpTestContext::RunTest(const std::vector<float>& X,
                                       const std::vector<float>& expected_Y,
                                       const std::vector<float>& expected_Y_h) {
   // run with and without output_sequence
-  ::onnxruntime::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
+  ::onnxruntime::Test::RunGruTest(run_on_gpu, X, gru_input_weights_, gru_recurrent_weights_,
                                   expected_Y, expected_Y_h,
                                   input_size_, batch_size, hidden_dim_, seq_length,
                                   use_bias_ ? &gru_bias_ : nullptr,
@@ -469,7 +486,7 @@ void DeepCpuGruOpTestContext::RunTest(const std::vector<float>& X,
                                   alphas_,
                                   betas_);
 
-  ::onnxruntime::Test::RunGruTest(X, gru_input_weights_, gru_recurrent_weights_,
+  ::onnxruntime::Test::RunGruTest(run_on_gpu, X, gru_input_weights_, gru_recurrent_weights_,
                                   expected_Y, expected_Y_h,
                                   input_size_, batch_size, hidden_dim_, seq_length,
                                   use_bias_ ? &gru_bias_ : nullptr,
@@ -499,7 +516,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardBasic) {
   std::vector<float> expected_Y = {-0.03255286f, 0.0774838f, -0.05556786f, 0.0785508f};
   std::vector<float> expected_Y_h = {-0.05556786f, 0.0785508f};
 
-  ctx.RunTest(X, batch, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = true;
+  ctx.RunTest(run_on_gpu, X, batch, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpBackwardBasic) {
@@ -518,7 +536,8 @@ TEST(GRUTest, LotusRT_TestGRUOpBackwardBasic) {
                                    -0.03255286f, 0.0774838f};
   std::vector<float> expected_Y_h = {-0.05556786f, 0.0785508f};
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = true;
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpBidirectionalBasic) {
@@ -541,7 +560,8 @@ TEST(GRUTest, LotusRT_TestGRUOpBidirectionalBasic) {
   std::vector<float> expected_Y_h = {-0.05556786f, 0.0785508f,
                                      -0.05469977f, 0.1004222f};
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = true;
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpForwardActivation) {
@@ -560,7 +580,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardActivation) {
                                    0.3810334f, 0.4944591f};
   std::vector<float> expected_Y_h = {0.3810334f, 0.4944591f};
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = false;  // cudnn only support activation {sigmoid, tanh}
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpForwardInitialHiddenState) {
@@ -579,7 +600,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardInitialHiddenState) {
                                    0.07378622f, -0.02782359f};
   std::vector<float> expected_Y_h = {0.07378622f, -0.02782359f};
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = false;  // cudnn implementation only support linear_before_reset = true
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpForwardBatch) {
@@ -606,7 +628,8 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardBatch) {
   std::vector<float> expected_Y_h = {0.07378622f, -0.02782359f,
                                      -0.05556786f, 0.0785508f};
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = false; // cudnn implementation only support linear_before_reset = true
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpGrowBatchSequenceLength) {
@@ -625,7 +648,8 @@ TEST(GRUTest, LotusRT_TestGRUOpGrowBatchSequenceLength) {
                                    -0.05556786f, 0.0785508f};
   std::vector<float> expected_Y_h = {-0.05556786f, 0.0785508f};
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = false;
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 
   const int batch2 = 2;
   const int seq_length2 = 2;
@@ -646,7 +670,7 @@ TEST(GRUTest, LotusRT_TestGRUOpGrowBatchSequenceLength) {
   std::vector<float> expected_Y_h2 = {0.07378622f, -0.02782359f,
                                       -0.03255286f, 0.0774838f};
 
-  ctx.RunTest(X2, batch2, seq_length2, sequence_length2, &initial_h2, expected_Y2, expected_Y_h2);
+  ctx.RunTest(run_on_gpu, X2, batch2, seq_length2, sequence_length2, &initial_h2, expected_Y2, expected_Y_h2);
 }
 
 TEST(GRUTest, LotusRT_TestGRUOpSingleBatchMultipleHiddenThreads) {
@@ -676,7 +700,8 @@ TEST(GRUTest, LotusRT_TestGRUOpSingleBatchMultipleHiddenThreads) {
           0.437727744598091f, 0.451604294166264f, 0.40203814648622f, 0.416614999456787f};
   std::vector<float> expected_Y_h(expected_Y);
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = true;
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUPositiveActivationClipping) {
@@ -705,7 +730,8 @@ TEST(GRUTest, LotusRT_TestGRUPositiveActivationClipping) {
 
   std::vector<float> expected_Y_h(expected_Y);
 
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  bool run_on_gpu = true;
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 TEST(GRUTest, LotusRT_TestGRUPositiveActivationAlphaBeta) {
@@ -746,8 +772,9 @@ TEST(GRUTest, LotusRT_TestGRUPositiveActivationAlphaBeta) {
 
   std::vector<float> expected_Y_h(expected_Y);
 
+  bool run_on_gpu = false;  // cudnn implementation don't support the alpha & beta and customized activations
   DeepCpuGruOpTestContext ctx(direction, activations, true, alpha, beta, /*large_hidden*/ true, input_size);
-  ctx.RunTest(X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
+  ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
 }  // namespace Test

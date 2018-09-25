@@ -59,6 +59,35 @@ cudnnDataType_t CudnnTensor::GetDataType() {
     LOTUS_THROW("cuDNN engine currently supports only single/double/half precision data types.");
 }
 
+CudnnFilterDescriptor::CudnnFilterDescriptor() : desc_(nullptr) {
+  cudnnCreateFilterDescriptor(&desc_);
+}
+
+CudnnFilterDescriptor::~CudnnFilterDescriptor() {
+  if (desc_ != nullptr) {
+    cudnnDestroyFilterDescriptor(desc_);
+    desc_ = nullptr;
+  }
+}
+
+Status CudnnFilterDescriptor::Set(const std::vector<int64_t>& filter_dims, cudnnDataType_t data_type) {
+  if (!desc_)
+    CUDNN_RETURN_IF_ERROR(cudnnCreateFilterDescriptor(&desc_));
+
+  int rank = gsl::narrow_cast<int>(filter_dims.size());
+  std::vector<int> w_dims(rank);
+  for (int i = 0; i < rank; i++) {
+    w_dims[i] = gsl::narrow_cast<int>(filter_dims[i]);
+  }
+
+  CUDNN_RETURN_IF_ERROR(cudnnSetFilterNdDescriptor(desc_,
+                                                   data_type,
+                                                   CUDNN_TENSOR_NCHW,
+                                                   rank,
+                                                   w_dims.data()));
+  return Status::OK();
+}
+
 template cudnnDataType_t CudnnTensor::GetDataType<float>();
 template cudnnDataType_t CudnnTensor::GetDataType<double>();
 template cudnnDataType_t CudnnTensor::GetDataType<half>();

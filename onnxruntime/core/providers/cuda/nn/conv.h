@@ -12,19 +12,6 @@
 namespace onnxruntime {
 namespace cuda {
 
-class CudnnFilterDescriptor final {
- public:
-  CudnnFilterDescriptor();
-  ~CudnnFilterDescriptor();
-
-  Status Set(const std::vector<int64_t>& filter_dims, cudnnDataType_t data_typ);
-
-  operator cudnnFilterDescriptor_t() const { return desc_; }
-
- private:
-  cudnnFilterDescriptor_t desc_;
-};
-
 class CudnnConvolutionDescriptor final {
  public:
   CudnnConvolutionDescriptor();
