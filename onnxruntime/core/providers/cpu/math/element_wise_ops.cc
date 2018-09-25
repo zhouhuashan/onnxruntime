@@ -256,6 +256,12 @@ ONNX_CPU_OPERATOR_KERNEL(
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Affine<float>);
 
+ONNX_CPU_OPERATOR_KERNEL(
+    Scale,
+    1,
+    KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
+    Scale<float>);
+
 template <typename T>
 auto MakeEigenArrayMap(Tensor& t) { return EigenVectorArrayMap<T>(t.MutableData<T>(), t.Shape().Size()); }
 template <typename T>
@@ -1105,5 +1111,13 @@ ONNX_CPU_OPERATOR_TYPED_KERNEL(
     float,
     KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     Expand_8<float>);
+
+template <>
+Status Scale<float>::Compute(OpKernelContext* ctx) const {
+  auto& X = *ctx->Input<Tensor>(0);
+  auto& Y = *ctx->Output(0, X.Shape());
+  EigenMap<float>(Y) = scale_ * EigenMap<float>(X);
+  return Status::OK();
+}
 
 }  // namespace onnxruntime
