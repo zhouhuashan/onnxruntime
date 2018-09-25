@@ -26,9 +26,9 @@ for build_type in 'Debug' 'Relwithdebinfo'; do
   popd
 done
 export ONNX_ML=1
-#3376d4438aaadfba483399fa249b841153152bc0 is v1.2.2
+#5af210ca8a1c73aa6bae8754c9346ec54d0a756e is v1.2.3
 #bae6333e149a59a3faa9c4d9c44974373dcf5256 is v1.3.0
-for onnx_version in "3376d4438aaadfba483399fa249b841153152bc0" "bae6333e149a59a3faa9c4d9c44974373dcf5256" ; do
+for onnx_version in "5af210ca8a1c73aa6bae8754c9346ec54d0a756e" "bae6333e149a59a3faa9c4d9c44974373dcf5256" "9a26a21a5b8dc8ff35ca1fffb84338fe250603f9"; do
   aria2c -q -d /tmp/src  https://github.com/onnx/onnx/archive/$onnx_version.tar.gz
   tar -xf /tmp/src/onnx-$onnx_version.tar.gz -C /tmp/src
   cd /tmp/src/onnx-$onnx_version
