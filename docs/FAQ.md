@@ -12,4 +12,4 @@ frameworks. Each framework provides its own implementation of operators and thes
 Can a framework choose to support an operator only on a subset of the standard data types?
 ------------------------------------------------------------------------------------------
 
-No, all standard data types must be supported.
+Yes.
