@@ -304,4 +304,17 @@ class Expand_8 final : public OpKernel {
   Status Compute(OpKernelContext* context) const override;
 };
 
+template <typename T>
+class Scale final : public OpKernel {
+ public:
+  Scale(const OpKernelInfo& info) : OpKernel(info) {
+    LOTUS_ENFORCE(info.GetAttr("scale", &scale_).IsOK());
+  }
+
+  Status Compute(OpKernelContext* context) const override;
+
+ private:
+  float scale_;
+};
+
 }  // namespace onnxruntime

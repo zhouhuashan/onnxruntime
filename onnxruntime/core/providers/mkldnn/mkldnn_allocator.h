@@ -6,6 +6,9 @@
 
 // Placeholder for an MKL allocators
 namespace onnxruntime {
+constexpr const char* MKLDNN = "MklDnn";
+constexpr const char* MKLDNN_CPU = "MklDnnCpu";
+
 class MKLDNNAllocator : public CPUAllocator {
  public:
   const AllocatorInfo& Info() const override;

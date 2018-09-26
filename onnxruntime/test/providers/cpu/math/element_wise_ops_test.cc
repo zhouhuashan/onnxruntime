@@ -820,6 +820,23 @@ TEST(MathOpTest, Expand_8_1x3) {
   test.Run();
 }
 
+TEST(MathOpTest, Scale) {
+  OpTester test("Scale");
+  std::vector<int64_t> dims{2, 2};
+  test.AddAttribute("scale", 2.0f);
+  test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("B", dims, {0.0f, 2.0f, 4.0f, 6.0f});
+  test.RunOnCpuAndCuda();
+}
+
+TEST(MathOpTest, Scale_Default) {
+  OpTester test("Scale");
+  std::vector<int64_t> dims{2, 2};
+  test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("B", dims, {0.0f, 1.0f, 2.0f, 3.0f});
+  test.RunOnCpuAndCuda();
+}
+
 }  // namespace Test
 
 }  // namespace onnxruntime

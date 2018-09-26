@@ -1,3 +1,5 @@
+#include <typeinfo>
+
 #include "core/framework/data_types.h"
 #include "core/graph/onnx_protobuf.h"
 #include "gtest/gtest.h"
@@ -46,16 +48,41 @@ struct TestOpaqueType {};
 extern const char TestOpaqueDomain[] = "test_domain";
 extern const char TestOpaqueName[] = "test_name";
 
-using OpaqueType_1 = OpaqueRegistratonType<TestOpaqueType, TestOpaqueDomain, TestOpaqueName>;
+using OpaqueType_1 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain, TestOpaqueName>;
 LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_1);
-using OpaqueType_2 = OpaqueRegistratonType<TestOpaqueType, TestOpaqueDomain, TestOpaqueName, uint64_t, float>;
+using OpaqueType_2 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain, TestOpaqueName, uint64_t, float>;
 LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_2);
 
 extern const char TestOpaqueDomain_2[] = "test_doma_2";
 extern const char TestOpaqueName_2[] = "test_na_2";
 
-using OpaqueType_3 = OpaqueRegistratonType<TestOpaqueType, TestOpaqueDomain_2, TestOpaqueName_2>;
+using OpaqueType_3 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain_2, TestOpaqueName_2>;
 LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_3);
+
+// Register Maps using Opaque types as values. Note that we
+// use the same cpp runtime types but due to Opaque type domain, name
+// and optional parameters we produce separate MLDataTypes that are NOT
+// compatible with each other.
+using MyOpaqueMapCpp = std::unordered_map<int64_t, TestOpaqueType>;
+using MyOpaqueMap_1 = TypeRegister<MyOpaqueMapCpp, OpaqueType_1>;
+LOTUS_REGISTER_MAP(MyOpaqueMap_1);
+using MyOpaqueMap_2 = TypeRegister<MyOpaqueMapCpp, OpaqueType_2>;
+LOTUS_REGISTER_MAP(MyOpaqueMap_2);
+using MyOpaqueMap_3 = TypeRegister<MyOpaqueMapCpp, OpaqueType_3>;
+LOTUS_REGISTER_MAP(MyOpaqueMap_3);
+
+// Register Sequence as containing an Opaque type
+using MyOpaqueSeqCpp = std::vector<TestOpaqueType>;
+using MyOpaqueSeq_1 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_1>;
+LOTUS_REGISTER_SEQ(MyOpaqueSeq_1);
+using MyOpaqueSeq_2 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_2>;
+LOTUS_REGISTER_SEQ(MyOpaqueSeq_2);
+using MyOpaqueSeq_3 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_3>;
+LOTUS_REGISTER_SEQ(MyOpaqueSeq_3);
+
+// Use of Opaque types in recursive definitions. I.e. we would like to use
+// it within Maps(values) and Sequences(Values) and it should work properly
+// Use the example.
 
 namespace Test {
 
@@ -75,6 +102,7 @@ struct MapTypeProto : TypeProto {
   }
 };
 
+// TODO: Add tests with Opaque type within Maps and Sequences.
 TEST(DataTypeTest, OpaqueRegistrationTest) {
   // No parameters
   TypeProto opaque_proto_1;
@@ -185,6 +213,30 @@ TEST(DataTypeTest, RecursiveMapTest) {
 
   EXPECT_TRUE(DataTypeImpl::GetType<TestMapToMapInt64ToFloat>()->IsCompatible(map_int64_to_map_int64_to_float));
   EXPECT_FALSE(DataTypeImpl::GetType<TestMapToMapInt64ToFloat>()->IsCompatible(map_string_to_vector_of_int64));
+
+  // Map that contains an Opaque_1
+  const auto* op1_proto = DataTypeImpl::GetType<OpaqueType_1>();
+  TypeProto unod_map_int64_to_op1;
+  mut_map = unod_map_int64_to_op1.mutable_map_type();
+  mut_map->set_key_type(TensorProto_DataType_INT64);
+  mut_map->mutable_value_type()->CopyFrom(*op1_proto->GetTypeProto());
+  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_1>()->IsCompatible(unod_map_int64_to_op1));
+
+    // Map that contains an Opaque_2
+  const auto* op2_proto = DataTypeImpl::GetType<OpaqueType_2>();
+  TypeProto unod_map_int64_to_op2;
+  mut_map = unod_map_int64_to_op2.mutable_map_type();
+  mut_map->set_key_type(TensorProto_DataType_INT64);
+  mut_map->mutable_value_type()->CopyFrom(*op2_proto->GetTypeProto());
+  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_2>()->IsCompatible(unod_map_int64_to_op2));
+
+    // Map that contains an Opaque_3
+  const auto* op3_proto = DataTypeImpl::GetType<OpaqueType_3>();
+  TypeProto unod_map_int64_to_op3;
+  mut_map = unod_map_int64_to_op3.mutable_map_type();
+  mut_map->set_key_type(TensorProto_DataType_INT64);
+  mut_map->mutable_value_type()->CopyFrom(*op3_proto->GetTypeProto());
+  EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_3>()->IsCompatible(unod_map_int64_to_op3));
 }
 
 TEST(DataTypeTest, RecursiveVectorTest) {

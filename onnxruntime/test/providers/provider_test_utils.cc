@@ -48,13 +48,18 @@ void Check<float>(const OpTester::Data& expected_data, const Tensor& output_tens
   bool has_abs_err = expected_data.absolute_error_.has_value();
   bool has_rel_err = expected_data.relative_error_.has_value();
 
+  float threshold = 0.001f;
+#ifdef USE_CUDA
+  threshold = 0.005f;
+#endif
+
   for (int i = 0; i < size; ++i) {
     if (std::isinf(expected[i]))  // Test infinity for equality
       EXPECT_EQ(expected[i], output[i]);
     else {
       if (!has_abs_err && !has_rel_err) {
         // the default for existing tests
-        EXPECT_NEAR(expected[i], output[i], 0.001f);
+        EXPECT_NEAR(expected[i], output[i], threshold);
       } else {
         if (has_abs_err) {
           EXPECT_NEAR(expected[i], output[i], expected_data.absolute_error_.value());

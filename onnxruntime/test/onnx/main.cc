@@ -178,7 +178,8 @@ int main(int argc, char* argv[]) {
                                                "maxpool_2d_precomputed_strides", "maxpool_2d_precomputed_same_upper", "maxpool_2d_precomputed_pads", "expand_dim_unchanged",
                                                "convtranspose_1d", "expand_dim_changed", "convtranspose_3d", "expand_shape_model1", "expand_shape_model2", "expand_shape_model3", "expand_shape_model4", "less",
                                                "constantlike_ones_with_input", "constantlike_zeros_without_input_dtype", "dynamic_slice", "dynamic_slice_end_out_of_bounds", "less_bcast", "dynamic_slice_default_axes",
-                                               "dynamic_slice_start_out_of_bounds", "greater", "constantlike_threes_with_shape_and_dtype", "greater_bcast", "dynamic_slice_neg"
+                                               "dynamic_slice_start_out_of_bounds", "greater", "constantlike_threes_with_shape_and_dtype", "greater_bcast", "dynamic_slice_neg", "lstm_with_peepholes", "gru_seq_length",
+                                               "eyelike_with_dtype", "eyelike_populate_off_main_diagonal", "eyelike_without_dtype"
                                                };
 
 

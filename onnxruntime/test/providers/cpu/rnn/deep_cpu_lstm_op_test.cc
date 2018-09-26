@@ -23,7 +23,8 @@ T DuplicateContainer(const T& container) {
   return doubled;
 }
 
-static void RunLstmTest(const std::vector<float>& X_data,
+static void RunLstmTest(bool run_on_gpu,
+                        const std::vector<float>& X_data,
                         const std::vector<float>& W_data,
                         const std::vector<float>& R_data,
                         const std::vector<float>& Y_data,
@@ -136,10 +137,15 @@ static void RunLstmTest(const std::vector<float>& X_data,
     test.AddMissingOptionalOutput<float>();
   }
 
-  test.Run();
+  if (run_on_gpu) {
+    test.RunOnCpuAndCuda();
+  } else {
+    test.Run();
+  }
 }
 
-void SimpleWeightsNoBiasTwoRows(std::string direction,
+void SimpleWeightsNoBiasTwoRows(bool run_on_gpu,
+                                std::string direction,
                                 const std::vector<float>& Y_data,
                                 const std::vector<float>& Y_h_data,
                                 const std::vector<float>& Y_c_data,
@@ -165,14 +171,14 @@ void SimpleWeightsNoBiasTwoRows(std::string direction,
     W_data = DuplicateContainer(W_data);
   }
 
-  RunLstmTest(X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
+  RunLstmTest(run_on_gpu, X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
               input_size, batch_size, hidden_size, seq_length,
               nullptr, nullptr, nullptr, nullptr, seq_lengths, direction);
 
   // need at least one output, so we need Y_h or Y_c to be requested (non-empty output to compare against) in order
   // to test Y not being returned (output_sequence == false)
   if (!Y_h_data.empty() || !Y_c_data.empty())
-    RunLstmTest(X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
+    RunLstmTest(run_on_gpu, X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
                 input_size, batch_size, hidden_size, seq_length,
                 nullptr, nullptr, nullptr, nullptr, seq_lengths, direction, 999.f, /* output_sequence*/ false);
 }
@@ -193,10 +199,11 @@ TEST(LSTMTest, ForwardSimpleWeightsNoBiasTwoRows) {
       1.27731147f, 1.44181041f, 1.53179041f,
       1.3249796f, 1.51063104f, 1.61451544f};
 
-  SimpleWeightsNoBiasTwoRows("forward", Y_data, Y_h_data, Y_c_data);
+  bool run_on_gpu = true;
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "forward", Y_data, Y_h_data, Y_c_data);
 
   // test Y_h and Y_c being optional
-  SimpleWeightsNoBiasTwoRows("forward", Y_data, {}, {});
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "forward", Y_data, {}, {});
 }
 
 TEST(LSTMTest, ReverseSimpleWeightsNoBiasTwoRows) {
@@ -215,7 +222,8 @@ TEST(LSTMTest, ReverseSimpleWeightsNoBiasTwoRows) {
       1.27850552f, 1.46799496f, 1.57641257f,
       1.34960834f, 1.54772296f, 1.65633056f};
 
-  SimpleWeightsNoBiasTwoRows("reverse", Y_data, Y_h_data, Y_c_data);
+  bool run_on_gpu = true;
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "reverse", Y_data, Y_h_data, Y_c_data);
 }
 
 TEST(LSTMTest, BidirectionalSimpleWeightsNoBiasTwoRows) {
@@ -248,7 +256,9 @@ TEST(LSTMTest, BidirectionalSimpleWeightsNoBiasTwoRows) {
       1.27850552f, 1.46799496f, 1.57641257f,
       1.34960834f, 1.54772296f, 1.65633056f};
 
-  SimpleWeightsNoBiasTwoRows("bidirectional", Y_data, Y_h_data, Y_c_data);
+  // cudnn don't support customized activation
+  bool run_on_gpu = true;
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "bidirectional", Y_data, Y_h_data, Y_c_data);
 }
 
 TEST(LSTMTest, MixedSequenceLengths) {
@@ -271,7 +281,9 @@ TEST(LSTMTest, MixedSequenceLengths) {
       0.52497941f, 0.54983425f, 0.5744428f,  // see intermediate output from ForwardSimpleWeightsNoBiasTwoRows
       1.3249796f, 1.51063104f, 1.61451544f};
 
-  SimpleWeightsNoBiasTwoRows("forward", Y_data, Y_h_data, Y_c_data, &seq_lengths);
+  // Not able to mask on Y_c for CUDA using cudnn lib
+  bool run_on_gpu = false;
+  SimpleWeightsNoBiasTwoRows(run_on_gpu , "forward", Y_data, Y_h_data, Y_c_data, &seq_lengths);
 
   // swap which one is short
   seq_lengths = {2, 1};
@@ -291,7 +303,7 @@ TEST(LSTMTest, MixedSequenceLengths) {
       1.27731147f, 1.44181041f, 1.53179041f,
       0.54983425f, 0.59868795f, 0.64565659f};
 
-  SimpleWeightsNoBiasTwoRows("forward", Y_data, Y_h_data, Y_c_data, &seq_lengths);
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "forward", Y_data, Y_h_data, Y_c_data, &seq_lengths);
 }
 
 TEST(LSTMTest, MixedSequenceLengthsReverse) {
@@ -314,7 +326,8 @@ TEST(LSTMTest, MixedSequenceLengthsReverse) {
       0.52497941f, 0.54983425f, 0.5744428f,
       1.34960834f, 1.54772296f, 1.65633056f};
 
-  SimpleWeightsNoBiasTwoRows("reverse", Y_data, Y_h_data, Y_c_data, &seq_lengths);
+  bool run_on_gpu = false;
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "reverse", Y_data, Y_h_data, Y_c_data, &seq_lengths);
 
   // swap which one is short
   seq_lengths = {2, 1};
@@ -334,7 +347,7 @@ TEST(LSTMTest, MixedSequenceLengthsReverse) {
       1.27850552f, 1.46799496f, 1.57641257f,
       0.54983425f, 0.59868795f, 0.64565659f};
 
-  SimpleWeightsNoBiasTwoRows("reverse", Y_data, Y_h_data, Y_c_data, &seq_lengths);
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "reverse", Y_data, Y_h_data, Y_c_data, &seq_lengths);
 }
 
 // test path in LSTM model where batch_parallel_ is false and there are multiple steps (seq_length > 1)
@@ -361,12 +374,13 @@ TEST(LSTMTest, BatchParallelFalseSeqLengthGreaterThanOne) {
   std::vector<float> Y_c_data{
       1.02721067f, 1.15254318f};
 
-  RunLstmTest(X_data, W_data, R_data, Y_data, {}, Y_c_data,
+  bool run_on_gpu = true;
+  RunLstmTest(run_on_gpu, X_data, W_data, R_data, Y_data, {}, Y_c_data,
               input_size, batch_size, hidden_size, seq_length);
 }
 
 // make sure GateComputations works correctly if batch_parallel_ is true due to large batch size
-static void LargeBatchWithClip(const std::vector<float>& Y_h_data, float clip = 9999.0) {
+static void LargeBatchWithClip(bool run_on_gpu, const std::vector<float>& Y_h_data, float clip = 9999.0) {
   int64_t seq_length = 2;
   int batch_size = 32;
   int64_t input_size = 1;
@@ -387,7 +401,7 @@ static void LargeBatchWithClip(const std::vector<float>& Y_h_data, float clip = 
 
   std::vector<float> R_data(num_directions * 4 * hidden_size * hidden_size, 0.1f);
 
-  RunLstmTest(X_data, W_data, R_data, {}, Y_h_data, {},
+  RunLstmTest(run_on_gpu, X_data, W_data, R_data, {}, Y_h_data, {},
               input_size, batch_size, hidden_size, seq_length,
               nullptr, nullptr, nullptr, nullptr, nullptr, direction, clip);
 }
@@ -427,7 +441,8 @@ TEST(LSTMTest, LargeBatchNoClipping) {
       0.96073964f, 0.96388402f, 0.96402112f,
       0.96105254f, 0.96391004f, 0.96402279f};
 
-  LargeBatchWithClip(Y_h_data);
+  bool run_on_gpu = true;
+  LargeBatchWithClip(run_on_gpu, Y_h_data);
 }
 
 // make sure GateComputations with clipping works correctly if batch_parallel_ is true due to large batch size
@@ -466,7 +481,8 @@ TEST(LSTMTest, LargeBatchWithClip) {
       0.94072091f, 0.94266769f, 0.94266769f,
       0.94103248f, 0.94266769f, 0.94266769f};
 
-  LargeBatchWithClip(Y_h_data, 4.f);
+  bool run_on_gpu = false;
+  LargeBatchWithClip(run_on_gpu, Y_h_data, 4.f);
 }
 
 // LotusRT tests
@@ -592,7 +608,8 @@ class LstmOpContext2x1x2x2 {
     // RunTest(seq_len, batch_size, num_direction, Y_data, output_first);
   }
 
-  void RunTest(const std::vector<float>& X,
+  void RunTest(bool run_on_gpu,
+               const std::vector<float>& X,
                const int batch_size,
                const int seq_length,
                const std::vector<float>* initial_h,
@@ -606,7 +623,7 @@ class LstmOpContext2x1x2x2 {
                float clip = 9999.f,
                bool input_forget = false) {
     // run with and without output_sequence to test UniDirectionalLstm handling when Y isn't returned
-    ::onnxruntime::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
+    ::onnxruntime::Test::RunLstmTest(run_on_gpu, X, input_weights_, recurrent_weights_,
                                      expected_Y, expected_Y_h, expected_Y_c,
                                      input_size_, batch_size, hidden_size_, seq_length,
                                      use_bias ? &bias_ : nullptr,
@@ -621,7 +638,7 @@ class LstmOpContext2x1x2x2 {
                                      activation_alphas_,
                                      activation_betas_);
 
-    ::onnxruntime::Test::RunLstmTest(X, input_weights_, recurrent_weights_,
+    ::onnxruntime::Test::RunLstmTest(run_on_gpu, X, input_weights_, recurrent_weights_,
                                      expected_Y, expected_Y_h, expected_Y_c,
                                      input_size_, batch_size, hidden_size_, seq_length,
                                      use_bias ? &bias_ : nullptr,
@@ -664,7 +681,8 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardPeepHole) {
 
   //Run Test
   LstmOpContext2x1x2x2 context(direction);
-  context.RunTest(input, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data);
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, input, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data);
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMBidirectionalBasic) {
@@ -682,7 +700,8 @@ TEST(LSTMTest, LotusRT_TestLSTMBidirectionalBasic) {
                                  -0.0753684f, 0.120794f};
 
   LstmOpContext2x1x2x2 context("bidirectional");
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data);
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data);
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardNoBiasUsePeepholes) {
@@ -699,7 +718,8 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardNoBiasUsePeepholes) {
   std::vector<float> Y_c_data = {0.11169686f, 0.00625722f};
 
   LstmOpContext2x1x2x2 context("forward");
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data, nullptr,
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data, nullptr,
                   use_bias, use_peepholes);
 }
 
@@ -719,7 +739,9 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardInputForget) {
   std::vector<float> Y_c_data = {-0.07474898f, 0.08480116f};
 
   LstmOpContext2x1x2x2 context("forward");
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data, nullptr,
+  // cudnn don't support peepholes
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data, nullptr,
                   use_bias, use_peepholes, clip, input_forget);
 }
 
@@ -738,7 +760,8 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardClip) {
   std::vector<float> Y_c_data = {-0.07415761f, 0.07395997f};
 
   LstmOpContext2x1x2x2 context("forward");
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data, nullptr,
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data, nullptr,
                   use_bias, use_peepholes, clip);
 }
 
@@ -753,7 +776,24 @@ TEST(LSTMTest, LotusRT_TestLSTMBackward) {
   std::vector<float> Y_c_data = {-0.07536839f, 0.12079399f};
 
   LstmOpContext2x1x2x2 context("reverse");
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data);
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data);
+}
+
+TEST(LSTMTest, LotusRT_TestLSTMBackward_gpu) {
+  const int seq_len = 2, batch_size = 1;
+
+  std::vector<float> X_data = {-0.455351f, -0.276391f, -0.185934f, -0.269585f};
+
+  std::vector<float> Y_data = {-0.033075746f, 0.074455738f,
+                               -0.031248707f, 0.027853041f};
+  std::vector<float> Y_h_data = {-0.033075746f, 0.074455738f};
+  std::vector<float> Y_c_data = {-0.076699793f, 0.11975205f};
+
+  LstmOpContext2x1x2x2 context("reverse");
+  bool run_on_gpu = true;
+  // Disable peephole since cudnn doesn't support it
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data, nullptr, true, false);
 }
 
 TEST(LSTMTest, LotusRT_TestLSTMForwardHiddenState) {
@@ -771,7 +811,8 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardHiddenState) {
   std::vector<float> Y_c_data = {-0.07285583f, -0.02545788f};
 
   LstmOpContext2x1x2x2 context("forward");
-  context.RunTest(X_data, batch_size, seq_len, &hidden_state, nullptr, Y_data, Y_h_data, Y_c_data,
+  bool run_on_gpu = true;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, &hidden_state, nullptr, Y_data, Y_h_data, Y_c_data,
                   nullptr, use_bias, use_peepholes);
 }
 
@@ -791,7 +832,8 @@ TEST(LSTMTest, LotusRT_TestLSTMForwardCellState) {
   std::vector<float> Y_c_data = {0.06408449f, 0.03139432f};
 
   LstmOpContext2x1x2x2 context("forward");
-  context.RunTest(X_data, batch_size, seq_len, &hidden_state, &cell_state, Y_data, Y_h_data, Y_c_data,
+  bool run_on_gpu = true;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, &hidden_state, &cell_state, Y_data, Y_h_data, Y_c_data,
                   nullptr, use_bias, use_peepholes);
 }
 
@@ -811,7 +853,8 @@ TEST(LSTMTest, LotusRT_TestLSTMActivation) {
   std::vector<float> Y_c_data = {0.1624992f, 0.04672481f};
 
   LstmOpContext2x1x2x2 context("forward", activations);
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
                   nullptr, use_bias, use_peepholes);
 }
 
@@ -839,7 +882,8 @@ TEST(LSTMTest, LotusRT_TestLSTMBatchReallocation) {
   std::vector<float> Y_c_data = {0.1624992f, 0.04672481f};
 
   LstmOpContext2x1x2x2 context(direction, activations);
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
                   nullptr, use_bias, use_peepholes);
 
   batch_size = 3;
@@ -868,7 +912,7 @@ TEST(LSTMTest, LotusRT_TestLSTMBatchReallocation) {
               0.23038f, -0.0239f,
               0.24572f, 0.051626f};
 
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
                   nullptr, use_bias, use_peepholes);
 }
 
@@ -901,7 +945,8 @@ TEST(LSTMTest, LotusRT_TestLSTMOutputWrite) {
 
   std::string direction = "bidirectional";
   LstmOpContext2x1x2x2 context(direction, activations);
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
+  bool run_on_gpu = false;
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
                   nullptr, use_bias, use_peepholes);
 
   batch_size = 3;
@@ -947,7 +992,7 @@ TEST(LSTMTest, LotusRT_TestLSTMOutputWrite) {
               0.22469461f, -0.02200207f,
               0.18284359f, -0.01078442f};
 
-  context.RunTest(X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
+  context.RunTest(run_on_gpu, X_data, batch_size, seq_len, nullptr, nullptr, Y_data, Y_h_data, Y_c_data,
                   nullptr, use_bias, use_peepholes);
 }
 

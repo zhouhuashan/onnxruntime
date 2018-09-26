@@ -7,6 +7,7 @@
 #include "core/framework/transformer_memcpy.h"
 #include "core/framework/memcpy.h"
 #include "core/framework/kernel_registry.h"
+#include "mkldnn_fwd.h"
 
 namespace onnxruntime {
 namespace mkl_dnn {

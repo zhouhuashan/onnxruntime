@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include "core/providers/cpu/tensor/shape_op.h"
+#include "core/providers/cuda/cuda_fwd.h"
 
 namespace onnxruntime {
 namespace cuda {

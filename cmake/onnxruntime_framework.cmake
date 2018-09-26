@@ -7,11 +7,6 @@ file(GLOB_RECURSE onnxruntime_framework_srcs
     "${LOTUS_ROOT}/core/framework/*.cc"
 )
 
-if(lotus_USE_CUDA)
-    file(GLOB_RECURSE onnxruntime_framework_cuda_srcs "${LOTUS_ROOT}/core/framework/*.cu")
-    list(APPEND onnxruntime_framework_srcs ${onnxruntime_framework_cuda_srcs})
-endif()
-
 source_group(TREE ${REPO_ROOT} FILES ${onnxruntime_framework_srcs})
 
 add_library(onnxruntime_framework ${onnxruntime_framework_srcs})
@@ -20,9 +15,6 @@ add_library(onnxruntime_framework ${onnxruntime_framework_srcs})
 target_include_directories(onnxruntime_framework PRIVATE ${LOTUS_ROOT} ${eigen_INCLUDE_DIRS})
 lotus_add_include_to_target(onnxruntime_framework onnx protobuf::libprotobuf)
 set_target_properties(onnxruntime_framework PROPERTIES FOLDER "Lotus")
-if(lotus_USE_CUDA)
-  set_target_properties(onnxruntime_framework PROPERTIES LINKER_LANGUAGE CUDA)
-endif()
 # need onnx to build to create headers that this project includes
 add_dependencies(onnxruntime_framework ${lotus_EXTERNAL_DEPENDENCIES})
 
