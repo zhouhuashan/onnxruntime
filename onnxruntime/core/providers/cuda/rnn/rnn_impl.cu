@@ -24,12 +24,12 @@ __global__ void _ReverseBySequenceKernel(const int32_t seq_length,
 template <typename T>
 void ReverseBySequence(const int32_t seq_length,
                        const int32_t batch_size,
-                       const int32_t hidden_size,
+                       const int32_t input_or_hidden_size,
                        const T* data,
                        T* reversed_data,
                        const size_t N) {
   // kerneral
-  int32_t block_size = batch_size * hidden_size;
+  int32_t block_size = batch_size * input_or_hidden_size;
   fast_divmod div_batch_block(block_size);
   int blocksPerGrid = (int)(ceil(static_cast<float>(N) / GridDim::maxThreadsPerBlock));
   _ReverseBySequenceKernel<T><<<blocksPerGrid, GridDim::maxThreadsPerBlock, 0>>>(

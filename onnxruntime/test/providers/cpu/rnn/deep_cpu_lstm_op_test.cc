@@ -199,7 +199,7 @@ TEST(LSTMTest, ForwardSimpleWeightsNoBiasTwoRows) {
       1.27731147f, 1.44181041f, 1.53179041f,
       1.3249796f, 1.51063104f, 1.61451544f};
 
-  bool run_on_gpu = false;
+  bool run_on_gpu = true;
   SimpleWeightsNoBiasTwoRows(run_on_gpu, "forward", Y_data, Y_h_data, Y_c_data);
 
   // test Y_h and Y_c being optional
@@ -222,7 +222,7 @@ TEST(LSTMTest, ReverseSimpleWeightsNoBiasTwoRows) {
       1.27850552f, 1.46799496f, 1.57641257f,
       1.34960834f, 1.54772296f, 1.65633056f};
 
-  bool run_on_gpu = false;
+  bool run_on_gpu = true;
   SimpleWeightsNoBiasTwoRows(run_on_gpu, "reverse", Y_data, Y_h_data, Y_c_data);
 }
 

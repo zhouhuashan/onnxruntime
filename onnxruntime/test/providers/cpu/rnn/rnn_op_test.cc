@@ -586,7 +586,7 @@ TEST(RNNTest, RNN_reverse_direction) {
       test.AddMissingOptionalOutput<float>();
     }
 
-    test.Run();
+    test.RunOnCpuAndCuda();
   };
 
   // TODO: bring in these tests

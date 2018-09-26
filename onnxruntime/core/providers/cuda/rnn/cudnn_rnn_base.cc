@@ -208,13 +208,12 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   if (reverse_) {
     // reverse input data
     x_reversed_data = GetScratchBuffer<T>(seq_length * batch_size * input_size);
-    int32_t block_size = gsl::narrow_cast<int32_t>(batch_size * input_size);
     ReverseBySequence(gsl::narrow_cast<int32_t>(seq_length),
                       gsl::narrow_cast<int32_t>(batch_size),
-                      gsl::narrow_cast<int32_t>(hidden_size_),
+                      gsl::narrow_cast<int32_t>(input_size),
                       reinterpret_cast<CudaT*>(x_data),
                       reinterpret_cast<CudaT*>(x_reversed_data.get()),
-                      block_size * seq_length);
+                      seq_length * batch_size * input_size);
     x_data = x_reversed_data.get();
   }
 
@@ -261,7 +260,6 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   if (reverse_ || num_directions_ == 2) {
     //reverse output
     y_reorganized_data = GetScratchBuffer<T>(output_size);
-
     if (reverse_) {
       //reverse output data
       ReverseBySequence(gsl::narrow_cast<int32_t>(seq_length),
