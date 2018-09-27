@@ -397,7 +397,6 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
       }
     }
     if (compare_result != COMPARE_RESULT::SUCCESS && !ret.second.empty()) {
-      c_->GetDatasetDebugInfoString(i);
       LOGF_DEFAULT(ERROR, "%s:%s", test_case_name_.c_str(), ret.second.c_str());
     }
     if (compare_result != COMPARE_RESULT::SUCCESS) {
