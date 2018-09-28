@@ -10,7 +10,6 @@ set(END_WHOLE_ARCHIVE -Wl,--no-whole-archive)
 set(onnxruntime_libs 
   onnxruntime_session
   ${LOTUS_PROVIDERS_MKLDNN}
-  ${LOTUS_PROVIDERS_NUPHAR}
   onnxruntime_providers
   onnxruntime_framework
   onnxruntime_util

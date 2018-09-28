@@ -3,6 +3,7 @@
 
 #include "core/providers/nuphar/nuphar_allocator.h"
 #include "test/framework/test_utils.h"
+#include "nuphar_test_utils.h"
 
 #include "gtest/gtest.h"
 

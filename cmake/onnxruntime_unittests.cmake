@@ -95,10 +95,6 @@ if(lotus_USE_CUDA)
   list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/cuda/*)
 endif()
 
-if(lotus_USE_TVM)
-  list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/nuphar/*)
-endif()
-
 file(GLOB lotus_test_framework_src ${lotus_test_framework_src_patterns})
 
 
@@ -153,10 +149,6 @@ if(lotus_USE_MKLDNN)
   list(APPEND lotus_test_framework_libs onnxruntime_providers_mkldnn)
 endif()
 
-if(lotus_USE_TVM)
-  list(APPEND lotus_test_framework_libs onnxruntime_providers_nuphar)
-endif()
-
 if(WIN32)
     list(APPEND lotus_test_framework_libs Advapi32)
 else()
@@ -168,7 +160,6 @@ set(lotus_test_providers_libs
   onnxruntime_session
   ${LOTUS_PROVIDERS_CUDA}
   ${LOTUS_PROVIDERS_MKLDNN}
-  ${LOTUS_PROVIDERS_NUPHAR}
   onnxruntime_providers
   onnxruntime_framework
   onnxruntime_util
@@ -179,7 +170,6 @@ set(lotus_test_providers_libs
   protobuf::libprotobuf
   gtest gmock
   )
-
 
 set (lotus_test_providers_dependencies ${lotus_EXTERNAL_DEPENDENCIES})
 
@@ -195,10 +185,6 @@ if(lotus_USE_MKLDNN)
   list(APPEND lotus_test_providers_dependencies onnxruntime_providers_mkldnn)
 endif()
 
-if(lotus_USE_TVM)
-  list(APPEND lotus_test_providers_dependencies onnxruntime_providers_nuphar)
-endif()
-
 if( NOT WIN32)
     list(APPEND lotus_test_providers_libs stdc++fs)
 endif()
@@ -207,6 +193,10 @@ file(GLOB_RECURSE lotus_test_tvm_src
   "${LOTUS_ROOT}/test/tvm/*.h"
   "${LOTUS_ROOT}/test/tvm/*.cc"
   )
+
+if (lotus_ENABLE_MICROSOFT_INTERNAL)
+  include(onnxruntime_unittests_internal.cmake)
+endif()  
 
 add_library(lotus_test_utils_for_framework ${lotus_test_utils_src})
 lotus_add_include_to_target(lotus_test_utils_for_framework gtest onnx protobuf::libprotobuf)
