@@ -324,10 +324,7 @@ struct AddOpaqueParam<P, Params...> {
 /// All tensors base
 class TensorTypeBase : public DataTypeImpl {
  public:
-  static MLDataType Type() {
-    static TensorTypeBase tensor_base;
-    return &tensor_base;
-  }
+  static MLDataType Type();
 
   /// We first compare type_proto pointers and then
   /// if they do not match try to account for the case
@@ -385,10 +382,7 @@ class TensorType : public TensorTypeBase {
   static_assert(data_types_internal::IsTensorContainedType<elemT>::value,
                 "Requires one of the tensor fundamental types");
 
-  static MLDataType Type() {
-    static TensorType tensor_type;
-    return &tensor_type;
-  }
+  static MLDataType Type();
 
   /// Tensors only can contain basic data types
   /// that have been previously registered with Lotus
@@ -490,8 +484,9 @@ class MapType<CPPType> : public NonTensorType<CPPType> {
   static_assert(data_types_internal::IsTensorContainedType<typename CPPType::key_type>::value,
                 "Requires one of the tensor fundamental types as key");
 
+  //static MLDataType Type();
   static MLDataType Type() {
-    static MapType map_type;
+    static MapType<CPPType> map_type;
     return &map_type;
   }
 
@@ -513,6 +508,7 @@ class MapType<TypeRegister<CPPType, Types...>> :
  public:
   static_assert(data_types_internal::IsTensorContainedType<typename CPPType::key_type>::value,
                 "Requires one of the tensor fundamental types as key");
+  //static MLDataType Type();
   static MLDataType Type() {
     static MapType map_type;
     return &map_type;
@@ -544,6 +540,7 @@ class SequenceType;
 template <typename CPPType>
 class SequenceType<CPPType> : protected NonTensorType<CPPType> {
  public:
+  //static MLDataType Type();
   static MLDataType Type() {
     static SequenceType sequence_type;
     return &sequence_type;
@@ -564,6 +561,7 @@ template <typename CPPType, typename... Types>
 class SequenceType<TypeRegister<CPPType, Types...>> : 
   public NonTensorType<CPPType> {
  public:
+  //static MLDataType Type();
   static MLDataType Type() {
     static SequenceType sequence_type;
     return &sequence_type;
@@ -595,6 +593,7 @@ class SequenceType<TypeRegister<CPPType, Types...>> :
 template <typename T>
 class OpaqueType : protected NonTensorType<T> {
  public:
+  //static MLDataType Type();
   static MLDataType Type() {
     static OpaqueType opaque_type;
     return &opaque_type;
@@ -622,10 +621,7 @@ class NonOnnxType : public DataTypeImpl {
     return false;
   }
 
-  static MLDataType Type() {
-    static NonOnnxType non_tensor_type;
-    return &non_tensor_type;
-  }
+  static MLDataType Type();
 
   size_t Size() const override {
     return sizeof(T);
