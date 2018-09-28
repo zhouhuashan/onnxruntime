@@ -58,11 +58,9 @@ const MLDataType& NumpyToOnnxRuntimeTensorType(int numpy_type) {
       {NPY_LONGLONG, DataTypeImpl::GetType<int64_t>()},
       {NPY_ULONGLONG, DataTypeImpl::GetType<uint64_t>()},
       {NPY_UNICODE, DataTypeImpl::GetType<std::string>()},
-      {NPY_OBJECT, DataTypeImpl::GetType<std::string>()}};
-
-  if (numpy_type == NPY_STRING) {
-    throw std::runtime_error("Please use np.unicode for strings.");
-  }
+      {NPY_STRING, DataTypeImpl::GetType<std::string>()},
+      {NPY_OBJECT, DataTypeImpl::GetType<std::string>()},
+      {NPY_VOID, DataTypeImpl::GetType<std::string>()}};
 
   const auto it = type_map.find(numpy_type);
   if (it == type_map.end()) {
@@ -109,13 +107,42 @@ void CreateTensorMLValue(AllocatorPtr alloc, const std::string& name_input, PyAr
 
     if (npy_type == NPY_UNICODE) {
       // Copy string data which needs to be done after Tensor is allocated.
+      // Strings are Python strings or numpy.unicode string.
       std::string* dst = static_cast<std::string*>(buffer);
       auto item_size = PyArray_ITEMSIZE(darray);
       auto num_chars = item_size / PyUnicode_4BYTE_KIND;
       char* src = static_cast<char*>(PyArray_DATA(darray));
+      const char* str;
+      Py_ssize_t size;
+      PyObject* pStr;
       for (int i = 0; i < shape.Size(); i++, src += item_size) {
         // Python unicode strings are assumed to be USC-4. Strings are stored as UTF-8.
-        dst[i] = PyUnicode_AsUTF8(PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, src, num_chars));
+        pStr = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, src, num_chars);
+        str = PyUnicode_AsUTF8AndSize(pStr, &size);
+        if (str == NULL) {
+          dst[i] = "";
+        } else {
+          // Size is equal to the longest string size, numpy stores
+          // strings in a single array. Those code assumes a string ends with a final 0.
+          dst[i] = str;
+        }
+        Py_XDECREF(pStr);
+      }
+    } else if (npy_type == NPY_STRING || npy_type == NPY_VOID) {
+      // Copy string data which needs to be done after Tensor is allocated.
+      // Strings are given as bytes (encoded strings).
+      // NPY_VOID does not trim final 0.
+      // NPY_STRING assumes bytes string ends with a final 0.
+      std::string* dst = static_cast<std::string*>(buffer);
+      auto item_size = PyArray_ITEMSIZE(darray);
+      char* src = static_cast<char*>(PyArray_DATA(darray));
+      for (int i = 0; i < shape.Size(); i++, src += item_size) {
+        if (npy_type == NPY_STRING) {
+          dst[i] = src;
+        } else {
+          dst[i].resize(item_size);
+          memcpy((void*)dst[i].c_str(), src, item_size);
+        }
       }
     } else if (npy_type == NPY_OBJECT) {
       // Converts object into string.
