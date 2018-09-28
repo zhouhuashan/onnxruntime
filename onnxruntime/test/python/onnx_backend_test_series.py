@@ -53,6 +53,9 @@ backend_test.exclude(r'(shufflenet)')  # Too long.
 backend_test.exclude(r'(squeezenet)')  # Too long.
 backend_test.exclude(r'(zfnet)')  # Too long.
 
+# Exclude experimental
+backend_test.exclude(r'(test_mvn_cpu)')
+
 # import all test cases at global scope to make
 # them visible to python.unittest.
 globals().update(backend_test.enable_report().test_cases)
