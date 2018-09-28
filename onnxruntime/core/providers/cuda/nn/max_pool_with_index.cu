@@ -44,9 +44,9 @@ __global__ void MaxPoolWithIndexKernel(
   fdm_h.divmod(id_tmp, id_tmp, h_index);
   fdm_c.divmod(id_tmp, n_index, c_index);
 
-  int64_t d_start = _Max<int64_t>(d_index * stride_d - pad_d, 0);
-  int64_t w_start = _Max<int64_t>(w_index * stride_w - pad_w, 0);
-  int64_t h_start = _Max<int64_t>(h_index * stride_h - pad_h, 0);
+  int64_t d_start = d_index * stride_d - pad_d;
+  int64_t w_start = w_index * stride_w - pad_w;
+  int64_t h_start = h_index * stride_h - pad_h;
 
   int64_t d_end = _Min<int64_t>(d_start + kernel_d, depth);
   int64_t w_end = _Min<int64_t>(w_start + kernel_w, width);
@@ -60,10 +60,10 @@ __global__ void MaxPoolWithIndexKernel(
   int64_t h_index_max = -1;
   int64_t offset = (n_index * channels + c_index) * height * width * depth;
   const T* p_slice = p_input + offset;
-  T maxval = p_slice[h_start * width * depth + w_start * depth + d_start] - (T) 1;
-  for (int64_t h = h_start; h < h_end; ++h) {
+  T maxval = p_slice[h_start * width * depth + w_start * depth + d_start] - (T)1;
+  for (int64_t d = d_start; d < d_end; ++d) {
     for (int64_t w = w_start; w < w_end; ++w) {
-      for (int64_t d = d_start; d < d_end; ++d) {
+      for (int64_t h = h_start; h < h_end; ++h) {
         if (p_slice[h * width * depth + w * depth + d] > maxval) {
           h_index_max = h;
           w_index_max = w;
@@ -105,9 +105,12 @@ void MaxPoolWithIndex(
   int64_t stride_h = stride_shape[0];
   int64_t stride_w = stride_shape.size() > 1 ? stride_shape[1] : 1;
   int64_t stride_d = stride_shape.size() > 2 ? stride_shape[2] : 1;
+  //pads in the format of [x1_begin, x2_begin...x1_end, x2_end,...],
+  //where xi_begin the number of pixels added at the beginning of axis i
+  //and xi_end, the number of pixels added at the end of axis i.
   int64_t pad_h = pads[0];
-  int64_t pad_w = pads.size() > 1 ? pads[1] : 0;
-  int64_t pad_d = pads.size() > 2 ? pads[2] : 0;
+  int64_t pad_w = pads.size() == 4 ? pads[1] : 0;
+  int64_t pad_d = pads.size() == 6 ? pads[2] : 0;
   int64_t output_size = output_shape.Size();
 
   fast_divmod fdm_c(static_cast<int>(channels));
