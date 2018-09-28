@@ -8,9 +8,6 @@
 #ifdef USE_CUDA
 #include "core/providers/cuda/cuda_execution_provider.h"
 #endif
-#ifdef USE_TVM
-#include "core/providers/nuphar/nuphar_execution_provider.h"
-#endif  // USE_TVM
 
 namespace onnxruntime {
 namespace Test {
@@ -19,10 +16,6 @@ IExecutionProvider* TestCPUExecutionProvider();
 #ifdef USE_CUDA
 IExecutionProvider* TestCudaExecutionProvider();
 #endif
-
-#ifdef USE_TVM
-IExecutionProvider* TestNupharExecutionProvider();
-#endif  // USE_TVM
 
 template <typename T>
 void CreateMLValue(AllocatorPtr alloc,

@@ -77,7 +77,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
 
       std::vector<int64_t> y_dims;
       y_dims.insert(y_dims.begin(), {N, M});
-      InferOutputShape<true>(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims);
+      LOTUS_RETURN_IF_ERROR(InferOutputShape<true>(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims));
       s_.y_dims = y_dims;
 
       std::vector<int64_t> x_dims_cudnn = x_dims;

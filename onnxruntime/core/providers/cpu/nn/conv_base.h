@@ -165,7 +165,7 @@ class ConvBase {
           &pads->at(dim),
           &pads->at(input_shape.NumDimensions() + dim),
           &dim_size));
-      if (dim_size < 0) {
+      if (dim_size <= 0) {
         return Status(common::LOTUS, common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
       }
       output_shape->push_back(dim_size);

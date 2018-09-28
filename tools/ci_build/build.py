@@ -63,7 +63,7 @@ Use the individual flags to only run the specified stages.
 
     # Build a shared lib
     parser.add_argument("--build_shared_lib", action='store_true', help="Build a shared library for the Lotus runtime.")
-    
+
     # Build options
     parser.add_argument("--cmake_extra_defines", nargs="+",
                         help="Extra definitions to pass to CMake during build system generation. " +
@@ -87,6 +87,7 @@ Use the individual flags to only run the specified stages.
     parser.add_argument("--use_tvm", action="store_true", help="Build with tvm")
     parser.add_argument("--use_openmp", action='store_true', help="Build with OpenMP.")
     parser.add_argument("--use_llvm", action="store_true", help="Build tvm with llvm")
+    parser.add_argument("--enable_msinternal", action="store_true", help="Enable for Microsoft internal builds only.")
     parser.add_argument("--llvm_path", help="Path to llvm dir")
     return parser.parse_args()
 
@@ -178,14 +179,15 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
                  "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),
                  "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
                  "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
-                 "-Dlotus_BUILD_SHARED_LIB=" + ("ON" if args.build_shared_lib else "OFF"),                  
+                 "-Dlotus_BUILD_SHARED_LIB=" + ("ON" if args.build_shared_lib else "OFF"),
                  "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
                  "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
                  "-Dlotus_USE_MKLDNN=" + ("ON" if args.use_mkldnn else "OFF"),
                  "-Dlotus_USE_MKLML=" + ("ON" if args.use_mklml else "OFF"),
                  "-Dlotus_USE_OPENMP=" + ("ON" if args.use_openmp else "OFF"),
                  "-Dlotus_USE_TVM=" + ("ON" if args.use_tvm else "OFF"),
-                 "-Dlotus_USE_LLVM=" + ("ON" if args.use_llvm else "OFF")
+                 "-Dlotus_USE_LLVM=" + ("ON" if args.use_llvm else "OFF"),
+                 "-Dlotus_ENABLE_MICROSOFT_INTERNAL=" + ("ON" if args.enable_msinternal else "OFF")
                  ]
 
     if args.use_llvm:
@@ -427,8 +429,8 @@ def run_lotus_tests(args, ctest_path, build_dir, configs, enable_python_tests, e
         # shared lib tests - both simple + custom op
         if args.build_shared_lib:
             if is_ubuntu_1604():
-                run_subprocess([cwd+'/lotus_shared_lib_test'], cwd=cwd, dll_path=dll_path)            
-            
+                run_subprocess([cwd+'/lotus_shared_lib_test'], cwd=cwd, dll_path=dll_path)
+
 def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, use_cuda):
 
     for config in configs:
@@ -462,7 +464,7 @@ def main():
     if (args.build_shared_lib and is_windows()):
         log.error("Shared lib creation not supported on Windows")
         sys.exit(-1)
-        
+
     cmake_path = args.cmake_path
     cmake_extra_defines = args.cmake_extra_defines if args.cmake_extra_defines else []
 
