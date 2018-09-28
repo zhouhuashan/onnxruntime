@@ -164,6 +164,23 @@ TEST(ConvTest, Conv2D_1) {
   TestConvOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape, false, true);  // asymmetric padding is not supported by cudnn
 }
 
+TEST(ConvTest, Conv1D_Invalid_Input_Shape) {
+  ConvOpAttributes attrs = {
+      "",                     // auto_pad
+      vector<int64_t>{1},     // dilations
+      1,                      // group
+      vector<int64_t>{2},     // kernel_shape
+      vector<int64_t>{0, 0},  // pads
+      vector<int64_t>{1}      // strides
+  };
+  vector<float> X = vector<float>(1, 1.0f);
+  vector<int64_t> X_shape = {1, 1, 1};
+  vector<int64_t> dummy_shape = {1, 1, 2};
+  auto dummy_vals = {0.0f, 0.0f};
+  TestConvOp(attrs, {X, dummy_vals}, {X_shape, dummy_shape}, dummy_vals, dummy_shape, true, true,
+             OpTester::ExpectResult::kExpectFailure, "Invalid input shape: {1}");
+}
+
 TEST(ConvTest, Conv2D_Invalid_Input_Shape) {
   ConvOpAttributes attrs = {
       "",                           // auto_pad
