@@ -11,18 +11,21 @@
 namespace onnxruntime {
 namespace cuda {
 
-enum PoolType {
-  MaxPool,
-  AveragePool,
-  MaxPool_8 // MaxPool of opset 8
-};
-
-template <typename T, PoolType type>
+template <typename T, typename PoolType>
 class Pool final : public CudaKernel, public PoolBase {
  public:
   Pool(OpKernelInfo info) : CudaKernel(info), PoolBase(info) {}
 
   Status ComputeInternal(OpKernelContext* context) const override;
 };
+
+template <typename T>
+class Pool<T, MaxPool<8>> final : public CudaKernel, public PoolBase {
+ public:
+  Pool(OpKernelInfo info) : CudaKernel(info), PoolBase(info) {}
+
+  Status ComputeInternal(OpKernelContext* context) const override;
+};
+
 }  // namespace cuda
 }  // namespace onnxruntime
