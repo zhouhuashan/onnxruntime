@@ -10,9 +10,9 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
-static void RunGruTest(bool run_on_gpu, 
+static void RunGruTest(bool run_on_gpu,
                        const std::vector<float>& X_data,
                        const std::vector<float>& W_data,
                        const std::vector<float>& R_data,
@@ -248,7 +248,7 @@ void DefaultActivationsSimpleWeightsWithBias(bool run_on_gpu,
 
   RunGruTest(run_on_gpu, X_data, W_data, R_data, Y_data, {}, input_size, batch_size, hidden_size, seq_length,
              &B_data, nullptr, nullptr, direction, 999.f, /* output_sequence*/ true, linear_before_reset);
-}  // namespace Test
+}  // namespace test
 
 TEST(GRUTest, ForwardDefaultActivationsSimpleWeightsWithBiasBatchParallel) {
   std::vector<float> Y_data{
@@ -327,7 +327,7 @@ class DeepCpuGruOpTestContext {
 
   ~DeepCpuGruOpTestContext() = default;
 
-  void RunTest(bool run_on_gpu, 
+  void RunTest(bool run_on_gpu,
                const std::vector<float>& X,
                const int batch,
                const int seq_length,
@@ -348,7 +348,7 @@ class DeepCpuGruOpTestContext {
   std::vector<float> gru_input_weights_;
   std::vector<float> gru_recurrent_weights_;
   std::vector<float> gru_bias_;
-};  // namespace Test
+};  // namespace test
 
 DeepCpuGruOpTestContext::DeepCpuGruOpTestContext(const std::string direction,
                                                  const std::vector<std::string>& activations,
@@ -472,7 +472,7 @@ void DeepCpuGruOpTestContext::RunTest(bool run_on_gpu,
                                       const std::vector<float>& expected_Y,
                                       const std::vector<float>& expected_Y_h) {
   // run with and without output_sequence
-  ::onnxruntime::Test::RunGruTest(run_on_gpu, X, gru_input_weights_, gru_recurrent_weights_,
+  ::onnxruntime::test::RunGruTest(run_on_gpu, X, gru_input_weights_, gru_recurrent_weights_,
                                   expected_Y, expected_Y_h,
                                   input_size_, batch_size, hidden_dim_, seq_length,
                                   use_bias_ ? &gru_bias_ : nullptr,
@@ -486,7 +486,7 @@ void DeepCpuGruOpTestContext::RunTest(bool run_on_gpu,
                                   alphas_,
                                   betas_);
 
-  ::onnxruntime::Test::RunGruTest(run_on_gpu, X, gru_input_weights_, gru_recurrent_weights_,
+  ::onnxruntime::test::RunGruTest(run_on_gpu, X, gru_input_weights_, gru_recurrent_weights_,
                                   expected_Y, expected_Y_h,
                                   input_size_, batch_size, hidden_dim_, seq_length,
                                   use_bias_ ? &gru_bias_ : nullptr,
@@ -628,7 +628,7 @@ TEST(GRUTest, LotusRT_TestGRUOpForwardBatch) {
   std::vector<float> expected_Y_h = {0.07378622f, -0.02782359f,
                                      -0.05556786f, 0.0785508f};
 
-  bool run_on_gpu = false; // cudnn implementation only support linear_before_reset = true
+  bool run_on_gpu = false;  // cudnn implementation only support linear_before_reset = true
   ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
@@ -777,5 +777,5 @@ TEST(GRUTest, LotusRT_TestGRUPositiveActivationAlphaBeta) {
   ctx.RunTest(run_on_gpu, X, batch_size, seq_length, sequence_length, &initial_h, expected_Y, expected_Y_h);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

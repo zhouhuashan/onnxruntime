@@ -12,7 +12,7 @@
 using namespace onnxruntime;
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 // Tests that Resolve() properly clears the state of topological sorted nodes,
 // inputs, outputs and valueInfo.
 // Assumes the graph passed in has been previously resolved.
@@ -145,5 +145,5 @@ INSTANTIATE_TEST_CASE_P(ONNXModelsTests,
                         ::testing::Values("bvlc_alexnet", "bvlc_googlenet", "bvlc_reference_caffenet", "bvlc_reference_rcnn_ilsvrc13", "densenet121", "emotion_ferplus", "inception_v1", "inception_v2", "mnist", "resnet50", "shufflenet", "squeezenet", "tiny_yolov2", "vgg19", "zfnet"));
 
 #endif
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

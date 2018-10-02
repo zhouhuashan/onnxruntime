@@ -13,7 +13,7 @@ namespace ONNX_NAMESPACE {
 class TensorProto;
 }
 namespace onnxruntime {
-namespace Utils {
+namespace utils {
 //How much memory it will need for putting the content of this tensor into a plain array
 //string/complex64/complex128 tensors are not supported.
 //The output value could be zero or -1.
@@ -26,5 +26,5 @@ class TensorUtils {
                              int64_t expected_size);
 
 };  // namespace Utils
-}  // namespace Utils
+}  // namespace utils
 }  // namespace onnxruntime

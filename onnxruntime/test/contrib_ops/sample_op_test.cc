@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, SampleOpFloat) {
   OpTester test("SampleOp", 1, onnxruntime::kMSDomain);
@@ -17,5 +17,5 @@ TEST(MLOpTest, SampleOpFloat) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

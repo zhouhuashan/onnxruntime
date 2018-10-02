@@ -7,7 +7,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 static void RunTest(const std::vector<float>& x_vals,
                     const std::vector<float>& expected_vals,
@@ -228,5 +228,5 @@ TEST(SoftmaxOperator, TestInputTooLarge) {
             return Status(common::LOTUS, common::INVALID_ARGUMENT, msg);
         }*/
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

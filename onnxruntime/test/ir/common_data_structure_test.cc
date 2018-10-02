@@ -7,7 +7,7 @@
 using namespace ::onnxruntime::common;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(RecordTest, CommonDataStructureTest) {
   Record<std::string> string_record;
   const std::string* n2;
@@ -42,5 +42,5 @@ TEST(RecordTest, CommonDataStructureTest) {
   EXPECT_EQ("streamLength", *name);
   EXPECT_EQ(2.0f, value3);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

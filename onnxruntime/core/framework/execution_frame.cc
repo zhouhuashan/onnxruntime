@@ -437,7 +437,7 @@ MLValue* ExecutionFrame::GetMutableNodeInputOrOutputMLValue(int index) {
 }
 
 AllocatorPtr ExecutionFrame::GetAllocator(const AllocatorInfo& info) {
-  return Utils::GetAllocator(session_state_, info);
+  return utils::GetAllocator(session_state_, info);
 }
 
 static inline void VerifyShape(const MLValue* p_mlvalue,

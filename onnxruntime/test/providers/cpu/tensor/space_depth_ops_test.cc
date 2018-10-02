@@ -6,7 +6,7 @@
 #include "core/providers/cpu/tensor/space_depth_ops.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(TensorOpTest, SpaceToDepthTest_1) {
   OpTester test("SpaceToDepth");
@@ -145,5 +145,5 @@ TEST(TensorOpTest, DepthToSpaceTest_2) {
   test.AddOutput<float>("output", {2, 3, 6, 4}, result);
   test.Run();
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

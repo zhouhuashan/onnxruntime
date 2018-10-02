@@ -14,7 +14,7 @@ using namespace ONNX_NAMESPACE;
 using namespace onnx;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 static const std::string MODEL_FOLDER = "testdata/transform/";
 
@@ -40,5 +40,5 @@ TEST(GraphTransformationTests, IdentityElimination) {
   ASSERT_TRUE(session_object.Initialize().IsOK());
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

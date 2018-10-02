@@ -60,7 +60,7 @@ namespace python {
 
 namespace py = pybind11;
 using namespace onnxruntime;
-using namespace onnxruntime::Logging;
+using namespace onnxruntime::logging;
 
 static AllocatorPtr& GetAllocator() {
   static AllocatorPtr alloc = std::make_shared<CPUAllocator>();
@@ -144,7 +144,7 @@ void AddTensorAsPyObj(onnxruntime::MLValue& val, vector<py::object>& pyobjs) {
 class SessionObjectInitializer {
  public:
   typedef const SessionOptions& Arg1;
-  typedef Logging::LoggingManager* Arg2;
+  typedef logging::LoggingManager* Arg2;
   operator Arg1() {
     return GetDefaultCPUSessionOptions();
   }

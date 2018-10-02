@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(InstanceNormalizationOpTest, InstanceNorm) {
   OpTester test("InstanceNormalization");
@@ -112,5 +112,5 @@ TEST(InstanceNormalizationOpTest, InstanceNorm_2) {
   test.RunOnCpuAndCuda();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

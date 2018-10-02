@@ -14,9 +14,9 @@ using namespace onnxruntime;
 
 int main(int argc, char* args[]) {
   std::string default_logger_id{"Default"};
-  Logging::LoggingManager default_logging_manager{std::unique_ptr<Logging::ISink>{new Logging::CLogSink{}},
-                                                  Logging::Severity::kWARNING, false,
-                                                  Logging::LoggingManager::InstanceType::Default,
+  logging::LoggingManager default_logging_manager{std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
+                                                  logging::Severity::kWARNING, false,
+                                                  logging::LoggingManager::InstanceType::Default,
                                                   &default_logger_id};
 
   std::unique_ptr<Environment> env;
@@ -26,13 +26,13 @@ int main(int argc, char* args[]) {
     return -1;
   }
 
-  ::onnxruntime::PerfTest::PerformanceTestConfig test_config;
-  if (!::onnxruntime::PerfTest::CommandLineParser::ParseArguments(test_config, argc, args)) {
-    ::onnxruntime::PerfTest::CommandLineParser::ShowUsage();
+  ::onnxruntime::perftest::PerformanceTestConfig test_config;
+  if (!::onnxruntime::perftest::CommandLineParser::ParseArguments(test_config, argc, args)) {
+    ::onnxruntime::perftest::CommandLineParser::ShowUsage();
     return -1;
   }
 
-  ::onnxruntime::PerfTest::PerformanceRunner perf_runner(test_config);
+  ::onnxruntime::perftest::PerformanceRunner perf_runner(test_config);
   status = perf_runner.Run();
   if (!status.IsOK()) {
     LOGF_DEFAULT(ERROR, "Run failed:%s", status.ErrorMessage().c_str());

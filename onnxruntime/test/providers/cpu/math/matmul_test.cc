@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MathOpTest, MatMul) {
   std::vector<float> vals{0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
@@ -77,5 +77,5 @@ TEST(MathOpTest, MatMul) {
   }
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

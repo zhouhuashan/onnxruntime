@@ -23,7 +23,7 @@
 #include <evntrace.h>
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 
 namespace {
 TRACELOGGING_DEFINE_PROVIDER(etw_provider_handle, "LotusTraceLoggingProvider",
@@ -126,7 +126,7 @@ void EtwSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id,
 #undef ETW_EVENT_NAME
 #undef TRACE_LOG_WRITE
 }
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime
 
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

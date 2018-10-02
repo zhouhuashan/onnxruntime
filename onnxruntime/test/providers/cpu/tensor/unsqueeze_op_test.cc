@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(TensorOpTest, Unsqueeze_1) {
   OpTester test("Unsqueeze");
@@ -61,5 +61,5 @@ TEST(TensorOpTest, Unsqueeze_OutOfRange) {
   test.RunOnCpuAndCuda(OpTester::ExpectResult::kExpectFailure, "'axes' has an out of range axis");
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

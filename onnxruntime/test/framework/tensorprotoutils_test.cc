@@ -10,7 +10,7 @@
 #include <sstream>
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 #ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
 TEST(TensorProtoUtilsTest, test1) {
   const char* filename = "../models/test_resnet50/test_data_set_0/input_0.pb";
@@ -25,5 +25,5 @@ TEST(TensorProtoUtilsTest, test1) {
   ASSERT_TRUE(st.IsOK());
 }
 #endif
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

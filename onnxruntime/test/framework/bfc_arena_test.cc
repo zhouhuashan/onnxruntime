@@ -6,7 +6,7 @@
 #include <cstdlib>
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 static void CheckStats(BFCArena* a, int64_t num_allocs, int64_t bytes_in_use,
                        int64_t max_bytes_in_use, int64_t max_alloc_size) {
   AllocatorStats stats;
@@ -234,5 +234,5 @@ TEST(BFCArenaTest, TestReserve) {
   a.GetStats(&stats);
   EXPECT_EQ(stats.total_allocated_bytes, 1048576);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

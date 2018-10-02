@@ -9,8 +9,8 @@
 #include <psapi.h>
 
 namespace onnxruntime {
-namespace PerfTest {
-namespace Utils {
+namespace perftest {
+namespace utils {
 
 size_t GetPeakWorkingSetSize() {
   PROCESS_MEMORY_COUNTERS pmc;
@@ -75,6 +75,6 @@ std::unique_ptr<ICPUUsage> CreateICPUUsage() {
   return std::make_unique<CPUUsage>();
 }
 
-}  // namespace Utils
-}  // namespace PerfTest
+}  // namespace utils
+}  // namespace perftest
 }  // namespace onnxruntime

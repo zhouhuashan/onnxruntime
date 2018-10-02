@@ -12,7 +12,7 @@ namespace onnxruntime {
 
 OpKernelContext::OpKernelContext(ExecutionFrame* frame,
                                  const OpKernel* kernel,
-                                 const Logging::Logger& logger)
+                                 const logging::Logger& logger)
     : execution_frame_(frame),
       kernel_(kernel),
       logger_(&logger) {

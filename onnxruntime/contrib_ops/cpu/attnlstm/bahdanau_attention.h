@@ -14,7 +14,7 @@ class BahdanauAttention : public IAttentionMechanism<T> {
  public:
   BahdanauAttention(
       AllocatorPtr allocator,
-      const Logging::Logger& logger,
+      const logging::Logger& logger,
       int batch_size,
       int max_memory_step,
       int memory_depth,
@@ -49,7 +49,7 @@ class BahdanauAttention : public IAttentionMechanism<T> {
 
  private:
   AllocatorPtr allocator_;
-  const Logging::Logger& logger_;
+  const logging::Logger& logger_;
 
   int batch_size_;
   int max_memory_steps_;

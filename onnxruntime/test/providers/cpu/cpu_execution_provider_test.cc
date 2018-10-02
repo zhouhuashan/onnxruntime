@@ -5,12 +5,12 @@
 #include "gtest/gtest.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(CPUExecutionProviderTest, MetadataTest) {
   CPUExecutionProviderInfo info;
   auto provider = std::make_unique<CPUExecutionProvider>(info);
   EXPECT_TRUE(provider != nullptr);
   ASSERT_STREQ(provider->GetAllocator(kMemTypeDefault)->Info().name, CPU);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

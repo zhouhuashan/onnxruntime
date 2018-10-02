@@ -8,7 +8,7 @@
 #endif  //  USE_CUDA
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 static std::string GetAllocatorId(const std::string& name, const int id, const bool isArena) {
   std::ostringstream ss;
@@ -71,5 +71,5 @@ AllocatorPtr AllocatorManager::GetAllocator(const std::string& name, const int i
   LOTUS_ENFORCE(entry != map_.end(), "Allocator not found:", allocator_id);
   return entry->second;
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -84,7 +84,7 @@ LOTUS_REGISTER_SEQ(MyOpaqueSeq_3);
 // it within Maps(values) and Sequences(Values) and it should work properly
 // Use the example.
 
-namespace Test {
+namespace test {
 
 using namespace ONNX_NAMESPACE;
 
@@ -222,7 +222,7 @@ TEST(DataTypeTest, RecursiveMapTest) {
   mut_map->mutable_value_type()->CopyFrom(*op1_proto->GetTypeProto());
   EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_1>()->IsCompatible(unod_map_int64_to_op1));
 
-    // Map that contains an Opaque_2
+  // Map that contains an Opaque_2
   const auto* op2_proto = DataTypeImpl::GetType<OpaqueType_2>();
   TypeProto unod_map_int64_to_op2;
   mut_map = unod_map_int64_to_op2.mutable_map_type();
@@ -230,7 +230,7 @@ TEST(DataTypeTest, RecursiveMapTest) {
   mut_map->mutable_value_type()->CopyFrom(*op2_proto->GetTypeProto());
   EXPECT_TRUE(DataTypeImpl::GetType<MyOpaqueMap_2>()->IsCompatible(unod_map_int64_to_op2));
 
-    // Map that contains an Opaque_3
+  // Map that contains an Opaque_3
   const auto* op3_proto = DataTypeImpl::GetType<OpaqueType_3>();
   TypeProto unod_map_int64_to_op3;
   mut_map = unod_map_int64_to_op3.mutable_map_type();
@@ -367,5 +367,5 @@ TEST(DataTypeTest, DataUtilsTest) {
   }
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

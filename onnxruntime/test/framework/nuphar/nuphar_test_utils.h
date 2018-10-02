@@ -6,9 +6,9 @@
 #endif  // USE_TVM
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 #ifdef USE_TVM
 IExecutionProvider* TestNupharExecutionProvider();
 #endif  // USE_TVM
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

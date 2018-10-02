@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MathOpTest, Add_int32) {
   OpTester test("Add");
@@ -837,6 +837,6 @@ TEST(MathOpTest, Scale_Default) {
   test.RunOnCpuAndCuda();
 }
 
-}  // namespace Test
+}  // namespace test
 
 }  // namespace onnxruntime

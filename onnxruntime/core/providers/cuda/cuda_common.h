@@ -151,7 +151,7 @@ class ToCudaType<MLFloat16> {
  public:
   typedef half MappedType;
   static MappedType FromFloat(float f) {
-    uint16_t h = Math::floatToHalf(f);
+    uint16_t h = math::floatToHalf(f);
     return *reinterpret_cast<MappedType*>(&h);
   }
 };

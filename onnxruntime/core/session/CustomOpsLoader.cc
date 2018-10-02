@@ -10,7 +10,7 @@
 #include <vector>
 
 using namespace ::onnxruntime::common;
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 
 namespace onnxruntime {
 CustomOpsLoader::~CustomOpsLoader() {

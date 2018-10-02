@@ -6,9 +6,9 @@
 #include "TestCaseResult.h"
 #include <CppUnitTest.h>
 
-class VsTestSink : public onnxruntime::Logging::ISink {
+class VsTestSink : public onnxruntime::logging::ISink {
  public:
-  void SendImpl(const onnxruntime::Logging::Timestamp& timestamp, const std::string& logger_id_, const onnxruntime::Logging::Capture& message) override;
+  void SendImpl(const onnxruntime::logging::Timestamp& timestamp, const std::string& logger_id_, const onnxruntime::logging::Capture& message) override;
 };
 
 namespace Microsoft {

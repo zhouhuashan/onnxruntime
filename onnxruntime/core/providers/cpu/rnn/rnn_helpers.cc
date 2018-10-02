@@ -18,7 +18,7 @@
 #include "core/util/math_cpuonly.h"
 
 namespace onnxruntime {
-namespace Rnn {
+namespace rnn {
 namespace detail {
 
 using namespace ::onnxruntime::common;
@@ -890,5 +890,5 @@ GruOutputGateFuncPtr GruOutputGateFuncByName(const std::string& func) {
 
 }  // namespace deepcpu
 }  // namespace detail
-}  // namespace Rnn
+}  // namespace rnn
 }  // namespace onnxruntime

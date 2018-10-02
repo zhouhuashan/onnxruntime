@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(GatherOpTest, Gather_axis0) {
   OpTester test("Gather");
@@ -302,5 +302,5 @@ TEST(GatherOpTest, Gather_perf) {
   test.AddOutput<int32_t>("output", {800, 1, 100}, output);
   test.RunOnCpuAndCuda();
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

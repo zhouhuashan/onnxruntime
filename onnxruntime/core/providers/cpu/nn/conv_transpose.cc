@@ -232,7 +232,7 @@ Status ConvTranspose<T>::Compute(OpKernelContext* context) const {
   for (auto image_id = 0; image_id < p.N; ++image_id) {
     for (int group_id = 0; group_id < group_; ++group_id) {
       // Weight term
-      Math::Gemm<T, CPUMathUtil>(
+      math::Gemm<T, CPUMathUtil>(
           CblasTrans,
           CblasNoTrans,
           kernel_dim,
@@ -246,7 +246,7 @@ Status ConvTranspose<T>::Compute(OpKernelContext* context) const {
           &CPUMathUtil::Instance());
 
       // Col2im
-      Math::Col2im<T, CPUMathUtil, StorageOrder::NCHW>(
+      math::Col2im<T, CPUMathUtil, StorageOrder::NCHW>(
           col_buffer_data,
           p.num_output_channels / group_,
           p.Y->Shape()[2],

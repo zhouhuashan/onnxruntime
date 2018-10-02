@@ -22,7 +22,7 @@ namespace onnxruntime {
 class Tensor;
 class OpKernelContext;
 
-namespace Rnn {
+namespace rnn {
 namespace detail {
 
 // Retrieve optional input from the context. Returns nullptr if input doesn't exist, or if it has no data in it.
@@ -156,7 +156,7 @@ void ComputeGemm(const int M,
   LOTUS_ENFORCE(B + (K * ldb - (ldb - N)) <= B_end);
   LOTUS_ENFORCE(C + (M * ldc - (ldc - N)) <= C_end);
 
-  ::onnxruntime::Math::GemmEx<float, CPUMathUtil>(
+  ::onnxruntime::math::GemmEx<float, CPUMathUtil>(
       CblasNoTrans, CblasNoTrans,
       M, N, K, alpha,
       &*A, lda,
@@ -202,7 +202,7 @@ T* SafeRawPointer(typename gsl::span<T> span, size_t offset, size_t size) {
 
 template <typename TLambda>
 void ExecuteLambdaInParallel(const std::string& name, TLambda lambda, int max, int step,
-                             TaskThreadPool& ttp, const ::onnxruntime::Logging::Logger& logger) {
+                             TaskThreadPool& ttp, const ::onnxruntime::logging::Logger& logger) {
   // #define NOTHREADS to execute the lambdas directly and in order if you need to do that to debug
 
 #ifdef NOTHREADS
@@ -318,5 +318,5 @@ inline void elementwise_sum2(const float* src1, const float* src2, float* dest, 
 
 }  // namespace deepcpu
 }  // namespace detail
-}  // namespace Rnn
+}  // namespace rnn
 }  // namespace onnxruntime

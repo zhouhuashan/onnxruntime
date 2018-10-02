@@ -12,9 +12,9 @@ using namespace ONNX_NAMESPACE;
 using namespace std;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
-using namespace ModelBuilder;
+using namespace modelbuilder;
 
 class ShapeInferenceTest : public ::testing::Test {
  protected:
@@ -76,7 +76,7 @@ class ShapeInferenceTest : public ::testing::Test {
     }
   }
 
-};  // namespace Test
+};  // namespace test
 
 TEST_F(ShapeInferenceTest, BasicTest) {
   Type type1({1, 50, 100});
@@ -103,5 +103,5 @@ TEST_F(ShapeInferenceTest, BasicTest) {
   CheckShapeEquality(InputShape(p_node), OutputShape(p_node));
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

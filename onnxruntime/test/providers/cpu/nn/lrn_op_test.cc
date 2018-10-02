@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(LRNTest, LRN_1) {
   OpTester test("LRN");
@@ -102,5 +102,5 @@ TEST(LRNTest, LRN_2) {
   test.RunOnCpuAndCuda();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -43,7 +43,7 @@ Status ComputePadAndOutputShape(
 
         // make sure padding is symmetric
         if (ForceSymmetricAutoPadding)
-          pad_needed = Math::roundUpPow2<int64_t, 2>(pad_needed);
+          pad_needed = math::roundUpPow2<int64_t, 2>(pad_needed);
 
         if (pad_type == AutoPadType::SAME_LOWER) {
           *pad_head = (pad_needed + 1) / 2;

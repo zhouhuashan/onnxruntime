@@ -12,10 +12,10 @@
 #include "test_utils.h"
 using namespace std;
 using namespace ONNX_NAMESPACE;
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 class XPUExecutionProvider : public IExecutionProvider {
  public:
@@ -37,5 +37,5 @@ class XPUExecutionProvider : public IExecutionProvider {
   }
 };
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

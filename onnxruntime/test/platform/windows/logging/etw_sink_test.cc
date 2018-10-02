@@ -12,9 +12,9 @@
 #include "test/common/logging/helpers.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 
 /// <summary>
 /// Test usage of the ETW sinks does not fail.
@@ -58,6 +58,6 @@ TEST(LoggingTests, TestEtwSinkCtor) {
   LOGS(*logger, WARNING) << "Two sinks aren't better than one";
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

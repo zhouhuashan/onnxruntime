@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 using ShapeAndData = std::pair<const std::vector<int64_t>, const std::vector<float>>;
 using ExpectResult = OpTester::ExpectResult;
@@ -380,5 +380,5 @@ SplitAxis2()
 SplitMiddleDimension()
 
 */
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

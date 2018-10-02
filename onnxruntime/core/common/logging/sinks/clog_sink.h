@@ -7,7 +7,7 @@
 #include "core/common/logging/sinks/ostream_sink.h"
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 /// <summary>
 /// A std::clog based ISink
 /// </summary>
@@ -17,5 +17,5 @@ class CLogSink : public OStreamSink {
   CLogSink() : OStreamSink(std::clog, /*flush*/ true) {
   }
 };
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

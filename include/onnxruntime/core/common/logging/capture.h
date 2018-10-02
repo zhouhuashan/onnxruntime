@@ -10,7 +10,7 @@
 #include "core/common/logging/severity.h"
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 
 class Logger;
 enum class DataType;
@@ -28,8 +28,8 @@ class Capture {
   @param dataType Type of the data.
   @param location The file location the log message is coming from.
   */
-  Capture(const Logger& logger, Logging::Severity severity, const char* category,
-          Logging::DataType dataType, const CodeLocation& location)
+  Capture(const Logger& logger, logging::Severity severity, const char* category,
+          logging::DataType dataType, const CodeLocation& location)
       : logger_{&logger}, severity_{severity}, category_{category}, data_type_{dataType}, location_{location} {
   }
 
@@ -71,14 +71,14 @@ class Capture {
   */
   void ProcessPrintf(msvc_printf_check const char* format, va_list args);
 
-  Logging::Severity Severity() const noexcept {
+  logging::Severity Severity() const noexcept {
     return severity_;
   }
 
   char SeverityPrefix() const noexcept {
     // Carefully setup so severity_ is a valid index
     GSL_SUPPRESS(bounds .2) {
-      return Logging::SEVERITY_PREFIX[static_cast<int>(severity_)];
+      return logging::SEVERITY_PREFIX[static_cast<int>(severity_)];
     }
   }
 
@@ -86,7 +86,7 @@ class Capture {
     return category_;
   }
 
-  Logging::DataType DataType() const noexcept {
+  logging::DataType DataType() const noexcept {
     return data_type_;
   }
 
@@ -104,12 +104,12 @@ class Capture {
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Capture);
 
   const Logger* logger_;
-  const Logging::Severity severity_;
+  const logging::Severity severity_;
   const char* category_;
-  const Logging::DataType data_type_;
+  const logging::DataType data_type_;
   const CodeLocation location_;
 
   std::ostringstream stream_;
 };
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

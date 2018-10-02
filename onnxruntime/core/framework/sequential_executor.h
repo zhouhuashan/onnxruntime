@@ -22,7 +22,7 @@ class SequentialExecutor : public IExecutor {
                          const NameMLValMap& feeds,
                          const std::vector<std::string>& output_names,
                          std::vector<MLValue>& fetches,
-                         const Logging::Logger& logger) override;
+                         const logging::Logger& logger) override;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SequentialExecutor);

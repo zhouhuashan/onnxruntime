@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 // cast from map<int64_t,TFrom> to Tensor<TCastTo>
 template <typename TFrom, typename TCastTo>
@@ -48,7 +48,7 @@ TEST(CastMap, DenseStringToFloat) {
   std::vector<float> output{-1.0f, 1.0f, 2.0f, -3.0f};
 
   RunTest(map, output, "TO_FLOAT");
-}  // namespace Test
+}  // namespace test
 
 // Test sparse input, converting from float to float
 TEST(CastMap, SparseFloatToFloat) {
@@ -145,5 +145,5 @@ TEST(CastMap, InvalidIndexInMap) {
   RunTest(map, output, "TO_INT64", 5, OpTester::ExpectResult::kExpectFailure);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -4,7 +4,7 @@
 #pragma once
 #include "core/framework/arena.h"
 namespace onnxruntime {
-namespace Test {
+namespace test {
 class AllocatorManager {
  public:
   // the allocator manager is a just for onnx runner to allocate space for input/output tensors.
@@ -26,5 +26,5 @@ class AllocatorManager {
 
   std::unordered_map<std::string, AllocatorPtr> map_;
 };
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

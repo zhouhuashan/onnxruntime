@@ -6,7 +6,7 @@
 #include "gsl/gsl"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, ArrayFeatureExtractorTest) {
   OpTester test("ArrayFeatureExtractor", 1, onnxruntime::kMLDomain);
@@ -36,5 +36,5 @@ TEST(MLOpTest, ArrayFeatureExtractorTest) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

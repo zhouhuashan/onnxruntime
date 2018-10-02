@@ -10,7 +10,7 @@
 #include "core/common/logging/logging.h"
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 /// <summary>
 /// Class that abstracts multiple ISink instances being written to.
 /// </summary>
@@ -42,5 +42,5 @@ class CompositeSink : public ISink {
 
   std::vector<std::unique_ptr<ISink>> sinks_;
 };
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

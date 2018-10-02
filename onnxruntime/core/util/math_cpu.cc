@@ -60,7 +60,7 @@
 #endif
 
 namespace onnxruntime {
-namespace Math {
+namespace math {
 
 #ifdef max
 #undef max  // Visual Studio defines this macro
@@ -470,7 +470,7 @@ void GemmBatched<float, CPUMathUtil>(
   auto y_offset = M * N;
   // loop over matrices in the batch
   for (int i = 0; i < A_batches; ++i) {
-    Math::Gemm<float, CPUMathUtil>(
+    math::Gemm<float, CPUMathUtil>(
         TransA,
         TransB,
         M,
@@ -1472,5 +1472,5 @@ float halfToFloat(uint16_t h) {
   return Eigen::half_impl::half_to_float(Eigen::half_impl::raw_uint16_to_half(h));
 }
 
-}  // namespace Math
+}  // namespace math
 }  // namespace onnxruntime

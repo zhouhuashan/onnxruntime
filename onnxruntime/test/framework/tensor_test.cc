@@ -11,7 +11,7 @@
 #include <sstream>
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 template <typename T>
 void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
   //not own the buffer
@@ -216,5 +216,5 @@ TEST(TensorTest, Int64PtrConstructor) {
   EXPECT_THAT(shape.GetDims(), testing::ElementsAre(2, 3));
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

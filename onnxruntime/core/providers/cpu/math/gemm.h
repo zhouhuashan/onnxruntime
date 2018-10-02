@@ -91,7 +91,7 @@ class Gemm final : public OpKernel {
     }
 
     // W * x
-    Math::Gemm<T_X, CPUMathUtil>(
+    math::Gemm<T_X, CPUMathUtil>(
         trans_A_,
         trans_B_,
         M,

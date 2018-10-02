@@ -12,7 +12,7 @@
 #include "core/framework/session_state.h"
 
 namespace onnxruntime {
-namespace Utils {
+namespace utils {
 
 const KernelDef* GetKernelDef(const KernelRegistryManager& kernel_registry,
                               const onnxruntime::Node& node) {
@@ -48,5 +48,5 @@ AllocatorPtr GetAllocator(const SessionState& session_state, const AllocatorInfo
   return GetAllocator(session_state.GetExecutionProviders(), allocator_info);
 }
 
-}  // namespace Utils
+}  // namespace utils
 }  // namespace onnxruntime

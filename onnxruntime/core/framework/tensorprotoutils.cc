@@ -16,7 +16,7 @@ using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 
 namespace onnxruntime {
-namespace Utils {
+namespace utils {
 std::vector<int64_t> GetTensorShapeFromTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto) {
   const auto& dims = tensor_proto.dims();
   std::vector<int64_t> tensor_shape_vec(dims.size());
@@ -56,7 +56,7 @@ common::Status GetTensorByTypeFromTensorProto(const TensorProto& tensor_proto,
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size, expected ", size_to_allocate, ", got ", preallocated_size);
   //TODO(@chasun): size_to_allocate could be zero. We shouldn't pass zero to alloc->Alloc()
   T* p_data = static_cast<T*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
-  LOTUS_RETURN_IF_ERROR(::onnxruntime::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
+  LOTUS_RETURN_IF_ERROR(::onnxruntime::utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
                                        tensor_shape,
                                        static_cast<void*>(p_data),
@@ -97,7 +97,7 @@ common::Status GetTensorByTypeFromTensorProto<std::string>(const TensorProto& te
   however restricting it to string types only alleviates this concern for other types at least. Hence the template
   specialization for string.
   */
-  LOTUS_RETURN_IF_ERROR(::onnxruntime::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
+  LOTUS_RETURN_IF_ERROR(::onnxruntime::utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
 
   return common::Status::OK();
 }
@@ -120,7 +120,7 @@ common::Status GetTensorByTypeFromTensorProto<MLFloat16>(const TensorProto& tens
     return Status(LOTUS, FAIL, "The buffer planner is not consistent with tensor buffer size");
 
   MLFloat16* p_data = static_cast<MLFloat16*>(preallocated ? preallocated : alloc->Alloc(size_to_allocate));
-  LOTUS_RETURN_IF_ERROR(::onnxruntime::Utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
+  LOTUS_RETURN_IF_ERROR(::onnxruntime::utils::TensorUtils::UnpackTensor(tensor_proto, p_data, tensor_size));
   *p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<MLFloat16>(),
                                        tensor_shape,
                                        static_cast<void*>(p_data),
@@ -140,7 +140,7 @@ Status TensorProtoToMLValue(const ONNX_NAMESPACE::TensorProto& input, AllocatorP
   return Status::OK();
 }
 
-#define LOTUS_CASE_PROTO(X, Y)                               \
+#define LOTUS_CASE_PROTO(X, Y)                                         \
   case ONNX_NAMESPACE::TensorProto_DataType::TensorProto_DataType_##X: \
     return GetTensorByTypeFromTensorProto<Y>(tensor_proto, tensor_shape, p_tensor, allocator, preallocated, preallocated_size);
 
@@ -173,5 +173,5 @@ common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
     }
   }
 }
-}  // namespace Utils
+}  // namespace utils
 }  // namespace onnxruntime

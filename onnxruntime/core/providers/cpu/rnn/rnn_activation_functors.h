@@ -12,7 +12,7 @@
 #endif
 #define RNN_UNUSED_PARAMETER LOTUS_ATTRIBUTE_UNUSED = 0
 namespace onnxruntime {
-namespace Rnn {
+namespace rnn {
 namespace detail {
 
 template <typename T>
@@ -108,5 +108,5 @@ std::function<T(T, T, T)> GetFuncByName(const std::string& name, const std::stri
 }
 
 }  // namespace detail
-}  // namespace Rnn
+}  // namespace rnn
 }  // namespace onnxruntime

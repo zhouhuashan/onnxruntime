@@ -29,7 +29,7 @@
 #include "core/framework/customregistry.h"
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 // Checks test attributes set on ABI kernels can be queried with correct values
 void VerifyTestAttributes(const MLOperatorAttributes& attrs) {
@@ -621,5 +621,5 @@ TEST(CustomKernelTests, CustomKernelWithOptionalOutput) {
   // Now run
   RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

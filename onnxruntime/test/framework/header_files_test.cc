@@ -12,7 +12,7 @@
 using namespace std::experimental::filesystem::v1;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 std::set<path> RetrieveAllHeaders(const path& include_folder_root) {
   std::set<path> headers;
@@ -67,5 +67,5 @@ TEST(HeaderFiles, EnsureAllPublicHeadersInIncludeFolder) {
   }
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

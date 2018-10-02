@@ -196,12 +196,12 @@ file(GLOB_RECURSE lotus_test_tvm_src
 
 if (lotus_ENABLE_MICROSOFT_INTERNAL)
   include(onnxruntime_unittests_internal.cmake)
-endif()  
+endif()
 
 add_library(lotus_test_utils_for_framework ${lotus_test_utils_src})
 lotus_add_include_to_target(lotus_test_utils_for_framework gtest onnx protobuf::libprotobuf)
 add_dependencies(lotus_test_utils_for_framework ${lotus_EXTERNAL_DEPENDENCIES} eigen)
-target_include_directories(lotus_test_utils_for_framework PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS})
+target_include_directories(lotus_test_utils_for_framework PUBLIC "${TEST_SRC_DIR}/util/include" PRIVATE ${eigen_INCLUDE_DIRS} ${LOTUS_ROOT})
 # Add the define for conditionally using the framework Environment class in TestEnvironment
 target_compile_definitions(lotus_test_utils_for_framework PUBLIC -DHAVE_FRAMEWORK_LIB)
 
@@ -330,7 +330,7 @@ endif()
 add_library(onnx_test_runner_common ${onnx_test_runner_common_srcs})
 lotus_add_include_to_target(onnx_test_runner_common lotus_test_utils onnx protobuf::libprotobuf)
 add_dependencies(onnx_test_runner_common eigen ${lotus_EXTERNAL_DEPENDENCIES})
-target_include_directories(onnx_test_runner_common PRIVATE ${eigen_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx)
+target_include_directories(onnx_test_runner_common PRIVATE ${eigen_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/onnx ${LOTUS_ROOT})
 set_target_properties(onnx_test_runner_common PROPERTIES FOLDER "LotusTest")
 
 onnxruntime_protobuf_generate(APPEND_PATH IMPORT_DIRS ${LOTUS_ROOT}/core/protobuf TARGET onnx_test_runner_common)
@@ -389,6 +389,7 @@ endif()
 
 add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
 target_link_libraries(onnx_test_runner PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
+target_include_directories(onnx_test_runner PRIVATE ${LOTUS_ROOT})
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
 
 if(lotus_BUILD_BENCHMARKS)
@@ -476,16 +477,14 @@ if (UNIX)
   file(GLOB lotus_shared_lib_test_srcs "${LOTUS_ROOT}/test/shared_lib/test_inference.cc")
 
   add_executable(lotus_shared_lib_test ${lotus_shared_lib_test_srcs})
-  target_include_directories(lotus_shared_lib_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(lotus_shared_lib_test PRIVATE "${PROJECT_SOURCE_DIR}/include" ${LOTUS_ROOT})
 
   target_link_libraries(lotus_shared_lib_test
     onnxruntime
     onnx
     onnx_proto
     )
-  set_target_properties(lotus_shared_lib_test PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")  
+  set_target_properties(lotus_shared_lib_test PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
   set_target_properties(lotus_shared_lib_test PROPERTIES FOLDER "LotusSharedLibTest")
 endif()
 endif()
-
-

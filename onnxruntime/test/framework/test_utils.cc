@@ -3,7 +3,7 @@
 
 #include "test_utils.h"
 namespace onnxruntime {
-namespace Test {
+namespace test {
 IExecutionProvider* TestCPUExecutionProvider() {
   static CPUExecutionProviderInfo info;
   static CPUExecutionProvider cpu_provider(info);
@@ -17,5 +17,5 @@ IExecutionProvider* TestCudaExecutionProvider() {
   return &cuda_provider;
 }
 #endif
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

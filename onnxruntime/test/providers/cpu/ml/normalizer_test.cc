@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 template <typename T>
 static void RunTest(const vector<T>& input,
@@ -178,5 +178,5 @@ TEST(Normalizer, InvalidNorm) {
   RunTest(input, dims, output, "InvalidNormValue", OpTester::ExpectResult::kExpectFailure);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

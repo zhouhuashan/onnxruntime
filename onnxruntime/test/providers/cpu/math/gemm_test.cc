@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MathOpTest, GemmNoTrans) {
   OpTester test("Gemm");
@@ -169,5 +169,5 @@ TEST(MathOpTest, GemmFalseBroadcast) {
   test.RunOnMklDnn();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

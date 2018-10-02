@@ -6,7 +6,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 static void RunTest(int64_t k,
                     const std::vector<float>& input_vals,
@@ -82,5 +82,5 @@ TEST(TopKOperator, InvalidK) {
           "k_temp > 0");
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

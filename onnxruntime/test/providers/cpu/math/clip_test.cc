@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MathOpTest, Clip) {
   OpTester test("Clip");
@@ -25,5 +25,5 @@ TEST(MathOpTest, Clip) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

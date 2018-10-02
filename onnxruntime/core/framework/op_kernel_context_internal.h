@@ -16,7 +16,7 @@ class OpKernelContextInternal : public OpKernelContext {
  public:
   explicit OpKernelContextInternal(ExecutionFrame& frame,
                                    const OpKernel& kernel,
-                                   const Logging::Logger& logger)
+                                   const logging::Logger& logger)
       : OpKernelContext(&frame, &kernel, logger) {
   }
 

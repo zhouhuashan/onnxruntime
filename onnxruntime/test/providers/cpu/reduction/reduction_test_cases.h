@@ -4,7 +4,7 @@
 #pragma once
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 struct ReductionAttribute {
   std::vector<int64_t> axes_;
   int64_t keep_dims_;
@@ -22,5 +22,5 @@ struct ReductionTestCases {
 // python generated testcases
 #include "reduction_test_cases.inl"
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

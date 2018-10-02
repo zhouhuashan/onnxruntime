@@ -30,11 +30,11 @@ Status Hardmax<float>::Compute(OpKernelContext* ctx) const {
 
   std::vector<float> rowmax_(N);
   float* rowmax_data = rowmax_.data();
-  Math::RowwiseMax<float, CPUMathUtil>(N, D, Xdata, rowmax_data, nullptr);
+  math::RowwiseMax<float, CPUMathUtil>(N, D, Xdata, rowmax_data, nullptr);
 
   Tensor* Y = ctx->Output(0, input_shape);
   float* Ydata = Y->MutableData<float>();
-  Math::Set<float, CPUMathUtil>(input_shape.Size(), 0.f, Ydata, &CPUMathUtil::Instance());
+  math::Set<float, CPUMathUtil>(input_shape.Size(), 0.f, Ydata, &CPUMathUtil::Instance());
 
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < D; ++j) {

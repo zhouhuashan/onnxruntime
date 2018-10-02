@@ -8,7 +8,7 @@
 #include <random>
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(Random, RandomNormal2DDouble) {
   OpTester test("RandomNormal");
@@ -303,5 +303,5 @@ TEST(Random, MultinomialInvalidDtype) {
 
   test.Run(OpTester::ExpectResult::kExpectFailure, "Output type must be int32 or int64");
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

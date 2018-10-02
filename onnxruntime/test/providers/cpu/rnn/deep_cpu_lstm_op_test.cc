@@ -10,7 +10,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 // copy the contents of the container to the end so the original values are duplicated
 template <typename T>
@@ -283,7 +283,7 @@ TEST(LSTMTest, MixedSequenceLengths) {
 
   // Not able to mask on Y_c for CUDA using cudnn lib
   bool run_on_gpu = false;
-  SimpleWeightsNoBiasTwoRows(run_on_gpu , "forward", Y_data, Y_h_data, Y_c_data, &seq_lengths);
+  SimpleWeightsNoBiasTwoRows(run_on_gpu, "forward", Y_data, Y_h_data, Y_c_data, &seq_lengths);
 
   // swap which one is short
   seq_lengths = {2, 1};
@@ -623,7 +623,7 @@ class LstmOpContext2x1x2x2 {
                float clip = 9999.f,
                bool input_forget = false) {
     // run with and without output_sequence to test UniDirectionalLstm handling when Y isn't returned
-    ::onnxruntime::Test::RunLstmTest(run_on_gpu, X, input_weights_, recurrent_weights_,
+    ::onnxruntime::test::RunLstmTest(run_on_gpu, X, input_weights_, recurrent_weights_,
                                      expected_Y, expected_Y_h, expected_Y_c,
                                      input_size_, batch_size, hidden_size_, seq_length,
                                      use_bias ? &bias_ : nullptr,
@@ -638,7 +638,7 @@ class LstmOpContext2x1x2x2 {
                                      activation_alphas_,
                                      activation_betas_);
 
-    ::onnxruntime::Test::RunLstmTest(run_on_gpu, X, input_weights_, recurrent_weights_,
+    ::onnxruntime::test::RunLstmTest(run_on_gpu, X, input_weights_, recurrent_weights_,
                                      expected_Y, expected_Y_h, expected_Y_c,
                                      input_size_, batch_size, hidden_size_, seq_length,
                                      use_bias ? &bias_ : nullptr,
@@ -996,5 +996,5 @@ TEST(LSTMTest, LotusRT_TestLSTMOutputWrite) {
                   nullptr, use_bias, use_peepholes);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

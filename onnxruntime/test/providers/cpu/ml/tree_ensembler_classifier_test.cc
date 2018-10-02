@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, TreeEnsembleClassifier) {
   OpTester test("TreeEnsembleClassifier", 1, onnxruntime::kMLDomain);
@@ -151,5 +151,5 @@ TEST(MLOpTest, TreeEnsembleClassifierBinary) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

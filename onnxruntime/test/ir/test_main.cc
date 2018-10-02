@@ -10,7 +10,7 @@ GTEST_API_ int main(int argc, char** argv) {
   int status = 0;
 
   try {
-    Lotus::Test::TestEnvironment test_environment{argc, argv};
+    onnxruntime::test::TestEnvironment test_environment{argc, argv};
 
     // Register Microsoft domain with min/max op_set version as 1/1.
     ONNX_NAMESPACE::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(LotusIR::kMSDomain, 1, 1);

@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 template<typename T>
 void TestNupharCopyTensorWithPrimitiveType(IExecutionProvider *nuphar_provider,
@@ -41,5 +41,5 @@ TEST(NupharCopyTensorTests, PrimitiveTypesTest) {
   TestNupharCopyTensorWithPrimitiveType<double>(nuphar_provider, nuphar_allocator, {3, 2}, {1.0, 4.0, 3.0, 2.0, 11.0, 12.0});
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

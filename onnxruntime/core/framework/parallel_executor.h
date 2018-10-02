@@ -26,20 +26,20 @@ class ParallelExecutor : public IExecutor {
                          const NameMLValMap& feeds,
                          const std::vector<std::string>& output_names,
                          std::vector<MLValue>& fetches,
-                         const Logging::Logger& logger) override;
+                         const logging::Logger& logger) override;
 
  private:
   LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ParallelExecutor);
 
-  void RunNodeAsync(size_t p_node_index, const SessionState& session_state, const Logging::Logger& logger);
+  void RunNodeAsync(size_t p_node_index, const SessionState& session_state, const logging::Logger& logger);
 
-  void EnqueueNode(size_t p_node_index, const SessionState& session_state, const Logging::Logger& logger);
+  void EnqueueNode(size_t p_node_index, const SessionState& session_state, const logging::Logger& logger);
 
   Status FetchOutput(const MLValueNameIdxMap& name_idx_map,
                      ExecutionFrame& frame,
                      const std::vector<std::string>& output_names,
                      std::vector<MLValue>& fetches,
-                     const Logging::Logger& logger);
+                     const logging::Logger& logger);
 
   std::unique_ptr<ExecutionFrame> root_frame_;
   std::vector<size_t> node_refs_;

@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(AllocatorTest, CPUAllocatorTest) {
   auto cpu_arena = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
 
@@ -73,5 +73,5 @@ TEST(AllocatorTest, MakeUniquePtrTest) {
   auto void_ptr = IAllocator::MakeUniquePtr<void>(allocator, 16);
   void_ptr = nullptr;
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -7,7 +7,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 static void RunTest(const std::vector<float>& x_vals,
                     const std::vector<float>& expected_vals,
@@ -148,5 +148,5 @@ TEST(HardmaxOperator, InvalidAxis) {
           "Invalid axis provided.");
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -18,14 +18,14 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using std::experimental::filesystem::v1::path;
 
 static std::unique_ptr<::onnxruntime::Environment> env;
-::onnxruntime::Logging::LoggingManager* default_logger;
+::onnxruntime::logging::LoggingManager* default_logger;
 static std::string logger_id("onnx_test_runner");
 
 TEST_MODULE_INITIALIZE(ModuleInitialize) {
   Logger::WriteMessage("Initialize onnxruntime");
-  default_logger = new ::onnxruntime::Logging::LoggingManager{std::unique_ptr<::onnxruntime::Logging::ISink>{new VsTestSink{}},
-                                                              ::onnxruntime::Logging::Severity::kWARNING, false,
-                                                              ::onnxruntime::Logging::LoggingManager::InstanceType::Default,
+  default_logger = new ::onnxruntime::logging::LoggingManager{std::unique_ptr<::onnxruntime::logging::ISink>{new VsTestSink{}},
+                                                              ::onnxruntime::logging::Severity::kWARNING, false,
+                                                              ::onnxruntime::logging::LoggingManager::InstanceType::Default,
                                                               &logger_id};
   auto status = ::onnxruntime::Environment::Create(env);
   if (!status.IsOK()) {

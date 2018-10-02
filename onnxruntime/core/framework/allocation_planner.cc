@@ -191,7 +191,7 @@ class PlannerImpl {
   // Find if there exists some input tensor that we can use in-place for output_arg
   bool FindReusableInput(const onnxruntime::Node& node, int output_arg_num, MLValueIndex* reusable_input) {
     auto p_output_arg = node.OutputDefs()[output_arg_num];
-    auto p_opkernel_def = Utils::GetKernelDef(kernel_registry_, node);
+    auto p_opkernel_def = utils::GetKernelDef(kernel_registry_, node);
 
     // Note: We expect a KernelDef to be available at this point. If it is not available, the
     // planner would have returned an error status earlier on.
@@ -350,7 +350,7 @@ class PlannerImpl {
       }
       // Identify where each output of this node should be allocated.
       // This is determined by the opkernel bound to the node.
-      auto p_kernelDef = Utils::GetKernelDef(graph_, kernel_registry_, step.node_index);
+      auto p_kernelDef = utils::GetKernelDef(graph_, kernel_registry_, step.node_index);
       if (nullptr == p_kernelDef) {
         std::ostringstream errormsg;
         errormsg << "No suitable kernel definition found for op " << pnode->OpType();
@@ -418,7 +418,7 @@ class PlannerImpl {
             LOTUS_ENFORCE(p_provider);
 
             thisplan.alloc_kind = AllocKind::kAllocateStatically;
-            auto p_opkernelDef = Utils::GetKernelDef(kernel_registry_, node);
+            auto p_opkernelDef = utils::GetKernelDef(kernel_registry_, node);
             if (MemTypeOnCpuExplicitly(p_opkernelDef->InputMemoryType(), index))
               // weights are not output from any node, so it's OK to put its location on CPU provider
               thisplan.location = execution_providers_.Get(onnxruntime::kCpuExecutionProvider)->GetAllocator(kMemTypeDefault)->Info();
@@ -442,7 +442,7 @@ class PlannerImpl {
       auto input_index = Index(graph_input->Name());
       SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(input_index);
       thisplan.alloc_kind = AllocKind::kPreExisting;
-      thisplan.value_type = Utils::GetMLDataType(*graph_input);
+      thisplan.value_type = utils::GetMLDataType(*graph_input);
     }
 
     GeneratePlanForWeights();
@@ -457,7 +457,7 @@ class PlannerImpl {
       for (auto node_output : pnode->OutputDefs()) {
         if (!node_output->Exists()) continue;
         auto current = Index(node_output->Name());
-        AllocPlan(current).value_type = Utils::GetMLDataType(*node_output);
+        AllocPlan(current).value_type = utils::GetMLDataType(*node_output);
         MLValueIndex reused;
         if (std::find(graph_outputs.begin(), graph_outputs.end(), node_output) != graph_outputs.end()) {
           // node_output is graph's output, so we can't reuse intermedia buffer

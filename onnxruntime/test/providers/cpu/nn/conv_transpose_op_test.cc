@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 namespace {
 
@@ -334,5 +334,5 @@ TEST(ConvTransposeTest, ConvTranspose_onnx_group) {
   TestConvTransposeOp(attrs, {X, W}, {X_shape, W_shape}, expected_vals, Y_shape);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

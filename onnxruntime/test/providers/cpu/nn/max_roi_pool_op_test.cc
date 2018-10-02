@@ -6,7 +6,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(RoIPoolTest, MaxRoiPool) {
   OpTester test("MaxRoiPool");
@@ -40,5 +40,5 @@ TEST(RoIPoolTest, MaxRoiPool) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

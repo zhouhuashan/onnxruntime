@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(SqueezeOpTest, Squeeze_1) {
   OpTester test("Squeeze");
@@ -71,5 +71,5 @@ TEST(SqueezeOpTest, BadAxes) {
   // Expect failure.
   test.RunOnCpuAndCuda(OpTester::ExpectResult::kExpectFailure, "Dimension of input 0 must be 1 instead of 3");
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

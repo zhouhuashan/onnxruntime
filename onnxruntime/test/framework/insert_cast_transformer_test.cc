@@ -11,7 +11,7 @@
 
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 typedef std::vector<onnxruntime::NodeArg*> ArgMap;
 TEST(TransformerTest, InsertCastGPUTest) {
   auto model = std::make_shared<onnxruntime::Model>("test");
@@ -124,5 +124,5 @@ TEST(TransformerTest, InsertCastAllCPUTest) {
     EXPECT_EQ((*it)->OpType(), "Cast");
   }
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

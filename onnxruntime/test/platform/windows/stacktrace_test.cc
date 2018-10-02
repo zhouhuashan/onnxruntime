@@ -11,7 +11,7 @@
 #include "gmock/gmock.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 using namespace ::testing;
 //TVM is not working with StackTrace now.
@@ -47,6 +47,6 @@ TEST(StacktraceTests, BasicTests) {
   }
 }
 #endif
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime
 #endif

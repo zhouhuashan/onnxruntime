@@ -14,6 +14,12 @@ using namespace ONNX_NAMESPACE;
 
 std::once_flag schemaRegistrationOnceFlag;
 
+Status Environment::Create(std::unique_ptr<Environment>& environment) {
+  environment = std::unique_ptr<Environment>(new Environment());
+  auto status = environment->Initialize();
+  return status;
+}
+
 Status Environment::Initialize() {
   auto status = Status::OK();
 

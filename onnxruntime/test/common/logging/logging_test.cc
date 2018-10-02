@@ -12,7 +12,7 @@
 #include "test/common/logging/helpers.h"
 
 using namespace onnxruntime;
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 using InstanceType = LoggingManager::InstanceType;
 
 // if we pull in the whole 'testing' namespace we get warnings from date.h as both use '_' in places.
@@ -68,7 +68,7 @@ TEST_F(LoggingTestsFixture, TestWhereMacro) {
   EXPECT_CALL(*sink_ptr, SendImpl(testing::_, HasSubstr(logid),
                                   Property(&Capture::Location,
                                            AllOf(Field(&CodeLocation::line_num, Eq(std::ref(log_line))),
-                                                 Field(&CodeLocation::file_and_path, HasSubstr("onnxruntime")),            // path
+                                                 Field(&CodeLocation::file_and_path, HasSubstr("onnxruntime")),      // path
                                                  Field(&CodeLocation::file_and_path, HasSubstr("logging_test.cc")),  // filename
                                                  Field(&CodeLocation::function, HasSubstr(function))))))
       .WillRepeatedly(PrintArgs());
@@ -231,7 +231,7 @@ TEST_F(LoggingTestsFixture, TestVLog) {
 
 #ifdef _DEBUG
   // test we can globally disable
-  Logging::vlog_enabled = false;
+  logging::vlog_enabled = false;
   VLOGS(*logger, 0) << "Should be ignored.";  // ignored as disabled
 #endif
 }

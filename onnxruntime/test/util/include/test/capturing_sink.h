@@ -9,11 +9,11 @@
 #include "date/date.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 
-class CapturingSink : public Logging::ISink {
+class CapturingSink : public logging::ISink {
  public:
   void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override {
     // operator for formatting of timestamp in ISO8601 format including microseconds
@@ -33,5 +33,5 @@ class CapturingSink : public Logging::ISink {
  private:
   std::vector<std::string> messages_;
 };
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

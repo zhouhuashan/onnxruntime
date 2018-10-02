@@ -7,7 +7,7 @@
 #include "test/providers/cpu/reduction/reduction_test_cases.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 template <typename OutT>
 void TestReduceOp(const std::string& op,
@@ -909,5 +909,5 @@ TEST(ReductionOpTest, ArgMin_int32) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

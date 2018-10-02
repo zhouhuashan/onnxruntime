@@ -14,7 +14,7 @@ using namespace ONNX_NAMESPACE;
 using namespace std;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 typedef std::vector<onnxruntime::NodeArg*> ArgMap;
 
 std::shared_ptr<onnxruntime::Model> DummyGraphWithClip() {
@@ -260,5 +260,5 @@ TEST(ExecutionFrameTest, MemPatternTest) {
   EXPECT_EQ(p->GetBlock(3)->offset_, 0);
   EXPECT_EQ(p->GetBlock(4)->offset_, sizeof(float) * 4);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

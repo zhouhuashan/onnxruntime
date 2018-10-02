@@ -49,22 +49,22 @@ const std::unordered_map<int, MLValue>& SessionState::GetInitializedTensors() co
   return initialized_tensors_;
 }
 
-SessionState& SessionState::SetLogger(const Logging::Logger& logger) {
+SessionState& SessionState::SetLogger(const logging::Logger& logger) {
   logger_ = &logger;
   return *this;
 }
 
-const Logging::Logger& SessionState::Logger() const {
+const logging::Logger& SessionState::Logger() const {
   // DefaultLogger either throws or returns a valid logger.
-  const Logging::Logger* logger = logger_ != nullptr ? logger_ : &Logging::LoggingManager::DefaultLogger();
+  const logging::Logger* logger = logger_ != nullptr ? logger_ : &logging::LoggingManager::DefaultLogger();
   return *logger;
 }
 
-void SessionState::SetProfiler(Profiling::Profiler& profiler) {
+void SessionState::SetProfiler(profiling::Profiler& profiler) {
   profiler_ = &profiler;
 }
 
-::onnxruntime::Profiling::Profiler& SessionState::Profiler() const {
+::onnxruntime::profiling::Profiler& SessionState::Profiler() const {
   return *profiler_;
 }
 

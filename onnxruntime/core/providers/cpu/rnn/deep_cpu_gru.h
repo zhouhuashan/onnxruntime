@@ -36,8 +36,8 @@ class DeepCpuGruOp final : public OpKernel {
     clip_ = info.GetAttrOrDefault<float>("clip", std::numeric_limits<float>::max());
     LOTUS_ENFORCE(clip_ > 0.f);
 
-    direction_ = Rnn::detail::MakeDirection(direction);
-    num_directions_ = direction_ == Rnn::detail::Direction::kBidirectional ? 2 : 1;
+    direction_ = rnn::detail::MakeDirection(direction);
+    num_directions_ = direction_ == rnn::detail::Direction::kBidirectional ? 2 : 1;
 
     if (activation_func_names.empty()) {
       for (int i = 0; i < num_directions_; ++i) {
@@ -48,7 +48,7 @@ class DeepCpuGruOp final : public OpKernel {
 
     LOTUS_ENFORCE(activation_func_names.size() == num_directions_ * 2);
 
-    activation_funcs_ = Rnn::detail::ActivationFuncs(activation_func_names,
+    activation_funcs_ = rnn::detail::ActivationFuncs(activation_func_names,
                                                      activation_func_alphas,
                                                      activation_func_betas);
   }
@@ -58,14 +58,14 @@ class DeepCpuGruOp final : public OpKernel {
   ~DeepCpuGruOp() override = default;
 
  private:
-  Rnn::detail::Direction direction_;
+  rnn::detail::Direction direction_;
   int num_directions_;
 
   int hidden_size_ = 0;
   float clip_;
   int linear_before_reset_ = 0;
 
-  Rnn::detail::ActivationFuncs activation_funcs_;
+  rnn::detail::ActivationFuncs activation_funcs_;
 
   // Threadpool for operator. If concurrent Compute calls are possible, it will be shared
   // across them. mutable due to this.

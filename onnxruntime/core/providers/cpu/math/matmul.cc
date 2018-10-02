@@ -27,7 +27,7 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
 
   // TODO: replace it with GemmBatch for performance, it's OK for now as GemmBatch unrolls as well
   for (int i = 0; i < helper.OutputOffsets().size(); i++) {
-    Math::Gemm<float, CPUMathUtil>(
+    math::Gemm<float, CPUMathUtil>(
         CblasNoTrans,
         CblasNoTrans,
         static_cast<int>(helper.M()),

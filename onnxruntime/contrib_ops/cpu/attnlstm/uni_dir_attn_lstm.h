@@ -14,16 +14,15 @@
 namespace onnxruntime {
 namespace ml {
 
-namespace deepcpu = ::onnxruntime::Rnn::detail::deepcpu;
-namespace Logging = ::onnxruntime::Logging;
+namespace deepcpu = ::onnxruntime::rnn::detail::deepcpu;
+namespace logging = ::onnxruntime::logging;
 
 using ::onnxruntime::AllocatorPtr;
 using ::onnxruntime::IAllocatorUniquePtr;
 using ::onnxruntime::TaskThreadPool;
 using ::onnxruntime::ml::detail::ActivationInfo;
-using ::onnxruntime::Rnn::detail::ActivationFuncs;
-using ::onnxruntime::Rnn::detail::Direction;
-
+using ::onnxruntime::rnn::detail::ActivationFuncs;
+using ::onnxruntime::rnn::detail::Direction;
 
 namespace rnn {
 namespace detail {
@@ -35,7 +34,7 @@ template <typename T>
 class UniDirectionalAttnLstm {
  public:
   UniDirectionalAttnLstm(AllocatorPtr allocator,
-                         const Logging::Logger& logger,
+                         const logging::Logger& logger,
                          const int seq_length,
                          const int batch_size,
                          const int input_size,
@@ -43,7 +42,7 @@ class UniDirectionalAttnLstm {
                          Direction direction,
                          const bool input_forget,
                          AttentionWrapper<T>& attention_wrapper,
-                         const gsl::span<const T>& input_weights,    // pure input weights + input weights for attention state,
+                         const gsl::span<const T>& input_weights,  // pure input weights + input weights for attention state,
                          const gsl::span<const T>& recurrent_weights,
                          const gsl::span<const T>& bias,
                          const gsl::span<const T>& peephole_weights,
@@ -102,7 +101,7 @@ class UniDirectionalAttnLstm {
   void LoadBias(const gsl::span<const T>& WbRb_values);
 
   AllocatorPtr allocator_;
-  const Logging::Logger& logger_;
+  const logging::Logger& logger_;
 
   int seq_length_;
   int batch_size_;

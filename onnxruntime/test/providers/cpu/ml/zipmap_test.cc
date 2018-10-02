@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 template <typename T>
 void TestHelper(const std::vector<T>& classes,
                 const std::string& type,
@@ -71,5 +71,5 @@ TEST(MLOpTest, ZipMapOpInt64FloatStrideMoreThanNumLabels) {
 TEST(MLOpTest, ZipMapOpInt64FloatStrideLessThanNumLabels) {
   TestHelper<int64_t>({10, 20, 30}, "int64_t", {3, 2}, OpTester::ExpectResult::kExpectFailure);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

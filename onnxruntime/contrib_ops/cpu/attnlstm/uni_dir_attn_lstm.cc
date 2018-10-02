@@ -1,6 +1,6 @@
 #include "uni_dir_attn_lstm.h"
 
-using namespace onnxruntime::Rnn::detail;
+using namespace onnxruntime::rnn::detail;
 
 namespace onnxruntime {
 namespace ml {
@@ -9,14 +9,14 @@ namespace detail {
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
 
 template <typename T>
 UniDirectionalAttnLstm<T>::UniDirectionalAttnLstm(AllocatorPtr allocator,
-                                                  const Logging::Logger& logger,
+                                                  const logging::Logger& logger,
                                                   const int seq_length,
                                                   const int batch_size,
                                                   const int input_size,
@@ -138,7 +138,7 @@ void UniDirectionalAttnLstm<T>::LoadAllWeights(const gsl::span<const T>& input_w
                                                const gsl::span<const T>& bias) {
   DumpMatrix("W[iofc]_Transposed", input_weights.data(), 4 * hidden_size_, (attention_size_ + input_size_));
   LoadWeightsWithTranspose(input_weights, weights_ifoc_, hidden_size_, input_size_, input_size_ + attention_size_, 0);
-  DumpMatrix("W[ifoc]", weights_ifoc_.data(), input_size_, 4*hidden_size_);
+  DumpMatrix("W[ifoc]", weights_ifoc_.data(), input_size_, 4 * hidden_size_);
   LoadWeightsWithTranspose(input_weights, weights_attn_ifoc_, hidden_size_, attention_size_, input_size_ + attention_size_, input_size_);
   DumpMatrix("W[ifoc]_Attn", weights_attn_ifoc_.data(), attention_size_, 4 * hidden_size_);
 
@@ -387,10 +387,10 @@ void UniDirectionalAttnLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
 
       span_T_iter step_out_IFOC = output_ifoc_.begin() + (step * batch_size_) * hidden_size_x4;
 
-    // shape is [ attention_size_ ]
+      // shape is [ attention_size_ ]
       const gsl::span<const T> attention = attention_wrapper_.GetAttnStates();
 
-    #if defined(HAVE_PARALLELIZED_GEMM)
+#if defined(HAVE_PARALLELIZED_GEMM)
       // Xt*(W[ifoc]^T) = INPUTt * W[ifoc]^T + At-1 * WA[ifoc]
       ComputeGemm(batch_size_, hidden_size_x4, attention_size_, T{1.0},
                   attention.cbegin(), attention.cend(),  // At-1
@@ -399,7 +399,7 @@ void UniDirectionalAttnLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
                   hidden_size_x4, T{1.0},
                   step_out_IFOC, output_ifoc_.end(),  // input contains Xt*(W[ifoc]^T)
                   hidden_size_x4);
-    
+
       // calculate Xt*(W[ifoc]^T) + Ht-1*R[ifoc]
       ComputeGemm(batch_size_, hidden_size_x4, hidden_size_, T{1.0},
                   previous_state, previous_state_end,  // Ht-1
@@ -408,7 +408,7 @@ void UniDirectionalAttnLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
                   hidden_size_x4, T{1.0},
                   step_out_IFOC, output_ifoc_.end(),  // input contains Xt*(W[ifoc]^T)
                   hidden_size_x4);
-    #else
+#else
       auto hidden_gemm_compute = [&](int thread_id) {
         int local_cols = hidden_size_x4 / hidden_num_threads_;
         int start_col = thread_id * local_cols;
@@ -419,12 +419,12 @@ void UniDirectionalAttnLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
 
         // Xt*(W[ifoc]^T) = INPUTt * W[ifoc]^T + At-1 * WA[ifoc]^T
         ComputeGemm(batch_size_, compute_cols, attention_size_, T{1.0},
-          attention.cbegin(), attention.cend(),  // At-1
-          attention_size_,
+                    attention.cbegin(), attention.cend(),  // At-1
+                    attention_size_,
                     weights_attn_ifoc_.cbegin() + start_col, weights_attn_ifoc_.cend(),  // WA[ifoc]
-          hidden_size_x4, T{1.0},
+                    hidden_size_x4, T{1.0},
                     step_out_IFOC + start_col, output_ifoc_.end(),  // input contains Xt*(W[ifoc]^T)
-          hidden_size_x4);
+                    hidden_size_x4);
 
         // calculate Xt*(W[ifoc]^T) + Ht-t*R[ifoc]
         ComputeGemm(batch_size_, compute_cols, hidden_size_, T{1.0},
@@ -439,7 +439,7 @@ void UniDirectionalAttnLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
       ExecuteLambdaInParallel("Calculating Xt*(W[ifoc]^T) + Ht-1*R[ifoc])" + seqno_str,
                               hidden_gemm_compute, hidden_num_threads_, 1, ttp_, logger_);
 
-    #endif
+#endif
 
       span_T_iter batched_output, batched_output_end;
       if (output_sequence) {
@@ -498,7 +498,6 @@ void UniDirectionalAttnLstm<T>::Compute(const gsl::span<const T>& inputs_arg,
   }
 }
 
-
 template <typename T>
 void UniDirectionalAttnLstm<T>::GateComputations(span_T_iter& out, span_T_iter& out_end,
                                                  span_T_iter& C_prev, span_T_iter& C_prev_end,  // Ct-1 value not 'ct'. using 'C' for clarity
@@ -552,7 +551,7 @@ void UniDirectionalAttnLstm<T>::GateComputations(span_T_iter& out, span_T_iter& 
     } else {
       if (use_peepholes_) {
         deepcpu::elementwise_product(
-          pCprev_hidden_size, SafeRawConstPointer<const T>(peephole_f_, 0, hidden_size_), pf, hidden_size_);
+            pCprev_hidden_size, SafeRawConstPointer<const T>(peephole_f_, 0, hidden_size_), pf, hidden_size_);
       }
 
       const float* pBf = use_bias_ ? SafeRawConstPointer<T>(bias_WRf_, 0, hidden_size_) : nullptr;
@@ -572,8 +571,7 @@ void UniDirectionalAttnLstm<T>::GateComputations(span_T_iter& out, span_T_iter& 
     // Output Gate
     if (use_peepholes_) {
       deepcpu::elementwise_product(
-        pCprev_hidden_size, SafeRawConstPointer<const T>(peephole_o_, 0, hidden_size_), po, hidden_size_);
-
+          pCprev_hidden_size, SafeRawConstPointer<const T>(peephole_o_, 0, hidden_size_), po, hidden_size_);
     }
 
     // calculate 'ot'
@@ -633,7 +631,6 @@ void UniDirectionalAttnLstm<T>::SetNumThreads() {
   int hmt = threads;
   batch_parallel_ = false;
 
-
   // For readability of the below logic
 
   // TODO: Temperately removed path: parallelize by partitioning the batch rows,
@@ -655,7 +652,6 @@ void UniDirectionalAttnLstm<T>::SetNumThreads() {
 
   VLOGS(logger_, 1) << "Hidden Threads : " << hidden_num_threads_;
 }
-
 
 template class UniDirectionalAttnLstm<float>;
 

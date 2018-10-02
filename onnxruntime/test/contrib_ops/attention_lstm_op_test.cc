@@ -7,7 +7,7 @@
 #include <algorithm>
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 // copy the contents of the container to the end so the original values are duplicated
 template <typename T>
@@ -20,7 +20,6 @@ T DuplicateContainer(const T& container) {
   return doubled;
 }
 
-
 // Test data is generated using attention_lstm_data_gen.py, which covers the all options
 // that need to be specified to generate different cases here. Also from the file, it is
 // easy to understand how the operate works in Tensorflow.
@@ -32,12 +31,12 @@ static void RunAttnLstmTest(
     const std::vector<float>& Y_h_data,
     const std::vector<float>& Y_c_data,
 
-    const std::vector<float>& MW_data, // memory layer weight: [num_directions, memory_depth,  am_attn_depth]
-    const std::vector<float>& QW_data, // query layer weight: [num_directions, query_layer_depth=cell_hidden_size,  am_attn_depth]
-    const std::vector<float>& attn_v_data, // [num_directions, am_attn_depth]
-    const std::vector<float>& M_data, // memory sequence: [batch_size, maxMemoryTimeStep, memory_depth]
-    const std::vector<int>* memory_sequence_lengths, // [batch_size]
-    const std::vector<float>* attn_layer_weights, // [num_directions, cell_hidden_size + memory_depth, aw_hidden_depth]
+    const std::vector<float>& MW_data,                // memory layer weight: [num_directions, memory_depth,  am_attn_depth]
+    const std::vector<float>& QW_data,                // query layer weight: [num_directions, query_layer_depth=cell_hidden_size,  am_attn_depth]
+    const std::vector<float>& attn_v_data,            // [num_directions, am_attn_depth]
+    const std::vector<float>& M_data,                 // memory sequence: [batch_size, maxMemoryTimeStep, memory_depth]
+    const std::vector<int>* memory_sequence_lengths,  // [batch_size]
+    const std::vector<float>* attn_layer_weights,     // [num_directions, cell_hidden_size + memory_depth, aw_hidden_depth]
 
     int64_t x_depth,
     int batch_size,
@@ -62,7 +61,6 @@ static void RunAttnLstmTest(
     std::vector<std::string> activations = {},
     std::vector<float> activation_alphas = {},
     std::vector<float> activation_betas = {}) {
-
   const int64_t input_size = x_depth + aw_attn_size;
 
   OpTester test("AttnLSTM", 1, onnxruntime::kMSDomain);
@@ -89,7 +87,7 @@ static void RunAttnLstmTest(
   test.AddAttribute<int64_t>("input_forget", input_forget);
   if (clip < 0.0f) clip = std::numeric_limits<float>::max();
   test.AddAttribute<float>("clip", clip);
-  
+
   std::vector<int64_t> X_dims = {seq_length, batch_size, x_depth};
   std::vector<int64_t> W_dims = {num_directions, 4 * hidden_size, input_size};
   std::vector<int64_t> R_dims = {num_directions, 4 * hidden_size, hidden_size};
@@ -185,7 +183,6 @@ static void RunAttnLstmTest(
   test.Run();
 }
 
-
 template <typename T>
 static std::vector<T> ConcatDup(const std::vector<T>& src) {
   std::vector<T> dst(2 * src.size());
@@ -193,7 +190,6 @@ static std::vector<T> ConcatDup(const std::vector<T>& src) {
   std::copy(src.cbegin(), src.cend(), dst.begin() + src.size());
   return dst;
 }
-
 
 template <typename T>
 static std::vector<T> ConcatLastDim(const std::vector<T>& a, const std::vector<T>& b, int depth) {
@@ -204,7 +200,6 @@ static std::vector<T> ConcatLastDim(const std::vector<T>& a, const std::vector<T
   }
   return dst;
 }
-
 
 template <typename T>
 static std::vector<T> Transpose2D(const std::vector<T>& src, int num_rows, int num_cols) {
@@ -217,7 +212,6 @@ static std::vector<T> Transpose2D(const std::vector<T>& src, int num_rows, int n
   }
   return dst;
 }
-
 
 template <typename T>
 static std::vector<T> ConvertBatchSeqToSeqBatch(
@@ -235,7 +229,6 @@ static std::vector<T> ConvertBatchSeqToSeqBatch(
   return sb;
 }
 
-
 // This  convert seq in [*, 4*cell_hidden_size] from: I, J(C), F, O into: I O, F, C(J)
 // for weights from semantic TF to Onnx semantic.
 template <typename T>
@@ -245,14 +238,13 @@ static std::vector<T> ConvertIcfoToIofc(const std::vector<T>& icfo, int cell_hid
     auto src = icfo.cbegin() + i;
     auto dst = iofc.begin() + i;
 
-  std::copy(src + 0 * cell_hidden_size, src + 1 * cell_hidden_size, dst + 0 * cell_hidden_size);
+    std::copy(src + 0 * cell_hidden_size, src + 1 * cell_hidden_size, dst + 0 * cell_hidden_size);
     std::copy(src + 3 * cell_hidden_size, src + 4 * cell_hidden_size, dst + 1 * cell_hidden_size);
     std::copy(src + 2 * cell_hidden_size, src + 3 * cell_hidden_size, dst + 2 * cell_hidden_size);
     std::copy(src + 1 * cell_hidden_size, src + 2 * cell_hidden_size, dst + 3 * cell_hidden_size);
   }
   return iofc;
 }
-
 
 //Settings for this group of test data
 static const int batch_size = 1;
@@ -276,7 +268,17 @@ static std::vector<int> s_mem_seq_lenghts{3};
 static const std::vector<int> s_mem_seq_lenghts_2batch{3, 2};
 
 // [batch_size=1, input_max_step=3, input_only_depth=3]
-static std::vector<float> s_X_T_data{0.25f, -1.5f, 1.0f, 0.25f, -0.5f, -1.5f, 0.1f, 1.5f, 0.25f, };
+static std::vector<float> s_X_T_data{
+    0.25f,
+    -1.5f,
+    1.0f,
+    0.25f,
+    -0.5f,
+    -1.5f,
+    0.1f,
+    1.5f,
+    0.25f,
+};
 
 //real seq lens for X
 static std::vector<int> s_seq_lengths{3};
@@ -287,7 +289,7 @@ static std::vector<float> s_memory_layer_weight{4.0f, 2.0f, 0.5f, -8.0f, -2.0f, 
 // [num_directions, query_depth(cell_hidden_size)=3, am_attn_size=2]
 static std::vector<float> s_query_layer_weight{-0.125f, -0.25f, 0.1f, -0.125f, -0.5f, 1.5f};
 
-// [num_directions, memory_depth+cell_hidden_size=3+3=6, aw_attn_size=2] 
+// [num_directions, memory_depth+cell_hidden_size=3+3=6, aw_attn_size=2]
 static std::vector<float> s_attn_layer_weight{1.5f, 1.0f, 0.1f, -0.25f, 0.1f, 1.0f, -0.25f, -0.125f, -1.5f, -1.5f, -0.25f, 1.5f};
 
 //[2]
@@ -295,24 +297,22 @@ static std::vector<float> s_attn_v{-0.25f, 0.1f};
 
 //lstm kernel weights, [8, 12]  8 = x_depth + aw_attn_size + cell_hidden_size, 12 = 4 * cell_hidden_size (ijfo)
 static std::vector<float> s_WR_T_data_ICFO{
-  //  ---- x_depth lines of attention input weight
-  -1.0f, -1.5f, -0.5f, -1.5f, 0.1f, -0.5f, 0.5f, -1.5f, -0.25f, 1.0f, -0.125f, -0.25f,
-  -1.0f, -0.5f, 0.25f, -0.125f, -0.25f, -1.0f, 1.5f, 1.0f, -1.5f, 0.25f, 0.5f, 0.5f,
-  1.5f, -0.5f, -1.0f, -0.5f, 0.1f, 1.0f, 0.1f, -0.5f, -0.125f, -1.5f, 0.1f, 1.5f,
-  //  ---- aw_attn_size lines of attention input weight
-  1.0f, -0.5f, -0.5f, -1.5f, -0.125f, -0.125f, 0.25f, -0.25f, -0.25f, 0.1f, -0.5f, -0.25f,
-  0.25f, -0.5f, 0.1f, -0.5f, -0.25f, 0.25f, 0.1f, 0.5f, -1.5f, -0.125f, 1.5f, 0.5f,
-  //  ---- cell_hidden_size lines of attention input weight
-  -1.5f, 1.0f, 0.1f, -0.5f, -1.5f, 0.5f, -1.0f, 0.25f, -0.25f, 1.0f, 0.25f, 0.5f,
-  -0.125f, 0.1f, -1.0f, -1.0f, 0.1f, 1.5f, -1.5f, 0.1f, 1.5f, 0.5f, 0.25f, 1.0f,
-  1.0f, -1.5f, -0.25f, 0.5f, -0.25f, 1.0f, -1.0f, 0.25f, -0.5f, 0.5f, -1.5f, 0.5f};
+    //  ---- x_depth lines of attention input weight
+    -1.0f, -1.5f, -0.5f, -1.5f, 0.1f, -0.5f, 0.5f, -1.5f, -0.25f, 1.0f, -0.125f, -0.25f,
+    -1.0f, -0.5f, 0.25f, -0.125f, -0.25f, -1.0f, 1.5f, 1.0f, -1.5f, 0.25f, 0.5f, 0.5f,
+    1.5f, -0.5f, -1.0f, -0.5f, 0.1f, 1.0f, 0.1f, -0.5f, -0.125f, -1.5f, 0.1f, 1.5f,
+    //  ---- aw_attn_size lines of attention input weight
+    1.0f, -0.5f, -0.5f, -1.5f, -0.125f, -0.125f, 0.25f, -0.25f, -0.25f, 0.1f, -0.5f, -0.25f,
+    0.25f, -0.5f, 0.1f, -0.5f, -0.25f, 0.25f, 0.1f, 0.5f, -1.5f, -0.125f, 1.5f, 0.5f,
+    //  ---- cell_hidden_size lines of attention input weight
+    -1.5f, 1.0f, 0.1f, -0.5f, -1.5f, 0.5f, -1.0f, 0.25f, -0.25f, 1.0f, 0.25f, 0.5f,
+    -0.125f, 0.1f, -1.0f, -1.0f, 0.1f, 1.5f, -1.5f, 0.1f, 1.5f, 0.5f, 0.25f, 1.0f,
+    1.0f, -1.5f, -0.25f, 0.5f, -0.25f, 1.0f, -1.0f, 0.25f, -0.5f, 0.5f, -1.5f, 0.5f};
 
-  //lstm_cell_bias, [12] = 4 * 3, append extra zero for onnix
+//lstm_cell_bias, [12] = 4 * 3, append extra zero for onnix
 std::vector<float> s_lstm_cell_bias_ICFO{
-  0.25f, -0.25f, 0.1f,     1.0f, 1.5f, -1.5f,     1.5f, -1.0f, -0.25f,     1.0f, -0.25f, 1.0f,
-  0.0f, 0.0f, 0.0f,        0.0f, 0.0f, 0.0f,      0.0f, 0.0f, 0.0f,        0.0f, 0.0f, 0.0f
-};
-
+    0.25f, -0.25f, 0.1f, 1.0f, 1.5f, -1.5f, 1.5f, -1.0f, -0.25f, 1.0f, -0.25f, 1.0f,
+    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 
 TEST(AttnLSTMTest, ForwardLstmWithBahdanauAMZeroAttention) {
   std::vector<float> X_data = ConvertBatchSeqToSeqBatch(s_X_T_data, batch_size, input_max_step, input_only_depth);
@@ -335,7 +335,7 @@ TEST(AttnLSTMTest, ForwardLstmWithBahdanauAMZeroAttention) {
 
   std::vector<float> B_data = ConvertIcfoToIofc(s_lstm_cell_bias_ICFO, cell_hidden_size);
 
-// [1, 3, 3]
+  // [1, 3, 3]
   std::vector<float> Y_T_data{
       0.0978363082f, 0.105625421f, 0.116753615f,
       0.277829766f, 0.166462898f, -0.119725525f,
@@ -343,21 +343,19 @@ TEST(AttnLSTMTest, ForwardLstmWithBahdanauAMZeroAttention) {
 
   // convert to onnx output semantic, should be same in this case.
   std::vector<float> Y_data = ConvertBatchSeqToSeqBatch(
-    Y_T_data, batch_size, input_max_step, cell_hidden_size);
+      Y_T_data, batch_size, input_max_step, cell_hidden_size);
 
   const std::vector<float> Y_h_data{};
   const std::vector<float> Y_c_data{};
 
   RunAttnLstmTest(
-    X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
-    s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &zero_attn_layer_weight,
-    input_only_depth, batch_size, cell_hidden_size, input_max_step,
-    memory_max_step, memory_depth, am_attn_size, aw_attn_size,
-    &B_data, nullptr, nullptr, nullptr, &s_seq_lengths,
-    "forward", -9999.f, true, false
-  );
+      X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
+      s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &zero_attn_layer_weight,
+      input_only_depth, batch_size, cell_hidden_size, input_max_step,
+      memory_max_step, memory_depth, am_attn_size, aw_attn_size,
+      &B_data, nullptr, nullptr, nullptr, &s_seq_lengths,
+      "forward", -9999.f, true, false);
 }
-
 
 TEST(AttnLSTMTest, ForwardLstmWithBahdanauAM) {
   std::vector<float> X_data = ConvertBatchSeqToSeqBatch(s_X_T_data, batch_size, input_max_step, input_only_depth);
@@ -376,9 +374,9 @@ TEST(AttnLSTMTest, ForwardLstmWithBahdanauAM) {
 
   // [1, 3, 3]
   std::vector<float> Y_T_data{
-    0.0978363082f, 0.105625421f,  0.116753615f,
-    0.236107856f,  0.195716992f, -0.133973882f,
-    -0.029754376f, 0.274325848f, -0.387993187f};
+      0.0978363082f, 0.105625421f, 0.116753615f,
+      0.236107856f, 0.195716992f, -0.133973882f,
+      -0.029754376f, 0.274325848f, -0.387993187f};
 
   // convert to onnx output semantic, should be same in this case.
   std::vector<float> Y_data = ConvertBatchSeqToSeqBatch(
@@ -388,14 +386,13 @@ TEST(AttnLSTMTest, ForwardLstmWithBahdanauAM) {
   const std::vector<float> Y_c_data{};
 
   RunAttnLstmTest(
-    X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
-    s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &s_attn_layer_weight,
-    input_only_depth, batch_size, cell_hidden_size, input_max_step,
-    memory_max_step, memory_depth, am_attn_size, aw_attn_size,
-    &B_data, nullptr, nullptr, nullptr, &s_seq_lengths,
-    "forward", -9999.f, true, false);
+      X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
+      s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &s_attn_layer_weight,
+      input_only_depth, batch_size, cell_hidden_size, input_max_step,
+      memory_max_step, memory_depth, am_attn_size, aw_attn_size,
+      &B_data, nullptr, nullptr, nullptr, &s_seq_lengths,
+      "forward", -9999.f, true, false);
 }
-
 
 TEST(AttnLSTMTest, ForwardLstmWithBahdanauAMShortenSeqLength) {
   std::vector<float> X_data = ConvertBatchSeqToSeqBatch(s_X_T_data, batch_size, input_max_step, input_only_depth);
@@ -428,14 +425,13 @@ TEST(AttnLSTMTest, ForwardLstmWithBahdanauAMShortenSeqLength) {
   std::vector<int> shortenSeqLen{2};
 
   RunAttnLstmTest(
-    X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
-    s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &s_attn_layer_weight,
-    input_only_depth, batch_size, cell_hidden_size, input_max_step,
-    memory_max_step, memory_depth, am_attn_size, aw_attn_size,
-    &B_data, nullptr, nullptr, nullptr, &shortenSeqLen,
-    "forward", -9999.f, true, false);
+      X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
+      s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &s_attn_layer_weight,
+      input_only_depth, batch_size, cell_hidden_size, input_max_step,
+      memory_max_step, memory_depth, am_attn_size, aw_attn_size,
+      &B_data, nullptr, nullptr, nullptr, &shortenSeqLen,
+      "forward", -9999.f, true, false);
 }
-
 
 TEST(AttnLSTMTest, ReverseLstmWithBahdanauAMShortenSeqLength) {
   std::vector<float> X_data = ConvertBatchSeqToSeqBatch(s_X_T_data, batch_size, input_max_step, input_only_depth);
@@ -454,10 +450,9 @@ TEST(AttnLSTMTest, ReverseLstmWithBahdanauAMShortenSeqLength) {
 
   // [1, 3, 3]
   std::vector<float> Y_T_data{
-      -0.229537353f,  0.136488736f,  -0.414591223f,
-      0.127119571f,   0.164731115f,  -0.1136849f,
-      0.0f,           0.0f,           0.0f
-  };
+      -0.229537353f, 0.136488736f, -0.414591223f,
+      0.127119571f, 0.164731115f, -0.1136849f,
+      0.0f, 0.0f, 0.0f};
 
   // convert to onnx output semantic, should be same in this case.
   std::vector<float> Y_data = ConvertBatchSeqToSeqBatch(
@@ -469,14 +464,13 @@ TEST(AttnLSTMTest, ReverseLstmWithBahdanauAMShortenSeqLength) {
   std::vector<int> shortenSeqLen{2};
 
   RunAttnLstmTest(
-    X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
-    s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &s_attn_layer_weight,
-    input_only_depth, batch_size, cell_hidden_size, input_max_step,
-    memory_max_step, memory_depth, am_attn_size, aw_attn_size,
-    &B_data, nullptr, nullptr, nullptr, &shortenSeqLen,
-    "reverse", -9999.f, true, false);
+      X_data, W_data, R_data, Y_data, Y_h_data, Y_c_data,
+      s_memory_layer_weight, s_query_layer_weight, s_attn_v, s_M_data, &s_mem_seq_lenghts, &s_attn_layer_weight,
+      input_only_depth, batch_size, cell_hidden_size, input_max_step,
+      memory_max_step, memory_depth, am_attn_size, aw_attn_size,
+      &B_data, nullptr, nullptr, nullptr, &shortenSeqLen,
+      "reverse", -9999.f, true, false);
 }
-
 
 TEST(AttnLSTMTest, BidirectionLstmWithBahdanauAMShortenSeqLength) {
   std::vector<float> X_data = ConvertBatchSeqToSeqBatch(s_X_T_data, batch_size, input_max_step, input_only_depth);
@@ -493,44 +487,43 @@ TEST(AttnLSTMTest, BidirectionLstmWithBahdanauAMShortenSeqLength) {
 
   std::vector<float> B_data = ConvertIcfoToIofc(s_lstm_cell_bias_ICFO, cell_hidden_size);
 
-   // concat two result sequence from tf
+  // concat two result sequence from tf
   std::vector<float> Y_data = ConcatLastDim(
-    ConvertBatchSeqToSeqBatch(
-      std::vector<float>{
-        0.0978363082f,  0.105625421f, 0.116753615f, 
-        0.236107856f, 0.195716992f, -0.133973882f,
-        0.0f, 0.0f, 0.0f}, 
-      batch_size, input_max_step, cell_hidden_size),
-    ConvertBatchSeqToSeqBatch(
-      std::vector<float>{
-        -0.229537353f, 0.136488736f, -0.414591223f,
-        0.127119571f, 0.164731115f, -0.1136849f,
-        0.0f, 0.0f, 0.0f}, 
-      batch_size, input_max_step, cell_hidden_size), 
-    cell_hidden_size * batch_size
-  );
+      ConvertBatchSeqToSeqBatch(
+          std::vector<float>{
+              0.0978363082f, 0.105625421f, 0.116753615f,
+              0.236107856f, 0.195716992f, -0.133973882f,
+              0.0f, 0.0f, 0.0f},
+          batch_size, input_max_step, cell_hidden_size),
+      ConvertBatchSeqToSeqBatch(
+          std::vector<float>{
+              -0.229537353f, 0.136488736f, -0.414591223f,
+              0.127119571f, 0.164731115f, -0.1136849f,
+              0.0f, 0.0f, 0.0f},
+          batch_size, input_max_step, cell_hidden_size),
+      cell_hidden_size * batch_size);
 
   const std::vector<float> Y_h_data{};
   const std::vector<float> Y_c_data{};
 
   std::vector<int> shortenSeqLen{2};
-  
+
   auto d_W_data = ConcatDup(W_data);
   auto d_R_data = ConcatDup(R_data);
   auto d_B_data = ConcatDup(B_data);
 
-  auto d_memory_layer_weight =  ConcatDup(s_memory_layer_weight);
+  auto d_memory_layer_weight = ConcatDup(s_memory_layer_weight);
   auto d_query_layer_weight = ConcatDup(s_query_layer_weight);
   auto d_attn_v = ConcatDup(s_attn_v);
   auto d_attn_layer_weight = ConcatDup(s_attn_layer_weight);
 
   RunAttnLstmTest(
-    X_data, d_W_data, d_R_data, Y_data, Y_h_data, Y_c_data,
-    d_memory_layer_weight, d_query_layer_weight, d_attn_v, s_M_data, &s_mem_seq_lenghts, &d_attn_layer_weight,
-    input_only_depth, batch_size, cell_hidden_size, input_max_step,
-    memory_max_step, memory_depth, am_attn_size, aw_attn_size,
-    &d_B_data, nullptr, nullptr, nullptr, &shortenSeqLen,
-    "bidirectional", -9999.f, true, false);
+      X_data, d_W_data, d_R_data, Y_data, Y_h_data, Y_c_data,
+      d_memory_layer_weight, d_query_layer_weight, d_attn_v, s_M_data, &s_mem_seq_lenghts, &d_attn_layer_weight,
+      input_only_depth, batch_size, cell_hidden_size, input_max_step,
+      memory_max_step, memory_depth, am_attn_size, aw_attn_size,
+      &d_B_data, nullptr, nullptr, nullptr, &shortenSeqLen,
+      "bidirectional", -9999.f, true, false);
 }
 
 TEST(AttnLSTMTest, BidirectionLstmWithBahdanauAM2BatchShortenSeqLen) {
@@ -538,7 +531,7 @@ TEST(AttnLSTMTest, BidirectionLstmWithBahdanauAM2BatchShortenSeqLen) {
   const int inputMaxStep4 = 4;
 
   static const std::vector<float> s_X_T_2batch{0.25f, -1.5f, 1.0f, 0.25f, -0.5f, -1.5f, 0.1f, 1.5f, 0.25f, 0.0f, 0.0f, 0.0f,
-                                         0.1f, -0.125f, 0.25f, -0.5f, 0.25f, 0.1f, 1.0f, 0.5f, -1.5f, 0.0f, 0.0f, 0.0f};
+                                               0.1f, -0.125f, 0.25f, -0.5f, 0.25f, 0.1f, 1.0f, 0.5f, -1.5f, 0.0f, 0.0f, 0.0f};
   static const std::vector<int> s_seq_lengths_2batch{3, 2};
 
   std::vector<float> X_data = ConvertBatchSeqToSeqBatch(s_X_T_2batch, batch2Size, inputMaxStep4, input_only_depth);
@@ -557,17 +550,17 @@ TEST(AttnLSTMTest, BidirectionLstmWithBahdanauAM2BatchShortenSeqLen) {
 
   // concat two result sequence from tf
   std::vector<float> Y_data = ConcatLastDim(
-    ConvertBatchSeqToSeqBatch(
-      std::vector<float>{
-        0.0978363082f, 0.105625421f, 0.116753615f, 0.236107856f, 0.195716992f, -0.133973882f, -0.029754376f, 0.274325848f, -0.387993187f, 0.0f, 0.0f, 0.0f,
-        0.261070877f, 0.144692719f, -0.274273455f, -0.272313654f, 0.324584424f, -0.298215479f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-      batch2Size, inputMaxStep4, cell_hidden_size),
-    ConvertBatchSeqToSeqBatch(
-      std::vector<float>{
-        -0.248873845f, 0.139064044f, -0.596312642f, 0.134674609f, 0.255465984f, -0.119320348f, 0.10030812f, 0.110956885f, -0.438956916f, 0.0f, 0.0f, 0.0f, 
-        -0.230028018f, 0.230880141f, -0.193421111f, 0.328211069f, 0.230195627f, -0.3777861f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, 
-      batch2Size, inputMaxStep4, cell_hidden_size), 
-    cell_hidden_size * batch2Size);
+      ConvertBatchSeqToSeqBatch(
+          std::vector<float>{
+              0.0978363082f, 0.105625421f, 0.116753615f, 0.236107856f, 0.195716992f, -0.133973882f, -0.029754376f, 0.274325848f, -0.387993187f, 0.0f, 0.0f, 0.0f,
+              0.261070877f, 0.144692719f, -0.274273455f, -0.272313654f, 0.324584424f, -0.298215479f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+          batch2Size, inputMaxStep4, cell_hidden_size),
+      ConvertBatchSeqToSeqBatch(
+          std::vector<float>{
+              -0.248873845f, 0.139064044f, -0.596312642f, 0.134674609f, 0.255465984f, -0.119320348f, 0.10030812f, 0.110956885f, -0.438956916f, 0.0f, 0.0f, 0.0f,
+              -0.230028018f, 0.230880141f, -0.193421111f, 0.328211069f, 0.230195627f, -0.3777861f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+          batch2Size, inputMaxStep4, cell_hidden_size),
+      cell_hidden_size * batch2Size);
 
   const std::vector<float> Y_h_data{};
   const std::vector<float> Y_c_data{};
@@ -582,13 +575,13 @@ TEST(AttnLSTMTest, BidirectionLstmWithBahdanauAM2BatchShortenSeqLen) {
   auto d_attn_layer_weight = ConcatDup(s_attn_layer_weight);
 
   RunAttnLstmTest(
-    X_data, d_W_data, d_R_data, Y_data, Y_h_data, Y_c_data,
-    d_memory_layer_weight, d_query_layer_weight, d_attn_v, s_M_2batch, &s_mem_seq_lenghts_2batch, &d_attn_layer_weight,
-    input_only_depth, batch2Size, cell_hidden_size, inputMaxStep4,
-    memory_max_step, memory_depth, am_attn_size, aw_attn_size,
-    &d_B_data, nullptr, nullptr, nullptr, &s_seq_lengths_2batch,
-    "bidirectional", -9999.f, true, false);
+      X_data, d_W_data, d_R_data, Y_data, Y_h_data, Y_c_data,
+      d_memory_layer_weight, d_query_layer_weight, d_attn_v, s_M_2batch, &s_mem_seq_lenghts_2batch, &d_attn_layer_weight,
+      input_only_depth, batch2Size, cell_hidden_size, inputMaxStep4,
+      memory_max_step, memory_depth, am_attn_size, aw_attn_size,
+      &d_B_data, nullptr, nullptr, nullptr, &s_seq_lengths_2batch,
+      "bidirectional", -9999.f, true, false);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

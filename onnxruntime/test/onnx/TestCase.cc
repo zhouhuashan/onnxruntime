@@ -178,7 +178,7 @@ static Status SortTensorFileNames(std::vector<path>& input_pb_files) {
 
 //Doesn't support file size >2 GB
 Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
-  const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& name_data_map, std::ostringstream &oss) {
+                    const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& name_data_map, std::ostringstream& oss) {
   std::string content;
   //TODO: mmap is better
   LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
@@ -220,7 +220,7 @@ Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
         st = RichTypeProtoToMLValue<decltype(data.map_int64_to_double().v()), MapInt64ToDouble>(data.map_int64_to_double().v(), value);
         break;
       case proto::TraditionalMLData::kTensor:
-        st = Utils::TensorProtoToMLValue(data.tensor(), allocator, nullptr, 0, value);
+        st = utils::TensorProtoToMLValue(data.tensor(), allocator, nullptr, 0, value);
         break;
       default:
         st = Status(LOTUS, NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
@@ -234,8 +234,7 @@ Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
       value_name = value_info[name_data_map.size()].name();
 
     auto pv = name_data_map.insert(std::make_pair(value_name, value));
-    if (!pv.second)
-    {
+    if (!pv.second) {
       st = Status(LOTUS, FAIL, "duplicated test data name");
       break;
     }
@@ -308,8 +307,8 @@ class OnnxTestCase : public ITestCase {
   }
   //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
   // for https://github.com/onnx/onnx/issues/679
-  ::onnxruntime::common::Status ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs, 
-      const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out);
+  ::onnxruntime::common::Status ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs,
+                                                const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out);
   std::string node_name_;
   std::once_flag model_parsed_;
   std::once_flag config_parsed_;
@@ -499,7 +498,7 @@ Status OnnxTestCase::LoadTestData(size_t id, onnxruntime::NameMLValMap& name_dat
 
   std::vector<onnx::TensorProto> test_data_pbs;
   LOTUS_RETURN_IF_ERROR(LoadTensors(test_data_pb_files, &test_data_pbs));
-  LOTUS_RETURN_IF_ERROR(ConvertTestData(test_data_pbs, is_input? input_value_info_ : output_value_info_, name_data_map));
+  LOTUS_RETURN_IF_ERROR(ConvertTestData(test_data_pbs, is_input ? input_value_info_ : output_value_info_, name_data_map));
   return Status::OK();
 }
 
@@ -520,14 +519,14 @@ Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<MLV
       }
     }
     MLValue value;
-    LOTUS_RETURN_IF_ERROR(onnxruntime::Utils::TensorProtoToMLValue(tensor, allocator_, nullptr, 0, value));
+    LOTUS_RETURN_IF_ERROR(onnxruntime::utils::TensorProtoToMLValue(tensor, allocator_, nullptr, 0, value));
     output_values.emplace_back(value);
   }
   return Status::OK();
 }
 
-Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs, 
-    const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out) {
+Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs,
+                                     const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out) {
   int len = static_cast<int>(value_info.size());
   bool has_valid_names = true;
   //"0","1",...
@@ -593,7 +592,7 @@ Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_
     std::string name = var_names[input_index];
     const onnx::TensorProto& input = test_data_pbs[input_index];
     MLValue v1;
-    LOTUS_RETURN_IF_ERROR(Utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
+    LOTUS_RETURN_IF_ERROR(utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
     out.insert(std::make_pair(name, v1));
   }
   return Status::OK();

@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(ContribOpTest, ExpandDims_0) {
   OpTester test("ExpandDims", 1, onnxruntime::kMSDomain);
@@ -23,5 +23,5 @@ TEST(ContribOpTest, ExpandDims_1) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -10,7 +10,7 @@
 
 #include "test/common/logging/helpers.h"
 
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 using InstanceType = LoggingManager::InstanceType;
 
 namespace {

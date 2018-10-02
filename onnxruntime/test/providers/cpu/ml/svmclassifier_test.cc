@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, SVMClassifierMulticlassSVC) {
   OpTester test("SVMClassifier", 1, onnxruntime::kMLDomain);
@@ -115,5 +115,5 @@ TEST(MLOpTest, SVMClassifierSVCProbabilities) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

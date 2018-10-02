@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 template <typename T>
 void TestSizeOp(const std::initializer_list<int64_t>& dims) {
@@ -50,5 +50,5 @@ TEST(SizeOpTest, IntScalarTest) {
   TestSizeOp<int>({});
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

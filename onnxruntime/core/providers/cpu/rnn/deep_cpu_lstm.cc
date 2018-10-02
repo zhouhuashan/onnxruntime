@@ -157,7 +157,7 @@ ONNX_CPU_OPERATOR_KERNEL(
         .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
     DeepCpuLstmOp);
 
-using namespace Rnn::detail;
+using namespace rnn::detail;
 
 // LSTM details
 namespace detail {
@@ -177,7 +177,7 @@ template <typename T>
 class UniDirectionalLstm {
  public:
   UniDirectionalLstm(AllocatorPtr allocator,
-                     const Logging::Logger& logger,
+                     const logging::Logger& logger,
                      const int seq_length,
                      const int batch_size,
                      const int input_size,
@@ -239,7 +239,7 @@ class UniDirectionalLstm {
   void LoadBias(const gsl::span<const T>& WbRb_values);
 
   AllocatorPtr allocator_;
-  const Logging::Logger& logger_;
+  const logging::Logger& logger_;
 
   int seq_length_;
   int batch_size_;
@@ -320,7 +320,7 @@ DeepCpuLstmOp::Compute(OpKernelContext* context) const {
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
@@ -505,7 +505,7 @@ Status DeepCpuLstmOp::ComputeImpl(OpKernelContext& context) const {
 Status DeepCpuLstmOp::ValidateInputs(const Tensor& X, const Tensor& W, const Tensor& R, const Tensor* B,
                                      const Tensor* sequence_lens, const Tensor* initial_h, const Tensor* initial_c,
                                      const Tensor* P, int batch_size) const {
-  auto status = Rnn::detail::ValidateCommonRnnInputs(X, W, R, B, 4, sequence_lens, initial_h,
+  auto status = rnn::detail::ValidateCommonRnnInputs(X, W, R, B, 4, sequence_lens, initial_h,
                                                      num_directions_, hidden_size_);
   LOTUS_RETURN_IF_ERROR(status);
 
@@ -544,7 +544,7 @@ namespace detail {
 
 template <typename T>
 UniDirectionalLstm<T>::UniDirectionalLstm(AllocatorPtr allocator,
-                                          const Logging::Logger& logger,
+                                          const logging::Logger& logger,
                                           const int seq_length,
                                           const int batch_size,
                                           const int input_size,

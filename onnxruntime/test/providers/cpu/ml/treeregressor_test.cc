@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, TreeRegressorMultiTarget) {
   OpTester test("TreeEnsembleRegressor", 1, onnxruntime::kMLDomain);
@@ -50,5 +50,5 @@ TEST(MLOpTest, TreeRegressorMultiTarget) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

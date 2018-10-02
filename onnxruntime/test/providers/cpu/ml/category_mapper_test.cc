@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 template <typename TInput, typename TOutput>
 static void RunTest(const std::vector<int64_t>& dims, const std::vector<TInput>& input, const std::vector<TOutput>& output) {
@@ -43,5 +43,5 @@ TEST(CategoryMapper, IntToString) {
 
   RunTest(dims, input, output);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

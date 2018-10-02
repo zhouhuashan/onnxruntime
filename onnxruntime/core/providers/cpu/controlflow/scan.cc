@@ -388,7 +388,7 @@ Status ScanImpl::ValidateInput() {
 Status ScanImpl::AllocateOutput(int index, bool has_sequence_len_dimension) {
   auto& graph_outputs = graph_.GetOutputs();
   auto& graph_output = graph_outputs.at(index);
-  TensorShape output_shape{onnxruntime::Utils::GetTensorShapeFromTensorShapeProto(*graph_output->Shape())};
+  TensorShape output_shape{onnxruntime::utils::GetTensorShapeFromTensorShapeProto(*graph_output->Shape())};
   auto& graph_output_dims{output_shape.GetDims()};
 
   std::vector<int64_t> scan_output_dims;

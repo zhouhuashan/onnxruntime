@@ -10,7 +10,7 @@
 #endif
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 IExecutionProvider* TestCPUExecutionProvider();
 
 #ifdef USE_CUDA
@@ -57,5 +57,5 @@ void AllocateMLValue(AllocatorPtr alloc,
                   DataTypeImpl::GetType<Tensor>(),
                   DataTypeImpl::GetType<Tensor>()->GetDeleteFunc());
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

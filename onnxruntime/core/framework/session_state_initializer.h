@@ -18,7 +18,7 @@ class ExecutionProviders;
 class KernelRegistryManager;
 class InsertCastTransformer;
 
-namespace Logging {
+namespace logging {
 class Logger;
 }
 
@@ -28,7 +28,7 @@ class SessionStateInitializer {
                           SessionState& session_state,
                           const ExecutionProviders& providers,
                           KernelRegistryManager& kernel_registry_manager,
-                          const Logging::Logger& logger);
+                          const logging::Logger& logger);
 
   // First perform any transformations and create the execution plan
   common::Status CreatePlan(const onnxruntime::GraphTransformerManager& graph_transformation_manager,
@@ -46,6 +46,6 @@ class SessionStateInitializer {
 
   const ExecutionProviders& execution_providers_;
   KernelRegistryManager& kernel_registry_manager_;
-  const Logging::Logger& logger_;
+  const logging::Logger& logger_;
 };
 }  // namespace onnxruntime

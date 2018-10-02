@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, SVMRegressorSVC) {
   OpTester test("SVMRegressor", 1, onnxruntime::kMLDomain);
@@ -104,5 +104,5 @@ TEST(MLOpTest, SVMRegressorLinear) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

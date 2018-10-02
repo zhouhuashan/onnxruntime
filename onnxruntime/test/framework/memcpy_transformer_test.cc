@@ -9,7 +9,7 @@
 #include "core/graph/function_container.h"
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 typedef std::vector<onnxruntime::NodeArg*> ArgMap;
 
@@ -162,5 +162,5 @@ TEST(TransformerTest, MemcpyTransformerTestCudaFirst) {
   ExpectSame(node2, node4, 1);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

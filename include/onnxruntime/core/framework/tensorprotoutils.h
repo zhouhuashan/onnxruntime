@@ -17,11 +17,11 @@ class TensorShapeProto;
 
 namespace onnxruntime {
 class Tensor;
-namespace Utils {
+namespace utils {
 common::Status GetTensorFromTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto, std::unique_ptr<Tensor>* p_tensor, AllocatorPtr allocator, void* preallocated = nullptr, size_t preallocated_size = 0);
 std::vector<int64_t> GetTensorShapeFromTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_proto);
 std::vector<int64_t> GetTensorShapeFromTensorShapeProto(const ONNX_NAMESPACE::TensorShapeProto& tensor_shape_proto);
 common::Status TensorProtoToMLValue(const ONNX_NAMESPACE::TensorProto& input, AllocatorPtr allocator, void* preallocated,
                                     size_t preallocated_size, MLValue& value);
-}  // namespace Utils
+}  // namespace utils
 }  // namespace onnxruntime

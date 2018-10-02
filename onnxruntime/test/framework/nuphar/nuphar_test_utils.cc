@@ -4,7 +4,7 @@
 #include "nuphar_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 #ifdef USE_TVM
 IExecutionProvider* TestNupharExecutionProvider() {
   static NupharExecutionProviderInfo info;
@@ -12,5 +12,5 @@ IExecutionProvider* TestNupharExecutionProvider() {
   return &nuphar_provider;
 }
 #endif  // USE_TVM
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

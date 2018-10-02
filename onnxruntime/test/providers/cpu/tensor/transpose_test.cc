@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 void TransposeTest(std::vector<int64_t>& input_shape,
                    std::vector<float>& input_vals,
@@ -105,5 +105,5 @@ TEST(TransposeOpTest, ThreeDim) {
   TransposeTest(input_shape, input_vals, &perm, expected_shape, expected_vals);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

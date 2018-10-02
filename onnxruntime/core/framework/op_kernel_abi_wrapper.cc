@@ -497,7 +497,7 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputTensorShape)(uint32_t input_index, ui
       const auto* inputType = impl_->GetInputType(input_index);
       LOTUS_ENFORCE(inputType->has_tensor_type());
       for (uint32_t i = 0; i < dimension_count; ++i) {
-        
+
         // Shape inference is only done when all dimensions of all inputs have known values,
         // so the input tensors will always have shapes at this point.
         assert(inputType->tensor_type().shape().dim(i).has_dim_value());
@@ -519,14 +519,14 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputTensorDimensionCount)(uint32_t input_
     if (input_index >= GetInputCount()) {
       return MLStatus::INVALID_ARGUMENT;
     }
-    
+
     // Input shapes are determined either from the override or from the underlying proto
     if (input_shapes_override_) {
       *dimension_count = gsl::narrow_cast<uint32_t>(input_shapes_override_->GetShape(input_index).size());
     } else {
       const auto* inputType = impl_->GetInputType(input_index);
       LOTUS_ENFORCE(inputType->has_tensor_type());
-      
+
       // Shape inference is only done when all dimensions of all inputs have known values,
       // so the input tensors will always have shapes at this point.
       assert(inputType->tensor_type().has_shape());

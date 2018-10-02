@@ -7,7 +7,7 @@
 #include "core/common/logging/sinks/ostream_sink.h"
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 /// <summary>
 /// A std::cerr based ISink
 /// </summary>
@@ -17,5 +17,5 @@ class CErrSink : public OStreamSink {
   CErrSink() : OStreamSink(std::cerr, /*flush*/ false) {  // std::cerr isn't buffered so no flush required
   }
 };
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

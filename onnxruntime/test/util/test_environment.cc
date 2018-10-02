@@ -12,14 +12,14 @@
 #include "core/common/logging/logging.h"
 #include "core/common/logging/sinks/clog_sink.h"
 
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 static LoggingManager* s_default_logging_manager = nullptr;
 
-::onnxruntime::Logging::LoggingManager& DefaultLoggingManager() {
+::onnxruntime::logging::LoggingManager& DefaultLoggingManager() {
   LOTUS_ENFORCE(s_default_logging_manager != nullptr,
                 "Need a TestEnvironment instance to provide the default logging manager.");
 
@@ -45,7 +45,7 @@ TestEnvironment::TestEnvironment(int argc, char** argv, bool create_default_logg
     s_default_logging_manager = logging_manager_.get();
 
     // make sure default logging manager exists and is working
-    auto logger = ::onnxruntime::Test::DefaultLoggingManager().DefaultLogger();
+    auto logger = ::onnxruntime::test::DefaultLoggingManager().DefaultLogger();
     LOGS(logger, VERBOSE) << "Logging manager initialized.";
   }
 
@@ -68,5 +68,5 @@ TestEnvironment::~TestEnvironment() {
   logging_manager_ = nullptr;
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

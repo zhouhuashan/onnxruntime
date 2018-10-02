@@ -6,8 +6,8 @@
 #include <memory>
 
 namespace onnxruntime {
-namespace PerfTest {
-namespace Utils {
+namespace perftest {
+namespace utils {
 
 size_t GetPeakWorkingSetSize();
 
@@ -22,6 +22,6 @@ class ICPUUsage {
 
 std::unique_ptr<ICPUUsage> CreateICPUUsage();
 
-}  // namespace Utils
-}  // namespace PerfTest
+}  // namespace utils
+}  // namespace perftest
 }  // namespace onnxruntime

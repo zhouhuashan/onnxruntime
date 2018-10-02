@@ -16,7 +16,7 @@
 #endif
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 const char* Category::onnxruntime = "onnxruntime";
 const char* Category::System = "System";
 
@@ -179,8 +179,8 @@ std::exception LoggingManager::LogFatalAndCreateException(const char* category,
 
   // create Capture in separate scope so it gets destructed (leading to log output) before we throw.
   {
-    ::onnxruntime::Logging::Capture c{::onnxruntime::Logging::LoggingManager::DefaultLogger(),
-                                      ::onnxruntime::Logging::Severity::kFATAL, category, ::onnxruntime::Logging::DataType::SYSTEM, location};
+    ::onnxruntime::logging::Capture c{::onnxruntime::logging::LoggingManager::DefaultLogger(),
+                                      ::onnxruntime::logging::Severity::kFATAL, category, ::onnxruntime::logging::DataType::SYSTEM, location};
     va_list args;
     va_start(args, format_str);
 
@@ -212,5 +212,5 @@ unsigned int GetProcessId() {
 #endif
 }
 
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

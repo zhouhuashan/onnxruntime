@@ -43,7 +43,7 @@ enum StorageOrder {
 
 #define FLOAT_TYPE DataTypeImpl::GetType<float>()
 
-namespace Math {
+namespace math {
 
 template <typename T, class Provider>
 void Exp(const int N, const T* x, T* y, Provider* provider);
@@ -483,5 +483,5 @@ uint16_t floatToHalf(float f);
 
 float halfToFloat(uint16_t h);
 
-}  // namespace Math
+}  // namespace math
 }  // namespace onnxruntime

@@ -9,7 +9,7 @@ GTEST_API_ int main(int argc, char** argv) {
 
   try {
     const bool create_default_logger = false;
-    Lotus::Test::TestEnvironment environment{argc, argv, create_default_logger};
+    onnxruntime::test::TestEnvironment environment{argc, argv, create_default_logger};
 
     status = RUN_ALL_TESTS();
   } catch (const std::exception& ex) {

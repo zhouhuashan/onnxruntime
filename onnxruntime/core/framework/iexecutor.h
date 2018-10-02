@@ -13,7 +13,7 @@
 namespace onnxruntime {
 
 class SessionState;
-namespace Logging {
+namespace logging {
 class Logger;
 }
 
@@ -25,6 +25,6 @@ class IExecutor {
                                  const NameMLValMap& feeds,
                                  const std::vector<std::string>& output_names,
                                  std::vector<MLValue>& fetches,
-                                 const Logging::Logger& logger) = 0;
+                                 const logging::Logger& logger) = 0;
 };
 }  // namespace onnxruntime

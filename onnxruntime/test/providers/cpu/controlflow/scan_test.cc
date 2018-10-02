@@ -10,7 +10,7 @@
 
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 static void CreateSubgraph(Model& model) {
   auto& graph = model.MainGraph();
@@ -361,5 +361,5 @@ TEST(Scan, InvalidInput) {
           "Number of entries in 'directions' was 3. Must match 'num_scan_inputs' of 2");
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -6,7 +6,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 // test input data is generated from CNTK with shape of [batch_size, seq_length, input_size]
 // onnxruntime takes input of shape [seq_length, batch_size, input_size)
@@ -783,5 +783,5 @@ TEST(RNNTest, RNN_bidirectional_with_sequence_lens) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -19,18 +19,18 @@ static Status FetchOutput(const MLValueNameIdxMap& name_idx_map,
                           ExecutionFrame& frame,
                           const std::vector<std::string>& output_names,
                           std::vector<MLValue>& fetches,
-                          const Logging::Logger& logger);
+                          const logging::Logger& logger);
 
 static Status ReleaseNodeMLValues(ExecutionFrame& frame,
                                   const SequentialExecutionPlan& seq_exec_plan,
                                   const SequentialExecutionPlan::NodeExecutionPlan& node_exec_plan,
-                                  const Logging::Logger& logger);
+                                  const logging::Logger& logger);
 
 Status SequentialExecutor::Execute(const SessionState& session_state,
                                    const NameMLValMap& feeds,
                                    const std::vector<std::string>& output_names,
                                    std::vector<MLValue>& fetches,
-                                   const Logging::Logger& logger) {
+                                   const logging::Logger& logger) {
   auto tp = session_state.Profiler().StartTime();
 
   ExecutionFrame frame{feeds, output_names, fetches, session_state};
@@ -76,7 +76,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state,
       }
     }
 
-    session_state.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
+    session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_fence_before",
                                                    sync_time_begin,
                                                    std::unordered_map<std::string,
@@ -87,7 +87,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state,
 
     auto kernel_begin_time = session_state.Profiler().StartTime();
     LOTUS_RETURN_IF_ERROR(p_op_kernel->Compute(&op_kernel_context));
-    session_state.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
+    session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_kernel_time",
                                                    kernel_begin_time,
                                                    std::unordered_map<std::string, std::string>{{"op_name", op_name}});
@@ -107,7 +107,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state,
         fence->AfterUsedAsOutput(queue_id);
       }
     }
-    session_state.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
+    session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_fence_after",
                                                    sync_time_begin,
                                                    std::unordered_map<std::string, std::string>{{"op_name", op_name}});
@@ -139,7 +139,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state,
     }
   }
 
-  session_state.Profiler().EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "SequentialExecutor::Execute", tp);
+  session_state.Profiler().EndTimeAndRecordEvent(profiling::SESSION_EVENT, "SequentialExecutor::Execute", tp);
   return Status::OK();
 }
 
@@ -147,7 +147,7 @@ static Status FetchOutput(const MLValueNameIdxMap& name_idx_map,
                           ExecutionFrame& frame,
                           const std::vector<std::string>& output_names,
                           std::vector<MLValue>& fetches,
-                          const Logging::Logger& logger) {
+                          const logging::Logger& logger) {
   if (fetches.empty()) {
     fetches.resize(output_names.size());
   } else {
@@ -175,7 +175,7 @@ static Status FetchOutput(const MLValueNameIdxMap& name_idx_map,
 static Status ReleaseNodeMLValues(ExecutionFrame& frame,
                                   const SequentialExecutionPlan& seq_exec_plan,
                                   const SequentialExecutionPlan::NodeExecutionPlan& node_exec_plan,
-                                  const Logging::Logger& logger) {
+                                  const logging::Logger& logger) {
   for (auto i = node_exec_plan.free_from_index; i <= node_exec_plan.free_to_index; ++i) {
     auto mlvalue_idx = seq_exec_plan.to_be_freed[i];
     VLOGS(logger, 1) << "Releasing mlvalue with index: " << mlvalue_idx;

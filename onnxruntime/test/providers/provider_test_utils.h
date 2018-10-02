@@ -22,7 +22,7 @@
 #include <gsl/gsl_byte>
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 // unfortunately std::optional is in C++17 so use a miniversion of it
 template <typename T>
 class optional {
@@ -237,7 +237,7 @@ struct OpTester {
       TensorShape shape{dims};
       LOTUS_ENFORCE(shape.Size() == values_count, values_count, " input values doesn't match tensor size of ", shape.Size());
 
-      auto allocator = ::onnxruntime::Test::AllocatorManager::Instance().GetAllocator(CPU);
+      auto allocator = ::onnxruntime::test::AllocatorManager::Instance().GetAllocator(CPU);
       auto size_in_bytes = values_count * sizeof(T);
       void* buffer = allocator->Alloc(size_in_bytes);
       auto p_tensor = std::make_unique<Tensor>(DataTypeImpl::GetType<T>(),
@@ -284,5 +284,5 @@ void ExpectThrow(OpTester& test, const std::string& error_msg) {
   }
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(FeatureVectorizer, BasicFunctionality) {
   OpTester test("FeatureVectorizer", 1, onnxruntime::kMLDomain);
@@ -85,5 +85,5 @@ TEST(FeatureVectorizer, BatchWith3DInput) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

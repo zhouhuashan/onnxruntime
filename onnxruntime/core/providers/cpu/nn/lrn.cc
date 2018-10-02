@@ -44,24 +44,24 @@ Status LRN<float>::Compute(OpKernelContext* context) const {
   auto sdata = alloc->Alloc(sizeof(float) * Xsize);
   BufferUniquePtr scale_buffer(sdata, BufferDeleter(alloc));
   float* scale_data = static_cast<float*>(scale_buffer.get());
-  Math::Set<float, CPUMathUtil>(Xsize, bias_, scale_data, &CPUMathUtil::Instance());
+  math::Set<float, CPUMathUtil>(Xsize, bias_, scale_data, &CPUMathUtil::Instance());
 
   const size_t padded_square_size = (C + size_ - 1) * H * W;
   auto psdata = alloc->Alloc(sizeof(float) * padded_square_size);
   BufferUniquePtr padded_square_buffer(psdata, BufferDeleter(alloc));
   float* padded_square_data = static_cast<float*>(padded_square_buffer.get());
-  Math::Set<float, CPUMathUtil>(padded_square_size, 0.0f, padded_square_data, &CPUMathUtil::Instance());
+  math::Set<float, CPUMathUtil>(padded_square_size, 0.0f, padded_square_data, &CPUMathUtil::Instance());
 
   const float alpha_over_size = alpha_ / size_;
   // go through the images
   for (int n = 0; n < N; ++n) {
     // compute the padded square
-    Math::Sqr<float, CPUMathUtil>(image_size, Xdata + image_size * n,
+    math::Sqr<float, CPUMathUtil>(image_size, Xdata + image_size * n,
                                   padded_square_data + pre_pad * H * W,
                                   &CPUMathUtil::Instance());
     // Create the first channel scale
     for (int c = 0; c < size_; ++c) {
-      Math::Axpy<float, CPUMathUtil>(
+      math::Axpy<float, CPUMathUtil>(
           H * W, alpha_over_size, padded_square_data + c * H * W,
           scale_data + image_size * n, &CPUMathUtil::Instance());
     }
@@ -71,18 +71,18 @@ Status LRN<float>::Compute(OpKernelContext* context) const {
       // copy previous scale
       memcpy(this_scale_slice, this_scale_slice - H * W, H * W * sizeof(float));
       // add head
-      Math::Axpy<float, CPUMathUtil>(
+      math::Axpy<float, CPUMathUtil>(
           H * W, alpha_over_size, padded_square_data + (c + size_ - 1) * H * W,
           this_scale_slice, &CPUMathUtil::Instance());
       // subtract tail
-      Math::Axpy<float, CPUMathUtil>(
+      math::Axpy<float, CPUMathUtil>(
           H * W, -alpha_over_size, padded_square_data + (c - 1) * H * W,
           this_scale_slice, &CPUMathUtil::Instance());
     }
   }
 
-  Math::Powx<float, CPUMathUtil>(Xsize, scale_data, -beta_, Ydata, &CPUMathUtil::Instance());
-  Math::Mul<float, CPUMathUtil>(Xsize, Ydata, Xdata, Ydata, &CPUMathUtil::Instance());
+  math::Powx<float, CPUMathUtil>(Xsize, scale_data, -beta_, Ydata, &CPUMathUtil::Instance());
+  math::Mul<float, CPUMathUtil>(Xsize, Ydata, Xdata, Ydata, &CPUMathUtil::Instance());
 
   return Status::OK();
 }

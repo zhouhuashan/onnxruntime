@@ -17,11 +17,11 @@ class KernelDef;
 class KernelRegistryManager;
 class SessionState;
 
-namespace Logging {
+namespace logging {
 class Logger;
 }
 
-namespace Utils {
+namespace utils {
 const KernelDef* GetKernelDef(const KernelRegistryManager& kernel_registry,
                               const onnxruntime::Node& node);
 
@@ -33,5 +33,5 @@ AllocatorPtr GetAllocator(const ExecutionProviders& exec_providers, const Alloca
 
 AllocatorPtr GetAllocator(const SessionState& session_state,
                           const AllocatorInfo& allocator_info);
-}  // namespace Utils
+}  // namespace utils
 }  // namespace onnxruntime

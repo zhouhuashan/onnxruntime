@@ -32,7 +32,7 @@
 
 using namespace std;
 using namespace ONNX_NAMESPACE;
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 
 namespace onnxruntime {
 class FuseAdd : public OpKernel {
@@ -117,7 +117,7 @@ class FuseExecutionProvider : public IExecutionProvider {
     return "FuseExecutionProvider";
   }
 };
-namespace Test {
+namespace test {
 static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg);
 static void VerifyOutputs(const std::vector<MLValue>& fetches,
                           const std::vector<int64_t>& expected_dims,
@@ -341,8 +341,8 @@ static bool Compare(const InputDefList& f_arg, const InputDefList& s_arg) {
     if (!x->Shape()) {
       continue;
     }
-    vector<int64_t> x_shape = Utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
-    vector<int64_t> y_shape = Utils::GetTensorShapeFromTensorShapeProto(*y->Shape());
+    vector<int64_t> x_shape = utils::GetTensorShapeFromTensorShapeProto(*x->Shape());
+    vector<int64_t> y_shape = utils::GetTensorShapeFromTensorShapeProto(*y->Shape());
     if (x->Name() == y->Name() && x_shape == y_shape && *x->Type() == *y->Type()) {
       continue;
     }
@@ -422,8 +422,8 @@ TEST(InferenceSessionTests, CheckRunLogger) {
   // is around our pointer stays valid.
   auto capturing_sink = new CapturingSink();
 
-  auto logging_manager = std::make_unique<Logging::LoggingManager>(
-      std::unique_ptr<ISink>(capturing_sink), Logging::Severity::kVERBOSE, false, LoggingManager::InstanceType::Temporal);
+  auto logging_manager = std::make_unique<logging::LoggingManager>(
+      std::unique_ptr<ISink>(capturing_sink), logging::Severity::kVERBOSE, false, LoggingManager::InstanceType::Temporal);
 
   InferenceSession session_object{so, logging_manager.get()};
   ASSERT_TRUE(session_object.Load(MODEL_URI).IsOK());
@@ -574,9 +574,9 @@ TEST(InferenceSessionTests, ConfigureVerbosityLevel) {
   // is around our pointer stays valid.
   auto capturing_sink = new CapturingSink();
 
-  auto logging_manager = std::make_unique<Logging::LoggingManager>(
+  auto logging_manager = std::make_unique<logging::LoggingManager>(
       std::unique_ptr<ISink>(capturing_sink),
-      Logging::Severity::kVERBOSE,
+      logging::Severity::kVERBOSE,
       false,
       LoggingManager::InstanceType::Temporal);
 
@@ -895,5 +895,5 @@ TEST(ExecutionProviderTest, FunctionTest) {
   VerifyOutputs(fetches, expected_dims_mul_m, expected_values_mul_m);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -45,7 +45,7 @@ namespace onnxruntime {
 
 class InferenceSession::Impl {
  public:
-  Impl(const SessionOptions& session_options, Logging::LoggingManager* logging_manager)
+  Impl(const SessionOptions& session_options, logging::LoggingManager* logging_manager)
       : session_options_{session_options},
         graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
         logging_manager_{logging_manager},
@@ -140,7 +140,7 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
-    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_uri", tp);
+    session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_uri", tp);
     return common::Status::OK();
   }
 
@@ -171,7 +171,7 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
-    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_proto", tp);
+    session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_proto", tp);
     return Status::OK();
   }
 
@@ -202,7 +202,7 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
-    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_proto", tp);
+    session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_proto", tp);
     return Status::OK();
   }
 
@@ -239,7 +239,7 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
       return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
-    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_loading_istream", tp);
+    session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_istream", tp);
     return common::Status::OK();
   }
 
@@ -375,7 +375,7 @@ class InferenceSession::Impl {
       LOGS(*session_logger_, ERROR) << status.ErrorMessage();
     }
 
-    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "session_initialization", tp);
+    session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "session_initialization", tp);
     return status;
   }
 
@@ -409,7 +409,7 @@ class InferenceSession::Impl {
 
       auto& input_ml_value = feeds.at(arg_name);
       auto input_type = input_ml_value.Type();
-      auto expected_type = Utils::GetMLDataType(*arg);
+      auto expected_type = utils::GetMLDataType(*arg);
 
       if (!input_ml_value.IsTensor()) {
         auto retval = CheckTypes(input_type, expected_type);
@@ -745,7 +745,7 @@ class InferenceSession::Impl {
 
       // scope of owned_run_logger is just the call to Execute.
       // If Execute ever becomes async we need a different approach
-      std::unique_ptr<Logging::Logger> owned_run_logger;
+      std::unique_ptr<logging::Logger> owned_run_logger;
       auto run_logger = CreateLoggerForRun(run_options, owned_run_logger);
 
       // info all execution providers InferenceSession:Run started
@@ -783,7 +783,7 @@ class InferenceSession::Impl {
       LOTUS_CHECK_AND_SET_RETVAL(xp->OnRunEnd());
 
     --current_num_runs_;
-    session_profiler_.EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "model_run", tp);
+    session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_run", tp);
     return retval;
   }
 
@@ -935,9 +935,9 @@ class InferenceSession::Impl {
   // which must remain valid for the duration of the execution.
   // If the default logger is used, new_run_logger will remain empty.
   // The returned value should be used in the execution.
-  const Logging::Logger& CreateLoggerForRun(const RunOptions& run_options,
-                                            std::unique_ptr<Logging::Logger>& new_run_logger) {
-    const Logging::Logger* run_logger;
+  const logging::Logger& CreateLoggerForRun(const RunOptions& run_options,
+                                            std::unique_ptr<logging::Logger>& new_run_logger) {
+    const logging::Logger* run_logger;
 
     // create a per-run logger if we can
     if (logging_manager_ != nullptr) {
@@ -951,7 +951,7 @@ class InferenceSession::Impl {
 
       if (run_options.run_log_verbosity_level > 0) {
         new_run_logger = logging_manager_->CreateLogger(run_log_id,
-                                                        Logging::Severity::kVERBOSE,
+                                                        logging::Severity::kVERBOSE,
                                                         false,
                                                         run_options.run_log_verbosity_level);
       } else {
@@ -969,7 +969,7 @@ class InferenceSession::Impl {
     return *run_logger;
   }
 
-  void InitLogger(Logging::LoggingManager* logging_manager) {
+  void InitLogger(logging::LoggingManager* logging_manager) {
     // create logger for session, using provided logging manager if possible
     if (logging_manager != nullptr) {
       std::string session_logid = !session_options_.session_logid.empty()
@@ -978,7 +978,7 @@ class InferenceSession::Impl {
 
       if (session_options_.session_log_verbosity_level > 0) {
         owned_session_logger_ = logging_manager->CreateLogger(session_logid,
-                                                              Logging::Severity::kVERBOSE,
+                                                              logging::Severity::kVERBOSE,
                                                               false,
                                                               session_options_.session_log_verbosity_level);
       } else {
@@ -986,7 +986,7 @@ class InferenceSession::Impl {
       }
       session_logger_ = owned_session_logger_.get();
     } else {
-      session_logger_ = &Logging::LoggingManager::DefaultLogger();
+      session_logger_ = &logging::LoggingManager::DefaultLogger();
     }
 
     session_state_.SetLogger(*session_logger_);
@@ -1009,16 +1009,16 @@ class InferenceSession::Impl {
   onnxruntime::GraphTransformerManager graph_transformation_mgr_;
 
   /// Logging manager if provided.
-  Logging::LoggingManager* logging_manager_;
+  logging::LoggingManager* logging_manager_;
 
   /// Logger for this session. WARNING: Will contain nullptr if logging_manager_ is nullptr.
-  std::unique_ptr<Logging::Logger> owned_session_logger_;
+  std::unique_ptr<logging::Logger> owned_session_logger_;
 
   /// convenience pointer to logger. should always be the same as session_state_.Logger();
-  const Logging::Logger* session_logger_;
+  const logging::Logger* session_logger_;
 
   // Profiler for this session.
-  Profiling::Profiler session_profiler_;
+  profiling::Profiler session_profiler_;
 
   ExecutionProviders execution_providers_;
 
@@ -1073,7 +1073,7 @@ class InferenceSession::Impl {
 // InferenceSession
 //
 InferenceSession::InferenceSession(const SessionOptions& session_options,
-                                   Logging::LoggingManager* logging_manager)
+                                   logging::LoggingManager* logging_manager)
     : impl_(std::make_unique<Impl>(session_options, logging_manager)) {
 }
 

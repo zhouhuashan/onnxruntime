@@ -145,7 +145,7 @@ void FuseAdd(const onnxruntime::Graph& graph, std::vector<std::unique_ptr<Comput
   }
 }
 
-namespace Test {
+namespace test {
 
 static void RunSession(InferenceSession& session_object,
                        RunOptions& run_options,
@@ -213,7 +213,7 @@ TEST(TVMTest, Fuse_Add_Test) {
   // Now run
   RunSession(session_object, run_options, dims_x, values_x, expected_dims_y, expected_values_y);
 }
-}  // namespace Test
+}  // namespace test
 
 }  // namespace onnxruntime
 

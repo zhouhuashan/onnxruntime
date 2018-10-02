@@ -142,7 +142,7 @@ ONNX_CPU_OPERATOR_KERNEL(
         .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
     DeepCpuGruOp);
 
-using namespace Rnn::detail;
+using namespace rnn::detail;
 
 // internal helper code
 namespace detail {
@@ -158,7 +158,7 @@ template <typename T>
 class UniDirectionalGru {
  public:
   UniDirectionalGru(AllocatorPtr allocator,
-                    const Logging::Logger& logger,
+                    const logging::Logger& logger,
                     const int seq_length,
                     const int batch_size,
                     const int input_size,
@@ -184,7 +184,7 @@ class UniDirectionalGru {
 
  private:
   AllocatorPtr allocator_;
-  const Logging::Logger& logger_;
+  const logging::Logger& logger_;
   TaskThreadPool& ttp_;
 
   int seq_length_;
@@ -253,7 +253,7 @@ class UniDirectionalGru {
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
@@ -441,7 +441,7 @@ static void TransposeCopy(gsl::span<const T> src, size_t src_offset,
 
 template <typename T>
 UniDirectionalGru<T>::UniDirectionalGru(AllocatorPtr allocator,
-                                        const Logging::Logger& logger,
+                                        const logging::Logger& logger,
                                         const int seq_length,
                                         const int batch_size,
                                         const int input_size,

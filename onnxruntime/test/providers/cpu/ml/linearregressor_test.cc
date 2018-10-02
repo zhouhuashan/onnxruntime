@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, LinearRegressorUniTarget) {
   /* TEST MODEL TRAINING
@@ -66,5 +66,5 @@ TEST(MLOpTest, LinearRegressorMultiTarget) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -10,7 +10,7 @@
 using namespace std;
 using namespace onnxruntime;
 using namespace onnxruntime::common;
-using namespace onnxruntime::Logging;
+using namespace onnxruntime::logging;
 
 static const std::string MODEL_URI = "testdata/mul_1.pb";
 static const std::string CUSTOM_OP_MODEL_URI = "testdata/foo_1.pb";
@@ -80,7 +80,7 @@ void RunSession(InferenceSession& session_object,
   cout << "Run() succeeded\n";
 }
 
-class CapturingSink : public Logging::ISink {
+class CapturingSink : public logging::ISink {
  public:
   void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override {
     // operator for formatting of timestamp in ISO8601 format including microseconds
@@ -98,8 +98,8 @@ void TestInference(const std::string& model_uri,
                    const std::vector<float>& expected_values_y,
                    bool custom_op) {
   static std::string default_logger_id{"TestSharedLib"};
-  auto logging_manager = std::make_unique<Logging::LoggingManager>(
-      std::unique_ptr<ISink>(new CapturingSink()), Logging::Severity::kVERBOSE, false,
+  auto logging_manager = std::make_unique<logging::LoggingManager>(
+      std::unique_ptr<ISink>(new CapturingSink()), logging::Severity::kVERBOSE, false,
       LoggingManager::InstanceType::Default, &default_logger_id);
 
   SessionOptions so;

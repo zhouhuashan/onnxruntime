@@ -6,7 +6,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 void TestUnaryElementwiseOp(const char* szOp, std::vector<float>& input_vals,
                             std::function<float(float)> expected_func,
@@ -216,5 +216,5 @@ TEST(ActivationOpTest, Softsign) {
                          [](float x) { return x / (1 + std::abs(x)); });
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

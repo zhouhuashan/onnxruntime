@@ -11,7 +11,7 @@
 using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(OpRegistrationTest, AffineOp) {
   auto op = OpSchemaRegistry::Schema("Affine");
   EXPECT_TRUE(nullptr != op);
@@ -79,5 +79,5 @@ TEST(FeatureVectorizerTest, TraditionalMlOpTest) {
   delete output_arg1;
   delete output_arg4;
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

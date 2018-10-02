@@ -9,7 +9,7 @@
 
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 using ExpectResult = OpTester::ExpectResult;
 
@@ -153,18 +153,18 @@ TEST(TensorOpTest, CastFromBool) {
   TestCastOp(bool_data, int64_t_output, shape, TensorProto::INT64);
 
   const std::initializer_list<MLFloat16> float16_output{
-      MLFloat16(Math::floatToHalf(0.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(0.0f)),
-      MLFloat16(Math::floatToHalf(1.0f))};
+      MLFloat16(math::floatToHalf(0.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(0.0f)),
+      MLFloat16(math::floatToHalf(1.0f))};
   TestCastOp(bool_data, float16_output, shape, TensorProto::FLOAT16);
 }
 
@@ -172,18 +172,18 @@ TEST(TensorOpTest, CastToFloat16) {
   const std::vector<int64_t> shape{3, 2, 2};
   std::initializer_list<float> float_data = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   const std::initializer_list<MLFloat16> float16_output{
-      MLFloat16(Math::floatToHalf(0.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(2.0f)),
-      MLFloat16(Math::floatToHalf(3.0f)),
-      MLFloat16(Math::floatToHalf(4.0f)),
-      MLFloat16(Math::floatToHalf(5.0f)),
-      MLFloat16(Math::floatToHalf(6.0f)),
-      MLFloat16(Math::floatToHalf(7.0f)),
-      MLFloat16(Math::floatToHalf(8.0f)),
-      MLFloat16(Math::floatToHalf(9.0f)),
-      MLFloat16(Math::floatToHalf(10.0f)),
-      MLFloat16(Math::floatToHalf(11.0f))};
+      MLFloat16(math::floatToHalf(0.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(2.0f)),
+      MLFloat16(math::floatToHalf(3.0f)),
+      MLFloat16(math::floatToHalf(4.0f)),
+      MLFloat16(math::floatToHalf(5.0f)),
+      MLFloat16(math::floatToHalf(6.0f)),
+      MLFloat16(math::floatToHalf(7.0f)),
+      MLFloat16(math::floatToHalf(8.0f)),
+      MLFloat16(math::floatToHalf(9.0f)),
+      MLFloat16(math::floatToHalf(10.0f)),
+      MLFloat16(math::floatToHalf(11.0f))};
 
   TestCastOp(float_data, float16_output, shape, TensorProto::FLOAT16);
 
@@ -216,18 +216,18 @@ TEST(TensorOpTest, CastFromFloat16) {
   const std::vector<int64_t> shape{3, 2, 2};
   const std::initializer_list<float> float_output = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f};
   const std::initializer_list<MLFloat16> input = {
-      MLFloat16(Math::floatToHalf(0.0f)),
-      MLFloat16(Math::floatToHalf(1.0f)),
-      MLFloat16(Math::floatToHalf(2.0f)),
-      MLFloat16(Math::floatToHalf(3.0f)),
-      MLFloat16(Math::floatToHalf(4.0f)),
-      MLFloat16(Math::floatToHalf(5.0f)),
-      MLFloat16(Math::floatToHalf(6.0f)),
-      MLFloat16(Math::floatToHalf(7.0f)),
-      MLFloat16(Math::floatToHalf(8.0f)),
-      MLFloat16(Math::floatToHalf(9.0f)),
-      MLFloat16(Math::floatToHalf(10.0f)),
-      MLFloat16(Math::floatToHalf(11.0f))};
+      MLFloat16(math::floatToHalf(0.0f)),
+      MLFloat16(math::floatToHalf(1.0f)),
+      MLFloat16(math::floatToHalf(2.0f)),
+      MLFloat16(math::floatToHalf(3.0f)),
+      MLFloat16(math::floatToHalf(4.0f)),
+      MLFloat16(math::floatToHalf(5.0f)),
+      MLFloat16(math::floatToHalf(6.0f)),
+      MLFloat16(math::floatToHalf(7.0f)),
+      MLFloat16(math::floatToHalf(8.0f)),
+      MLFloat16(math::floatToHalf(9.0f)),
+      MLFloat16(math::floatToHalf(10.0f)),
+      MLFloat16(math::floatToHalf(11.0f))};
 
   TestCastOp(input, float_output, shape, TensorProto::FLOAT);
 
@@ -471,5 +471,5 @@ TEST(TensorOpTest, ImageScalerTest) {
   test.RunOnCpuAndCuda();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -19,7 +19,7 @@
 #include "test_configuration.h"
 
 namespace onnxruntime {
-namespace PerfTest {
+namespace perftest {
 
 /*static*/ void CommandLineParser::ShowUsage() {
   printf(
@@ -100,5 +100,5 @@ namespace PerfTest {
   return true;
 }
 
-}  // namespace PerfTest
+}  // namespace perftest
 }  // namespace onnxruntime

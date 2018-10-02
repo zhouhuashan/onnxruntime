@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(LpNormalizationTest, L1Normalization) {
   OpTester test("LpNormalization");
@@ -80,5 +80,5 @@ TEST(LpNormalizationTest, LpNormalizationDefaultAxisAndP) {
   test.AddOutput<float>("Y", input_dims, expected_output);
   test.Run();
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -27,10 +27,10 @@
 
 using namespace std;
 using namespace ONNX_NAMESPACE;
-using namespace onnxruntime::Logging;
+using namespace onnxruntime::logging;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 typedef std::vector<onnxruntime::NodeArg*> ArgMap;
 
@@ -251,5 +251,5 @@ TEST(CUDAFenceTests, TileWithComputedInput) {
   }
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

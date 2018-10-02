@@ -18,10 +18,10 @@
 #include "core/providers/mkldnn/mkldnn_execution_provider.h"
 #endif
 
-using namespace ::onnxruntime::Logging;
+using namespace ::onnxruntime::logging;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 // Check functions for tensor types
 
@@ -341,5 +341,5 @@ void OpTester::RunOnMklDnn(ExpectResult expect_result, const std::string& expect
 #endif
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

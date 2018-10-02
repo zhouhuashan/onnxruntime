@@ -25,7 +25,7 @@ class IOBinding;
 
 class CustomRegistry;
 
-namespace Logging {
+namespace logging {
 class LoggingManager;
 }
 
@@ -108,7 +108,7 @@ class InferenceSession {
     See core/common/logging/logging.h for details, and how LoggingManager::DefaultLogger works.
     */
   explicit InferenceSession(const SessionOptions& session_options,
-                            Logging::LoggingManager* logging_manager = nullptr);
+                            logging::LoggingManager* logging_manager = nullptr);
 
   virtual ~InferenceSession();
 

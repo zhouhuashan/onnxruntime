@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MathOpTest, Concat1D_string) {
   OpTester test("Concat");
@@ -165,5 +165,5 @@ TEST(MathOpTest, Concat3D_3) {
   test.RunOnCpuAndCuda();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

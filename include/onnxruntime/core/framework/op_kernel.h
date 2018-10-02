@@ -63,7 +63,7 @@ class OpKernelContext {
 
   explicit OpKernelContext(ExecutionFrame* frame,
                            const OpKernel* kernel,
-                           const Logging::Logger& logger);
+                           const logging::Logger& logger);
 
   virtual ~OpKernelContext() = default;
 
@@ -99,7 +99,7 @@ class OpKernelContext {
   // Return nullptr if the output is an unused optional output.
   Tensor* Output(int index, const TensorShape& shape);
 
-  const Logging::Logger& Logger() const {
+  const logging::Logger& Logger() const {
     return *logger_;
   }
 
@@ -144,7 +144,7 @@ class OpKernelContext {
 
   ExecutionFrame* execution_frame_{nullptr};
   const OpKernel* kernel_{nullptr};
-  const Logging::Logger* logger_{nullptr};
+  const logging::Logger* logger_{nullptr};
 
   // The argument starting index in ExecutionFrame.
   int node_input_start_index_{-1};

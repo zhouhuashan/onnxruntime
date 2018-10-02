@@ -4,18 +4,16 @@
 #include <stdexcept>
 #include <memory.h>
 
-using onnxruntime::Rnn::detail::Allocate;
+using onnxruntime::rnn::detail::Allocate;
 
 namespace onnxruntime {
 namespace ml {
 
-template<typename T>
-BahdanauAttention<T>::BahdanauAttention(AllocatorPtr allocator, const Logging::Logger& logger,
+template <typename T>
+BahdanauAttention<T>::BahdanauAttention(AllocatorPtr allocator, const logging::Logger& logger,
                                         int batch_size, int max_memory_step, int memory_depth,
                                         int query_depth, int attn_depth, bool normalize)
-    : allocator_(allocator), logger_(logger), batch_size_(batch_size), max_memory_steps_(max_memory_step), 
-      memory_depth_(memory_depth), query_depth_(query_depth), attn_depth_(attn_depth), normalize_(normalize) {
-
+    : allocator_(allocator), logger_(logger), batch_size_(batch_size), max_memory_steps_(max_memory_step), memory_depth_(memory_depth), query_depth_(query_depth), attn_depth_(attn_depth), normalize_(normalize) {
   values_ = Allocate(allocator_, batch_size_ * max_memory_steps_ * memory_depth_, values_ptr_, true);
   keys_ = Allocate(allocator_, batch_size_ * max_memory_steps_ * attn_depth_, keys_ptr_, true);
   processed_query_ = Allocate(allocator_, batch_size_ * attn_depth_, processed_query_ptr_, true);
@@ -24,16 +22,14 @@ BahdanauAttention<T>::BahdanauAttention(AllocatorPtr allocator, const Logging::L
   LOTUS_ENFORCE(!normalize_, "not support normalize yet.");
 }
 
-
 template <typename T>
 void BahdanauAttention<T>::SetWeights(
-  const gsl::span<const T>& attn_weights,
-  const gsl::span<const T>& query_layer_weights,
-  const gsl::span<const T>& memory_layer_weights) {
-
-  attention_v_ = attn_weights;                  //[attn_depth_]
-  query_layer_weights_ = query_layer_weights;   //[query_depth_, attn_depth_]
-  memory_layer_weights_ = memory_layer_weights; //[memory_depth_, attn_depth_]
+    const gsl::span<const T>& attn_weights,
+    const gsl::span<const T>& query_layer_weights,
+    const gsl::span<const T>& memory_layer_weights) {
+  attention_v_ = attn_weights;                   //[attn_depth_]
+  query_layer_weights_ = query_layer_weights;    //[query_depth_, attn_depth_]
+  memory_layer_weights_ = memory_layer_weights;  //[memory_depth_, attn_depth_]
 }
 
 template <typename T>
@@ -58,24 +54,22 @@ bool BahdanauAttention<T>::NeedPrevAlignment() const {
 
 template <typename T>
 void BahdanauAttention<T>::PrepareMemory(
-  const gsl::span<const T>& memory, 
-  const gsl::span <const int>& memory_sequence_lengths) {
-
+    const gsl::span<const T>& memory,
+    const gsl::span<const int>& memory_sequence_lengths) {
   std::copy(memory.cbegin(), memory.cend(), values_.begin());
   if (memory_sequence_lengths.empty()) {
     std::fill(mem_seq_lengths_.begin(), mem_seq_lengths_.end(), max_memory_steps_);
-  }
-  else {
+  } else {
     std::copy(memory_sequence_lengths.cbegin(), memory_sequence_lengths.cend(), mem_seq_lengths_.begin());
   }
 
   for (int b = 0; b < batch_size_; b++) {
     int mem_steps = mem_seq_lengths_[b];
-    LOTUS_ENFORCE(mem_steps <= max_memory_steps_ && mem_steps > 0, 
-                 "Real memory steps ", mem_steps, " is not in (0, ", max_memory_steps_, "]");
+    LOTUS_ENFORCE(mem_steps <= max_memory_steps_ && mem_steps > 0,
+                  "Real memory steps ", mem_steps, " is not in (0, ", max_memory_steps_, "]");
   }
 
-  Math::GemmEx<T, CPUMathUtil>(CblasNoTrans, CblasNoTrans,
+  math::GemmEx<T, CPUMathUtil>(CblasNoTrans, CblasNoTrans,
                                batch_size_ * max_memory_steps_, attn_depth_, memory_depth_, T{1.0},
                                memory.data(), memory_depth_,
                                memory_layer_weights_.data(), attn_depth_, T{0.0},
@@ -106,7 +100,6 @@ static void SoftmaxInplace(const gsl::span<T>& alignments) {
   }
 }
 
-
 /**
   * Args:
   *     queries: Tensor, shape `[batch_size_, query_depth_]` to compare to keys.
@@ -114,13 +107,12 @@ static void SoftmaxInplace(const gsl::span<T>& alignments) {
   */
 template <typename T>
 void BahdanauAttention<T>::Compute(
-  const gsl::span<const T>& queries, 
-  const gsl::span<const T>&,         // Not used by bahdanau attention
-  const gsl::span<T>& output,
-  const gsl::span<T>& aligns) const {
-
+    const gsl::span<const T>& queries,
+    const gsl::span<const T>&,  // Not used by bahdanau attention
+    const gsl::span<T>& output,
+    const gsl::span<T>& aligns) const {
   //process query in dense query layer without bias
-  Math::GemmEx<T, CPUMathUtil>(CblasNoTrans, CblasNoTrans,
+  math::GemmEx<T, CPUMathUtil>(CblasNoTrans, CblasNoTrans,
                                batch_size_, attn_depth_, query_depth_, T{1.0},
                                queries.data(), query_depth_,
                                query_layer_weights_.data(), attn_depth_, T{0.0},
@@ -151,7 +143,7 @@ void BahdanauAttention<T>::Compute(
     // Calculate the context
     auto outspan = output.subspan(b * memory_depth_);
     auto values = values_.subspan(b * max_memory_steps_ * memory_depth_);
-    Math::GemmEx<T, CPUMathUtil>(CblasNoTrans, CblasNoTrans,
+    math::GemmEx<T, CPUMathUtil>(CblasNoTrans, CblasNoTrans,
                                  1, memory_depth_, max_memory_steps_, T{1.0},
                                  alignments, max_memory_steps_,
                                  values.data(), memory_depth_, T{0.0},
@@ -161,5 +153,5 @@ void BahdanauAttention<T>::Compute(
 
 template class BahdanauAttention<float>;
 
-}
-}
+}  // namespace ml
+}  // namespace onnxruntime

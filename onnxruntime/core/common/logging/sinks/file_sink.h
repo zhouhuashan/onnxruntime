@@ -7,7 +7,7 @@
 #include "core/common/logging/sinks/ostream_sink.h"
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 /// <summary>
 /// ISink that writes to a file.
 /// </summary>
@@ -47,5 +47,5 @@ class FileSink : public OStreamSink {
   std::unique_ptr<std::ofstream> file_;
   bool filter_user_data_;
 };
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

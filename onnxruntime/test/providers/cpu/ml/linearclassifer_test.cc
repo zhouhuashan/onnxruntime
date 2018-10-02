@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, LinearClassifierMulticlass) {
   OpTester test("LinearClassifier", 1, onnxruntime::kMLDomain);
@@ -143,5 +143,5 @@ TEST(MLOpTest, LinearClassifierMulticlassInt64Input) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

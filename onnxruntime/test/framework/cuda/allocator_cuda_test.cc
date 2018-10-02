@@ -8,7 +8,7 @@
 #include "core/providers/cuda/cuda_allocator.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(AllocatorTest, CUDAAllocatorTest) {
   int cuda_device_id = 0;
   DeviceAllocatorRegistrationInfo default_allocator_info({kMemTypeDefault,
@@ -67,5 +67,5 @@ TEST(AllocatorTest, CUDAAllocatorTest) {
   cuda_arena->Free(cuda_addr);
   pinned_allocator->Free(pinned_addr);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

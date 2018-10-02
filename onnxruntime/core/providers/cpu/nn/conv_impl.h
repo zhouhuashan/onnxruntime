@@ -104,7 +104,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
   for (int image_id = 0; image_id < N; ++image_id) {
     for (int group_id = 0; group_id < group_; ++group_id) {
       if (Is2DKernel) {
-        Math::Im2col<T, CPUMathUtil, StorageOrder::NCHW>(
+        math::Im2col<T, CPUMathUtil, StorageOrder::NCHW>(
             Xdata + group_id * X_offset,
             C / group_,
             input_shape[0],
@@ -122,7 +122,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
             col_buffer_data,
             &CPUMathUtil::Instance());
       } else {
-        Math::Im2colNd<T, CPUMathUtil, StorageOrder::NCHW>(
+        math::Im2colNd<T, CPUMathUtil, StorageOrder::NCHW>(
             Xdata + group_id * X_offset,
             image_shape.GetDims().data(),
             col_buffer_shape.data(),
@@ -136,7 +136,7 @@ Status Conv<T>::Compute(OpKernelContext* context) const {
             col_buffer_data,
             &CPUMathUtil::Instance());
       }
-      Math::Gemm<T, CPUMathUtil>(
+      math::Gemm<T, CPUMathUtil>(
           CblasNoTrans,
           CblasNoTrans,
           M / group_,
@@ -263,7 +263,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
             col_buffer_data,
             Ydata + group_id * Y_offset);
       } else {
-        Math::Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
+        math::Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
             Xdata + group_id * X_offset,
             image_shape.GetDims().data(),
             col_buffer_shape.data(),
@@ -276,7 +276,7 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
             static_cast<int>(kernel_shape.size()),
             col_buffer_data,
             &CPUMathUtil::Instance());
-        Math::Gemm<float, CPUMathUtil>(
+        math::Gemm<float, CPUMathUtil>(
             CblasNoTrans,
             CblasNoTrans,
             M / group_,

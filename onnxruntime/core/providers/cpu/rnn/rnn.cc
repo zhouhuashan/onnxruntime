@@ -18,7 +18,7 @@ ONNX_CPU_OPERATOR_KERNEL(
 
 // #define DUMP_MATRIXES to provide diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
@@ -68,7 +68,7 @@ void Assign_Y_h(const T* Y_buffer_data, Tensor* Y_h, const Tensor* sequence_lens
                        direction * batch_size * hidden_size +
                        batch * hidden_size;
     int64_t Y_h_offset = direction * batch_size * hidden_size + batch * hidden_size;
-    Math::CopyVector<T, CPUMathUtil>(static_cast<int>(hidden_size), Y_buffer_data + y_offset,
+    math::CopyVector<T, CPUMathUtil>(static_cast<int>(hidden_size), Y_buffer_data + y_offset,
                                      Y_h->MutableData<T>() + Y_h_offset,
                                      &CPUMathUtil::Instance());
   }
@@ -85,7 +85,7 @@ void ClearMissingFrames(T* Y_buffer_data, const Tensor* sequence_lens,
               seq * num_directions * batch_size * hidden_size +
               direction * batch_size * hidden_size +
               batch * hidden_size;
-          Math::Set<T, CPUMathUtil>(hidden_size, 0, Y_buffer_data + offset, &CPUMathUtil::Instance());
+          math::Set<T, CPUMathUtil>(hidden_size, 0, Y_buffer_data + offset, &CPUMathUtil::Instance());
         }
       }
     }
@@ -98,7 +98,7 @@ using EigenMatrixMapRowMajor = Eigen::Map<
 
 template <>
 Status RNN<float>::Compute(OpKernelContext* ctx) const {
-  using namespace Rnn::detail;
+  using namespace rnn::detail;
 
   // inputs
   const Tensor& X = *ctx->Input<Tensor>(0);
@@ -115,7 +115,7 @@ Status RNN<float>::Compute(OpKernelContext* ctx) const {
   int64_t batch_size = X.Shape()[1];
   int64_t input_size = X.Shape()[2];
 
-  auto status = Rnn::detail::ValidateCommonRnnInputs(X, W, R, B, 1, sequence_lens, initial_h,
+  auto status = rnn::detail::ValidateCommonRnnInputs(X, W, R, B, 1, sequence_lens, initial_h,
                                                      num_directions, hidden_size_);
   LOTUS_RETURN_IF_ERROR(status);
 
@@ -156,11 +156,11 @@ Status RNN<float>::Compute(OpKernelContext* ctx) const {
           ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size_, hidden_size_).transpose() +
           ConstEigenVectorMap<float>(B->Data<float>() + direction * 2 * hidden_size_ + hidden_size_, hidden_size_).transpose();
     } else {
-      Math::Set<float, CPUMathUtil>(seq_length * batch_size * hidden_size_, 0, x_matmul_w_buffer_data, &CPUMathUtil::Instance());
+      math::Set<float, CPUMathUtil>(seq_length * batch_size * hidden_size_, 0, x_matmul_w_buffer_data, &CPUMathUtil::Instance());
     }
 
     // X * W[direction]^t + B
-    Math::Gemm<float, CPUMathUtil>(
+    math::Gemm<float, CPUMathUtil>(
         CblasNoTrans,
         CblasTrans,
         static_cast<int>(seq_length * batch_size),
@@ -192,7 +192,7 @@ Status RNN<float>::Compute(OpKernelContext* ctx) const {
 
       if (h_prev != nullptr) {
         // H_t_1 * R[direction]^t
-        Math::Gemm<float, CPUMathUtil>(
+        math::Gemm<float, CPUMathUtil>(
             CblasNoTrans,
             CblasTrans,
             static_cast<int>(batch_size),
@@ -205,7 +205,7 @@ Status RNN<float>::Compute(OpKernelContext* ctx) const {
             Y_buffer_data_current_frame,
             &CPUMathUtil::Instance());
       } else {
-        Math::Set<float, CPUMathUtil>(batch_size * hidden_size_, 0, Y_buffer_data_current_frame, &CPUMathUtil::Instance());
+        math::Set<float, CPUMathUtil>(batch_size * hidden_size_, 0, Y_buffer_data_current_frame, &CPUMathUtil::Instance());
       }
 
       // X[time_step] * W^t + H_t_1 * R^t

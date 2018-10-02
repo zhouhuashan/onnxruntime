@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(TensorOpTest, Slice1D) {
   OpTester test("Slice");
@@ -101,5 +101,5 @@ TEST(TensorOpTest, Slice3D) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

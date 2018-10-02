@@ -155,11 +155,11 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   const Tensor& X = *ctx->Input<Tensor>(Input_Index::X);  // inputs. [seq_length, batch_size, input_size]
 
   // optional inputs
-  const Tensor* sequence_lens = Rnn::detail::OptionalInput(*ctx, Input_Index::sequence_lens);  // [batch_size]
-  const Tensor* initial_h = Rnn::detail::OptionalInput(*ctx, Input_Index::initial_h);          // initial hidden. [num_directions_, batch_size, hidden_size_]
+  const Tensor* sequence_lens = rnn::detail::OptionalInput(*ctx, Input_Index::sequence_lens);  // [batch_size]
+  const Tensor* initial_h = rnn::detail::OptionalInput(*ctx, Input_Index::initial_h);          // initial hidden. [num_directions_, batch_size, hidden_size_]
   Tensor* initial_c(nullptr);
   if (rnn_mode_ == CUDNN_LSTM) {
-    initial_c = const_cast<Tensor*>(Rnn::detail::OptionalInput(*ctx, Input_Index::initial_c));  // initial cell. [num_directions_, batch_size, hidden_size_]
+    initial_c = const_cast<Tensor*>(rnn::detail::OptionalInput(*ctx, Input_Index::initial_c));  // initial cell. [num_directions_, batch_size, hidden_size_]
   }
 
   int64_t seq_length = X.Shape()[0];
@@ -199,7 +199,7 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   if (!weight_cached_) {
     const Tensor& W = *ctx->Input<Tensor>(Input_Index::W);
     const Tensor& R = *ctx->Input<Tensor>(Input_Index::R);
-    const Tensor* B = Rnn::detail::OptionalInput(*ctx, Input_Index::B);
+    const Tensor* B = rnn::detail::OptionalInput(*ctx, Input_Index::B);
     ReorganizeWeights(&W, &R, B, w_data, w_desc);
   }
 
@@ -223,7 +223,7 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   T* y_c_data = (Y_c == nullptr) ? nullptr : Y_c->MutableData<T>();
   int64_t output_size = seq_length * num_directions_ * batch_size * hidden_size_;
   T* y_data = nullptr;
-  IAllocatorUniquePtr<T> y_alloc_data; 
+  IAllocatorUniquePtr<T> y_alloc_data;
   if (Y != nullptr) {
     y_data = Y->MutableData<T>();
   } else {

@@ -17,7 +17,7 @@ using namespace ONNX_NAMESPACE;
 using namespace std;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 class TestOpKernel : public OpKernel {
  public:
   TestOpKernel(const OpKernelInfo& p) : OpKernel(p) {}
@@ -62,5 +62,5 @@ TEST(SessionStateTest, AddGetKernelTest) {
   std::cout << "orig: " << orig_num_outputs << " new: " << test_kernel->Node().OutputDefs().size() << std::endl;
   EXPECT_EQ(orig_num_outputs, test_kernel->Node().OutputDefs().size());
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -5,11 +5,11 @@
 #include "core/graph/onnx_protobuf.h"
 #include "gtest/gtest.h"
 
-using namespace ::onnxruntime::Utils;
+using namespace ::onnxruntime::utils;
 using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 //T must be float for double, and it must match with the 'type' argument
 template <typename T>
@@ -63,5 +63,5 @@ TEST(TensorParseTest, TensorUtilsTest) {
   status = TensorUtils::UnpackTensor(bool_tensor_proto, string_data, 2);
   EXPECT_FALSE(status.IsOK());
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

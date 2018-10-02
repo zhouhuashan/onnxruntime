@@ -8,7 +8,7 @@
 #include "core/common/logging/logging.h"
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 class ISink {
  public:
   ISink() = default;
@@ -31,5 +31,5 @@ class ISink {
 
   virtual void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) = 0;
 };
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

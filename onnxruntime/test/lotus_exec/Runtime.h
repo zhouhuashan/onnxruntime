@@ -38,7 +38,7 @@ class WinMLRuntime {
  public:
   WinMLRuntime() {
     using namespace onnxruntime;
-    using namespace ::onnxruntime::Logging;
+    using namespace ::onnxruntime::logging;
 
     static std::unique_ptr<::onnxruntime::Environment> lotus_env = nullptr;
     static std::once_flag env_flag;
@@ -356,14 +356,14 @@ class WinMLRuntime {
  private:
   std::unique_ptr<::onnxruntime::InferenceSession> inference_session_;
 
-  static ::onnxruntime::Logging::LoggingManager& DefaultLoggingManager() {
+  static ::onnxruntime::logging::LoggingManager& DefaultLoggingManager() {
     using namespace onnxruntime;
     std::string default_logger_id{"Default"};
 
-    static Logging::LoggingManager default_logging_manager{
-        std::unique_ptr<Logging::ISink>{new ::onnxruntime::Logging::CLogSink{}},
-        Logging::Severity::kWARNING, false,
-        Logging::LoggingManager::InstanceType::Default,
+    static logging::LoggingManager default_logging_manager{
+        std::unique_ptr<logging::ISink>{new ::onnxruntime::logging::CLogSink{}},
+        logging::Severity::kWARNING, false,
+        logging::LoggingManager::InstanceType::Default,
         &default_logger_id};
 
     return default_logging_manager;

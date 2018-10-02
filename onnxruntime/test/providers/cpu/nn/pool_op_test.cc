@@ -6,7 +6,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(PoolTest, MaxPool) {
   OpTester test("MaxPool");
@@ -1050,5 +1050,5 @@ TEST(PoolTest, GlobalLpPool) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

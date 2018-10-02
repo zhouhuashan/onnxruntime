@@ -13,7 +13,7 @@
 using namespace std::experimental::filesystem::v1;
 
 namespace onnxruntime {
-namespace PerfTest {
+namespace perftest {
 Status PerformanceRunner::Run() {
   if (!Initialize()) {
     return LOTUS_MAKE_STATUS(LOTUS, FAIL, "failed to initialize.");
@@ -25,7 +25,7 @@ Status PerformanceRunner::Run() {
   if (!performance_test_config_.run_config.profile_file.empty())
     session_object_->StartProfiling(performance_test_config_.run_config.profile_file);
 
-  std::unique_ptr<Utils::ICPUUsage> p_ICPUUsage = Utils::CreateICPUUsage();
+  std::unique_ptr<utils::ICPUUsage> p_ICPUUsage = utils::CreateICPUUsage();
   switch (performance_test_config_.run_config.test_mode) {
     case TestMode::kFixDurationMode:
       LOTUS_RETURN_IF_ERROR(RunFixDuration());
@@ -37,7 +37,7 @@ Status PerformanceRunner::Run() {
       return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unknown test mode.");
   }
   performance_result_.average_CPU_usage = p_ICPUUsage->GetUsage();
-  performance_result_.peak_workingset_size = Utils::GetPeakWorkingSetSize();
+  performance_result_.peak_workingset_size = utils::GetPeakWorkingSetSize();
 
   if (!performance_test_config_.run_config.profile_file.empty())
     session_object_->EndProfiling();
@@ -118,6 +118,6 @@ bool PerformanceRunner::Initialize() {
   return true;
 }
 
-}  // namespace PerfTest
+}  // namespace perftest
 
 }  // namespace onnxruntime

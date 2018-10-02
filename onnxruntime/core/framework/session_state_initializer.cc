@@ -34,7 +34,7 @@ static common::Status TransformGraph(onnxruntime::Graph& graph,
 
 static common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
                                                   MLValueNameIdxMap& mlvalue_name_idx_map,
-                                                  const Logging::Logger& logger);
+                                                  const logging::Logger& logger);
 
 using SaveTensorFunc = std::function<void(int idx, const onnxruntime::MLValue&)>;
 
@@ -45,12 +45,12 @@ static common::Status SaveInitializedTensors(const onnxruntime::Graph& graph,
                                              const MLValueNameIdxMap& mlvalue_name_idx_map,
                                              std::map<AllocatorInfo, BufferUniquePtr>& weights_buffers,
                                              SaveTensorFunc save_tensor_func,
-                                             const Logging::Logger& logger);
+                                             const logging::Logger& logger);
 
 static common::Status SaveKernels(const ExecutionProviders& execution_providers,
                                   SessionState& session_state,
                                   const KernelRegistryManager& custom_registry_manager,
-                                  const Logging::Logger& logger);
+                                  const logging::Logger& logger);
 
 static common::Status SaveInputOutputNamesToNodeMapping(const onnxruntime::Graph& graph,
                                                         const KernelRegistryManager& custom_registry_manager,
@@ -60,7 +60,7 @@ SessionStateInitializer::SessionStateInitializer(onnxruntime::Graph& graph,
                                                  SessionState& session_state,
                                                  const ExecutionProviders& providers,
                                                  KernelRegistryManager& kernel_registry_manager,
-                                                 const Logging::Logger& logger)
+                                                 const logging::Logger& logger)
     : graph_{graph},
       session_state_{session_state},
       execution_providers_{providers},
@@ -167,7 +167,7 @@ common::Status TransformGraph(onnxruntime::Graph& graph,
 // Build the MLValue name->idx mapping
 common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
                                            MLValueNameIdxMap& mlvalue_name_idx_map,
-                                           const Logging::Logger& logger) {
+                                           const logging::Logger& logger) {
   LOGS(logger, INFO) << "SaveMLValueNameIndexMapping";
   int idx = 0;
 
@@ -212,14 +212,14 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
                                       const AllocatorInfo& alloc_info,
                                       const ExecutionProviders& exec_providers,
                                       MLValue& mlvalue, void* preallocated, size_t preallocated_size) {
-  auto alloc_ptr = Utils::GetAllocator(exec_providers, alloc_info);
+  auto alloc_ptr = utils::GetAllocator(exec_providers, alloc_info);
   if (!alloc_ptr) {
     return Status(common::LOTUS, common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
   }
 
   if (strcmp(alloc_info.name, CPU) == 0 || alloc_info.mem_type == kMemTypeCPUOutput) {
     // deserialize directly to CPU tensor
-    return Utils::TensorProtoToMLValue(tensor_proto, alloc_ptr, preallocated, preallocated_size, mlvalue);
+    return utils::TensorProtoToMLValue(tensor_proto, alloc_ptr, preallocated, preallocated_size, mlvalue);
   }
 
   std::unique_ptr<Tensor> p_tensor;
@@ -227,7 +227,7 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
   AllocatorPtr deserialize_alloc_ptr;
   std::unique_ptr<Tensor> p_deserialize_tensor;
   deserialize_alloc_ptr = exec_providers.Get(kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
-  LOTUS_RETURN_IF_ERROR(Utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
+  LOTUS_RETURN_IF_ERROR(utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
                                                         deserialize_alloc_ptr));
 
   if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
@@ -266,7 +266,7 @@ static common::Status PlanTensor(MLValuePatternPlanner& planner, const MLValueNa
   int mlvalue_index;
   LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
   size_t len;
-  Status st = Utils::GetSizeInBytesFromTensorProto(tensor_proto, &len);
+  Status st = utils::GetSizeInBytesFromTensorProto(tensor_proto, &len);
   if (st.Code() == common::NOT_IMPLEMENTED) return Status::OK();
   if (!st.IsOK()) return st;
   return planner.TraceAllocation(mlvalue_index, Align256(len));
@@ -278,7 +278,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
                                                     const MLValueNameIdxMap& mlvalue_name_idx_map,
                                                     std::map<AllocatorInfo, BufferUniquePtr>& weights_buffers,
                                                     SaveTensorFunc save_tensor_func,
-                                                    const Logging::Logger& logger) {
+                                                    const logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving initialized tensors.";
 
   LOTUS_ENFORCE(mlvalue_name_idx_map.MaxIdx() > 0, "MLValue indexes should have been populated.");
@@ -300,7 +300,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
     LOTUS_ENFORCE(weights_buffers.find(location) == weights_buffers.end(),
                   "Existing entry in weights buffer for ", location.name);
 
-    auto alloc = Utils::GetAllocator(exec_providers, location);
+    auto alloc = utils::GetAllocator(exec_providers, location);
     if (!alloc)
       return Status(common::LOTUS, common::FAIL, "Failed to get allocator for location: " + location.ToString());
 
@@ -353,7 +353,7 @@ common::Status SaveInitializedTensorsWithSeperateBuffer(const onnxruntime::Graph
                                                         const ExecutionProviders& exec_providers,
                                                         const MLValueNameIdxMap& mlvalue_name_idx_map,
                                                         SaveTensorFunc save_tensor_func,
-                                                        const Logging::Logger& logger) {
+                                                        const logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving initialized tensors.";
 
   LOTUS_ENFORCE(mlvalue_name_idx_map.MaxIdx() > 0, "MLValue indexes should have been populated.");
@@ -382,7 +382,7 @@ common::Status SaveInitializedTensors(const onnxruntime::Graph& graph,
                                       const MLValueNameIdxMap& mlvalue_name_idx_map,
                                       std::map<AllocatorInfo, BufferUniquePtr>& weights_buffers,
                                       SaveTensorFunc save_tensor_func,
-                                      const Logging::Logger& logger) {
+                                      const logging::Logger& logger) {
   // if we enable the memory pattern and already have the execution plan
   // go with mem pattern approach, which will allocate a big chunk for all
   // the weights.
@@ -408,7 +408,7 @@ static common::Status CreateOpKernel(const onnxruntime::Node& node,
                                      const SessionState& session_state,
                                      const KernelRegistryManager& custom_registry_manager,
                                      std::unique_ptr<OpKernel>& op_kernel,
-                                     const Logging::Logger& logger) {
+                                     const logging::Logger& logger) {
   onnxruntime::ProviderType exec_provider_name = node.GetExecutionProviderType();
 
   const IExecutionProvider* exec_provider = nullptr;
@@ -432,7 +432,7 @@ static common::Status CreateOpKernel(const onnxruntime::Node& node,
 common::Status SaveKernels(const ExecutionProviders& execution_providers,
                            SessionState& session_state,
                            const KernelRegistryManager& custom_registry_manager,
-                           const Logging::Logger& logger) {
+                           const logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving kernels.";
 
   const onnxruntime::Graph& graph{*session_state.GetGraph()};

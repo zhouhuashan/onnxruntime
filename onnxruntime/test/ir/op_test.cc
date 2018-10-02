@@ -18,7 +18,7 @@ using namespace ONNX_NAMESPACE;
 #define LOTUS_OPERATOR_SCHEMA LOTUS_UNUSED ONNX_OPERATOR_SCHEMA
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(FormalParamTest, Success) {
   OpSchema::FormalParameter p("input", "desc: integer input", "tensor(int32)");
   EXPECT_EQ("input", p.GetName());
@@ -248,5 +248,5 @@ TEST(OpRegistrationTest, AttributeDefaultValueListTest) {
   }
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -9,7 +9,7 @@
 #include "core/graph/constants.h"
 
 namespace onnxruntime {
-namespace PerfTest {
+namespace perftest {
 
 enum class TestMode : std::uint8_t {
   kFixDurationMode = 0,
@@ -49,5 +49,5 @@ struct PerformanceTestConfig {
   RunConfig run_config;
 };
 
-}  // namespace PerfTest
+}  // namespace perftest
 }  // namespace onnxruntime

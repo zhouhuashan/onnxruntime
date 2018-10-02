@@ -11,7 +11,7 @@
 using namespace std;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 using InputDataMap = unordered_map<string, vector<float>>;
 using InputShapesMap = unordered_map<string, vector<int64_t>>;
@@ -512,5 +512,5 @@ TEST(BatchNormTest, InvalidVarDim) {
                 OpTester::ExpectResult::kExpectFailure,
                 "Invalid input var");
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

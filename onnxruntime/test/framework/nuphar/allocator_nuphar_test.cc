@@ -9,7 +9,7 @@
 #include "gtest/gtest.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(AllocatorTest, NupharAllocatorTest) {
   int device_id = 0;
   TVMContext tvm_ctx;
@@ -34,5 +34,5 @@ TEST(AllocatorTest, NupharAllocatorTest) {
 
   nuphar_arena->Free(addr);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

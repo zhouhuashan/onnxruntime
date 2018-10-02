@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -18,9 +17,9 @@
 using namespace ONNX_NAMESPACE;
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
-namespace ModelBuilder {
+namespace modelbuilder {
 
 class NodeCounter {
  private:
@@ -62,9 +61,9 @@ class DummyOpKernel : public OpKernel {
   }
 };
 
-}  // namespace ModelBuilder
+}  // namespace modelbuilder
 
-using namespace ModelBuilder;
+using namespace modelbuilder;
 
 class AllocationPlanTestUtility {
  public:
@@ -430,5 +429,5 @@ TEST_F(PlannerTest, PlanOutputTest) {
   }
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

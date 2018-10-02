@@ -73,24 +73,24 @@ class SessionState {
   /**
   Set the logger to use for this session. 
   */
-  SessionState& SetLogger(const Logging::Logger& logger);
+  SessionState& SetLogger(const logging::Logger& logger);
 
   /**
   Get the logger for this session. 
   Falls back to returning Logging::LoggingManager::DefaultLogger if SetLogger has not been called.
   */
-  const Logging::Logger& Logger() const;
+  const logging::Logger& Logger() const;
 
   /**
   Set the profiler for this session.
   */
-  void SetProfiler(Profiling::Profiler& profiler);
+  void SetProfiler(profiling::Profiler& profiler);
 
   /**
   Get the profiler for this session. It needs to be enabled via the InferenceSession to perform
   profiling actions.
   */
-  Profiling::Profiler& Profiler() const;
+  profiling::Profiler& Profiler() const;
 
   /**
   Get cached memory pattern based on input shapes
@@ -163,8 +163,8 @@ class SessionState {
   std::unordered_map<int, MLValue> initialized_tensors_;  // key is mlvalue_index
   std::unique_ptr<SequentialExecutionPlan> p_seq_exec_plan_ = nullptr;
 
-  const Logging::Logger* logger_;
-  Profiling::Profiler* profiler_;
+  const logging::Logger* logger_;
+  profiling::Profiler* profiler_;
 
   // switch for enable memory pattern optimization or not.
   bool enable_mem_pattern_ = true;

@@ -21,7 +21,7 @@
 #include "test_configuration.h"
 
 namespace onnxruntime {
-namespace PerfTest {
+namespace perftest {
 
 struct PerformanceResult {
   size_t peak_workingset_size{0};
@@ -117,5 +117,5 @@ class PerformanceRunner {
   std::shared_ptr<::onnxruntime::InferenceSession> session_object_;
   std::unique_ptr<IOBinding> io_binding_;
 };
-}  // namespace PerfTest
+}  // namespace perftest
 }  // namespace onnxruntime

@@ -6,7 +6,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(UpsampleOpTest, UpsampleOpNearestTest) {
   OpTester test("Upsample");
@@ -215,5 +215,5 @@ TEST(UpsampleOpTest, UpsampleOpNearestTest_1D) {
   test.AddOutput<float>("Y", {10}, Y);
   test.RunOnCpuAndCudaWithTVM();
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

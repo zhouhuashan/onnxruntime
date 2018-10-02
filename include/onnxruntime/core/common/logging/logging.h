@@ -50,7 +50,7 @@ A sink can do further filter as needed.
 */
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 
 using Timestamp = std::chrono::time_point<std::chrono::system_clock>;
 
@@ -263,5 +263,5 @@ Return the current process id.
 */
 unsigned int GetProcessId();
 
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime

@@ -8,7 +8,7 @@
 #include "onnx/defs/data_type_utils.h"
 
 namespace onnxruntime {
-namespace Utils {
+namespace utils {
 MLDataType GetMLDataType(const onnxruntime::NodeArg& arg);
-}  // namespace Utils
+}  // namespace utils
 }  // namespace onnxruntime

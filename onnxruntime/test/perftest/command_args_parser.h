@@ -4,7 +4,7 @@
 #pragma once
 
 namespace onnxruntime {
-namespace PerfTest {
+namespace perftest {
 
 struct PerformanceTestConfig;
 
@@ -15,5 +15,5 @@ class CommandLineParser {
   static bool ParseArguments(PerformanceTestConfig& test_config, int argc, char* argv[]);
 };
 
-}  // namespace PerfTest
+}  // namespace perftest
 }  // namespace onnxruntime

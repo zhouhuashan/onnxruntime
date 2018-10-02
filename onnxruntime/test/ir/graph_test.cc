@@ -34,7 +34,7 @@
 
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 using google::protobuf::util::MessageDifferencer;
 
 TEST(GraphTraversalTest, ReverseDFS) {
@@ -648,5 +648,5 @@ TEST(NameResolutionTest, DuplicateName) {
   EXPECT_TRUE(duplicate_error_found);
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

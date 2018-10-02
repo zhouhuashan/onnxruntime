@@ -11,9 +11,9 @@
 namespace onnxruntime {
 namespace ml {
 
-using onnxruntime::Rnn::detail::ActivationFuncs;
-using onnxruntime::Rnn::detail::Direction;
-using onnxruntime::Rnn::detail::MakeDirection;
+using onnxruntime::rnn::detail::ActivationFuncs;
+using onnxruntime::rnn::detail::Direction;
+using onnxruntime::rnn::detail::MakeDirection;
 
 // The class represents DeepCPU implementation of a long short term memory (LSTM) plus a Bahdanau Attention wraper.
 // The equivilent python usage could be checked int the corresponding op test directory, attention_lstm_data_gen.py.
@@ -55,7 +55,6 @@ class DeepCpuAttnLstmOp final : public OpKernel {
     activation_funcs_ = ActivationFuncs(activation_func_names,
                                         activation_func_alphas,
                                         activation_func_betas);
-
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -97,7 +96,6 @@ class DeepCpuAttnLstmOp final : public OpKernel {
   // cost on every call.
   mutable TaskThreadPool ttp_{std::thread::hardware_concurrency()};
 };
-
 
 }  // namespace ml
 }  // namespace onnxruntime

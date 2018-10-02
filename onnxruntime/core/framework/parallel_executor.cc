@@ -20,7 +20,7 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
                                  const NameMLValMap& feeds,
                                  const std::vector<std::string>& output_names,
                                  std::vector<MLValue>& fetches,
-                                 const Logging::Logger& logger) {
+                                 const logging::Logger& logger) {
   auto tp = session_state.Profiler().StartTime();
 
   node_refs_ = session_state.GetGraph()->GetNodeRefs();
@@ -65,11 +65,11 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
     }
   }
 
-  session_state.Profiler().EndTimeAndRecordEvent(Profiling::SESSION_EVENT, "ParallelExecutor::Execute", tp);
+  session_state.Profiler().EndTimeAndRecordEvent(profiling::SESSION_EVENT, "ParallelExecutor::Execute", tp);
   return Status::OK();
 }
 
-void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& session_state, const Logging::Logger& logger) {
+void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& session_state, const logging::Logger& logger) {
   LOGS(logger, INFO) << "Begin execution";
 
   size_t node_index = p_node_index;
@@ -104,7 +104,7 @@ void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& ses
     const std::string& node_name = p_op_kernel->Node().Name();
     const std::string& op_name = p_op_kernel->KernelDef().OpName();
 
-    session_state.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
+    session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_fence_before",
                                                    sync_time_begin,
                                                    std::unordered_map<std::string,
@@ -120,7 +120,7 @@ void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& ses
     if (!status.IsOK())
       LOTUS_THROW("Compute failed for node: ", session_state.GetGraph()->GetNode(node_index)->Name());
 
-    session_state.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
+    session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_kernel_time",
                                                    kernel_begin_time,
                                                    std::unordered_map<std::string, std::string>{{"op_name", op_name}});
@@ -139,7 +139,7 @@ void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& ses
         fence->AfterUsedAsOutput(queue_id);
       }
     }
-    session_state.Profiler().EndTimeAndRecordEvent(Profiling::NODE_EVENT,
+    session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_fence_after",
                                                    sync_time_begin,
                                                    std::unordered_map<std::string, std::string>{{"op_name", op_name}});
@@ -176,7 +176,7 @@ void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& ses
   }
 }
 
-void ParallelExecutor::EnqueueNode(size_t p_node_index, const SessionState& session_state, const Logging::Logger& logger) {
+void ParallelExecutor::EnqueueNode(size_t p_node_index, const SessionState& session_state, const logging::Logger& logger) {
   out_standings_++;
   //std::cout << "Enqueue async node: " << p_node_index << ", out_standings: " << out_standings_ << std::endl;
   std::packaged_task<void()> task{std::bind(&ParallelExecutor::RunNodeAsync, this, p_node_index, std::cref(session_state), std::cref(logger))};
@@ -187,7 +187,7 @@ Status ParallelExecutor::FetchOutput(const MLValueNameIdxMap& name_idx_map,
                                      ExecutionFrame& frame,
                                      const std::vector<std::string>& output_names,
                                      std::vector<MLValue>& fetches,
-                                     const Logging::Logger& logger) {
+                                     const logging::Logger& logger) {
   if (fetches.empty()) {
     fetches.resize(output_names.size());
   } else {

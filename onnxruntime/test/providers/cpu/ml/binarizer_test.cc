@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 using namespace std;
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(MLOpTest, BinarizerOp) {
   OpTester test("Binarizer", 1, onnxruntime::kMLDomain);
@@ -25,5 +25,5 @@ TEST(MLOpTest, BinarizerOp) {
   test.Run();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

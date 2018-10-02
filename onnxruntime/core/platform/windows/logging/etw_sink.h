@@ -23,7 +23,7 @@
 #include "core/common/logging/isink.h"
 
 namespace onnxruntime {
-namespace Logging {
+namespace logging {
 
 class EtwSink : public ISink {
  public:
@@ -41,7 +41,7 @@ class EtwSink : public ISink {
   // EtwTracingManager to ensure we cleanly unregister it
   static std::atomic_flag have_instance_;
 };
-}  // namespace Logging
+}  // namespace logging
 }  // namespace onnxruntime
 
 #endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED

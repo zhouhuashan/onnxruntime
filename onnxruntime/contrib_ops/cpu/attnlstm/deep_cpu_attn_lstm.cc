@@ -11,22 +11,22 @@
 namespace onnxruntime {
 namespace ml {
 
-using ::onnxruntime::Rnn::detail::Allocate;
-using ::onnxruntime::Rnn::detail::OptionalInput;
 using ::onnxruntime::ml::rnn::detail::UniDirectionalAttnLstm;
+using ::onnxruntime::rnn::detail::Allocate;
+using ::onnxruntime::rnn::detail::OptionalInput;
 
 extern template class BahdanauAttention<float>;
 
 /* AttnLSTM operator */
 ONNX_OPERATOR_KERNEL_EX(
-  AttnLSTM,  //name
-  kMSDomain,
-  1,
-  kCpuExecutionProvider,
-  KernelDefBuilder()
-    .TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()})
-    .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
-  DeepCpuAttnLstmOp);
+    AttnLSTM,  //name
+    kMSDomain,
+    1,
+    kCpuExecutionProvider,
+    KernelDefBuilder()
+        .TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()})
+        .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
+    DeepCpuAttnLstmOp);
 
 Status
 DeepCpuAttnLstmOp::Compute(OpKernelContext* context) const {
@@ -50,7 +50,7 @@ DeepCpuAttnLstmOp::Compute(OpKernelContext* context) const {
 
 // #define DUMP_MATRIXES to provide lots of diagnostic output
 #if defined(DUMP_MATRIXES)
-#define DumpMatrix(...) ::onnxruntime::Rnn::detail::DumpMatrixImpl(__VA_ARGS__)
+#define DumpMatrix(...) ::onnxruntime::rnn::detail::DumpMatrixImpl(__VA_ARGS__)
 #else
 #define DumpMatrix(...) ((void)0)
 #endif
@@ -91,30 +91,28 @@ Status DeepCpuAttnLstmOp::ComputeImpl(OpKernelContext& context) const {
 
   // Processing attention wrapper
   const int first_attn_input = 8;
-  const Tensor& am_query_layer_weights = *context.Input<Tensor>(first_attn_input + 0);  // [num_directions, query_depth(hidden_size of lstm), am_attn_size]
-  const Tensor& am_memory_layer_weights = *context.Input<Tensor>(first_attn_input + 1); // [num_directions, memory_depth, am_attn_size]
-  const Tensor& am_v_weights = *context.Input<Tensor>(first_attn_input + 2);            // [num_directions, am_attn_size]
-  const Tensor& attn_memory = *context.Input<Tensor>(first_attn_input + 3);             // [batch_size, max_memory_step, memory_depth_]
-  const Tensor* attn_memory_seq_lens = context.Input<Tensor>(first_attn_input + 4);     // [batch_size], int value
-  const Tensor* attn_layer_weights = context.Input<Tensor>(first_attn_input + 5);       // [num_directions, memory_depth+cell_hidden_size, aw_attn_size]
+  const Tensor& am_query_layer_weights = *context.Input<Tensor>(first_attn_input + 0);   // [num_directions, query_depth(hidden_size of lstm), am_attn_size]
+  const Tensor& am_memory_layer_weights = *context.Input<Tensor>(first_attn_input + 1);  // [num_directions, memory_depth, am_attn_size]
+  const Tensor& am_v_weights = *context.Input<Tensor>(first_attn_input + 2);             // [num_directions, am_attn_size]
+  const Tensor& attn_memory = *context.Input<Tensor>(first_attn_input + 3);              // [batch_size, max_memory_step, memory_depth_]
+  const Tensor* attn_memory_seq_lens = context.Input<Tensor>(first_attn_input + 4);      // [batch_size], int value
+  const Tensor* attn_layer_weights = context.Input<Tensor>(first_attn_input + 5);        // [num_directions, memory_depth+cell_hidden_size, aw_attn_size]
 
   Status status = ValidateInputs(
-    X, W, R, B, sequence_lens, initial_h, initial_c, P, batch_size,
-    am_query_layer_weights, am_memory_layer_weights, am_v_weights, attn_memory, attn_memory_seq_lens, attn_layer_weights);
+      X, W, R, B, sequence_lens, initial_h, initial_c, P, batch_size,
+      am_query_layer_weights, am_memory_layer_weights, am_v_weights, attn_memory, attn_memory_seq_lens, attn_layer_weights);
   LOTUS_RETURN_IF_ERROR(status);
 
   const int max_memory_step = gsl::narrow<int>(attn_memory.Shape()[1]);
   const int memory_depth = gsl::narrow<int>(am_memory_layer_weights.Shape()[1]);
   const int am_attn_size = gsl::narrow<int>(am_memory_layer_weights.Shape()[2]);
-  const int query_depth = gsl::narrow<int>(am_query_layer_weights.Shape()[1]);        // it is equal to hidden_size
+  const int query_depth = gsl::narrow<int>(am_query_layer_weights.Shape()[1]);  // it is equal to hidden_size
   const bool has_attention_layer = attn_layer_weights != nullptr;
   const int attn_layer_depth = has_attention_layer ? gsl::narrow<int>(attn_layer_weights->Shape()[2]) : 0;
   const int attention_size = has_attention_layer ? attn_layer_depth : memory_depth;
 
-  const gsl::span<const T> attn_layer_weights_span = (has_attention_layer) ?
-    attn_layer_weights->DataAsSpan<T>() : gsl::span<const T>();
-  const gsl::span<const int> memory_seq_lens_span = (attn_memory_seq_lens != nullptr) ?
-    attn_memory_seq_lens->DataAsSpan<int>() : gsl::span<const int>();
+  const gsl::span<const T> attn_layer_weights_span = (has_attention_layer) ? attn_layer_weights->DataAsSpan<T>() : gsl::span<const T>();
+  const gsl::span<const int> memory_seq_lens_span = (attn_memory_seq_lens != nullptr) ? attn_memory_seq_lens->DataAsSpan<int>() : gsl::span<const int>();
 
   // LSTM outputs are optional but must be in the same order
   std::vector<int64_t> Y_dims{seq_length, num_directions_, batch_size, hidden_size_};
@@ -193,7 +191,7 @@ Status DeepCpuAttnLstmOp::ComputeImpl(OpKernelContext& context) const {
   gsl::span<T> last_cell_1 = last_cell.subspan(0, last_cell_size_per_direction);
 
   if (!output.empty() && !sequence_lens_span.empty()) {
-  // clear tailing outputs
+    // clear tailing outputs
     int32_t max_seq_this_batch = *std::max_element(sequence_lens_span.cbegin(), sequence_lens_span.cend());
     if (max_seq_this_batch >= 0 && max_seq_this_batch < seq_length) {
       auto start = max_seq_this_batch * hidden_output_size_per_direction * num_directions_;
@@ -230,34 +228,34 @@ Status DeepCpuAttnLstmOp::ComputeImpl(OpKernelContext& context) const {
                                                  last_cell_size_per_direction);
 
     auto fam = std::make_unique<BahdanauAttention<T>>(
-      alloc, logger, batch_size, max_memory_step, memory_depth, query_depth, am_attn_size, false);
+        alloc, logger, batch_size, max_memory_step, memory_depth, query_depth, am_attn_size, false);
     fam->SetWeights(
-      FirstHalfSpan(am_v_weights.DataAsSpan<T>()),
-      FirstHalfSpan(am_query_layer_weights.DataAsSpan<T>()),
-      FirstHalfSpan(am_memory_layer_weights.DataAsSpan<T>()));
+        FirstHalfSpan(am_v_weights.DataAsSpan<T>()),
+        FirstHalfSpan(am_query_layer_weights.DataAsSpan<T>()),
+        FirstHalfSpan(am_memory_layer_weights.DataAsSpan<T>()));
     fam->PrepareMemory(attn_memory.DataAsSpan<T>(), memory_seq_lens_span);
 
     auto faw = std::make_unique<AttentionWrapper<T>>(
-      alloc, logger, batch_size, memory_depth, attn_layer_depth, hidden_size_, has_attention_layer, *fam);
+        alloc, logger, batch_size, memory_depth, attn_layer_depth, hidden_size_, has_attention_layer, *fam);
     faw->SetWeights(FirstHalfSpan(attn_layer_weights_span));
 
     auto fw = std::make_unique<UniDirectionalAttnLstm<T>>(
-      alloc, logger,
-      seq_length, batch_size, input_size,
-      hidden_size_, Direction::kForward, input_forget_, *faw,
-      input_weights_1, recurrent_weights_1, bias_1,
-      peephole_weights_1, initial_hidden_1, initial_cell_1,
-      activation_funcs_.Entries()[0],
-      activation_funcs_.Entries()[1],
-      activation_funcs_.Entries()[2],
-      clip_, ttp_);
+        alloc, logger,
+        seq_length, batch_size, input_size,
+        hidden_size_, Direction::kForward, input_forget_, *faw,
+        input_weights_1, recurrent_weights_1, bias_1,
+        peephole_weights_1, initial_hidden_1, initial_cell_1,
+        activation_funcs_.Entries()[0],
+        activation_funcs_.Entries()[1],
+        activation_funcs_.Entries()[2],
+        clip_, ttp_);
 
     auto bam = std::make_unique<BahdanauAttention<T>>(
-      alloc, logger, batch_size, max_memory_step, memory_depth, query_depth, am_attn_size, false);
+        alloc, logger, batch_size, max_memory_step, memory_depth, query_depth, am_attn_size, false);
     bam->SetWeights(
-      SecondHalfSpan(am_v_weights.DataAsSpan<T>()),
-      SecondHalfSpan(am_query_layer_weights.DataAsSpan<T>()),
-      SecondHalfSpan(am_memory_layer_weights.DataAsSpan<T>()));
+        SecondHalfSpan(am_v_weights.DataAsSpan<T>()),
+        SecondHalfSpan(am_query_layer_weights.DataAsSpan<T>()),
+        SecondHalfSpan(am_memory_layer_weights.DataAsSpan<T>()));
     bam->PrepareMemory(attn_memory.DataAsSpan<T>(), memory_seq_lens_span);
 
     auto baw = std::make_unique<AttentionWrapper<T>>(
@@ -265,42 +263,42 @@ Status DeepCpuAttnLstmOp::ComputeImpl(OpKernelContext& context) const {
     baw->SetWeights(SecondHalfSpan(attn_layer_weights_span));
 
     auto bw = std::make_unique<UniDirectionalAttnLstm<T>>(
-      alloc, logger,
-      seq_length, batch_size, input_size,
-      hidden_size_, Direction::kReverse, input_forget_, *baw,
-      input_weights_2, hidden_weights_2, bias_2,
-      peephole_weights_2, initial_hidden_2, initial_cell_2,
-      activation_funcs_.Entries()[3],
-      activation_funcs_.Entries()[4],
-      activation_funcs_.Entries()[5],
-      clip_, ttp_);
+        alloc, logger,
+        seq_length, batch_size, input_size,
+        hidden_size_, Direction::kReverse, input_forget_, *baw,
+        input_weights_2, hidden_weights_2, bias_2,
+        peephole_weights_2, initial_hidden_2, initial_cell_2,
+        activation_funcs_.Entries()[3],
+        activation_funcs_.Entries()[4],
+        activation_funcs_.Entries()[5],
+        clip_, ttp_);
 
     fw->Compute(input, sequence_lens_span, num_directions_, output_1, hidden_output_1, last_cell_1);
     bw->Compute(input, sequence_lens_span, num_directions_, output_2, hidden_output_2, last_cell_2);
 
   } else {
     auto fam = std::make_unique<BahdanauAttention<T>>(
-      alloc, logger, batch_size, max_memory_step, memory_depth, query_depth, am_attn_size, false);
+        alloc, logger, batch_size, max_memory_step, memory_depth, query_depth, am_attn_size, false);
     fam->SetWeights(
-      am_v_weights.DataAsSpan<T>(),
-      am_query_layer_weights.DataAsSpan<T>(),
-      am_memory_layer_weights.DataAsSpan<T>());
+        am_v_weights.DataAsSpan<T>(),
+        am_query_layer_weights.DataAsSpan<T>(),
+        am_memory_layer_weights.DataAsSpan<T>());
     fam->PrepareMemory(attn_memory.DataAsSpan<T>(), memory_seq_lens_span);
 
     auto faw = std::make_unique<AttentionWrapper<T>>(
-      alloc, logger, batch_size, memory_depth, attn_layer_depth, hidden_size_, has_attention_layer, *fam);
+        alloc, logger, batch_size, memory_depth, attn_layer_depth, hidden_size_, has_attention_layer, *fam);
     faw->SetWeights(attn_layer_weights_span);
 
     auto fw = std::make_unique<UniDirectionalAttnLstm<T>>(
-      alloc, logger,
-      seq_length, batch_size, input_size,
-      hidden_size_, direction_, input_forget_, *faw,
-      input_weights_1, recurrent_weights_1, bias_1,
-      peephole_weights_1, initial_hidden_1, initial_cell_1,
-      activation_funcs_.Entries()[0],
-      activation_funcs_.Entries()[1],
-      activation_funcs_.Entries()[2],
-      clip_, ttp_);
+        alloc, logger,
+        seq_length, batch_size, input_size,
+        hidden_size_, direction_, input_forget_, *faw,
+        input_weights_1, recurrent_weights_1, bias_1,
+        peephole_weights_1, initial_hidden_1, initial_cell_1,
+        activation_funcs_.Entries()[0],
+        activation_funcs_.Entries()[1],
+        activation_funcs_.Entries()[2],
+        clip_, ttp_);
 
     fw->Compute(input, sequence_lens_span, num_directions_, output_1, hidden_output_1, last_cell_1);
   }
@@ -316,9 +314,7 @@ Status DeepCpuAttnLstmOp::ComputeImpl(OpKernelContext& context) const {
   return Status::OK();
 }
 
-
-static
-Status ValidateRnnInputsWithExtraInputFromState(
+static Status ValidateRnnInputsWithExtraInputFromState(
     const Tensor& X,
     const Tensor& W,
     const Tensor& R,
@@ -398,20 +394,18 @@ Status ValidateRnnInputsWithExtraInputFromState(
   return Status::OK();
 }  // namespace detail
 
-
 Status DeepCpuAttnLstmOp::ValidateInputs(
     const Tensor& X, const Tensor& W, const Tensor& R, const Tensor* B,
     const Tensor* sequence_lens, const Tensor* initial_h, const Tensor* initial_c,
     const Tensor* P, int batch_size,
     const Tensor& am_query_layer_weights, const Tensor& am_memory_layer_weights, const Tensor& am_v_weights,
     const Tensor& attn_memory, const Tensor* attn_memory_seq_lens, const Tensor* attn_layer_weights) const {
-
   // Check memory of [batch_size, max_memory_step, memory_depth_], its sequence length of [batch_size]
   auto memory_shape = attn_memory.Shape();
   if (memory_shape.NumDimensions() != 3 || memory_shape[0] != batch_size) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-        "Attention mechanism memory shape error! Expected: {", batch_size,
-        "}, actural: ", memory_shape);
+    return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
+                             "Attention mechanism memory shape error! Expected: {", batch_size,
+                             "}, actural: ", memory_shape);
   }
   const int max_memory_step = gsl::narrow<int>(memory_shape[1]);
   const int memory_depth = gsl::narrow<int>(memory_shape[2]);
@@ -419,17 +413,17 @@ Status DeepCpuAttnLstmOp::ValidateInputs(
     auto memory_seq_lens_shape = attn_memory_seq_lens->Shape();
     if (memory_seq_lens_shape.NumDimensions() != 1 || memory_seq_lens_shape[0] != batch_size) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-        "Attention mechanism memory sequence lengths must have shape {", batch_size,
-        "}, actural: ",  memory_seq_lens_shape);
+                               "Attention mechanism memory sequence lengths must have shape {", batch_size,
+                               "}, actural: ", memory_seq_lens_shape);
     }
     const gsl::span<const int> mem_seq_lens_span = attn_memory_seq_lens->DataAsSpan<int>();
     auto item_not_in_range = std::find_if(
-      mem_seq_lens_span.cbegin(), mem_seq_lens_span.cend(),
-      [max_memory_step](int len) { return len <= 0 || len > max_memory_step; });
+        mem_seq_lens_span.cbegin(), mem_seq_lens_span.cend(),
+        [max_memory_step](int len) { return len <= 0 || len > max_memory_step; });
     if (item_not_in_range != mem_seq_lens_span.cend()) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-        "Attention mechanism memory sequence lengths value must in (0, ",
-        max_memory_step, "], while ", *item_not_in_range, " found!");
+                               "Attention mechanism memory sequence lengths value must in (0, ",
+                               max_memory_step, "], while ", *item_not_in_range, " found!");
     }
   }
 
@@ -439,8 +433,8 @@ Status DeepCpuAttnLstmOp::ValidateInputs(
       memory_layer_shape[0] != num_directions_ ||
       memory_layer_shape[1] != memory_depth) {
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-      "Attention memory layer weight shape error! Expected:{",
-      num_directions_, ",", memory_depth, ", am_attn_size}, Got:", memory_layer_shape);
+                             "Attention memory layer weight shape error! Expected:{",
+                             num_directions_, ",", memory_depth, ", am_attn_size}, Got:", memory_layer_shape);
   }
   const int am_attn_size = gsl::narrow<int>(memory_layer_shape[2]);
 
@@ -449,10 +443,10 @@ Status DeepCpuAttnLstmOp::ValidateInputs(
   if (query_layer_shape.NumDimensions() != 3 ||
       query_layer_shape[0] != num_directions_ ||
       query_layer_shape[1] != hidden_size_ ||
-      query_layer_shape[2] != am_attn_size ) {
+      query_layer_shape[2] != am_attn_size) {
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-      "Attention query layer weight shape error! Expected:{",
-      num_directions_, ", ", hidden_size_, ", ", am_attn_size, "}, Got: ", query_layer_shape);
+                             "Attention query layer weight shape error! Expected:{",
+                             num_directions_, ", ", hidden_size_, ", ", am_attn_size, "}, Got: ", query_layer_shape);
   }
 
   // check attention v for [num_directions, am_attn_size]
@@ -461,8 +455,8 @@ Status DeepCpuAttnLstmOp::ValidateInputs(
       v_shape[0] != num_directions_ ||
       v_shape[1] != am_attn_size) {
     return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-      "Attention v weight shape error! Expected:{", num_directions_, ", ", am_attn_size,
-      "}. Got: ", v_shape);
+                             "Attention v weight shape error! Expected:{", num_directions_, ", ", am_attn_size,
+                             "}. Got: ", v_shape);
   }
 
   // Check attention layer weights for [num_directions, memory_depth+cell_hidden_size, aw_attn_size]
@@ -474,14 +468,14 @@ Status DeepCpuAttnLstmOp::ValidateInputs(
         attn_layer_shape[0] != num_directions_ ||
         attn_layer_shape[1] != memory_depth + hidden_size_) {
       return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-        "Attention layer weight shape error! Expected: {", num_directions_, ", ",
-        memory_depth + hidden_size_, ", aw_attn_size}. Got:", attn_layer_shape);
+                               "Attention layer weight shape error! Expected: {", num_directions_, ", ",
+                               memory_depth + hidden_size_, ", aw_attn_size}. Got:", attn_layer_shape);
     }
     aw_attn_size = gsl::narrow<int>(attn_layer_shape[2]);
   }
 
   auto status = ValidateRnnInputsWithExtraInputFromState(
-    X, W, R, B, 4, sequence_lens, initial_h, num_directions_, hidden_size_, aw_attn_size);
+      X, W, R, B, 4, sequence_lens, initial_h, num_directions_, hidden_size_, aw_attn_size);
   LOTUS_RETURN_IF_ERROR(status);
 
   if (initial_c != nullptr) {

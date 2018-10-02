@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 class FlattenOpTest : public testing::Test {
  public:
@@ -54,5 +54,5 @@ TEST_F(FlattenOpTest, Flatten_axis4) {
   test_.AddOutput<float>("output", {16L, 1L}, data1_);
   test_.RunOnCpuAndCuda();
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

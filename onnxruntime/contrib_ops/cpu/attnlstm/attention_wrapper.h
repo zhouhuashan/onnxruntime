@@ -8,19 +8,19 @@
 
 namespace onnxruntime {
 namespace ml {
-  
+
 template <typename T>
 class AttentionWrapper {
  public:
   AttentionWrapper(AllocatorPtr allocator,
-                   const Logging::Logger& logger,
+                   const logging::Logger& logger,
                    int batch_size,
                    int attn_context_depth,  // it is also the depth of the memory
                    int attn_layer_depth,
                    int inner_cell_hidden_size,
                    bool has_attn_layer,
                    const IAttentionMechanism<T>& attention_mechanism);
-  
+
   virtual ~AttentionWrapper() = default;
 
   // Calculation based on output of the inner wrapped rnn_cell.
@@ -41,8 +41,8 @@ class AttentionWrapper {
 
  private:
   AllocatorPtr allocator_;
-  const Logging::Logger& logger_;
-  
+  const logging::Logger& logger_;
+
   gsl::span<const T> attn_layer_cell_weights_;
   gsl::span<const T> attn_layer_attn_weights_;
 
@@ -68,5 +68,5 @@ class AttentionWrapper {
   const IAttentionMechanism<T>& attention_mechanism_;
 };
 
-}
-}
+}  // namespace ml
+}  // namespace onnxruntime

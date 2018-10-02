@@ -4,9 +4,9 @@
 #include "core/graph/model.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
-namespace ModelBuilder {
+namespace modelbuilder {
 
 // Shape: a wrapper to build a TensorShapeProto
 struct Shape {
@@ -59,6 +59,6 @@ struct Type {
   }
 };
 
-}  // namespace ModelBuilder
-}  // namespace Test
+}  // namespace modelbuilder
+}  // namespace test
 }  // namespace onnxruntime

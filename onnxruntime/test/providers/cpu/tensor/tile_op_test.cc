@@ -5,7 +5,7 @@
 #include "test/providers/provider_test_utils.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 
 TEST(TensorOpTest, Tile1D) {
   OpTester test("Tile");
@@ -64,5 +64,5 @@ TEST(TensorOpTest, Tile3D) {
   test.RunOnCpuAndCuda();
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

@@ -5,6 +5,7 @@
 
 #include <type_traits>
 
+namespace onnxruntime {
 // Container has T* entries. e.g. std::vector<T*>, and this class provides const access to those
 // via iterators and direct access, as the standard behavior only makes the pointer constant,
 // and not what is pointed too. i.e. you get a const pointer to T not a pointer to const T without this wrapper.
@@ -51,3 +52,4 @@ class ConstPointerContainer {
  private:
   const Container& data_;
 };
+}

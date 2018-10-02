@@ -12,7 +12,7 @@
 #include "core/common/logging/capture.h"
 #include "core/common/logging/isink.h"
 
-void VsTestSink::SendImpl(const ::onnxruntime::Logging::Timestamp& timestamp, const std::string& logger_id_, const ::onnxruntime::Logging::Capture& message) {
+void VsTestSink::SendImpl(const ::onnxruntime::logging::Timestamp& timestamp, const std::string& logger_id_, const ::onnxruntime::logging::Capture& message) {
   // operator for formatting of timestamp in ISO8601 format including microseconds
   using date::operator<<;
 

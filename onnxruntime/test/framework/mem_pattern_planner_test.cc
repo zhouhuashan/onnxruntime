@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 
 namespace onnxruntime {
-namespace Test {
+namespace test {
 TEST(MemPatternPlannerTest, TraceAllocaitonTest) {
   MemPatternPlanner planner;
   planner.TraceAllocation(0, 1024);
@@ -34,5 +34,5 @@ TEST(MemPatternPlannerTest, TraceAllocaitonTest) {
   EXPECT_EQ(pattern.GetBlock(5)->offset_, 1024 + 256 + 512);
   EXPECT_EQ(pattern.GetBlock(6)->offset_, 1024);
 }
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime
