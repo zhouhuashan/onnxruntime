@@ -193,9 +193,9 @@ LoopStateVariable::LoopStateVariable(const MLValue& original_value,
                                      MLValue& final_value,
                                      const int64_t sequence_len,
                                      AllocatorPtr& allocator)
-    : original_value_{original_value},
-      final_value_{final_value},
-      sequence_len_{sequence_len} {
+    : sequence_len_{sequence_len},
+      original_value_{original_value},
+      final_value_{final_value} {
   auto& tensor = original_value.Get<Tensor>();
   auto& shape = tensor.Shape();
 

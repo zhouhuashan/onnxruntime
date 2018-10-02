@@ -37,8 +37,8 @@ ONNX_CPU_OPERATOR_ML_KERNEL(
 
 ZipMapOp::ZipMapOp(const OpKernelInfo& info)
     : OpKernel(info),
-      classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")),
-      classlabels_int64s_(info.GetAttrsOrDefault<int64_t>("classlabels_int64s")) {
+      classlabels_int64s_(info.GetAttrsOrDefault<int64_t>("classlabels_int64s")),
+      classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")) {
   LOTUS_ENFORCE(classlabels_strings_.empty() ^ classlabels_int64s_.empty(),
                 "Must provide classlabels_strings or classlabels_int64s but not both.");
   using_strings_ = !classlabels_strings_.empty();

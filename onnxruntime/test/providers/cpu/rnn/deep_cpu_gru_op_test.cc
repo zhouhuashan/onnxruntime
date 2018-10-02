@@ -359,9 +359,9 @@ DeepCpuGruOpTestContext::DeepCpuGruOpTestContext(const std::string direction,
                                                  int input_size)
     : input_size_(input_size),
       hidden_dim_(large_hidden ? 32 : 2),
+      use_bias_(use_bias),
       direction_(direction),
       activation_func_names_(activations),
-      use_bias_(use_bias),
       alphas_(alpha),
       betas_(beta) {
   if (direction == "bidirectional")

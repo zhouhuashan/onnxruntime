@@ -36,7 +36,7 @@ class ConcatBase {
 
 class Concat final : public OpKernel, public ConcatBase {
  public:
-  Concat(const OpKernelInfo& info) : ConcatBase(info), OpKernel(info) {}
+  Concat(const OpKernelInfo& info) : OpKernel(info), ConcatBase(info) {}
 
   Status Compute(OpKernelContext* context) const override;
 };

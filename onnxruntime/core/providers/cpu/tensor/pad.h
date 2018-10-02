@@ -50,7 +50,7 @@ class PadBase {
 
 template <typename T>
 struct Pad final : public OpKernel, public PadBase {
-  Pad(const OpKernelInfo& info) : PadBase(info), OpKernel(info) {}
+  Pad(const OpKernelInfo& info) : OpKernel(info), PadBase(info) {}
 
   Status Compute(OpKernelContext* context) const override;
 };

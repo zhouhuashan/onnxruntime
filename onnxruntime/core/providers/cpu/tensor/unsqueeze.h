@@ -27,7 +27,7 @@ class UnsqueezeBase {
 
 class Unsqueeze final : public OpKernel, public UnsqueezeBase {
  public:
-  Unsqueeze(const OpKernelInfo& info) : UnsqueezeBase(info), OpKernel(info) {}
+  Unsqueeze(const OpKernelInfo& info) : OpKernel(info), UnsqueezeBase(info) {}
   Status Compute(OpKernelContext* context) const override;
 };
 

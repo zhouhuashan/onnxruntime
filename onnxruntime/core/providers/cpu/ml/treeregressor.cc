@@ -23,13 +23,13 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
       nodes_truenodeids_(info.GetAttrsOrDefault<int64_t>("nodes_truenodeids")),
       nodes_falsenodeids_(info.GetAttrsOrDefault<int64_t>("nodes_falsenodeids")),
       missing_tracks_true_(info.GetAttrsOrDefault<int64_t>("nodes_missing_value_tracks_true")),
-      target_treeids_(info.GetAttrsOrDefault<int64_t>("target_treeids")),
       target_nodeids_(info.GetAttrsOrDefault<int64_t>("target_nodeids")),
+      target_treeids_(info.GetAttrsOrDefault<int64_t>("target_treeids")),
       target_ids_(info.GetAttrsOrDefault<int64_t>("target_ids")),
       target_weights_(info.GetAttrsOrDefault<float>("target_weights")),
       base_values_(info.GetAttrsOrDefault<float>("base_values")),
-      aggregate_function_(::onnxruntime::ml::MakeAggregateFunction(info.GetAttrOrDefault<std::string>("aggregate_function", "SUM"))),
-      transform_(::onnxruntime::ml::MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
+      transform_(::onnxruntime::ml::MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))),
+      aggregate_function_(::onnxruntime::ml::MakeAggregateFunction(info.GetAttrOrDefault<std::string>("aggregate_function", "SUM"))) {
   LOTUS_ENFORCE(info.GetAttr<int64_t>("n_targets", &n_targets_).IsOK());
 
   //update nodeids to start at 0

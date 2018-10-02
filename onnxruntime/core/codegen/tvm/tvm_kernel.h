@@ -18,7 +18,7 @@ typedef tvm::runtime::Module (*TVMModuleBuilder)(tvm::Schedule schedule, tvm::Bu
 template <TVMScheduleCreator S, TVMModuleBuilder M>
 class TVMKernel : public OpKernel {
  public:
-  explicit TVMKernel(const OpKernelInfo& info) : OpKernel(info), tvm_values_(nullptr), tvm_type_codes_(nullptr), dl_tensors_(nullptr) {
+  explicit TVMKernel(const OpKernelInfo& info) : OpKernel(info), tvm_values_(nullptr), dl_tensors_(nullptr), tvm_type_codes_(nullptr) {
     auto& node = info.node();
     LOTUS_ENFORCE(node.NodeType() == Node::Type::Fused);
     auto func = node.GetFunctionBody();

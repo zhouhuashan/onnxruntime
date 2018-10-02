@@ -686,7 +686,7 @@ ML_API_IMP_(const void*, TensorWrapper::GetData)() const noexcept {
 OpKernelContextWrapper::OpKernelContextWrapper(
     OpKernelContext* context,
     const IExecutionProvider* provider,
-    const EdgeShapes* output_shapes) : impl_(context), provider_(provider), output_shapes_(output_shapes) {
+    const EdgeShapes* output_shapes) : impl_(context), output_shapes_(output_shapes), provider_(provider) {
   // Pre-size tensor arrays.  Member methods return pointers to these which
   // are stored in these arrays, which would become stale if the vectors reallocate
   // their internal storage.

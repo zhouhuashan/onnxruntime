@@ -25,8 +25,8 @@ class ConvTransposeBase : public ConvBase {
  protected:
   ConvTransposeBase(const OpKernelInfo& info)
       : ConvBase(info),
-        output_shape_(info.GetAttrsOrDefault<int64_t>("output_shape")),
-        output_padding_(info.GetAttrsOrDefault<int64_t>("output_padding")) {
+        output_padding_(info.GetAttrsOrDefault<int64_t>("output_padding")),
+        output_shape_(info.GetAttrsOrDefault<int64_t>("output_shape")) {
   }
 
   struct Prepare {

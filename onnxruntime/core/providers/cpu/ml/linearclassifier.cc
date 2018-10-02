@@ -40,11 +40,11 @@ ONNX_CPU_OPERATOR_TYPED_ML_KERNEL(
 
 template <typename T>
 LinearClassifier<T>::LinearClassifier(const OpKernelInfo& info) : OpKernel(info),
-                                                                  intercepts_(info.GetAttrsOrDefault<float>("intercepts")),
                                                                   multi_class_(info.GetAttrOrDefault<int64_t>("multi_class", 0)),
+                                                                  post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))),
+                                                                  intercepts_(info.GetAttrsOrDefault<float>("intercepts")),
                                                                   classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")),
-                                                                  classlabels_ints_(info.GetAttrsOrDefault<int64_t>("classlabels_ints")),
-                                                                  post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
+                                                                  classlabels_ints_(info.GetAttrsOrDefault<int64_t>("classlabels_ints")) {
   if (!info.GetAttrs<float>("coefficients", coefficients_).IsOK())
     LOTUS_ENFORCE(!coefficients_.empty());
 

@@ -24,9 +24,9 @@ SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info)
     : OpKernel(info),
       SVMCommon<T>(info),
       vectors_per_class_(info.GetAttrsOrDefault<int64_t>("vectors_per_class")),
-      support_vectors_(info.GetAttrsOrDefault<float>("support_vectors")),
       proba_(info.GetAttrsOrDefault<float>("prob_a")),
       probb_(info.GetAttrsOrDefault<float>("prob_b")),
+      support_vectors_(info.GetAttrsOrDefault<float>("support_vectors")),
       post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
   LOTUS_ENFORCE(info.GetAttrs<float>("rho", rho_).IsOK());
   LOTUS_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());

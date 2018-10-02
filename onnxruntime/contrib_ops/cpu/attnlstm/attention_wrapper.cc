@@ -20,8 +20,8 @@ AttentionWrapper<T>::AttentionWrapper(AllocatorPtr alloc, const logging::Logger&
       attn_context_depth_(attn_context_depth),
       attn_layer_depth_(attn_layer_depth),
       inner_cell_hidden_size_(inner_cell_hidden_size),
-      attention_mechanism_(attention_mechanism),
-      has_attn_layer_(has_attn_layer) {
+      has_attn_layer_(has_attn_layer),
+      attention_mechanism_(attention_mechanism) {
   auto mem_max_steps = attention_mechanism_.GetMaxMemorySteps();
   prev_alignments_ = Allocate(allocator_, batch_size_ * mem_max_steps, prev_alignments_ptr_, true);
   alignments_ = Allocate(allocator_, batch_size_ * mem_max_steps, alignments_ptr_, true);

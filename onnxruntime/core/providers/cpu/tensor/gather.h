@@ -30,7 +30,7 @@ class GatherBase {
 
 class Gather final : public OpKernel, public GatherBase {
  public:
-  Gather(const OpKernelInfo& info) : GatherBase(info), OpKernel(info) {}
+  Gather(const OpKernelInfo& info) : OpKernel(info), GatherBase(info) {}
 
   Status Compute(OpKernelContext* context) const override;
 };

@@ -458,15 +458,15 @@ UniDirectionalGru<T>::UniDirectionalGru(AllocatorPtr allocator,
                                         TaskThreadPool& ttp)
     : allocator_(allocator),
       logger_(logger),
+      ttp_(ttp),
       seq_length_(seq_length),
       batch_size_(batch_size),
       input_size_(input_size),
       hidden_size_(hidden_size),
       linear_before_reset_(linear_before_reset),
-      direction_(direction),
-      use_bias_(!bias.empty()),
       clip_(clip),
-      ttp_(ttp) {
+      direction_(direction),
+      use_bias_(!bias.empty()) {
   //
   clip_with_bias_ptr_ = use_bias_ ? deepcpu::clip_add_bias : deepcpu::clip_ignore_bias;
 

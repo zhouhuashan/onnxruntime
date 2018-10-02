@@ -49,8 +49,8 @@ class InferenceSession::Impl {
       : session_options_{session_options},
         graph_transformation_mgr_{session_options_.max_num_graph_transformation_steps},
         logging_manager_{logging_manager},
-        insert_cast_transformer_{"CastFloat16Transformer"},
-        session_state_{execution_providers_} {
+        session_state_{execution_providers_},
+        insert_cast_transformer_{"CastFloat16Transformer"} {
     InitLogger(logging_manager);
 
     //env_(Env::Default()) {
