@@ -183,6 +183,17 @@ void GemmEx<float, CPUMathUtil>(
     CPUMathUtil*) {
 #if defined(USE_MLAS)
   MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+#elif defined(USE_MKLDNN)
+  // mkldnn_sgemm expects col major matrices, so we need to swap the operands A and B
+  auto status = mkldnn_sgemm(TransB == CblasNoTrans ? "N" : "T",
+                             TransA == CblasNoTrans ? "N" : "T",
+                             &N, &M, &K,
+                             &alpha, B, &ldb,
+                             A, &lda,
+                             &beta, C, &ldc);
+  if (status != mkldnn_success) {
+    LOTUS_THROW("mkldnn_sgemm failed with status: " + status);
+  }
 #else
   using OuterStride = Eigen::OuterStride<Eigen::Dynamic>;
   using StridedMap = Eigen::Map<Eigen::MatrixXf, 0, OuterStride>;
