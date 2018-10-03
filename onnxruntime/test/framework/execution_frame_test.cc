@@ -95,7 +95,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   TensorShape shape2(std::vector<int64_t>{3, 2});
   status = frame.AllocateTensorWithPreAllocateBuffer(
       start_index + 1,
-      p_tensor->MutableData<float>(),
+      p_tensor->template MutableData<float>(),
       DataTypeImpl::GetType<float>(),
       p_tensor->Location(),
       shape2);
@@ -105,7 +105,7 @@ TEST(ExecutionFrameTest, TensorAllocationTest) {
   auto tensor2 = p_ml_value_const ? &(p_ml_value_const->Get<Tensor>()) : nullptr;
   EXPECT_TRUE(tensor2);
   EXPECT_EQ(tensor2->Shape(), shape2);
-  EXPECT_EQ(tensor2->Data<float>(), p_tensor->Data<float>());
+  EXPECT_EQ(tensor2->template Data<float>(), p_tensor->template Data<float>());
 }
 
 TEST(ExecutionFrameTest, FeedInDataTest) {
@@ -159,7 +159,7 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
   EXPECT_TRUE(p_tensor_arg_0);
   EXPECT_EQ(p_tensor_arg_0->Shape(), shape);
   EXPECT_EQ(p_tensor_arg_0->DataType(), DataTypeImpl::GetType<float>());
-  EXPECT_EQ(p_tensor_arg_0->MutableData<float>(), buffer);
+  EXPECT_EQ(p_tensor_arg_0->template MutableData<float>(), buffer);
 }
 
 TEST(ExecutionFrameTest, MemPatternTest) {

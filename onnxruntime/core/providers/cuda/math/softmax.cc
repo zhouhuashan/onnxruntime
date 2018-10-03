@@ -32,8 +32,8 @@ Status Softmax<T>::ComputeInternal(OpKernelContext* ctx) const {
   int64_t D = input_shape.SizeFromDimension(axis);
   std::vector<int64_t> dims({N, 1, 1, D});  // cudnn expects 4D shape in NCHW format
 
-  auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
-  auto x_data = reinterpret_cast<const CudaT*>(X.Data<T>());
+  auto y_data = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
+  auto x_data = reinterpret_cast<const CudaT*>(X.template Data<T>());
 
   const auto alpha = Consts<CudaT>::One;
   const auto beta = Consts<CudaT>::Zero;

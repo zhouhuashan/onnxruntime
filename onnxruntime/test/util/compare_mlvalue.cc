@@ -51,8 +51,8 @@ template <typename FLOAT_TYPE>
 std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue, const Tensor& expected_value, double per_sample_tolerance,
                                                           double relative_per_sample_tolerance, bool post_processing) {
   const size_t size1 = expected_value.Shape().Size();
-  const FLOAT_TYPE* expected_output = expected_value.Data<FLOAT_TYPE>();
-  const FLOAT_TYPE* real_output = outvalue.Data<FLOAT_TYPE>();
+  const FLOAT_TYPE* expected_output = expected_value.template Data<FLOAT_TYPE>();
+  const FLOAT_TYPE* real_output = outvalue.template Data<FLOAT_TYPE>();
   std::pair<COMPARE_RESULT, std::string> res = std::make_pair(COMPARE_RESULT::SUCCESS, "");
   double max_diff = 0;
   size_t diff_count = 0;
@@ -81,8 +81,8 @@ std::pair<COMPARE_RESULT, std::string> CompareFloatResult(const Tensor& outvalue
 template <typename T>
 std::pair<COMPARE_RESULT, std::string> IsResultExactlyMatch(const Tensor& outvalue, const Tensor& expected_value) {
   const size_t size1 = expected_value.Shape().Size();
-  const T* expected_output = expected_value.Data<T>();
-  const T* real_output = outvalue.Data<T>();
+  const T* expected_output = expected_value.template Data<T>();
+  const T* real_output = outvalue.template Data<T>();
   for (size_t di = 0; di != size1; ++di) {
     if (expected_output[di] != real_output[di]) {
       std::ostringstream oss;
@@ -96,8 +96,8 @@ std::pair<COMPARE_RESULT, std::string> IsResultExactlyMatch(const Tensor& outval
 std::pair<COMPARE_RESULT, std::string> CompareFloat16Result(const Tensor& outvalue, const Tensor& expected_value, double per_sample_tolerance,
                                                             double relative_per_sample_tolerance, bool post_processing) {
   const size_t size1 = expected_value.Shape().Size();
-  const MLFloat16* expected_output = expected_value.Data<MLFloat16>();
-  const MLFloat16* real_output = outvalue.Data<MLFloat16>();
+  const MLFloat16* expected_output = expected_value.template Data<MLFloat16>();
+  const MLFloat16* real_output = outvalue.template Data<MLFloat16>();
   for (size_t di = 0; di != size1; ++di) {
     float expected = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(expected_output[di].val));
     float real = Eigen::half_impl::half_to_float(Eigen::half_impl::__half(real_output[di].val));

@@ -44,9 +44,9 @@ class FuseAdd : public OpKernel {
     auto Y = context->Input<Tensor>(1);
     auto Z = context->Input<Tensor>(2);
     auto& shape = X->Shape();
-    auto M = context->Output(0, shape)->MutableData<float>();
+    auto M = context->Output(0, shape)->template MutableData<float>();
     for (int i = 0; i < shape.Size(); ++i) {
-      *(M + i) = *(X->Data<float>() + i) + *(Y->Data<float>() + i) + *(Z->Data<float>() + i);
+      *(M + i) = *(X->template Data<float>() + i) + *(Y->template Data<float>() + i) + *(Z->template Data<float>() + i);
     }
     return Status::OK();
   }
@@ -165,7 +165,7 @@ void VerifyOutputs(const std::vector<MLValue>& fetches,
   auto& rtensor = fetches.front().Get<Tensor>();
   TensorShape expected_shape(expected_dims);
   ASSERT_EQ(expected_shape, rtensor.Shape());
-  const std::vector<float> found(rtensor.Data<float>(), rtensor.Data<float>() + expected_values.size());
+  const std::vector<float> found(rtensor.template Data<float>(), rtensor.template Data<float>() + expected_values.size());
   ASSERT_EQ(expected_values, found);
 }
 

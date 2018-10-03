@@ -12,6 +12,39 @@
 
 namespace onnxruntime {
 class MLValue {
+ private:
+
+  template<typename Result, typename TReg>
+  struct Fetcher {
+    static const Result& Get(const MLValue& ml_value) {
+      LOTUS_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
+                    DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
+      return *static_cast<Result*>(ml_value.data_.get());
+    }
+    static Result* GetMutable(MLValue& ml_value) {
+      LOTUS_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
+                    DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
+      return static_cast<Result*>(ml_value.data_.get());
+    }
+  };
+
+  template <typename T, typename... Types>
+  struct TypeRegistrationDispatcher;
+
+  template<typename T>
+  struct TypeRegistrationDispatcher<T> : public Fetcher<T,T> {
+  };
+
+  template <typename T, typename... Types>
+  struct TypeRegistrationDispatcher<TypeRegister<T, Types...>> : 
+    public Fetcher<T, TypeRegister<T, Types...>> {
+  };
+
+  template <typename T, const char D[], const char N[], typename... Params>
+      struct TypeRegistrationDispatcher<OpaqueRegister<T, D, N, Params...>> : 
+        public Fetcher<T,OpaqueRegister<T, D, N, Params...>> {
+  };
+
  public:
   MLValue() : data_(nullptr) {}
   virtual ~MLValue() = default;
@@ -30,15 +63,13 @@ class MLValue {
   }
 
   template <typename T>
-  const T& Get() const {
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
-    return *static_cast<T*>(data_.get());
+  const auto& Get() const {
+    return TypeRegistrationDispatcher<T>::Get(*this);
   }
 
   template <typename T>
-  T* GetMutable() {
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == type_, DataTypeImpl::GetType<T>(), " != ", type_);
-    return static_cast<T*>(data_.get());
+  auto* GetMutable() {
+    return TypeRegistrationDispatcher<T>::GetMutable(*this);
   }
 
   bool IsTensor() const {

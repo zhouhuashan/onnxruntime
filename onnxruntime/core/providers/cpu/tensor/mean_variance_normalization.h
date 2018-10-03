@@ -33,8 +33,8 @@ class MeanVarianceNormalization final : public OpKernel {
     const int64_t W = dims[3];
 
     Tensor* Y = context->Output(0, TensorShape({N, C, H, W}));
-    const T* Xdata = X->Data<T>();
-    T* Ydata = Y->MutableData<T>();
+    const T* Xdata = X->template Data<T>();
+    T* Ydata = Y->template MutableData<T>();
 
     const int64_t sample_size = H * W;
     Eigen::Array<float, Eigen::Dynamic, 1> mean(C, 1);

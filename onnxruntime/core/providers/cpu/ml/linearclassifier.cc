@@ -74,7 +74,7 @@ Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
   Tensor* Z = ctx->Output(1, TensorShape(dims));
 
   int64_t zindex = 0;
-  const auto* x_data = X->Data<T>();
+  const auto* x_data = X->template Data<T>();
 
   size_t class_count = static_cast<size_t>(class_count_);
   std::vector<float> scores;
@@ -107,32 +107,32 @@ Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
     {
       if (using_strings_) {
         if (classlabels_strings_.size() == 2 && maxweight > 0) {
-          Y->MutableData<std::string>()[i] = classlabels_strings_[1];  //positive label
+          Y->template MutableData<std::string>()[i] = classlabels_strings_[1];  //positive label
         } else if (classlabels_strings_.size() == 2) {
-          Y->MutableData<std::string>()[i] = classlabels_strings_[0];  //negative label
+          Y->template MutableData<std::string>()[i] = classlabels_strings_[0];  //negative label
         } else if (maxweight > 0) {
-          Y->MutableData<std::string>()[i] = "1";  //positive label
+          Y->template MutableData<std::string>()[i] = "1";  //positive label
         } else {
-          Y->MutableData<std::string>()[i] = "0";  //negative label
+          Y->template MutableData<std::string>()[i] = "0";  //negative label
         }
       } else  //no strings
       {
         if (classlabels_ints_.size() == 2 && maxweight > 0) {
-          Y->MutableData<int64_t>()[i] = classlabels_ints_[1];  //positive label
+          Y->template MutableData<int64_t>()[i] = classlabels_ints_[1];  //positive label
         } else if (classlabels_ints_.size() == 2) {
-          Y->MutableData<int64_t>()[i] = classlabels_ints_[0];  //negative label
+          Y->template MutableData<int64_t>()[i] = classlabels_ints_[0];  //negative label
         } else if (maxweight > 0) {
-          Y->MutableData<int64_t>()[i] = 1;  //positive label
+          Y->template MutableData<int64_t>()[i] = 1;  //positive label
         } else {
-          Y->MutableData<int64_t>()[i] = 0;  //negative label
+          Y->template MutableData<int64_t>()[i] = 0;  //negative label
         }
       }
     } else  //multiclass
     {
       if (using_strings_) {
-        Y->MutableData<std::string>()[i] = classlabels_strings_[maxclass];
+        Y->template MutableData<std::string>()[i] = classlabels_strings_[maxclass];
       } else {
-        Y->MutableData<int64_t>()[i] = classlabels_ints_[maxclass];
+        Y->template MutableData<int64_t>()[i] = classlabels_ints_[maxclass];
       }
     }
     //write float values

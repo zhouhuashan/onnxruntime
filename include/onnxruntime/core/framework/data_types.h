@@ -265,9 +265,8 @@ struct SetMapTypes {
 /// Sequence helpers
 ///
 // Element type is a primitive type so we set it to a tensor<elemT>
-void
-CopyMutableSeqElement(const ONNX_NAMESPACE::TypeProto&,
-                      ONNX_NAMESPACE::TypeProto&);
+void CopyMutableSeqElement(const ONNX_NAMESPACE::TypeProto&,
+                           ONNX_NAMESPACE::TypeProto&);
 
 template <typename T>
 struct SetSequenceType {
@@ -358,6 +357,9 @@ class TensorTypeBase : public DataTypeImpl {
 
  protected:
   ONNX_NAMESPACE::TypeProto& mutable_type_proto();
+  // Associates a type string from ONNX_NAMESPACE::DataUtils with
+  // MLDataType
+  void RegisterDataType() const;
 
   TensorTypeBase();
   ~TensorTypeBase();
@@ -400,6 +402,7 @@ class TensorType : public TensorTypeBase {
   TensorType() {
     using namespace data_types_internal;
     TensorContainedTypeSetter<elemT>::SetTensorElementType(this->mutable_type_proto());
+    this->RegisterDataType();
   }
 };
 
@@ -424,6 +427,10 @@ class NonTensorTypeBase : public DataTypeImpl {
   ~NonTensorTypeBase();
 
   ONNX_NAMESPACE::TypeProto& mutable_type_proto();
+
+  // Associates a type string from ONNX_NAMESPACE::DataUtils with
+  // MLDataType
+  void RegisterDataType() const;
 
   bool IsMapCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const;
 
@@ -467,8 +474,7 @@ class NonTensorType<T> : public NonTensorTypeBase {
 // Specialize for Opaque registration type to make sure we
 // instantiate/Destroy CPPType and not OpaqueRegister<>
 template <typename CPPType, const char D[], const char N[], typename... Params>
-class NonTensorType<OpaqueRegister<CPPType, D, N, Params...>> : 
-  public NonTensorType<CPPType> {
+class NonTensorType<OpaqueRegister<CPPType, D, N, Params...>> : public NonTensorType<CPPType> {
 };
 
 /**
@@ -503,13 +509,13 @@ class MapType<CPPType> : public NonTensorType<CPPType> {
   MapType() {
     using namespace data_types_internal;
     SetMapTypes<typename CPPType::key_type, typename CPPType::mapped_type>::Set(this->mutable_type_proto());
+    this->RegisterDataType();
   }
 };
 
 // Same as above registered with TypeRegister helper with one parameter
 template <typename CPPType, typename... Types>
-class MapType<TypeRegister<CPPType, Types...>> : 
-  public NonTensorType<CPPType> {
+class MapType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
  public:
   static_assert(data_types_internal::IsTensorContainedType<typename CPPType::key_type>::value,
                 "Requires one of the tensor fundamental types as key");
@@ -526,6 +532,7 @@ class MapType<TypeRegister<CPPType, Types...>> :
   MapType() {
     using namespace data_types_internal;
     SetMapTypes<typename CPPType::key_type, typename TypeRegister<CPPType, Types...>::value_type>::Set(this->mutable_type_proto());
+    this->RegisterDataType();
   }
 };
 
@@ -538,7 +545,7 @@ class MapType<TypeRegister<CPPType, Types...>> :
  * \details Usage: LOTUS_REGISTER_SEQUENCE(C++Type)
  *          The type is required to have value_type defined
  */
-template<typename... Types>
+template <typename... Types>
 class SequenceType;
 
 template <typename CPPType>
@@ -556,13 +563,13 @@ class SequenceType<CPPType> : protected NonTensorType<CPPType> {
  private:
   SequenceType() {
     data_types_internal::SetSequenceType<typename CPPType::value_type>::Set(this->mutable_type_proto());
+    this->RegisterDataType();
   }
 };
 
 // Same as above using TypeRegister
 template <typename CPPType, typename... Types>
-class SequenceType<TypeRegister<CPPType, Types...>> : 
-  public NonTensorType<CPPType> {
+class SequenceType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
  public:
   static MLDataType Type() {
     static SequenceType sequence_type;
@@ -572,9 +579,11 @@ class SequenceType<TypeRegister<CPPType, Types...>> :
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
     return this->IsSequenceCompatible(type_proto);
   }
+
  private:
   SequenceType() {
     data_types_internal::SetSequenceType<typename TypeRegister<Types...>::value_type>::Set(this->mutable_type_proto());
+    this->RegisterDataType();
   }
 };
 
@@ -607,6 +616,7 @@ class OpaqueType : protected NonTensorType<T> {
  private:
   OpaqueType() {
     data_types_internal::AddOpaqueParam<T>::Add(this->mutable_type_proto());
+    this->RegisterDataType();
   }
 };
 

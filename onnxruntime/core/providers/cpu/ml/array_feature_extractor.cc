@@ -54,7 +54,7 @@ common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) con
   const Tensor& X = *context->Input<Tensor>(0);
   const TensorShape& x_shape = X.Shape();
   const vector<int64_t>& x_dims = x_shape.GetDims();
-  const T* x_data = X.Data<T>();
+  const T* x_data = X.template Data<T>();
 
   if (x_dims.empty()) {
     return Status(LOTUS, INVALID_ARGUMENT, "Invalid argument: X input has empty dimensions.");
@@ -65,7 +65,7 @@ common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) con
 
   const Tensor& Y = *context->Input<Tensor>(1);
   const TensorShape& y_shape = Y.Shape();
-  const int64_t* y_data = Y.Data<int64_t>();
+  const int64_t* y_data = Y.template Data<int64_t>();
   int64_t num_indices = y_shape.Size();
 
   // validate Y
@@ -81,7 +81,7 @@ common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) con
 
   std::vector<int64_t> z_dims{N, num_indices};
   Tensor* Z = context->Output(0, z_dims);
-  T* z_data = Z->MutableData<T>();
+  T* z_data = Z->template MutableData<T>();
 
   for (int64_t n = 0; n < N; ++n) {
     for (int64_t j = 0; j < num_indices; ++j) {

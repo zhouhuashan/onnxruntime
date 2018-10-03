@@ -25,7 +25,7 @@ class Shape final : public OpKernel {
     TensorShape outputShape({gsl::narrow_cast<int64_t>(nDims)});
     Tensor* output = context->Output(0, TensorShape(outputShape));
 
-    inputShape.CopyDims(output->MutableData<int64_t>(), nDims);
+    inputShape.CopyDims(output->template MutableData<int64_t>(), nDims);
     return Status::OK();
   }
 };

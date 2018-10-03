@@ -95,7 +95,7 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
     // ArgMax/ArgMin with FP16 are not supported by cudnn, so convert input to fp32 then call cudnn
     temp_X = GetScratchBuffer<float>(input_shape.Size());
     cudnn_type_X = CUDNN_DATA_FLOAT;
-    Impl_Cast<CudaT, float>(reinterpret_cast<const CudaT*>(X.Data<T>()), temp_X.get(), X.Shape().Size());
+    Impl_Cast<CudaT, float>(reinterpret_cast<const CudaT*>(X.template Data<T>()), temp_X.get(), X.Shape().Size());
   }
 
   // CUDNN requires at least 3D input, so pad 1s if needed
@@ -122,8 +122,8 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_NO_INDICES) {
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
         CudnnHandle(), reduce_desc, nullptr, 0, workspace_cuda.get(), workspace_bytes,
-        &one, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
-        &zero, output_tensor, reinterpret_cast<CudaT*>(Y->MutableData<T>())));
+        &one, input_tensor, reinterpret_cast<const CudaT*>(X.template Data<T>()),
+        &zero, output_tensor, reinterpret_cast<CudaT*>(Y->template MutableData<T>())));
   } else {
     size_t indices_bytes = 0;
     CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
@@ -142,12 +142,12 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
       auto temp_output = GetScratchBuffer<CudaT>(output_count);
       CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
           CudnnHandle(), reduce_desc, indices_cuda.get(), indices_bytes, workspace_cuda.get(), workspace_bytes,
-          &one, input_tensor, reinterpret_cast<const CudaT*>(X.Data<T>()),
+          &one, input_tensor, reinterpret_cast<const CudaT*>(X.template Data<T>()),
           &zero, output_tensor, temp_output.get()));
     }
 
     // CUDA reduction index is uint32_t for now, cast it to int64_t according to ONNX spec
-    Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda.get()), Y->MutableData<int64_t>(), output_count);
+    Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda.get()), Y->template MutableData<int64_t>(), output_count);
   }
 
   return Status::OK();

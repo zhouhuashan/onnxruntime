@@ -156,10 +156,10 @@ static Status MultinomialCompute(OpKernelContext* ctx,
   // implementation copied from Tensorflow with some changes such as using the std::uniform_real_distribution
   // instead of the Philox RNG.
   Eigen::array<int64_t, 2> X_dims = {{batch_size, num_classes}};
-  ConstMatrix<float> logits = ConstMatrix<float>(X.Data<float>(), X_dims);
+  ConstMatrix<float> logits = ConstMatrix<float>(X.template Data<float>(), X_dims);
 
   Eigen::array<int64_t, 2> Y_dims = {{batch_size, num_samples}};
-  Matrix<OutputType> output = Matrix<OutputType>(Y.MutableData<OutputType>(), Y_dims);
+  Matrix<OutputType> output = Matrix<OutputType>(Y.template MutableData<OutputType>(), Y_dims);
 
   // TODO (perf optimization) - the idea behind making this a lambda is so that we can parallelize across batches.
   // When we do that this lamdba will act as one task given to a thread
@@ -270,7 +270,7 @@ static Status CreateOutputTensorFromTensorValues(OpKernelContext* ctx, const Ten
   std::vector<int64_t> dims;
   dims.reserve(shape.Size());
 
-  auto data = gsl::make_span(tensor.Data<int64_t>(), shape.Size());
+  auto data = gsl::make_span(tensor.template Data<int64_t>(), shape.Size());
   dims.insert(dims.cbegin(), data.cbegin(), data.cend());
 
   *Y = ctx->Output(0, TensorShape(dims));
@@ -354,7 +354,7 @@ static Status RandomUniformCompute(float low, float high,
 
 template <typename T, typename TDistribution>
 void GenerateData(std::default_random_engine generator, TDistribution distribution, Tensor& tensor) {
-  auto out = gsl::make_span(tensor.MutableData<T>(), tensor.Shape().Size());
+  auto out = gsl::make_span(tensor.template MutableData<T>(), tensor.Shape().Size());
 
   std::for_each(out.begin(), out.end(), [&generator, &distribution](T& value) { value = distribution(generator); });
 }

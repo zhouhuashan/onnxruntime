@@ -21,24 +21,24 @@ template <typename SrcType,
           typename DstType>
 inline void CastData(const Tensor* in, Tensor* out, const TensorShape& shape) {
   auto shape_size = shape.Size();
-  auto in_vector = ConstEigenVectorMap<SrcType>(in->Data<SrcType>(), shape_size);
-  auto output_vector = EigenVectorMap<DstType>(out->MutableData<DstType>(), shape_size);
+  auto in_vector = ConstEigenVectorMap<SrcType>(in->template Data<SrcType>(), shape_size);
+  auto output_vector = EigenVectorMap<DstType>(out->template MutableData<DstType>(), shape_size);
   output_vector = in_vector.template cast<DstType>();
 }
 
 template <>
 inline void CastData<float, MLFloat16>(const Tensor* in, Tensor* out, const TensorShape& shape) {
-  auto out_data = out->MutableData<MLFloat16>();
+  auto out_data = out->template MutableData<MLFloat16>();
   auto shape_size = shape.Size();
-  auto in_vector = ConstEigenVectorMap<float>(in->Data<float>(), shape_size);
+  auto in_vector = ConstEigenVectorMap<float>(in->template Data<float>(), shape_size);
   auto output_vector = EigenVectorMap<Eigen::half>(static_cast<Eigen::half*>(static_cast<void*>(out_data)), shape_size);
   output_vector = in_vector.template cast<Eigen::half>();
 }
 
 template <>
 inline void CastData<MLFloat16, float>(const Tensor* in, Tensor* out, const TensorShape& shape) {
-  auto out_data = out->MutableData<float>();
-  auto in_data = in->Data<MLFloat16>();
+  auto out_data = out->template MutableData<float>();
+  auto in_data = in->template Data<MLFloat16>();
   auto shape_size = shape.Size();
 #if defined(USE_MLAS) && defined(_M_AMD64)
   MlasConvertHalfToFloatBuffer(&in_data[0].val, out_data, shape_size);

@@ -126,8 +126,8 @@ Status Upsample<T>::ComputeInternal(OpKernelContext* context) const {
     s_->func = module.GetFunction("upsample");
   }
 
-  auto data_x = reinterpret_cast<const CudaT*>(X->Data<T>());
-  auto data_y = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+  auto data_x = reinterpret_cast<const CudaT*>(X->template Data<T>());
+  auto data_y = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
 
   DLDataType dtype;
   dtype.lanes = 1;

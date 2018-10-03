@@ -44,7 +44,7 @@ Status SVMRegressor<T>::Compute(OpKernelContext* ctx) const {
   int64_t N = X->Shape().Size() == 1 ? 1 : X->Shape()[0];
 
   Tensor* Y = ctx->Output(0, TensorShape({N, 1}));  // this op outputs for one target only
-  const auto* x_data = X->Data<T>();
+  const auto* x_data = X->template Data<T>();
 
   for (int64_t n = 0; n < N; n++) {  //for each example
     int64_t current_weight_0 = n * stride;
@@ -64,11 +64,11 @@ Status SVMRegressor<T>::Compute(OpKernelContext* ctx) const {
       sum += rho_[0];
     }
     if (one_class_ && sum > 0) {
-      Y->MutableData<float>()[n] = 1.f;
+      Y->template MutableData<float>()[n] = 1.f;
     } else if (one_class_) {
-      Y->MutableData<float>()[n] = -1.f;
+      Y->template MutableData<float>()[n] = -1.f;
     } else {
-      Y->MutableData<float>()[n] = sum;
+      Y->template MutableData<float>()[n] = sum;
     }
   }
 

@@ -64,7 +64,7 @@ common::Status ZipMapOp::Compute(OpKernelContext* context) const {
                   "Zipmap only supports 1D or 2D input tensors");
   }
 
-  const float* x_data = X.Data<float>();
+  const float* x_data = X.template Data<float>();
 
   if (using_strings_) {
     if (features_per_batch != static_cast<int64_t>(classlabels_strings_.size())) {
@@ -74,7 +74,7 @@ common::Status ZipMapOp::Compute(OpKernelContext* context) const {
                         "] != number of classlabels[" + std::to_string(classlabels_strings_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::string, float>>>(0);
-    //auto* y_data = Y->MutableData<std::vector<std::map<std::string, float>>>();
+    //auto* y_data = Y->template MutableData<std::vector<std::map<std::string, float>>>();
     y_data->resize(batch_size);
     int64_t current_weight_0 = 0;
     for (int n = 0; n < batch_size; n++) {
@@ -93,7 +93,7 @@ common::Status ZipMapOp::Compute(OpKernelContext* context) const {
                         "] != number of classlabels[" + std::to_string(classlabels_int64s_.size()) + "]");
     }
     auto* y_data = context->Output<std::vector<std::map<std::int64_t, float>>>(0);
-    //auto* y_data = Y->MutableData<std::vector<std::map<int64_t, float>>>();
+    //auto* y_data = Y->template MutableData<std::vector<std::map<int64_t, float>>>();
     y_data->resize(batch_size);
     int64_t current_weight_0 = 0;
     for (int n = 0; n < batch_size; n++) {

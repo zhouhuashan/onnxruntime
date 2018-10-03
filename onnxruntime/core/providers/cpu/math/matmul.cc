@@ -34,10 +34,10 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
         static_cast<int>(helper.N()),
         static_cast<int>(helper.K()),
         /* alpha */ 1.0f,
-        left_X->Data<float>() + helper.LeftOffsets()[i],
-        right_X->Data<float>() + helper.RightOffsets()[i],
+        left_X->template Data<float>() + helper.LeftOffsets()[i],
+        right_X->template Data<float>() + helper.RightOffsets()[i],
         /* beta */ 0.0f,
-        Y->MutableData<float>() + helper.OutputOffsets()[i],
+        Y->template MutableData<float>() + helper.OutputOffsets()[i],
         &CPUMathUtil::Instance());
   }
 

@@ -39,12 +39,12 @@ Status BatchNorm<T>::ComputeInternal(OpKernelContext* p_op_kernel_context) const
   const TensorShape& x_shape = X->Shape();
   Tensor* Y = p_op_kernel_context->Output(0, x_shape);
 
-  auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
-  auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
-  auto scale_data = reinterpret_cast<const CudaT*>(scale->Data<T>());
-  auto b_data = reinterpret_cast<const CudaT*>(B->Data<T>());
-  auto mean_data = reinterpret_cast<const CudaT*>(mean->Data<T>());
-  auto var_data = reinterpret_cast<const CudaT*>(var->Data<T>());
+  auto y_data = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
+  auto x_data = reinterpret_cast<const CudaT*>(X->template Data<T>());
+  auto scale_data = reinterpret_cast<const CudaT*>(scale->template Data<T>());
+  auto b_data = reinterpret_cast<const CudaT*>(B->template Data<T>());
+  auto mean_data = reinterpret_cast<const CudaT*>(mean->template Data<T>());
+  auto var_data = reinterpret_cast<const CudaT*>(var->template Data<T>());
 
   CudnnTensor data_desc;
   vector<int64_t> new_dims;

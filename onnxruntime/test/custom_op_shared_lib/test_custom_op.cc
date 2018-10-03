@@ -18,10 +18,10 @@ class FooKernel : public OpKernel {
   Status Compute(OpKernelContext* ctx) const override {
     const Tensor* X = ctx->Input<Tensor>(0);
     const Tensor* W = ctx->Input<Tensor>(1);
-    auto* X_data = X->Data<float>();
-    auto* W_data = W->Data<float>();
+    auto* X_data = X->template Data<float>();
+    auto* W_data = W->template Data<float>();
     Tensor* Y = ctx->Output(0, X->Shape());
-    auto* Y_data = Y->MutableData<float>();
+    auto* Y_data = Y->template MutableData<float>();
 
     for (size_t i = 0; i < X->Shape().Size(); i++) {
       Y_data[i] = X_data[i] + W_data[i];

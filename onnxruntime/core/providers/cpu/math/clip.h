@@ -20,8 +20,8 @@ class Clip final : public OpKernel {
   Status Compute(OpKernelContext* ctx) const override {
     const Tensor* X = ctx->Input<Tensor>(0);
     Tensor* Y = ctx->Output(0, X->Shape());
-    EigenVectorMap<T>(Y->MutableData<T>(), Y->Shape().Size()) =
-        ConstEigenVectorMap<T>(X->Data<T>(), X->Shape().Size())
+    EigenVectorMap<T>(Y->template MutableData<T>(), Y->Shape().Size()) =
+        ConstEigenVectorMap<T>(X->template Data<T>(), X->Shape().Size())
             .cwiseMax(min_)
             .cwiseMin(max_);
     return Status::OK();

@@ -31,8 +31,8 @@ Status LabelEncoder::Compute(OpKernelContext* context) const {
     if (Y.DataType() != DataTypeImpl::GetType<int64_t>())
       return Status(LOTUS, FAIL, "Input of tensor(string) must have output of tensor(int64)");
 
-    auto input = gsl::make_span(X.Data<std::string>(), shape.Size());
-    auto output = gsl::make_span(Y.MutableData<int64_t>(), shape.Size());
+    auto input = gsl::make_span(X.template Data<std::string>(), shape.Size());
+    auto output = gsl::make_span(Y.template MutableData<int64_t>(), shape.Size());
     auto out = output.begin();
 
     // map isn't going to change so get end() once instead of calling inside the for_each loop
@@ -48,8 +48,8 @@ Status LabelEncoder::Compute(OpKernelContext* context) const {
     if (Y.DataType() != DataTypeImpl::GetType<std::string>())
       return Status(LOTUS, FAIL, "Input of tensor(int64) must have output of tensor(string)");
 
-    auto input = gsl::make_span(X.Data<int64_t>(), shape.Size());
-    auto output = gsl::make_span(Y.MutableData<std::string>(), shape.Size());
+    auto input = gsl::make_span(X.template Data<int64_t>(), shape.Size());
+    auto output = gsl::make_span(Y.template MutableData<std::string>(), shape.Size());
     auto out = output.begin();
 
     const auto map_end = int_to_string_map_.end();

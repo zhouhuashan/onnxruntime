@@ -48,9 +48,9 @@ Status Transpose<T>::ComputeInternal(OpKernelContext* ctx) const {
       rank,
       input_strides.GpuPtr(),
       perm.GpuPtr(),
-      reinterpret_cast<const typename ToCudaType<T>::MappedType*>(X.Data<T>()),
+      reinterpret_cast<const typename ToCudaType<T>::MappedType*>(X.template Data<T>()),
       fdm_output_strides.GpuPtr(),
-      reinterpret_cast<typename ToCudaType<T>::MappedType*>(Y->MutableData<T>()),
+      reinterpret_cast<typename ToCudaType<T>::MappedType*>(Y->template MutableData<T>()),
       output_shape.Size());
 
   return Status::OK();

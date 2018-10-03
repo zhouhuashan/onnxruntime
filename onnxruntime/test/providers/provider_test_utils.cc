@@ -29,8 +29,8 @@ namespace test {
 template <typename T>
 void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
   auto& expected_tensor = expected_data.data_.Get<Tensor>();
-  auto* expected = expected_tensor.Data<T>();
-  auto* output = output_tensor.Data<T>();
+  auto* expected = expected_tensor.template Data<T>();
+  auto* output = output_tensor.template Data<T>();
   auto size = output_tensor.Shape().Size();
 
   for (int i = 0; i < size; ++i) {
@@ -41,8 +41,8 @@ void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
 template <>
 void Check<float>(const OpTester::Data& expected_data, const Tensor& output_tensor) {
   auto& expected_tensor = expected_data.data_.Get<Tensor>();
-  auto* expected = expected_tensor.Data<float>();
-  auto* output = output_tensor.Data<float>();
+  auto* expected = expected_tensor.template Data<float>();
+  auto* output = output_tensor.template Data<float>();
   auto size = output_tensor.Shape().Size();
 
   bool has_abs_err = expected_data.absolute_error_.has_value();

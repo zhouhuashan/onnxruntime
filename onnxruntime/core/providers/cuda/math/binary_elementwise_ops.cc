@@ -169,13 +169,13 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                       \
         prepare.output_rank_or_simple_broadcast,                                                        \
         prepare.lhs_padded_strides.GpuPtr(),                                                            \
-        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.lhs_tensor->Data<T>()),     \
+        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.lhs_tensor->template Data<T>()),\
         prepare.rhs_padded_strides.GpuPtr(),                                                            \
-        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.rhs_tensor->Data<T>()),     \
+        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.rhs_tensor->template Data<T>()),\
         prepare.fdm_output_strides.GpuPtr(),                                                            \
         prepare.fdm_H,                                                                                  \
         prepare.fdm_C,                                                                                  \
-        reinterpret_cast<typename ToCudaType<T>::MappedType*>(prepare.output_tensor->MutableData<T>()), \
+        reinterpret_cast<typename ToCudaType<T>::MappedType*>(prepare.output_tensor->template MutableData<T>()), \
         prepare.output_tensor->Shape().Size());                                                         \
     return Status::OK();                                                                                \
   }
@@ -274,13 +274,13 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
       Impl_Add<CudaT>(
           prepare.output_rank_or_simple_broadcast,
           prepare.lhs_padded_strides.GpuPtr(),
-          reinterpret_cast<const CudaT*>(prepare.lhs_tensor->Data<T>()),
+          reinterpret_cast<const CudaT*>(prepare.lhs_tensor->template Data<T>()),
           prepare.rhs_padded_strides.GpuPtr(),
-          reinterpret_cast<const CudaT*>(prepare.rhs_tensor->Data<T>()),
+          reinterpret_cast<const CudaT*>(prepare.rhs_tensor->template Data<T>()),
           prepare.fdm_output_strides.GpuPtr(),
           prepare.fdm_H,
           prepare.fdm_C,
-          reinterpret_cast<CudaT*>(prepare.output_tensor->MutableData<T>()),
+          reinterpret_cast<CudaT*>(prepare.output_tensor->template MutableData<T>()),
           prepare.output_tensor->Shape().Size());
     } else {
       // for more than 2 inputs, we need to accumulate into output tensor, as the shape from input0 + input1 might be different from output shape
@@ -290,13 +290,13 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
         Impl_Add<CudaT>(
             prepare.output_rank_or_simple_broadcast,
             prepare.lhs_padded_strides.GpuPtr(),
-            reinterpret_cast<const CudaT*>(prepare.lhs_tensor->Data<T>()),
+            reinterpret_cast<const CudaT*>(prepare.lhs_tensor->template Data<T>()),
             prepare.rhs_padded_strides.GpuPtr(),
-            reinterpret_cast<const CudaT*>(prepare.rhs_tensor->Data<T>()),
+            reinterpret_cast<const CudaT*>(prepare.rhs_tensor->template Data<T>()),
             prepare.fdm_output_strides.GpuPtr(),
             prepare.fdm_H,
             prepare.fdm_C,
-            reinterpret_cast<CudaT*>(prepare.output_tensor->MutableData<T>()),
+            reinterpret_cast<CudaT*>(prepare.output_tensor->template MutableData<T>()),
             prepare.output_tensor->Shape().Size());
       }
     }

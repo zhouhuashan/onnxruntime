@@ -49,25 +49,25 @@ Status BatchNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
     sample_size *= dims_vec[i];
   }
 
-  ConstEigenVectorArrayMap<float> scale_arr(scale->Data<float>(), C);
-  ConstEigenVectorArrayMap<float> bias_arr(B->Data<float>(), C);
+  ConstEigenVectorArrayMap<float> scale_arr(scale->template Data<float>(), C);
+  ConstEigenVectorArrayMap<float> bias_arr(B->template Data<float>(), C);
 
   // Regardless of training or testing, we will apply the estimated mean
   // and standard deviation to the input. For testing, they are
   // specified directly by the input, and for training, they are computed
   // by the op.
   Eigen::Array<float, Eigen::Dynamic, 1> inv_std(C);
-  ConstEigenVectorArrayMap<float> var_arr(var->Data<float>(), C);
+  ConstEigenVectorArrayMap<float> var_arr(var->template Data<float>(), C);
   inv_std = (var_arr + epsilon_).sqrt().inverse();
-  ConstEigenVectorArrayMap<float> mean_arr(mean->Data<float>(), C);
+  ConstEigenVectorArrayMap<float> mean_arr(mean->template Data<float>(), C);
   // We can fuse the output computation as follows:
   //   ((x - est_mean) * (inv_var) * scale + bias
   // to
   //   (x * inv_var * scale) + (bias - est_mean * inv_var * scale)
   Eigen::Array<float, Eigen::Dynamic, 1> new_scale = inv_std * scale_arr;
   Eigen::Array<float, Eigen::Dynamic, 1> new_bias = bias_arr - mean_arr * new_scale;
-  EigenArrayMap<float> Y_arr(Y->MutableData<float>(), sample_size, N * C);
-  ConstEigenArrayMap<float> X_arr(X->Data<float>(), sample_size, N * C);
+  EigenArrayMap<float> Y_arr(Y->template MutableData<float>(), sample_size, N * C);
+  ConstEigenArrayMap<float> X_arr(X->template Data<float>(), sample_size, N * C);
   for (int nc = 0; nc < N * C; ++nc) {
     Y_arr.col(nc) = X_arr.col(nc) * new_scale(nc % C) + new_bias(nc % C);
   }

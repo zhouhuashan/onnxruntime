@@ -48,7 +48,7 @@ Status Gemm<T>::ComputeInternal(OpKernelContext* ctx) const {
   // broadcast bias if needed
   if (beta_ != 0) {
     auto& b_shape = B->Shape();
-    const CudaT* b_data = reinterpret_cast<const CudaT*>(B->Data<T>());
+    const CudaT* b_data = reinterpret_cast<const CudaT*>(B->template Data<T>());
 
     if (b_shape.Size() == 1) {
       // if B is (), (1,) or (1, 1), broadcast the scalar
@@ -98,9 +98,9 @@ Status Gemm<T>::ComputeInternal(OpKernelContext* ctx) const {
       trans_A_ ? CUBLAS_OP_T : CUBLAS_OP_N,
       N, M, K,
       &alpha,
-      reinterpret_cast<const CudaT*>(W->Data<T>()),
+      reinterpret_cast<const CudaT*>(W->template Data<T>()),
       (trans_B_ ? K : N),
-      reinterpret_cast<const CudaT*>(X->Data<T>()),
+      reinterpret_cast<const CudaT*>(X->template Data<T>()),
       (trans_A_ ? M : K),
       &beta,
       out_data, N));

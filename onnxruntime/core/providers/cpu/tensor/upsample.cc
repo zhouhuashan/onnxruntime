@@ -206,7 +206,7 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
 
   switch (mode_) {
     case UpsampleMode::NN:
-      return upsampleNearest<T>(X->Data<T>(), Y->MutableData<T>(), X->Shape(), Y->Shape(), scales_);
+      return upsampleNearest<T>(X->template Data<T>(), Y->template MutableData<T>(), X->Shape(), Y->Shape(), scales_);
     case UpsampleMode::LINEAR: {
       //What's the correct behavior of linear mode is not clear right now,
       //Only support bilinear with 4D tensor to keep consistent with previous behavior
@@ -217,9 +217,9 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
       const int64_t input_height = dims[2], input_width = dims[3];
 
       upsampleBilinear(batch_size, num_channels, input_height, input_width,
-                       scales_[2], scales_[3], X->Data<T>(), Y->MutableData<T>());
+                       scales_[2], scales_[3], X->template Data<T>(), Y->template MutableData<T>());
       return Status::OK();
-      //return upsampleLiner<T>(X->Data<T>(), Y->MutableData<T>(), X->Shape(), Y->Shape(), scales_);
+      //return upsampleLiner<T>(X->template Data<T>(), Y->template MutableData<T>(), X->Shape(), Y->Shape(), scales_);
     }
     default:
       return Status(LOTUS, FAIL, "Upsample: unexpected mode");

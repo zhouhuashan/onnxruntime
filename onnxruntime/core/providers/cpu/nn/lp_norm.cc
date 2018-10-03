@@ -61,9 +61,9 @@ Status LpNorm<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   const int64_t sf = input_shape.SizeFromDimension(canonical_axis + 1);
 
   if (p_ == 1) {
-    DoNormalizeP1(input->Data<float>(), output->MutableData<float>(), m, n, sf);
+    DoNormalizeP1(input->template Data<float>(), output->template MutableData<float>(), m, n, sf);
   } else if (p_ == 2) {
-    DoNormalizeP2(input->Data<float>(), output->MutableData<float>(), m, n, sf);
+    DoNormalizeP2(input->template Data<float>(), output->template MutableData<float>(), m, n, sf);
   }
 
   return Status::OK();

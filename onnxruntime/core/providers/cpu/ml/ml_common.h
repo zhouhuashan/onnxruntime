@@ -283,7 +283,7 @@ static inline void compute_softmax_zero(std::vector<float>& values) {
 static inline void write_scores(std::vector<float>& scores, POST_EVAL_TRANSFORM post_transform, int64_t write_index, Tensor* Z, int add_second_class) {
   if (post_transform == POST_EVAL_TRANSFORM::PROBIT && scores.size() == 1) {
     scores[0] = ml_sqrt2 * ml_inv_erf(2 * scores[0] - 1);
-    Z->MutableData<float>()[write_index] = scores[0];
+    Z->template MutableData<float>()[write_index] = scores[0];
   } else if (scores.size() >= 2) {  //multiclass
     if (post_transform == POST_EVAL_TRANSFORM::LOGISTIC) {
       for (float& score : scores) {
@@ -319,7 +319,7 @@ static inline void write_scores(std::vector<float>& scores, POST_EVAL_TRANSFORM 
     }
   }
   for (float score : scores) {
-    Z->MutableData<float>()[write_index] = score;
+    Z->template MutableData<float>()[write_index] = score;
     write_index++;
   }
 }

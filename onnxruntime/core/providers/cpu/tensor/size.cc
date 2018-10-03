@@ -11,7 +11,7 @@ Status Size::Compute(OpKernelContext* ctx) const {
   std::vector<int64_t> empty_list_of_dimensions;
   TensorShape scalar_shape(empty_list_of_dimensions);
   Tensor* p_output_tensor = ctx->Output(0, scalar_shape);
-  int64_t* p_output_scalar = p_output_tensor->MutableData<int64_t>();
+  int64_t* p_output_scalar = p_output_tensor->template MutableData<int64_t>();
 
   *p_output_scalar = input_tensor.Shape().Size();
 

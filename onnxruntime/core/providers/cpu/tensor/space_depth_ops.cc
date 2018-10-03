@@ -51,9 +51,9 @@ Status SpaceToDepth<float>::Compute(OpKernelContext* context) const {
   Tensor& output = *context->Output(0, output_dims);
 
   std::array<int64_t, IntermediateTensorRank> permutation{{0, 3, 5, 1, 2, 4}};
-  EigenTensorMap(output.MutableData<float>(), batch, blocksize_, blocksize_,
+  EigenTensorMap(output.template MutableData<float>(), batch, blocksize_, blocksize_,
                  input_depth, input_height / blocksize_, input_width / blocksize_) =
-      EigenTensorMap(const_cast<float*>(input.Data<float>()), batch,
+      EigenTensorMap(const_cast<float*>(input.template Data<float>()), batch,
                      input_depth, input_height / blocksize_, blocksize_,
                      input_width / blocksize_, blocksize_)
           .shuffle(permutation);
@@ -80,9 +80,9 @@ Status DepthToSpace<float>::Compute(OpKernelContext* context) const {
   Tensor& output = *context->Output(0, output_dims);
 
   std::array<int64_t, IntermediateTensorRank> permutation{{0, 3, 4, 1, 5, 2}};
-  EigenTensorMap(output.MutableData<float>(), batch, input_depth / blocksize_ / blocksize_,
+  EigenTensorMap(output.template MutableData<float>(), batch, input_depth / blocksize_ / blocksize_,
                  input_height, blocksize_, input_width, blocksize_) =
-      EigenTensorMap(const_cast<float*>(input.Data<float>()), batch,
+      EigenTensorMap(const_cast<float*>(input.template Data<float>()), batch,
                      blocksize_, blocksize_, input_depth / blocksize_ / blocksize_,
                      input_height, input_width)
           .shuffle(permutation);

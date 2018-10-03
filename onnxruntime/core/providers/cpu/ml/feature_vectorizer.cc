@@ -43,7 +43,7 @@ Status FeatureVectorizer::Compute(OpKernelContext* context) const {
 
   // initialize all the output to 0.f
   Tensor* Y = context->Output(0, TensorShape(dims));
-  auto Y_data = Y->MutableData<float>();
+  auto Y_data = Y->template MutableData<float>();
 
   auto out = gsl::make_span(Y_data, Y->Shape().Size());
 
@@ -96,7 +96,7 @@ static void VectorizeTensor(const Tensor& input_tensor, int64_t feature_size, in
     stride = feature_size;
   }
 
-  auto data = input_tensor.Data<T>();
+  auto data = input_tensor.template Data<T>();
   auto input = gsl::make_span(data, shape.Size());
   auto input_iter = input.cbegin();
 

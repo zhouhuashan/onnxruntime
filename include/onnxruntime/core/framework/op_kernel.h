@@ -58,6 +58,40 @@ class OpKernel {
 };
 
 class OpKernelContext {
+
+  // See explicit Tensor specialization below
+  template<typename Result, typename TReg>
+  struct Fetcher {
+    static const Result* Input(const OpKernelContext& ctx, int index) {
+      const MLValue* p_ml_value = ctx.GetInputMLValue(index);
+      return p_ml_value ? &(p_ml_value->Get<TReg>()) : nullptr;
+    }
+    static Result* Output(OpKernelContext& ctx, int index) {
+      if (index < 0 || index >= ctx.OutputCount())
+        return nullptr;
+      MLValue* p_ml_value = nullptr;
+      LOTUS_ENFORCE(ctx.GetOrCreateOutputMLValue(index, p_ml_value).IsOK());
+      return p_ml_value ? p_ml_value->GetMutable<TReg>() : nullptr;
+    }
+  };
+
+  template <typename T, typename... Types>
+  struct TypeRegistrationDispatcher;
+
+  template <typename T>
+  struct TypeRegistrationDispatcher<T> : public Fetcher<T,T> {
+  };
+
+  template <typename T, typename... Params>
+  struct TypeRegistrationDispatcher<TypeRegister<T, Params...>> : 
+    public Fetcher<T, TypeRegister<T, Params...>> {
+  };
+
+  template <typename T, const char D[], const char N[], typename... Params>
+  struct TypeRegistrationDispatcher<OpaqueRegister<T, D, N, Params...>> : 
+    public Fetcher<T, OpaqueRegister<T, D, N, Params...>> {
+  };
+
  public:
   using ArgMap = std::unordered_map<std::string, size_t>;
 
@@ -78,20 +112,14 @@ class OpKernelContext {
   MLDataType OutputType(int index) const;
 
   template <typename T>
-  const T* Input(int index) const {
-    const MLValue* p_ml_value = GetInputMLValue(index);
-    return p_ml_value ? &(p_ml_value->Get<T>()) : nullptr;
+  const auto* Input(int index) const {
+    return TypeRegistrationDispatcher<T>::Input(*this, index);
   }
 
   // Fetch output (non-tensor) with specified index.
   template <typename T>
-  T* Output(int index) {
-    if (index < 0 || index >= OutputCount())
-      return nullptr;
-
-    MLValue* p_ml_value = nullptr;
-    LOTUS_ENFORCE(GetOrCreateOutputMLValue(index, p_ml_value).IsOK());
-    return p_ml_value ? p_ml_value->GetMutable<T>() : nullptr;
+  auto* Output(int index) {
+    return TypeRegistrationDispatcher<T>::Output(*this, index);
   }
 
   // In the case that memory allocation has not been done for an output tensor,
@@ -151,13 +179,21 @@ class OpKernelContext {
   int node_output_start_index_{-1};
 };
 
-// Fetching output tensor without shape is not allowed except when it already exists
+// Bring this out to a namespace to provide explicit
+// specialization
 template <>
-inline Tensor* OpKernelContext::Output<Tensor>(int index) {
-  MLValue* p_ml_value = GetOutputMLValue(index);
-  LOTUS_ENFORCE(p_ml_value, "Please fetch output tensor with specified shape.");
-  return p_ml_value->GetMutable<Tensor>();
-}
+struct OpKernelContext::Fetcher<Tensor, Tensor> {
+  static const Tensor* Input(const OpKernelContext& ctx, int index) {
+    const MLValue* p_ml_value = ctx.GetInputMLValue(index);
+    return p_ml_value ? &(p_ml_value->Get<Tensor>()) : nullptr;
+  }
+  // Fetching output tensor without shape is not allowed except when it already exists
+  static Tensor* Output(OpKernelContext& ctx, int index) {
+    MLValue* p_ml_value = ctx.GetOutputMLValue(index);
+    LOTUS_ENFORCE(p_ml_value, "Please fetch output tensor with specified shape.");
+    return p_ml_value->GetMutable<Tensor>();
+  }
+};
 
 using KernelCreateFn = std::function<OpKernel*(const OpKernelInfo& info)>;
 

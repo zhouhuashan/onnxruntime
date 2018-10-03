@@ -61,9 +61,9 @@ Status Pad<T>::ComputeInternal(OpKernelContext* ctx) const {
       upper_pads.GpuPtr(),
       value_,
       static_cast<int>(mode_),
-      reinterpret_cast<const typename ToCudaType<T>::MappedType*>(input_tensor.Data<T>()),
+      reinterpret_cast<const typename ToCudaType<T>::MappedType*>(input_tensor.template Data<T>()),
       fdm_output_strides.GpuPtr(),
-      reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_tensor.MutableData<T>()),
+      reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_tensor.template MutableData<T>()),
       output_tensor.Shape().Size());
 
   return Status::OK();

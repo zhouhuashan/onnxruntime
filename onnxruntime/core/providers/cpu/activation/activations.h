@@ -9,10 +9,10 @@
 
 namespace onnxruntime {
 
-#define EIGEN_X ConstEigenVectorArrayMap<T>(X->Data<T>(), X->Shape().Size())
-#define EIGEN_X_VAR(var) ConstEigenVectorArrayMap<T> var(X->Data<T>(), X->Shape().Size())
-#define EIGEN_Y EigenVectorArrayMap<T>(Y->MutableData<T>(), Y->Shape().Size())
-#define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->MutableData<T>(), Y->Shape().Size())
+#define EIGEN_X ConstEigenVectorArrayMap<T>(X->template Data<T>(), X->Shape().Size())
+#define EIGEN_X_VAR(var) ConstEigenVectorArrayMap<T> var(X->template Data<T>(), X->Shape().Size())
+#define EIGEN_Y EigenVectorArrayMap<T>(Y->template MutableData<T>(), Y->Shape().Size())
+#define EIGEN_Y_VAR(var) EigenVectorArrayMap<T> var(Y->template MutableData<T>(), Y->Shape().Size())
 
 template <typename T>
 class Elu final : public OpKernel {

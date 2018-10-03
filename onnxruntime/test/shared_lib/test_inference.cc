@@ -72,7 +72,7 @@ void RunSession(InferenceSession& session_object,
     std::cout << "shapes don't match: expected_shape " << expected_shape << " != rtensor.Shape() " << rtensor.Shape() << std::endl;
     exit(1);
   }
-  const std::vector<float> found(rtensor.Data<float>(), rtensor.Data<float>() + expected_shape.Size());
+  const std::vector<float> found(rtensor.template Data<float>(), rtensor.template Data<float>() + expected_shape.Size());
   if (values_y != found) {
     std::cout << "outputs don't match" << std::endl;
     exit(1);

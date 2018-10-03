@@ -109,8 +109,8 @@ Status Transpose<float>::Compute(OpKernelContext* ctx) const {
 
   TensorShape output_shape{output_dims};
   Tensor* Y = ctx->Output(0, output_shape);
-  const float* Xdata = X.Data<float>();
-  float* Ydata = Y->MutableData<float>();
+  const float* Xdata = X.template Data<float>();
+  float* Ydata = Y->template MutableData<float>();
 
   // Partition the permutation into a prefix and the largest suffix such that
   // every axis i in the suffix is mapped to i.

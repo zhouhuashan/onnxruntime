@@ -146,7 +146,7 @@ struct SliceIterator {
 
  private:
   const Tensor& tensor_;
-  const T* input_{tensor_.Data<T>()};
+  const T* input_{tensor_.template Data<T>()};
   gsl::span<const int64_t> extents_;
   size_t inner_counter_{}, inner_extent_;
   SliceSkips skips_;

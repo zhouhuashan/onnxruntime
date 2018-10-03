@@ -25,7 +25,7 @@ void TestNupharCopyTensorWithPrimitiveType(IExecutionProvider *nuphar_provider,
   EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
   EXPECT_EQ(src_tensor.Shape(), dst_tensor->Shape());
   EXPECT_EQ(src_tensor.DataType(), dst_tensor->DataType());
-  std::vector<T> dst_values(dst_tensor->Data<T>(), dst_tensor->Data<T>() + src_values.size());
+  std::vector<T> dst_values(dst_tensor->template Data<T>(), dst_tensor->template Data<T>() + src_values.size());
   ASSERT_EQ(src_values, dst_values);
 }
 

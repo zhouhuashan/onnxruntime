@@ -31,12 +31,12 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& x_shape = X->Shape();
   const auto& x_dims = x_shape.GetDims();
-  auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
+  auto x_data = reinterpret_cast<const CudaT*>(X->template Data<T>());
 
   const Tensor* W = context->Input<Tensor>(1);
   const TensorShape& w_shape = W->Shape();
   std::vector<int64_t> w_dims = w_shape.GetDims();
-  auto w_data = reinterpret_cast<const CudaT*>(W->Data<T>());
+  auto w_data = reinterpret_cast<const CudaT*>(W->template Data<T>());
 
   size_t num_inputs = OpKernel::Node().InputDefs().size();
   bool has_bias = (num_inputs == 3);
@@ -119,7 +119,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
       }
 
       Tensor* Y = context->Output(0, TensorShape(s_.y_dims));
-      y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+      y_data = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
 
       // set math type to tensor core before algorithm search
       if (std::is_same<T, MLFloat16>::value)
@@ -149,7 +149,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
 
   if (!y_data) {
     Tensor* Y = context->Output(0, TensorShape(s_.y_dims));
-    y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+    y_data = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
   }
 
   const auto alpha = Consts<CudaT>::One;
@@ -173,7 +173,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
 
   if (has_bias) {
     const Tensor* B = context->Input<Tensor>(2);
-    auto b_data = reinterpret_cast<const CudaT*>(B->Data<T>());
+    auto b_data = reinterpret_cast<const CudaT*>(B->template Data<T>());
     CUDNN_RETURN_IF_ERROR(cudnnAddTensor(CudnnHandle(), &alpha, s_.b_tensor, b_data, &alpha, s_.y_tensor, y_data));
   }
 

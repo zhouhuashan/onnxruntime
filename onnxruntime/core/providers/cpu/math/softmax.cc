@@ -24,14 +24,14 @@ Status Softmax<float>::Compute(OpKernelContext* ctx) const {
   size_t N = input_shape.SizeToDimension(axis);
   size_t D = input_shape.SizeFromDimension(axis);
 
-  float* Ydata = Y->MutableData<float>();
+  float* Ydata = Y->template MutableData<float>();
 
   std::vector<float> scale_(N);
   std::vector<float> rowmax_(N);
   std::vector<float> sum_multiplier_(D, 1.f);  // initialize all multiplier values to 1.0
 
   const bool logarithmic = false;
-  auto status = SoftmaxCPU(N, D, X.Data<float>(), Ydata,
+  auto status = SoftmaxCPU(N, D, X.template Data<float>(), Ydata,
                            scale_.data(), sum_multiplier_.data(), logarithmic, rowmax_.data());
 
   return status;

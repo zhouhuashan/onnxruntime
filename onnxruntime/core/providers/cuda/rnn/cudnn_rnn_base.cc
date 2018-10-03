@@ -119,9 +119,9 @@ Status CudnnRnnBase<T>::ReorganizeWeights(const Tensor* W, const Tensor* R, cons
     // Prepare the weight data
     target_w_data = GetScratchBuffer<void>(w_size * sizeof(T));
 
-    const T* W_data = W->Data<T>();
-    const T* R_data = R->Data<T>();
-    const T* B_data = B == nullptr ? nullptr : B->Data<T>();
+    const T* W_data = W->template Data<T>();
+    const T* R_data = R->template Data<T>();
+    const T* B_data = B == nullptr ? nullptr : B->template Data<T>();
 
     LOTUS_RETURN_IF_ERROR(SetCudnnRnnWeightBias(CudnnHandle(), rnn_desc_, fake_x_desc, target_w_desc,
                                                 target_w_data.get(), W_data, R_data, B_data));
@@ -204,7 +204,7 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   }
 
   IAllocatorUniquePtr<T> x_reversed_data;
-  T* x_data = const_cast<T*>(X.Data<T>());
+  T* x_data = const_cast<T*>(X.template Data<T>());
   if (reverse_) {
     // reverse input data
     x_reversed_data = GetScratchBuffer<T>(seq_length * batch_size * input_size);
@@ -217,20 +217,20 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
     x_data = x_reversed_data.get();
   }
 
-  const T* hx_data = (initial_h == nullptr) ? nullptr : initial_h->Data<T>();
-  const T* cx_data = (initial_c == nullptr) ? nullptr : initial_c->Data<T>();
-  T* y_h_data = (Y_h == nullptr) ? nullptr : Y_h->MutableData<T>();
-  T* y_c_data = (Y_c == nullptr) ? nullptr : Y_c->MutableData<T>();
+  const T* hx_data = (initial_h == nullptr) ? nullptr : initial_h->template Data<T>();
+  const T* cx_data = (initial_c == nullptr) ? nullptr : initial_c->template Data<T>();
+  T* y_h_data = (Y_h == nullptr) ? nullptr : Y_h->template MutableData<T>();
+  T* y_c_data = (Y_c == nullptr) ? nullptr : Y_c->template MutableData<T>();
   int64_t output_size = seq_length * num_directions_ * batch_size * hidden_size_;
   T* y_data = nullptr;
   IAllocatorUniquePtr<T> y_alloc_data;
   if (Y != nullptr) {
-    y_data = Y->MutableData<T>();
+    y_data = Y->template MutableData<T>();
   } else {
     y_alloc_data = GetScratchBuffer<T>(output_size);
     y_data = y_alloc_data.get();
   }
-  const int32_t* sequence_lens_data = (sequence_lens == nullptr) ? nullptr : sequence_lens->Data<int32_t>();
+  const int32_t* sequence_lens_data = (sequence_lens == nullptr) ? nullptr : sequence_lens->template Data<int32_t>();
 
   size_t workspace_bytes;
   CUDNN_RETURN_IF_ERROR(cudnnGetRNNWorkspaceSize(CudnnHandle(), rnn_desc_, gsl::narrow_cast<int>(seq_length), x_desc.data(), &workspace_bytes));

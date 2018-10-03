@@ -309,7 +309,7 @@ common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
   auto* Z = context->Output(1, TensorShape(z_dims));
 
   int64_t zindex = 0;
-  const T* x_data = X.Data<T>();
+  const T* x_data = X.template Data<T>();
 
   // for each class
   std::vector<float> scores;
@@ -339,15 +339,15 @@ common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
         }
       }
       if (using_strings_) {
-        Y->MutableData<std::string>()[i] = classlabels_strings_[maxclass];
+        Y->template MutableData<std::string>()[i] = classlabels_strings_[maxclass];
       } else {
-        Y->MutableData<int64_t>()[i] = classlabels_int64s_[maxclass];
+        Y->template MutableData<int64_t>()[i] = classlabels_int64s_[maxclass];
       }
     } else  // binary case
     {
       maxweight = classes.size() > 0 ? classes[0] : 0.f;  // only 1 class
       if (using_strings_) {
-        auto* y_data = Y->MutableData<std::string>();
+        auto* y_data = Y->template MutableData<std::string>();
         if (classlabels_strings_.size() == 2 &&
             weights_are_all_positive_ &&
             maxweight > 0.5 &&
@@ -377,7 +377,7 @@ common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
           y_data[i] = "0";  // negative label
         }
       } else {
-        auto* y_data = Y->MutableData<int64_t>();
+        auto* y_data = Y->template MutableData<int64_t>();
         if (classlabels_int64s_.size() == 2 &&
             weights_are_all_positive_ &&
             maxweight > 0.5 &&

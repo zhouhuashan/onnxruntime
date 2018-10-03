@@ -32,7 +32,7 @@ Status Tile<T>::ComputeInternal(OpKernelContext* ctx) const {
     return Status(LOTUS, INVALID_ARGUMENT, "'repeat' input tensor must have the same length as the 'input' tensor");
 
   // Calculate the shape of the output tensor
-  auto* repeats = repeats_tensor.Data<int64_t>();
+  auto* repeats = repeats_tensor.template Data<int64_t>();
   const auto& input_shape = input_tensor.Shape().GetDims();
   std::vector<int64_t> output_dims(input_shape);
   for (auto axis = 0; axis < rank; axis++)
@@ -40,8 +40,8 @@ Status Tile<T>::ComputeInternal(OpKernelContext* ctx) const {
   TensorShape outputShape(output_dims);
   auto& output_tensor = *ctx->Output(0, outputShape);
 
-  T* output_data = output_tensor.MutableData<T>();
-  const T* input_data = input_tensor.Data<T>();
+  T* output_data = output_tensor.template MutableData<T>();
+  const T* input_data = input_tensor.template Data<T>();
 
   CudaAsyncBuffer<int64_t> input_strides(this, rank);
   CudaAsyncBuffer<fast_divmod> fdm_input_shape(this, rank);

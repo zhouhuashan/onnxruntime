@@ -263,9 +263,9 @@ ONNX_CPU_OPERATOR_KERNEL(
     Scale<float>);
 
 template <typename T>
-auto MakeEigenArrayMap(Tensor& t) { return EigenVectorArrayMap<T>(t.MutableData<T>(), t.Shape().Size()); }
+auto MakeEigenArrayMap(Tensor& t) { return EigenVectorArrayMap<T>(t.template MutableData<T>(), t.Shape().Size()); }
 template <typename T>
-auto MakeEigenArrayMap(const Tensor& t) { return ConstEigenVectorArrayMap<T>(t.Data<T>(), t.Shape().Size()); }
+auto MakeEigenArrayMap(const Tensor& t) { return ConstEigenVectorArrayMap<T>(t.template Data<T>(), t.Shape().Size()); }
 
 struct BroadcastIterator {
   size_t AdvanceBy(size_t delta) {
@@ -449,15 +449,15 @@ struct TBroadcaster {
   Broadcaster broadcaster_{input_tensor0_.Shape().GetDims(), input_tensor1_.Shape().GetDims()};
   size_t span_size_{broadcaster_.GetSpanSize()};
 
-  const T* input0_{input_tensor0_.Data<T>()};
-  const T* input1_{input_tensor1_.Data<T>()};
+  const T* input0_{input_tensor0_.template Data<T>()};
+  const T* input1_{input_tensor1_.template Data<T>()};
 };
 
 template <typename T>
 struct TBroadcastOutput {
   TBroadcastOutput(size_t span_size, Tensor& tensor)
       : span_size_(span_size) {
-    output_ = tensor.MutableData<T>();
+    output_ = tensor.template MutableData<T>();
     output_end_ = output_ + tensor.Shape().Size();
   }
 
@@ -1077,7 +1077,7 @@ struct TBroadcasterExpand {
   Broadcaster broadcaster_;
   size_t span_size_{broadcaster_.GetSpanSize()};
 
-  const T* input_{input_tensor_.Data<T>()};
+  const T* input_{input_tensor_.template Data<T>()};
 };
 
 template <typename T>
@@ -1086,7 +1086,7 @@ Status Expand_8<T>::Compute(OpKernelContext* context) const {
   LOTUS_ENFORCE(tensor_shape.Shape().GetDims().size() == 1, "Shape must be 1 dimensional as it's tensor data is a shape");
 
   // Turn the shape tensor data into an actual shape
-  const int64_t* p_shape = tensor_shape.Data<int64_t>();
+  const int64_t* p_shape = tensor_shape.template Data<int64_t>();
   std::vector<int64_t> shape{p_shape, p_shape + tensor_shape.Shape().Size()};
 
   TBroadcasterExpand<T> bc(*context->Input<Tensor>(0), shape);

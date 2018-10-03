@@ -225,7 +225,7 @@ common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const
   Tensor* Y = context->Output(0, TensorShape({N, n_targets_}));
 
   int64_t write_index = 0;
-  const auto* x_data = X->Data<T>();
+  const auto* x_data = X->template Data<T>();
 
   for (int64_t i = 0; i < N; i++)  //for each class
   {
@@ -265,7 +265,7 @@ common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const
       ::onnxruntime::ml::compute_softmax_zero(outputs);
     }
     for (float output : outputs) {
-      Y->MutableData<float>()[write_index] = output;
+      Y->template MutableData<float>()[write_index] = output;
       write_index++;
     }
   }

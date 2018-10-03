@@ -92,7 +92,7 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
     dims = {static_cast<int64_t>(N), static_cast<int64_t>(class_count_)};
   Z = ctx->Output(1, TensorShape(dims));
 
-  const auto* x_data = X->Data<T>();
+  const auto* x_data = X->template Data<T>();
   int64_t zindex = 0;
 
   for (int64_t n = 0; n < N; n++)  //for each example
@@ -203,48 +203,48 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
     {
       if (using_strings_) {
         if (classlabels_strings_.size() == 2 && weights_are_all_positive_ && maxweight >= 0.5 && proba_.size() == 0) {
-          Y->MutableData<std::string>()[n] = classlabels_strings_[1];  //positive label
+          Y->template MutableData<std::string>()[n] = classlabels_strings_[1];  //positive label
           write_additional_scores = 0;
         } else if (classlabels_strings_.size() == 2 && maxweight > 0 && !weights_are_all_positive_ && proba_.size() == 0) {
-          Y->MutableData<std::string>()[n] = classlabels_strings_[1];  //positive label
+          Y->template MutableData<std::string>()[n] = classlabels_strings_[1];  //positive label
           write_additional_scores = 0;
         } else if (classlabels_strings_.size() == 2 && proba_.size() > 0) {   //this case all classes are in their rightful spot
-          Y->MutableData<std::string>()[n] = classlabels_strings_[maxclass];  //whichever label
+          Y->template MutableData<std::string>()[n] = classlabels_strings_[maxclass];  //whichever label
           write_additional_scores = -1;
         } else if (classlabels_strings_.size() == 2) {
-          Y->MutableData<std::string>()[n] = classlabels_strings_[0];  //negative label
+          Y->template MutableData<std::string>()[n] = classlabels_strings_[0];  //negative label
           write_additional_scores = 1;
         } else if (maxweight > 0) {
-          Y->MutableData<std::string>()[n] = "1";  //positive label
+          Y->template MutableData<std::string>()[n] = "1";  //positive label
         } else {
-          Y->MutableData<std::string>()[n] = "0";  //negative label
+          Y->template MutableData<std::string>()[n] = "0";  //negative label
         }
       } else  //no strings
       {
         if (classlabels_ints_.size() == 2 && weights_are_all_positive_ && maxweight >= 0.5 && proba_.size() == 0) {
-          Y->MutableData<int64_t>()[n] = classlabels_ints_[1];  //positive label
+          Y->template MutableData<int64_t>()[n] = classlabels_ints_[1];  //positive label
           write_additional_scores = 0;
         } else if (classlabels_ints_.size() == 2 && maxweight > 0 && !weights_are_all_positive_ && proba_.size() == 0) {
-          Y->MutableData<int64_t>()[n] = classlabels_ints_[0];  //pos  label
+          Y->template MutableData<int64_t>()[n] = classlabels_ints_[0];  //pos  label
           write_additional_scores = 0;
         } else if (classlabels_ints_.size() == 2 && proba_.size() > 0)  //this case all classes are in their rightful spot
         {
-          Y->MutableData<int64_t>()[n] = classlabels_ints_[maxclass];  //whichever label
+          Y->template MutableData<int64_t>()[n] = classlabels_ints_[maxclass];  //whichever label
           write_additional_scores = -1;
         } else if (classlabels_ints_.size() == 2) {
-          Y->MutableData<int64_t>()[n] = classlabels_ints_[0];  //negative label
+          Y->template MutableData<int64_t>()[n] = classlabels_ints_[0];  //negative label
           write_additional_scores = 1;
         } else if (maxweight > 0) {
-          Y->MutableData<int64_t>()[n] = 1;  //positive label
+          Y->template MutableData<int64_t>()[n] = 1;  //positive label
         } else {
-          Y->MutableData<int64_t>()[n] = 0;  //negative label
+          Y->template MutableData<int64_t>()[n] = 0;  //negative label
         }
       }
     } else {  //multiclass
       if (using_strings_) {
-        Y->MutableData<std::string>()[n] = classlabels_strings_[maxclass];
+        Y->template MutableData<std::string>()[n] = classlabels_strings_[maxclass];
       } else {
-        Y->MutableData<int64_t>()[n] = classlabels_ints_[maxclass];
+        Y->template MutableData<int64_t>()[n] = classlabels_ints_[maxclass];
       }
     }
 

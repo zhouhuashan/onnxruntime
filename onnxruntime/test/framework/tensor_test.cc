@@ -27,7 +27,7 @@ void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
   EXPECT_STREQ(location.name, CPU);
   EXPECT_EQ(location.id, 0);
 
-  auto t_data = t.MutableData<T>();
+  auto t_data = t.template MutableData<T>();
   EXPECT_TRUE(t_data);
   memset(t_data, 0, sizeof(T) * shape.Size());
   EXPECT_EQ(*(T*)((char*)data + offset), (T)0);
@@ -45,7 +45,7 @@ void CPUTensorTest(std::vector<int64_t> dims, const int offset = 0) {
   ASSERT_STREQ(new_location.name, CPU);
   EXPECT_EQ(new_location.id, 0);
 
-  auto new_data = new_t.MutableData<T>();
+  auto new_data = new_t.template MutableData<T>();
   EXPECT_TRUE(new_data);
   memset(new_data, 0, sizeof(T) * shape.Size());
   EXPECT_EQ(*(T*)((char*)new_data + offset), (T)0);
@@ -131,7 +131,7 @@ TEST(TensorTest, EmptyTensorTest) {
   EXPECT_EQ(shape.Size(), 0);
   EXPECT_EQ(t.DataType(), type);
 
-  auto data = t.MutableData<float>();
+  auto data = t.template MutableData<float>();
   EXPECT_TRUE(!data);
 
   auto& location = t.Location();
@@ -153,7 +153,7 @@ TEST(TensorTest, TensorCopyAssignOpTest) {
   ASSERT_STREQ(location.name, CPU);
   EXPECT_EQ(location.id, 0);
   EXPECT_EQ(location.type, AllocatorType::kArenaAllocator);
-  auto t_data = t2.Data<int>();
+  auto t_data = t2.template Data<int>();
   EXPECT_EQ((void*)t_data, data);
   alloc->Free(data);
 }
@@ -178,12 +178,12 @@ TEST(TensorTest, StringTensorTest) {
     ASSERT_STREQ(location.name, CPU);
     EXPECT_EQ(location.id, 0);
 
-    std::string* new_data = t.MutableData<std::string>();
+    std::string* new_data = t.template MutableData<std::string>();
     EXPECT_TRUE(new_data);
     new_data[0] = "a";
     new_data[1] = "b";
 
-    auto tensor_data = t.Data<std::string>();
+    auto tensor_data = t.template Data<std::string>();
     EXPECT_EQ(tensor_data[0], "a");
     EXPECT_EQ(tensor_data[1], "b");
     string_ptr = new_data;

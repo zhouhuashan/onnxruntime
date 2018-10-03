@@ -91,7 +91,7 @@ class WinMLRuntime {
                                                                 buffer,
                                                                 alloc->Info(), alloc);
 
-    std::string* p = p_tensor->MutableData<std::string>();
+    std::string* p = p_tensor->template MutableData<std::string>();
     for (int i = 0; i < vec.size(); i++) {
       p[i] = std::string(vec[i].begin(), vec[i].end());
     }
@@ -305,19 +305,19 @@ class WinMLRuntime {
               separator = ",";
             }
           } else if (ctensor->DataType() == ::onnxruntime::DataTypeImpl::GetType<float>()) {
-            const float* cdata = ctensor->Data<float>();
+            const float* cdata = ctensor->template Data<float>();
             for (int ci = 0; ci < ctensor->Shape().Size(); ci++) {
               std::cout << separator << cdata[ci];
               separator = ",";
             }
           } else if (ctensor->DataType() == ::onnxruntime::DataTypeImpl::GetType<int64_t>()) {
-            const int64_t* cdata = ctensor->Data<int64_t>();
+            const int64_t* cdata = ctensor->template Data<int64_t>();
             for (int ci = 0; ci < ctensor->Shape().Size(); ci++) {
               std::cout << separator << cdata[ci];
               separator = ",";
             }
           } else if (ctensor->DataType() == ::onnxruntime::DataTypeImpl::GetType<std::string>()) {
-            const std::string* cdata = ctensor->Data<std::string>();
+            const std::string* cdata = ctensor->template Data<std::string>();
             for (int ci = 0; ci < ctensor->Shape().Size(); ci++) {
               std::cout << separator << cdata[ci];
               separator = ",";

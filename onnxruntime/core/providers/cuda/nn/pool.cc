@@ -120,8 +120,8 @@ Status Pool<T, PoolType>::ComputeInternal(OpKernelContext* context) const {
   std::vector<int64_t> y_dims = PoolBase::SetOutputSize(x_shape, x_shape[1], &pads);
   Tensor* Y = context->Output(0, TensorShape(y_dims));
 
-  auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
-  auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+  auto x_data = reinterpret_cast<const CudaT*>(X->template Data<T>());
+  auto y_data = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
 
   std::vector<int64_t> x_dims_cudnn = x_dims;
   std::vector<int64_t> y_dims_cudnn = y_dims;
@@ -178,12 +178,12 @@ Status Pool<T, MaxPool<8>>::ComputeInternal(OpKernelContext* context) const {
   std::vector<int64_t> y_dims = PoolBase::SetOutputSize(x_shape, x_shape[1], &pads);
   Tensor* Y = context->Output(0, TensorShape(y_dims));
 
-  auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
-  auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
+  auto x_data = reinterpret_cast<const CudaT*>(X->template Data<T>());
+  auto y_data = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
 
   Tensor* I = context->Output(1, TensorShape(y_dims));
   if (nullptr != I) {
-    auto i_data = I->MutableData<int64_t>();
+    auto i_data = I->template MutableData<int64_t>();
     MaxPoolWithIndex<CudaT>(
         x_shape,
         TensorShape(y_dims),

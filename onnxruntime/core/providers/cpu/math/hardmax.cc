@@ -11,7 +11,7 @@ template <>
 Status Hardmax<float>::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   const TensorShape& input_shape = X->Shape();
-  const float* Xdata = X->Data<float>();
+  const float* Xdata = X->template Data<float>();
 
   size_t tmpN = input_shape.SizeToDimension(axis_);
   size_t tmpD = input_shape.SizeFromDimension(axis_);
@@ -33,7 +33,7 @@ Status Hardmax<float>::Compute(OpKernelContext* ctx) const {
   math::RowwiseMax<float, CPUMathUtil>(N, D, Xdata, rowmax_data, nullptr);
 
   Tensor* Y = ctx->Output(0, input_shape);
-  float* Ydata = Y->MutableData<float>();
+  float* Ydata = Y->template MutableData<float>();
   math::Set<float, CPUMathUtil>(input_shape.Size(), 0.f, Ydata, &CPUMathUtil::Instance());
 
   for (int i = 0; i < N; ++i) {

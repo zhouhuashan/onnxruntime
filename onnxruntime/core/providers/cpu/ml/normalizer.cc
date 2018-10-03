@@ -137,8 +137,8 @@ void Normalizer::Normalize(OpKernelContext* context) const {
 
   Tensor* Y = context->Output(0, x_shape);
 
-  auto input = gsl::make_span(X.Data<T>(), data_size);
-  auto output = gsl::make_span(Y->MutableData<float>(), data_size);
+  auto input = gsl::make_span(X.template Data<T>(), data_size);
+  auto output = gsl::make_span(Y->template MutableData<float>(), data_size);
 
   int64_t stride = x_dims.size() == 1 ? x_dims[0] : x_dims[1];
   int64_t loops = data_size / stride;

@@ -77,10 +77,10 @@ common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
   output_shape.push_back(num_categories_);
 
   Tensor* Y = context->Output(0, TensorShape(output_shape));
-  auto y_data = Y->MutableData<float>();
+  auto y_data = Y->template MutableData<float>();
   std::fill_n(y_data, Y->Shape().Size(), 0.0f);
 
-  auto x_data = X->Data<T>();
+  auto x_data = X->template Data<T>();
   std::unordered_map<int64_t, size_t>::const_iterator idx;
   for (int64_t i = 0; i < input_shape.Size(); ++i) {
     auto int_idx = cats_int64s_.find(static_cast<int64_t>(x_data[i]));
@@ -102,10 +102,10 @@ common::Status OneHotEncoderOp<std::string>::Compute(OpKernelContext* context) c
   output_shape.push_back(num_categories_);
 
   Tensor* Y = context->Output(0, TensorShape(output_shape));
-  auto y_data = Y->MutableData<float>();
+  auto y_data = Y->template MutableData<float>();
   std::fill_n(y_data, Y->Shape().Size(), 0.0f);
 
-  auto x_data = X->Data<std::string>();
+  auto x_data = X->template Data<std::string>();
   for (int64_t i = 0; i < input_shape.Size(); ++i) {
     auto str_idx = cats_strings_.find(x_data[i]);
     if (str_idx != cats_strings_.cend())

@@ -23,7 +23,7 @@ class ExpandDims final : public OpKernel {
   Status Compute(OpKernelContext* context) const override {
     const Tensor* axis_tensor = context->Input<Tensor>(1);
     LOTUS_ENFORCE(axis_tensor->Shape().IsScalar(), "An axis tensor must be a scalar tensor.");
-    const int64_t axis = static_cast<int64_t>(axis_tensor->Data<int32_t>()[0]);
+    const int64_t axis = static_cast<int64_t>(axis_tensor->template Data<int32_t>()[0]);
     const Tensor* X = context->Input<Tensor>(0);
     const TensorShape& X_shape = X->Shape();
 

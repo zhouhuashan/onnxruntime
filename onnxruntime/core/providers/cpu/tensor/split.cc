@@ -83,7 +83,7 @@ Status Split::ComputeImpl(OpKernelContext& context, const Tensor& input) const {
   std::vector<int64_t> output_dimensions{input_dims};
 
   int64_t input_offset = 0;
-  const T* input_data = input.Data<T>();
+  const T* input_data = input.template Data<T>();
 
   for (int i = 0; i < num_outputs; ++i) {
     // update size of dimension for axis we're splitting on
@@ -91,7 +91,7 @@ Status Split::ComputeImpl(OpKernelContext& context, const Tensor& input) const {
     output_dimensions[axis] = split_size;
 
     Tensor* output = context.Output(i, TensorShape{output_dimensions});
-    T* output_data = output->MutableData<T>();
+    T* output_data = output->template MutableData<T>();
 
     ::onnxruntime::math::CopyMatrix<CPUMathUtil>(
         sizeof(T),

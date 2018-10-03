@@ -176,7 +176,7 @@ Status Pool<float, MaxPool<8 /*VERSION*/>>::Compute(OpKernelContext* context) co
 
   const float* X_data = X->template Data<float>();
   float* Y_data = Y->template MutableData<float>();
-  int64_t* I_data = I != nullptr ? I->MutableData<int64_t>() : nullptr;
+  int64_t* I_data = I != nullptr ? I->template MutableData<int64_t>() : nullptr;
 
   // The main loop
   int64_t channels = x_shape[1];

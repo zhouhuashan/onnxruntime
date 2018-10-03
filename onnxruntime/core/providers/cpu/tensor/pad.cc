@@ -65,7 +65,7 @@ Status Pad<float>::Compute(OpKernelContext* ctx) const {
 
   SliceIterator<float> input(input_tensor, input_starts, input_extents);
   auto& output_tensor = *ctx->Output(0, output_shape);
-  auto* output = output_tensor.MutableData<float>();
+  auto* output = output_tensor.template MutableData<float>();
 
   TensorPitches output_pitches(output_tensor);
   size_t alignSkip = 0;  // Amount to skip to align to where the next input tensor data needs to be written

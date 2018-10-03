@@ -18,6 +18,7 @@
 
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
+
 template <>
 MLDataType DataTypeImpl::GetType<Tensor>() {
   return TensorTypeBase::Type();
@@ -30,7 +31,7 @@ static bool IsTensorTypeScalar(const ONNX_NAMESPACE::TypeProto_Tensor& tensor_ty
 
 namespace data_types_internal {
 
-template<typename T>
+template <typename T>
 constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType();
 
 template <>
@@ -86,7 +87,7 @@ constexpr ONNX_NAMESPACE::TensorProto_DataType ToTensorDataType<uint64_t>() {
   return ONNX_NAMESPACE::TensorProto_DataType_UINT64;
 };
 
-template<typename T>
+template <typename T>
 struct TensorContainedTypeSetter<T> {
   static void SetTensorElementType(ONNX_NAMESPACE::TypeProto& proto) {
     proto.mutable_tensor_type()->set_elem_type(ToTensorDataType<T>());
@@ -282,6 +283,39 @@ bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Opaque& opaque_proto, const ON
   return result;
 }
 
+class DataTypeRegistry {
+  mutable std::mutex lock_;
+  std::unordered_map<DataType, MLDataType> mapping_;
+
+  DataTypeRegistry() = default;
+  ~DataTypeRegistry() = default;
+
+ public:
+  DataTypeRegistry(const DataTypeRegistry&) = delete;
+  DataTypeRegistry& operator=(const DataTypeRegistry&) = delete;
+
+  static DataTypeRegistry& instance() {
+    static DataTypeRegistry inst;
+    return inst;
+  }
+
+  void RegisterDataType(ONNX_NAMESPACE::DataType type, MLDataType mltype) {
+    std::lock_guard<std::mutex> g(lock_);
+    auto p = mapping_.insert(std::make_pair(type, mltype));
+    LOTUS_ENFORCE(p.second, "We do not expect duplicate registration of types for: ", type);
+  }
+  MLDataType GetMLDataType(const ONNX_NAMESPACE::TypeProto& proto) const {
+    using namespace ONNX_NAMESPACE;
+    DataType type = Utils::DataTypeUtils::ToType(proto);
+    std::lock_guard<std::mutex> g(lock_);
+    auto p = mapping_.find(type);
+    if (p != mapping_.end()) {
+      return p->second;
+    }
+    return nullptr;
+  }
+};
+
 struct TypeProtoImpl {
   const TypeProto* GetProto() const {
     return &proto_;
@@ -289,6 +323,13 @@ struct TypeProtoImpl {
   TypeProto& mutable_type_proto() {
     return proto_;
   }
+
+  void RegisterTypeProto(MLDataType mltype) const {
+    using namespace ONNX_NAMESPACE;
+    DataType type = Utils::DataTypeUtils::ToType(proto_);
+    DataTypeRegistry::instance().RegisterDataType(type, mltype);
+  }
+
   TypeProto proto_;
 };
 
@@ -324,6 +365,10 @@ ONNX_NAMESPACE::TypeProto& TensorTypeBase::mutable_type_proto() {
   return impl_->mutable_type_proto();
 }
 
+void onnxruntime::TensorTypeBase::RegisterDataType() const {
+  impl_->RegisterTypeProto(this);
+}
+
 bool TensorTypeBase::IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
   const auto* thisProto = GetTypeProto();
   if (&type_proto == thisProto) {
@@ -355,6 +400,10 @@ ONNX_NAMESPACE::TypeProto& NonTensorTypeBase::mutable_type_proto() {
 
 const ONNX_NAMESPACE::TypeProto* NonTensorTypeBase::GetTypeProto() const {
   return impl_->GetProto();
+}
+
+void onnxruntime::NonTensorTypeBase::RegisterDataType() const {
+  impl_->RegisterTypeProto(this);
 }
 
 bool NonTensorTypeBase::IsMapCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const {
@@ -430,6 +479,8 @@ LOTUS_REGISTER_SEQ(VectorMapStringToFloat);
 LOTUS_REGISTER_SEQ(VectorMapInt64ToFloat);
 
 MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
+  const auto& registry = data_types_internal::DataTypeRegistry::instance();
+
   switch (proto.value_case()) {
     case TypeProto::ValueCase::kTensorType: {
       auto tensor_type = proto.tensor_type();
@@ -469,52 +520,61 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
       auto maptype = proto.map_type();
       auto keytype = maptype.key_type();
       auto value_type = maptype.value_type();
-      if (value_type.value_case() != TypeProto::ValueCase::kTensorType ||
-          !IsTensorTypeScalar(value_type.tensor_type())) {
-        LOTUS_NOT_IMPLEMENTED("Nested map/sequence type is not supported");
-      }
 
-      auto value_elem_type = value_type.tensor_type().elem_type();
-      switch (value_elem_type) {
-        case TensorProto_DataType_STRING: {
-          switch (keytype) {
-            case TensorProto_DataType_STRING:
-              return DataTypeImpl::GetType<MapStringToString>();
-            case TensorProto_DataType_INT64:
-              return DataTypeImpl::GetType<MapInt64ToString>();
-            default:
-              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
+      if (value_type.value_case() == TypeProto::ValueCase::kTensorType &&
+          IsTensorTypeScalar(value_type.tensor_type())) {
+        auto value_elem_type = value_type.tensor_type().elem_type();
+        switch (value_elem_type) {
+          case TensorProto_DataType_STRING: {
+            switch (keytype) {
+              case TensorProto_DataType_STRING:
+                return DataTypeImpl::GetType<MapStringToString>();
+              case TensorProto_DataType_INT64:
+                return DataTypeImpl::GetType<MapInt64ToString>();
+              default:
+                break;
+            }
           }
+          case TensorProto_DataType_INT64:
+            switch (keytype) {
+              case TensorProto_DataType_STRING:
+                return DataTypeImpl::GetType<MapStringToInt64>();
+              case TensorProto_DataType_INT64:
+                return DataTypeImpl::GetType<MapInt64ToInt64>();
+              default:
+                break;
+            }
+          case TensorProto_DataType_FLOAT:
+            switch (keytype) {
+              case TensorProto_DataType_STRING:
+                return DataTypeImpl::GetType<MapStringToFloat>();
+              case TensorProto_DataType_INT64:
+                return DataTypeImpl::GetType<MapInt64ToFloat>();
+              default:
+                break;
+            }
+          case TensorProto_DataType_DOUBLE:
+            switch (keytype) {
+              case TensorProto_DataType_STRING:
+                return DataTypeImpl::GetType<MapStringToDouble>();
+              case TensorProto_DataType_INT64:
+                return DataTypeImpl::GetType<MapInt64ToDouble>();
+              default:
+                break;
+            }
+          default:
+            break;
         }
-        case TensorProto_DataType_INT64:
-          switch (keytype) {
-            case TensorProto_DataType_STRING:
-              return DataTypeImpl::GetType<MapStringToInt64>();
-            case TensorProto_DataType_INT64:
-              return DataTypeImpl::GetType<MapInt64ToInt64>();
-            default:
-              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
-          }
-        case TensorProto_DataType_FLOAT:
-          switch (keytype) {
-            case TensorProto_DataType_STRING:
-              return DataTypeImpl::GetType<MapStringToFloat>();
-            case TensorProto_DataType_INT64:
-              return DataTypeImpl::GetType<MapInt64ToFloat>();
-            default:
-              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
-          }
-        case TensorProto_DataType_DOUBLE:
-          switch (keytype) {
-            case TensorProto_DataType_STRING:
-              return DataTypeImpl::GetType<MapStringToDouble>();
-            case TensorProto_DataType_INT64:
-              return DataTypeImpl::GetType<MapInt64ToDouble>();
-            default:
-              LOTUS_NOT_IMPLEMENTED("Map with key type: ", keytype, " is not supported");
-          }
-        default:
-          LOTUS_NOT_IMPLEMENTED("Map with value type: ", value_elem_type, " is not supported");
+        MLDataType type = registry.GetMLDataType(proto);
+        LOTUS_ENFORCE(type != nullptr, "Map with key type: ", keytype, " value type: ", value_elem_type, " is not registered");
+        return type;
+      } else { // not if(scalar tensor) pre-reg types
+        MLDataType type = registry.GetMLDataType(proto);
+        if (type == nullptr) {
+          DataType str_type = ONNX_NAMESPACE::Utils::DataTypeUtils::ToType(proto);
+          LOTUS_NOT_IMPLEMENTED("type: ", *str_type, " is not registered");
+        }
+        return type;
       }
     } break;
     case TypeProto::ValueCase::kSequenceType: {
@@ -526,49 +586,55 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
           auto& maptype = val_type.map_type();
           auto keytype = maptype.key_type();
           auto& value_type = maptype.value_type();
-          if (value_type.value_case() != TypeProto::ValueCase::kTensorType ||
-              !IsTensorTypeScalar(value_type.tensor_type())) {
-            LOTUS_THROW("Nested map/sequence type is not supported");
-          }
 
-          auto value_elem_type = value_type.tensor_type().elem_type();
-          switch (value_elem_type) {
-            case TensorProto_DataType_FLOAT: {
-              switch (keytype) {
-                case TensorProto_DataType_STRING:
-                  return DataTypeImpl::GetType<VectorMapStringToFloat>();
-                case TensorProto_DataType_INT64:
-                  return DataTypeImpl::GetType<VectorMapInt64ToFloat>();
+          if (value_type.value_case() == TypeProto::ValueCase::kTensorType &&
+              IsTensorTypeScalar(value_type.tensor_type())) {
+              auto value_elem_type = value_type.tensor_type().elem_type();
+              switch (value_elem_type) {
+                case TensorProto_DataType_FLOAT: {
+                  switch (keytype) {
+                    case TensorProto_DataType_STRING:
+                      return DataTypeImpl::GetType<VectorMapStringToFloat>();
+                    case TensorProto_DataType_INT64:
+                      return DataTypeImpl::GetType<VectorMapInt64ToFloat>();
+                    default:
+                      break;
+                  }
+                }
                 default:
-                  LOTUS_THROW("Map with key type: ", keytype, " is not supported");
+                  break;
               }
             }
-            default:
-              LOTUS_THROW("Sequence type that has a map of value type other than float not supported for now.");
+          break;
+          } // MapType
+          case TypeProto::ValueCase::kTensorType: {
+            auto val_elem_type = val_type.tensor_type().elem_type();
+            switch (val_elem_type) {
+              case TensorProto_DataType_STRING:
+                return DataTypeImpl::GetType<VectorString>();
+              case TensorProto_DataType_INT64:
+                return DataTypeImpl::GetType<VectorInt64>();
+              case TensorProto_DataType_FLOAT:
+                return DataTypeImpl::GetType<VectorFloat>();
+              case TensorProto_DataType_DOUBLE:
+                return DataTypeImpl::GetType<VectorDouble>();
+              default:
+                break;
+            }
           }
-        }
-        case TypeProto::ValueCase::kTensorType: {
-          auto val_elem_type = val_type.tensor_type().elem_type();
-          switch (val_elem_type) {
-            case TensorProto_DataType_STRING:
-              return DataTypeImpl::GetType<VectorString>();
-            case TensorProto_DataType_INT64:
-              return DataTypeImpl::GetType<VectorInt64>();
-            case TensorProto_DataType_FLOAT:
-              return DataTypeImpl::GetType<VectorFloat>();
-            case TensorProto_DataType_DOUBLE:
-              return DataTypeImpl::GetType<VectorDouble>();
-            default:
-              LOTUS_THROW("Sequence with value type: ", val_elem_type, " is not supported");
-          }
-        }
-        default:
-          throw ::onnxruntime::NotImplementedException("type is not supported");
-      }
-    }
+          default:
+            break;
+      } // Sequence value case
+    } // kSequenceType
     default:
-      throw ::onnxruntime::NotImplementedException(::onnxruntime::MakeString("Onnx type: ", proto.value_case(), " is not supported."));
+      break;
+  } // proto.value_case()
+  MLDataType type = registry.GetMLDataType(proto);
+  if (type == nullptr) {
+    DataType str_type = ONNX_NAMESPACE::Utils::DataTypeUtils::ToType(proto);
+    LOTUS_NOT_IMPLEMENTED("type: ", *str_type, " is not currently registered or supported");
   }
+  return type;
 }
 
 //Below are the types the we need to execute the runtime

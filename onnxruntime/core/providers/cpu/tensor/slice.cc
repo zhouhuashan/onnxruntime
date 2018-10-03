@@ -68,7 +68,7 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
 
   TensorShape output_shape(output_dims);
   auto& output_tensor = *ctx->Output(0, output_shape);
-  auto* output = output_tensor.MutableData<float>();
+  auto* output = output_tensor.template MutableData<float>();
   const auto* output_end = output + output_shape.Size();
 
   SliceIterator<float> input_iterator(input_tensor, starts, output_dims);

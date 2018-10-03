@@ -77,7 +77,7 @@ Status TopK<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   vector<int64_t> linear_shape = {SizeToDim(in_dims.size() - 1, in_dims),
                                   in_dims[in_dims.size() - 1]};
   auto input_map = ConstEigenMatrixMapRowMajor<float>(
-      static_cast<const float*>(X->Data<float>()),
+      static_cast<const float*>(X->template Data<float>()),
       linear_shape[0],
       linear_shape[1]);
 
@@ -90,9 +90,9 @@ Status TopK<float>::Compute(OpKernelContext* p_op_kernel_context) const {
 
   // Use Eigen maps to allow indexing into the 2d tensors like Values_map(i,j)
   auto Values_map = EigenMatrixMapRowMajor<float>(
-      Values->MutableData<float>(), linear_shape[0], k_);
+      Values->template MutableData<float>(), linear_shape[0], k_);
   auto Indices_map = EigenMatrixMapRowMajor<int64_t>(
-      Indices->MutableData<int64_t>(), linear_shape[0], k_);
+      Indices->template MutableData<int64_t>(), linear_shape[0], k_);
 
   // Sort preserving Indices
   for (int64_t i = 0; i < linear_shape[0]; ++i) {

@@ -45,10 +45,10 @@ Status InstanceNorm<T>::ComputeInternal(OpKernelContext* p_op_kernel_context) co
   const TensorShape& x_shape = X->Shape();
   Tensor* Y = p_op_kernel_context->Output(0, x_shape);
 
-  auto y_data = reinterpret_cast<CudaT*>(Y->MutableData<T>());
-  auto x_data = reinterpret_cast<const CudaT*>(X->Data<T>());
-  auto scale_data = reinterpret_cast<const CudaT*>(scale->Data<T>());
-  auto bias_data = reinterpret_cast<const CudaT*>(bias->Data<T>());
+  auto y_data = reinterpret_cast<CudaT*>(Y->template MutableData<T>());
+  auto x_data = reinterpret_cast<const CudaT*>(X->template Data<T>());
+  auto scale_data = reinterpret_cast<const CudaT*>(scale->template Data<T>());
+  auto bias_data = reinterpret_cast<const CudaT*>(bias->template Data<T>());
 
   const auto& x_dims = x_shape.GetDims();
   const int64_t N = x_dims[0];

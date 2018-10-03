@@ -22,13 +22,13 @@ ONNX_OPERATOR_KERNEL_EX(
 
 #define TYPED_FUNCTION_CALL(T)                                                \
   if (T_type == DataTypeImpl::GetType<T>()) {                                 \
-    T* output_data = p.output_tensor->MutableData<T>();                       \
-    const T* input_data = p.input_tensor->Data<T>();                          \
+    T* output_data = p.output_tensor->template MutableData<T>();              \
+    const T* input_data = p.input_tensor->template Data<T>();                 \
     if (Tin_type == DataTypeImpl::GetType<int32_t>()) {                       \
       GatherImpl(                                                             \
           input_block_size,                                                   \
           indices_max,                                                        \
-          p.indices_tensor->Data<int32_t>(),                                  \
+          p.indices_tensor->template Data<int32_t>(),                                  \
           div_strides.GpuPtr(),                                               \
           reinterpret_cast<const ToCudaType<T>::MappedType*>(input_data),     \
           reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_data), \
@@ -39,7 +39,7 @@ ONNX_OPERATOR_KERNEL_EX(
       GatherImpl(                                                             \
           input_block_size,                                                   \
           indices_max,                                                        \
-          p.indices_tensor->Data<int64_t>(),                                  \
+          p.indices_tensor->template Data<int64_t>(),                                  \
           div_strides.GpuPtr(),                                               \
           reinterpret_cast<const ToCudaType<T>::MappedType*>(input_data),     \
           reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_data), \
