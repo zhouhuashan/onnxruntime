@@ -1,6 +1,7 @@
 include (ExternalProject)
 
 set(MKLDNN_URL https://github.com/intel/mkl-dnn.git)
+# If MKLDNN_TAG is updated, check if platform.cmake.patch needs to be updated.
 set(MKLDNN_TAG v0.15)
 set(MKLDNN_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/mkl-dnn/src/mkl-dnn/src)
 set(MKLDNN_INSTALL ${CMAKE_CURRENT_BINARY_DIR}/mkl-dnn/install)
@@ -14,6 +15,7 @@ if(WIN32)
     set(MKLML_SHARED_LIB mklml.dll)
     set(IOMP5MD_SHARED_LIB libiomp5md.dll)
   endif()
+  set(MKLDNN_PATCH_COMMAND "")
 else()
   set(MKLDNN_SHARED_LIB libmkldnn.so.0)
   if(lotus_USE_MKLML)
@@ -21,6 +23,7 @@ else()
     set(MKLML_SHARED_LIB libmklml_intel.so)
     set(IOMP5MD_SHARED_LIB libiomp5.so)
   endif()
+  set(MKLDNN_PATCH_COMMAND patch -d${MKLDNN_SOURCE} -p1 < ${CMAKE_SOURCE_DIR}/patches/mkldnn/platform.cmake.patch)
 endif()
 
 if(NOT lotus_USE_MKLDNN OR EXISTS ${MKLDNN_SOURCE}/external)
@@ -32,6 +35,7 @@ ExternalProject_Add(project_mkldnn
     GIT_REPOSITORY ${MKLDNN_URL}
     GIT_TAG ${MKLDNN_TAG}
     PATCH_COMMAND ${DOWNLOAD_MKLML}
+    PATCH_COMMAND ${MKLDNN_PATCH_COMMAND}
     SOURCE_DIR ${MKLDNN_SOURCE}
     CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${MKLDNN_INSTALL}
 )

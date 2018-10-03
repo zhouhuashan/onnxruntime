@@ -6,4 +6,6 @@ renamed_whl=`echo $whl | sed --expression='s/linux/manylinux1/g'`
 basename=`echo $whl | awk -F'-cp3' '{print $1}'`
 unzip $whl
 sed -i 's/linux/manylinux1/g' ${basename}.dist-info/WHEEL
+# explicitly set file perms
+chmod 664 ${basename}.dist-info/*
 zip -r $renamed_whl ${basename}.data ${basename}.dist-info
