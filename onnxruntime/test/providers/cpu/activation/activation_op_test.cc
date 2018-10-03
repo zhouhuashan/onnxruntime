@@ -24,7 +24,7 @@ void TestUnaryElementwiseOp(const char* szOp, std::vector<float>& input_vals,
 
   test.AddInput<float>("X", dims, input_vals);
   test.AddOutput<float>("Y", dims, expected_vals);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 std::vector<float> input_vals = {
@@ -140,7 +140,7 @@ TEST(ActivationOpTest, PRelu) {
   test.AddInput<float>("X", dims, inputs);
   test.AddInput<float>("slope", dims, slopes);
   test.AddOutput<float>("Y", dims, outputs);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(ActivationOpTest, PRelu_SingleSlope) {
@@ -158,7 +158,7 @@ TEST(ActivationOpTest, PRelu_SingleSlope) {
   test.AddInput<float>("X", dims, inputs);
   test.AddInput<float>("slope", {}, {slope});
   test.AddOutput<float>("Y", dims, outputs);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(ActivationOpTest, PRelu_MultiChannel) {
@@ -180,7 +180,7 @@ TEST(ActivationOpTest, PRelu_MultiChannel) {
   test.AddInput<float>("X", x_dims, inputs);
   test.AddInput<float>("slope", slope_dims, slopes);
   test.AddOutput<float>("Y", x_dims, outputs);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(ActivationOpTest, ParametricSoftplus) {

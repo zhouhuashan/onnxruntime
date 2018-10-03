@@ -92,11 +92,11 @@ static void RunGruTest(bool run_on_gpu,
     test.AddMissingOptionalOutput<float>();
   }
 
-  if (run_on_gpu) {
-    test.RunOnCpuAndCuda();
-  } else {
-    test.Run();
+  std::unordered_set<std::string> excluded_provider_types;
+  if (!run_on_gpu) {
+    excluded_provider_types.insert(kCudaExecutionProvider);
   }
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", excluded_provider_types);
 }
 
 void DefaultActivationsSimpleWeightsNoBias(bool run_on_gpu,

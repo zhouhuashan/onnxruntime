@@ -137,11 +137,11 @@ static void RunLstmTest(bool run_on_gpu,
     test.AddMissingOptionalOutput<float>();
   }
 
-  if (run_on_gpu) {
-    test.RunOnCpuAndCuda();
-  } else {
-    test.Run();
+  std::unordered_set<std::string> excluded_providers;
+  if (!run_on_gpu) {
+    excluded_providers.insert(kCudaExecutionProvider);
   }
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", excluded_providers);
 }
 
 void SimpleWeightsNoBiasTwoRows(bool run_on_gpu,

@@ -43,14 +43,14 @@ void TestConvOp(const ConvOpAttributes& attributes,
     test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);
   }
   test.AddOutput<float>("Y", expected_output_shape, expected_output);
-  if (is_cuda_supported) {
-    test.RunOnCpuAndCuda(expect_result, err_str);
-  } else {
-    test.Run(expect_result, err_str);
+  std::unordered_set<std::string> excluded_providers;
+  if (!is_cuda_supported) {
+    excluded_providers.insert(kCudaExecutionProvider);
   }
-  if (is_mkldnn_supported) {
-    test.RunOnMklDnn(expect_result, err_str);
+  if (!is_mkldnn_supported) {
+    excluded_providers.insert(kMklDnnExecutionProvider);
   }
+  test.Run(expect_result, err_str, excluded_providers);
 }
 
 }  // namespace

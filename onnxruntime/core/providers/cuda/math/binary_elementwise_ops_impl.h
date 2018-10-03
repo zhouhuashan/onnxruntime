@@ -14,7 +14,6 @@ namespace cuda {
 // 3. (optional) Implement specialized single element operator
 // 4. Add op kernel class definition in binary_elementwise_ops.h
 // 5. Add op kernel registration and compute specialization in binary_elementwise_ops.cc
-// 6. Enable test of the newly added kernel on CUDA by changing test.Run() to test.RunOnCpuAndCuda()
 
 #define BINARY_OPS()                   \
   BINARY_OP_NAME_EXPR(Add, (a + b))    \

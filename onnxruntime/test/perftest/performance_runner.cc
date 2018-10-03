@@ -68,7 +68,11 @@ bool PerformanceRunner::Initialize() {
     return false;
   }
 
-  SessionFactory sf({performance_test_config_.machine_config.provider_type_name}, true, true);
+  std::vector<std::string> provider_types = {performance_test_config_.machine_config.provider_type_name};
+  // always add CPU provider as fallback
+  if (performance_test_config_.machine_config.provider_type_name != onnxruntime::kCpuExecutionProvider)
+    provider_types.push_back(onnxruntime::kCpuExecutionProvider);
+  SessionFactory sf(provider_types, true, true);
   sf.enable_sequential_execution = performance_test_config_.run_config.enable_sequential_execution;
   sf.session_thread_pool_size = 6;
 

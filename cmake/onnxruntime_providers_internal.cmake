@@ -4,8 +4,16 @@
 # internal providers
 # this file is meant to be included in the parent onnxruntime_providers.cmake file
 
-# nuphar
-if (lotus_USE_TVM)
+# TODO: move nuphar out of internal
+set(lotus_USE_NUPHAR ON)
+
+if (lotus_USE_NUPHAR)
+  add_definitions(-DUSE_NUPHAR=1)
+  
+  if (NOT lotus_USE_TVM)
+    message(FATAL_ERROR "lotus_USE_TVM required for lotus_USE_NUPHAR")
+  endif()
+
   file(GLOB_RECURSE onnxruntime_providers_nuphar_cc_srcs
     "${LOTUS_ROOT}/core/providers/nuphar/*.h"
     "${LOTUS_ROOT}/core/providers/nuphar/*.cc"

@@ -19,7 +19,7 @@ TEST(TensorOpTest, Reshape) {
   test.AddInput<float>("data", {2, 3}, std::vector<float>(6, 1.0f));
   test.AddInput<int64_t>("shape", {3}, {-1, 0, 2});
   test.AddOutput<float>("reshaped", {1, 3, 2}, std::vector<float>(6, 1.0f));
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(TensorOpTest, Identity) {
@@ -27,7 +27,7 @@ TEST(TensorOpTest, Identity) {
   std::vector<float> X{1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
   test.AddInput<float>("input", {2, 3}, X);
   test.AddOutput<float>("output", {2, 3}, X);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(TensorOpTest, IdentityString) {
@@ -43,7 +43,7 @@ TEST(TensorOpTest, ShapeTest2D) {
 
   test.AddInput<float>("data", {2, 3}, std::vector<float>(6, 1.0f));
   test.AddOutput<int64_t>("shape", {2}, {2, 3});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(TensorOpTest, ShapeTest3D) {
@@ -51,7 +51,7 @@ TEST(TensorOpTest, ShapeTest3D) {
 
   test.AddInput<float>("data", {2, 3, 4}, std::vector<float>(24, 1.0f));
   test.AddOutput<int64_t>("shape", {3}, {2, 3, 4});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 template <typename SrcType,
@@ -66,7 +66,7 @@ void TestCastOp(const std::initializer_list<SrcType>& input,
   test.AddAttribute("to", toType);
   test.AddInput<SrcType>("input", dimensions, input);
   test.AddOutput<DstType>("output", dimensions, output);
-  test.RunOnCpuAndCuda(expect_result, expected_failure_string);
+  test.Run(expect_result, expected_failure_string);
 }
 
 template <typename SrcType>
@@ -279,7 +279,7 @@ TEST(TensorOpTest, CropBorderOnly) {
   test.AddAttribute("border", border);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, (H - border[2] - border[0]), (W - border[3] - border[1])}, output);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(TensorOpTest, CropBorderAndScale) {
@@ -307,7 +307,7 @@ TEST(TensorOpTest, CropBorderAndScale) {
   test.AddAttribute("scale", scale);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, scale[0], scale[1]}, output);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 std::pair<float, float> MeanStdev(std::vector<float>& v) {
@@ -468,7 +468,7 @@ TEST(TensorOpTest, ImageScalerTest) {
   test.AddAttribute("bias", bias);
   test.AddInput<float>("input", {N, C, H, W}, X);
   test.AddOutput<float>("output", {N, C, H, W}, result);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 }  // namespace test

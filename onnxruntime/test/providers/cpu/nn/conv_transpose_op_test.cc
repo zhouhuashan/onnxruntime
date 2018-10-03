@@ -43,7 +43,7 @@ void TestConvTransposeOp(const ConvTransposeOpAttributes& attributes,
     test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);
   }
   test.AddOutput<float>("Y", expected_output_shape, expected_output);
-  test.RunOnCpuAndCuda(expect_result, err_str);
+  test.Run(expect_result, err_str);
 }
 }  // namespace
 

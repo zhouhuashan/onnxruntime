@@ -73,7 +73,7 @@ TEST(MathOpTest, MatMul) {
     test.AddInput<float>("B", t.input1_dims, input1_vals);
 
     test.AddOutput<float>("Y", t.expected_dims, t.expected_vals);
-    test.RunOnCpuAndCuda();
+    test.Run();
   }
 }
 

@@ -11,12 +11,7 @@
 #include "core/common/logging/sinks/clog_sink.h"
 #include "core/session/inference_session.h"
 #include "core/graph/function_container.h"
-#ifdef USE_CUDA
-#include "core/providers/cuda/cuda_execution_provider.h"
-#endif
-#ifdef USE_MKLDNN
-#include "core/providers/mkldnn/mkldnn_execution_provider.h"
-#endif
+#include "test/util/include/default_providers.h"
 
 using namespace ::onnxruntime::logging;
 
@@ -170,7 +165,7 @@ void OpTester::SetOutputRelErr(const char* name, float v) {
   it->relative_error_ = optional<float>(v);
 }
 
-void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string, onnxruntime::ProviderType provider_type) {
+void OpTester::Run(ExpectResult expect_result, const std::string& expected_failure_string, const std::unordered_set<std::string>& excluded_provider_types) {
   try {
 #if _DEBUG
     run_called_ = true;
@@ -203,7 +198,6 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     for (auto& add_attribute_fn : add_attribute_funcs_)
       add_attribute_fn(node);
 
-    node.SetExecutionProviderType(provider_type);
     Status status = graph.Resolve();
     //LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
     if (!status.IsOK()) {
@@ -229,86 +223,108 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     so.session_logid = op_;
     so.session_log_verbosity_level = 1;
 
-    InferenceSession session_object{so};
+    static const std::string all_provider_types[] = {
+        kCpuExecutionProvider,
+        kCudaExecutionProvider,
+        kMklDnnExecutionProvider,
+        kNupharExecutionProvider,
+    };
 
-    for (auto& custom_session_registry : custom_session_registries_)
-      session_object.RegisterCustomRegistry(custom_session_registry);
+    for (const auto& provider_type : all_provider_types) {
+      if (excluded_provider_types.count(provider_type) > 0)
+        continue;
 
-    if (provider_type == onnxruntime::kCudaExecutionProvider) {
-#ifdef USE_CUDA
-      CUDAExecutionProviderInfo epi;
-      epi.device_id = 0;
-      EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(epi)).IsOK());
-#endif
-    } else if (provider_type == onnxruntime::kMklDnnExecutionProvider) {
-#ifdef USE_MKLDNN
-      MKLDNNExecutionProviderInfo epi;
-      EXPECT_TRUE(session_object.RegisterExecutionProvider(std::make_unique<MKLDNNExecutionProvider>(epi)).IsOK());
-#endif
-    }
+      InferenceSession session_object{so};
 
-    std::stringstream s1;
-    p_model->ToProto().SerializeToOstream(&s1);
-    status = session_object.Load(s1);
-    EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
-    if (!status.IsOK()) {
-      LOGS_DEFAULT(ERROR) << "Load failed with status: " << status.ErrorMessage();
-      return;
-    }
+      for (auto& custom_session_registry : custom_session_registries_)
+        session_object.RegisterCustomRegistry(custom_session_registry);
 
-    status = session_object.Initialize();
-    if (!status.IsOK()) {
-      if (expect_result == ExpectResult::kExpectFailure) {
-        EXPECT_TRUE(!status.IsOK());
-        EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
-      } else {
-        LOGS_DEFAULT(ERROR) << "Initialize failed with status: " << status.ErrorMessage();
-        EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+      std::unique_ptr<IExecutionProvider> execution_provider;
+      if (provider_type == onnxruntime::kCpuExecutionProvider)
+        execution_provider = DefaultCpuExecutionProvider();
+      else if (provider_type == onnxruntime::kCudaExecutionProvider)
+        execution_provider = DefaultCudaExecutionProvider();
+      else if (provider_type == onnxruntime::kMklDnnExecutionProvider)
+        execution_provider = DefaultMkldnnExecutionProvider();
+      else if (provider_type == onnxruntime::kNupharExecutionProvider)
+        execution_provider = DefaultNupharExecutionProvider();
+
+      // skip if execution provider is disabled
+      if (execution_provider == nullptr)
+        continue;
+
+      //if node is not registered for the provider, skip
+      node.SetExecutionProviderType(provider_type);
+      auto reg = execution_provider->GetKernelRegistry();
+      const KernelCreateInfo* kci;
+      if (!reg->FindKernel(node, &kci).IsOK()) {
+        continue;
       }
-    }
-    if (!status.IsOK()) {
-      return;
-    }
+      EXPECT_TRUE(session_object.RegisterExecutionProvider(std::move(execution_provider)).IsOK());
 
-    RunOptions run_options;
-    run_options.run_tag = op_;
-    run_options.run_log_verbosity_level = 1;
-    std::vector<MLValue> fetches;
-    status = session_object.Run(run_options, feeds, output_names, &fetches);
-    if (status.IsOK()) {
-      EXPECT_TRUE(expect_result == ExpectResult::kExpectSuccess);
-      if (expect_result == ExpectResult::kExpectFailure) {
+      std::stringstream s1;
+      p_model->ToProto().SerializeToOstream(&s1);
+      status = session_object.Load(s1);
+      EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+      if (!status.IsOK()) {
+        LOGS_DEFAULT(ERROR) << "Load failed with status: " << status.ErrorMessage();
         return;
       }
-    } else {
-      if (expect_result == ExpectResult::kExpectFailure) {
-        EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
-      } else {
-        LOGS_DEFAULT(ERROR) << "Run failed with status: " << status.ErrorMessage();
-        EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
-      }
-      return;
-    }
 
-    // Verify the outputs
-    // Todo: support check output with map/sequence/....
-    size_t idx = 0;
-    for (auto& expected_data : output_data_) {
-      MLValue& mlvalue = fetches[idx];
-      if (mlvalue.Fence())
-        mlvalue.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, 0);
-
-      if (expected_data.def_.Exists()) {  // optional outputs won't exist
-        if (expected_data.data_.IsTensor()) {
-          Check(expected_data, mlvalue.Get<Tensor>());
+      status = session_object.Initialize();
+      if (!status.IsOK()) {
+        if (expect_result == ExpectResult::kExpectFailure) {
+          EXPECT_TRUE(!status.IsOK());
+          EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
         } else {
-          Check(expected_data, mlvalue);
+          LOGS_DEFAULT(ERROR) << "Initialize failed with status: " << status.ErrorMessage();
+          EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
         }
-        ++idx;
+      }
+      if (!status.IsOK()) {
+        return;
+      }
 
-        // skip missing trailing optional outputs
-        if (idx == fetches.size())
-          break;
+      RunOptions run_options;
+      run_options.run_tag = op_;
+      run_options.run_log_verbosity_level = 1;
+      std::vector<MLValue> fetches;
+      status = session_object.Run(run_options, feeds, output_names, &fetches);
+      if (status.IsOK()) {
+        EXPECT_TRUE(expect_result == ExpectResult::kExpectSuccess);
+        if (expect_result == ExpectResult::kExpectFailure) {
+          return;
+        }
+      } else {
+        if (expect_result == ExpectResult::kExpectFailure) {
+          EXPECT_THAT(status.ErrorMessage(), testing::HasSubstr(expected_failure_string));
+        } else {
+          LOGS_DEFAULT(ERROR) << "Run failed with status: " << status.ErrorMessage();
+          EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+        }
+        return;
+      }
+
+      // Verify the outputs
+      // Todo: support check output with map/sequence/....
+      size_t idx = 0;
+      for (auto& expected_data : output_data_) {
+        MLValue& mlvalue = fetches[idx];
+        if (mlvalue.Fence())
+          mlvalue.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, 0);
+
+        if (expected_data.def_.Exists()) {  // optional outputs won't exist
+          if (expected_data.data_.IsTensor()) {
+            Check(expected_data, mlvalue.Get<Tensor>());
+          } else {
+            Check(expected_data, mlvalue);
+          }
+          ++idx;
+
+          // skip missing trailing optional outputs
+          if (idx == fetches.size())
+            break;
+        }
       }
     }
   } catch (const std::exception& ex) {
@@ -316,29 +332,6 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     // rethrow as some tests for error handling expect this
     throw;
   }
-}
-
-void OpTester::RunOnCpuAndCuda(ExpectResult expect_result, const std::string& expected_failure_string) {
-  Run(expect_result, expected_failure_string, onnxruntime::kCpuExecutionProvider);
-#ifdef USE_CUDA
-  Run(expect_result, expected_failure_string, onnxruntime::kCudaExecutionProvider);
-#endif
-}
-
-void OpTester::RunOnCpuAndCudaWithTVM(ExpectResult expect_result, const std::string& expected_failure_string) {
-  Run(expect_result, expected_failure_string, onnxruntime::kCpuExecutionProvider);
-#if defined(USE_CUDA) && defined(USE_TVM)
-  Run(expect_result, expected_failure_string, onnxruntime::kCudaExecutionProvider);
-#endif
-}
-
-void OpTester::RunOnMklDnn(ExpectResult expect_result, const std::string& expected_failure_string) {
-#ifdef USE_MKLDNN
-  Run(expect_result, expected_failure_string, onnxruntime::kMklDnnExecutionProvider);
-#else
-  UNUSED_PARAMETER(expect_result);
-  UNUSED_PARAMETER(expected_failure_string);
-#endif
 }
 
 }  // namespace test

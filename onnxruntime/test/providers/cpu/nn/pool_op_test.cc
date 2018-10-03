@@ -49,8 +49,7 @@ TEST(PoolTest, MaxPool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.RunOnCpuAndCuda();
-  test.RunOnMklDnn();
+  test.Run();
 }
 
 static void MaxPool_8_WithIndexTest(int64_t storage_order) {
@@ -99,7 +98,7 @@ static void MaxPool_8_WithIndexTest(int64_t storage_order) {
   test.AddOutput<float>("Y", expected_dims, expected_vals);
   storage_order == 0 ? test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_row)
                      : test.AddOutput<int64_t>("Indices", expected_dims, expected_indices_col);
-  test.RunOnCpuAndCuda();
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kMklDnnExecutionProvider});
 }
 
 TEST(PoolTest, MaxPool_8_With_Index) {
@@ -122,7 +121,7 @@ TEST(PoolTest, MaxPool1D) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 static void MaxPool1D_8_WithIndexTest(int64_t storage_order) {
@@ -143,7 +142,7 @@ static void MaxPool1D_8_WithIndexTest(int64_t storage_order) {
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
   test.AddOutput<int64_t>("Indices", expected_dims, expected_indices);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(PoolTest, MaxPool1D_8_With_Index) {
@@ -224,8 +223,7 @@ TEST(PoolTest, GlobalMaxPool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.RunOnCpuAndCuda();
-  test.RunOnMklDnn();
+  test.Run();
 }
 
 TEST(PoolTest, GlobalMaxPool3D) {
@@ -301,7 +299,7 @@ TEST(PoolTest, GlobalMaxPool3D) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(PoolTest, AveragePool) {
@@ -382,8 +380,7 @@ TEST(PoolTest, AveragePool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.RunOnCpuAndCuda();
-  test.RunOnMklDnn();
+  test.Run();
 }
 
 TEST(PoolTest, AveragePool_IncludePadPixel) {
@@ -407,8 +404,7 @@ TEST(PoolTest, AveragePool_IncludePadPixel) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.RunOnCpuAndCuda();
-  test.RunOnMklDnn();
+  test.Run();
 }
 
 TEST(PoolTest, GlobalAveragePool) {
@@ -484,8 +480,7 @@ TEST(PoolTest, GlobalAveragePool) {
 
   test.AddInput<float>("X", x_dims, x_vals);
   test.AddOutput<float>("Y", expected_dims, expected_vals);
-  test.RunOnCpuAndCuda();
-  test.RunOnMklDnn();
+  test.Run();
 }
 
 TEST(PoolTest, LpPool) {

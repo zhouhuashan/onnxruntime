@@ -343,7 +343,7 @@ if(lotus_USE_MKLDNN)
   set(onnx_mkldnn_test_libs onnxruntime_providers_mkldnn)
 endif()
 
-set(onnx_test_libs
+list(APPEND onnx_test_libs
   lotus_test_utils
   onnxruntime_session
   ${onnx_cuda_test_libs}

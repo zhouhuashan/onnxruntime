@@ -37,7 +37,7 @@ TEST(LRNTest, LRN_1) {
                           0.11411944f, 0.31849629f, 0.34136036f, 0.16256343f, 0.10403012f};
   test.AddInput<float>("X", shape, X);
   test.AddOutput<float>("Y", shape, expected_output);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(LRNTest, LRN_2) {
@@ -99,7 +99,7 @@ TEST(LRNTest, LRN_2) {
 
   test.AddInput<float>("X", shape, X);
   test.AddOutput<float>("Y", shape, expected_output);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 }  // namespace test

@@ -5,11 +5,12 @@
 # this file is meant to be included inside the parent onnxruntime_unittests.cmake file
 # and hence it depends on variables defined in the parent file.
 
-# nuphar
-if(lotus_USE_TVM)
+# TODO: move nuphar out of internal
+if(lotus_USE_NUPHAR)
   list(APPEND lotus_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/nuphar/*)
   list(APPEND lotus_test_framework_libs onnxruntime_providers_nuphar)
   list(APPEND lotus_test_providers_dependencies onnxruntime_providers_nuphar)
   list(APPEND lotus_test_providers_libs onnxruntime_providers_nuphar)
+  list(APPEND onnx_test_libs onnx_nuphar_test_libs onnxruntime_providers_nuphar)
 endif()
 

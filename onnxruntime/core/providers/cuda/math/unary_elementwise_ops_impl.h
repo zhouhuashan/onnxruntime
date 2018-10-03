@@ -12,7 +12,6 @@ namespace cuda {
 // 3. (optional) Implement specialized single element operator
 // 4. Add op kernel class definition in unary_elementwise_ops.h
 // 5. Add op kernel registration and compute specialization in unary_elementwise_ops.cc
-// 6. Enable test of the newly added kernel on CUDA by changing test.Run() to test.RunOnCpuAndCuda()
 
 #define UNARY_OPS()                        \
   UNARY_OP_NAME_EXPR(Abs, _Abs(a))         \

@@ -12,7 +12,7 @@ TEST(MathOpTest, Add_int32) {
   test.AddInput<int32_t>("A", {3}, {1, 2, 3});
   test.AddInput<int32_t>("B", {3}, {4, 5, 6});
   test.AddOutput<int32_t>("C", {3}, {5, 7, 9});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add) {
@@ -30,7 +30,7 @@ TEST(MathOpTest, Add) {
                         {0.0f, 6.4f, 431.3f,
                          0.0f, 5.0f, -36.0f,
                          -10.8f, 18.6f, 0.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_Axis) {
@@ -49,7 +49,7 @@ TEST(MathOpTest, Add_Broadcast_Axis) {
                         {4.0f, 5.0f, 6.0f,
                          6.0f, 7.0f, 8.0f,
                          8.0f, 9.0f, 10.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_0x0) {
@@ -58,7 +58,7 @@ TEST(MathOpTest, Add_Broadcast_0x0) {
   test.AddInput<float>("A", {}, {10.0f});
   test.AddInput<float>("B", {}, {2.0f});
   test.AddOutput<float>("C", {}, {12.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_0x1) {
@@ -67,7 +67,7 @@ TEST(MathOpTest, Add_Broadcast_0x1) {
   test.AddInput<float>("A", {}, {10.0f});
   test.AddInput<float>("B", {1}, {2.0f});
   test.AddOutput<float>("C", {1}, {12.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_1x0) {
@@ -76,7 +76,7 @@ TEST(MathOpTest, Add_Broadcast_1x0) {
   test.AddInput<float>("A", {1}, {10.0f});
   test.AddInput<float>("B", {}, {2.0f});
   test.AddOutput<float>("C", {1}, {12.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_1x1) {
@@ -85,7 +85,7 @@ TEST(MathOpTest, Add_Broadcast_1x1) {
   test.AddInput<float>("A", {1}, {10.0f});
   test.AddInput<float>("B", {1}, {2.0f});
   test.AddOutput<float>("C", {1}, {12.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_3x2_3x1) {
@@ -104,7 +104,7 @@ TEST(MathOpTest, Add_Broadcast_3x2_3x1) {
                         {2.0f, 3.0f,
                          5.0f, 6.0f,
                          8.0f, 9.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_2x1x4_1x3x1) {
@@ -123,7 +123,7 @@ TEST(MathOpTest, Add_Broadcast_2x1x4_1x3x1) {
                          211.0f, 212.0f, 213.0f, 214.0f,
                          221.0f, 222.0f, 223.0f, 224.0f,
                          231.0f, 232.0f, 233.0f, 234.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Add_Broadcast_2x1x1_3x4) {
@@ -143,7 +143,7 @@ TEST(MathOpTest, Add_Broadcast_2x1x1_3x4) {
                          211.0f, 212.0f, 213.0f, 214.0f,
                          221.0f, 222.0f, 223.0f, 224.0f,
                          231.0f, 232.0f, 233.0f, 234.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Sub_int32) {
@@ -151,7 +151,7 @@ TEST(MathOpTest, Sub_int32) {
   test.AddInput<int32_t>("A", {3}, {1, 4, 3});
   test.AddInput<int32_t>("B", {3}, {4, 2, 4});
   test.AddOutput<int32_t>("C", {3}, {-3, 2, -1});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Sub) {
@@ -169,7 +169,7 @@ TEST(MathOpTest, Sub) {
                         {2.0f, -2.4f, -433.3f,
                          0.0f, -2.0f, -164.0f,
                          0.0f, 0.0f, -20'000.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Sub_Broadcast_Scalar) {
@@ -184,7 +184,7 @@ TEST(MathOpTest, Sub_Broadcast_Scalar) {
                         {-4.0f, -3.0f, -6.0f,
                          -5.0f, -3.5f, -105.0f,
                          -10.4f, 4.3f, -10'005.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Mul_int32) {
@@ -192,7 +192,7 @@ TEST(MathOpTest, Mul_int32) {
   test.AddInput<int32_t>("A", {3}, {1, 2, 3});
   test.AddInput<int32_t>("B", {3}, {4, -3, 6});
   test.AddOutput<int32_t>("C", {3}, {4, -6, 18});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Mul) {
@@ -210,7 +210,7 @@ TEST(MathOpTest, Mul) {
                         {-1.0f, 8.8f, -432.3f,
                          0.0f, 5.25f, -6'400.0f,
                          29.16f, 86.49f, -100'000'000.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Div_int32) {
@@ -218,7 +218,7 @@ TEST(MathOpTest, Div_int32) {
   test.AddInput<int32_t>("A", {3}, {4, 8, 8});
   test.AddInput<int32_t>("B", {3}, {1, 3, 2});
   test.AddOutput<int32_t>("C", {3}, {4, 2, 4});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Div) {
@@ -233,7 +233,7 @@ TEST(MathOpTest, Div) {
   test.AddOutput<float>("C", dims,
                         {1.0f, 0.5f, 2.0f,
                          0.0f, 10.0f, -0.25f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Abs) {
@@ -241,7 +241,7 @@ TEST(MathOpTest, Abs) {
   std::vector<int64_t> dims{2, 2};
   test.AddInput<float>("X", dims, {1.0f, -2.0f, -0.0f, -10.0f});
   test.AddOutput<float>("Y", dims, {1.0f, 2.0f, 0.0f, 10.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Abs_int8) {
@@ -249,7 +249,7 @@ TEST(MathOpTest, Abs_int8) {
   std::vector<int64_t> dims{4};
   test.AddInput<int8_t>("X", dims, {1, 2, -1, -5});
   test.AddOutput<int8_t>("Y", dims, {1, 2, 1, 5});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Abs_int32) {
@@ -257,7 +257,7 @@ TEST(MathOpTest, Abs_int32) {
   std::vector<int64_t> dims{4};
   test.AddInput<int32_t>("X", dims, {1, 2, -1, -5});
   test.AddOutput<int32_t>("Y", dims, {1, 2, 1, 5});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Neg) {
@@ -269,7 +269,7 @@ TEST(MathOpTest, Neg) {
   test.AddOutput<float>("Y", dims,
                         {-1.0f, 2.0f,
                          -0.0f, 10.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Neg_int8) {
@@ -277,7 +277,7 @@ TEST(MathOpTest, Neg_int8) {
   std::vector<int64_t> dims{4};
   test.AddInput<int8_t>("X", dims, {1, -2, 0, -10});
   test.AddOutput<int8_t>("Y", dims, {-1, 2, 0, 10});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Neg_int32) {
@@ -285,7 +285,7 @@ TEST(MathOpTest, Neg_int32) {
   std::vector<int64_t> dims{4};
   test.AddInput<int32_t>("X", dims, {1, -2, 0, -10});
   test.AddOutput<int32_t>("Y", dims, {-1, 2, 0, 10});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Floor) {
@@ -297,7 +297,7 @@ TEST(MathOpTest, Floor) {
   test.AddOutput<float>("Y", dims,
                         {-2.0f, 0.0f,
                          -1.0f, 10.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Ceil) {
@@ -309,7 +309,7 @@ TEST(MathOpTest, Ceil) {
   test.AddOutput<float>("Y", dims,
                         {-1.0f, 1.0f,
                          0.0f, 11.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Reciprocal) {
@@ -321,7 +321,7 @@ TEST(MathOpTest, Reciprocal) {
   test.AddOutput<float>("Y", dims,
                         {1.0f, 0.5f,
                          -1.0f, -0.5f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Sqrt) {
@@ -333,7 +333,7 @@ TEST(MathOpTest, Sqrt) {
   test.AddOutput<float>("Y", dims,
                         {1.0f, 2.0f,
                          0.0f, 3.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Pow) {
@@ -348,7 +348,7 @@ TEST(MathOpTest, Pow) {
   test.AddOutput<float>("Z", dims,
                         {1.0f, 256.0f,
                          2.0f, 1.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Pow_Broadcast_Scalar0) {
@@ -358,7 +358,7 @@ TEST(MathOpTest, Pow_Broadcast_Scalar0) {
   test.AddInput<float>("X", {}, {2.0f});
   test.AddInput<float>("Y", dims, {1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("Z", dims, {2.0f, 4.0f, 8.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Pow_Broadcast_Scalar1) {
@@ -368,7 +368,7 @@ TEST(MathOpTest, Pow_Broadcast_Scalar1) {
   test.AddInput<float>("X", dims, {1.0f, 2.0f, 3.0f});
   test.AddInput<float>("Y", {}, {2.0f});
   test.AddOutput<float>("Z", dims, {1.0f, 4.0f, 9.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Exp) {
@@ -381,7 +381,7 @@ TEST(MathOpTest, Exp) {
                         {1.0f, exp(1.0f),
                          exp(2.0f), exp(10.0f)});
   test.SetOutputRelErr("Y", 1e-7f);
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Log) {
@@ -393,7 +393,7 @@ TEST(MathOpTest, Log) {
   test.AddOutput<float>("Y", dims,
                         {0.0f, log(2.0f),
                          log(5.0f), log(10.0f)});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Sum_6) {
@@ -415,7 +415,7 @@ TEST(MathOpTest, Sum_6) {
                         {3.0f, 0.0f, 6.0f,
                          -6.0f, 6.6f, 28.0f,
                          -1.0f, 0.06f, 0.25f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Sum_8_Test1) {
@@ -435,7 +435,7 @@ TEST(MathOpTest, Sum_8_Test1) {
                          311.0f, 312.0f, 313.0f,
                          321.0f, 322.0f, 323.0f,
                          331.0f, 332.0f, 333.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Sum_8_Test2) {
@@ -464,7 +464,7 @@ TEST(MathOpTest, Sum_8_Test2) {
                          3.3f, 4.4f, -94.7f,
                          59.6f, 64.01f, -8.0f});
 
-  test.RunOnCpuAndCuda(OpTester::ExpectResult::kExpectSuccess, "Sum is not correct");
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "Sum is not correct");
 }
 
 TEST(MathOpTest, Min_6) {
@@ -564,7 +564,7 @@ TEST(MathOpTest, And) {
   test.AddInput<bool>("A", dims, {false, true, false, true});
   test.AddInput<bool>("B", dims, {false, false, true, true});
   test.AddOutput<bool>("C", dims, {false, false, false, true});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Or) {
@@ -573,7 +573,7 @@ TEST(MathOpTest, Or) {
   test.AddInput<bool>("A", dims, {false, true, false, true});
   test.AddInput<bool>("B", dims, {false, false, true, true});
   test.AddOutput<bool>("C", dims, {false, true, true, true});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Xor) {
@@ -582,7 +582,7 @@ TEST(MathOpTest, Xor) {
   test.AddInput<bool>("A", dims, {false, true, false, true});
   test.AddInput<bool>("B", dims, {false, false, true, true});
   test.AddOutput<bool>("C", dims, {false, true, true, false});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Xor_bcast3v2d) {
@@ -608,7 +608,7 @@ TEST(MathOpTest, Xor_bcast3v2d) {
                         false, true, true, false,
                         false, true, true, false,
                         false, true, true, false});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Less) {
@@ -731,7 +731,7 @@ TEST(MathOpTest, AffineDefaultAttributes) {
   std::vector<int64_t> dims{2, 2};
   test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("B", dims, {0.0f, 1.0f, 2.0f, 3.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Affine) {
@@ -741,7 +741,7 @@ TEST(MathOpTest, Affine) {
   test.AddAttribute("beta", 1.0f);
   test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("B", dims, {1.0f, 3.0f, 5.0f, 7.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 template <float (&op)(float value)>
@@ -826,7 +826,7 @@ TEST(MathOpTest, Scale) {
   test.AddAttribute("scale", 2.0f);
   test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("B", dims, {0.0f, 2.0f, 4.0f, 6.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(MathOpTest, Scale_Default) {
@@ -834,7 +834,7 @@ TEST(MathOpTest, Scale_Default) {
   std::vector<int64_t> dims{2, 2};
   test.AddInput<float>("A", dims, {0.0f, 1.0f, 2.0f, 3.0f});
   test.AddOutput<float>("B", dims, {0.0f, 1.0f, 2.0f, 3.0f});
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 }  // namespace test

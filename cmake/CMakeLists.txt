@@ -43,7 +43,7 @@ option(lotus_USE_TVM "Build tvm for code-gen" OFF)
 option(lotus_USE_LLVM "Build tvm with LLVM" OFF)
 option(lotus_USE_OPENMP "Build with OpenMP support" OFF)
 option(lotus_BUILD_SHARED_LIB "Build a shared library" OFF)
-option(lotus_ENABLE_MICROSOFT_INTERNAL "Use this option to enable/disable microsoft internal only code" ON)
+option(lotus_ENABLE_MICROSOFT_INTERNAL "Use this option to enable/disable microsoft internal only code" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)

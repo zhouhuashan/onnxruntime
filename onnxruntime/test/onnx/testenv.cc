@@ -3,6 +3,7 @@
 
 #include "testenv.h"
 #include "FixedCountFinishCallback.h"
+#include "test/util/include/default_providers.h"
 #include <core/common/logging/logging.h>
 #include <core/graph/constants.h>
 #include <core/framework/allocator.h>
@@ -32,26 +33,21 @@ Status SessionFactory::create(std::shared_ptr<::onnxruntime::InferenceSession>& 
   sess.reset(new ::onnxruntime::InferenceSession(so));
 
   Status status;
-  for (const std::string& provider : providers_) {
-    if (provider == onnxruntime::kCudaExecutionProvider) {
-#ifdef USE_CUDA
-      onnxruntime::CUDAExecutionProviderInfo cuda_pi;
-      cuda_pi.device_id = 0;
-      LOTUS_RETURN_IF_ERROR(sess->RegisterExecutionProvider(::onnxruntime::CreateCUDAExecutionProvider(cuda_pi)));
-#else
-      LOTUS_THROW("This executable was not built with CUDA");
-#endif
-    }
-    //TODO: add more
+  for (const std::string& provider_type : providers_) {
+    std::unique_ptr<::onnxruntime::IExecutionProvider> execution_provider;
+    if (provider_type == ::onnxruntime::kCudaExecutionProvider)
+      execution_provider = ::onnxruntime::test::DefaultCudaExecutionProvider();
+    else if (provider_type == ::onnxruntime::kMklDnnExecutionProvider)
+      execution_provider = ::onnxruntime::test::DefaultMkldnnExecutionProvider(enable_cpu_mem_arena_);
+    else if (provider_type == ::onnxruntime::kCpuExecutionProvider)
+      execution_provider = ::onnxruntime::test::DefaultCpuExecutionProvider(enable_cpu_mem_arena_);
+    else if (provider_type == ::onnxruntime::kNupharExecutionProvider)
+      execution_provider = ::onnxruntime::test::DefaultNupharExecutionProvider();
+
+    if (execution_provider == nullptr)
+      LOTUS_THROW("This executable was not built with ", provider_type);
+    LOTUS_RETURN_IF_ERROR(sess->RegisterExecutionProvider(std::move(execution_provider)));
   }
-#ifdef USE_MKLDNN
-  ::onnxruntime::CPUExecutionProviderInfo mkldnn_pi;
-  mkldnn_pi.create_arena = enable_cpu_mem_arena_;
-  LOTUS_RETURN_IF_ERROR(sess->RegisterExecutionProvider(::onnxruntime::CreateMKLDNNExecutionProvider(mkldnn_pi)));
-#endif
-  ::onnxruntime::CPUExecutionProviderInfo cpu_pi;
-  cpu_pi.create_arena = enable_cpu_mem_arena_;
-  status = sess->RegisterExecutionProvider(::onnxruntime::CreateBasicCPUExecutionProvider(cpu_pi));
 
   status = sess->Load(model_url.string());
   LOTUS_RETURN_IF_ERROR(status);

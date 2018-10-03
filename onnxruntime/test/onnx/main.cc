@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  std::vector<std::string> providers{onnxruntime::kCpuExecutionProvider};
+  std::vector<std::string> providers;
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
   int concurrent_session_runs = Env::Default().GetNumCpuCores();
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
           break;
         case 'e':
           if (!strcmp(optarg, "cpu")) {
-            providers.push_back(onnxruntime::kCpuExecutionProvider);
+            // do nothing, as CPU provider would always be added
           } else if (!strcmp(optarg, "cuda")) {
             providers.push_back(onnxruntime::kCudaExecutionProvider);
           } else {
@@ -124,6 +124,10 @@ int main(int argc, char* argv[]) {
       }
     }
   }
+
+  // add CPU provider as fallback
+  providers.push_back(onnxruntime::kCpuExecutionProvider);
+
   if (concurrent_session_runs > 1 && repeat_count > 1) {
     fprintf(stderr, "when you use '-r [repeat]', please set '-c' to 1\n");
     usage();

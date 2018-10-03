@@ -118,7 +118,7 @@ TEST(RNNTest, RNN_bidirectional_bias_initial_zigged_batch) {
                                -0.71697658F, 0.99646497F, 0.9980582F, 0.1513377F, 0.90150106F, 0.74947751F});
   test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
-  test.Run();
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kCudaExecutionProvider});
 }
 
 TEST(RNNTest, RNN_bidirectional_zigged_batch) {
@@ -195,7 +195,7 @@ TEST(RNNTest, RNN_bidirectional_zigged_batch) {
                                0.39222997F, -0.99489242F, 0.86467457F, 0.0274523F, -0.9431532F, -0.60166585F});
   test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
@@ -268,7 +268,7 @@ TEST(RNNTest, RNN_reverse_direction_zigged_batch) {
   std::vector<float> Y_h_data({0.87014002F, 0.09402763F, -0.54269236F, 0.64809889F, -0.19472955F, -0.24271242F});
   test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
-  test.Run();
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kCudaExecutionProvider});
 }
 
 TEST(RNNTest, RNN_forward_direction_zigged_batch) {
@@ -342,7 +342,7 @@ TEST(RNNTest, RNN_forward_direction_zigged_batch) {
   std::vector<float> Y_h_data({-0.746264696F, -0.0781838298F, -0.751394153F, -0.343922496F, -0.181868196F, -0.130254388F});
   test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 TEST(RNNTest, RNN_bidirectional) {
@@ -404,7 +404,7 @@ TEST(RNNTest, RNN_bidirectional) {
   std::vector<float> Y_h_data({-0.74539614F, 0.93210655F, -0.63887376F, 0.89708149F, -0.50691134F, 0.10560472F});
   test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
-  test.RunOnCpuAndCuda();
+  test.Run();
 }
 
 typedef enum {
@@ -477,7 +477,7 @@ TEST(RNNTest, RNN_default_attributes_and_forward_direction) {
       test.AddMissingOptionalOutput<float>();
     }
 
-    test.RunOnCpuAndCuda();
+    test.Run();
   };
 
   {
@@ -586,7 +586,7 @@ TEST(RNNTest, RNN_reverse_direction) {
       test.AddMissingOptionalOutput<float>();
     }
 
-    test.RunOnCpuAndCuda();
+    test.Run();
   };
 
   // TODO: bring in these tests
@@ -780,7 +780,7 @@ TEST(RNNTest, RNN_bidirectional_with_sequence_lens) {
 
   test.AddOutput<float>("Y_h", Y_h_dims, Y_h_data);
 
-  test.Run();
+  test.Run(OpTester::ExpectResult::kExpectSuccess, "", {kCudaExecutionProvider});
 }
 
 }  // namespace test
