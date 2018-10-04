@@ -95,9 +95,6 @@ if(onnxruntime_USE_CUDA)
   list(APPEND onnxruntime_test_framework_src_patterns  ${TEST_SRC_DIR}/framework/cuda/*)
 endif()
 
-file(GLOB onnxruntime_test_framework_src ${onnxruntime_test_framework_src_patterns})
-
-
 file(GLOB_RECURSE onnxruntime_test_providers_src
   "${TEST_SRC_DIR}/providers/*.h"
   "${TEST_SRC_DIR}/providers/*.cc"
@@ -157,19 +154,7 @@ endif()
 
 set(onnxruntime_test_providers_libs
   onnxruntime_test_utils_for_framework
-  onnxruntime_session
-  ${PROVIDERS_CUDA}
-  ${PROVIDERS_MKLDNN}
-  onnxruntime_providers
-  onnxruntime_framework
-  onnxruntime_util
-  onnxruntime_graph
-  onnx
-  onnx_proto
-  onnxruntime_common
-  protobuf::libprotobuf
-  gtest gmock
-  )
+  onnxruntime_session)
 
 set (onnxruntime_test_providers_dependencies ${onnxruntime_EXTERNAL_DEPENDENCIES})
 
@@ -194,9 +179,29 @@ file(GLOB_RECURSE onnxruntime_test_tvm_src
   "${ONNXRUNTIME_ROOT}/test/tvm/*.cc"
   )
 
+set(onnx_test_libs
+  onnxruntime_test_utils
+  onnxruntime_session)
+
 if (onnxruntime_ENABLE_MICROSOFT_INTERNAL)
   include(onnxruntime_unittests_internal.cmake)
 endif()
+
+list(APPEND onnxruntime_test_providers_libs
+  ${PROVIDERS_CUDA}
+  ${PROVIDERS_MKLDNN}
+  onnxruntime_providers
+  onnxruntime_framework
+  onnxruntime_util
+  onnxruntime_graph
+  onnx
+  onnx_proto
+  onnxruntime_common
+  protobuf::libprotobuf
+  gtest gmock
+  )
+
+file(GLOB onnxruntime_test_framework_src ${onnxruntime_test_framework_src_patterns})
 
 add_library(onnxruntime_test_utils_for_framework ${onnxruntime_test_utils_src})
 onnxruntime_add_include_to_target(onnxruntime_test_utils_for_framework gtest onnx protobuf::libprotobuf)
@@ -344,8 +349,6 @@ if(onnxruntime_USE_MKLDNN)
 endif()
 
 list(APPEND onnx_test_libs
-  onnxruntime_test_utils
-  onnxruntime_session
   ${onnx_cuda_test_libs}
   ${onnxruntime_tvm_libs}
   ${onnx_mkldnn_test_libs}

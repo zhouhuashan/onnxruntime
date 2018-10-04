@@ -215,7 +215,7 @@ if (onnxruntime_USE_TVM)
   endif()
   if (onnxruntime_USE_LLVM)
     set(USE_LLVM ON)
-	add_definitions(-DUSE_TVM_WITH_LLVM)
+    add_definitions(-DUSE_TVM_WITH_LLVM)
   endif()
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/tvm EXCLUDE_FROM_ALL)
   set_target_properties(tvm PROPERTIES FOLDER "External/tvm")
@@ -235,9 +235,11 @@ if (onnxruntime_USE_TVM)
     # wd4100: identifier' : unreferenced formal parameter
     # wd4244: conversion from 'int' to 'char', possible loss of data
     # wd4251: class X needs to have dll-interface to be used by clients of class Y
+    # wd4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
     # wd4275: non dll-interface class X used as base for dll-interface class Y
     # wd4389: signed/unsigned mismatch
-    set(DISABLED_WARNINGS_FOR_TVM "/wd4100" "/wd4244" "/wd4275" "/wd4251" "/wd4389")
+    # wd4456: declaration of X hides previous local declaration
+    set(DISABLED_WARNINGS_FOR_TVM "/wd4100" "/wd4244" "/wd4251" "/wd4267" "/wd4275" "/wd4389" "/wd4456")
   endif()
 
   include(onnxruntime_codegen.cmake)
