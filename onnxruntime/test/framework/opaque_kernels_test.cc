@@ -174,13 +174,13 @@ KernelDefBuilder ConstructSparseTensorDef() {
       .SinceVersion(8)
       .Provider(onnxruntime::kCpuExecutionProvider)
       .TypeConstraint("sparse_values",
-                      {DataTypeImpl::GetTensorType<int64_t>()})
+                      DataTypeImpl::GetTensorType<int64_t>())
       .TypeConstraint("sparse_indicies",
-                      {DataTypeImpl::GetTensorType<int64_t>()})
+                      DataTypeImpl::GetTensorType<int64_t>())
       .TypeConstraint("sparse_shape",
-                      {DataTypeImpl::GetTensorType<int64_t>()})
+                      DataTypeImpl::GetTensorType<int64_t>())
       .TypeConstraint("sparse_rep",
-                      {DataTypeImpl::GetType<TestSparseTensorType>()});
+                      DataTypeImpl::GetType<TestSparseTensorType>());
   return def;
 }
 
@@ -191,9 +191,9 @@ KernelDefBuilder ConstructFetchSparseShape() {
       .SinceVersion(8)
       .Provider(onnxruntime::kCpuExecutionProvider)
       .TypeConstraint("sparse_rep",
-                      {DataTypeImpl::GetType<TestSparseTensorType>()})
+                      DataTypeImpl::GetType<TestSparseTensorType>())
       .TypeConstraint("sparse_tensor_shape",
-                      {DataTypeImpl::GetTensorType<int64_t>()});
+                      DataTypeImpl::GetTensorType<int64_t>());
   return def;
 }
 
