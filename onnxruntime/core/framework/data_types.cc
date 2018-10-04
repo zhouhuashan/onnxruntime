@@ -515,7 +515,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
         default:
           ONNXRUNTIME_NOT_IMPLEMENTED("tensor type ", tensor_type.elem_type(), " is not supported");
       }
-    } break;
+    } break; // kTensorType
     case TypeProto::ValueCase::kMapType: {
       auto maptype = proto.map_type();
       auto keytype = maptype.key_type();
@@ -535,6 +535,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
                 break;
             }
           }
+          break;
           case TensorProto_DataType_INT64:
             switch (keytype) {
               case TensorProto_DataType_STRING:
@@ -544,6 +545,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
               default:
                 break;
             }
+            break;
           case TensorProto_DataType_FLOAT:
             switch (keytype) {
               case TensorProto_DataType_STRING:
@@ -553,6 +555,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
               default:
                 break;
             }
+            break;
           case TensorProto_DataType_DOUBLE:
             switch (keytype) {
               case TensorProto_DataType_STRING:
@@ -562,9 +565,10 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
               default:
                 break;
             }
-          default:
             break;
-        }
+            default:
+              break;
+          }
         MLDataType type = registry.GetMLDataType(proto);
         ONNXRUNTIME_ENFORCE(type != nullptr, "Map with key type: ", keytype, " value type: ", value_elem_type, " is not registered");
         return type;
@@ -576,7 +580,8 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
         }
         return type;
       }
-    } break;
+    }
+    break; // kMapType
     case TypeProto::ValueCase::kSequenceType: {
       auto& seq_type = proto.sequence_type();
       auto& val_type = seq_type.elem_type();
@@ -605,8 +610,8 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
                 break;
             }
           }
-          break;
         }  // MapType
+        break;
         case TypeProto::ValueCase::kTensorType: {
           auto val_elem_type = val_type.tensor_type().elem_type();
           switch (val_elem_type) {
@@ -621,11 +626,13 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
             default:
               break;
           }
-        }
+        } // kTensorType
+        break;
         default:
           break;
       }  // Sequence value case
     }    // kSequenceType
+    break;
     default:
       break;
   }  // proto.value_case()
