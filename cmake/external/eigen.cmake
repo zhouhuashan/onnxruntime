@@ -1,6 +1,6 @@
 include (ExternalProject)
 
-if (lotus_USE_PREINSTALLED_EIGEN)
+if (onnxruntime_USE_PREINSTALLED_EIGEN)
     set(eigen_INCLUDE_DIRS ${eigen_SOURCE_PATH})
     ExternalProject_Add(eigen
         PREFIX eigen
