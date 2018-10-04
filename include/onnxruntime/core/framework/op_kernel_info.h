@@ -38,8 +38,8 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
   bool TryGetConstantInput(int input_index, const Tensor** constant_input_value) const;
 
  private:
-  LOTUS_DISALLOW_MOVE(OpKernelInfo);
-  LOTUS_DISALLOW_ASSIGN(OpKernelInfo);
+  ONNXRUNTIME_DISALLOW_MOVE(OpKernelInfo);
+  ONNXRUNTIME_DISALLOW_ASSIGNMENT(OpKernelInfo);
 
   const onnxruntime::Node& node_;
   const KernelDef& kernel_def_;

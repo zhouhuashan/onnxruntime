@@ -71,7 +71,7 @@ TEST(ONNXModelsTest, non_existing_model) {
 #endif
 }
 
-#ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
+#ifdef ONNXRUNTIME_RUN_EXTERNAL_ONNX_TESTS
 TEST(ONNXModelsTest1, bvlc_alexnet_1) {
   using ::google::protobuf::io::CodedInputStream;
   using ::google::protobuf::io::FileInputStream;

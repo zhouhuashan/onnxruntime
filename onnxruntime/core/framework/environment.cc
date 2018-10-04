@@ -29,11 +29,11 @@ Status Environment::Initialize() {
       ONNX_NAMESPACE::OpSchemaRegistry::DomainToVersionRange::Instance().AddDomainToVersion(onnxruntime::kMSDomain, 1, 1);
     });
 
-	// Register MVN operator for backward compatibility.
-	// Experimental operator does not have history kept in ONNX. Unfortunately, RS5 takes bunch of experimental operators
-	// in onnx as production ops. MVN is one of them. Now (9/26/2018) MVN is a production function in ONNX. The experimental
-	// MVN op was removed. The history has to be kept locally as below.
-    LOTUS_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MeanVarianceNormalization)
+    // Register MVN operator for backward compatibility.
+    // Experimental operator does not have history kept in ONNX. Unfortunately, RS5 takes bunch of experimental operators
+    // in onnx as production ops. MVN is one of them. Now (9/26/2018) MVN is a production function in ONNX. The experimental
+    // MVN op was removed. The history has to be kept locally as below.
+    ONNXRUNTIME_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MeanVarianceNormalization)
         .SetDoc(R"DOC(Perform mean variance normalization.)DOC")
         .Attr("across_channels", "If 1, mean and variance are computed across channels. Default is 0.", AttributeProto::INT, static_cast<int64_t>(0))
         .Attr("normalize_variance", "If 0, normalize the mean only.  Default is 1.", AttributeProto::INT, static_cast<int64_t>(1))
@@ -44,8 +44,8 @@ Status Environment::Initialize() {
             {"tensor(float16)", "tensor(float)", "tensor(double)"},
             "Constrain input and output types to float tensors.")
         .TypeAndShapeInferenceFunction(propagateShapeAndTypeFromFirstInput);
-	// MVN operator is deprecated since operator set 9 (replaced with MVN function).
-    LOTUS_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MeanVarianceNormalization)
+    // MVN operator is deprecated since operator set 9 (replaced with MVN function).
+    ONNXRUNTIME_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MeanVarianceNormalization)
         .SetDoc(R"DOC(Perform mean variance normalization.)DOC")
         .SinceVersion(9)
         .Deprecate()
@@ -62,7 +62,7 @@ Status Environment::Initialize() {
     // Register MemCpy schema;
 
     // These ops are internal-only, so register outside of onnx
-    LOTUS_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MemcpyFromHost)
+    ONNXRUNTIME_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MemcpyFromHost)
         .Input(0, "X", "input", "T")
         .Output(0, "Y", "output", "T")
         .TypeConstraint(
@@ -74,7 +74,7 @@ Status Environment::Initialize() {
 Internal copy node
 )DOC");
 
-    LOTUS_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MemcpyToHost)
+    ONNXRUNTIME_ATTRIBUTE_UNUSED ONNX_OPERATOR_SCHEMA(MemcpyToHost)
         .Input(0, "X", "input", "T")
         .Output(0, "Y", "output", "T")
         .TypeConstraint(
@@ -90,9 +90,9 @@ Internal copy node
     // The corresponding kernels are registered inside the appropriate execution provider.
     ml::RegisterContribSchemas();
   } catch (std::exception& ex) {
-    status = Status{LOTUS, common::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
+    status = Status{ONNXRUNTIME, common::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
   } catch (...) {
-    status = Status{LOTUS, common::RUNTIME_EXCEPTION};
+    status = Status{ONNXRUNTIME, common::RUNTIME_EXCEPTION};
   }
 
   return status;

@@ -25,6 +25,6 @@ class SequentialExecutor : public IExecutor {
                          const logging::Logger& logger) override;
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SequentialExecutor);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(SequentialExecutor);
 };
 }  // namespace onnxruntime

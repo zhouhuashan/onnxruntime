@@ -29,7 +29,7 @@ class TestEnvironment {
   ~TestEnvironment();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TestEnvironment);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(TestEnvironment);
 
   std::unique_ptr<::onnxruntime::logging::LoggingManager> logging_manager_;
 

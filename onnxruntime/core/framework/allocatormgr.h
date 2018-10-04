@@ -34,7 +34,7 @@ class DeviceAllocatorRegistry {
 
  private:
   DeviceAllocatorRegistry() = default;
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(DeviceAllocatorRegistry);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(DeviceAllocatorRegistry);
 
   std::map<std::string, DeviceAllocatorRegistrationInfo> device_allocator_registrations_;
 };

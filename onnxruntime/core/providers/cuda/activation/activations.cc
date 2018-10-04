@@ -18,21 +18,21 @@ namespace cuda {
           .MayInplace(0, 0),                                     \
       x<T>);
 
-#define UNARY_ACTIVATION_COMPUTE(x, T)                                                                    \
-  template <>                                                                                             \
-  Status x<T>::ComputeInternal(OpKernelContext* context) const {                                          \
-    UnaryElementwisePreparation p;                                                                        \
-    UnaryElementwise::Prepare(context, &p);                                                               \
-    CudaAsyncBuffer<Ctx##x> func_ctx(this, MakeFuncCtx());                                                \
-    if (!std::is_same<CtxNull, Ctx##x>::value)                                                            \
-      LOTUS_RETURN_IF_ERROR(func_ctx.CopyToGpu());                                                        \
-    Impl_##x<typename ToCudaType<T>::MappedType>(                                                         \
-        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(p.input_tensor->template Data<T>()),  \
-        reinterpret_cast<typename ToCudaType<T>::MappedType*>(p.output_tensor->template MutableData<T>()),\
-        func_ctx.GpuPtr(),                                                                                \
-        p.output_tensor->Shape().Size());                                                                 \
-                                                                                                          \
-    return Status::OK();                                                                                  \
+#define UNARY_ACTIVATION_COMPUTE(x, T)                                                                     \
+  template <>                                                                                              \
+  Status x<T>::ComputeInternal(OpKernelContext* context) const {                                           \
+    UnaryElementwisePreparation p;                                                                         \
+    UnaryElementwise::Prepare(context, &p);                                                                \
+    CudaAsyncBuffer<Ctx##x> func_ctx(this, MakeFuncCtx());                                                 \
+    if (!std::is_same<CtxNull, Ctx##x>::value)                                                             \
+      ONNXRUNTIME_RETURN_IF_ERROR(func_ctx.CopyToGpu());                                                           \
+    Impl_##x<typename ToCudaType<T>::MappedType>(                                                          \
+        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(p.input_tensor->template Data<T>()),   \
+        reinterpret_cast<typename ToCudaType<T>::MappedType*>(p.output_tensor->template MutableData<T>()), \
+        func_ctx.GpuPtr(),                                                                                 \
+        p.output_tensor->Shape().Size());                                                                  \
+                                                                                                           \
+    return Status::OK();                                                                                   \
   }
 
 #define UNARY_ACTIVATION_OP_TYPED(name, ver, T) \

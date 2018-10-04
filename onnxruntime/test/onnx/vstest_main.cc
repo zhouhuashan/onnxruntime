@@ -62,13 +62,13 @@ static void run(SessionFactory& sf, const wchar_t* test_folder) {
     }
     snprintf(buf, sizeof(buf), "running test %s with %d cores", tests[0]->GetTestCaseName().c_str(), p_models);
     Logger::WriteMessage(buf);
-    LOTUS_EVENT finish_event;
-    ::onnxruntime::Status status = CreateLotusEvent(&finish_event);
+    EVENT finish_event;
+    ::onnxruntime::Status status = CreateOnnxRuntimeEvent(&finish_event);
     Assert::IsTrue(status.IsOK());
     Assert::IsNotNull(finish_event);
     RunSingleTestCase(tests[0], sf, p_models, 1, GetDefaultThreadPool(::onnxruntime::Env::Default()), nullptr, [finish_event, &res](std::shared_ptr<TestCaseResult> result, PTP_CALLBACK_INSTANCE pci) {
       res = result->GetExcutionResult();
-      return LotusSetEventWhenCallbackReturns(pci, finish_event);
+      return OnnxRuntimeSetEventWhenCallbackReturns(pci, finish_event);
     });
     status = WaitAndCloseEvent(finish_event);
     Assert::IsTrue(status.IsOK());

@@ -70,7 +70,7 @@ class InferenceSession::Impl {
 
   common::Status RegisterExecutionProvider(std::unique_ptr<IExecutionProvider> p_exec_provider) {
     if (p_exec_provider == nullptr) {
-      return Status(common::LOTUS, common::FAIL, "Received nullptr for exec provider");
+      return Status(common::ONNXRUNTIME, common::FAIL, "Received nullptr for exec provider");
     }
 
     std::string provider_type = p_exec_provider->Type();
@@ -82,29 +82,29 @@ class InferenceSession::Impl {
 
   common::Status RegisterGraphTransformer(std::unique_ptr<onnxruntime::GraphTransformer> p_graph_transformer) {
     if (p_graph_transformer == nullptr) {
-      return Status(common::LOTUS, common::FAIL, "Received nullptr for graph transformer");
+      return Status(common::ONNXRUNTIME, common::FAIL, "Received nullptr for graph transformer");
     }
     return graph_transformation_mgr_.Register(std::move(p_graph_transformer));
   }
 
   common::Status LoadCustomOps(const std::vector<std::string>& dso_list) {
     if (dso_list.empty()) {
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "Empty list of shared libraries in the input.");
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "Empty list of shared libraries in the input.");
     }
     for (auto& dso_file_path : dso_list) {
       std::shared_ptr<CustomRegistry> custom_registry;
-      LOTUS_RETURN_IF_ERROR(custom_ops_loader_.LoadCustomOps(dso_file_path, custom_registry));
+      ONNXRUNTIME_RETURN_IF_ERROR(custom_ops_loader_.LoadCustomOps(dso_file_path, custom_registry));
       if (!custom_registry) {
-        return Status(common::LOTUS, common::FAIL, "Null custom_registry after loading custom ops.");
+        return Status(common::ONNXRUNTIME, common::FAIL, "Null custom_registry after loading custom ops.");
       }
-      LOTUS_RETURN_IF_ERROR(RegisterCustomRegistry(custom_registry));
+      ONNXRUNTIME_RETURN_IF_ERROR(RegisterCustomRegistry(custom_registry));
     }
     return Status::OK();
   }
 
   common::Status RegisterCustomRegistry(std::shared_ptr<CustomRegistry>& custom_registry) {
     if (custom_registry == nullptr) {
-      return Status(common::LOTUS, common::FAIL, "Received nullptr for custom registry");
+      return Status(common::ONNXRUNTIME, common::FAIL, "Received nullptr for custom registry");
     }
 
     // Insert session-level customized kernel registry.
@@ -120,25 +120,25 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (is_model_loaded_) {  // already loaded
         LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-        return common::Status(common::LOTUS, common::MODEL_LOADED, "This session already contains a loaded model.");
+        return common::Status(common::ONNXRUNTIME, common::MODEL_LOADED, "This session already contains a loaded model.");
       }
 
       std::shared_ptr<onnxruntime::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(onnxruntime::Model::Load(model_uri, p_tmp_model,
-                                                     HasLocalSchema() ? &custom_schema_registries_ : nullptr));
+      ONNXRUNTIME_RETURN_IF_ERROR(onnxruntime::Model::Load(model_uri, p_tmp_model,
+                                                   HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
-      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+      ONNXRUNTIME_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
 
       // all steps complete, mark the model as loaded.
       is_model_loaded_ = true;
 
       LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(common::LOTUS, common::FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(common::ONNXRUNTIME, common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(common::ONNXRUNTIME, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_uri", tp);
     return common::Status::OK();
@@ -151,25 +151,25 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (is_model_loaded_) {  // already loaded
         LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-        return common::Status(common::LOTUS, common::MODEL_LOADED, "This session already contains a loaded model.");
+        return common::Status(common::ONNXRUNTIME, common::MODEL_LOADED, "This session already contains a loaded model.");
       }
 
       std::shared_ptr<onnxruntime::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(onnxruntime::Model::Load(model_proto, p_tmp_model,
-                                                     HasLocalSchema() ? &custom_schema_registries_ : nullptr));
+      ONNXRUNTIME_RETURN_IF_ERROR(onnxruntime::Model::Load(model_proto, p_tmp_model,
+                                                   HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
-      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+      ONNXRUNTIME_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
 
       // all steps complete, mark the model as loaded.
       is_model_loaded_ = true;
 
       LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(common::LOTUS, common::FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(common::ONNXRUNTIME, common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(common::ONNXRUNTIME, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_proto", tp);
     return Status::OK();
@@ -182,25 +182,25 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (is_model_loaded_) {  // already loaded
         LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-        return common::Status(common::LOTUS, common::MODEL_LOADED, "This session already contains a loaded model.");
+        return common::Status(common::ONNXRUNTIME, common::MODEL_LOADED, "This session already contains a loaded model.");
       }
 
       std::shared_ptr<onnxruntime::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(onnxruntime::Model::Load(std::move(p_model_proto), p_tmp_model,
-                                                     HasLocalSchema() ? &custom_schema_registries_ : nullptr));
+      ONNXRUNTIME_RETURN_IF_ERROR(onnxruntime::Model::Load(std::move(p_model_proto), p_tmp_model,
+                                                   HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
-      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+      ONNXRUNTIME_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
 
       // all steps complete, mark the model as loaded.
       is_model_loaded_ = true;
 
       LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(common::LOTUS, common::FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(common::ONNXRUNTIME, common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(common::ONNXRUNTIME, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_proto", tp);
     return Status::OK();
@@ -213,31 +213,31 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (is_model_loaded_) {  // already loaded
         LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
-        return common::Status(common::LOTUS, common::MODEL_LOADED, "This session already contains a loaded model.");
+        return common::Status(common::ONNXRUNTIME, common::MODEL_LOADED, "This session already contains a loaded model.");
       }
 
       ModelProto model_proto;
       const bool result = model_proto.ParseFromIstream(&model_istream);
       if (!result) {
-        return Status(common::LOTUS, common::INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
+        return Status(common::ONNXRUNTIME, common::INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
       }
 
       std::shared_ptr<onnxruntime::Model> p_tmp_model;
-      LOTUS_RETURN_IF_ERROR(onnxruntime::Model::Load(model_proto, p_tmp_model,
-                                                     HasLocalSchema() ? &custom_schema_registries_ : nullptr));
+      ONNXRUNTIME_RETURN_IF_ERROR(onnxruntime::Model::Load(model_proto, p_tmp_model,
+                                                   HasLocalSchema() ? &custom_schema_registries_ : nullptr));
       model_ = p_tmp_model;
 
-      LOTUS_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
+      ONNXRUNTIME_RETURN_IF_ERROR(DoPostLoadProcessing(*model_.get()));
 
       // all steps complete, mark the model as loaded.
       is_model_loaded_ = true;
 
       LOGS(*session_logger_, INFO) << "Model successfully loaded.";
     } catch (const std::exception& ex) {
-      return Status(common::LOTUS, common::FAIL, "Exception during loading: " + std::string(ex.what()));
+      return Status(common::ONNXRUNTIME, common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
       LOGS(*session_logger_, ERROR) << "Unknown exception in Load()";
-      return Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
+      return Status(common::ONNXRUNTIME, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Load()");
     }
     session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_loading_istream", tp);
     return common::Status::OK();
@@ -271,7 +271,7 @@ class InferenceSession::Impl {
           SubgraphMemory subgraph_info;
           // create Graph instance for subgraph
           subgraph_info.graph = std::make_unique<Graph>(graph, subgraph_proto);
-          LOTUS_RETURN_IF_ERROR(subgraph_info.graph->Resolve());
+          ONNXRUNTIME_RETURN_IF_ERROR(subgraph_info.graph->Resolve());
 
           // create SessionState for executing subgraph
           subgraph_info.session_state = std::make_unique<SessionState>(execution_providers_);
@@ -282,11 +282,11 @@ class InferenceSession::Impl {
           SessionStateInitializer initializer{*subgraph_info.graph, *subgraph_info.session_state,
                                               execution_providers_, kernel_registry_manager_, *session_logger_};
 
-          LOTUS_RETURN_IF_ERROR(initializer.CreatePlan(graph_transformation_mgr_, insert_cast_transformer_,
-                                                       session_options_.enable_sequential_execution));
+          ONNXRUNTIME_RETURN_IF_ERROR(initializer.CreatePlan(graph_transformation_mgr_, insert_cast_transformer_,
+                                                     session_options_.enable_sequential_execution));
 
-          LOTUS_RETURN_IF_ERROR(initializer.InitializeAndSave(session_state_.GetEnableMemoryPattern(),
-                                                              subgraph_info.weights_buffers));
+          ONNXRUNTIME_RETURN_IF_ERROR(initializer.InitializeAndSave(session_state_.GetEnableMemoryPattern(),
+                                                            subgraph_info.weights_buffers));
 
           // add the subgraph SessionState instance to the parent graph SessionState so it can be retrieved
           // by Compute() via OpKernelContextInternal.
@@ -315,7 +315,7 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_model_loaded_) {
         LOGS(*session_logger_, ERROR) << "Model was not loaded";
-        return common::Status(common::LOTUS, common::FAIL, "Model was not loaded.");
+        return common::Status(common::ONNXRUNTIME, common::FAIL, "Model was not loaded.");
       }
 
       if (is_inited_) {  // already initialized
@@ -349,11 +349,11 @@ class InferenceSession::Impl {
       SessionStateInitializer session_initializer{graph, session_state_, execution_providers_,
                                                   kernel_registry_manager_, *session_logger_};
 
-      LOTUS_RETURN_IF_ERROR(session_initializer.CreatePlan(graph_transformation_mgr_, insert_cast_transformer_,
-                                                           session_options_.enable_sequential_execution));
+      ONNXRUNTIME_RETURN_IF_ERROR(session_initializer.CreatePlan(graph_transformation_mgr_, insert_cast_transformer_,
+                                                         session_options_.enable_sequential_execution));
 
-      LOTUS_RETURN_IF_ERROR(session_initializer.InitializeAndSave(session_state_.GetEnableMemoryPattern(),
-                                                                  weights_buffers_));
+      ONNXRUNTIME_RETURN_IF_ERROR(session_initializer.InitializeAndSave(session_state_.GetEnableMemoryPattern(),
+                                                                weights_buffers_));
 
       // handle any subgraphs
       InitializeSubgraphSessions(graph, session_state_);
@@ -365,13 +365,13 @@ class InferenceSession::Impl {
 
       LOGS(*session_logger_, INFO) << "Session successfully initialized.";
     } catch (const NotImplementedException& ex) {
-      status = LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Exception during initialization: ", ex.what());
+      status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, NOT_IMPLEMENTED, "Exception during initialization: ", ex.what());
       LOGS(*session_logger_, ERROR) << status.ErrorMessage();
     } catch (const std::exception& ex) {
-      status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Exception during initialization: ", ex.what());
+      status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Exception during initialization: ", ex.what());
       LOGS(*session_logger_, ERROR) << status.ErrorMessage();
     } catch (...) {
-      status = LOTUS_MAKE_STATUS(LOTUS, RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
+      status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, RUNTIME_EXCEPTION, "Encountered unknown exception in Initialize()");
       LOGS(*session_logger_, ERROR) << status.ErrorMessage();
     }
 
@@ -396,7 +396,7 @@ class InferenceSession::Impl {
     }
     auto actual_name = std::string(typeid(*actual).name());
     auto expected_name = std::string(typeid(*expected).name());
-    return Status(common::LOTUS, common::INVALID_ARGUMENT,
+    return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                   "Unexpected input data type. Actual: (" + actual_name + ") , expected: (" + expected_name + ")");
   }
 
@@ -432,9 +432,9 @@ class InferenceSession::Impl {
 
   common::Status ValidateInputNames(const NameMLValMap& feeds) {
     if (model_input_names_.size() != feeds.size()) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                               "The number of feeds is not same as the number of the model input, expect ",
-                               model_input_names_.size(), " got ", feeds.size());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
+                             "The number of feeds is not same as the number of the model input, expect ",
+                             model_input_names_.size(), " got ", feeds.size());
     }
 
     bool valid = true;
@@ -453,7 +453,7 @@ class InferenceSession::Impl {
                     [&ostr](const std::string& elem) {
                       ostr << elem << " ";
                     });
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT,
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                             "Invalid Feed Input Names:" + invalid_names.str() +
                                 " Valid input names are: " + ostr.str());
     }
@@ -462,20 +462,20 @@ class InferenceSession::Impl {
   }
 
   common::Status ValidateInputs(const NameMLValMap& feeds) {
-    LOTUS_RETURN_IF_ERROR(ValidateInputNames(feeds));
-    LOTUS_RETURN_IF_ERROR(ValidateInputTypes(feeds));
+    ONNXRUNTIME_RETURN_IF_ERROR(ValidateInputNames(feeds));
+    ONNXRUNTIME_RETURN_IF_ERROR(ValidateInputTypes(feeds));
     return Status::OK();
   }
 
   common::Status ValidateOutputs(const std::vector<std::string>& output_names,
                                  const std::vector<MLValue>* p_fetches) {
     if (!p_fetches) {
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT,
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                             "Output vector pointer is NULL");
     }
 
     if (output_names.empty()) {
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT,
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                             "At least one output should be requested.");
     }
 
@@ -484,7 +484,7 @@ class InferenceSession::Impl {
       std::ostringstream ostr;
       ostr << "Output vector incorrectly sized: output_names.size(): " << output_names.size()
            << "p_fetches->size(): " << p_fetches->size();
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, ostr.str());
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, ostr.str());
     }
 
     bool valid = true;
@@ -503,7 +503,7 @@ class InferenceSession::Impl {
                     [&ostr](const std::string& elem) {
                       ostr << elem << " ";
                     });
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT,
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                             "Invalid Output Names:" + invalid_names.str() +
                                 " Valid output names are: " + ostr.str());
     }
@@ -521,10 +521,10 @@ class InferenceSession::Impl {
       MLValue new_mlvalue;
       auto& input_name = pair.first;
       auto& orig_mlvalue = pair.second;
-      LOTUS_RETURN_IF_ERROR(IOBinding::CopyOneInputAcrossDevices(session_state,
-                                                                 input_name,
-                                                                 orig_mlvalue,
-                                                                 new_mlvalue));
+      ONNXRUNTIME_RETURN_IF_ERROR(IOBinding::CopyOneInputAcrossDevices(session_state,
+                                                               input_name,
+                                                               orig_mlvalue,
+                                                               new_mlvalue));
       new_feeds[input_name] = new_mlvalue;
     }
     return Status::OK();
@@ -541,7 +541,7 @@ class InferenceSession::Impl {
 
     std::set<std::string> seen_outputs;
     const onnxruntime::Graph* p_graph = session_state_.GetGraph();
-    LOTUS_ENFORCE(p_graph);
+    ONNXRUNTIME_ENFORCE(p_graph);
 
     std::pair<bool, size_t> found;
     for (auto& node : p_graph->Nodes()) {  // TODO optimize this
@@ -611,7 +611,7 @@ class InferenceSession::Impl {
       auto& def_name = one_def->Name();
       size_t idx = found.second;
       int mlvalue_idx;
-      LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(def_name, mlvalue_idx));
+      ONNXRUNTIME_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(def_name, mlvalue_idx));
       if (!weights.count(mlvalue_idx)) {
         LOGS(*session_logger_, INFO) << "Output with name " << def_name << " is not a weight.";
         continue;
@@ -622,8 +622,8 @@ class InferenceSession::Impl {
     }
 
     if (seen_outputs.size() != output_names.size())  // make sure we've seen all outputs
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "output size mismatch, expected ", output_names.size(),
-                               " got ", seen_outputs.size());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "output size mismatch, expected ", output_names.size(),
+                             " got ", seen_outputs.size());
 
     return Status::OK();
   }
@@ -633,16 +633,16 @@ class InferenceSession::Impl {
                                 MLValue& output_mlvalue) {
     auto* p_provider = execution_providers_.Get(provider_type);
     if (!p_provider)
-      return Status(common::LOTUS, common::INVALID_ARGUMENT, "invalid provider_type");
+      return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "invalid provider_type");
 
     auto allocator = p_provider->GetAllocator(kMemTypeDefault);
     if (!allocator)
-      return Status(common::LOTUS, common::FAIL, "invalid allocator");
+      return Status(common::ONNXRUNTIME, common::FAIL, "invalid allocator");
 
     auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
     void* buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
     if (!buffer)
-      return Status(common::LOTUS, common::FAIL, "invalid buffer");
+      return Status(common::ONNXRUNTIME, common::FAIL, "invalid buffer");
 
     std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(fetched_tensor.DataType(),
                                                                 fetched_tensor.Shape(),
@@ -671,7 +671,7 @@ class InferenceSession::Impl {
       auto* p_fetched_provider = execution_providers_.Get(fetched_tensor_location);
       if (!p_fetched_provider) {
         p_fetched_provider = execution_providers_.Get(onnxruntime::kCpuExecutionProvider);
-        LOTUS_ENFORCE(p_fetched_provider);
+        ONNXRUNTIME_ENFORCE(p_fetched_provider);
       }
 
       auto fetched_provider_type = p_fetched_provider->Type();
@@ -679,9 +679,9 @@ class InferenceSession::Impl {
       auto& output_mlvalue = user_fetches[idx];
       if (!output_mlvalue.IsAllocated()) {
         if (fetched_provider_type != onnxruntime::kCpuExecutionProvider) {
-          LOTUS_RETURN_IF_ERROR(AllocateHelper(onnxruntime::kCpuExecutionProvider,
-                                               fetched_mlvalue,
-                                               output_mlvalue));
+          ONNXRUNTIME_RETURN_IF_ERROR(AllocateHelper(onnxruntime::kCpuExecutionProvider,
+                                             fetched_mlvalue,
+                                             output_mlvalue));
         } else {
           user_fetches[idx] = fetched_mlvalue;
           continue;
@@ -693,7 +693,7 @@ class InferenceSession::Impl {
       auto* p_output_provider = execution_providers_.Get(output_tensor_loc);
       if (!p_output_provider) {
         p_output_provider = execution_providers_.Get(onnxruntime::kCpuExecutionProvider);
-        LOTUS_ENFORCE(p_output_provider);
+        ONNXRUNTIME_ENFORCE(p_output_provider);
       }
 
       auto output_provider_type = p_output_provider->Type();
@@ -705,9 +705,9 @@ class InferenceSession::Impl {
 
       // our CPU exec provider doesn't support copy from GPU->CPU
       if (fetched_provider_type != onnxruntime::kCpuExecutionProvider) {
-        LOTUS_RETURN_IF_ERROR(p_fetched_provider->CopyTensor(fetched_tensor, *p_output_tensor));
+        ONNXRUNTIME_RETURN_IF_ERROR(p_fetched_provider->CopyTensor(fetched_tensor, *p_output_tensor));
       } else {
-        LOTUS_RETURN_IF_ERROR(p_output_provider->CopyTensor(fetched_tensor, *p_output_tensor));
+        ONNXRUNTIME_RETURN_IF_ERROR(p_output_provider->CopyTensor(fetched_tensor, *p_output_tensor));
       }
     }
 
@@ -726,14 +726,14 @@ class InferenceSession::Impl {
         std::lock_guard<std::mutex> l(session_mutex_);
         if (!is_inited_) {
           LOGS(*session_logger_, ERROR) << "Session was not initialized";
-          retval = Status(common::LOTUS, common::FAIL, "Session not initialized.");
+          retval = Status(common::ONNXRUNTIME, common::FAIL, "Session not initialized.");
         }
       }
 
-      LOTUS_CHECK_AND_SET_RETVAL(ValidateInputs(feeds));
+      ONNXRUNTIME_CHECK_AND_SET_RETVAL(ValidateInputs(feeds));
 
       // if the output vector is non-empty, ensure that its the same size as the output_names
-      LOTUS_CHECK_AND_SET_RETVAL(ValidateOutputs(output_names, p_fetches));
+      ONNXRUNTIME_CHECK_AND_SET_RETVAL(ValidateOutputs(output_names, p_fetches));
 
       if (!run_options.run_tag.empty()) {
         LOGS(*session_logger_, INFO) << "Running with tag: " << run_options.run_tag;
@@ -751,13 +751,13 @@ class InferenceSession::Impl {
       // info all execution providers InferenceSession:Run started
       // TODO: only call OnRunStart for all providers in-use
       for (auto& xp : execution_providers_)
-        LOTUS_CHECK_AND_SET_RETVAL(xp->OnRunStart());
+        ONNXRUNTIME_CHECK_AND_SET_RETVAL(xp->OnRunStart());
 
       NameMLValMap copied_feeds;
-      LOTUS_CHECK_AND_SET_RETVAL(CopyInputsAcrossDevices(session_state_, feeds, copied_feeds));
+      ONNXRUNTIME_CHECK_AND_SET_RETVAL(CopyInputsAcrossDevices(session_state_, feeds, copied_feeds));
 
       std::vector<MLValue> new_fetches;
-      LOTUS_CHECK_AND_SET_RETVAL(MatchOutputsWithProviders(output_names, *p_fetches, new_fetches));
+      ONNXRUNTIME_CHECK_AND_SET_RETVAL(MatchOutputsWithProviders(output_names, *p_fetches, new_fetches));
 
       std::unique_ptr<IExecutor> p_exec;
 
@@ -769,18 +769,18 @@ class InferenceSession::Impl {
         }
       }
 
-      LOTUS_CHECK_AND_SET_RETVAL(p_exec->Execute(session_state_, copied_feeds, output_names, new_fetches, run_logger));
-      LOTUS_CHECK_AND_SET_RETVAL(CopyOutputsAcrossDevices(new_fetches, *p_fetches));
+      ONNXRUNTIME_CHECK_AND_SET_RETVAL(p_exec->Execute(session_state_, copied_feeds, output_names, new_fetches, run_logger));
+      ONNXRUNTIME_CHECK_AND_SET_RETVAL(CopyOutputsAcrossDevices(new_fetches, *p_fetches));
 
     } catch (const std::exception& e) {
-      retval = Status(common::LOTUS, common::FAIL, e.what());
+      retval = Status(common::ONNXRUNTIME, common::FAIL, e.what());
     } catch (...) {
-      retval = Status(common::LOTUS, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Run()");
+      retval = Status(common::ONNXRUNTIME, common::RUNTIME_EXCEPTION, "Encountered unknown exception in Run()");
     }
 
     // info all execution providers InferenceSession:Run ended
     for (auto& xp : execution_providers_)
-      LOTUS_CHECK_AND_SET_RETVAL(xp->OnRunEnd());
+      ONNXRUNTIME_CHECK_AND_SET_RETVAL(xp->OnRunEnd());
 
     --current_num_runs_;
     session_profiler_.EndTimeAndRecordEvent(profiling::SESSION_EVENT, "model_run", tp);
@@ -793,7 +793,7 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_model_loaded_) {
         LOGS(*session_logger_, ERROR) << "Model was not loaded";
-        return std::make_pair(common::Status(common::LOTUS, common::FAIL, "Model was not loaded."),
+        return std::make_pair(common::Status(common::ONNXRUNTIME, common::FAIL, "Model was not loaded."),
                               nullptr);
       }
     }
@@ -806,7 +806,7 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_model_loaded_) {
         LOGS(*session_logger_, ERROR) << "Model was not loaded";
-        return std::make_pair(common::Status(common::LOTUS, common::FAIL, "Model was not loaded."),
+        return std::make_pair(common::Status(common::ONNXRUNTIME, common::FAIL, "Model was not loaded."),
                               nullptr);
       }
     }
@@ -819,7 +819,7 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_model_loaded_) {
         LOGS(*session_logger_, ERROR) << "Model was not loaded";
-        return std::make_pair(common::Status(common::LOTUS, common::FAIL, "Model was not loaded."),
+        return std::make_pair(common::Status(common::ONNXRUNTIME, common::FAIL, "Model was not loaded."),
                               nullptr);
       }
     }
@@ -832,7 +832,7 @@ class InferenceSession::Impl {
       std::lock_guard<std::mutex> l(session_mutex_);
       if (!is_inited_) {
         LOGS(*session_logger_, ERROR) << "Session was not initialized";
-        return common::Status(common::LOTUS, common::FAIL, "Session not initialized.");
+        return common::Status(common::ONNXRUNTIME, common::FAIL, "Session not initialized.");
       }
     }
 
@@ -906,7 +906,7 @@ class InferenceSession::Impl {
     input_def_list_.reserve(inputs.size());
     for (const auto& elem : inputs) {
       if (!elem) {
-        return common::Status(common::LOTUS, common::FAIL, "Got null input nodearg ptr");
+        return common::Status(common::ONNXRUNTIME, common::FAIL, "Got null input nodearg ptr");
       }
       // skip inputs that are weights
       if (weights.count(elem->Name())) {
@@ -921,7 +921,7 @@ class InferenceSession::Impl {
     output_def_list_.reserve(outputs.size());
     for (const auto& elem : outputs) {
       if (!elem) {
-        return common::Status(common::LOTUS, common::FAIL, "Got null output nodearg ptr");
+        return common::Status(common::ONNXRUNTIME, common::FAIL, "Got null output nodearg ptr");
       }
       output_def_list_.push_back(elem);
       model_output_names_.insert(elem->Name());
@@ -994,7 +994,7 @@ class InferenceSession::Impl {
 
   common::Status WaitForNotification(Notification* p_executor_done, int64_t timeout_in_ms) {
     if (timeout_in_ms > 0) {
-      LOTUS_NOT_IMPLEMENTED(__FUNCTION__, "timeout_in_ms >0 is not supported");  // TODO
+      ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, "timeout_in_ms >0 is not supported");  // TODO
     } else {
       p_executor_done->WaitForNotification();
     }
@@ -1023,7 +1023,7 @@ class InferenceSession::Impl {
   ExecutionProviders execution_providers_;
 
   KernelRegistryManager kernel_registry_manager_;
-  std::list<std::shared_ptr<onnxruntime::ILotusOpSchemaCollection>> custom_schema_registries_;
+  std::list<std::shared_ptr<onnxruntime::IOnnxRuntimeOpSchemaCollection>> custom_schema_registries_;
 
   // The model served by this inference session instance.
   // Currently this has to be a shared ptr because the Model::Load method

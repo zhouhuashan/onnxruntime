@@ -22,15 +22,15 @@ class ExpandDims final : public OpKernel {
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* axis_tensor = context->Input<Tensor>(1);
-    LOTUS_ENFORCE(axis_tensor->Shape().IsScalar(), "An axis tensor must be a scalar tensor.");
+    ONNXRUNTIME_ENFORCE(axis_tensor->Shape().IsScalar(), "An axis tensor must be a scalar tensor.");
     const int64_t axis = static_cast<int64_t>(axis_tensor->template Data<int32_t>()[0]);
     const Tensor* X = context->Input<Tensor>(0);
     const TensorShape& X_shape = X->Shape();
 
     std::vector<int64_t> expanded_shape(X_shape.GetDims());
     int64_t X_NumDims = X_shape.Size();
-    LOTUS_ENFORCE(axis <= X_NumDims && axis >= -X_NumDims,
-                  "Axis must be within range [", -X_NumDims, ", ", X_NumDims, "].", " Axis is ", axis);
+    ONNXRUNTIME_ENFORCE(axis <= X_NumDims && axis >= -X_NumDims,
+                "Axis must be within range [", -X_NumDims, ", ", X_NumDims, "].", " Axis is ", axis);
     if (axis >= 0) {
       expanded_shape.insert(expanded_shape.begin() + axis, 1);
     } else {

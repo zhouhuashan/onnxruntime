@@ -82,8 +82,8 @@ class Tensor final {
   template <typename T>
   T* MutableData() {
     // Type check
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                  DataTypeImpl::GetType<T>(), "!=", dtype_);
+    ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                DataTypeImpl::GetType<T>(), "!=", dtype_);
     return reinterpret_cast<T*>(static_cast<char*>(p_data_) + byte_offset_);
   }
 
@@ -91,8 +91,8 @@ class Tensor final {
   template <typename T>
   gsl::span<T> MutableDataAsSpan() {
     // Type check
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                  DataTypeImpl::GetType<T>(), "!=", dtype_);
+    ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                DataTypeImpl::GetType<T>(), "!=", dtype_);
     T* data = reinterpret_cast<T*>(static_cast<char*>(p_data_) + byte_offset_);
     return gsl::make_span(data, shape_.Size());
   }
@@ -100,27 +100,27 @@ class Tensor final {
   template <typename T>
   const T* Data() const {
     // Type check
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                  DataTypeImpl::GetType<T>(), "!=", dtype_);
+    ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                DataTypeImpl::GetType<T>(), "!=", dtype_);
     return reinterpret_cast<const T*>(static_cast<char*>(p_data_) + byte_offset_);
   }
 
   template <typename T>
   gsl::span<const T> DataAsSpan() const {
     // Type check
-    LOTUS_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                  DataTypeImpl::GetType<T>(), "!=", dtype_);
+    ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
+                DataTypeImpl::GetType<T>(), "!=", dtype_);
     const T* data = reinterpret_cast<const T*>(static_cast<char*>(p_data_) + byte_offset_);
     return gsl::make_span(data, shape_.Size());
   }
 
   void* MutableDataRaw(MLDataType type) {
-    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
+    ONNXRUNTIME_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
     return p_data_;
   }
 
   const void* DataRaw(MLDataType type) const {
-    LOTUS_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
+    ONNXRUNTIME_ENFORCE(type == dtype_, "Tensor type mismatch.", type, "!=", dtype_);
     return p_data_;
   }
 
@@ -138,9 +138,9 @@ class Tensor final {
   * @warning this function is NOT thread-safe.
   */
   inline void Reshape(const TensorShape& new_shape) {
-    LOTUS_ENFORCE(shape_.Size() == new_shape.Size(),
-                  "Tensor size (" + std::to_string(shape_.Size()) +
-                      ") != new size (" + std::to_string(new_shape.Size()) + ")");
+    ONNXRUNTIME_ENFORCE(shape_.Size() == new_shape.Size(),
+                "Tensor size (" + std::to_string(shape_.Size()) +
+                    ") != new size (" + std::to_string(new_shape.Size()) + ")");
     shape_ = new_shape;
   }
 

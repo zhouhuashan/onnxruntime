@@ -23,34 +23,34 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Options
-option(lotus_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
-option(lotus_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
-option(lotus_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
-option(lotus_ENABLE_PYTHON "Enable python buildings" OFF)
-option(lotus_USE_CUDA "Build with CUDA support" OFF)
-option(lotus_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
-option(lotus_USE_MLAS "Use optimized blas library for GEMM and 2D Convolution" OFF)
-option(lotus_USE_MKLDNN "Build with MKL-DNN support" OFF)
-option(lotus_USE_MKLML "Build MKL-DNN with MKL-ML binary dependency" OFF)
-option(lotus_USE_OPENBLAS "Use openblas" OFF)
-option(lotus_USE_PREBUILT_PB "Use prebuilt protobuf library" OFF)
-option(lotus_USE_JEMALLOC "Use jecmalloc" OFF)
-option(lotus_MSVC_STATIC_RUNTIME "Compile for the static CRT" OFF)
-option(lotus_BUILD_UNIT_TESTS "Build Lotus unit tests" ON)
-option(lotus_USE_PREINSTALLED_EIGEN "Use pre-installed EIGEN. Need to provide eigen_SOURCE_PATH if turn this on." OFF)
-option(lotus_BUILD_BENCHMARKS "Build Lotus micro-benchmarks" OFF)
-option(lotus_USE_TVM "Build tvm for code-gen" OFF)
-option(lotus_USE_LLVM "Build tvm with LLVM" OFF)
-option(lotus_USE_OPENMP "Build with OpenMP support" OFF)
-option(lotus_BUILD_SHARED_LIB "Build a shared library" OFF)
-option(lotus_ENABLE_MICROSOFT_INTERNAL "Use this option to enable/disable microsoft internal only code" OFF)
+option(onnxruntime_RUN_ONNX_TESTS "Enable ONNX Compatibility Testing" OFF)
+option(onnxruntime_GENERATE_TEST_REPORTS "Enable test report generation" OFF)
+option(onnxruntime_ENABLE_STATIC_ANALYSIS "Enable static analysis" OFF)
+option(onnxruntime_ENABLE_PYTHON "Enable python buildings" OFF)
+option(onnxruntime_USE_CUDA "Build with CUDA support" OFF)
+option(onnxruntime_USE_EIGEN_FOR_BLAS "Use eign for blas" ON)
+option(onnxruntime_USE_MLAS "Use optimized blas library for GEMM and 2D Convolution" OFF)
+option(onnxruntime_USE_MKLDNN "Build with MKL-DNN support" OFF)
+option(onnxruntime_USE_MKLML "Build MKL-DNN with MKL-ML binary dependency" OFF)
+option(onnxruntime_USE_OPENBLAS "Use openblas" OFF)
+option(onnxruntime_USE_PREBUILT_PB "Use prebuilt protobuf library" OFF)
+option(onnxruntime_USE_JEMALLOC "Use jecmalloc" OFF)
+option(onnxruntime_MSVC_STATIC_RUNTIME "Compile for the static CRT" OFF)
+option(onnxruntime_BUILD_UNIT_TESTS "Build Lotus unit tests" ON)
+option(onnxruntime_USE_PREINSTALLED_EIGEN "Use pre-installed EIGEN. Need to provide eigen_SOURCE_PATH if turn this on." OFF)
+option(onnxruntime_BUILD_BENCHMARKS "Build Lotus micro-benchmarks" OFF)
+option(onnxruntime_USE_TVM "Build tvm for code-gen" OFF)
+option(onnxruntime_USE_LLVM "Build tvm with LLVM" OFF)
+option(onnxruntime_USE_OPENMP "Build with OpenMP support" OFF)
+option(onnxruntime_BUILD_SHARED_LIB "Build a shared library" OFF)
+option(onnxruntime_ENABLE_MICROSOFT_INTERNAL "Use this option to enable/disable microsoft internal only code" OFF)
 
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests" FORCE)
 set(ONNX_ML 1)
 include(onnxruntime_cmake_utils.cmake)
 
 if (MSVC)
-  if (lotus_MSVC_STATIC_RUNTIME)
+  if (onnxruntime_MSVC_STATIC_RUNTIME)
     # set all of our submodules to static runtime
     set(ONNX_USE_MSVC_STATIC_RUNTIME ON)
     set(protobuf_MSVC_STATIC_RUNTIME ON)
@@ -90,7 +90,7 @@ else()
   endif()
 endif()
 
-if(lotus_BUILD_BENCHMARKS)
+if(onnxruntime_BUILD_BENCHMARKS)
   if(NOT TARGET benchmark)
     # We will not need to test benchmark lib itself.
     set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark testing as we don't need it.")
@@ -104,14 +104,14 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external)
 
 #Here we support three build mode:
-#1. (recommended)lotus_USE_PREBUILT_PB is set (ONNX_CUSTOM_PROTOC_EXECUTABLE should also be set)
+#1. (recommended)onnxruntime_USE_PREBUILT_PB is set (ONNX_CUSTOM_PROTOC_EXECUTABLE should also be set)
 #   We will not build protobuf, will use a prebuilt binary instead. This mode can also support cross-compiling
-#2. lotus_USE_PREBUILT_PB is not set but ONNX_CUSTOM_PROTOC_EXECUTABLE is set
+#2. onnxruntime_USE_PREBUILT_PB is not set but ONNX_CUSTOM_PROTOC_EXECUTABLE is set
 #   Build Protobuf from source, except protoc.exe. This mode is mainly for cross-compiling
-#3. both lotus_USE_PREBUILT_PB and ONNX_CUSTOM_PROTOC_EXECUTABLE are not set
+#3. both onnxruntime_USE_PREBUILT_PB and ONNX_CUSTOM_PROTOC_EXECUTABLE are not set
 #   Compile everything from source code. Slowest option.
 
-if(lotus_USE_PREBUILT_PB)
+if(onnxruntime_USE_PREBUILT_PB)
   get_filename_component(
      _PROTOBUF_INSTALL_PREFIX
      ${ONNX_CUSTOM_PROTOC_EXECUTABLE}
@@ -138,37 +138,37 @@ else()
   include(protobuf_function.cmake)
 endif()
 
-if (lotus_USE_CUDA AND "${lotus_CUDNN_HOME}" STREQUAL "")
-  message(FATAL_ERROR "lotus_CUDNN_HOME required for lotus_USE_CUDA")
+if (onnxruntime_USE_CUDA AND "${onnxruntime_CUDNN_HOME}" STREQUAL "")
+  message(FATAL_ERROR "onnxruntime_CUDNN_HOME required for onnxruntime_USE_CUDA")
 endif()
 
-if (lotus_USE_EIGEN_FOR_BLAS)
-  add_definitions(-DLOTUS_USE_EIGEN_FOR_BLAS)
+if (onnxruntime_USE_EIGEN_FOR_BLAS)
+  add_definitions(-DUSE_EIGEN_FOR_BLAS)
 endif()
 
-if (lotus_USE_MLAS AND WIN32)
+if (onnxruntime_USE_MLAS AND WIN32)
   add_definitions(-DUSE_MLAS)
 endif()
 
-if (lotus_USE_OPENBLAS AND "${lotus_OPENBLAS_HOME}" STREQUAL "" AND WIN32)
+if (onnxruntime_USE_OPENBLAS AND "${onnxruntime_OPENBLAS_HOME}" STREQUAL "" AND WIN32)
   # On linux we assume blas is installed via 'apt-get install libopenblas-dev'
-  message(FATAL_ERROR "lotus_OPENBLAS_HOME required for lotus_USE_OPENBLAS")
+  message(FATAL_ERROR "onnxruntime_OPENBLAS_HOME required for onnxruntime_USE_OPENBLAS")
 endif()
 
-if (lotus_USE_OPENBLAS AND lotus_USE_EIGEN_FOR_BLAS)
-  message(FATAL_ERROR "use one of lotus_USE_OPENBLAS, lotus_USE_EIGEN_FOR_BLAS")
+if (onnxruntime_USE_OPENBLAS AND onnxruntime_USE_EIGEN_FOR_BLAS)
+  message(FATAL_ERROR "use one of onnxruntime_USE_OPENBLAS, onnxruntime_USE_EIGEN_FOR_BLAS")
 endif()
 
 # if ON put all the unit tests in a single project so that code coverage is more comprehensive.
 # defaulting to that and most likely removing option to have separate unit test projects in the near future.
 set(SingleUnitTestProject ON)
-if (lotus_SPLIT_UNIT_TEST_PROJECTS)
+if (onnxruntime_SPLIT_UNIT_TEST_PROJECTS)
   set(SingleUnitTestProject OFF)
 endif()
 
 set(REPO_ROOT ${PROJECT_SOURCE_DIR}/..)
-set(LOTUS_ROOT ${PROJECT_SOURCE_DIR}/../onnxruntime)
-set(LOTUS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/onnxruntime)
+set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/../onnxruntime)
+set(ONNXRUNTIME_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/onnxruntime)
 
 include(date)
 
@@ -181,7 +181,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DGSL_UNENFORCED_ON_CONT
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DGSL_UNENFORCED_ON_CONTRACT_VIOLATION")
 
 include(eigen)
-set(lotus_EXTERNAL_LIBRARIES protobuf::libprotobuf)
+set(onnxruntime_EXTERNAL_LIBRARIES protobuf::libprotobuf)
 
 # gtest and gmock
 add_subdirectory(${PROJECT_SOURCE_DIR}/external/googletest EXCLUDE_FROM_ALL)
@@ -190,7 +190,7 @@ set_target_properties(gmock_main PROPERTIES FOLDER "External/GTest")
 set_target_properties(gtest PROPERTIES FOLDER "External/GTest")
 set_target_properties(gtest_main PROPERTIES FOLDER "External/GTest")
 
-function(lotus_add_include_to_target dst_target)
+function(onnxruntime_add_include_to_target dst_target)
     foreach(src_target ${ARGN})
         target_include_directories(${dst_target} PRIVATE $<TARGET_PROPERTY:${src_target},INTERFACE_INCLUDE_DIRECTORIES>)
         target_compile_definitions(${dst_target} PRIVATE $<TARGET_PROPERTY:${src_target},INTERFACE_COMPILE_DEFINITIONS>)
@@ -206,14 +206,14 @@ set_target_properties(onnx_proto PROPERTIES FOLDER "External/ONNX")
 if (MSVC)
     target_compile_options(onnx_proto PRIVATE /wd4146) # unary minus operator applied to unsigned type
 endif()
-set(lotus_EXTERNAL_DEPENDENCIES gsl onnx_proto)
+set(onnxruntime_EXTERNAL_DEPENDENCIES gsl onnx_proto)
 
 # TVM
-if (lotus_USE_TVM)
-  if (lotus_USE_CUDA)
+if (onnxruntime_USE_TVM)
+  if (onnxruntime_USE_CUDA)
     set(USE_CUDA ON)
   endif()
-  if (lotus_USE_LLVM)
+  if (onnxruntime_USE_LLVM)
     set(USE_LLVM ON)
 	add_definitions(-DUSE_TVM_WITH_LLVM)
   endif()
@@ -253,11 +253,11 @@ if (lotus_USE_TVM)
     onnxruntime_codegen_tvm)
 endif()
 
-if (lotus_RUN_ONNX_TESTS)
-  add_definitions(-DLOTUSIR_RUN_EXTERNAL_ONNX_TESTS)
+if (onnxruntime_RUN_ONNX_TESTS)
+  add_definitions(-DONNXRUNTIME_RUN_EXTERNAL_ONNX_TESTS)
 endif()
 
-if (lotus_USE_MLAS AND WIN32)
+if (onnxruntime_USE_MLAS AND WIN32)
     set(MLAS_INC ${PROJECT_SOURCE_DIR}/../../mlas/inc)
     set(MLAS_LIBRARY mlas)
 endif()
@@ -271,7 +271,7 @@ if (WIN32)
       " /wd4127" # conditional expression is constant. 
       " /wd4146" # unary minus operator applied to unsigned type. Needed for Protobuf
     )
-    if (lotus_ENABLE_STATIC_ANALYSIS)
+    if (onnxruntime_ENABLE_STATIC_ANALYSIS)
         string(APPEND CMAKE_CXX_FLAGS 
             " /analyze:WX- "
             # disable warning because there are many occurrences from test macros
@@ -280,7 +280,7 @@ if (WIN32)
     endif()
 
     # set compile warning level to 3 on CUDA build but 4 on CPU-only build
-    if(lotus_USE_CUDA)
+    if(onnxruntime_USE_CUDA)
         #CMake hardcoded /W3 in its 'Windows-NVIDIA-CUDA.cmake'. We'd better keep consistent with it.
         #Change it to /W4 will result build failure
         string(APPEND CMAKE_CXX_FLAGS " /W3")
@@ -300,7 +300,7 @@ else()
   add_definitions(-DPLATFORM_POSIX)
   # Enable warning in Linux
   string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra")
-  if(NOT lotus_USE_TVM)
+  if(NOT onnxruntime_USE_TVM)
     string(APPEND CMAKE_CXX_FLAGS " -Werror")
   endif()
   check_cxx_compiler_flag(-Wunused-but-set-variable HAS_UNUSED_BUT_SET_VARIABLE)
@@ -308,7 +308,7 @@ else()
   check_cxx_compiler_flag(-Wcast-function-type HAS_CAST_FUNCTION_TYPE)
   check_cxx_compiler_flag(-Wparentheses HAS_PARENTHESES)
   string(APPEND CMAKE_CXX_FLAGS " -Wno-error=sign-compare -Wno-error=comment")
-  if(lotus_USE_CUDA)
+  if(onnxruntime_USE_CUDA)
     string(APPEND CMAKE_CXX_FLAGS " -Wno-error=reorder")
   endif()
   if(HAS_PARENTHESES)
@@ -319,55 +319,55 @@ else()
   endif()
 endif()
 
-if (lotus_USE_JEMALLOC)
+if (onnxruntime_USE_JEMALLOC)
   if (Win32)
     message( FATAL_ERROR "Jemalloc is not supported on Windows." )
   endif()
   include(jemalloc)
   add_definitions(-DUSE_JEMALLOC=1) 
-  list(APPEND lotus_EXTERNAL_LIBRARIES ${JEMALLOC_STATIC_LIBRARIES})
-  list(APPEND lotus_EXTERNAL_DEPENDENCIES jemalloc)
+  list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${JEMALLOC_STATIC_LIBRARIES})
+  list(APPEND onnxruntime_EXTERNAL_DEPENDENCIES jemalloc)
 endif()
 
 include_directories(
-    ${LOTUS_INCLUDE_DIR}
+    ${ONNXRUNTIME_INCLUDE_DIR}
     ${gsl_INCLUDE_DIR}
 )
 
-if (lotus_USE_MKLDNN)
+if (onnxruntime_USE_MKLDNN)
   add_definitions(-DUSE_MKLDNN=1)
   include(mkldnn)
-  list(APPEND lotus_EXTERNAL_LIBRARIES mkldnn)
-  list(APPEND lotus_EXTERNAL_DEPENDENCIES mkldnn)
+  list(APPEND onnxruntime_EXTERNAL_LIBRARIES mkldnn)
+  list(APPEND onnxruntime_EXTERNAL_DEPENDENCIES mkldnn)
 endif()
 
-if (lotus_USE_OPENBLAS)
+if (onnxruntime_USE_OPENBLAS)
   add_definitions(-DUSE_OPENBLAS=1)
   if (WIN32)
-    include_directories(${lotus_OPENBLAS_HOME})
-    list(APPEND lotus_EXTERNAL_LIBRARIES ${lotus_OPENBLAS_HOME}/lib/libopenblas.lib)
+    include_directories(${onnxruntime_OPENBLAS_HOME})
+    list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_OPENBLAS_HOME}/lib/libopenblas.lib)
   else()
     # on linux we assume blas is installed via 'apt-get install libopenblas-dev'
-    list(APPEND lotus_EXTERNAL_LIBRARIES openblas)
+    list(APPEND onnxruntime_EXTERNAL_LIBRARIES openblas)
   endif()
 endif()
 
-if (lotus_USE_CUDA)
+if (onnxruntime_USE_CUDA)
   add_definitions(-DUSE_CUDA=1)
   enable_language(CUDA)
   set(CMAKE_CUDA_STANDARD 14)
   find_package(CUDA 9.0 REQUIRED)
-  file(TO_CMAKE_PATH ${lotus_CUDNN_HOME} lotus_CUDNN_HOME)
+  file(TO_CMAKE_PATH ${onnxruntime_CUDNN_HOME} onnxruntime_CUDNN_HOME)
   include(cub)
   set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
     ${CUDA_curand_LIBRARY} ${CUDA_cupti_LIBRARY} ${CUDA_cusolver_LIBRARY})
   if (WIN32)
-    list(APPEND CUDA_LIBRARIES ${lotus_CUDNN_HOME}/lib/x64/cudnn.lib)
+    list(APPEND CUDA_LIBRARIES ${onnxruntime_CUDNN_HOME}/lib/x64/cudnn.lib)
   else()
-    list(APPEND CUDA_LIBRARIES ${lotus_CUDNN_HOME}/lib64/libcudnn.so ${CUDA_TOOLKIT_TARGET_DIR}/lib64/libculibos.a)
+    list(APPEND CUDA_LIBRARIES ${onnxruntime_CUDNN_HOME}/lib64/libcudnn.so ${CUDA_TOOLKIT_TARGET_DIR}/lib64/libculibos.a)
   endif()
-  list(APPEND lotus_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
-  list(APPEND lotus_EXTERNAL_DEPENDENCIES cub)
+  list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
+  list(APPEND onnxruntime_EXTERNAL_DEPENDENCIES cub)
   
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_30,code=sm_30") # K series
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_50,code=sm_50") # M series
@@ -385,21 +385,21 @@ include(onnxruntime_framework.cmake)
 include(onnxruntime_providers.cmake)
 include(onnxruntime_session.cmake)
 
-if(lotus_USE_MKLDNN)
-  set(LOTUS_PROVIDERS_MKLDNN onnxruntime_providers_mkldnn)
+if(onnxruntime_USE_MKLDNN)
+  set(PROVIDERS_MKLDNN onnxruntime_providers_mkldnn)
 endif()
-if(lotus_USE_CUDA)
-  set(LOTUS_PROVIDERS_CUDA onnxruntime_providers_cuda)
+if(onnxruntime_USE_CUDA)
+  set(PROVIDERS_CUDA onnxruntime_providers_cuda)
 endif()
 
-if (lotus_ENABLE_PYTHON)
+if (onnxruntime_ENABLE_PYTHON)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
 endif()
 include(onnxruntime_python.cmake)
 endif()
 
-if (lotus_BUILD_SHARED_LIB)
+if (onnxruntime_BUILD_SHARED_LIB)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
   include(onnxruntime.cmake)
@@ -408,7 +408,7 @@ endif()
 
 # some of the tests rely on the shared libs to be
 # built; hence the ordering
-if (lotus_BUILD_UNIT_TESTS)
+if (onnxruntime_BUILD_UNIT_TESTS)
   # we need to make sure this is turned off since it
   # turned ON by the previous step when building a shared lib
   set(CMAKE_SKIP_BUILD_RPATH OFF)

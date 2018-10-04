@@ -19,20 +19,20 @@ class Scan final : public OpKernel {
     // with the necessary infrastructure to execute the subgraph.
     // This is available via Info().GetSubgraphSessionState("attribute_name") when Compute is called.
     ONNX_NAMESPACE::GraphProto proto;
-    LOTUS_ENFORCE(info.GetAttr<ONNX_NAMESPACE::GraphProto>("body", &proto).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<ONNX_NAMESPACE::GraphProto>("body", &proto).IsOK());
     (void)proto;
 
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("num_scan_inputs", &num_scan_inputs_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("num_scan_inputs", &num_scan_inputs_).IsOK());
 
     if (info.GetAttrs<int64_t>("directions", directions_).IsOK()) {
-      LOTUS_ENFORCE(gsl::narrow_cast<int64_t>(directions_.size()) == num_scan_inputs_,
-                    "Number of entries in 'directions' was ", directions_.size(),
-                    ". Must match 'num_scan_inputs' of ", num_scan_inputs_);
-      LOTUS_ENFORCE(std::all_of(directions_.cbegin(), directions_.cend(),
-                                [](int64_t i) { return i == static_cast<int64_t>(Direction::kForward) ||
-                                                       i == static_cast<int64_t>(Direction::kReverse); }),
-                    "Invalid values in 'directions'. 0 == forward. 1 == reverse. Values were ",
-                    directions_);
+      ONNXRUNTIME_ENFORCE(gsl::narrow_cast<int64_t>(directions_.size()) == num_scan_inputs_,
+                  "Number of entries in 'directions' was ", directions_.size(),
+                  ". Must match 'num_scan_inputs' of ", num_scan_inputs_);
+      ONNXRUNTIME_ENFORCE(std::all_of(directions_.cbegin(), directions_.cend(),
+                              [](int64_t i) { return i == static_cast<int64_t>(Direction::kForward) ||
+                                                     i == static_cast<int64_t>(Direction::kReverse); }),
+                  "Invalid values in 'directions'. 0 == forward. 1 == reverse. Values were ",
+                  directions_);
     } else {
       // default to forward
       directions_ = std::vector<int64_t>(num_scan_inputs_, static_cast<int64_t>(Direction::kForward));

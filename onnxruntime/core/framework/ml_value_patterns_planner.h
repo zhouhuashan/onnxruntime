@@ -20,7 +20,7 @@ class MLValuePatternPlanner {
     auto location = execution_planner_.allocation_plan[ml_value_idx].location;
     auto it = planner_map_.find(location);
     if (it == planner_map_.end()) {
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT);
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT);
     }
 
     std::lock_guard<std::mutex> lock(lock_);
@@ -32,7 +32,7 @@ class MLValuePatternPlanner {
     auto location = execution_planner_.allocation_plan[ml_value_index].location;
     auto it = planner_map_.find(location);
     if (it == planner_map_.end()) {
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT);
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT);
     }
 
     std::lock_guard<std::mutex> lock(lock_);
@@ -42,7 +42,7 @@ class MLValuePatternPlanner {
 
   common::Status GeneratePatterns(MemoryPatternGroup* out) {
     if (!out)
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT);
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT);
 
     std::lock_guard<std::mutex> lock(lock_);
     for (auto& it : planner_map_) {
@@ -54,7 +54,7 @@ class MLValuePatternPlanner {
   }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(MLValuePatternPlanner);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(MLValuePatternPlanner);
 
   mutable std::mutex lock_;
   std::map<AllocatorInfo, MemPatternPlanner*> planner_map_;

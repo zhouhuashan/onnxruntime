@@ -13,13 +13,13 @@ namespace onnxruntime {
 class Flatten final : public OpKernel {
  public:
   Flatten(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("axis", &axis_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("axis", &axis_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
     const TensorShape& X_shape = X->Shape();
-    LOTUS_ENFORCE(gsl::narrow_cast<int64_t>(X_shape.NumDimensions()) >= axis_, "The rank of input tensor must be >= axis");
+    ONNXRUNTIME_ENFORCE(gsl::narrow_cast<int64_t>(X_shape.NumDimensions()) >= axis_, "The rank of input tensor must be >= axis");
 
     Tensor* Y = context->Output(0, TensorShape({X_shape.SizeToDimension(axis_), X_shape.SizeFromDimension(axis_)}));
 

@@ -29,7 +29,7 @@ class ParallelExecutor : public IExecutor {
                          const logging::Logger& logger) override;
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ParallelExecutor);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(ParallelExecutor);
 
   void RunNodeAsync(size_t p_node_index, const SessionState& session_state, const logging::Logger& logger);
 

@@ -10,8 +10,8 @@ class GemmHelper {
  public:
   GemmHelper(const TensorShape& left, bool trans_left, const TensorShape& right, bool trans_right, const TensorShape& bias) {
     //dimension check
-    LOTUS_ENFORCE(left.NumDimensions() == 2);
-    LOTUS_ENFORCE(right.NumDimensions() == 2);
+    ONNXRUNTIME_ENFORCE(left.NumDimensions() == 2);
+    ONNXRUNTIME_ENFORCE(right.NumDimensions() == 2);
 
     if (trans_left) {
       M_ = left[1];
@@ -31,16 +31,16 @@ class GemmHelper {
     }
 
     if (right[k_dim] != K_)
-      status_ = LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                                  "GEMM: Dimension mismatch, W: ",
-                                  right.ToString(),
-                                  " K: " + std::to_string(K_),
-                                  " N:" + std::to_string(N_));
+      status_ = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
+                                "GEMM: Dimension mismatch, W: ",
+                                right.ToString(),
+                                " K: " + std::to_string(K_),
+                                " N:" + std::to_string(N_));
 
     if (!IsValidBroadcast(bias, M_, N_))
-      status_ = common::Status(common::LOTUS, common::INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
+      status_ = common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "Gemm: Invalid bias shape for broadcast");
 
-    LOTUS_ENFORCE(M_ > 0 && N_ > 0 && K_ > 0);
+    ONNXRUNTIME_ENFORCE(M_ > 0 && N_ > 0 && K_ > 0);
   }
 
   int64_t M() const { return M_; }

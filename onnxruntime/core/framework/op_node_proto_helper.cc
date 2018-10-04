@@ -14,71 +14,71 @@ using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 
-#define DEFINE_GET_ATTR(IMPL_T, T, type)                                                       \
-  template <>                                                                                  \
-  template <>                                                                                  \
-  Status OpNodeProtoHelper<IMPL_T>::GetAttr<T>(                                                \
-      const std::string& name, T* value) const {                                               \
-    const AttributeProto* attr = TryGetAttribute(name);                                        \
-    if (!attr) {                                                                               \
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "No attribute with name:'", name, "'is defined."); \
-    }                                                                                          \
-    if (!attr->has_##type()) {                                                                 \
-      return Status(LOTUS, FAIL, "Attibute name and type don't match");                        \
-    } else {                                                                                   \
-      *value = static_cast<T>(attr->type());                                                   \
-      return Status::OK();                                                                     \
-    }                                                                                          \
+#define ONNXRUNTIME_DEFINE_GET_ATTR(IMPL_T, T, type)                                                       \
+  template <>                                                                                      \
+  template <>                                                                                      \
+  Status OpNodeProtoHelper<IMPL_T>::GetAttr<T>(                                                    \
+      const std::string& name, T* value) const {                                                   \
+    const AttributeProto* attr = TryGetAttribute(name);                                            \
+    if (!attr) {                                                                                   \
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "No attribute with name:'", name, "'is defined."); \
+    }                                                                                              \
+    if (!attr->has_##type()) {                                                                     \
+      return Status(ONNXRUNTIME, FAIL, "Attibute name and type don't match");                      \
+    } else {                                                                                       \
+      *value = static_cast<T>(attr->type());                                                       \
+      return Status::OK();                                                                         \
+    }                                                                                              \
   }
 
-#define DEFINE_GET_ATTRS(IMPL_T, T, list)                                    \
-  template <>                                                                \
-  template <>                                                                \
-  Status OpNodeProtoHelper<IMPL_T>::GetAttrs<T>(                             \
-      const std::string& name, std::vector<T>& values) const {               \
-    const AttributeProto* attr = TryGetAttribute(name);                      \
-    if (!attr) {                                                             \
-      return Status(LOTUS, FAIL, "No attribute with this name is defined."); \
-    }                                                                        \
-    values.reserve(attr->list##_size());                                     \
-    for (int i = 0; i < attr->list##_size(); ++i) {                          \
-      values.push_back(static_cast<T>(attr->list(i)));                       \
-    }                                                                        \
-    return Status::OK();                                                     \
-  }                                                                          \
-  template <>                                                                \
-  template <>                                                                \
-  Status OpNodeProtoHelper<IMPL_T>::GetAttrs<T>(                             \
-      const std::string& name, gsl::span<T> values) const {                  \
-    const AttributeProto* attr = TryGetAttribute(name);                      \
-    if (!attr) {                                                             \
-      return Status(LOTUS, FAIL, "No attribute with this name is defined."); \
-    }                                                                        \
-    LOTUS_ENFORCE(values.size() == attr->list##_size());                     \
-    for (int i = 0; i < attr->list##_size(); ++i) {                          \
-      values[i] = static_cast<T>(attr->list(i));                             \
-    }                                                                        \
-    return Status::OK();                                                     \
+#define ONNXRUNTIME_DEFINE_GET_ATTRS(IMPL_T, T, list)                                      \
+  template <>                                                                      \
+  template <>                                                                      \
+  Status OpNodeProtoHelper<IMPL_T>::GetAttrs<T>(                                   \
+      const std::string& name, std::vector<T>& values) const {                     \
+    const AttributeProto* attr = TryGetAttribute(name);                            \
+    if (!attr) {                                                                   \
+      return Status(ONNXRUNTIME, FAIL, "No attribute with this name is defined."); \
+    }                                                                              \
+    values.reserve(attr->list##_size());                                           \
+    for (int i = 0; i < attr->list##_size(); ++i) {                                \
+      values.push_back(static_cast<T>(attr->list(i)));                             \
+    }                                                                              \
+    return Status::OK();                                                           \
+  }                                                                                \
+  template <>                                                                      \
+  template <>                                                                      \
+  Status OpNodeProtoHelper<IMPL_T>::GetAttrs<T>(                                   \
+      const std::string& name, gsl::span<T> values) const {                        \
+    const AttributeProto* attr = TryGetAttribute(name);                            \
+    if (!attr) {                                                                   \
+      return Status(ONNXRUNTIME, FAIL, "No attribute with this name is defined."); \
+    }                                                                              \
+    ONNXRUNTIME_ENFORCE(values.size() == attr->list##_size());                             \
+    for (int i = 0; i < attr->list##_size(); ++i) {                                \
+      values[i] = static_cast<T>(attr->list(i));                                   \
+    }                                                                              \
+    return Status::OK();                                                           \
   }
 
-#define DEFINE_GET_ATTR_SPECIALIZATIONS(type, list)   \
-  DEFINE_GET_ATTR(ProtoHelperNodeContext, type, list) \
-  DEFINE_GET_ATTR(InferenceContext, type, list)
+#define ONNXRUNTIME_DEFINE_GET_ATTR_SPECIALIZATIONS(type, list)   \
+  ONNXRUNTIME_DEFINE_GET_ATTR(ProtoHelperNodeContext, type, list) \
+  ONNXRUNTIME_DEFINE_GET_ATTR(InferenceContext, type, list)
 
-#define DEFINE_GET_ATTRS_SPECIALIZATIONS(type, list)   \
-  DEFINE_GET_ATTRS(ProtoHelperNodeContext, type, list) \
-  DEFINE_GET_ATTRS(InferenceContext, type, list)
+#define ONNXRUNTIME_DEFINE_GET_ATTRS_SPECIALIZATIONS(type, list)   \
+  ONNXRUNTIME_DEFINE_GET_ATTRS(ProtoHelperNodeContext, type, list) \
+  ONNXRUNTIME_DEFINE_GET_ATTRS(InferenceContext, type, list)
 
-DEFINE_GET_ATTR_SPECIALIZATIONS(float, f)
-DEFINE_GET_ATTR_SPECIALIZATIONS(int64_t, i)
-DEFINE_GET_ATTR_SPECIALIZATIONS(std::string, s)
-DEFINE_GET_ATTR_SPECIALIZATIONS(TensorProto, t)
-DEFINE_GET_ATTR_SPECIALIZATIONS(GraphProto, g)
-DEFINE_GET_ATTRS_SPECIALIZATIONS(float, floats)
-DEFINE_GET_ATTRS_SPECIALIZATIONS(int64_t, ints)
-DEFINE_GET_ATTRS_SPECIALIZATIONS(std::string, strings)
-DEFINE_GET_ATTRS_SPECIALIZATIONS(TensorProto, tensors)
-DEFINE_GET_ATTRS_SPECIALIZATIONS(GraphProto, graphs)
+ONNXRUNTIME_DEFINE_GET_ATTR_SPECIALIZATIONS(float, f)
+ONNXRUNTIME_DEFINE_GET_ATTR_SPECIALIZATIONS(int64_t, i)
+ONNXRUNTIME_DEFINE_GET_ATTR_SPECIALIZATIONS(std::string, s)
+ONNXRUNTIME_DEFINE_GET_ATTR_SPECIALIZATIONS(TensorProto, t)
+ONNXRUNTIME_DEFINE_GET_ATTR_SPECIALIZATIONS(GraphProto, g)
+ONNXRUNTIME_DEFINE_GET_ATTRS_SPECIALIZATIONS(float, floats)
+ONNXRUNTIME_DEFINE_GET_ATTRS_SPECIALIZATIONS(int64_t, ints)
+ONNXRUNTIME_DEFINE_GET_ATTRS_SPECIALIZATIONS(std::string, strings)
+ONNXRUNTIME_DEFINE_GET_ATTRS_SPECIALIZATIONS(TensorProto, tensors)
+ONNXRUNTIME_DEFINE_GET_ATTRS_SPECIALIZATIONS(GraphProto, graphs)
 
 size_t ProtoHelperNodeContext::getNumInputs() const {
   return node_.InputDefs().size();

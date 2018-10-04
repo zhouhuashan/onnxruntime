@@ -3,7 +3,7 @@
 
 #include "core/platform/windows/logging/etw_sink.h"
 
-#ifdef LOTUS_ETW_TRACE_LOGGING_SUPPORTED
+#ifdef ETW_TRACE_LOGGING_SUPPORTED
 
 #include "core/common/logging/capture.h"
 #include "core/common/logging/logging.h"
@@ -60,4 +60,4 @@ TEST(LoggingTests, TestEtwSinkCtor) {
 
 }  // namespace test
 }  // namespace onnxruntime
-#endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED
+#endif  // ETW_TRACE_LOGGING_SUPPORTED

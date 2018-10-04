@@ -26,10 +26,10 @@ class TypeMismatchException : public std::logic_error {
   TypeMismatchException() noexcept : logic_error("Type mismatch"){};
 };
 
-class LotusException : public std::exception {
+class OnnxRuntimeException : public std::exception {
  public:
-  LotusException(const CodeLocation& location, const std::string& msg) noexcept
-      : LotusException(location, nullptr, msg) {
+  OnnxRuntimeException(const CodeLocation& location, const std::string& msg) noexcept
+      : OnnxRuntimeException(location, nullptr, msg) {
   }
 
   /**
@@ -39,7 +39,7 @@ class LotusException : public std::exception {
                           e.g. "tensor.Size() == input.Size()". May be nullptr.
   @param msg Message containing additional information about the exception cause.
   */
-  LotusException(const CodeLocation& location, const char* failed_condition, const std::string& msg)
+  OnnxRuntimeException(const CodeLocation& location, const char* failed_condition, const std::string& msg)
       : location_{location} {
     std::ostringstream ss;
 

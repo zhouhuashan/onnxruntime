@@ -36,7 +36,7 @@ Status ComputePadAndOutputShape(
         break;
       case AutoPadType::SAME_UPPER:
       case AutoPadType::SAME_LOWER: {
-        LOTUS_ENFORCE(dilation == 1, "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER.");
+        ONNXRUNTIME_ENFORCE(dilation == 1, "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER.");
         int64_t legacy_target_size = (in_dim + stride - 1) / stride;
         int64_t pad_needed = (legacy_target_size - 1) * stride + kernel - in_dim;
         *out_dim = (in_dim + pad_needed - dkernel) / stride + 1;
@@ -53,7 +53,7 @@ Status ComputePadAndOutputShape(
         *pad_tail = pad_needed - *pad_head;
       } break;
       default:
-        return Status(common::LOTUS, common::INVALID_ARGUMENT, "pad type not supported.");
+        return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "pad type not supported.");
     }
   }
   return Status::OK();
@@ -93,13 +93,13 @@ class ConvBase {
 #if false
     // TODO: Re-enable when attributes values are guaranteed to be filled.
     std::string auto_pad;
-    LOTUS_ENFORCE(info.GetAttr<std::string>("auto_pad", &auto_pad).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<std::string>("auto_pad", &auto_pad).IsOK());
     auto_pad_ = StringToAutoPadType(auto_pad);
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("group", &group_).IsOK());
-    LOTUS_ENFORCE(info.GetAttrs<int64_t>("kernel_shape", kernel_shape_).IsOK());
-    LOTUS_ENFORCE(info.GetAttrs<int64_t>("strides", strides_).IsOK());
-    LOTUS_ENFORCE(info.GetAttrs<int64_t>("pads", pads_).IsOK());
-    LOTUS_ENFORCE(info.GetAttrs<int64_t>("dilations", dilations_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("group", &group_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttrs<int64_t>("kernel_shape", kernel_shape_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttrs<int64_t>("strides", strides_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttrs<int64_t>("pads", pads_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttrs<int64_t>("dilations", dilations_).IsOK());
 #endif
   }
 
@@ -121,22 +121,22 @@ class ConvBase {
     const int64_t M = W->Shape()[0];
 
     if (X->Shape().NumDimensions() != W->Shape().NumDimensions()) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "X num_dims does not match W num_dims.",
-                               " X: ", X->Shape().ToString().c_str(),
-                               " W: ", W->Shape().ToString().c_str());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "X num_dims does not match W num_dims.",
+                             " X: ", X->Shape().ToString().c_str(),
+                             " W: ", W->Shape().ToString().c_str());
     }
 
     if (C != W->Shape()[1] * group_) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input channels C is not equal to kernel channels * group.",
-                               " C: ", C,
-                               " kernel channels: ", W->Shape()[1],
-                               " group: ", group_);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Input channels C is not equal to kernel channels * group.",
+                             " C: ", C,
+                             " kernel channels: ", W->Shape()[1],
+                             " group: ", group_);
     }
 
     if (M % group_ != 0) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Output channels M is not divisible by group.",
-                               " M: ", M,
-                               " group: ", group_);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Output channels M is not divisible by group.",
+                             " M: ", M,
+                             " group: ", group_);
     }
     return Status::OK();
   }
@@ -153,10 +153,10 @@ class ConvBase {
       if (dim >= strides.size() || dim >= kernel_shape.size() ||
           dim >= dilations.size() || dim >= pads->size() ||
           rank + dim >= pads->size()) {
-        return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Out of bound access to array");
+        return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Out of bound access to array");
       }
       int64_t dim_size = 0;
-      LOTUS_RETURN_IF_ERROR(ComputePadAndOutputShape<ForceSymmetricAutoPadding>(
+      ONNXRUNTIME_RETURN_IF_ERROR(ComputePadAndOutputShape<ForceSymmetricAutoPadding>(
           input_shape[dim],
           strides[dim],
           kernel_shape[dim],
@@ -166,7 +166,7 @@ class ConvBase {
           &pads->at(input_shape.NumDimensions() + dim),
           &dim_size));
       if (dim_size <= 0) {
-        return Status(common::LOTUS, common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
+        return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "Invalid input shape: " + input_shape.ToString());
       }
       output_shape->push_back(dim_size);
     }

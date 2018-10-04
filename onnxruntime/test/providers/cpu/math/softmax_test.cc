@@ -225,7 +225,7 @@ TEST(SoftmaxOperator, TestInputTooLarge) {
             ss << "SoftmaxCPU inputs N, D and N * D must be < " << INT32_MAX << ". N=" << N << ", D=" << D;
             std::string msg = ss.str();
 
-            return Status(common::LOTUS, common::INVALID_ARGUMENT, msg);
+            return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, msg);
         }*/
 }
 }  // namespace test

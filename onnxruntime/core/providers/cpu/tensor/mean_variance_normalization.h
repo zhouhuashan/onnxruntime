@@ -14,8 +14,8 @@ template <typename T>
 class MeanVarianceNormalization final : public OpKernel {
  public:
   MeanVarianceNormalization(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("across_channels", &across_channels_).IsOK());
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("normalize_variance", &normalize_variance_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("across_channels", &across_channels_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("normalize_variance", &normalize_variance_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override {
@@ -23,7 +23,7 @@ class MeanVarianceNormalization final : public OpKernel {
     const auto dims = X->Shape().GetDims();
 
     if (dims.size() < 4) {
-      return Status(common::LOTUS, common::INVALID_ARGUMENT,
+      return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                     "Input is expected to have four dimensions corresponding to [N,C,H,W]");
     }
 

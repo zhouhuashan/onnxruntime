@@ -32,6 +32,6 @@ class CustomOpsLoader final {
   };
   std::map<std::string, DsoData> dso_name_data_map_;
 
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomOpsLoader);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(CustomOpsLoader);
 };
 }  // namespace onnxruntime

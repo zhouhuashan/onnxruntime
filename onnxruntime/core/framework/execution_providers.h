@@ -25,7 +25,7 @@ class ExecutionProviders {
   common::Status Add(const std::string& provider_id, std::unique_ptr<IExecutionProvider> p_exec_provider) {
     // make sure there are no issues before we change any internal data structures
     if (provider_idx_map_.find(provider_id) != provider_idx_map_.end()) {
-      auto status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Provider ", provider_id, " has already been registered.");
+      auto status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Provider ", provider_id, " has already been registered.");
       LOGS_DEFAULT(ERROR) << status.ErrorMessage();
       return status;
     }
@@ -33,7 +33,7 @@ class ExecutionProviders {
     for (const auto& pair : p_exec_provider->GetAllocatorMap()) {
       auto allocator = pair.second;
       if (allocator_idx_map_.find(allocator->Info()) != allocator_idx_map_.end()) {
-        auto status = LOTUS_MAKE_STATUS(LOTUS, FAIL, allocator->Info(), " allocator already registered.");
+        auto status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, allocator->Info(), " allocator already registered.");
         LOGS_DEFAULT(ERROR) << status.ErrorMessage();
         return status;
       }
@@ -42,11 +42,11 @@ class ExecutionProviders {
     // index that provider will have after insertion
     auto new_provider_idx = exec_providers_.size();
 
-    IGNORE_RETURN_VALUE(provider_idx_map_.insert({provider_id, new_provider_idx}));
+    ONNXRUNTIME_IGNORE_RETURN_VALUE(provider_idx_map_.insert({provider_id, new_provider_idx}));
 
     for (const auto& pair : p_exec_provider->GetAllocatorMap()) {
       auto allocator = pair.second;
-      IGNORE_RETURN_VALUE(allocator_idx_map_.insert({allocator->Info(), new_provider_idx}));
+      ONNXRUNTIME_IGNORE_RETURN_VALUE(allocator_idx_map_.insert({allocator->Info(), new_provider_idx}));
     }
 
     exec_providers_.push_back(std::move(p_exec_provider));
@@ -56,7 +56,7 @@ class ExecutionProviders {
 
   const IExecutionProvider* Get(const onnxruntime::Graph& graph, const onnxruntime::NodeIndex& idx) const {
     auto node = graph.GetNode(idx);
-    LOTUS_ENFORCE(node != nullptr, "Node with id ", idx, " was not found in graph.");
+    ONNXRUNTIME_ENFORCE(node != nullptr, "Node with id ", idx, " was not found in graph.");
 
     return Get(*node);
   }

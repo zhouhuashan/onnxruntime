@@ -27,9 +27,9 @@ struct BinaryElementwisePreparation {
                                                               fdm_output_strides(op_kernel) {}
 
   Status CopyToGpu() {
-    LOTUS_RETURN_IF_ERROR(lhs_padded_strides.CopyToGpu());
-    LOTUS_RETURN_IF_ERROR(rhs_padded_strides.CopyToGpu());
-    LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
+    ONNXRUNTIME_RETURN_IF_ERROR(lhs_padded_strides.CopyToGpu());
+    ONNXRUNTIME_RETURN_IF_ERROR(rhs_padded_strides.CopyToGpu());
+    ONNXRUNTIME_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
     return Status::OK();
   }
 };
@@ -48,7 +48,7 @@ class BinaryElementwise : public CudaKernel {
 
   BinaryElementwise(const OpKernelInfo& info) : CudaKernel(info) {}
   Status ComputeInternal(OpKernelContext*) const override {
-    return Status(common::LOTUS, common::FAIL);  // should not reach here
+    return Status(common::ONNXRUNTIME, common::FAIL);  // should not reach here
   }
   Status Prepare(OpKernelContext* context, BinaryElementwisePreparation* p) const;
 };

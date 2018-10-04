@@ -14,7 +14,7 @@ class ConcatBase {
  protected:
   ConcatBase(const OpKernelInfo& info) {
     if (!info.GetAttr("axis", &axis_).IsOK()) {
-      LOTUS_ENFORCE(false, "Must have valid 'axis' attribute");
+      ONNXRUNTIME_ENFORCE(false, "Must have valid 'axis' attribute");
     }
   }
 

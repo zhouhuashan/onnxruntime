@@ -15,16 +15,16 @@ class CastMap final : public OpKernel {
   CastMap(const OpKernelInfo& info) : OpKernel(info) {
     std::string attr;
 
-    LOTUS_ENFORCE(info.GetAttr<std::string>("cast_to", &attr).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<std::string>("cast_to", &attr).IsOK());
     cast_to_ = MakeCast(attr);
 
-    LOTUS_ENFORCE(info.GetAttr<std::string>("map_form", &attr).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<std::string>("map_form", &attr).IsOK());
     map_form_ = MakePack(attr);
 
     // ignore if not found as we fall back to the default of 1
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("max_map", &max_map_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("max_map", &max_map_).IsOK());
 
-    LOTUS_ENFORCE(map_form_ != PACK_MAP::SPARSE || max_map_ > 0, "max_map must be > 0 if map_form is SPARSE");
+    ONNXRUNTIME_ENFORCE(map_form_ != PACK_MAP::SPARSE || max_map_ > 0, "max_map must be > 0 if map_form is SPARSE");
   }
 
   Status Compute(OpKernelContext* context) const override;

@@ -7,24 +7,24 @@
 #include <core/common/common.h>
 #include <core/common/logging/logging.h>
 #include "simple_thread_pool.h"
-#include "lotus_event.h"
+#include "onnxruntime_event.h"
 
 using onnxruntime::common::Status;
 
 //this can be passed to one of the following functions:
-//LotusSetEventWhenCallbackReturns
-class LotusCallbackInstance {
+//OnnxRuntimeSetEventWhenCallbackReturns
+class OnnxRuntimeCallbackInstance {
  private:
-  std::vector<LOTUS_EVENT> events_to_signal_;
+  std::vector<EVENT> events_to_signal_;
 
  public:
-  void AddEvent(LOTUS_EVENT event);
+  void AddEvent(EVENT event);
   onnxruntime::common::Status SignalAllEvents();
 };
 
-Status WaitAndCloseEvent(LOTUS_EVENT finish_event) {
+Status WaitAndCloseEvent(EVENT finish_event) {
   if (finish_event == nullptr)
-    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "");
+    return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "");
   pthread_mutex_lock(&finish_event->finish_event_mutex);
   while (!finish_event->finished) {
     pthread_cond_wait(&finish_event->finish_event_data, &finish_event->finish_event_mutex);
@@ -34,13 +34,13 @@ Status WaitAndCloseEvent(LOTUS_EVENT finish_event) {
   return Status::OK();
 }
 
-Status CreateAndSubmitThreadpoolWork(LOTUS_CALLBACK_FUNCTION callback, void* data, PThreadPool pool) {
+Status CreateAndSubmitThreadpoolWork(ONNXRUNTIME_CALLBACK_FUNCTION callback, void* data, PThreadPool pool) {
   if (callback == nullptr)
-    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "callback cannot be NULL");
+    return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "callback cannot be NULL");
   if (pool == nullptr)
-    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "pool cannot be NULL");
+    return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "pool cannot be NULL");
   pool->Schedule([=]() {
-    LotusCallbackInstance instance;
+    OnnxRuntimeCallbackInstance instance;
     callback(&instance, data, nullptr);
     Status st = instance.SignalAllEvents();
     if (!st.IsOK()) {
@@ -63,48 +63,48 @@ PThreadPool GetDefaultThreadPool(const onnxruntime::Env& env) {
   return default_pool.get();
 }
 
-Status LotusSetEventWhenCallbackReturns(LOTUS_CALLBACK_INSTANCE pci, LOTUS_EVENT finish_event) {
+Status OnnxRuntimeSetEventWhenCallbackReturns(CALLBACK_INSTANCE pci, EVENT finish_event) {
   if (finish_event == nullptr)
-    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "");
+    return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "");
 
   if (pci == nullptr) {
     if (pthread_mutex_lock(&finish_event->finish_event_mutex)) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "lock failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "lock failed");
     }
     finish_event->finished = true;
     if (pthread_mutex_unlock(&finish_event->finish_event_mutex))
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unlock failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "unlock failed");
     if (!pthread_cond_broadcast(&finish_event->finish_event_data))
       return Status::OK();
     else
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "pthread_cond_broadcast failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "pthread_cond_broadcast failed");
   } else {
     pci->AddEvent(finish_event);
     return Status::OK();
   }
 }
 
-void LotusCallbackInstance::AddEvent(LOTUS_EVENT event) {
+void OnnxRuntimeCallbackInstance::AddEvent(EVENT event) {
   events_to_signal_.push_back(event);
 }
 
-Status LotusCallbackInstance::SignalAllEvents() {
-  for (LOTUS_EVENT finish_event : events_to_signal_) {
+Status OnnxRuntimeCallbackInstance::SignalAllEvents() {
+  for (EVENT finish_event : events_to_signal_) {
     if (pthread_mutex_lock(&finish_event->finish_event_mutex)) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "lock failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "lock failed");
     }
     finish_event->finished = true;
     if (pthread_mutex_unlock(&finish_event->finish_event_mutex))
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unlock failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "unlock failed");
     if (pthread_cond_broadcast(&finish_event->finish_event_data))
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "pthread_cond_broadcast failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "pthread_cond_broadcast failed");
   }
   return Status::OK();
 }
 
-Status CreateLotusEvent(LOTUS_EVENT* out) {
+Status CreateOnnxRuntimeEvent(EVENT* out) {
   if (out == nullptr)
-    return Status(onnxruntime::common::LOTUS, onnxruntime::common::INVALID_ARGUMENT, "");
-  *out = new LotusEvent();
+    return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "");
+  *out = new OnnxRuntimeEvent();
   return Status::OK();
 }

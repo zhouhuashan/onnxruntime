@@ -16,7 +16,7 @@ class UnaryElementwise : public CudaKernel {
  protected:
   UnaryElementwise(const OpKernelInfo& info) : CudaKernel(info) {}
   Status ComputeInternal(OpKernelContext*) const override {
-    return Status(common::LOTUS, common::FAIL);  // should not reach here
+    return Status(common::ONNXRUNTIME, common::FAIL);  // should not reach here
   }
   Status Prepare(OpKernelContext* context, UnaryElementwisePreparation* p) const;
 };

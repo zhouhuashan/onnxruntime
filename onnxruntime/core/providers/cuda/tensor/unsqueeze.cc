@@ -18,7 +18,7 @@ ONNX_OPERATOR_KERNEL_EX(
 
 Status Unsqueeze::ComputeInternal(OpKernelContext* ctx) const {
   Prepare p;
-  LOTUS_RETURN_IF_ERROR(PrepareCompute(ctx, p));
+  ONNXRUNTIME_RETURN_IF_ERROR(PrepareCompute(ctx, p));
 
   const void* input = p.input_tensor->DataRaw();
   void* output = p.output_tensor->MutableDataRaw();

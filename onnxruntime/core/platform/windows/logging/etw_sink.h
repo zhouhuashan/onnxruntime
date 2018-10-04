@@ -9,10 +9,10 @@
 // https://stackoverflow.com/questions/2665755/how-can-i-determine-the-version-of-the-windows-sdk-installed-on-my-computer
 #if VER_PRODUCTBUILD > 9600
 // LotusRT ETW trace logging uses Windows 10 SDK's TraceLoggingProvider.h
-#define LOTUS_ETW_TRACE_LOGGING_SUPPORTED 1
+#define ETW_TRACE_LOGGING_SUPPORTED 1
 #endif
 
-#ifdef LOTUS_ETW_TRACE_LOGGING_SUPPORTED
+#ifdef ETW_TRACE_LOGGING_SUPPORTED
 
 #include <date/date.h>
 #include <atomic>
@@ -33,7 +33,7 @@ class EtwSink : public ISink {
   constexpr static const char* kEventName = "LotusLogEvent";
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(EtwSink);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(EtwSink);
 
   void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override;
 
@@ -44,4 +44,4 @@ class EtwSink : public ISink {
 }  // namespace logging
 }  // namespace onnxruntime
 
-#endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED
+#endif  // ETW_TRACE_LOGGING_SUPPORTED

@@ -73,29 +73,29 @@ void TransformerMemcpyImpl::ProcessDefs(onnxruntime::Node& node, const KernelReg
     kernel_registries.SearchKernelRegistry(node, &kci);
     const auto* input_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
     const auto* output_mem_types = kci ? &kci->kernel_def->InputMemoryType() : nullptr;
-    LOTUS_ENFORCE(onnxruntime::Node::ForEachWithIndex(
-                      node.InputDefs(),
-                      [this, &input_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
-                        if (input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index))
-                          non_provider_input_defs_.insert(&arg);
-                        else
-                          provider_input_defs_.insert(&arg);
-                        return Status::OK();
-                      })
-                      .IsOK());
-    LOTUS_ENFORCE(onnxruntime::Node::ForEachWithIndex(
-                      node.OutputDefs(),
-                      [this, &output_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
-                        if (output_mem_types && MemTypeOnCpuExplicitly(*output_mem_types, index))
-                          non_provider_output_defs_.insert(&arg);
-                        else
-                          provider_output_defs_.insert(&arg);
-                        return Status::OK();
-                      })
-                      .IsOK());
+    ONNXRUNTIME_ENFORCE(onnxruntime::Node::ForEachWithIndex(
+                    node.InputDefs(),
+                    [this, &input_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
+                      if (input_mem_types && MemTypeOnCpuExplicitly(*input_mem_types, index))
+                        non_provider_input_defs_.insert(&arg);
+                      else
+                        provider_input_defs_.insert(&arg);
+                      return Status::OK();
+                    })
+                    .IsOK());
+    ONNXRUNTIME_ENFORCE(onnxruntime::Node::ForEachWithIndex(
+                    node.OutputDefs(),
+                    [this, &output_mem_types](const onnxruntime::NodeArg& arg, size_t index) {
+                      if (output_mem_types && MemTypeOnCpuExplicitly(*output_mem_types, index))
+                        non_provider_output_defs_.insert(&arg);
+                      else
+                        provider_output_defs_.insert(&arg);
+                      return Status::OK();
+                    })
+                    .IsOK());
   } else {
     // TODO: copy between devices? i.e. multiple GPUs
-    LOTUS_ENFORCE(node.GetExecutionProviderType() == onnxruntime::kCpuExecutionProvider || node.GetExecutionProviderType().empty());
+    ONNXRUNTIME_ENFORCE(node.GetExecutionProviderType() == onnxruntime::kCpuExecutionProvider || node.GetExecutionProviderType().empty());
     node.ForEachDef([this](const onnxruntime::NodeArg* arg, bool is_input) {
       if (is_input)
         non_provider_input_defs_.insert(arg);

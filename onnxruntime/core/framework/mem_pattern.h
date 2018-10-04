@@ -44,7 +44,7 @@ class MemoryPattern {
 
  private:
   // allow move
-  LOTUS_DISALLOW_COPY_AND_ASSIGN(MemoryPattern);
+  ONNXRUNTIME_DISALLOW_COPY_AND_ASSIGNMENT(MemoryPattern);
 
   std::unordered_map<int, MemoryBlock> patterns_;
   size_t peak_size_{0};

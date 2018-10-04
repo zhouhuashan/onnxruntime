@@ -48,7 +48,7 @@ Status MKLDNNExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const
   if (!(strcmp(src.Location().name, MKLDNN) == 0 && strcmp(dst.Location().name, CPU) == 0) &&
       !(strcmp(src.Location().name, CPU) == 0 && strcmp(dst.Location().name, MKLDNN) == 0) &&
       !(strcmp(src.Location().name, MKLDNN) == 0 && strcmp(dst.Location().name, MKLDNN_CPU) == 0)) {
-    LOTUS_NOT_IMPLEMENTED(src.Location().name, " copy to ", dst.Location().name, " is not implemented");
+    ONNXRUNTIME_NOT_IMPLEMENTED(src.Location().name, " copy to ", dst.Location().name, " is not implemented");
   }
 
   // Todo: Copy for now. May optimize later to avoid copy.

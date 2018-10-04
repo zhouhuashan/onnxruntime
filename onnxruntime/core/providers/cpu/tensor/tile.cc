@@ -24,9 +24,9 @@ Status Tile<float>::Compute(OpKernelContext* ctx) const {
   size_t dimension_count = input_tensor.Shape().NumDimensions();
 
   if (repeats_tensor.Shape().NumDimensions() != 1)
-    return Status(LOTUS, INVALID_ARGUMENT, "'repeat' input tensor must be 1 dimensional");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'repeat' input tensor must be 1 dimensional");
   if (size_t(repeats_tensor.Shape().Size()) != input_tensor.Shape().NumDimensions())
-    return Status(LOTUS, INVALID_ARGUMENT, "'repeat' input tensor must have the same length as the 'input' tensor");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'repeat' input tensor must have the same length as the 'input' tensor");
 
   // Calculate the shape of the output tensor
   auto* repeats = repeats_tensor.template Data<int64_t>();

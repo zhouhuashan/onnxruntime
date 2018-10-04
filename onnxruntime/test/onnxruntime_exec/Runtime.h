@@ -40,9 +40,9 @@ class WinMLRuntime {
     using namespace onnxruntime;
     using namespace ::onnxruntime::logging;
 
-    static std::unique_ptr<::onnxruntime::Environment> lotus_env = nullptr;
+    static std::unique_ptr<::onnxruntime::Environment> onnxruntime_env = nullptr;
     static std::once_flag env_flag;
-    std::call_once(env_flag, []() { ::onnxruntime::Environment::Create(lotus_env); });
+    std::call_once(env_flag, []() { ::onnxruntime::Environment::Create(onnxruntime_env); });
 
     static LoggingManager& s_default_logging_manager = DefaultLoggingManager();
     SessionOptions so;

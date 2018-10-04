@@ -69,7 +69,7 @@ class MLValueTensorSlicer {
 
     // const accessor is always enabled
     const_reference operator*() const {
-      LOTUS_ENFORCE(position_ >= 0 && position_ < sequence_length_);
+      ONNXRUNTIME_ENFORCE(position_ >= 0 && position_ < sequence_length_);
       if (position_ != position_materialized_) {
         MaterializeMLValue();
       }
@@ -79,7 +79,7 @@ class MLValueTensorSlicer {
 
     // non-const is only enabled if T is not const (i.e. is 'MLValue' not 'const MLValue')
     std::enable_if_t<!std::is_const<reference>::value, reference> operator*() {
-      LOTUS_ENFORCE(position_ >= 0 && position_ < sequence_length_);
+      ONNXRUNTIME_ENFORCE(position_ >= 0 && position_ < sequence_length_);
       if (position_ != position_materialized_) {
         MaterializeMLValue();
       }

@@ -34,7 +34,7 @@ Status BatchNorm<T>::ComputeInternal(OpKernelContext* p_op_kernel_context) const
   const Tensor* mean = p_op_kernel_context->Input<Tensor>(3);
   const Tensor* var = p_op_kernel_context->Input<Tensor>(4);
 
-  LOTUS_RETURN_IF_ERROR(BatchNormHelper::ValidateInputs(X, scale, B, mean, var));
+  ONNXRUNTIME_RETURN_IF_ERROR(BatchNormHelper::ValidateInputs(X, scale, B, mean, var));
 
   const TensorShape& x_shape = X->Shape();
   Tensor* Y = p_op_kernel_context->Output(0, x_shape);
@@ -49,10 +49,10 @@ Status BatchNorm<T>::ComputeInternal(OpKernelContext* p_op_kernel_context) const
   CudnnTensor data_desc;
   vector<int64_t> new_dims;
   BatchNormHelper::NormalizeDims(x_shape, new_dims);
-  LOTUS_RETURN_IF_ERROR(data_desc.Set(new_dims, CudnnTensor::GetDataType<CudaT>()));
+  ONNXRUNTIME_RETURN_IF_ERROR(data_desc.Set(new_dims, CudnnTensor::GetDataType<CudaT>()));
 
   CudnnTensor bn_tensor_desc;
-  LOTUS_RETURN_IF_ERROR(bn_tensor_desc.Set(data_desc, cudnn_batch_norm_mode_));
+  ONNXRUNTIME_RETURN_IF_ERROR(bn_tensor_desc.Set(data_desc, cudnn_batch_norm_mode_));
 
   const auto alpha = Consts<CudaT>::One;
   const auto beta = Consts<CudaT>::Zero;

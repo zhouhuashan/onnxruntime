@@ -24,7 +24,7 @@ class TransformerMemcpyImpl {
   void ProcessInitializers();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TransformerMemcpyImpl);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(TransformerMemcpyImpl);
 
   // use value-based compare to make sure transformer output order is consistent
   struct NodeCompare {

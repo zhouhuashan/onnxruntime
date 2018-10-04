@@ -84,7 +84,7 @@ class Profiler {
   std::string WriteProfileData();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Profiler);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Profiler);
 
   // Mutex controlling access to profiler data
   std::mutex mutex_;

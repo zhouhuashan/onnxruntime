@@ -20,15 +20,15 @@ namespace test {
 static LoggingManager* s_default_logging_manager = nullptr;
 
 ::onnxruntime::logging::LoggingManager& DefaultLoggingManager() {
-  LOTUS_ENFORCE(s_default_logging_manager != nullptr,
-                "Need a TestEnvironment instance to provide the default logging manager.");
+  ONNXRUNTIME_ENFORCE(s_default_logging_manager != nullptr,
+              "Need a TestEnvironment instance to provide the default logging manager.");
 
   return *s_default_logging_manager;
 }
 
 TestEnvironment::TestEnvironment(int argc, char** argv, bool create_default_logging_manager) {
-  LOTUS_ENFORCE(s_default_logging_manager == nullptr,
-                "Only expected one instance of TestEnvironment to be created.");
+  ONNXRUNTIME_ENFORCE(s_default_logging_manager == nullptr,
+              "Only expected one instance of TestEnvironment to be created.");
 
   std::clog << "Initializing unit testing." << std::endl;
   testing::InitGoogleTest(&argc, argv);
@@ -51,7 +51,7 @@ TestEnvironment::TestEnvironment(int argc, char** argv, bool create_default_logg
 
 #ifdef HAVE_FRAMEWORK_LIB
   auto status = Environment::Create(runtime_environment_);
-  LOTUS_ENFORCE(status == Status::OK(), "Failed creating runtime environment. ", status.ErrorMessage());
+  ONNXRUNTIME_ENFORCE(status == Status::OK(), "Failed creating runtime environment. ", status.ErrorMessage());
 #endif
 }
 

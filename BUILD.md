@@ -55,7 +55,7 @@ Run unit tests:
 ctest -C %CMAKE_BUILD_TYPE%
 ```
 `ALL_BUILD.vcxproj` will check external dependecies and takes a little longer. During development you want to
-use a more specific project like `lotus_test_core_runtime.vcxproj`.
+use a more specific project like `onnxruntime_test_core_runtime.vcxproj`.
 
 ## Enable Clang tools
 You may also add '-DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON' to your cmake args, then your build engine(like msbuild/make/ninja) will generate a compile\_commands.json file for you. Please copy this file to the top source directory. Then you can use clang tools like ['clang-rename'](http://clang.llvm.org/extra/clang-rename.html), ['clang-tidy'](http://clang.llvm.org/extra/clang-tidy/) to clean up or refactor your code.
@@ -99,7 +99,7 @@ You can build with:
 ```
 mkdir cmake_build_gpu
 cd cmake_build_gpu
-cmake ..\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -A x64 -G "Visual Studio 15 2017" -T host=x64 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=<path to top level 'cuda' directory in CUDNN installation>
+cmake ..\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -A x64 -G "Visual Studio 15 2017" -T host=x64 -Donnxruntime_USE_CUDA=ON -Donnxruntime_CUDNN_HOME=<path to top level 'cuda' directory in CUDNN installation>
 ```
 
 where the CUDNN path would be something like `C:\cudnn-9.2-windows10-x64-v7.1\cuda`
@@ -109,7 +109,7 @@ To build ONNX Runtime with MKL support, download MKL from Intel and call cmake t
 ```
 mkdir cmake_build_mkl
 cd cmake_build_mkl
-cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp" -Dlotus_USE_EIGEN=OFF -Dlotus_USE_MKL=ON -Dlotus_MKL_HOME=%MKL_HOME%
+cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp" -Donnxruntime_USE_EIGEN=OFF -Donnxruntime_USE_MKL=ON -Donnxruntime_MKL_HOME=%MKL_HOME%
 ```
 where MKL_HOME would be something like:
 `D:\local\IntelSWTools\compilers_and_libraries\windows\mkl`
@@ -122,7 +122,7 @@ Once you have the OpenBLAS binaries, call the ONNX Runtime cmake like:
 ```
 mkdir cmake_build_openblas
 cd cmake_build_openblas
-cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp"  -Dlotus_USE_EIGEN=OFF -Dlotus_USE_OPENBLAS=ON -Dlotus_OPENBLAS_HOME=%OPENBLAS_HOME%
+cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp"  -Donnxruntime_USE_EIGEN=OFF -Donnxruntime_USE_OPENBLAS=ON -Donnxruntime_OPENBLAS_HOME=%OPENBLAS_HOME%
 ```
 where OPENBLAS_HOME would be something like:
 `d:\share\openblas`
@@ -142,8 +142,8 @@ Install Docker: `https://docs.docker.com/install/`
 ###CPU
 ```
 cd tools/ci_build/vsts/linux/docker
-docker build -t lotus_dev --build-arg OS_VERSION=16.04 -f Dockerfile.ubuntu .
-docker run --rm -it lotus_dev /bin/bash
+docker build -t onnxruntime_dev --build-arg OS_VERSION=16.04 -f Dockerfile.ubuntu .
+docker run --rm -it onnxruntime_dev /bin/bash
 ```
 
 ###GPU
@@ -168,7 +168,7 @@ cd ~/src
 git clone https://github.com/onnx/onnxruntime
 docker run --runtime=nvidia -v ~/src/ONNX Runtime:/data/lotus --rm -it cuda_dev /bin/bash
 mkdir build
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug /data/lotus/cmake -Dlotus_ENABLE_PYTHON=ON -DPYTHON_EXECUTABLE=/usr/bin/python3 -Dlotus_USE_CUDA=ON -Dlotus_CUDNN_HOME=/usr/local/cudnn-7.0/cuda
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug /data/lotus/cmake -Donnxruntime_ENABLE_PYTHON=ON -DPYTHON_EXECUTABLE=/usr/bin/python3 -Donnxruntime_USE_CUDA=ON -Donnxruntime_CUDNN_HOME=/usr/local/cudnn-7.0/cuda
 ninja
 ```
 

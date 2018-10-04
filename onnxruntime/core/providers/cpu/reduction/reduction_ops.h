@@ -20,7 +20,7 @@ class ReduceKernelBase {
       axes_.push_back(v);
     }
     int64_t keepdims = 1;
-    LOTUS_ENFORCE(info.GetAttr("keepdims", &keepdims).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr("keepdims", &keepdims).IsOK());
     keepdims_ = (keepdims == 1);
   }
 

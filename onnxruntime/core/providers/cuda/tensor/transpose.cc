@@ -37,12 +37,12 @@ Status Transpose<T>::ComputeInternal(OpKernelContext* ctx) const {
   CudaAsyncBuffer<int64_t> input_strides(this, rank);
   CudaAsyncBuffer<int64_t> perm(this, *p_perm);
   CudaAsyncBuffer<fast_divmod> fdm_output_strides(this, rank);
-  LOTUS_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_dims));
-  LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
+  ONNXRUNTIME_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_dims));
+  ONNXRUNTIME_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
 
-  LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
-  LOTUS_RETURN_IF_ERROR(perm.CopyToGpu());
-  LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
+  ONNXRUNTIME_RETURN_IF_ERROR(input_strides.CopyToGpu());
+  ONNXRUNTIME_RETURN_IF_ERROR(perm.CopyToGpu());
+  ONNXRUNTIME_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
 
   TransposeImpl(
       rank,

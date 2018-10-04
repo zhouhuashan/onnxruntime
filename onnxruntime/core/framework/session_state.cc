@@ -41,7 +41,7 @@ const SequentialExecutionPlan* SessionState::GetExecutionPlan() const {
 }
 
 void SessionState::AddInitializedTensor(int mlvalue_index, const MLValue& mlvalue) {
-  LOTUS_ENFORCE(mlvalue_index >= 0 && mlvalue_index <= mlvalue_name_idx_map_.MaxIdx());
+  ONNXRUNTIME_ENFORCE(mlvalue_index >= 0 && mlvalue_index <= mlvalue_name_idx_map_.MaxIdx());
   initialized_tensors_.insert({mlvalue_index, mlvalue});
 }
 
@@ -114,7 +114,7 @@ void SessionState::AddInputNameToNodeInfoMapping(const std::string& input_name, 
 
 common::Status SessionState::GetInputNodeInfo(const std::string& input_name, std::vector<NodeInfo>& node_info_vec) const {
   if (!input_names_to_nodeinfo_mapping_.count(input_name)) {
-    return Status(LOTUS, FAIL, "Failed to find input name in the mapping");
+    return Status(ONNXRUNTIME, FAIL, "Failed to find input name in the mapping");
   }
   node_info_vec = input_names_to_nodeinfo_mapping_.at(input_name);
   return Status::OK();
@@ -137,11 +137,11 @@ void SessionState::AddSubgraphSessionState(onnxruntime::NodeIndex index,
                                            const SessionState& session_state) {
   auto entry = subgraph_session_states_.find(index);
 
-  // make sure this is new. internal logic error if it is not so using LOTUS_ENFORCE.
+  // make sure this is new. internal logic error if it is not so using ONNXRUNTIME_ENFORCE.
   if (entry != subgraph_session_states_.cend()) {
     const auto& existing_entries = entry->second;
-    LOTUS_ENFORCE(existing_entries.find(attribute_name) == existing_entries.cend(),
-                  "Entry exists in node ", index, " for attribute ", attribute_name);
+    ONNXRUNTIME_ENFORCE(existing_entries.find(attribute_name) == existing_entries.cend(),
+                "Entry exists in node ", index, " for attribute ", attribute_name);
   }
 
   subgraph_session_states_[index].insert({attribute_name, &session_state});

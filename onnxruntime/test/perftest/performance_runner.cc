@@ -16,7 +16,7 @@ namespace onnxruntime {
 namespace perftest {
 Status PerformanceRunner::Run() {
   if (!Initialize()) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "failed to initialize.");
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "failed to initialize.");
   }
 
   // warm up
@@ -28,13 +28,13 @@ Status PerformanceRunner::Run() {
   std::unique_ptr<utils::ICPUUsage> p_ICPUUsage = utils::CreateICPUUsage();
   switch (performance_test_config_.run_config.test_mode) {
     case TestMode::kFixDurationMode:
-      LOTUS_RETURN_IF_ERROR(RunFixDuration());
+      ONNXRUNTIME_RETURN_IF_ERROR(RunFixDuration());
       break;
     case TestMode::KFixRepeatedTimesMode:
-      LOTUS_RETURN_IF_ERROR(RunRepeatedTimes());
+      ONNXRUNTIME_RETURN_IF_ERROR(RunRepeatedTimes());
       break;
     default:
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unknown test mode.");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "unknown test mode.");
   }
   performance_result_.average_CPU_usage = p_ICPUUsage->GetUsage();
   performance_result_.peak_workingset_size = utils::GetPeakWorkingSetSize();

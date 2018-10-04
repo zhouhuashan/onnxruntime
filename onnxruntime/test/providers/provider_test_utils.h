@@ -31,7 +31,7 @@ class optional {
   optional() : has_value_(false) {}
   bool has_value() const { return has_value_; }
   const T& value() const {
-    LOTUS_ENFORCE(has_value_);
+    ONNXRUNTIME_ENFORCE(has_value_);
     return value_;
   }
 
@@ -192,7 +192,7 @@ struct OpTester {
 
   void AddCustomOpRegistry(std::shared_ptr<CustomRegistry> registry) {
     // need to do some static casting so we can easily use this later
-    custom_schema_registries_.push_back(std::static_pointer_cast<ILotusOpSchemaCollection>(registry));
+    custom_schema_registries_.push_back(std::static_pointer_cast<IOnnxRuntimeOpSchemaCollection>(registry));
     custom_session_registries_.push_back(std::static_pointer_cast<CustomRegistry>(registry));
   }
 
@@ -232,7 +232,7 @@ struct OpTester {
                int64_t values_count) {
     try {
       TensorShape shape{dims};
-      LOTUS_ENFORCE(shape.Size() == values_count, values_count, " input values doesn't match tensor size of ", shape.Size());
+      ONNXRUNTIME_ENFORCE(shape.Size() == values_count, values_count, " input values doesn't match tensor size of ", shape.Size());
 
       auto allocator = ::onnxruntime::test::AllocatorManager::Instance().GetAllocator(CPU);
       auto size_in_bytes = values_count * sizeof(T);
@@ -263,7 +263,7 @@ struct OpTester {
   std::vector<Data> output_data_;
   std::vector<std::function<void(onnxruntime::Node& node)>> add_attribute_funcs_;
 
-  ILotusOpSchemaRegistryList custom_schema_registries_;
+  IOnnxRuntimeOpSchemaRegistryList custom_schema_registries_;
   std::vector<std::shared_ptr<CustomRegistry>> custom_session_registries_;
 #if _DEBUG
   bool run_called_{};

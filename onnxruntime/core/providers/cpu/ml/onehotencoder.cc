@@ -52,7 +52,7 @@ template <typename T>
 OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), zeros_(info.GetAttrOrDefault<int64_t>("zeros", 1)), num_categories_(0) {
   std::vector<int64_t> tmp_cats_int64s = info.GetAttrsOrDefault<int64_t>("cats_int64s");
   std::vector<std::string> tmp_cats_strings = info.GetAttrsOrDefault<string>("cats_strings");
-  LOTUS_ENFORCE(tmp_cats_int64s.empty() || tmp_cats_strings.empty());
+  ONNXRUNTIME_ENFORCE(tmp_cats_int64s.empty() || tmp_cats_strings.empty());
   if (!tmp_cats_int64s.empty()) {
     num_categories_ = tmp_cats_int64s.size();
     for (size_t idx = 0, end = tmp_cats_int64s.size(); idx < end; ++idx) {
@@ -64,14 +64,14 @@ OneHotEncoderOp<T>::OneHotEncoderOp(const OpKernelInfo& info) : OpKernel(info), 
       cats_strings_[tmp_cats_strings[idx]] = idx;
     }
   }
-  LOTUS_ENFORCE(num_categories_ > 0);
+  ONNXRUNTIME_ENFORCE(num_categories_ > 0);
 }
 
 template <typename T>
 common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& input_shape = X->Shape();
-  LOTUS_ENFORCE(input_shape.NumDimensions() <= 2);
+  ONNXRUNTIME_ENFORCE(input_shape.NumDimensions() <= 2);
 
   std::vector<int64_t> output_shape(input_shape.GetDims());
   output_shape.push_back(num_categories_);
@@ -87,7 +87,7 @@ common::Status OneHotEncoderOp<T>::Compute(OpKernelContext* context) const {
     if (int_idx != cats_int64s_.cend())
       y_data[i * num_categories_ + int_idx->second] = 1.0f;
     else if (!zeros_)
-      return Status(LOTUS, FAIL, "Unknown Category and zeros = 0.");
+      return Status(ONNXRUNTIME, FAIL, "Unknown Category and zeros = 0.");
   }
   return Status::OK();
 }
@@ -96,7 +96,7 @@ template <>
 common::Status OneHotEncoderOp<std::string>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const TensorShape& input_shape = X->Shape();
-  LOTUS_ENFORCE(input_shape.NumDimensions() <= 2);
+  ONNXRUNTIME_ENFORCE(input_shape.NumDimensions() <= 2);
 
   std::vector<int64_t> output_shape(input_shape.GetDims());
   output_shape.push_back(num_categories_);
@@ -111,7 +111,7 @@ common::Status OneHotEncoderOp<std::string>::Compute(OpKernelContext* context) c
     if (str_idx != cats_strings_.cend())
       y_data[i * num_categories_ + str_idx->second] = 1.0f;
     else if (!zeros_)
-      return Status(LOTUS, FAIL, "Unknown Category and zeros = 0.");
+      return Status(ONNXRUNTIME, FAIL, "Unknown Category and zeros = 0.");
   }
   return Status::OK();
 }

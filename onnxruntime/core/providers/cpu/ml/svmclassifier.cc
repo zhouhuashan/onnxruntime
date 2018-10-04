@@ -28,15 +28,15 @@ SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info)
       probb_(info.GetAttrsOrDefault<float>("prob_b")),
       support_vectors_(info.GetAttrsOrDefault<float>("support_vectors")),
       post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
-  LOTUS_ENFORCE(info.GetAttrs<float>("rho", rho_).IsOK());
-  LOTUS_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
+  ONNXRUNTIME_ENFORCE(info.GetAttrs<float>("rho", rho_).IsOK());
+  ONNXRUNTIME_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
 
   // prob_a and prob_b are optional for Z output
-  LOTUS_ENFORCE(proba_.size() == probb_.size());
+  ONNXRUNTIME_ENFORCE(proba_.size() == probb_.size());
 
   // one of these should be valid
-  LOTUS_ENFORCE(info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_).IsOK() ||
-                info.GetAttrs<int64_t>("classlabels_ints", classlabels_ints_).IsOK());
+  ONNXRUNTIME_ENFORCE(info.GetAttrs<std::string>("classlabels_strings", classlabels_strings_).IsOK() ||
+              info.GetAttrs<int64_t>("classlabels_ints", classlabels_ints_).IsOK());
 
   vector_count_ = 0;
   feature_count_ = 0;
@@ -63,9 +63,9 @@ SVMClassifier<T>::SVMClassifier(const OpKernelInfo& info)
     mode_ = SVM_TYPE::SVM_LINEAR;
     set_kernel_type(KERNEL::LINEAR);
   }
-  LOTUS_ENFORCE(classlabels_strings_.size() > 0 || classlabels_ints_.size() > 0);
-  LOTUS_ENFORCE(proba_.size() == probb_.size());
-  LOTUS_ENFORCE(coefficients_.size() > 0);
+  ONNXRUNTIME_ENFORCE(classlabels_strings_.size() > 0 || classlabels_ints_.size() > 0);
+  ONNXRUNTIME_ENFORCE(proba_.size() == probb_.size());
+  ONNXRUNTIME_ENFORCE(coefficients_.size() > 0);
   weights_are_all_positive_ = true;
   for (int64_t i = 0; i < static_cast<int64_t>(coefficients_.size()); i++) {
     if (coefficients_[i] < 0) {
@@ -208,7 +208,7 @@ Status SVMClassifier<T>::Compute(OpKernelContext* ctx) const {
         } else if (classlabels_strings_.size() == 2 && maxweight > 0 && !weights_are_all_positive_ && proba_.size() == 0) {
           Y->template MutableData<std::string>()[n] = classlabels_strings_[1];  //positive label
           write_additional_scores = 0;
-        } else if (classlabels_strings_.size() == 2 && proba_.size() > 0) {   //this case all classes are in their rightful spot
+        } else if (classlabels_strings_.size() == 2 && proba_.size() > 0) {            //this case all classes are in their rightful spot
           Y->template MutableData<std::string>()[n] = classlabels_strings_[maxclass];  //whichever label
           write_additional_scores = -1;
         } else if (classlabels_strings_.size() == 2) {

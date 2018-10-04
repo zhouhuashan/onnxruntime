@@ -13,9 +13,9 @@ struct Slice final : OpKernel {
     has_axes_ = info.GetAttrs("axes", axes_).IsOK();
 
     if (!info.GetAttrs("starts", starts_).IsOK())
-      LOTUS_THROW("Invalid 'starts' attribute value");
+      ONNXRUNTIME_THROW("Invalid 'starts' attribute value");
     if (!info.GetAttrs("ends", ends_).IsOK())
-      LOTUS_THROW("Invalid 'ends' attribute value");
+      ONNXRUNTIME_THROW("Invalid 'ends' attribute value");
   }
 
   Status Compute(OpKernelContext* context) const override;

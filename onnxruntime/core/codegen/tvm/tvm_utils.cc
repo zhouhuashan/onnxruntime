@@ -7,9 +7,9 @@ namespace onnxruntime {
 namespace tvm_codegen {
 
 #define RETURN_DLDATATYPE_IF_MATCH(type, type_code) \
-if (ml_type == DataTypeImpl::GetType<type>()) {  \
-  return {type_code, sizeof(type) * 8, 1};       \
-}
+  if (ml_type == DataTypeImpl::GetType<type>()) {   \
+    return {type_code, sizeof(type) * 8, 1};        \
+  }
 
 // DLDataType: {DLDataTypeCode, bits, lanes}
 DLDataType ToTvmDLDataType(MLDataType ml_type) {
@@ -25,7 +25,7 @@ DLDataType ToTvmDLDataType(MLDataType ml_type) {
   RETURN_DLDATATYPE_IF_MATCH(float, kDLFloat);
   RETURN_DLDATATYPE_IF_MATCH(double, kDLFloat);
 
-  LOTUS_NOT_IMPLEMENTED("converting MLDataType ", ml_type, " to tvm DLDataType is not implemented");
+  ONNXRUNTIME_NOT_IMPLEMENTED("converting MLDataType ", ml_type, " to tvm DLDataType is not implemented");
 }
 
 }  // namespace tvm_codegen

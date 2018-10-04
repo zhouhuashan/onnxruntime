@@ -82,7 +82,7 @@ class NodeArg {
   bool Exists() const noexcept;
 
  private:
-  LOTUS_DISALLOW_COPY_AND_ASSIGN(NodeArg);
+  ONNXRUNTIME_DISALLOW_COPY_AND_ASSIGNMENT(NodeArg);
   friend class Graph;
 
   void SetType(ONNX_NAMESPACE::DataType p_type);
@@ -167,7 +167,7 @@ class Node {
       auto arg = nodeArgVec[index];
       if (!arg->Exists())
         continue;
-      LOTUS_RETURN_IF_ERROR(func(*arg, index));
+      ONNXRUNTIME_RETURN_IF_ERROR(func(*arg, index));
     }
     return common::Status::OK();
   }
@@ -271,7 +271,7 @@ class Node {
     std::vector<NodeArg*> output_defs;
 
    private:
-    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Definitions);
+    ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Definitions);
   };
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -308,11 +308,11 @@ class Node {
     std::set<const Node*> output_nodes;
 
    private:
-    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Relationships);
+    ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Relationships);
   };
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Node);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Node);
 
   // NOTE: These friendship relationships should ONLY be used for calling the
   // following methods so that the Node can maintain its internal invariants as
@@ -640,7 +640,7 @@ class GraphBase {
 
  private:
   // need custom versions to handle the unique_ptr's in nodes_
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphBase);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(GraphBase);
 
   gsl::not_null<Node*> AllocateNode();
 
@@ -651,9 +651,9 @@ class GraphBase {
   Node* NodeAtIndexImpl(NodeIndex node_index) const {
     // if we are trying to access a node that doesn't exist there's (most
     // likely) either a logic issue or a graph consistency/correctness issue.
-    // use LOTUS_ENFORCE to prove that or uncover scenarios where we actually
+    // use ONNXRUNTIME_ENFORCE to prove that or uncover scenarios where we actually
     // expect attempts to retrieve a non-existent node.
-    LOTUS_ENFORCE(node_index < nodes_.size(), "Validating no unexpected access using an invalid node_index.");
+    ONNXRUNTIME_ENFORCE(node_index < nodes_.size(), "Validating no unexpected access using an invalid node_index.");
     return nodes_[node_index].get();
   }
 

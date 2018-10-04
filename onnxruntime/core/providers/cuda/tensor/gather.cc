@@ -28,7 +28,7 @@ ONNX_OPERATOR_KERNEL_EX(
       GatherImpl(                                                             \
           input_block_size,                                                   \
           indices_max,                                                        \
-          p.indices_tensor->template Data<int32_t>(),                                  \
+          p.indices_tensor->template Data<int32_t>(),                         \
           div_strides.GpuPtr(),                                               \
           reinterpret_cast<const ToCudaType<T>::MappedType*>(input_data),     \
           reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_data), \
@@ -39,7 +39,7 @@ ONNX_OPERATOR_KERNEL_EX(
       GatherImpl(                                                             \
           input_block_size,                                                   \
           indices_max,                                                        \
-          p.indices_tensor->template Data<int64_t>(),                                  \
+          p.indices_tensor->template Data<int64_t>(),                         \
           div_strides.GpuPtr(),                                               \
           reinterpret_cast<const ToCudaType<T>::MappedType*>(input_data),     \
           reinterpret_cast<typename ToCudaType<T>::MappedType*>(output_data), \
@@ -50,7 +50,7 @@ ONNX_OPERATOR_KERNEL_EX(
 
 Status Gather::ComputeInternal(OpKernelContext* context) const {
   Prepare p;
-  LOTUS_RETURN_IF_ERROR(PrepareForCompute(context, p));
+  ONNXRUNTIME_RETURN_IF_ERROR(PrepareForCompute(context, p));
 
   const TensorShape& input_shape = p.input_tensor->Shape();
 
@@ -66,7 +66,7 @@ Status Gather::ComputeInternal(OpKernelContext* context) const {
   gsl::span<fast_divmod> div_strides_span = div_strides.CpuSpan();
   div_strides_span[0] = fast_divmod(gsl::narrow_cast<int>(output_block_size));
   div_strides_span[1] = fast_divmod(gsl::narrow_cast<int>(block_size));
-  LOTUS_RETURN_IF_ERROR(div_strides.CopyToGpu());
+  ONNXRUNTIME_RETURN_IF_ERROR(div_strides.CopyToGpu());
 
   MLDataType T_type = p.input_tensor->DataType();
   MLDataType Tin_type = p.indices_tensor->DataType();
@@ -84,7 +84,7 @@ Status Gather::ComputeInternal(OpKernelContext* context) const {
   TYPED_FUNCTION_CALL(double)
   TYPED_FUNCTION_CALL(bool)
 
-  return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");
+  return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");
 }
 
 }  // namespace cuda

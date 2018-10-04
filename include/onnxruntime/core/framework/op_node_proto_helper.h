@@ -8,17 +8,17 @@
 #include "gsl/span"
 
 #ifdef __has_attribute
-#define LOTUS_HAVE_ATTRIBUTE(x) __has_attribute(x)
+#define ONNXRUNTIME_HAVE_ATTRIBUTE(x) __has_attribute(x)
 #else
-#define LOTUS_HAVE_ATTRIBUTE(x) 0
+#define ONNXRUNTIME_HAVE_ATTRIBUTE(x) 0
 #endif
 
-#if LOTUS_HAVE_ATTRIBUTE(nodiscard)
-#define LOTUS_MUST_USE_RESULT [[nodiscard]]
-#elif defined(__clang__) && LOTUS_HAVE_ATTRIBUTE(warn_unused_result)
-#define LOTUS_MUST_USE_RESULT __attribute__((warn_unused_result))
+#if ONNXRUNTIME_HAVE_ATTRIBUTE(nodiscard)
+#define MUST_USE_RESULT [[nodiscard]]
+#elif defined(__clang__) && ONNXRUNTIME_HAVE_ATTRIBUTE(warn_unused_result)
+#define MUST_USE_RESULT __attribute__((warn_unused_result))
 #else
-#define LOTUS_MUST_USE_RESULT
+#define MUST_USE_RESULT
 #endif
 
 class IMLOpKernel;
@@ -35,7 +35,7 @@ class OpNodeProtoHelper {
 
   //Get a single attribute
   template <typename T>
-  LOTUS_MUST_USE_RESULT Status GetAttr(const std::string& name, T* value) const;
+  MUST_USE_RESULT Status GetAttr(const std::string& name, T* value) const;
 
   //Get a single attribute
   template <typename T>
@@ -53,17 +53,17 @@ class OpNodeProtoHelper {
 
   //Get repeated attributes
   template <typename T>
-  LOTUS_MUST_USE_RESULT std::vector<T> GetAttrsOrDefault(const std::string& name, const std::vector<T>& default_value = std::vector<T>{}) const {
+  MUST_USE_RESULT std::vector<T> GetAttrsOrDefault(const std::string& name, const std::vector<T>& default_value = std::vector<T>{}) const {
     std::vector<T> tmp;
     return GetAttrs<T>(name, tmp).IsOK() ? tmp : default_value;
   }
 
   //Get repeated attributes
   template <typename T>
-  LOTUS_MUST_USE_RESULT Status GetAttrs(const std::string& name, std::vector<T>& values) const;
+  MUST_USE_RESULT Status GetAttrs(const std::string& name, std::vector<T>& values) const;
 
   template <typename T>
-  LOTUS_MUST_USE_RESULT Status GetAttrs(const std::string& name, gsl::span<T> values) const;
+  MUST_USE_RESULT Status GetAttrs(const std::string& name, gsl::span<T> values) const;
 
   uint32_t GetPrimitiveAttrElementCount(ONNX_NAMESPACE::AttributeProto_AttributeType type,
                                         const std::string& name) const noexcept;
@@ -95,7 +95,7 @@ class OpNodeProtoHelper {
 
   const ONNX_NAMESPACE::AttributeProto* GetAttribute(const std::string& name) const {
     const ONNX_NAMESPACE::AttributeProto* attr = TryGetAttribute(name);
-    LOTUS_ENFORCE(attr != nullptr);
+    ONNXRUNTIME_ENFORCE(attr != nullptr);
     return attr;
   }
 

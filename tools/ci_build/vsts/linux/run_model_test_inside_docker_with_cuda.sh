@@ -10,7 +10,7 @@ else
   mkdir -p /data/onnx
   azcopy --recursive --source:https://lotus.blob.core.windows.net/onnx-model-zoo-20180726 --destination:/data/onnx/models  --source-key:$AZURE_BLOB_KEY
 fi
-PATH=$PATH:/usr/local/cuda/bin /opt/cmake/bin/cmake -G Ninja -Dlotus_USE_CUDA=ON -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -Dlotus_CUDNN_HOME=/usr/local/cudnn-7.0/cuda -DCMAKE_BUILD_TYPE=Debug -Deigen_SOURCE_PATH=/usr/include/eigen3 -Dlotus_USE_PREINSTALLED_EIGEN=ON /data/lotus/cmake
+PATH=$PATH:/usr/local/cuda/bin /opt/cmake/bin/cmake -G Ninja -Donnxruntime_USE_CUDA=ON -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs -Donnxruntime_CUDNN_HOME=/usr/local/cudnn-7.0/cuda -DCMAKE_BUILD_TYPE=Debug -Deigen_SOURCE_PATH=/usr/include/eigen3 -Donnxruntime_USE_PREINSTALLED_EIGEN=ON /data/lotus/cmake
 ninja
 for D in /data/onnx/*; do
     if [ -d "${D}" ]; then

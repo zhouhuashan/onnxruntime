@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #pragma once
+
 #include <string>
 #include <vector>
 #include <experimental/filesystem>  // C++-standard header file name
@@ -21,7 +22,7 @@
 #include <core/graph/graph.h>  //TODO(@chasun): remove this
 #include "sync_api.h"
 
-typedef std::function<::onnxruntime::common::Status(std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci)> TestCaseCallBack;
+typedef std::function<::onnxruntime::common::Status(std::shared_ptr<TestCaseResult> result, CALLBACK_INSTANCE pci)> TestCaseCallBack;
 
 struct TestCaseTask {
   TestEnv& env;
@@ -32,10 +33,10 @@ struct TestCaseTask {
   const PThreadPool pool;
 };
 
-void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE instance, void* context, LOTUS_WORK work);
+void CALLBACK RunTestCase(CALLBACK_INSTANCE instance, void* context, WORK work);
 //TODO: implement this function for Linux
-void LOTUS_CALLBACK RunSingleDataItem(LOTUS_CALLBACK_INSTANCE instance, void* context, LOTUS_WORK work);
-::onnxruntime::common::Status OnTestCaseFinished(LOTUS_CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result);
+void CALLBACK RunSingleDataItem(CALLBACK_INSTANCE instance, void* context, WORK work);
+::onnxruntime::common::Status OnTestCaseFinished(CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result);
 
 class DataRunner {
  protected:
@@ -53,13 +54,13 @@ class DataRunner {
 
  public:
   DataRunner(std::shared_ptr<::onnxruntime::InferenceSession> session1, const std::string& test_case_name1, ITestCase* c, TestCaseCallBack on_finished1);
-  virtual void OnTaskFinished(size_t task_id, EXECUTE_RESULT res, LOTUS_CALLBACK_INSTANCE pci) noexcept = 0;
-  void RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store_result);
+  virtual void OnTaskFinished(size_t task_id, EXECUTE_RESULT res, CALLBACK_INSTANCE pci) noexcept = 0;
+  void RunTask(size_t task_id, CALLBACK_INSTANCE pci, bool store_result);
   virtual ~DataRunner() {}
 
-  virtual void Start(LOTUS_CALLBACK_INSTANCE pci, size_t concurrent_runs) = 0;
+  virtual void Start(CALLBACK_INSTANCE pci, size_t concurrent_runs) = 0;
 
-  void finish(LOTUS_CALLBACK_INSTANCE pci) {
+  void finish(CALLBACK_INSTANCE pci) {
     std::shared_ptr<TestCaseResult> res = result;
     CALL_BACK callback = on_finished;
     res->SetSpentTime(spent_time_);
@@ -103,18 +104,18 @@ class SeqTestRunner : public DataRunner {
                 ITestCase* c, size_t repeat_count,
                 TestCaseCallBack on_finished1);
 
-  void Start(LOTUS_CALLBACK_INSTANCE pci, size_t concurrent_runs) override;
-  void OnTaskFinished(size_t, EXECUTE_RESULT, LOTUS_CALLBACK_INSTANCE) noexcept override {}
+  void Start(CALLBACK_INSTANCE pci, size_t concurrent_runs) override;
+  void OnTaskFinished(size_t, EXECUTE_RESULT, CALLBACK_INSTANCE) noexcept override {}
 };
 
 class PTestRunner : public DataRunner {
  private:
   std::atomic<size_t> next_test_to_run;
   std::atomic<size_t> finished;
-  void OnTaskFinished(size_t task_id, EXECUTE_RESULT res, LOTUS_CALLBACK_INSTANCE pci) noexcept override;
+  void OnTaskFinished(size_t task_id, EXECUTE_RESULT res, CALLBACK_INSTANCE pci) noexcept override;
 
  public:
-  void Start(LOTUS_CALLBACK_INSTANCE pci, size_t concurrent_runs) override;
+  void Start(CALLBACK_INSTANCE pci, size_t concurrent_runs) override;
 
   PTestRunner(std::shared_ptr<::onnxruntime::InferenceSession> session1,
               ITestCase* c, PThreadPool tpool,
@@ -134,4 +135,4 @@ std::vector<ITestCase*> LoadTests(const std::vector<std::experimental::filesyste
 //Do not run this function in the thread pool passed in
 ::onnxruntime::common::Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_count, PThreadPool tpool);
 EXECUTE_RESULT StatusCodeToExecuteResult(int input);
-void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, PThreadPool tpool, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished);
+void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, PThreadPool tpool, CALLBACK_INSTANCE pci, TestCaseCallBack on_finished);

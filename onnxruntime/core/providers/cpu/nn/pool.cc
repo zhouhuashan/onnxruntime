@@ -12,7 +12,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   TensorShape x_shape = X->Shape();
 
-  LOTUS_RETURN_IF_NOT(x_shape.NumDimensions() >= 3, "Input dimension cannot be less than 3.");
+  ONNXRUNTIME_RETURN_IF_NOT(x_shape.NumDimensions() >= 3, "Input dimension cannot be less than 3.");
 
   std::vector<int64_t> pads = pads_;
   std::vector<int64_t> kernel_shape = kernel_shape_;
@@ -154,7 +154,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
       break;
     }
     default:
-      return Status(LOTUS, INVALID_ARGUMENT, "Unsupported pooling size : ");
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Unsupported pooling size : ");
   }
 
   return Status::OK();
@@ -165,7 +165,7 @@ Status Pool<float, MaxPool<8 /*VERSION*/>>::Compute(OpKernelContext* context) co
   const Tensor* X = context->Input<Tensor>(0);
   TensorShape x_shape = X->Shape();
 
-  LOTUS_RETURN_IF_NOT(x_shape.NumDimensions() >= 3, "Input dimension cannot be less than 3.");
+  ONNXRUNTIME_RETURN_IF_NOT(x_shape.NumDimensions() >= 3, "Input dimension cannot be less than 3.");
 
   std::vector<int64_t> pads = pads_;
   std::vector<int64_t> kernel_shape = kernel_shape_;
@@ -313,7 +313,7 @@ Status Pool<float, MaxPool<8 /*VERSION*/>>::Compute(OpKernelContext* context) co
       break;
     }
     default:
-      return Status(LOTUS, INVALID_ARGUMENT, "Unsupported pooling size : ");
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Unsupported pooling size : ");
   }
 
   return Status::OK();

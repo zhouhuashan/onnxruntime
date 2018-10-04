@@ -76,8 +76,8 @@ Tensor::Tensor(const Tensor& src)
     : shape_(src.shape_), dtype_(src.dtype_), alloc_info_(src.alloc_info_), byte_offset_(src.byte_offset_) {
   // it may be better to refactor it a little bit to make it a compile error
   // but right now just keep it simple first.
-  LOTUS_ENFORCE(src.buffer_deleter_ == nullptr,
-                "Can't copy tensor with its owned buffer. Please transfer ownership by move.");
+  ONNXRUNTIME_ENFORCE(src.buffer_deleter_ == nullptr,
+              "Can't copy tensor with its owned buffer. Please transfer ownership by move.");
 
   p_data_ = src.p_data_;
   buffer_deleter_ = nullptr;
@@ -100,8 +100,8 @@ Tensor::~Tensor() {
 
 Tensor& Tensor::ShallowCopy(const Tensor& other) {
   // similar as above
-  LOTUS_ENFORCE(other.buffer_deleter_ == nullptr,
-                "Can't copy tensor with its owned buffer. Please transfer ownership by move.");
+  ONNXRUNTIME_ENFORCE(other.buffer_deleter_ == nullptr,
+              "Can't copy tensor with its owned buffer. Please transfer ownership by move.");
 
   if (this != &other) {
     dtype_ = other.dtype_;

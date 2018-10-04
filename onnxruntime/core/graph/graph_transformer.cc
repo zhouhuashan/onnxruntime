@@ -14,9 +14,9 @@ Status RuleBasedGraphTransformer::Register(const std::string& op_type, std::uniq
 }
 
 Status TopDownRuleBasedTransformer::Apply(Graph& graph, bool& modified) const {
-  LOTUS_RETURN_IF_ERROR(graph.Resolve());
+  ONNXRUNTIME_RETURN_IF_ERROR(graph.Resolve());
   const std::vector<NodeIndex>* order;
-  LOTUS_RETURN_IF_ERROR(graph.GetNodesInTopologicalOrder(&order));
+  ONNXRUNTIME_RETURN_IF_ERROR(graph.GetNodesInTopologicalOrder(&order));
   assert(order);
 
   GraphEditor graph_editor(graph);
@@ -24,7 +24,7 @@ Status TopDownRuleBasedTransformer::Apply(Graph& graph, bool& modified) const {
   for (NodeIndex i : *order) {
     auto node = graph.GetNode(i);
     if (!node) {
-      return Status(LOTUS, INVALID_ARGUMENT);
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT);
     }
     if (graph.IsSinkNode(*node) || graph.IsSourceNode(*node)) {
       continue;
@@ -36,13 +36,13 @@ Status TopDownRuleBasedTransformer::Apply(Graph& graph, bool& modified) const {
     }
     const std::vector<std::unique_ptr<RewriteRule>>& rules = GetRewriteRules(node->OpType());
     for (const auto& rule : rules) {
-      LOTUS_RETURN_IF_ERROR(rule->CheckConditionAndApply(&graph_editor, node, &modified));
+      ONNXRUNTIME_RETURN_IF_ERROR(rule->CheckConditionAndApply(&graph_editor, node, &modified));
     }
   }
 
   // Resolve the graph at the end of all passes.
   if (modified) {
-    LOTUS_RETURN_IF_ERROR(graph.Resolve());
+    ONNXRUNTIME_RETURN_IF_ERROR(graph.Resolve());
   }
 
   return Status::OK();

@@ -22,21 +22,21 @@ enum ExecutionStatus {
   MODEL_LOADING_FAILURE = 1,
   DATA_LOADING_FAILURE = 2,
   PREDICTION_FAILURE = 3,
-  NOT_IMPLEMENTED = 5
+  ONNXRUNTIME_NOT_IMPLEMENTED = 5
 };
 
 class Model {
  public:
-  Model(const std::string &modelfile) {
+  Model(const std::string& modelfile) {
     runtime_ = std::make_unique<WinMLRuntime>();
     LoadModel(modelfile);
   }
 
-  void Execute(const std::string &datafile) {
+  void Execute(const std::string& datafile) {
     struct stat s;
     if (stat(datafile.c_str(), &s) == 0) {
       if (s.st_mode & S_IFDIR) {
-        exec_status_ = ExecutionStatus::NOT_IMPLEMENTED;
+        exec_status_ = ExecutionStatus::ONNXRUNTIME_NOT_IMPLEMENTED;
         return;
       }
     }
@@ -86,7 +86,7 @@ class Model {
   }
 
  private:
-  void LoadModel(const std::string &strfilepath) {
+  void LoadModel(const std::string& strfilepath) {
     std::wstring filepath(strfilepath.begin(), strfilepath.end());
 
     auto status = runtime_->LoadModel(filepath);
@@ -100,7 +100,7 @@ class Model {
     }
   }
 
-  std::unique_ptr<TestDataReader> LoadTestFile(const std::string &filepath) {
+  std::unique_ptr<TestDataReader> LoadTestFile(const std::string& filepath) {
     std::wstring testfilepath(filepath.begin(), filepath.end());
     auto reader = TestDataReader::OpenReader(testfilepath);
 

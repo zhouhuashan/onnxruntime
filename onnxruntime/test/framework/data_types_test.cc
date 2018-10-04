@@ -24,14 +24,14 @@ struct TestMap {
 
 // Try recursive type registration and compatibility tests
 using TestMapToMapInt64ToFloat = TestMap<int64_t, MapInt64ToFloat>;
-LOTUS_REGISTER_MAP(TestMapToMapInt64ToFloat);
+ONNXRUNTIME_REGISTER_MAP(TestMapToMapInt64ToFloat);
 using TestMapStringToVectorInt64 = TestMap<std::string, VectorInt64>;
-LOTUS_REGISTER_MAP(TestMapStringToVectorInt64);
+ONNXRUNTIME_REGISTER_MAP(TestMapStringToVectorInt64);
 
 // Trial to see if we resolve the setter properly
 // a map with a key that has not been registered in data_types.cc
 using TestMapMLFloat16ToFloat = TestMap<MLFloat16, float>;
-LOTUS_REGISTER_MAP(TestMapMLFloat16ToFloat);
+ONNXRUNTIME_REGISTER_MAP(TestMapMLFloat16ToFloat);
 
 template <typename T>
 struct TestSequence {
@@ -39,7 +39,7 @@ struct TestSequence {
 };
 
 using TestSequenceOfSequence = TestSequence<VectorString>;
-LOTUS_REGISTER_SEQ(TestSequenceOfSequence);
+ONNXRUNTIME_REGISTER_SEQ(TestSequenceOfSequence);
 
 /// Adding an Opaque type with type parameters
 struct TestOpaqueType {};
@@ -49,15 +49,15 @@ extern const char TestOpaqueDomain[] = "test_domain";
 extern const char TestOpaqueName[] = "test_name";
 
 using OpaqueType_1 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain, TestOpaqueName>;
-LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_1);
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_1);
 using OpaqueType_2 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain, TestOpaqueName, uint64_t, float>;
-LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_2);
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_2);
 
 extern const char TestOpaqueDomain_2[] = "test_doma_2";
 extern const char TestOpaqueName_2[] = "test_na_2";
 
 using OpaqueType_3 = OpaqueRegister<TestOpaqueType, TestOpaqueDomain_2, TestOpaqueName_2>;
-LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_3);
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_3);
 
 // Register Maps using Opaque types as values. Note that we
 // use the same cpp runtime types but due to Opaque type domain, name
@@ -65,20 +65,20 @@ LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_3);
 // compatible with each other.
 using MyOpaqueMapCpp = std::unordered_map<int64_t, TestOpaqueType>;
 using MyOpaqueMap_1 = TypeRegister<MyOpaqueMapCpp, OpaqueType_1>;
-LOTUS_REGISTER_MAP(MyOpaqueMap_1);
+ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap_1);
 using MyOpaqueMap_2 = TypeRegister<MyOpaqueMapCpp, OpaqueType_2>;
-LOTUS_REGISTER_MAP(MyOpaqueMap_2);
+ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap_2);
 using MyOpaqueMap_3 = TypeRegister<MyOpaqueMapCpp, OpaqueType_3>;
-LOTUS_REGISTER_MAP(MyOpaqueMap_3);
+ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap_3);
 
 // Register Sequence as containing an Opaque type
 using MyOpaqueSeqCpp = std::vector<TestOpaqueType>;
 using MyOpaqueSeq_1 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_1>;
-LOTUS_REGISTER_SEQ(MyOpaqueSeq_1);
+ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeq_1);
 using MyOpaqueSeq_2 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_2>;
-LOTUS_REGISTER_SEQ(MyOpaqueSeq_2);
+ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeq_2);
 using MyOpaqueSeq_3 = TypeRegister<MyOpaqueSeqCpp, OpaqueType_3>;
-LOTUS_REGISTER_SEQ(MyOpaqueSeq_3);
+ONNXRUNTIME_REGISTER_SEQ(MyOpaqueSeq_3);
 
 // Use of Opaque types in recursive definitions. I.e. we would like to use
 // it within Maps(values) and Sequences(Values) and it should work properly
@@ -406,7 +406,6 @@ TEST(DataTypeTest, DataUtilsTest) {
     const auto& from_dt_proto = DataTypeUtils::ToTypeProto(op_dt);
     EXPECT_TRUE(DataTypeImpl::GetType<OpaqueType_2>()->IsCompatible(from_dt_proto));
   }
-
 }
 
 }  // namespace test

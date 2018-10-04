@@ -5,25 +5,25 @@
 # this file is meant to be included in the parent onnxruntime_providers.cmake file
 
 # TODO: move nuphar out of internal
-set(lotus_USE_NUPHAR ON)
+set(onnxruntime_USE_NUPHAR ON)
 
-if (lotus_USE_NUPHAR)
+if (onnxruntime_USE_NUPHAR)
   add_definitions(-DUSE_NUPHAR=1)
   
-  if (NOT lotus_USE_TVM)
-    message(FATAL_ERROR "lotus_USE_TVM required for lotus_USE_NUPHAR")
+  if (NOT onnxruntime_USE_TVM)
+    message(FATAL_ERROR "onnxruntime_USE_TVM required for onnxruntime_USE_NUPHAR")
   endif()
 
   file(GLOB_RECURSE onnxruntime_providers_nuphar_cc_srcs
-    "${LOTUS_ROOT}/core/providers/nuphar/*.h"
-    "${LOTUS_ROOT}/core/providers/nuphar/*.cc"
+    "${ONNXRUNTIME_ROOT}/core/providers/nuphar/*.h"
+    "${ONNXRUNTIME_ROOT}/core/providers/nuphar/*.cc"
   )
 
-  source_group(TREE ${LOTUS_ROOT}/core FILES ${onnxruntime_providers_nuphar_cc_srcs})
+  source_group(TREE ${ONNXRUNTIME_ROOT}/core FILES ${onnxruntime_providers_nuphar_cc_srcs})
   add_library(onnxruntime_providers_nuphar ${onnxruntime_providers_nuphar_cc_srcs})
-  lotus_add_include_to_target(onnxruntime_providers_nuphar onnx protobuf::libprotobuf)
+  onnxruntime_add_include_to_target(onnxruntime_providers_nuphar onnx protobuf::libprotobuf)
   set_target_properties(onnxruntime_providers_nuphar PROPERTIES FOLDER "Lotus")
-  target_include_directories(onnxruntime_providers_nuphar PRIVATE ${LOTUS_ROOT} ${TVM_INCLUDES})
+  target_include_directories(onnxruntime_providers_nuphar PRIVATE ${ONNXRUNTIME_ROOT} ${TVM_INCLUDES})
   set_target_properties(onnxruntime_providers_nuphar PROPERTIES LINKER_LANGUAGE CXX)
   target_compile_options(onnxruntime_providers_nuphar PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
   add_dependencies(onnxruntime_providers_nuphar ${onnxruntime_tvm_dependencies})

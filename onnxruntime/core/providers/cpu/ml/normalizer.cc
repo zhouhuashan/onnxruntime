@@ -54,7 +54,7 @@ Status Normalizer::Compute(OpKernelContext* context) const {
   } else if (input_type == DataTypeImpl::GetType<int32_t>()) {
     Normalize<int32_t>(context);
   } else {
-    LOTUS_THROW("Invalid input type of ", input_type);
+    ONNXRUNTIME_THROW("Invalid input type of ", input_type);
   }
 
   return Status::OK();
@@ -180,7 +180,7 @@ void Normalizer::Normalize(OpKernelContext* context) const {
         break;
       }
       default: {
-        LOTUS_THROW("Unexpected NORMALIZE value of ", normalization_);
+        ONNXRUNTIME_THROW("Unexpected NORMALIZE value of ", normalization_);
       }
     }
   }

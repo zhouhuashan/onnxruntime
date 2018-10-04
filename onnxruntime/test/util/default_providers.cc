@@ -32,7 +32,7 @@ std::unique_ptr<IExecutionProvider> DefaultMkldnnExecutionProvider(bool enable_a
   mkldnn_pi.create_arena = enable_arena;
   return CreateMKLDNNExecutionProvider(mkldnn_pi);
 #else
-  UNUSED_PARAMETER(enable_arena);
+  ONNXRUNTIME_UNUSED_PARAMETER(enable_arena);
   return nullptr;
 #endif
 }

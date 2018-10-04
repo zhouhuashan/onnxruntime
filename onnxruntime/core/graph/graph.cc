@@ -318,8 +318,8 @@ Status Node::UpdateInputArgCount() {
                                         definitions_.input_arg_count.cend(), 0);
 
   if (total_arg_count < 0 || static_cast<size_t>(total_arg_count) != definitions_.input_defs.size()) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL,
-                             "The sum of input arg count is not equal to size of input defs in node (", name_, ")");
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL,
+                           "The sum of input arg count is not equal to size of input defs in node (", name_, ")");
   }
 
   // op_ is always valid when this is called
@@ -428,14 +428,14 @@ using google::protobuf::RepeatedPtrField;
 Graph::Graph(GraphProto* graph_proto,
              const std::unordered_map<std::string, int>& domain_to_version,
              Version ir_version,
-             ILotusOpSchemaCollectionPtr schema_registry)
+             IOnnxRuntimeOpSchemaCollectionPtr schema_registry)
 
     : GraphBase(/* resolve needed */ true, /* proto sync needed */ false, domain_to_version, ir_version),
       graph_proto_{graph_proto},
       graph_type_{Type::Main},
       schema_registry_(schema_registry),
       function_container_(std::make_unique<FunctionContainer>()) {
-  LOTUS_ENFORCE(graph_proto != nullptr, "graph_proto cannot be null");
+  ONNXRUNTIME_ENFORCE(graph_proto != nullptr, "graph_proto cannot be null");
   ArgNameToTypeMap name_to_type_map;
 
   // these are all empty unless we received a graph_proto as input
@@ -514,7 +514,7 @@ Status GraphBase::VerifyNoDuplicateName(/*in*/ const std::unordered_set<std::str
 
     if (!node_name.empty() && node_name_to_index.end() != node_name_to_index.find(node_name)) {
       // The node has name and its name was used by another node.
-      Status status(LOTUS, FAIL,
+      Status status(ONNXRUNTIME, FAIL,
                     "Error: two nodes with same node name (" + node_name + ").");
       return status;
     }
@@ -526,14 +526,14 @@ Status GraphBase::VerifyNoDuplicateName(/*in*/ const std::unordered_set<std::str
       if (output_def->Exists()) {
         auto& output_arg_name = output_def->Name();
         if (inputs_and_initializers.count(output_arg_name)) {
-          Status status(LOTUS, FAIL,
+          Status status(ONNXRUNTIME, FAIL,
                         "Error: Duplicate definition of name (" + output_arg_name + ").");
           return status;
         }
         auto result = output_args.insert({output_arg_name, &node});
         if (!result.second) {
           // Two outputs with same name, so that insertion fails.
-          Status status(LOTUS, FAIL,
+          Status status(ONNXRUNTIME, FAIL,
                         "Error: Duplicate definition of name (" + output_arg_name + ").");
           return status;
         }
@@ -556,7 +556,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
     for (auto& control_input : node.ControlInputs()) {
       auto name_to_index_iter = node_name_to_index.find(control_input);
       if (node_name_to_index.end() == name_to_index_iter) {
-        Status status(LOTUS, FAIL,
+        Status status(ONNXRUNTIME, FAIL,
                       "The control input (" + control_input + ") of Node (" +
                           node.Name() + ") does not exist in the graph.");
         return status;
@@ -566,7 +566,7 @@ Status GraphBase::BuildConnections(const std::unordered_map<std::string, Node*>&
       const NodeIndex dst_node_index = node.Index();
       auto dst = GetNode(dst_node_index);
       auto src = GetNode(src_node_index);
-      LOTUS_ENFORCE(dst && src, "ControlInputs should not have invalid nodes. dst=", dst, " src=", src);
+      ONNXRUNTIME_ENFORCE(dst && src, "ControlInputs should not have invalid nodes. dst=", dst, " src=", src);
       src->MutableRelationships().output_nodes.insert(dst);
       dst->MutableRelationships().input_nodes.insert(src);
     }
@@ -758,7 +758,7 @@ Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_or
          iter != end; ++iter) {
       const NodeIndex idx = (*iter)->Index();
       if (ancestor_nodes.end() != ancestor_nodes.find(idx)) {
-        Status status(LOTUS, FAIL, "Error: the graph is not acyclic.");
+        Status status(ONNXRUNTIME, FAIL, "Error: the graph is not acyclic.");
         return status;
       }
 
@@ -772,7 +772,7 @@ Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_or
   if (num_of_nodes_ >= 0 && static_cast<size_t>(num_of_nodes_) == nodes_in_topological_order.size()) {
     return Status::OK();
   } else {
-    return Status(LOTUS, FAIL, "Error: the graph is not acyclic.");
+    return Status(ONNXRUNTIME, FAIL, "Error: the graph is not acyclic.");
   }
 }
 
@@ -891,7 +891,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
       if (input_def->Type() == nullptr) {
         // Logic error: This should not happen if we properly checked that every use has
         // a corresponding def, for which type-inference already produced a valid type
-        Status status(LOTUS, FAIL,
+        Status status(ONNXRUNTIME, FAIL,
                       "Node (" + nodeName + ") input arg (" +
                           input_def->Name() + ") does not have type information set by parent node.");
         return status;
@@ -905,7 +905,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
         if (input_type == nullptr) input_type = &null_pointer;
         // Type error in input model/graph.
 
-        Status status(LOTUS, INVALID_GRAPH,
+        Status status(ONNXRUNTIME, INVALID_GRAPH,
                       "Type Error: Type '" + *input_type + "' of input parameter (" + input_def->Name() +
                           ") of operator (" + op.Name() + ") in node (" + nodeName + ") is invalid.");
         return status;
@@ -925,7 +925,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
         // However, this will need to be extended to handle the If-Then-Else and Loop
         // constructs in future which will have variadic inputs and outputs of different types.
 
-        Status status(LOTUS, FAIL,
+        Status status(ONNXRUNTIME, FAIL,
                       "Type Error: Type parameter (" + op_formal_parameter.GetTypeStr() +
                           ") bound to different types (" + *(param_to_type_iter->second) +
                           " and " + *(input_def->Type()) +
@@ -938,9 +938,9 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   // Apply ONNX's shape/type inference to node
   std::vector<TypeProto> onnx_inferred_types;
   try {
-    LOTUS_RETURN_IF_ERROR(InferOutputTypesAndShapes(node, onnx_inferred_types));
+    ONNXRUNTIME_RETURN_IF_ERROR(InferOutputTypesAndShapes(node, onnx_inferred_types));
   } catch (const std::exception& ex) {
-    return Status(LOTUS, FAIL, ex.what());
+    return Status(ONNXRUNTIME, FAIL, ex.what());
   }
 
   // Infer and verify node output arg type information.
@@ -976,14 +976,14 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
       inferred_type = existing_type;
     } else {
       // This should not happen: indicates incompleteness in ONNX inference.
-      Status status(LOTUS, FAIL,
+      Status status(ONNXRUNTIME, FAIL,
                     "Node (" + nodeName + ") output arg (" + output_def->Name() + ") type inference failed");
       return status;
     }
 
     if ((existing_type != inferred_type) && (existing_type != nullptr)) {
       // A type exists for this output but does not match the inferred type.
-      return Status(LOTUS, FAIL,
+      return Status(ONNXRUNTIME, FAIL,
                     "Type Error: Type (" + *existing_type + ") of output arg (" +
                         output_def->Name() + ") of node (" + nodeName +
                         ") does not match expected type (" + *inferred_type + ").");
@@ -1011,7 +1011,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   // Check that the type of every input is specified:
   for (auto* graph_input : GetInputs()) {
     if (nullptr == graph_input->Type()) {
-      Status status(LOTUS, FAIL, "Model input (" + graph_input->Name() + ") does not have type information.");
+      Status status(ONNXRUNTIME, FAIL, "Model input (" + graph_input->Name() + ") does not have type information.");
       return status;
     }
   }
@@ -1033,7 +1033,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
       if (nullptr == existing_type)
         node_arg->SetType(inferred_type);
       else if (inferred_type != existing_type) {
-        return Status(LOTUS, FAIL,
+        return Status(ONNXRUNTIME, FAIL,
                       "Type Error: Value of initializer " + name + " does not match its type.");
       }
 
@@ -1047,12 +1047,12 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
         node_arg->SetShape(inferred_shape);
       else {
         if (p_existing_shape->dim_size() != tensor_proto->dims_size())
-          return Status(LOTUS, FAIL,
+          return Status(ONNXRUNTIME, FAIL,
                         "Type Error: Shape of initializer " + name + " does not match its type.");
         for (int i = 0; i < p_existing_shape->dim_size(); ++i) {
           auto& d = p_existing_shape->dim(i);
           if (d.has_dim_value() && (d.dim_value() != tensor_proto->dims(i)))
-            return Status(LOTUS, FAIL,
+            return Status(ONNXRUNTIME, FAIL,
                           "Type Error: Shape of initializer " + initializer_pair.first + " does not match its type.");
         }
       }
@@ -1063,7 +1063,7 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
 
 Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
                                    const std::unordered_map<std::string, Node*>& output_args) {
-  LOTUS_RETURN_IF_ERROR(TypeCheckInputsAndInitializers());
+  ONNXRUNTIME_RETURN_IF_ERROR(TypeCheckInputsAndInitializers());
 
   for (auto nodeIndex : nodes_in_topological_order) {
     if (IsSourceNode(nodeIndex) || IsSinkNode(nodeIndex)) {
@@ -1089,13 +1089,13 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
       try {
         checker::check_node(node_proto, ctx, lsc);
       } catch (const std::exception& ex) {
-        return Status(LOTUS, FAIL, ex.what());
+        return Status(ONNXRUNTIME, FAIL, ex.what());
       }
       auto maxInclusiveVersion = DomainToVersionMap().find(domain)->second;
       node.op_ = schema_registry_->GetSchema(node.OpType(), maxInclusiveVersion, node.Domain());
     }
 
-    LOTUS_RETURN_IF_ERROR(node.UpdateInputArgCount());
+    ONNXRUNTIME_RETURN_IF_ERROR(node.UpdateInputArgCount());
 
     // currently an Op is required by ValidateVersion, so we use gsl::not_null.
     // This may change in the future to allow a null Op
@@ -1116,7 +1116,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
           }
           // TODO: Handle optional attribute but no default value specified in op definition.
         } else {
-          Status status(LOTUS, FAIL,
+          Status status(ONNXRUNTIME, FAIL,
                         "Node (" + node_name + ") attribute (" + attr_def.first +
                             ") is required but not specified.");
           return status;
@@ -1124,7 +1124,7 @@ Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topolo
       }
     }
 
-    NO_CHANGE_ON_SYNC_FLAG(LOTUS_RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op)));
+    NO_CHANGE_ON_SYNC_FLAG(ONNXRUNTIME_RETURN_IF_ERROR(InferAndVerifyTypeMatch(node, *p_op)));
   }
 
   return Status::OK();
@@ -1137,7 +1137,7 @@ Status Graph::VerifyInputAndInitializerNames(/*OUT*/ std::unordered_set<std::str
   for (auto* input : GetInputs()) {
     auto result = inputs_and_initializers.insert(input->Name());
     if (!result.second) {
-      Status status(LOTUS, FAIL,
+      Status status(ONNXRUNTIME, FAIL,
                     "Error: Duplicate definition-site for (" + input->Name() + ").");
       return status;
     }
@@ -1166,12 +1166,12 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   std::unordered_map<std::string, Node*> output_args;
   std::unordered_set<std::string> inputs_and_initializers;
   std::unordered_map<std::string, NodeIndex> node_name_to_index;
-  LOTUS_RETURN_IF_ERROR(VerifyInputAndInitializerNames(inputs_and_initializers));
-  LOTUS_RETURN_IF_ERROR(VerifyNoDuplicateName(inputs_and_initializers, output_args, node_name_to_index));
-  LOTUS_RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
-  LOTUS_RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
-  LOTUS_RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
-  LOTUS_RETURN_IF_ERROR(SetGraphInputsOutputs());
+  ONNXRUNTIME_RETURN_IF_ERROR(VerifyInputAndInitializerNames(inputs_and_initializers));
+  ONNXRUNTIME_RETURN_IF_ERROR(VerifyNoDuplicateName(inputs_and_initializers, output_args, node_name_to_index));
+  ONNXRUNTIME_RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
+  ONNXRUNTIME_RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
+  ONNXRUNTIME_RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
+  ONNXRUNTIME_RETURN_IF_ERROR(SetGraphInputsOutputs());
 
   CleanUnusedInitializers();
 
@@ -1188,7 +1188,7 @@ Status Graph::Resolve(bool no_proto_sync_required) {
 
 Status GraphBase::GetNodesInTopologicalOrder(gsl::not_null<const std::vector<NodeIndex>**> pp_nodes) const {
   if (graph_resolve_needed_) {
-    return Status(::onnxruntime::common::LOTUS, ::onnxruntime::common::FAIL,
+    return Status(::onnxruntime::common::ONNXRUNTIME, ::onnxruntime::common::FAIL,
                   "Resolve() must be called before using the graph as modifications have been made to it.");
   }
 
@@ -1297,8 +1297,8 @@ static void AddNodeArgs(const std::vector<NodeArg*>& input_args,
       node_arg_map[key] = input_arg;
     } else {
       // check that if an existing entry was found, it was for the same instance
-      LOTUS_ENFORCE(node_arg == input_arg,
-                    "Existing entry in NodeArg map for ", key, " != input definition.");
+      ONNXRUNTIME_ENFORCE(node_arg == input_arg,
+                  "Existing entry in NodeArg map for ", key, " != input definition.");
     }
   }
 }
@@ -1629,7 +1629,7 @@ Status Graph::SetGraphInputsOutputs() {
       std::string missing_list;
       for (auto& name : specified_graph_outputs)
         missing_list += name + " ";
-      return Status(LOTUS, FAIL, "Some graph outputs do not exist in the graph. (" + missing_list + ")");
+      return Status(ONNXRUNTIME, FAIL, "Some graph outputs do not exist in the graph. (" + missing_list + ")");
     }
 
     for (const auto& node : Nodes()) {
@@ -1653,7 +1653,7 @@ Status Graph::SetGraphInputsOutputs() {
             specified_initializers.end() == specified_initializers.find(input_arg->Name())) {
           // The node input is not specified as graph input,
           // and it's not fed by another node neither.
-          return Status(LOTUS, FAIL, "Node input (" + input_arg->Name() + ") should be a graph input or initializer.");
+          return Status(ONNXRUNTIME, FAIL, "Node input (" + input_arg->Name() + ") should be a graph input or initializer.");
         }
 
         if (specified_graph_value_info.erase(input_arg->Name()) >= 1) {
@@ -1757,15 +1757,15 @@ bool GraphBase::ReleaseNode(NodeIndex index) {
   return true;
 }
 
-ILotusOpSchemaCollectionPtr Graph::GetSchemaRegistry() const {
+IOnnxRuntimeOpSchemaCollectionPtr Graph::GetSchemaRegistry() const {
   return schema_registry_;
 }
 
 Node* Graph::FuseSubGraph(std::unique_ptr<::onnxruntime::IndexedSubGraph> sub_graph, const std::string& fused_node_name) {
-  LOTUS_ENFORCE(nullptr != sub_graph && nullptr != sub_graph->GetMetaDef());
+  ONNXRUNTIME_ENFORCE(nullptr != sub_graph && nullptr != sub_graph->GetMetaDef());
 
   auto func_meta_def = sub_graph->GetMetaDef();
-  LOTUS_ENFORCE(nullptr != func_meta_def);
+  ONNXRUNTIME_ENFORCE(nullptr != func_meta_def);
   std::vector<NodeArg*> input_args, output_args;
   for (auto& arg_name : func_meta_def->inputs) {
     input_args.push_back(GetNodeArg(arg_name));
@@ -1804,7 +1804,7 @@ void Graph::CollectRootNodesAndRefs() {
         !(IsSourceNode(node) || IsSinkNode(node))) {
       root_nodes_.push_back(node.Index());
     }
-    LOTUS_ENFORCE(node.Index() < max_size);
+    ONNXRUNTIME_ENFORCE(node.Index() < max_size);
     node_refs_[node.Index()] = node.GetInputEdgesCount();
   }
 }

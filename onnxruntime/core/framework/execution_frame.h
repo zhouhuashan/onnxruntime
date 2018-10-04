@@ -47,7 +47,7 @@ class ExecutionFrame {
                                                 bool create_fence = false);
 
   // ?? Cheng: What about non-tensor values??
-  // ?? Cheng: There are cases we may not want to use LOTUS_ENFORCE??
+  // ?? Cheng: There are cases we may not want to use ONNXRUNTIME_ENFORCE??
   // ?? Cheng: Graph must be immutable for GetNodesInTopologicalOrder??
   // Create tensor at index mlvalue, and allocate buffer for it.
   // This tensor will own this buffer.
@@ -70,18 +70,18 @@ class ExecutionFrame {
                                              const TensorShape& shape);
 
   const MLValue& GetMLValue(int mlvalue_index) const {
-    LOTUS_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
+    ONNXRUNTIME_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
     return all_values_[mlvalue_index];
   }
 
   MLValue& GetMutableMLValue(int mlvalue_index) {
-    LOTUS_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
+    ONNXRUNTIME_ENFORCE(mlvalue_index >= 0 && static_cast<size_t>(mlvalue_index) < all_values_.size());
     return all_values_[mlvalue_index];
   }
 
   // Index to the first argument of the given node.
   int GetFirstArgIndex(onnxruntime::NodeIndex index) const {
-    LOTUS_ENFORCE(index < node_offsets_.size());
+    ONNXRUNTIME_ENFORCE(index < node_offsets_.size());
     return node_offsets_[index];
   }
 
@@ -111,7 +111,7 @@ class ExecutionFrame {
   }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ExecutionFrame);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(ExecutionFrame);
 
   // This method is not thread safe!
   void Release(int offset);

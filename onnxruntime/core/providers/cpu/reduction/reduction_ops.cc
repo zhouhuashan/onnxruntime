@@ -46,7 +46,7 @@ void PrepareForReduce(OpKernelContext* ctx,
 
   size_t ndim = input.Shape().GetDims().size();
   for (int64_t axe : axes_) {
-    LOTUS_ENFORCE(axe >= 0 && axe < (int64_t)ndim, "Axis attribute out of range");
+    ONNXRUNTIME_ENFORCE(axe >= 0 && axe < (int64_t)ndim, "Axis attribute out of range");
   }
 
   transposedInputData.resize(input.Shape().Size(), 0);

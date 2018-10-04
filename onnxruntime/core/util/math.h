@@ -70,7 +70,7 @@ void Not(const int N, const T* x, T* y, Provider* provider);
 template <typename T, class Provider>
 void Powx(const int N, const T* a, const T b, T* y, Provider* provider);
 
-#define LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(name)                            \
+#define DECLARE_BINARY_OP_BINARY_RESULT(name)                            \
   template <typename T, class Provider>                                        \
   void name(const int N, const T* a, const T* b, bool* y, Provider* provider); \
   template <typename T, class Provider>                                        \
@@ -82,18 +82,18 @@ void Powx(const int N, const T* a, const T b, T* y, Provider* provider);
       bool* y,                                                                 \
       Provider* provider);
 
-LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(LT);
-LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(LE);
-LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(GT);
-LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(GE);
+DECLARE_BINARY_OP_BINARY_RESULT(LT);
+DECLARE_BINARY_OP_BINARY_RESULT(LE);
+DECLARE_BINARY_OP_BINARY_RESULT(GT);
+DECLARE_BINARY_OP_BINARY_RESULT(GE);
 
-LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(And);
-LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(Or);
-LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(Xor);
+DECLARE_BINARY_OP_BINARY_RESULT(And);
+DECLARE_BINARY_OP_BINARY_RESULT(Or);
+DECLARE_BINARY_OP_BINARY_RESULT(Xor);
 
-#undef LOTUS_DECLARE_BINARY_OP_BINARY_RESULT
+#undef DECLARE_BINARY_OP_BINARY_RESULT
 
-#define LOTUS_DECLARE_BINARY_OP(name)                                       \
+#define DECLARE_BINARY_OP(name)                                       \
   template <typename T, class Provider>                                     \
   void name(const int N, const T* a, const T* b, T* y, Provider* provider); \
   template <typename T, class Provider>                                     \
@@ -111,12 +111,12 @@ LOTUS_DECLARE_BINARY_OP_BINARY_RESULT(Xor);
   void name##ToCol(                                                         \
       const int M, const int N, const T* x, T* y, Provider* provider);
 
-LOTUS_DECLARE_BINARY_OP(Add);
-LOTUS_DECLARE_BINARY_OP(Sub);
-LOTUS_DECLARE_BINARY_OP(Mul);
-LOTUS_DECLARE_BINARY_OP(Div);
+DECLARE_BINARY_OP(Add);
+DECLARE_BINARY_OP(Sub);
+DECLARE_BINARY_OP(Mul);
+DECLARE_BINARY_OP(Div);
 
-#undef LOTUS_DECLARE_BINARY_OP
+#undef DECLARE_BINARY_OP
 
 template <typename T, class Provider>
 void ReduceMin(

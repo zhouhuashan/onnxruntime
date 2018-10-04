@@ -18,7 +18,7 @@ class RNN final : public CudnnRnnBase<T> {
  public:
   RNN(const OpKernelInfo& info) : CudnnRnnBase<T>(info) {
     std::vector<std::string> activations_;
-    LOTUS_ENFORCE(info.GetAttrs("activations", activations_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttrs("activations", activations_).IsOK());
     if (activations_[0] == "Relu")
       CudnnRnnBase<T>::rnn_mode_ = CUDNN_RNN_RELU;
     else if (activations_[0] == "Tanh")
@@ -35,7 +35,6 @@ class RNN final : public CudnnRnnBase<T> {
 
     CudnnRnnBase<T>::CacheCudnnRnnWeights(info);
   }
-
 };
 
 }  // namespace cuda

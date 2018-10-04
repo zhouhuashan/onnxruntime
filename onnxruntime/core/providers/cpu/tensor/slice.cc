@@ -44,15 +44,15 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
   }
 
   if (axes.size() > starts_.size())
-    return Status(LOTUS, INVALID_ARGUMENT, "'axes' has more entries than the 'starts' attribute holds");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has more entries than the 'starts' attribute holds");
   if (axes.size() > ends_.size())
-    return Status(LOTUS, INVALID_ARGUMENT, "'axes' has more entries than the 'ends' attribute holds");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has more entries than the 'ends' attribute holds");
 
   // Iterate through the provided axes and override the start/end ranges
   for (size_t axesIndex = 0; axesIndex < axes.size(); axesIndex++) {
     auto axis = axes[axesIndex];
     if (axis >= dimension_count)
-      return Status(LOTUS, INVALID_ARGUMENT, "'axes' has an axis outside of the tensor dimension count");
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has an axis outside of the tensor dimension count");
     auto start = starts_[axesIndex];
     if (start < 0)
       start += input_dimensions[axis];
@@ -63,7 +63,7 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
       end += input_dimensions[axis];
     output_dims[axis] = clamp(end, int64_t{0}, input_dimensions[axis]) - starts[axis];
     if (output_dims[axis] < 0)
-      return Status(LOTUS, INVALID_ARGUMENT, "'starts' and 'ends' values resulted in a negative dimension");
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'starts' and 'ends' values resulted in a negative dimension");
   }
 
   TensorShape output_shape(output_dims);

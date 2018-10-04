@@ -104,8 +104,8 @@ class FuseExecutionProvider : public IExecutionProvider {
   }
 
   common::Status CopyTensor(const Tensor& src, Tensor& dst) const override {
-    UNUSED_PARAMETER(src);
-    UNUSED_PARAMETER(dst);
+    ONNXRUNTIME_UNUSED_PARAMETER(src);
+    ONNXRUNTIME_UNUSED_PARAMETER(dst);
     return Status::OK();
   }
 
@@ -247,7 +247,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
       AllocateMLValue<float>(TestCudaExecutionProvider()->GetAllocator(kMemTypeDefault), expected_output_dims, &output_ml_value);
 #endif
     } else {
-      LOTUS_THROW("Unsupported provider");
+      ONNXRUNTIME_THROW("Unsupported provider");
     }
   }
   io_binding->BindOutput("Y", output_ml_value);
@@ -273,7 +273,7 @@ void RunModelWithBindingMatMul(InferenceSession& session_object,
     auto& shape = rtensor.Shape();
     auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
     void* buffer = cpu_allocator->Alloc(element_type->Size() * shape.Size());
-    LOTUS_ENFORCE(buffer);
+    ONNXRUNTIME_ENFORCE(buffer);
     std::unique_ptr<Tensor> cpu_tensor = std::make_unique<Tensor>(element_type,
                                                                   shape,
                                                                   buffer,

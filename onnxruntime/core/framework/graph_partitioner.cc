@@ -56,7 +56,7 @@ KernelDefBuilder& BuildFusedKernelDef(KernelDefBuilder& builder, const onnxrunti
 
 Status GraphPartitioner::Partition(onnxruntime::Graph& graph) const {
   if (providers_.Empty()) {
-    return Status(LOTUS, INVALID_ARGUMENT, "No provider specified.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "No provider specified.");
   }
   //fused_kernel_registry is prepareing the kernels created on the fly for fused sub graph.
   //It is only visiable for current session.
@@ -80,7 +80,7 @@ Status GraphPartitioner::Partition(onnxruntime::Graph& graph) const {
         // The <provider> can run a fused <sub_graph> in the <graph>.
         //
         // Add fused node into <graph>
-        LOTUS_ENFORCE(nullptr != capacity->sub_graph_->GetMetaDef());
+        ONNXRUNTIME_ENFORCE(nullptr != capacity->sub_graph_->GetMetaDef());
         std::string node_name = provider->Type() + "_" + capacity->sub_graph_->GetMetaDef()->name + "_" + std::to_string(count++);
         auto fused_node = graph.FuseSubGraph(std::move(capacity->sub_graph_), node_name);
         fused_node->SetExecutionProviderType(provider->Type());

@@ -45,5 +45,5 @@ class TestEnv {
   ~TestEnv();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(TestEnv);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(TestEnv);
 };

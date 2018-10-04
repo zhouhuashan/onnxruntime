@@ -15,7 +15,7 @@ Status KernelRegistryManager::CreateKernel(const onnxruntime::Node& node,
                                            /*out*/ std::unique_ptr<OpKernel>& op_kernel) const {
   std::lock_guard<std::mutex> lock(lock_);
   if (kernel_registries_.empty()) {
-    return Status(LOTUS, FAIL, "Kernel not found.");
+    return Status(ONNXRUNTIME, FAIL, "Kernel not found.");
   }
 
   Status status;
@@ -53,7 +53,7 @@ Status KernelRegistryManager::SearchKernelRegistry(const onnxruntime::Node& node
                                                    /*out*/ const KernelCreateInfo** kernel_create_info) const {
   std::lock_guard<std::mutex> lock(lock_);
   if (kernel_registries_.empty()) {
-    return Status(LOTUS, FAIL, "Kernel def not found.");
+    return Status(ONNXRUNTIME, FAIL, "Kernel def not found.");
   }
 
   Status status;

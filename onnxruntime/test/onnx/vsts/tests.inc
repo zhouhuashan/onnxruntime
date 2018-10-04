@@ -701,9 +701,9 @@ TEST_METHOD(test_zfnet) {
   SessionFactory sf({::onnxruntime::kCpuExecutionProvider}, true, true);
   run(sf, L"modelzoo\\test_zfnet");
 }
-TEST_METHOD(keras_lotus_resnet3D) {
+TEST_METHOD(keras_onnxruntime_resnet3D) {
   SessionFactory sf({::onnxruntime::kCpuExecutionProvider}, true, true);
-  run(sf, L"others\\keras_lotus_resnet3D");
+  run(sf, L"others\\keras_onnxruntime_resnet3D");
 }
 TEST_METHOD(mobilenetv2_1_0) {
   SessionFactory sf({::onnxruntime::kCpuExecutionProvider}, true, true);

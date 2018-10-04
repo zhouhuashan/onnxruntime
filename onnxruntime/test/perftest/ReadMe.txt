@@ -1,4 +1,4 @@
-lotus_perf_test [options...] <model_path> <result_file>
+onnxruntime_perf_test [options...] <model_path> <result_file>
 
 Options:
         -m [test_mode]: Specifies the test mode. Value coulde be 'duration' or 'times'. Provide 'duration' to run the test for a fix duration, and 'times' to repeated for a certain times. Default:'duration'.

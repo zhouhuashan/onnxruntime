@@ -30,7 +30,7 @@ const KernelDef* GetKernelDef(const onnxruntime::Graph& graph,
                               const KernelRegistryManager& kernel_registry,
                               const onnxruntime::NodeIndex node_id) {
   auto node = graph.GetNode(node_id);
-  LOTUS_ENFORCE(nullptr != node);
+  ONNXRUNTIME_ENFORCE(nullptr != node);
 
   return GetKernelDef(kernel_registry, *node);
 }

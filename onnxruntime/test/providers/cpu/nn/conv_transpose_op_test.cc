@@ -37,7 +37,7 @@ void TestConvTransposeOp(const ConvTransposeOpAttributes& attributes,
   test.AddAttribute("strides", attributes.strides);
   test.AddAttribute("group", attributes.group);
 
-  LOTUS_ENFORCE(inputs.size() <= 3, "Our name array is only setup to handle 3 inputs");
+  ONNXRUNTIME_ENFORCE(inputs.size() <= 3, "Our name array is only setup to handle 3 inputs");
   const char* szNames[] = {"X", "W", "B"};
   for (size_t i = 0; i < inputs.size(); i++) {
     test.AddInput<float>(szNames[i], input_shapes[i], inputs[i]);

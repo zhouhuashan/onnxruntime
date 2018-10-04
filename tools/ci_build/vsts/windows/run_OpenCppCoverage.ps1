@@ -40,8 +40,8 @@ $outputXml = Join-Path $buildDir "cobertura.xml"
 $outputDir = Join-Path $buildDir "OpenCppCoverageResults"
 
 # Lotus unit tests
-$lotus_test_all = Join-Path $buildDir "lotus_test_all.exe"
-RunTest $lotus_test_all ("binary:" + (Join-Path $buildDir "lotus_test_all.cov"))
+$onnxruntime_test_all = Join-Path $buildDir "onnxruntime_test_all.exe"
+RunTest $onnxruntime_test_all ("binary:" + (Join-Path $buildDir "onnxruntime_test_all.cov"))
 
 # Set to true to use vstest.console.exe to run the model tests. Requires a 'models' directory to have been created
 # in $BuildRoot by running 'generate-data' from the ONNX installation.
@@ -50,9 +50,9 @@ $useVSTest = $false
 
 if ($haveModelsInBuildDir)
 {
-    # ONNX tests via the vstest onnx_test_runner. merge output from lotus_test_all.cov. 
+    # ONNX tests via the vstest onnx_test_runner. merge output from onnxruntime_test_all.cov. 
     $onnx_test_models = "vstest.console.exe " + (Join-Path $buildDir "onnx_test_runner_vstest.dll")
-    RunTest $onnx_test_models ("cobertura:$outputXml", "html:$outputDir") ("lotus_test_all.cov")
+    RunTest $onnx_test_models ("cobertura:$outputXml", "html:$outputDir") ("onnxruntime_test_all.cov")
 }
 else
 {
@@ -61,5 +61,5 @@ else
     $otr_1 = "$onnx_test_runner " + (Join-Path $sourceRoot "cmake/external/onnx/onnx/backend/test/data/pytorch-converted")
     $otr_2 = "$onnx_test_runner " + (Join-Path $sourceRoot "cmake/external/onnx/onnx/backend/test/data/pytorch-operator")
     RunTest $otr_1 ("binary:"  + (Join-Path $buildDir "otr_1.cov"))
-    RunTest $otr_2 ("cobertura:$outputXml", "html:$outputDir") ("lotus_test_all.cov", "otr_1.cov")
+    RunTest $otr_2 ("cobertura:$outputXml", "html:$outputDir") ("onnxruntime_test_all.cov", "otr_1.cov")
 }

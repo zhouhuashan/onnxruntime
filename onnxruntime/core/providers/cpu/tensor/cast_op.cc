@@ -76,11 +76,11 @@ const std::vector<MLDataType> castOpTypeConstraints{
         }                                                                                                                          \
         break;                                                                                                                     \
       case TensorProto_DataType_STRING:                                                                                            \
-        LOTUS_THROW("Casting to and from strings is not supported yet."); /*break;*/                                               \
+        ONNXRUNTIME_THROW("Casting to and from strings is not supported yet."); /*break;*/                                                 \
       case TensorProto_DataType_UNDEFINED:                                                                                         \
-        LOTUS_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/                                                \
+        ONNXRUNTIME_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/                                                  \
       default:                                                                                                                     \
-        LOTUS_THROW("Unexpected 'to' argument value: ", to_);                                                                      \
+        ONNXRUNTIME_THROW("Unexpected 'to' argument value: ", to_);                                                                        \
     }                                                                                                                              \
     return Status::OK();                                                                                                           \
   }
@@ -149,11 +149,11 @@ Status Cast<MLFloat16>::Compute(OpKernelContext* context) const {
       CastFloat16Data<MLFloat16, int8_t>(X, Y, shape, op_kernel_info);
       break;
     case TensorProto_DataType_STRING:
-      LOTUS_THROW("Casting to and from strings is not supported yet."); /*break;*/
+      ONNXRUNTIME_THROW("Casting to and from strings is not supported yet."); /*break;*/
     case TensorProto_DataType_UNDEFINED:
-      LOTUS_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/
+      ONNXRUNTIME_THROW("Cast op must have 'to' argument of type DataType"); /*break;*/
     default:
-      LOTUS_THROW("Unexpected 'to' argument value: ", to_);
+      ONNXRUNTIME_THROW("Unexpected 'to' argument value: ", to_);
   }
   return Status::OK();
 }

@@ -44,12 +44,12 @@ Status Cast<SrcT>::ComputeInternal(OpKernelContext* context) const {
   const auto* x_data = reinterpret_cast<const CudaSrcT*>(X->template Data<SrcT>());
   size_t count = shape.Size();
 
-#define CASE(TP_TYPE, DstT)                                                               \
-  case TP_TYPE:                                                                           \
-    Impl_Cast<CudaSrcT, typename ToCudaType<DstT>::MappedType>(                           \
-        x_data,                                                                           \
+#define CASE(TP_TYPE, DstT)                                                                        \
+  case TP_TYPE:                                                                                    \
+    Impl_Cast<CudaSrcT, typename ToCudaType<DstT>::MappedType>(                                    \
+        x_data,                                                                                    \
         reinterpret_cast<typename ToCudaType<DstT>::MappedType*>(Y->template MutableData<DstT>()), \
-        count);                                                                           \
+        count);                                                                                    \
     break;
 
   switch (to_) {
@@ -66,11 +66,11 @@ Status Cast<SrcT>::ComputeInternal(OpKernelContext* context) const {
     CASE(TensorProto_DataType_UINT64, uint64_t)
     CASE(TensorProto_DataType_BOOL, bool)
     case TensorProto_DataType_STRING:
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Casting to and from strings is not supported yet.");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Casting to and from strings is not supported yet.");
     case TensorProto_DataType_UNDEFINED:
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Cast op must have 'to' argument of type DataType");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Cast op must have 'to' argument of type DataType");
     default:
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Unexpected 'to' argument value: ", to_);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Unexpected 'to' argument value: ", to_);
   }
   return Status::OK();
 }

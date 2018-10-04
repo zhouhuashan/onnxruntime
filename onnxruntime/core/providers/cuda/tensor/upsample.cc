@@ -47,10 +47,10 @@ Status Upsample<T>::ComputeInternal(OpKernelContext* context) const {
   const std::vector<int64_t>& X_dims = X->Shape().GetDims();
   auto rank = X_dims.size();
   if (rank == 0)
-    return Status(LOTUS, INVALID_ARGUMENT, "Upsample: input tensor cannot be scalar.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Upsample: input tensor cannot be scalar.");
 
   if (rank != scales_.size())
-    return Status(LOTUS, INVALID_ARGUMENT, "Upsample: input tensor's dimension does not match the scales.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Upsample: input tensor's dimension does not match the scales.");
 
   std::vector<int64_t> Y_dims;
   for (std::size_t i = 0; i < X_dims.size(); i++) {
@@ -102,7 +102,7 @@ Status Upsample<T>::ComputeInternal(OpKernelContext* context) const {
     } else if (std::is_same<T, int32_t>::value) {
       tvm_X = tvm::placeholder(a_shape, tvm::Int(32), "A");
     } else
-      return Status(LOTUS, FAIL, "Unsupported data type");
+      return Status(ONNXRUNTIME, FAIL, "Unsupported data type");
 
     switch (mode_) {
       case UpsampleMode::NN:
@@ -112,7 +112,7 @@ Status Upsample<T>::ComputeInternal(OpKernelContext* context) const {
         tvm_Y = topi::nn::upsampling(tvm_X, out_hw, "NCHW", "BILINEAR");
         break;
       default:
-        return Status(LOTUS, FAIL, "Upsample: unexpected mode");
+        return Status(ONNXRUNTIME, FAIL, "Upsample: unexpected mode");
     }
 
     auto target = tvm::target::cuda();
@@ -138,7 +138,7 @@ Status Upsample<T>::ComputeInternal(OpKernelContext* context) const {
     dtype.code = kDLInt;
     dtype.bits = 32;
   } else
-    return Status(LOTUS, FAIL, "Unsupported data type");
+    return Status(ONNXRUNTIME, FAIL, "Unsupported data type");
 
   DLContext ctx;
   ctx.device_type = DLDeviceType::kDLGPU;

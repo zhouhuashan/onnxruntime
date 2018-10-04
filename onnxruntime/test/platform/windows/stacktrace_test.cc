@@ -33,8 +33,8 @@ TEST(StacktraceTests, BasicTests) {
     EXPECT_THAT(result[0], HasSubstr("Unknown symbol"));
 
   try {
-    LOTUS_THROW("Testing");
-  } catch (const LotusException& ex) {
+    ONNXRUNTIME_THROW("Testing");
+  } catch (const OnnxRuntimeException& ex) {
     auto msg = ex.what();
     std::cout << msg;
 

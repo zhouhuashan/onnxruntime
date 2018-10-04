@@ -34,7 +34,7 @@ class MLValueNameIdxMap {
 
     auto it = map_.find(name);
     if (it == map_.end()) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Could not find MLValue with name: ", name);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Could not find MLValue with name: ", name);
     }
 
     idx = it->second;
@@ -48,7 +48,7 @@ class MLValueNameIdxMap {
   const_iterator end() const noexcept { return map_.cend(); }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(MLValueNameIdxMap);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(MLValueNameIdxMap);
 
   // using std::atomic so each call to Add is guaranteed to get a unique index number.
   // we could use a raw int at the cost of thread safety, but as we populate the map during

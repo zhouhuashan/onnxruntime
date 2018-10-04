@@ -12,7 +12,7 @@
 
 namespace onnxruntime {
 
-class CustomRegistry : public KernelRegistry, public onnxruntime::LotusOpSchemaRegistry {
+class CustomRegistry : public KernelRegistry, public onnxruntime::OnnxRuntimeOpSchemaRegistry {
  public:
   CustomRegistry() = default;
   ~CustomRegistry() override = default;
@@ -29,7 +29,7 @@ class CustomRegistry : public KernelRegistry, public onnxruntime::LotusOpSchemaR
   common::Status RegisterCustomKernel(KernelCreateInfo&);
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(CustomRegistry);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(CustomRegistry);
 };
 
 }  // namespace onnxruntime

@@ -156,7 +156,7 @@ class Env {
   Env();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Env);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Env);
   EnvTime* env_time_ = EnvTime::Default();
 };
 
@@ -169,7 +169,7 @@ class Thread {
   virtual ~Thread();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Thread);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Thread);
 };
 
 /// \brief Options to configure a Thread.

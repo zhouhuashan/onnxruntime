@@ -36,9 +36,9 @@ int64_t TensorShape::Size() const {
 
 int64_t TensorShape::SizeToDimension(size_t dimension) const {
   const size_t num_dims = size();
-  LOTUS_ENFORCE(dimension <= num_dims,
-                "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
-                num_dims, " dimensions.");
+  ONNXRUNTIME_ENFORCE(dimension <= num_dims,
+              "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
+              num_dims, " dimensions.");
 
   int64_t size = SizeHelper(0, dimension);
   return size;
@@ -46,17 +46,17 @@ int64_t TensorShape::SizeToDimension(size_t dimension) const {
 
 int64_t TensorShape::SizeFromDimension(size_t dimension) const {
   const size_t num_dims = size();
-  LOTUS_ENFORCE(dimension <= num_dims,
-                "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
-                num_dims, " dimensions.");
+  ONNXRUNTIME_ENFORCE(dimension <= num_dims,
+              "Invalid dimension of ", dimension, " for SizeFromDimension. Tensor has ",
+              num_dims, " dimensions.");
 
   int64_t size = SizeHelper(dimension, num_dims);
   return size;
 }
 
 TensorShape TensorShape::Slice(size_t dimstart, size_t dimend) const {
-  LOTUS_ENFORCE(dimstart <= dimend && dimend <= size(),
-                "Invalid tensor shape slice argument.");
+  ONNXRUNTIME_ENFORCE(dimstart <= dimend && dimend <= size(),
+              "Invalid tensor shape slice argument.");
   return TensorShape(*this, dimstart, dimend);
 }
 

@@ -274,8 +274,8 @@ class Affine final : public OpKernel {
  public:
   Affine(const OpKernelInfo& info) : OpKernel(info) {
     // Either model-supplied or default values should be returned for alpha and beta
-    LOTUS_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
-    LOTUS_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr("alpha", &alpha_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr("beta", &beta_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;
@@ -308,7 +308,7 @@ template <typename T>
 class Scale final : public OpKernel {
  public:
   Scale(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(info.GetAttr("scale", &scale_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr("scale", &scale_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override;

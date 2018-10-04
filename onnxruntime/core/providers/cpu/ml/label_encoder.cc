@@ -29,7 +29,7 @@ Status LabelEncoder::Compute(OpKernelContext* context) const {
 
   if (input_type == DataTypeImpl::GetType<std::string>()) {
     if (Y.DataType() != DataTypeImpl::GetType<int64_t>())
-      return Status(LOTUS, FAIL, "Input of tensor(string) must have output of tensor(int64)");
+      return Status(ONNXRUNTIME, FAIL, "Input of tensor(string) must have output of tensor(int64)");
 
     auto input = gsl::make_span(X.template Data<std::string>(), shape.Size());
     auto output = gsl::make_span(Y.template MutableData<int64_t>(), shape.Size());
@@ -46,7 +46,7 @@ Status LabelEncoder::Compute(OpKernelContext* context) const {
                   });
   } else {
     if (Y.DataType() != DataTypeImpl::GetType<std::string>())
-      return Status(LOTUS, FAIL, "Input of tensor(int64) must have output of tensor(string)");
+      return Status(ONNXRUNTIME, FAIL, "Input of tensor(int64) must have output of tensor(string)");
 
     auto input = gsl::make_span(X.template Data<int64_t>(), shape.Size());
     auto output = gsl::make_span(Y.template MutableData<std::string>(), shape.Size());

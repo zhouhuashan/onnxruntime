@@ -34,7 +34,7 @@ class GraphTransformer {
   virtual ::onnxruntime::common::Status Apply(Graph& graph, bool& modified) const = 0;
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphTransformer);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(GraphTransformer);
 
   const std::string name_;
   const std::string desc_;
@@ -47,8 +47,8 @@ class GraphTransformer {
 // Represents a IGraphTransformer determined by a set of rewrite-rules.
 // The transformer will apply all the rewrite-rules iteratively as
 // determined by the underlying rewriting-strategy.
-// Several rewriting-strategies are possible when traversing the graph and applying 
-// rewrite rules, each with different tradeoffs. At the moment, we define one 
+// Several rewriting-strategies are possible when traversing the graph and applying
+// rewrite rules, each with different tradeoffs. At the moment, we define one
 // that performs top-down traversal of nodes.
 // TODO: Is a bottom-up traversal more efficient?
 // TODO: Is it worth adding the max number of passes a rule should be applied for?
@@ -57,8 +57,7 @@ class GraphTransformer {
 // calling resolve().
 class RuleBasedGraphTransformer : public GraphTransformer {
  public:
-  RuleBasedGraphTransformer(const std::string& name, const std::string& desc) : 
-	  GraphTransformer(name, desc) {}
+  RuleBasedGraphTransformer(const std::string& name, const std::string& desc) : GraphTransformer(name, desc) {}
 
   // Register a rewriting rule.
   // TODO (revisit needed): Using OpSignature* here will ask that OpSignature
@@ -90,8 +89,7 @@ class RuleBasedGraphTransformer : public GraphTransformer {
 // This is a rule-based graph transformer that applies rules by performing top-down passes of the graph.
 class TopDownRuleBasedTransformer : public RuleBasedGraphTransformer {
  public:
-  TopDownRuleBasedTransformer(const std::string& name, const std::string& desc) : 
-	  RuleBasedGraphTransformer(name, desc) {}
+  TopDownRuleBasedTransformer(const std::string& name, const std::string& desc) : RuleBasedGraphTransformer(name, desc) {}
 
   // Performs a single top-down traversal of the graph and applies all registered rules.
   ::onnxruntime::common::Status Apply(Graph&, bool&) const override;

@@ -46,7 +46,7 @@ LinearClassifier<T>::LinearClassifier(const OpKernelInfo& info) : OpKernel(info)
                                                                   classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")),
                                                                   classlabels_ints_(info.GetAttrsOrDefault<int64_t>("classlabels_ints")) {
   if (!info.GetAttrs<float>("coefficients", coefficients_).IsOK())
-    LOTUS_ENFORCE(!coefficients_.empty());
+    ONNXRUNTIME_ENFORCE(!coefficients_.empty());
 
   using_strings_ = !classlabels_strings_.empty();
   class_count_ = static_cast<int64_t>(intercepts_.size());
@@ -56,7 +56,7 @@ template <typename T>
 Status LinearClassifier<T>::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(common::LOTUS, common::INVALID_ARGUMENT,
+    return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 

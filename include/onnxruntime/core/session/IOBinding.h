@@ -87,6 +87,6 @@ class IOBinding {
                                                   const MLValue& orig_mlvalue,
                                                   MLValue& new_mlvalue);
 
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(IOBinding);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(IOBinding);
 };
 }  // namespace onnxruntime

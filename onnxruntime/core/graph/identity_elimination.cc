@@ -22,7 +22,7 @@ Status EliminateIdentity::Apply(GraphEditor* graph_editor, Node* node, bool* mod
   graph_editor->RemoveNode(node->Index());
 
   // TODO: Make sure resolve is not required here.
-  //LOTUS_RETURN_IF_ERROR(graph_editor->Resolve());
+  //ONNXRUNTIME_RETURN_IF_ERROR(graph_editor->Resolve());
 
   return Status::OK();
 }

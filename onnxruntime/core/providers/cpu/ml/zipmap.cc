@@ -39,8 +39,8 @@ ZipMapOp::ZipMapOp(const OpKernelInfo& info)
     : OpKernel(info),
       classlabels_int64s_(info.GetAttrsOrDefault<int64_t>("classlabels_int64s")),
       classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")) {
-  LOTUS_ENFORCE(classlabels_strings_.empty() ^ classlabels_int64s_.empty(),
-                "Must provide classlabels_strings or classlabels_int64s but not both.");
+  ONNXRUNTIME_ENFORCE(classlabels_strings_.empty() ^ classlabels_int64s_.empty(),
+              "Must provide classlabels_strings or classlabels_int64s but not both.");
   using_strings_ = !classlabels_strings_.empty();
 }
 
@@ -50,7 +50,7 @@ common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   const vector<int64_t> x_dims = x_shape.GetDims();
 
   if (x_dims.empty()) {
-    return Status(LOTUS,
+    return Status(ONNXRUNTIME,
                   INVALID_ARGUMENT,
                   "Zipmap does not support empty dim count");
   }
@@ -59,7 +59,7 @@ common::Status ZipMapOp::Compute(OpKernelContext* context) const {
   int64_t features_per_batch = x_dims[x_dims.size() - 1];
 
   if (x_dims.size() > 2) {
-    return Status(LOTUS,
+    return Status(ONNXRUNTIME,
                   INVALID_ARGUMENT,
                   "Zipmap only supports 1D or 2D input tensors");
   }
@@ -68,7 +68,7 @@ common::Status ZipMapOp::Compute(OpKernelContext* context) const {
 
   if (using_strings_) {
     if (features_per_batch != static_cast<int64_t>(classlabels_strings_.size())) {
-      return Status(LOTUS,
+      return Status(ONNXRUNTIME,
                     INVALID_ARGUMENT,
                     "Input features_per_batch[" + std::to_string(features_per_batch) +
                         "] != number of classlabels[" + std::to_string(classlabels_strings_.size()) + "]");
@@ -87,7 +87,7 @@ common::Status ZipMapOp::Compute(OpKernelContext* context) const {
     }
   } else {
     if (features_per_batch != static_cast<int64_t>(classlabels_int64s_.size())) {
-      return Status(LOTUS,
+      return Status(ONNXRUNTIME,
                     INVALID_ARGUMENT,
                     "Input features_per_batch[" + std::to_string(features_per_batch) +
                         "] != number of classlabels[" + std::to_string(classlabels_int64s_.size()) + "]");

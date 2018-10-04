@@ -17,7 +17,7 @@ void* NupharAllocator::Alloc(size_t size) {
                                                                    /*alignment=*/tvm::runtime::kAllocAlignment,
                                                                    /*type_hint=*/{});
   if (p == nullptr) {
-    LOTUS_THROW("TVM AllocDataSpace failure");
+    ONNXRUNTIME_THROW("TVM AllocDataSpace failure");
   }
   return p;
 }

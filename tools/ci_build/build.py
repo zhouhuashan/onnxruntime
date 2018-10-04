@@ -172,22 +172,22 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
     # TODO: fix jemalloc build so it does not conflict with lotus shared lib builds. (e.g. onnxuntime_pybind)
     # for now, disable jemalloc if pybind is also enabled.
     cmake_args = [cmake_path, cmake_dir,
-                 "-Dlotus_RUN_ONNX_TESTS=" + ("ON" if args.enable_onnx_tests else "OFF"),
-                 "-Dlotus_GENERATE_TEST_REPORTS=ON",
+                 "-Donnxruntime_RUN_ONNX_TESTS=" + ("ON" if args.enable_onnx_tests else "OFF"),
+                 "-Donnxruntime_GENERATE_TEST_REPORTS=ON",
                  "-DPYTHON_EXECUTABLE=" + sys.executable,
-                 "-Dlotus_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
-                 "-Dlotus_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),
-                 "-Dlotus_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
-                 "-Dlotus_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
-                 "-Dlotus_BUILD_SHARED_LIB=" + ("ON" if args.build_shared_lib else "OFF"),
-                 "-Dlotus_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
-                 "-Dlotus_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
-                 "-Dlotus_USE_MKLDNN=" + ("ON" if args.use_mkldnn else "OFF"),
-                 "-Dlotus_USE_MKLML=" + ("ON" if args.use_mklml else "OFF"),
-                 "-Dlotus_USE_OPENMP=" + ("ON" if args.use_openmp else "OFF"),
-                 "-Dlotus_USE_TVM=" + ("ON" if args.use_tvm else "OFF"),
-                 "-Dlotus_USE_LLVM=" + ("ON" if args.use_llvm else "OFF"),
-                 "-Dlotus_ENABLE_MICROSOFT_INTERNAL=" + ("ON" if args.enable_msinternal else "OFF")
+                 "-Donnxruntime_USE_CUDA=" + ("ON" if args.use_cuda else "OFF"),
+                 "-Donnxruntime_CUDNN_HOME=" + (cudnn_home if args.use_cuda else ""),
+                 "-Donnxruntime_USE_JEMALLOC=" + ("ON" if args.use_jemalloc else "OFF"),
+                 "-Donnxruntime_ENABLE_PYTHON=" + ("ON" if args.enable_pybind else "OFF"),
+                 "-Donnxruntime_BUILD_SHARED_LIB=" + ("ON" if args.build_shared_lib else "OFF"),
+                 "-Donnxruntime_USE_EIGEN_FOR_BLAS=" + ("OFF" if args.use_openblas else "ON"),
+                 "-Donnxruntime_USE_OPENBLAS=" + ("ON" if args.use_openblas else "OFF"),
+                 "-Donnxruntime_USE_MKLDNN=" + ("ON" if args.use_mkldnn else "OFF"),
+                 "-Donnxruntime_USE_MKLML=" + ("ON" if args.use_mklml else "OFF"),
+                 "-Donnxruntime_USE_OPENMP=" + ("ON" if args.use_openmp else "OFF"),
+                 "-Donnxruntime_USE_TVM=" + ("ON" if args.use_tvm else "OFF"),
+                 "-Donnxruntime_USE_LLVM=" + ("ON" if args.use_llvm else "OFF"),
+                 "-Donnxruntime_ENABLE_MICROSOFT_INTERNAL=" + ("ON" if args.enable_msinternal else "OFF")
                  ]
 
     if args.use_llvm:
@@ -198,11 +198,11 @@ def generate_build_tree(cmake_path, source_dir, build_dir, cuda_home, cudnn_home
         cmake_args += ["-DCUDA_CUDA_LIBRARY=" + nvml_stub_path]
 
     if args.use_preinstalled_eigen:
-        cmake_args += ["-Dlotus_USE_PREINSTALLED_EIGEN=ON",
+        cmake_args += ["-Donnxruntime_USE_PREINSTALLED_EIGEN=ON",
                        "-Deigen_SOURCE_PATH=" + args.eigen_path]
 
     if pb_home:
-        cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Dlotus_USE_PREBUILT_PB=ON']
+        cmake_args += ["-DONNX_CUSTOM_PROTOC_EXECUTABLE=" + os.path.join(pb_home,'bin','protoc'), '-Donnxruntime_USE_PREBUILT_PB=ON']
 
     cmake_args += ["-D{}".format(define) for define in cmake_extra_defines]
 
@@ -255,7 +255,7 @@ def build_targets(cmake_path, build_dir, configs, parallel):
 
 #TODO: remove this function. Get the test data from docker image
 #As we need to test Lotus via different onnx versions, it's not practical to build onnx multiple times for each PR
-def install_onnx_linux(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args):
+def install_onnx_linux(build_dir, source_dir, configs, cmake_path, onnxruntime_onnx_test_data_dir, cmake_extra_args):
     "Install ONNX and create test data."
     pb_src_dir = os.path.join(source_dir, 'cmake', 'external', 'protobuf')
     # make a protobuf release build
@@ -268,10 +268,10 @@ def install_onnx_linux(build_dir, source_dir, configs, cmake_path, lotus_onnx_te
     os.environ["PATH"] = os.path.join(install_dir, 'usr/local/bin') + os.pathsep + os.environ["PATH"]
     onnx_src = os.path.join(source_dir, 'cmake', 'external', 'onnx')
     run_subprocess([sys.executable, 'setup.py', 'install','--user'], cwd=onnx_src)
-    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', lotus_onnx_test_data_dir])
+    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', onnxruntime_onnx_test_data_dir])
 
 
-def install_onnx_win(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args):
+def install_onnx_win(build_dir, source_dir, configs, cmake_path, onnxruntime_onnx_test_data_dir, cmake_extra_args):
     "Install ONNX and create test data."
     dep_packages = ['typing_extensions','typing','six','protobuf','setuptools', 'numpy', 'pytest_runner']
     run_subprocess([sys.executable, '-m', 'pip', 'install', '--trusted-host', 'files.pythonhosted.org', '--upgrade'] + dep_packages)
@@ -327,7 +327,7 @@ def install_onnx_win(build_dir, source_dir, configs, cmake_path, lotus_onnx_test
             print(line)
 
     run_subprocess([sys.executable, 'setup.py', 'install'], cwd=onnx_src)
-    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', lotus_onnx_test_data_dir])
+    run_subprocess([sys.executable, '-m', 'onnx.backend.test.cmd_tools', 'generate-data', '-o', onnxruntime_onnx_test_data_dir])
 
 def add_dir_if_exists(dir, dir_list):
     if (os.path.isdir(dir)):
@@ -395,7 +395,7 @@ def setup_cuda_vars(args):
 
     return cuda_home, cudnn_home
 
-def run_lotus_tests(args, ctest_path, build_dir, configs, enable_python_tests, enable_tvm = False):
+def run_onnxruntime_tests(args, ctest_path, build_dir, configs, enable_python_tests, enable_tvm = False):
     for config in configs:
         log.info("Running tests for %s configuration", config)
         cwd = get_config_build_dir(build_dir, config)
@@ -429,14 +429,14 @@ def run_lotus_tests(args, ctest_path, build_dir, configs, enable_python_tests, e
         # shared lib tests - both simple + custom op
         if args.build_shared_lib:
             if is_ubuntu_1604():
-                run_subprocess([cwd+'/lotus_shared_lib_test'], cwd=cwd, dll_path=dll_path)
+                run_subprocess([cwd+'/onnxruntime_shared_lib_test'], cwd=cwd, dll_path=dll_path)
 
-def run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, use_cuda):
+def run_onnx_tests(build_dir, configs, onnxruntime_onnx_test_data_dir, onnx_test_data_dir, use_cuda):
 
     for config in configs:
         test_data_dirs = []
         # test data created by running with --install_onnx
-        add_dir_if_exists(os.path.join(lotus_onnx_test_data_dir, 'node'), test_data_dirs)
+        add_dir_if_exists(os.path.join(onnxruntime_onnx_test_data_dir, 'node'), test_data_dirs)
         cwd = get_config_build_dir(build_dir, config)
         if is_windows():
            exe = os.path.join(cwd, config, 'onnx_test_runner')
@@ -495,7 +495,7 @@ def main():
     # directory that Lotus ONNX test data is created in if this script is run with --install_onnx
     # If the directory exists and looks valid we assume ONNX is installed and run tests
     # using that data.
-    lotus_onnx_test_data_dir = os.path.join(build_dir, 'test_data')
+    onnxruntime_onnx_test_data_dir = os.path.join(build_dir, 'test_data')
 
     os.makedirs(build_dir, exist_ok=True)
 
@@ -532,18 +532,18 @@ def main():
     if (args.install_onnx):
         #try to install onnx from this source tree
         if(is_windows()):
-          install_onnx_win(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
+          install_onnx_win(build_dir, source_dir, configs, cmake_path, onnxruntime_onnx_test_data_dir, cmake_extra_args)
         else:
-          install_onnx_linux(build_dir, source_dir, configs, cmake_path, lotus_onnx_test_data_dir, cmake_extra_args)
+          install_onnx_linux(build_dir, source_dir, configs, cmake_path, onnxruntime_onnx_test_data_dir, cmake_extra_args)
 
 
     if (args.test):
-        run_lotus_tests(args, ctest_path, build_dir, configs, args.enable_pybind, args.use_tvm)
+        run_onnxruntime_tests(args, ctest_path, build_dir, configs, args.enable_pybind, args.use_tvm)
 
     # run the onnx tests if requested explicitly.
     # it could be done implicitly by user installing onnx but currently the tests fail so that doesn't work for CI
     if (args.enable_onnx_tests or args.install_onnx):
-        run_onnx_tests(build_dir, configs, lotus_onnx_test_data_dir, onnx_test_data_dir, args.use_cuda)
+        run_onnx_tests(build_dir, configs, onnxruntime_onnx_test_data_dir, onnx_test_data_dir, args.use_cuda)
 
     if args.build_wheel:
         build_python_wheel(source_dir, build_dir, configs, args.use_cuda)

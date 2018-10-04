@@ -22,7 +22,7 @@ using namespace ONNX_NAMESPACE;
 using namespace onnxruntime::common;
 
 const char* experimental_using_opaque = R"DOC(
-The operator constructs an instance of sparse one dimensional tensor 
+The operator constructs an instance of sparse one dimensional tensor
 represented by a SparseTensorSample type. It uses 3 supplied inputs each
 in a form of a single dimensional tensor.
 )DOC";
@@ -96,7 +96,7 @@ extern const char kSparseTensorName[] = "SparseTensorSample";
 using TestSparseTensorType = OpaqueRegister<SparseTensorSample, kTestDomain, kSparseTensorName,
                                             int64_t, int64_t, int64_t>;
 
-LOTUS_REGISTER_OPAQUE_TYPE(TestSparseTensorType);
+ONNXRUNTIME_REGISTER_OPAQUE_TYPE(TestSparseTensorType);
 
 /**
  *  @brief This class represents an operator kernel which takes as input 3 tensors
@@ -113,7 +113,7 @@ class ConstructSparseTensor final : public OpKernel {
   ConstructSparseTensor(const OpKernelInfo& info) : OpKernel{info} {}
 
   Status Compute(OpKernelContext* ctx) const override {
-    LOTUS_ENFORCE(ctx->InputCount() == 3, "Expecting 3 inputs");
+    ONNXRUNTIME_ENFORCE(ctx->InputCount() == 3, "Expecting 3 inputs");
 
     const Tensor& values_tensor = *ctx->Input<Tensor>(0);
     const Tensor& indicies_tensor = *ctx->Input<Tensor>(1);
@@ -123,8 +123,8 @@ class ConstructSparseTensor final : public OpKernel {
     // values
     const TensorShape& val_shape = values_tensor.Shape();
     const TensorShape& ind_shape = indicies_tensor.Shape();
-    LOTUS_ENFORCE(val_shape.NumDimensions() == 1, "Expecting vectors");
-    LOTUS_ENFORCE(val_shape.NumDimensions() == ind_shape.NumDimensions());
+    ONNXRUNTIME_ENFORCE(val_shape.NumDimensions() == 1, "Expecting vectors");
+    ONNXRUNTIME_ENFORCE(val_shape.NumDimensions() == ind_shape.NumDimensions());
 
     // Copy data. With some effort we could hold shallow copies of the input Tensors
     // but I will leave this for now.
@@ -141,7 +141,7 @@ class ConstructSparseTensor final : public OpKernel {
 
 /**
  *  @brief This class represents an operator kernel that fetches and returns
- *         sparse tensor shape from an Opaque type 
+ *         sparse tensor shape from an Opaque type
  *
  *
  *  Output - Scalar Tensor<int64_t>
@@ -151,14 +151,14 @@ class FetchSparseTensorShape final : public OpKernel {
   FetchSparseTensorShape(const OpKernelInfo& info) : OpKernel{info} {}
 
   Status Compute(OpKernelContext* ctx) const override {
-    LOTUS_ENFORCE(ctx->InputCount() == 1, "Expecting a single SparseTensorSample input");
+    ONNXRUNTIME_ENFORCE(ctx->InputCount() == 1, "Expecting a single SparseTensorSample input");
     const SparseTensorSample* sparse_input = ctx->Input<TestSparseTensorType>(0);
     // Always a single dimension of 1 bc we are storing a single number
     const int64_t dims[1] = {1};
     TensorShape output_shape(dims, 1);
     Tensor* sparse_shape = ctx->Output(0, output_shape);
     int64_t* shape_data = sparse_shape->template MutableData<int64_t>();
-    LOTUS_ENFORCE(shape_data != nullptr);
+    ONNXRUNTIME_ENFORCE(shape_data != nullptr);
     *shape_data = sparse_input->Size();
 
     return Status::OK();
@@ -295,7 +295,7 @@ TEST(OpaqueTypeTests, RunModel) {
   auto shape_def = ConstructFetchSparseShape();
   EXPECT_TRUE(registry->RegisterCustomKernel(shape_def, [](const OpKernelInfo& info) { return new FetchSparseTensorShape(info); }).IsOK());
 
-  ILotusOpSchemaRegistryList custom_schema_registries_ = {registry};
+  IOnnxRuntimeOpSchemaRegistryList custom_schema_registries_ = {registry};
   std::unordered_map<std::string, int> domain_to_version = {{onnxruntime::kMLDomain, 8}};
 
   Model model("SparseTensorTest", false, ModelMetaData(), &custom_schema_registries_, domain_to_version);
@@ -397,5 +397,5 @@ TEST(OpaqueTypeTests, RunModel) {
   EXPECT_EQ(5, *rtensor.template Data<int64_t>());
 }
 
-}  // namespace Test
+}  // namespace test
 }  // namespace onnxruntime

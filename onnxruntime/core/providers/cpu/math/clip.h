@@ -13,8 +13,8 @@ template <typename T>
 class Clip final : public OpKernel {
  public:
   Clip(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(info.GetAttr<T>("max", &max_).IsOK());
-    LOTUS_ENFORCE(info.GetAttr<T>("min", &min_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<T>("max", &max_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<T>("min", &min_).IsOK());
   }
 
   Status Compute(OpKernelContext* ctx) const override {

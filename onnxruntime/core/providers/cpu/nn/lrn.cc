@@ -26,7 +26,7 @@ Status LRN<float>::Compute(OpKernelContext* context) const {
   Tensor* Y = context->Output(0, X->Shape());
 
   // Supports NCHW image format.
-  LOTUS_ENFORCE(X->Shape().NumDimensions() == 4);
+  ONNXRUNTIME_ENFORCE(X->Shape().NumDimensions() == 4);
   const int N = gsl::narrow_cast<int>(X->Shape()[0]);
   const int C = gsl::narrow_cast<int>(X->Shape()[1]);
   const int H = gsl::narrow_cast<int>(X->Shape()[2]);
@@ -38,7 +38,7 @@ Status LRN<float>::Compute(OpKernelContext* context) const {
   float* Ydata = Y->template MutableData<float>();
 
   AllocatorPtr alloc;
-  LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
+  ONNXRUNTIME_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
 
   const int Xsize = gsl::narrow_cast<int>(X->Shape().Size());
   auto sdata = alloc->Alloc(sizeof(float) * Xsize);

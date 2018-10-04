@@ -47,7 +47,7 @@ common::Status IExecutionProvider::CopyTensor(const Tensor& src,
                                               Tensor& dst,
                                               int exec_queue_id) const {
   // execution provider may override this to support different exec queues
-  LOTUS_ENFORCE(exec_queue_id == 0);
+  ONNXRUNTIME_ENFORCE(exec_queue_id == 0);
   return CopyTensor(src, dst);
 }
 

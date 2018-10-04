@@ -57,7 +57,7 @@ common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) con
   const T* x_data = X.template Data<T>();
 
   if (x_dims.empty()) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Invalid argument: X input has empty dimensions.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Invalid argument: X input has empty dimensions.");
   }
 
   int64_t stride = x_dims.size() == 1 ? x_dims[0] : x_dims[1];
@@ -70,13 +70,13 @@ common::Status ArrayFeatureExtractorOp<T>::Compute(OpKernelContext* context) con
 
   // validate Y
   if (num_indices == 0) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Invalid Y argument: num_indices = 0");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Invalid Y argument: num_indices = 0");
   }
 
   if (num_indices - 1 >= stride) {
     std::ostringstream err_msg;
     err_msg << "Invalid Y argument: num_indices - 1 (" << num_indices - 1 << ") >= stride (" << stride << ")";
-    return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, err_msg.str());
   }
 
   std::vector<int64_t> z_dims{N, num_indices};

@@ -85,7 +85,7 @@ class CapturingSink : public logging::ISink {
   void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) override {
     // operator for formatting of timestamp in ISO8601 format including microseconds
     //using date::operator<<;
-    UNUSED_PARAMETER(timestamp);
+    ONNXRUNTIME_UNUSED_PARAMETER(timestamp);
     std::cout << " [" << message.SeverityPrefix() << ":" << message.Category() << ":" << logger_id << ", "
               << message.Location().ToString() << "] " << message.Message() << std::endl;
   }
@@ -107,7 +107,7 @@ void TestInference(const std::string& model_uri,
   InferenceSession session_object{so, logging_manager.get()};
 
   if (custom_op) {
-    auto st = session_object.LoadCustomOps({"liblotus_custom_op_shared_lib_test.so"});
+    auto st = session_object.LoadCustomOps({"libonnxruntime_custom_op_shared_lib_test.so"});
     if (!st.IsOK()) {
       std::cout << "error loading custom ops library " << st.ErrorMessage() << std::endl;
       exit(1);

@@ -47,7 +47,7 @@ class Graph : public GraphBase {
   // Serialize the <Graph> into <GraphProto>.
   const ONNX_NAMESPACE::GraphProto& ToGraphProto();
 
-  ILotusOpSchemaCollectionPtr GetSchemaRegistry() const;
+  IOnnxRuntimeOpSchemaCollectionPtr GetSchemaRegistry() const;
 
   // Construct a Graph instance for a subgraph. Inherits some properties from the parent graph.
   Graph(const Graph& model_graph, ONNX_NAMESPACE::GraphProto& subgraph_proto);
@@ -61,7 +61,7 @@ class Graph : public GraphBase {
   ~Graph();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Graph);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Graph);
 
   // This friendship relationship should only be used to call Graph::Graph and
   // Graph::LoadGraph All other access should be via the public API.
@@ -72,7 +72,7 @@ class Graph : public GraphBase {
   Graph(ONNX_NAMESPACE::GraphProto* graph_proto,
         const std::unordered_map<std::string, int>& domain_to_version,
         Version ir_version,
-        ILotusOpSchemaCollectionPtr schema_registry);
+        IOnnxRuntimeOpSchemaCollectionPtr schema_registry);
 
   Graph() = delete;
 
@@ -129,7 +129,7 @@ class Graph : public GraphBase {
   // Graph value_info.
   std::vector<const NodeArg*> value_info_;
 
-  ILotusOpSchemaCollectionPtr schema_registry_;
+  IOnnxRuntimeOpSchemaCollectionPtr schema_registry_;
 
   std::unique_ptr<FunctionContainer> function_container_;
 

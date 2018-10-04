@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-
 #pragma once
 
 #include "core/common/common.h"
@@ -60,10 +59,10 @@ class Conv : public CudaKernel, public ConvBase {
  public:
   Conv(const OpKernelInfo& info) : CudaKernel(info), ConvBase(info) {
     auto pads_size = pads_.size();
-    LOTUS_ENFORCE(pads_size % 2 == 0);
+    ONNXRUNTIME_ENFORCE(pads_size % 2 == 0);
     auto rank = pads_size / 2;
     for (size_t i = 0; i < rank; i++) {
-      LOTUS_ENFORCE(pads_[i] == pads_[i + rank], "cudnn only supports symmetric padding");
+      ONNXRUNTIME_ENFORCE(pads_[i] == pads_[i + rank], "cudnn only supports symmetric padding");
     }
   }
 

@@ -44,7 +44,7 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
   }
 
   VLOGS(logger, 1) << "Fetching output.";
-  LOTUS_RETURN_IF_ERROR(FetchOutput(session_state.GetMLValueNameIdxMap(), *root_frame_, output_names, fetches, logger));
+  ONNXRUNTIME_RETURN_IF_ERROR(FetchOutput(session_state.GetMLValueNameIdxMap(), *root_frame_, output_names, fetches, logger));
 
   if (root_frame_->HasPlan()) {
     std::vector<TensorShape> input_shapes;
@@ -60,8 +60,8 @@ Status ParallelExecutor::Execute(const SessionState& session_state,
 
     if (all_tensors) {
       auto mem_patterns = std::make_unique<MemoryPatternGroup>();
-      LOTUS_RETURN_IF_ERROR(root_frame_->GeneratePatterns(mem_patterns.get()));
-      LOTUS_RETURN_IF_ERROR(session_state.UpdateMemoryPatternGroupCache(input_shapes, std::move(mem_patterns)));
+      ONNXRUNTIME_RETURN_IF_ERROR(root_frame_->GeneratePatterns(mem_patterns.get()));
+      ONNXRUNTIME_RETURN_IF_ERROR(session_state.UpdateMemoryPatternGroupCache(input_shapes, std::move(mem_patterns)));
     }
   }
 
@@ -81,7 +81,7 @@ void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& ses
 
     // if a kernel has been added in the session state, it better be NON-null.
     if (p_op_kernel == nullptr)
-      LOTUS_THROW("Got nullptr from GetKernel for node: ", session_state.GetGraph()->GetNode(node_index)->Name());
+      ONNXRUNTIME_THROW("Got nullptr from GetKernel for node: ", session_state.GetGraph()->GetNode(node_index)->Name());
 
     OpKernelContextInternal op_kernel_context(*root_frame_, *p_op_kernel, logger);
 
@@ -118,7 +118,7 @@ void ParallelExecutor::RunNodeAsync(size_t p_node_index, const SessionState& ses
     // Execute the kernel.
     auto status = p_op_kernel->Compute(&op_kernel_context);
     if (!status.IsOK())
-      LOTUS_THROW("Compute failed for node: ", session_state.GetGraph()->GetNode(node_index)->Name());
+      ONNXRUNTIME_THROW("Compute failed for node: ", session_state.GetGraph()->GetNode(node_index)->Name());
 
     session_state.Profiler().EndTimeAndRecordEvent(profiling::NODE_EVENT,
                                                    node_name + "_kernel_time",
@@ -192,9 +192,9 @@ Status ParallelExecutor::FetchOutput(const MLValueNameIdxMap& name_idx_map,
     fetches.resize(output_names.size());
   } else {
     // this should've been checked before already
-    LOTUS_ENFORCE(output_names.size() == fetches.size(),
-                  "output_names vector size: " + std::to_string(output_names.size()) +
-                      " does not match that of fetches vector: " + std::to_string(fetches.size()));
+    ONNXRUNTIME_ENFORCE(output_names.size() == fetches.size(),
+                "output_names vector size: " + std::to_string(output_names.size()) +
+                    " does not match that of fetches vector: " + std::to_string(fetches.size()));
   }
 
   auto idx = 0;
@@ -202,7 +202,7 @@ Status ParallelExecutor::FetchOutput(const MLValueNameIdxMap& name_idx_map,
   for (const auto& oname : output_names) {
     VLOGS(logger, 1) << "Attempting to fetch output with name: " << oname;
     int mlvalue_index;
-    LOTUS_RETURN_IF_ERROR(name_idx_map.GetIdx(oname, mlvalue_index));
+    ONNXRUNTIME_RETURN_IF_ERROR(name_idx_map.GetIdx(oname, mlvalue_index));
     const MLValue& output_mlvalue = frame.GetMLValue(mlvalue_index);
     VLOGS(logger, 1) << "Copying fetched MLValue to output vector";
     fetches[idx++] = output_mlvalue;

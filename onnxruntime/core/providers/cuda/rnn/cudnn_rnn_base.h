@@ -88,7 +88,6 @@ class CudnnRNN {
   cudnnRNNDescriptor_t rnn_desc_;
 };
 
-
 template <typename T>
 class CudnnRnnBase : public CudaKernel {
   const std::set<std::string> allowed_directions{"forward", "reverse", "bidirectional"};
@@ -96,11 +95,11 @@ class CudnnRnnBase : public CudaKernel {
  public:
   CudnnRnnBase(const OpKernelInfo& info) : CudaKernel{info} {
     reverse_ = false;
-    LOTUS_ENFORCE(info.GetAttr("direction", &direction_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr("direction", &direction_).IsOK());
     num_directions_ = direction_ == "bidirectional" ? 2 : 1;
-    LOTUS_ENFORCE(allowed_directions.find(direction_) != allowed_directions.end());
+    ONNXRUNTIME_ENFORCE(allowed_directions.find(direction_) != allowed_directions.end());
 
-    LOTUS_ENFORCE(info.GetAttr("hidden_size", &hidden_size_).IsOK() && hidden_size_ > 0);
+    ONNXRUNTIME_ENFORCE(info.GetAttr("hidden_size", &hidden_size_).IsOK() && hidden_size_ > 0);
     rnn_mode_ = CUDNN_LSTM;
     num_layers_ = 1;
     weight_cached_ = false;

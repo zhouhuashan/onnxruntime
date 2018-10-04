@@ -64,9 +64,9 @@ template <typename T>
 ScalerOp<T>::ScalerOp(const OpKernelInfo& info) : OpKernel(info),
                                                   scale_(info.GetAttrsOrDefault<float>("scale")),
                                                   offset_(info.GetAttrsOrDefault<float>("offset")) {
-  LOTUS_ENFORCE(!scale_.empty(), "Empty scale in attributes");
-  LOTUS_ENFORCE(scale_.size() == offset_.size(),
-                "Scale size: (" + std::to_string(scale_.size()) + ") != (" + std::to_string(offset_.size()) + ")");
+  ONNXRUNTIME_ENFORCE(!scale_.empty(), "Empty scale in attributes");
+  ONNXRUNTIME_ENFORCE(scale_.size() == offset_.size(),
+              "Scale size: (" + std::to_string(scale_.size()) + ") != (" + std::to_string(offset_.size()) + ")");
 }
 
 template <typename T>
@@ -78,7 +78,7 @@ common::Status ScalerOp<T>::Compute(OpKernelContext* context) const {
   float* y_data = Y->template MutableData<float>();
   const vector<int64_t>& x_dims = x_shape.GetDims();
   if (x_dims.empty()) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Invalid argument: input has empty dimensions.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Invalid argument: input has empty dimensions.");
   }
 
   size_t x_size = x_shape.Size();
@@ -95,7 +95,7 @@ common::Status ScalerOp<T>::Compute(OpKernelContext* context) const {
   } else {
     std::ostringstream err_msg;
     err_msg << "Either both scale and offset can be of feature size (" << stride << ") or 1";
-    return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, err_msg.str());
   }
   return Status::OK();
 }

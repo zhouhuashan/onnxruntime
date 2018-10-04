@@ -148,7 +148,7 @@ class PlannerImpl {
   MLValueIndex Index(const MLValueName& name) {
     MLValueIndex result;
     auto status = mlvalue_name_idx_map_.GetIdx(name, result);
-    LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
+    ONNXRUNTIME_ENFORCE(status.IsOK(), status.ErrorMessage());
     return result;
   }
 
@@ -174,7 +174,7 @@ class PlannerImpl {
   }
 
   void Reuse(MLValueIndex reused, MLValueIndex reused_for) {
-    LOTUS_ENFORCE(reused != reused_for);
+    ONNXRUNTIME_ENFORCE(reused != reused_for);
     // find original buffer underlying ml-value we want to reuse:
     MLValueIndex original = Buffer(reused);
     // record that the new buffer will reuse that original buffer
@@ -195,7 +195,7 @@ class PlannerImpl {
 
     // Note: We expect a KernelDef to be available at this point. If it is not available, the
     // planner would have returned an error status earlier on.
-    LOTUS_ENFORCE(nullptr != p_opkernel_def);
+    ONNXRUNTIME_ENFORCE(nullptr != p_opkernel_def);
 
     const std::vector<std::pair<int, int>>& alias_map = p_opkernel_def->Alias();
     auto& input_args = node.InputDefs();
@@ -256,7 +256,7 @@ class PlannerImpl {
     const TypeProto& type_proto = ONNX_NAMESPACE::Utils::DataTypeUtils::ToTypeProto(tensor_type);
     MLDataType ml_data_type = DataTypeImpl::TypeFromProto(type_proto);
     const TensorTypeBase* tensor_type_base = ml_data_type->AsTensorType();
-    LOTUS_ENFORCE(nullptr != tensor_type_base);
+    ONNXRUNTIME_ENFORCE(nullptr != tensor_type_base);
     MLDataType elt_type = tensor_type_base->GetElementType();
     return elt_type->Size();
   }
@@ -355,11 +355,11 @@ class PlannerImpl {
         std::ostringstream errormsg;
         errormsg << "No suitable kernel definition found for op " << pnode->OpType();
         if (!pnode->Name().empty()) errormsg << " (node " << pnode->Name() << ")";
-        return LOTUS_MAKE_STATUS(LOTUS, FAIL, errormsg.str());
+        return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, errormsg.str());
       }
 
       auto exec_provider = execution_providers_.Get(graph_, step.node_index);
-      LOTUS_ENFORCE(exec_provider);
+      ONNXRUNTIME_ENFORCE(exec_provider);
 
       auto& default_allocator_info = exec_provider->GetAllocator(kMemTypeDefault)->Info();
       auto& mem_type_allocated_args = p_kernelDef->OutputMemoryType();
@@ -415,7 +415,7 @@ class PlannerImpl {
             auto wt_index = Index(def_name);
             SequentialExecutionPlan::AllocPlanPerValue& thisplan = AllocPlan(wt_index);
             auto* p_provider = execution_providers_.Get(node);
-            LOTUS_ENFORCE(p_provider);
+            ONNXRUNTIME_ENFORCE(p_provider);
 
             thisplan.alloc_kind = AllocKind::kAllocateStatically;
             auto p_opkernelDef = utils::GetKernelDef(kernel_registry_, node);
@@ -538,7 +538,7 @@ class PlannerImpl {
 
 Status PlannerImpl::CreatePlan() {
   const std::vector<onnxruntime::NodeIndex>* p_graph_nodes;
-  LOTUS_RETURN_IF_ERROR(graph_.GetNodesInTopologicalOrder(&p_graph_nodes));
+  ONNXRUNTIME_RETURN_IF_ERROR(graph_.GetNodesInTopologicalOrder(&p_graph_nodes));
 
   auto num_ml_values = mlvalue_name_idx_map_.MaxIdx() + 1;
 
@@ -552,7 +552,7 @@ Status PlannerImpl::CreatePlan() {
   }
 
   // compute use counts for all ml-values
-  LOTUS_RETURN_IF_ERROR(ComputeUseCounts());
+  ONNXRUNTIME_RETURN_IF_ERROR(ComputeUseCounts());
 
   // determine sharing/reuse among ml-values
   ComputeReusePlan();

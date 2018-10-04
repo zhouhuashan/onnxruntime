@@ -172,7 +172,7 @@ class ScanImpl {
 Status Scan::Compute(OpKernelContext* ctx) const {
   auto ctx_internal = static_cast<OpKernelContextInternal*>(ctx);
   auto* session_state = ctx_internal->SubgraphSessionState("body");
-  LOTUS_ENFORCE(session_state, "Subgraph SessionState was not found for 'body' attribute.");
+  ONNXRUNTIME_ENFORCE(session_state, "Subgraph SessionState was not found for 'body' attribute.");
 
   // TODO:
   //       Setup shape/type inferencing for subgraph (runs prior to Scan being called)
@@ -182,7 +182,7 @@ Status Scan::Compute(OpKernelContext* ctx) const {
   ScanImpl scan_impl{*ctx_internal, *session_state, num_scan_inputs_, directions_};
 
   auto status = scan_impl.Initialize();
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   status = scan_impl.Execute();
 
@@ -245,7 +245,7 @@ MLValue& LoopStateVariable::Output() {
 }
 
 void LoopStateVariable::Next() {
-  LOTUS_ENFORCE(iteration_num_ < sequence_len_, "Misuse of LoopStateVariable. Attempt to move beyond end of sequence");
+  ONNXRUNTIME_ENFORCE(iteration_num_ < sequence_len_, "Misuse of LoopStateVariable. Attempt to move beyond end of sequence");
   ++iteration_num_;
 }
 
@@ -268,7 +268,7 @@ ScanImpl::ScanImpl(OpKernelContextInternal& context,
 
 Status ScanImpl::Initialize() {
   auto status = ValidateInput();
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   auto& graph_outputs = graph_.GetOutputs();
   output_names_.reserve(graph_outputs.size());
@@ -280,7 +280,7 @@ Status ScanImpl::Initialize() {
   }
 
   status = AllocateOutputTensors();
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   return Status::OK();
 }
@@ -310,9 +310,9 @@ Status ScanImpl::ValidateSubgraphInput(int start_input, int end_input, bool has_
     const auto& input_shape = input_tensor.Shape();
 
     if (input_shape.NumDimensions() < min_dims_required)
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Invalid scan input:", graph_inputs[i]->Name(),
-                               " Expected ", min_dims_required,
-                               " dimensions or more but input had shape of ", input_shape);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Invalid scan input:", graph_inputs[i]->Name(),
+                             " Expected ", min_dims_required,
+                             " dimensions or more but input had shape of ", input_shape);
 
     auto this_batch_size = input_shape[0];
 
@@ -320,9 +320,9 @@ Status ScanImpl::ValidateSubgraphInput(int start_input, int end_input, bool has_
       batch_size_ = this_batch_size;
     else {
       if (batch_size_ != this_batch_size) {
-        return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Scan inputs have inconsistent batch size. Previous value was ",
-                                 batch_size_, " but ", graph_inputs[i]->Name(), " has batch size of ",
-                                 this_batch_size);
+        return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Scan inputs have inconsistent batch size. Previous value was ",
+                               batch_size_, " but ", graph_inputs[i]->Name(), " has batch size of ",
+                               this_batch_size);
       }
     }
 
@@ -333,9 +333,9 @@ Status ScanImpl::ValidateSubgraphInput(int start_input, int end_input, bool has_
         max_sequence_len_ = this_seq_len;
       } else {
         if (max_sequence_len_ != this_seq_len) {
-          return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Scan inputs have inconsistent sequence lengths. Previous value was ",
-                                   max_sequence_len_, " but ", graph_inputs[i]->Name(),
-                                   " has length of ", this_seq_len);
+          return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Scan inputs have inconsistent sequence lengths. Previous value was ",
+                                 max_sequence_len_, " but ", graph_inputs[i]->Name(),
+                                 " has length of ", this_seq_len);
         }
       }
     }
@@ -349,24 +349,24 @@ Status ScanImpl::ValidateInput() {
   auto num_graph_inputs = graph_inputs.size();
 
   if (num_graph_inputs != num_variadic_inputs_) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "The subgraph in 'body' expects ", num_graph_inputs,
-                             " inputs but Scan was only given ", num_variadic_inputs_);
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "The subgraph in 'body' expects ", num_graph_inputs,
+                           " inputs but Scan was only given ", num_variadic_inputs_);
   }
 
   // process any loop state variables, which will set the batch size
   auto status = ValidateSubgraphInput(0, num_loop_state_variables_, false, graph_inputs);
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   // process the scan inputs. sets/validates batch size and sequence length
   status = ValidateSubgraphInput(num_loop_state_variables_, num_variadic_inputs_, true, graph_inputs);
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   if (sequence_lens_tensor_ != nullptr) {
     auto num_entries = sequence_lens_tensor_->Shape().Size();
 
     if (num_entries != batch_size_) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "sequence_lens length of ", num_entries,
-                               " did not match batch size of ", batch_size_);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "sequence_lens length of ", num_entries,
+                             " did not match batch size of ", batch_size_);
     }
 
     auto d = sequence_lens_tensor_->DataAsSpan<int64_t>();
@@ -374,8 +374,8 @@ Status ScanImpl::ValidateInput() {
 
     if (std::all_of(sequence_lens_.cbegin(), sequence_lens_.cend(),
                     [this](int64_t value) { return value > 0 && value <= max_sequence_len_; }) == false) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                               "Invalid entries in sequence_lens. Max sequence length was ", max_sequence_len_);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
+                             "Invalid entries in sequence_lens. Max sequence length was ", max_sequence_len_);
     }
 
   } else {
@@ -407,7 +407,7 @@ Status ScanImpl::AllocateOutput(int index, bool has_sequence_len_dimension) {
   auto* tensor = context_.Output(index, TensorShape(scan_output_dims));
 
   if (!tensor)
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Failed to create output tensor for ", graph_output->Name());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Failed to create output tensor for ", graph_output->Name());
 
   // zero out the output so that any short sequences have deterministic values in unused slots.
   // strictly speaking this isn't required, and alternatively we could fill with zeros when we
@@ -423,8 +423,8 @@ Status ScanImpl::AllocateOutputTensors() {
   auto& graph_outputs = graph_.GetOutputs();
 
   if (graph_outputs.size() != num_variadic_outputs_) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Subgraph in 'body' produces ", graph_outputs.size(),
-                             " outputs but Scan expects ", num_variadic_outputs_);
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Subgraph in 'body' produces ", graph_outputs.size(),
+                           " outputs but Scan expects ", num_variadic_outputs_);
   }
 
   // TODO: Need to handle shape/type inference for subgraphs.
@@ -433,12 +433,12 @@ Status ScanImpl::AllocateOutputTensors() {
   for (int i = 0; i < num_loop_state_variables_; ++i) {
     const bool has_sequence_len_dimension = false;  // loop state variables don't have a sequence_len dimension;
     status = AllocateOutput(i, has_sequence_len_dimension);
-    LOTUS_RETURN_IF_ERROR(status);
+    ONNXRUNTIME_RETURN_IF_ERROR(status);
   }
 
   for (int i = num_loop_state_variables_, end = num_variadic_outputs_; i < end; ++i) {
     status = AllocateOutput(i, true);
-    LOTUS_RETURN_IF_ERROR(status);
+    ONNXRUNTIME_RETURN_IF_ERROR(status);
   }
 
   return Status::OK();
@@ -462,7 +462,7 @@ Status ScanImpl::CreateLoopStateVariables(std::vector<std::vector<LoopStateVaria
     const MLValue& mlvalue = GetSubgraphInputMLValue(context_, i);
     MLValue* p_mlvalue = context_.GetOutputMLValue(i);
 
-    LOTUS_ENFORCE(p_mlvalue, "Output MLValue has not been created for loop state variable output ", i);
+    ONNXRUNTIME_ENFORCE(p_mlvalue, "Output MLValue has not been created for loop state variable output ", i);
 
     loop_state_input_iterators.push_back(MLValueTensorSlicer<const MLValue>::Create(mlvalue).begin());
     loop_state_output_iterators.push_back(MLValueTensorSlicer<MLValue>::Create(*p_mlvalue).begin());
@@ -473,7 +473,7 @@ Status ScanImpl::CreateLoopStateVariables(std::vector<std::vector<LoopStateVaria
 
   AllocatorPtr alloc;
   auto status = context_.GetTempSpaceAllocator(&alloc);
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   // setup the loop state variables for each batch row
   for (int64_t b = 0; b < batch_size_; ++b) {
@@ -500,7 +500,7 @@ Status ScanImpl::Execute() {
   // for each batch item, std::vector of LoopStateVariables
   std::vector<std::vector<LoopStateVariable>> batch_loop_state_variables;
   status = CreateLoopStateVariables(batch_loop_state_variables);
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   for (int64_t b = 0; b < batch_size_; ++b) {
     // Setup input MLValue streams
@@ -525,7 +525,7 @@ Status ScanImpl::Execute() {
 
     for (int i = num_loop_state_variables_, end = num_variadic_outputs_; i < end; ++i) {
       MLValue* p_mlvalue = context_.GetOutputMLValue(i);
-      LOTUS_ENFORCE(p_mlvalue, "Output MLValue has not been created for output ", i);
+      ONNXRUNTIME_ENFORCE(p_mlvalue, "Output MLValue has not been created for output ", i);
 
       scan_output_stream_iterators.push_back(MLValueTensorSlicer<MLValue>::Create(*p_mlvalue, 1, b).begin());
     }
@@ -536,7 +536,7 @@ Status ScanImpl::Execute() {
                              scan_output_stream_iterators,
                              sequence_lens_[b]);
 
-    LOTUS_RETURN_IF_ERROR(status);
+    ONNXRUNTIME_RETURN_IF_ERROR(status);
   }
 
   return status;
@@ -595,7 +595,7 @@ Status ScanImpl::IterateSequence(std::vector<LoopStateVariable>& loop_state_vari
     // For now just making it work. Optimization and refinement will follow.
     SequentialExecutor executor;
     status = executor.Execute(session_state_, feeds, output_names_, fetches, context_.Logger());
-    LOTUS_RETURN_IF_ERROR(status);
+    ONNXRUNTIME_RETURN_IF_ERROR(status);
 
     // cycle the LoopStateVariable input/output in preparation for the next iteration
     std::for_each(loop_state_variables.begin(), loop_state_variables.end(), [](LoopStateVariable& v) { v.Next(); });

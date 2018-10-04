@@ -71,29 +71,29 @@ SessionStateInitializer::SessionStateInitializer(onnxruntime::Graph& graph,
 common::Status SessionStateInitializer::CreatePlan(const onnxruntime::GraphTransformerManager& graph_transformation_manager,
                                                    const InsertCastTransformer& insert_cast_transformer,
                                                    bool enable_sequential_execution) {
-  LOTUS_RETURN_IF_ERROR(TransformGraph(graph_, graph_transformation_manager,
-                                       execution_providers_, kernel_registry_manager_,
-                                       insert_cast_transformer));
+  ONNXRUNTIME_RETURN_IF_ERROR(TransformGraph(graph_, graph_transformation_manager,
+                                     execution_providers_, kernel_registry_manager_,
+                                     insert_cast_transformer));
 
   // populate the SessionState MLValueNameIdxMap
-  LOTUS_RETURN_IF_ERROR(SaveMLValueNameIndexMapping(graph_,
-                                                    session_state_.GetMLValueNameIdxMap(),
-                                                    logger_));
+  ONNXRUNTIME_RETURN_IF_ERROR(SaveMLValueNameIndexMapping(graph_,
+                                                  session_state_.GetMLValueNameIdxMap(),
+                                                  logger_));
 
   std::unique_ptr<SequentialExecutionPlan> exec_plan;
 
   if (enable_sequential_execution) {
     // CreatePlan will create a new SequentialExecutionPlan instance that we will
     // save into the session state.
-    LOTUS_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
-                                                        session_state_.GetMLValueNameIdxMap(), exec_plan));
+    ONNXRUNTIME_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
+                                                      session_state_.GetMLValueNameIdxMap(), exec_plan));
 
     session_state_.SetExecutionPlan(std::move(exec_plan));
   } else {
     // Parallel execution still uses same allocation plan, but has limitation of memory buffer reuse.
     SequentialPlannerContext context(true /* enable parallel execution */);
-    LOTUS_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
-                                                        session_state_.GetMLValueNameIdxMap(), context, exec_plan));
+    ONNXRUNTIME_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
+                                                      session_state_.GetMLValueNameIdxMap(), context, exec_plan));
 
     session_state_.SetExecutionPlan(std::move(exec_plan));
   }
@@ -104,7 +104,7 @@ common::Status SessionStateInitializer::CreatePlan(const onnxruntime::GraphTrans
 common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pattern,
                                                           std::map<AllocatorInfo, BufferUniquePtr>& weights_buffers) {
   const auto* exec_plan_ptr = session_state_.GetExecutionPlan();
-  LOTUS_ENFORCE(exec_plan_ptr, "Execution plan was not found in SessionState. CreatePlan must be called first.");
+  ONNXRUNTIME_ENFORCE(exec_plan_ptr, "Execution plan was not found in SessionState. CreatePlan must be called first.");
 
   const auto& exec_plan{*exec_plan_ptr};
   const auto& mlvalue_name_idx_map{session_state_.GetMLValueNameIdxMap()};
@@ -114,14 +114,14 @@ common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pat
     session_state_.AddInitializedTensor(idx, value);
   };
 
-  LOTUS_RETURN_IF_ERROR(SaveInitializedTensors(graph_, enable_memory_pattern, exec_plan,
-                                               execution_providers_, mlvalue_name_idx_map, weights_buffers,
-                                               add_initialized_tensor, logger_));
+  ONNXRUNTIME_RETURN_IF_ERROR(SaveInitializedTensors(graph_, enable_memory_pattern, exec_plan,
+                                             execution_providers_, mlvalue_name_idx_map, weights_buffers,
+                                             add_initialized_tensor, logger_));
 
   graph_.CleanAllInitializedTensors();  // remove weights from the graph now to save memory
 
-  LOTUS_RETURN_IF_ERROR(SaveKernels(execution_providers_, session_state_, kernel_registry_manager_, logger_));
-  LOTUS_RETURN_IF_ERROR(SaveInputOutputNamesToNodeMapping(graph_, kernel_registry_manager_, session_state_));
+  ONNXRUNTIME_RETURN_IF_ERROR(SaveKernels(execution_providers_, session_state_, kernel_registry_manager_, logger_));
+  ONNXRUNTIME_RETURN_IF_ERROR(SaveInputOutputNamesToNodeMapping(graph_, kernel_registry_manager_, session_state_));
 
   return Status::OK();
 }
@@ -139,13 +139,13 @@ common::Status TransformGraph(onnxruntime::Graph& graph,
   // 5. insert cast nodes.
 
   // first apply the default/system/basic graph to graph optimizations.
-  LOTUS_RETURN_IF_ERROR(graph_transformer_mgr.ApplyAll(graph));
+  ONNXRUNTIME_RETURN_IF_ERROR(graph_transformer_mgr.ApplyAll(graph));
 
   auto kernels{kernel_registry_manager.GetAllKernelRegistries()};
 
   // Do partitioning based on execution providers' capability.
   GraphPartitioner partitioner(kernel_registry_manager, providers);
-  LOTUS_RETURN_IF_ERROR(partitioner.Partition(graph));
+  ONNXRUNTIME_RETURN_IF_ERROR(partitioner.Partition(graph));
 
   // Insert copy nodes.
   for (auto& provider : providers) {
@@ -157,9 +157,9 @@ common::Status TransformGraph(onnxruntime::Graph& graph,
 
   // Insert cast node/s.
   bool modified = false;
-  LOTUS_RETURN_IF_ERROR(insert_cast_transformer.Apply(graph, modified));
+  ONNXRUNTIME_RETURN_IF_ERROR(insert_cast_transformer.Apply(graph, modified));
 
-  LOTUS_RETURN_IF_ERROR(graph.Resolve());
+  ONNXRUNTIME_RETURN_IF_ERROR(graph.Resolve());
 
   return common::Status::OK();
 }
@@ -214,7 +214,7 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
                                       MLValue& mlvalue, void* preallocated, size_t preallocated_size) {
   auto alloc_ptr = utils::GetAllocator(exec_providers, alloc_info);
   if (!alloc_ptr) {
-    return Status(common::LOTUS, common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
+    return Status(common::ONNXRUNTIME, common::FAIL, "Failed to get allocator for alloc_info: " + alloc_info.ToString());
   }
 
   if (strcmp(alloc_info.name, CPU) == 0 || alloc_info.mem_type == kMemTypeCPUOutput) {
@@ -227,15 +227,15 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
   AllocatorPtr deserialize_alloc_ptr;
   std::unique_ptr<Tensor> p_deserialize_tensor;
   deserialize_alloc_ptr = exec_providers.Get(kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
-  LOTUS_RETURN_IF_ERROR(utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
-                                                        deserialize_alloc_ptr));
+  ONNXRUNTIME_RETURN_IF_ERROR(utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
+                                                      deserialize_alloc_ptr));
 
   if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
-    return Status(common::LOTUS, common::FAIL, "The buffer planner is not consistent with tensor buffer size");
+    return Status(common::ONNXRUNTIME, common::FAIL, "The buffer planner is not consistent with tensor buffer size");
   }
 
   const IExecutionProvider* provider = exec_providers.Get(alloc_info);
-  LOTUS_ENFORCE(provider != nullptr);
+  ONNXRUNTIME_ENFORCE(provider != nullptr);
   p_tensor = std::make_unique<Tensor>(
       p_deserialize_tensor->DataType(),
       p_deserialize_tensor->Shape(),
@@ -264,7 +264,7 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
 
 static common::Status PlanTensor(MLValuePatternPlanner& planner, const MLValueNameIdxMap& mlvalue_name_idx_map, const std::string& name, const ONNX_NAMESPACE::TensorProto& tensor_proto) {
   int mlvalue_index;
-  LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
+  ONNXRUNTIME_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
   size_t len;
   Status st = utils::GetSizeInBytesFromTensorProto(tensor_proto, &len);
   if (st.Code() == common::NOT_IMPLEMENTED) return Status::OK();
@@ -281,7 +281,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
                                                     const logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving initialized tensors.";
 
-  LOTUS_ENFORCE(mlvalue_name_idx_map.MaxIdx() > 0, "MLValue indexes should have been populated.");
+  ONNXRUNTIME_ENFORCE(mlvalue_name_idx_map.MaxIdx() > 0, "MLValue indexes should have been populated.");
 
   MLValuePatternPlanner planner(execution_plan);
 
@@ -289,20 +289,20 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
   const onnxruntime::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
   for (const auto& entry : initialized_tensor_set) {
     //string/complex64/complex128 tensors will be skipped
-    LOTUS_RETURN_IF_ERROR(PlanTensor(planner, mlvalue_name_idx_map, entry.first, *entry.second));
+    ONNXRUNTIME_RETURN_IF_ERROR(PlanTensor(planner, mlvalue_name_idx_map, entry.first, *entry.second));
   }
 
   //2. allocate weight buffer on different locations
   MemoryPatternGroup mem_patterns;
-  LOTUS_RETURN_IF_ERROR(planner.GeneratePatterns(&mem_patterns));
+  ONNXRUNTIME_RETURN_IF_ERROR(planner.GeneratePatterns(&mem_patterns));
   for (size_t i = 0; i < mem_patterns.locations.size(); i++) {
     auto& location = mem_patterns.locations[i];
-    LOTUS_ENFORCE(weights_buffers.find(location) == weights_buffers.end(),
-                  "Existing entry in weights buffer for ", location.name);
+    ONNXRUNTIME_ENFORCE(weights_buffers.find(location) == weights_buffers.end(),
+                "Existing entry in weights buffer for ", location.name);
 
     auto alloc = utils::GetAllocator(exec_providers, location);
     if (!alloc)
-      return Status(common::LOTUS, common::FAIL, "Failed to get allocator for location: " + location.ToString());
+      return Status(common::ONNXRUNTIME, common::FAIL, "Failed to get allocator for location: " + location.ToString());
 
     void* buffer = mem_patterns.patterns[i].PeakSize() > 0 ? alloc->Alloc(mem_patterns.patterns[i].PeakSize())
                                                            : nullptr;
@@ -313,13 +313,13 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
   for (const auto& entry : initialized_tensor_set) {
     const std::string& name = entry.first;
     int mlvalue_index;
-    LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
+    ONNXRUNTIME_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
     const ONNX_NAMESPACE::TensorProto& tensor_proto = *(entry.second);
 
     auto& location = execution_plan.allocation_plan[mlvalue_index].location;
     auto it = weights_buffers.find(location);
     if (it == weights_buffers.end())
-      return Status(common::LOTUS, common::FAIL, "Weight buffer not found");
+      return Status(common::ONNXRUNTIME, common::FAIL, "Weight buffer not found");
 
     auto pattern = mem_patterns.GetPatterns(location);
     auto block = pattern->GetBlock(mlvalue_index);
@@ -333,10 +333,10 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
     }
 
     if (!block) {
-      LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(tensor_proto, location, exec_providers, mlvalue, nullptr, 0));
+      ONNXRUNTIME_RETURN_IF_ERROR(DeserializeTensorProto(tensor_proto, location, exec_providers, mlvalue, nullptr, 0));
     } else {
-      LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(tensor_proto, location, exec_providers, mlvalue,
-                                                   (uint8_t*)it->second.get() + block->offset_, block->size_));
+      ONNXRUNTIME_RETURN_IF_ERROR(DeserializeTensorProto(tensor_proto, location, exec_providers, mlvalue,
+                                                 (uint8_t*)it->second.get() + block->offset_, block->size_));
     }
 
     save_tensor_func(mlvalue_index, mlvalue);
@@ -356,17 +356,17 @@ common::Status SaveInitializedTensorsWithSeperateBuffer(const onnxruntime::Graph
                                                         const logging::Logger& logger) {
   LOGS(logger, INFO) << "Saving initialized tensors.";
 
-  LOTUS_ENFORCE(mlvalue_name_idx_map.MaxIdx() > 0, "MLValue indexes should have been populated.");
+  ONNXRUNTIME_ENFORCE(mlvalue_name_idx_map.MaxIdx() > 0, "MLValue indexes should have been populated.");
 
   const onnxruntime::InitializedTensorSet& initialized_tensor_set = graph.GetAllInitializedTensors();
   for (const auto& entry : initialized_tensor_set) {
     const std::string& name = entry.first;
     int mlvalue_index;
-    LOTUS_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
+    ONNXRUNTIME_RETURN_IF_ERROR(mlvalue_name_idx_map.GetIdx(name, mlvalue_index));
     VLOGS(logger, 1) << "About to add weight with name: " << name << " and index: " << mlvalue_index;
     auto& location = execution_plan.allocation_plan[mlvalue_index].location;
     MLValue mlvalue;
-    LOTUS_RETURN_IF_ERROR(DeserializeTensorProto(*(entry.second), location, exec_providers, mlvalue, nullptr, 0));
+    ONNXRUNTIME_RETURN_IF_ERROR(DeserializeTensorProto(*(entry.second), location, exec_providers, mlvalue, nullptr, 0));
     save_tensor_func(mlvalue_index, mlvalue);
     VLOGS(logger, 1) << "Added weight with name : " << name << " with index: " << mlvalue_index;
   }
@@ -413,8 +413,8 @@ static common::Status CreateOpKernel(const onnxruntime::Node& node,
 
   const IExecutionProvider* exec_provider = nullptr;
   if (exec_provider_name.empty() || (exec_provider = execution_providers.Get(exec_provider_name)) == nullptr) {
-    auto status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Could not create kernel for node: ", node.Name(),
-                                    " as there's no execution provider allocated.");
+    auto status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Could not create kernel for node: ", node.Name(),
+                                  " as there's no execution provider allocated.");
     LOGS(logger, ERROR) << status.ErrorMessage();
   }
 
@@ -444,7 +444,7 @@ common::Status SaveKernels(const ExecutionProviders& execution_providers,
     }
     // construct and save the kernels
     std::unique_ptr<OpKernel> op_kernel;
-    LOTUS_RETURN_IF_ERROR(CreateOpKernel(node, execution_providers, session_state, custom_registry_manager, op_kernel, logger));
+    ONNXRUNTIME_RETURN_IF_ERROR(CreateOpKernel(node, execution_providers, session_state, custom_registry_manager, op_kernel, logger));
     session_state.AddKernel(node.Index(), std::move(op_kernel));
   }
 
@@ -469,7 +469,7 @@ common::Status SaveInputOutputNamesToNodeMapping(const onnxruntime::Graph& graph
   auto& graph_outputs = graph.GetOutputs();
 
   for (auto& node : graph.Nodes()) {
-    LOTUS_RETURN_IF_ERROR(
+    ONNXRUNTIME_RETURN_IF_ERROR(
         onnxruntime::Node::ForEachWithIndex(
             node.InputDefs(),
             [&](const onnxruntime::NodeArg& arg, size_t index) {

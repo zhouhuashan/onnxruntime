@@ -11,7 +11,7 @@
 
 namespace onnxruntime {
 namespace test {
-#ifdef LOTUSIR_RUN_EXTERNAL_ONNX_TESTS
+#ifdef ONNXRUNTIME_RUN_EXTERNAL_ONNX_TESTS
 TEST(TensorProtoUtilsTest, test1) {
   const char* filename = "../models/test_resnet50/test_data_set_0/input_0.pb";
   std::string tensorbinary;

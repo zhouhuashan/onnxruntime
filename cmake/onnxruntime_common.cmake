@@ -2,32 +2,32 @@
 # Licensed under the MIT License.
 
 set(onnxruntime_common_src_patterns
-    "${LOTUS_INCLUDE_DIR}/core/common/*.h"    
-    "${LOTUS_INCLUDE_DIR}/core/common/logging/*.h"    
-    "${LOTUS_ROOT}/core/common/*.h"
-    "${LOTUS_ROOT}/core/common/*.cc"
-    "${LOTUS_ROOT}/core/common/logging/*.h"
-    "${LOTUS_ROOT}/core/common/logging/*.cc"
-    "${LOTUS_ROOT}/core/common/logging/sinks/*.h"
-    "${LOTUS_ROOT}/core/common/logging/sinks/*.cc"
-    "${LOTUS_ROOT}/core/inc/*.h"
-    "${LOTUS_ROOT}/core/platform/env.h"
-    "${LOTUS_ROOT}/core/platform/env.cc"
-    "${LOTUS_ROOT}/core/platform/env_time.h"
-    "${LOTUS_ROOT}/core/platform/env_time.cc"    
+    "${ONNXRUNTIME_INCLUDE_DIR}/core/common/*.h"    
+    "${ONNXRUNTIME_INCLUDE_DIR}/core/common/logging/*.h"    
+    "${ONNXRUNTIME_ROOT}/core/common/*.h"
+    "${ONNXRUNTIME_ROOT}/core/common/*.cc"
+    "${ONNXRUNTIME_ROOT}/core/common/logging/*.h"
+    "${ONNXRUNTIME_ROOT}/core/common/logging/*.cc"
+    "${ONNXRUNTIME_ROOT}/core/common/logging/sinks/*.h"
+    "${ONNXRUNTIME_ROOT}/core/common/logging/sinks/*.cc"
+    "${ONNXRUNTIME_ROOT}/core/inc/*.h"
+    "${ONNXRUNTIME_ROOT}/core/platform/env.h"
+    "${ONNXRUNTIME_ROOT}/core/platform/env.cc"
+    "${ONNXRUNTIME_ROOT}/core/platform/env_time.h"
+    "${ONNXRUNTIME_ROOT}/core/platform/env_time.cc"    
 )
 
 if(WIN32)
     list(APPEND onnxruntime_common_src_patterns
-         "${LOTUS_ROOT}/core/platform/windows/*.h"
-         "${LOTUS_ROOT}/core/platform/windows/*.cc"
-         "${LOTUS_ROOT}/core/platform/windows/logging/*.h"
-         "${LOTUS_ROOT}/core/platform/windows/logging/*.cc"    
+         "${ONNXRUNTIME_ROOT}/core/platform/windows/*.h"
+         "${ONNXRUNTIME_ROOT}/core/platform/windows/*.cc"
+         "${ONNXRUNTIME_ROOT}/core/platform/windows/logging/*.h"
+         "${ONNXRUNTIME_ROOT}/core/platform/windows/logging/*.cc"    
     )
 else()
     list(APPEND onnxruntime_common_src_patterns
-         "${LOTUS_ROOT}/core/platform/posix/*.h"
-         "${LOTUS_ROOT}/core/platform/posix/*.cc"
+         "${ONNXRUNTIME_ROOT}/core/platform/posix/*.h"
+         "${ONNXRUNTIME_ROOT}/core/platform/posix/*.cc"
     )
 endif()
 
@@ -40,7 +40,7 @@ add_library(onnxruntime_common ${onnxruntime_common_src})
 if(NOT WIN32)
 	target_link_libraries(onnxruntime_common dl)
 endif()
-target_include_directories(onnxruntime_common PRIVATE ${LOTUS_ROOT} ${date_INCLUDE_DIR})
+target_include_directories(onnxruntime_common PRIVATE ${ONNXRUNTIME_ROOT} ${date_INCLUDE_DIR})
 # logging uses date. threadpool uses eigen
 add_dependencies(onnxruntime_common date eigen gsl)
 

@@ -81,7 +81,7 @@ class PerformanceRunner {
 
   inline Status RunOneIteration(bool isWarmup = false) {
     auto start = std::chrono::high_resolution_clock::now();
-    LOTUS_RETURN_IF_ERROR(session_object_->Run(*io_binding_));
+    ONNXRUNTIME_RETURN_IF_ERROR(session_object_->Run(*io_binding_));
     auto end = std::chrono::high_resolution_clock::now();
 
     if (!isWarmup) {
@@ -98,14 +98,14 @@ class PerformanceRunner {
 
   inline Status RunFixDuration() {
     while (performance_result_.total_time_cost < performance_test_config_.run_config.duration_in_seconds) {
-      LOTUS_RETURN_IF_ERROR(RunOneIteration());
+      ONNXRUNTIME_RETURN_IF_ERROR(RunOneIteration());
     }
     return Status::OK();
   }
 
   inline Status RunRepeatedTimes() {
     for (size_t ite = 0; ite < performance_test_config_.run_config.repeated_times; ite++) {
-      LOTUS_RETURN_IF_ERROR(RunOneIteration());
+      ONNXRUNTIME_RETURN_IF_ERROR(RunOneIteration());
     }
     return Status::OK();
   }

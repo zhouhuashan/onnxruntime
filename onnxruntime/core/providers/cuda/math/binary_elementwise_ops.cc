@@ -13,7 +13,7 @@ Status BinaryElementwise<ShouldNotBroadcast>::Prepare(OpKernelContext* context, 
   p->lhs_tensor = context->Input<Tensor>(0);
   p->rhs_tensor = context->Input<Tensor>(1);
   if (!(p->lhs_tensor->Shape() == p->rhs_tensor->Shape()))
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, Node().Name(), ": mismatching input shapes: ", p->lhs_tensor->Shape().ToString(), " != ", p->rhs_tensor->Shape().ToString());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, Node().Name(), ": mismatching input shapes: ", p->lhs_tensor->Shape().ToString(), " != ", p->rhs_tensor->Shape().ToString());
   p->output_tensor = context->Output(0, p->lhs_tensor->Shape());
   p->output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::NoBroadcast);
   return Status::OK();
@@ -34,11 +34,11 @@ static Status ComputeOutputShape(const std::string& node_name, const TensorShape
       rhs_dim = rhs_shape[rhs_rank - 1 - i];
     int64_t out_dim = std::max(lhs_dim, rhs_dim);
     if (lhs_dim != out_dim && lhs_dim != 1)
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, node_name, ": left operand cannot broadcast on dim ", lhs_rank - 1 - i,
-                               " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, node_name, ": left operand cannot broadcast on dim ", lhs_rank - 1 - i,
+                             " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
     if (rhs_dim != out_dim && rhs_dim != 1)
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, node_name, ": right operand cannot broadcast on dim ", rhs_rank - 1 - i,
-                               " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, node_name, ": right operand cannot broadcast on dim ", rhs_rank - 1 - i,
+                             " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
     output_dims[out_rank - 1 - i] = out_dim;
   }
   out_shape = TensorShape(output_dims);
@@ -106,20 +106,20 @@ Status BinaryElementwiseBroadcastPrepare(
     // compute strides with 1 more dim than out_rank, and use strides[0] == strides[1]
     // to decide if dim0 needs broadcast
     p->lhs_padded_strides.AllocCpuPtr(out_rank + 1);
-    LOTUS_RETURN_IF_NOT(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
+    ONNXRUNTIME_RETURN_IF_NOT(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
     if (lhs_shape[0] > 1 && lhs_rank == out_rank)
       p->lhs_padded_strides.CpuPtr()[0] = 0;
   }
 
   if (rhs_shape != output_shape) {
     p->rhs_padded_strides.AllocCpuPtr(out_rank + 1);
-    LOTUS_RETURN_IF_NOT(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
+    ONNXRUNTIME_RETURN_IF_NOT(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
     if (rhs_shape[0] > 1 && rhs_rank == out_rank)
       p->rhs_padded_strides.CpuPtr()[0] = 0;
   }
 
   p->fdm_output_strides.AllocCpuPtr(out_rank);
-  LOTUS_RETURN_IF_NOT(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_tensor->Shape().GetDims()));
+  ONNXRUNTIME_RETURN_IF_NOT(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_tensor->Shape().GetDims()));
   return Status::OK();
 }
 
@@ -131,10 +131,10 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   const auto& rhs_shape = rhs_tensor->Shape();
 
   TensorShape output_shape;
-  LOTUS_RETURN_IF_ERROR(ComputeOutputShape(Node().Name(), lhs_shape, rhs_shape, output_shape));
+  ONNXRUNTIME_RETURN_IF_ERROR(ComputeOutputShape(Node().Name(), lhs_shape, rhs_shape, output_shape));
   auto output_tensor = context->Output(0, output_shape);
 
-  LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(lhs_tensor, rhs_tensor, output_tensor, p));
+  ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(lhs_tensor, rhs_tensor, output_tensor, p));
 
   return Status::OK();
 }
@@ -160,24 +160,24 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
       KernelDefBuilder().TypeConstraint("T", DataTypeImpl::GetTensorType<T>()),    \
       x<T>);
 
-#define BINARY_ELEMENTWISE_COMPUTE(x, T)                                                                \
-  template <>                                                                                           \
-  Status x<T>::ComputeInternal(OpKernelContext* context) const {                                        \
-    BinaryElementwisePreparation prepare(this);                                                         \
-    Prepare(context, &prepare);                                                                         \
-    LOTUS_RETURN_IF_ERROR(prepare.CopyToGpu());                                                         \
-    Impl_##x<typename ToCudaType<T>::MappedType>(                                                       \
-        prepare.output_rank_or_simple_broadcast,                                                        \
-        prepare.lhs_padded_strides.GpuPtr(),                                                            \
-        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.lhs_tensor->template Data<T>()),\
-        prepare.rhs_padded_strides.GpuPtr(),                                                            \
-        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.rhs_tensor->template Data<T>()),\
-        prepare.fdm_output_strides.GpuPtr(),                                                            \
-        prepare.fdm_H,                                                                                  \
-        prepare.fdm_C,                                                                                  \
+#define BINARY_ELEMENTWISE_COMPUTE(x, T)                                                                         \
+  template <>                                                                                                    \
+  Status x<T>::ComputeInternal(OpKernelContext* context) const {                                                 \
+    BinaryElementwisePreparation prepare(this);                                                                  \
+    Prepare(context, &prepare);                                                                                  \
+    ONNXRUNTIME_RETURN_IF_ERROR(prepare.CopyToGpu());                                                                    \
+    Impl_##x<typename ToCudaType<T>::MappedType>(                                                                \
+        prepare.output_rank_or_simple_broadcast,                                                                 \
+        prepare.lhs_padded_strides.GpuPtr(),                                                                     \
+        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.lhs_tensor->template Data<T>()),     \
+        prepare.rhs_padded_strides.GpuPtr(),                                                                     \
+        reinterpret_cast<const typename ToCudaType<T>::MappedType*>(prepare.rhs_tensor->template Data<T>()),     \
+        prepare.fdm_output_strides.GpuPtr(),                                                                     \
+        prepare.fdm_H,                                                                                           \
+        prepare.fdm_C,                                                                                           \
         reinterpret_cast<typename ToCudaType<T>::MappedType*>(prepare.output_tensor->template MutableData<T>()), \
-        prepare.output_tensor->Shape().Size());                                                         \
-    return Status::OK();                                                                                \
+        prepare.output_tensor->Shape().Size());                                                                  \
+    return Status::OK();                                                                                         \
   }
 
 #define BINARY_OP_TYPED(name, ver, T)                    \
@@ -251,7 +251,7 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
   const auto& node = Node();
   const auto& node_name = node.Name();
   auto input_count = node.InputArgCount().front();
-  LOTUS_RETURN_IF_NOT(input_count >= 1, "Must have 1 or more inputs");
+  ONNXRUNTIME_RETURN_IF_NOT(input_count >= 1, "Must have 1 or more inputs");
 
   if (input_count == 1) {
     auto input_tensor = context->Input<Tensor>(0);
@@ -261,16 +261,16 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
   } else {
     // compute output shape first, using broadcast rule
     TensorShape output_shape;
-    LOTUS_RETURN_IF_ERROR(ComputeOutputShape(node_name, context->Input<Tensor>(0)->Shape(), context->Input<Tensor>(1)->Shape(), output_shape));
+    ONNXRUNTIME_RETURN_IF_ERROR(ComputeOutputShape(node_name, context->Input<Tensor>(0)->Shape(), context->Input<Tensor>(1)->Shape(), output_shape));
     for (int index = 2; index < input_count; index++) {
       TensorShape previous_output_shape = output_shape;
-      LOTUS_RETURN_IF_ERROR(ComputeOutputShape(node_name, previous_output_shape, context->Input<Tensor>(index)->Shape(), output_shape));
+      ONNXRUNTIME_RETURN_IF_ERROR(ComputeOutputShape(node_name, previous_output_shape, context->Input<Tensor>(index)->Shape(), output_shape));
     }
     Tensor* output_tensor = context->Output(0, output_shape);
     BinaryElementwisePreparation prepare(this);
     if (input_count == 2) {
       // special case for 2 tensors to avoid memset zero
-      LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(context->Input<Tensor>(0), context->Input<Tensor>(1), output_tensor, &prepare));
+      ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(context->Input<Tensor>(0), context->Input<Tensor>(1), output_tensor, &prepare));
       Impl_Add<CudaT>(
           prepare.output_rank_or_simple_broadcast,
           prepare.lhs_padded_strides.GpuPtr(),
@@ -286,7 +286,7 @@ Status Sum<T>::ComputeInternal(OpKernelContext* context) const {
       // for more than 2 inputs, we need to accumulate into output tensor, as the shape from input0 + input1 might be different from output shape
       CUDA_RETURN_IF_ERROR(cudaMemset(output_tensor->MutableDataRaw(), 0, output_shape.Size() * sizeof(CudaT)));
       for (int index = 0; index < input_count; index++) {
-        LOTUS_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(output_tensor, context->Input<Tensor>(index), output_tensor, &prepare));
+        ONNXRUNTIME_RETURN_IF_ERROR(BinaryElementwiseBroadcastPrepare(output_tensor, context->Input<Tensor>(index), output_tensor, &prepare));
         Impl_Add<CudaT>(
             prepare.output_rank_or_simple_broadcast,
             prepare.lhs_padded_strides.GpuPtr(),

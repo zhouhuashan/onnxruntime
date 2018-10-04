@@ -22,7 +22,7 @@ class Environment {
   ~Environment();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(Environment);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(Environment);
 
   Environment() = default;
   Status Initialize();

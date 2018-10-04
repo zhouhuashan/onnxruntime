@@ -16,15 +16,15 @@ template <typename T>
 LinearRegressor<T>::LinearRegressor(const OpKernelInfo& info) : OpKernel(info),
                                                                 intercepts_(info.GetAttrsOrDefault<float>("intercepts")),
                                                                 post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
-  LOTUS_ENFORCE(info.GetAttr<int64_t>("targets", &targets_).IsOK());
-  LOTUS_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
+  ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("targets", &targets_).IsOK());
+  ONNXRUNTIME_ENFORCE(info.GetAttrs<float>("coefficients", coefficients_).IsOK());
 }
 
 template <>
 Status LinearRegressor<float>::Compute(OpKernelContext* ctx) const {
   const Tensor* X = ctx->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(common::LOTUS, common::INVALID_ARGUMENT,
+    return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 

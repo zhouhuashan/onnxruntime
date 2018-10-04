@@ -55,9 +55,9 @@ Status upsampleNearest(const T* input,
                        const TensorShape& output_shape,
                        const vector<float>& scales) {
   if (!input || !output)
-    return Status(LOTUS, FAIL, "Upsample: input/output value is nullptr");
+    return Status(ONNXRUNTIME, FAIL, "Upsample: input/output value is nullptr");
   if (input_shape.NumDimensions() != output_shape.NumDimensions())
-    return Status(LOTUS, FAIL, "Upsample: input/output value's dimension mismatch");
+    return Status(ONNXRUNTIME, FAIL, "Upsample: input/output value's dimension mismatch");
   auto n_dim = input_shape.NumDimensions();
   for (size_t i = 0, size = output_shape.Size(); i < size; i++) {
     size_t old_idx = 0;
@@ -86,9 +86,9 @@ Status upsampleLiner(const T* input,
                      const TensorShape& output_shape,
                      const vector<float>& scales) {
   if (!input || !output)
-    return Status(LOTUS, FAIL, "Upsample: input/output value is nullptr");
+    return Status(ONNXRUNTIME, FAIL, "Upsample: input/output value is nullptr");
   if (input_shape.NumDimensions() != output_shape.NumDimensions())
-    return Status(LOTUS, FAIL, "Upsample: input/output value's dimension mismatch");
+    return Status(ONNXRUNTIME, FAIL, "Upsample: input/output value's dimension mismatch");
   auto n_dim = input_shape.NumDimensions();
   for (size_t i = 0, size = output_shape.Size(); i < size; i++) {
     std::vector<int64_t> val1, val2;
@@ -195,7 +195,7 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   const std::vector<int64_t>& dims = X->Shape().GetDims();
   if (dims.size() != scales_.size()) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Upsample: input tensor's dimension does not match the scales.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Upsample: input tensor's dimension does not match the scales.");
   }
 
   std::vector<int64_t> Y_dims;
@@ -211,7 +211,7 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
       //What's the correct behavior of linear mode is not clear right now,
       //Only support bilinear with 4D tensor to keep consistent with previous behavior
       if (dims.size() != 4)
-        return Status(LOTUS, FAIL, "Upsample: liner mode upsample only support 4-D tensor with NCHW layout");
+        return Status(ONNXRUNTIME, FAIL, "Upsample: liner mode upsample only support 4-D tensor with NCHW layout");
 
       const int64_t batch_size = dims[0], num_channels = dims[1];
       const int64_t input_height = dims[2], input_width = dims[3];
@@ -222,7 +222,7 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
       //return upsampleLiner<T>(X->template Data<T>(), Y->template MutableData<T>(), X->Shape(), Y->Shape(), scales_);
     }
     default:
-      return Status(LOTUS, FAIL, "Upsample: unexpected mode");
+      return Status(ONNXRUNTIME, FAIL, "Upsample: unexpected mode");
   }
 }
 

@@ -43,7 +43,7 @@ MLDataType ElementTypeFromProto(ONNX_NAMESPACE::TensorProto_DataType type) {
     case ONNX_NAMESPACE::TensorProto_DataType_FLOAT16:
       return DataTypeImpl::GetType<MLFloat16>();
     default:
-      LOTUS_NOT_IMPLEMENTED(__FUNCTION__, ":tensor type ", type, " is not supported");
+      ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, ":tensor type ", type, " is not supported");
   }
 }
 

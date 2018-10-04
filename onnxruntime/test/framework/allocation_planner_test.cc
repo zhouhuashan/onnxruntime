@@ -51,12 +51,12 @@ class DummyOpKernel : public OpKernel {
  public:
   DummyOpKernel(const OpKernelInfo& p) : OpKernel(p) {}
   Status Compute(OpKernelContext* context) const {
-    UNUSED_PARAMETER(context);
+    ONNXRUNTIME_UNUSED_PARAMETER(context);
     return Status::OK();
   }
   Status ComputeAsync(OpKernelContext* context, DoneCallback done) const {
-    UNUSED_PARAMETER(context);
-    UNUSED_PARAMETER(done);
+    ONNXRUNTIME_UNUSED_PARAMETER(context);
+    ONNXRUNTIME_UNUSED_PARAMETER(done);
     return Status::OK();
   }
 };

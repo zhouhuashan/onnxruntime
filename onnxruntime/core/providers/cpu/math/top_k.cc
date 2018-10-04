@@ -31,7 +31,7 @@ ONNX_CPU_OPERATOR_KERNEL(
     TopK<float>);
 
 static int64_t SizeToDim(size_t k, const vector<int64_t>& dims) {
-  LOTUS_ENFORCE(k <= dims.size());
+  ONNXRUNTIME_ENFORCE(k <= dims.size());
   int64_t r = 1;
   for (size_t i = 0; i < k; ++i) {
     r *= dims[i];
@@ -71,7 +71,7 @@ Status TopK<float>::Compute(OpKernelContext* p_op_kernel_context) const {
   if (in_dims.back() < k_) {
     ostringstream err_msg;
     err_msg << "k argment [" << k_ << "] should not be greater than last dim [" << in_dims.back() << "]";
-    return Status(common::LOTUS, common::FAIL, err_msg.str());
+    return Status(common::ONNXRUNTIME, common::FAIL, err_msg.str());
   }
 
   vector<int64_t> linear_shape = {SizeToDim(in_dims.size() - 1, in_dims),

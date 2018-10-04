@@ -39,13 +39,13 @@ void CudnnRnnBase<T>::SetWeightBias(const cudnnHandle_t handle,
 }
 template <typename T>
 Status CudnnRnnBase<T>::SetCudnnRnnWeightBias(const cudnnHandle_t cudnn_handle,
-                                             const cudnnRNNDescriptor_t rnn_desc,
-                                             const cudnnTensorDescriptor_t x_desc,
-                                             const cudnnFilterDescriptor_t w_desc,
-                                             void* w_data,
-                                             const T* W_data,
-                                             const T* R_data,
-                                             const T* B_data) const {
+                                              const cudnnRNNDescriptor_t rnn_desc,
+                                              const cudnnTensorDescriptor_t x_desc,
+                                              const cudnnFilterDescriptor_t w_desc,
+                                              void* w_data,
+                                              const T* W_data,
+                                              const T* R_data,
+                                              const T* B_data) const {
   //Onnx only support 1 layer
   CudnnFilterDescriptor filter_desc;
   int w_offset = 0;
@@ -86,8 +86,8 @@ Status CudnnRnnBase<T>::SetCudnnRnnDesc() {
 
   CudnnDropout cudnn_dropout_desc;
   cudnn_dropout_desc.Set(CudnnHandle());
-  LOTUS_RETURN_IF_ERROR(rnn_desc_.Set(CudnnHandle(), hidden_size_, num_layers_, cudnn_dropout_desc,
-                                     cudnn_direction, rnn_mode_, CudnnTensor::GetDataType<CudaT>()));
+  ONNXRUNTIME_RETURN_IF_ERROR(rnn_desc_.Set(CudnnHandle(), hidden_size_, num_layers_, cudnn_dropout_desc,
+                                    cudnn_direction, rnn_mode_, CudnnTensor::GetDataType<CudaT>()));
 
   return Status::OK();
 }
@@ -97,36 +97,36 @@ Status CudnnRnnBase<T>::ReorganizeWeights(const Tensor* W, const Tensor* R, cons
                                           IAllocatorUniquePtr<void>& target_w_data,
                                           CudnnFilterDescriptor& target_w_desc) const {
   typedef typename ToCudaType<T>::MappedType CudaT;
-    int64_t input_size = W->Shape()[2];
-    // RNN W[num_directions_, hidden_size_, input_size]
-    // RNN R[num_directions_, hidden_size_, hidden_size_]
-    // RNN B[num_directions_, 2*hidden_size_]
-    // GRU W[num_directions_, 3*hidden_size_, input_size]
-    // GRU R[num_directions_, 3*hidden_size_, hidden_size_]
-    // GRU B[num_directions_, 6*hidden_size_]
-    // LSTM W[num_directions_, 4*hidden_size_, input_size]
-    // LSTM R[num_directions_, 4*hidden_size_, hidden_size_]
-    // LSTM B[num_directions_, 8*hidden_size_]
-    size_t number = W_lin_layer_id_.size();
-    int64_t w_size = num_directions_ * (number * hidden_size_ * (input_size + hidden_size_ + 2));
-    std::vector<int64_t> dims_w({w_size, 1, 1});
-    LOTUS_RETURN_IF_ERROR(target_w_desc.Set(dims_w, CudnnTensor::GetDataType<CudaT>()));
+  int64_t input_size = W->Shape()[2];
+  // RNN W[num_directions_, hidden_size_, input_size]
+  // RNN R[num_directions_, hidden_size_, hidden_size_]
+  // RNN B[num_directions_, 2*hidden_size_]
+  // GRU W[num_directions_, 3*hidden_size_, input_size]
+  // GRU R[num_directions_, 3*hidden_size_, hidden_size_]
+  // GRU B[num_directions_, 6*hidden_size_]
+  // LSTM W[num_directions_, 4*hidden_size_, input_size]
+  // LSTM R[num_directions_, 4*hidden_size_, hidden_size_]
+  // LSTM B[num_directions_, 8*hidden_size_]
+  size_t number = W_lin_layer_id_.size();
+  int64_t w_size = num_directions_ * (number * hidden_size_ * (input_size + hidden_size_ + 2));
+  std::vector<int64_t> dims_w({w_size, 1, 1});
+  ONNXRUNTIME_RETURN_IF_ERROR(target_w_desc.Set(dims_w, CudnnTensor::GetDataType<CudaT>()));
 
-    std::vector<int64_t> fake_dims_x({1, input_size, 1});
-    CudnnTensor fake_x_desc;
-    fake_x_desc.Set(fake_dims_x, CudnnTensor::GetDataType<CudaT>());
+  std::vector<int64_t> fake_dims_x({1, input_size, 1});
+  CudnnTensor fake_x_desc;
+  fake_x_desc.Set(fake_dims_x, CudnnTensor::GetDataType<CudaT>());
 
-    // Prepare the weight data
-    target_w_data = GetScratchBuffer<void>(w_size * sizeof(T));
+  // Prepare the weight data
+  target_w_data = GetScratchBuffer<void>(w_size * sizeof(T));
 
-    const T* W_data = W->template Data<T>();
-    const T* R_data = R->template Data<T>();
-    const T* B_data = B == nullptr ? nullptr : B->template Data<T>();
+  const T* W_data = W->template Data<T>();
+  const T* R_data = R->template Data<T>();
+  const T* B_data = B == nullptr ? nullptr : B->template Data<T>();
 
-    LOTUS_RETURN_IF_ERROR(SetCudnnRnnWeightBias(CudnnHandle(), rnn_desc_, fake_x_desc, target_w_desc,
-                                                target_w_data.get(), W_data, R_data, B_data));
+  ONNXRUNTIME_RETURN_IF_ERROR(SetCudnnRnnWeightBias(CudnnHandle(), rnn_desc_, fake_x_desc, target_w_desc,
+                                            target_w_data.get(), W_data, R_data, B_data));
 
-    return Status::OK();
+  return Status::OK();
 }
 
 template <typename T>
@@ -140,7 +140,7 @@ Status CudnnRnnBase<T>::CacheCudnnRnnWeights(const OpKernelInfo& info) {
 
   if (get_W && get_R) {
     info.TryGetConstantInput(Input_Index::B, &B);
-    LOTUS_RETURN_IF_ERROR(ReorganizeWeights(W, R, B, w_data_cache_, w_desc_cache_));
+    ONNXRUNTIME_RETURN_IF_ERROR(ReorganizeWeights(W, R, B, w_data_cache_, w_desc_cache_));
     weight_cached_ = true;
   }
 
@@ -188,10 +188,10 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   CudnnTensor cx_desc;
   CudnnTensor y_h_desc;
   CudnnTensor y_c_desc;
-  LOTUS_RETURN_IF_ERROR(hx_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
-  LOTUS_RETURN_IF_ERROR(cx_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
-  LOTUS_RETURN_IF_ERROR(y_h_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
-  LOTUS_RETURN_IF_ERROR(y_c_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
+  ONNXRUNTIME_RETURN_IF_ERROR(hx_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
+  ONNXRUNTIME_RETURN_IF_ERROR(cx_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
+  ONNXRUNTIME_RETURN_IF_ERROR(y_h_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
+  ONNXRUNTIME_RETURN_IF_ERROR(y_c_desc.Set(dims_hxy, CudnnTensor::GetDataType<CudaT>()));
 
   // Prepare the weight data
   IAllocatorUniquePtr<void> w_data;

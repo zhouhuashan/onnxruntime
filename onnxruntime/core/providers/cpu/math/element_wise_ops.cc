@@ -286,7 +286,7 @@ struct BroadcastIterator {
   }
 
   void Init(int64_t axis, int64_t largest) {
-    LOTUS_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
+    ONNXRUNTIME_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
 
     deltas_.push_back(axis > 1);
     counts_.push_back(largest);
@@ -294,7 +294,7 @@ struct BroadcastIterator {
   }
 
   void Append(int64_t axis, int64_t largest) {
-    LOTUS_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
+    ONNXRUNTIME_ENFORCE(axis == 1 || axis == largest, "Attempting to broadcast an axis by a dimension other than 1. ", axis, " by ", largest);
 
     // If we're greater than 1, it doesn't matter what the other tensor does
     if (axis > 1) {
@@ -488,7 +488,7 @@ struct TBroadcastOutput {
 template <typename T>
 struct TensorAllocator {
   TensorAllocator(OpKernelContext& context) {
-    LOTUS_ENFORCE(context.GetTempSpaceAllocator(&allocator_).IsOK());
+    ONNXRUNTIME_ENFORCE(context.GetTempSpaceAllocator(&allocator_).IsOK());
   }
 
   std::unique_ptr<Tensor> Allocate(const TensorShape& shape) {
@@ -533,7 +533,7 @@ Status BroadcastTwo(OpKernelContext& context, Input0Scalar input0scalar, Input1S
 template <typename TInput, typename TOutput, typename Input0Scalar, typename Input1Scalar, typename General>
 Status BroadcastVariadic(const Node& node, OpKernelContext& context, Input0Scalar input0scalar, Input1Scalar input1scalar, General general) {
   auto input_count = node.InputArgCount().front();
-  LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
+  ONNXRUNTIME_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
 
   // One item is trivial, just copy across and exit
   if (input_count == 1) {
@@ -679,7 +679,7 @@ Status Log<float>::Compute(OpKernelContext* ctx) const {
 template <>
 Status Sum_6<float>::Compute(OpKernelContext* ctx) const {
   auto input_count = Node().InputArgCount().front();
-  LOTUS_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
+  ONNXRUNTIME_ENFORCE(input_count >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
   auto& shape = data_0.Shape();
   auto sum = EigenMap<float>(*ctx->Output(0, shape));
@@ -688,12 +688,12 @@ Status Sum_6<float>::Compute(OpKernelContext* ctx) const {
     sum = EigenMap<float>(data_0);
   } else {
     auto& data_1 = *ctx->Input<Tensor>(1);
-    LOTUS_ENFORCE(data_1.Shape() == shape, "All inputs must have the same shape");
+    ONNXRUNTIME_ENFORCE(data_1.Shape() == shape, "All inputs must have the same shape");
 
     sum = EigenMap<float>(data_0) + EigenMap<float>(data_1);
     for (int index = 2; index < input_count; index++) {
       auto& data_n = *ctx->Input<Tensor>(index);
-      LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+      ONNXRUNTIME_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
       sum += EigenMap<float>(data_n);
     }
   }
@@ -713,7 +713,7 @@ Status Sum_8<float>::Compute(OpKernelContext* context) const {
 template <>
 Status Min_6<float>::Compute(OpKernelContext* ctx) const {
   auto inputCount = Node().InputArgCount().front();
-  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+  ONNXRUNTIME_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
   auto& shape = data_0.Shape();
   auto min = EigenMap<float>(*ctx->Output(0, shape));
@@ -721,7 +721,7 @@ Status Min_6<float>::Compute(OpKernelContext* ctx) const {
   min = EigenMap<float>(data_0);
   for (int index = 1; index < inputCount; index++) {
     auto& data_n = *ctx->Input<Tensor>(index);
-    LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+    ONNXRUNTIME_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
     min = min.array().min(EigenMap<float>(data_n).array());
   }
 
@@ -740,7 +740,7 @@ Status Min_8<float>::Compute(OpKernelContext* context) const {
 template <>
 Status Max_6<float>::Compute(OpKernelContext* ctx) const {
   auto inputCount = Node().InputArgCount().front();
-  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+  ONNXRUNTIME_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
   auto& shape = data_0.Shape();
   auto max = EigenMap<float>(*ctx->Output(0, shape));
@@ -748,7 +748,7 @@ Status Max_6<float>::Compute(OpKernelContext* ctx) const {
   max = EigenMap<float>(data_0);
   for (int index = 1; index < inputCount; index++) {
     auto& data_n = *ctx->Input<Tensor>(index);
-    LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+    ONNXRUNTIME_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
     max = max.array().max(EigenMap<float>(data_n).array());
   }
 
@@ -859,7 +859,7 @@ Status Greater<T>::Compute(OpKernelContext* context) const {
 template <>
 Status Mean_6<float>::Compute(OpKernelContext* ctx) const {
   auto inputCount = Node().InputArgCount().front();
-  LOTUS_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
+  ONNXRUNTIME_ENFORCE(inputCount >= 1, "Must have 1 or more inputs");
   auto& data_0 = *ctx->Input<Tensor>(0);
   auto& shape = data_0.Shape();
   auto mean = EigenMap<float>(*ctx->Output(0, shape));
@@ -868,12 +868,12 @@ Status Mean_6<float>::Compute(OpKernelContext* ctx) const {
     mean = EigenMap<float>(data_0);
   } else {
     auto& data_1 = *ctx->Input<Tensor>(1);
-    LOTUS_ENFORCE(data_1.Shape() == shape, "All inputs must have the same shape");
+    ONNXRUNTIME_ENFORCE(data_1.Shape() == shape, "All inputs must have the same shape");
 
     mean = EigenMap<float>(data_0) + EigenMap<float>(data_1);
     for (int index = 2; index < inputCount; index++) {
       auto& data_n = *ctx->Input<Tensor>(index);
-      LOTUS_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
+      ONNXRUNTIME_ENFORCE(data_n.Shape() == shape, "All inputs must have the same shape");
       mean += EigenMap<float>(data_n);
     }
   }
@@ -1083,7 +1083,7 @@ struct TBroadcasterExpand {
 template <typename T>
 Status Expand_8<T>::Compute(OpKernelContext* context) const {
   auto& tensor_shape = *context->Input<Tensor>(1);
-  LOTUS_ENFORCE(tensor_shape.Shape().GetDims().size() == 1, "Shape must be 1 dimensional as it's tensor data is a shape");
+  ONNXRUNTIME_ENFORCE(tensor_shape.Shape().GetDims().size() == 1, "Shape must be 1 dimensional as it's tensor data is a shape");
 
   // Turn the shape tensor data into an actual shape
   const int64_t* p_shape = tensor_shape.template Data<int64_t>();

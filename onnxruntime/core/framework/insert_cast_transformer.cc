@@ -56,9 +56,9 @@ onnxruntime::NodeArg* AddCastNode(onnxruntime::Graph& graph,
 }
 
 Status InsertCastTransformer::Apply(onnxruntime::Graph& graph, bool& modified) const {
-  LOTUS_RETURN_IF_ERROR(graph.Resolve());
+  ONNXRUNTIME_RETURN_IF_ERROR(graph.Resolve());
   const std::vector<onnxruntime::NodeIndex>* order;
-  LOTUS_RETURN_IF_ERROR(graph.GetNodesInTopologicalOrder(&order));
+  ONNXRUNTIME_RETURN_IF_ERROR(graph.GetNodesInTopologicalOrder(&order));
   assert(order);
   TypeProto float_16_tensor_proto, float_tensor_proto;
   float_16_tensor_proto.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT16);
@@ -68,7 +68,7 @@ Status InsertCastTransformer::Apply(onnxruntime::Graph& graph, bool& modified) c
   for (onnxruntime::NodeIndex i : *order) {
     auto node = graph.GetNode(i);
     if (!node)
-      return Status(LOTUS, INVALID_ARGUMENT);
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT);
     if (graph.IsSinkNode(*node) || graph.IsSourceNode(*node))
       continue;
 
@@ -128,7 +128,7 @@ Status InsertCastTransformer::Apply(onnxruntime::Graph& graph, bool& modified) c
     modified = modified || casted;
   }
   //Resolve it to build the edges.
-  LOTUS_RETURN_IF_ERROR(graph.Resolve());
+  ONNXRUNTIME_RETURN_IF_ERROR(graph.Resolve());
   std::map<const onnxruntime::NodeArg*, onnxruntime::NodeArg*> replacement_defs;
   std::vector<onnxruntime::NodeIndex> removed_nodes;
   for (auto& node : graph.Nodes()) {

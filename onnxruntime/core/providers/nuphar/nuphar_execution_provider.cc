@@ -20,7 +20,7 @@ NupharExecutionProvider::~NupharExecutionProvider() {
 
 Status NupharExecutionProvider::CopyTensor(const Tensor& src, Tensor& dst) const {
   if (!(strcmp(src.Location().name, TVM_STACKVM) == 0 && strcmp(dst.Location().name, TVM_STACKVM) == 0))
-    LOTUS_NOT_IMPLEMENTED("copy to ", dst.Location().name, " from ", src.Location().name, " is not implemented");
+    ONNXRUNTIME_NOT_IMPLEMENTED("copy to ", dst.Location().name, " from ", src.Location().name, " is not implemented");
 
   size_t bytes = src.DataType()->Size() * src.Shape().Size();
   const void* src_data = src.DataRaw();

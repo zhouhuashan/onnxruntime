@@ -16,7 +16,7 @@ class Normalizer final : public OpKernel {
  public:
   Normalizer(const OpKernelInfo& info) : OpKernel(info) {
     std::string norm;
-    LOTUS_ENFORCE(info.GetAttr<std::string>("norm", &norm).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<std::string>("norm", &norm).IsOK());
 
     normalization_ = MakeNormalize(norm);
   }

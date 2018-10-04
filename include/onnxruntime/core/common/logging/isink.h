@@ -27,7 +27,7 @@ class ISink {
 
  private:
   // Make Code Analysis happy by disabling all for now. Enable as needed.
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(ISink);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(ISink);
 
   virtual void SendImpl(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) = 0;
 };

@@ -14,16 +14,16 @@ class RoiPool : public OpKernel {
  public:
   RoiPool(const OpKernelInfo& info) : OpKernel(info) {
     std::vector<int64_t> pooled_shape;
-    LOTUS_ENFORCE(info.GetAttrs<int64_t>("pooled_shape", pooled_shape).IsOK());
-    LOTUS_ENFORCE(pooled_shape.size() == 2);
+    ONNXRUNTIME_ENFORCE(info.GetAttrs<int64_t>("pooled_shape", pooled_shape).IsOK());
+    ONNXRUNTIME_ENFORCE(pooled_shape.size() == 2);
 
     pooled_height_ = pooled_shape[0];
     pooled_width_ = pooled_shape[1];
-    LOTUS_ENFORCE(pooled_height_ > 0);
-    LOTUS_ENFORCE(pooled_width_ > 0);
+    ONNXRUNTIME_ENFORCE(pooled_height_ > 0);
+    ONNXRUNTIME_ENFORCE(pooled_width_ > 0);
 
-    LOTUS_ENFORCE(info.GetAttr<float>("spatial_scale", &spatial_scale_).IsOK());
-    LOTUS_ENFORCE(spatial_scale_ > 0);
+    ONNXRUNTIME_ENFORCE(info.GetAttr<float>("spatial_scale", &spatial_scale_).IsOK());
+    ONNXRUNTIME_ENFORCE(spatial_scale_ > 0);
   }
 
   ~RoiPool() override = default;

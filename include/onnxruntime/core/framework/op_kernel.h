@@ -43,7 +43,7 @@ class OpKernel {
 
   virtual Status ComputeAsync(OpKernelContext*,
                               DoneCallback) const {
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   const AllocatorInfo& Allocator(MemType mem_type) const {
@@ -53,14 +53,13 @@ class OpKernel {
   const OpKernelInfo& Info() const { return op_kernel_info_; }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OpKernel);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(OpKernel);
   OpKernelInfo op_kernel_info_;
 };
 
 class OpKernelContext {
-
   // See explicit Tensor specialization below
-  template<typename Result, typename TReg>
+  template <typename Result, typename TReg>
   struct Fetcher {
     static const Result* Input(const OpKernelContext& ctx, int index) {
       const MLValue* p_ml_value = ctx.GetInputMLValue(index);
@@ -70,7 +69,7 @@ class OpKernelContext {
       if (index < 0 || index >= ctx.OutputCount())
         return nullptr;
       MLValue* p_ml_value = nullptr;
-      LOTUS_ENFORCE(ctx.GetOrCreateOutputMLValue(index, p_ml_value).IsOK());
+      ONNXRUNTIME_ENFORCE(ctx.GetOrCreateOutputMLValue(index, p_ml_value).IsOK());
       return p_ml_value ? p_ml_value->GetMutable<TReg>() : nullptr;
     }
   };
@@ -79,17 +78,15 @@ class OpKernelContext {
   struct TypeRegistrationDispatcher;
 
   template <typename T>
-  struct TypeRegistrationDispatcher<T> : public Fetcher<T,T> {
+  struct TypeRegistrationDispatcher<T> : public Fetcher<T, T> {
   };
 
   template <typename T, typename... Params>
-  struct TypeRegistrationDispatcher<TypeRegister<T, Params...>> : 
-    public Fetcher<T, TypeRegister<T, Params...>> {
+  struct TypeRegistrationDispatcher<TypeRegister<T, Params...>> : public Fetcher<T, TypeRegister<T, Params...>> {
   };
 
   template <typename T, const char D[], const char N[], typename... Params>
-  struct TypeRegistrationDispatcher<OpaqueRegister<T, D, N, Params...>> : 
-    public Fetcher<T, OpaqueRegister<T, D, N, Params...>> {
+  struct TypeRegistrationDispatcher<OpaqueRegister<T, D, N, Params...>> : public Fetcher<T, OpaqueRegister<T, D, N, Params...>> {
   };
 
  public:
@@ -145,7 +142,7 @@ class OpKernelContext {
   Return the fence of current node's input.
   @param index The index of the input.
   @returns Point to the Fence of the input MLValue.
-  It is null if the input MLValue doesn't have fence or the input is optional. 
+  It is null if the input MLValue doesn't have fence or the input is optional.
   */
   Fence_t InputFence(int index) const;
 
@@ -153,7 +150,7 @@ class OpKernelContext {
   Return the fence of current node's output identifed by index.
   @param index The index of the output.
   @returns Point to the Fence of the output MLValue.
-  It is null if the output MLValue doesn't have fence or the output is optional. 
+  It is null if the output MLValue doesn't have fence or the output is optional.
   */
   Fence_t OutputFence(int index) const;
 
@@ -190,7 +187,7 @@ struct OpKernelContext::Fetcher<Tensor, Tensor> {
   // Fetching output tensor without shape is not allowed except when it already exists
   static Tensor* Output(OpKernelContext& ctx, int index) {
     MLValue* p_ml_value = ctx.GetOutputMLValue(index);
-    LOTUS_ENFORCE(p_ml_value, "Please fetch output tensor with specified shape.");
+    ONNXRUNTIME_ENFORCE(p_ml_value, "Please fetch output tensor with specified shape.");
     return p_ml_value->GetMutable<Tensor>();
   }
 };

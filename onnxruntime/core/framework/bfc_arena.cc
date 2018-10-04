@@ -25,11 +25,11 @@ BFCArena::BFCArena(std::unique_ptr<IDeviceAllocator> resource_allocator,
     LOGS_DEFAULT(INFO) << "Creating bin of max chunk size "
                        << bin_size;
     new (BinFromIndex(b)) Bin(this, bin_size);
-    LOTUS_ENFORCE(BinForSize(bin_size) == BinFromIndex(b));
-    LOTUS_ENFORCE(BinForSize(bin_size + 255) == BinFromIndex(b));
-    LOTUS_ENFORCE(BinForSize(bin_size * 2 - 1) == BinFromIndex(b));
+    ONNXRUNTIME_ENFORCE(BinForSize(bin_size) == BinFromIndex(b));
+    ONNXRUNTIME_ENFORCE(BinForSize(bin_size + 255) == BinFromIndex(b));
+    ONNXRUNTIME_ENFORCE(BinForSize(bin_size * 2 - 1) == BinFromIndex(b));
     if (b + 1 < kNumBins) {
-      LOTUS_ENFORCE(BinForSize(bin_size * 2) != BinFromIndex(b));
+      ONNXRUNTIME_ENFORCE(BinForSize(bin_size * 2) != BinFromIndex(b));
     }
   }
 }
@@ -49,7 +49,7 @@ BFCArena::~BFCArena() {
 }
 
 BFCArena::Chunk* BFCArena::ChunkFromHandle(ChunkHandle h) {
-  LOTUS_ENFORCE(h < chunks_.size());
+  ONNXRUNTIME_ENFORCE(h < chunks_.size());
   return &(chunks_[h]);
 }
 
@@ -155,7 +155,7 @@ size_t BFCArena::RoundedBytes(size_t bytes) {
   size_t rounded_bytes =
       (kMinAllocationSize *
        ((bytes + kMinAllocationSize - 1) / kMinAllocationSize));
-  LOTUS_ENFORCE(size_t{0} == rounded_bytes % kMinAllocationSize);
+  ONNXRUNTIME_ENFORCE(size_t{0} == rounded_bytes % kMinAllocationSize);
   return rounded_bytes;
 }
 
@@ -169,7 +169,7 @@ void* BFCArena::Reserve(size_t size) {
 
   std::lock_guard<std::mutex> lock(lock_);
   void* ptr = device_allocator_->Alloc(size);
-  LOTUS_ENFORCE(reserved_chunks_.find(ptr) == reserved_chunks_.end());
+  ONNXRUNTIME_ENFORCE(reserved_chunks_.find(ptr) == reserved_chunks_.end());
   reserved_chunks_.insert(std::pair<void*, size_t>(ptr, size));
   stats_.bytes_in_use += size;
   stats_.num_allocs += 1;
@@ -182,7 +182,7 @@ void* BFCArena::Reserve(size_t size) {
 size_t BFCArena::RequestedSize(const void* ptr) {
   std::lock_guard<std::mutex> lock(lock_);
   BFCArena::ChunkHandle h = region_manager_.get_handle(ptr);
-  LOTUS_ENFORCE(h != kInvalidChunkHandle);
+  ONNXRUNTIME_ENFORCE(h != kInvalidChunkHandle);
   BFCArena::Chunk* c = ChunkFromHandle(h);
   return c->requested_size;
 }
@@ -190,7 +190,7 @@ size_t BFCArena::RequestedSize(const void* ptr) {
 size_t BFCArena::AllocatedSize(const void* ptr) {
   std::lock_guard<std::mutex> lock(lock_);
   BFCArena::ChunkHandle h = region_manager_.get_handle(ptr);
-  LOTUS_ENFORCE(h != kInvalidChunkHandle);
+  ONNXRUNTIME_ENFORCE(h != kInvalidChunkHandle);
   BFCArena::Chunk* c = ChunkFromHandle(h);
   return c->size;
 }
@@ -251,7 +251,7 @@ void* BFCArena::FindChunkPtr(BinNum bin_num, size_t rounded_bytes,
          ++citer) {
       const BFCArena::ChunkHandle h = (*citer);
       BFCArena::Chunk* chunk = ChunkFromHandle(h);
-      LOTUS_ENFORCE(!chunk->in_use());
+      ONNXRUNTIME_ENFORCE(!chunk->in_use());
       if (chunk->size >= rounded_bytes) {
         // We found an existing chunk that fits us that wasn't in use, so remove
         // it from the free bin structure prior to using.
@@ -294,7 +294,7 @@ void BFCArena::SplitChunk(BFCArena::ChunkHandle h, size_t num_bytes) {
   ChunkHandle h_new_chunk = AllocateChunk();
 
   Chunk* c = ChunkFromHandle(h);
-  LOTUS_ENFORCE(!c->in_use() && (c->bin_num == kInvalidBinNum));
+  ONNXRUNTIME_ENFORCE(!c->in_use() && (c->bin_num == kInvalidBinNum));
 
   // Create a new chunk starting num_bytes after c
   BFCArena::Chunk* new_chunk = ChunkFromHandle(h_new_chunk);
@@ -343,7 +343,7 @@ void BFCArena::Free(void* p) {
 void BFCArena::DeallocateRawInternal(void* ptr) {
   // Find the chunk from the ptr.
   BFCArena::ChunkHandle h = region_manager_.get_handle(ptr);
-  LOTUS_ENFORCE(h != kInvalidChunkHandle);
+  ONNXRUNTIME_ENFORCE(h != kInvalidChunkHandle);
 
   // Consider coalescing it.
   FreeAndMaybeCoalesce(h);
@@ -356,7 +356,7 @@ void BFCArena::Merge(BFCArena::ChunkHandle h1,
   Chunk* c1 = ChunkFromHandle(h1);
   Chunk* c2 = ChunkFromHandle(h2);
   // We can only merge chunks that are not in use.
-  LOTUS_ENFORCE(!c1->in_use() && !c2->in_use());
+  ONNXRUNTIME_ENFORCE(!c1->in_use() && !c2->in_use());
 
   // c1's prev doesn't change, still points to the same ptr, and is
   // still not in use.
@@ -368,7 +368,7 @@ void BFCArena::Merge(BFCArena::ChunkHandle h1,
 
   BFCArena::ChunkHandle h3 = c2->next;
   c1->next = h3;
-  LOTUS_ENFORCE(c2->prev == h1);
+  ONNXRUNTIME_ENFORCE(c2->prev == h1);
   if (h3 != kInvalidChunkHandle) {
     BFCArena::Chunk* c3 = ChunkFromHandle(h3);
     c3->prev = h1;
@@ -390,7 +390,7 @@ void BFCArena::DeleteChunk(ChunkHandle h) {
 
 void BFCArena::InsertFreeChunkIntoBin(BFCArena::ChunkHandle h) {
   Chunk* c = ChunkFromHandle(h);
-  LOTUS_ENFORCE(!c->in_use() && (c->bin_num == kInvalidBinNum));
+  ONNXRUNTIME_ENFORCE(!c->in_use() && (c->bin_num == kInvalidBinNum));
   BinNum bin_num = BinNumForSize(c->size);
   Bin* new_bin = BinFromIndex(bin_num);
   c->bin_num = bin_num;
@@ -402,22 +402,22 @@ void BFCArena::RemoveFreeChunkIterFromBin(
     const BFCArena::Bin::FreeChunkSet::iterator& citer) {
   ChunkHandle h = *citer;
   Chunk* c = ChunkFromHandle(h);
-  LOTUS_ENFORCE(!c->in_use() && (c->bin_num != kInvalidBinNum));
+  ONNXRUNTIME_ENFORCE(!c->in_use() && (c->bin_num != kInvalidBinNum));
   free_chunks->erase(citer);
   c->bin_num = kInvalidBinNum;
 }
 
 void BFCArena::RemoveFreeChunkFromBin(BFCArena::ChunkHandle h) {
   Chunk* c = ChunkFromHandle(h);
-  LOTUS_ENFORCE(!c->in_use() && (c->bin_num != kInvalidBinNum));
-  LOTUS_ENFORCE(BinFromIndex(c->bin_num)->free_chunks.erase(h) > 0,
-                "Could not find chunk in bin");
+  ONNXRUNTIME_ENFORCE(!c->in_use() && (c->bin_num != kInvalidBinNum));
+  ONNXRUNTIME_ENFORCE(BinFromIndex(c->bin_num)->free_chunks.erase(h) > 0,
+              "Could not find chunk in bin");
   c->bin_num = kInvalidBinNum;
 }
 
 void BFCArena::FreeAndMaybeCoalesce(BFCArena::ChunkHandle h) {
   Chunk* c = ChunkFromHandle(h);
-  LOTUS_ENFORCE(c->in_use() && (c->bin_num == kInvalidBinNum));
+  ONNXRUNTIME_ENFORCE(c->in_use() && (c->bin_num == kInvalidBinNum));
 
   // Mark the chunk as no longer in use
   c->allocation_id = -1;
@@ -481,8 +481,8 @@ BFCArena::get_bin_debug_info() {
         bin_info.total_chunks_in_use++;
       } else {
         Bin* bin = BinFromIndex(bin_num);
-        LOTUS_ENFORCE(bin->free_chunks.count(h) == 1);
-        LOTUS_ENFORCE(c->bin_num == bin_num);
+        ONNXRUNTIME_ENFORCE(bin->free_chunks.count(h) == 1);
+        ONNXRUNTIME_ENFORCE(c->bin_num == bin_num);
       }
       h = c->next;
     }
@@ -495,8 +495,8 @@ void BFCArena::DumpMemoryLog(size_t num_bytes) {
   for (BinNum bin_num = 0; bin_num < kNumBins; bin_num++) {
     Bin* b = BinFromIndex(bin_num);
     const BinDebugInfo& bin_info = bin_infos[bin_num];
-    LOTUS_ENFORCE(b->free_chunks.size() ==
-                  bin_info.total_chunks_in_bin - bin_info.total_chunks_in_use);
+    ONNXRUNTIME_ENFORCE(b->free_chunks.size() ==
+                bin_info.total_chunks_in_bin - bin_info.total_chunks_in_use);
 
     LOGS_DEFAULT(INFO) << "Bin (" << b->bin_size
                        << "): \tTotal Chunks: " << bin_info.total_chunks_in_bin

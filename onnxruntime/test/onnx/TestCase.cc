@@ -49,7 +49,7 @@ template <typename InputType, typename OutputType>
 Status ConvertVector(const InputType& data, OutputType** vec) {
   //void* p = allocator->Alloc(sizeof(OutputType));
   //if (p == nullptr)
-  //	return Status(LOTUS, FAIL, "out of memory");
+  //	return Status(ONNXRUNTIME, FAIL, "out of memory");
   //OutputType* v = new (p) OutputType();
   //TODO: non-tensor type has no deleter inside it. So, cannot use allocator
   OutputType* v = new OutputType();
@@ -153,7 +153,7 @@ static int ExtractFileNo(const std::string& name) {
   const char* end = number_str.c_str();
   long ret = strtol(start, const_cast<char**>(&end), 10);
   if (end == start) {
-    LOTUS_THROW("parse file name failed");
+    ONNXRUNTIME_THROW("parse file name failed");
   }
   return static_cast<int>(ret);
 }
@@ -170,7 +170,7 @@ static Status SortTensorFileNames(std::vector<path>& input_pb_files) {
   for (size_t i = 0; i != input_pb_files.size(); ++i) {
     int fileno = ExtractFileNo(input_pb_files[i].filename().string());
     if (fileno != i) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "illegal input file name:", input_pb_files[i].filename().string());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "illegal input file name:", input_pb_files[i].filename().string());
     }
   }
   return Status::OK();
@@ -181,7 +181,7 @@ Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
                     const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& name_data_map, std::ostringstream& oss) {
   std::string content;
   //TODO: mmap is better
-  LOTUS_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
+  ONNXRUNTIME_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
   google::protobuf::io::CodedInputStream coded_input((const uint8_t*)content.data(), (int)content.size());
   bool clean_eof = false;
   Status st;
@@ -223,7 +223,7 @@ Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
         st = utils::TensorProtoToMLValue(data.tensor(), allocator, nullptr, 0, value);
         break;
       default:
-        st = Status(LOTUS, NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
+        st = Status(ONNXRUNTIME, NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
     }
     if (!st.IsOK()) break;
     if (!data.debug_info().empty()) {
@@ -235,27 +235,27 @@ Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
 
     auto pv = name_data_map.insert(std::make_pair(value_name, value));
     if (!pv.second) {
-      st = Status(LOTUS, FAIL, "duplicated test data name");
+      st = Status(ONNXRUNTIME, FAIL, "duplicated test data name");
       break;
     }
   }
-  if (!st.IsOK()) return LOTUS_MAKE_STATUS(LOTUS, FAIL, "load the ", item_id, "-th item in file '", outputs_pb.string(), "' failed,", st.ErrorMessage());
+  if (!st.IsOK()) return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "load the ", item_id, "-th item in file '", outputs_pb.string(), "' failed,", st.ErrorMessage());
   if (!clean_eof) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "parse input file '", outputs_pb.string(), "' failed, clean_eof==false");
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "parse input file '", outputs_pb.string(), "' failed, clean_eof==false");
   }
   return Status::OK();
 }
 
 Status loadModel(std::istream& model_istream, ONNX_NAMESPACE::ModelProto* p_model_proto) {
   if (!model_istream.good()) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Invalid istream object.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Invalid istream object.");
   }
   if (!p_model_proto) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Null model_proto ptr.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Null model_proto ptr.");
   }
   const bool result = p_model_proto->ParseFromIstream(&model_istream);
   if (!result) {
-    return Status(LOTUS, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
+    return Status(ONNXRUNTIME, INVALID_PROTOBUF, "Failed to load model because protobuf parsing failed.");
   }
   return Status::OK();
 }
@@ -265,7 +265,7 @@ Status loadModelFile(const std::string& model_url, ONNX_NAMESPACE::ModelProto* m
   if (!input) {
     std::ostringstream oss;
     oss << "open file " << model_url << " failed";
-    return Status(LOTUS, NO_SUCHFILE, oss.str());
+    return Status(ONNXRUNTIME, NO_SUCHFILE, oss.str());
   }
   return loadModel(input, model_pb);
 }
@@ -317,7 +317,7 @@ class OnnxTestCase : public ITestCase {
   bool post_processing_;
   Status ParseModel();
   Status ParseConfig();
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(OnnxTestCase);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(OnnxTestCase);
 
  public:
   OnnxTestCase(const AllocatorPtr&, const std::string& test_case_name);
@@ -359,7 +359,7 @@ ITestCase* CreateOnnxTestCase(const std::string& test_case_name) {
 Status OnnxTestCase::GetPerSampleTolerance(double* value) {
   Status st = ParseConfig();
   if (!st.IsOK())
-    return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
 
   *value = per_sample_tolerance_;
   return Status::OK();
@@ -368,7 +368,7 @@ Status OnnxTestCase::GetPerSampleTolerance(double* value) {
 Status OnnxTestCase::GetRelativePerSampleTolerance(double* value) {
   Status st = ParseConfig();
   if (!st.IsOK())
-    return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
   *value = relative_per_sample_tolerance_;
   return Status::OK();
 }
@@ -376,7 +376,7 @@ Status OnnxTestCase::GetRelativePerSampleTolerance(double* value) {
 Status OnnxTestCase::GetPostProcessing(bool* value) {
   Status st = ParseConfig();
   if (!st.IsOK()) {
-    return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, MODEL_LOADED, "parse test config failed:", st.ErrorMessage());
   }
   *value = post_processing_;
   return Status::OK();
@@ -405,7 +405,7 @@ Status OnnxTestCase::ParseConfig() {
       return;
     }
     if (!google::protobuf::TextFormat::ParseFromString(body, &config_pb)) {
-      st = Status(LOTUS, FAIL, "Parse config failed");
+      st = Status(ONNXRUNTIME, FAIL, "Parse config failed");
       return;
     }
     per_sample_tolerance_ = config_pb.per_sample_tolerance();
@@ -451,10 +451,10 @@ static Status LoadTensors(const std::vector<path>& pb_files, std::vector<ONNX_NA
     ONNX_NAMESPACE::TensorProto tensor;
     std::ifstream input(pb_files.at(i), std::ios::in | std::ios::binary);
     if (!input) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "open file '", pb_files.at(i), "' failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "open file '", pb_files.at(i), "' failed");
     }
     if (!tensor.ParseFromIstream(&input)) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "parse file '", pb_files.at(i), "' failed");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "parse file '", pb_files.at(i), "' failed");
     }
     input_pbs->emplace_back(tensor);
   }
@@ -463,11 +463,11 @@ static Status LoadTensors(const std::vector<path>& pb_files, std::vector<ONNX_NA
 
 Status OnnxTestCase::LoadTestData(size_t id, onnxruntime::NameMLValMap& name_data_map, bool is_input) {
   if (id >= test_data_dirs_.size())
-    return Status(LOTUS, INVALID_ARGUMENT, "out of bound");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "out of bound");
 
   Status st = ParseModel();
   if (!st.IsOK())
-    return LOTUS_MAKE_STATUS(LOTUS, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, MODEL_LOADED, "parse model failed:", st.ErrorMessage());
 
   path test_data_pb = test_data_dirs_[id] / (is_input ? "inputs.pb" : "outputs.pb");
   if (std::experimental::filesystem::exists(test_data_pb)) {  //has an all-in-one input file
@@ -494,17 +494,17 @@ Status OnnxTestCase::LoadTestData(size_t id, onnxruntime::NameMLValMap& name_dat
       test_data_pb_files.push_back(f);
     }
   }
-  LOTUS_RETURN_IF_ERROR(SortTensorFileNames(test_data_pb_files));
+  ONNXRUNTIME_RETURN_IF_ERROR(SortTensorFileNames(test_data_pb_files));
 
   std::vector<onnx::TensorProto> test_data_pbs;
-  LOTUS_RETURN_IF_ERROR(LoadTensors(test_data_pb_files, &test_data_pbs));
-  LOTUS_RETURN_IF_ERROR(ConvertTestData(test_data_pbs, is_input ? input_value_info_ : output_value_info_, name_data_map));
+  ONNXRUNTIME_RETURN_IF_ERROR(LoadTensors(test_data_pb_files, &test_data_pbs));
+  ONNXRUNTIME_RETURN_IF_ERROR(ConvertTestData(test_data_pbs, is_input ? input_value_info_ : output_value_info_, name_data_map));
   return Status::OK();
 }
 
 Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<MLValue>& output_values) {
   for (const path& f : files) {
-    if (!f.has_extension()) return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "unknown file type, path = ", f);
+    if (!f.has_extension()) return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, NOT_IMPLEMENTED, "unknown file type, path = ", f);
     std::string s = f.extension().string();
     if (s != ".pb")
       continue;
@@ -512,14 +512,14 @@ Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<MLV
     {
       std::ifstream input(f, std::ios::in | std::ios::binary);
       if (!input) {
-        return Status(LOTUS, FAIL, "open file failed");
+        return Status(ONNXRUNTIME, FAIL, "open file failed");
       }
       if (!tensor.ParseFromIstream(&input)) {
-        return Status(LOTUS, FAIL, "parse file failed");
+        return Status(ONNXRUNTIME, FAIL, "parse file failed");
       }
     }
     MLValue value;
-    LOTUS_RETURN_IF_ERROR(onnxruntime::utils::TensorProtoToMLValue(tensor, allocator_, nullptr, 0, value));
+    ONNXRUNTIME_RETURN_IF_ERROR(onnxruntime::utils::TensorProtoToMLValue(tensor, allocator_, nullptr, 0, value));
     output_values.emplace_back(value);
   }
   return Status::OK();
@@ -584,7 +584,7 @@ Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_
           snprintf(buf, sizeof(buf), "gpu_0/data_%d", static_cast<int>(input_index));
           var_names[input_index] = buf;
         } else
-          return Status(LOTUS, NOT_IMPLEMENTED, "cannot guess a valid input name");
+          return Status(ONNXRUNTIME, NOT_IMPLEMENTED, "cannot guess a valid input name");
       }
     }
   }
@@ -592,7 +592,7 @@ Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_
     std::string name = var_names[input_index];
     const onnx::TensorProto& input = test_data_pbs[input_index];
     MLValue v1;
-    LOTUS_RETURN_IF_ERROR(utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
+    ONNXRUNTIME_RETURN_IF_ERROR(utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
     out.insert(std::make_pair(name, v1));
   }
   return Status::OK();

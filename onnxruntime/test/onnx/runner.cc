@@ -26,13 +26,13 @@ using std::experimental::filesystem::v1::path;
 using namespace onnxruntime;
 using ::onnxruntime::common::Status;
 
-void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE pci, void* context, LOTUS_WORK work) {
-  LotusCloseThreadpoolWork(work);
+void CALLBACK RunTestCase(CALLBACK_INSTANCE pci, void* context, WORK work) {
+  OnnxRuntimeCloseThreadpoolWork(work);
   TestCaseTask* task((TestCaseTask*)context);
   ITestCase* info = task->env.tests[task->task_id];
   std::shared_ptr<TestCaseResult> ret;
   try {
-    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, task->repeat_count, task->pool, pci, [task](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
+    RunSingleTestCase(info, task->env.sf, task->concurrent_runs, task->repeat_count, task->pool, pci, [task](std::shared_ptr<TestCaseResult> result, CALLBACK_INSTANCE pci) {
       return OnTestCaseFinished(pci, task, result);
     });
     return;
@@ -46,7 +46,7 @@ void LOTUS_CALLBACK RunTestCase(LOTUS_CALLBACK_INSTANCE pci, void* context, LOTU
   }
 }
 
-void PTestRunner::Start(LOTUS_CALLBACK_INSTANCE, size_t concurrent_runs) {
+void PTestRunner::Start(CALLBACK_INSTANCE, size_t concurrent_runs) {
   concurrent_runs = std::min<size_t>(std::max<size_t>(1, concurrent_runs), c_->GetDataCount());
   next_test_to_run = 0;
   for (size_t i = 0; i != concurrent_runs; ++i) {
@@ -69,7 +69,7 @@ bool PTestRunner::ScheduleNew() {
   return true;
 }
 
-void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT, LOTUS_CALLBACK_INSTANCE pci) noexcept {
+void PTestRunner::OnTaskFinished(size_t, EXECUTE_RESULT, CALLBACK_INSTANCE pci) noexcept {
   try {
     ScheduleNew();
     if (++finished == c_->GetDataCount()) {
@@ -90,8 +90,8 @@ PTestRunner::PTestRunner(std::shared_ptr<::onnxruntime::InferenceSession> sessio
                          TestCaseCallBack on_finished1) : DataRunner(session1, c->GetTestCaseName(), c, on_finished1), next_test_to_run(0), finished(0), tpool_(tpool) {
 }
 
-void LOTUS_CALLBACK RunSingleDataItem(LOTUS_CALLBACK_INSTANCE instance, void* context, LOTUS_WORK work) {
-  LotusCloseThreadpoolWork(work);
+void CALLBACK RunSingleDataItem(CALLBACK_INSTANCE instance, void* context, WORK work) {
+  OnnxRuntimeCloseThreadpoolWork(work);
   DataTask* task((DataTask*)context);
   PTestRunner* env = task->env;
   const size_t task_id = task->task_id;
@@ -99,7 +99,7 @@ void LOTUS_CALLBACK RunSingleDataItem(LOTUS_CALLBACK_INSTANCE instance, void* co
   env->RunTask(task_id, instance, true);
 }
 
-Status OnTestCaseFinished(LOTUS_CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result) {
+Status OnTestCaseFinished(CALLBACK_INSTANCE pci, TestCaseTask* task, std::shared_ptr<TestCaseResult> result) {
   FixedCountFinishCallback* finished = task->env.finished;
   auto task_id = task->task_id;
   bool failed = false;
@@ -136,7 +136,7 @@ static Status ParallelRunTests(TestEnv& env, int p_models, size_t current_runs, 
   }
   bool ret = env.finished->wait();
   if (!ret) {
-    return Status(::onnxruntime::common::LOTUS, ::onnxruntime::common::FAIL, "ParallelRunTests failed");
+    return Status(::onnxruntime::common::ONNXRUNTIME, ::onnxruntime::common::FAIL, "ParallelRunTests failed");
   }
   LOGF_DEFAULT(ERROR, "Running tests finished. Generating report");
   return Status::OK();
@@ -150,15 +150,15 @@ Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_c
   });
   std::vector<std::shared_ptr<TestCaseResult>> results;
   if (p_models > 1 && env.tests.size() > 1) {
-    LOTUS_RETURN_IF_ERROR(ParallelRunTests(env, p_models, concurrent_runs, repeat_count, tpool));
+    ONNXRUNTIME_RETURN_IF_ERROR(ParallelRunTests(env, p_models, concurrent_runs, repeat_count, tpool));
     results = env.finished->getResults();
   } else {
     //run models one by one
     for (size_t i = 0; i != env.tests.size(); ++i) {
       const char* test_case_name = env.tests[i]->GetTestCaseName().c_str();
-      LOTUS_EVENT ev;
-      LOTUS_RETURN_IF_ERROR(CreateLotusEvent(&ev));
-      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, repeat_count, tpool, nullptr, [repeat_count, &results, ev, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, LOTUS_CALLBACK_INSTANCE pci) {
+      EVENT ev;
+      ONNXRUNTIME_RETURN_IF_ERROR(CreateOnnxRuntimeEvent(&ev));
+      RunSingleTestCase(env.tests[i], env.sf, concurrent_runs, repeat_count, tpool, nullptr, [repeat_count, &results, ev, concurrent_runs, test_case_name](std::shared_ptr<TestCaseResult> result, CALLBACK_INSTANCE pci) {
         //TODO:output this information to a xml
         if (concurrent_runs == 1) {
           TIME_SPEC ts = result->GetSpentTime();
@@ -167,9 +167,9 @@ Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_c
           LOGF_DEFAULT(ERROR, "Test %s finished in %.3g seconds, took %.3g for each input", test_case_name, spent, spent2);
         }
         results.push_back(result);
-        return LotusSetEventWhenCallbackReturns(pci, ev);
+        return OnnxRuntimeSetEventWhenCallbackReturns(pci, ev);
       });
-      LOTUS_RETURN_IF_ERROR(WaitAndCloseEvent(ev));
+      ONNXRUNTIME_RETURN_IF_ERROR(WaitAndCloseEvent(ev));
     }
   }
   for (size_t i = 0; i != env.tests.size(); ++i) {
@@ -217,7 +217,7 @@ Status RunTests(TestEnv& env, int p_models, int concurrent_runs, size_t repeat_c
           if (!r.node_name.empty()) stat.AddFailedKernels(r.node_name);
           break;
         default:
-          return LOTUS_MAKE_STATUS(LOTUS, FAIL, "unknown result");
+          return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "unknown result");
       }
     }
   }
@@ -271,7 +271,7 @@ DataRunner::DataRunner(std::shared_ptr<::onnxruntime::InferenceSession> session1
   SetTimeSpecToZero(&spent_time_);
 }
 
-void DataRunner::RunTask(size_t task_id, LOTUS_CALLBACK_INSTANCE pci, bool store_result) {
+void DataRunner::RunTask(size_t task_id, CALLBACK_INSTANCE pci, bool store_result) {
   EXECUTE_RESULT res = EXECUTE_RESULT::UNKNOWN_ERROR;
   try {
     res = RunTaskImpl(task_id);
@@ -336,27 +336,26 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   }
 
   NameMLValMap name_fetch_output_map;
-  std::unordered_map<std::string, const onnx::ValueInfoProto *> name_output_value_info_proto;
+  std::unordered_map<std::string, const onnx::ValueInfoProto*> name_output_value_info_proto;
   int i = 0;
-  for (auto &output_name : output_names)
-  {
-      // p_fetches is filled in the order of output_names.
-      name_fetch_output_map[output_name] = p_fetches.at(i);
-      const onnx::ValueInfoProto &infoProto = c_->GetOutputInfoFromModel(i);
-      name_output_value_info_proto.insert(std::make_pair(infoProto.name(), &infoProto));
-      i++;
+  for (auto& output_name : output_names) {
+    // p_fetches is filled in the order of output_names.
+    name_fetch_output_map[output_name] = p_fetches.at(i);
+    const onnx::ValueInfoProto& infoProto = c_->GetOutputInfoFromModel(i);
+    name_output_value_info_proto.insert(std::make_pair(infoProto.name(), &infoProto));
+    i++;
   }
 
   EXECUTE_RESULT res = EXECUTE_RESULT::SUCCESS;
-  for (auto &output : output_values) {
-    const MLValue &expected_output_value = output.second;
+  for (auto& output : output_values) {
+    const MLValue& expected_output_value = output.second;
     const std::string& output_name = output.first;
 
     const MLValue& actual_output_value = name_fetch_output_map[output_name];
     //this is the default value for provider sync.Currently only one execution queue for CPU.
     int queue_id = 0;
     if (actual_output_value.Fence())
-        actual_output_value.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, queue_id);
+      actual_output_value.Fence()->BeforeUsingAsInput(onnxruntime::kCpuExecutionProvider, queue_id);
     std::pair<COMPARE_RESULT, std::string> ret = CompareMLValue(actual_output_value, expected_output_value, per_sample_tolerance, relative_per_sample_tolerance, post_procesing);
     COMPARE_RESULT compare_result = ret.first;
     if (compare_result == COMPARE_RESULT::SUCCESS) {
@@ -406,7 +405,7 @@ EXECUTE_RESULT DataRunner::RunTaskImpl(size_t task_id) {
   return res;
 }
 
-void SeqTestRunner::Start(LOTUS_CALLBACK_INSTANCE pci, size_t) {
+void SeqTestRunner::Start(CALLBACK_INSTANCE pci, size_t) {
   const size_t data_count = c_->GetDataCount();
   for (size_t idx_repeat = 0; idx_repeat != repeat_count_; ++idx_repeat)
     for (size_t idx_data = 0; idx_data != data_count; ++idx_data) {
@@ -415,7 +414,7 @@ void SeqTestRunner::Start(LOTUS_CALLBACK_INSTANCE pci, size_t) {
   finish(pci);
 }
 
-void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, PThreadPool tpool, LOTUS_CALLBACK_INSTANCE pci, TestCaseCallBack on_finished) {
+void RunSingleTestCase(ITestCase* info, const SessionFactory& sf, size_t concurrent_runs, size_t repeat_count, PThreadPool tpool, CALLBACK_INSTANCE pci, TestCaseCallBack on_finished) {
   std::shared_ptr<TestCaseResult> ret;
   size_t data_count = info->GetDataCount();
   {

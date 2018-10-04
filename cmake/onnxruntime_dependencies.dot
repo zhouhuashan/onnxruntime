@@ -14,8 +14,8 @@ node [
     "node17" [ label="onnxruntime_providers" shape="diamond"];
     "node17" -> "node10" // onnxruntime_providers -> onnxruntime_common
     "node17" -> "node15" // onnxruntime_providers -> onnxruntime_framework
-    "node18" [ label="lotus_test_common" shape="house"];
-    "node6" [ label="lotus_test_framework" shape="house"];
-    "node19" [ label="lotus_test_ir" shape="house"];
-    "node20" [ label="lotus_test_providers" shape="house"];
+    "node18" [ label="onnxruntime_test_common" shape="house"];
+    "node6" [ label="onnxruntime_test_framework" shape="house"];
+    "node19" [ label="onnxruntime_test_ir" shape="house"];
+    "node20" [ label="onnxruntime_test_providers" shape="house"];
 }

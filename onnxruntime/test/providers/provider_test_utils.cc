@@ -72,7 +72,7 @@ void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const T
   if (type == DataTypeImpl::GetType<Type>())
     Check<Type>(expected_data, output_tensor);
   else
-    LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
+    ONNXRUNTIME_THROW("OpTester:Check() not implemented for output tensor type of ", type);
 }
 
 template <typename Type, typename Next, typename... Types>
@@ -84,10 +84,10 @@ void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, const T
 }
 
 void Check(const OpTester::Data& expected_data, const Tensor& output_tensor) {
-  LOTUS_ENFORCE(expected_data.data_.Get<Tensor>().Shape() == output_tensor.Shape(),
-                "Expected output shape [" + expected_data.data_.Get<Tensor>().Shape().ToString() +
-                    "] did not match run output shape [" +
-                    output_tensor.Shape().ToString() + "]");
+  ONNXRUNTIME_ENFORCE(expected_data.data_.Get<Tensor>().Shape() == output_tensor.Shape(),
+              "Expected output shape [" + expected_data.data_.Get<Tensor>().Shape().ToString() +
+                  "] did not match run output shape [" +
+                  output_tensor.Shape().ToString() + "]");
 
   CheckDispatch<bool, float, double, uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t, std::string, MLFloat16>(output_tensor.DataType(), expected_data, output_tensor);
 }
@@ -104,7 +104,7 @@ void CheckDispatch(MLDataType type, const OpTester::Data& expected_data, MLValue
   if (type == DataTypeImpl::GetType<Type>())
     Check<Type>(expected_data, mlvalue.Get<Type>());
   else
-    LOTUS_THROW("OpTester:Check() not implemented for output tensor type of ", type);
+    ONNXRUNTIME_THROW("OpTester:Check() not implemented for output tensor type of ", type);
 }
 
 template <typename Type, typename Next, typename... Types>
@@ -150,7 +150,7 @@ void OpTester::SetOutputAbsErr(const char* name, float v) {
       [name](Data& data) {
         return (data.def_.Name() == name);
       });
-  LOTUS_ENFORCE(it != output_data_.end());
+  ONNXRUNTIME_ENFORCE(it != output_data_.end());
   it->absolute_error_ = optional<float>(v);
 }
 
@@ -161,7 +161,7 @@ void OpTester::SetOutputRelErr(const char* name, float v) {
       [name](Data& data) {
         return (data.def_.Name() == name);
       });
-  LOTUS_ENFORCE(it != output_data_.end());
+  ONNXRUNTIME_ENFORCE(it != output_data_.end());
   it->relative_error_ = optional<float>(v);
 }
 
@@ -182,9 +182,9 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
       output_defs.push_back(&data.def_);
     }
 
-    const ILotusOpSchemaRegistryList* local_schema_registries = custom_schema_registries_.empty()
-                                                                    ? nullptr
-                                                                    : &custom_schema_registries_;
+    const IOnnxRuntimeOpSchemaRegistryList* local_schema_registries = custom_schema_registries_.empty()
+                                                                          ? nullptr
+                                                                          : &custom_schema_registries_;
 
     // Create a simple model
     std::unordered_map<std::string, int> domain_to_version;
@@ -199,7 +199,7 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
       add_attribute_fn(node);
 
     Status status = graph.Resolve();
-    //LOTUS_ENFORCE(status.IsOK(), status.ErrorMessage());
+    //ONNXRUNTIME_ENFORCE(status.IsOK(), status.ErrorMessage());
     if (!status.IsOK()) {
       if (expect_result == ExpectResult::kExpectFailure) {
         EXPECT_TRUE(!status.IsOK());
@@ -333,6 +333,5 @@ void OpTester::Run(ExpectResult expect_result, const std::string& expected_failu
     throw;
   }
 }
-
 }  // namespace test
 }  // namespace onnxruntime

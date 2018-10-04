@@ -60,7 +60,7 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
   const auto rank = input_shape.NumDimensions();
 
   if (rank > 8) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "cuDNN only supports up to 8-D tensors in reduction");
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "cuDNN only supports up to 8-D tensors in reduction");
   }
 
   const auto& input_dims = input_shape.GetDims();
@@ -108,13 +108,13 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
   }
 
   CudnnReduceDescriptor reduce_desc;
-  LOTUS_RETURN_IF_ERROR(reduce_desc.Set(cudnnReduceOp, cudnn_type_X, ReduceTensorIndices));
+  ONNXRUNTIME_RETURN_IF_ERROR(reduce_desc.Set(cudnnReduceOp, cudnn_type_X, ReduceTensorIndices));
   const auto one = Consts<CudaT>::One;
   const auto zero = Consts<CudaT>::Zero;
   CudnnTensor input_tensor;
   CudnnTensor output_tensor;
-  LOTUS_RETURN_IF_ERROR(input_tensor.Set(input_dims_cudnn, cudnn_type_X));
-  LOTUS_RETURN_IF_ERROR(output_tensor.Set(output_dims_cudnn, cudnn_type_X));
+  ONNXRUNTIME_RETURN_IF_ERROR(input_tensor.Set(input_dims_cudnn, cudnn_type_X));
+  ONNXRUNTIME_RETURN_IF_ERROR(output_tensor.Set(output_dims_cudnn, cudnn_type_X));
   size_t workspace_bytes = 0;
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
   auto workspace_cuda = GetScratchBuffer<void>(workspace_bytes);

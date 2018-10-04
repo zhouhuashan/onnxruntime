@@ -25,7 +25,7 @@ REGISTER_KERNEL_TYPED(MLFloat16)
 template <typename T>
 Status Crop<T>::ComputeInternal(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
-  LOTUS_RETURN_IF_ERROR(ValidateInput(X));
+  ONNXRUNTIME_RETURN_IF_ERROR(ValidateInput(X));
 
   const auto dims = X->Shape().GetDims();
   const int64_t N = dims[0];

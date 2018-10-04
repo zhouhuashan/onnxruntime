@@ -221,7 +221,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   const auto& x_dims = x_shape.GetDims();
 
   if (x_shape.NumDimensions() < 3) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Input dimension cannot be less than 3.");
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Input dimension cannot be less than 3.");
   }
 
   if (x_shape.NumDimensions() == 3) {
@@ -235,7 +235,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
 
   if (this->global_pooling_) {
     kernel_shape.assign(x_dims.begin() + 2, x_dims.end());
-    pads.assign(kernel_shape.size()*2, 0);
+    pads.assign(kernel_shape.size() * 2, 0);
     strides.assign(kernel_shape.size(), 1);
   }
 
@@ -249,11 +249,11 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
   mkldnn::memory::dims dst_dims_mkl(y_dims.begin(), y_dims.end());
   mkldnn::memory::dims kernel_mkl(kernel_shape.begin(), kernel_shape.end());
   mkldnn::memory::dims strides_mkl(strides.begin(), strides.end());
-  mkldnn::memory::dims padding_left_mkl(pads.begin(), pads.begin() + (pads.size()/2));
+  mkldnn::memory::dims padding_left_mkl(pads.begin(), pads.begin() + (pads.size() / 2));
   mkldnn::memory::dims padding_right_mkl(pads.begin() + (pads.size() / 2), pads.end());
 
   AllocatorPtr alloc;
-  LOTUS_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
+  ONNXRUNTIME_RETURN_IF_ERROR(context->GetTempSpaceAllocator(&alloc));
   IAllocatorUniquePtr<void> src_reorder_buffer;
   IAllocatorUniquePtr<void> dst_reorder_buffer;
 
@@ -267,8 +267,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
     std::shared_ptr<mkldnn::pooling_forward::primitive_desc> fwd_primitive_desc = pool_primitive->GetPrimitiveDesc();
 
     mkldnn::engine& cpu_engine = GetEngine();
-    mkldnn::memory::format mem_format = src_dims_mkl.size() == 5 ? mkldnn::memory::format::ncdhw :
-		                                                           mkldnn::memory::format::nchw;
+    mkldnn::memory::format mem_format = src_dims_mkl.size() == 5 ? mkldnn::memory::format::ncdhw : mkldnn::memory::format::nchw;
     // Per ONNX spec, X (src) is NCHW and Y (dst) is NCHW
     auto src_md = mkldnn::memory::desc(src_dims_mkl, MklDnnType<T>(), mem_format);
     auto dst_md = mkldnn::memory::desc(dst_dims_mkl, MklDnnType<T>(), mem_format);
@@ -301,7 +300,7 @@ Status Pool<T, PoolType>::Compute(OpKernelContext* context) const {
       DoReorder<T>(params);
     }
   } catch (mkldnn::error& e) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Status: ", e.status, ", message: ", e.message.c_str());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Status: ", e.status, ", message: ", e.message.c_str());
   }
 
   return Status::OK();

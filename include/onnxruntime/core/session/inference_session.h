@@ -258,7 +258,7 @@ class InferenceSession {
   common::Status Load(std::unique_ptr<ONNX_NAMESPACE::ModelProto> p_model_proto);
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(InferenceSession);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(InferenceSession);
 
   class Impl;
   std::unique_ptr<Impl> impl_;

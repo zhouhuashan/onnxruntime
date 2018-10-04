@@ -11,7 +11,7 @@ namespace onnxruntime {
 class UnsqueezeBase {
  protected:
   UnsqueezeBase(const OpKernelInfo& info) {
-    LOTUS_ENFORCE(info.GetAttrs("axes", axes_).IsOK(), "Missing/Invalid 'axes' attribute value");
+    ONNXRUNTIME_ENFORCE(info.GetAttrs("axes", axes_).IsOK(), "Missing/Invalid 'axes' attribute value");
   }
 
   struct Prepare {

@@ -83,7 +83,7 @@ class SymbolHelper {
   }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(SymbolHelper);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(SymbolHelper);
 
   HANDLE process_ = GetCurrentProcess();
   bool cleanup_ = false;

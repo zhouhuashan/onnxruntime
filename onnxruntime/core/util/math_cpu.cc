@@ -72,7 +72,7 @@ namespace math {
 // will delegate the Caffe math functions that are BLAS-related to either the
 // CBLAS call or the Eigen implementation.
 ////////////////////////////////////////////////////////////////////////////////
-#ifdef LOTUS_USE_EIGEN_FOR_BLAS
+#ifdef USE_EIGEN_FOR_BLAS
 
 // Caffe2 gemm provides a simpler interface to the gemm functions, with the
 // limitation that the data has to be contiguous in memory.
@@ -121,7 +121,7 @@ void Gemm<float, CPUMathUtil>(
                              A, &lda,
                              &beta, C, &N_);
   if (status != mkldnn_success) {
-    LOTUS_THROW("mkldnn_sgemm failed with status: " + status);
+    ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: " + status);
   }
 #else
   auto C_mat = EigenMatrixMap<float>(C, N, M);
@@ -142,7 +142,7 @@ void Gemm<float, CPUMathUtil>(
                                       ConstEigenMatrixMap<float>(A, K, M));
           return;
         default:
-          LOTUS_THROW("CblasNoTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
+          ONNXRUNTIME_THROW("CblasNoTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     case CblasTrans: {
@@ -156,11 +156,11 @@ void Gemm<float, CPUMathUtil>(
                                       ConstEigenMatrixMap<float>(A, M, K).transpose());
           return;
         default:
-          LOTUS_THROW("CblasTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
+          ONNXRUNTIME_THROW("CblasTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     default:
-      LOTUS_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
+      ONNXRUNTIME_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
   }
 #endif
 }
@@ -192,7 +192,7 @@ void GemmEx<float, CPUMathUtil>(
                              A, &lda,
                              &beta, C, &ldc);
   if (status != mkldnn_success) {
-    LOTUS_THROW("mkldnn_sgemm failed with status: " + status);
+    ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: " + status);
   }
 #else
   using OuterStride = Eigen::OuterStride<Eigen::Dynamic>;
@@ -218,7 +218,7 @@ void GemmEx<float, CPUMathUtil>(
                        ConstStridedMap(A, K, M, OuterStride(lda)));
           return;
         default:
-          LOTUS_THROW("CblasNoTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
+          ONNXRUNTIME_THROW("CblasNoTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     case CblasTrans: {
@@ -234,11 +234,11 @@ void GemmEx<float, CPUMathUtil>(
                        ConstStridedMap(A, M, K, OuterStride(lda)).transpose());
           return;
         default:
-          LOTUS_THROW("CblasTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
+          ONNXRUNTIME_THROW("CblasTrans Unexpected CBLAS_TRANSPOSE for TransB of ", TransB);
       }
     }
     default:
-      LOTUS_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
+      ONNXRUNTIME_THROW("Unexpected CBLAS_TRANSPOSE for TransA of ", TransA);
   }
 #endif
 }
@@ -275,11 +275,11 @@ void Gemv<float, CPUMathUtil>(
       return;
     }
     default:
-      LOTUS_THROW("Gemv float found an unexpected CBLAS_TRANSPOSE input of", TransA);
+      ONNXRUNTIME_THROW("Gemv float found an unexpected CBLAS_TRANSPOSE input of", TransA);
   }
 }
 
-#define LOTUS_SPECIALIZED_SCALE(T)                                                   \
+#define SPECIALIZED_SCALE(T)                                                         \
   template <>                                                                        \
   void Scale<T, CPUMathUtil>(                                                        \
       const int n, const float alpha, const T* x, T* y, CPUMathUtil* /*provider*/) { \
@@ -294,20 +294,20 @@ void Gemv<float, CPUMathUtil>(
       CPUMathUtil* /*provider*/) {                                                   \
     EigenVectorMap<T>(y, n) = ConstEigenVectorMap<T>(x, n) * (*alpha);               \
   }
-LOTUS_SPECIALIZED_SCALE(float)
-#undef LOTUS_SPECIALIZED_SCALE
+SPECIALIZED_SCALE(float)
+#undef SPECIALIZED_SCALE
 
-#define LOTUS_SPECIALIZED_DOT(T)                                         \
+#define SPECIALIZED_DOT(T)                                               \
   template <>                                                            \
   void Dot<T, CPUMathUtil>(                                              \
       const int N, const T* a, const T* b, T* y,                         \
       CPUMathUtil* /*provider*/) {                                       \
     *y = ConstEigenVectorMap<T>(a, N).dot(ConstEigenVectorMap<T>(b, N)); \
   }
-LOTUS_SPECIALIZED_DOT(float)
-#undef LOTUS_SPECIALIZED_DOT
+SPECIALIZED_DOT(float)
+#undef SPECIALIZED_DOT
 
-#define LOTUS_SPECIALIZED_AXPY(T)                                                 \
+#define SPECIALIZED_AXPY(T)                                                       \
   template <>                                                                     \
   void Axpy<T, CPUMathUtil>(                                                      \
       const int N, const T alpha, const T* x, T* Y, CPUMathUtil* /*provider*/) {  \
@@ -318,20 +318,20 @@ LOTUS_SPECIALIZED_DOT(float)
       const int N, const T* alpha, const T* x, T* Y, CPUMathUtil* /*provider*/) { \
     EigenVectorMap<T>(Y, N) += ConstEigenVectorMap<T>(x, N) * (*alpha);           \
   }
-LOTUS_SPECIALIZED_AXPY(float)
-#undef LOTUS_SPECIALIZED_AXPY
+SPECIALIZED_AXPY(float)
+#undef SPECIALIZED_AXPY
 
-#define LOTUS_SPECIALIZED_AXPBY(T)                                           \
+#define SPECIALIZED_AXPBY(T)                                                 \
   template <>                                                                \
   void Axpby<T, CPUMathUtil>(const int N, const T alpha, const T* x,         \
                              const T beta, T* y, CPUMathUtil* /*context*/) { \
     EigenVectorMap<T> y_vec(y, N);                                           \
     y_vec = y_vec * beta + ConstEigenVectorMap<T>(x, N) * alpha;             \
   }
-LOTUS_SPECIALIZED_AXPBY(float)
-#undef LOTUS_SPECIALIZED_AXPBY
+SPECIALIZED_AXPBY(float)
+#undef SPECIALIZED_AXPBY
 
-#else  // LOTUS_USE_EIGEN_FOR_BLAS
+#else  // USE_EIGEN_FOR_BLAS
 
 template <>
 void Gemm<float, CPUMathUtil>(
@@ -444,7 +444,7 @@ CAFFE2_SPECIALIZED_AXPY(float, s)
 CAFFE2_SPECIALIZED_AXPBY(float, s)
 #undef CAFFE2_SPECIALIZED_AXPBY
 
-#endif  // LOTUS_USE_EIGEN_FOR_BLAS
+#endif  // USE_EIGEN_FOR_BLAS
 
 template <>
 void GemmBatched<float, CPUMathUtil>(
@@ -559,56 +559,56 @@ DEFINE_SIMPLE_BINARY_FUNCTION(Div, /)
 // Eigen or via custom code.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LOTUS_SPECIALIZED_REDUCEMIN(T) \
-  template <>                          \
-  void ReduceMin<T, CPUMathUtil>(      \
-      const int N,                     \
-      const T* x,                      \
-      T* y,                            \
-      Tensor* /*scratch_ptr*/,         \
-      CPUMathUtil* /*context*/) {      \
-    *y = *std::min_element(x, x + N);  \
+#define SPECIALIZED_REDUCEMIN(T)      \
+  template <>                         \
+  void ReduceMin<T, CPUMathUtil>(     \
+      const int N,                    \
+      const T* x,                     \
+      T* y,                           \
+      Tensor* /*scratch_ptr*/,        \
+      CPUMathUtil* /*context*/) {     \
+    *y = *std::min_element(x, x + N); \
   }
-LOTUS_SPECIALIZED_REDUCEMIN(float)
-#undef LOTUS_SPECIALIZED_REDUCEMIN
+SPECIALIZED_REDUCEMIN(float)
+#undef SPECIALIZED_REDUCEMIN
 
-#define LOTUS_SPECIALIZED_REDUCEMAX(T) \
-  template <>                          \
-  void ReduceMax<T, CPUMathUtil>(      \
-      const int N,                     \
-      const T* x,                      \
-      T* y,                            \
-      Tensor* /*scratch_ptr*/,         \
-      CPUMathUtil* /*context*/) {      \
-    *y = *std::max_element(x, x + N);  \
+#define SPECIALIZED_REDUCEMAX(T)      \
+  template <>                         \
+  void ReduceMax<T, CPUMathUtil>(     \
+      const int N,                    \
+      const T* x,                     \
+      T* y,                           \
+      Tensor* /*scratch_ptr*/,        \
+      CPUMathUtil* /*context*/) {     \
+    *y = *std::max_element(x, x + N); \
   }
-LOTUS_SPECIALIZED_REDUCEMAX(float)
-LOTUS_SPECIALIZED_REDUCEMAX(int32_t)
-LOTUS_SPECIALIZED_REDUCEMAX(int64_t)
+SPECIALIZED_REDUCEMAX(float)
+SPECIALIZED_REDUCEMAX(int32_t)
+SPECIALIZED_REDUCEMAX(int64_t)
 
-#undef LOTUS_SPECIALIZED_REDUCEMAX
+#undef SPECIALIZED_REDUCEMAX
 
-#define LOTUS_SPECIALIZED_ROWWISEMAX(T)                           \
+#define SPECIALIZED_ROWWISEMAX(T)                                 \
   template <>                                                     \
   void RowwiseMax<T, CPUMathUtil>(                                \
       const int N, const int D, const T* x, T* y, CPUMathUtil*) { \
     EigenVectorMap<T>(y, N) =                                     \
         ConstEigenMatrixMap<T>(x, D, N).colwise().maxCoeff();     \
   }
-LOTUS_SPECIALIZED_ROWWISEMAX(float)
-#undef LOTUS_SPECIALIZED_ROWWISEMAX
+SPECIALIZED_ROWWISEMAX(float)
+#undef SPECIALIZED_ROWWISEMAX
 
-#define LOTUS_SPECIALIZED_COLWISEMAX(T)                           \
+#define SPECIALIZED_COLWISEMAX(T)                                 \
   template <>                                                     \
   void ColwiseMax<T, CPUMathUtil>(                                \
       const int N, const int D, const T* x, T* y, CPUMathUtil*) { \
     EigenVectorMap<T>(y, D) =                                     \
         ConstEigenMatrixMap<T>(x, D, N).rowwise().maxCoeff();     \
   }
-LOTUS_SPECIALIZED_COLWISEMAX(float)
-#undef LOTUS_SPECIALIZED_COLWISEMAX
+SPECIALIZED_COLWISEMAX(float)
+#undef SPECIALIZED_COLWISEMAX
 
-#define LOTUS_SPECIALIZED_ELEMWISEMAX(T)                                     \
+#define SPECIALIZED_ELEMWISEMAX(T)                                           \
   template <>                                                                \
   void ElemwiseMax<T, CPUMathUtil>(                                          \
       const int N, const T* x, const T* y, T* z, CPUMathUtil* /*context*/) { \
@@ -616,18 +616,18 @@ LOTUS_SPECIALIZED_COLWISEMAX(float)
       return std::max(x_i, y_i);                                             \
     });                                                                      \
   }
-LOTUS_SPECIALIZED_ELEMWISEMAX(float)
-#undef LOTUS_SPECIALIZED_ELEMWISEMAX
+SPECIALIZED_ELEMWISEMAX(float)
+#undef SPECIALIZED_ELEMWISEMAX
 
-#define LOTUS_SPECIALIZED_MAXIMUM(T)                                                 \
+#define SPECIALIZED_MAXIMUM(T)                                                       \
   template <>                                                                        \
   void Maximum<T, CPUMathUtil>(                                                      \
       const int N, const float alpha, const T* x, T* y, CPUMathUtil* /*provider*/) { \
     std::transform(                                                                  \
         x, x + N, y, [&alpha](const T& x_i) { return std::max(x_i, alpha); });       \
   }
-LOTUS_SPECIALIZED_MAXIMUM(float)
-#undef LOTUS_SPECIALIZED_MAXIMUM
+SPECIALIZED_MAXIMUM(float)
+#undef SPECIALIZED_MAXIMUM
 
 // AddToRow and AddToCol adds the corresponding row/col vector b to the matrix a
 // of shape M x N. The actual implementation uses eigen which is column major,
@@ -666,7 +666,7 @@ DEFINE_BROADCAST_BINARY_FUNCTION(Div, /)
 #undef DEFINE_BROADCAST_BINARY_FUNCTION
 #undef DELEGATE_BROADCAST_BINARY_FUNCTION
 
-#define LOTUS_SPECIALIZED_SET(T)                                                 \
+#define SPECIALIZED_SET(T)                                                       \
   template <>                                                                    \
   void Set<T, CPUMathUtil>(const int64_t N, const T alpha, T* Y, CPUMathUtil*) { \
     if (alpha == (T)0) {                                                         \
@@ -676,19 +676,19 @@ DEFINE_BROADCAST_BINARY_FUNCTION(Div, /)
     }                                                                            \
   }
 
-LOTUS_SPECIALIZED_SET(float);
-LOTUS_SPECIALIZED_SET(double);
-LOTUS_SPECIALIZED_SET(int8_t);
-LOTUS_SPECIALIZED_SET(int16_t);
-LOTUS_SPECIALIZED_SET(int32_t);
-LOTUS_SPECIALIZED_SET(int64_t);
-LOTUS_SPECIALIZED_SET(bool);
-LOTUS_SPECIALIZED_SET(char);
-LOTUS_SPECIALIZED_SET(uint8_t);
-LOTUS_SPECIALIZED_SET(uint16_t);
-#undef LOTUS_SPECIALIZED_SET
+SPECIALIZED_SET(float);
+SPECIALIZED_SET(double);
+SPECIALIZED_SET(int8_t);
+SPECIALIZED_SET(int16_t);
+SPECIALIZED_SET(int32_t);
+SPECIALIZED_SET(int64_t);
+SPECIALIZED_SET(bool);
+SPECIALIZED_SET(char);
+SPECIALIZED_SET(uint8_t);
+SPECIALIZED_SET(uint16_t);
+#undef SPECIALIZED_SET
 
-#define LOTUS_INSTANTIATE_BINARY_OP(name, op, T)                    \
+#define INSTANTIATE_BINARY_OP(name, op, T)                          \
   template <>                                                       \
   void name<T, CPUMathUtil>(                                        \
       const int n, const T* a, const T* b, bool* y, CPUMathUtil*) { \
@@ -709,19 +709,19 @@ LOTUS_SPECIALIZED_SET(uint16_t);
     }                                                               \
   }
 
-#define LOTUS_DEFINE_BINARY_OP(name, op)         \
-  LOTUS_INSTANTIATE_BINARY_OP(name, op, float)   \
-  LOTUS_INSTANTIATE_BINARY_OP(name, op, int32_t) \
-  LOTUS_INSTANTIATE_BINARY_OP(name, op, int64_t)
+#define DEFINE_BINARY_OP(name, op)         \
+  INSTANTIATE_BINARY_OP(name, op, float)   \
+  INSTANTIATE_BINARY_OP(name, op, int32_t) \
+  INSTANTIATE_BINARY_OP(name, op, int64_t)
 
-LOTUS_DEFINE_BINARY_OP(LT, <);
-LOTUS_DEFINE_BINARY_OP(LE, <=);
-LOTUS_DEFINE_BINARY_OP(GT, >);
-LOTUS_DEFINE_BINARY_OP(GE, >=);
+DEFINE_BINARY_OP(LT, <);
+DEFINE_BINARY_OP(LE, <=);
+DEFINE_BINARY_OP(GT, >);
+DEFINE_BINARY_OP(GE, >=);
 
-LOTUS_INSTANTIATE_BINARY_OP(Or, |, bool);
-LOTUS_INSTANTIATE_BINARY_OP(And, &, bool);
-LOTUS_INSTANTIATE_BINARY_OP(Xor, ^, bool);
+INSTANTIATE_BINARY_OP(Or, |, bool);
+INSTANTIATE_BINARY_OP(And, &, bool);
+INSTANTIATE_BINARY_OP(Xor, ^, bool);
 
 template <>
 void Not<bool, CPUMathUtil>(
@@ -734,10 +734,10 @@ void Not<bool, CPUMathUtil>(
   }
 }
 
-#undef LOTUS_DEFINE_BINARY_OP
-#undef LOTUS_INSTANTIATE_BINARY_OP
+#undef DEFINE_BINARY_OP
+#undef INSTANTIATE_BINARY_OP
 
-#define LOTUS_SPECIALIZED_CPU_ADD_STRIPED_BATCH(T)                \
+#define SPECIALIZED_CPU_ADD_STRIPED_BATCH(T)                      \
   template <>                                                     \
   void AddStripedBatch(                                           \
       const int N,                                                \
@@ -751,8 +751,8 @@ void Not<bool, CPUMathUtil>(
     }                                                             \
   }
 
-LOTUS_SPECIALIZED_CPU_ADD_STRIPED_BATCH(float);
-#undef LOTUS_SPECIALIZED_CPU_ADD_STRIPED_BATCH
+SPECIALIZED_CPU_ADD_STRIPED_BATCH(float);
+#undef SPECIALIZED_CPU_ADD_STRIPED_BATCH
 
 template <>
 void RandUniform<float, CPUMathUtil>(
@@ -760,9 +760,9 @@ void RandUniform<float, CPUMathUtil>(
     CPUMathUtil* /*provider*/) {
   std::uniform_real_distribution<float> distribution(a, b);
   //todo: need implmenet "RandGenerator()" in execution provider
-  UNUSED_PARAMETER(n);
-  UNUSED_PARAMETER(r);
-  LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  ONNXRUNTIME_UNUSED_PARAMETER(n);
+  ONNXRUNTIME_UNUSED_PARAMETER(r);
+  ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   /*for (int i = 0; i < n; ++i) {
                 r[i] = distribution(context->RandGenerator());
             }*/
@@ -774,9 +774,9 @@ void RandUniform<int, CPUMathUtil>(
     CPUMathUtil* /*provider*/) {
   std::uniform_int_distribution<int> distribution(a, b);
   //todo: need implmenet "RandGenerator()" in execution provider
-  UNUSED_PARAMETER(n);
-  UNUSED_PARAMETER(r);
-  LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  ONNXRUNTIME_UNUSED_PARAMETER(n);
+  ONNXRUNTIME_UNUSED_PARAMETER(r);
+  ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   /*for (int i = 0; i < n; ++i) {
                 r[i] = distribution(context->RandGenerator());
             }*/
@@ -821,15 +821,15 @@ void RandGaussian<float, CPUMathUtil>(
     const int n, const float mean, const float std, float* r,
     CPUMathUtil* /*provider*/) {
   std::normal_distribution<float> distribution(mean, std);
-  UNUSED_PARAMETER(n);
-  UNUSED_PARAMETER(r);
-  LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+  ONNXRUNTIME_UNUSED_PARAMETER(n);
+  ONNXRUNTIME_UNUSED_PARAMETER(r);
+  ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   /*for (int i = 0; i < n; ++i) {
                 r[i] = distribution(context->RandGenerator());
             }*/
 }
 
-#define LOTUS_SPECIALIZED_SUM(T)             \
+#define SPECIALIZED_SUM(T)                   \
   template <>                                \
   void Sum<T, CPUMathUtil>(                  \
       const int N,                           \
@@ -840,11 +840,11 @@ void RandGaussian<float, CPUMathUtil>(
     *y = ConstEigenVectorMap<T>(x, N).sum(); \
   }
 
-LOTUS_SPECIALIZED_SUM(float);
-LOTUS_SPECIALIZED_SUM(int32_t);
-LOTUS_SPECIALIZED_SUM(int64_t);
+SPECIALIZED_SUM(float);
+SPECIALIZED_SUM(int32_t);
+SPECIALIZED_SUM(int64_t);
 
-#undef LOTUS_SPECIALIZED_SUM
+#undef SPECIALIZED_SUM
 
 template <>
 void SumSqr<float, CPUMathUtil>(
@@ -865,7 +865,7 @@ void Select<float, CPUMathUtil>(
     float* y,
     CPUMathUtil* /*context*/) {
   for (int i = 0; i < N; ++i) {
-    LOTUS_ENFORCE(idx[i] < D);
+    ONNXRUNTIME_ENFORCE(idx[i] < D);
     y[i] = x[i * D + idx[i]];
   }
 }
@@ -931,7 +931,7 @@ void Im2colNd<float, CPUMathUtil, StorageOrder::NCHW>(
       incremented = false;
       for (int64_t d_i = N - 1; d_i >= 0; --d_i) {
         const int64_t d_max = col_shape[d_i + 1];
-        LOTUS_ENFORCE(d_iter[d_i] < d_max);
+        ONNXRUNTIME_ENFORCE(d_iter[d_i] < d_max);
         if (d_iter[d_i] == d_max - 1) {
           d_iter[d_i] = 0;
         } else {  // d_iter[d_i] < d_max - 1
@@ -1435,7 +1435,7 @@ void CopyMatrix<CPUMathUtil>(
   }
 }
 
-#define LOTUS_SPECIALIZED_COPYVECTOR(T)                              \
+#define SPECIALIZED_COPYVECTOR(T)                                    \
   template <>                                                        \
   void CopyVector<T, CPUMathUtil>(                                   \
       const int N, const T* src, T* dst, CPUMathUtil* /*context*/) { \
@@ -1443,8 +1443,8 @@ void CopyMatrix<CPUMathUtil>(
       memcpy(dst, src, sizeof(T) * N);                               \
     }                                                                \
   }
-LOTUS_SPECIALIZED_COPYVECTOR(float)
-#undef LOTUS_SPECIALIZED_COPYVECTOR
+SPECIALIZED_COPYVECTOR(float)
+#undef SPECIALIZED_COPYVECTOR
 
 uint32_t randomNumberSeed() {
   // Originally copied from folly::randomNumberSeed (at 418ad4)

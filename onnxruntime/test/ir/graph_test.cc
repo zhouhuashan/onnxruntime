@@ -25,12 +25,12 @@
 #include "core/graph/function_container.h"
 
 #ifdef __GNUC__
-#define LOTUS_UNUSED __attribute__((unused))
+#define UNUSED __attribute__((unused))
 #else
-#define LOTUS_UNUSED
+#define UNUSED
 #endif
 
-#define LOTUS_OPERATOR_SCHEMA LOTUS_UNUSED ONNX_OPERATOR_SCHEMA
+#define OPERATOR_SCHEMA UNUSED ONNX_OPERATOR_SCHEMA
 
 using namespace ONNX_NAMESPACE;
 namespace onnxruntime {
@@ -38,16 +38,16 @@ namespace test {
 using google::protobuf::util::MessageDifferencer;
 
 TEST(GraphTraversalTest, ReverseDFS) {
-  LOTUS_OPERATOR_SCHEMA(Variable_DFS)
+  OPERATOR_SCHEMA(Variable_DFS)
       .SetDoc("Input variable.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
-  LOTUS_OPERATOR_SCHEMA(Add_DFS)
+  OPERATOR_SCHEMA(Add_DFS)
       .SetDoc("Add two integers.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
-  LOTUS_OPERATOR_SCHEMA(NoOp_DFS)
+  OPERATOR_SCHEMA(NoOp_DFS)
       .SetDoc("Operator doing nothing.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
@@ -201,16 +201,16 @@ TEST(ResolvingGraphTest, GraphConstruction_VerifyNodeAndOpMatch) {
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
-  LOTUS_OPERATOR_SCHEMA(Variable_Fake)
+  OPERATOR_SCHEMA(Variable_Fake)
       .SetDoc("Input variable.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
-  LOTUS_OPERATOR_SCHEMA(Add_Fake)
+  OPERATOR_SCHEMA(Add_Fake)
       .SetDoc("Add two integers.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
-  LOTUS_OPERATOR_SCHEMA(NoOp_Fake)
+  OPERATOR_SCHEMA(NoOp_Fake)
       .SetDoc("Operator doing nothing.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
@@ -323,12 +323,12 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsNotAcyclic) {
   //            ^        |
   //            | <- node_2 (NoOp)
 
-  LOTUS_OPERATOR_SCHEMA(Add_Fake)
+  OPERATOR_SCHEMA(Add_Fake)
       .SetDoc("Add two integers.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
-  LOTUS_OPERATOR_SCHEMA(NoOp_Fake)
+  OPERATOR_SCHEMA(NoOp_Fake)
       .SetDoc("Operator doing nothing.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
@@ -377,13 +377,13 @@ TEST(ResolvingGraphTest, GraphConstruction_OnlyInitializer) {
 }
 
 TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
-  LOTUS_OPERATOR_SCHEMA(Variable2_Fake)
+  OPERATOR_SCHEMA(Variable2_Fake)
       .SetDoc("Input variable.")
       .Input(0, "input_1", "docstr for input_1.", "T")
       .Output(0, "output_1", "docstr for output_1.", "T")
       .TypeConstraint("T", {"tensor(int32)", "tensor(float)"}, "input/output types");
 
-  LOTUS_OPERATOR_SCHEMA(Max_Fake)
+  OPERATOR_SCHEMA(Max_Fake)
       .SetDoc("Add two integers.")
       .Input(0, "input_1", "docstr for input_1.", "T")
       .Input(1, "input_2", "docstr for input_2.", "T")
@@ -466,7 +466,7 @@ TEST(ResolvingGraphTest, GraphConstruction_TypeInference) {
 }
 
 TEST(TestAddAttribute, AddTensorAttribute) {
-  LOTUS_OPERATOR_SCHEMA(__Constant)
+  OPERATOR_SCHEMA(__Constant)
       .SetDoc("Constant Op.")
       .Attr(kConstantValue, "constant value", AttrType::AttributeProto_AttributeType_TENSOR)
       .Output(0, "output_1", "docstr for output_1.", "tensor(int64)");

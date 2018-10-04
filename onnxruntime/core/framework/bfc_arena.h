@@ -223,7 +223,7 @@ class BFCArena : public IArenaAllocator {
           memory_size_(memory_size),
           end_ptr_(
               static_cast<void*>(static_cast<char*>(ptr_) + memory_size_)) {
-      LOTUS_ENFORCE(0 == memory_size % kMinAllocationSize);
+      ONNXRUNTIME_ENFORCE(0 == memory_size % kMinAllocationSize);
       const size_t n_handles =
           (memory_size + kMinAllocationSize - 1) / kMinAllocationSize;
       handles_ = new ChunkHandle[n_handles];
@@ -263,8 +263,8 @@ class BFCArena : public IArenaAllocator {
     int IndexFor(const void* p) const {
       std::uintptr_t p_int = reinterpret_cast<std::uintptr_t>(p);
       std::uintptr_t base_int = reinterpret_cast<std::uintptr_t>(ptr_);
-      LOTUS_ENFORCE(p_int >= base_int);
-      LOTUS_ENFORCE(p_int < base_int + memory_size_);
+      ONNXRUNTIME_ENFORCE(p_int >= base_int);
+      ONNXRUNTIME_ENFORCE(p_int < base_int + memory_size_);
       return static_cast<int>(((p_int - base_int) >> kMinAllocationBits));
     }
 
@@ -278,7 +278,7 @@ class BFCArena : public IArenaAllocator {
     // for the memory allocation represented by "p"
     ChunkHandle* handles_ = nullptr;
 
-    LOTUS_DISALLOW_ASSIGN(AllocationRegion);
+    ONNXRUNTIME_DISALLOW_ASSIGNMENT(AllocationRegion);
   };
 
   // RegionManager aggregates one or more "AllocationRegions" and provides
@@ -310,7 +310,7 @@ class BFCArena : public IArenaAllocator {
     const std::vector<AllocationRegion>& regions() const { return regions_; }
 
    private:
-    LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RegionManager);
+    ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(RegionManager);
 
     static bool Comparator(const void* ptr, const AllocationRegion& other) {
       return ptr < other.end_ptr();
@@ -472,6 +472,6 @@ class BFCArena : public IArenaAllocator {
 
   std::unordered_map<void*, size_t> reserved_chunks_;
 
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(BFCArena);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(BFCArena);
 };
 }  // namespace onnxruntime

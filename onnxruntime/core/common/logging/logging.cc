@@ -190,7 +190,7 @@ std::exception LoggingManager::LogFatalAndCreateException(const char* category,
     exception_msg = c.Message();
   }
 
-  return LotusException(location, exception_msg);
+  return OnnxRuntimeException(location, exception_msg);
 }
 
 unsigned int GetThreadId() {

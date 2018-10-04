@@ -495,7 +495,7 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputTensorShape)(uint32_t input_index, ui
       }
     } else {
       const auto* inputType = impl_->GetInputType(input_index);
-      LOTUS_ENFORCE(inputType->has_tensor_type());
+      ONNXRUNTIME_ENFORCE(inputType->has_tensor_type());
       for (uint32_t i = 0; i < dimension_count; ++i) {
 
         // Shape inference is only done when all dimensions of all inputs have known values,
@@ -525,7 +525,7 @@ ML_API_IMP(NODEINFO_WRAPPER_CLASS::GetInputTensorDimensionCount)(uint32_t input_
       *dimension_count = gsl::narrow_cast<uint32_t>(input_shapes_override_->GetShape(input_index).size());
     } else {
       const auto* inputType = impl_->GetInputType(input_index);
-      LOTUS_ENFORCE(inputType->has_tensor_type());
+      ONNXRUNTIME_ENFORCE(inputType->has_tensor_type());
 
       // Shape inference is only done when all dimensions of all inputs have known values,
       // so the input tensors will always have shapes at this point.
@@ -914,7 +914,7 @@ Status AbiOpKernel::Compute(OpKernelContext* context) const {
   MLStatus status = impl_->Compute(&kernelContextWrapper);
 
   if (status != MLStatus::OK) {
-    return Status(LOTUS, static_cast<StatusCode>(status));
+    return Status(ONNXRUNTIME, static_cast<StatusCode>(status));
   }
 
   return Status();
@@ -1194,7 +1194,7 @@ ML_API_IMP(AbiCustomRegistry::RegisterOpSetFromSchema)(
     }
 
     // Register the operator set with onnxruntime
-    LOTUS_ENFORCE(custom_registry_->RegisterOpSet(schema_vector, opSetId->domain, baseline_version, opSetId->version).IsOK());
+    ONNXRUNTIME_ENFORCE(custom_registry_->RegisterOpSet(schema_vector, opSetId->domain, baseline_version, opSetId->version).IsOK());
 
     return MLStatus::OK;
   } catch (const MLStatusException& ex) {

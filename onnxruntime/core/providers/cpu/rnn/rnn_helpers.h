@@ -42,8 +42,8 @@ inline Direction MakeDirection(const std::string& direction) {
   } else if (direction == "bidirectional") {
     return kBidirectional;
   } else {
-    LOTUS_THROW("Invalid 'direction' argument of '", direction,
-                "'. Must be one of 'forward', 'reverse', or 'bidirectional'.");
+    ONNXRUNTIME_THROW("Invalid 'direction' argument of '", direction,
+              "'. Must be one of 'forward', 'reverse', or 'bidirectional'.");
   }
 }
 
@@ -151,10 +151,10 @@ void ComputeGemm(const int M,
                  const int ldc) {
   // validate all the inputs
   // need to use the lda/ldb/ldc strides which should be >= the columns for the span
-  LOTUS_ENFORCE(lda >= K && ldb >= N && ldc >= N);
-  LOTUS_ENFORCE(A + (M * lda - (lda - K)) <= A_end);
-  LOTUS_ENFORCE(B + (K * ldb - (ldb - N)) <= B_end);
-  LOTUS_ENFORCE(C + (M * ldc - (ldc - N)) <= C_end);
+  ONNXRUNTIME_ENFORCE(lda >= K && ldb >= N && ldc >= N);
+  ONNXRUNTIME_ENFORCE(A + (M * lda - (lda - K)) <= A_end);
+  ONNXRUNTIME_ENFORCE(B + (K * ldb - (ldb - N)) <= B_end);
+  ONNXRUNTIME_ENFORCE(C + (M * ldc - (ldc - N)) <= C_end);
 
   ::onnxruntime::math::GemmEx<float, CPUMathUtil>(
       CblasNoTrans, CblasNoTrans,
@@ -170,7 +170,7 @@ template <typename T>
 const T* SafeRawConstPointer(typename gsl::span<T>::const_iterator cur,
                              typename gsl::span<T>::const_iterator end,
                              size_t size) {
-  LOTUS_ENFORCE(cur + size <= end);
+  ONNXRUNTIME_ENFORCE(cur + size <= end);
   return &*cur;
 }
 
@@ -178,7 +178,7 @@ const T* SafeRawConstPointer(typename gsl::span<T>::const_iterator cur,
 // after validating the memory covered by the span supports the size required
 template <typename T>
 const T* SafeRawConstPointer(gsl::span<T> span, size_t offset, size_t size) {
-  LOTUS_ENFORCE(offset + size <= size_t(span.size()));
+  ONNXRUNTIME_ENFORCE(offset + size <= size_t(span.size()));
   return span.data();
 }
 
@@ -188,7 +188,7 @@ template <typename T>
 T* SafeRawPointer(typename gsl::span<T>::iterator cur,
                   typename gsl::span<T>::iterator end,
                   size_t size) {
-  LOTUS_ENFORCE(cur + size <= end);
+  ONNXRUNTIME_ENFORCE(cur + size <= end);
   return &*cur;
 }
 
@@ -196,7 +196,7 @@ T* SafeRawPointer(typename gsl::span<T>::iterator cur,
 // after validating the memory covered by the span supports the size required
 template <typename T>
 T* SafeRawPointer(typename gsl::span<T> span, size_t offset, size_t size) {
-  LOTUS_ENFORCE(offset + size <= size_t(span.size()));
+  ONNXRUNTIME_ENFORCE(offset + size <= size_t(span.size()));
   return span.data() + offset;
 }
 
@@ -206,8 +206,8 @@ void ExecuteLambdaInParallel(const std::string& name, TLambda lambda, int max, i
   // #define NOTHREADS to execute the lambdas directly and in order if you need to do that to debug
 
 #ifdef NOTHREADS
-  UNUSED_PARAMETER(ttp);
-  UNUSED_PARAMETER(logger);
+  ONNXRUNTIME_UNUSED_PARAMETER(ttp);
+  ONNXRUNTIME_UNUSED_PARAMETER(logger);
 
   for (int i = 0; i < max; i += step) {
     (void)name;

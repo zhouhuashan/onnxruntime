@@ -21,7 +21,7 @@ Status MatMul<float>::Compute(OpKernelContext* ctx) const {
   const Tensor* right_X = ctx->Input<Tensor>(1);
 
   MatMulComputeHelper helper;
-  LOTUS_RETURN_IF_ERROR(helper.Compute(left_X->Shape(), right_X->Shape()));
+  ONNXRUNTIME_RETURN_IF_ERROR(helper.Compute(left_X->Shape(), right_X->Shape()));
 
   Tensor* Y = ctx->Output(0, helper.OutputShape());
 

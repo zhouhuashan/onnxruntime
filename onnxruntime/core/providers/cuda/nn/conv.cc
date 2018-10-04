@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-
 #include "core/providers/common.h"
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cuda/nn/conv.h"
@@ -58,7 +57,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
       const int64_t N = X->Shape()[0];
       const int64_t M = W->Shape()[0];
 
-      LOTUS_RETURN_IF_ERROR(ValidateInputShape(X, W));
+      ONNXRUNTIME_RETURN_IF_ERROR(ValidateInputShape(X, W));
 
       std::vector<int64_t> kernel_shape = ComputeKernelShape(W->Shape());
       auto rank = kernel_shape.size();
@@ -77,7 +76,7 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
 
       std::vector<int64_t> y_dims;
       y_dims.insert(y_dims.begin(), {N, M});
-      LOTUS_RETURN_IF_ERROR(InferOutputShape<true>(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims));
+      ONNXRUNTIME_RETURN_IF_ERROR(InferOutputShape<true>(x_shape.Slice(2), kernel_shape, strides, dilations, &pads, &y_dims));
       s_.y_dims = y_dims;
 
       std::vector<int64_t> x_dims_cudnn = x_dims;
@@ -93,14 +92,14 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
         strides.push_back(1);
         dilations.push_back(1);
       }
-      LOTUS_RETURN_IF_ERROR(s_.x_tensor.Set(x_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
-      LOTUS_RETURN_IF_ERROR(s_.y_tensor.Set(y_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
+      ONNXRUNTIME_RETURN_IF_ERROR(s_.x_tensor.Set(x_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
+      ONNXRUNTIME_RETURN_IF_ERROR(s_.y_tensor.Set(y_dims_cudnn, CudnnTensor::GetDataType<CudaT>()));
 
       if (w_dims_changed)
-        LOTUS_RETURN_IF_ERROR(s_.filter_desc.Set(w_dims, CudnnTensor::GetDataType<CudaT>()));
+        ONNXRUNTIME_RETURN_IF_ERROR(s_.filter_desc.Set(w_dims, CudnnTensor::GetDataType<CudaT>()));
 
       cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION;
-      LOTUS_RETURN_IF_ERROR(s_.conv_desc.Set(kernel_shape.size(), pads, strides, dilations, mode, CudnnTensor::GetDataType<CudaT>()));
+      ONNXRUNTIME_RETURN_IF_ERROR(s_.conv_desc.Set(kernel_shape.size(), pads, strides, dilations, mode, CudnnTensor::GetDataType<CudaT>()));
       CUDNN_RETURN_IF_ERROR(cudnnSetConvolutionGroupCount(s_.conv_desc, gsl::narrow_cast<int>(group_)));
 
       IAllocatorUniquePtr<void> algo_search_workspace = GetScratchBuffer<void>(AlgoSearchWorkspaceSize);
@@ -108,14 +107,14 @@ Status Conv<T>::ComputeInternal(OpKernelContext* context) const {
       if (has_bias) {
         const Tensor* B = context->Input<Tensor>(2);
         const auto& b_shape = B->Shape();
-        LOTUS_RETURN_IF_NOT(b_shape.NumDimensions() == 1, "bias should be 1D");
+        ONNXRUNTIME_RETURN_IF_NOT(b_shape.NumDimensions() == 1, "bias should be 1D");
         std::vector<int64_t> b_dims(2 + kernel_shape.size());
         b_dims[0] = 1;           // N
         b_dims[1] = b_shape[0];  // C
         for (int i = 0; i < kernel_shape.size(); i++)
           b_dims[2 + i] = 1;
 
-        LOTUS_RETURN_IF_ERROR(s_.b_tensor.Set(b_dims, CudnnTensor::GetDataType<CudaT>()));
+        ONNXRUNTIME_RETURN_IF_ERROR(s_.b_tensor.Set(b_dims, CudnnTensor::GetDataType<CudaT>()));
       }
 
       Tensor* Y = context->Output(0, TensorShape(s_.y_dims));

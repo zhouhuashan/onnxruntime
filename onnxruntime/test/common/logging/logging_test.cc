@@ -50,7 +50,7 @@ class LoggingTestsFixture : public ::testing::Test {
 std::unique_ptr<LoggingManager> LoggingTestsFixture::default_logging_manager_;
 
 /// <summary>
-/// Tests that the WHERE macro populates all fields correctly.
+/// Tests that the ONNXRUNTIME_WHERE macro populates all fields correctly.
 /// </summary>
 TEST_F(LoggingTestsFixture, TestWhereMacro) {
   const std::string logid{"TestWhereMacro"};

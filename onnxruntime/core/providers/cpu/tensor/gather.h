@@ -12,7 +12,7 @@ namespace onnxruntime {
 class GatherBase {
  protected:
   GatherBase(const OpKernelInfo& info) {
-    LOTUS_ENFORCE(info.GetAttr<int64_t>("axis", &axis_).IsOK(), "Missing/Invalid 'axis' attribute value");
+    ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("axis", &axis_).IsOK(), "Missing/Invalid 'axis' attribute value");
   }
 
   struct Prepare {

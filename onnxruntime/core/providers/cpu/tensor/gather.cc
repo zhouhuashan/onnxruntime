@@ -43,8 +43,8 @@ Status GatherCopyData(const Tensor* indices_tensor, const uint8_t* src_base, uin
   for (int64_t i = 0; i < N; ++i) {
     Tin idx = indices_data[i];
     if (idx < 0 || idx >= input_data_shape[axis]) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "indices element out of data bounds, idx=", idx,
-                               " data_dim=", input_data_shape[axis]);
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "indices element out of data bounds, idx=", idx,
+                             " data_dim=", input_data_shape[axis]);
     }
   }
 
@@ -71,7 +71,7 @@ Status GatherCopyData(const Tensor* indices_tensor, const uint8_t* src_base, uin
 
 Status Gather::Compute(OpKernelContext* context) const {
   Prepare p;
-  LOTUS_RETURN_IF_ERROR(PrepareForCompute(context, p));
+  ONNXRUNTIME_RETURN_IF_ERROR(PrepareForCompute(context, p));
 
   const TensorShape& input_data_shape = p.input_tensor->Shape();
 
@@ -97,7 +97,7 @@ Status Gather::Compute(OpKernelContext* context) const {
                                    block_size, M, N, data_batch_bytes, gathered_batch_bytes, input_data_shape, p.axis);
   }
 
-  return LOTUS_MAKE_STATUS(LOTUS, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");
+  return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, NOT_IMPLEMENTED, "Type for Tind not supported yet in Gather.");
 }
 
 }  // namespace onnxruntime

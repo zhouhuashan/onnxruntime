@@ -13,8 +13,8 @@ template <typename T>
 class ImageScaler final : public OpKernel {
  public:
   ImageScaler(const OpKernelInfo& info) : OpKernel(info) {
-    LOTUS_ENFORCE(info.GetAttr<float>("scale", &scale_).IsOK());
-    LOTUS_ENFORCE(info.GetAttrs<float>("bias", bias_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<float>("scale", &scale_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttrs<float>("bias", bias_).IsOK());
   }
 
   Status Compute(OpKernelContext* context) const override {
@@ -22,8 +22,8 @@ class ImageScaler final : public OpKernel {
     const auto dims = X->Shape().GetDims();
 
     if (dims.size() < 4) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                               "Input is expected to have four dimensions corresponding to [N,C,H,W], got ", dims.size());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
+                             "Input is expected to have four dimensions corresponding to [N,C,H,W], got ", dims.size());
     }
 
     const int64_t N = dims[0];
@@ -32,7 +32,7 @@ class ImageScaler final : public OpKernel {
     const int64_t W = dims[3];
 
     if (!bias_.empty() && bias_.size() != static_cast<size_t>(C)) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Bias size (", bias_.size(), ") does not match the number of channels (", C, ")");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "Bias size (", bias_.size(), ") does not match the number of channels (", C, ")");
     }
 
     Tensor* Y = context->Output(0, TensorShape({N, C, H, W}));

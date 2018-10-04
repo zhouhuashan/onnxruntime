@@ -14,13 +14,13 @@ class UpsampleBase {
  protected:
   UpsampleBase(OpKernelInfo info) {
     std::string mode;
-    LOTUS_ENFORCE(info.GetAttr<std::string>("mode", &mode).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttr<std::string>("mode", &mode).IsOK());
 
     mode_ = StringToUpsampleMode(mode);
 
-    LOTUS_ENFORCE(info.GetAttrs<float>("scales", scales_).IsOK());
+    ONNXRUNTIME_ENFORCE(info.GetAttrs<float>("scales", scales_).IsOK());
     for (auto& scale : scales_) {
-      LOTUS_ENFORCE(scale >= 1, "Scale value should be greater than or equal to 1.");
+      ONNXRUNTIME_ENFORCE(scale >= 1, "Scale value should be greater than or equal to 1.");
     }
   }
 
@@ -39,8 +39,8 @@ class UpsampleBase {
     } else if (strcmp(mode.c_str(), UpsampleModeLinear) == 0) {
       return UpsampleMode::LINEAR;
     } else {
-      LOTUS_THROW("mode attribute is " + mode + ". It can only be " +
-                  UpsampleModeNN + "(default) or " + UpsampleModeLinear + ".");
+      ONNXRUNTIME_THROW("mode attribute is " + mode + ". It can only be " +
+                UpsampleModeNN + "(default) or " + UpsampleModeLinear + ".");
     }
   }
 };

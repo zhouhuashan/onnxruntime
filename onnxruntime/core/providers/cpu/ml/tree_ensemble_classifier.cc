@@ -155,22 +155,22 @@ TreeEnsembleClassifier<T>::TreeEnsembleClassifier(const OpKernelInfo& info)
       classlabels_strings_(info.GetAttrsOrDefault<std::string>("classlabels_strings")),
       classlabels_int64s_(info.GetAttrsOrDefault<int64_t>("classlabels_int64s")),
       post_transform_(MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))) {
-  LOTUS_ENFORCE(!nodes_treeids_.empty());
-  LOTUS_ENFORCE(class_nodeids_.size() == class_ids_.size());
-  LOTUS_ENFORCE(class_nodeids_.size() == class_weights_.size());
-  LOTUS_ENFORCE(nodes_nodeids_.size() == nodes_featureids_.size());
-  LOTUS_ENFORCE(nodes_nodeids_.size() == nodes_modes_names_.size());
-  LOTUS_ENFORCE(nodes_nodeids_.size() == nodes_values_.size());
-  LOTUS_ENFORCE(nodes_nodeids_.size() == nodes_truenodeids_.size());
-  LOTUS_ENFORCE(nodes_nodeids_.size() == nodes_falsenodeids_.size());
-  LOTUS_ENFORCE((nodes_nodeids_.size() == nodes_hitrates_.size()) || (nodes_hitrates_.empty()));
+  ONNXRUNTIME_ENFORCE(!nodes_treeids_.empty());
+  ONNXRUNTIME_ENFORCE(class_nodeids_.size() == class_ids_.size());
+  ONNXRUNTIME_ENFORCE(class_nodeids_.size() == class_weights_.size());
+  ONNXRUNTIME_ENFORCE(nodes_nodeids_.size() == nodes_featureids_.size());
+  ONNXRUNTIME_ENFORCE(nodes_nodeids_.size() == nodes_modes_names_.size());
+  ONNXRUNTIME_ENFORCE(nodes_nodeids_.size() == nodes_values_.size());
+  ONNXRUNTIME_ENFORCE(nodes_nodeids_.size() == nodes_truenodeids_.size());
+  ONNXRUNTIME_ENFORCE(nodes_nodeids_.size() == nodes_falsenodeids_.size());
+  ONNXRUNTIME_ENFORCE((nodes_nodeids_.size() == nodes_hitrates_.size()) || (nodes_hitrates_.empty()));
 
-  LOTUS_ENFORCE(classlabels_strings_.empty() ^ classlabels_int64s_.empty(),
-                "Must provide classlabels_strings or classlabels_int64s but not both.");
+  ONNXRUNTIME_ENFORCE(classlabels_strings_.empty() ^ classlabels_int64s_.empty(),
+              "Must provide classlabels_strings or classlabels_int64s but not both.");
 
   // in the absence of bool type supported by GetAttrs this ensure that we don't have any negative
   // values so that we can check for the truth condition without worrying about negative values.
-  LOTUS_ENFORCE(std::all_of(
+  ONNXRUNTIME_ENFORCE(std::all_of(
       std::begin(missing_tracks_true_),
       std::end(missing_tracks_true_), [](int64_t elem) { return elem >= 0; }));
 
@@ -266,7 +266,7 @@ void TreeEnsembleClassifier<T>::Initialize() {
     // they must be in the same tree
     int64_t id = nodes_treeids_[i] * kOffset_ + nodes_truenodeids_[i];
     it = parents.find(id);
-    LOTUS_ENFORCE(it != parents.end());
+    ONNXRUNTIME_ENFORCE(it != parents.end());
     it->second++;
   }
   // all false nodes arent roots_
@@ -275,7 +275,7 @@ void TreeEnsembleClassifier<T>::Initialize() {
     // they must be in the same tree
     int64_t id = nodes_treeids_[i] * kOffset_ + nodes_falsenodeids_[i];
     it = parents.find(id);
-    LOTUS_ENFORCE(it != parents.end());
+    ONNXRUNTIME_ENFORCE(it != parents.end());
     it->second++;
   }
   // find all the nodes that dont have other nodes pointing at them
@@ -288,9 +288,9 @@ void TreeEnsembleClassifier<T>::Initialize() {
   }
   class_count_ = !classlabels_strings_.empty() ? classlabels_strings_.size() : classlabels_int64s_.size();
   using_strings_ = !classlabels_strings_.empty();
-  LOTUS_ENFORCE(base_values_.empty() ||
-                base_values_.size() == static_cast<size_t>(class_count_) ||
-                base_values_.size() == weights_classes_.size());
+  ONNXRUNTIME_ENFORCE(base_values_.empty() ||
+              base_values_.size() == static_cast<size_t>(class_count_) ||
+              base_values_.size() == weights_classes_.size());
 }
 
 template <typename T>
@@ -299,7 +299,7 @@ common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
   const TensorShape& x_shape = X.Shape();
   vector<int64_t> x_dims = x_shape.GetDims();
   if (x_dims.empty()) {
-    return Status(LOTUS, INVALID_ARGUMENT, "X dims is empty.");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "X dims is empty.");
   }
 
   int64_t stride = x_dims.size() == 1 ? x_dims[0] : x_dims[1];  // TODO(task 495): how does this work in the case of 3D tensors?
@@ -325,7 +325,7 @@ common::Status TreeEnsembleClassifier<T>::Compute(OpKernelContext* context) cons
     }
     // walk each tree from its root
     for (size_t j = 0, end = roots_.size(); j < end; ++j) {
-      LOTUS_RETURN_IF_ERROR(ProcessTreeNode(classes, roots_[j], x_data, current_weight_0));
+      ONNXRUNTIME_RETURN_IF_ERROR(ProcessTreeNode(classes, roots_[j], x_data, current_weight_0));
     }
     float maxweight = 0.f;
     int64_t maxclass = -1;
@@ -471,10 +471,10 @@ common::Status TreeEnsembleClassifier<T>::ProcessTreeNode(std::unordered_map<int
       default: {
         std::ostringstream err_msg;
         err_msg << "Invalid mode of value: " << static_cast<std::underlying_type<NODE_MODE>::type>(mode);
-        return Status(LOTUS, INVALID_ARGUMENT, err_msg.str());
+        return Status(ONNXRUNTIME, INVALID_ARGUMENT, err_msg.str());
       }
     }
-    LOTUS_ENFORCE(treeindex >= 0);
+    ONNXRUNTIME_ENFORCE(treeindex >= 0);
     treeindex = treeindex + root;
     mode = static_cast<NODE_MODE>(nodes_modes_[treeindex]);
     loopcount++;

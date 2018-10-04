@@ -47,7 +47,7 @@ class PrimitivePool {
     auto& map = PrimitivePool<T>::GetMap();
     auto iter = map.find(key);
     // We should not find a primitive already using this key.
-    LOTUS_ENFORCE(iter == map.end());
+    ONNXRUNTIME_ENFORCE(iter == map.end());
     map.insert(std::make_pair(key, std::move(primitive)));
   }
 

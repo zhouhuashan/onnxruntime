@@ -27,7 +27,7 @@ inline AutoPadType StringToAutoPadType(const std::string& str) {
   } else if (str == "SAME_LOWER") {
     return AutoPadType::SAME_LOWER;
   } else {
-    LOTUS_ENFORCE(false, "Unknown AutoPadType String");
+    ONNXRUNTIME_ENFORCE(false, "Unknown AutoPadType String");
   }
 }
 }  // namespace onnxruntime

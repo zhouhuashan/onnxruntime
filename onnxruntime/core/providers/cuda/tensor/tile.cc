@@ -27,9 +27,9 @@ Status Tile<T>::ComputeInternal(OpKernelContext* ctx) const {
   size_t rank = input_tensor.Shape().NumDimensions();
 
   if (repeats_tensor.Shape().NumDimensions() != 1)
-    return Status(LOTUS, INVALID_ARGUMENT, "'repeat' input tensor must be 1 dimensional");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'repeat' input tensor must be 1 dimensional");
   if (size_t(repeats_tensor.Shape().Size()) != rank)
-    return Status(LOTUS, INVALID_ARGUMENT, "'repeat' input tensor must have the same length as the 'input' tensor");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'repeat' input tensor must have the same length as the 'input' tensor");
 
   // Calculate the shape of the output tensor
   auto* repeats = repeats_tensor.template Data<int64_t>();
@@ -47,16 +47,16 @@ Status Tile<T>::ComputeInternal(OpKernelContext* ctx) const {
   CudaAsyncBuffer<fast_divmod> fdm_input_shape(this, rank);
   CudaAsyncBuffer<fast_divmod> fdm_output_strides(this, rank);
 
-  LOTUS_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_shape));
-  LOTUS_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
+  ONNXRUNTIME_ENFORCE(TensorPitches::Calculate(input_strides.CpuSpan(), input_shape));
+  ONNXRUNTIME_ENFORCE(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_dims));
 
   auto fdm_input_shape_span = fdm_input_shape.CpuSpan();
   for (size_t i = 0; i < input_shape.size(); ++i)
     fdm_input_shape_span[i] = fast_divmod(gsl::narrow_cast<int>(input_shape[i]));
 
-  LOTUS_RETURN_IF_ERROR(fdm_input_shape.CopyToGpu());
-  LOTUS_RETURN_IF_ERROR(input_strides.CopyToGpu());
-  LOTUS_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
+  ONNXRUNTIME_RETURN_IF_ERROR(fdm_input_shape.CopyToGpu());
+  ONNXRUNTIME_RETURN_IF_ERROR(input_strides.CopyToGpu());
+  ONNXRUNTIME_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
 
   TileImpl(
       rank,

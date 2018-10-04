@@ -15,7 +15,6 @@ limitations under the License.
 // NOTE: License applies to the multinomial implementation only.
 // Portions Copyright (c) Microsoft Corporation
 
-
 #include "core/providers/cpu/generator/random.h"
 
 // build\windows\debug\external\eigen3\unsupported\eigen\cxx11\src/Tensor/Tensor.h(76):
@@ -103,14 +102,14 @@ Status RandomNormalLike::Compute(OpKernelContext* ctx) const {
   Tensor* Y = nullptr;
 
   auto status = CreateOutputTensorFromTensorShape(ctx, X, &Y);
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   auto dtype = dtype_ != TensorProto_DataType_UNDEFINED ? dtype_ : InferDataType(X);
 
   if (dtype == TensorProto_DataType_UNDEFINED)
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL,
-                             "Could not infer data type from input tensor with data type ",
-                             X.DataType());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL,
+                           "Could not infer data type from input tensor with data type ",
+                           X.DataType());
 
   status = RandomNormalCompute(mean_, scale_, generator_, dtype, *Y);
 
@@ -122,14 +121,14 @@ Status RandomUniformLike::Compute(OpKernelContext* ctx) const {
   Tensor* Y = nullptr;
 
   auto status = CreateOutputTensorFromTensorShape(ctx, X, &Y);
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
 
   auto dtype = dtype_ != TensorProto_DataType_UNDEFINED ? dtype_ : InferDataType(X);
 
   if (dtype == TensorProto_DataType_UNDEFINED)
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL,
-                             "Could not infer data type from input tensor with data type ",
-                             X.DataType());
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL,
+                           "Could not infer data type from input tensor with data type ",
+                           X.DataType());
   status = RandomUniformCompute(low_, high_, generator_, dtype, *Y);
 
   return status;
@@ -216,7 +215,7 @@ Status Multinomial::Compute(OpKernelContext* ctx) const {
   auto& X_dims = X.Shape().GetDims();
 
   if (X_dims.empty()) {
-    return Status(LOTUS, INVALID_ARGUMENT, "Empty dimensions for input tensor");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "Empty dimensions for input tensor");
   }
 
   const auto batch_size = X_dims[0];
@@ -224,13 +223,13 @@ Status Multinomial::Compute(OpKernelContext* ctx) const {
 
   // validate inputs
   if (batch_size < 1) {
-    return Status(LOTUS, INVALID_ARGUMENT, "batch_size is < 1");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "batch_size is < 1");
   }
   if (num_classes < 1) {
-    return Status(LOTUS, INVALID_ARGUMENT, "num_classes is < 1");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "num_classes is < 1");
   }
   if (num_samples_ < 1) {
-    return Status(LOTUS, INVALID_ARGUMENT, "num_samples is < 1");
+    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "num_samples is < 1");
   }
 
   std::vector<int64_t> Y_dims{batch_size, num_samples_};
@@ -247,7 +246,7 @@ Status Multinomial::Compute(OpKernelContext* ctx) const {
       break;
     }
     default:
-      status = LOTUS_MAKE_STATUS(LOTUS, FAIL, "Invalid data type of ", output_dtype_);
+      status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Invalid data type of ", output_dtype_);
   }
 
   return status;
@@ -264,7 +263,7 @@ static Status CreateOutputTensorFromTensorValues(OpKernelContext* ctx, const Ten
   auto num_dims = shape.NumDimensions();
 
   if (num_dims != 1) {
-    return LOTUS_MAKE_STATUS(LOTUS, FAIL, "Expected 1 dimension tensor with shape information. Dimensions=", num_dims);
+    return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Expected 1 dimension tensor with shape information. Dimensions=", num_dims);
   }
 
   std::vector<int64_t> dims;
@@ -313,7 +312,7 @@ static Status RandomNormalCompute(float mean, float scale,
       break;
     }
     case TensorProto::FLOAT16: {
-      LOTUS_NOT_IMPLEMENTED("FLOAT16 is not supported");
+      ONNXRUNTIME_NOT_IMPLEMENTED("FLOAT16 is not supported");
     }
     case TensorProto::DOUBLE: {
       GenerateData<double, std::normal_distribution<double>>(
@@ -321,7 +320,7 @@ static Status RandomNormalCompute(float mean, float scale,
       break;
     }
     default:
-      LOTUS_THROW("Invalid data type of ", dtype);
+      ONNXRUNTIME_THROW("Invalid data type of ", dtype);
   }
 
   return Status::OK();
@@ -338,7 +337,7 @@ static Status RandomUniformCompute(float low, float high,
       break;
     }
     case TensorProto::FLOAT16: {
-      LOTUS_NOT_IMPLEMENTED("FLOAT16 is not supported");
+      ONNXRUNTIME_NOT_IMPLEMENTED("FLOAT16 is not supported");
     }
     case TensorProto::DOUBLE: {
       GenerateData<double, std::uniform_real_distribution<double>>(
@@ -346,7 +345,7 @@ static Status RandomUniformCompute(float low, float high,
       break;
     }
     default:
-      LOTUS_THROW("Invalid data type of ", dtype);
+      ONNXRUNTIME_THROW("Invalid data type of ", dtype);
   }
 
   return Status::OK();

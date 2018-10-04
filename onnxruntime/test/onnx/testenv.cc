@@ -45,12 +45,12 @@ Status SessionFactory::create(std::shared_ptr<::onnxruntime::InferenceSession>& 
       execution_provider = ::onnxruntime::test::DefaultNupharExecutionProvider();
 
     if (execution_provider == nullptr)
-      LOTUS_THROW("This executable was not built with ", provider_type);
-    LOTUS_RETURN_IF_ERROR(sess->RegisterExecutionProvider(std::move(execution_provider)));
+      ONNXRUNTIME_THROW("This executable was not built with ", provider_type);
+    ONNXRUNTIME_RETURN_IF_ERROR(sess->RegisterExecutionProvider(std::move(execution_provider)));
   }
 
   status = sess->Load(model_url.string());
-  LOTUS_RETURN_IF_ERROR(status);
+  ONNXRUNTIME_RETURN_IF_ERROR(status);
   LOGS_DEFAULT(INFO) << "successfully loaded model from " << model_url;
   status = sess->Initialize();
   if (status.IsOK())

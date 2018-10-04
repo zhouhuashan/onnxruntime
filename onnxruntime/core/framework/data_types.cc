@@ -197,7 +197,7 @@ bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Map& map_proto,
         result = IsCompatible(lhs.value_type().opaque_type(), rhs.value_type().opaque_type());
         break;
       default:
-        LOTUS_ENFORCE(false);
+        ONNXRUNTIME_ENFORCE(false);
         break;
     }
   } else {
@@ -227,7 +227,7 @@ bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Sequence& sequence_proto,
         result = IsCompatible(lhs.elem_type().opaque_type(), rhs.elem_type().opaque_type());
         break;
       default:
-        LOTUS_ENFORCE(false);
+        ONNXRUNTIME_ENFORCE(false);
         break;
     }
   } else {
@@ -270,7 +270,7 @@ bool IsCompatible(const ONNX_NAMESPACE::TypeProto_Opaque& opaque_proto, const ON
             result = IsCompatible(lparam.opaque_type(), rparam.opaque_type());
             break;
           default:
-            LOTUS_ENFORCE(false);
+            ONNXRUNTIME_ENFORCE(false);
             break;
         }
       } else {
@@ -302,7 +302,7 @@ class DataTypeRegistry {
   void RegisterDataType(ONNX_NAMESPACE::DataType type, MLDataType mltype) {
     std::lock_guard<std::mutex> g(lock_);
     auto p = mapping_.insert(std::make_pair(type, mltype));
-    LOTUS_ENFORCE(p.second, "We do not expect duplicate registration of types for: ", type);
+    ONNXRUNTIME_ENFORCE(p.second, "We do not expect duplicate registration of types for: ", type);
   }
   MLDataType GetMLDataType(const ONNX_NAMESPACE::TypeProto& proto) const {
     using namespace ONNX_NAMESPACE;
@@ -378,8 +378,8 @@ bool TensorTypeBase::IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) c
     return false;
   }
 
-  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kTensorType);
-  LOTUS_ENFORCE(thisProto->tensor_type().has_elem_type());
+  ONNXRUNTIME_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kTensorType);
+  ONNXRUNTIME_ENFORCE(thisProto->tensor_type().has_elem_type());
 
   return data_types_internal::IsCompatible(thisProto->tensor_type(), type_proto.tensor_type());
 }
@@ -414,9 +414,9 @@ bool NonTensorTypeBase::IsMapCompatible(const ONNX_NAMESPACE::TypeProto& type_pr
   if (type_proto.value_case() != TypeProto::ValueCase::kMapType) {
     return false;
   }
-  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kMapType);
-  LOTUS_ENFORCE(thisProto->map_type().has_key_type());
-  LOTUS_ENFORCE(thisProto->map_type().has_value_type());
+  ONNXRUNTIME_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kMapType);
+  ONNXRUNTIME_ENFORCE(thisProto->map_type().has_key_type());
+  ONNXRUNTIME_ENFORCE(thisProto->map_type().has_value_type());
   return data_types_internal::IsCompatible(thisProto->map_type(), type_proto.map_type());
 }
 
@@ -428,8 +428,8 @@ bool NonTensorTypeBase::IsSequenceCompatible(const ONNX_NAMESPACE::TypeProto& ty
   if (type_proto.value_case() != TypeProto::ValueCase::kSequenceType) {
     return false;
   }
-  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kSequenceType);
-  LOTUS_ENFORCE(thisProto->sequence_type().has_elem_type());
+  ONNXRUNTIME_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kSequenceType);
+  ONNXRUNTIME_ENFORCE(thisProto->sequence_type().has_elem_type());
   return data_types_internal::IsCompatible(thisProto->sequence_type(), type_proto.sequence_type());
 }
 
@@ -441,42 +441,42 @@ bool NonTensorTypeBase::IsOpaqueCompatible(const ONNX_NAMESPACE::TypeProto& type
   if (type_proto.value_case() != TypeProto::ValueCase::kOpaqueType) {
     return false;
   }
-  LOTUS_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kOpaqueType);
-  LOTUS_ENFORCE(thisProto->opaque_type().has_domain());
-  LOTUS_ENFORCE(thisProto->opaque_type().has_name());
+  ONNXRUNTIME_ENFORCE(thisProto->value_case() == TypeProto::ValueCase::kOpaqueType);
+  ONNXRUNTIME_ENFORCE(thisProto->opaque_type().has_domain());
+  ONNXRUNTIME_ENFORCE(thisProto->opaque_type().has_name());
   return data_types_internal::IsCompatible(thisProto->opaque_type(), type_proto.opaque_type());
 }
 
-LOTUS_REGISTER_TENSOR_TYPE(int32_t);
-LOTUS_REGISTER_TENSOR_TYPE(float);
-LOTUS_REGISTER_TENSOR_TYPE(bool);
-LOTUS_REGISTER_TENSOR_TYPE(std::string);
-LOTUS_REGISTER_TENSOR_TYPE(int8_t);
-LOTUS_REGISTER_TENSOR_TYPE(uint8_t);
-LOTUS_REGISTER_TENSOR_TYPE(uint16_t);
-LOTUS_REGISTER_TENSOR_TYPE(int16_t);
-LOTUS_REGISTER_TENSOR_TYPE(int64_t);
-LOTUS_REGISTER_TENSOR_TYPE(double);
-LOTUS_REGISTER_TENSOR_TYPE(uint32_t);
-LOTUS_REGISTER_TENSOR_TYPE(uint64_t);
-LOTUS_REGISTER_TENSOR_TYPE(MLFloat16);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(int32_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(float);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(bool);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(std::string);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(int8_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(uint8_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(uint16_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(int16_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(int64_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(double);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(uint32_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(uint64_t);
+ONNXRUNTIME_REGISTER_TENSOR_TYPE(MLFloat16);
 
-LOTUS_REGISTER_MAP(MapStringToString);
-LOTUS_REGISTER_MAP(MapStringToInt64);
-LOTUS_REGISTER_MAP(MapStringToFloat);
-LOTUS_REGISTER_MAP(MapStringToDouble);
-LOTUS_REGISTER_MAP(MapInt64ToString);
-LOTUS_REGISTER_MAP(MapInt64ToInt64);
-LOTUS_REGISTER_MAP(MapInt64ToFloat);
-LOTUS_REGISTER_MAP(MapInt64ToDouble);
+ONNXRUNTIME_REGISTER_MAP(MapStringToString);
+ONNXRUNTIME_REGISTER_MAP(MapStringToInt64);
+ONNXRUNTIME_REGISTER_MAP(MapStringToFloat);
+ONNXRUNTIME_REGISTER_MAP(MapStringToDouble);
+ONNXRUNTIME_REGISTER_MAP(MapInt64ToString);
+ONNXRUNTIME_REGISTER_MAP(MapInt64ToInt64);
+ONNXRUNTIME_REGISTER_MAP(MapInt64ToFloat);
+ONNXRUNTIME_REGISTER_MAP(MapInt64ToDouble);
 
-LOTUS_REGISTER_SEQ(VectorString);
-LOTUS_REGISTER_SEQ(VectorFloat);
-LOTUS_REGISTER_SEQ(VectorInt64);
-LOTUS_REGISTER_SEQ(VectorDouble);
+ONNXRUNTIME_REGISTER_SEQ(VectorString);
+ONNXRUNTIME_REGISTER_SEQ(VectorFloat);
+ONNXRUNTIME_REGISTER_SEQ(VectorInt64);
+ONNXRUNTIME_REGISTER_SEQ(VectorDouble);
 
-LOTUS_REGISTER_SEQ(VectorMapStringToFloat);
-LOTUS_REGISTER_SEQ(VectorMapInt64ToFloat);
+ONNXRUNTIME_REGISTER_SEQ(VectorMapStringToFloat);
+ONNXRUNTIME_REGISTER_SEQ(VectorMapInt64ToFloat);
 
 MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
   const auto& registry = data_types_internal::DataTypeRegistry::instance();
@@ -484,7 +484,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
   switch (proto.value_case()) {
     case TypeProto::ValueCase::kTensorType: {
       auto tensor_type = proto.tensor_type();
-      LOTUS_ENFORCE(tensor_type.has_elem_type());
+      ONNXRUNTIME_ENFORCE(tensor_type.has_elem_type());
       switch (tensor_type.elem_type()) {
         case TensorProto_DataType_FLOAT:
           return DataTypeImpl::GetTensorType<float>();
@@ -513,7 +513,7 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
         case TensorProto_DataType_FLOAT16:
           return DataTypeImpl::GetTensorType<MLFloat16>();
         default:
-          LOTUS_NOT_IMPLEMENTED("tensor type ", tensor_type.elem_type(), " is not supported");
+          ONNXRUNTIME_NOT_IMPLEMENTED("tensor type ", tensor_type.elem_type(), " is not supported");
       }
     } break;
     case TypeProto::ValueCase::kMapType: {
@@ -566,13 +566,13 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
             break;
         }
         MLDataType type = registry.GetMLDataType(proto);
-        LOTUS_ENFORCE(type != nullptr, "Map with key type: ", keytype, " value type: ", value_elem_type, " is not registered");
+        ONNXRUNTIME_ENFORCE(type != nullptr, "Map with key type: ", keytype, " value type: ", value_elem_type, " is not registered");
         return type;
-      } else { // not if(scalar tensor) pre-reg types
+      } else {  // not if(scalar tensor) pre-reg types
         MLDataType type = registry.GetMLDataType(proto);
         if (type == nullptr) {
           DataType str_type = ONNX_NAMESPACE::Utils::DataTypeUtils::ToType(proto);
-          LOTUS_NOT_IMPLEMENTED("type: ", *str_type, " is not registered");
+          ONNXRUNTIME_NOT_IMPLEMENTED("type: ", *str_type, " is not registered");
         }
         return type;
       }
@@ -589,69 +589,69 @@ MLDataType DataTypeImpl::TypeFromProto(const ONNX_NAMESPACE::TypeProto& proto) {
 
           if (value_type.value_case() == TypeProto::ValueCase::kTensorType &&
               IsTensorTypeScalar(value_type.tensor_type())) {
-              auto value_elem_type = value_type.tensor_type().elem_type();
-              switch (value_elem_type) {
-                case TensorProto_DataType_FLOAT: {
-                  switch (keytype) {
-                    case TensorProto_DataType_STRING:
-                      return DataTypeImpl::GetType<VectorMapStringToFloat>();
-                    case TensorProto_DataType_INT64:
-                      return DataTypeImpl::GetType<VectorMapInt64ToFloat>();
-                    default:
-                      break;
-                  }
+            auto value_elem_type = value_type.tensor_type().elem_type();
+            switch (value_elem_type) {
+              case TensorProto_DataType_FLOAT: {
+                switch (keytype) {
+                  case TensorProto_DataType_STRING:
+                    return DataTypeImpl::GetType<VectorMapStringToFloat>();
+                  case TensorProto_DataType_INT64:
+                    return DataTypeImpl::GetType<VectorMapInt64ToFloat>();
+                  default:
+                    break;
                 }
-                default:
-                  break;
               }
-            }
-          break;
-          } // MapType
-          case TypeProto::ValueCase::kTensorType: {
-            auto val_elem_type = val_type.tensor_type().elem_type();
-            switch (val_elem_type) {
-              case TensorProto_DataType_STRING:
-                return DataTypeImpl::GetType<VectorString>();
-              case TensorProto_DataType_INT64:
-                return DataTypeImpl::GetType<VectorInt64>();
-              case TensorProto_DataType_FLOAT:
-                return DataTypeImpl::GetType<VectorFloat>();
-              case TensorProto_DataType_DOUBLE:
-                return DataTypeImpl::GetType<VectorDouble>();
               default:
                 break;
             }
           }
-          default:
-            break;
-      } // Sequence value case
-    } // kSequenceType
+          break;
+        }  // MapType
+        case TypeProto::ValueCase::kTensorType: {
+          auto val_elem_type = val_type.tensor_type().elem_type();
+          switch (val_elem_type) {
+            case TensorProto_DataType_STRING:
+              return DataTypeImpl::GetType<VectorString>();
+            case TensorProto_DataType_INT64:
+              return DataTypeImpl::GetType<VectorInt64>();
+            case TensorProto_DataType_FLOAT:
+              return DataTypeImpl::GetType<VectorFloat>();
+            case TensorProto_DataType_DOUBLE:
+              return DataTypeImpl::GetType<VectorDouble>();
+            default:
+              break;
+          }
+        }
+        default:
+          break;
+      }  // Sequence value case
+    }    // kSequenceType
     default:
       break;
-  } // proto.value_case()
+  }  // proto.value_case()
   MLDataType type = registry.GetMLDataType(proto);
   if (type == nullptr) {
     DataType str_type = ONNX_NAMESPACE::Utils::DataTypeUtils::ToType(proto);
-    LOTUS_NOT_IMPLEMENTED("type: ", *str_type, " is not currently registered or supported");
+    ONNXRUNTIME_NOT_IMPLEMENTED("type: ", *str_type, " is not currently registered or supported");
   }
   return type;
 }
 
 //Below are the types the we need to execute the runtime
 //They are not compatible with TypeProto in ONNX.
-LOTUS_REGISTER_NON_ONNX_TYPE(int32_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(float);
-LOTUS_REGISTER_NON_ONNX_TYPE(bool);
-LOTUS_REGISTER_NON_ONNX_TYPE(std::string);
-LOTUS_REGISTER_NON_ONNX_TYPE(int8_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(uint8_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(uint16_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(int16_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(int64_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(double);
-LOTUS_REGISTER_NON_ONNX_TYPE(uint32_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(uint64_t);
-LOTUS_REGISTER_NON_ONNX_TYPE(MLFloat16);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(int32_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(float);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(bool);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(std::string);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(int8_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(uint8_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(uint16_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(int16_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(int64_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(double);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(uint32_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(uint64_t);
+ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(MLFloat16);
 
 const std::vector<MLDataType>& DataTypeImpl::AllFixedSizeTensorTypes() {
   static std::vector<MLDataType> all_fixed_size_tensor_types =

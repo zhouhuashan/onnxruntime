@@ -47,7 +47,7 @@ class GraphEditor {
   }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(GraphEditor);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(GraphEditor);
 
   Graph& graph_;
 };
@@ -83,7 +83,7 @@ class RewriteRule {
   }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(RewriteRule);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(RewriteRule);
 
   const std::string name_;
   const std::string desc_;

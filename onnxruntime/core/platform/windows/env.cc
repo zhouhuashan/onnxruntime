@@ -46,21 +46,21 @@ class WindowsEnv : public Env {
   template <typename T, typename F>
   static common::Status FileExists_(T fname, F f) {
     if (!fname)
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "file name is nullptr");
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "file name is nullptr");
     struct _stat st;
     int ret = f(fname, &st);
     if (ret == 0) {
       if (st.st_mode & _S_IFREG)
         return common::Status::OK();
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, fname, "is not a regular file");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, fname, "is not a regular file");
     }
     switch (errno) {
       case ENOENT:
-        return common::Status(common::LOTUS, common::NO_SUCHFILE, "");
+        return common::Status(common::ONNXRUNTIME, common::NO_SUCHFILE, "");
       case EINVAL:
-        return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "");
+        return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "");
       default:
-        return common::Status(common::LOTUS, common::FAIL, "unknown error inside FileExists");
+        return common::Status(common::ONNXRUNTIME, common::FAIL, "unknown error inside FileExists");
     }
   }
 
@@ -80,7 +80,7 @@ class WindowsEnv : public Env {
       SYSTEM_INFO sysInfo;
       GetSystemInfo(&sysInfo);
       if (sysInfo.dwNumberOfProcessors <= 0) {
-        LOTUS_THROW("Fatal error: 0 count processors from GetSystemInfo");
+        ONNXRUNTIME_THROW("Fatal error: 0 count processors from GetSystemInfo");
       }
       // This is the number of logical processors in the current group
       return sysInfo.dwNumberOfProcessors;
@@ -92,7 +92,7 @@ class WindowsEnv : public Env {
         ++processorCoreCount;
       }
     }
-    if (!processorCoreCount) LOTUS_THROW("Fatal error: 0 count processors from GetLogicalProcessorInformation");
+    if (!processorCoreCount) ONNXRUNTIME_THROW("Fatal error: 0 count processors from GetLogicalProcessorInformation");
     return processorCoreCount;
   }
 
@@ -164,14 +164,14 @@ class WindowsEnv : public Env {
   }
   common::Status ReadFileAsString(const char* fname, std::string* out) const override {
     if (!fname)
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "file name is nullptr");
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "file name is nullptr");
     size_t flen = strlen(fname);
     if (flen >= std::numeric_limits<int>::max()) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "input path too long");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "input path too long");
     }
     int len = MultiByteToWideChar(CP_ACP, 0, fname, (int)(flen + 1), nullptr, 0);
     if (len <= 0) {
-      return LOTUS_MAKE_STATUS(LOTUS, FAIL, "MultiByteToWideChar error");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "MultiByteToWideChar error");
     }
     std::wstring wStreamName((size_t)(len - 1), L'\0');
     MultiByteToWideChar(CP_ACP, 0, fname, (int)flen, (LPWSTR)wStreamName.data(), len);
@@ -180,63 +180,63 @@ class WindowsEnv : public Env {
 
   common::Status ReadFileAsString(const wchar_t* fname, std::string* out) const override {
     if (!fname)
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "file name is nullptr");
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "file name is nullptr");
     if (!out) {
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "'out' cannot be NULL");
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "'out' cannot be NULL");
     }
     char errbuf[512];
     HANDLE hFile = CreateFileW(fname, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
       int err = GetLastError();
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d open file %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
-      return common::Status(common::LOTUS, common::FAIL, errbuf);
+      return common::Status(common::ONNXRUNTIME, common::FAIL, errbuf);
     }
     LARGE_INTEGER filesize;
     if (!GetFileSizeEx(hFile, &filesize)) {
       int err = GetLastError();
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d GetFileSizeEx %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
       CloseHandle(hFile);
-      return common::Status(common::LOTUS, common::FAIL, errbuf);
+      return common::Status(common::ONNXRUNTIME, common::FAIL, errbuf);
     }
     out->resize(filesize.QuadPart, '\0');
     if (filesize.QuadPart > std::numeric_limits<DWORD>::max()) {
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d READ file %ls fail, file size too long", __FILE__, (int)__LINE__, fname);
       CloseHandle(hFile);
       //we can support that with a while loop
-      return common::Status(common::LOTUS, common::NOT_IMPLEMENTED, errbuf);
+      return common::Status(common::ONNXRUNTIME, common::NOT_IMPLEMENTED, errbuf);
     }
     if (!ReadFile(hFile, (void*)out->data(), (DWORD)filesize.QuadPart, nullptr, nullptr)) {
       int err = GetLastError();
       _snprintf_s(errbuf, _TRUNCATE, "%s:%d ReadFileEx %ls fail, errcode = %d", __FILE__, (int)__LINE__, fname, err);
       CloseHandle(hFile);
-      return common::Status(common::LOTUS, common::FAIL, errbuf);
+      return common::Status(common::ONNXRUNTIME, common::FAIL, errbuf);
     }
     CloseHandle(hFile);
     return common::Status::OK();
   }
 
   virtual Status LoadLibrary(const std::string& library_filename, void** handle) const override {
-    UNUSED_PARAMETER(library_filename);
-    UNUSED_PARAMETER(handle);
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_UNUSED_PARAMETER(library_filename);
+    ONNXRUNTIME_UNUSED_PARAMETER(handle);
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   virtual common::Status UnloadLibrary(void* handle) const override {
-    UNUSED_PARAMETER(handle);
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_UNUSED_PARAMETER(handle);
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   virtual Status GetSymbolFromLibrary(void* handle, const std::string& symbol_name, void** symbol) const override {
-    UNUSED_PARAMETER(handle);
-    UNUSED_PARAMETER(symbol_name);
-    UNUSED_PARAMETER(symbol);
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_UNUSED_PARAMETER(handle);
+    ONNXRUNTIME_UNUSED_PARAMETER(symbol_name);
+    ONNXRUNTIME_UNUSED_PARAMETER(symbol);
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   virtual std::string FormatLibraryFileName(const std::string& name, const std::string& version) const override {
-    UNUSED_PARAMETER(name);
-    UNUSED_PARAMETER(version);
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_UNUSED_PARAMETER(name);
+    ONNXRUNTIME_UNUSED_PARAMETER(version);
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
  private:

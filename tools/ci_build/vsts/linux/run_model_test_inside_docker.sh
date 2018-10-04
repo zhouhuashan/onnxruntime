@@ -10,7 +10,7 @@ else
   mkdir -p /data/onnx
   azcopy --recursive --source:https://lotus.blob.core.windows.net/onnx-model-zoo-20180726 --destination:/data/onnx/models  --source-key:$AZURE_BLOB_KEY
 fi
-/opt/cmake/bin/cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -Deigen_SOURCE_PATH=/usr/include/eigen3 -Dlotus_USE_PREINSTALLED_EIGEN=ON /data/lotus/cmake
+/opt/cmake/bin/cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -Deigen_SOURCE_PATH=/usr/include/eigen3 -Donnxruntime_USE_PREINSTALLED_EIGEN=ON /data/lotus/cmake
 ninja onnx_test_runner
 
 for D in /data/onnx/*; do

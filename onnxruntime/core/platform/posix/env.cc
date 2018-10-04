@@ -120,23 +120,23 @@ class PosixEnv : public Env {
   }
 
   common::Status FileExists(const char* /*fname*/) const override {
-    return common::Status(common::LOTUS, common::NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
+    return common::Status(common::ONNXRUNTIME, common::NOT_IMPLEMENTED, "NOT_IMPLEMENTED");
   }
   common::Status ReadFileAsString(const char* fname, std::string* out) const override {
     if (!out) {
-      return common::Status(common::LOTUS, common::INVALID_ARGUMENT, "'out' cannot be NULL");
+      return common::Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT, "'out' cannot be NULL");
     }
     char errbuf[512];
     int fd = open(fname, O_RDONLY);
     if (fd < 0) {
       snprintf(errbuf, sizeof(errbuf), "%s:%d open file %s fail, errcode = %d", __FILE__, __LINE__, fname, errno);
-      return common::Status(common::LOTUS, common::FAIL, errbuf);
+      return common::Status(common::ONNXRUNTIME, common::FAIL, errbuf);
     }
     struct stat stbuf;
     if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
       close(fd);
       snprintf(errbuf, sizeof(errbuf), "%s:%d read file %s fail", __FILE__, __LINE__, fname);
-      return common::Status(common::LOTUS, common::FAIL, errbuf);
+      return common::Status(common::ONNXRUNTIME, common::FAIL, errbuf);
     }
     if (stbuf.st_size == 0) {
       out->clear();
@@ -152,7 +152,7 @@ class PosixEnv : public Env {
                  __LINE__,
                  fname,
                  errno);
-        return common::Status(common::LOTUS, common::FAIL, errbuf);
+        return common::Status(common::ONNXRUNTIME, common::FAIL, errbuf);
       }
       close(fd);
     }
@@ -164,7 +164,7 @@ class PosixEnv : public Env {
     *handle = dlopen(library_filename.c_str(), RTLD_NOW | RTLD_LOCAL);
     error_str = dlerror();
     if (!*handle) {
-      return common::Status(common::LOTUS, common::FAIL,
+      return common::Status(common::ONNXRUNTIME, common::FAIL,
                             "Failed to load library " + library_filename + " with error: " + error_str);
     }
     return common::Status::OK();
@@ -172,13 +172,13 @@ class PosixEnv : public Env {
 
   virtual common::Status UnloadLibrary(void* handle) const override {
     if (!handle) {
-      return common::Status(common::LOTUS, common::FAIL, "Got null library handle");
+      return common::Status(common::ONNXRUNTIME, common::FAIL, "Got null library handle");
     }
     char* error_str = dlerror();  // clear any old error_str
     int retval = dlclose(handle);
     error_str = dlerror();
     if (retval != 0) {
-      return common::Status(common::LOTUS, common::FAIL,
+      return common::Status(common::ONNXRUNTIME, common::FAIL,
                             "Failed to unload library with error: " + std::string(error_str));
     }
     return common::Status::OK();
@@ -189,7 +189,7 @@ class PosixEnv : public Env {
     *symbol = dlsym(handle, symbol_name.c_str());
     error_str = dlerror();
     if (error_str) {
-      return common::Status(common::LOTUS, common::FAIL,
+      return common::Status(common::ONNXRUNTIME, common::FAIL,
                             "Failed to get symbol " + symbol_name + " with error: " + error_str);
     }
     // it's possible to get a NULL symbol in our case when Schemas are not custom.

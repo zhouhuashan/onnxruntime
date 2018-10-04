@@ -29,9 +29,9 @@ static void CopyWithCast(typename gsl::span<const T>::const_iterator begin,
 
 Status FeatureVectorizer::Compute(OpKernelContext* context) const {
   auto input_count = context->NumVariadicInputs(0);
-  LOTUS_ENFORCE(input_count == input_dimensions_.size(),
-                "Number of inputs (", input_count, ") does not match number of inputdimensions values (",
-                input_dimensions_.size(), ").");
+  ONNXRUNTIME_ENFORCE(input_count == input_dimensions_.size(),
+              "Number of inputs (", input_count, ") does not match number of inputdimensions values (",
+              input_dimensions_.size(), ").");
 
   const Tensor& X = *context->Input<Tensor>(0);
   const auto& x_dims = X.Shape().GetDims();
@@ -71,7 +71,7 @@ Status FeatureVectorizer::Compute(OpKernelContext* context) const {
       VectorizeTensor<double>(input_tensor, feature_size, total_dimensions_, cur_out);
     } else {
       // should never happen. graph validation should have failed
-      LOTUS_THROW("Invalid input type:", data_type);
+      ONNXRUNTIME_THROW("Invalid input type:", data_type);
     }
 
     // move to start of next feature

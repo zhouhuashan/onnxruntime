@@ -10,12 +10,12 @@
 using namespace ONNX_NAMESPACE;
 
 #ifdef __GNUC__
-#define LOTUS_UNUSED __attribute__((unused))
+#define UNUSED __attribute__((unused))
 #else
-#define LOTUS_UNUSED
+#define UNUSED
 #endif
 
-#define LOTUS_OPERATOR_SCHEMA LOTUS_UNUSED ONNX_OPERATOR_SCHEMA
+#define OPERATOR_SCHEMA UNUSED ONNX_OPERATOR_SCHEMA
 
 namespace onnxruntime {
 namespace test {
@@ -29,7 +29,7 @@ TEST(FormalParamTest, Success) {
 }
 
 TEST(OpRegistrationTest, OpRegTest) {
-  LOTUS_OPERATOR_SCHEMA(__TestOpReg)
+  OPERATOR_SCHEMA(__TestOpReg)
       .SetDoc("Op Registration Basic Test.")
       .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
       .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
@@ -54,7 +54,7 @@ ONNX_NAMESPACE::OpSchema CreateTestSchema(const char* name, const char* domain, 
 }
 
 TEST(OpRegistrationTest, OpsetRegTest) {
-  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> registry = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::OnnxRuntimeOpSchemaRegistry> registry = std::make_shared<OnnxRuntimeOpSchemaRegistry>();
 
   // Register op-set version 1 with baseline version 0
   std::vector<ONNX_NAMESPACE::OpSchema> schema = {CreateTestSchema("Op1", "Domain1", 1), CreateTestSchema("Op2", "Domain1", 1)};
@@ -76,7 +76,7 @@ TEST(OpRegistrationTest, OpsetRegTest) {
   EXPECT_FALSE(registry->RegisterOpSet(schemaV2, "Domain1", 1, 2).IsOK());
 
   // Registering an op-set with schema in a different domain than the op-set will fail
-  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> temp_reg = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::OnnxRuntimeOpSchemaRegistry> temp_reg = std::make_shared<OnnxRuntimeOpSchemaRegistry>();
   EXPECT_FALSE(temp_reg->RegisterOpSet(schema, "WrongDomain", 0, 1).IsOK());
 
   // Registering a second op-set in a different domain should succeed
@@ -90,7 +90,7 @@ TEST(OpRegistrationTest, OpsetRegTest) {
   EXPECT_FALSE(registry->RegisterOpSet(schema, "Domain1", 0, 1).IsOK());
 
   // Create a second registry, combined with the first through a manager
-  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> registry2 = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::OnnxRuntimeOpSchemaRegistry> registry2 = std::make_shared<OnnxRuntimeOpSchemaRegistry>();
   SchemaRegistryManager manager;
   manager.RegisterRegistry(registry);
   manager.RegisterRegistry(registry2);
@@ -107,7 +107,7 @@ TEST(OpRegistrationTest, OpsetRegTest) {
 
   // Add a new operator set which is verion 5, with a baseline of version 4, meaning that
   // there is a gap at version 3.
-  std::shared_ptr<onnxruntime::LotusOpSchemaRegistry> registryV5 = std::make_shared<LotusOpSchemaRegistry>();
+  std::shared_ptr<onnxruntime::OnnxRuntimeOpSchemaRegistry> registryV5 = std::make_shared<OnnxRuntimeOpSchemaRegistry>();
   manager.RegisterRegistry(registryV5);
   std::vector<ONNX_NAMESPACE::OpSchema> schemaV5 = {
       CreateTestSchema("Op3", "Domain1", 4),
@@ -130,14 +130,14 @@ TEST(OpRegistrationTest, OpsetRegTest) {
   // without this operator.  This would normally be invalid, and the registry with the missing
   // operator could trigger the operator lookup to fail.  Version 1 is a special case to allow
   // for experimental operators, and is accomplished by not reducing the targetted version to
-  // zero in LotusOpSchemaRegistry::GetSchemaAndHistory.
+  // zero in OnnxRuntimeOpSchemaRegistry::GetSchemaAndHistory.
   // TODO - Consider making the registration algorithm robust to this invalid usage in general
   EXPECT_TRUE(manager.GetSchema("Op5", 5, "Domain1")->since_version() == 1);
   EXPECT_TRUE(manager.GetSchema("Op5", 1, "Domain1")->since_version() == 1);
 }
 
 TEST(OpRegistrationTest, TypeConstraintTest) {
-  LOTUS_OPERATOR_SCHEMA(__TestTypeConstraint)
+  OPERATOR_SCHEMA(__TestTypeConstraint)
       .SetDoc("Op with Type Constraint.")
       .Input(0, "input_1", "docstr for input_1.", "T")
       .Input(1, "input_2", "docstr for input_2.", "T")
@@ -167,7 +167,7 @@ TEST(OpRegistrationTest, TypeConstraintTest) {
 }
 
 TEST(OpRegistrationTest, AttributeDefaultValueTest) {
-  LOTUS_OPERATOR_SCHEMA(__TestAttrDefaultValue)
+  OPERATOR_SCHEMA(__TestAttrDefaultValue)
       .SetDoc("Op with attributes that have default values")
       .Attr("my_attr_int", "attr with default value of 99.", AttrType::AttributeProto_AttributeType_INT, int64_t(99))
       .Attr("my_attr_float", "attr with default value of 0.99.", AttrType::AttributeProto_AttributeType_FLOAT, float(0.99))
@@ -202,7 +202,7 @@ TEST(OpRegistrationTest, AttributeDefaultValueTest) {
 }
 
 TEST(OpRegistrationTest, AttributeDefaultValueListTest) {
-  LOTUS_OPERATOR_SCHEMA(__TestAttrDefaultValueList)
+  OPERATOR_SCHEMA(__TestAttrDefaultValueList)
       .SetDoc("Op with attributes that have default list of values.")
       .Attr("my_attr_ints", "attr with default value of [98, 99, 100].", AttrType::AttributeProto_AttributeType_INTS, std::vector<int64_t>{int64_t(98), int64_t(99), int64_t(100)})
       .Attr("my_attr_floats", "attr with default value of [0.98, 0.99, 1.00].", AttrType::AttributeProto_AttributeType_FLOATS, std::vector<float>{float(0.98), float(0.99), float(1.00)})

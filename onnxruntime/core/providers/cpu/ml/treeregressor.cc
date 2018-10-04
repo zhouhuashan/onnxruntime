@@ -30,10 +30,10 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
       base_values_(info.GetAttrsOrDefault<float>("base_values")),
       transform_(::onnxruntime::ml::MakeTransform(info.GetAttrOrDefault<std::string>("post_transform", "NONE"))),
       aggregate_function_(::onnxruntime::ml::MakeAggregateFunction(info.GetAttrOrDefault<std::string>("aggregate_function", "SUM"))) {
-  LOTUS_ENFORCE(info.GetAttr<int64_t>("n_targets", &n_targets_).IsOK());
+  ONNXRUNTIME_ENFORCE(info.GetAttr<int64_t>("n_targets", &n_targets_).IsOK());
 
   //update nodeids to start at 0
-  LOTUS_ENFORCE(!nodes_treeids_.empty());
+  ONNXRUNTIME_ENFORCE(!nodes_treeids_.empty());
   int64_t current_tree_id = 1234567891L;
   std::vector<int64_t> tree_offsets;
 
@@ -63,14 +63,14 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
   }
 
   size_t nodes_id_size = nodes_nodeids_.size();
-  LOTUS_ENFORCE(target_nodeids_.size() == target_ids_.size());
-  LOTUS_ENFORCE(target_nodeids_.size() == target_weights_.size());
-  LOTUS_ENFORCE(nodes_id_size == nodes_featureids_.size());
-  LOTUS_ENFORCE(nodes_id_size == nodes_values_.size());
-  LOTUS_ENFORCE(nodes_id_size == nodes_modes_.size());
-  LOTUS_ENFORCE(nodes_id_size == nodes_truenodeids_.size());
-  LOTUS_ENFORCE(nodes_id_size == nodes_falsenodeids_.size());
-  LOTUS_ENFORCE((nodes_id_size == nodes_hitrates_.size()) || (0 == nodes_hitrates_.size()));
+  ONNXRUNTIME_ENFORCE(target_nodeids_.size() == target_ids_.size());
+  ONNXRUNTIME_ENFORCE(target_nodeids_.size() == target_weights_.size());
+  ONNXRUNTIME_ENFORCE(nodes_id_size == nodes_featureids_.size());
+  ONNXRUNTIME_ENFORCE(nodes_id_size == nodes_values_.size());
+  ONNXRUNTIME_ENFORCE(nodes_id_size == nodes_modes_.size());
+  ONNXRUNTIME_ENFORCE(nodes_id_size == nodes_truenodeids_.size());
+  ONNXRUNTIME_ENFORCE(nodes_id_size == nodes_falsenodeids_.size());
+  ONNXRUNTIME_ENFORCE((nodes_id_size == nodes_hitrates_.size()) || (0 == nodes_hitrates_.size()));
 
   max_tree_depth_ = 1000;
   offset_ = four_billion_;
@@ -122,7 +122,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
     //they must be in the same tree
     int64_t id = nodes_treeids_[i] * offset_ + nodes_truenodeids_[i];
     it = parents.find(id);
-    LOTUS_ENFORCE(it != parents.end());
+    ONNXRUNTIME_ENFORCE(it != parents.end());
     it->second++;
   }
   //all false nodes aren't roots
@@ -131,7 +131,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
     //they must be in the same tree
     int64_t id = nodes_treeids_[i] * offset_ + nodes_falsenodeids_[i];
     it = parents.find(id);
-    LOTUS_ENFORCE(it != parents.end());
+    ONNXRUNTIME_ENFORCE(it != parents.end());
     it->second++;
   }
   //find all the nodes that dont have other nodes pointing at them
@@ -142,7 +142,7 @@ TreeEnsembleRegressor<T>::TreeEnsembleRegressor(const OpKernelInfo& info)
       roots_.push_back(it->second);
     }
   }
-  LOTUS_ENFORCE(base_values_.empty() || base_values_.size() == static_cast<size_t>(n_targets_));
+  ONNXRUNTIME_ENFORCE(base_values_.empty() || base_values_.size() == static_cast<size_t>(n_targets_));
 }
 
 template <typename T>
@@ -175,7 +175,7 @@ common::Status TreeEnsembleRegressor<T>::ProcessTreeNode(std::unordered_map<int6
     }
 
     if (treeindex < 0) {
-      return common::Status(common::LOTUS, common::RUNTIME_EXCEPTION,
+      return common::Status(common::ONNXRUNTIME, common::RUNTIME_EXCEPTION,
                             "treeindex evaluated to a negative value, which should not happen.");
     }
     treeindex = treeindex + root;
@@ -216,7 +216,7 @@ template <typename T>
 common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const {
   const Tensor* X = context->Input<Tensor>(0);
   if (X->Shape().Size() == 0) {
-    return Status(common::LOTUS, common::INVALID_ARGUMENT,
+    return Status(common::ONNXRUNTIME, common::INVALID_ARGUMENT,
                   "Input shape needs to be at least a single dimension.");
   }
 
@@ -234,7 +234,7 @@ common::Status TreeEnsembleRegressor<T>::Compute(OpKernelContext* context) const
     //for each tree
     for (size_t j = 0; j < roots_.size(); j++) {
       //walk each tree from its root
-      LOTUS_RETURN_IF_ERROR(ProcessTreeNode(scores, roots_[j], x_data, current_weight_0));
+      ONNXRUNTIME_RETURN_IF_ERROR(ProcessTreeNode(scores, roots_[j], x_data, current_weight_0));
     }
     //find aggregate, could use a heap here if there are many classes
     std::vector<float> outputs;

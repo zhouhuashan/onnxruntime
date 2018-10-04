@@ -25,9 +25,9 @@ template <typename T>
 class LpNorm final : public OpKernel {
  public:
   LpNorm(const OpKernelInfo& op_kernel_info) : OpKernel(op_kernel_info) {
-    LOTUS_ENFORCE(op_kernel_info.GetAttr<int64_t>("axis", &axis_).IsOK());
-    LOTUS_ENFORCE(op_kernel_info.GetAttr<int64_t>("p", &p_).IsOK());
-    LOTUS_ENFORCE(p_ == 1 || p_ == 2);
+    ONNXRUNTIME_ENFORCE(op_kernel_info.GetAttr<int64_t>("axis", &axis_).IsOK());
+    ONNXRUNTIME_ENFORCE(op_kernel_info.GetAttr<int64_t>("p", &p_).IsOK());
+    ONNXRUNTIME_ENFORCE(p_ == 1 || p_ == 2);
   }
 
   Status Compute(OpKernelContext* p_op_kernel_context) const override;

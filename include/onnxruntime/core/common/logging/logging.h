@@ -156,7 +156,7 @@ class LoggingManager final {
   ~LoggingManager();
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(LoggingManager);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(LoggingManager);
   static std::unique_ptr<Logger>& GetDefaultLogger() noexcept;
 
   Timestamp GetTimestamp() const noexcept;

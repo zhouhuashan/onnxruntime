@@ -53,11 +53,11 @@ template <typename SrcType,
           typename DstType>
 inline void CastFloat16Data(const Tensor* in, Tensor* out, const TensorShape& shape, const OpKernelInfo& info) {
   auto* p_provider = info.GetExecutionProvider();
-  LOTUS_ENFORCE(p_provider);
+  ONNXRUNTIME_ENFORCE(p_provider);
   auto allocator = p_provider->GetAllocator(kMemTypeDefault);
-  LOTUS_ENFORCE(allocator != nullptr);
+  ONNXRUNTIME_ENFORCE(allocator != nullptr);
   void* buffer = allocator->Alloc(sizeof(float) * shape.Size());
-  LOTUS_ENFORCE(buffer);
+  ONNXRUNTIME_ENFORCE(buffer);
   Tensor tmp_tensor(DataTypeImpl::GetType<float>(), shape, buffer, allocator->Info(), allocator);
 
   if (std::is_same<SrcType, MLFloat16>::value) {
@@ -75,7 +75,7 @@ class Cast final : public OpKernel {
   Cast(const OpKernelInfo& info) : OpKernel(info) {
     int64_t to;
     Status status = info.GetAttr("to", &to);
-    LOTUS_ENFORCE(status.IsOK(), "Attribute to is not set.");
+    ONNXRUNTIME_ENFORCE(status.IsOK(), "Attribute to is not set.");
     to_ = gsl::narrow_cast<ONNX_NAMESPACE::TensorProto_DataType>(to);
   }
 

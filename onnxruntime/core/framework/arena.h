@@ -57,11 +57,11 @@ class DummyArena : public IArenaAllocator {
   }
 
   size_t Used() const override {
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   size_t Max() const override {
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   const AllocatorInfo& Info() const override {
@@ -69,7 +69,7 @@ class DummyArena : public IArenaAllocator {
   }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(DummyArena);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(DummyArena);
 
   std::unique_ptr<IDeviceAllocator> allocator_;
   AllocatorInfo info_;

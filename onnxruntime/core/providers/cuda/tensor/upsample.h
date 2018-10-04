@@ -19,7 +19,7 @@ class Upsample : public UpsampleBase, public CudaKernel {
     // only support scale HW for NCHW input
     if (scales_.size() > 2) {
       for (int i = 0; i < scales_.size() - 2; i++) {
-        LOTUS_ENFORCE(scales_[i] == 1, "Can only upsample in H/W channels.");
+        ONNXRUNTIME_ENFORCE(scales_[i] == 1, "Can only upsample in H/W channels.");
       }
     }
   }

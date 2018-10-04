@@ -19,15 +19,15 @@ class CropBase {
 
   Status ValidateInput(const Tensor* X) const {
     if (border_.size() < 4) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                               "Attribute border needs to be specified with four border elements, got ", border_.size());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
+                             "Attribute border needs to be specified with four border elements, got ", border_.size());
     }
 
     const auto dims = X->Shape().GetDims();
 
     if (dims.size() < 4) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                               "Input is expected to have four dimensions corresponding to [N,C,H,W], got ", dims.size());
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
+                             "Input is expected to have four dimensions corresponding to [N,C,H,W], got ", dims.size());
     }
 
     const int64_t H = dims[2];
@@ -40,11 +40,11 @@ class CropBase {
             bottomBorder = border_[3];
 
     if (H < topBorder + bottomBorder) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input's height (", H, ") needs to be greater than the topBorder (", topBorder, ") + bottomBorder (", bottomBorder, ")");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "Input's height (", H, ") needs to be greater than the topBorder (", topBorder, ") + bottomBorder (", bottomBorder, ")");
     }
 
     if (W < leftBorder + rightBorder) {
-      return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input's width (", W, ") needs to be greater than the leftBorder (", leftBorder, ") + rightBorder (", rightBorder, ")");
+      return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "Input's width (", W, ") needs to be greater than the leftBorder (", leftBorder, ") + rightBorder (", rightBorder, ")");
     }
 
     int64_t bottomLimit = H - bottomBorder;
@@ -56,12 +56,12 @@ class CropBase {
       rightLimit = leftBorder + scale_[1];
 
       if (H < bottomLimit) {
-        return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT,
-                                 "Input's height (", H, ") needs to be greater than the topBorder (", topBorder, ") + scale_[0] (", scale_[0], ")");
+        return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT,
+                               "Input's height (", H, ") needs to be greater than the topBorder (", topBorder, ") + scale_[0] (", scale_[0], ")");
       }
 
       if (W < rightLimit) {
-        return LOTUS_MAKE_STATUS(LOTUS, INVALID_ARGUMENT, "Input's width (", W, ") needs to be greater than the leftBorder (", leftBorder, ") + scale_[1] (", scale_[1], ")");
+        return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, INVALID_ARGUMENT, "Input's width (", W, ") needs to be greater than the leftBorder (", leftBorder, ") + scale_[1] (", scale_[1], ")");
       }
     }
 
@@ -80,7 +80,7 @@ class Crop final : public CropBase, public OpKernel {
 
   common::Status Compute(OpKernelContext* context) const override {
     const Tensor* X = context->Input<Tensor>(0);
-    LOTUS_RETURN_IF_ERROR(ValidateInput(X));
+    ONNXRUNTIME_RETURN_IF_ERROR(ValidateInput(X));
 
     const auto dims = X->Shape().GetDims();
     const int64_t N = dims[0];

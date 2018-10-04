@@ -55,7 +55,7 @@ FunctionImpl::FunctionImpl(const onnxruntime::Graph& graph,
     sub_graph.AddNode(node->Name(), node->OpType(), node->Description(), inputs, outputs, &node->GetAttributes(), node->Domain());
   }
   //TODO: if we reuse the nodes in parent graph, maybe we don't need to resolve it.
-  LOTUS_ENFORCE(sub_graph.Resolve().IsOK());
+  ONNXRUNTIME_ENFORCE(sub_graph.Resolve().IsOK());
 }
 
 const ONNX_NAMESPACE::OpSchema& FunctionImpl::OpSchema() const {

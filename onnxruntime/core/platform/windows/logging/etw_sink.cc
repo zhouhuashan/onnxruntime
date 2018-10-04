@@ -4,7 +4,7 @@
 // EtwSink.h must come before the windows includes
 #include "core/platform/windows/logging/etw_sink.h"
 
-#ifdef LOTUS_ETW_TRACE_LOGGING_SUPPORTED
+#ifdef ETW_TRACE_LOGGING_SUPPORTED
 
 // STL includes
 #include <exception>
@@ -60,7 +60,7 @@ class EtwRegistrationManager {
   }
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(EtwRegistrationManager);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(EtwRegistrationManager);
 
   EtwRegistrationManager(const HRESULT status) noexcept : etw_status_{status} {}
   const HRESULT etw_status_;
@@ -129,4 +129,4 @@ void EtwSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id,
 }  // namespace logging
 }  // namespace onnxruntime
 
-#endif  // LOTUS_ETW_TRACE_LOGGING_SUPPORTED
+#endif  // ETW_TRACE_LOGGING_SUPPORTED

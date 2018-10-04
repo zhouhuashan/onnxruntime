@@ -18,7 +18,7 @@ using namespace common;
 
 template <typename ERRTYPE>
 const char* CudaErrString(ERRTYPE x) {
-  LOTUS_NOT_IMPLEMENTED();
+  ONNXRUNTIME_NOT_IMPLEMENTED();
 }
 
 #define CASE_ENUM_TO_STR(x) \
@@ -88,13 +88,13 @@ bool CudaCall(ERRTYPE retCode, const char* exprString, const char* libName, ERRT
                hostname,
                exprString, msg);
       if (THRW) {
-        LOTUS_THROW(str);
+        ONNXRUNTIME_THROW(str);
       } else {
         LOGS_DEFAULT(ERROR) << str;
       }
     } catch (const std::exception& e) {  // catch, log, and rethrow since CUDA code sometimes hangs in destruction, so we'd never get to see the error
       if (THRW) {
-        LOTUS_THROW(e.what());
+        ONNXRUNTIME_THROW(e.what());
       } else {
         LOGS_DEFAULT(ERROR) << e.what();
       }

@@ -5,15 +5,15 @@
 #include <pthread.h>
 #include <core/common/common.h>
 
-struct LotusEvent {
+struct OnnxRuntimeEvent {
  public:
   pthread_mutex_t finish_event_mutex = PTHREAD_MUTEX_INITIALIZER;
   pthread_cond_t finish_event_data = PTHREAD_COND_INITIALIZER;
   bool finished = false;
-  LotusEvent() = default;
+  OnnxRuntimeEvent() = default;
 
  private:
-  LOTUS_DISALLOW_COPY_ASSIGN_AND_MOVE(LotusEvent);
+  ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(OnnxRuntimeEvent);
 };
 
-using LOTUS_EVENT = LotusEvent*;
+using EVENT = OnnxRuntimeEvent*;

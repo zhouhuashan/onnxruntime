@@ -13,7 +13,7 @@ namespace common {
 enum StatusCategory {
   NONE = 0,
   SYSTEM = 1,
-  LOTUS = 2,
+  ONNXRUNTIME = 2,
 };
 
 // Error code for lotus.

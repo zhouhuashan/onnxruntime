@@ -33,8 +33,8 @@ endif(NOT NUMPY_INCLUDE_DIR)
 
 # ---[ Python + Numpy
 set(onnxruntime_pybind_srcs_pattern
-    "${LOTUS_ROOT}/python/*.cc"
-    "${LOTUS_ROOT}/python/*.h"
+    "${ONNXRUNTIME_ROOT}/python/*.cc"
+    "${ONNXRUNTIME_ROOT}/python/*.h"
 )
 
 file(GLOB onnxruntime_pybind_srcs ${onnxruntime_pybind_srcs_pattern})
@@ -44,12 +44,12 @@ add_library(onnxruntime_pybind11_state MODULE ${onnxruntime_pybind_srcs})
 if(HAS_CAST_FUNCTION_TYPE)
 target_compile_options(onnxruntime_pybind11_state PRIVATE "-Wno-cast-function-type")
 endif()
-target_include_directories(onnxruntime_pybind11_state PRIVATE ${LOTUS_ROOT} ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
+target_include_directories(onnxruntime_pybind11_state PRIVATE ${ONNXRUNTIME_ROOT} ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIR})
 target_include_directories(onnxruntime_pybind11_state PRIVATE ${pybind11_INCLUDE_DIRS})
 set(onnxruntime_pybind11_state_libs
     onnxruntime_session
-    ${LOTUS_PROVIDERS_CUDA}
-    ${LOTUS_PROVIDERS_MKLDNN}
+    ${PROVIDERS_CUDA}
+    ${PROVIDERS_MKLDNN}
     onnxruntime_providers
     onnxruntime_framework
     onnxruntime_util
@@ -60,16 +60,16 @@ set(onnxruntime_pybind11_state_libs
 )
 
 set(onnxruntime_pybind11_state_dependencies
-    ${lotus_EXTERNAL_DEPENDENCIES}
+    ${onnxruntime_EXTERNAL_DEPENDENCIES}
     pybind11
 )
 
 add_dependencies(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_dependencies})
 if (MSVC)
   # if MSVC, pybind11 looks for release version of python lib (pybind11/detail/common.h undefs _DEBUG)
-  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${MLAS_LIBRARY} ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
+  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${MLAS_LIBRARY} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
 else()
-  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${lotus_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
+  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
   set_target_properties(onnxruntime_pybind11_state PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
 endif()
 
@@ -83,30 +83,30 @@ else()
 endif()
 
 file(GLOB onnxruntime_backend_srcs
-    "${LOTUS_ROOT}/python/backend/*.py"
+    "${ONNXRUNTIME_ROOT}/python/backend/*.py"
 )
 file(GLOB onnxruntime_python_srcs
-    "${LOTUS_ROOT}/python/*.py"
+    "${ONNXRUNTIME_ROOT}/python/*.py"
 )
 file(GLOB onnxruntime_python_test_srcs
-    "${LOTUS_ROOT}/test/python/*.py"
+    "${ONNXRUNTIME_ROOT}/test/python/*.py"
 )
 file(GLOB onnxruntime_python_tools_srcs
-    "${LOTUS_ROOT}/python/tools/*.py"
+    "${ONNXRUNTIME_ROOT}/python/tools/*.py"
 )
 file(GLOB onnxruntime_python_datasets_srcs
-    "${LOTUS_ROOT}/python/datasets/*.py"
+    "${ONNXRUNTIME_ROOT}/python/datasets/*.py"
 )
 file(GLOB onnxruntime_python_datasets_data
-    "${LOTUS_ROOT}/python/datasets/*.pb"
-    "${LOTUS_ROOT}/python/datasets/*.onnx"
+    "${ONNXRUNTIME_ROOT}/python/datasets/*.pb"
+    "${ONNXRUNTIME_ROOT}/python/datasets/*.onnx"
 )
 
 # adjust based on what target/s onnxruntime_unittests.cmake created
 if (SingleUnitTestProject)
-  set(test_data_target lotus_test_all)
+  set(test_data_target onnxruntime_test_all)
 else()
-  set(test_data_target lotus_test_ir)
+  set(test_data_target onnxruntime_test_ir)
 endif()
 
 add_custom_command(
@@ -116,7 +116,7 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/datasets
   COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/tools
   COMMAND ${CMAKE_COMMAND} -E copy
-      ${LOTUS_ROOT}/__init__.py
+      ${ONNXRUNTIME_ROOT}/__init__.py
       $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/
   COMMAND ${CMAKE_COMMAND} -E copy
       ${REPO_ROOT}/ThirdPartyNotices.txt
@@ -147,7 +147,7 @@ add_custom_command(
       $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/tools/
 )
 
-if (lotus_USE_MKLDNN)
+if (onnxruntime_USE_MKLDNN)
   add_custom_command(
     TARGET onnxruntime_pybind11_state POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
@@ -155,7 +155,7 @@ if (lotus_USE_MKLDNN)
         $<TARGET_FILE_DIR:${test_data_target}>/onnxruntime/capi/
   )
 endif()
-if (lotus_USE_MKLML)
+if (onnxruntime_USE_MKLML)
   add_custom_command(
     TARGET onnxruntime_pybind11_state POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy

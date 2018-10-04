@@ -13,17 +13,16 @@
 namespace onnxruntime {
 class MLValue {
  private:
-
-  template<typename Result, typename TReg>
+  template <typename Result, typename TReg>
   struct Fetcher {
     static const Result& Get(const MLValue& ml_value) {
-      LOTUS_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
-                    DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
+      ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
+                  DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
       return *static_cast<Result*>(ml_value.data_.get());
     }
     static Result* GetMutable(MLValue& ml_value) {
-      LOTUS_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
-                    DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
+      ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<TReg>() == ml_value.type_,
+                  DataTypeImpl::GetType<TReg>(), " != ", ml_value.type_);
       return static_cast<Result*>(ml_value.data_.get());
     }
   };
@@ -31,18 +30,16 @@ class MLValue {
   template <typename T, typename... Types>
   struct TypeRegistrationDispatcher;
 
-  template<typename T>
-  struct TypeRegistrationDispatcher<T> : public Fetcher<T,T> {
+  template <typename T>
+  struct TypeRegistrationDispatcher<T> : public Fetcher<T, T> {
   };
 
   template <typename T, typename... Types>
-  struct TypeRegistrationDispatcher<TypeRegister<T, Types...>> : 
-    public Fetcher<T, TypeRegister<T, Types...>> {
+  struct TypeRegistrationDispatcher<TypeRegister<T, Types...>> : public Fetcher<T, TypeRegister<T, Types...>> {
   };
 
   template <typename T, const char D[], const char N[], typename... Params>
-      struct TypeRegistrationDispatcher<OpaqueRegister<T, D, N, Params...>> : 
-        public Fetcher<T,OpaqueRegister<T, D, N, Params...>> {
+  struct TypeRegistrationDispatcher<OpaqueRegister<T, D, N, Params...>> : public Fetcher<T, OpaqueRegister<T, D, N, Params...>> {
   };
 
  public:

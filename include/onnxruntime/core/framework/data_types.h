@@ -65,7 +65,7 @@ class DataTypeImpl {
   virtual DeleteFunc GetDeleteFunc() const = 0;
 
   /**
-   * \brief Retrieves an instance of TypeProto for 
+   * \brief Retrieves an instance of TypeProto for
    *        a given MLDataType
    * \returns optional TypeProto. Only ONNX types
               has type proto, non-ONNX types will return nullptr.
@@ -112,7 +112,7 @@ std::ostream& operator<<(std::ostream& out, MLDataType data_type);
  *         extern const char domain[]; extern const char name[];
  *         Params must be preregistered types.
  *         using MyOpaqueType = OpaqueRegister<MyCppOpaqueType, domain, name, optional_params>;
- *         LOTUS_REGISTER_OPAQUE_TYPE(MyOpaqueType); // Runtime type is MyCppOpaqueType.
+ *         ONNXRUNTIME_REGISTER_OPAQUE_TYPE(MyOpaqueType); // Runtime type is MyCppOpaqueType.
  */
 template <typename CPPType, const char D[], const char N[],
           typename... Params>
@@ -122,7 +122,7 @@ struct OpaqueRegister {
 
 /**
  * \brief   Registration helper for Maps and Sequences
- * 
+ *
  * \details Needed to support recursive registration of types
  *          including Opaque types and/or more complex types as Sequences
  *          of Opaque Types in Maps.
@@ -131,22 +131,22 @@ struct OpaqueRegister {
  *          Providing that both keys and values either fundamental TensorContained
  *          types OR previously registered more complex types. E.g.:
  *            using MyMap = std::map<int64_t, std::string>;
- *            LOTUS_REGISTER_MAP(MyMap); // Runtime type MyMap
+ *            ONNXRUNTIME_REGISTER_MAP(MyMap); // Runtime type MyMap
  *            using MySequence = std::vector<int64_t>;
- *            LOTUS_REGISTER_SEQ(MySequence); // Runtime type is std::vector<int64_t>
+ *            ONNXRUNTIME_REGISTER_SEQ(MySequence); // Runtime type is std::vector<int64_t>
  *            using ComplexSequence = std::vector<MyMap>; // MyMap is previously registered
- *            LOTUS_REGISTER_SEQ(ComplexSequence); // Runtime type is std::vector<MyMap>;
+ *            ONNXRUNTIME_REGISTER_SEQ(ComplexSequence); // Runtime type is std::vector<MyMap>;
  *          Alternate using registration helper producing the same results
  *            using MyMap = TypeRegister<std::map<int64_t, std::string>>;
- *            LOTUS_REGISTER_MAP(MyMap); // Runtime type std::map<int64_t, std::string>
+ *            ONNXRUNTIME_REGISTER_MAP(MyMap); // Runtime type std::map<int64_t, std::string>
  *            using  MySequence = TypeRegister<std::vector<int64_t>>;
- *            LOTUS_REGISTER_SEQ(MySequence); // Runtime type is std::vector<int64_t>
+ *            ONNXRUNTIME_REGISTER_SEQ(MySequence); // Runtime type is std::vector<int64_t>
  *
  *         Must use an OpaqueRegister helper to register OpaqueTypes:
  *             extern const char domain[]; extern const char name[];
  *             Params must be preregistered types.
  *             using MyOpaqueType = OpaqueRegister<MyCppOpaqueType, domain, name, optional_params>;
- *             LOTUS_REGISTER_OPAQUE_TYPE(MyOpaqueType); // Runtime type is MyCppOpaqueType.
+ *             ONNXRUNTIME_REGISTER_OPAQUE_TYPE(MyOpaqueType); // Runtime type is MyCppOpaqueType.
  *             use DataTypeImpl::GetType<MyOpaqueType>() to query MLDataType
  *
  *          However, if you want to register maps or sequences of OpaqueTypes you'd need
@@ -154,11 +154,11 @@ struct OpaqueRegister {
  *             using MyMap = std::map<int64_t, MyCppOpaqueType>;
  *             using MyOpaqueType = OpaqueRegister<MyCppOpaqueType, domain, name, optional_params>;
  *             using MyOpaqueMap =- TypeRegister<MyMap, MyOpaqueType>;
- *             LOTUS_REGISTER_MAP(MyOpaqueMap); // Runtime type std::map<int64_t, MyCppOpaqueType>
+ *             ONNXRUNTIME_REGISTER_MAP(MyOpaqueMap); // Runtime type std::map<int64_t, MyCppOpaqueType>
  *             use DataTypeImpl::GetType<MyOpaqueMap>() to get MLDataType
  *             using MySequence = std::vector<MyCppOpaqueType>;
  *             using MyOpaqueSequence = TypeRegister<MySequence, MyOpaqueType>;
- *             LOTUS_REGISTER_SERQ(MyOpaqueSequence); // Runtime type is std::vector<MyCppOpaqueType>
+ *             ONNXRUNTIME_REGISTER_SERQ(MyOpaqueSequence); // Runtime type is std::vector<MyCppOpaqueType>
 *              use DataTypeImpl::GetType<MyOpaqueSequence>() to get MLDataType
  */
 template <typename... Types>
@@ -256,8 +256,8 @@ struct SetMapTypes {
     TensorContainedTypeSetter<K>::SetMapKeyType(proto);
     MLDataType dt = GetMLDataType<V, IsTensorContainedType<V>::value>::Get();
     const auto* value_proto = dt->GetTypeProto();
-    LOTUS_ENFORCE(value_proto != nullptr, typeid(V).name(),
-                  " expected to be a registered ONNX type");
+    ONNXRUNTIME_ENFORCE(value_proto != nullptr, typeid(V).name(),
+                " expected to be a registered ONNX type");
     CopyMutableMapValue(*value_proto, proto);
   }
 };
@@ -273,8 +273,8 @@ struct SetSequenceType {
   static void Set(ONNX_NAMESPACE::TypeProto& proto) {
     MLDataType dt = GetMLDataType<T, IsTensorContainedType<T>::value>::Get();
     const auto* elem_proto = dt->GetTypeProto();
-    LOTUS_ENFORCE(elem_proto != nullptr, typeid(T).name(),
-                  " expected to be a registered ONNX type");
+    ONNXRUNTIME_ENFORCE(elem_proto != nullptr, typeid(T).name(),
+                " expected to be a registered ONNX type");
     CopyMutableSeqElement(*elem_proto, proto);
   }
 };
@@ -312,8 +312,8 @@ struct AddOpaqueParam<P, Params...> {
   static void Add(ONNX_NAMESPACE::TypeProto& proto) {
     MLDataType dt = GetMLDataType<P, IsTensorContainedType<P>::value>::Get();
     const auto* param_proto = dt->GetTypeProto();
-    LOTUS_ENFORCE(param_proto != nullptr, typeid(P).name(),
-                  " expected to be a registered ONNX type");
+    ONNXRUNTIME_ENFORCE(param_proto != nullptr, typeid(P).name(),
+                " expected to be a registered ONNX type");
     AddOpaqueParameter(*param_proto, proto);
     AddOpaqueParam<Params...>::Add(proto);
   }
@@ -349,7 +349,7 @@ class TensorTypeBase : public DataTypeImpl {
 
   virtual MLDataType GetElementType() const {
     // should never reach here.
-    LOTUS_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
+    ONNXRUNTIME_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
 
   TensorTypeBase(const TensorTypeBase&) = delete;
@@ -374,9 +374,9 @@ class TensorTypeBase : public DataTypeImpl {
  * it at registration time except the element type. One of the types mentioned
  * above at IsTensorContainedType<> list is acceptable.
  *
- * \details 
- *        Usage: 
- *        LOTUS_REGISTER_TENSOR(ELEMENT_TYPE)
+ * \details
+ *        Usage:
+ *        ONNXRUNTIME_REGISTER_TENSOR(ELEMENT_TYPE)
  *        Currently all of the Tensors irrespective of the dimensions are mapped to Tensor<type>
  *        type. IsCompatible() currently ignores shape.
  */
@@ -483,7 +483,7 @@ class NonTensorType<OpaqueRegister<CPPType, D, N, Params...>> : public NonTensor
  *
  * \param T - cpp type that you wish to register as runtime MapType
  *
- * \details Usage: LOTUS_REGISTER_MAP(C++Type)
+ * \details Usage: ONNXRUNTIME_REGISTER_MAP(C++Type)
  *          The type is required to have mapped_type and
  *          key_type defined
  */
@@ -542,7 +542,7 @@ class MapType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
  *  \param T - CPP type that you wish to register as Sequence
  *             runtime type.
  *
- * \details Usage: LOTUS_REGISTER_SEQUENCE(C++Type)
+ * \details Usage: ONNXRUNTIME_REGISTER_SEQUENCE(C++Type)
  *          The type is required to have value_type defined
  */
 template <typename... Types>
@@ -595,10 +595,10 @@ class SequenceType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPTy
  * \details Usage:
  *   struct YourOpaqueType {};
  *   using OpaqueType_1 = OpaqueRegister<CPPRuntimeType>;
- *   LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_1);
+ *   ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_1);
  *   With parameter types
  *   using OpaqueType_2 = OpaqueRegister<CPPRuntimeType, uint64_t, float, double>;
- *   LOTUS_REGISTER_OPAQUE_TYPE(OpaqueType_2);
+ *   ONNXRUNTIME_REGISTER_OPAQUE_TYPE(OpaqueType_2);
  *   To query your type: DataTypeImpl::GetType<OpaqueType_2>();
  */
 template <typename T>
@@ -658,31 +658,31 @@ class NonOnnxType : public DataTypeImpl {
 // thus a simple way to pre-instantiate a given template
 // at a registration time does not currently work and the macro
 // is needed.
-#define LOTUS_REGISTER_TENSOR_TYPE(ELEM_TYPE)           \
+#define ONNXRUNTIME_REGISTER_TENSOR_TYPE(ELEM_TYPE)             \
   template <>                                           \
   MLDataType DataTypeImpl::GetTensorType<ELEM_TYPE>() { \
     return TensorType<ELEM_TYPE>::Type();               \
   }
 
-#define LOTUS_REGISTER_MAP(TYPE)             \
+#define ONNXRUNTIME_REGISTER_MAP(TYPE)               \
   template <>                                \
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return MapType<TYPE>::Type();            \
   }
 
-#define LOTUS_REGISTER_SEQ(TYPE)             \
+#define ONNXRUNTIME_REGISTER_SEQ(TYPE)               \
   template <>                                \
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return SequenceType<TYPE>::Type();       \
   }
 
-#define LOTUS_REGISTER_NON_ONNX_TYPE(TYPE)   \
+#define ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(TYPE)     \
   template <>                                \
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return NonOnnxType<TYPE>::Type();        \
   }
 
-#define LOTUS_REGISTER_OPAQUE_TYPE(REGISTRATION_TYPE)     \
+#define ONNXRUNTIME_REGISTER_OPAQUE_TYPE(REGISTRATION_TYPE)       \
   template <>                                             \
   MLDataType DataTypeImpl::GetType<REGISTRATION_TYPE>() { \
     return OpaqueType<REGISTRATION_TYPE>::Type();         \

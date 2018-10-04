@@ -12,7 +12,7 @@ using namespace std::chrono;
 }
 
 void Profiler::StartProfiling(const logging::Logger* session_logger, const std::string& file_name) {
-  LOTUS_ENFORCE(session_logger != nullptr);
+  ONNXRUNTIME_ENFORCE(session_logger != nullptr);
   session_logger_ = session_logger;
   enabled_ = true;
   profile_stream_ = std::ofstream(file_name, std::ios::out | std::ios::trunc);
@@ -80,7 +80,7 @@ std::string Profiler::WriteProfileData() {
 // Conditionally sync the GPU if the syncGPU flag is set.
 //
 void ProfilerSyncGpu() {
-  LOTUS_NOT_IMPLEMENTED("Needs to implement only for gpus");
+  ONNXRUNTIME_NOT_IMPLEMENTED("Needs to implement only for gpus");
 }
 
 }  // namespace profiling

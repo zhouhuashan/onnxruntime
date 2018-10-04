@@ -13,7 +13,7 @@ const ::ONNX_NAMESPACE::TypeProto* FindTypeBinding(const onnxruntime::Node& node
   const ONNX_NAMESPACE::OpSchema& op_schema = *node.Op();
   // search inputs:
   const size_t len = node.InputArgCount().size();
-  LOTUS_ENFORCE(len <= op_schema.inputs().size());
+  ONNXRUNTIME_ENFORCE(len <= op_schema.inputs().size());
   int actual_index = 0;
   for (size_t formal_index = 0; formal_index != len; ++formal_index) {
     auto& param = op_schema.inputs()[formal_index];
@@ -163,7 +163,7 @@ Status KernelRegistry::Register(KernelCreateInfo& create_info) {
         i->second.status.IsOK() &&
         i->second.kernel_def->IsConflict(*create_info.kernel_def)) {
       create_info.status =
-          Status(LOTUS, FAIL,
+          Status(ONNXRUNTIME, FAIL,
                  "Failed to add kernel for " + op_name +
                      ": Conflicting with a registered kernel with op versions.");
       // For invalid entries, we keep them in the map now. Must check for status
@@ -184,7 +184,7 @@ Status KernelRegistry::CreateKernel(const onnxruntime::Node& node,
                                     const SessionState& session_state,
                                     /*out*/ std::unique_ptr<OpKernel>& op_kernel) const {
   const KernelCreateInfo* kernel_create_info = nullptr;
-  LOTUS_RETURN_IF_ERROR(FindKernel(node, &kernel_create_info));
+  ONNXRUNTIME_RETURN_IF_ERROR(FindKernel(node, &kernel_create_info));
 
   OpKernelInfo kernel_info(node, *kernel_create_info->kernel_def, execution_provider, session_state);
   op_kernel.reset(kernel_create_info->kernel_create_func(kernel_info));
@@ -227,10 +227,10 @@ Status KernelRegistry::FindKernel(const onnxruntime::Node& node,
     ostr << "Failed to find kernel def for op: " << node.OpType()
          << " on CPU execution provider"
          << " Encountered following errors: " << ToString(error_strs);
-    return Status(LOTUS, FAIL, ostr.str());
+    return Status(ONNXRUNTIME, FAIL, ostr.str());
   }
 
-  return Status(LOTUS, FAIL, "KernelDef not found.");
+  return Status(ONNXRUNTIME, FAIL, "KernelDef not found.");
 }
 
 bool KernelRegistry::CanExecutionProviderCreateKernel(
