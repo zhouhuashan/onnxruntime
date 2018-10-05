@@ -28,7 +28,7 @@ done
 export ONNX_ML=1
 #5af210ca8a1c73aa6bae8754c9346ec54d0a756e is v1.2.3
 #bae6333e149a59a3faa9c4d9c44974373dcf5256 is v1.3.0
-for onnx_version in "5af210ca8a1c73aa6bae8754c9346ec54d0a756e" "bae6333e149a59a3faa9c4d9c44974373dcf5256" "9a26a21a5b8dc8ff35ca1fffb84338fe250603f9"; do
+for onnx_version in "5af210ca8a1c73aa6bae8754c9346ec54d0a756e" "bae6333e149a59a3faa9c4d9c44974373dcf5256" "6ef49ecee91e6f13ea7022fe544cf639ef4df75f"; do
   aria2c -q -d /tmp/src  https://github.com/onnx/onnx/archive/$onnx_version.tar.gz
   tar -xf /tmp/src/onnx-$onnx_version.tar.gz -C /tmp/src
   cd /tmp/src/onnx-$onnx_version
