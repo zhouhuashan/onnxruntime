@@ -39,7 +39,7 @@ namespace perftest {
 
 /*static*/ bool CommandLineParser::ParseArguments(PerformanceTestConfig& test_config, int argc, char* argv[]) {
   int ch;
-  while ((ch = getopt(argc, argv, "m:e:r:t:xvh")) != -1) {
+  while ((ch = getopt(argc, argv, "m:e:r:t:p:xvh")) != -1) {
     switch (ch) {
       case 'm':
         if (!strcmp(optarg, "duration")) {
@@ -49,6 +49,9 @@ namespace perftest {
         } else {
           return false;
         }
+        break;
+      case 'p':
+        test_config.run_config.profile_file = optarg;
         break;
       case 'e':
         if (!strcmp(optarg, "cpu")) {
