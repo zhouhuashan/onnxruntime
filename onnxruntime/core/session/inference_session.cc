@@ -629,7 +629,7 @@ class InferenceSession::Impl {
   }
 
   common::Status AllocateHelper(onnxruntime::ProviderType provider_type,
-                                const MLValue& fetched_mlvalue,
+                                const Tensor& fetched_tensor,
                                 MLValue& output_mlvalue) {
     auto* p_provider = execution_providers_.Get(provider_type);
     if (!p_provider)
@@ -639,10 +639,12 @@ class InferenceSession::Impl {
     if (!allocator)
       return Status(common::ONNXRUNTIME, common::FAIL, "invalid allocator");
 
-    auto& fetched_tensor = fetched_mlvalue.Get<Tensor>();
-    void* buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
-    if (!buffer)
-      return Status(common::ONNXRUNTIME, common::FAIL, "invalid buffer");
+    void* buffer = nullptr;
+    if (fetched_tensor.Shape().Size() != 0) {
+      buffer = allocator->Alloc(fetched_tensor.DataType()->Size() * fetched_tensor.Shape().Size());
+      if (!buffer)
+        return Status(common::ONNXRUNTIME, common::FAIL, "invalid buffer");
+    }
 
     std::unique_ptr<Tensor> p_tensor = std::make_unique<Tensor>(fetched_tensor.DataType(),
                                                                 fetched_tensor.Shape(),
@@ -680,8 +682,8 @@ class InferenceSession::Impl {
       if (!output_mlvalue.IsAllocated()) {
         if (fetched_provider_type != onnxruntime::kCpuExecutionProvider) {
           ONNXRUNTIME_RETURN_IF_ERROR(AllocateHelper(onnxruntime::kCpuExecutionProvider,
-                                             fetched_mlvalue,
-                                             output_mlvalue));
+                                                     fetched_tensor,
+                                                     output_mlvalue));
         } else {
           user_fetches[idx] = fetched_mlvalue;
           continue;

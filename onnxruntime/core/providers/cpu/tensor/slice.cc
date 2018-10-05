@@ -21,36 +21,25 @@ const T& clamp(const T& v, const T& lo, const T& hi) {
   return v;
 }
 
-template <>
-Status Slice<float>::Compute(OpKernelContext* ctx) const {
-  auto& input_tensor = *ctx->Input<Tensor>(0);
-  auto& input_dimensions = input_tensor.Shape().GetDims();
-
-  // Initialize the starts & ends to the actual tensor shape
-  const size_t dimension_count = input_dimensions.size();
-  std::vector<int64_t> starts(dimension_count, 0);
-  std::vector<int64_t> output_dims(input_dimensions);
-
+Status SliceBase::PrepareForCompute(const size_t dimension_count, const std::vector<int64_t>& input_dimensions,
+                                    std::vector<int64_t>& starts, std::vector<int64_t>& output_dims) const {
   // Initialize axes to the provided axes attribute or to the default sequence
-  std::vector<size_t> axes;
-  if (has_axes_) {
-    axes.resize(axes_.size());
-    std::copy(axes_.begin(), axes_.end(), axes.begin());
-  } else {
+  std::vector<int64_t> axes(axes_);
+  if (!has_axes_) {
     //axes are omitted, they are set to[0, ..., ndim - 1]
     axes.resize(starts.size());
     for (size_t i = 0; i < starts.size(); i++)
       axes[i] = i;
-  }
 
-  if (axes.size() > starts_.size())
-    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has more entries than the 'starts' attribute holds");
-  if (axes.size() > ends_.size())
-    return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has more entries than the 'ends' attribute holds");
+    if (axes.size() > starts_.size())
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has more entries than the 'starts' attribute holds");
+    if (axes.size() > ends_.size())
+      return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has more entries than the 'ends' attribute holds");
+  }
 
   // Iterate through the provided axes and override the start/end ranges
   for (size_t axesIndex = 0; axesIndex < axes.size(); axesIndex++) {
-    auto axis = axes[axesIndex];
+    auto axis = static_cast<size_t>(axes[axesIndex]);
     if (axis >= dimension_count)
       return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'axes' has an axis outside of the tensor dimension count");
     auto start = starts_[axesIndex];
@@ -65,6 +54,21 @@ Status Slice<float>::Compute(OpKernelContext* ctx) const {
     if (output_dims[axis] < 0)
       return Status(ONNXRUNTIME, INVALID_ARGUMENT, "'starts' and 'ends' values resulted in a negative dimension");
   }
+
+  return Status::OK();
+}
+
+template <>
+Status Slice<float>::Compute(OpKernelContext* ctx) const {
+  auto& input_tensor = *ctx->Input<Tensor>(0);
+  auto& input_dimensions = input_tensor.Shape().GetDims();
+
+  // Initialize the starts & ends to the actual tensor shape
+  const size_t dimension_count = input_dimensions.size();
+  std::vector<int64_t> starts(dimension_count, 0);
+  std::vector<int64_t> output_dims(input_dimensions);
+
+  ONNXRUNTIME_RETURN_IF_ERROR(PrepareForCompute(dimension_count, input_dimensions, starts, output_dims));
 
   TensorShape output_shape(output_dims);
   auto& output_tensor = *ctx->Output(0, output_shape);

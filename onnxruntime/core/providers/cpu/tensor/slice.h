@@ -7,23 +7,35 @@
 
 namespace onnxruntime {
 
-template <typename T>
-struct Slice final : OpKernel {
-  Slice(const OpKernelInfo& info) : OpKernel(info) {
+class SliceBase {
+ protected:
+  SliceBase(const OpKernelInfo& info) {
     has_axes_ = info.GetAttrs("axes", axes_).IsOK();
 
-    if (!info.GetAttrs("starts", starts_).IsOK())
-      ONNXRUNTIME_THROW("Invalid 'starts' attribute value");
-    if (!info.GetAttrs("ends", ends_).IsOK())
-      ONNXRUNTIME_THROW("Invalid 'ends' attribute value");
+    ONNXRUNTIME_ENFORCE(info.GetAttrs("starts", starts_).IsOK(), "Invalid 'starts' attribute value");
+    ONNXRUNTIME_ENFORCE(info.GetAttrs("ends", ends_).IsOK(), "Invalid 'ends' attribute value");
+
+    if (has_axes_) {
+      if (axes_.size() > starts_.size())
+        ONNXRUNTIME_THROW("'axes' has more entries than the 'starts' attribute holds");
+      if (axes_.size() > ends_.size())
+        ONNXRUNTIME_THROW("'axes' has more entries than the 'ends' attribute holds");
+    }
   }
 
-  Status Compute(OpKernelContext* context) const override;
+  Status PrepareForCompute(const size_t dimension_count, const std::vector<int64_t>& input_dimensions,
+                           std::vector<int64_t>& starts, std::vector<int64_t>& output_dims) const;
 
- private:
   std::vector<int64_t> axes_;
   bool has_axes_;
   std::vector<int64_t> starts_, ends_;
+};
+
+template <typename T>
+struct Slice final : public OpKernel, public SliceBase {
+  Slice(const OpKernelInfo& info) : OpKernel(info), SliceBase(info) {}
+
+  Status Compute(OpKernelContext* context) const override;
 };  // namespace onnxruntime
 
 }  // namespace onnxruntime

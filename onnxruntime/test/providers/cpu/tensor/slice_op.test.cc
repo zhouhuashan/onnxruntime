@@ -7,7 +7,7 @@
 namespace onnxruntime {
 namespace test {
 
-TEST(TensorOpTest, Slice1D) {
+TEST(SliceTest, Slice1D) {
   OpTester test("Slice");
 
   test.AddAttribute("axes", std::vector<int64_t>{0});
@@ -19,7 +19,21 @@ TEST(TensorOpTest, Slice1D) {
   test.Run();
 }
 
-TEST(TensorOpTest, Slice2D_OutOfBounds) {
+TEST(SliceTest, Slice1D_Perf) {
+  OpTester test("Slice");
+
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("starts", std::vector<int64_t>{2});
+  test.AddAttribute("ends", std::vector<int64_t>{502});
+
+  std::vector<float> input(1000, 2.0f);
+  std::vector<float> output(500, 2.0f);
+  test.AddInput<float>("data", {1000}, input);
+  test.AddOutput<float>("output", {500}, output);
+  test.Run();
+}
+
+TEST(SliceTest, Slice2D_OutOfBounds) {
   OpTester test("Slice");
 
   test.AddAttribute("axes", std::vector<int64_t>{0, 1});
@@ -31,7 +45,7 @@ TEST(TensorOpTest, Slice2D_OutOfBounds) {
   test.Run();
 }
 
-TEST(TensorOpTest, Slice2D_OneAxis) {
+TEST(SliceTest, Slice2D_OneAxis) {
   OpTester test("Slice");
 
   test.AddAttribute("axes", std::vector<int64_t>{0});
@@ -51,7 +65,7 @@ TEST(TensorOpTest, Slice2D_OneAxis) {
   test.Run();
 }
 
-TEST(TensorOpTest, Slice2D_TwoAxes) {
+TEST(SliceTest, Slice2D_TwoAxes) {
   OpTester test("Slice");
 
   test.AddAttribute("axes", std::vector<int64_t>{1, 0});
@@ -71,7 +85,26 @@ TEST(TensorOpTest, Slice2D_TwoAxes) {
   test.Run();
 }
 
-TEST(TensorOpTest, Slice3D) {
+TEST(SliceTest, Slice2D_TwoAxesEque) {
+  OpTester test("Slice");
+
+  test.AddAttribute("axes", std::vector<int64_t>{1, 0});
+  test.AddAttribute("starts", std::vector<int64_t>{2, 3});
+  test.AddAttribute("ends", std::vector<int64_t>{1000, 3});
+
+  test.AddInput<float>("data", {6, 4},
+                       {00.0f, 01.0f, 02.0f, 03.0f,
+                        10.0f, 11.0f, 12.0f, 13.0f,
+                        20.0f, 21.0f, 22.0f, 23.0f,
+                        30.0f, 31.0f, 32.0f, 33.0f,
+                        40.0f, 41.0f, 42.0f, 43.0f,
+                        50.0f, 51.0f, 52.0f, 53.0f});
+  test.AddOutput<float>("output", {0, 2},
+                        {});
+  test.Run();
+}
+
+TEST(SliceTest, Slice3D) {
   OpTester test("Slice");
 
   test.AddAttribute("starts", std::vector<int64_t>{0, 1, 1});
@@ -101,5 +134,5 @@ TEST(TensorOpTest, Slice3D) {
   test.Run();
 }
 
-}  // namespace test
+}  // namespace Test
 }  // namespace onnxruntime
