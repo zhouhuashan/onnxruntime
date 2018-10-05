@@ -21,7 +21,7 @@ TEST(TensorProtoUtilsTest, test1) {
   ASSERT_TRUE(proto.ParseFromString(tensorbinary));
   std::unique_ptr<Tensor> tensor;
   ::onnxruntime::AllocatorPtr cpu_allocator = std::make_shared<::onnxruntime::CPUAllocator>();
-  st = ::onnxruntime::Utils::GetTensorFromTensorProto(proto, &tensor, cpu_allocator);
+  st = ::onnxruntime::utils::GetTensorFromTensorProto(proto, &tensor, cpu_allocator);
   ASSERT_TRUE(st.IsOK());
 }
 #endif

@@ -60,7 +60,7 @@ if (MSVC)
     # so that MSVCR*.DLL is not required at runtime.
     # https://msdn.microsoft.com/en-us/library/2kzt1wy3.aspx
     # This is achieved by replacing msvc option /MD with /MT and /MDd with /MTd
-    # http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_build_my_MSVC_application_with_a_static_runtime.3F  
+    # http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_build_my_MSVC_application_with_a_static_runtime.3F
     foreach(flag_var
         CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
         CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO
@@ -173,8 +173,8 @@ set(ONNXRUNTIME_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../include/onnxruntime)
 include(date)
 
 include(gsl)
-# bounds checking behavior. 
-# throw instead of calling terminate if there's a bounds checking violation. 
+# bounds checking behavior.
+# throw instead of calling terminate if there's a bounds checking violation.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGSL_THROW_ON_CONTRACT_VIOLATION")
 # no bounds checking in release build so no perf cost
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DGSL_UNENFORCED_ON_CONTRACT_VIOLATION")
@@ -223,11 +223,11 @@ if (onnxruntime_USE_TVM)
   set_target_properties(tvm_runtime PROPERTIES FOLDER "External/tvm")
   set_target_properties(nnvm_compiler PROPERTIES FOLDER "External/tvm")
 
-  set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include 
+  set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include
     ${PROJECT_SOURCE_DIR}/external/tvm/dmlc-core/include
     ${PROJECT_SOURCE_DIR}/external/tvm/dlpack/include
-    $<TARGET_PROPERTY:tvm,INTERFACE_INCLUDE_DIRECTORIES> 
-    $<TARGET_PROPERTY:tvm_topi,INTERFACE_INCLUDE_DIRECTORIES> 
+    $<TARGET_PROPERTY:tvm,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:tvm_topi,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:nnvm_compiler,INTERFACE_INCLUDE_DIRECTORIES>)
   add_definitions(-DUSE_TVM)
 
@@ -268,13 +268,13 @@ if (WIN32)
     # parallel build
     # These compiler opitions cannot be forwarded to NVCC, so cannot use add_compiler_options
     string(APPEND CMAKE_CXX_FLAGS " /MP")
-    string(APPEND CMAKE_CXX_FLAGS 
+    string(APPEND CMAKE_CXX_FLAGS
       " /wd4503" # Decorated name length exceeded.
-      " /wd4127" # conditional expression is constant. 
+      " /wd4127" # conditional expression is constant.
       " /wd4146" # unary minus operator applied to unsigned type. Needed for Protobuf
     )
     if (onnxruntime_ENABLE_STATIC_ANALYSIS)
-        string(APPEND CMAKE_CXX_FLAGS 
+        string(APPEND CMAKE_CXX_FLAGS
             " /analyze:WX- "
             # disable warning because there are many occurrences from test macros
             " /wd6326 " # potential comparison of a constant with another constant
@@ -326,7 +326,7 @@ if (onnxruntime_USE_JEMALLOC)
     message( FATAL_ERROR "Jemalloc is not supported on Windows." )
   endif()
   include(jemalloc)
-  add_definitions(-DUSE_JEMALLOC=1) 
+  add_definitions(-DUSE_JEMALLOC=1)
   list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${JEMALLOC_STATIC_LIBRARIES})
   list(APPEND onnxruntime_EXTERNAL_DEPENDENCIES jemalloc)
 endif()
@@ -370,7 +370,7 @@ if (onnxruntime_USE_CUDA)
   endif()
   list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
   list(APPEND onnxruntime_EXTERNAL_DEPENDENCIES cub)
-  
+
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_30,code=sm_30") # K series
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_50,code=sm_50") # M series
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_60,code=sm_60") # P series
@@ -384,6 +384,7 @@ endif()
 include(onnxruntime_common.cmake)
 include(onnxruntime_graph.cmake)
 include(onnxruntime_framework.cmake)
+include(onnxruntime_util.cmake)
 include(onnxruntime_providers.cmake)
 include(onnxruntime_session.cmake)
 
@@ -416,4 +417,3 @@ if (onnxruntime_BUILD_UNIT_TESTS)
   set(CMAKE_SKIP_BUILD_RPATH OFF)
   include(onnxruntime_unittests.cmake)
 endif()
-
