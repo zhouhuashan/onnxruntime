@@ -55,8 +55,49 @@ onnxruntime::NodeArg* AddCastNode(onnxruntime::Graph& graph,
   return new_arg;
 }
 
+static bool IsInputFloat16(const onnxruntime::Node* node) {
+  for (auto input : node->InputDefs()) {
+    if (input->Type() != nullptr &&
+        DataTypeImpl::TypeFromProto(*input->TypeAsProto()) == DataTypeImpl::GetTensorType<MLFloat16>() &&
+        !node->GetExecutionProviderType().empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool IsSingleInputNodeFloat16Node(const onnxruntime::Node* node) {
+  if (IsInputFloat16(node) && node->GetExecutionProviderType() == kCpuExecutionProvider) {
+    for (auto it = node->InputNodesBegin(); it != node->InputNodesEnd(); it++) {
+      if (IsInputFloat16(*it))
+        return false;
+    }
+    for (auto it = node->OutputNodesBegin(); it != node->OutputNodesEnd(); it++) {
+      if (IsInputFloat16(*it))
+        return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+Status ForceSingleNodeCPUFloat16ToFloat32(onnxruntime::Graph& graph) {
+  // if graph only contain 1 compute node (plus source and sink), don't force to float32
+  if (graph.NumberOfNodes() <= 3) {
+    return Status::OK();
+  }
+  for (auto& node : graph.Nodes()) {
+    if (IsSingleInputNodeFloat16Node(&node)) {
+      node.SetExecutionProviderType("");
+    }
+  }
+  return graph.Resolve();
+}
+
 Status InsertCastTransformer::Apply(onnxruntime::Graph& graph, bool& modified) const {
   ONNXRUNTIME_RETURN_IF_ERROR(graph.Resolve());
+  if (force_cpu_fp32_)
+    ONNXRUNTIME_RETURN_IF_ERROR(ForceSingleNodeCPUFloat16ToFloat32(graph));
   const std::vector<onnxruntime::NodeIndex>* order;
   ONNXRUNTIME_RETURN_IF_ERROR(graph.GetNodesInTopologicalOrder(&order));
   assert(order);
