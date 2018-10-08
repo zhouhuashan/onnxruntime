@@ -87,6 +87,16 @@ TEST(ReductionOpTest, ReduceL1_do_not_keepdims) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceL1_do_not_keepdims_2) {
+  OpTester test("ReduceL1");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {6.0f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceL1_keepdims) {
   OpTester test("ReduceL1");
   test.AddAttribute("axes", std::vector<int64_t>{2});
@@ -169,6 +179,16 @@ TEST(ReductionOpTest, ReduceL2_do_not_keepdims) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceL2_do_not_keepdims_2) {
+  OpTester test("ReduceL2");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {3.741657387f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceL2_keepdims) {
   OpTester test("ReduceL2");
   test.AddAttribute("axes", std::vector<int64_t>{2});
@@ -239,6 +259,16 @@ TEST(ReductionOpTest, ReduceLogSum) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceLogSum_do_not_keepdims_2) {
+  OpTester test("ReduceLogSum");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {1.79175947f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceLogSumExp_default_axes_keepdims) {
   OpTester test("ReduceLogSumExp");
   test.AddAttribute("keepdims", (int64_t)1);
@@ -269,6 +299,16 @@ TEST(ReductionOpTest, ReduceLogSumExp_do_not_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {3, 2}, {20.0f, 2.31326175f, 40.00004578f, 2.31326175f, 60.00671387f, 2.31326175f});
+  test.Run();
+}
+
+TEST(ReductionOpTest, ReduceLogSumExp_do_not_keepdims_2) {
+  OpTester test("ReduceLogSumExp");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {3.40760596f});
   test.Run();
 }
 
@@ -356,6 +396,16 @@ TEST(ReductionOpTest, ReduceMax_do_not_keepdims) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceMax_do_not_keepdims_2) {
+  OpTester test("ReduceMax");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {5.0f, 1.0f, 20.0f});
+  test.AddOutput<float>("reduced", {}, {20.0f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceMax_keepdims) {
   OpTester test("ReduceMax");
   test.AddAttribute("axes", std::vector<int64_t>{1});
@@ -440,6 +490,16 @@ TEST(ReductionOpTest, ReduceMean_do_not_keepdims) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceMean_do_not_keepdims_2) {
+  OpTester test("ReduceMean");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {2.0f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceMean_keepdims) {
   OpTester test("ReduceMean");
   test.AddAttribute("axes", std::vector<int64_t>{1});
@@ -521,6 +581,16 @@ TEST(ReductionOpTest, ReduceMin_do_not_keepdims) {
                         55.0f, 1.0f,
                         60.0f, 2.0f});
   test.AddOutput<float>("reduced", {3, 2}, {5.0f, 1.0f, 30.0f, 1.0f, 55.0f, 1.0f});
+  test.Run();
+}
+
+TEST(ReductionOpTest, ReduceMin_do_not_keepdims_2) {
+  OpTester test("ReduceMin");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {5.0f, 1.0f, 20.0f});
+  test.AddOutput<float>("reduced", {}, {1.0f});
   test.Run();
 }
 
@@ -636,6 +706,16 @@ TEST(ReductionOpTest, ReduceSum_do_not_keepdims) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceSum_do_not_keepdims_2) {
+  OpTester test("ReduceSum");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {6.0f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceSum_keepdims) {
   OpTester test("ReduceSum");
   test.AddAttribute("axes", std::vector<int64_t>{1});
@@ -720,6 +800,16 @@ TEST(ReductionOpTest, ReduceSumSquare_do_not_keepdims) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceSumSquare_do_not_keepdims_2) {
+  OpTester test("ReduceSumSquare");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {14.0f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceSumSquare_keepdims) {
   OpTester test("ReduceSumSquare");
   test.AddAttribute("axes", std::vector<int64_t>{1});
@@ -766,6 +856,16 @@ TEST(ReductionOpTest, ReduceProd_do_not_keepdims) {
                         9.0f, 10.0f,
                         11.0f, 12.0f});
   test.AddOutput<float>("reduced", {3, 2}, {3.f, 8.f, 35.f, 48.f, 99.f, 120.f});
+  test.Run();
+}
+
+TEST(ReductionOpTest, ReduceProd_do_not_keepdims_2) {
+  OpTester test("ReduceProd");
+  test.AddAttribute("axes", std::vector<int64_t>{0});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<float>("reduced", {}, {6.0f});
   test.Run();
 }
 
@@ -838,6 +938,37 @@ TEST(ReductionOpTest, ArgMax) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ArgMax_do_not_keepdims) {
+  OpTester test("ArgMax");
+  test.AddAttribute("axis", (int64_t)1);
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3, 2, 2},
+                       {1.0f, 2.0f,
+                        3.0f, 4.0f,
+
+                        5.0f, 6.0f,
+                        7.0f, 8.0f,
+
+                        9.0f, 10.0f,
+                        11.0f, 12.0f});
+  test.AddOutput<int64_t>("reduced", {3, 2},
+                          {1, 1,
+                           1, 1,
+                           1, 1});
+  test.Run();
+}
+
+TEST(ReductionOpTest, ArgMax_do_not_keepdims_2) {
+  OpTester test("ArgMax");
+  test.AddAttribute("axis", (int64_t)0);
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<int64_t>("reduced", {},
+                          {2});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ArgMax_int32) {
   OpTester test("ArgMax");
   test.AddAttribute("axis", (int64_t)1);
@@ -874,6 +1005,25 @@ TEST(ReductionOpTest, ArgMax2D) {
 TEST(ReductionOpTest, ArgMin) {
   OpTester test("ArgMin");
   test.AddAttribute("axis", (int64_t)0);
+  test.AddAttribute("keepdims", (int64_t)1);
+  test.AddInput<float>("data", {3, 2, 2},
+                       {1.0f, 2.0f,
+                        3.0f, 4.0f,
+
+                        5.0f, 6.0f,
+                        7.0f, 8.0f,
+
+                        9.0f, 10.0f,
+                        11.0f, 12.0f});
+  test.AddOutput<int64_t>("reduced", {1, 2, 2},
+                          {0, 0,
+                           0, 0});
+  test.Run();
+}
+
+TEST(ReductionOpTest, ArgMin_do_not_keepdims) {
+  OpTester test("ArgMin");
+  test.AddAttribute("axis", (int64_t)0);
   test.AddAttribute("keepdims", (int64_t)0);
   test.AddInput<float>("data", {3, 2, 2},
                        {1.0f, 2.0f,
@@ -887,6 +1037,16 @@ TEST(ReductionOpTest, ArgMin) {
   test.AddOutput<int64_t>("reduced", {2, 2},
                           {0, 0,
                            0, 0});
+  test.Run();
+}
+
+TEST(ReductionOpTest, ArgMin_do_not_keepdims_2) {
+  OpTester test("ArgMin");
+  test.AddAttribute("axis", (int64_t)0);
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3},
+                       {1.0f, 2.0f, 3.0f});
+  test.AddOutput<int64_t>("reduced", {}, {0});
   test.Run();
 }
 
