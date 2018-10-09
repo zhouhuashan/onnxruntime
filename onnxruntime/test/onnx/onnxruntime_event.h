@@ -16,4 +16,4 @@ struct OnnxRuntimeEvent {
   ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(OnnxRuntimeEvent);
 };
 
-using EVENT = OnnxRuntimeEvent*;
+using ONNXRUNTIME_EVENT = OnnxRuntimeEvent*;

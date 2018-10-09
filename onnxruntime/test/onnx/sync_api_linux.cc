@@ -15,14 +15,14 @@ using onnxruntime::common::Status;
 //OnnxRuntimeSetEventWhenCallbackReturns
 class OnnxRuntimeCallbackInstance {
  private:
-  std::vector<EVENT> events_to_signal_;
+  std::vector<ONNXRUNTIME_EVENT> events_to_signal_;
 
  public:
-  void AddEvent(EVENT event);
+  void AddEvent(ONNXRUNTIME_EVENT event);
   onnxruntime::common::Status SignalAllEvents();
 };
 
-Status WaitAndCloseEvent(EVENT finish_event) {
+Status WaitAndCloseEvent(ONNXRUNTIME_EVENT finish_event) {
   if (finish_event == nullptr)
     return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "");
   pthread_mutex_lock(&finish_event->finish_event_mutex);
@@ -63,7 +63,7 @@ PThreadPool GetDefaultThreadPool(const onnxruntime::Env& env) {
   return default_pool.get();
 }
 
-Status OnnxRuntimeSetEventWhenCallbackReturns(CALLBACK_INSTANCE pci, EVENT finish_event) {
+Status OnnxRuntimeSetEventWhenCallbackReturns(ONNXRUNTIME_CALLBACK_INSTANCE pci, ONNXRUNTIME_EVENT finish_event) {
   if (finish_event == nullptr)
     return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "");
 
@@ -84,12 +84,12 @@ Status OnnxRuntimeSetEventWhenCallbackReturns(CALLBACK_INSTANCE pci, EVENT finis
   }
 }
 
-void OnnxRuntimeCallbackInstance::AddEvent(EVENT event) {
+void OnnxRuntimeCallbackInstance::AddEvent(ONNXRUNTIME_EVENT event) {
   events_to_signal_.push_back(event);
 }
 
 Status OnnxRuntimeCallbackInstance::SignalAllEvents() {
-  for (EVENT finish_event : events_to_signal_) {
+  for (ONNXRUNTIME_EVENT finish_event : events_to_signal_) {
     if (pthread_mutex_lock(&finish_event->finish_event_mutex)) {
       return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "lock failed");
     }
@@ -102,9 +102,13 @@ Status OnnxRuntimeCallbackInstance::SignalAllEvents() {
   return Status::OK();
 }
 
-Status CreateOnnxRuntimeEvent(EVENT* out) {
+Status CreateOnnxRuntimeEvent(ONNXRUNTIME_EVENT* out) {
   if (out == nullptr)
     return Status(onnxruntime::common::ONNXRUNTIME, onnxruntime::common::INVALID_ARGUMENT, "");
   *out = new OnnxRuntimeEvent();
   return Status::OK();
+}
+
+void ONNXRuntimeCloseEvent(ONNXRUNTIME_EVENT finish_event) {
+  delete finish_event;
 }

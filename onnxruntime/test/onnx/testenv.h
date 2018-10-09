@@ -6,7 +6,7 @@
 #include <vector>
 #include "TestResultStat.h"
 #include <core/common/common.h>
-#include <core/session/inference_session.h>
+#include <core/session/onnxruntime_cxx_api.h>
 
 #include <experimental/filesystem>
 #ifdef _MSC_VER
@@ -19,29 +19,14 @@ template <typename T>
 class FixedCountFinishCallbackImpl;
 using FixedCountFinishCallback = FixedCountFinishCallbackImpl<TestCaseResult>;
 
-class SessionFactory {
- private:
-  const std::vector<std::string> providers_;
-  bool enable_mem_pattern_ = true;
-  bool enable_cpu_mem_arena_ = true;
-
- public:
-  SessionFactory(std::vector<std::string> providers, bool enable_mem_pattern, bool enable_cpu_mem_arena) : providers_(std::move(providers)), enable_mem_pattern_(enable_mem_pattern), enable_cpu_mem_arena_(enable_cpu_mem_arena) {}
-  //Create an initialized session from a given model url
-  ::onnxruntime::common::Status create(std::shared_ptr<::onnxruntime::InferenceSession>& sess, const std::experimental::filesystem::v1::path& model_url, const std::string& logid) const;
-
-  bool enable_sequential_execution = true;
-  int session_thread_pool_size = 0;
-};
-
 class TestEnv {
  public:
   std::vector<ITestCase*> tests;
   std::atomic_int next_test_to_run;
   TestResultStat& stat;
   FixedCountFinishCallback* finished;
-  const SessionFactory& sf;
-  TestEnv(const std::vector<ITestCase*>& tests, TestResultStat& stat1, SessionFactory& sf1);
+  const onnxruntime::SessionOptionsWrapper& sf;
+  TestEnv(const std::vector<ITestCase*>& tests, TestResultStat& stat1, onnxruntime::SessionOptionsWrapper& sf1);
   ~TestEnv();
 
  private:

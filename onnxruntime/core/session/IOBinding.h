@@ -42,6 +42,8 @@ class IOBinding {
     * Call repeatedly to bind as many inputs as required.
     * If the input mlvalue is not at the desired location (specified by the execution provider), this will
     * copy it to the desired location. This copy may or may not be async. It depends on the exec provider.
+    * If the input mlvalue is not at the desired location, it should be preallocated
+    * If the input mlvalue isn't preallocated, it should have memtype of kMemTypeDefault
     * For copying it leverages IExecutionProvider::CopyTensor().
     */
   common::Status BindInput(const std::string& name, const MLValue& ml_value);

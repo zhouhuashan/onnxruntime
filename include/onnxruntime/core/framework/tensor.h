@@ -67,6 +67,8 @@ class Tensor final {
      reference to another tensor. Not deep clone/copy.
   */
   Tensor(const Tensor& src);
+
+  ///requires other.buffer_deleter_ == nullptr
   Tensor& ShallowCopy(const Tensor& other);
 
   Tensor(Tensor&& other);

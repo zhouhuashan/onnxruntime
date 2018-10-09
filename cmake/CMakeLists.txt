@@ -12,6 +12,7 @@ include(CheckCXXCompilerFlag)
 set(CMAKE_CXX_STANDARD 14)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+# NOTE: POSITION INDEPENDENT CODE hurts performance, and it only make sense on POSIX systems
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Enable CTest
@@ -197,17 +198,6 @@ function(onnxruntime_add_include_to_target dst_target)
     endforeach()
 endfunction()
 
-# ONNX
-add_subdirectory(onnx)
-set_target_properties(onnx PROPERTIES FOLDER "External/ONNX")
-set_target_properties(onnx_proto PROPERTIES FOLDER "External/ONNX")
-#set_target_properties(gen_onnx_proto PROPERTIES FOLDER "External/ONNX")
-# fix a warning in onnx code we can't do anything about
-if (MSVC)
-    target_compile_options(onnx_proto PRIVATE /wd4146) # unary minus operator applied to unsigned type
-endif()
-set(onnxruntime_EXTERNAL_DEPENDENCIES gsl onnx_proto)
-
 # TVM
 if (onnxruntime_USE_TVM)
   if (onnxruntime_USE_CUDA)
@@ -245,15 +235,31 @@ if (onnxruntime_USE_TVM)
   include(onnxruntime_codegen.cmake)
 
   set(onnxruntime_tvm_libs
+    onnxruntime_codegen_tvm
     tvm
-    nnvm_compiler
-    onnxruntime_codegen_tvm)
+    nnvm_compiler)
 
   set(onnxruntime_tvm_dependencies
     tvm
     nnvm_compiler
     onnxruntime_codegen_tvm)
 endif()
+
+if (NOT WIN32)
+string(APPEND CMAKE_CXX_FLAGS " -fvisibility=hidden")
+string(APPEND CMAKE_C_FLAGS " -fvisibility=hidden")
+endif()
+
+# ONNX
+add_subdirectory(onnx)
+set_target_properties(onnx PROPERTIES FOLDER "External/ONNX")
+set_target_properties(onnx_proto PROPERTIES FOLDER "External/ONNX")
+#set_target_properties(gen_onnx_proto PROPERTIES FOLDER "External/ONNX")
+# fix a warning in onnx code we can't do anything about
+if (MSVC)
+    target_compile_options(onnx_proto PRIVATE /wd4146) # unary minus operator applied to unsigned type
+endif()
+set(onnxruntime_EXTERNAL_DEPENDENCIES gsl onnx_proto)
 
 if (onnxruntime_RUN_ONNX_TESTS)
   add_definitions(-DONNXRUNTIME_RUN_EXTERNAL_ONNX_TESTS)
@@ -341,6 +347,7 @@ if (onnxruntime_USE_MKLDNN)
   include(mkldnn)
   list(APPEND onnxruntime_EXTERNAL_LIBRARIES mkldnn)
   list(APPEND onnxruntime_EXTERNAL_DEPENDENCIES mkldnn)
+  link_directories(${MKLDNN_LIB_DIR})
 endif()
 
 if (onnxruntime_USE_OPENBLAS)
@@ -361,14 +368,16 @@ if (onnxruntime_USE_CUDA)
   find_package(CUDA 9.0 REQUIRED)
   file(TO_CMAKE_PATH ${onnxruntime_CUDNN_HOME} onnxruntime_CUDNN_HOME)
   include(cub)
-  set(CUDA_LIBRARIES ${CUDA_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_CUFFT_LIBRARIES}
-    ${CUDA_curand_LIBRARY} ${CUDA_cupti_LIBRARY} ${CUDA_cusolver_LIBRARY})
+  set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
+  file(TO_CMAKE_PATH ${onnxruntime_CUDNN_HOME} onnxruntime_CUDNN_HOME)
   if (WIN32)
-    list(APPEND CUDA_LIBRARIES ${onnxruntime_CUDNN_HOME}/lib/x64/cudnn.lib)
+    link_directories(${onnxruntime_CUDNN_HOME}/lib/x64)
+    set(ONNXRUNTIME_CUDA_LIBRARIES cudnn cublas)
   else()
-    list(APPEND CUDA_LIBRARIES ${onnxruntime_CUDNN_HOME}/lib64/libcudnn.so ${CUDA_TOOLKIT_TARGET_DIR}/lib64/libculibos.a)
+    link_directories(${onnxruntime_CUDNN_HOME}/lib64)
+    set(ONNXRUNTIME_CUDA_LIBRARIES cudnn_static cublas_static culibos)
   endif()
-  list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${CUDA_LIBRARIES})
+  list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${ONNXRUNTIME_CUDA_LIBRARIES})
   list(APPEND onnxruntime_EXTERNAL_DEPENDENCIES cub)
 
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_30,code=sm_30") # K series
@@ -405,6 +414,8 @@ endif()
 if (onnxruntime_BUILD_SHARED_LIB)
 if(UNIX)
   set(CMAKE_SKIP_BUILD_RPATH ON)
+  include(onnxruntime.cmake)
+else()
   include(onnxruntime.cmake)
 endif()
 endif()

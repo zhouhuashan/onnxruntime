@@ -2,15 +2,18 @@
 // Licensed under the MIT License.
 
 #include "performance_runner.h"
+#include "TestCase.h"
 #include <experimental/filesystem>
 #ifdef _MSC_VER
 #include <filesystem>
 #endif
+#include "core/providers/provider_factories.h"
 #include "core/graph/graph.h"  //for onnxruntime::NodeArg
-#include "runner.h"
 #include "utils.h"
+#include "testenv.h"
 
 using namespace std::experimental::filesystem::v1;
+using onnxruntime::Status;
 
 namespace onnxruntime {
 namespace perftest {

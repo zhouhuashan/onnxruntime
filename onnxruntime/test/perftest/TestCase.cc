@@ -1,18 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//TODO: switch to use onnxruntime public api
-
 #include "TestCase.h"
 #include <fstream>
 #include <memory>
 
-#include "core/common/common.h"
 #include "core/platform/env.h"
-#include "core/session/onnxruntime_cxx_api.h"
-//TODO: delete this
-#include "core/framework/data_types.h"
-#include "core/framework/ml_value.h"
+#include "core/framework/tensorprotoutils.h"
+#include <google/protobuf/util/delimited_message_util.h>
+#include <google/protobuf/text_format.h>
+
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
@@ -35,8 +32,6 @@
 #pragma warning(disable : 4800) /*'type' : forcing value to bool 'true' or 'false' (performance warning)*/
 #pragma warning(disable : 4996) /*The compiler encountered a deprecated declaration.*/
 #endif
-#include <google/protobuf/util/delimited_message_util.h>
-#include <google/protobuf/text_format.h>
 #include "tml.pb.h"
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
@@ -52,6 +47,11 @@ using namespace onnxruntime::common;
 namespace {
 template <typename InputType, typename OutputType>
 Status ConvertVector(const InputType& data, OutputType** vec) {
+  //void* p = allocator->Alloc(sizeof(OutputType));
+  //if (p == nullptr)
+  //	return Status(ONNXRUNTIME, FAIL, "out of memory");
+  //OutputType* v = new (p) OutputType();
+  //TODO: non-tensor type has no deleter inside it. So, cannot use allocator
   OutputType* v = new OutputType();
   for (const auto& i : data) {
     typename OutputType::value_type new_value;
@@ -177,8 +177,8 @@ static Status SortTensorFileNames(std::vector<path>& input_pb_files) {
 }
 
 //Doesn't support file size >2 GB
-Status LoopDataFile(const path& outputs_pb, ONNXRuntimeAllocator* env,
-                    const std::vector<onnx::ValueInfoProto> value_info, std::unordered_map<std::string, ONNXValuePtr>& name_data_map, std::ostringstream& oss) {
+Status LoopDataFile(const path& outputs_pb, AllocatorPtr allocator,
+                    const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& name_data_map, std::ostringstream& oss) {
   std::string content;
   //TODO: mmap is better
   ONNXRUNTIME_RETURN_IF_ERROR(Env::Default().ReadFileAsString(outputs_pb.c_str(), &content));
@@ -187,9 +187,7 @@ Status LoopDataFile(const path& outputs_pb, ONNXRuntimeAllocator* env,
   Status st;
   int item_id = 1;
   for (proto::TraditionalMLData data; google::protobuf::util::ParseDelimitedFromCodedStream(&data, &coded_input, &clean_eof); ++item_id, data.Clear()) {
-    std::unique_ptr<ONNXValue, decltype(&ReleaseONNXValue)> gvalue(nullptr, ReleaseONNXValue);
     MLValue value;
-    bool is_tensor = false;
     switch (data.values_case()) {
       case proto::TraditionalMLData::kVectorMapStringToFloat:
         st = RichTypeProtoToMLValue<decltype(data.vector_map_string_to_float().v()), VectorMapStringToFloat>(data.vector_map_string_to_float().v(), value);
@@ -221,13 +219,9 @@ Status LoopDataFile(const path& outputs_pb, ONNXRuntimeAllocator* env,
       case proto::TraditionalMLData::kMapInt64ToDouble:
         st = RichTypeProtoToMLValue<decltype(data.map_int64_to_double().v()), MapInt64ToDouble>(data.map_int64_to_double().v(), value);
         break;
-      case proto::TraditionalMLData::kTensor: {
-        ONNXValuePtr temp_value;
-        std::string s = data.tensor().SerializeAsString();
-        ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeTensorProtoToONNXValue(env, s.data(), (int)s.size(), &temp_value));
-        gvalue.reset(temp_value);
-        is_tensor = true;
-      } break;
+      case proto::TraditionalMLData::kTensor:
+        st = utils::TensorProtoToMLValue(data.tensor(), allocator, nullptr, 0, value);
+        break;
       default:
         st = Status(ONNXRUNTIME, NOT_IMPLEMENTED, "unknown data type inside TraditionalMLData");
     }
@@ -239,7 +233,7 @@ Status LoopDataFile(const path& outputs_pb, ONNXRuntimeAllocator* env,
     if (value_name.empty())
       value_name = value_info[name_data_map.size()].name();
 
-    auto pv = name_data_map.insert(std::make_pair(value_name, is_tensor ? gvalue.release() : (ONNXValuePtr) new MLValue(value)));
+    auto pv = name_data_map.insert(std::make_pair(value_name, value));
     if (!pv.second) {
       st = Status(ONNXRUNTIME, FAIL, "duplicated test data name");
       break;
@@ -296,12 +290,13 @@ class OnnxTestCase : public ITestCase {
  private:
   std::string test_case_name_;
   std::experimental::filesystem::v1::path model_url_;
-  ONNXRuntimeAllocator* onnxenv_;
+  AllocatorPtr allocator_;
   std::vector<std::string> debuginfo_strings;
   std::mutex m_;
   std::vector<ONNX_NAMESPACE::ValueInfoProto> input_value_info_;
   std::vector<ONNX_NAMESPACE::ValueInfoProto> output_value_info_;
 
+  Status FromPbFiles(const std::vector<std::experimental::filesystem::v1::path>& files, std::vector<MLValue>& output_values);
   std::vector<std::experimental::filesystem::v1::path> test_data_dirs_;
 
   std::string GetDatasetDebugInfoString(size_t dataset_id) override {
@@ -313,7 +308,7 @@ class OnnxTestCase : public ITestCase {
   //If we cannot get input name from input_pbs, we'll use names like "data_0","data_1",... It's dirty hack
   // for https://github.com/onnx/onnx/issues/679
   ::onnxruntime::common::Status ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs,
-                                                const std::vector<onnx::ValueInfoProto> value_info, std::unordered_map<std::string, ONNXValuePtr>& out);
+                                                const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out);
   std::string node_name_;
   std::once_flag model_parsed_;
   std::once_flag config_parsed_;
@@ -325,18 +320,15 @@ class OnnxTestCase : public ITestCase {
   ONNXRUNTIME_DISALLOW_COPY_ASSIGNMENT_AND_MOVE(OnnxTestCase);
 
  public:
-  OnnxTestCase(ONNXRuntimeAllocator* env, const std::string& test_case_name);
+  OnnxTestCase(const AllocatorPtr&, const std::string& test_case_name);
   explicit OnnxTestCase(const std::string& test_case_name) : test_case_name_(test_case_name) {}
+  void SetAllocator(const AllocatorPtr&) override;
   Status GetPerSampleTolerance(double* value) override;
   Status GetRelativePerSampleTolerance(double* value) override;
   Status GetPostProcessing(bool* value) override;
 
   const ONNX_NAMESPACE::ValueInfoProto& GetOutputInfoFromModel(size_t i) const override {
     return output_value_info_[i];
-  }
-
-  size_t GetOutputCount() const override {
-    return output_value_info_.size();
   }
   size_t GetDataCount() const override {
     return test_data_dirs_.size();
@@ -354,10 +346,10 @@ class OnnxTestCase : public ITestCase {
   const std::string& GetTestCaseName() const override {
     return test_case_name_;
   }
-  ::onnxruntime::common::Status LoadTestData(size_t id, std::unordered_map<std::string, ONNXValuePtr>&, bool is_input) override;
+  ::onnxruntime::common::Status LoadTestData(size_t id, onnxruntime::NameMLValMap& name_data_map, bool is_input) override;
 };
 
-ITestCase* CreateOnnxTestCase(ONNXRuntimeAllocator* ptr, const std::string& test_case_name) {
+ITestCase* CreateOnnxTestCase(const AllocatorPtr& ptr, const std::string& test_case_name) {
   return new OnnxTestCase(ptr, test_case_name);
 }
 ITestCase* CreateOnnxTestCase(const std::string& test_case_name) {
@@ -398,9 +390,6 @@ Status OnnxTestCase::ParseConfig() {
     if (!st.IsOK()) {
       per_sample_tolerance_ = 1e-3;
       relative_per_sample_tolerance_ = 1e-5;
-#ifdef USE_CUDA
-      relative_per_sample_tolerance_ = 0.003;
-#endif
       post_processing_ = false;
       st = Status::OK();
       return;
@@ -469,7 +458,7 @@ static Status LoadTensors(const std::vector<path>& pb_files, std::vector<ONNX_NA
   return Status::OK();
 }
 
-Status OnnxTestCase::LoadTestData(size_t id, std::unordered_map<std::string, ONNXValuePtr>& name_data_map, bool is_input) {
+Status OnnxTestCase::LoadTestData(size_t id, onnxruntime::NameMLValMap& name_data_map, bool is_input) {
   if (id >= test_data_dirs_.size())
     return Status(ONNXRUNTIME, INVALID_ARGUMENT, "out of bound");
 
@@ -480,11 +469,8 @@ Status OnnxTestCase::LoadTestData(size_t id, std::unordered_map<std::string, ONN
   path test_data_pb = test_data_dirs_[id] / (is_input ? "inputs.pb" : "outputs.pb");
   if (std::experimental::filesystem::exists(test_data_pb)) {  //has an all-in-one input file
     std::ostringstream oss;
-    {
-      std::lock_guard<std::mutex> l(m_);
-      oss << debuginfo_strings[id];
-    }
-    st = LoopDataFile(test_data_pb, onnxenv_, is_input ? input_value_info_ : output_value_info_, name_data_map, oss);
+    oss << debuginfo_strings[id];
+    st = LoopDataFile(test_data_pb, allocator_, is_input ? input_value_info_ : output_value_info_, name_data_map, oss);
     {
       std::lock_guard<std::mutex> l(m_);
       debuginfo_strings[id] = oss.str();
@@ -513,8 +499,31 @@ Status OnnxTestCase::LoadTestData(size_t id, std::unordered_map<std::string, ONN
   return Status::OK();
 }
 
+Status OnnxTestCase::FromPbFiles(const std::vector<path>& files, std::vector<MLValue>& output_values) {
+  for (const path& f : files) {
+    if (!f.has_extension()) return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, NOT_IMPLEMENTED, "unknown file type, path = ", f);
+    std::string s = f.extension().string();
+    if (s != ".pb")
+      continue;
+    ONNX_NAMESPACE::TensorProto tensor;
+    {
+      std::ifstream input(f, std::ios::in | std::ios::binary);
+      if (!input) {
+        return Status(ONNXRUNTIME, FAIL, "open file failed");
+      }
+      if (!tensor.ParseFromIstream(&input)) {
+        return Status(ONNXRUNTIME, FAIL, "parse file failed");
+      }
+    }
+    MLValue value;
+    ONNXRUNTIME_RETURN_IF_ERROR(onnxruntime::utils::TensorProtoToMLValue(tensor, allocator_, nullptr, 0, value));
+    output_values.emplace_back(value);
+  }
+  return Status::OK();
+}
+
 Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_data_pbs,
-                                     const std::vector<onnx::ValueInfoProto> value_info, std::unordered_map<std::string, ONNXValuePtr>& out) {
+                                     const std::vector<onnx::ValueInfoProto> value_info, onnxruntime::NameMLValMap& out) {
   int len = static_cast<int>(value_info.size());
   bool has_valid_names = true;
   //"0","1",...
@@ -579,13 +588,17 @@ Status OnnxTestCase::ConvertTestData(const std::vector<onnx::TensorProto>& test_
   for (size_t input_index = 0; input_index != test_data_pbs.size(); ++input_index) {
     std::string name = var_names[input_index];
     const onnx::TensorProto& input = test_data_pbs[input_index];
-    std::string s = input.SerializeAsString();
-    MLValue* v1;
-    ONNXRUNTIME_TRHOW_ON_ERROR(ONNXRuntimeTensorProtoToONNXValue(onnxenv_, s.data(), (int)s.size(), (ONNXValuePtr*)&v1));
-    out.insert(std::make_pair(name, (ONNXValuePtr)v1));
+    MLValue v1;
+    ONNXRUNTIME_RETURN_IF_ERROR(utils::TensorProtoToMLValue(input, allocator_, nullptr, 0, v1));
+    out.insert(std::make_pair(name, v1));
   }
   return Status::OK();
 }
 
-OnnxTestCase::OnnxTestCase(ONNXRuntimeAllocator* ptr, const std::string& test_case_name) : test_case_name_(test_case_name), onnxenv_(ptr) {
+OnnxTestCase::OnnxTestCase(const AllocatorPtr& allocator, const std::string& test_case_name) : test_case_name_(test_case_name) {
+  SetAllocator(allocator);
+}
+
+void OnnxTestCase::SetAllocator(const AllocatorPtr& allocator) {
+  allocator_ = allocator;
 }

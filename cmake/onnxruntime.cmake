@@ -3,33 +3,32 @@
 
 # have to add an empty source file to satisfy cmake when building a shared lib
 # from archives only
-add_library(onnxruntime SHARED ${ONNXRUNTIME_ROOT}/core/framework/empty.cc)
-set(BEGIN_WHOLE_ARCHIVE -Wl,--whole-archive)
-set(END_WHOLE_ARCHIVE -Wl,--no-whole-archive)
 
-set(onnxruntime_libs 
-  onnxruntime_session
-  ${PROVIDERS_MKLDNN}
-  onnxruntime_providers
-  onnxruntime_framework
-  onnxruntime_util
-  onnxruntime_graph
-  onnx
-  onnx_proto
-  onnxruntime_common
-  )
+add_library(onnxruntime SHARED ${onnxruntime_session_srcs})
+target_include_directories(onnxruntime PRIVATE ${ONNXRUNTIME_ROOT} ${date_INCLUDE_DIR})
+add_dependencies(onnxruntime ${onnxruntime_EXTERNAL_DEPENDENCIES})
 
-set(onnxruntime_dependencies
-  ${onnxruntime_EXTERNAL_DEPENDENCIES}
-  )
+if(UNIX)
+  set(BEGIN_WHOLE_ARCHIVE -Wl,--whole-archive)
+  set(END_WHOLE_ARCHIVE -Wl,--no-whole-archive)
+  target_link_libraries(onnxruntime PRIVATE
+    ${BEGIN_WHOLE_ARCHIVE}
+    ${PROVIDERS_CUDA}
+    ${PROVIDERS_MKLDNN}
+    onnxruntime_providers
+    onnxruntime_util
+    onnxruntime_framework
+    onnxruntime_graph
+    onnxruntime_common
+    ${END_WHOLE_ARCHIVE}
+    "-Wl,--exclude-libs,ALL"
+    onnx
+    onnx_proto
+    ${onnxruntime_EXTERNAL_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT} -Wl,--no-undefined)
+else()
+  target_compile_definitions(onnxruntime PRIVATE ONNX_RUNTIME_EXPORTS=1 ONNX_RUNTIME_BUILD_DLL=1)
+  target_link_libraries(onnxruntime PRIVATE ${PROVIDERS_CUDA} ${PROVIDERS_MKLDNN} onnxruntime_providers onnxruntime_framework onnxruntime_util onnxruntime_graph onnx onnx_proto onnxruntime_common ${onnxruntime_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ONNXRUNTIME_CUDA_LIBRARIES})
+endif()
 
-add_dependencies(onnxruntime ${onnxruntime_dependencies})
-
-target_link_libraries(onnxruntime
-  ${BEGIN_WHOLE_ARCHIVE}
-  ${onnxruntime_libs}
-  ${END_WHOLE_ARCHIVE}
-  ${onnxruntime_EXTERNAL_LIBRARIES})
-
-set_target_properties(onnxruntime PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")
 set_target_properties(onnxruntime PROPERTIES FOLDER "Lotus")

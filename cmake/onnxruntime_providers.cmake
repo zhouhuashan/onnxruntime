@@ -30,8 +30,10 @@ add_dependencies(onnxruntime_providers eigen gsl onnx)
 set_target_properties(onnxruntime_providers PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(onnxruntime_providers PROPERTIES FOLDER "Lotus")
 
-if (WIN32 AND onnxruntime_USE_OPENMP AND ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-  add_definitions(/openmp)
+if (WIN32 AND onnxruntime_USE_OPENMP)
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+      add_definitions(/openmp)
+  endif()
 endif()
 
 if (onnxruntime_USE_CUDA)

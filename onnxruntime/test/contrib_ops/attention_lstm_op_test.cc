@@ -255,7 +255,6 @@ static const int input_only_depth = 3;
 static const int am_attn_size = 2;
 static const int cell_hidden_size = 3;
 static const int aw_attn_size = 2;
-static const int am_context_size = memory_depth;
 static const int input_size = input_only_depth + aw_attn_size;
 
 // [batch_size=1, memory_max_step=3, memory_depth=3]

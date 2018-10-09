@@ -113,10 +113,10 @@ class InferenceSession::Impl {
     return Status::OK();
   }
 
-  common::Status Load(const std::string& model_uri) {
+  template <typename T>
+  common::Status Load(const T& model_uri) {
     auto tp = session_profiler_.StartTime();
     try {
-      LOGS(*session_logger_, INFO) << "Loading model: " << model_uri;
       std::lock_guard<std::mutex> l(session_mutex_);
       if (is_model_loaded_) {  // already loaded
         LOGS(*session_logger_, ERROR) << "This session already contains a loaded model.";
@@ -132,8 +132,6 @@ class InferenceSession::Impl {
 
       // all steps complete, mark the model as loaded.
       is_model_loaded_ = true;
-
-      LOGS(*session_logger_, INFO) << "Model: " << model_uri << " successfully loaded.";
     } catch (const std::exception& ex) {
       return Status(common::ONNXRUNTIME, common::FAIL, "Exception during loading: " + std::string(ex.what()));
     } catch (...) {
@@ -1084,7 +1082,11 @@ InferenceSession::~InferenceSession() = default;
 common::Status InferenceSession::Load(const std::string& model_uri) {
   return impl_->Load(model_uri);
 }
-
+#ifdef _WIN32
+common::Status InferenceSession::Load(const std::wstring& model_uri) {
+  return impl_->Load(model_uri);
+}
+#endif
 common::Status InferenceSession::Load(std::istream& model_istream) {
   return impl_->Load(model_istream);
 }

@@ -29,10 +29,9 @@ class Scan final : public OpKernel {
                   "Number of entries in 'directions' was ", directions_.size(),
                   ". Must match 'num_scan_inputs' of ", num_scan_inputs_);
       ONNXRUNTIME_ENFORCE(std::all_of(directions_.cbegin(), directions_.cend(),
-                              [](int64_t i) { return i == static_cast<int64_t>(Direction::kForward) ||
-                                                     i == static_cast<int64_t>(Direction::kReverse); }),
-                  "Invalid values in 'directions'. 0 == forward. 1 == reverse. Values were ",
-                  directions_);
+                                      [](int64_t i) { return i == static_cast<int64_t>(Direction::kForward) ||
+                                                             i == static_cast<int64_t>(Direction::kReverse); }),
+                          "Invalid values in 'directions'. 0 == forward. 1 == reverse.");
     } else {
       // default to forward
       directions_ = std::vector<int64_t>(num_scan_inputs_, static_cast<int64_t>(Direction::kForward));

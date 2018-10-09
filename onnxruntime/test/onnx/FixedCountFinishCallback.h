@@ -13,19 +13,27 @@ class FixedCountFinishCallbackImpl {
   //remain tasks
   int s_;
   std::mutex m_;
-  EVENT finish_event_;
+  ONNXRUNTIME_EVENT finish_event_;
   bool failed = false;
   std::vector<std::shared_ptr<T>> results_;
 
  public:
+  FixedCountFinishCallbackImpl(const FixedCountFinishCallbackImpl&) = delete;
+  FixedCountFinishCallbackImpl& operator=(const FixedCountFinishCallbackImpl&) = delete;
+
   const std::vector<std::shared_ptr<T>>& getResults() const {
     return results_;
   }
+
   FixedCountFinishCallbackImpl(int s) : s_(s), results_(s) {
     ONNXRUNTIME_ENFORCE(CreateOnnxRuntimeEvent(&finish_event_).IsOK());
   }
 
-  ::onnxruntime::common::Status fail(CALLBACK_INSTANCE pci) {
+  ~FixedCountFinishCallbackImpl() {
+    if (finish_event_) ONNXRuntimeCloseEvent(finish_event_);
+  }
+
+  ::onnxruntime::common::Status fail(ONNXRUNTIME_CALLBACK_INSTANCE pci) {
     {
       std::lock_guard<std::mutex> g(m_);
       failed = true;
@@ -34,7 +42,7 @@ class FixedCountFinishCallbackImpl {
     return OnnxRuntimeSetEventWhenCallbackReturns(pci, finish_event_);
   }
 
-  ::onnxruntime::common::Status onFinished(size_t task_index, std::shared_ptr<T> result, CALLBACK_INSTANCE pci) {
+  ::onnxruntime::common::Status onFinished(size_t task_index, std::shared_ptr<T> result, ONNXRUNTIME_CALLBACK_INSTANCE pci) {
     int v;
     {
       std::lock_guard<std::mutex> g(m_);
@@ -56,6 +64,7 @@ class FixedCountFinishCallbackImpl {
     ONNXRUNTIME_ENFORCE(WaitAndCloseEvent(finish_event_).IsOK());
     {
       std::lock_guard<std::mutex> g(m_);
+      finish_event_ = nullptr;
       return !failed;
     }
   }

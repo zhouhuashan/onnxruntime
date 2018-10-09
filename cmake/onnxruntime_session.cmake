@@ -13,5 +13,6 @@ add_library(onnxruntime_session ${onnxruntime_session_srcs})
 onnxruntime_add_include_to_target(onnxruntime_session onnx protobuf::libprotobuf)
 target_include_directories(onnxruntime_session PRIVATE ${ONNXRUNTIME_ROOT})
 add_dependencies(onnxruntime_session ${onnxruntime_EXTERNAL_DEPENDENCIES})
-
 set_target_properties(onnxruntime_session PROPERTIES FOLDER "Lotus")
+
+

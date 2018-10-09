@@ -41,6 +41,7 @@ class CPUExecutionProvider : public IExecutionProvider {
   GetCapability(const onnxruntime::Graph& graph,
                 const std::vector<const KernelRegistry*>& kernel_registries) const override;
 
+  ///requires src.buffer_deleter_ == nullptr
   Status CopyTensor(const Tensor& src, Tensor& dst) const override {
     ONNXRUNTIME_ENFORCE(strcmp(dst.Location().name, CPU) == 0);
 

@@ -53,9 +53,9 @@ int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
   if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return -1;
   std::string default_logger_id{"Default"};
-  Logging::LoggingManager default_logging_manager{std::unique_ptr<Logging::ISink>{new Logging::CLogSink{}},
-                                                  Logging::Severity::kWARNING, false,
-                                                  Logging::LoggingManager::InstanceType::Default,
+  logging::LoggingManager default_logging_manager{std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
+                                                  logging::Severity::kWARNING, false,
+                                                  logging::LoggingManager::InstanceType::Default,
                                                   &default_logger_id};
 
   std::unique_ptr<Environment> env;

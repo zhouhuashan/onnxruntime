@@ -4,9 +4,8 @@
 #pragma once
 #include <vector>
 #include <mutex>
-#include <unordered_map>
-#include <core/common/status.h>
-#include <core/session/onnxruntime_cxx_api.h>
+#include <core/framework/ml_value.h>
+#include <core/framework/framework_common.h>
 #include <experimental/filesystem>
 #ifdef _MSC_VER
 #include <filesystem>
@@ -22,10 +21,10 @@ class ITestCase {
  public:
   //must be called before calling the other functions
   virtual ::onnxruntime::common::Status SetModelPath(const std::experimental::filesystem::v1::path& path) = 0;
-  virtual size_t GetOutputCount() const = 0;
-  virtual ::onnxruntime::common::Status LoadTestData(size_t id, std::unordered_map<std::string, ONNXValuePtr>& name_data_map, bool is_input) = 0;
+  virtual ::onnxruntime::common::Status LoadTestData(size_t id, onnxruntime::NameMLValMap& name_data_map, bool is_input) = 0;
   virtual const std::experimental::filesystem::v1::path& GetModelUrl() const = 0;
   virtual const std::string& GetTestCaseName() const = 0;
+  virtual void SetAllocator(const ::onnxruntime::AllocatorPtr&) = 0;
   //a string to help identify the dataset
   virtual std::string GetDatasetDebugInfoString(size_t dataset_id) = 0;
   virtual ::onnxruntime::common::Status GetNodeName(std::string* out) = 0;
@@ -38,4 +37,5 @@ class ITestCase {
   virtual ::onnxruntime::common::Status GetPostProcessing(bool* value) = 0;
 };
 
-ITestCase* CreateOnnxTestCase(ONNXRuntimeAllocator* ptr, const std::string& test_case_name);
+ITestCase* CreateOnnxTestCase(const ::onnxruntime::AllocatorPtr&, const std::string& test_case_name);
+ITestCase* CreateOnnxTestCase(const std::string& test_case_name);

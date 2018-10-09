@@ -15,7 +15,7 @@ Status CreateAndSubmitThreadpoolWork(ONNXRUNTIME_CALLBACK_FUNCTION callback, voi
   return Status::OK();
 }
 
-Status WaitAndCloseEvent(EVENT finish_event) {
+Status WaitAndCloseEvent(ONNXRUNTIME_EVENT finish_event) {
   DWORD dwWaitResult = WaitForSingleObject(finish_event, INFINITE);
   (void)CloseHandle(finish_event);
   if (dwWaitResult != WAIT_OBJECT_0) {
@@ -24,7 +24,7 @@ Status WaitAndCloseEvent(EVENT finish_event) {
   return Status::OK();
 }
 
-Status CreateOnnxRuntimeEvent(EVENT* out) {
+Status CreateOnnxRuntimeEvent(ONNXRUNTIME_EVENT* out) {
   if (out == nullptr)
     return Status(::onnxruntime::common::ONNXRUNTIME, ::onnxruntime::common::INVALID_ARGUMENT, "");
   HANDLE finish_event = CreateEvent(
@@ -39,7 +39,7 @@ Status CreateOnnxRuntimeEvent(EVENT* out) {
   return Status::OK();
 }
 
-Status OnnxRuntimeSetEventWhenCallbackReturns(CALLBACK_INSTANCE pci, EVENT finish_event) {
+Status OnnxRuntimeSetEventWhenCallbackReturns(ONNXRUNTIME_CALLBACK_INSTANCE pci, ONNXRUNTIME_EVENT finish_event) {
   if (finish_event == nullptr)
     return Status(::onnxruntime::common::ONNXRUNTIME, ::onnxruntime::common::INVALID_ARGUMENT, "");
   if (pci)
@@ -48,4 +48,8 @@ Status OnnxRuntimeSetEventWhenCallbackReturns(CALLBACK_INSTANCE pci, EVENT finis
     return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "SetEvent failed");
   }
   return Status::OK();
+}
+
+void ONNXRuntimeCloseEvent(ONNXRUNTIME_EVENT finish_event) {
+  (void)CloseHandle(finish_event);
 }

@@ -153,7 +153,9 @@ class InferenceSession {
     * @return OK if success.
     */
   common::Status Load(const std::string& model_uri);
-
+#ifdef _WIN32
+  common::Status Load(const std::wstring& model_uri);
+#endif
   /**
     * Load an ONNX model.
     * @param istream object of the model.

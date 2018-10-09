@@ -1,13 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include <core/framework/environment.h>
-#include <core/graph/constants.h>
-#include <core/framework/allocator.h>
-#include <core/common/logging/logging.h>
-#include <core/common/logging/sinks/clog_sink.h>
-#include <core/session/inference_session.h>
-#include <core/platform/env.h>
+#include <core/session/onnxruntime_cxx_api.h>
 #include <iostream>
 #include <experimental/filesystem>
 #ifdef _MSC_VER
@@ -18,13 +12,14 @@
 #include "getopt.h"
 #else
 #include <getopt.h>
+#include <thread>
 #endif
 
 #include "TestResultStat.h"
 #include "testenv.h"
 #include "runner.h"
 #include "sync_api.h"
-
+#include "test_allocator.h"
 using namespace std::experimental::filesystem::v1;
 using namespace onnxruntime;
 
@@ -37,42 +32,64 @@ void usage() {
       "\t-A : Disable memory arena\n"
       "\t-c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.\n"
       "\t-r [repeat]: Specifies the number of times to repeat\n"
+      "\t-v: verbose\n"
       "\t-n [test_case_name]: Specifies a single test case to run.\n"
-      "\t-e [EXECUTION_PROVIDER]: EXECUTION_PROVIDER could be 'cpu' or 'cuda'. Default: 'cpu'.\n"
+      "\t-e [EXECUTION_PROVIDER]: EXECUTION_PROVIDER could be 'cpu', 'cuda' or 'mkldnn'. Default: 'cpu'.\n"
       "\t-x: Use parallel executor, default (without -x): sequential executor.\n"
       "\t-h: help\n");
 }
 
+#ifdef _WIN32
+int GetNumCpuCores() {
+  SYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer[256];
+  DWORD returnLength = sizeof(buffer);
+  if (GetLogicalProcessorInformation(buffer, &returnLength) == FALSE) {
+    // try GetSystemInfo
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    if (sysInfo.dwNumberOfProcessors <= 0) {
+      ONNXRUNTIME_THROW("Fatal error: 0 count processors from GetSystemInfo");
+    }
+    // This is the number of logical processors in the current group
+    return sysInfo.dwNumberOfProcessors;
+  }
+  int processorCoreCount = 0;
+  int count = (int)(returnLength / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION));
+  for (int i = 0; i != count; ++i) {
+    if (buffer[i].Relationship == RelationProcessorCore) {
+      ++processorCoreCount;
+    }
+  }
+  if (!processorCoreCount) ONNXRUNTIME_THROW("Fatal error: 0 count processors from GetLogicalProcessorInformation");
+  return processorCoreCount;
+}
+#else
+int GetNumCpuCores() {
+  return std::thread::hardware_concurrency();
+}
+#endif
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  std::string default_logger_id{"Default"};
-  logging::LoggingManager default_logging_manager{std::unique_ptr<logging::ISink>{new logging::CLogSink{}},
-                                                  logging::Severity::kWARNING, false,
-                                                  logging::LoggingManager::InstanceType::Default,
-                                                  &default_logger_id};
-
-  std::unique_ptr<Environment> env;
-  auto status = Environment::Create(env);
-  if (!status.IsOK()) {
-    fprintf(stderr, "Error creating environment: %s \n", status.ErrorMessage().c_str());
-    return -1;
-  }
-
-  std::vector<std::string> providers;
   //if this var is not empty, only run the tests with name in this list
   std::vector<std::string> whitelisted_test_cases;
-  int concurrent_session_runs = Env::Default().GetNumCpuCores();
+  int concurrent_session_runs = GetNumCpuCores();
   bool enable_cpu_mem_arena = true;
   bool enable_sequential_execution = true;
   int repeat_count = 1;
-  int p_models = Env::Default().GetNumCpuCores();
+  int p_models = GetNumCpuCores();
+  bool enable_cuda = false;
+  bool enable_mkl = false;
+  ONNXRuntimeLoggingLevel logging_level = ONNXRUNTIME_LOGGING_LEVEL_kWARNING;
   {
     int ch;
-    while ((ch = getopt(argc, argv, "Ac:hj:m:n:r:e:x")) != -1) {
+    while ((ch = getopt(argc, argv, "Ac:hj:m:n:r:e:xv")) != -1) {
       switch (ch) {
         case 'A':
           enable_cpu_mem_arena = false;
+          break;
+        case 'v':
+          logging_level = ONNXRUNTIME_LOGGING_LEVEL_kINFO;
           break;
         case 'c':
           concurrent_session_runs = static_cast<int>(strtol(optarg, nullptr, 10));
@@ -105,9 +122,11 @@ int main(int argc, char* argv[]) {
           break;
         case 'e':
           if (!strcmp(optarg, "cpu")) {
-            // do nothing, as CPU provider would always be added
+            //do nothing
           } else if (!strcmp(optarg, "cuda")) {
-            providers.push_back(onnxruntime::kCudaExecutionProvider);
+            enable_cuda = true;
+          } else if (!strcmp(optarg, "mkldnn")) {
+            enable_mkl = true;
           } else {
             usage();
             return -1;
@@ -124,10 +143,6 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-
-  // add CPU provider as fallback
-  providers.push_back(onnxruntime::kCpuExecutionProvider);
-
   if (concurrent_session_runs > 1 && repeat_count > 1) {
     fprintf(stderr, "when you use '-r [repeat]', please set '-c' to 1\n");
     usage();
@@ -140,7 +155,20 @@ int main(int argc, char* argv[]) {
     usage();
     return -1;
   }
+  std::unique_ptr<ONNXEnv, decltype(&ReleaseONNXEnv)> env(nullptr, ReleaseONNXEnv);
+  {
+    ONNXEnv* t;
+    ONNXStatusPtr ost = InitializeONNXRuntime(logging_level, "Default", &t);
+    if (ost != nullptr) {
+      fprintf(stderr, "Error creating environment: %s \n", ONNXRuntimeGetErrorMessage(ost));
+      ReleaseONNXStatus(ost);
+      return -1;
+    }
+    env.reset(t);
+  }
   std::vector<path> data_dirs;
+  TestResultStat stat;
+  MockedONNXRuntimeAllocator default_allocator;
   for (int i = 0; i != argc; ++i) {
     path p(argv[i]);
     if (!is_directory(p)) {
@@ -149,24 +177,40 @@ int main(int argc, char* argv[]) {
     }
     data_dirs.emplace_back(p);
   }
-  AllocatorPtr cpu_allocator = std::make_shared<::onnxruntime::CPUAllocator>();
-  std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, cpu_allocator);
-  TestResultStat stat;
-  SessionFactory sf(providers, true, enable_cpu_mem_arena);
-  sf.enable_sequential_execution = enable_sequential_execution;
-  TestEnv args(tests, stat, sf);
-  Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
-  if (!st.IsOK()) {
-    fprintf(stderr, "%s\n", st.ErrorMessage().c_str());
-    return -1;
-  }
+  {
+    std::vector<ITestCase*> tests = LoadTests(data_dirs, whitelisted_test_cases, default_allocator.Upcast());
+    SessionOptionsWrapper sf(env.get());
+    if (enable_cpu_mem_arena)
+      sf.EnableCpuMemArena();
+    else
+      sf.DisableCpuMemArena();
+    if (enable_sequential_execution)
+      sf.EnableSequentialExecution();
+    else
+      sf.DisableSequentialExecution();
+    if (enable_cuda)
+      sf.EnableCudaProvider(0);
+    else
+      sf.DisableCudaProvider();
+    if (enable_mkl)
+      sf.EnableMklProvider();
+    else
+      sf.DisableMklProvider();
 
-  std::string res = stat.ToString();
-  fwrite(res.c_str(), 1, res.size(), stdout);
-  for (ITestCase* l : tests) {
-    delete l;
-  }
+    TestEnv args(tests, stat, sf);
+    Status st = RunTests(args, p_models, concurrent_session_runs, static_cast<size_t>(repeat_count), GetDefaultThreadPool(Env::Default()));
+    if (!st.IsOK()) {
+      fprintf(stderr, "%s\n", st.ErrorMessage().c_str());
+      return -1;
+    }
 
+    std::string res = stat.ToString();
+    fwrite(res.c_str(), 1, res.size(), stdout);
+    for (ITestCase* l : tests) {
+      delete l;
+    }
+  }
+  default_allocator.LeakCheck();
   std::map<std::string, std::string> broken_tests{
       {"cast_DOUBLE_to_FLOAT", "disable reason"},
       {"cast_DOUBLE_to_FLOAT16", "disable reason"},

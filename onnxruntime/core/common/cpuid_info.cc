@@ -26,13 +26,6 @@ static inline void GetCPUID(int function_id, int data[4]) {
   __cpuid(function_id, data[0], data[1], data[2], data[3]);
 #endif
 }
-static inline void GetCPUIDEx(int function_id, int subfunction_id, int data[4]) {
-#if defined(_MSC_VER)
-  __cpuidex(reinterpret_cast<int*>(data), function_id, subfunction_id);
-#elif defined(__GNUC__)
-  __cpuid_count(function_id, subfunction_id, data[0], data[1], data[2], data[3]);
-#endif
-}
 
 static inline int XGETBV() {
 #if defined(_MSC_VER)
