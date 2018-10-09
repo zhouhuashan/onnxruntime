@@ -33,25 +33,28 @@ class OpNodeProtoHelper {
  public:
   explicit OpNodeProtoHelper(const Impl_t* impl) : impl_(impl) {}
 
-  //Get a single attribute
+  // Get a single attribute
   template <typename T>
   MUST_USE_RESULT Status GetAttr(const std::string& name, T* value) const;
 
-  //Get a single attribute
+  // Get a single attribute
+  // Call this function only when onnx doesn't have default value
   template <typename T>
   T GetAttrOrDefault(const std::string& name, const T& default_value) const {
     T tmp;
     return GetAttr<T>(name, &tmp).IsOK() ? tmp : default_value;
   }
 
-  //Get a single attribute
+  // Get a single attribute
+  // Call this function only when onnx doesn't have default value
   template <typename T>
   void GetAttrOrDefault(const std::string& name, T* value, const T& default_value) const {
     if (!GetAttr<T>(name, value).IsOK())
       *value = default_value;
   }
 
-  //Get repeated attributes
+  // Get repeated attributes
+  // Call this function only when onnx doesn't have default value
   template <typename T>
   MUST_USE_RESULT std::vector<T> GetAttrsOrDefault(const std::string& name, const std::vector<T>& default_value = std::vector<T>{}) const {
     std::vector<T> tmp;

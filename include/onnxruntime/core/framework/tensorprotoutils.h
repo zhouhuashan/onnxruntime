@@ -9,6 +9,7 @@
 #include "core/common/status.h"
 #include "core/framework/allocator.h"
 #include "core/framework/ml_value.h"
+#include "core/graph/onnx_protobuf.h"
 
 namespace ONNX_NAMESPACE {
 class TensorProto;
@@ -23,5 +24,6 @@ std::vector<int64_t> GetTensorShapeFromTensorProto(const ONNX_NAMESPACE::TensorP
 std::vector<int64_t> GetTensorShapeFromTensorShapeProto(const ONNX_NAMESPACE::TensorShapeProto& tensor_shape_proto);
 common::Status TensorProtoToMLValue(const ONNX_NAMESPACE::TensorProto& input, AllocatorPtr allocator, void* preallocated,
                                     size_t preallocated_size, MLValue& value);
+ONNX_NAMESPACE::TensorProto::DataType GetTensorProtoType(const Tensor& tensor);
 }  // namespace utils
 }  // namespace onnxruntime

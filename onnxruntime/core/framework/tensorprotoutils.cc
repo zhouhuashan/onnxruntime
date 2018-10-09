@@ -173,5 +173,36 @@ common::Status GetTensorFromTensorProto(const TensorProto& tensor_proto,
     }
   }
 }
+
+TensorProto::DataType GetTensorProtoType(const Tensor& tensor) {
+  auto tensor_type = tensor.DataType();
+  TensorProto::DataType dtype = TensorProto_DataType_UNDEFINED;
+
+  if (tensor_type == DataTypeImpl::GetType<float>())
+    dtype = TensorProto_DataType_FLOAT;
+  else if (tensor_type == DataTypeImpl::GetType<double>())
+    dtype = TensorProto_DataType_DOUBLE;
+  else if (tensor_type == DataTypeImpl::GetType<int8_t>())
+    dtype = TensorProto_DataType_INT8;
+  else if (tensor_type == DataTypeImpl::GetType<int16_t>())
+    dtype = TensorProto_DataType_INT16;
+  else if (tensor_type == DataTypeImpl::GetType<int32_t>())
+    dtype = TensorProto_DataType_INT32;
+  else if (tensor_type == DataTypeImpl::GetType<int64_t>())
+    dtype = TensorProto_DataType_INT64;
+  else if (tensor_type == DataTypeImpl::GetType<uint8_t>())
+    dtype = TensorProto_DataType_UINT8;
+  else if (tensor_type == DataTypeImpl::GetType<uint16_t>())
+    dtype = TensorProto_DataType_UINT16;
+  else if (tensor_type == DataTypeImpl::GetType<uint32_t>())
+    dtype = TensorProto_DataType_UINT32;
+  else if (tensor_type == DataTypeImpl::GetType<uint64_t>())
+    dtype = TensorProto_DataType_UINT64;
+  else if (tensor_type == DataTypeImpl::GetType<bool>())
+    dtype = TensorProto_DataType_BOOL;
+
+  return dtype;
+}
+
 }  // namespace utils
 }  // namespace onnxruntime
