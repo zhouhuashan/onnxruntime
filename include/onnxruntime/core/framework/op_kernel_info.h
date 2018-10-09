@@ -15,9 +15,11 @@ namespace onnxruntime {
 
 class SessionState;
 
-// A very light-weight class, which works as an aggregated
-// view of all data needed for constructing a Kernel instance.
-// NOTE: it does not own/hold any objects.
+/**
+   A very light-weight class, which works as an aggregated
+   view of all data needed for constructing a Kernel instance.
+   NOTE: it does not own/hold any objects.
+*/
 class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
  public:
   explicit OpKernelInfo(const onnxruntime::Node& node,

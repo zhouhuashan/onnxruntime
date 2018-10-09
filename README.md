@@ -1,6 +1,6 @@
 # ONNX Runtime
 
-ONNX Runtime is the runtime for ONNX. Learn more about the design [here](OSS:TODO).
+ONNX Runtime is the runtime for ONNX. Here is it's [high level design](OSS:TODO).
 The ONNX spec can be found [here](https://github.com/onnx/onnx).
 
 # Install

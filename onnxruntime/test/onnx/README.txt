@@ -1,4 +1,4 @@
-onnx_test_runner [options...] <data_root>
+onnxruntime_test_runner [options...] <data_root>
 Options:
         -j [models]: Specifies the number of models to run simultaneously.
         -c [runs]: Specifies the number of Session::Run() to invoke simultaneously for each model.
@@ -10,11 +10,11 @@ Options:
 The debug version of this program depends on dbghelp.dll. Please make sure it's in your PATH.
 
 How to run node tests:
-1. Install onnx from lotus\cmake\external\onnx
+1. Install onnx from onnxruntime\cmake\external\onnx
    Steps:
    "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
    C:
-   cd C:\src\lotus\lotus\cmake\external\onnx
+   cd C:\src\onnxruntime\onnxruntime\cmake\external\onnx
    set PATH="C:\Program Files\CMake\bin";C:\python35;C:\python35\scripts;C:\Program Files\CMake\bin;%PATH%
    set PATH=%PATH%;C:\os\onnx\protoc
    set INCLUDE=%INCLUDE%;C:\os\protobuf-2.6.1\src
@@ -23,14 +23,14 @@ How to run node tests:
 
 2. Execute test data generator:
        backend-test-tools generate-data -o <some_empty_folder>
-   e.g. 
+   e.g.
        backend-test-tools generate-data -o C:\testdata
     backend-test-tools is a tool under C:\Python35\Scripts (If your python was installed to C:\Python35)
 
-3. compile onnx_test_runner and run
-      onnx_test_runner <test_data_dir>
+3. compile onnxruntime_test_runner and run
+      onnxruntime_test_runner <test_data_dir>
 	e.g.
-	  onnx_test_runner C:\testdata\node
+	  onnxruntime_test_runner C:\testdata\node
 
 
 How to run model tests:
@@ -42,7 +42,7 @@ How to run model tests:
 	  You may change C:\testdata to any directory in your disk.
    Full document: https://www.1eswiki.com/wiki/VSTS_Drop
 
-2. compile onnx_test_runner and run
-   onnx_test_runner <test_data_dir>
+2. compile onnxruntime_test_runner and run
+   onnxruntime_test_runner <test_data_dir>
    e.g.
-	 onnx_test_runner C:\testdata
+	 onnxruntime_test_runner C:\testdata

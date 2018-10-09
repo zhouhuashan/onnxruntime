@@ -9,13 +9,13 @@
 
 namespace onnxruntime {
 /**
-Provides the runtime environment for onnxruntime.
-Create one instance for the duration of execution.
+   Provides the runtime environment for onnxruntime.
+   Create one instance for the duration of execution.
 */
 class Environment {
  public:
   /**
-  Create and initialize the runtime environment.
+     Create and initialize the runtime environment.
   */
   static Status Create(std::unique_ptr<Environment>& environment);
 

@@ -11,6 +11,9 @@
 #include "core/framework/tensor.h"
 
 namespace onnxruntime {
+/**
+   Represents both tensors and non-tensors.
+*/
 class MLValue {
  private:
   template <typename Result, typename TReg>

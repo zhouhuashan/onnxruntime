@@ -1,8 +1,4 @@
 /**
- * Derived from caffe2, need copy right annoucement here.
- */
-
-/**
  * Copyright (c) 2016-present, Facebook, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// Portions Copyright (c) Microsoft Corporation
 
 #pragma once
 

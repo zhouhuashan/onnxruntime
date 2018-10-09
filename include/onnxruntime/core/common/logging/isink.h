@@ -14,10 +14,10 @@ class ISink {
   ISink() = default;
 
   /**
-  Sends the message to the sink.
-  @param timestamp The timestamp.
-  @param logger_id The logger identifier.
-  @param message The captured message.
+     Sends the message to the sink.
+     @param timestamp The timestamp.
+     @param logger_id The logger identifier.
+     @param message The captured message.
   */
   void Send(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
     SendImpl(timestamp, logger_id, message);

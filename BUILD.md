@@ -21,7 +21,7 @@
 
 OS/Compiler Matrix:
 
-|             | Supports VC  | Supports GCC     |  Supports Clang |
+| OS/Compiler | Supports VC  | Supports GCC     |  Supports Clang |
 |-------------|:------------:|:----------------:|:---------------:|
 |Windows 10   | YES          | Not tested       | Not tested      |
 |Linux        | NO           | YES(gcc>=5.0)    | YES             |
@@ -35,30 +35,11 @@ Checkout the source tree:
 ```
 git clone --recursive https://github.com/onnx/onnxruntime
 cd onnxruntime
+./build.sh for Linux (or ./build.bat for Windows)
 ```
+The build script runs all unit tests by default.
 
-Generate the project files (only needed once):
-```
-set CMAKE_BUILD_TYPE=Debug
-mkdir cmake_build
-cd cmake_build
-cmake ../cmake -A x64 -T host=x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE%
-```
-
-And build it:
-```
-MSBuild /p:Configuration=%CMAKE_BUILD_TYPE% ALL_BUILD.vcxproj
-```
-
-Run unit tests:
-```
-ctest -C %CMAKE_BUILD_TYPE%
-```
-`ALL_BUILD.vcxproj` will check external dependecies and takes a little longer. During development you want to
-use a more specific project like `onnxruntime_test_core_runtime.vcxproj`.
-
-## Enable Clang tools
-You may also add '-DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON' to your cmake args, then your build engine(like msbuild/make/ninja) will generate a compile\_commands.json file for you. Please copy this file to the top source directory. Then you can use clang tools like ['clang-rename'](http://clang.llvm.org/extra/clang-rename.html), ['clang-tidy'](http://clang.llvm.org/extra/clang-tidy/) to clean up or refactor your code.
+The complete list of build options can be found by running `./build.sh (or ./build.bat) --help`
 
 # Integration Tests
 To run onnx model tests on Linux,
@@ -67,9 +48,11 @@ To run onnx model tests on Linux,
 2. (optional) Run "export AZURE\_BLOB\_KEY=<secret_value>". You can get the key by executing "az storage keys list --account-name lotus" if you have Azure CLI 2.0 installed or just ask chasun@microsoft.com for that.
 3.  Run tools/ci\_build/vsts/linux/run\_build.sh.
 
-For Windows, please follow the README file at lotus/test/onnx/README.txt
+For Windows, please follow the README file at onnxruntime/test/onnx/README.txt
 
 # Additional Build Flavors
+The complete list of build flavors can be seen by running `./build.sh --help` or `./build.bat --help`. Here are some common flavors.
+
 ## Windows CUDA Build
 ONNX Runtime supports CUDA builds. You will need to download and install [CUDA](https://developer.nvidia.com/cuda-toolkit) and [CUDNN](https://developer.nvidia.com/cudnn).
 
@@ -97,56 +80,40 @@ The path to the 'cuda' folder in the CUDNN installation must be provided. The 'c
 You can build with:
 
 ```
-mkdir cmake_build_gpu
-cd cmake_build_gpu
-cmake ..\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -A x64 -G "Visual Studio 15 2017" -T host=x64 -Donnxruntime_USE_CUDA=ON -Donnxruntime_CUDNN_HOME=<path to top level 'cuda' directory in CUDNN installation>
+./build.sh --use_cuda --cudnn_home /usr --cuda_home /usr/local/cuda (Linux)
+./build.bat --use_cuda --cudnn_home <cudnn home path> --cuda_home <cuda home path> (Windows)
 ```
 
-where the CUDNN path would be something like `C:\cudnn-9.2-windows10-x64-v7.1\cuda`
-
-## MKL
-To build ONNX Runtime with MKL support, download MKL from Intel and call cmake the following way:
-```
-mkdir cmake_build_mkl
-cd cmake_build_mkl
-cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp" -Donnxruntime_USE_EIGEN=OFF -Donnxruntime_USE_MKL=ON -Donnxruntime_MKL_HOME=%MKL_HOME%
-```
-where MKL_HOME would be something like:
-`D:\local\IntelSWTools\compilers_and_libraries\windows\mkl`
+## MKL-DNN
+To build ONNX Runtime with MKL-DNN support, build it with `./build.sh --use_mkldnn --use_mklml`
 
 ## OpenBLAS
-To build ONNX Runtime with OpenBLAS support, download OpenBLAS and compile it for windows.
+### Windows
 Instructions how to build OpenBLAS for windows can be found here https://github.com/xianyi/OpenBLAS/wiki/How-to-use-OpenBLAS-in-Microsoft-Visual-Studio#build-openblas-for-universal-windows-platform.
 
-Once you have the OpenBLAS binaries, call the ONNX Runtime cmake like:
-```
-mkdir cmake_build_openblas
-cd cmake_build_openblas
-cmake ..\cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/openmp"  -Donnxruntime_USE_EIGEN=OFF -Donnxruntime_USE_OPENBLAS=ON -Donnxruntime_OPENBLAS_HOME=%OPENBLAS_HOME%
-```
-where OPENBLAS_HOME would be something like:
-`d:\share\openblas`
+Once you have the OpenBLAS binaries, build ONNX Runtime with `./build.bat --use_openblas`
 
+### Linux
 For Linux (e.g. Ubuntu 16.04), install libopenblas-dev package
-sudo apt-get install libopenblas-dev
+`sudo apt-get install libopenblas-dev` and build with `./build.sh --use_openblas`
 
-## AVX, AVX2, OpenMP
-To pass in additional compiler flags, for example to build with SIMD instructions, you can pass in CXX_FLAGS from the cmake command line, for example to build eigen with avx2 support and openmp, you can call cmake like:
+## OpenMP
 ```
-cmake .. -G "Visual Studio 15 2017" -A x64   -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% -DCMAKE_CXX_FLAGS="/arch:AVX2 /openmp"
+./build.sh --use_openmp (for Linux)
+./build.bat --use_openmp (for Windows)
 ```
 
 ## Build with Docker on Linux
 Install Docker: `https://docs.docker.com/install/`
 
-###CPU
+### CPU
 ```
 cd tools/ci_build/vsts/linux/docker
 docker build -t onnxruntime_dev --build-arg OS_VERSION=16.04 -f Dockerfile.ubuntu .
 docker run --rm -it onnxruntime_dev /bin/bash
 ```
 
-###GPU
+### GPU
 If you need GPU support, please also install:
 1. nvidia driver. Before doing this please add 'nomodeset rd.driver.blacklist=nouveau' to your linux [kernel boot parameters](https://www.kernel.org/doc/html/v4.17/admin-guide/kernel-parameters.html).
 2. nvidia-docker2: [Install doc](`https://github.com/NVIDIA/nvidia-docker/wiki/Installation-(version-2.0)`)

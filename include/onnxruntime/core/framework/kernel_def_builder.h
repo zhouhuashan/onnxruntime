@@ -128,64 +128,80 @@ class KernelDefBuilder {
     return *this;
   }
 
-  // This kernel supports operator definition since <since_version> (to latest).
+  /**
+     This kernel supports operator definition since <since_version> (to latest).
+  */
   KernelDefBuilder& SinceVersion(int since_version) {
     kernel_def_->op_since_version_start_ = since_version;
     return *this;
   }
 
-  // The start and end version should be set accordingly per version range for
-  // each domain registered in OpSchemaRegistry::DomainToVersionRange in
-  // \onnxruntime\lotus\core\graph\op.h as below.
-  // Key: domain. Value: <lowest version, highest version> pair.
-  // std::unordered_map<std::string, std::pair<int, int>> map_;
+  /**
+     The start and end version should be set accordingly per version range for
+     each domain registered in OpSchemaRegistry::DomainToVersionRange in
+     \onnxruntime\lotus\core\graph\op.h as below.
+     Key: domain. Value: <lowest version, highest version> pair.
+     std::unordered_map<std::string, std::pair<int, int>> map_;
+  */
   KernelDefBuilder& SinceVersion(int since_version_start, int since_version_end) {
     kernel_def_->op_since_version_start_ = since_version_start;
     kernel_def_->op_since_version_end_ = since_version_end;
     return *this;
   }
 
-  // The execution provider type of the kernel.
+  /**
+     The execution provider type of the kernel.
+  */
   KernelDefBuilder& Provider(onnxruntime::ProviderType provider_type) {
     kernel_def_->provider_type_ = provider_type;
     return *this;
   }
 
-  // Specify the set of types that this kernel supports. A further restriction
-  // of the set of types specified in the op schema.
-  // The arg name could be either op formal parameter name, say "X", or type
-  // argument name specified in op schema, say "T".
+  /**
+     Specify the set of types that this kernel supports. A further restriction
+     of the set of types specified in the op schema.
+     The arg name could be either op formal parameter name, say "X", or type
+     argument name specified in op schema, say "T".
+  */
   KernelDefBuilder& TypeConstraint(const std::string& arg_name,
                                    const std::vector<MLDataType>& supported_types) {
     kernel_def_->type_constraints_[arg_name] = supported_types;
     return *this;
   }
 
-  // Like TypeConstraint but supports just a single type.
+  /**
+     Like TypeConstraint but supports just a single type.
+  */
   KernelDefBuilder& TypeConstraint(const std::string& arg_name,
                                    MLDataType supported_type) {
     kernel_def_->type_constraints_[arg_name] = std::vector<MLDataType>{supported_type};
     return *this;
   }
 
-  // Inplace mapping from inputs to outputs allowed.
-  // It means that uplayer runtime could do memory in-place optimization
-  // as it will not impact the correctness of this kernel.
+  /**
+     Inplace mapping from inputs to outputs allowed.
+     It means that uplayer runtime could do memory in-place optimization
+     as it will not impact the correctness of this kernel.
+  */
   KernelDefBuilder& MayInplace(const std::vector<std::pair<int, int>>& inplaces) {
     kernel_def_->inplace_map_ = inplaces;
     return *this;
   }
 
-  // allowing output[output_index] to reuse memory of input[input_index]
+  /**
+     allowing output[output_index] to reuse memory of input[input_index]
+  */
   KernelDefBuilder& MayInplace(int input_index, int output_index) {
     // TODO: validate inputs.
     kernel_def_->inplace_map_.emplace_back(input_index, output_index);
     return *this;
   }
 
-  // Alias mapping from inputs to outputs. Different from Inplace that the
-  // content of the tensor is not changed. This is to take care of operators
-  // such as Identity and Reshape.
+  /**
+     Alias mapping from inputs to outputs. Different from Inplace that the
+     content of the tensor is not changed. This is to take care of operators
+     such as Identity and Reshape.
+  */
   KernelDefBuilder& Alias(const std::vector<std::pair<int, int>>& aliases) {
     kernel_def_->alias_map_ = aliases;
     return *this;
@@ -196,16 +212,20 @@ class KernelDefBuilder {
     return *this;
   }
 
-  // Specify that this kernel requires an input arg
-  // in certain memory type (instead of the default, device memory).
+  /**
+     Specify that this kernel requires an input arg
+     in certain memory type (instead of the default, device memory).
+  */
   template <MemType T>
   KernelDefBuilder& InputMemoryType(int input_index) {
     kernel_def_->input_memory_type_args_.insert(std::make_pair(input_index, T));
     return *this;
   }
 
-  // Specify that this kernel provides an output arg
-  // in certain memory type (instead of the default, device memory).
+  /**
+     Specify that this kernel provides an output arg
+     in certain memory type (instead of the default, device memory).
+  */
   template <MemType T>
   KernelDefBuilder& OutputMemoryType(int output_index) {
     kernel_def_->output_memory_type_args_.insert(std::make_pair(output_index, T));
@@ -219,13 +239,17 @@ class KernelDefBuilder {
     return *this;
   }
 
-  // Specify that this kernel runs on which execution queue in the provider
+  /**
+     Specify that this kernel runs on which execution queue in the provider
+  */
   KernelDefBuilder& ExecQueueId(int queue_id) {
     kernel_def_->exec_queue_id_ = queue_id;
     return *this;
   }
 
-  // Return the kernel definition, passing ownership of the KernelDef to the caller
+  /**
+     Return the kernel definition, passing ownership of the KernelDef to the caller
+  */
   std::unique_ptr<KernelDef> Build() {
     return std::move(kernel_def_);
   }

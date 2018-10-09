@@ -43,14 +43,16 @@ typedef std::unique_ptr<void, BufferDeleter> BufferUniquePtr;
 using BufferNakedPtr = void*;
 
 /*
-We want to keep tensor as simple as possible, it is just a placeholder 
-for a piece of memory, with additional shape information.
-Memory is owned and managed by Executor / Workspace, so Tensor just uses 
-it, and won't do any allocation / release.
+  We want to keep tensor as simple as possible, it is just a placeholder
+  for a piece of memory, with additional shape information.
+  Memory is owned and managed by Executor / Workspace, so Tensor just uses
+  it, and won't do any allocation / release.
 */
 class Tensor final {
  public:
-  // Create tensor with given type, shape, pre-allocate memory and allocator info.
+  /**
+     Create tensor with given type, shape, pre-allocate memory and allocator info.
+  */
   Tensor(MLDataType p_type,
          const TensorShape& shape,
          BufferNakedPtr p_data,
@@ -60,8 +62,10 @@ class Tensor final {
 
   ~Tensor();
 
-  // Copy constructor and assign op will just pass the shape and memory
-  // reference to another tensor. Not deep clone/copy.
+  /**
+     Copy constructor and assign op will just pass the shape and memory
+     reference to another tensor. Not deep clone/copy.
+  */
   Tensor(const Tensor& src);
   Tensor& ShallowCopy(const Tensor& other);
 
@@ -69,30 +73,40 @@ class Tensor final {
 
   Tensor& operator=(Tensor&& other);
 
-  // Returns the data type.
+  /**
+     Returns the data type.
+  */
   MLDataType DataType() const { return dtype_; }
 
-  // Returns the shape of the tensor.
+  /**
+     Returns the shape of the tensor.
+  */
   const TensorShape& Shape() const noexcept { return shape_; }
 
-  // Returns the location of the tensor's memory
+  /**
+     Returns the location of the tensor's memory
+  */
   const AllocatorInfo& Location() const { return alloc_info_; }
 
-  // May return nullptr if tensor size is zero
+  /**
+     May return nullptr if tensor size is zero
+  */
   template <typename T>
   T* MutableData() {
     // Type check
     ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                DataTypeImpl::GetType<T>(), "!=", dtype_);
+                        DataTypeImpl::GetType<T>(), "!=", dtype_);
     return reinterpret_cast<T*>(static_cast<char*>(p_data_) + byte_offset_);
   }
 
-  // May return nullptr if tensor size is zero
+  /**
+     May return nullptr if tensor size is zero
+  */
   template <typename T>
   gsl::span<T> MutableDataAsSpan() {
     // Type check
     ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                DataTypeImpl::GetType<T>(), "!=", dtype_);
+                        DataTypeImpl::GetType<T>(), "!=", dtype_);
     T* data = reinterpret_cast<T*>(static_cast<char*>(p_data_) + byte_offset_);
     return gsl::make_span(data, shape_.Size());
   }
@@ -101,7 +115,7 @@ class Tensor final {
   const T* Data() const {
     // Type check
     ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                DataTypeImpl::GetType<T>(), "!=", dtype_);
+                        DataTypeImpl::GetType<T>(), "!=", dtype_);
     return reinterpret_cast<const T*>(static_cast<char*>(p_data_) + byte_offset_);
   }
 
@@ -109,7 +123,7 @@ class Tensor final {
   gsl::span<const T> DataAsSpan() const {
     // Type check
     ONNXRUNTIME_ENFORCE(DataTypeImpl::GetType<T>() == dtype_, "Tensor type mismatch. ",
-                DataTypeImpl::GetType<T>(), "!=", dtype_);
+                        DataTypeImpl::GetType<T>(), "!=", dtype_);
     const T* data = reinterpret_cast<const T*>(static_cast<char*>(p_data_) + byte_offset_);
     return gsl::make_span(data, shape_.Size());
   }
@@ -133,14 +147,14 @@ class Tensor final {
   }
 
   /**
-  * Resizes the tensor without touching underlying storage.
-  * This requires the total size of the tensor to remains constant.
-  * @warning this function is NOT thread-safe.
-  */
+   * Resizes the tensor without touching underlying storage.
+   * This requires the total size of the tensor to remains constant.
+   * @warning this function is NOT thread-safe.
+   */
   inline void Reshape(const TensorShape& new_shape) {
     ONNXRUNTIME_ENFORCE(shape_.Size() == new_shape.Size(),
-                "Tensor size (" + std::to_string(shape_.Size()) +
-                    ") != new size (" + std::to_string(new_shape.Size()) + ")");
+                        "Tensor size (" + std::to_string(shape_.Size()) +
+                        ") != new size (" + std::to_string(new_shape.Size()) + ")");
     shape_ = new_shape;
   }
 
@@ -158,9 +172,11 @@ class Tensor final {
             int64_t offset = 0);
 
   void* p_data_;
-  // if buffer_deleter_ is null, it means tensor does not own the buffer.
-  // otherwise tensor will use the deleter to release the buffer when
-  // tensor is released.
+  /**
+     if buffer_deleter_ is null, it means tensor does not own the buffer.
+     otherwise tensor will use the deleter to release the buffer when
+     tensor is released.
+  */
   AllocatorPtr buffer_deleter_;
 
   TensorShape shape_;

@@ -16,7 +16,9 @@ enum StatusCategory {
   ONNXRUNTIME = 2,
 };
 
-// Error code for lotus.
+/**
+   Error code for lotus.
+*/
 enum StatusCode {
   OK = static_cast<unsigned int>(MLStatus::OK),
   FAIL = static_cast<unsigned int>(MLStatus::FAIL),

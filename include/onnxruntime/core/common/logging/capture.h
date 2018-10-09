@@ -16,33 +16,33 @@ class Logger;
 enum class DataType;
 
 /**
-Class to capture the details of a log message.
+   Class to capture the details of a log message.
 */
 class Capture {
  public:
   /**
-  Initializes a new instance of the Capture class.
-  @param logger The logger.
-  @param severity The severity.
-  @param category The category.
-  @param dataType Type of the data.
-  @param location The file location the log message is coming from.
+     Initializes a new instance of the Capture class.
+     @param logger The logger.
+     @param severity The severity.
+     @param category The category.
+     @param dataType Type of the data.
+     @param location The file location the log message is coming from.
   */
   Capture(const Logger& logger, logging::Severity severity, const char* category,
           logging::DataType dataType, const CodeLocation& location)
       : logger_{&logger}, severity_{severity}, category_{category}, data_type_{dataType}, location_{location} {
-  }
+      }
 
   /**
-  The stream that can capture the message via operator<<.
-  @returns Output stream.
+     The stream that can capture the message via operator<<.
+     @returns Output stream.
   */
   std::ostream& Stream() noexcept {
     return stream_;
   }
 
 #ifdef _MSC_VER
-// add SAL annotation for printf format string. requires Code Analysis to run to validate usage.
+  // add SAL annotation for printf format string. requires Code Analysis to run to validate usage.
 #define msvc_printf_check _Printf_format_string_
 #define __attribute__(x)  // Disable for MSVC. Supported by GCC and CLang.
 #else
@@ -50,24 +50,24 @@ class Capture {
 #endif
 
   /**
-  Captures a printf style log message.
-  @param name="format">The printf format.
-  @param name="">Arguments to the printf format if needed.  
-  @remarks
-  A maximum of 2K of output will be captured currently.
-  Non-static method, so 'this' is implicit first arg, and we use format(printf(2,3)
+     Captures a printf style log message.
+     @param name="format">The printf format.
+     @param name="">Arguments to the printf format if needed.
+     @remarks
+     A maximum of 2K of output will be captured currently.
+     Non-static method, so 'this' is implicit first arg, and we use format(printf(2,3)
   */
   void CapturePrintf(msvc_printf_check const char* format, ...) __attribute__((format(printf, 2, 3)));
 
   /**
-  Process a printf style log message.
-  @param format The printf format.
-  @param ... Arguments to the printf format if needed.
-  @remarks
-  A maximum of 2K of output will be captured currently.
-  Note: As va_list is 'char *', we have to disambiguate this from CapturePrintf
-  so that something like "One string: %s", "the string" does not consider "the string"
-  to be the va_list.
+     Process a printf style log message.
+     @param format The printf format.
+     @param ... Arguments to the printf format if needed.
+     @remarks
+     A maximum of 2K of output will be captured currently.
+     Note: As va_list is 'char *', we have to disambiguate this from CapturePrintf
+     so that something like "One string: %s", "the string" does not consider "the string"
+     to be the va_list.
   */
   void ProcessPrintf(msvc_printf_check const char* format, va_list args);
 

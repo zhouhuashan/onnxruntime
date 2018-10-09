@@ -12,18 +12,21 @@
 
 namespace onnxruntime {
 
+/**
+   Represents a registry that contains both custom kernels and custom schemas.
+*/
 class CustomRegistry : public KernelRegistry, public onnxruntime::OnnxRuntimeOpSchemaRegistry {
  public:
   CustomRegistry() = default;
   ~CustomRegistry() override = default;
 
   /**
-    * Register a kernel definition together with kernel factory method to this session.
-    * If any conflict happened between registered kernel def and built-in kernel def,
-    * registered kernel will have higher priority.
-    * Call this before invoking Initialize().
-    * @return OK if success.
-    */
+   * Register a kernel definition together with kernel factory method to this session.
+   * If any conflict happened between registered kernel def and built-in kernel def,
+   * registered kernel will have higher priority.
+   * Call this before invoking Initialize().
+   * @return OK if success.
+   */
   common::Status RegisterCustomKernel(KernelDefBuilder& kernel_def_builder, KernelCreateFn kernel_creator);
 
   common::Status RegisterCustomKernel(KernelCreateInfo&);

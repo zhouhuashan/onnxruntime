@@ -25,7 +25,9 @@ enum AllocatorType {  // TODO use enum class
   kArenaAllocator = 1
 };
 
-// memory types for allocator, exec provider specific types should be extended in each provider
+/**
+   memory types for allocator, exec provider specific types should be extended in each provider
+*/
 enum MemType : int {                // TODO use enum class
   kMemTypeCPUInput = -2,            // Any CPU memory used by non-CPU execution provider
   kMemTypeCPUOutput = -1,           // CPU accessible memory outputted by non-CPU execution provider, i.e. CUDA_PINNED
@@ -90,13 +92,17 @@ class IAllocator {
   virtual void Free(void* p) = 0;
   virtual const AllocatorInfo& Info() const = 0;
 
-  // optional CreateFence interface, as provider like DML has its own fence
+  /**
+     optional CreateFence interface, as provider like DML has its own fence
+  */
   virtual FencePtr CreateFence(const SessionState* /*unused*/) { return nullptr; }
 
-  /// Create a std::unique_ptr that is allocated and freed by the provided IAllocator.
-  /// @param allocator The allocator.
-  /// @param count_or_bytes The exact bytes to allocate if T is void, otherwise the number of elements to allocate.
-  /// @returns std::unique_ptr with allocated memory and deleter.
+  /**
+     Create a std::unique_ptr that is allocated and freed by the provided IAllocator.
+     @param allocator The allocator.
+     @param count_or_bytes The exact bytes to allocate if T is void, otherwise the number of elements to allocate.
+     @returns std::unique_ptr with allocated memory and deleter.
+  */
   template <typename T>
   static IAllocatorUniquePtr<T> MakeUniquePtr(std::shared_ptr<IAllocator> allocator, size_t count_or_bytes) {
     // for now limit to fundamental types. we could support others, but to do so either we or the caller
@@ -112,13 +118,15 @@ class IAllocator {
       alloc_size *= sizeof(typename std::conditional<std::is_void<T>::value, void*, T>::type);
 
     return IAllocatorUniquePtr<T>{
-        static_cast<T*>(allocator->Alloc(alloc_size)),  // allocate
-        [=](T* ptr) { allocator->Free(ptr); }};         // capture IAllocator so it's always valid, and use as deleter
+      static_cast<T*>(allocator->Alloc(alloc_size)),  // allocate
+          [=](T* ptr) { allocator->Free(ptr); }};         // capture IAllocator so it's always valid, and use as deleter
   }
 };
 
-// The resource allocator on a physical device.
-// This allocator will directly allocate resource from system call
+/**
+   The resource allocator on a physical device.
+   This allocator will directly allocate resource from system call
+*/
 class IDeviceAllocator : public IAllocator {
  public:
   ~IDeviceAllocator() override = default;

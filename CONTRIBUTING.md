@@ -1,18 +1,20 @@
 # Contributing
 
-We're always looking for your help to fix bugs and improve the product. Create a pull request, and we'll be happy to take a look.
+We're always looking for your help to fix bugs and improve the product. Create a pull request and we'll be happy to take a look.
 
 # Checkin procedure
 ```
-git clone ...
-git checkout -b my_changes
-make your changes
+git clone --recursive https://github.com/onnx/onnxruntime
+git checkout -b feature_branch
+# make your changes
+# write unit tests
+# make sure it builds and all tests pass
 git commit -m "my changes"
-git push
+git push origin HEAD
 ```
 To request merge into master send a pull request from the web ui
 https://github.com/onnx/onnxruntime
-New code should be accompanied by unittests.
+New code *must* be accompanied by unit tests.
 
 # Build
 [Build](BUILD.md)
