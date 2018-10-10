@@ -7,8 +7,7 @@
 
 #include "core/platform/env.h"
 #include "core/framework/tensorprotoutils.h"
-#include <google/protobuf/util/delimited_message_util.h>
-#include <google/protobuf/text_format.h>
+
 
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -28,10 +27,13 @@
 #pragma warning(disable : 4309) /*'conversion' : truncation of constant value*/
 #pragma warning(disable : 4334) /*'operator' : result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)*/
 #pragma warning(disable : 4355) /*'this' : used in base member initializer list*/
+#pragma warning(disable : 4505) /*unreferenced local function has been removed*/
 #pragma warning(disable : 4506) /*no definition for inline function 'function'*/
 #pragma warning(disable : 4800) /*'type' : forcing value to bool 'true' or 'false' (performance warning)*/
 #pragma warning(disable : 4996) /*The compiler encountered a deprecated declaration.*/
 #endif
+#include <google/protobuf/util/delimited_message_util.h>
+#include <google/protobuf/text_format.h>
 #include "tml.pb.h"
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
