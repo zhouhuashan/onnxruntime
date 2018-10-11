@@ -1551,33 +1551,37 @@ void Graph::SyncGraphInputsOutputs() {
 }
 
 void Graph::CleanUnusedInitializers() {
-  std::vector<std::string> unused_names;
-  std::set<const NodeArg*> input_args;
+  std::unordered_set<std::string> used_args;
+
+  const auto& inputs = GetInputs();
+  const auto& outputs = GetOutputs();
+
+  std::for_each(inputs.cbegin(), inputs.cend(), [&used_args](const NodeArg* input) {
+    ONNXRUNTIME_IGNORE_RETURN_VALUE(used_args.insert(input->Name()));
+  });
+
+  std::for_each(outputs.cbegin(), outputs.cend(), [&used_args](const NodeArg* output) {
+    ONNXRUNTIME_IGNORE_RETURN_VALUE(used_args.insert(output->Name()));
+  });
+
   for (const auto& node : Nodes()) {
-    node.ForEachInputDef([&input_args](const onnxruntime::NodeArg* def) { GSL_SUPPRESS(es .84)
-                                                                      input_args.insert(def); });
+    node.ForEachInputDef([&used_args](const onnxruntime::NodeArg* def) {
+      ONNXRUNTIME_IGNORE_RETURN_VALUE(used_args.insert(def->Name()));
+    });
   }
 
+  std::vector<std::string> erase_list;
+  auto end = used_args.end();
   for (const auto& pv : name_to_initial_tensor_) {
-    const std::string& s = pv.first;
-    const bool used_as_input = std::any_of(input_args.begin(), input_args.end(),
-                                           [&s](const gsl::not_null<const NodeArg*> input) noexcept {
-                                             return s == input->Name();
-                                           });
-    const bool used_as_output = std::any_of(GetOutputs().begin(), GetOutputs().end(),
-                                            [&s](const gsl::not_null<const NodeArg*> output) noexcept {
-                                              return s == output->Name();
-                                            });
-
-    if (!used_as_input && !used_as_output) {
-      unused_names.push_back(s);
+    const std::string& name = pv.first;
+    if (used_args.find(name) == end) {
+      LOGS_DEFAULT(WARNING) << name << " exists in this graph's initializers but it is not used by any node";
+      erase_list.push_back(name);
     }
   }
 
-  for (const std::string& s : unused_names) {
-    LOGF_DEFAULT(WARNING, "%s exists in this graph's initializers but it is not used by any node", s.c_str());
-    name_to_initial_tensor_.erase(s);
-  }
+  std::for_each(erase_list.cbegin(), erase_list.cend(),
+                [this](const std::string& name) { name_to_initial_tensor_.erase(name); });
 }
 
 GSL_SUPPRESS(es .84)  // warning about ignoring return value from insert(...)

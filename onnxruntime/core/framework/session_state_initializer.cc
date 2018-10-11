@@ -72,13 +72,13 @@ common::Status SessionStateInitializer::CreatePlan(const onnxruntime::GraphTrans
                                                    const InsertCastTransformer& insert_cast_transformer,
                                                    bool enable_sequential_execution) {
   ONNXRUNTIME_RETURN_IF_ERROR(TransformGraph(graph_, graph_transformation_manager,
-                                     execution_providers_, kernel_registry_manager_,
-                                     insert_cast_transformer));
+                                             execution_providers_, kernel_registry_manager_,
+                                             insert_cast_transformer));
 
   // populate the SessionState MLValueNameIdxMap
   ONNXRUNTIME_RETURN_IF_ERROR(SaveMLValueNameIndexMapping(graph_,
-                                                  session_state_.GetMLValueNameIdxMap(),
-                                                  logger_));
+                                                          session_state_.GetMLValueNameIdxMap(),
+                                                          logger_));
 
   std::unique_ptr<SequentialExecutionPlan> exec_plan;
 
@@ -86,14 +86,14 @@ common::Status SessionStateInitializer::CreatePlan(const onnxruntime::GraphTrans
     // CreatePlan will create a new SequentialExecutionPlan instance that we will
     // save into the session state.
     ONNXRUNTIME_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
-                                                      session_state_.GetMLValueNameIdxMap(), exec_plan));
+                                                              session_state_.GetMLValueNameIdxMap(), exec_plan));
 
     session_state_.SetExecutionPlan(std::move(exec_plan));
   } else {
     // Parallel execution still uses same allocation plan, but has limitation of memory buffer reuse.
     SequentialPlannerContext context(true /* enable parallel execution */);
     ONNXRUNTIME_RETURN_IF_ERROR(SequentialPlanner::CreatePlan(graph_, execution_providers_, kernel_registry_manager_,
-                                                      session_state_.GetMLValueNameIdxMap(), context, exec_plan));
+                                                              session_state_.GetMLValueNameIdxMap(), context, exec_plan));
 
     session_state_.SetExecutionPlan(std::move(exec_plan));
   }
@@ -115,8 +115,8 @@ common::Status SessionStateInitializer::InitializeAndSave(bool enable_memory_pat
   };
 
   ONNXRUNTIME_RETURN_IF_ERROR(SaveInitializedTensors(graph_, enable_memory_pattern, exec_plan,
-                                             execution_providers_, mlvalue_name_idx_map, weights_buffers,
-                                             add_initialized_tensor, logger_));
+                                                     execution_providers_, mlvalue_name_idx_map, weights_buffers,
+                                                     add_initialized_tensor, logger_));
 
   graph_.CleanAllInitializedTensors();  // remove weights from the graph now to save memory
 
@@ -178,6 +178,14 @@ common::Status SaveMLValueNameIndexMapping(const onnxruntime::Graph& graph,
     }
 
     // build the MLValue->index map
+
+    // we keep all graph inputs, even if they are unused, so make sure they all have an entry
+    for (gsl::not_null<const onnxruntime::NodeArg*> input_def : graph.GetInputs()) {
+      idx = mlvalue_name_idx_map.Add(input_def->Name());
+      VLOGS(logger, 1)
+          << "Added graph input with name: " << input_def->Name() << " to MLValueIndex with index: " << idx;
+    }
+
     for (gsl::not_null<const onnxruntime::NodeArg*> input_def : node.InputDefs()) {
       if (input_def->Exists()) {
         idx = mlvalue_name_idx_map.Add(input_def->Name());
@@ -228,7 +236,7 @@ common::Status DeserializeTensorProto(const ONNX_NAMESPACE::TensorProto& tensor_
   std::unique_ptr<Tensor> p_deserialize_tensor;
   deserialize_alloc_ptr = exec_providers.Get(kCpuExecutionProvider)->GetAllocator(kMemTypeDefault);
   ONNXRUNTIME_RETURN_IF_ERROR(utils::GetTensorFromTensorProto(tensor_proto, &p_deserialize_tensor,
-                                                      deserialize_alloc_ptr));
+                                                              deserialize_alloc_ptr));
 
   if (preallocated && preallocated_size != Align256(p_deserialize_tensor->Size())) {
     return Status(common::ONNXRUNTIME, common::FAIL, "The buffer planner is not consistent with tensor buffer size");
@@ -298,7 +306,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
   for (size_t i = 0; i < mem_patterns.locations.size(); i++) {
     auto& location = mem_patterns.locations[i];
     ONNXRUNTIME_ENFORCE(weights_buffers.find(location) == weights_buffers.end(),
-                "Existing entry in weights buffer for ", location.name);
+                        "Existing entry in weights buffer for ", location.name);
 
     auto alloc = utils::GetAllocator(exec_providers, location);
     if (!alloc)
@@ -336,7 +344,7 @@ common::Status SaveInitializedTensorsWithMemPattern(const Graph& graph,
       ONNXRUNTIME_RETURN_IF_ERROR(DeserializeTensorProto(tensor_proto, location, exec_providers, mlvalue, nullptr, 0));
     } else {
       ONNXRUNTIME_RETURN_IF_ERROR(DeserializeTensorProto(tensor_proto, location, exec_providers, mlvalue,
-                                                 (uint8_t*)it->second.get() + block->offset_, block->size_));
+                                                         (uint8_t*)it->second.get() + block->offset_, block->size_));
     }
 
     save_tensor_func(mlvalue_index, mlvalue);
@@ -414,7 +422,7 @@ static common::Status CreateOpKernel(const onnxruntime::Node& node,
   const IExecutionProvider* exec_provider = nullptr;
   if (exec_provider_name.empty() || (exec_provider = execution_providers.Get(exec_provider_name)) == nullptr) {
     auto status = ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Could not create kernel for node: ", node.Name(),
-                                  " as there's no execution provider allocated.");
+                                          " as there's no execution provider allocated.");
     LOGS(logger, ERROR) << status.ErrorMessage();
   }
 
