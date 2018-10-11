@@ -43,15 +43,17 @@ using onnxruntime::common::Status;
   } while (0)
 
 struct ONNXEnv {
-  ONNXEnv(Environment* value1, LoggingManager* loggingManager1) : value(value1), loggingManager(loggingManager1), cpu_allocator(new onnxruntime::CPUAllocator()) {
+  ONNXEnv(Environment* value1, LoggingManager* loggingManager1) : value(value1), loggingManager(loggingManager1) {
   }
+  /**
+  * This function will call ::google::protobuf::ShutdownProtobufLibrary
+  */
   ~ONNXEnv() {
     delete loggingManager;
     delete value;
   }
   Environment* value;
   LoggingManager* loggingManager;
-  std::shared_ptr<IAllocator> cpu_allocator;
   ONNXRUNTIME_DISALLOW_COPY_AND_ASSIGNMENT(ONNXEnv);
 };
 
@@ -70,11 +72,11 @@ static ONNXStatusPtr ToONNXStatus(const Status& st) {
   return ret;
 }
 
-ONNX_RUNTIME_EXPORT ONNXRuntimeErrorCode ONNXRuntimeGetErrorCode(_In_ const ONNXStatusPtr status) NO_EXCEPTION {
+ONNXRUNTIME_API(ONNXRuntimeErrorCode, ONNXRuntimeGetErrorCode, _In_ const ONNXStatusPtr status) {
   return *reinterpret_cast<ONNXRuntimeErrorCode*>(status);
 }
 
-ONNX_RUNTIME_EXPORT const char* ONNXRuntimeGetErrorMessage(_In_ const ONNXStatusPtr status) NO_EXCEPTION {
+ONNXRUNTIME_API(const char*, ONNXRuntimeGetErrorMessage, _In_ const ONNXStatusPtr status) {
   return reinterpret_cast<const char*>(status) + sizeof(int);
 }
 
@@ -127,26 +129,12 @@ class LoggingWrapper : public ISink {
   void* logger_param_;
 };
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr InitializeONNXRuntimeWithCustomLogger(ONNXRuntimeLoggingFunction logging_function, void* logger_param, ONNXRuntimeLoggingLevel warning_level, const char* logid, ONNXEnv** out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(InitializeONNXRuntimeWithCustomLogger, ONNXRuntimeLoggingFunction logging_function, void* logger_param, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out) {
   API_IMPL_BEGIN
   std::string name = logid;
   std::unique_ptr<ISink> logger = std::make_unique<LoggingWrapper>(logging_function, logger_param);
   std::unique_ptr<LoggingManager> default_logging_manager = std::make_unique<LoggingManager>(std::move(logger),
-                                                                                             static_cast<Severity>(warning_level), false,
-                                                                                             LoggingManager::InstanceType::Default,
-                                                                                             &name);
-  std::unique_ptr<Environment> env;
-  Status status = Environment::Create(env);
-  if (status.IsOK())
-    *out = new ONNXEnv(env.release(), default_logging_manager.release());
-  return ToONNXStatus(status);
-  API_IMPL_END
-}
-ONNX_RUNTIME_EXPORT ONNXStatusPtr InitializeONNXRuntime(ONNXRuntimeLoggingLevel warning_level, const char* logid, ONNXEnv** out) NO_EXCEPTION {
-  API_IMPL_BEGIN
-  std::string name = logid;
-  std::unique_ptr<LoggingManager> default_logging_manager = std::make_unique<LoggingManager>(std::unique_ptr<ISink>{new CLogSink{}},
-                                                                                             static_cast<Severity>(warning_level), false,
+                                                                                             static_cast<Severity>(default_warning_level), false,
                                                                                              LoggingManager::InstanceType::Default,
                                                                                              &name);
   std::unique_ptr<Environment> env;
@@ -157,19 +145,38 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr InitializeONNXRuntime(ONNXRuntimeLoggingLevel 
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetStringTensorDataLength(_In_ ONNXValuePtr value, _Out_ size_t* out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(InitializeONNXRuntime, ONNXRuntimeLoggingLevel default_warning_level, _In_ const char* logid, _Out_ ONNXEnv** out) {
+  API_IMPL_BEGIN
+  std::string name = logid;
+  std::unique_ptr<LoggingManager> default_logging_manager = std::make_unique<LoggingManager>(std::unique_ptr<ISink>{new CLogSink{}},
+                                                                                             static_cast<Severity>(default_warning_level), false,
+                                                                                             LoggingManager::InstanceType::Default,
+                                                                                             &name);
+  std::unique_ptr<Environment> env;
+  Status status = Environment::Create(env);
+  if (status.IsOK())
+    *out = new ONNXEnv(env.release(), default_logging_manager.release());
+  return ToONNXStatus(status);
+  API_IMPL_END
+}
+
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeGetStringTensorDataLength, _In_ ONNXValuePtr value, _Out_ size_t* out) {
   TENSOR_READ_API_BEGIN
   const auto* src = tensor.Data<std::string>();
-  auto len = static_cast<size_t>(tensor.Shape().Size());
-  size_t ret = 0;
-  for (size_t i = 0; i != len; ++i) {
-    ret += src[i].size();
-  }
-  *out = ret;
+  int64_t len = tensor.Shape().Size();
+  if (len >= 0) {
+    size_t ret = 0;
+    for (int64_t i = 0; i != len; ++i) {
+      ret += src[i].size();
+    }
+    *out = ret;
+  } else
+    return CreateONNXStatus(ONNXRUNTIME_INVALID_ARGUMENT, "shape is invalid");
   return nullptr;
   API_IMPL_END
 }
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeFillStringTensor(_In_ ONNXValuePtr value, _In_ const char* s[], size_t s_len) NO_EXCEPTION {
+
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeFillStringTensor, _In_ ONNXValuePtr value, _In_ const char* s[], size_t s_len) {
   TENSOR_READWRITE_API_BEGIN
   auto* dst = tensor->MutableData<std::string>();
   auto len = static_cast<size_t>(tensor->Shape().Size());
@@ -177,6 +184,7 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeFillStringTensor(_In_ ONNXValuePtr 
     return CreateONNXStatus(ONNXRUNTIME_INVALID_ARGUMENT, "input array is too short");
   }
   for (size_t i = 0; i != len; ++i) {
+    //allocate and copy
     dst[i] = s[i];
   }
   return nullptr;
@@ -184,7 +192,7 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeFillStringTensor(_In_ ONNXValuePtr 
 }
 
 template <typename T>
-void CreateTensorImpl(const size_t* shape, size_t shape_len, std::shared_ptr<onnxruntime::IAllocator>& allocator, std::unique_ptr<Tensor>* out) NO_EXCEPTION {
+void CreateTensorImpl(const size_t* shape, size_t shape_len, std::shared_ptr<onnxruntime::IAllocator>& allocator, std::unique_ptr<Tensor>* out) {
   size_t elem_count = 1;
   std::vector<int64_t> shapes(shape_len);
   for (size_t i = 0; i != shape_len; ++i) {
@@ -202,7 +210,7 @@ void CreateTensorImpl(const size_t* shape, size_t shape_len, std::shared_ptr<onn
 }
 
 template <typename T>
-ONNXStatusPtr CreateTensorImpl(const size_t* shape, size_t shape_len, const ONNXRuntimeAllocatorInfo* info, void* p_data, size_t p_data_len, std::unique_ptr<Tensor>* out) NO_EXCEPTION {
+ONNXStatusPtr CreateTensorImpl(const size_t* shape, size_t shape_len, const ONNXRuntimeAllocatorInfo* info, void* p_data, size_t p_data_len, std::unique_ptr<Tensor>* out) {
   size_t elem_count = 1;
   std::vector<int64_t> shapes(shape_len);
   for (size_t i = 0; i != shape_len; ++i) {
@@ -224,7 +232,7 @@ ONNXStatusPtr CreateTensorImpl(const size_t* shape, size_t shape_len, const ONNX
   return nullptr;
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeCreateTensorWithDataAsONNXValue(const ONNXRuntimeAllocatorInfo* info, void* p_data, size_t p_data_len, _In_ const size_t* shape, size_t shape_len, OnnxRuntimeTensorElementDataType type, _Out_ ONNXValuePtr* out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeCreateTensorWithDataAsONNXValue, _In_ const ONNXRuntimeAllocatorInfo* info, _In_ void* p_data, size_t p_data_len, _In_ const size_t* shape, size_t shape_len, OnnxRuntimeTensorElementDataType type, _Out_ ONNXValuePtr* out) {
   API_IMPL_BEGIN
   std::unique_ptr<Tensor> tensor;
   switch (type) {
@@ -285,9 +293,9 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeCreateTensorWithDataAsONNXValue(con
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeCreateTensorAsONNXValue(_Inout_ ONNXRuntimeAllocator* env, _In_ const size_t* shape, size_t shape_len, OnnxRuntimeTensorElementDataType type, _Out_ ONNXValuePtr* out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeCreateTensorAsONNXValue, _Inout_ ONNXRuntimeAllocator* allocator, _In_ const size_t* shape, size_t shape_len, OnnxRuntimeTensorElementDataType type, _Out_ ONNXValuePtr* out) {
   API_IMPL_BEGIN
-  std::shared_ptr<onnxruntime::IAllocator> allocator_ = std::make_shared<onnxruntime::AllocatorWrapper>(env);
+  std::shared_ptr<onnxruntime::IAllocator> allocator_ = std::make_shared<onnxruntime::AllocatorWrapper>(allocator);
   std::unique_ptr<Tensor> tensor;
   switch (type) {
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT:
@@ -349,7 +357,7 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeCreateTensorAsONNXValue(_Inout_ ONN
 }
 
 template <typename T>
-static ONNXStatusPtr CreateInferenceSessionImpl(_In_ ONNXEnv* env, _In_ T model_path, _In_ const ONNXRuntimeSessionOptions* options, _Out_ ONNXSessionPtr* out) NO_EXCEPTION {
+static ONNXStatusPtr CreateInferenceSessionImpl(_In_ ONNXEnv* env, _In_ T model_path, _In_ const ONNXRuntimeSessionOptions* options, _Out_ ONNXSessionPtr* out) {
   API_IMPL_BEGIN
   std::unique_ptr<::onnxruntime::InferenceSession> sess = std::make_unique<::onnxruntime::InferenceSession>(options->value, env->loggingManager);
   Status status;
@@ -381,20 +389,21 @@ static ONNXStatusPtr CreateInferenceSessionImpl(_In_ ONNXEnv* env, _In_ T model_
   API_IMPL_END
 }
 
-#ifndef _WIN32
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeCreateInferenceSession(_In_ ONNXEnv* env, _In_ const char* model_path, _In_ const ONNXRuntimeSessionOptions* options, _Out_ ONNXSessionPtr* out) NO_EXCEPTION {
+#ifdef _WIN32
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeCreateInferenceSession, _In_ ONNXEnv* env, _In_ const wchar_t* model_path, _In_ const ONNXRuntimeSessionOptions* options, _Out_ ONNXSessionPtr* out) {
   API_IMPL_BEGIN
   return CreateInferenceSessionImpl(env, model_path, options, out);
   API_IMPL_END
 }
 #else
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeCreateInferenceSession(_In_ ONNXEnv* env, _In_ const wchar_t* model_path, _In_ const ONNXRuntimeSessionOptions* options, _Out_ ONNXSessionPtr* out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeCreateInferenceSession, _In_ ONNXEnv* env, _In_ const char* model_path, _In_ const ONNXRuntimeSessionOptions* options, _Out_ ONNXSessionPtr* out) {
   API_IMPL_BEGIN
   return CreateInferenceSessionImpl(env, model_path, options, out);
   API_IMPL_END
 }
 #endif
-ONNX_RUNTIME_EXPORT ONNXStatusPtr RunInferenceAndFetchAll(_In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _Out_ ONNXValueListPtr* output, _Out_ size_t* output_len) NO_EXCEPTION {
+
+ONNXRUNTIME_API_STATUS_IMPL(RunInferenceAndFetchAll, _In_ ONNXSessionPtr sess, _In_ const char* input_names[], _In_ ONNXValuePtr* input, size_t input_len, _Out_ ONNXValueListPtr* output, _Out_ size_t* output_len) {
   API_IMPL_BEGIN
   auto session = reinterpret_cast<::onnxruntime::InferenceSession*>(sess);
   ::onnxruntime::NameMLValMap in;
@@ -426,7 +435,7 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr RunInferenceAndFetchAll(_In_ ONNXSessionPtr se
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetTensorMutableData(ONNXValuePtr value, void** output) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeGetTensorMutableData, _In_ ONNXValuePtr value, _Out_ void** output) {
   TENSOR_READWRITE_API_BEGIN
   //TODO: test if it's a string tensor
   *output = tensor->MutableDataRaw();
@@ -434,22 +443,22 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetTensorMutableData(ONNXValuePtr v
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetTensorShape(ONNXValuePtr value, size_t* shapeArray, size_t shapeArrayLen) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeGetTensorShape, _In_ ONNXValuePtr value, _Out_ size_t* shape_array, size_t shape_array_len) {
   TENSOR_READ_API_BEGIN
   const onnxruntime::TensorShape& shape = tensor.Shape();
   size_t len = shape.NumDimensions();
-  if (shapeArrayLen < len) {
+  if (shape_array_len < len) {
     std::ostringstream oss;
     oss << "input array doesn't have enough rooom, needs " << len;
     std::string errmsg = oss.str();
     return CreateONNXStatus(ONNXRUNTIME_INVALID_ARGUMENT, errmsg.c_str());
   }
-  memcpy(shapeArray, shape.GetDims().data(), len * sizeof(size_t));
+  memcpy(shape_array, shape.GetDims().data(), len * sizeof(size_t));
   return nullptr;
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetTensorShapeDimCount(ONNXValuePtr value, size_t* out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeGetTensorShapeDimCount, ONNXValuePtr value, size_t* out) {
   TENSOR_READ_API_BEGIN
   const onnxruntime::TensorShape& shape = tensor.Shape();
   *out = shape.NumDimensions();
@@ -457,7 +466,7 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetTensorShapeDimCount(ONNXValuePtr
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetTensorShapeElementCount(_In_ ONNXValuePtr value, _Out_ size_t* out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeGetTensorShapeElementCount, _In_ ONNXValuePtr value, _Out_ size_t* out) {
   TENSOR_READ_API_BEGIN
   const onnxruntime::TensorShape& shape = tensor.Shape();
   *out = shape.Size();
@@ -465,7 +474,7 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetTensorShapeElementCount(_In_ ONN
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetStringTensorContent(_In_ ONNXValuePtr value, _Out_ void* s, size_t s_len, _Out_ size_t* offsets, size_t offsets_len) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeGetStringTensorContent, _In_ ONNXValuePtr value, _Out_ void* s, size_t s_len, _Out_ size_t* offsets, size_t offsets_len) {
   TENSOR_READ_API_BEGIN
   const auto* input = tensor.Data<std::string>();
   auto len = static_cast<size_t>(tensor.Shape().Size());
@@ -493,7 +502,7 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeGetStringTensorContent(_In_ ONNXVal
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeTensorProtoToONNXValue(_Inout_ ONNXRuntimeAllocator* allocator, const void* input, int input_len, _Out_ ONNXValuePtr* out) NO_EXCEPTION {
+ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeTensorProtoToONNXValue, _Inout_ ONNXRuntimeAllocator* allocator, const void* input, int input_len, _Out_ ONNXValuePtr* out) {
   API_IMPL_BEGIN
   std::shared_ptr<onnxruntime::IAllocator> allocator_ = std::make_shared<onnxruntime::AllocatorWrapper>(allocator);
   ::ONNX_NAMESPACE::TensorProto proto;
@@ -509,22 +518,22 @@ ONNX_RUNTIME_EXPORT ONNXStatusPtr ONNXRuntimeTensorProtoToONNXValue(_Inout_ ONNX
   API_IMPL_END
 }
 
-ONNX_RUNTIME_EXPORT ONNXValuePtr ONNXValueListGetNthValue(ONNXValueListPtr list, size_t index) NO_EXCEPTION {
+ONNXRUNTIME_API(ONNXValuePtr, ONNXValueListGetNthValue, ONNXValueListPtr list, size_t index) {
   auto v = reinterpret_cast<::onnxruntime::MLValue*>(list);
   return reinterpret_cast<ONNXValuePtr>(v + index);
 }
 
-#define DEFINE_RELEASE_ONNX_RUNTIME_OBJECT_FUNCTION(INPUT_TYPE, REAL_TYPE)           \
-  ONNX_RUNTIME_EXPORT void Release##INPUT_TYPE(INPUT_TYPE##Ptr value) NO_EXCEPTION { \
-    delete reinterpret_cast<REAL_TYPE*>(value);                                      \
+#define DEFINE_RELEASE_ONNX_RUNTIME_OBJECT_FUNCTION(INPUT_TYPE, REAL_TYPE) \
+  ONNXRUNTIME_API(void, Release##INPUT_TYPE, INPUT_TYPE##Ptr value) {      \
+    delete reinterpret_cast<REAL_TYPE*>(value);                            \
   }
 
 #define DEFINE_RELEASE_ONNX_RUNTIME_OBJECT_FUNCTION_FOR_ARRAY(INPUT_TYPE, REAL_TYPE) \
-  ONNX_RUNTIME_EXPORT void Release##INPUT_TYPE(INPUT_TYPE##Ptr value) NO_EXCEPTION { \
+  ONNXRUNTIME_API(void, Release##INPUT_TYPE, INPUT_TYPE##Ptr value) {                \
     delete[] reinterpret_cast<REAL_TYPE*>(value);                                    \
   }
 
-ONNX_RUNTIME_EXPORT void ReleaseONNXEnv(ONNXEnv* env) NO_EXCEPTION {
+ONNXRUNTIME_API(void, ReleaseONNXEnv, ONNXEnv* env) {
   delete env;
 }
 

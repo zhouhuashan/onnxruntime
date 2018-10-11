@@ -16,6 +16,8 @@
 extern "C" {
 #endif
 
+//Any pointer marked with _In_ or _Out_, cannot be NULL. Caller should ensure that.
+
 //copied from TensorProto::DataType
 typedef enum OnnxRuntimeTensorElementDataType {
   ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT = 1,   // float
@@ -68,6 +70,11 @@ typedef struct ONNXOpaqueTypeInfo {
 //Every non-leaf node contains a field of ONNXRuntimeType
 //Each leaf node is either a tensor, or an ONNXArray.
 
+/**
+ * ReleaseONNXEnv function calls ::google::protobuf::ShutdownProtobufLibrary().
+ * Therefore, you should only call ReleaseONNXEnv at the end of your program.
+ * Once you did that, don't call any onnxruntime, onnx or protobuf functions again.
+ */
 DEFINE_RUNTIME_CLASS(ONNXEnv);
 
 typedef enum ONNXRuntimeLoggingLevel {
@@ -147,7 +154,7 @@ ONNXRUNTIME_API_STATUS(ONNXRuntimeCreateInferenceSession, _In_ ONNXEnv* env, _In
 DEFINE_RUNTIME_CLASS(ONNXValue);
 
 /**
- * This function is only for advanced users. In most cases, don't use it.
+ * This function is only for advanced users. In most cases, please use ONNXRuntimeCreateTensorWithDataAsONNXValue
  * The returned ONNXValuePtr will keep a reference to allocator, without reference counting
  * \param type must be one of TENSOR_ELEMENT_DATA_TYPE_xxxx
  */
@@ -163,10 +170,22 @@ ONNXRUNTIME_API_STATUS(ONNXRuntimeCreateTensorWithDataAsONNXValue, _In_ const ON
 ONNXRUNTIME_API_STATUS(ONNXRuntimeGetTensorMutableData, _In_ ONNXValuePtr value, _Out_ void** out);
 
 /**
+ * \param value A tensor created from ONNXRuntimeCreateTensor*** function.
  * \param s each A string array. Each string in this array must be null terminated.
+ * \param s_len length of s
  */
-ONNXRUNTIME_API_STATUS(ONNXRuntimeFillStringTensor, _In_ ONNXValuePtr value, _In_ const char* s[], size_t len);
+ONNXRUNTIME_API_STATUS(ONNXRuntimeFillStringTensor, _In_ ONNXValuePtr value, _In_ const char* s[], size_t s_len);
+/**
+ * \param value A tensor created from ONNXRuntimeCreateTensor*** function.
+ * \param len total data length, not including the trailing '\0' chars.
+ */
 ONNXRUNTIME_API_STATUS(ONNXRuntimeGetStringTensorDataLength, _In_ ONNXValuePtr value, _Out_ size_t* len);
+
+/**
+ * \param s string contents. Each string is NOT null-terminated.
+ * \param value A tensor created from ONNXRuntimeCreateTensor*** function.
+ * \param s_len total data length, get it from ONNXRuntimeGetStringTensorDataLength
+ */
 ONNXRUNTIME_API_STATUS(ONNXRuntimeGetStringTensorContent, _In_ ONNXValuePtr value, _Out_ void* s, size_t s_len, _Out_ size_t* offsets, size_t offsets_len);
 
 /**
@@ -224,7 +243,7 @@ ONNXRUNTIME_API(int, ONNXRuntimeInferenceSessionGetOutputCount, _In_ ONNXSession
  */
 ONNXRUNTIME_API(ONNXValuePtr, ONNXValueListGetNthValue, _In_ ONNXValueListPtr list, size_t index);
 
-ONNXRUNTIME_API_STATUS(ONNXRuntimeTensorProtoToONNXValue, _Inout_ ONNXRuntimeAllocator* allocator, const void* input, int input_len, _Out_ ONNXValuePtr* out);
+ONNXRUNTIME_API_STATUS(ONNXRuntimeTensorProtoToONNXValue, _Inout_ ONNXRuntimeAllocator* allocator, _In_ const void* input, int input_len, _Out_ ONNXValuePtr* out);
 
 #ifdef __cplusplus
 }
