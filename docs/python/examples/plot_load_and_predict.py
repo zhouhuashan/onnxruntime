@@ -10,9 +10,6 @@ Load and predict with ONNX Runtime and a very simple model
 This example demonstrates how to load a model and compute
 the output for an input vector. It also shows how to
 retrieve the definition of its inputs and outputs.
-
-Basic usage
-+++++++++++
 """
 
 import onnxruntime as rt
@@ -54,66 +51,3 @@ x = numpy.random.random((3,4,5))
 x = x.astype(numpy.float32)
 res = sess.run([output_name], {input_name: x})
 print(res)
-
-#########################
-# Basic errors
-# ++++++++++++
-#
-# What happens if the dimension or the name are not right.
-# First, bad type.
-
-example2 = get_example("logreg_iris.onnx")
-sess = rt.InferenceSession(example2)
-
-try:
-    x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float64)
-    sess.run([output_name], {input_name: x})
-except Exception as e:
-    print("{0}: {1}".format(type(e), e))
-    
-#########################
-# Then bad dimension.
-
-try:
-    x = numpy.array([[1.0, 2.0, 1.0], [3.0, 4.0, 5.0]], dtype=numpy.float32)
-    sess.run([output_name], {input_name: x})
-except Exception as e:
-    print("{0}: {1}".format(type(e), e))
-
-#########################
-# Bad type.
-
-try:
-    x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float64)
-    sess.run(["whatever"], {input_name: x})
-except Exception as e:
-    print("{0}: {1}".format(type(e), e))
-
-#########################
-# Bad name.
-
-try:
-    x = numpy.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=numpy.float32)
-    sess.run([output_name], {"whatever": x})
-except Exception as e:
-    print("{0}: {1}".format(type(e), e))
-
-#########################
-# Bad shape (1)
-
-try:
-    x = numpy.array([[[1.0, 2.0], [3.0, 4.0]]], dtype=numpy.float32)
-    sess.run(output_name, {input_name: x})
-except Exception as e:
-    print("{0}: {1}".format(type(e), e))
-
-#########################
-# Bad shape (2)
-
-try:
-    x = numpy.array([1.0, 2.0, 3.0, 4.0], dtype=numpy.float32)
-    sess.run(output_name, {input_name: x})
-except Exception as e:
-    print("{0}: {1}".format(type(e), e))
-
-

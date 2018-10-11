@@ -15,6 +15,7 @@
         :caption: Contents:
         
         auto_examples/plot_load_and_predict
+        auto_examples/plot_common_errors
         auto_examples/plot_train_convert_predict
         auto_examples/plot_pipeline
         auto_examples/plot_backend
