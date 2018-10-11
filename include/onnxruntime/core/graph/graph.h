@@ -95,11 +95,9 @@ class Graph : public GraphBase {
   ::onnxruntime::common::Status VerifyInputAndInitializerNames(
       /*OUT*/ std::unordered_set<std::string>& inputs_and_initializers);
 
-  // Given nodes in topological order, infer and set type information
-  // across <*this> graph if needed, and verify type/attribute
-  // information match between node and op.
-  ::onnxruntime::common::Status VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
-                                                     const std::unordered_map<std::string, Node*>& output_args);
+  // Infer and set type information across <*this> graph if needed, and verify type/attribute
+  // information matches between node and op.
+  ::onnxruntime::common::Status VerifyNodeAndOpMatch(const std::unordered_map<std::string, Node*>& output_args);
 
   // Set graph inputs/outputs when resolving a graph..
   ::onnxruntime::common::Status SetGraphInputsOutputs();

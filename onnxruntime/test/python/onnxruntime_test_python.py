@@ -98,15 +98,17 @@ class TestInferenceSession(unittest.TestCase):
         a = np.array([[True, True], [False, False]], dtype=np.bool)
         b = np.array([[True, False], [True, False]], dtype=np.bool)
 
+        # input1:0 is first in the protobuf, and input:0 is second
+        # and we maintain the original order. 
         a_name = sess.get_inputs()[0].name
-        self.assertEqual(a_name, "input:0")
+        self.assertEqual(a_name, "input1:0")
         a_shape = sess.get_inputs()[0].shape
         self.assertEqual(a_shape, [2, 2])
         a_type = sess.get_inputs()[0].type
         self.assertEqual(a_type, 'tensor(bool)')
 
         b_name = sess.get_inputs()[1].name
-        self.assertEqual(b_name, "input1:0")
+        self.assertEqual(b_name, "input:0")
         b_shape = sess.get_inputs()[1].shape
         self.assertEqual(b_shape, [2, 2])
         b_type = sess.get_inputs()[0].type

@@ -319,7 +319,8 @@ Status Node::UpdateInputArgCount() {
 
   if (total_arg_count < 0 || static_cast<size_t>(total_arg_count) != definitions_.input_defs.size()) {
     return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL,
-                           "The sum of input arg count is not equal to size of input defs in node (", name_, ")");
+                                   "The sum of input arg count is not equal to size of input defs in node (",
+                                   name_, ")");
   }
 
   // op_ is always valid when this is called
@@ -469,6 +470,8 @@ Graph::Graph(GraphProto* graph_proto,
     for (auto& graph_input : graph_proto_->input()) {
       if (graph_input.has_name() && graph_input.has_type()) {
         name_to_type_map[graph_input.name()] = graph_input.type();
+        // always create a NodeArg for graph input in case its from an initializer
+        GetOrCreateNodeArg(graph_input.name(), &graph_input.type());
       }
     }
 
@@ -702,30 +705,58 @@ void GraphBase::ReverseDFSFrom(const std::vector<const Node*>& from,
 }
 
 GSL_SUPPRESS(es .84)  // noisy warning about ignoring return value from insert(...)
-Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_order) const {
+Status GraphBase::PerformTopologicalSortAndCheckIsAcyclic() {
+  std::vector<NodeIndex>& nodes_in_topological_order{MutableNodesInTopologicalOrder()};
   nodes_in_topological_order.clear();
+
   // nodes that have been processed and added to nodes_in_topological_order.
-  std::unordered_set<NodeIndex> visited_nodes;
-  std::unordered_set<NodeIndex> ancestor_nodes;
-  // tracks nodes whose child nodes have been processed.
-  std::unordered_set<NodeIndex> children_visited_nodes;
+  std::unordered_set<NodeIndex> processed_nodes;
+  std::unordered_set<NodeIndex> output_nodes;
+  std::unordered_set<NodeIndex> nodes_added_for_processing;
   std::stack<NodeIndex> stack;
+
+  // push the top level nodes into nodes_in_topological_order in the order they were added
+  // to ensure that is consistent.
+  auto& nodes_in_original_order = Nodes();
+  std::for_each(nodes_in_original_order.cbegin(), nodes_in_original_order.cend(),
+                [&](const Node& node) {
+                  auto index = node.Index();
+
+                  // find the top level nodes in the graph.
+                  // need to also consider nodes that only have Constants as inputs as top level nodes,
+                  // as the constant will get replaced by an initializer.
+                  auto input_edges = node.GetRelationships().input_edges;
+                  auto has_inputs = std::any_of(input_edges.cbegin(), input_edges.cend(), [](Node::EdgeEnd* edge) {
+                    return edge->GetNode().OpType() != kConstant;
+                  });
+
+                  if (index != sink_node_index_ && !has_inputs) {
+                    // add to the topological list, and ensure we skip these nodes when walking the graph
+                    nodes_in_topological_order.push_back(index);
+                    processed_nodes.insert(index);
+
+                    // mark this as added as we've fully processed it and don't need to do it again later
+                    nodes_added_for_processing.insert(index);
+                  }
+                });
+
+  // start at the bottom and work our way up the graph
   stack.push(sink_node_index_);
 
   while (!stack.empty()) {
     const NodeIndex current = stack.top();
     stack.pop();
 
-    if (visited_nodes.end() != visited_nodes.find(current)) {
-      // The node has been visited before
+    if (processed_nodes.find(current) != processed_nodes.end()) {
       continue;
     }
 
-    if (children_visited_nodes.end() != children_visited_nodes.find(current)) {
-      // children are done so we mark this one complete.
-      visited_nodes.insert(current);
+    if (nodes_added_for_processing.find(current) != nodes_added_for_processing.end()) {
+      // we popped the stack and are back to a node that was added previously,
+      // so we know all the upstream nodes from it have been fully processed,
       nodes_in_topological_order.push_back(current);
-      ancestor_nodes.erase(current);
+      processed_nodes.insert(current);
+      output_nodes.erase(current);
       continue;
     }
 
@@ -734,39 +765,27 @@ Status GraphBase::CheckIsAcyclic(std::vector<NodeIndex>& nodes_in_topological_or
       continue;
     }
 
-    if (node->InputNodesBegin() == node->InputNodesEnd()) {
-      // no children
-      children_visited_nodes.insert(current);
-      visited_nodes.insert(current);
-      nodes_in_topological_order.push_back(current);
-      ancestor_nodes.erase(current);
-      continue;
-    }
-
     stack.push(current);
+    output_nodes.insert(current);
 
-    // mark as children done. by the time the node is popped off the stack again,
-    // its children will have been processed
-    children_visited_nodes.insert(current);
-
-    ancestor_nodes.insert(current);
-
-    // check children. use reverse order as we're going to push them onto the stack
-    // and doing it this way maintains their original order as we process the stack
+    // push the node's inputs onto the stack in reverse order so that when we finish processing each one
+    // and pop them from the stack they get added to nodes_in_topological_order in their original order
     for (auto iter = std::make_reverse_iterator(node->InputNodesEnd()),
               end = std::make_reverse_iterator(node->InputNodesBegin());
          iter != end; ++iter) {
       const NodeIndex idx = (*iter)->Index();
-      if (ancestor_nodes.end() != ancestor_nodes.find(idx)) {
+      if (output_nodes.find(idx) != output_nodes.end()) {
         Status status(ONNXRUNTIME, FAIL, "Error: the graph is not acyclic.");
         return status;
       }
 
       // avoid re-processing nodes
-      if (children_visited_nodes.end() == children_visited_nodes.find(idx)) {
+      if (nodes_added_for_processing.find(idx) == nodes_added_for_processing.end()) {
         stack.push(idx);
       }
     }
+
+    nodes_added_for_processing.insert(current);
   }
 
   if (num_of_nodes_ >= 0 && static_cast<size_t>(num_of_nodes_) == nodes_in_topological_order.size()) {
@@ -1061,11 +1080,10 @@ Status Graph::InferAndVerifyTypeMatch(Node& node,
   return Status::OK();
 }
 
-Status Graph::VerifyNodeAndOpMatch(const std::vector<NodeIndex>& nodes_in_topological_order,
-                                   const std::unordered_map<std::string, Node*>& output_args) {
+Status Graph::VerifyNodeAndOpMatch(const std::unordered_map<std::string, Node*>& output_args) {
   ONNXRUNTIME_RETURN_IF_ERROR(TypeCheckInputsAndInitializers());
 
-  for (auto nodeIndex : nodes_in_topological_order) {
+  for (auto nodeIndex : NodesInTopologicalOrder()) {
     if (IsSourceNode(nodeIndex) || IsSinkNode(nodeIndex)) {
       continue;
     }
@@ -1169,8 +1187,8 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   ONNXRUNTIME_RETURN_IF_ERROR(VerifyInputAndInitializerNames(inputs_and_initializers));
   ONNXRUNTIME_RETURN_IF_ERROR(VerifyNoDuplicateName(inputs_and_initializers, output_args, node_name_to_index));
   ONNXRUNTIME_RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
-  ONNXRUNTIME_RETURN_IF_ERROR(CheckIsAcyclic(NodesInTopologicalOrder()));
-  ONNXRUNTIME_RETURN_IF_ERROR(VerifyNodeAndOpMatch(NodesInTopologicalOrder(), output_args));
+  ONNXRUNTIME_RETURN_IF_ERROR(PerformTopologicalSortAndCheckIsAcyclic());
+  ONNXRUNTIME_RETURN_IF_ERROR(VerifyNodeAndOpMatch(output_args));
   ONNXRUNTIME_RETURN_IF_ERROR(SetGraphInputsOutputs());
 
   CleanUnusedInitializers();
@@ -1298,7 +1316,7 @@ static void AddNodeArgs(const std::vector<NodeArg*>& input_args,
     } else {
       // check that if an existing entry was found, it was for the same instance
       ONNXRUNTIME_ENFORCE(node_arg == input_arg,
-                  "Existing entry in NodeArg map for ", key, " != input definition.");
+                          "Existing entry in NodeArg map for ", key, " != input definition.");
     }
   }
 }
@@ -1588,6 +1606,8 @@ Status Graph::SetGraphInputsOutputs() {
     std::unordered_set<std::string> specified_graph_outputs;
     std::unordered_set<std::string> specified_graph_value_info;
     std::unordered_set<std::string> specified_initializers;
+    std::unordered_map<std::string, const NodeArg*> input_name_to_node_arg;
+    std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
 
     for (auto& graph_output : graph_proto_->output()) {
       specified_graph_outputs.insert(graph_output.name());
@@ -1598,7 +1618,11 @@ Status Graph::SetGraphInputsOutputs() {
     }
 
     for (auto& initializer : graph_proto_->initializer()) {
-      specified_initializers.insert(initializer.name());
+      auto& name = initializer.name();
+      specified_initializers.insert(name);
+      auto* node_arg = FindNodeArg(name);
+      ONNXRUNTIME_ENFORCE(node_arg, "Graph ctor should have created NodeArg for initializer.");
+      input_name_to_node_arg.insert({initializer.name(), node_arg});
     }
 
     // only add non-initializer to inputs
@@ -1607,21 +1631,19 @@ Status Graph::SetGraphInputsOutputs() {
         specified_graph_inputs.insert(graph_input.name());
     }
 
-    std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
+    // add non-initializer outputs
     for (const auto& node : Nodes()) {
       for (gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
-        if (specified_graph_outputs.erase(output_def->Name()) >= 1) {
-          graph_outputs.push_back(output_def);
-        }
+        ONNXRUNTIME_IGNORE_RETURN_VALUE(specified_graph_outputs.erase(output_def->Name()));
         output_name_to_node_arg.insert({output_def->Name(), output_def});
       }
     }
-    // for any outputs using initializer, add to graph_outputs
+
+    // add any outputs using initializer
     if (specified_graph_outputs.size() > 0) {
       for (const auto& name : specified_initializers) {
-        if (specified_graph_outputs.erase(name) >= 1) {
-          graph_outputs.push_back(FindNodeArg(name));
-        }
+        ONNXRUNTIME_IGNORE_RETURN_VALUE(specified_graph_outputs.erase(name));
+        output_name_to_node_arg.insert({name, FindNodeArg(name)});
       }
     }
 
@@ -1643,7 +1665,7 @@ Status Graph::SetGraphInputsOutputs() {
         if (specified_graph_inputs.end() != specified_graph_inputs.find(input_arg->Name())) {
           if (added_input_names.insert(input_arg->Name()).second) {
             // The node input is specified as graph input.
-            graph_inputs.push_back(input_arg);
+            input_name_to_node_arg.insert({input_arg->Name(), input_arg});
           }
           continue;
         }
@@ -1661,16 +1683,33 @@ Status Graph::SetGraphInputsOutputs() {
         }
       }
     }
+
+    // preserve input order
+    for (auto& graph_input : graph_proto_->input()) {
+      auto node_arg_iter = input_name_to_node_arg.find(graph_input.name());
+      ONNXRUNTIME_ENFORCE(node_arg_iter != input_name_to_node_arg.cend(),
+                          "All inputs and initializers should have entries.");
+      graph_inputs.push_back(node_arg_iter->second);
+    }
+
+    // preserve output order
+    for (auto& graph_output : graph_proto_->output()) {
+      graph_outputs.push_back(output_name_to_node_arg.at(graph_output.name()));
+    }
   } else {
     std::unordered_map<std::string, const NodeArg*> output_name_to_node_arg;
+    std::vector<std::string> ordered_output_names;
+
     for (const auto& node : Nodes()) {
       for (gsl::not_null<const NodeArg*> output_def : node.OutputDefs()) {
-        if (output_def->Exists())
+        if (output_def->Exists()) {
           output_name_to_node_arg.insert({output_def->Name(), output_def});
+          ordered_output_names.push_back(output_def->Name());
+        }
       }
     }
 
-    // Init graph output args with all node output args.
+    // Init graph output args with copy of all node output args.
     auto graph_output_args = output_name_to_node_arg;
 
     std::unordered_set<Node*> inner_nodes;
@@ -1689,22 +1728,28 @@ Status Graph::SetGraphInputsOutputs() {
           const std::string& name = input_arg->Name();
           if (added_input_names.end() == added_input_names.find(name)) {
             // This graph input has not been added into <graph_inputs_>.
-            if (name_to_initial_tensor_.find(name) == name_to_initial_tensor_.end())
+            if (name_to_initial_tensor_.find(name) == name_to_initial_tensor_.end()) {
               graph_inputs.push_back(input_arg);
+            }
+
             added_input_names.insert(input_arg->Name());
           }
         } else if (graph_output_args.erase(output_arg_iter->first) >= 1) {
           // Remove the output arg name from graph outputs since it's
-          // the input of another node, which we call it intermediate result
+          // the input of this node, which we call it intermediate result
           // and store it in <m_valueinfo>.
           value_info_.push_back(input_arg);
         }
       }
     }
 
-    // Set graph outputs.
-    for (auto& output_arg : graph_output_args) {
-      graph_outputs.push_back(output_arg.second);
+    // Set graph outputs
+    auto end = graph_output_args.end();
+    for (auto& name : ordered_output_names) {
+      auto graph_output = graph_output_args.find(name);
+      if (graph_output != end) {
+        graph_outputs.push_back(graph_output->second);
+      }
     }
   }
 
