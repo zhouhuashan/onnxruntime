@@ -1181,6 +1181,7 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   //otherwise, if the graph only contain initializers, CheckIsAcyclic will fail as the graph is not connected.
   NO_CHANGE_ON_SYNC_FLAG(AddControlEdge(source_node_index_, sink_node_index_));
 
+  ONNXRUNTIME_RETURN_IF_ERROR(SetGraphInputsOutputs());
   std::unordered_map<std::string, Node*> output_args;
   std::unordered_set<std::string> inputs_and_initializers;
   std::unordered_map<std::string, NodeIndex> node_name_to_index;
@@ -1189,7 +1190,6 @@ Status Graph::Resolve(bool no_proto_sync_required) {
   ONNXRUNTIME_RETURN_IF_ERROR(BuildConnections(output_args, node_name_to_index));
   ONNXRUNTIME_RETURN_IF_ERROR(PerformTopologicalSortAndCheckIsAcyclic());
   ONNXRUNTIME_RETURN_IF_ERROR(VerifyNodeAndOpMatch(output_args));
-  ONNXRUNTIME_RETURN_IF_ERROR(SetGraphInputsOutputs());
 
   CleanUnusedInitializers();
 
