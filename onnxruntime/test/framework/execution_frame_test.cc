@@ -165,7 +165,9 @@ TEST(ExecutionFrameTest, FeedInDataTest) {
 TEST(ExecutionFrameTest, MemPatternTest) {
   auto cpu_xp = CreateCPUExecutionProvider();
   auto xp_type = cpu_xp->Type();
-  onnxruntime::Model model("test");
+  std::unordered_map<std::string, int> domain_to_version;
+  domain_to_version[onnxruntime::kOnnxDomain] = 7;
+  onnxruntime::Model model("test", true, ModelMetaData(), nullptr, domain_to_version);
   onnxruntime::Graph& graph = model.MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);

@@ -127,8 +127,10 @@ static const std::string MODEL_URI_NO_OPSET = "testdata/mul_1.pb.noopset";
 //static const std::string MODEL_URI = "./testdata/squeezenet/model.onnx"; // TODO enable this after we've weights?
 
 static void CreateMatMulModel(std::unique_ptr<onnxruntime::Model>& p_model, ProviderType provider_type) {
+  std::unordered_map<std::string, int> domain_to_version;
+  domain_to_version[onnxruntime::kOnnxDomain] = 7;
   // Generate the input & output def lists
-  p_model = std::make_unique<onnxruntime::Model>("test");
+  p_model = std::make_unique<onnxruntime::Model>("test", true, ModelMetaData(), nullptr, domain_to_version);
   onnxruntime::Graph& graph = p_model->MainGraph();
 
   TypeProto tensor_float;

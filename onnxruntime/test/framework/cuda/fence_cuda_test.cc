@@ -87,7 +87,7 @@ TEST(CUDAFenceTests, DISABLED_PartOnCPU) {
   p_node = graph.AddNode("node_to_delete", "Add", "Add operator", ArgMap{&y_def, &z_def}, ArgMap{&out_def});
   graph.RemoveNode(p_node->Index());
 
-  EXPECT_TRUE(graph.Resolve().IsOK());
+  ASSERT_TRUE(graph.Resolve().IsOK());
 
   auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
   auto element_type = DataTypeImpl::GetType<float>();
@@ -113,14 +113,14 @@ TEST(CUDAFenceTests, DISABLED_PartOnCPU) {
   LoadInferenceSessionFromModel(session, *model);
   CUDAExecutionProviderInfo xp_info;
   session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
-  EXPECT_TRUE(session.Initialize().IsOK());
-  EXPECT_TRUE(1 == CountCopyNodes(graph));
+  ASSERT_TRUE(session.Initialize().IsOK());
+  ASSERT_TRUE(1 == CountCopyNodes(graph));
 
   vector<MLValue> outputs;
   session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},
               std::vector<std::string>{"Out"},
               &outputs);
-  EXPECT_TRUE(1 == outputs.size());
+  ASSERT_TRUE(1 == outputs.size());
   const Tensor& output = outputs[0].Get<Tensor>();
   EXPECT_EQ(output.Shape(), shape);
   EXPECT_EQ(output.DataType(), DataTypeImpl::GetType<float>());
@@ -142,9 +142,9 @@ TEST(CUDAFenceTests, TileWithInitializer) {
 
   auto p_node = graph.AddNode("node1", "Tile", "Tile operator", ArgMap{&x1_def, &tile_repeat_def}, ArgMap{&y_def});
   p_node->SetExecutionProviderType(onnxruntime::kCudaExecutionProvider);
-  EXPECT_TRUE(graph.Resolve().IsOK());
+  ASSERT_TRUE(graph.Resolve().IsOK());
 
-  EXPECT_TRUE(0 == CountCopyNodes(graph));
+  ASSERT_TRUE(0 == CountCopyNodes(graph));
 
   auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
   auto element_type = DataTypeImpl::GetType<float>();
@@ -170,13 +170,13 @@ TEST(CUDAFenceTests, TileWithInitializer) {
   LoadInferenceSessionFromModel(session, *model);
   CUDAExecutionProviderInfo xp_info;
   session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
-  EXPECT_TRUE(session.Initialize().IsOK());
+  ASSERT_TRUE(session.Initialize().IsOK());
 
   vector<MLValue> outputs;
   session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},
               std::vector<std::string>{"Y"},
               &outputs);
-  EXPECT_TRUE(1 == outputs.size());
+  ASSERT_TRUE(1 == outputs.size());
   const Tensor& output = outputs[0].Get<Tensor>();
   EXPECT_EQ(output.Shape(), TensorShape({2, 4}));
   EXPECT_EQ(output.DataType(), DataTypeImpl::GetType<float>());
@@ -188,7 +188,9 @@ TEST(CUDAFenceTests, TileWithInitializer) {
 }
 
 TEST(CUDAFenceTests, TileWithComputedInput) {
-  std::unique_ptr<onnxruntime::Model> model = std::make_unique<onnxruntime::Model>("test");
+  std::unordered_map<std::string, int> domain_to_version;
+  domain_to_version[onnxruntime::kOnnxDomain] = 7;
+  std::unique_ptr<onnxruntime::Model> model = std::make_unique<onnxruntime::Model>("test", true, ModelMetaData(), nullptr, domain_to_version);
   onnxruntime::Graph& graph = model->MainGraph();
   TypeProto tensor_float;
   tensor_float.mutable_tensor_type()->set_elem_type(TensorProto_DataType_FLOAT);
@@ -206,9 +208,9 @@ TEST(CUDAFenceTests, TileWithComputedInput) {
   p_node->SetExecutionProviderType(onnxruntime::kCpuExecutionProvider);
   p_node = graph.AddNode("node3", "Tile", "Tile operator", ArgMap{&y_def, &s_def}, ArgMap{&out_def});
   p_node->SetExecutionProviderType(onnxruntime::kCudaExecutionProvider);
-  EXPECT_TRUE(graph.Resolve().IsOK());
+  ASSERT_TRUE(graph.Resolve().IsOK());
 
-  EXPECT_TRUE(0 == CountCopyNodes(graph));
+  ASSERT_TRUE(0 == CountCopyNodes(graph));
 
   auto cpu_allocator = TestCPUExecutionProvider()->GetAllocator(kMemTypeDefault);
   auto element_type = DataTypeImpl::GetType<float>();
@@ -234,13 +236,13 @@ TEST(CUDAFenceTests, TileWithComputedInput) {
   LoadInferenceSessionFromModel(session, *model);
   CUDAExecutionProviderInfo xp_info;
   session.RegisterExecutionProvider(std::make_unique<CUDAExecutionProvider>(xp_info));
-  EXPECT_TRUE(session.Initialize().IsOK());
+  ASSERT_TRUE(session.Initialize().IsOK());
 
   vector<MLValue> outputs;
   session.Run(std::unordered_map<std::string, MLValue>{{"X1", value}},
               std::vector<std::string>{"Out"},
               &outputs);
-  EXPECT_TRUE(1 == outputs.size());
+  ASSERT_TRUE(1 == outputs.size());
   const Tensor& output = outputs[0].Get<Tensor>();
   EXPECT_EQ(output.Shape(), TensorShape({4, 4}));
   EXPECT_EQ(output.DataType(), DataTypeImpl::GetType<float>());
