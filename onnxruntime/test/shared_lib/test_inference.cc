@@ -145,7 +145,7 @@ typedef CApiTestImpl<false> CApiTest;
 
 #ifdef _WIN32
 typedef std::wstring PATH_TYPE;
-#define TSTR(X) L#X
+#define TSTR(X) L##X
 #else
 #define TSTR(X) (X)
 typedef std::string PATH_TYPE;
