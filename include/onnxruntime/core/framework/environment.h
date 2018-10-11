@@ -19,6 +19,9 @@ class Environment {
   */
   static Status Create(std::unique_ptr<Environment>& environment);
 
+  /**
+  * This function will call ::google::protobuf::ShutdownProtobufLibrary
+  */
   ~Environment();
 
  private:

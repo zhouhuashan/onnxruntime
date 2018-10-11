@@ -461,9 +461,6 @@ def build_python_wheel(source_dir, build_dir, configs, use_cuda):
 
 def main():
     args = parse_arguments()
-    if (args.build_shared_lib and is_windows()):
-        log.error("Shared lib creation not supported on Windows")
-        sys.exit(-1)
 
     cmake_path = args.cmake_path
     cmake_extra_defines = args.cmake_extra_defines if args.cmake_extra_defines else []

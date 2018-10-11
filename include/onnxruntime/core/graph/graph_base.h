@@ -580,7 +580,7 @@ class GraphBase {
     return nodes_in_topological_order_;
   }
 
-  std::vector<NodeIndex>& NodesInTopologicalOrder() noexcept {
+  std::vector<NodeIndex>& MutableNodesInTopologicalOrder() noexcept {
     return nodes_in_topological_order_;
   }
 
@@ -623,13 +623,11 @@ class GraphBase {
       /*out*/ std::unordered_map<std::string, Node*>& output_args,
       /*out*/ std::unordered_map<std::string, NodeIndex>& node_name_to_index);
 
-  // Check whether <*this> graph is acyclic.
-  // Depth-first going thru the graph and check whether there's any back
-  // edge.
-  // <nodes_in_topological_order> returns nodes' indexes in toplogical
+  // Check whether <*this> graph is acyclic while performing a topological sort.
+  // Depth-first going from bottom up through the graph and checking whether there are any back edges.
+  // NodesInTopologicalOrder is updated with the nodes' indexes in topological
   // order if <Status> returned is "OK", otherwise it's undefined.
-  common::Status CheckIsAcyclic(
-      /*out*/ std::vector<NodeIndex>& nodes_in_topological_order) const;
+  common::Status PerformTopologicalSortAndCheckIsAcyclic();
 
   // Apply shape/type inference to a single node. This is a wrapper for
   // invoking ONNX-defined shape+type inference for a single node.

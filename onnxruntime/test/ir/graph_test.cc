@@ -315,6 +315,226 @@ TEST(ResolvingGraphTest, GraphConstruction_CheckIsAcyclic) {
   }
 }
 
+TEST(ResolvingGraphTest, GraphConstruction_CheckInputNodeOrderMaintained) {
+  OPERATOR_SCHEMA(Identity_Fake)
+      .SetDoc("Identity.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+  OPERATOR_SCHEMA(Merge_Fake)
+      .SetDoc("Merge.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+
+  Model model("graph_1");
+  auto& graph = model.MainGraph();
+
+  //    node_1 (Identity)  node_2 (Identity)
+  //                |         |
+  //    node_4 (Identity)  node_3 (Identity)   Cross inputs over so node_1 and node_2 would get swapped if we didn't
+  //                 \       /                 maintain order.
+  //                 node_5 (Merge)
+  //                     |
+
+  std::unordered_map<std::string, std::pair<std::vector<NodeArg*>, std::vector<NodeArg*>>>
+      expected_node_name_to_input_output_args;
+
+  TypeProto tensor_int32;
+  tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+  tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+
+  auto& input_arg1 = graph.GetOrCreateNodeArg("node_1_in_1", &tensor_int32);
+  auto& output_arg1 = graph.GetOrCreateNodeArg("node_1_out_1", &tensor_int32);
+
+  auto& input_arg2 = graph.GetOrCreateNodeArg("node_2_in_1", &tensor_int32);
+  auto& output_arg2 = graph.GetOrCreateNodeArg("node_2_out_1", &tensor_int32);
+
+  auto& output_arg3 = graph.GetOrCreateNodeArg("node_3_out_1", &tensor_int32);
+  auto& output_arg4 = graph.GetOrCreateNodeArg("node_4_out_1", &tensor_int32);
+  auto& output_arg5 = graph.GetOrCreateNodeArg("node_5_out_1", &tensor_int32);
+
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
+
+  inputs.push_back(&input_arg1);
+  outputs.push_back(&output_arg1);
+  expected_node_name_to_input_output_args["node_1"] = {inputs, outputs};
+  graph.AddNode("node_1", "Identity_Fake", "node 1", inputs, outputs);
+
+  inputs[0] = &input_arg2;
+  outputs[0] = &output_arg2;
+  expected_node_name_to_input_output_args["node_2"] = {inputs, outputs};
+  graph.AddNode("node_2", "Identity_Fake", "node 2", inputs, outputs);
+
+  inputs[0] = &output_arg2;
+  outputs[0] = &output_arg3;
+  expected_node_name_to_input_output_args["node_3"] = {inputs, outputs};
+  graph.AddNode("node_3", "Identity_Fake", "node 3", inputs, outputs);
+
+  inputs[0] = &output_arg1;
+  outputs[0] = &output_arg4;
+  expected_node_name_to_input_output_args["node_4"] = {inputs, outputs};
+  graph.AddNode("node_4", "Identity_Fake", "node 4", inputs, outputs);
+
+  inputs.resize(2);
+  inputs[0] = &output_arg4;
+  inputs[1] = &output_arg3;
+  outputs[0] = &output_arg5;
+  expected_node_name_to_input_output_args["node_5"] = {inputs, outputs};
+  graph.AddNode("node_5", "Merge_Fake", "node 3", inputs, outputs);
+
+  auto status = graph.Resolve();
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+  const std::vector<NodeIndex>* topological_order;
+  status = graph.GetNodesInTopologicalOrder(&topological_order);
+  EXPECT_TRUE(status.IsOK());
+
+  bool seen1 = false;
+  bool seen2 = false;
+
+  for (auto i : *topological_order) {
+    auto node = graph.GetNode(i);
+
+    if (node->Name() == "node_1") {
+      EXPECT_TRUE(!seen2) << "node_1 should remain before node_2 after the topological sort.";
+      seen1 = true;
+    } else if (node->Name() == "node_2") {
+      EXPECT_TRUE(seen1) << "node_1 should be before node_2 after the topological sort.";
+      seen2 = true;
+    }
+  }
+}
+
+TEST(ResolvingGraphTest, GraphConstruction_CheckGraphInputOutputOrderMaintained) {
+  OPERATOR_SCHEMA(Identity_Fake)
+      .SetDoc("Identity.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+  OPERATOR_SCHEMA(Merge_Fake)
+      .SetDoc("Merge.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Input(1, "input_2", "docstr for input_2.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)");
+
+  // we need more than 8 outputs to trigger the unordered_map that's used in Graph::SetGraphInputsOutputs to
+  // re-allocate and re-order to prove the code works.
+  OPERATOR_SCHEMA(Split_Fake)
+      .SetDoc("Split.")
+      .Input(0, "input_1", "docstr for input_1.", "tensor(int32)")
+      .Output(0, "output_1", "docstr for output_1.", "tensor(int32)")
+      .Output(1, "output_2", "docstr for output_2.", "tensor(int32)")
+      .Output(2, "output_3", "docstr for output_3.", "tensor(int32)")
+      .Output(3, "output_4", "docstr for output_4.", "tensor(int32)")
+      .Output(4, "output_5", "docstr for output_5.", "tensor(int32)")
+      .Output(5, "output_6", "docstr for output_6.", "tensor(int32)")
+      .Output(6, "output_7", "docstr for output_7.", "tensor(int32)")
+      .Output(7, "output_8", "docstr for output_8.", "tensor(int32)")
+      .Output(8, "output_9", "docstr for output_9.", "tensor(int32)")
+      .Output(9, "output_10", "docstr for output_10.", "tensor(int32)");
+
+  Model model("graph_1");
+  auto& graph = model.MainGraph();
+
+  std::unordered_map<std::string, int> map;
+
+  for (auto i = 0; i < 20; ++i) {
+    map.insert({std::to_string(i), i});
+
+    std::cout << "Insert " << i << "\n";
+    for (auto pair : map) {
+      std::cout << pair.first << ":" << pair.second << " ";
+    }
+    std::cout << "\n";
+  }
+
+  //               |         |
+  //       b (Identity)  a (Identity)   values
+  //                \   /
+  //                  c (Merge)
+  //                  |
+  //                  d (Split)
+  //                /   \
+  //              1  ..  10
+  std::unordered_map<std::string, std::pair<std::vector<NodeArg*>, std::vector<NodeArg*>>>
+      expected_node_name_to_input_output_args;
+
+  TypeProto tensor_int32;
+  tensor_int32.mutable_tensor_type()->set_elem_type(TensorProto_DataType_INT32);
+  tensor_int32.mutable_tensor_type()->mutable_shape()->add_dim()->set_dim_value(1);
+
+  auto& input_arg_a = graph.GetOrCreateNodeArg("node_a_in_1", &tensor_int32);
+  auto& output_arg_a = graph.GetOrCreateNodeArg("node_a_out_1", &tensor_int32);
+
+  auto& input_arg_b = graph.GetOrCreateNodeArg("node_b_in_1", &tensor_int32);
+  auto& output_arg_b = graph.GetOrCreateNodeArg("node_b_out_1", &tensor_int32);
+
+  auto& output_arg_c = graph.GetOrCreateNodeArg("node_c_out_1", &tensor_int32);
+
+  std::vector<NodeArg*> split_outputs;
+  for (int i = 0; i < 10; ++i) {
+    split_outputs.push_back(&graph.GetOrCreateNodeArg("node_d_out_" + std::to_string(i + 1), &tensor_int32));
+  }
+
+  std::vector<NodeArg*> inputs;
+  std::vector<NodeArg*> outputs;
+
+  inputs.push_back(&input_arg_a);
+  outputs.push_back(&output_arg_a);
+  expected_node_name_to_input_output_args["a"] = {inputs, outputs};
+  graph.AddNode("a", "Identity_Fake", "a", inputs, outputs);
+
+  inputs.resize(2);
+  inputs[0] = &output_arg_b;
+  inputs[1] = &output_arg_a;
+  outputs[0] = &output_arg_c;
+  expected_node_name_to_input_output_args["c"] = {inputs, outputs};
+  graph.AddNode("c", "Merge_Fake", "c", inputs, outputs);
+
+  // deliberately add 'b' after 'c' to mix up the inputs as well
+  inputs.resize(1);
+  inputs[0] = &input_arg_b;
+  outputs[0] = &output_arg_b;
+  expected_node_name_to_input_output_args["b"] = {inputs, outputs};
+  graph.AddNode("b", "Identity_Fake", "b", inputs, outputs);
+
+  inputs[0] = &output_arg_c;
+  expected_node_name_to_input_output_args["d"] = {inputs, split_outputs};
+  graph.AddNode("d", "Split_Fake", "d", inputs, split_outputs);
+
+  auto validate_inputs_outputs = [&split_outputs](const Graph& graph) {
+    auto inputs = graph.GetInputs();
+    auto outputs = graph.GetOutputs();
+
+    EXPECT_TRUE(inputs[0]->Name() == "node_a_in_1");  // 'a' was added first
+    EXPECT_TRUE(inputs[1]->Name() == "node_b_in_1");
+
+    for (int i = 0; i < 10; ++i) {
+      EXPECT_TRUE(split_outputs[i]->Name() == outputs[i]->Name());
+    }
+  };
+
+  auto status = graph.Resolve();
+  validate_inputs_outputs(graph);
+
+  // serialize and reload so we check the loaded from proto path in SetGraphInputsOutputs
+  auto proto = model.ToProto();
+  std::stringstream s1;
+  model.ToProto().SerializeToOstream(&s1);
+
+  ModelProto model_proto;
+  const bool result = model_proto.ParseFromIstream(&s1);
+  ASSERT_TRUE(result) << "Failed to load model from serialized protobuf";
+
+  std::shared_ptr<onnxruntime::Model> p_tmp_model;
+  auto x = onnxruntime::Model::Load(model_proto, p_tmp_model, nullptr);
+
+  auto& graph2 = p_tmp_model->MainGraph();
+  status = graph2.Resolve();
+  EXPECT_TRUE(status.IsOK()) << status.ErrorMessage();
+
+  validate_inputs_outputs(graph2);
+}
+
 TEST(ResolvingGraphTest, GraphConstruction_CheckIsNotAcyclic) {
   // A cyclic graph
   //                 SouceNode

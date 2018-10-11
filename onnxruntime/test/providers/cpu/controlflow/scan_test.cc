@@ -20,9 +20,9 @@ static void CreateSubgraph(Model& model) {
 
   /* Subgraph looks like this. 
 
-                   loop_state_in_1             concat_in_0      concat_in_1
-                        |                                 \     /
-       constant_1-----[Add]                              [Concat]
+    [constant_1]  loop_state_in_1             concat_in_0      concat_in_1
+            \           |                                 \     /
+             \--------[Add]                               [Concat]
                         |                                    |
                         |                                 concat_out_1
                         |                                    |
