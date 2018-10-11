@@ -29,6 +29,13 @@ export ONNX_ML=1
 #5af210ca8a1c73aa6bae8754c9346ec54d0a756e is v1.2.3
 #bae6333e149a59a3faa9c4d9c44974373dcf5256 is v1.3.0
 for onnx_version in "5af210ca8a1c73aa6bae8754c9346ec54d0a756e" "bae6333e149a59a3faa9c4d9c44974373dcf5256" "6ef49ecee91e6f13ea7022fe544cf639ef4df75f"; do
+  if [ -z ${lastest_onnx_version+x} ]; then
+    echo "first pass";
+  else
+    echo "deleting old onnx-${lastest_onnx_version}";
+    pip3 uninstall -y onnx
+  fi
+  lastest_onnx_version=$onnx_version
   aria2c -q -d /tmp/src  https://github.com/onnx/onnx/archive/$onnx_version.tar.gz
   tar -xf /tmp/src/onnx-$onnx_version.tar.gz -C /tmp/src
   cd /tmp/src/onnx-$onnx_version
@@ -37,8 +44,9 @@ for onnx_version in "5af210ca8a1c73aa6bae8754c9346ec54d0a756e" "bae6333e149a59a3
   pip3 install -q dist/*
   mkdir -p /data/onnx/$onnx_version
   backend-test-tools generate-data -o /data/onnx/$onnx_version
-  pip3 uninstall -y onnx
 done
+
+#The last onnx version will be kept
 
 aria2c -q -d /tmp/src  http://bitbucket.org/eigen/eigen/get/3.3.5.tar.bz2
 tar -jxf /tmp/src/eigen-eigen-b3f3d4950030.tar.bz2 -C /usr/include

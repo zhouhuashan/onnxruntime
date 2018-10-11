@@ -413,7 +413,8 @@ def run_onnxruntime_tests(args, ctest_path, build_dir, configs, enable_python_te
             except ImportError:
                 warnings.warn("onnx is not installed. Following test cannot be run.")
                 onnx_test = False
-            if onnx_test:
+            #TODO: enable this test on Linux
+            if onnx_test and is_windows():
                 run_subprocess([sys.executable, 'onnxruntime_test_python_backend.py'], cwd=cwd, dll_path=dll_path)
                 run_subprocess([sys.executable, 'onnx_backend_test_series.py'], cwd=cwd, dll_path=dll_path)
             try:
