@@ -453,7 +453,10 @@ ONNXRUNTIME_API_STATUS_IMPL(ONNXRuntimeGetTensorShape, _In_ ONNXValuePtr value, 
     std::string errmsg = oss.str();
     return CreateONNXStatus(ONNXRUNTIME_INVALID_ARGUMENT, errmsg.c_str());
   }
-  memcpy(shape_array, shape.GetDims().data(), len * sizeof(size_t));
+  const std::vector<int64_t>& dims = shape.GetDims();
+  for (size_t i = 0; i != len; ++i) {
+    shape_array[i] = static_cast<size_t>(dims[i]);
+  }
   return nullptr;
   API_IMPL_END
 }
