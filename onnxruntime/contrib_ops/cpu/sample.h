@@ -8,7 +8,7 @@
 #include "core/framework/tensor.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 template <typename T>
 class SampleOp : public OpKernel {
  public:
@@ -28,5 +28,5 @@ class SampleOp : public OpKernel {
     return Status::OK();
   }
 };
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

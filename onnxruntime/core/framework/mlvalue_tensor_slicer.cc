@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/framework/mlvalue_tensor_slicer.h"
 
 namespace onnxruntime {

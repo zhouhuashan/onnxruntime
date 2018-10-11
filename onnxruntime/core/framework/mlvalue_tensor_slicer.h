@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include <iterator>
@@ -15,19 +18,19 @@ Class to provide a slicing service over a Tensor stored within an MLValue with s
 {batch size, sequence length, <input shape>}. Access to the slices is via an iterator interface.
 
 For each iteration an MLValue will be returned containing a sub-Tensor of the original Tensor.
-The sub-Tensor applies the relevant offset to the data address from the original Tensor in order 
+The sub-Tensor applies the relevant offset to the data address from the original Tensor in order
 to avoid any memory allocations/copies for the tensor data.
 */
 template <typename T>
 class MLValueTensorSlicer {
  public:
-  /** 
-  Create a new instance to slice the Tensor contained in an MLValue 
+  /**
+  Create a new instance to slice the Tensor contained in an MLValue
   into sub-Tensors contained within new MLValue instances that are accessed via the Iterator.
   T must be 'MLValue' or 'const MLValue'
-    @param slice_dimension Dimension to slice on. 
-    @param dim0_offset Offset to start at. Only meaningful if slice_dimension != 0. 
-           e.g. if input is [batch, seq_len, data] and you want to slice the seq_len dimension, you need to 
+    @param slice_dimension Dimension to slice on.
+    @param dim0_offset Offset to start at. Only meaningful if slice_dimension != 0.
+           e.g. if input is [batch, seq_len, data] and you want to slice the seq_len dimension, you need to
                 create an Iterator instance for each batch item, incrementing dim0_offset for each one.
   */
   static MLValueTensorSlicer Create(T& mlvalue, int64_t slice_dimension = 0, int64_t dim0_offset = 0);

@@ -1,7 +1,10 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 namespace detail {
 
 // Helper struct for an activation function call information
@@ -13,5 +16,5 @@ struct ActivationInfo {
 };
 
 }  // namespace detail
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

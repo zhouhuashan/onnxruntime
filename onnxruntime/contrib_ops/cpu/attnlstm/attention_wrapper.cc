@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "attention_wrapper.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"
 
@@ -7,7 +10,7 @@
 using onnxruntime::rnn::detail::Allocate;
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 template <typename T>
 AttentionWrapper<T>::AttentionWrapper(AllocatorPtr alloc, const logging::Logger& logger,
@@ -79,5 +82,5 @@ void AttentionWrapper<T>::SetWeights(const gsl::span<const T>& wrapper_weights) 
 
 template class AttentionWrapper<float>;
 
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

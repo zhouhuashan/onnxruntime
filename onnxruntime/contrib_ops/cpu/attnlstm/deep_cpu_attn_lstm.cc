@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "deep_cpu_attn_lstm.h"
 #include "activation_info.h"
 #include "bahdanau_attention.h"
@@ -9,9 +12,9 @@
 #include "core/framework/allocator.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
-using ::onnxruntime::ml::rnn::detail::UniDirectionalAttnLstm;
+using ::onnxruntime::contrib::rnn::detail::UniDirectionalAttnLstm;
 using ::onnxruntime::rnn::detail::Allocate;
 using ::onnxruntime::rnn::detail::OptionalInput;
 
@@ -19,14 +22,14 @@ extern template class BahdanauAttention<float>;
 
 /* AttnLSTM operator */
 ONNX_OPERATOR_KERNEL_EX(
-    AttnLSTM,  //name
-    kMSDomain,
-    1,
-    kCpuExecutionProvider,
-    KernelDefBuilder()
-        .TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()})
-        .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
-    DeepCpuAttnLstmOp);
+     AttnLSTM,  //name
+     kMSDomain,
+     1,
+     kCpuExecutionProvider,
+     KernelDefBuilder()
+     .TypeConstraint("T", {DataTypeImpl::GetTensorType<float>(), DataTypeImpl::GetTensorType<double>()})
+     .TypeConstraint("T1", DataTypeImpl::GetTensorType<int32_t>()),
+     DeepCpuAttnLstmOp);
 
 Status
 DeepCpuAttnLstmOp::Compute(OpKernelContext* context) const {
@@ -504,5 +507,5 @@ Status DeepCpuAttnLstmOp::ValidateInputs(
   return Status::OK();
 }
 
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

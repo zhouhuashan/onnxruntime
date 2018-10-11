@@ -7,7 +7,7 @@
 #include "core/framework/kernel_registry.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 #define ONNX_CONTRIB_OPERATOR_SCHEMA(name) \
   ONNX_CONTRIB_OPERATOR_SCHEMA_UNIQ_HELPER(__COUNTER__, name)
 #define ONNX_CONTRIB_OPERATOR_SCHEMA_UNIQ_HELPER(Counter, name) \
@@ -28,5 +28,5 @@ namespace ml {
 
 void RegisterContribSchemas();
 void RegisterContribKernels(std::function<void(KernelCreateInfo&&)> create_fn);
-}  // namespace ml
+} // namespace contrib
 }  // namespace onnxruntime

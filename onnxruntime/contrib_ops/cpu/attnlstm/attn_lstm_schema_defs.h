@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #ifdef __GNUC__
@@ -11,7 +14,7 @@
 #endif
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 ::ONNX_NAMESPACE::OpSchema& RegisterAttnLSTMContribOpSchema(::ONNX_NAMESPACE::OpSchema&& op_schema);
 

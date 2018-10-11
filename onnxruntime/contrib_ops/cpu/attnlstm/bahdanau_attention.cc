@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "bahdanau_attention.h"
 #include "core/providers/cpu/rnn/rnn_helpers.h"
 
@@ -7,7 +10,7 @@
 using onnxruntime::rnn::detail::Allocate;
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 template <typename T>
 BahdanauAttention<T>::BahdanauAttention(AllocatorPtr allocator, const logging::Logger& logger,
@@ -153,5 +156,5 @@ void BahdanauAttention<T>::Compute(
 
 template class BahdanauAttention<float>;
 
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

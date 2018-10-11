@@ -412,7 +412,7 @@ void RegisterOnnxMLOperatorKernels(std::function<void(KernelCreateInfo&&)> fn) {
 static void RegisterCPUKernels(std::function<void(KernelCreateInfo&&)> create_fn) {
   RegisterOnnxOperatorKernels(create_fn);
   ::onnxruntime::ml::RegisterOnnxMLOperatorKernels(create_fn);
-  ::onnxruntime::ml::RegisterContribKernels(create_fn);
+  ::onnxruntime::contrib::RegisterContribKernels(create_fn);
 }
 
 std::shared_ptr<KernelRegistry> CPUExecutionProvider::GetKernelRegistry() const {

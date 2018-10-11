@@ -9,9 +9,9 @@
 #include "core/providers/cpu/tensor/utils.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 /*
-Given a tensor input, this operation inserts a dimension of 1 at the dimension index axis 
+Given a tensor input, this operation inserts a dimension of 1 at the dimension index axis
 of X's shape. The dimension index axis starts at zero; if you specify a negative number
 of axis, it starts backward from the end.
 */
@@ -44,5 +44,5 @@ class ExpandDims final : public OpKernel {
   }
 };
 
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include "activation_info.h"
@@ -12,7 +15,7 @@
 #include <gsl/span>
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 namespace deepcpu = ::onnxruntime::rnn::detail::deepcpu;
 namespace logging = ::onnxruntime::logging;
@@ -20,7 +23,7 @@ namespace logging = ::onnxruntime::logging;
 using ::onnxruntime::AllocatorPtr;
 using ::onnxruntime::IAllocatorUniquePtr;
 using ::onnxruntime::TaskThreadPool;
-using ::onnxruntime::ml::detail::ActivationInfo;
+using ::onnxruntime::contrib::detail::ActivationInfo;
 using ::onnxruntime::rnn::detail::ActivationFuncs;
 using ::onnxruntime::rnn::detail::Direction;
 
@@ -167,5 +170,5 @@ class UniDirectionalAttnLstm {
 
 }  // namespace detail
 }  // namespace rnn
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

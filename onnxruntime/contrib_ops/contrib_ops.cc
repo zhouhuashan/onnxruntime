@@ -10,8 +10,7 @@
 #include "./cpu/attnlstm/attn_lstm_schema_defs.h"
 
 namespace onnxruntime {
-namespace ml {
-
+namespace contrib {
 using ::ONNX_NAMESPACE::AttributeProto;
 using ::ONNX_NAMESPACE::OPTIONAL;
 using ::ONNX_NAMESPACE::OpSchema;
@@ -60,5 +59,5 @@ void RegisterContribKernels(std::function<void(KernelCreateInfo&&)> fn) {
   fn(BuildKernel<ONNX_OPERATOR_TYPED_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, float, ExpandDims)>());
   fn(BuildKernel<ONNX_OPERATOR_KERNEL_CLASS_NAME(kCpuExecutionProvider, kMSDomain, 1, AttnLSTM)>());
 }
-}  // namespace ml
+} // namespace contrib
 }  // namespace onnxruntime

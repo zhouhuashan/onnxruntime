@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "core/session/allocator.h"
 #include <atomic>
 #include <stdexcept>
@@ -45,6 +48,6 @@ ONNXRUNTIME_ALLOCATOR_IMPL_BEGIN(MockedONNXRuntimeAllocator)
     }
 ONNXRUNTIME_ALLOCATOR_IMPL_END
 
-//By default, Visual Studio applies internal linkage to constexpr variables even if the extern keyword is used. 
+//By default, Visual Studio applies internal linkage to constexpr variables even if the extern keyword is used.
 constexpr ONNXRuntimeAllocatorInfo MockedONNXRuntimeAllocator::cpuAllocatorInfo;
 constexpr ONNXRuntimeAllocatorInteface MockedONNXRuntimeAllocator::table_;

@@ -6,8 +6,7 @@
 #include "sample.h"
 
 namespace onnxruntime {
-namespace ml {
-
+namespace contrib {
 ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
     ExpandDims,
     1,
@@ -16,7 +15,6 @@ ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
         .Alias(0, 0)
         .TypeConstraint("T", DataTypeImpl::AllTensorTypes())
         .TypeConstraint("axis", DataTypeImpl::GetTensorType<int32_t>()),
-    ExpandDims);
-
-}  // namespace ml
+    contrib::ExpandDims);
+} // namespace contrib
 }  // namespace onnxruntime

@@ -1,9 +1,12 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include <gsl/span>
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 template <typename T>
 class IAttentionMechanism {
@@ -11,7 +14,7 @@ class IAttentionMechanism {
   virtual ~IAttentionMechanism() = default;
 
   virtual void PrepareMemory(
-    const gsl::span<const T>& memory, 
+    const gsl::span<const T>& memory,
     const gsl::span<const int>& memory_sequence_lengths) = 0;
 
   virtual void Compute(
@@ -21,7 +24,7 @@ class IAttentionMechanism {
     const gsl::span<T>& alignment) const = 0;
 
   virtual const gsl::span<const T> Values() const = 0;
-  
+
   virtual const gsl::span<const T> Keys() const = 0;
 
   virtual int GetMaxMemorySteps() const = 0;

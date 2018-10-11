@@ -1,18 +1,21 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "attn_lstm_schema_defs.h"
 
 #include "core/graph/constants.h"
 #include "core/graph/op.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 using ::ONNX_NAMESPACE::AttributeProto;
 using ::ONNX_NAMESPACE::OPTIONAL;
 using ::ONNX_NAMESPACE::OpSchema;
 
-// This Doc based on LSTM_ver7, and modification 
+// This Doc based on LSTM_ver7, and modification
 static const char* AttnLSTM_ver1_doc = R"DOC(
-Computes an one-layer RNN where its RNN Cell is an AttentionWrapper wrapped a LSTM Cell. The RNN layer 
+Computes an one-layer RNN where its RNN Cell is an AttentionWrapper wrapped a LSTM Cell. The RNN layer
 contains following basic component: LSTM Cell, Bahdanau Attention Mechanism, AttentionWrapp.
 
 Activation functions:
@@ -47,7 +50,7 @@ Bahdanau Attention Mechanism:
     `M` -  Memory tensor.
 
     `VALUES` - masked Memory by its real sequence length.
-    
+
     `MW` - Memory layer weight.
 
     `KEYS` - Processed memory tensor by the memory layer.
@@ -131,7 +134,7 @@ AttentionWrapp Notations:
 
   `ATTN` - attention state, initial is zero. If `AW` provided, it is the output of the attention layer,
                 ATTNt = concat(Ht, CONTEXTt) * AW
-           otherwise, 
+           otherwise,
                 ATTNt = CONTEXTt
 
 RNN layer output:
@@ -157,7 +160,7 @@ OpSchema& RegisterAttnLSTMContribOpSchema(OpSchema&& op_schema){
         OPTIONAL)
     .Attr(
         "activation_alpha",
-        "Optional scaling values used by some activation functions. The values are consumed " 
+        "Optional scaling values used by some activation functions. The values are consumed "
         "in the order of activation functions, for example (f, g, h) in LSTM. Default values "
         "are the same as of corresponding ONNX operators.For example with LeakyRelu, the "
         "default alpha is 0.01.",
@@ -172,7 +175,7 @@ OpSchema& RegisterAttnLSTMContribOpSchema(OpSchema&& op_schema){
         OPTIONAL)
     .Attr(
         "clip",
-        "Cell clip threshold. Clipping bounds the elements of a tensor in the range of " 
+        "Cell clip threshold. Clipping bounds the elements of a tensor in the range of "
         "[-threshold, +threshold] and is applied to the input of activations. No clip if not "
         "specified.",
         AttributeProto::FLOAT,
@@ -189,7 +192,7 @@ OpSchema& RegisterAttnLSTMContribOpSchema(OpSchema&& op_schema){
         OPTIONAL)
     .Attr(
         "direction",
-        "Specify if the RNN is forward, reverse, or bidirectional. Must be one of " 
+        "Specify if the RNN is forward, reverse, or bidirectional. Must be one of "
         "forward (default), reverse, or bidirectional.",
         AttributeProto::STRING,
         std::string("forward"))

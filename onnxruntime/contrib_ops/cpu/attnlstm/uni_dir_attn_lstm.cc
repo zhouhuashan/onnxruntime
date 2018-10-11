@@ -1,9 +1,12 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #include "uni_dir_attn_lstm.h"
 
 using namespace onnxruntime::rnn::detail;
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 namespace rnn {
 namespace detail {
 
@@ -657,5 +660,5 @@ template class UniDirectionalAttnLstm<float>;
 
 }  // namespace detail
 }  // namespace rnn
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

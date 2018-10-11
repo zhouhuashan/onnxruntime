@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include "core/framework/allocator.h"
@@ -6,7 +9,7 @@
 #include "attention_mechanism.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 // Please refer to: https://arxiv.org/pdf/1409.0473.pdf
 template <typename T>
@@ -76,5 +79,5 @@ class BahdanauAttention : public IAttentionMechanism<T> {
   bool normalize_;
 };
 
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

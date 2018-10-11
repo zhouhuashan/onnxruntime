@@ -88,7 +88,7 @@ Internal copy node
 
     // Register contributed schemas.
     // The corresponding kernels are registered inside the appropriate execution provider.
-    ml::RegisterContribSchemas();
+    contrib::RegisterContribSchemas();
   } catch (std::exception& ex) {
     status = Status{ONNXRUNTIME, common::RUNTIME_EXCEPTION, std::string{"Exception caught: "} + ex.what()};
   } catch (...) {

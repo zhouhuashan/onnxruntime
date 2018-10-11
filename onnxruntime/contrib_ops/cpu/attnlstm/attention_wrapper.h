@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include "attention_mechanism.h"
@@ -7,7 +10,7 @@
 #include "core/framework/allocator.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 template <typename T>
 class AttentionWrapper {
@@ -68,5 +71,5 @@ class AttentionWrapper {
   const IAttentionMechanism<T>& attention_mechanism_;
 };
 
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime

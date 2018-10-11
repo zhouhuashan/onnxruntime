@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #pragma once
 
 #include <limits>
@@ -9,7 +12,7 @@
 #include "core/providers/cpu/rnn/rnn_helpers.h"
 
 namespace onnxruntime {
-namespace ml {
+namespace contrib {
 
 using onnxruntime::rnn::detail::ActivationFuncs;
 using onnxruntime::rnn::detail::Direction;
@@ -97,5 +100,5 @@ class DeepCpuAttnLstmOp final : public OpKernel {
   mutable TaskThreadPool ttp_{std::thread::hardware_concurrency()};
 };
 
-}  // namespace ml
+}  // namespace contrib
 }  // namespace onnxruntime
