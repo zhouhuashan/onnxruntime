@@ -2,6 +2,9 @@
 # Licensed under the MIT License.
 
 """
+
+.. _l-logreg-example:
+
 Train, convert and predict with ONNX Runtime
 ============================================
 

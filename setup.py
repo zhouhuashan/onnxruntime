@@ -30,7 +30,7 @@ else:
 data = [path.join('capi', x) for x in libs if path.isfile(path.join('onnxruntime', 'capi', x))]
 
 # Additional examples
-examples_names = ["mul_1.pb", "logreg_iris.onnx"]
+examples_names = ["mul_1.pb", "logreg_iris.onnx", "sigmoid.onnx"]
 examples = [path.join('datasets', x) for x in examples_names]
 
 # Extra files such as EULA and ThirdPartyNotices
