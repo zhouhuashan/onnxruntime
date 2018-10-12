@@ -5,6 +5,7 @@
 
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cuda/shared_inc/fast_divmod.h"
+#include "core/providers/cpu/tensor/utils.h"
 
 namespace onnxruntime {
 namespace cuda {
@@ -32,7 +33,74 @@ struct BinaryElementwisePreparation {
     ONNXRUNTIME_RETURN_IF_ERROR(fdm_output_strides.CopyToGpu());
     return Status::OK();
   }
+
+Status BinaryElementwiseBroadcastPrepareHelper(const TensorShape& lhs_shape,
+                                                 const TensorShape& rhs_shape,
+                                                 const TensorShape& output_shape) {
+    size_t lhs_rank = lhs_shape.NumDimensions();
+    size_t rhs_rank = rhs_shape.NumDimensions();
+    size_t out_rank = std::max(lhs_rank, rhs_rank);
+
+    // early return when shapes match
+    if (lhs_shape == rhs_shape) {
+      output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::NoBroadcast);
+      return Status::OK();
+    }
+
+    // early return if one operand is scalar
+    if (lhs_shape.Size() <= 1 || rhs_shape.Size() <= 1) {
+      output_rank_or_simple_broadcast = static_cast<size_t>(lhs_shape.Size() <= 1 ? SimpleBroadcast::LeftScalar : SimpleBroadcast::RightScalar);
+      return Status::OK();
+    }
+
+    // special case for lhs(N,C,H) and rhs (C,1) which is used in conv bias
+    // when N == 1: out[id] = op(lhs[id], rhs[id / H])
+    // When N > 1:  out[id] = op(lhs[id], rhs[id / H % C])
+    if (lhs_shape == output_shape) {
+      const auto& rhs_dims = rhs_shape.GetDims();
+      int64_t C;
+      if (1 == std::count_if(rhs_dims.begin(), rhs_dims.end(), [&C](int64_t dim) { if (dim > 1) C = dim; return (dim > 1); })) {
+        auto dim_C = std::find(rhs_dims.begin(), rhs_dims.end(), C) - rhs_dims.begin() + output_shape.NumDimensions() - rhs_shape.NumDimensions();
+        int64_t N = output_shape.SizeToDimension(dim_C);
+        int64_t H = (dim_C < out_rank - 1 ? output_shape.SizeFromDimension(dim_C + 1) : 1);
+
+        std::vector<int64_t> new_output_dims;
+        if (N == 1) {
+          output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::RightPerChannelBatch1);
+          fdm_H = fast_divmod(gsl::narrow_cast<int>(H));
+        } else {
+          output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::RightPerChannelBatchN);
+          fdm_H = fast_divmod(gsl::narrow_cast<int>(H));
+          fdm_C = fast_divmod(gsl::narrow_cast<int>(C));
+        }
+        return Status::OK();
+      }
+    }
+
+    output_rank_or_simple_broadcast = out_rank;
+
+    if (lhs_shape != output_shape) {
+      // compute strides with 1 more dim than out_rank, and use strides[0] == strides[1]
+      // to decide if dim0 needs broadcast
+      lhs_padded_strides.AllocCpuPtr(out_rank + 1);
+      ONNXRUNTIME_RETURN_IF_NOT(TensorPitches::Calculate(lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
+      if (lhs_shape[0] > 1 && lhs_rank == out_rank)
+        lhs_padded_strides.CpuPtr()[0] = 0;
+    }
+
+    if (rhs_shape != output_shape) {
+      rhs_padded_strides.AllocCpuPtr(out_rank + 1);
+      ONNXRUNTIME_RETURN_IF_NOT(TensorPitches::Calculate(rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
+      if (rhs_shape[0] > 1 && rhs_rank == out_rank)
+        rhs_padded_strides.CpuPtr()[0] = 0;
+    }
+
+    fdm_output_strides.AllocCpuPtr(out_rank);
+    ONNXRUNTIME_RETURN_IF_NOT(CalculateFdmStrides(fdm_output_strides.CpuSpan(), output_shape.GetDims()));
+    return Status::OK();
+  }
 };
+
 
 // trait classes to indicate if the kernel supports broadcast
 class ShouldBroadcast {

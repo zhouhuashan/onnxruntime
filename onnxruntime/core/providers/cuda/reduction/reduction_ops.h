@@ -11,13 +11,21 @@ namespace cuda {
 template <bool allow_multi_axes>
 class ReduceKernel : public CudaKernel, public ReduceKernelBase<allow_multi_axes> {
  protected:
-  ReduceKernel(const OpKernelInfo& info) : CudaKernel(info), ReduceKernelBase<allow_multi_axes>(info) {}
+  ReduceKernel(const OpKernelInfo& info) : CudaKernel(info),
+                                           ReduceKernelBase<allow_multi_axes>(info),
+                                           calculate_log_(false),
+                                           calculate_sqt_(false),
+                                           log_sum_exp_(false) {}
 
   template <typename T, cudnnReduceTensorIndices_t ReduceTensorIndices = CUDNN_REDUCE_TENSOR_NO_INDICES>
   Status ComputeImpl(OpKernelContext* ctx, cudnnReduceTensorOp_t cudnnReduceOp) const;
 
   using ReduceKernelBase<allow_multi_axes>::axes_;
   using ReduceKernelBase<allow_multi_axes>::keepdims_;
+
+  bool calculate_log_;
+  bool calculate_sqt_;
+  bool log_sum_exp_;
 };
 
 template <typename T>
@@ -104,6 +112,42 @@ template <typename T>
 class ReduceSum final : public ReduceKernel<true> {
  public:
   ReduceSum(const OpKernelInfo& info) : ReduceKernel<true>(info) {}
+
+  Status ComputeInternal(OpKernelContext* ctx) const override {
+    return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_ADD);
+  }
+};
+
+template <typename T>
+class ReduceLogSum final : public ReduceKernel<true> {
+ public:
+  ReduceLogSum(const OpKernelInfo& info) : ReduceKernel<true>(info) {
+    ReduceKernel<true>::calculate_log_ = true;
+  }
+
+  Status ComputeInternal(OpKernelContext* ctx) const override {
+    return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_ADD);
+  }
+};
+
+template <typename T>
+class ReduceSumSquare final : public ReduceKernel<true> {
+ public:
+  ReduceSumSquare(const OpKernelInfo& info) : ReduceKernel<true>(info) {
+    ReduceKernel<true>::calculate_sqt_ = true;
+  }
+
+  Status ComputeInternal(OpKernelContext* ctx) const override {
+    return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_ADD);
+  }
+};
+
+template <typename T>
+class ReduceLogSumExp final : public ReduceKernel<true> {
+ public:
+  ReduceLogSumExp(const OpKernelInfo& info) : ReduceKernel<true>(info) {
+    ReduceKernel<true>::log_sum_exp_ = true;
+  }
 
   Status ComputeInternal(OpKernelContext* ctx) const override {
     return ComputeImpl<T>(ctx, CUDNN_REDUCE_TENSOR_ADD);

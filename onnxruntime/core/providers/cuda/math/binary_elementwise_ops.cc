@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 #include "binary_elementwise_ops.h"
-#include "core/providers/cpu/tensor/utils.h"
 #include "binary_elementwise_ops_impl.h"
 using namespace onnxruntime::common;
 namespace onnxruntime {
@@ -35,10 +34,10 @@ static Status ComputeOutputShape(const std::string& node_name, const TensorShape
     int64_t out_dim = std::max(lhs_dim, rhs_dim);
     if (lhs_dim != out_dim && lhs_dim != 1)
       return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, node_name, ": left operand cannot broadcast on dim ", lhs_rank - 1 - i,
-                             " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
+                                     " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
     if (rhs_dim != out_dim && rhs_dim != 1)
       return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, node_name, ": right operand cannot broadcast on dim ", rhs_rank - 1 - i,
-                             " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
+                                     " LeftShape: ", lhs_shape.ToString(), ", RightShape: ", rhs_shape.ToString());
     output_dims[out_rank - 1 - i] = out_dim;
   }
   out_shape = TensorShape(output_dims);
@@ -56,70 +55,12 @@ Status BinaryElementwiseBroadcastPrepare(
   p->rhs_tensor = rhs_tensor;
   const auto& lhs_shape = override_lhs_shape ? *override_lhs_shape : lhs_tensor->Shape();
   const auto& rhs_shape = override_rhs_shape ? *override_rhs_shape : rhs_tensor->Shape();
-  size_t lhs_rank = lhs_shape.NumDimensions();
-  size_t rhs_rank = rhs_shape.NumDimensions();
-  size_t out_rank = std::max(lhs_rank, rhs_rank);
 
   p->output_tensor = output_tensor;
-
-  // early return when shapes match
-  if (lhs_shape == rhs_shape) {
-    p->output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::NoBroadcast);
-    return Status::OK();
-  }
-
-  // early return if one operand is scalar
-  if (lhs_shape.Size() <= 1 || rhs_shape.Size() <= 1) {
-    p->output_rank_or_simple_broadcast = static_cast<size_t>(lhs_shape.Size() <= 1 ? SimpleBroadcast::LeftScalar : SimpleBroadcast::RightScalar);
-    return Status::OK();
-  }
-
   const auto& output_shape = output_tensor->Shape();
 
-  // special case for lhs(N,C,H) and rhs (C,1) which is used in conv bias
-  // when N == 1: out[id] = op(lhs[id], rhs[id / H])
-  // When N > 1:  out[id] = op(lhs[id], rhs[id / H % C])
-  if (lhs_shape == output_tensor->Shape()) {
-    const auto& rhs_dims = rhs_shape.GetDims();
-    int64_t C;
-    if (1 == std::count_if(rhs_dims.begin(), rhs_dims.end(), [&C](int64_t dim) { if (dim > 1) C = dim; return (dim > 1); })) {
-      auto dim_C = std::find(rhs_dims.begin(), rhs_dims.end(), C) - rhs_dims.begin() + output_shape.NumDimensions() - rhs_shape.NumDimensions();
-      int64_t N = output_shape.SizeToDimension(dim_C);
-      int64_t H = (dim_C < out_rank - 1 ? output_shape.SizeFromDimension(dim_C + 1) : 1);
+  ONNXRUNTIME_RETURN_IF_ERROR(p->BinaryElementwiseBroadcastPrepareHelper(lhs_shape, rhs_shape, output_shape));
 
-      std::vector<int64_t> new_output_dims;
-      if (N == 1) {
-        p->output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::RightPerChannelBatch1);
-        p->fdm_H = fast_divmod(gsl::narrow_cast<int>(H));
-      } else {
-        p->output_rank_or_simple_broadcast = static_cast<size_t>(SimpleBroadcast::RightPerChannelBatchN);
-        p->fdm_H = fast_divmod(gsl::narrow_cast<int>(H));
-        p->fdm_C = fast_divmod(gsl::narrow_cast<int>(C));
-      }
-      return Status::OK();
-    }
-  }
-
-  p->output_rank_or_simple_broadcast = out_rank;
-
-  if (lhs_shape != output_shape) {
-    // compute strides with 1 more dim than out_rank, and use strides[0] == strides[1]
-    // to decide if dim0 needs broadcast
-    p->lhs_padded_strides.AllocCpuPtr(out_rank + 1);
-    ONNXRUNTIME_RETURN_IF_NOT(TensorPitches::Calculate(p->lhs_padded_strides.CpuSpan(), lhs_shape.GetDims()));
-    if (lhs_shape[0] > 1 && lhs_rank == out_rank)
-      p->lhs_padded_strides.CpuPtr()[0] = 0;
-  }
-
-  if (rhs_shape != output_shape) {
-    p->rhs_padded_strides.AllocCpuPtr(out_rank + 1);
-    ONNXRUNTIME_RETURN_IF_NOT(TensorPitches::Calculate(p->rhs_padded_strides.CpuSpan(), rhs_shape.GetDims()));
-    if (rhs_shape[0] > 1 && rhs_rank == out_rank)
-      p->rhs_padded_strides.CpuPtr()[0] = 0;
-  }
-
-  p->fdm_output_strides.AllocCpuPtr(out_rank);
-  ONNXRUNTIME_RETURN_IF_NOT(CalculateFdmStrides(p->fdm_output_strides.CpuSpan(), output_tensor->Shape().GetDims()));
   return Status::OK();
 }
 
@@ -165,7 +106,7 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   Status x<T>::ComputeInternal(OpKernelContext* context) const {                                                 \
     BinaryElementwisePreparation prepare(this);                                                                  \
     Prepare(context, &prepare);                                                                                  \
-    ONNXRUNTIME_RETURN_IF_ERROR(prepare.CopyToGpu());                                                                    \
+    ONNXRUNTIME_RETURN_IF_ERROR(prepare.CopyToGpu());                                                            \
     Impl_##x<typename ToCudaType<T>::MappedType>(                                                                \
         prepare.output_rank_or_simple_broadcast,                                                                 \
         prepare.lhs_padded_strides.GpuPtr(),                                                                     \
@@ -184,20 +125,20 @@ Status BinaryElementwise<ShouldBroadcast>::Prepare(OpKernelContext* context, Bin
   BINARY_ELEMENTWISE_REGISTER_KERNEL_TYPED(name, ver, T) \
   BINARY_ELEMENTWISE_COMPUTE(name, T)
 
-// since different ops has different types, we cannot use BINARY_OPS() directly
-// the postfix of means the types supported by the op:
-// B: uint8_t
-// W: uint16_t
-// U: uint32_t
-// Z: uint64_t
-// C: int8_t
-// S: int16_t
-// I: int32_t
-// L: int64_t
-// H: float16
-// F: float
-// D: double
-// O: bool
+  // since different ops has different types, we cannot use BINARY_OPS() directly
+  // the postfix of means the types supported by the op:
+  // B: uint8_t
+  // W: uint16_t
+  // U: uint32_t
+  // Z: uint64_t
+  // C: int8_t
+  // S: int16_t
+  // I: int32_t
+  // L: int64_t
+  // H: float16
+  // F: float
+  // D: double
+  // O: bool
 
 #define BINARY_OP_HFD(name, ver)        \
   BINARY_OP_TYPED(name, ver, MLFloat16) \

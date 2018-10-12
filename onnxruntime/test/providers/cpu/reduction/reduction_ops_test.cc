@@ -662,6 +662,40 @@ TEST(ReductionOpTest, ReduceSum) {
   test.Run();
 }
 
+TEST(ReductionOpTest, ReduceSum_axes01) {
+  OpTester test("ReduceSum");
+  test.AddAttribute("axes", std::vector<int64_t>{2});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3, 2, 2},
+                       {1.0f, 2.0f,
+                        3.0f, 4.0f,
+
+                        5.0f, 6.0f,
+                        7.0f, 8.0f,
+
+                        9.0f, 10.0f,
+                        11.0f, 12.0f});
+  test.AddOutput<float>("reduced", {3, 2}, {3.0f, 7.0f, 11.0f, 15.0f, 19.0f, 23.0f});
+  test.Run();
+}
+
+TEST(ReductionOpTest, ReduceSum_axes02) {
+  OpTester test("ReduceSum");
+  test.AddAttribute("axes", std::vector<int64_t>{1});
+  test.AddAttribute("keepdims", (int64_t)0);
+  test.AddInput<float>("data", {3, 2, 2},
+                       {1.0f, 2.0f,
+                        3.0f, 4.0f,
+
+                        5.0f, 6.0f,
+                        7.0f, 8.0f,
+
+                        9.0f, 10.0f,
+                        11.0f, 12.0f});
+  test.AddOutput<float>("reduced", {3, 2}, {4.0f, 6.0f, 12.0f, 14.0f, 20.0f, 22.0f});
+  test.Run();
+}
+
 TEST(ReductionOpTest, ReduceSum_int32) {
   OpTester test("ReduceSum");
   test.AddAttribute("axes", std::vector<int64_t>{0, 2});

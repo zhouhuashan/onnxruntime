@@ -5,6 +5,10 @@
 #include "core/providers/common.h"
 #include "core/providers/cuda/cudnn_common.h"
 #include "core/providers/cuda/math/unary_elementwise_ops_impl.h"
+#include "core/providers/cuda/math/binary_elementwise_ops_impl.h"
+#include "core/providers/cuda/math/binary_elementwise_ops.h"
+#include "core/providers/cpu/tensor/utils.h"
+
 using namespace onnxruntime::common;
 namespace onnxruntime {
 namespace cuda {
@@ -89,11 +93,12 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
 
   Tensor* Y = ctx->Output(0, TensorShape(squeezed_output_dims));
 
+  int64_t input_count = input_shape.Size();
   IAllocatorUniquePtr<float> temp_X;
   cudnnDataType_t cudnn_type_X = CudnnTensor::GetDataType<CudaT>();
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_FLATTENED_INDICES && std::is_same<T, MLFloat16>::value) {
     // ArgMax/ArgMin with FP16 are not supported by cudnn, so convert input to fp32 then call cudnn
-    temp_X = GetScratchBuffer<float>(input_shape.Size());
+    temp_X = GetScratchBuffer<float>(input_count);
     cudnn_type_X = CUDNN_DATA_FLOAT;
     Impl_Cast<CudaT, float>(reinterpret_cast<const CudaT*>(X.template Data<T>()), temp_X.get(), X.Shape().Size());
   }
@@ -119,18 +124,78 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
   CUDNN_RETURN_IF_ERROR(cudnnGetReductionWorkspaceSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &workspace_bytes));
   auto workspace_cuda = GetScratchBuffer<void>(workspace_bytes);
 
+  // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
+  auto output_count = Y->Shape().Size();
+
   if (ReduceTensorIndices == CUDNN_REDUCE_TENSOR_NO_INDICES) {
+    CudaT* input_data = nullptr;
+    if (calculate_sqt_) {
+      input_data = reinterpret_cast<CudaT*>(GetScratchBuffer<T>(input_count).get());
+      fast_divmod tmp_div;
+      Impl_Mul<CudaT>(static_cast<size_t>(SimpleBroadcast::NoBroadcast), nullptr,
+                      reinterpret_cast<const CudaT*>(X.template Data<T>()), nullptr,
+                      reinterpret_cast<const CudaT*>(X.template Data<T>()), nullptr,
+                      tmp_div, tmp_div,
+                      input_data, input_count);
+    } else if (log_sum_exp_) {
+      // Reduce max
+      CudnnReduceDescriptor reduce_max_desc;
+      ONNXRUNTIME_RETURN_IF_ERROR(reduce_max_desc.Set(CUDNN_REDUCE_TENSOR_MAX, cudnn_type_X, CUDNN_REDUCE_TENSOR_NO_INDICES));
+      CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
+          CudnnHandle(), reduce_max_desc, nullptr, 0, workspace_cuda.get(), workspace_bytes,
+          &one, input_tensor, reinterpret_cast<const CudaT*>(X.template Data<T>()),
+          &zero, output_tensor, reinterpret_cast<CudaT*>(Y->template MutableData<T>())));
+
+      // Exp(X-ReduceMax)
+      const TensorShape output_shape(output_dims);
+      auto exp_result = GetScratchBuffer<T>(input_count).get();
+      auto log_sum_result = GetScratchBuffer<T>(output_count).get();
+      BinaryElementwisePreparation prepare(this);
+      prepare.BinaryElementwiseBroadcastPrepareHelper(input_shape, output_shape, input_shape);
+      prepare.CopyToGpu();
+      Impl_Sub<CudaT>(prepare.output_rank_or_simple_broadcast,
+                      prepare.lhs_padded_strides.GpuPtr(),
+                      reinterpret_cast<const CudaT*>(X.template Data<T>()),
+                      prepare.rhs_padded_strides.GpuPtr(),
+                      reinterpret_cast<CudaT*>(Y->template MutableData<T>()),
+                      prepare.fdm_output_strides.GpuPtr(),
+                      prepare.fdm_H, prepare.fdm_C,
+                      reinterpret_cast<CudaT*>(exp_result), input_count);
+
+      Impl_Exp<CudaT>(reinterpret_cast<CudaT*>(exp_result),
+                      reinterpret_cast<CudaT*>(exp_result),
+                      input_count);
+
+      // ReduceSum
+      CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
+          CudnnHandle(), reduce_desc, nullptr, 0, workspace_cuda.get(), workspace_bytes,
+          &one, input_tensor, exp_result,
+          &zero, output_tensor, reinterpret_cast<CudaT*>(log_sum_result)));
+
+      // Log(Sum)
+      Impl_Log<CudaT>(reinterpret_cast<CudaT*>(log_sum_result),
+                      reinterpret_cast<CudaT*>(log_sum_result),
+                      output_count);
+
+      // Log + ReduceMax
+      fast_divmod tmp_div;
+      Impl_Add<CudaT>(static_cast<size_t>(SimpleBroadcast::NoBroadcast), nullptr,
+                      reinterpret_cast<CudaT*>(log_sum_result), nullptr,
+                      reinterpret_cast<CudaT*>(Y->template MutableData<T>()), nullptr,
+                      tmp_div, tmp_div,
+                      reinterpret_cast<CudaT*>(Y->template MutableData<T>()), output_count);
+
+      return Status::OK();
+    }
+
     CUDNN_RETURN_IF_ERROR(cudnnReduceTensor(
         CudnnHandle(), reduce_desc, nullptr, 0, workspace_cuda.get(), workspace_bytes,
-        &one, input_tensor, reinterpret_cast<const CudaT*>(X.template Data<T>()),
+        &one, input_tensor, calculate_sqt_ ? input_data : reinterpret_cast<const CudaT*>(X.template Data<T>()),
         &zero, output_tensor, reinterpret_cast<CudaT*>(Y->template MutableData<T>())));
   } else {
     size_t indices_bytes = 0;
     CUDNN_RETURN_IF_ERROR(cudnnGetReductionIndicesSize(CudnnHandle(), reduce_desc, input_tensor, output_tensor, &indices_bytes));
     auto indices_cuda = GetScratchBuffer<void>(indices_bytes);
-
-    // need to allocate a separate buffer for ArgMin/ArgMax comparsion output
-    auto output_count = Y->Shape().Size();
 
     if (temp_X) {
       auto temp_output = GetScratchBuffer<float>(output_count);
@@ -150,6 +215,12 @@ Status ReduceKernel<allow_multi_axes>::ComputeImpl(OpKernelContext* ctx, cudnnRe
     Impl_Cast<uint32_t, int64_t>(reinterpret_cast<uint32_t*>(indices_cuda.get()), Y->template MutableData<int64_t>(), output_count);
   }
 
+  if (calculate_log_) {
+    Impl_Log<CudaT>(reinterpret_cast<CudaT*>(Y->template MutableData<T>()),
+                    reinterpret_cast<CudaT*>(Y->template MutableData<T>()),
+                    output_count);
+  }
+
   return Status::OK();
 }
 
@@ -167,6 +238,9 @@ REGISTER_KERNEL_HFD(ReduceMean)
 REGISTER_KERNEL_HFD(ReduceMin)
 REGISTER_KERNEL_HFD(ReduceProd)
 REGISTER_KERNEL_HFD(ReduceSum)
+REGISTER_KERNEL_HFD(ReduceLogSum)
+REGISTER_KERNEL_HFD(ReduceSumSquare)
+REGISTER_KERNEL_HFD(ReduceLogSumExp)
 
 }  // namespace cuda
 }  // namespace onnxruntime
