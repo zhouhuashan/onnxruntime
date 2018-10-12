@@ -323,10 +323,7 @@ struct AddOpaqueParam<P, Params...> {
 /// All tensors base
 class TensorTypeBase : public DataTypeImpl {
  public:
-  static MLDataType Type() {
-    static TensorTypeBase tensor_base;
-    return &tensor_base;
-  }
+  static MLDataType Type();
 
   /// We first compare type_proto pointers and then
   /// if they do not match try to account for the case
@@ -387,10 +384,7 @@ class TensorType : public TensorTypeBase {
   static_assert(data_types_internal::IsTensorContainedType<elemT>::value,
                 "Requires one of the tensor fundamental types");
 
-  static MLDataType Type() {
-    static TensorType tensor_type;
-    return &tensor_type;
-  }
+  static MLDataType Type();
 
   /// Tensors only can contain basic data types
   /// that have been previously registered with Lotus
@@ -496,10 +490,7 @@ class MapType<CPPType> : public NonTensorType<CPPType> {
   static_assert(data_types_internal::IsTensorContainedType<typename CPPType::key_type>::value,
                 "Requires one of the tensor fundamental types as key");
 
-  static MLDataType Type() {
-    static MapType map_type;
-    return &map_type;
-  }
+  static MLDataType Type();
 
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
     return this->IsMapCompatible(type_proto);
@@ -519,10 +510,9 @@ class MapType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
  public:
   static_assert(data_types_internal::IsTensorContainedType<typename CPPType::key_type>::value,
                 "Requires one of the tensor fundamental types as key");
-  static MLDataType Type() {
-    static MapType map_type;
-    return &map_type;
-  }
+
+
+  static MLDataType Type();
 
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
     return this->IsMapCompatible(type_proto);
@@ -551,10 +541,8 @@ class SequenceType;
 template <typename CPPType>
 class SequenceType<CPPType> : protected NonTensorType<CPPType> {
  public:
-  static MLDataType Type() {
-    static SequenceType sequence_type;
-    return &sequence_type;
-  }
+
+  static MLDataType Type();
 
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
     return this->IsSequenceCompatible(type_proto);
@@ -571,10 +559,8 @@ class SequenceType<CPPType> : protected NonTensorType<CPPType> {
 template <typename CPPType, typename... Types>
 class SequenceType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPType> {
  public:
-  static MLDataType Type() {
-    static SequenceType sequence_type;
-    return &sequence_type;
-  }
+
+  static MLDataType Type();
 
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
     return this->IsSequenceCompatible(type_proto);
@@ -604,10 +590,8 @@ class SequenceType<TypeRegister<CPPType, Types...>> : public NonTensorType<CPPTy
 template <typename T>
 class OpaqueType : protected NonTensorType<T> {
  public:
-  static MLDataType Type() {
-    static OpaqueType opaque_type;
-    return &opaque_type;
-  }
+
+  static MLDataType Type();
 
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override {
     return this->IsOpaqueCompatible(type_proto);
@@ -632,10 +616,7 @@ class NonOnnxType : public DataTypeImpl {
     return false;
   }
 
-  static MLDataType Type() {
-    static NonOnnxType non_tensor_type;
-    return &non_tensor_type;
-  }
+  static MLDataType Type();
 
   size_t Size() const override {
     return sizeof(T);
@@ -660,11 +641,21 @@ class NonOnnxType : public DataTypeImpl {
 // is needed.
 #define ONNXRUNTIME_REGISTER_TENSOR_TYPE(ELEM_TYPE)             \
   template <>                                           \
+  MLDataType TensorType<ELEM_TYPE>::Type() {            \
+    static TensorType<ELEM_TYPE> tensor_type;           \
+    return &tensor_type;                                \
+  }                                                     \
+  template <>                                           \
   MLDataType DataTypeImpl::GetTensorType<ELEM_TYPE>() { \
     return TensorType<ELEM_TYPE>::Type();               \
   }
 
 #define ONNXRUNTIME_REGISTER_MAP(TYPE)               \
+  template <>                                \
+    MLDataType MapType<TYPE>::Type() {       \
+    static MapType<TYPE> map_type;           \
+    return &map_type;                        \
+  }                                          \
   template <>                                \
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return MapType<TYPE>::Type();            \
@@ -672,17 +663,32 @@ class NonOnnxType : public DataTypeImpl {
 
 #define ONNXRUNTIME_REGISTER_SEQ(TYPE)               \
   template <>                                \
+  MLDataType SequenceType<TYPE>::Type() {    \
+    static SequenceType<TYPE> sequence_type; \
+    return &sequence_type;                   \
+  }                                          \
+  template <>                                \
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return SequenceType<TYPE>::Type();       \
   }
 
 #define ONNXRUNTIME_REGISTER_NON_ONNX_TYPE(TYPE)     \
   template <>                                \
+  MLDataType NonOnnxType<TYPE>::Type() {     \
+    static NonOnnxType<TYPE> non_onnx_type;  \
+    return &non_onnx_type;                   \
+  }                                          \
+  template <>                                \
   MLDataType DataTypeImpl::GetType<TYPE>() { \
     return NonOnnxType<TYPE>::Type();        \
   }
 
 #define ONNXRUNTIME_REGISTER_OPAQUE_TYPE(REGISTRATION_TYPE)       \
+  template <>                                             \
+  MLDataType OpaqueType<REGISTRATION_TYPE>::Type() {      \
+    static OpaqueType<REGISTRATION_TYPE> opaque_type;     \
+    return &opaque_type;                                  \
+  }                                                       \
   template <>                                             \
   MLDataType DataTypeImpl::GetType<REGISTRATION_TYPE>() { \
     return OpaqueType<REGISTRATION_TYPE>::Type();         \

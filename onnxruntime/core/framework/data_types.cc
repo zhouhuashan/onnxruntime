@@ -707,4 +707,9 @@ std::ostream& operator<<(std::ostream& out, const MLDataType data_type) {
   return out << typeid(*data_type).name();
 }
 
+MLDataType TensorTypeBase::Type() {
+  static TensorTypeBase tensor_base;
+  return &tensor_base;
+}
+
 }  // namespace onnxruntime
