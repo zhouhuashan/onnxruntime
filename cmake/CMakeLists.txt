@@ -214,8 +214,8 @@ if (onnxruntime_USE_TVM)
   set_target_properties(nnvm_compiler PROPERTIES FOLDER "External/tvm")
 
   set(TVM_INCLUDES ${PROJECT_SOURCE_DIR}/external/tvm/include
-    ${PROJECT_SOURCE_DIR}/external/tvm/dmlc-core/include
-    ${PROJECT_SOURCE_DIR}/external/tvm/dlpack/include
+    ${PROJECT_SOURCE_DIR}/external/tvm/3rdparty/dmlc-core/include
+    ${PROJECT_SOURCE_DIR}/external/tvm/3rdparty/dlpack/include
     $<TARGET_PROPERTY:tvm,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:tvm_topi,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:nnvm_compiler,INTERFACE_INCLUDE_DIRECTORIES>)
