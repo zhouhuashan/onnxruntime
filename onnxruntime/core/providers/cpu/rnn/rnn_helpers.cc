@@ -23,16 +23,6 @@ namespace detail {
 
 using namespace ::onnxruntime::common;
 
-const Tensor* OptionalInput(const OpKernelContext& context, int index) {
-  const Tensor* result = context.Input<Tensor>(index);
-
-  // ignore dummy input
-  if (result != nullptr && result->Shape().Size() == 0)
-    result = nullptr;
-
-  return result;
-}
-
 Status ValidateCommonRnnInputs(const Tensor& X,
                                const Tensor& W,
                                const Tensor& R,

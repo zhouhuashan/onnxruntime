@@ -25,9 +25,6 @@ class OpKernelContext;
 namespace rnn {
 namespace detail {
 
-// Retrieve optional input from the context. Returns nullptr if input doesn't exist, or if it has no data in it.
-const ::onnxruntime::Tensor* OptionalInput(const OpKernelContext& context, int index);
-
 enum Direction {
   kForward = 0,
   kReverse = 1,

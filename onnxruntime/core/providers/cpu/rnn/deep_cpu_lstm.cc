@@ -334,11 +334,11 @@ Status DeepCpuLstmOp::ComputeImpl(OpKernelContext& context) const {
   const Tensor& R = *context.Input<Tensor>(2);  // recurrence weights. [num_directions, 4*hidden_size, hidden_size]
 
   // optional
-  const Tensor* B = OptionalInput(context, 3);              // bias. [num_directions, 8*hidden_size]
-  const Tensor* sequence_lens = OptionalInput(context, 4);  // [batch_size]
-  const Tensor* initial_h = OptionalInput(context, 5);      // initial hidden. [num_directions, batch_size, hidden_size]
-  const Tensor* initial_c = OptionalInput(context, 6);      // initial cell. [num_directions, batch_size, hidden_size]
-  const Tensor* P = OptionalInput(context, 7);              // peephole weights. [num_directions, 3*hidden_size]
+  const Tensor* B = context.Input<Tensor>(3);              // bias. [num_directions, 8*hidden_size]
+  const Tensor* sequence_lens = context.Input<Tensor>(4);  // [batch_size]
+  const Tensor* initial_h = context.Input<Tensor>(5);      // initial hidden. [num_directions, batch_size, hidden_size]
+  const Tensor* initial_c = context.Input<Tensor>(6);      // initial cell. [num_directions, batch_size, hidden_size]
+  const Tensor* P = context.Input<Tensor>(7);              // peephole weights. [num_directions, 3*hidden_size]
 
   auto& X_shape = X.Shape();
 

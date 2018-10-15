@@ -87,7 +87,7 @@ Status CudnnRnnBase<T>::SetCudnnRnnDesc() {
   CudnnDropout cudnn_dropout_desc;
   cudnn_dropout_desc.Set(CudnnHandle());
   ONNXRUNTIME_RETURN_IF_ERROR(rnn_desc_.Set(CudnnHandle(), hidden_size_, num_layers_, cudnn_dropout_desc,
-                                    cudnn_direction, rnn_mode_, CudnnTensor::GetDataType<CudaT>()));
+                                            cudnn_direction, rnn_mode_, CudnnTensor::GetDataType<CudaT>()));
 
   return Status::OK();
 }
@@ -124,7 +124,7 @@ Status CudnnRnnBase<T>::ReorganizeWeights(const Tensor* W, const Tensor* R, cons
   const T* B_data = B == nullptr ? nullptr : B->template Data<T>();
 
   ONNXRUNTIME_RETURN_IF_ERROR(SetCudnnRnnWeightBias(CudnnHandle(), rnn_desc_, fake_x_desc, target_w_desc,
-                                            target_w_data.get(), W_data, R_data, B_data));
+                                                    target_w_data.get(), W_data, R_data, B_data));
 
   return Status::OK();
 }
@@ -155,11 +155,11 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   const Tensor& X = *ctx->Input<Tensor>(Input_Index::X);  // inputs. [seq_length, batch_size, input_size]
 
   // optional inputs
-  const Tensor* sequence_lens = rnn::detail::OptionalInput(*ctx, Input_Index::sequence_lens);  // [batch_size]
-  const Tensor* initial_h = rnn::detail::OptionalInput(*ctx, Input_Index::initial_h);          // initial hidden. [num_directions_, batch_size, hidden_size_]
-  Tensor* initial_c(nullptr);
+  const Tensor* sequence_lens = ctx->Input<Tensor>(Input_Index::sequence_lens);  // [batch_size]
+  const Tensor* initial_h = ctx->Input<Tensor>(Input_Index::initial_h);          // initial hidden. [num_directions_, batch_size, hidden_size_]
+  const Tensor* initial_c(nullptr);
   if (rnn_mode_ == CUDNN_LSTM) {
-    initial_c = const_cast<Tensor*>(rnn::detail::OptionalInput(*ctx, Input_Index::initial_c));  // initial cell. [num_directions_, batch_size, hidden_size_]
+    initial_c = ctx->Input<Tensor>(Input_Index::initial_c);  // initial cell. [num_directions_, batch_size, hidden_size_]
   }
 
   int64_t seq_length = X.Shape()[0];
@@ -199,7 +199,7 @@ Status CudnnRnnBase<T>::ComputeInternal(OpKernelContext* ctx) const {
   if (!weight_cached_) {
     const Tensor& W = *ctx->Input<Tensor>(Input_Index::W);
     const Tensor& R = *ctx->Input<Tensor>(Input_Index::R);
-    const Tensor* B = rnn::detail::OptionalInput(*ctx, Input_Index::B);
+    const Tensor* B = ctx->Input<Tensor>(Input_Index::B);
     ReorganizeWeights(&W, &R, B, w_data, w_desc);
   }
 
