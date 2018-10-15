@@ -32,13 +32,12 @@
           <CodeCoverage>
             <Functions>
               <Include>
-                <Function>^Lotus.*</Function> <!-- all code in the Lotus namespace -->
+                <Function>^onnxruntime.*</Function> <!-- all code in the onnxruntime namespace -->
               </Include>
               <Exclude>
-                <Function>^Lotus\:\:Test.*</Function> <!-- exclude all code in the Lotus::Test* namespaces -->
-                <Function>^LotusIR\:\:Test.*</Function> <!-- exclude all code in the LotusIR::Test* namespaces -->
-                <Function>^Lotus\:\:MakeString&lt;.*</Function> <!-- Lotus::MakeString<types...> -->
-                <Function>^Lotus\:\:MakeStringInternal&lt;.*</Function> <!-- Lotus::MakeString<types...> -->
+                <Function>^onnxruntime\:\:test.*</Function> <!-- exclude all code in the onnxruntime::test* namespaces -->
+                <Function>^onnxruntime\:\:MakeString&lt;.*</Function> <!-- onnxruntime::MakeString<types...> -->
+                <Function>^onnxruntime\:\:MakeStringInternal&lt;.*</Function> <!-- onnxruntime::MakeString<types...> -->
               </Exclude>
             </Functions>
             <!--
