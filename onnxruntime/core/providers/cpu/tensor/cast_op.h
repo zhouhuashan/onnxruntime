@@ -11,8 +11,7 @@
 #include "core/util/math_cpuonly.h"
 
 #if defined(USE_MLAS) && defined(_M_AMD64)
-#include <windows.h>
-#include <mlas.h>
+#include "core/mlas/inc/mlas.h"
 #endif
 
 namespace onnxruntime {

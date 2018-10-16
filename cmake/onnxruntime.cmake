@@ -24,11 +24,25 @@ if(UNIX)
     "-Wl,--exclude-libs,ALL"
     onnx
     onnx_proto
+    onnxruntime_mlas
     ${onnxruntime_EXTERNAL_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT} -Wl,--no-undefined)
 else()
   target_compile_definitions(onnxruntime PRIVATE ONNX_RUNTIME_EXPORTS=1 ONNX_RUNTIME_BUILD_DLL=1)
-  target_link_libraries(onnxruntime PRIVATE ${PROVIDERS_CUDA} ${PROVIDERS_MKLDNN} onnxruntime_providers onnxruntime_framework onnxruntime_util onnxruntime_graph onnx onnx_proto onnxruntime_common ${onnxruntime_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ONNXRUNTIME_CUDA_LIBRARIES})
+  target_link_libraries(onnxruntime PRIVATE
+    ${PROVIDERS_CUDA}
+    ${PROVIDERS_MKLDNN}
+    onnxruntime_providers
+    onnxruntime_framework
+    onnxruntime_util
+    onnxruntime_graph
+    onnx
+    onnx_proto
+    onnxruntime_common
+    onnxruntime_mlas
+    ${onnxruntime_EXTERNAL_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${ONNXRUNTIME_CUDA_LIBRARIES})
 endif()
 
 set_target_properties(onnxruntime PROPERTIES FOLDER "Lotus")

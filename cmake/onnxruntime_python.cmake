@@ -57,6 +57,7 @@ set(onnxruntime_pybind11_state_libs
     onnx
     onnx_proto
     onnxruntime_common
+    onnxruntime_mlas
 )
 
 set(onnxruntime_pybind11_state_dependencies
@@ -67,7 +68,7 @@ set(onnxruntime_pybind11_state_dependencies
 add_dependencies(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_dependencies})
 if (MSVC)
   # if MSVC, pybind11 looks for release version of python lib (pybind11/detail/common.h undefs _DEBUG)
-  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${MLAS_LIBRARY} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
+  target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY_RELEASE})
 else()
   target_link_libraries(onnxruntime_pybind11_state ${onnxruntime_pybind11_state_libs} ${onnxruntime_EXTERNAL_LIBRARIES} ${PYTHON_LIBRARY})
   set_target_properties(onnxruntime_pybind11_state PROPERTIES LINK_FLAGS "-Wl,-rpath,\$ORIGIN")

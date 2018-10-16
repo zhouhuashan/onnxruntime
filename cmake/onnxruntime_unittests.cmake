@@ -14,9 +14,9 @@ function(AddTest)
   if (_UT_DEPENDS)
     list(REMOVE_DUPLICATES _UT_DEPENDS)
   endif(_UT_DEPENDS)
-  
-  add_executable(${_UT_TARGET} ${_UT_SOURCES})  
-  
+
+  add_executable(${_UT_TARGET} ${_UT_SOURCES})
+
   source_group(TREE ${TEST_SRC_DIR} FILES ${_UT_SOURCES})
   set_target_properties(${_UT_TARGET} PROPERTIES FOLDER "LotusTest")
 
@@ -26,9 +26,9 @@ function(AddTest)
 
   target_link_libraries(${_UT_TARGET} PRIVATE ${_UT_LIBS} ${onnxruntime_EXTERNAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
   if (onnxruntime_USE_TVM)
-    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${onnxruntime_CUDNN_HOME}/include ${TVM_INCLUDES})
+    target_include_directories(${_UT_TARGET} PRIVATE ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${onnxruntime_CUDNN_HOME}/include ${TVM_INCLUDES})
   else()
-    target_include_directories(${_UT_TARGET} PRIVATE ${MLAS_INC} ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${onnxruntime_CUDNN_HOME}/include)
+    target_include_directories(${_UT_TARGET} PRIVATE ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS} ${date_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${onnxruntime_CUDNN_HOME}/include)
   endif()
 
   if (WIN32)
@@ -135,6 +135,7 @@ set(onnxruntime_test_framework_libs
   onnx
   onnx_proto
   onnxruntime_common
+  onnxruntime_mlas
   protobuf::libprotobuf
   gtest gmock
   )
@@ -158,10 +159,6 @@ set(onnxruntime_test_providers_libs
   onnxruntime_session)
 
 set (onnxruntime_test_providers_dependencies ${onnxruntime_EXTERNAL_DEPENDENCIES})
-
-if (onnxruntime_USE_MLAS AND WIN32)
-  list(APPEND onnxruntime_test_providers_libs ${MLAS_LIBRARY})
-endif()
 
 if(onnxruntime_USE_CUDA)
   list(APPEND onnxruntime_test_providers_dependencies onnxruntime_providers_cuda)
@@ -198,6 +195,7 @@ list(APPEND onnxruntime_test_providers_libs
   onnx
   onnx_proto
   onnxruntime_common
+  onnxruntime_mlas
   protobuf::libprotobuf
   gtest gmock
   )
@@ -369,8 +367,8 @@ list(APPEND onnx_test_libs
   onnx
   onnx_proto
   onnxruntime_common
+  onnxruntime_mlas
   onnx_test_data_proto
-  ${MLAS_LIBRARY}
   ${FS_STDLIB}
   ${onnxruntime_EXTERNAL_LIBRARIES}
   ${ONNXRUNTIME_CUDA_LIBRARIES}
@@ -402,7 +400,7 @@ if (onnxruntime_USE_MKLML)
     )
 endif()
 
-add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc) 
+add_executable(onnx_test_runner ${onnx_test_runner_src_dir}/main.cc)
 target_link_libraries(onnx_test_runner PRIVATE onnx_test_runner_common ${onnx_test_libs} ${GETOPT_LIB})
 target_include_directories(onnx_test_runner PRIVATE ${ONNXRUNTIME_ROOT})
 set_target_properties(onnx_test_runner PROPERTIES FOLDER "LotusTest")
@@ -411,9 +409,6 @@ if(onnxruntime_BUILD_BENCHMARKS)
   add_executable(onnxruntime_benchmark ${TEST_SRC_DIR}/onnx/microbenchmark/main.cc ${TEST_SRC_DIR}/onnx/microbenchmark/modeltest.cc)
   target_include_directories(onnxruntime_benchmark PRIVATE ${ONNXRUNTIME_ROOT} ${onnxruntime_graph_header} benchmark)
   target_compile_options(onnxruntime_benchmark PRIVATE "/wd4141")
-  if (onnxruntime_USE_MLAS AND WIN32)
-    target_include_directories(onnxruntime_benchmark PRIVATE ${MLAS_INC})
-  endif()
   target_link_libraries(onnxruntime_benchmark PRIVATE ${onnx_test_libs} onnx_test_runner_common benchmark)
   add_dependencies(onnxruntime_benchmark ${onnxruntime_EXTERNAL_DEPENDENCIES})
   set_target_properties(onnxruntime_benchmark PROPERTIES FOLDER "LotusTest")
@@ -482,7 +477,7 @@ if (onnxruntime_BUILD_SHARED_LIB)
     file(GLOB onnxruntime_custom_op_shared_lib_test_srcs "${ONNXRUNTIME_ROOT}/test/custom_op_shared_lib/test_custom_op.cc")
     add_library(onnxruntime_custom_op_shared_lib_test SHARED ${onnxruntime_custom_op_shared_lib_test_srcs})
     add_dependencies(onnxruntime_custom_op_shared_lib_test onnx_proto ${onnxruntime_EXTERNAL_DEPENDENCIES})
-    target_include_directories(onnxruntime_custom_op_shared_lib_test PUBLIC "${PROJECT_SOURCE_DIR}/include")    
+    target_include_directories(onnxruntime_custom_op_shared_lib_test PUBLIC "${PROJECT_SOURCE_DIR}/include")
     target_link_libraries(onnxruntime_custom_op_shared_lib_test PRIVATE onnxruntime onnx onnx_proto  protobuf::libprotobuf)
     set_target_properties(onnxruntime_custom_op_shared_lib_test PROPERTIES FOLDER "LotusSharedLibTest")
     set(ONNX_DLL onnxruntime)
@@ -500,10 +495,15 @@ if (onnxruntime_BUILD_SHARED_LIB)
     target_compile_definitions(onnxruntime_shared_lib_test PRIVATE ONNX_RUNTIME_BUILD_DLL)
   endif()
   target_link_libraries(onnxruntime_shared_lib_test PRIVATE ${ONNX_DLL} onnx onnx_proto gtest)
-  
+
   set_target_properties(onnxruntime_shared_lib_test PROPERTIES FOLDER "LotusSharedLibTest")
 
   add_test(NAME onnxruntime_shared_lib_test COMMAND onnxruntime_shared_lib_test WORKING_DIRECTORY $<TARGET_FILE_DIR:onnxruntime_shared_lib_test>)
 endif()
 
 add_executable(c_api_test "${ONNXRUNTIME_ROOT}/test/shared_lib/test_inference_c.c")
+
+add_executable(onnxruntime_mlas_test ${TEST_SRC_DIR}/mlas/unittest.cpp)
+target_include_directories(onnxruntime_mlas_test PRIVATE ${ONNXRUNTIME_ROOT}/core/mlas/inc)
+target_link_libraries(onnxruntime_mlas_test PRIVATE onnxruntime_mlas)
+set_target_properties(onnxruntime_mlas_test PROPERTIES FOLDER "LotusTest")

@@ -43,16 +43,8 @@
 #include "core/util/math_cpuonly.h"
 #include "Eigen/src/Core/arch/CUDA/Half.h"
 
-#if defined(_MSC_VER)
-#include <process.h>
-#endif
-
-#ifdef _MSC_VER
-#include <Windows.h>
-#endif  // _MSC_VER
-
 #if defined(USE_MLAS)
-#include <mlas.h>
+#include "core/mlas/inc/mlas.h"
 #endif
 
 #ifdef USE_MKLDNN
@@ -61,10 +53,6 @@
 
 namespace onnxruntime {
 namespace math {
-
-#ifdef max
-#undef max  // Visual Studio defines this macro
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // BLAS alternatives.
@@ -103,11 +91,7 @@ void Gemm<float, CPUMathUtil>(
     float* C,
     CPUMathUtil* /*provider*/,
     MLDataType /*math_type*/) {
-#if defined(USE_MLAS)
-  int lda = (int)((TransA == CblasNoTrans) ? K : M);
-  int ldb = (int)((TransB == CblasNoTrans) ? N : K);
-  MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, N);
-#elif defined(USE_MKLDNN)
+#if defined(USE_MKLDNN)
   int lda = (int)((TransA == CblasTrans) ? M : K);
   int ldb = (int)((TransB == CblasTrans) ? K : N);
   int M_ = (int)M;
@@ -123,6 +107,10 @@ void Gemm<float, CPUMathUtil>(
   if (status != mkldnn_success) {
     ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: " + status);
   }
+#elif defined(USE_MLAS)
+  int lda = (int)((TransA == CblasNoTrans) ? K : M);
+  int ldb = (int)((TransB == CblasNoTrans) ? N : K);
+  MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, N);
 #else
   auto C_mat = EigenMatrixMap<float>(C, N, M);
   if (beta == 0) {
@@ -181,9 +169,7 @@ void GemmEx<float, CPUMathUtil>(
     float* C,
     const int ldc,
     CPUMathUtil*) {
-#if defined(USE_MLAS)
-  MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
-#elif defined(USE_MKLDNN)
+#if defined(USE_MKLDNN)
   // mkldnn_sgemm expects col major matrices, so we need to swap the operands A and B
   auto status = mkldnn_sgemm(TransB == CblasNoTrans ? "N" : "T",
                              TransA == CblasNoTrans ? "N" : "T",
@@ -194,6 +180,8 @@ void GemmEx<float, CPUMathUtil>(
   if (status != mkldnn_success) {
     ONNXRUNTIME_THROW("mkldnn_sgemm failed with status: " + status);
   }
+#elif defined(USE_MLAS)
+  MlasSgemm(TransA, TransB, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
 #else
   using OuterStride = Eigen::OuterStride<Eigen::Dynamic>;
   using StridedMap = Eigen::Map<Eigen::MatrixXf, 0, OuterStride>;
@@ -1311,90 +1299,6 @@ void Col2im<float, CPUMathUtil, StorageOrder::NHWC>(
       w_pad += stride_w;
     }
     h_pad += stride_h;
-  }
-}
-
-template <>
-void BiasCHW<float, CPUMathUtil>(
-    const float* bias,
-    const int bias_channels,
-    const int image_size,
-    float* image,
-    CPUMathUtil* /*context*/) {
-  // Sum the per-channel bias into every image plane
-  for (int c = 0; c < bias_channels; ++c) {
-    float b = bias[c];
-
-#ifdef __ARM_NEON__
-    float32x4_t vBias = vdupq_n_f32(b);
-
-    // We give alignment hints for additional speed, so handle the
-    // non-vectorizable prologue separately
-    constexpr int kVecSizeInFloat = sizeof(float32x4_t) / sizeof(float);
-
-    // FIXME: if input < kVecSizeInFloat, can't vectorize at all
-
-    int prologue =
-        kVecSizeInFloat -
-        // remainder in floats
-        (((uintptr_t)image) % (sizeof(float32x4_t))) / sizeof(float);
-
-    int i = 0;
-    // Prologue loop
-    for (; i < prologue; ++i) {
-      image[i] += b;
-    }
-
-    // The loop is manually unrolled by 8
-    constexpr int kUnroll = 8;
-    constexpr int kFloatsPerLoop = kUnroll * kVecSizeInFloat;
-
-    int remainder = image_size - prologue;
-    int vectorizable = prologue + (remainder / kFloatsPerLoop) * kFloatsPerLoop;
-
-    // Vectorizable body
-    for (; i < vectorizable; i += kFloatsPerLoop) {
-      // Manually unrolled
-      float32x4_t v0 = vld1q_f32_aligned(image + i + 0);
-      float32x4_t v1 = vld1q_f32_aligned(image + i + 4);
-      float32x4_t v2 = vld1q_f32_aligned(image + i + 8);
-      float32x4_t v3 = vld1q_f32_aligned(image + i + 12);
-      float32x4_t v4 = vld1q_f32_aligned(image + i + 16);
-      float32x4_t v5 = vld1q_f32_aligned(image + i + 20);
-      float32x4_t v6 = vld1q_f32_aligned(image + i + 24);
-      float32x4_t v7 = vld1q_f32_aligned(image + i + 28);
-
-      v0 = vaddq_f32(v0, vBias);
-      v1 = vaddq_f32(v1, vBias);
-      v2 = vaddq_f32(v2, vBias);
-      v3 = vaddq_f32(v3, vBias);
-      v4 = vaddq_f32(v4, vBias);
-      v5 = vaddq_f32(v5, vBias);
-      v6 = vaddq_f32(v6, vBias);
-      v7 = vaddq_f32(v7, vBias);
-
-      vst1q_f32_aligned(image + i + 0, v0);
-      vst1q_f32_aligned(image + i + 4, v1);
-      vst1q_f32_aligned(image + i + 8, v2);
-      vst1q_f32_aligned(image + i + 12, v3);
-      vst1q_f32_aligned(image + i + 16, v4);
-      vst1q_f32_aligned(image + i + 20, v5);
-      vst1q_f32_aligned(image + i + 24, v6);
-      vst1q_f32_aligned(image + i + 28, v7);
-    }
-
-    // Non-vectorizable epilogue
-    for (; i < image_size; ++i) {
-      image[i] += b;
-    }
-#else
-    // Non-NEON CPU implementation
-    for (int i = 0; i < image_size; ++i) {
-      image[i] += b;
-    }
-#endif  // __ARM_NEON__
-
-    image += image_size;
   }
 }
 

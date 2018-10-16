@@ -389,16 +389,6 @@ void Col2im(
     T* data_im,
     Provider* provider);
 
-// Applies a per-channel bias value to each channel of the input
-// image. image_size is H * W
-template <typename T, class Provider>
-void BiasCHW(
-    const T* bias,
-    const int bias_channels,
-    const int image_size,
-    T* image,
-    Provider* provider);
-
 // Todo: should we provide a better copy method signature?
 using TypedCopy = void (*)(const void*, void*, size_t);
 

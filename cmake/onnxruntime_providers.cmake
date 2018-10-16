@@ -17,13 +17,13 @@ file(GLOB onnxruntime_providers_common_srcs
   "${ONNXRUNTIME_ROOT}/core/providers/*.h"
   "${ONNXRUNTIME_ROOT}/core/providers/*.cc"
 )
-    
+
 source_group(TREE ${ONNXRUNTIME_ROOT}/core FILES ${onnxruntime_providers_common_srcs} ${onnxruntime_providers_srcs})
 # add using ONNXRUNTIME_ROOT so they show up under the 'contrib_ops' folder in Visual Studio
 source_group(TREE ${ONNXRUNTIME_ROOT} FILES ${onnxruntime_contrib_ops_srcs})
 add_library(onnxruntime_providers ${onnxruntime_providers_common_srcs} ${onnxruntime_providers_srcs} ${onnxruntime_contrib_ops_srcs})
 onnxruntime_add_include_to_target(onnxruntime_providers onnx protobuf::libprotobuf)
-target_include_directories(onnxruntime_providers PRIVATE ${MLAS_INC} ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS})
+target_include_directories(onnxruntime_providers PRIVATE ${ONNXRUNTIME_ROOT} ${eigen_INCLUDE_DIRS})
 
 add_dependencies(onnxruntime_providers eigen gsl onnx)
 
@@ -71,7 +71,7 @@ if (onnxruntime_USE_CUDA)
       COMPILE_FLAGS "/Yccuda_pch.h"
     )
     # disable a warning from the CUDA headers about unreferenced local functions
-    target_compile_options(onnxruntime_providers_cuda PRIVATE /wd4505) 
+    target_compile_options(onnxruntime_providers_cuda PRIVATE /wd4505)
     if (onnxruntime_USE_TVM)
       target_compile_options(onnxruntime_providers_cuda PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
     endif()
@@ -95,4 +95,4 @@ endif()
 
 if (onnxruntime_ENABLE_MICROSOFT_INTERNAL)
   include(onnxruntime_providers_internal.cmake)
-endif()  
+endif()
