@@ -64,4 +64,4 @@ First release on Ubuntu 14.04, 16.04 for CPU and GPU with Cuda 9.1 and Cudnn 7.0
 supports runtime for deep learning models architecture such as AlexNet, ResNet,
 XCeption, VGG, Inception, DenseNet, standard linear learner,
 standard ensemble learners,
-and transform scalers, imputers.
+and transform scaler, imputer.
