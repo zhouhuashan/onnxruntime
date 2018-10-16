@@ -48,3 +48,20 @@ replaces *scikit-learn* to compute the predictions.
     input_name = sess.get_inputs()[0].name
     label_name = sess.get_outputs()[0].name
     pred_onx = sess.run([label_name], {input_name: X_test.astype(numpy.float32)})[0]   
+
+Changes
+-------
+
+0.1.3
+^^^^^
+
+Fixes a crash on machines which do not support AVX instructions.
+
+0.1.2
+^^^^^
+
+First release on Ubuntu 14.04, 16.04 for CPU and GPU with Cuda 9.1 and Cudnn 7.0,
+supports runtime for deep learning models architecture such as AlexNet, ResNet,
+XCeption, VGG, Inception, DenseNet, standard linear learner,
+standard ensemble learners,
+and transform scalers, imputers.
