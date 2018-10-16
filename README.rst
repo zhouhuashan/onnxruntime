@@ -60,7 +60,7 @@ Fixes a crash on machines which do not support AVX instructions.
 0.1.2
 ^^^^^
 
-First release on Ubuntu 14.04, 16.04 for CPU and GPU with Cuda 9.1 and Cudnn 7.0,
+First release on Ubuntu 16.04 for CPU and GPU with Cuda 9.1 and Cudnn 7.0,
 supports runtime for deep learning models architecture such as AlexNet, ResNet,
 XCeption, VGG, Inception, DenseNet, standard linear learner,
 standard ensemble learners,
