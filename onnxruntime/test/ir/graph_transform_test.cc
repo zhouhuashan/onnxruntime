@@ -6,6 +6,10 @@
 #include "core/graph/model.h"
 #include "core/graph/graph_transformer.h"
 #include "core/graph/identity_elimination.h"
+#include "core/graph/unsqueeze_elimination.h"
+#include "core/graph/conv_bn_fusion.h"
+#include "core/graph/conv_mul_fusion.h"
+#include "core/graph/conv_add_fusion.h"
 
 #include "test/capturing_sink.h"
 #include "test/test_environment.h"
@@ -37,6 +41,29 @@ TEST(GraphTransformationTests, IdentityElimination) {
       std::make_unique<TopDownRuleBasedTransformer>("RuleTransformer1", "First rule transformer");
 
   rule_transformer->Register("Identity", std::make_unique<EliminateIdentity>());
+
+  session_object.RegisterGraphTransformer(std::move(rule_transformer));
+
+  ASSERT_TRUE(session_object.Initialize().IsOK());
+}
+
+TEST(GraphTransformationTests, FuseConvBNMulAddUnsqueeze) {
+  string model_uri = MODEL_FOLDER + "fusion/fuse-conv-bn-mul-add-unsqueeze.onnx";
+
+  SessionOptions so;
+  so.session_logid = "GraphTransformationTests.LoadModelToTransform";
+  InferenceSession session_object{so, &DefaultLoggingManager()};
+  ASSERT_TRUE(session_object.Load(model_uri).IsOK());
+
+  std::shared_ptr<Model> p_model;
+  ASSERT_TRUE(Model::Load(model_uri, p_model).IsOK());
+
+  std::unique_ptr<TopDownRuleBasedTransformer> rule_transformer =
+    std::make_unique<TopDownRuleBasedTransformer>("RuleTransformer", "Top-down rule transformer");
+  rule_transformer->Register("Unsqueeze", std::make_unique<UnsqueezeElimination>());
+  rule_transformer->Register("BatchNormalization", std::make_unique<ConvBNFusion>());
+  rule_transformer->Register("Mul", std::make_unique<ConvMulFusion>());
+  rule_transformer->Register("Add", std::make_unique<ConvAddFusion>());
 
   session_object.RegisterGraphTransformer(std::move(rule_transformer));
 

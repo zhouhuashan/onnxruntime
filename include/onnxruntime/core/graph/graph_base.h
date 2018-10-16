@@ -184,12 +184,15 @@ class Node {
     return ConstPointerContainer<std::vector<NodeArg*>>(definitions_.output_defs);
   }
 
+  std::vector<NodeArg*>& MutableInputDefs() noexcept {
+    return MutableDefinitions().input_defs;
+  }
+
   using NodeConstIterator = std::set<const Node*>::const_iterator;
   using EdgeConstIterator = std::set<EdgeEnd*>::const_iterator;
 
   // Functions defined to traverse a Graph as below.
   // Read all input nodes of <*this>.
-
   // Beginning of input nodes. Iterator should have no nullptr values.
   NodeConstIterator InputNodesBegin() const noexcept { return relationships_.input_nodes.cbegin(); };
   // End of input nodes.
@@ -199,6 +202,12 @@ class Node {
   NodeConstIterator OutputNodesBegin() const noexcept { return relationships_.output_nodes.cbegin(); }
   // End of output nodes.
   NodeConstIterator OutputNodesEnd() const noexcept { return relationships_.output_nodes.cend(); }
+
+  // Beginning of input edge. Iterator should have no nullptr values.
+  EdgeConstIterator InputEdgesBegin() const noexcept { return relationships_.input_edges.cbegin(); }
+
+  // End of input nodes.
+  EdgeConstIterator InputEdgesEnd() const noexcept { return relationships_.input_edges.cend(); }
 
   // Beginning of output edge. Iterator should have no nullptr values.
   EdgeConstIterator OutputEdgesBegin() const noexcept { return relationships_.output_edges.cbegin(); }
