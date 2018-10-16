@@ -30,7 +30,6 @@ CreateMKLDNNExecutionProvider(const CPUExecutionProviderInfo& info);
 
 // Information needed to construct CUDA execution providers.
 struct CUDAExecutionProviderInfo {
-  std::string name;
   int device_id{0};
 };
 
