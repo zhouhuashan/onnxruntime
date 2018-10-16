@@ -165,9 +165,9 @@ class PlannerTest : public ::testing::Test {
   PlannerTest() : model_("test"), graph_{model_.MainGraph()}, state_{execution_providers_} {
     std_kernel_ = KernelDefBuilder().SetName("Transpose").Build();
     in_place_kernel_ = KernelDefBuilder().SetName("Clip").MayInplace(0, 0).Build();
-    CPUExecutionProviderInfo epi{"CPUExecutionProvider"};
+    CPUExecutionProviderInfo epi;
     auto execution_provider = std::make_unique<CPUExecutionProvider>(epi);
-    execution_providers_.Add(epi.name, std::move(execution_provider));
+    execution_providers_.Add("CPUExecutionProvider", std::move(execution_provider));
   }
 
   ~PlannerTest() = default;
