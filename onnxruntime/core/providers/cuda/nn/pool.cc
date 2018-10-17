@@ -165,11 +165,11 @@ Status Pool<T, MaxPool<8>>::ComputeInternal(OpKernelContext* context) const {
     return ONNXRUNTIME_MAKE_STATUS(ONNXRUNTIME, FAIL, "Input dimension cannot be less than 3.");
   }
 
-  std::vector<int64_t> kernel_shape = kernel_shape_;
-  std::vector<int64_t> pads = pads_;
-  std::vector<int64_t> strides = strides_;
+  std::vector<int64_t> kernel_shape = this->kernel_shape_;
+  std::vector<int64_t> pads = this->pads_;
+  std::vector<int64_t> strides = this->strides_;
 
-  if (global_pooling_) {
+  if (this->global_pooling_) {
     kernel_shape.assign(x_dims.begin() + 2, x_dims.end());
     pads.assign(kernel_shape.size(), 0);
     strides.assign(kernel_shape.size(), 1);
@@ -190,10 +190,12 @@ Status Pool<T, MaxPool<8>>::ComputeInternal(OpKernelContext* context) const {
         kernel_shape,
         strides,
         pads,
-        storage_order_,
+        this->storage_order_,
         x_data,
         y_data,
         i_data);
+  } else {
+    Pool<T, MaxPool<1>>::ComputeInternal(context);
   }
   return Status::OK();
 }
