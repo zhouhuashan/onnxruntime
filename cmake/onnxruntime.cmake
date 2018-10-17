@@ -21,7 +21,7 @@ if(UNIX)
     onnxruntime_graph
     onnxruntime_common
     ${END_WHOLE_ARCHIVE}
-    "-Wl,--exclude-libs,ALL"
+    "-Wl,--version-script=${ONNXRUNTIME_ROOT}/core/version_script.lds"
     onnx
     onnx_proto
     onnxruntime_mlas

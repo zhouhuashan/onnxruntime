@@ -6,27 +6,37 @@
 #include "core/session/inference_session.h"
 #include "abi_session_options_impl.h"
 
-ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, CreateONNXRuntimeSessionOptions) {
+ONNXRuntimeSessionOptions::~ONNXRuntimeSessionOptions() {
+  for (ONNXRuntimeProviderFactoryPtr* p : provider_factories) {
+    (*p)->Release(p);
+  }
+}
+
+ONNXRuntimeSessionOptions& ONNXRuntimeSessionOptions::operator=(const ONNXRuntimeSessionOptions&) {
+  throw std::runtime_error("not implemented");
+}
+ONNXRuntimeSessionOptions::ONNXRuntimeSessionOptions(const ONNXRuntimeSessionOptions& other)
+    : value(other.value), custom_op_paths(other.custom_op_paths), provider_factories(other.provider_factories) {
+  for (ONNXRuntimeProviderFactoryPtr* p : other.provider_factories) {
+    (*p)->AddRef(p);
+  }
+}
+ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, ONNXRuntimeCreateSessionOptions) {
   std::unique_ptr<ONNXRuntimeSessionOptions> options = std::make_unique<ONNXRuntimeSessionOptions>();
-#ifdef USE_CUDA
-  options->enable_cuda_provider = true;
-#else
-  options->enable_cuda_provider = false;
-#endif
-#ifdef USE_MKLDNN
-  options->enable_mkl_provider = true;
-#else
-  options->enable_mkl_provider = false;
-#endif
   return options.release();
 }
 
-ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, CloneONNXRuntimeSessionOptions, ONNXRuntimeSessionOptions* input) {
+ONNXRUNTIME_API(ONNXRuntimeSessionOptions*, ONNXRuntimeCloneSessionOptions, ONNXRuntimeSessionOptions* input) {
   try {
     return new ONNXRuntimeSessionOptions(*input);
   } catch (std::exception&) {
     return nullptr;
   }
+}
+
+ONNXRUNTIME_API(void, ONNXRuntimeSessionOptionsAppendExecutionProvider, _In_ ONNXRuntimeSessionOptions* options, _In_ ONNXRuntimeProviderFactoryPtr* f) {
+  (*f)->AddRef(f);
+  options->provider_factories.push_back(f);
 }
 
 ONNXRUNTIME_API(void, ReleaseONNXRuntimeSessionOptions, _Frees_ptr_opt_ ONNXRuntimeSessionOptions* value) {
@@ -89,31 +99,6 @@ ONNXRUNTIME_API(int, ONNXRuntimeSetSessionThreadPoolSize, _In_ ONNXRuntimeSessio
   return 0;
 }
 
-ONNXRUNTIME_API(int, ONNXRuntimeEnableCudaProvider, _In_ ONNXRuntimeSessionOptions* options, int device_id) {
-#ifdef USE_CUDA
-  options->enable_cuda_provider = true;
-  options->cuda_device_id = device_id;
-  return 0;
-#else
-  (void)options;
-  (void)device_id;
-  return -1;
-#endif
-}
-
-ONNXRUNTIME_API(void, ONNXRuntimeDisableCudaProvider, _In_ ONNXRuntimeSessionOptions* options) {
-  options->enable_cuda_provider = false;
-}
-
-ONNXRUNTIME_API(int, ONNXRuntimeEnableMklProvider, _In_ ONNXRuntimeSessionOptions* options) {
-  //TODO:
-  (void)options;
-  return -1;
-}
-
-ONNXRUNTIME_API(void, ONNXRuntimeDisableMklProvider, _In_ ONNXRuntimeSessionOptions* options) {
-  options->enable_mkl_provider = false;
-}
 
 ONNXRUNTIME_API(void, ONNXRuntimeAddCustomOp, _In_ ONNXRuntimeSessionOptions* options, const char* custom_op_path) {
   options->custom_op_paths.emplace_back(custom_op_path);

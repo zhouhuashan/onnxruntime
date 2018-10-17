@@ -90,7 +90,7 @@ static void run(ONNXEnv* env, SessionOptionsWrapper& sf, const wchar_t* test_fol
 static ONNXEnv* env;
 
 TEST_MODULE_INITIALIZE(ModuleInitialize) {
-  ONNXStatusPtr ost = InitializeONNXRuntime(ONNXRUNTIME_LOGGING_LEVEL_kWARNING, "Default", &env);
+  ONNXStatusPtr ost = ONNXRuntimeInitialize(ONNXRUNTIME_LOGGING_LEVEL_kWARNING, "Default", &env);
   if (ost != nullptr) {
     Logger::WriteMessage(ONNXRuntimeGetErrorMessage(ost));
     ReleaseONNXStatus(ost);
